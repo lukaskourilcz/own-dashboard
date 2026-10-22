@@ -15,6 +15,7 @@ import { pendingDneskaiMediaCandidates, readDneskaiMedia } from './dneskai-media
 import { DNESKAI_SOURCES } from './dneskai-registry';
 import { DNESKAI_RENDERER_VERSION } from './dneskai-render';
 import type { CreateDneskaiBriefs } from './dneskai-ports';
+import type { DneskaiEditPool } from './dneskai-deck-edit';
 import { pragueScheduledAt } from './clock';
 import { ingestSource } from './store';
 import { enqueueMarketingJob, MarketingWorkerRuntimeError } from './worker-runtime';
@@ -498,6 +499,21 @@ export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { en
 export function createDneskaiBriefs(db: DneskaiBriefsDatabase, options: { now?: () => Date; enqueue?: (owner: string, request: unknown) => Promise<JobAdmission> } = {}): CreateDneskaiBriefs {
   const store = createDneskaiBriefStore(db, options);
   return (input) => createDneskaiBriefsWithStore(store, input, options);
+}
+
+/**
+ * The brief's pictures with their capability flags and its primary source (review-10), for an owner edit that moves
+ * a picture slide to another type or inserts a slide. The same brief rows as `listDneskaiBriefAssetHashes`; an
+ * empty pool when the revision names no brief.
+ */
+export async function listDneskaiBriefPool(db: Pick<DneskaiBriefsDatabase, 'from'>, owner: string, revision: Pick<ContentRevision, 'sources'>): Promise<DneskaiEditPool> {
+  const source = revision.sources[0];
+  if (!source || !/^[a-f0-9]{64}$/.test(source.sourceId)) return { media: [], primaryCandidateId: null };
+  const { data, error } = await db.from('marketing_dneskai_briefs').select('brief').eq('user_id', owner).eq('event_id', source.sourceId).eq('member_hash', source.sourceRevision).neq('status', 'skipped').limit(4);
+  if (error) throw new DneskaiBriefError('brief-store-unavailable');
+  const briefs = (data ?? []).flatMap((row: { brief: unknown }) => { const brief = DneskaiBriefSchema.safeParse(row.brief); return brief.success ? [brief.data] : []; });
+  const media = briefs.flatMap((brief) => brief.media.map(({ assetSha256, candidateId, credit, fullBleedCapable, insetCapable }) => ({ assetSha256, candidateId, credit, fullBleedCapable, insetCapable })));
+  return { media: media.filter((item, index) => media.findIndex((other) => other.assetSha256 === item.assetSha256) === index), primaryCandidateId: briefs[0]?.evidence[0]?.candidateId ?? null };
 }
 
 /**

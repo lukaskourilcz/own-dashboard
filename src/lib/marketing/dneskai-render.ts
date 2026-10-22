@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
-import { DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide, type DneskaiSlideType } from "./dneskai-slides";
+import { DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 
 /**
@@ -89,8 +90,8 @@ export async function dneskaiEncoderIdentity(): Promise<{ sharp: string; vips: s
   return { sharp: String(sharp.versions.sharp ?? ""), vips: String(sharp.versions.vips) };
 }
 
-/** A field of a slide that carries written copy. `sources` stands for each of its lines. */
-export type DneskaiTextField = "headline" | "body" | "kicker" | "credit" | "sources";
+export type { DneskaiTextField };
+export { DNESKAI_PLACED_FIELDS };
 const TEXT_FIELDS = ["headline", "body", "kicker", "credit"] as const;
 
 /**
@@ -109,19 +110,7 @@ export const DNESKAI_FIELD_FACES = {
   sources: { family: "Source Serif 4", weight: 400, uppercase: false },
 } as const satisfies Record<DneskaiTextField, { family: string; weight: number; uppercase: boolean }>;
 
-/**
- * The written fields each slide type draws. The studio fills only its template's slots, so any
- * other field would sit in the approved deck and never reach the picture. Checked against the
- * vendored templates like the faces.
- */
-export const DNESKAI_PLACED_FIELDS = {
-  "cover-photo": ["headline", "kicker", "credit"],
-  figure: ["headline", "body", "credit"],
-  split: ["headline", "body", "kicker", "credit"],
-  statement: ["headline", "body"],
-  sources: ["sources"],
-  single: ["headline", "body", "kicker", "credit"],
-} as const satisfies Record<DneskaiSlideType, readonly DneskaiTextField[]>;
+/** The written fields each slide type draws: `DNESKAI_PLACED_FIELDS` in `dneskai-slide-layout.ts`, checked against the vendored templates. */
 
 /**
  * The string the studio draws for a field: trimmed, uppercased in Czech where the template does

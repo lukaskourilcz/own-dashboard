@@ -3,16 +3,14 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiRenderReportSchema, parseContentRevision, type ContentRevision } from './contracts';
 import { DneskaiBriefSchema, type DneskaiBrief } from './dneskai-brief';
-import type { DneskaiSlide } from './dneskai-slides';
 import { DNESKAI_BRIEF_SLOTS } from './dneskai-briefs';
-import { DNESKAI_PLACED_FIELDS } from './dneskai-render';
-import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId } from './dneskai-generation';
+import { dneskaiSlideFieldLimits } from './dneskai-slide-layout';
 import { marketingJobErrorCode } from './job-health';
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import {
-  DNESKAI_COSTS_VERSION, DNESKAI_EDITABLE_TEXT_FIELDS, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
-  DneskaiWorkspaceReadSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiFieldLimit, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
+  DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
+  DneskaiWorkspaceReadSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
 
 /**
@@ -24,17 +22,11 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
 type Database = Pick<SupabaseClient<any>, 'from'>;
 
-const SCHEMA_LIMITS: Record<(typeof DNESKAI_EDITABLE_TEXT_FIELDS)[number], number> = { headline: 200, body: 700, kicker: 80, credit: 120 };
 const POST_LIMIT = 60;
 const REVISION_READ_LIMIT = 150;
 
-/** The written fields a slide's template draws, with the most characters its layer holds. Sources lines are code-owned. */
-export function dneskaiSlideFieldLimits(slide: DneskaiSlide): DneskaiFieldLimit[] {
-  const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
-  if (slide.type === 'sources') return [];
-  const limits: Partial<Record<string, number>> = DNESKAI_TEXT_LIMITS[dneskaiTemplateId(slide as Parameters<typeof dneskaiTemplateId>[0])];
-  return DNESKAI_EDITABLE_TEXT_FIELDS.filter((field) => placed.includes(field)).map((field) => ({ field, max: limits[field] ?? SCHEMA_LIMITS[field] }));
-}
+/** The written fields a slide's template draws, with the most characters its layer holds (browser-safe in `dneskai-slide-layout.ts`). */
+export { dneskaiSlideFieldLimits };
 
 const iso = (value: unknown): string | null => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 const money = (value: unknown): number | null => {

@@ -57,6 +57,7 @@ const en = {
   draftProblems: {
     'text-too-long': 'is longer than the slide holds', 'text-missing': 'is empty', 'alt-missing': 'is empty', 'caption-too-long': 'is longer than 2,200 characters',
     'caption-missing': 'is empty', 'deck-edit-slide-count': 'A carousel needs 2 to 10 slides; a single post exactly one.', 'schedule-invalid': 'is not a valid time in Prague (for example inside the clock change).',
+    'text-clipped': 'would be cut on the slide; shorten it', 'text-unfit': 'has text the slide cannot print as written',
   },
   calendar: {
     title: 'Next seven days', intro: 'Publishing slots in Europe/Prague and what is planned in each.', free: 'Free slot', dst: 'Clocks change on this day; times are local Prague time.',
@@ -143,6 +144,7 @@ const cs: typeof en = {
   draftProblems: {
     'text-too-long': 'je delší, než se na slide vejde', 'text-missing': 'je prázdný', 'alt-missing': 'je prázdný', 'caption-too-long': 'je delší než 2 200 znaků',
     'caption-missing': 'je prázdný', 'deck-edit-slide-count': 'Carousel potřebuje 2 až 10 slidů, samostatný příspěvek právě jeden.', 'schedule-invalid': 'není platný pražský čas (například během změny času).',
+    'text-clipped': 'by se na slidu ořízl; zkraťte ho', 'text-unfit': 'obsahuje text, který slide nevytiskne tak, jak je napsaný',
   },
   calendar: {
     title: 'Příštích sedm dní', intro: 'Publikační sloty v čase Europe/Prague a co je v nich naplánované.', free: 'Volný slot', dst: 'Tento den se mění čas; časy jsou místní pražské.',

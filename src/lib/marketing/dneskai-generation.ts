@@ -4,6 +4,7 @@ import { contentHash } from "./hashes";
 import type { DneskaiBrief, DneskaiBriefMedia } from "./dneskai-brief";
 import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
+import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
 
 /**
@@ -31,21 +32,9 @@ export const DNESKAI_SOURCES_SLIDE = { lines: 4, thumbnails: 4, lineChars: 190 }
 /** The DNESKAi hashtag base set from the studio's `copy.ts` (`HASHTAG_BASE["caught-up"]`). */
 export const DNESKAI_HASHTAG_BASE = ["ai", "umelainteligence", "technologie", "aitech", "dneskai"] as const;
 
-/**
- * The most characters each written field of a DNESKAi template holds (`maxChars` of its text layer in the
- * vendored `dneskai-photo.js`). `tests/lib/marketing-dneskai-generation.test.ts` reads them back from the
- * studio. Whether a line fits is still the fitter's call; this is the hard ceiling the prompt aims under.
- */
-export const DNESKAI_TEXT_LIMITS = {
-  "dneskai-cover-photo": { headline: 110, kicker: 56, credit: 80 },
-  "dneskai-figure": { headline: 110, body: 260, credit: 80 },
-  "dneskai-split": { headline: 110, body: 330, kicker: 28, credit: 80 },
-  "dneskai-split-pair": { headline: 110, body: 320, kicker: 28, credit: 80 },
-  "dneskai-statement": { headline: 170, body: 240 },
-  "dneskai-single-photo": { headline: 110, body: 100, kicker: 44, credit: 30 },
-  "dneskai-single-type": { headline: 120, body: 280, kicker: 56, credit: 80 },
-} as const satisfies Record<string, Partial<Record<"headline" | "body" | "kicker" | "credit", number>>>;
-type TemplateId = keyof typeof DNESKAI_TEXT_LIMITS;
+/** The templates' text ceilings live in the browser-safe layout tables (`dneskai-slide-layout.ts`). */
+export { DNESKAI_TEXT_LIMITS, dneskaiTemplateId };
+type TemplateId = DneskaiTemplateId;
 /** What the prompt asks for: four fifths of the ceiling, so the fitter has room at the template's sizes. */
 const target = (limit: number) => Math.floor(limit * 0.8);
 
@@ -278,16 +267,6 @@ export function normalizeDneskaiCopy(value: unknown): unknown {
   }) };
 }
 
-/** The studio template a written slide resolves to. */
-export function dneskaiTemplateId(slide: Pick<DneskaiCopySlide, "type" | "variant" | "images">): TemplateId {
-  switch (slide.type) {
-    case "cover-photo": return "dneskai-cover-photo";
-    case "figure": return "dneskai-figure";
-    case "split": return slide.images.length > 1 ? "dneskai-split-pair" : "dneskai-split";
-    case "statement": return "dneskai-statement";
-    case "single": return slide.variant === "type" ? "dneskai-single-type" : "dneskai-single-photo";
-  }
-}
 
 const UNSAFE_TEXT = /https?:\/\/|www\.|<[^>]+>|[\u0000-\u0008\u000b-\u001f]|[\p{Extended_Pictographic}]/u;
 // Extract the same whole numeric tokens from output and evidence. Keep units and decimal precision:

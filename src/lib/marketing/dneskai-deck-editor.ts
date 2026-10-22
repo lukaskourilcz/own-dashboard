@@ -1,20 +1,28 @@
 import type { DneskaiBriefMedia } from './dneskai-brief';
 import type { DneskaiImageCrop, DneskaiSlide, DneskaiSlideImage } from './dneskai-slides';
 import { pragueLocalInput, pragueScheduledAt } from './clock';
+import {
+  dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
+  dneskaiSlideMoves, dneskaiSlideShape, DNESKAI_PLACED_FIELDS, type DneskaiPoolPicture, type DneskaiShapeId, type DneskaiSlideShape,
+} from './dneskai-slide-layout';
 import type { DneskaiFieldLimit, DneskaiWorkspacePost } from './dneskai-workspace';
+import type { DneskaiFitResult } from './dneskai-lab';
 
 /**
  * The owner's post editor (#119) as pure functions: a draft built from one revision, the edits the editor allows
  * (written fields the template draws, picture swaps from the topic's pool, focal point and zoom, removing and
- * moving slides, caption, time and account) and the exact `edit` request for POST /api/marketing/revisions.
- * Slide types, variants, picture places and source lines stay as generated; the server enforces the same rules.
+ * moving slides, caption, time and account), and since review-10 a slide's type and variant within the moves its
+ * pictures allow and a slide inserted from the brief's pool, plus the exact `edit` request for
+ * POST /api/marketing/revisions. Source lines stay code-owned; the server applies the same rules
+ * (`applyDneskaiDeckEdit` in dneskai-deck-edit.ts).
  */
 export const DNESKAI_CAPTION_MAX = 2200;
 export const DNESKAI_ZOOM = { min: 1, max: 2, step: 0.05 } as const;
 /** Arrow keys move the focal point by 2 % of the picture. */
 export const DNESKAI_FOCAL_STEP = 0.02;
 
-export type DraftSlide = { from: number; slide: DneskaiSlide; fields: DneskaiFieldLimit[] };
+/** `from` is the slide's index in the saved revision, or null for a slide the owner inserted. */
+export type DraftSlide = { from: number | null; slide: DneskaiSlide; fields: DneskaiFieldLimit[] };
 export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -70,25 +78,8 @@ export function setImageCrop(draft: DeckDraft, index: number, slot: string, patc
   return updateSlide(draft, index, (slide) => ({ ...slide, images: slide.images.map((image) => image.slot === slot ? withCrop(image, patch) : image) }));
 }
 
-/**
- * The credit line code sets for a slide's pictures, the same three forms as generation (`fitDneskaiCredit` in
- * dneskai-generation.ts): full credits, then without the „Foto:“/„Obrázek:“ label, then also without the platform in
- * brackets. Null when even the shortest form does not fit.
- */
-export function dneskaiCreditLine(credits: readonly string[], limit: number): string | null {
-  const whitespace = (value: string) => value.replace(/\s+/gu, ' ').trim();
-  const distinct = <T>(values: T[]) => [...new Set(values)];
-  const characters = (value: string) => [...value.normalize('NFC')].length;
-  const full = distinct(credits.map(whitespace).filter(Boolean));
-  if (!full.length) return '';
-  const unlabelled = full.map((credit) => credit.replace(/^(?:Foto|Obrázek):\s+/u, ''));
-  const bare = unlabelled.map((credit) => credit.replace(/\s+\((?:Bluesky|GitHub|Instagram)\)$/u, ''));
-  for (const form of [full, unlabelled, bare]) {
-    const line = distinct(form).join(' · ');
-    if (characters(line) <= limit) return line;
-  }
-  return null;
-}
+/** The credit line code sets for a slide's pictures (browser-safe in `dneskai-slide-layout.ts`). */
+export { dneskaiCreditLine };
 
 /**
  * Swaps the picture in one slot for another from the topic's pool. The crop starts centred, the slide's credit line
@@ -123,12 +114,90 @@ export function moveSlide(draft: DeckDraft, from: number, to: number): DeckDraft
   return { ...draft, slides };
 }
 
+/** The pool the editor offers: the brief's pictures and its primary source. */
+export function draftPool(post: Pick<DneskaiWorkspacePost, 'brief'>): { media: DneskaiBriefMedia[]; primaryCandidateId: string | null } {
+  return { media: post.brief?.media ?? [], primaryCandidateId: post.brief?.evidence[0]?.candidateId ?? null };
+}
+
+/** The shapes slide `index` of the draft may take while keeping its pictures, the current one first. */
+export function draftSlideMoves(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, draft: DeckDraft, index: number): DneskaiSlideShape[] {
+  const item = draft.slides[index];
+  if (!item) return [];
+  const media = new Map(draftPool(post).media.map((entry) => [entry.assetSha256, entry]));
+  return dneskaiSlideMoves(item.slide, { index, format: post.deck?.format ?? 'carousel', media });
+}
+
+/**
+ * Moves slide `index` to another shape within its allowed moves. Text the new type does not draw is dropped (the
+ * caller tells the owner which fields went), a type-only single post drops its picture and credit, and the counters
+ * follow the new template. Returns the draft unchanged when the move is not allowed.
+ */
+export function setSlideShape(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, draft: DeckDraft, index: number, id: DneskaiShapeId): { draft: DeckDraft; dropped: Array<'body' | 'kicker' | 'credit'> } {
+  const item = draft.slides[index];
+  if (!item || !draftSlideMoves(post, draft, index).some((shape) => dneskaiShapeId(shape) === id)) return { draft, dropped: [] };
+  const shape = dneskaiShapeFromId(id);
+  const slide: DneskaiSlide = { ...structuredClone(item.slide), type: shape.type };
+  if ('variant' in shape) slide.variant = shape.variant; else delete slide.variant;
+  if (!dneskaiShapePictureCounts(shape).some((count) => count > 0)) slide.images = [];
+  const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const dropped = (['body', 'kicker', 'credit'] as const).filter((field) => (slide[field] ?? '').trim() && (!placed.includes(field) || (field === 'credit' && !slide.images.length)));
+  for (const field of ['body', 'kicker', 'credit'] as const) if (!placed.includes(field) || (field === 'credit' && !slide.images.length)) delete slide[field];
+  return { draft: { ...draft, slides: draft.slides.map((entry, position) => position === index ? { ...entry, slide, fields: dneskaiSlideFieldLimits(slide) } : entry) }, dropped };
+}
+
+/** Pictures an inserted slide may use: unused pool pictures from a source the deck already cites, that fit the shape. */
+export function insertablePictures(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, draft: DeckDraft, id: DneskaiShapeId): DneskaiBriefMedia[] {
+  const shape = dneskaiShapeFromId(id);
+  if (!post.deck || !dneskaiShapePictureCounts(shape).some((count) => count > 0)) return [];
+  const pool = draftPool(post);
+  // The sources slide cites what the saved deck shows; a picture the draft already shows cannot repeat.
+  const cited = dneskaiInsertablePictures(pool.media, post.deck, pool.primaryCandidateId);
+  const shown = new Set(draft.slides.filter((item) => item.slide.type !== 'sources').flatMap((item) => item.slide.images.map((image) => image.assetSha256)));
+  return cited.filter((item) => !shown.has(item.assetSha256) && dneskaiPictureFitsShape(item, shape));
+}
+
+/** Where a new slide goes: after slide `after`, but never after the sources slide. */
+export function insertPosition(draft: DeckDraft, after: number): number {
+  const sources = draft.slides.findIndex((item) => item.slide.type === 'sources');
+  const at = Math.max(0, Math.min(draft.slides.length, after + 1));
+  return sources >= 0 ? Math.min(at, sources) : at;
+}
+
+/**
+ * Inserts a carousel slide (review-10): a framed picture from the pool with its code-set credit, or a statement.
+ * Its headline and alt text start empty, so the draft cannot be saved until the owner writes them. Returns the draft
+ * unchanged when the shape, the picture or the slide count does not allow it.
+ */
+export function insertSlide(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, draft: DeckDraft, after: number, id: DneskaiShapeId, picture: Pick<DneskaiPoolPicture, 'assetSha256'> | null): { draft: DeckDraft; index: number } {
+  const shape = dneskaiShapeFromId(id);
+  const unchanged = { draft, index: -1 };
+  if (post.deck?.format !== 'carousel' || draft.slides.length >= 10 || !['figure', 'split', 'statement-accent', 'statement-ink'].includes(id)) return unchanged;
+  const needsPicture = dneskaiShapePictureCounts(shape).some((count) => count > 0);
+  const media = needsPicture ? insertablePictures(post, draft, id).find((item) => item.assetSha256 === picture?.assetSha256) : null;
+  if (needsPicture && !media) return unchanged;
+  const slide: DneskaiSlide = { type: shape.type, ...('variant' in shape ? { variant: shape.variant } : {}), headline: '', images: media ? [{ slot: 'image-1', assetSha256: media.assetSha256 }] : [], alt: '' };
+  const fields = dneskaiSlideFieldLimits(slide);
+  if (media) {
+    const credit = dneskaiCreditLine([media.credit], fields.find((field) => field.field === 'credit')?.max ?? 80);
+    if (credit === null) return unchanged;
+    slide.credit = credit;
+  }
+  const index = insertPosition(draft, after);
+  const slides = [...draft.slides];
+  slides.splice(index, 0, { from: null, slide, fields });
+  return { draft: { ...draft, slides }, index };
+}
+
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
-export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'deck-edit-slide-count' | 'schedule-invalid' };
-/** What the editor itself can see is wrong before sending; the server and the renderer check the rest. */
-export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: DeckDraft): DraftProblem[] {
+export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'deck-edit-slide-count' | 'schedule-invalid' | 'text-clipped' | 'text-unfit' };
+/**
+ * What the editor itself can see is wrong before sending; the server and the renderer check the rest. With the fit
+ * report for this exact draft (POST /api/marketing/dneskai/fit), a field the studio's fitter would cut is a problem
+ * too (`text-clipped`), as is any other text problem it names (`text-unfit`: a glyph the face lacks, unplaced text).
+ */
+export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: DeckDraft, fit: DneskaiFitResult | null = null): DraftProblem[] {
   const problems: DraftProblem[] = [];
   draft.slides.forEach(({ slide, fields }, index) => {
     for (const { field, max } of fields) {
@@ -137,6 +206,14 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
     }
     if (slide.type !== 'sources' && !slide.headline.trim()) problems.push({ slide: index, field: 'headline', code: 'text-missing' });
     if (!slide.alt.trim()) problems.push({ slide: index, field: 'alt', code: 'alt-missing' });
+    const fitted = fit?.slides.length === draft.slides.length ? fit.slides[index] : undefined;
+    if (fitted && !fitted.fits) {
+      for (const field of fitted.fields) {
+        if (field.clipped && field.overBy === 0) problems.push({ slide: index, field: field.field, code: 'text-clipped' });
+        else if (field.codes.length && field.overBy === 0) problems.push({ slide: index, field: field.field, code: 'text-unfit' });
+      }
+      if (fitted.codes.length) problems.push({ slide: index, field: 'slide', code: 'text-unfit' });
+    }
   });
   if (post.deck?.format === 'carousel' && (draft.slides.length < 2 || draft.slides.length > 10)) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
   if (post.deck?.format === 'single-image' && draft.slides.length !== 1) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
@@ -152,8 +229,9 @@ export function scheduledIso(local: string): string | null {
   try { return pragueScheduledAt(local.slice(0, 10), local.slice(11, 16)); } catch { return null; }
 }
 
-export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[] };
-export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; deck?: { slides: DneskaiSlideEdit[] } };
+export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null };
+export type DneskaiSlideInsertEdit = { insert: { type: 'figure' | 'split' | 'statement'; variant?: 'accent' | 'ink'; headline: string; body?: string; kicker?: string; alt: string; images: DneskaiSlideImage[] } };
+export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; deck?: { slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> } };
 
 const sameImages = (a: readonly DneskaiSlideImage[], b: readonly DneskaiSlideImage[]) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -166,11 +244,27 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
   if (!scheduledAt) throw new Error('schedule-invalid');
   const original = post.deck?.slides ?? [];
   let changed = draft.slides.length !== original.length;
-  const slides = draft.slides.map(({ from, slide, fields }, position): DneskaiSlideEdit => {
+  const slides = draft.slides.map(({ from, slide, fields }, position): DneskaiSlideEdit | DneskaiSlideInsertEdit => {
+    if (from === null) {
+      changed = true;
+      if (slide.type !== 'figure' && slide.type !== 'split' && slide.type !== 'statement') throw new Error('deck-edit-insert-not-allowed');
+      return { insert: {
+        type: slide.type, ...(slide.type === 'statement' && (slide.variant === 'accent' || slide.variant === 'ink') ? { variant: slide.variant } : {}),
+        headline: slide.headline, ...(slide.body?.trim() ? { body: slide.body } : {}), ...(slide.kicker?.trim() ? { kicker: slide.kicker } : {}),
+        alt: slide.alt, images: slide.images.map((image) => structuredClone(image)),
+      } };
+    }
     const source = original[from];
     if (!source) throw new Error('deck-edit-slide-invalid');
     if (from !== position) changed = true;
     const entry: DneskaiSlideEdit = { from };
+    const shape = dneskaiShapeId(dneskaiSlideShape(slide));
+    if (shape !== dneskaiShapeId(dneskaiSlideShape(source))) {
+      entry.type = slide.type;
+      entry.variant = slide.variant ?? null;
+      // Text the new type does not draw goes with the move.
+      for (const field of ['body', 'kicker'] as const) if (source[field] !== undefined && slide[field] === undefined) entry[field] = null;
+    }
     const placed = new Set(fields.map((field) => field.field));
     if (placed.has('headline') && slide.headline !== source.headline) entry.headline = slide.headline;
     for (const field of ['body', 'kicker'] as const) {
@@ -180,7 +274,7 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
       if (next === before) continue;
       if (next) entry[field] = next; else if (source[field] !== undefined) entry[field] = null;
     }
-    if (placed.has('credit') && (slide.credit ?? '') !== (source.credit ?? '')) entry.credit = slide.credit ?? '';
+    if (placed.has('credit') && !(entry.type !== undefined && slide.credit === undefined) && (slide.credit ?? '') !== (source.credit ?? '')) entry.credit = slide.credit ?? '';
     if (slide.alt !== source.alt) entry.alt = slide.alt;
     if (!sameImages(slide.images, source.images)) entry.images = slide.images.map((image) => structuredClone(image));
     if (Object.keys(entry).length > 1) changed = true;

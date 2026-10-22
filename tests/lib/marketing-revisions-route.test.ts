@@ -5,7 +5,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user()
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
 vi.mock("@/lib/marketing/owner-feedback", () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
 vi.mock("@/lib/marketing/approval-notification", () => ({ notifyMarketingApproval: mocks.notify }));
-vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: () => mocks.render(), getDneskaiMediaLoader: (...args: unknown[]) => mocks.media(...args), getBriefAssetHashLister: (...args: unknown[]) => mocks.lister(...args) }));
+vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: () => mocks.render(), getDneskaiMediaLoader: (...args: unknown[]) => mocks.media(...args), getBriefAssetHashLister: (...args: unknown[]) => mocks.lister(...args), getBriefPoolLoader: () => async () => ({ media: [], primaryCandidateId: null }) }));
 import { POST } from "@/app/api/marketing/revisions/route";
 import { revisionContentHash } from "@/lib/marketing/hashes";
 import type { ContentRevision } from "@/lib/marketing/contracts";
