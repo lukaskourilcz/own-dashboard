@@ -1,0 +1,47 @@
+UNAPPROVED — research remains disabled. This continuation started no research actor.
+
+DNESKAi Apify research plan dneskai-apify-research/1 (prices fetched 2026-10-22, Bronze tier)
+plan id a4c1458a8327aace893915734aff52c115ce417d5b250ec8d6ce8d33bfcf9438
+
+niche-posts-global [front] apify~instagram-post-scraper build 0.0.646
+  2026-10-23..2026-10-29, 4 run(s) x cap $3.60 = $14.40; worst case per run $3.45, up to 1500 results
+niche-posts-czech [front] apify~instagram-post-scraper build 0.0.646
+  2026-10-23..2026-10-29, 4 run(s) x cap $2.90 = $11.60; worst case per run $2.76, up to 1200 results
+niche-carousel-music [front] apify~instagram-post-scraper build 0.0.646
+  2026-10-24..2026-10-29, 4 run(s) x cap $2.35 = $9.40; worst case per run $2.24, up to 270 results
+niche-reels [front] apify~instagram-reel-scraper build 0.0.617
+  2026-10-23..2026-10-29, 6 run(s) x cap $3.15 = $18.90; worst case per run $2.99, up to 360 results
+hashtag-posts [front] apify~instagram-hashtag-scraper build 0.0.707
+  2026-10-24..2026-10-29, 3 run(s) x cap $1.95 = $5.85; worst case per run $1.84, up to 800 results
+hashtag-reels [front] apify~instagram-hashtag-scraper build 0.0.707
+  2026-10-24..2026-10-29, 3 run(s) x cap $1.00 = $3.00; worst case per run $0.92, up to 400 results
+popular-reels [front] apify~instagram-search-scraper build 0.1.557
+  2026-10-24..2026-10-29, 2 run(s) x cap $1.55 = $3.10; worst case per run $1.47, up to 640 results
+threads-posts [front] futurizerush~meta-threads-scraper build 0.0.413
+  2026-10-23..2026-10-29, 2 run(s) x cap $2.65 = $5.30; worst case per run $2.52, up to 1000 results
+google-news-cs [front] lhotanova~google-news-scraper build 0.0.46
+  2026-10-23..2026-10-29, 4 run(s) x cap $2.15 = $8.60; worst case per run $2.02, up to 500 results
+reddit-ai [front] harshmaur~reddit-scraper build 0.0.710
+  2026-10-23..2026-10-29, 2 run(s) x cap $2.00 = $4.00; worst case per run $1.88, up to 1000 results
+youtube-ai [front] streamers~youtube-scraper build 0.0.319
+  2026-10-23..2026-10-29, 2 run(s) x cap $0.95 = $1.90; worst case per run $0.90, up to 300 results
+audio-trend-reels [second] apify~instagram-reel-scraper build 0.0.617
+  2026-10-30..2026-11-05, 3 run(s) x cap $1.25 = $3.75; worst case per run $1.15, up to 500 results
+posts-resnapshot [second] apify~instagram-post-scraper build 0.0.646
+  2026-10-31..2026-11-05, 6 run(s) x cap $1.60 = $9.60; worst case per run $1.50, up to 1000 results
+reels-resnapshot [second] apify~instagram-reel-scraper build 0.0.617
+  2026-10-31..2026-11-05, 2 run(s) x cap $4.35 = $8.70; worst case per run $4.15, up to 500 results
+dneskai-daily-posts [daily] apify~instagram-post-scraper build 0.0.646
+  2026-10-23..2026-11-21, 30 run(s) x cap $0.15 = $4.50; worst case per run $0.14, up to 60 results
+dneskai-daily-profile [daily] apify~instagram-profile-scraper build 0.0.655
+  2026-10-23..2026-11-21, 30 run(s) x cap $0.01 = $0.30; worst case per run $0.00, up to 1 results
+month-end-niche-posts [month-end] apify~instagram-post-scraper build 0.0.646
+  2026-11-16..2026-11-21, 4 run(s) x cap $0.90 = $3.60; worst case per run $0.83, up to 360 results
+month-end-niche-reels [month-end] apify~instagram-reel-scraper build 0.0.617
+  2026-11-16..2026-11-21, 4 run(s) x cap $1.60 = $6.40; worst case per run $1.49, up to 180 results
+month-end-popular-reels [month-end] apify~instagram-search-scraper build 0.1.557
+  2026-11-16..2026-11-21, 2 run(s) x cap $1.55 = $3.10; worst case per run $1.47, up to 640 results
+
+front $86.05, second $22.05, daily $4.80, month-end $13.10
+total of caps $126.00 of $150.00; unallocated $24.00 (spendable only through a new, re-approved plan)
+plan valid

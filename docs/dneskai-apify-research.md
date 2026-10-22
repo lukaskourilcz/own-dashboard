@@ -1,6 +1,6 @@
 # DNESKAi Apify research
 
-The research plan and runner are local preparation. Research is off, all actor builds are unpinned, and the owner has not approved the plan. No actor was run by this work. The migration has not been applied to any connected database.
+The research plan and runner are local preparation. Research is off and the owner has not approved the plan. All nine actor builds are pinned from unauthenticated public metadata observed on 22 October at 02:45 UTC; [the receipt](dneskai-apify-build-pins.json) records the actor/build IDs, build numbers and source URLs. Only metadata GETs were made, with no token or account access. No actor was run by this work. The migration has not been applied to any connected database.
 
 ## Plan and budget
 
@@ -24,7 +24,7 @@ Production's migration history differs from the repository. Reconcile that histo
 
 `startDneskaiResearchRun(request, dependencies)` is a server module, not a scheduler or public endpoint. No timer mounts it. A caller must supply the authenticated owner, item key and zero-based run index. Derived-target tasks also need bounded targets from the earlier approved wave. The runner passes `maxTotalChargeUsd`, `maxItems`, a pinned build and disabled restart to Apify, and never retries a start.
 
-Set `dryRun: true` to get the actor, cap, result limit, input and blocking gates without touching the ledger or network. It works with the committed disabled/unpinned plan. Unit tests exercise this with synthetic data:
+Set `dryRun: true` to get the actor, cap, result limit, input and blocking gates without touching the ledger or network. It works with the committed disabled/unapproved plan. [The review copy](dneskai-apify-research-plan.txt) includes the resulting exact plan id, build pins and caps. Any future pin update changes that id and needs a new approval. Unit tests exercise this with synthetic data:
 
 ```bash
 ./node_modules/.bin/vitest run tests/lib/dneskai-apify-research-plan.test.ts tests/lib/dneskai-apify-research.test.ts tests/lib/dneskai-apify-research-database.test.ts tests/lib/marketing-codes.test.ts

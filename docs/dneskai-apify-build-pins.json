@@ -1,0 +1,87 @@
+{
+  "observedAt": "2026-10-22T02:45:37.073196+00:00",
+  "method": "Unauthenticated public actor metadata GET; no token, run, dataset or account endpoint",
+  "actors": [
+    {
+      "key": "instagram-post",
+      "actorId": "nH2AHrwxeTRJoN5hX",
+      "actorName": "apify~instagram-post-scraper",
+      "source": "https://api.apify.com/v2/acts/nH2AHrwxeTRJoN5hX",
+      "build": "0.0.646",
+      "buildId": "Bbc5Oef2hsALZae2E",
+      "finishedAt": "2026-10-21T15:00:18.302Z"
+    },
+    {
+      "key": "instagram-reel",
+      "actorId": "xMc5Ga1oCONPmWJIa",
+      "actorName": "apify~instagram-reel-scraper",
+      "source": "https://api.apify.com/v2/acts/xMc5Ga1oCONPmWJIa",
+      "build": "0.0.617",
+      "buildId": "AjNpEB8iFIVAm8xgB",
+      "finishedAt": "2026-10-21T15:00:17.135Z"
+    },
+    {
+      "key": "instagram-hashtag",
+      "actorId": "reGe1ST3OBgYZSsZJ",
+      "actorName": "apify~instagram-hashtag-scraper",
+      "source": "https://api.apify.com/v2/acts/reGe1ST3OBgYZSsZJ",
+      "build": "0.0.707",
+      "buildId": "JNnCvkiU2fxRNi1ys",
+      "finishedAt": "2026-10-21T15:00:18.722Z"
+    },
+    {
+      "key": "instagram-search",
+      "actorId": "DrF9mzPPEuVizVF4l",
+      "actorName": "apify~instagram-search-scraper",
+      "source": "https://api.apify.com/v2/acts/DrF9mzPPEuVizVF4l",
+      "build": "0.1.557",
+      "buildId": "lKYv1XorpGRQRJaHC",
+      "finishedAt": "2026-10-21T15:00:21.555Z"
+    },
+    {
+      "key": "instagram-profile",
+      "actorId": "dSCLg0C3YEZ83HzYX",
+      "actorName": "apify~instagram-profile-scraper",
+      "source": "https://api.apify.com/v2/acts/dSCLg0C3YEZ83HzYX",
+      "build": "0.0.655",
+      "buildId": "GznWdTj8nCdrEphwi",
+      "finishedAt": "2026-10-21T15:01:02.720Z"
+    },
+    {
+      "key": "threads",
+      "actorId": "lct1dlYksEDIG9If9",
+      "actorName": "futurizerush~meta-threads-scraper",
+      "source": "https://api.apify.com/v2/acts/lct1dlYksEDIG9If9",
+      "build": "0.0.413",
+      "buildId": "ojISOQ67VA8eqMpeF",
+      "finishedAt": "2026-10-17T13:45:10.926Z"
+    },
+    {
+      "key": "google-news",
+      "actorId": "eWUEW5YpCaCBAa0Zs",
+      "actorName": "lhotanova~google-news-scraper",
+      "source": "https://api.apify.com/v2/acts/eWUEW5YpCaCBAa0Zs",
+      "build": "0.0.46",
+      "buildId": "DcIrXSzWIk2bquw18",
+      "finishedAt": "2026-10-15T23:55:55.207Z"
+    },
+    {
+      "key": "reddit",
+      "actorId": "9sHOY9RzPYGjmTHo8",
+      "actorName": "harshmaur~reddit-scraper",
+      "source": "https://api.apify.com/v2/acts/9sHOY9RzPYGjmTHo8",
+      "build": "0.0.710",
+      "buildId": "Db2hljxvcFKShTGtL",
+      "finishedAt": "2026-10-20T15:22:13.814Z"
+    },
+    {
+      "key": "youtube",
+      "actorId": "h7sDV53CddomktSi5",
+      "actorName": "streamers~youtube-scraper",
+      "source": "https://api.apify.com/v2/acts/h7sDV53CddomktSi5",
+      "build": "0.0.319",
+      "buildId": "kOLogYtrERZU9YfGW",
+      "finishedAt": "2026-10-20T17:34:58.006Z"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import pins from "../../docs/dneskai-apify-build-pins.json";
 import { describe, expect, it } from "vitest";
 import {
   DNESKAI_RESEARCH_ACTORS, DNESKAI_RESEARCH_CEILING_USD, DNESKAI_RESEARCH_PLAN, dneskaiResearchPlanId, formatDneskaiResearchPlan,
@@ -36,10 +37,11 @@ describe("DNESKAi Apify research plan (brief §4.I)", () => {
     expect(validateDneskaiResearchPlan(withItem("youtube-ai", { window: { from: "2026-11-20", to: "2026-11-25" } }))).toContain("youtube-ai:window-invalid");
   });
 
-  it("records the fetched actor ids and pricing, with every build unpinned until the owner pins it", () => {
+  it("records actor ids, pricing and exact build pins from the public metadata receipt", () => {
     expect(DNESKAI_RESEARCH_ACTORS["instagram-post"]).toMatchObject({ id: "nH2AHrwxeTRJoN5hX", prices: { post: 0.0015, postDetails: 0.0008, musicData: 0.006 } });
     expect(DNESKAI_RESEARCH_ACTORS["instagram-reel"]).toMatchObject({ id: "xMc5Ga1oCONPmWJIa", prices: { reel: 0.0023, sharesCount: 0.006 } });
-    expect(Object.values(DNESKAI_RESEARCH_ACTORS).every((actor) => actor.build === null)).toBe(true);
+    expect(pins.actors).toHaveLength(Object.keys(DNESKAI_RESEARCH_ACTORS).length);
+    for (const receipt of pins.actors) expect(DNESKAI_RESEARCH_ACTORS[receipt.key as keyof typeof DNESKAI_RESEARCH_ACTORS]).toMatchObject({ id: receipt.actorId, name: receipt.actorName, build: receipt.build });
   });
 
   it("binds the approval to exact bytes: any change gives another plan id", () => {
