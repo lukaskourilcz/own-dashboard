@@ -521,6 +521,7 @@ const CODES = {
   'brief-still-waiting': ['wait', 'The topic still waits for its pictures. The scheduler drafts it once they are collected.', 'Téma ještě čeká na své obrázky. Plánovač ho napíše, jakmile budou sebrané.'],
   'generate-now-busy': ['wait', 'The scheduler is preparing topics right now, so this one was not started twice.', 'Plánovač právě připravuje témata, proto se toto nespustilo podruhé.'],
   'generate-now-unavailable': ['retry', 'The topic could not be admitted now. Nothing was spent.', 'Téma teď nešlo zařadit. Nic se neutratilo.'],
+  'topic-action-failed': ['retry', 'The topic change did not reach the server. The list shows the saved state.', 'Změna námětu nedošla na server. Seznam ukazuje uložený stav.'],
   'invalid-generate-request': ['investigate', 'The request to generate now was not valid.', 'Požadavek na okamžité vygenerování nebyl platný.'],
   'reminder-state-unavailable': ['auto', 'The posts waiting for review could not be read for the reminder.', 'Příspěvky čekající na kontrolu nešlo pro připomínku načíst.'],
   'reminder-write-failed': ['auto', 'The review reminder could not be written.', 'Připomínku kontroly nešlo zapsat.'],
