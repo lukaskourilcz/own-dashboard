@@ -18,7 +18,12 @@ let container: HTMLDivElement; let root: Root; let client: QueryClient;
 beforeEach(() => { resetDemoDneskaiTopics(); container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); client = new QueryClient({ defaultOptions: { queries: { retry: false } } }); });
 afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const wait = (ms = 300) => act(async () => { await new Promise((done) => setTimeout(done, ms)); });
-const show = async (preview = true) => { act(() => root.render(<QueryClientProvider client={client}><DneskaiTopicsList projectId={project} lang="en" preview={preview} /></QueryClientProvider>)); await wait(); };
+/** Renders the list and waits for its first read (the preview demo is a dynamic import, slow on a loaded machine). */
+const show = async (preview = true) => {
+  act(() => root.render(<QueryClientProvider client={client}><DneskaiTopicsList projectId={project} lang="en" preview={preview} /></QueryClientProvider>));
+  for (let tries = 0; tries < 50 && client.getQueryState(dneskaiTopicsKey(project))?.status !== 'success'; tries += 1) await wait(100);
+  await wait(50);
+};
 const row = (n: number) => container.querySelector<HTMLElement>(`[data-topic-row="${demoTopicId(n)}"]`);
 const button = (scope: ParentNode, name: string) => [...scope.querySelectorAll('button')].find((item) => item.getAttribute('aria-label') === name || item.textContent === name);
 const statusOf = (n: number) => {
