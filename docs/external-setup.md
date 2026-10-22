@@ -171,3 +171,17 @@ The code connects one Instagram professional account through the Instagram API w
 - After the publish intent, nothing is sent again. An ambiguous `media_publish` goes to read-only reconciliation, which matches the caption in the account's media list.
 - **Give up and queue again.** A publication left in `reconciliation` (or a claim whose lease ran out) with no numeric container ID, no media ID, no URL and no publish intent provably published nothing. *Errors and costs → Failed or uncertain publications* then offers *Give up and queue again*, which returns the post to approved and queued without changing its approval or images. Any row with a media ID or a numeric container is refused and stays with reconciliation. If the slot is more than 15 minutes old, the next run records the ordinary missed slot and the post can then be edited, returned or skipped.
 - The action needs `supabase/migrations/20261022110000_marketing_requeue_unpublished_publication.sql` and the server-only `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones after the migration history is reconciled, then set the variable and redeploy. Without them the button is not shown and the route answers `publication-requeue-unavailable`.
+
+### Retired n8n entry points (audit findings cost-06, cost-07)
+
+Since the 22 October 2026 audit, `/api/marketing/dneskai/collect` answers every method with `410` and
+`{"code":"route-retired"}`. It reads no body, checks no credential and calls no database or provider.
+`/api/marketing/n8n` answers `410` `{"code":"route-retired"}` to every DNESKAi operation: a `dneskai` brand before the database client exists, and a job or publication id that belongs to DNESKAi after one owner-scoped read, before any side effect. Its devShark and knowledge operations are unchanged. The pg_cron tick (`POST /api/marketing/tick`, [marketing scheduling](marketing-scheduling.md)) is
+the only scheduled entry point for DNESKAi. An approval no longer notifies n8n; the tick publishes the queued slot, and the approve response
+carries `scheduling: "tick"`.
+
+These server variables now open nothing. Delete them from every Vercel environment when convenient:
+`MARKETING_N8N_APPROVAL_WEBHOOK_URL`, `MARKETING_N8N_WEBHOOK_SECRET`,
+`MARKETING_DNESKAI_COLLECTION_SECRET`, `MARKETING_DNESKAI_MANUAL_SECRET`, `MARKETING_DNESKAI_MANUAL_RUN` and the
+`MARKETING_DNESKAI_COLLECTION_PILOT_*` group. Keep `MARKETING_DNESKAI_COLLECTION_ENABLED` (the tick reads it) and `MARKETING_N8N_SECRET` (it still
+opens the devShark and knowledge operations of `/api/marketing/n8n`).

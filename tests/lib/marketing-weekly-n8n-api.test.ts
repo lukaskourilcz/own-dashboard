@@ -37,15 +37,15 @@ describe('bounded authenticated Sunday discovery and read-only weekly reporting'
   {operation:'discover',brand:'devshark',dates:[dates[0],dates[0]]},
   {operation:'discover',brand:'devshark',dates,cursor:'cannot-combine'},
   {operation:'discover',brand:'devshark',dates,date:dates[0]},
-  {operation:'discover',brand:'dneskai',date:'2026-10-14'},
-  {operation:'discover',brand:'dneskai',dates:['2026-10-13']},
   {operation:'weekly-report',weekStartsOn:'2026-10-18',ownerId:'foreign'},
  ])('rejects invalid scope before privileged reads or producer writes:%j',async body=>{
   const response=await POST(request(body));expect(response.status).toBe(400);expect(mocks.admin).not.toHaveBeenCalled();expect(mocks.sync).not.toHaveBeenCalled();expect(mocks.querySources).not.toHaveBeenCalled();expect(mocks.ingest).not.toHaveBeenCalled();
  });
- it('uses Prague today for DNESKAi and never accepts an unauthorized discovery or report',async()=>{
-  vi.setSystemTime(new Date('2026-10-13T22:30:00Z'));
-  const response=await POST(request({operation:'discover',brand:'dneskai'}));expect(response.status).toBe(200);expect((await response.json()).dates).toEqual(['2026-10-14']);expect(mocks.sync).toHaveBeenCalledTimes(1);expect(mocks.querySources).not.toHaveBeenCalled();
+ it.each([{operation:'discover',brand:'dneskai'},{operation:'discover',brand:'dneskai',date:'2026-10-14'},{operation:'discover',brand:'dneskai',dates:['2026-10-13']},{operation:'weekly-report',brand:'dneskai',weekStartsOn:'2026-10-18'}])('refuses the retired DNESKAi operation %j with 410 before any read (audit finding cost-06)',async body=>{
+  const response=await POST(request(body));expect(response.status).toBe(410);expect(await response.json()).toEqual({code:'route-retired'});
+  expect(mocks.admin).not.toHaveBeenCalled();expect(mocks.sync).not.toHaveBeenCalled();expect(mocks.querySources).not.toHaveBeenCalled();expect(mocks.ingest).not.toHaveBeenCalled();
+ });
+ it('never accepts an unauthorized discovery or report',async()=>{
   mocks.admin.mockClear();for(const operation of ['discover','weekly-report'])expect((await POST(request({operation,brand:'devshark',weekStartsOn:'2026-10-18'},'Bearer wrong'))).status).toBe(401);expect(mocks.admin).not.toHaveBeenCalled();
  });
  it('refreshes actual dated producer identities and reports all42 slots including21 unsupported Stories without enqueueing',async()=>{

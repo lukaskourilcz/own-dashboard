@@ -12,11 +12,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getBriefAssetHashLister, getDneskaiMediaLoader, getRenderDneskaiDeck } from "@/lib/marketing/dneskai-wiring";
 import type { ContentRevision } from "@/lib/marketing/contracts";
 
-const mocks = vi.hoisted(() => ({ user: vi.fn(), notify: vi.fn(async () => ({ status: "skipped" })), readRun: vi.fn(), createRun: vi.fn(), updateRun: vi.fn(), createFeedback: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), readRun: vi.fn(), createRun: vi.fn(), updateRun: vi.fn(), createFeedback: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
-vi.mock("@/lib/marketing/approval-notification", () => ({ notifyMarketingApproval: mocks.notify }));
 vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: vi.fn(), getDneskaiMediaLoader: vi.fn(), getBriefAssetHashLister: vi.fn(), getBriefPoolLoader: vi.fn() }));
 vi.mock("langsmith", () => ({ Client: class { readRun = mocks.readRun; createRun = mocks.createRun; updateRun = mocks.updateRun; createFeedback = mocks.createFeedback; } }));
 import { POST } from "@/app/api/marketing/revisions/route";
@@ -81,13 +80,12 @@ describe("a tracing outage never stops an owner decision (#122)", () => {
     vi.stubEnv("MARKETING_LANGSMITH_ENABLED", "true"); vi.stubEnv("LANGSMITH_API_KEY", "test-only"); vi.stubEnv("LANGSMITH_PROJECT", "test-only"); vi.stubEnv("LANGSMITH_ENDPOINT", LANGSMITH_EU_ENDPOINT);
     mocks.user.mockReturnValue(userDb());
   });
-  it("approves, queues the publication and notifies while LangSmith is down", async () => {
+  it("approves and queues the publication while LangSmith is down", async () => {
     const response = await POST(request({ action: "approve", id: current, expectedHash: revisionContentHash(revision) }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ publicationId: "88888888-8888-4888-8888-888888888888", scheduling: { status: "skipped" } });
+    expect(await response.json()).toEqual({ publicationId: "88888888-8888-4888-8888-888888888888", scheduling: "tick" });
     expect(mocks.readRun).toHaveBeenCalledWith(revision.traceId);
     expect(mocks.createFeedback).not.toHaveBeenCalled();
-    expect(mocks.notify).toHaveBeenCalledWith("88888888-8888-4888-8888-888888888888");
   });
   it.each(["returned", "skipped"] as const)("records %s while LangSmith is down", async (action) => {
     const response = await POST(request({ action, id: current, feedback: "TEST owner note" }));

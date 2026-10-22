@@ -1,6 +1,7 @@
 # Marketing renderer diagnostic
 
-The existing authenticated `POST /api/marketing/n8n` accepts this diagnostic operation:
+The existing authenticated `POST /api/marketing/n8n` accepts this diagnostic operation. Since 2026-10-22 a `dneskai` brand
+answers `410` `{"code":"route-retired"}` (audit finding cost-06); `devshark` works as before.
 
 ```json
 {

@@ -40,7 +40,9 @@ be new work and is created only when the owner asks for it.
 
 The other exports still in `workflows/marketing/` (`devshark-weekly-preparation.json`,
 `knowledge-processing.json`, `weekly-review.json`) belong to devShark and the knowledge import, not
-to the DNESKAi chain, and stay where they are.
+to the DNESKAi chain, and stay where they are. Since 2026-10-22 `/api/marketing/n8n` answers `410`
+`{"code":"route-retired"}` to DNESKAi operations (audit finding cost-06), so the `dneskai` half of
+`weekly-review.json` reads as held; its devShark half and the other two exports are unchanged.
 
 ## Credentials
 

@@ -89,7 +89,7 @@ test("Marketing tabs expose roving focus and Arrow/Home/End keyboard controls", 
   await expect(page.locator("#marketing-panel-review")).toHaveAttribute("aria-labelledby", "marketing-tab-review");
 });
 
-test("Marketing APIs reject unauthenticated decisions, worker jobs and invalid n8n tokens without writes", async ({ request }) => {
+test("Marketing APIs reject unauthenticated decisions, worker jobs, invalid n8n tokens and the retired collection route without writes", async ({ request }) => {
   const results = await Promise.all([
     request.get("/api/marketing/state"),
     request.post("/api/marketing/revisions", { headers:{Origin:"http://localhost:3939"}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
@@ -102,4 +102,8 @@ test("Marketing APIs reject unauthenticated decisions, worker jobs and invalid n
     expect(result.status(), result.url()).toBe(401);
     expect((await result.json()).error).toBe("unauthorized");
   }
+  // The retired DNESKAi collection entry point answers 410 to everyone, before any credential check (audit finding cost-06).
+  const retired = await request.post("/api/marketing/dneskai/collect", { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { projectId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" } });
+  expect(retired.status()).toBe(410);
+  expect(await retired.json()).toEqual({ code: "route-retired" });
 });

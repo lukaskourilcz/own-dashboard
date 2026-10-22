@@ -2,6 +2,12 @@
 
 > **Historical state, superseded by [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110).** This page describes the October 2026 staging and n8n orchestration, retired on 2026-10-20 ([#113](https://github.com/lukaskourilcz/own-dashboard/issues/113)). The current plan is [`docs/reports/dneskai-instagram-2026-10-20.md`](reports/dneskai-instagram-2026-10-20.md). Retired exports are in [`workflows/marketing/retired/`](../workflows/marketing/retired/README.md); the staging inventory is [`marketing-staging-retired-2026-10.md`](marketing-staging-retired-2026-10.md).
 
+**DNESKAi retired from these routes, 2026-10-22 (audit findings cost-06, cost-07):**
+`/api/marketing/dneskai/collect` answers every method with `410` and `{"code":"route-retired"}` before any
+credential check. `/api/marketing/n8n` answers `410` `{"code":"route-retired"}` to every DNESKAi operation: a `dneskai` brand before the database client exists, and a job or publication id that belongs to DNESKAi after one owner-scoped read, before any side effect. Its devShark and knowledge operations are unchanged. The approval route no longer notifies the n8n approval webhook, and
+`approval-notification.ts` is deleted, so `MARKETING_N8N_APPROVAL_WEBHOOK_URL` and `MARKETING_N8N_WEBHOOK_SECRET`
+open nothing. The DNESKAi steps described below are history.
+
 **Scheduling update, 2026-10-20 ([#120](https://github.com/lukaskourilcz/own-dashboard/issues/120)):** n8n no longer
 times anything for DNESKAi. Supabase pg_cron calls `POST /api/marketing/tick`; see
 [marketing scheduling](marketing-scheduling.md). The two timers below moved to `workflows/marketing/retired/`.

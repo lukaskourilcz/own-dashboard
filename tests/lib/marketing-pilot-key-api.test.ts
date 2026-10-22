@@ -49,6 +49,8 @@ describe("expired pilot closes every n8n operation before database or provider a
   });
   it.each(["production", "development"])("ignores the same retired tuple in %s and reaches the ordinary operation", async (environment) => {
     vi.stubEnv("VERCEL_ENV", environment); mocks.operation.mockResolvedValue({ jobId: owner, status: "review" });
+    const query = { select: () => query, eq: () => query, maybeSingle: async () => ({ data: { brand: "devshark" }, error: null }) };
+    mocks.admin.mockReturnValue({ from: () => query });
     const response = await POST(new Request("https://own.example.test/api/marketing/n8n", {
       method: "POST", headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
       body: JSON.stringify({ operation: "status", jobId: owner }),

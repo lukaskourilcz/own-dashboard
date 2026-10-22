@@ -27,6 +27,7 @@ function database(tables: Record<string, Row[]> = {}) {
       in: (key: string, values: unknown[]) => { trace.filters.push([key, values]); conditions.push((row) => values.includes(row[key])); return query; },
       order: (key: string) => { trace.order = key; return query; },
       limit: (count: number) => { trace.limit = count; return query; },
+      maybeSingle: async () => ({ data: (tables[table] ?? []).find((row) => conditions.every((condition) => condition(row))) ?? null, error: null }),
       then: (resolve: (value: { data: Row[]; error: null }) => unknown) => {
         const rows = (tables[table] ?? []).filter((row) => conditions.every((condition) => condition(row)));
         return Promise.resolve({ data: rows.slice(0, trace.limit ?? rows.length), error: null }).then(resolve);
@@ -139,14 +140,14 @@ describe("authenticated n8n marketing operation boundary", () => {
   it("defaults publishing to dry-run and forwards an explicit live flag only for the authenticated owner", async () => {
     expect((await POST(request({ operation: "publish", brand: "devshark" }))).status).toBe(200);
     expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "devshark", true, expect.any(AbortSignal),undefined);
-    expect((await POST(request({ operation: "publish", brand: "dneskai", dryRun: false }))).status).toBe(200);
-    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", false, expect.any(AbortSignal),undefined);
+    expect((await POST(request({ operation: "publish", brand: "devshark", dryRun: false }))).status).toBe(200);
+    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "devshark", false, expect.any(AbortSignal),undefined);
   });
   it("forwards a read-only preflight only with a dry run", async () => {
-    expect((await POST(request({ operation: "publish", brand: "dneskai", preflight: true, publicationId: sourceId }))).status).toBe(200);
-    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "dneskai", true, expect.any(AbortSignal), sourceId, { preflight: true });
+    expect((await POST(request({ operation: "publish", brand: "devshark", preflight: true, publicationId: sourceId }))).status).toBe(200);
+    expect(mocks.publish).toHaveBeenLastCalledWith(expect.anything(), owner, "devshark", true, expect.any(AbortSignal), sourceId, { preflight: true });
     mocks.publish.mockClear();
-    const live = await POST(request({ operation: "publish", brand: "dneskai", dryRun: false, preflight: true }));
+    const live = await POST(request({ operation: "publish", brand: "devshark", dryRun: false, preflight: true }));
     expect(live.status).toBe(400); expect(await live.json()).toEqual({ error: "invalid-request" });
     expect(mocks.publish).not.toHaveBeenCalled();
   });
@@ -166,4 +167,38 @@ describe("authenticated n8n marketing operation boundary", () => {
     expect(mocks.execute).toHaveBeenCalledWith(expect.anything(), owner, sourceId); expect(mocks.read).toHaveBeenCalledWith(expect.anything(), owner, sourceId);
     expect(mocks.run).not.toHaveBeenCalled(); expect(mocks.publish).not.toHaveBeenCalled();
   });
+
+describe("retired DNESKAi operations (audit finding cost-06)", () => {
+  const retired = async (body: unknown) => { const response = await POST(request(body)); expect(response.status).toBe(410); expect(await response.json()).toEqual({ code: "route-retired" }); };
+  const nothingRan = () => { for (const mock of [mocks.sync, mocks.enqueueCalendar, mocks.execute, mocks.publish, mocks.reconcile, mocks.enqueue, mocks.read, mocks.run, mocks.refresh, mocks.ingest, mocks.querySources]) expect(mock).not.toHaveBeenCalled(); };
+  it.each([
+    { operation: "discover", brand: "dneskai" }, { operation: "refresh", brand: "dneskai", sourceIds: ["s"] },
+    { operation: "enqueue", brand: "dneskai", entryId: sourceId, platform: "instagram" },
+    { operation: "render-preflight", brand: "dneskai", sourceId: "s", scheduledAt: "2026-10-23T08:00:00Z" },
+    { operation: "publish", brand: "dneskai", dryRun: false }, { operation: "publish", brand: "dneskai", preflight: true },
+    { operation: "publication-plan", brand: "dneskai" }, { operation: "reconcile", brand: "dneskai" }, { operation: "weekly-report", brand: "dneskai", weekStartsOn: "2026-10-18" },
+  ])("refuses %j before the database client exists", async (body) => {
+    await retired(body); expect(mocks.admin).not.toHaveBeenCalled(); nothingRan();
+  });
+  it("refuses executing or reading a DNESKAi job after one owner-scoped read", async () => {
+    const state = database({ marketing_jobs: [{ id: sourceId, user_id: owner, brand: "dneskai" }, { id: other, user_id: owner, brand: "devshark" }] }); mocks.admin.mockReturnValue(state.db);
+    await retired({ operation: "execute", jobId: sourceId }); await retired({ operation: "status", jobId: sourceId }); nothingRan();
+    expect(state.queries.map(({ table, filters }) => ({ table, filters }))).toEqual([{ table: "marketing_jobs", filters: [["user_id", owner], ["id", sourceId]] }, { table: "marketing_jobs", filters: [["user_id", owner], ["id", sourceId]] }]);
+    expect((await POST(request({ operation: "execute", jobId: other }))).status).toBe(200); expect(mocks.execute).toHaveBeenCalledWith(state.db, owner, other);
+  });
+  it("refuses reconciling or planning a DNESKAi publication by id, and leaves DNESKAi out of a brandless plan", async () => {
+    const state = database({ marketing_publications: [{ id: sourceId, user_id: owner, marketing_revisions: { brand: "dneskai" } }] }); mocks.admin.mockReturnValue(state.db);
+    await retired({ operation: "reconcile", publicationId: sourceId }); await retired({ operation: "publication-plan", publicationId: sourceId }); nothingRan();
+    const soon = new Date(Date.now() + 3600000).toISOString();
+    const revision = (id: string, brand: string) => ({ id, brand, campaign_id: null, ready: true, status: "approved", approved_hash: "h", content_hash: "h" });
+    // The plan query's filters are covered elsewhere; this stub returns both queued slots so only the brand filter decides.
+    const rows: Record<string, Row[]> = { marketing_campaigns: [], marketing_publications: [
+      { id: "devshark-slot", scheduled_at: soon, marketing_revisions: revision("r1", "devshark") },
+      { id: "dneskai-slot", scheduled_at: soon, marketing_revisions: revision("r2", "dneskai") },
+    ] };
+    mocks.admin.mockReturnValue({ from: (table: string) => { const query: Record<string, unknown> = { then: (resolve: (value: { data: Row[]; error: null }) => unknown) => Promise.resolve({ data: rows[table] ?? [], error: null }).then(resolve) }; for (const key of ["select", "eq", "in", "gte", "lte", "order", "limit"]) query[key] = () => query; return query; } });
+    const response = await POST(request({ operation: "publication-plan" }));
+    expect(response.status).toBe(200); expect((await response.json()).publications.map((row: Row) => row.publicationId)).toEqual(["devshark-slot"]);
+  });
+});
 });

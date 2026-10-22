@@ -482,6 +482,8 @@ const CODES = {
   'token-refresh-uncertain': ['auto', 'The token refresh result is uncertain.', 'Výsledek obnovení tokenu není jistý.'],
   'yield-to-publication': ['wait', 'A publication is due soon, so this step waits.', 'Brzy je na řadě publikace, proto tento krok počká.'],
   'collection-disabled': ['config', 'Source collection is not enabled.', 'Sběr zdrojů není zapnutý.'],
+  // A retired entry point answers 410: /api/marketing/dneskai/collect, and DNESKAi operations of /api/marketing/n8n.
+  'route-retired': ['none', 'This entry point was retired; the scheduler does this work now.', 'Tento vstupní bod byl vyřazen; tuto práci teď dělá plánovač.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;

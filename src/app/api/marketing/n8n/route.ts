@@ -11,6 +11,7 @@ import { ingestSource } from '@/lib/marketing/store';
 import { runMarketingRenderPreflight,MARKETING_PREFLIGHT_HOLD_CODES } from '@/lib/marketing/render-preflight';
 import { MARKETING_RENDER_FAILURE_CODES } from '@/lib/marketing/render';
 import { pragueMarketingDate,sevenDayMarketingWindow } from '@/lib/marketing/weekly-planning';
+import { retiredMarketingRoute } from '@/lib/marketing/retired-route';
 export const runtime='nodejs';
 export const maxDuration=60;
 const Input=z.discriminatedUnion('operation',[
@@ -53,11 +54,37 @@ async function weeklySourceDiscovery(db:ReturnType<typeof createAdminClient>,own
  }
  return result;
 }
+type MarketingN8nInput=z.infer<typeof Input>;
+/**
+ * Audit finding cost-06: DNESKAi runs only through the pg_cron tick (POST /api/marketing/tick). A DNESKAi operation
+ * here answers 410 route-retired after at most one owner-scoped read and before any write, source refresh, job,
+ * provider or publisher call. devShark and knowledge operations keep their behavior.
+ */
+async function isDneskaiOperation(db:ReturnType<typeof createAdminClient>,owner:string,input:MarketingN8nInput):Promise<boolean>{
+ if('brand' in input&&input.brand==='dneskai')return true;
+ if(input.operation==='execute'||input.operation==='status'){
+  const {data,error}=await db.from('marketing_jobs').select('brand:request->generation->source->>brand').eq('user_id',owner).eq('id',input.jobId).maybeSingle();
+  if(error)throw new Error('marketing-operation-held');
+  return (data as {brand?:unknown}|null)?.brand==='dneskai';
+ }
+ if((input.operation==='publication-plan'||input.operation==='publish'||input.operation==='reconcile')&&input.publicationId){
+  const {data,error}=await db.from('marketing_publications').select('marketing_revisions!inner(brand)').eq('user_id',owner).eq('id',input.publicationId).maybeSingle();
+  if(error)throw new Error('marketing-operation-held');
+  const revision=(data as {marketing_revisions?:{brand?:unknown}|Array<{brand?:unknown}>}|null)?.marketing_revisions;
+  return (Array.isArray(revision)?revision[0]:revision)?.brand==='dneskai';
+ }
+ return false;
+}
 export async function POST(request:Request){
  const owner=authenticateN8n(request);if(!owner)return Response.json({error:'unauthorized'},{status:401});
  try{
-  const input=Input.parse(JSON.parse(await boundedRequestText(request)));const dates=input.operation==='discover'?discoveryDates(input,pragueMarketingDate(new Date())):null;
-  const db=createAdminClient();const signal=AbortSignal.any([request.signal,AbortSignal.timeout(55000)]);
+  const input=Input.parse(JSON.parse(await boundedRequestText(request)));
+  // A DNESKAi brand is refused before the database client exists; job and publication ids are checked by one read.
+  if('brand' in input&&input.brand==='dneskai')return retiredMarketingRoute();
+  const dates=input.operation==='discover'?discoveryDates(input,pragueMarketingDate(new Date())):null;
+  const db=createAdminClient();
+  if(await isDneskaiOperation(db,owner,input))return retiredMarketingRoute();
+  const signal=AbortSignal.any([request.signal,AbortSignal.timeout(55000)]);
   if(input.operation==='discover'||input.operation==='refresh'){
    const weekly=input.operation==='discover'&&input.dates!==undefined;
    const refreshed=weekly?await weeklySourceDiscovery(db,owner,dates!,signal):await synchronizeMarketingSources(db,owner,input.brand,input.operation==='refresh'?input.sourceIds:undefined,input.operation==='discover'?input.cursor:undefined,signal);
@@ -117,7 +144,7 @@ export async function POST(request:Request){
    if(input.publicationId)selection=selection.eq('id',input.publicationId);if(input.brand)selection=selection.eq('marketing_revisions.brand',input.brand);
    const {data,error}=await selection;if(error)throw new Error('publication-plan-unavailable');
    const {data:campaigns,error:campaignError}=await db.from('marketing_campaigns').select('id').eq('user_id',owner).eq('status','active');if(campaignError)throw new Error('campaign-state-unavailable');const active=new Set((campaigns??[]).map(c=>c.id));
-   const publications=(data??[]).flatMap(row=>{const revision=Array.isArray(row.marketing_revisions)?row.marketing_revisions[0]:row.marketing_revisions;return revision&&(!revision.campaign_id||active.has(revision.campaign_id))&&revision.approved_hash===revision.content_hash?[{publicationId:row.id,brand:revision.brand,scheduledAt:row.scheduled_at}]:[];});
+   const publications=(data??[]).flatMap(row=>{const revision=Array.isArray(row.marketing_revisions)?row.marketing_revisions[0]:row.marketing_revisions;return revision&&revision.brand!=='dneskai'&&(!revision.campaign_id||active.has(revision.campaign_id))&&revision.approved_hash===revision.content_hash?[{publicationId:row.id,brand:revision.brand,scheduledAt:row.scheduled_at}]:[];});
    return Response.json({publications});
   }
   if(input.operation==='publish'){
