@@ -158,6 +158,9 @@ describe('one collection becomes briefs and guarded jobs without any Quorum call
     const fromRevision = coverage.find((item) => item.id === 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
     expect(fromRevision).toMatchObject({ duplicateOf: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', assetSha256s: [picture] });
     expect(fromRevision!.urls).toEqual(expect.arrayContaining([lead.url, verge.url]));
+    // briefs-15: the reports' headlines, for the title repeat signal; a brief of another run carries its evidence titles.
+    expect(fromRevision!.titles).toEqual(expect.arrayContaining([lead.title, verge.title]));
+    expect(coverage.find((item) => item.duplicateOf === lead.id)!.titles).toEqual(expect.arrayContaining([lead.title, verge.title]));
     expect(coverage.some((item) => item.id === 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')).toBe(false);
     // This run's own briefs are not coverage of themselves; another run's queued briefs are.
     expect(coverage.filter((item) => item.duplicateOf === lead.id)).toHaveLength(1);

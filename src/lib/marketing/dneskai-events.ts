@@ -160,12 +160,12 @@ function titleFacts(headline: string): TitleFacts {
  * Different version or number tokens mean different events, however similar the rest reads: `0.12.6` and
  * `0.12.7` are two releases even when both headlines also mention „Gemma 3“.
  */
-function factsMatch(a: TitleFacts, b: TitleFacts): boolean {
+function factsMatch(a: TitleFacts, b: TitleFacts, reworded = true): boolean {
   if (disjoint(a.versions, b.versions) || disjoint(a.numbers, b.numbers)) return false;
   const { score, shared } = jaccard(a.tokens, b.tokens);
   if (shared >= DNESKAI_EVENT_MIN_SHARED_TOKENS && score >= DNESKAI_EVENT_TITLE_JACCARD) return true;
   // The second tier: a reworded headline about the same named thing.
-  if (shared < DNESKAI_EVENT_REWORDED_MIN_SHARED_TOKENS || score < DNESKAI_EVENT_REWORDED_JACCARD) return false;
+  if (!reworded || shared < DNESKAI_EVENT_REWORDED_MIN_SHARED_TOKENS || score < DNESKAI_EVENT_REWORDED_JACCARD) return false;
   for (const token of a.tokens) if (b.tokens.has(token) && (a.entities.has(token) || b.entities.has(token))) return true;
   return false;
 }
@@ -173,6 +173,18 @@ function factsMatch(a: TitleFacts, b: TitleFacts): boolean {
 /** True when two headlines describe the same event by the #115 token rule and its SEL-07 second tier. */
 export function dneskaiHeadlinesMatch(left: string, right: string): boolean {
   return factsMatch(titleFacts(left), titleFacts(right));
+}
+
+/**
+ * True when any headline on the left repeats any on the right (briefs-15): the #115 first tier only (token
+ * Jaccard ≥ 0.6 with ≥ 2 shared tokens) under the same number and version guard, so `Ollama 0.12.7` never
+ * repeats `Ollama 0.12.6`. The reworded second tier is left out because the 14-day repeat window is much wider
+ * than the 72-hour event window. Each headline is tokenised once.
+ */
+export function dneskaiHeadlinesRepeat(left: readonly string[], right: readonly string[]): boolean {
+  if (!left.length || !right.length) return false;
+  const others = right.map(titleFacts);
+  return left.some((headline) => { const facts = titleFacts(headline); return others.some((other) => factsMatch(facts, other, false)); });
 }
 
 const TRACKING = /^(?:utm_.*|fbclid|gclid|ref|ref_src|source|igsh|igshid|si|mc_cid|mc_eid|ncid|cmpid|guccounter)$/i;
