@@ -624,3 +624,41 @@ describe('review reminder step (owner decision 7)', () => {
     expect(failed.recorded).toBe(true);
   });
 });
+
+describe('scouting step (#151)', () => {
+  // 23:00 in Prague, the first five-minute slot of the hour.
+  const night = Date.parse('2026-10-20T21:00:00Z');
+  const scoutingOn = { ...on, DNESKAI_SCOUTING_ENABLED: 'true', DNESKAI_TOPICS_ENABLED: 'true' };
+  const result = { reports: 3, library: 1, inserted: 4, skipped: 2 };
+
+  it('runs right after collection in its hourly night slot, holds no lease and records what it inserted', async () => {
+    const scoutTopics = vi.fn(async () => result);
+    const { tick, store } = harness({ scoutTopics }, new Clock(night));
+    const done = await tick(scoutingOn);
+    expect(done.did.map((entry) => entry.category).slice(0, 2)).toEqual(['collection', 'scouting']);
+    expect(step(done, 'scouting')).toMatchObject({ status: 'done', detail: result });
+    expect(scoutTopics).toHaveBeenCalledWith(project, expect.any(Date));
+    expect(store.acquired).not.toContain('scouting');
+    const quiet = await harness({ scoutTopics: async () => ({ reports: 0, library: 0, inserted: 0, skipped: 5 }) }, new Clock(night)).tick(scoutingOn);
+    expect(step(quiet, 'scouting')).toMatchObject({ status: 'noop' });
+  });
+
+  it('waits outside the night and outside its slot', async () => {
+    const scoutTopics = vi.fn(async () => result);
+    expect(step(await harness({ scoutTopics }).tick(scoutingOn), 'scouting')).toMatchObject({ status: 'noop', code: 'scouting-not-due' });
+    expect(step(await harness({ scoutTopics }, new Clock(night + 5 * 60_000)).tick(scoutingOn), 'scouting')).toMatchObject({ status: 'noop', code: 'scouting-not-this-slot' });
+    expect(scoutTopics).not.toHaveBeenCalled();
+  });
+
+  it('is absent while either switch is off or the port is not wired, and a failure never stops the tick', async () => {
+    const scoutTopics = vi.fn(async () => result);
+    for (const env of [on, { ...on, DNESKAI_SCOUTING_ENABLED: 'true' }, { ...on, DNESKAI_TOPICS_ENABLED: 'true' }]) {
+      expect((await harness({ scoutTopics }, new Clock(night)).tick(env)).did.map((entry) => entry.category)).not.toContain('scouting');
+    }
+    expect((await harness({}, new Clock(night)).tick(scoutingOn)).did.map((entry) => entry.category)).not.toContain('scouting');
+    expect(scoutTopics).not.toHaveBeenCalled();
+    const failed = await harness({ scoutTopics: async () => { throw new Error('scouting-write-failed'); } }, new Clock(night)).tick(scoutingOn);
+    expect(step(failed, 'scouting')).toMatchObject({ status: 'error', code: 'scouting-write-failed' });
+    expect(failed.recorded).toBe(true);
+  });
+});
