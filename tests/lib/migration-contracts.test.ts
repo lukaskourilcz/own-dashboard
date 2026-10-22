@@ -166,6 +166,22 @@ describe("2026-10-23 DNESKAi topics (#150)", () => {
   });
 });
 
+describe("2026-10-23 DNESKAi comment replies (#160)", () => {
+  const sql = code("20261023120000_dneskai_comment_replies.sql");
+  it("keeps both tables own-read with service-role writes and one reply per comment", () => {
+    for (const table of ["marketing_instagram_comment_replies", "marketing_instagram_comment_checks"]) {
+      expect(sql).toMatch(new RegExp(`revoke all on public\\.${table} from public,anon,authenticated;`));
+      expect(sql).toMatch(new RegExp(`grant select on public\\.${table} to authenticated;`));
+      expect(sql).not.toMatch(new RegExp(`grant (insert|update|delete|all)[^;]* on public\\.${table} to authenticated`));
+      expect(sql).toMatch(new RegExp(`create policy owner_read on public\\.${table} for select to authenticated using \\(\\(select auth\\.uid\\(\\)\\)=user_id\\)`));
+    }
+    expect(sql).toMatch(/comment_id text not null unique/);
+    expect(sql).not.toMatch(/username|commenter|comment_text/i);
+    expect(sql).toMatch(/add column engagement_enabled boolean not null default false/);
+    expect(guide).toMatch(/DNESKAi comment replies, 23 October 2026 \(unapplied\)/);
+  });
+});
+
 describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
   it("keep the reel bucket private and MP4-only, documented as unapplied", () => {
     const sql = code("20261023130000_dneskai_reel_bucket.sql");

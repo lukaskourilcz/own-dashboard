@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
-import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, setMarketingAccountEnabled, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
+import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, setMarketingAccountEnabled, setMarketingAccountEngagement, marketingCommentSubscription, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
 
 type Lang = 'en' | 'cs';
 type Props = { lang: Lang; disabled?: boolean; now?: Date };
@@ -22,7 +22,7 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now = new Date
       <Button variant="outline" className="min-h-11" disabled={disabled || verify.isPending} aria-busy={verify.isPending} onClick={() => verify.mutate()}>{verify.isPending ? t.verifying : t.verify}</Button></div>
     <div aria-live="polite">{verify.isSuccess ? <p role="status" className="text-sm text-success">{verificationMessage(verify.data, lang)}</p> : verify.isError ? <p role="alert" className="text-sm text-risk">{verificationError(verify.error, lang)}</p> : null}</div>
     {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
-      : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : <><DneskaiInstagramAccountRecord account={account} lang={lang} now={now} />{account ? <DneskaiPublishingSwitch account={account} lang={lang} now={now} /> : null}</>}
+      : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p> : <><DneskaiInstagramAccountRecord account={account} lang={lang} now={now} />{account ? <DneskaiPublishingSwitch account={account} lang={lang} now={now} /> : null}{account?.engagement ? <DneskaiEngagementSwitch account={account} lang={lang} now={now} /> : null}</>}
   </section>;
 }
 
@@ -83,5 +83,51 @@ export function DneskaiPublishingSwitch({ account, lang, now }: { account: Marke
     </Button>
     <div aria-live="polite">{toggle.isSuccess ? <p role="status" className="text-sm text-success">{toggle.data.enabled ? t.enabledNow : t.disabledNow}</p>
       : toggle.isError ? <p role="alert" className="text-sm text-risk">{verificationError(toggle.error, lang)}</p> : null}</div>
+  </div>;
+}
+
+/**
+ * #160: replies to keyword comments for this account, shown while the server runs the comment watcher. A block
+ * (messaging switched off for connected tools) says what to change in the Instagram app; turning replies on clears it.
+ */
+export function DneskaiEngagementSwitch({ account, lang, now }: { account: MarketingAccountStatus; lang: Lang; now: Date }) {
+  const t = dneskaiAccount[lang], e = t.engagement;
+  const client = useQueryClient();
+  const toggle = useMutation({ mutationFn: (enabled: boolean) => setMarketingAccountEngagement(account.id, enabled), onSettled: () => client.invalidateQueries({ queryKey: qk.marketingAccounts }) });
+  const state = account.engagement!;
+  const tokenUsable = ['valid', 'expiring'].includes(marketingTokenState(account.token, now));
+  const on = state.enabled && !state.blockedCode;
+  const error = toggle.isError ? (toggle.error instanceof MarketingAccountRequestError ? e.errors[toggle.error.code] : undefined) ?? verificationError(toggle.error, lang) : null;
+  return <div className="space-y-2 border-t border-border pt-3" data-testid="dneskai-engagement-switch">
+    <div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{e.title}</h3>
+      <StatusBadge value={on ? 'engagement-on' : state.blockedCode ? 'engagement-blocked' : 'engagement-off'} label={on ? e.on : state.blockedCode ? e.blocked : e.off} tone={on ? 'information' : state.blockedCode ? 'warning' : 'neutral'} /></div>
+    <p className="text-sm text-foreground-muted">{e.help}</p>
+    {state.blockedCode && <p className="text-sm text-warning" data-testid="dneskai-engagement-blocked">{e.blockedHelp}</p>}
+    <Button variant={on ? 'outline' : 'default'} className="min-h-11" disabled={toggle.isPending || (!on && (!account.verifiedAt || !tokenUsable))} aria-busy={toggle.isPending} onClick={() => toggle.mutate(!on)}>
+      {toggle.isPending ? t.switching : on ? e.disable : e.enable}
+    </Button>
+    <div aria-live="polite">{toggle.isSuccess ? <p role="status" className="text-sm text-success">{toggle.data.engagement?.enabled ? e.enabledNow : e.disabledNow}</p>
+      : error ? <p role="alert" className="text-sm text-risk">{error}</p> : null}</div>
+    {state.webhook ? <DneskaiCommentSubscription account={account} lang={lang} /> : null}
+  </div>;
+}
+
+/**
+ * #161: whether Meta delivers this account's comments to the webhook, read once when the panel opens, and the owner's
+ * button to subscribe them. Polling answers comments either way; the webhook only makes replies faster.
+ */
+export function DneskaiCommentSubscription({ account, lang }: { account: MarketingAccountStatus; lang: Lang }) {
+  const t = dneskaiAccount[lang], e = t.engagement;
+  const client = useQueryClient();
+  const key = [...qk.marketingAccounts, 'comment-subscription', account.id] as const;
+  const status = useQuery({ queryKey: key, retry: false, staleTime: 5 * 60_000, queryFn: ({ signal }) => marketingCommentSubscription(account.id, 'status', signal) });
+  const subscribe = useMutation({ mutationFn: () => marketingCommentSubscription(account.id, 'subscribe'), onSuccess: (subscribed) => client.setQueryData(key, subscribed) });
+  const failure = status.isError ? status.error : subscribe.isError ? subscribe.error : null;
+  const message = failure ? (failure instanceof MarketingAccountRequestError ? e.errors[failure.code] : undefined) ?? verificationError(failure, lang) : null;
+  return <div className="space-y-2" data-testid="dneskai-comment-subscription">
+    <p className="text-sm">{status.isPending ? e.webhookChecking : status.data ? e.webhookOn : e.webhookOff}</p>
+    {status.data === false && <Button variant="outline" className="min-h-11" disabled={subscribe.isPending} aria-busy={subscribe.isPending} onClick={() => subscribe.mutate()}>
+      {subscribe.isPending ? t.switching : e.webhookSubscribe}</Button>}
+    <div aria-live="polite">{subscribe.isSuccess ? <p role="status" className="text-sm text-success">{e.webhookOn}</p> : message ? <p role="alert" className="text-sm text-risk">{message}</p> : null}</div>
   </div>;
 }

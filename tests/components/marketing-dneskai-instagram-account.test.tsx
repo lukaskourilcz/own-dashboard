@@ -3,7 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DneskaiInstagramAccount, DneskaiInstagramAccountRecord } from '@/components/marketing/dneskai-instagram-account';
+import { DneskaiCommentSubscription, DneskaiEngagementSwitch, DneskaiInstagramAccount, DneskaiInstagramAccountRecord } from '@/components/marketing/dneskai-instagram-account';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
 import type { MarketingAccountStatus } from '@/lib/marketing/accounts-client';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
@@ -73,5 +73,63 @@ describe('DNESKAi Instagram account status', () => {
     await act(async () => { container.querySelector('button')!.click(); }); await settle();
     expect(container.querySelector('[role="alert"]')?.textContent).toBe(message);
     expect(container.textContent).not.toContain('PRIVATE');
+  });
+});
+
+describe('replies to keyword comments (#160)', () => {
+  const t = dneskaiAccount.en;
+  const withEngagement = (engagement: NonNullable<MarketingAccountStatus['engagement']>) => account({ token: { ...account().token!, scopes: [...account().token!.scopes, 'instagram_business_manage_comments'] }, engagement });
+  it('shows no switch while the server does not run the watcher', () => {
+    render(<DneskaiEngagementSwitch account={withEngagement({ enabled: false, blockedCode: null, blockedAt: null })} lang="en" now={now} />);
+    expect(container.textContent).toContain(t.engagement.off);
+    act(() => root.unmount()); root = createRoot(container);
+    render(<DneskaiInstagramAccountRecord account={account()} lang="en" now={now} />);
+    expect(container.querySelector('[data-testid="dneskai-engagement-switch"]')).toBeNull();
+  });
+  it('turns replies on with one POST and explains a block in both languages', async () => {
+    const fetcher = vi.fn(async () => Response.json({ account: withEngagement({ enabled: true, blockedCode: null, blockedAt: null }) }));
+    vi.stubGlobal('fetch', fetcher);
+    render(<DneskaiEngagementSwitch account={withEngagement({ enabled: false, blockedCode: null, blockedAt: null })} lang="en" now={now} />);
+    act(() => container.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await settle();
+    expect(fetcher).toHaveBeenCalledWith('/api/marketing/accounts/engagement', expect.objectContaining({ method: 'POST', body: JSON.stringify({ accountId: account().id, enabled: true }) }));
+    expect(container.textContent).toContain(t.engagement.enabledNow);
+    for (const lang of ['en', 'cs'] as const) {
+      act(() => root.unmount()); root = createRoot(container);
+      render(<DneskaiEngagementSwitch account={withEngagement({ enabled: true, blockedCode: 'engagement-messaging-disabled', blockedAt: '2026-10-20T11:00:00Z' })} lang={lang} now={now} />);
+      expect(container.textContent).toContain(dneskaiAccount[lang].engagement.blocked);
+      expect(container.textContent).toContain(dneskaiAccount[lang].engagement.blockedHelp);
+      expect(container.querySelector('button')!.textContent).toBe(dneskaiAccount[lang].engagement.enable);
+    }
+  });
+  it('names a missing comment scope instead of a generic failure', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'engagement-scopes-unverified' }, { status: 409 })));
+    render(<DneskaiEngagementSwitch account={withEngagement({ enabled: false, blockedCode: null, blockedAt: null })} lang="cs" now={now} />);
+    act(() => container.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await settle();
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe(dneskaiAccount.cs.engagement.errors['engagement-scopes-unverified']);
+  });
+});
+
+describe('comment webhook subscription (#161)', () => {
+  it('reads the state once, offers to subscribe when Instagram does not send comments, and shows the result', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => { const action = JSON.parse(String(init?.body)).action as string; calls.push(action); return Response.json({ subscribed: action === 'subscribe' }); }));
+    render(<DneskaiCommentSubscription account={account()} lang="cs" />);
+    await settle();
+    expect(container.textContent).toContain(dneskaiAccount.cs.engagement.webhookOff);
+    act(() => container.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await settle();
+    expect(calls).toEqual(['status', 'subscribe']);
+    expect(container.textContent).toContain(dneskaiAccount.cs.engagement.webhookOn);
+    expect(container.querySelector('button')).toBeNull();
+  });
+  it('appears only when the server has the webhook configured', () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ subscribed: true })));
+    render(<DneskaiEngagementSwitch account={account({ engagement: { enabled: true, blockedCode: null, blockedAt: null } })} lang="en" now={now} />);
+    expect(container.querySelector('[data-testid="dneskai-comment-subscription"]')).toBeNull();
+    act(() => root.unmount()); root = createRoot(container);
+    render(<DneskaiEngagementSwitch account={account({ engagement: { enabled: true, blockedCode: null, blockedAt: null, webhook: true } })} lang="en" now={now} />);
+    expect(container.querySelector('[data-testid="dneskai-comment-subscription"]')).not.toBeNull();
   });
 });

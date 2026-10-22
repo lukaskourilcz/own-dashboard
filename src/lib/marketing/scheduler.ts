@@ -6,6 +6,8 @@ import type { DneskaiMediaOutcome } from "./dneskai-media";
 import type { CreateDneskaiBriefs } from "./dneskai-ports";
 import { instagramTokenRefreshDue, type InstagramTokenRefreshOutcome, type MetaTokenMetadata } from "./meta-credentials";
 import { pragueMarketingDate } from "./weekly-planning";
+import type { EngagementWatchResult } from "./dneskai-engagement-watch";
+import { dneskaiEngagementWatchEnabled } from "./dneskai-engagement";
 import type { DneskaiScoutingResult } from "./dneskai-scouting";
 import type { DneskaiFactOrHypeResult } from "./dneskai-fact-or-hype";
 import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled } from "./dneskai-evidence-rollout";
@@ -51,11 +53,16 @@ export const MARKETING_TICK_REMINDER = "reminder" as const;
  */
 export const MARKETING_TICK_SCOUTING = "scouting" as const;
 /**
+ * #160: the comment watcher runs after the categories above and before the reminder, under the publishing lease (it
+ * writes to Instagram too), only with DNESKAI_ENGAGEMENT_ENABLED=true and only when the ports wire it.
+ */
+export const MARKETING_TICK_ENGAGEMENT = "engagement" as const;
+/**
  * Trending audio (#167) runs last in the daily tick, only while DNESKAI_AUDIO_TRENDS_ENABLED is on and the ports wire
  * it. Two Graph GETs under Facebook Login; it holds no lease, its upsert is idempotent.
  */
 export const MARKETING_TICK_AUDIO_TRENDS = "audio-trends" as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_AUDIO_TRENDS;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_ENGAGEMENT | typeof MARKETING_TICK_AUDIO_TRENDS;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -106,7 +113,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, "audio-trends": 12_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, engagement: 8_000, "audio-trends": 12_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -187,6 +194,8 @@ export interface MarketingSchedulerPorts {
    * (`sendDneskaiReviewReminders`). Optional: without it the minute tick has no reminder step.
    */
   reviewReminders?(project: string, now: Date): Promise<{ due: number; sent: number }>;
+  /** #160: one pass of the comment watcher (`runDneskaiEngagementWatch`). Optional: without it there is no engagement step. */
+  engagementWatch?(input: { signal: AbortSignal; now: () => Date; remainingMs: () => number }): Promise<EngagementWatchResult>;
   /** #151: turns the night's education reports and highly rated library links into proposed topics (`scoutDneskaiTopics`). */
   scoutTopics?(project: string, now: Date): Promise<DneskaiScoutingResult>;
   /** #167: the day's trending sounds under Facebook Login; skipped (with its code) on Instagram Login. */
@@ -512,6 +521,22 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
         worked = progress.started + progress.transcribed + progress.classified > 0;
       }
       return { status: result.inserted || worked ? "done" : "noop", detail };
+    },
+  });
+
+  // #160: off unless DNESKAI_ENGAGEMENT_ENABLED=true, which waits for 20261023120000_dneskai_comment_replies.sql.
+  const engagementWatch = ports.engagementWatch;
+  if (engagementWatch) minuteSteps.push({
+    category: MARKETING_TICK_ENGAGEMENT, lease: "publishing",
+    async precheck(): Promise<StepOutcome | null> {
+      return dneskaiEngagementWatchEnabled(env) ? null : { status: "skipped", code: "engagement-watch-disabled" };
+    },
+    async run({ signal: abort, now, remainingMs }): Promise<StepOutcome> {
+      const result = await engagementWatch({ signal: abort, now, remainingMs });
+      const detail = { media: result.media, comments: result.comments, matches: result.matches, sent: result.sent, failed: result.failed, uncertain: result.uncertain,
+        publicSent: result.publicSent, skippedOld: result.skippedOld, blockedAccounts: result.blockedAccounts };
+      if (result.stopCode) return { status: "error", code: result.stopCode, detail };
+      return { status: result.media ? "done" : "noop", detail };
     },
   });
 

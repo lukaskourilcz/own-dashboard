@@ -16,6 +16,8 @@ import { pragueMarketingDate } from "./weekly-planning";
 import { renewStoredRevisionAssetUrls } from "./asset-urls";
 import { createMarketingSchedulerStore, type MarketingSchedulerPorts, type SchedulerCollectionRun } from "./scheduler";
 import { sendDneskaiReviewReminders } from "./dneskai-reminders";
+import { runDneskaiEngagementWatch } from "./dneskai-engagement-watch";
+import { createDneskaiEngagementGraph, createDneskaiEngagementStore } from "./dneskai-engagement-ports";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
@@ -98,6 +100,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       return z.array(z.object({ id: z.uuid() })).parse(data ?? []).map((row) => row.id);
     },
     reviewReminders: (project, now) => sendDneskaiReviewReminders(db, owner, project, now),
+    engagementWatch: ({ signal, now, remainingMs }) => runDneskaiEngagementWatch({ store: createDneskaiEngagementStore(db, owner), graph: createDneskaiEngagementGraph(db, owner, env), now, signal, remainingMs }),
     scoutTopics: (project, now) => scoutDneskaiTopics(db, owner, project, now),
     async audioTrends(now, signal) {
       const { data: account, error } = await db.from("marketing_accounts").select("*").eq("user_id", owner).eq("brand", "dneskai").eq("platform", "instagram").not("verified_at", "is", null).maybeSingle();

@@ -57,6 +57,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 | Jina Reader | Link enrichment: only the submitted URL is sent | `src/lib/link-library.ts` | Live |
 | **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
 | **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0; Facebook Login for Business is a prepared second mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
+| **Meta webhooks** (inbound) | Instagram sends new comments to `POST /api/webhooks/instagram` (signed with the app secret); the comment watcher answers them at once, polling stays the fallback (#161) | `src/app/api/webhooks/instagram/route.ts`, `dneskai-instagram-webhook.ts` | Prepared, **off**: needs `DNESKAI_ENGAGEMENT_ENABLED`, `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, `MARKETING_INSTAGRAM_APP_SECRET` and the Meta app callback |
 | **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions | `src/lib/marketing/generation.ts`, `dneskai-generation.ts` | Key set, live |
 | **Jev** (typesafe.ai, `jev-1.13.0`) | Classifies collected stories (category, relevance, on-topic) | `src/lib/marketing/dneskai-providers.ts` | Live, about $0.002 a night |
 | Apify | Instagram profile collection and a research plan | `dneskai-collection.ts`, `dneskai-apify-research*.ts` | Token set, **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`) |
@@ -88,7 +89,8 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
-| 8 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
+| 8 engagement | Prepared, off: replies once by DM to a keyword comment under a post of the last seven days, then posts the public reply (`DNESKAI_ENGAGEMENT_ENABLED`, #160) | `dneskai-engagement-watch.ts`, `dneskai-engagement-ports.ts` |
+| 9 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
 
 Details: `docs/marketing-scheduling.md`, `docs/dneskai-native-feeds.md`, `docs/dneskai-source-media.md`,
 `docs/dneskai-briefs.md`.
@@ -206,13 +208,14 @@ Costs show in "Chyby a náklady".
 | `marketing_audio_trends` | Trending sounds from Meta's Audio API per day (prepared, #167; Facebook Login only) |
 | `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
-| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only) |
+| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (prepared, `20261023120000`) |
+| `marketing_instagram_comment_replies`, `marketing_instagram_comment_checks` | One private reply per keyword comment (comment id, media, keyword, status; no commenter data) and the watcher's cursor and counts per post (prepared, `20261023120000`, #160) |
 | `marketing_ticks`, `marketing_scheduler_state` | Scheduler record and leases |
 | `notifications` | In-app notifications, including the review reminders |
 
 ## 6. Database and switches still to apply
 
-The repository lists every migration version production recorded (reconciled 22 October). Seventeen prepared
+The repository lists every migration version production recorded (reconciled 22 October). Eighteen prepared
 migrations are not applied yet: `20261022000000` through `20261023130100`. The owner applies them with
 `npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Then the
 owner sets these switches in Vercel Production and redeploys:
@@ -223,6 +226,7 @@ owner sets these switches in Vercel Production and redeploys:
 - `DNESKAI_SELECTION_V2_ENABLED`
 - `DNESKAI_REGENERATE_ENABLED`
 - `DNESKAI_TOPICS_ENABLED` (after `20261023100000`)
+- `DNESKAI_ENGAGEMENT_ENABLED` (after `20261023120000`; then the account's reply switch in Zdroje)
 
 Until then those features stay hidden or off and the daily tick logs one harmless `retention` error. Every switch is
 listed in `docs/external-setup.md` and `docs/marketing-scheduling.md`.
