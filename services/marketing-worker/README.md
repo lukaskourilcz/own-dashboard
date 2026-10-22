@@ -1,5 +1,15 @@
 # External marketing worker
 
+## Current OwnDashboard path
+
+The normal DNESKAi pipeline runs in OwnDashboard's Node routes and `src/lib/marketing` modules. `scheduler-ports.ts` connects collection, media, briefs and the durable `marketing_jobs` queue to the Supabase tick. `executeMarketingJob` claims the persisted job and uses the guarded generation/renderer adapters. No separately provisioned worker service or n8n timer is needed for that path. See [scheduling](../../docs/marketing-scheduling.md).
+
+The prepared continuation adds strict brief `/2` evidence while keeping `/1` readable. Brief offers use a conservative bytes/2 token estimate plus fixed token overhead; dollar reservations remain byte-based, and token/cost/job ceilings are unchanged. A refused Apify start settles at zero only with a definite pre-request or typed official refusal; ambiguous starts retain their reservation. Free source reads may overlap up to three at a time, within five operations and 45 seconds. Paid starts stay serial.
+
+These are local branch changes, with unapplied SQL migrations and unresolved production migration history. This document does not mark them deployed.
+
+## Optional external protocol (unprovisioned)
+
 `protocol.ts` exposes a Fetch-compatible authenticated HTTP handler and a separate durable job runner. Mount these in a provisioned Node runtime with the pinned fonts, template assets, `@resvg/resvg-js`, and `sharp`. Hosting has not been provisioned or verified for this service. n8n Cloud calls this HTTP interface; it cannot run `ExecuteCommand` or use native workflow LangSmith tracing.
 
 POST the `marketing-job/1` envelope to `/jobs`. Use the revision UUID as `idempotencyKey`, include `generation` and the exact approved `template`. The handler resolves that version through a trusted server registry and rejects a caller-supplied approval that differs from the registry. A durable queue must commit the immutable request and hash before the handler returns 202. Repeating a matching key and hash returns the original job (200); a changed hash must fail. GET `/jobs/<UUID>` returns scoped status/result. Authenticate both operations, bind the integration to its owner on the server, and use TLS. Do not put tokens in URLs.

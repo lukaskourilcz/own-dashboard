@@ -1,6 +1,6 @@
 # Marketing scheduling (pg_cron tick)
 
-Current state as of 20 October 2026, [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120).
+Code behavior reviewed on 22 October 2026; deployment evidence remains separately dated. Originally documented for [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120).
 Owner decision 4 of [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110): scheduling runs
 in Supabase with pg_cron and pg_net. n8n keeps no marketing timer.
 
@@ -37,7 +37,7 @@ one after another. Each unit is wrapped, so a failure is recorded and the next c
 
 | # | Category | Runs when | One unit | Switch |
 |---|---|---|---|---|
-| 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s). Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; inside the tick `MARKETING_DNESKAI_PAID_ENABLED` holds Apify and Jev, and Apify also needs `MARKETING_DNESKAI_APIFY_ENABLED` |
+| 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s): up to three free reads concurrently, each admitted with its 25 s timeout available; paid starts and polls remain serial. Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; inside the tick `MARKETING_DNESKAI_PAID_ENABLED` holds Apify and Jev, and Apify also needs `MARKETING_DNESKAI_APIFY_ENABLED` |
 | 2 | media | `pendingDneskaiMediaCandidates` is not empty | one `collectDneskaiMedia` for up to eight candidates, budget at most 40 s. A `busy` candidate waits 125 s (its claim lasts 120 s), a failed pass waits 10 minutes. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 3 | briefs | the newest finished run of the last two days | `getCreateDneskaiBriefs(db)` (#115) for that run. Once a call reports `pending: false` the run is left alone. A call stays `pending` while a brief waits for media, for a verified account, or for a job admission that failed with a code in `DNESKAI_BRIEF_RETRYABLE_CODES`. The step has no backoff, so it calls once per five-minute tick until that brief's slot, or the target day's last slot, is under 30 minutes away. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 4 | generation | a queued `marketing_jobs` row of brand `dneskai` | `executeMarketingJob` for the oldest one. A job that throws before it is claimed is set aside for an hour so younger jobs still run. | `MARKETING_AI_CONSENT` (and the generation module's own limits) |
@@ -146,6 +146,12 @@ slot, all without a single n8n execution.
   `MARKETING_AI_CONSENT` and the generation module's limits). The scheduler adds no paid call.
 - n8n: 0 executions for DNESKAi. The retired timers used 720 a month (collection) and about 720 a
   month (hourly publisher recovery); see `workflows/marketing/retired/README.md`.
+
+## Release prerequisite
+
+These are setup procedures, not authorization to run them. Production reports migration `20261021125123`, while local scheduler/media/brief filenames and ordering differ. Reconcile that history using [migration-guide.md](migration-guide.md) before applying anything. The 22 October continuation prepares additive migrations only; it deploys and applies none.
+
+The prepared lapse-release migration changes future skips only: reports return to classified `new` status when a brief lapses without a job/revision or another active brief. The skipped brief stays as history. Never reset historic selections or reservations as a rollout shortcut.
 
 ## Turning it on
 

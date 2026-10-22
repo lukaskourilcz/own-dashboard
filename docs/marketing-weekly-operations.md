@@ -1,5 +1,17 @@
 # Marketing po týdnech
 
+## Current DNESKAi path (code review, 22 October 2026)
+
+DNESKAi now uses native source collection, stored source media, event briefs and slide-deck generation; it no longer waits for a BoardlessAI article. Supabase pg_cron/pg_net calls OwnDashboard's scheduler, with no DNESKAi n8n timer. See [marketing-scheduling.md](marketing-scheduling.md) and [dneskai-briefs.md](dneskai-briefs.md). Exact rendered bytes, text, account and scheduled time still require owner approval. Missing/unchecked `@dneskai` prevents normal generation; no preview-account bypass is introduced.
+
+The retired pilot's accepted attempts and reservations remain historical facts and are never reset. They are not the ordinary pipeline's current admission ledger. Ordinary limits remain $0.25 per generation call, $1 per day and eight jobs; collection and per-profile caps also stay unchanged. Paid research remains separately disabled and requires its own approval.
+
+No live publication, deployment, scope change or migration apply is authorized by this continuation. Current account and production state must be checked against dated evidence. Insights/Threads access and the historic devShark package retain their existing gates.
+
+## Historical weekly plan and evidence (13 October 2026)
+
+The remainder records that session's plan, staging evidence and blockers. Its BoardlessAI and n8n DNESKAi steps were superseded by the native pipeline above; its dated counts are not current production totals.
+
 Ověřeno 13. října 2026. Tento dokument nahrazuje původní třicetidenní rozvrh pro nový start. Produkční spuštění zatím není schválené.
 
 ## Co bude majitel dělat

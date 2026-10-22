@@ -25,8 +25,7 @@ zůstaly bez fotografie; stránky Anthropic a TechCrunch prošly.
 Po nasazení plánovače (#120, [marketing-scheduling.md](marketing-scheduling.md)) ji volá
 jeho tick: každých pět minut jedno `collectDneskaiMedia` s rozpočtem nejvýše 40 s, po `busy`
 čeká 125 s a po chybě deset minut. Retenci `purgeUnusedDneskaiMedia(db, owner, 30)` spouští
-denní tick jen tehdy, když žádný kandidát nedrží zámek sběru médií. Dokud plánovač nasazený
-není, žádná cesta v aplikaci tyto funkce nespouští.
+denní tick jen tehdy, když žádný kandidát nedrží zámek sběru médií. The deployed state must be checked against dated production evidence; the code path exists in `scheduler-ports.ts`.
 
 Které kandidáty předat, řekne `pendingDneskaiMediaCandidates(db, owner, project)`:
 vybrané kandidáty pro dnešní nebo pozdější pražský den, jejichž stahování nezačalo nebo
@@ -48,10 +47,7 @@ dalším kandidátem.
 
 ## Co se stahuje
 
-**Instagram:** všechny `mediaUrls` kandidáta v pořadí sběru (nejprve hlavní obrázek,
-pak děti carouselu), nejvýše deset. Jen z hostů `cdninstagram.com` a `fbcdn.net`.
-`displayUrl` a první položka `images[]` bývají stejný obrázek: stejné byty se uloží
-jednou a druhá pozice dostane kód `media-duplicate-bytes`.
+**Instagram:** the collector keeps carousel children first, then unique fallback `images[]` and display renditions, at most ten. Known Instagram CDN filenames are deduplicated before that cap, so a repeated display rendition cannot displace the tenth child. Downloads remain limited to `cdninstagram.com` and `fbcdn.net`; identical downloaded bytes are still stored once.
 
 **Feedy:** stránka primárního článku se načte jednou a z ní:
 
@@ -80,7 +76,7 @@ obrázek z feedu. Pořadí a seznam obrázků se po prvním úspěšném načten
 
 Všechny požadavky jdou přes `safeFetch` z `free-feeds/security`: jen HTTPS na portu
 443, kontrola DNS na veřejné adresy, připnuté TLS spojení na ověřenou adresu, nejvýše
-8 MiB a 15 s na obrázek (3 MB na stránku), přesměrování jen v povolených hostech.
+8 MiB a 15 s na obrázek (3 MB na stránku), image redirects have at most two hops. Every hop repeats the publisher/known-CDN URL policy, HTTPS/public-DNS checks and TLS pinning. Article-page redirects keep their separate, narrower page-host rule.
 
 ## Co se ukládá
 
@@ -185,3 +181,9 @@ ho načte přes `loadDneskaiMedia` v `dneskai-client.ts`.
 Testy: `tests/lib/marketing-dneskai-media*.test.ts`. Síť v nich nahrazuje vložený
 fetcher a resolver, databázi PGlite se skutečnými migracemi. Žádný test nevolá
 Instagram ani placené API.
+
+## Richer evidence in the prepared continuation
+
+RSS prefers `content:encoded`. The article page already fetched for its pictures also yields up to 4,000 sanitized characters of article/main prose; scripts, navigation and instruction-shaped content are excluded. Image alt text/figure captions are retained as untrusted publisher metadata (up to 1,000 characters), never as a vision observation. The collection lease fences this evidence before the image plan is fixed. Brief `/2` carries these fields into the bounded offer; `/1` stays readable. Caption-only social evidence cannot become article or video-transcript evidence.
+
+This requires the new, **unapplied** richer-evidence and brief-compatibility migrations listed in [migration-guide.md](migration-guide.md). Production migration history must be reconciled before a coordinated release. Agency/photo-author credit policy remains an owner decision; publisher metadata does not authorize a new attribution rule.
