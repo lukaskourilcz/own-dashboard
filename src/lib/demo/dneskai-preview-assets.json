@@ -60,10 +60,8 @@
       {
         "slide": {
           "type": "cover-photo",
-          "kicker": "Prakticky",
           "headline": "Benchmark není žebříček. Jak ho číst bez omylu",
           "alt": "Ukázková rozostřená fotografie s titulkem o čtení benchmarků.",
-          "credit": "Foto: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -79,7 +77,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a1.jpg",
-          "sha256": "8d8d77a56bcc5d03a767635c57c84d278da8acee5678b036cb025273c15f1aa3",
+          "sha256": "53f8b3fb3e8c24d49d11b26888a72ccef86a89d6a62e75d8ba032d471a382923",
           "width": 1080,
           "height": 1350
         }
@@ -90,7 +88,6 @@
           "headline": "Nejdřív zjistěte, co test měří",
           "alt": "Ukázkový obrázek v rámu s vysvětlením, co benchmark měří.",
           "body": "Jedno číslo shrnuje stovky úloh. Podívejte se, jaké úlohy to jsou a jestli se podobají vaší práci.",
-          "credit": "Obrázek: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -100,7 +97,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a2.jpg",
-          "sha256": "e41954392acd3815534fd9df5a6d197aa5b6b54c0fad19c9caf0594b1d262730",
+          "sha256": "22352561fd0f55c7bc01805861417a454cf01b72f75b9450c6ade161cdc74bae",
           "width": 1080,
           "height": 1350
         }
@@ -112,7 +109,6 @@
           "headline": "Porovnávejte stejné podmínky",
           "alt": "Text vlevo a ukázkový obrázek vpravo s radou ke srovnávání.",
           "body": "Výsledek s jiným promptem nebo počtem pokusů není srovnatelný. Hledejte v metodice, jak byl test spuštěn.",
-          "credit": "Foto: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -122,7 +118,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a3.jpg",
-          "sha256": "afe3ff61d74b4fe607f63a6ffe32d77563dc49a1f562932998cb592866741221",
+          "sha256": "3e1b2db11f0591c2789c29e3678897d2e9b87f425451e5d6a5acbd5ce2782b26",
           "width": 1080,
           "height": 1350
         }
@@ -137,34 +133,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-a4.jpg",
-          "sha256": "33f8c3c744d25b01f393c3cceba06271c205de049910573d063a830ee25ce603",
-          "width": 1080,
-          "height": 1350
-        }
-      },
-      {
-        "slide": {
-          "type": "sources",
-          "headline": "",
-          "alt": "Seznam ukázkových zdrojů s náhledy použitých obrázků.",
-          "sources": [
-            "Ukázkový zdroj: Blog o strojovém učení (21. 10. 2026)",
-            "Obrázky: ukázkový zdroj"
-          ],
-          "images": [
-            {
-              "slot": "image-1",
-              "assetSha256": "863536beff0ca903ac15ae09928214cf0c3e78e34076b557e17df4517d9c2605"
-            },
-            {
-              "slot": "image-2",
-              "assetSha256": "be40c0e4a3f60aee2a37f77ffb9f55cba13b39afe049760d6e95ebbfd0ddce13"
-            }
-          ]
-        },
-        "render": {
-          "file": "/demo/dneskai/slide-a5.jpg",
-          "sha256": "592e71cb7b976f2026adb04e6a8d113a9e67ed19bf7470a9160fecd652d5919d",
+          "sha256": "05b2094e90be4d47faf8177748a1d580d9214ca8ac2b2722d87f26f4411972c0",
           "width": 1080,
           "height": 1350
         }
@@ -175,11 +144,8 @@
         "slide": {
           "type": "single",
           "variant": "photo",
-          "kicker": "Tip dne",
           "headline": "Dejte modelu kontext, ne prosby",
           "alt": "Ukázková fotografie s tipem dne o kontextu v promptech.",
-          "body": "Popište cíl, publikum a formát odpovědi.",
-          "credit": "Foto: ukázka",
           "images": [
             {
               "slot": "image-1",
@@ -189,7 +155,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-b1.jpg",
-          "sha256": "4a3c0824444cc03d0eff37d49547f650cfebfe2971d96f26322a70ea23967600",
+          "sha256": "4048d6223d417b0821debdb3e0bc60a08333a3c596716b87adc216bba5846b79",
           "width": 1080,
           "height": 1350
         }
@@ -199,10 +165,8 @@
       {
         "slide": {
           "type": "cover-photo",
-          "kicker": "Terminál",
           "headline": "Tři zkratky, které zrychlí práci v terminálu",
           "alt": "Ukázková fotografie s titulkem o zkratkách v terminálu.",
-          "credit": "Foto: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -212,7 +176,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-c1.jpg",
-          "sha256": "672f6eb408544ab5d249aa12d0b6171f4344749b151fe086360edcbebcdd9ee4",
+          "sha256": "5350ebdead565c33dc5b0a95dd1a061a53e392ab868812fb352983e0ee5617fd",
           "width": 1080,
           "height": 1350
         }
@@ -227,7 +191,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-c2.jpg",
-          "sha256": "1b622356df6ee3c944911050e4cc5808d0af338fac3b420aa1461ddab50fdfdb",
+          "sha256": "7e6e2e4e1ecec2c1e05d9b224f1f33454c41811f3f7a42663dace56308db5343",
           "width": 1080,
           "height": 1350
         }
@@ -240,7 +204,6 @@
           "headline": "Kdy stačí menší model",
           "alt": "Ukázkový obrázek v rámu s vysvětlením, kdy stačí menší model.",
           "body": "Na třídění, shrnutí a hledání v textu často stačí menší model. Bývá levnější a rychlejší.",
-          "credit": "Obrázek: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -250,7 +213,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-d1.jpg",
-          "sha256": "942fa33d5fdec8367967f224c2d61ae4f9cf1adb0f36918b4aa506289fbc19ef",
+          "sha256": "19fcb9b1a0e60776903d857ab2364cd9929b5ecc56081cd2fd96e05ad4daa687",
           "width": 1080,
           "height": 1350
         }
@@ -264,7 +227,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-d2.jpg",
-          "sha256": "7a4ab45d63705fd9541a9df3c40e0ca41e87c0cff10615455d778413e87a9f07",
+          "sha256": "18a94a24a0a588ca049cd250b373a48e8ab10567ee28a69982f471022cb028e3",
           "width": 1080,
           "height": 1350
         }
@@ -274,10 +237,8 @@
       {
         "slide": {
           "type": "cover-photo",
-          "kicker": "Checklist",
           "headline": "Pět otázek před nasazením AI asistenta",
           "alt": "Ukázková fotografie s titulkem o otázkách před nasazením asistenta.",
-          "credit": "Foto: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -287,29 +248,22 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-e1.jpg",
-          "sha256": "607567824e4aff33244928451ba39d03b620d247fb8c75158d260c6853df3d68",
+          "sha256": "c5d5b37230f20cba30d41980831a7c0cd72c873bccd693464c93eec8a82a9320",
           "width": 1080,
           "height": 1350
         }
       },
       {
         "slide": {
-          "type": "sources",
-          "headline": "",
-          "alt": "Seznam ukázkových zdrojů s náhledem použitého obrázku.",
-          "sources": [
-            "Ukázkový zdroj: Příručka týmu (20. 10. 2026)"
-          ],
-          "images": [
-            {
-              "slot": "image-1",
-              "assetSha256": "43864ca42221fa240253f3e6d66bb4d940c35e7b716ecd35528364a264efb629"
-            }
-          ]
+          "type": "statement",
+          "variant": "ink",
+          "headline": "Kdo bude odpovědi kontrolovat a jak často?",
+          "alt": "Výrok na tmavé ploše s otázkou, kdo kontroluje odpovědi asistenta.",
+          "images": []
         },
         "render": {
           "file": "/demo/dneskai/slide-e2.jpg",
-          "sha256": "4e9f32eed2da60566436806ab2cbce1d36ebd689e275d3b02e70cc7cabd2bf36",
+          "sha256": "b0294b63a400bd2a75e3555d45f2813208e2d691351c23a2c9aebdb53e768518",
           "width": 1080,
           "height": 1350
         }
@@ -319,10 +273,8 @@
       {
         "slide": {
           "type": "cover-photo",
-          "kicker": "Ověřování",
           "headline": "Jak poznat, že odpověď modelu potřebuje ověření",
           "alt": "Ukázková fotografie s titulkem o ověřování odpovědí.",
-          "credit": "Foto: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -338,7 +290,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-f1.jpg",
-          "sha256": "c740ca0af2722a5a6c881158f42cead85e89c81333a088b9ec8a68cc74d7d462",
+          "sha256": "b83d24ae999f5b35f7109bc2c6b22c4fa6b31cb1471379e5ce9adcad399220df",
           "width": 1080,
           "height": 1350
         }
@@ -346,13 +298,13 @@
       {
         "slide": {
           "type": "statement",
-          "headline": "Čísla, jména a data si vždy dohledejte ve zdroji.",
+          "headline": "U čísel, jmen a dat buďte nejpřísnější.",
           "alt": "Výrok na modré ploše o dohledávání čísel ve zdroji.",
           "images": []
         },
         "render": {
           "file": "/demo/dneskai/slide-f2.jpg",
-          "sha256": "67e7910ef401bbf0ad5b1442bd36887abea96bbdc323cbb712f7a362ef67cb38",
+          "sha256": "54cc3368d93699afd8ad6a4b225a054b85971f0177e3c314bb48f2959882e5c8",
           "width": 1080,
           "height": 1350
         }
@@ -362,10 +314,8 @@
       {
         "slide": {
           "type": "cover-photo",
-          "kicker": "Prompty",
           "headline": "Proč se vyplatí verzovat prompty",
           "alt": "Ukázková fotografie s titulkem o verzování promptů.",
-          "credit": "Foto: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -375,7 +325,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-g1.jpg",
-          "sha256": "280e75dec80b2b0ee8be2092d9f594eaca9ae3ca971de21b0b301824ad15692e",
+          "sha256": "6d9057d8b053e8758768fb987d76767fae7ccee5b426576c5f2f55943cc8cbcc",
           "width": 1080,
           "height": 1350
         }
@@ -386,7 +336,6 @@
           "headline": "Každá změna má svůj záznam",
           "alt": "Ukázkový obrázek v rámu o záznamu změn promptů.",
           "body": "Když se odpovědi zhorší, víte, která úprava to způsobila, a můžete se vrátit.",
-          "credit": "Obrázek: ukázkový zdroj",
           "images": [
             {
               "slot": "image-1",
@@ -396,7 +345,7 @@
         },
         "render": {
           "file": "/demo/dneskai/slide-g2.jpg",
-          "sha256": "e5173c0657b0241095c98c6c82917c057955da3a0f39e7354157d03f142c1593",
+          "sha256": "b15c171277e5601a6a280787ff9bec81fdf7031c813d3b121ac80b19177c3482",
           "width": 1080,
           "height": 1350
         }
