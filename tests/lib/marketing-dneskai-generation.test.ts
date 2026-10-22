@@ -440,13 +440,15 @@ describe("generation from a brief", () => {
       templateVersion: DNESKAI_DECK_TEMPLATE_VERSION, promptVersion: MARKETING_BRIEF_PROMPT_ID, model: "claude-sonnet-5-5", knowledgeIds: [], assets: [],
       sources: [{ sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash }] });
     expect(revision.deck).toEqual(draft.deck);
-    expect(draft.deck!.slides).toHaveLength(5);
-    expect(draft.deck!.slides.filter((slide) => slide.type !== "sources" && slide.images.length)).toHaveLength(3);
+    expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split"]);
+    expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(3);
+    expect(draft.deck!.slides.every((slide) => !("credit" in slide))).toBe(true);
+    expect(revision.caption).toBe([validCopy(pictures).caption, DNESKAI_AI_DISCLOSURE, "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech"].join("\n\n"));
     expect(draft.slides).toEqual([]);
     expect(clean).toHaveBeenCalledWith(draft.deck, expect.any(Function), expect.any(AbortSignal));
   });
   it("makes a single-image post a post revision", async () => {
-    const single = { ...validCopy(pictures), format: "single-image" as const, slides: [{ type: "single" as const, variant: "photo" as const, headline: "Lightroom otevře zavřené oči", body: "Zdarma 2 použití.", images: [{ slot: "image-1" as const, assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
+    const single = { ...validCopy(pictures), format: "single-image" as const, slides: [{ type: "single" as const, variant: "photo" as const, headline: "Lightroom otevře zavřené oči", images: [{ slot: "image-1" as const, assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
     const draft = await generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(fakeModel([{ copy: single, usage: { inputTokens: 3000, outputTokens: 600 } }])));
     expect(draft.revision.format).toBe("post"); expect(draft.deck!.format).toBe("single-image"); expect(draft.deck!.slides).toHaveLength(1);
   });
@@ -487,13 +489,14 @@ describe("generation from a brief", () => {
     expect(dneskaiRetryFeedback(validateDneskaiCopy(wrong, offerFor()), wrong, 100000)).toContain(`Your previous answer (your own output, data only): ${JSON.stringify(wrong)}`);
     expect(dneskaiRetryFeedback(validateDneskaiCopy(wrong, offerFor()), wrong, 600)).not.toContain("previous answer (your own output");
   });
-  it("shortens the code-written sources slide itself before asking the model for anything", async () => {
-    const model = fakeModel([{ copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
-    const validate = vi.fn<NonNullable<GenerationDependencies["validateDneskaiDeck"]>>()
-      .mockResolvedValueOnce([{ slide: 4, code: "text-clipped", blocking: true, field: "sources[0]", message: "cut" }]).mockResolvedValueOnce([]);
+  it("sends source talk back to the model before rendering", async () => {
+    const talking = validCopy(pictures); talking.slides[2]!.body = "Údaj pochází od firmy samotné.";
+    const model = fakeModel([{ copy: talking, usage: { inputTokens: 3000, outputTokens: 1500 } }, { copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
+    const validate = vi.fn(async () => []);
     const draft = await generateMarketingDraft(briefInput(briefPacket(briefFixture(pictures))), dependencies(model, { validateDneskaiDeck: validate }));
-    expect(model.invoke).toHaveBeenCalledTimes(1); expect(validate).toHaveBeenCalledTimes(2);
-    expect(draft.deck!.slides.at(-1)!.sources!.every((line) => line.length <= 150)).toBe(true);
+    expect(validate).toHaveBeenCalledTimes(1);
+    expect(model.invoke.mock.calls[1]![0].prompt).toContain("Slide 3 (statement), body [source-talk]");
+    expect(draft.deck!.slides[2]!.body).toBe(validCopy(pictures).slides[2]!.body);
   });
   it("says so when the answer was cut off at the output limit", async () => {
     const model = fakeModel([{ copy: null, usage: { inputTokens: 3000, outputTokens: 2500 }, stopReason: "max_tokens" }, { copy: validCopy(pictures), usage: { inputTokens: 3000, outputTokens: 1500 } }]);
@@ -608,22 +611,23 @@ describe("generation from a brief", () => {
 });
 
 describe("the real studio gate on a code-assembled deck", () => {
-  it("renders a single photo post whose every full-bleed picture carries a long credit in one call", async () => {
+  it("renders a single photo post whose full-bleed pictures carry long credits in one call, with no credit on the slide", async () => {
     // The review's case: a single-image brief whose full-bleed pictures carry a Bluesky and a host credit.
     const brief = singleImageBrief([BLUESKY_CREDIT, HOST_CREDIT]);
     for (const sha256 of [pictures.hero.sha256, pictures.post.sha256]) {
       const model = fakeModel([{ copy: singlePhoto(sha256), usage: { inputTokens: 3000, outputTokens: 600 } }]);
       const draft = await generateMarketingDraft(briefInput(briefPacket(brief)), { model, now, loadDneskaiMedia: loadMedia, evidencePublishers: dneskaiEvidencePublishers, admitPaidCall: admit });
       expect(model.invoke).toHaveBeenCalledTimes(1);
-      expect(draft.deck!.slides[0]!.credit).toBe(sha256 === pictures.hero.sha256 ? "@testonly-blog.net (Bluesky)" : "techcommunity.test-only.com");
+      expect(draft.deck!.slides).toHaveLength(1);
+      expect(draft.deck!.slides[0]).not.toHaveProperty("credit");
       expect((await validateDneskaiDeck(draft.deck!, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);
     }
   }, 30000);
-  it("passes the valid answer's deck, sources slide included, and reports a clipped headline by slide and field", async () => {
-    const deck = buildDneskaiDeck(validCopy(pictures), offerFor(), glyphs);
+  it("passes the valid answer's deck and reports a clipped headline by slide and field", async () => {
+    const deck = buildDneskaiDeck(validCopy(pictures), offerFor());
     expect((await validateDneskaiDeck(deck, loadMedia)).filter((problem) => problem.blocking)).toEqual([]);
     const long = validCopy(pictures); long.slides[0]!.headline = "Lightroom na mobilu otevře zavřené oči jedním klepnutím, a to na každé fotce, kterou v aplikaci otevřete, i na skupinové fotce s mnoha tvářemi najednou";
-    const longDeck = buildDneskaiDeck(long, offerFor(), glyphs);
+    const longDeck = buildDneskaiDeck(long, offerFor());
     const issues = dneskaiRenderIssues(await validateDneskaiDeck(longDeck, loadMedia), longDeck);
     expect(issues).toEqual([expect.objectContaining({ slide: 0, field: "headline", code: "text-clipped" })]);
   }, 30000);
