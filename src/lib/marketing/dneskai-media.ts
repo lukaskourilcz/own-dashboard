@@ -195,7 +195,7 @@ async function fetchBytes(url: string, allowImage: DneskaiImageUrlPolicy, deps: 
   if (!allowImage(parsed)) throw new FetchFailure('media-host-not-publisher', false);
   try {
     const response = await safeFetch(url, {
-      allowHosts: [host], method: 'GET', maxBytes: DNESKAI_MEDIA_FETCH_MAX_BYTES, maxRedirects: 2, timeoutMs: DNESKAI_MEDIA_FETCH_TIMEOUT_MS,
+      allowHosts: [host], urlPolicy: allowImage, method: 'GET', maxBytes: DNESKAI_MEDIA_FETCH_MAX_BYTES, maxRedirects: 2, timeoutMs: DNESKAI_MEDIA_FETCH_TIMEOUT_MS,
       headers: { Accept: 'image/jpeg, image/png, image/webp;q=0.9, */*;q=0.1', 'user-agent': SOURCE_USER_AGENT },
       extraContentTypes: IMAGE_CONTENT_TYPES, signal, fetchImpl: deps.fetchImpl, resolveImpl: deps.resolveImpl,
     });

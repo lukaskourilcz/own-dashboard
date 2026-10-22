@@ -359,3 +359,22 @@ describe('purgeUnusedDneskaiMedia', () => {
     expect(store.objects.size).toBe(0);
   });
 });
+
+
+describe('bounded publisher image redirects', () => {
+  it('follows a publisher image onto its registered CDN and checks DNS at each hop', async () => {
+    const page='https://www.anthropic.com/news/OFFLINE-redirect', origin='https://www.anthropic.com/redirect-photo.jpg', cdn='https://cdn.sanity.io/images/OFFLINE-photo.jpg';
+    const web=new FixtureWeb().serve(page,{type:'text/html',body:`<meta property="og:image" content="${origin}">`}).serve(origin,{status:302,location:cdn}).serve(cdn,{body:A});
+    const dns=vi.fn(async (host: string) => { expect(host).toBeTruthy(); return publicDns(); }), id=await insertCandidate('anthropic-news','OFFLINE-redirect',page,[]);
+    const result=await collectDneskaiMedia(client(),owner,project,[id],{fetchImpl:web.fetch,resolveImpl:dns,store:new MemoryStore()});
+    expect(result.candidates[0].assets).toBe(1);expect(web.count(cdn)).toBe(1);
+    expect(dns.mock.calls.map(call=>call[0])).toContain('cdn.sanity.io');
+  });
+  it.each(['https://unregistered.test/photo.jpg','http://cdn.sanity.io/photo.jpg','https://127.0.0.1/photo.jpg'])('refuses an unsafe redirect before fetching %s',async target=>{
+    const page=`https://www.anthropic.com/news/OFFLINE-${encodeURIComponent(target)}`, origin=`https://www.anthropic.com/photo-${encodeURIComponent(target)}.jpg`;
+    const web=new FixtureWeb().serve(page,{type:'text/html',body:`<meta property="og:image" content="${origin}">`}).serve(origin,{status:302,location:target});
+    const id=await insertCandidate('anthropic-news',`OFFLINE-${target}`,page,[]);
+    const result=await collectDneskaiMedia(client(),owner,project,[id],{fetchImpl:web.fetch,resolveImpl:publicDns,store:new MemoryStore()});
+    expect(result.candidates[0].assets).toBe(0);expect(web.count(target)).toBe(0);
+  });
+});

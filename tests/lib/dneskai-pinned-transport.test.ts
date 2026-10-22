@@ -40,3 +40,32 @@ describe('DNS-pinned free-feed transport', () => {
   for (const address of ['93.184.216.34', '192.0.1.1', '198.20.0.1', '203.0.114.1']) expect(isPublicAddress(address), address).toBe(true);
  });
 });
+
+describe('image redirect URL policy', () => {
+ it('pins a fresh checked IP and TLS hostname at every allowed hop', async () => {
+  const seen: Array<Record<string, unknown>> = [];
+  mock.request.mockImplementation((options, callback) => {
+   seen.push(options);
+   const request = new EventEmitter() as EventEmitter & { end: () => void };
+   request.end = () => {
+    const response = Readable.from([Buffer.from('fixture')]) as Readable & { statusCode: number; headers: Record<string, string> };
+    response.statusCode = seen.length === 1 ? 302 : 200;
+    response.headers = seen.length === 1 ? { location: 'https://cdn.publisher.test/photo.jpg' } : { 'content-type': 'image/jpeg' };
+    callback(response);
+   };
+   return request;
+  });
+  await safeFetch('https://publisher.test/photo.jpg', { allowHosts: [], urlPolicy: url => ['publisher.test','cdn.publisher.test'].includes(url.hostname), resolveImpl: async host => [host === 'publisher.test' ? '93.184.216.34' : '8.8.8.8'] });
+  expect(seen.map(item => [item.hostname,item.servername])).toEqual([['93.184.216.34','publisher.test'],['8.8.8.8','cdn.publisher.test']]);
+ });
+ it('refuses an allowlisted CDN that resolves privately before connecting to it', async () => {
+  const fetcher=vi.fn<typeof fetch>(async()=>new Response(null,{status:302,headers:{location:'https://cdn.publisher.test/photo.jpg'}}));
+  await expect(safeFetch('https://publisher.test/photo.jpg',{allowHosts:[],urlPolicy:()=>true,fetchImpl:fetcher,resolveImpl:async host=>[host==='publisher.test'?'93.184.216.34':'127.0.0.1']})).rejects.toThrow('private');
+  expect(fetcher).toHaveBeenCalledTimes(1);
+ });
+ it('stops redirect loops at the explicit hop limit', async () => {
+  const fetcher=vi.fn<typeof fetch>(async()=>new Response(null,{status:302,headers:{location:'/loop.jpg'}}));
+  await expect(safeFetch('https://publisher.test/photo.jpg',{allowHosts:['publisher.test'],maxRedirects:2,fetchImpl:fetcher,resolveImpl:async()=>['93.184.216.34']})).rejects.toThrow('excessive redirect');
+  expect(fetcher).toHaveBeenCalledTimes(3);
+ });
+});

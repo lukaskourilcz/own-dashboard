@@ -113,6 +113,8 @@ export async function resolvePublicAddresses(hostname: string): Promise<string[]
 
 export interface SafeFetchOptions {
   allowHosts: readonly string[];
+  /** Optional replacement host rule for this call. Checked on the initial URL and every redirect before DNS. */
+  urlPolicy?: (url: URL) => boolean;
   /**
    * HEAD reads status and headers only. It carries no body, and like POST it refuses a redirect
    * instead of following one: a pinned asset URL that redirects is not the URL that was checked.
@@ -164,7 +166,7 @@ export async function safeFetch(
   }
 
   for (let redirect = 0; redirect <= maxRedirects; redirect += 1) {
-    if (!options.allowHosts.includes(url.hostname)) {
+    if (!(options.urlPolicy ? options.urlPolicy(url) : options.allowHosts.includes(url.hostname))) {
       throw new UnsafeUrlError(`Host is not allowlisted: ${url.hostname}`);
     }
     const controller = new AbortController();
