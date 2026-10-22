@@ -508,7 +508,7 @@ const CODES = {
   'reels-disabled': ['config', 'Reels are switched off on this server, so this Reel waits and nothing is published.', 'Reely jsou na tomto serveru vypnuté, proto tento Reel čeká a nic se nepublikuje.'],
   'reel-render-pending': ['wait', 'The Reel video is being made; the post publishes on a following run inside its window.', 'Video Reelu se vyrábí; příspěvek vyjde při některém dalším běhu v rámci svého okna.'],
   'reel-render-unavailable': ['retry', 'The Reel video could not be requested, so the post waits.', 'Video Reelu nešlo vyžádat, proto příspěvek čeká.'],
-  'reel-render-required': ['investigate', 'The Reel had no stored video at publishing time, so nothing was sent.', 'Reel neměl při publikování uložené video, proto se nic neodeslalo.'],
+  'reel-video-missing': ['investigate', 'The Reel had no stored video at publishing time, so nothing was sent.', 'Reel neměl při publikování uložené video, proto se nic neodeslalo.'],
   // Audio library (#164): Zdroje → Hudba.
   'audio-library-unavailable': ['retry', 'The audio library could not be read or written.', 'Hudební knihovnu nešlo načíst ani uložit.'],
   'audio-upload-missing': ['retry', 'The uploaded file did not arrive; upload it again.', 'Nahraný soubor nedorazil; nahrajte ho znovu.'],

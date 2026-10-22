@@ -213,7 +213,7 @@ async function verifyReelVideo(input: PublishMarketingInput, reel: MarketingReel
 async function verifyAssets(input: PublishMarketingInput): Promise<void> {
   const revision = input.revisionRow.revision;
   if (deckReel(revision)) {
-    if (!input.reel) throw new MetaFailure('reel-render-required');
+    if (!input.reel) throw new MetaFailure('reel-video-missing');
     await verifyReelVideo(input, input.reel);
   }
   const story = revision.format === 'story';
@@ -453,7 +453,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
         Object.assign(fields, { media_type: 'STORIES', image_url: revision.assets[0]!.url });
       } else if (deckReel(revision)) {
         // #165: the rendered slideshow as a Reel, slide 1 as its cover, shown in the feed grid too.
-        if (!input.reel) throw new MetaFailure('reel-render-required');
+        if (!input.reel) throw new MetaFailure('reel-video-missing');
         Object.assign(fields, { media_type: 'REELS', video_url: input.reel.url, cover_url: revision.assets[0]!.url, share_to_feed: 'true' });
       } else if (revision.format === 'carousel') {
         const children: string[] = [];

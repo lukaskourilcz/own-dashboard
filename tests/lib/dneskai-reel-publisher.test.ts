@@ -80,7 +80,7 @@ describe('a DNESKAi deck Reel (#165)', () => {
 
   it('creates nothing without its rendered video or when the video bytes differ', async () => {
     const missing = fixture({ reel: null });
-    expect(await publishMarketingRevision(missing.input)).toMatchObject({ status: 'failed', errorCode: 'reel-render-required' });
+    expect(await publishMarketingRevision(missing.input)).toMatchObject({ status: 'failed', errorCode: 'reel-video-missing' });
     expect(missing.posts()).toEqual([]);
     const changed = fixture({ videoBytes: Buffer.from('other-bytes-of-same-length') });
     expect(await publishMarketingRevision(changed.input)).toMatchObject({ status: 'failed', errorCode: 'asset-hash-mismatch' });
