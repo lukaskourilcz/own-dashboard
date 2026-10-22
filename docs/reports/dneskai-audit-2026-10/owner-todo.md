@@ -16,44 +16,17 @@ The [setup report](browser-setup-result.md) records app IDs, deployment, scopes,
 
 ---
 
-## 2. Quick decisions (about 30 min for all of them)
+## 2. Decisions: all made on 22 October 2026
 
-Answer these in any form, even "1a, 2 yes, 3 no". Nothing here costs money unless it says so.
+You approved every recommendation ("yes, all my picks"), plus the post rules and the hashtag cap you set the same evening. All of it is built on branch `fable/dneskai-kit-plumbing`:
 
-### How DNESKAi sounds
-1. **Writing style.** a) calm plus a hook on the cover (my pick, to test), b) calm as today, c) explainer style. All three keep the truth rules. Examples: `docs/reports/dneskai-audit-2026-10/research/carousel-playbook.md`.
-2. **Hashtags.** Instagram has allowed only 5 per post since 18 December 2025, but the code still adds up to 10. Cut to 5? (my pick: yes)
-
-### Design
-3. **The four other design kits.** Editorial works. Bold, Explainer, Magazine and Ticker exist only as copies of Editorial. Who designs them: you, me from the research, or a designer?
-4. **Kit name.** Your notes said "clipping". The design record calls the fifth kit "magazine". Is "magazine" right?
-5. **Where the studio code lives.** a) Keep Quorum as the source for now (my pick), b) move the whole studio into OwnDashboard, c) copy only the DNESKAi part.
-
-### Reviewing and approving
-6. **Moving a post to another time.** Today any time change needs a fresh approval. a) Keep it that way, and when a post misses its slot show "přesunuto, znovu schválit" with a one-tap re-approval (my pick). b) Let you move an approved post without re-approving.
-7. **Reminder.** a) An in-app notification when the day's first post is ready and again 60 minutes before the first unapproved slot (my pick). b) No reminder.
-8. **"Přegenerovat s poznámkou".** A button that rewrites a returned post using your note, about $0.02 each time. Build it? (my pick: yes)
-9. **"Vygenerovat hned".** A button that drafts a story right away instead of waiting up to 5 minutes for the scheduler. Still under the $1 per day ceiling. Build it? (my pick: yes)
-10. **Design Lab location.** a) Keep it inside the review tab (my pick, no database change). b) Give it its own tab.
-
-### Which stories get picked
-11. **Tool and ai-project as one category.** Today one weak "ai-project" item can push out a strong news story. Merge the two into one slot? (my pick: yes)
-12. **Diversity or relevance.** a) Keep one story per category, then relevance (today). b) Pick by relevance first, allowing at most one non-news story a day (my pick).
-13. **Held stories.** Should stories that Jev held get one automatic second chance the next night? It adds a tiny Jev cost, well under a cent. (my pick: yes)
-14. **Similar headlines.** "Llama 4 8B" and "Llama 4 70B" count as one story. Keep that? (my pick: yes, it's usually one release)
-
-### Money guards
-15. **Reservation per draft.** The system blocks $0.25 before every model call, while a real call costs about $0.02. a) Lower it to about $0.13 (my pick), b) keep $0.25.
-16. **Refused calls.** When the model provider refuses a call outright, count it as $0 instead of $0.25? (my pick: yes)
-17. **Old unknown costs.** One old unknown Apify cost from staging can block paid work. Check only today's run instead of all history? (my pick: yes. The old reservation itself stays untouched, as you asked.)
-18. **Dates as evidence.** Should a number that only appears in a date (the "22" in "22. 10. 2026") count as proof for "22 %"? (my pick: no)
-
-### Small follow-ups
-19. A retried draft keeps the model's first answer on the job, which only you and the system can read. Keep it? (my pick: yes, it makes the retry better)
-20. When you add a picture slide yourself, should its source also appear as a thumbnail on the sources slide? (my pick: no, the credit line is enough)
-21. **Agency photos.** A Getty photo was credited "Obrázek: TechCrunch". a) Credit both when the file shows the agency: "Foto: Getty Images přes TechCrunch" (my pick). b) Keep crediting the publisher only.
-
----
+- **How DNESKAi sounds.** Calm register with a factual hook on the cover. Up to 10 hashtags, `#dneskai` first.
+- **Post rules.** The first slide shows only its headline. No slide shows page numbers, picture credits, a sources slide or anything about sources. The caption names no sources or credits. These rules live in `.claude/skills/dneskai-post-content/SKILL.md`.
+- **Design.** Five kits are designed and selectable in the Design Lab: Editorial, Bold, Explainer, Magazine and Ticker. A sixth, Spotlight (photo-led, your reference), is being added. The kit id stays `magazine`. Quorum remains the source of the studio.
+- **Reviewing and approving.** A time change still needs a new approval. A missed post shows "Přesunuto, znovu schválit" with one-tap re-approval to the next free slot. "Publikovat hned" approves for two minutes from now. Reminders go out as in-app notifications. "Přegenerovat s poznámkou" and "Vygenerovat hned" are built. The Design Lab stays in the review tab.
+- **Which stories get picked.** Relevance first, at most one story outside AI and tech news a day, with tool, ai-project and marketing sharing that slot. Held stories get one automatic second review. "Llama 4 8B" and "Llama 4 70B" stay one story.
+- **Money guards.** A draft reserves $0.13 instead of $0.25. A call the provider refuses before billing counts as $0. An old unknown cost blocks only its own night.
+- **Small follow-ups.** A retry keeps the model's previous answer. An inserted picture slide gets no sources thumbnail. A photo agency is credited in the database as "Foto: Getty Images přes TechCrunch".
 
 ## 3. Apify money (your $150 credit, expires about 22 November)
 
@@ -73,18 +46,20 @@ Don't cancel the Apify subscription, even though an old Quorum note suggests it.
 
 ## 4. One database push (about 20 min)
 
-The migration history is lined up: since 22 October the repository lists every version production recorded, so no repair is needed. I changed only the repository; nothing was written to production. Nine prepared changes are waiting, and the features that need them stay hidden behind switches.
+The repository lists every migration version production recorded, so no history repair is needed. Thirteen prepared migrations wait, `20261022000000` through `20261022190000`. You run them because they need the database password and write to production:
 
-1. **Apply the nine waiting changes** with the Supabase CLI. The three commands are in `docs/migration-guide.md`, section "Applying the prepared migrations". You run them, because they need the database password and write to production. They unlock:
-   - the scheduler log cleanup (the daily run stops logging its one harmless error);
-   - "Give up and queue again" for a stuck Instagram publication;
-   - "Re-review" for held stories and "Move to next free slot" and "Release" for expired posts;
-   - richer article text in the stories;
-   - better category picking;
-   - the Apify research ledger, which spends nothing until you approve the plan.
-2. **Flip four switches in Vercel and redeploy:** `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`, `MARKETING_PUBLICATION_REQUEUE_ENABLED`.
+1. Push them with the Supabase CLI, using the commands under "Applying the prepared migrations" in `docs/migration-guide.md`.
+2. Set six switches to `true` in Vercel Production and redeploy: `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`, `DNESKAI_LAPSED_RELEASE_ENABLED`, `MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED`, `DNESKAI_REGENERATE_ENABLED`.
 
----
+This unlocks:
+- the scheduler log cleanup;
+- held re-review, reslot and release;
+- "give up and queue again";
+- richer article text;
+- relevance-first selection and the second review of held stories;
+- regenerate with a note;
+- the narrower unknown-cost guard;
+- the Apify research ledger, which spends nothing until you approve the plan.
 
 ## 5. When the basics work
 
