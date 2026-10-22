@@ -70,6 +70,25 @@ describe('staged DNESKAi collection with mocked transports only',()=>{
   expect(()=>jevRequest(items,history)).not.toThrow();
   expect(()=>jevRequest(items,all.slice(0,history.length+1))).toThrow('collection-jev-input-limit');
  });
+ it('re-queues recent Jev holds once before the Jev plan only with DNESKAI_SELECTION_V2_ENABLED (decision 13)',async()=>{
+  const jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));
+  const feed=vi.fn(async()=>({items:[],complete:true,errorCode:null}));
+  const held=()=>[...Array.from({length:8},(_,i)=>item(i)),{...item(8),status:'held' as const,category:'ai-news' as const,relevance:0.8,reason:'collection-review-relevance'}];
+  // Off: the deployed path, the hold stays and only the eight open reports are planned.
+  const off=fixture([stage('openai-blog','feed')],held());const offRequeue=vi.fn(async()=>1);
+  await tickDneskaiCollection(owner,{projectId:project},{store:{...off.store,requeueHeld:offRequeue},env,now:()=>now,feed,jev});
+  expect(offRequeue).not.toHaveBeenCalled();expect(off.planJev.mock.calls[0][3]).toBe(1);
+  // On: the hold is open again before the plan counts the queue, so it shares the night's batches.
+  const on=fixture([stage('openai-blog','feed')],held());const order:string[]=[];
+  const requeueHeld=vi.fn(async()=>{order.push('requeue');const index=on.items.findIndex(row=>row.status==='held');on.items[index]={...on.items[index]!,status:'new',category:null,relevance:null,reason:null};return 1;});
+  on.planJev.mockImplementation(async(_owner,_run,_fence,count)=>{order.push('plan');for(let i=0;i<count;i++)on.stages.push(stage(`__jev:${String(i).padStart(2,'0')}`));on.run.jev_stage_count=count;return count;});
+  await tickDneskaiCollection(owner,{projectId:project},{store:{...on.store,requeueHeld},env:{...env,DNESKAI_SELECTION_V2_ENABLED:'true'},now:()=>now,feed,jev});
+  expect(requeueHeld).toHaveBeenCalledTimes(1);expect(order).toEqual(['requeue','plan']);expect(on.planJev.mock.calls[0][3]).toBe(2);
+  // A missing function (switch on before the migration) leaves the night as it was.
+  const missing=fixture([stage('openai-blog','feed')],held());
+  const result=await tickDneskaiCollection(owner,{projectId:project},{store:{...missing.store,requeueHeld:vi.fn(async()=>{throw new Error('collection-store-unavailable');})},env:{...env,DNESKAI_SELECTION_V2_ENABLED:'true'},now:()=>now,feed,jev});
+  expect(missing.planJev.mock.calls[0][3]).toBe(1);expect(result).toMatchObject({continue:false});
+ });
  it('plans ceil(new candidates / 8) Jev stages once, only after every source stage settled',async()=>{
   const f=fixture([stage('openai-blog','feed')]),feed=vi.fn(async()=>({items:[],complete:true,errorCode:null}));
   const jev=vi.fn<NonNullable<DneskaiCollectionDependencies['jev']>>(async items=>({items:items.map(item=>({...item,category:'ai-news' as const,relevance:0.99,status:'new' as const,duplicateOf:null})),costUsd:0.0001}));

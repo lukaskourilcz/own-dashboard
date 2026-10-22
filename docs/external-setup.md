@@ -187,3 +187,7 @@ These server variables now open nothing. Delete them from every Vercel environme
 `MARKETING_DNESKAI_COLLECTION_SECRET`, `MARKETING_DNESKAI_MANUAL_SECRET`, `MARKETING_DNESKAI_MANUAL_RUN` and the
 `MARKETING_DNESKAI_COLLECTION_PILOT_*` group. Keep `MARKETING_DNESKAI_COLLECTION_ENABLED` (the tick reads it) and `MARKETING_N8N_SECRET` (it still
 opens the devShark and knowledge operations of `/api/marketing/n8n`).
+
+### Story selection v2 switch (owner decisions 11-13)
+
+`DNESKAI_SELECTION_V2_ENABLED` is a server-only Vercel variable, off by default. Set it to `true` in Production and redeploy only after migrations `20261022180000_dneskai_relevance_first_selection.sql` and `20261022180100_dneskai_held_requeue.sql` are applied ([migration guide](migration-guide.md#prepared-story-selection-v2-owner-decisions-11-13)). With it on, the nightly collection gives reports that Jev held in the last 48 hours one more Jev review (at most 16 a night, within the existing $0.25 daily collection ceiling), and the Sources tab explains an unpicked event by the relevance-first rule. The rule itself changes when `20261022180000` is applied, with or without the switch. Turning it off stops the re-queue; reports already re-queued keep their record and never get a third review.

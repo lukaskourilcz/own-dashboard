@@ -268,6 +268,7 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `MARKETING_PUBLICATION_REQUEUE_ENABLED` | off | "Give up and queue again" for a stranded publication (`/api/marketing/publications`) | Off until migration `20261022110000` |
 | `DNESKAI_OWNER_RECOVERY_ENABLED` | off | Sources: Re-review of held reports and Move to next free slot | Off until migration `20261022141512` |
 | `DNESKAI_LAPSED_RELEASE_ENABLED` | off | Sources: Release reports of a lapsed brief | Off until migrations `20261022021835` and `20261022141613` |
+| `DNESKAI_SELECTION_V2_ENABLED` | off | Collection: one automatic re-review of recent Jev holds; Sources: the relevance-first explanation | Off until migrations `20261022180000` and `20261022180100` |
 | `DNESKAI_RICH_EVIDENCE_ENABLED` | off | Fetched article text and picture descriptions in media collection and brief/2 | Off until the evidence migrations |
 | `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` | off | The research runner (`dneskai-apify-research.ts`); it also needs `MARKETING_DNESKAI_APIFY_RESEARCH_APPROVED_PLAN` to equal the plan id | Off, waits for an approved plan |
 | `MARKETING_OFFLINE_IMPORT_ENABLED` | off | Import of devShark's offline first-week assets; also needs the generation pilot window | Retired outside Preview |

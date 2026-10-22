@@ -5,6 +5,7 @@ import { dueDneskaiSources,DNESKAI_SOURCES,dneskaiCheapIdentity } from './dneska
 import { collectDneskaiFeed,startDneskaiInstagram,pollDneskaiInstagram,classifyDneskaiCandidates,jevRequest,DneskaiProviderError,type DneskaiApifyRegistration,type JevHistory,type ProviderEnvironment } from './dneskai-providers';
 import { pragueMarketingDate } from './weekly-planning';
 import { marketingPilotConfiguration } from './pilot';
+import { dneskaiSelectionV2Enabled } from './dneskai-evidence-rollout';
 import type { DneskaiCollectionStore,DneskaiRun } from './dneskai-store';
 /** The pg_cron tick's only input: the project, and the run to resume (absent: admit today's run after 22:00 Prague). */
 export const DneskaiCollectInput=z.strictObject({projectId:z.uuid(),runId:z.uuid().optional()});
@@ -82,6 +83,10 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  }
  let current=await store.stages(owner,run.id);
  if(current.some(stage=>stage.kind!=='jev'&&['queued','running','polling'].includes(stage.status))){const updated=await store.finish(owner,run.id,fence,'running',null);return{runId:updated.id,status:'running',continue:true,retryAfterSeconds:15};}
+ // Decision 13: before the Jev plan, recent Jev holds get their one second chance (behind DNESKAI_SELECTION_V2_ENABLED,
+ // which needs migration 20261022180100). Free; the requeued reports then wait under the ordinary Jev limits. A
+ // failure leaves the holds where they are and the night runs as before.
+ if(dneskaiSelectionV2Enabled(env)&&store.requeueHeld&&run.jev_stage_count==null&&!current.some(stage=>stage.kind==='jev')){try{await store.requeueHeld(owner,run.id,fence);}catch{/* the run continues without the re-queue */}}
  const allInitial=await store.candidates(owner,input.projectId);
  let pending=pendingDneskaiCandidates(allInitial,clock());
  // Jev stages exist only for work that exists: planned once, after every source stage has settled.

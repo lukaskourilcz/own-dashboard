@@ -53,7 +53,7 @@ export const DneskaiEventViewSchema = z.strictObject({
   // SEL-05, additive: for an event that was not selected, what the stored lead report says about it. `code` names
   // the first selection rule it fails (only for an open, status `new` event; null when the data cannot tell).
   selection: z.strictObject({
-    code: z.enum(['selection-unclassified', 'selection-off-topic', 'selection-below-floor', 'selection-outside-window', 'selection-not-picked']).nullable(),
+    code: z.enum(['selection-unclassified', 'selection-off-topic', 'selection-below-floor', 'selection-outside-window', 'selection-not-picked', 'selection-not-picked-relevance']).nullable(),
     category: DneskaiCandidateSchema.shape.category, relevance: z.number().min(0).max(1).nullable(),
     publishedAt: z.iso.datetime({ offset: true }).nullable(), dateEstimated: z.literal(true).optional(),
   }).optional(),
