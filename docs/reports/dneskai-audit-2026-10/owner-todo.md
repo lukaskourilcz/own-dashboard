@@ -6,11 +6,11 @@ Each item says how long it takes and what it costs. Where you have to choose, I 
 
 ---
 
-## 1. Setup complete; publishing activation needs email verification
+## 1. Setup and publishing activation complete
 
 Production Anthropic key: **set**. @dneskai is a Creator account, tester invitation accepted, six Instagram configuration values set, redeploy Ready and Sources verification successful at 16:17 Prague on 22 October. The owner explicitly retained all five scopes granted by Meta. Token expires 21 December 2026 at 15:07:44 Prague.
 
-The owner requested publishing activation for testing. Vercel stopped at **Verify to reveal this value** for the Production publishing switch. Complete that email verification in Chrome, then the agent can set both Production switches, redeploy and enable only @dneskai. Publishing remains disabled until then. No final post has been approved or published.
+The owner requested publishing activation for testing and completed Vercel email verification. Both Production switches are now true, deployment `61NBJAaMqE9bmfTYHZwHZeeDUsUS` is Ready, and Sources shows @dneskai verified, publishing enabled and a valid token. No final post has been approved or published.
 
 The [setup report](browser-setup-result.md) records app IDs, deployment, scopes, expiry and the exact resume steps. Do not recreate the key or app.
 

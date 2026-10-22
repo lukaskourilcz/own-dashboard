@@ -133,7 +133,7 @@ The project's display name and slug do not follow the repository name; change th
 
 ## 11. Instagram publishing for @dneskai (#121)
 
-**Verified 22 October 2026:** Production key and Instagram configuration are set; Sources verifies @dneskai successfully. Publishing activation requested by the owner is pending Vercel email verification. The owner explicitly accepted the five granted scopes (basic, messages, content publish, insights, comments), superseding the two-scope setup plan for this account. See [current evidence and resume steps](reports/dneskai-audit-2026-10/browser-setup-result.md). The steps below are the setup reference; do not recreate completed credentials or the app.
+**Verified 22 October 2026:** Production key and Instagram configuration are set; Sources verifies @dneskai successfully. Publishing activation requested by the owner is complete: both Production switches are true, the redeployment is Ready, and @dneskai is enabled. The owner explicitly accepted the five granted scopes (basic, messages, content publish, insights, comments), superseding the two-scope setup plan for this account. See [current evidence and resume steps](reports/dneskai-audit-2026-10/browser-setup-result.md). The steps below are the setup reference; do not recreate completed credentials or the app.
 
 The code connects one Instagram professional account through the Instagram API with Instagram Login (host `graph.instagram.com`). The owner creates the account, the app and the token; nothing in this repository registers, buys or publishes. Publishing stays off throughout this setup: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the account's `enabled` column remain false until the pilot (#123).
 

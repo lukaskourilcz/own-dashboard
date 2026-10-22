@@ -2,7 +2,7 @@
 
 ## Current result
 
-The six browser setup tasks are complete. The later request to enable publishing is **pending Vercel email verification**. No post was approved or published, and no live pilot was run.
+The six browser setup tasks are complete. The later request to enable publishing is **complete**: both Production switches are true and @dneskai shows Publishing enabled. No post was approved or published, and no live pilot was run.
 
 | Task | Verified result |
 |---|---|
@@ -33,20 +33,15 @@ Saved credential names:
 
 devShark, knowledge processing and weekly review were untouched. Preview variables, branches, deployments, credentials and retained ledgers were not deleted.
 
-## Exact resume point
+## Publishing enabled — 22 October 2026
 
-The owner subsequently requested: “enable publishing so we can then test the entire workflow.”
+The owner completed Vercel email verification and saved Production `MARKETING_PUBLISH_ENABLED=true`. The agent verified it, added Production `MARKETING_DNESKAI_PUBLISH_ENABLED=true`, and redeployed the current main source.
 
-Opening Edit for Production `MARKETING_PUBLISH_ENABLED` reached Vercel's **Verify to reveal this value** dialog, offering **Send Code to Email**. Stopped before sending a code, as required by the browser instructions. The account remains disabled; enabling has not been completed.
+[Deployment 61NBJAaMqE9bmfTYHZwHZeeDUsUS](https://vercel.com/lukas-kourils-projects/own-dashboard/61NBJAaMqE9bmfTYHZwHZeeDUsUS) is **Ready / Production / Current**, with the same source commit `ae9e92ed806ea2e438c65fb3374eabff3fd7379a`; Vercel shows 22 October 16:33:53 CEST. Sources was refreshed after deployment and @dneskai was enabled through its confirmation dialog. The resulting UI shows **Ověřeno / Publikování zapnuto / Token je platný** and the stop-publishing button.
 
-After the owner completes verification:
-1. Recheck the current production deployment and pending approvals; do not assume this snapshot is current.
-2. Set Production `MARKETING_PUBLISH_ENABLED=true` and `MARKETING_DNESKAI_PUBLISH_ENABLED=true`. The DNESKAi-specific switch was found only on the retired Preview branch, so Production needs its own value. Preserve all Preview configuration and devShark settings; check that the global switch cannot enable another account.
-3. Redeploy Production, wait for Ready, then enable only @dneskai in Sources and verify the final visible state.
-4. Record the new deployment and activation evidence here and in #123. Do not claim an end-to-end test from switches alone.
-5. Follow #123 for one exact owner-reviewed asset/text/account/time, budget ≤ $1.50, real receipt and read-only reconciliation. At the last UI check, the 17:00 and 20:00 posts were still “Připravuje se”; no final post was approved. Switch publishing off after the pilot unless the owner authorizes daily operation.
+No final post was approved or published. The 17:00 and 20:00 topics were not approved at the activation check. Publishing activation is not proof of generation, rendering, costs or a receipt. Preview configuration and devShark settings were untouched.
 
-Stop for login, 2FA, CAPTCHA, phone verification or uncovered choices. No purchases, new accounts or deletion. Keep secrets only in their Vercel fields.
+Continue with #123: exact owner-reviewed asset/text/account/time, budget ≤ $1.50, real receipt and read-only reconciliation. Switch publishing off after the pilot unless the owner authorizes daily operation. Stop for login, 2FA, CAPTCHA, phone verification or uncovered choices. No purchases, new accounts or deletion; secrets only in Vercel fields.
 
 ## Remaining development work
 
@@ -54,10 +49,10 @@ Stop for login, 2FA, CAPTCHA, phone verification or uncovered choices. No purcha
 - #113 stays open for the recorded branch/tag and post-pilot owner cleanup; archive/rename work is done.
 - #121 remains closed; account connection is now verified in production. Token refresh and publisher dry-run were not exercised in this browser session.
 - #122 remains open: EU LangSmith setup and later evaluation; no configuration performed here.
-- #123 remains open: publishing activation checkpoint, exact owner review, pilot, cost evidence and receipt.
+- #123 remains open: exact owner review, pilot, cost evidence and receipt.
 - Migration-history reconciliation and prepared migrations remain pending. Do not run a blind database push.
 - Preserve owner decisions in `owner-todo.md`, follow-up feed checks on 23/25/28 October, and the staging cost ledger.
 
 ## Claude handoff
 
-Read this report, AGENTS.md, CLAUDE.md, NEEDED.md, docs/external-setup.md §11 and current #110/#113/#121/#122/#123 before working. Inspect current main, open PRs and the dirty local workspace; this report's production commit is a deployment snapshot, not a claim about the latest development head. Do not recreate keys, app or tester setup. Use an isolated branch/worktree and preserve unrelated local work. Read the installed Next.js guides before code changes. Make small coherent changes, run relevant project checks, and update evidence and remaining blockers. Ask for the pending Vercel checkpoint; never infer it was completed from elapsed time.
+Read this report, AGENTS.md, CLAUDE.md, NEEDED.md, docs/external-setup.md §11 and current #110/#113/#121/#122/#123 before working. Inspect current main, open PRs and the dirty local workspace; this report's production commit is a deployment snapshot, not a claim about the latest development head. Do not recreate keys, app or tester setup. Use an isolated branch/worktree and preserve unrelated local work. Read the installed Next.js guides before code changes. Make small coherent changes, run relevant project checks, and update evidence and remaining blockers. Publishing is already enabled; do not rerun setup. Verify live state before testing.
