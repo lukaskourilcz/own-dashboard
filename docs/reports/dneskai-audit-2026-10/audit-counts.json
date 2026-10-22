@@ -1,0 +1,161 @@
+{
+  "sourceCount": 237,
+  "keptCount": 189,
+  "excludedCount": 48,
+  "mergedCount": 134,
+  "areas": [
+    {
+      "area": "approval",
+      "total": 16,
+      "confirmed": 14,
+      "partly": 1,
+      "refuted": 1,
+      "kept": 12,
+      "quickWins": 3
+    },
+    {
+      "area": "brand",
+      "total": 5,
+      "confirmed": 5,
+      "partly": 0,
+      "refuted": 0,
+      "kept": 3,
+      "quickWins": 1
+    },
+    {
+      "area": "briefs",
+      "total": 15,
+      "confirmed": 14,
+      "partly": 1,
+      "refuted": 0,
+      "kept": 12,
+      "quickWins": 2
+    },
+    {
+      "area": "collection",
+      "total": 16,
+      "confirmed": 12,
+      "partly": 4,
+      "refuted": 0,
+      "kept": 15,
+      "quickWins": 3
+    },
+    {
+      "area": "cost",
+      "total": 16,
+      "confirmed": 11,
+      "partly": 5,
+      "refuted": 0,
+      "kept": 13,
+      "quickWins": 5
+    },
+    {
+      "area": "designlab",
+      "total": 10,
+      "confirmed": 9,
+      "partly": 1,
+      "refuted": 0,
+      "kept": 5,
+      "quickWins": 4
+    },
+    {
+      "area": "docs",
+      "total": 18,
+      "confirmed": 14,
+      "partly": 4,
+      "refuted": 0,
+      "kept": 16,
+      "quickWins": 8
+    },
+    {
+      "area": "generation",
+      "total": 16,
+      "confirmed": 13,
+      "partly": 3,
+      "refuted": 0,
+      "kept": 14,
+      "quickWins": 4
+    },
+    {
+      "area": "hooks",
+      "total": 14,
+      "confirmed": 11,
+      "partly": 3,
+      "refuted": 0,
+      "kept": 12,
+      "quickWins": 6
+    },
+    {
+      "area": "media",
+      "total": 16,
+      "confirmed": 12,
+      "partly": 4,
+      "refuted": 0,
+      "kept": 10,
+      "quickWins": 3
+    },
+    {
+      "area": "production",
+      "total": 15,
+      "confirmed": 11,
+      "partly": 4,
+      "refuted": 0,
+      "kept": 14,
+      "quickWins": 3
+    },
+    {
+      "area": "rendering",
+      "total": 10,
+      "confirmed": 9,
+      "partly": 1,
+      "refuted": 0,
+      "kept": 7,
+      "quickWins": 2
+    },
+    {
+      "area": "review",
+      "total": 17,
+      "confirmed": 15,
+      "partly": 2,
+      "refuted": 0,
+      "kept": 15,
+      "quickWins": 5
+    },
+    {
+      "area": "scheduler",
+      "total": 14,
+      "confirmed": 7,
+      "partly": 7,
+      "refuted": 0,
+      "kept": 11,
+      "quickWins": 1
+    },
+    {
+      "area": "selection",
+      "total": 15,
+      "confirmed": 13,
+      "partly": 2,
+      "refuted": 0,
+      "kept": 13,
+      "quickWins": 4
+    },
+    {
+      "area": "studio",
+      "total": 9,
+      "confirmed": 7,
+      "partly": 2,
+      "refuted": 0,
+      "kept": 4,
+      "quickWins": 2
+    },
+    {
+      "area": "tests",
+      "total": 15,
+      "confirmed": 12,
+      "partly": 3,
+      "refuted": 0,
+      "kept": 13,
+      "quickWins": 2
+    }
+  ]
+}
