@@ -17,8 +17,8 @@ beforeAll(async () => {
   create table public.projects(id uuid primary key,user_id uuid not null);
   create table public.ai_links(id uuid primary key,user_id uuid not null);
   insert into auth.users values('${owner}'),('${other}');`);
-  await db.exec(readFileSync('supabase/migrations/20261012225640_marketing_control_surface.sql', 'utf8'));
-  await db.exec(readFileSync('supabase/migrations/20261012232949_marketing_durable_jobs.sql', 'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261013193104_marketing_control_surface.sql', 'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261013193105_marketing_durable_jobs.sql', 'utf8'));
   await db.exec(readFileSync('supabase/migrations/20261022110000_marketing_requeue_unpublished_publication.sql', 'utf8'));
   await db.query(`select set_config('request.jwt.claim.sub',$1,false)`, [owner]);
 }, 30000);

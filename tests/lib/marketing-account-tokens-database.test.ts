@@ -35,8 +35,8 @@ beforeAll(async () => {
   create table public.projects(id uuid primary key,user_id uuid not null);
   create table public.ai_links(id uuid primary key,user_id uuid not null);
   insert into auth.users values('${owner}'),('${other}');`);
-  await db.exec(readFileSync('supabase/migrations/20261012225640_marketing_control_surface.sql', 'utf8'));
-  await db.exec(readFileSync('supabase/migrations/20261020110000_marketing_account_tokens.sql', 'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261013193104_marketing_control_surface.sql', 'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261021122220_marketing_account_tokens.sql', 'utf8'));
 }, 30000);
 afterAll(async () => { await db?.close(); });
 

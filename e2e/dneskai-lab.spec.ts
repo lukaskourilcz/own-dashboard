@@ -160,3 +160,10 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await page.getByTestId('dneskai-lab-approve').click();
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
 });
+
+test('Publish now stays off while the account does not publish, and says why', async ({ page }) => {
+  await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const publish = page.getByTestId('dneskai-lab-publish-now');
+  await expect(publish).toBeDisabled();
+  await expect(publish).toHaveAttribute('title', dneskaiLab.en.actions.publishNowOff);
+});

@@ -20,7 +20,7 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     create table public.projects(id uuid primary key,user_id uuid not null); create table public.ai_links(id uuid primary key,user_id uuid not null);`);
   await db.query("insert into auth.users values($1),($2)", [owner, other]);
-  for (const name of ["20261012225640_marketing_control_surface.sql", "20261012232949_marketing_durable_jobs.sql", "20261013092409_marketing_staging_pilot_guard.sql"])
+  for (const name of ["20261013193104_marketing_control_surface.sql", "20261013193105_marketing_durable_jobs.sql", "20261013193108_marketing_staging_pilot_guard.sql"])
     await db.exec(readFileSync(`supabase/migrations/${name}`, "utf8"));
 }, 30000);
 afterAll(async () => { await db?.close(); });

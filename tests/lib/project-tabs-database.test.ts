@@ -5,7 +5,7 @@ import { PROJECT_TAB_IDS } from '@/lib/project-workspace-tabs';
 import { createMigratedDatabase } from '../helpers/supabase-pglite';
 
 const owner = '11111111-1111-4111-8111-111111111111';
-const migration = readFileSync('supabase/migrations/20261021100000_dneskai_hideable_project_tabs.sql', 'utf8');
+const migration = readFileSync('supabase/migrations/20261021124712_dneskai_hideable_project_tabs.sql', 'utf8');
 const dneskaiTabs = ['dneskai-review', 'dneskai-calendar', 'dneskai-published', 'dneskai-costs'];
 let db: PGlite;
 

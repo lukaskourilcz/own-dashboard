@@ -23,7 +23,7 @@ Production. Production gets its own credentials when the issue that needs them l
   variables and never carries their values. The shared check is `src/lib/marketing/preview-pilot.ts`.
 - Inside Preview the behaviour is unchanged, including the interlock that holds paid collection while a
   generation pilot tuple is configured.
-- Migration `20261020120000_scope_retired_pilot_ledgers.sql` keeps every ledger row. A generation or
+- Migration `20261021122330_scope_retired_pilot_ledgers.sql` keeps every ledger row. A generation or
   collection pilot window now blocks ordinary admission and paid collection only while it is unexpired. An
   expired tuple still cannot be replayed or extended, and ordinary admission never adopts the retained
   pilot run. A job the generation pilot reserved never becomes ordinary work: after the window, ordinary

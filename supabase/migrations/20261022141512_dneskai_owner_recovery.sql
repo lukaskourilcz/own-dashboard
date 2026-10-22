@@ -12,7 +12,7 @@
 -- (status new, category, relevance, duplicateOf and reason cleared). The collection's pending filter then offers it
 -- to a later Jev batch under the existing stage, item and $0.25 daily limits. Releasing is not approval and does not
 -- bypass Jev: Jev may hold, reject or fold it again. Authored fields (title, text, URL, dates) never change, so the
--- Jev save's authored-surface check (20261020100000) still applies.
+-- Jev save's authored-surface check (20261021122104) still applies.
 create function public.marketing_dneskai_release_candidate(p_project uuid,p_candidate text) returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_owner uuid:=(select auth.uid());c public.marketing_dneskai_candidates;published timestamptz;
 begin

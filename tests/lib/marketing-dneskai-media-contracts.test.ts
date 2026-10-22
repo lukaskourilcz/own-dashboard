@@ -28,6 +28,22 @@ describe('dneskaiOfferableMediaAssets', () => {
     expect(positions([feed(0, 'og-image', { duplicateOfAssetId: id(1) }), feed(1, 'article-figure'), feed(2, 'article-figure', { duplicateOfAssetId: id(1) })])).toEqual([1, 2]);
   });
 
+  it('folds a social card that reframes a body figure, and keeps an unrelated card or a card without a figure', () => {
+    const feed = (n: number, kind: DneskaiMediaAssetView['originKind'], phash: string | null) => view(n, { originKind: kind, originUrl: `https://www.publisher.test/${n}.jpg`, credit: 'Obrázek: Publisher', phash });
+    // The pair measured in production on 22 October 2026: 1200 × 630 card, 1920 × 1080 hero, 12 bits apart.
+    const card = 'c4d2b549ba748b2d', hero = 'c496b3c99ba489ad';
+    expect(positions([feed(0, 'og-image', card), feed(1, 'article-figure', hero)])).toEqual([1]);
+    expect(positions([feed(0, 'feed-image', card), feed(1, 'article-figure', hero)])).toEqual([1]);
+    // 15 bits is past the limit: two pictures.
+    expect(positions([feed(0, 'og-image', '0000000000007fff'), feed(1, 'article-figure', '0000000000000000')])).toEqual([0, 1]);
+    // Two body figures stay two figures however close; a card alone, or without a hash, stays.
+    expect(positions([feed(0, 'article-figure', card), feed(1, 'article-figure', hero)])).toEqual([0, 1]);
+    expect(positions([feed(0, 'og-image', card)])).toEqual([0]);
+    expect(positions([feed(0, 'og-image', null), feed(1, 'article-figure', hero)])).toEqual([0, 1]);
+    // A purged figure offers nothing, so the card stays.
+    expect(positions([feed(0, 'og-image', card), view(1, { originKind: 'article-figure', phash: hero, purged: true })])).toEqual([0]);
+  });
+
   it('drops purged pictures and keeps a copy whose larger picture is purged or belongs to another candidate', () => {
     const repeated = { originUrl: 'https://scontent.cdninstagram.com/v/t51/1_n.jpg?stp=s640' };
     expect(positions([view(0, { ...repeated, duplicateOfAssetId: id(1) }), view(1, { purged: true }), view(2, { duplicateOfAssetId: id(99) })])).toEqual([0, 2]);

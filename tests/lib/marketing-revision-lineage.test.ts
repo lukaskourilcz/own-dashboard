@@ -29,8 +29,8 @@ beforeAll(async () => {
     grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;
     create table public.projects(id uuid primary key,user_id uuid not null); create table public.ai_links(id uuid primary key,user_id uuid not null);
     insert into auth.users values('${owner}'),('${other}'); insert into public.projects values('${project}','${owner}');`);
-  await db.exec(readFileSync("supabase/migrations/20261012225640_marketing_control_surface.sql", "utf8"));
-  await db.exec(readFileSync("supabase/migrations/20261012232949_marketing_durable_jobs.sql", "utf8"));
+  await db.exec(readFileSync("supabase/migrations/20261013193104_marketing_control_surface.sql", "utf8"));
+  await db.exec(readFileSync("supabase/migrations/20261013193105_marketing_durable_jobs.sql", "utf8"));
 }, 30000);
 beforeEach(async () => {
   await db.exec("truncate marketing_events,marketing_publications,marketing_revisions,marketing_jobs,marketing_calendar_entries,marketing_source_history,marketing_accounts,marketing_sources,marketing_campaigns");

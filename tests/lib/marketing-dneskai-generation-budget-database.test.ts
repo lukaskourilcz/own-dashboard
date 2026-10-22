@@ -7,8 +7,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 let db: PGlite;
 const owner = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
-const migrations = ["20261012225640_marketing_control_surface", "20261012232949_marketing_durable_jobs", "20261013092409_marketing_staging_pilot_guard",
-  "20261020170000_dneskai_daily_generation_budget"];
+const migrations = ["20261013193104_marketing_control_surface", "20261013193105_marketing_durable_jobs", "20261013193108_marketing_staging_pilot_guard",
+  "20261021124651_dneskai_daily_generation_budget"];
 type Decision = { admitted: boolean; spentUsd: number; reservationUsd: number; ceilingUsd: number };
 
 async function job(input: { brand?: string; status?: string; result?: unknown; user?: string } = {}) {

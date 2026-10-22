@@ -436,7 +436,7 @@ const CoveringRevisionSchema = z.object({
   deck: z.object({ slides: z.array(z.object({ images: z.array(z.object({ assetSha256: z.string().regex(/^[a-f0-9]{64}$/) })).max(4).default([]) })).max(10) }).optional(),
 });
 
-/** The Supabase-backed brief store: service-role reads and the guarded SQL functions of 20261020150000. */
+/** The Supabase-backed brief store: service-role reads and the guarded SQL functions of 20261021123547–20261021124144. */
 export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { enqueue?: (owner: string, request: unknown) => Promise<JobAdmission> } = {}): DneskaiBriefStore {
   const rpc = async (name: string, args: Record<string, unknown>) => {
     const { data, error } = await db.rpc(name, args);

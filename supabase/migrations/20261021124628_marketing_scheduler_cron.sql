@@ -3,7 +3,8 @@
 -- Two jobs call marketing_private.scheduler_post(kind):
 --   marketing-tick-minute  every 5 minutes (UTC)  -> POST {"tick": <uuid>, "kind": "minute"}
 --   marketing-tick-daily   02:18 UTC every day    -> POST {"tick": <uuid>, "kind": "daily"}
--- A third, marketing-cron-history-prune at 03:43 UTC, deletes cron.job_run_details rows older than
+-- A third job, marketing-cron-history-prune, lives in 20261022000000_marketing_scheduler_retention.sql
+-- because production applied this file without it. At 03:43 UTC it deletes cron.job_run_details rows older than
 -- 14 days. Supabase runs pg_cron with cron.log_run on and nothing else prunes that table, so the
 -- 289 runs a day would otherwise stay forever. It deletes only the history of these three jobs and of
 -- jobs that no longer exist (a tick job that was unscheduled and scheduled again gets a new jobid);
@@ -86,6 +87,5 @@ begin
  if to_regnamespace('cron') is not null then
   perform cron.schedule('marketing-tick-minute','*/5 * * * *',$command$select marketing_private.scheduler_post('minute')$command$);
   perform cron.schedule('marketing-tick-daily','18 2 * * *',$command$select marketing_private.scheduler_post('daily')$command$);
-  perform cron.schedule('marketing-cron-history-prune','43 3 * * *',$command$delete from cron.job_run_details where end_time < now() - interval '14 days' and jobid not in (select jobid from cron.job where coalesce(jobname,'') not in ('marketing-tick-minute','marketing-tick-daily','marketing-cron-history-prune'))$command$);
  end if;
 end $schedule$;

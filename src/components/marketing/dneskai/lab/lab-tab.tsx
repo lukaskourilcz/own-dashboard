@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { createDeckDraft, dneskaiEditRequest, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
+import { createDeckDraft, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiFitSlide, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, DNESKAI_KITS, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import type { DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -115,15 +115,21 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const [draft, setDraft] = useState<DeckDraft>(() => createDeckDraft(post, account?.id ?? null));
   const [view, setView] = useState<DneskaiStageView>('feed');
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());
-  const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<'return' | 'skip' | 'shortcuts' | null>(null), [note, setNote] = useState('');
+  const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | 'publish' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<'return' | 'skip' | 'shortcuts' | 'publish' | null>(null), [note, setNote] = useState('');
+  // Read once when the post opens: an expired time is replaced in the draft by the nearest possible one (createDeckDraft).
+  const [expired] = useState(() => dneskaiScheduleExpired(post));
   const [fit, setFit] = useState<DneskaiFitState>({ status: 'idle', result: null });
   const [previewMemory, setPreviewMemory] = useState<ReadonlyMap<string, DneskaiStagePreview>>(() => new Map());
   const busy = busyAction !== null;
   // The slide on show is a slide of the draft, which can have more slides than the saved version.
   const slide = Math.max(0, Math.min(requested, draft.slides.length - 1));
   const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== account?.id ? draft.accountId : null); } catch { return null; } })();
-  const dirty = !request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId;
+  // Only a post that can still be edited has unsaved changes; once approved, the draft is no longer an edit.
+  const editable = ['review', 'returned'].includes(post.status);
+  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId);
+  // Publish now replaces the time itself, so a draft that differs only in its time may use it.
+  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId;
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
   // REN-01: a draft slide whose pixels differ from the saved JPEG (other words, pictures, crop, type, place or deck
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
@@ -187,15 +193,21 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const onLoaded = (url: string, ok: boolean) => setLoaded((before) => before.get(url) === ok ? before : new Map(before).set(url, ok));
   const allLoaded = lab.slides.length > 0 && lab.slides.every((item) => item.render && loaded.get(item.render.url) === true);
   const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
+  const publishable = post.status === 'review' && !!post.deck;
+  const publishBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.publishNowDirty : lab.block ? t.actions.blocked[lab.block] : !account?.enabled ? t.actions.publishNowOff : !allLoaded ? t.actions.imagesLoading : null;
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
-  async function perform(action: 'approve' | 'save' | 'return' | 'skip') {
-    if (props.guest || busy || (action === 'approve' && block)) return;
-    if (action === 'save' && (!request || draftProblems(post, draft, fit.status === 'ready' ? fit.result : null).length)) { setError('deck-edit-invalid'); return; }
+  async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish') {
+    if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock)) return;
+    if (action === 'save') {
+      const problems = draftProblems(post, draft, fit.status === 'ready' ? fit.result : null);
+      if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? 'deck-edit-invalid'); return; }
+    }
     setBusyAction(action); setError(null); setMessage('');
     try {
       const api = await dneskaiWorkspaceApi(props.preview);
       if (action === 'approve') { await api.approve(post.id, post.contentHash); setMessage(t.actions.approved(lab.deadline.time)); }
       else if (action === 'save') { const result = await api.edit(request!); onSaved(result.id); setMessage(t.actions.saved); }
+      else if (action === 'publish') { const result = await api.publishNow(post.id, post.contentHash); setDialog(null); onSaved(result.id); setMessage(t.actions.publishNowDone(pragueClock(result.scheduledAt))); }
       else { await api.decide(post.id, action === 'return' ? 'returned' : 'skipped', action === 'return' ? note : undefined); setMessage(action === 'return' ? t.actions.returned : t.actions.skipped); setDialog(null); }
       await refresh();
     } catch (failure) {
@@ -234,7 +246,8 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <legend className="sr-only">{t.post.title}</legend>
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
-          <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} /></div>
+          <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
+            {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>
           <div><label htmlFor={`${id}-account`} className="text-xs font-medium">{t.post.account}</label><select id={`${id}-account`} value={draft.accountId ?? ''} onChange={(event) => setDraft({ ...draft, accountId: event.target.value })} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring"><option value="" disabled>@{post.account.handle}</option>{props.read.accounts.filter((item) => item.verified).map((item) => <option key={item.id} value={item.id}>@{item.handle}</option>)}</select></div>
         </fieldset>
         <section className="space-y-1 text-xs"><h4 className="font-medium">{t.post.disclosure}</h4><p className="text-foreground-muted">{post.deck?.slides.some((item) => item.type === 'sources') ? t.post.disclosureText : t.post.disclosureMissing}</p></section>
@@ -247,13 +260,22 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       <div className="flex flex-wrap items-center gap-2">
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>
         <Button variant="outline" disabled={props.guest || busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>
+        {publishable && <Button variant="outline" data-testid="dneskai-lab-publish-now" disabled={busy || !!publishBlock} title={publishBlock ?? undefined} onClick={() => setDialog('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNow}</Button>}
         {dirty && <Button variant="ghost" disabled={busy} onClick={() => setDraft(createDeckDraft(post, account?.id ?? null))}>{t.actions.discard}</Button>}
         <Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
       </div>
     </div>
     <Dialog open={dialog !== null} onOpenChange={(open) => { if (!open && !busy) setDialog(null); }}><DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); rootRef.current?.focus(); }}>
-      <DialogHeader><DialogTitle>{dialog === 'shortcuts' ? t.shortcuts.title : dialog === 'return' ? t.actions.return : t.actions.skipConfirm}</DialogTitle><DialogDescription>{dialog === 'shortcuts' ? t.shortcuts.description : dialog === 'return' ? t.actions.noteHelp : post.title}</DialogDescription></DialogHeader>
-      {dialog === 'shortcuts' ? <dl className="space-y-2 text-xs">{t.shortcuts.rows.map(([key, value]) => <div key={key} className="flex justify-between gap-4"><dt className="font-mono">{key}</dt><dd>{value}</dd></div>)}</dl> : <>
+      <DialogHeader><DialogTitle>{dialog === 'shortcuts' ? t.shortcuts.title : dialog === 'return' ? t.actions.return : dialog === 'publish' ? t.actions.publishNowTitle : t.actions.skipConfirm}</DialogTitle><DialogDescription>{dialog === 'shortcuts' ? t.shortcuts.description : dialog === 'return' ? t.actions.noteHelp : dialog === 'publish' ? t.actions.publishNowDescription : post.title}</DialogDescription></DialogHeader>
+      {dialog === 'publish' ? <>
+        <div className="space-y-2 text-xs" data-testid="dneskai-publish-now-summary">
+          <p className="font-medium">{post.title}</p>
+          <p>{t.actions.publishNowAccount(post.account.handle)} · {t.actions.publishNowSlides(lab.slides.length)} · <span className="font-mono">{t.actions.version(lab.revision.shortHash)}</span></p>
+          <p className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md border border-border p-2">{post.caption}</p>
+        </div>
+        {error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
+        <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setDialog(null)}>{t.actions.cancel}</Button><Button data-testid="dneskai-publish-now-confirm" disabled={busy || !!publishBlock} onClick={() => void perform('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNowConfirm}</Button></div>
+      </> : dialog === 'shortcuts' ? <dl className="space-y-2 text-xs">{t.shortcuts.rows.map(([key, value]) => <div key={key} className="flex justify-between gap-4"><dt className="font-mono">{key}</dt><dd>{value}</dd></div>)}</dl> : <>
         {dialog === 'return' && <><label htmlFor={`${id}-note`} className="text-xs font-medium">{t.actions.note}</label><Textarea id={`${id}-note`} value={note} maxLength={2000} onChange={(event) => setNote(event.target.value)} /></>}
         <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setDialog(null)}>{t.actions.cancel}</Button><Button disabled={busy || (dialog === 'return' && !note.trim())} onClick={() => void perform(dialog === 'return' ? 'return' : 'skip')}>{dialog === 'return' ? t.actions.sendReturn : t.actions.skipYes}</Button></div>
       </>}
@@ -290,4 +312,9 @@ function ApproveDay({ day, onClose, ...props }: Props & { day: DneskaiLabDay; on
     {!ready && <p role="status" className="text-xs text-foreground-muted">{t.actions.imagesLoading}</p>}
     <div className="mt-4 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={onClose}>{result ? t.shortcuts.close : t.actions.cancel}</Button>{!result && <Button disabled={busy || !ready} onClick={() => void approve()}>{t.approveDay.confirm(posts.length)}</Button>}</div>
   </DialogContent></Dialog>;
+}
+
+/** HH:MM in Prague for a stored instant. */
+function pragueClock(iso: string) {
+  return new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 }

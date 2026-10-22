@@ -24,7 +24,7 @@ beforeAll(async () => {
     -- Deliberately broad pre-existing feature policy: the migration must contain it.
     create policy existing_feature_access on storage.objects for all to anon,authenticated using(true) with check(true);
     insert into storage.buckets values('unrelated','unrelated',false,null,null);`);
-  await db.exec(readFileSync("supabase/migrations/20261013001528_marketing_private_assets.sql", "utf8"));
+  await db.exec(readFileSync("supabase/migrations/20261013193107_marketing_private_assets.sql", "utf8"));
   await db.query("insert into storage.objects(bucket_id,name) values('marketing-assets',$1),('marketing-assets',$2),('marketing-assets','unprefixed.jpg'),('unrelated','other-feature.jpg')", [`${owner}/marketing/own.jpg`, `${other}/marketing/foreign.jpg`]);
 }, 30000);
 afterAll(async () => { await db?.close(); });

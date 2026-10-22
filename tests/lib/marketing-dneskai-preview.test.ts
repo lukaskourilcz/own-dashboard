@@ -25,6 +25,10 @@ import assets from '@/lib/demo/dneskai-preview-assets.json';
 import type { DneskaiDeck } from '@/lib/marketing/dneskai-slides';
 import { deckRevision } from './marketing-dneskai-revision-fixture';
 
+// The drafts read the clock (an expired time is replaced, the time window is checked): pin it to the fixture's day.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date('2026-10-24T09:00:00Z'));
+
 const owner = '11111111-1111-4111-8111-111111111111';
 const revisionId = '55555555-5555-4555-8555-555555555555';
 const photos = new Map(Object.values(assets.photos).map((photo) => [photo.sha256, photo]));

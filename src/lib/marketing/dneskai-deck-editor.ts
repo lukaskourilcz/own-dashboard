@@ -28,11 +28,26 @@ export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal:
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const round = (value: number) => Math.round(value * 1000) / 1000;
 
-export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | null = null): DeckDraft {
+/** The server refuses a time that is not in the future or more than six days ahead (`schedule-outside-asset-window`). */
+export const DNESKAI_SCHEDULE_WINDOW_MS = 6 * 86_400_000;
+/** „Publish now“ moves the post this far ahead, so approval still sees a future time; the next 5-minute tick publishes it. */
+export const DNESKAI_PUBLISH_NOW_LEAD_MS = 2 * 60_000;
+/** A time the editor offers for an expired post: at least 15 minutes ahead, on a 5-minute mark. */
+export function dneskaiNextEditableTime(now: Date = new Date()): string {
+  const step = 5 * 60_000;
+  return new Date(Math.ceil((now.getTime() + 15 * 60_000) / step) * step).toISOString();
+}
+/** True when the saved time has passed (or is about to), so the post cannot be approved or saved as it is. */
+export function dneskaiScheduleExpired(post: Pick<DneskaiWorkspacePost, 'scheduledAt'>, now: Date = new Date()): boolean {
+  return Date.parse(post.scheduledAt) <= now.getTime() + 60_000;
+}
+
+/** A draft of the saved revision. A post whose time has passed starts with `dneskaiNextEditableTime` instead, so it can be saved. */
+export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | null = null, now: Date = new Date()): DeckDraft {
   return {
     slides: (post.deck?.slides ?? []).map((slide, from) => ({ from, slide: structuredClone(slide), fields: post.fields[from] ?? [] })),
     caption: post.caption,
-    scheduledLocal: pragueLocalInput(post.scheduledAt),
+    scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
   };
 }
@@ -203,13 +218,13 @@ export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
-export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'deck-edit-slide-count' | 'schedule-invalid' | 'text-clipped' | 'text-unfit' };
+export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit' };
 /**
  * What the editor itself can see is wrong before sending; the server and the renderer check the rest. With the fit
  * report for this exact draft (POST /api/marketing/dneskai/fit), a field the studio's fitter would cut is a problem
  * too (`text-clipped`), as is any other text problem it names (`text-unfit`: a glyph the face lacks, unplaced text).
  */
-export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: DeckDraft, fit: DneskaiFitResult | null = null): DraftProblem[] {
+export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: DeckDraft, fit: DneskaiFitResult | null = null, now: Date = new Date()): DraftProblem[] {
   const problems: DraftProblem[] = [];
   draft.slides.forEach(({ slide, fields }, index) => {
     for (const { field, max } of fields) {
@@ -231,7 +246,9 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
   if (post.deck?.format === 'single-image' && draft.slides.length !== 1) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
   if (!draft.caption.trim()) problems.push({ slide: null, field: 'caption', code: 'caption-missing' });
   else if (characterCount(draft.caption) > DNESKAI_CAPTION_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-too-long' });
-  if (scheduledIso(draft.scheduledLocal) === null) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-invalid' });
+  const scheduled = scheduledIso(draft.scheduledLocal);
+  if (scheduled === null) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-invalid' });
+  else if (Date.parse(scheduled) <= now.getTime() || Date.parse(scheduled) > now.getTime() + DNESKAI_SCHEDULE_WINDOW_MS) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-outside-asset-window' });
   return problems;
 }
 

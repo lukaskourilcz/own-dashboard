@@ -14,6 +14,19 @@ Approve the day captures the eligible revision IDs and hashes when its dialog op
 
 Only Editorial is renderable. The four future kit tiles are disabled until the owner approves their distinct designs and the corresponding renderer is available. The prototype does not present Editorial copies as other kits. Kit switching, alternative-variant storage/retention, reminders, missed-slot movement and paid regeneration await the decisions in NEEDED.md. No approval hash is weakened, no schedule moves automatically, and no model call or notification is added.
 
+## Expired time and Publish now (22 October 2026)
+
+The server refuses an edit whose time is not in the future or is more than six days ahead (`schedule-outside-asset-window`). A post opened after its time has passed therefore starts with the nearest possible time, at least 15 minutes ahead on a 5-minute mark (`dneskaiNextEditableTime`). A note under the time field names the original time. The editor checks the six-day window before sending.
+
+**Publikovat hned** (Publish now) appears on a DNESKAi post in review. It is enabled only when the saved slides have loaded, no blocking state applies and the account publishes: verified, its own switch on, and both server switches true. It also works when the draft differs only in its time. The confirmation dialog shows the title, `@account`, the number of slides, the version hash and the full caption. On confirmation, `POST /api/marketing/revisions` with `action: "publish-now"` and the shown `expectedHash`:
+
+1. refuses unless that hash is still the revision's hash and the revision is `review` and ready;
+2. refuses with `publishing-disabled` unless `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the account's `enabled` are all true;
+3. saves a new revision with the same caption, deck and account and a time two minutes ahead (`DNESKAI_PUBLISH_NOW_LEAD_MS`), reusing the re-verified JPEGs instead of rendering;
+4. approves that revision's new hash through `marketing_approve_revision`.
+
+The pg_cron tick, every 5 minutes, publishes the queued publication, usually within 7 minutes. The request never calls Meta itself: a carousel's container polling can take minutes, longer than a request may run.
+
 ## Authentic preview assets
 
 `node scripts/dneskai-preview-fixtures.mjs` deterministically regenerates six abstract synthetic source images and sixteen full-size 1080 × 1350 JPEG slides with the vendored studio. The images and all copy are fixtures, not observations or source claims. Their originals are committed so the fixture renderer can verify each sha256 before rendering an edit.

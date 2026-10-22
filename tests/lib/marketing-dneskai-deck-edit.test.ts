@@ -13,6 +13,10 @@ import type { DneskaiDeck } from '@/lib/marketing/dneskai-slides';
 import type { DneskaiWorkspacePost } from '@/lib/marketing/dneskai-workspace';
 import { a, b, c, d, deck, deckRevision } from './marketing-dneskai-revision-fixture';
 
+// The drafts read the clock (an expired time is replaced, the time window is checked): pin it to the fixture's day.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date('2026-10-24T09:00:00Z'));
+
 const code = async (run: () => unknown) => { try { await run(); } catch (error) { return error instanceof DneskaiRevisionEditError ? error.code : String(error); } return null; };
 const media = (assetSha256: string, candidateId: string, flags: { full: boolean; inset: boolean }, credit = 'Foto: ukázkový zdroj') =>
   ({ assetSha256, candidateId, credit, fullBleedCapable: flags.full, insetCapable: flags.inset });

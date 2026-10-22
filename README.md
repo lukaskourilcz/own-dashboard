@@ -132,35 +132,40 @@ The migrations, in the order they run:
 36. `20260925200300_drop_link_project_references.sql` — guarded drop of the unused `ai_link_projects` and `projects.video_url`.
 37. `20260925210000_restrict_purge_old_cron_runs.sql` — takes `purge_old_cron_runs()` away from `anon` and `authenticated`, leaving it to `service_role` and the scheduler.
 38. `20260926140000_ig_tips.sql` — `ai_links.tip_group` and `ai_links.tip_summary`: the topic group and the plain summary each IG TIPS card shows.
-39. `20261012225640_marketing_control_surface.sql` — owned campaigns/sources/revisions/approval and fenced publication queue.
-40. `20261012232949_marketing_durable_jobs.sql` — consent-bound durable jobs, calendar rebinding and publishing receipts.
-41. `20261012233059_marketing_knowledge_import.sql` — provenance-backed atomic procedures and consent-bound extraction.
-42. `20261013001528_marketing_private_assets.sql` — private immutable worker assets with owner-prefix reads.
-43. `20261013092409_marketing_staging_pilot_guard.sql` — immutable owner pilot limits, lifetime reservations and fenced invocation deadlines.
-44. `20261013150816_marketing_offline_import.sql` — owner-bound offline draft imports with immutable review holds and active pilot checks.
-45. `20261013150933_marketing_story_receipts.sql` — accepts a verified Story publication ID without requiring a permanent public URL.
-46. `20261013165236_marketing_dneskai_collection.sql` — owner-scoped DNESKAi research collection, fenced daily runs and bounded provider reservations; no approval or publication.
-47. `20261013181506_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
+39. `20261013193104_marketing_control_surface.sql` — owned campaigns/sources/revisions/approval and fenced publication queue.
+40. `20261013193105_marketing_durable_jobs.sql` — consent-bound durable jobs, calendar rebinding and publishing receipts.
+41. `20261013193106_marketing_knowledge_import.sql` — provenance-backed atomic procedures and consent-bound extraction.
+42. `20261013193107_marketing_private_assets.sql` — private immutable worker assets with owner-prefix reads.
+43. `20261013193108_marketing_staging_pilot_guard.sql` — immutable owner pilot limits, lifetime reservations and fenced invocation deadlines.
+44. `20261013193131_marketing_offline_import.sql` — owner-bound offline draft imports with immutable review holds and active pilot checks.
+45. `20261013193132_marketing_story_receipts.sql` — accepts a verified Story publication ID without requiring a permanent public URL.
+46. `20261013193134_marketing_dneskai_collection.sql` — owner-scoped DNESKAi research collection, fenced daily runs and bounded provider reservations; no approval or publication.
+47. `20261013193136_dneskai_collection_pilot.sql` — separate immutable Preview collection scope, one lifetime run with at most $0.24 reserved provider spend; generation limits and final approval requirements remain unchanged.
 48. `20261015234547_oslo_career_preferences.sql` — synchronized Czech Career opt-in, OFF by default; preserves existing records.
-49. `20261020100000_dneskai_collection_cursor_limits.sql` — DNESKAi collection cursor advances after a read capped only by its item limit; Instagram cap 10 per profile and 50 per day within the unchanged $0.25 daily ceiling; Jev stages planned from the candidate count (at most 16).
-50. `20261020110000_marketing_account_tokens.sql` — one long-lived Meta token per marketing account, readable only through service-role functions; the owner sees expiry, refresh time and scopes.
-51. `20261020120000_scope_retired_pilot_ledgers.sql` — retired October pilot ledgers block ordinary admission and paid collection only while their window is unexpired, and a reserved pilot job is never claimed as ordinary work; every ledger row and reservation is kept.
-52. `20261020130000_dneskai_source_media.sql` — DNESKAi source pictures for selected topics: private `marketing-media` bucket (JPEG, PNG, WebP, 32 MiB), one asset per owner and sha256 with origin, order, size, pHash and credit, links per candidate, per-candidate collection state, and service-role functions for collection, lookup and retention.
-53. `20261020140000_marketing_revision_media_identity.sql` — revisions keep their approval across signed-URL renewal: a service-role function rewrites only `assets[].url` for the same private objects; deck renders attach once to an unready revision, and approval refuses a blocking render report.
-54. `20261020150000_dneskai_events_briefs.sql` — DNESKAi events and briefs: `marketing_dneskai_finish` takes the event grouping and selects up to four events, one owner-readable brief row per selected event, and service-role functions that build, skip, admit (DNESKAi daily campaign and one calendar entry) and re-read a brief.
-55. `20261020160000_marketing_scheduler.sql` — the scheduler's tick record (`marketing_ticks`, kept 14 days) and one lease per category with backoff and small state; service-role functions only.
-56. `20261020160100_marketing_scheduler_cron.sql` — pg_cron, pg_net and pgcrypto; a Vault-configured, signed request to `/api/marketing/tick` every five minutes and daily at 02:18 UTC that sends nothing until both Vault secrets exist.
-57. `20261020170000_dneskai_daily_generation_budget.sql` — the DNESKAi daily generation ceiling: a private spend ledger and a service-role function that reserves a job's maximum before every paid DNESKAi model call and refuses it when the last 24 hours plus that maximum would pass the configured ceiling.
-58. `20261021090000_marketing_job_render_report.sql` — a finished generation job stores the studio's render report beside the DNESKAi revision it saves, so the review shows advisories on a generated post as it already did after an owner edit.
-59. `20261021100000_dneskai_hideable_project_tabs.sql` — recreates the `user_preferences.hidden_project_tabs` check with the four DNESKAi workspace tabs (For review today, Calendar, Published, Errors and costs) after the eleven project tabs, so Settings can hide them. No row is rewritten.
-60. `20261022013957_dneskai_apify_research.sql` — unapplied, isolated $150 research ledger and derived public metrics; no scheduler, production switch or pipeline budget changes.
-61. `20261022020702_dneskai_richer_brief_evidence.sql` — unapplied, bounded article prose stored under the existing media lease; source image alt metadata stays in the fixed plan.
-62. `20261022020759_dneskai_brief_v2_compatibility.sql` — unapplied, accept brief/2 while retaining strict brief/1 reads and old snapshots.
-63. `20261022021835_dneskai_release_lapsed_reports.sql` — future skips release only lapsed, never-generated reports; prepared, unapplied.
-64. `20261022110000_marketing_requeue_unpublished_publication.sql` — owner "give up and queue again" for a stuck publication that provably published nothing (approval-04); prepared, unapplied.
-65. `20261022141512_dneskai_owner_recovery.sql` — unapplied, owner-only release of a held report to the next nightly review and reslot of a lapsed, unadmitted brief; called only with `DNESKAI_OWNER_RECOVERY_ENABLED=true`.
-66. `20261022141613_dneskai_release_lapsed_brief.sql` — unapplied, owner-only release of a lapsed brief's selected reports; refuses to apply before migration 63; called only with `DNESKAI_LAPSED_RELEASE_ENABLED=true`.
-67. `20261022160000_dneskai_event_majority_category.sql` — unapplied, `marketing_dneskai_finish` takes an event's optional majority category from `p_events` (SEL-10); the deployed function ignores it.
+49. `20261021122104_dneskai_collection_cursor_limits.sql` — DNESKAi collection cursor advances after a read capped only by its item limit; Instagram cap 10 per profile and 50 per day within the unchanged $0.25 daily ceiling; Jev stages planned from the candidate count (at most 16).
+50. `20261021122220_marketing_account_tokens.sql` — one long-lived Meta token per marketing account, readable only through service-role functions; the owner sees expiry, refresh time and scopes.
+51. `20261021122330_scope_retired_pilot_ledgers.sql` — retired October pilot ledgers block ordinary admission and paid collection only while their window is unexpired, and a reserved pilot job is never claimed as ordinary work; every ledger row and reservation is kept.
+52. `20261021122453_dneskai_source_media.sql` — DNESKAi source pictures for selected topics: private `marketing-media` bucket (JPEG, PNG, WebP, 32 MiB), one asset per owner and sha256 with origin, order, size, pHash and credit, links per candidate, per-candidate collection state, and service-role functions for collection, lookup and retention.
+53. `20261021122551_marketing_revision_media_identity.sql` — revisions keep their approval across signed-URL renewal: a service-role function rewrites only `assets[].url` for the same private objects; deck renders attach once to an unready revision, and approval refuses a blocking render report.
+54. `20261021123547_dneskai_events_briefs.sql` — DNESKAi events and briefs, part 1 of 3: one owner-readable brief row per selected event and the event and member identity helpers.
+55. `20261021124058_dneskai_events_briefs_finish.sql` — part 2: `marketing_dneskai_finish` takes the event grouping and selects up to four events; the five-argument function is renamed `marketing_dneskai_finish_retired_20261021` and locked, as production applied it.
+56. `20261021124144_dneskai_events_briefs_functions.sql` — part 3: service-role functions that build, skip, admit (DNESKAi daily campaign and one calendar entry) and re-read a brief.
+57. `20261021124400_marketing_scheduler.sql` — the scheduler's tick record (`marketing_ticks`) and one lease per category with backoff and small state.
+58. `20261021124438_marketing_scheduler_functions.sql` — the service-role functions that record ticks and take, release and save category leases.
+59. `20261021124628_marketing_scheduler_cron.sql` — pg_cron, pg_net and pgcrypto; a Vault-configured, signed request to `/api/marketing/tick` every five minutes and daily at 02:18 UTC that sends nothing until both Vault secrets exist; the history prune job is in 20261022000000.
+60. `20261021124651_dneskai_daily_generation_budget.sql` — the DNESKAi daily generation ceiling: a private spend ledger and a service-role function that reserves a job's maximum before every paid DNESKAi model call and refuses it when the last 24 hours plus that maximum would pass the configured ceiling.
+61. `20261021124706_marketing_job_render_report.sql` — a finished generation job stores the studio's render report beside the DNESKAi revision it saves, so the review shows advisories on a generated post as it already did after an owner edit.
+62. `20261021124712_dneskai_hideable_project_tabs.sql` — recreates the `user_preferences.hidden_project_tabs` check with the four DNESKAi workspace tabs (For review today, Calendar, Published, Errors and costs) after the eleven project tabs, so Settings can hide them. No row is rewritten.
+63. `20261021125123_restrict_pg_net_browser_roles.sql` — revokes `net` from `anon` and `authenticated` where `pg_net` exists; recorded in production, where it changed nothing because Supabase grants `net.http_post` to `PUBLIC`.
+64. `20261022000000_marketing_scheduler_retention.sql` — unapplied, `marketing_scheduler_prune_ticks` (14 days of ticks) and the `marketing-cron-history-prune` job, which the scheduler release left out of production.
+65. `20261022013957_dneskai_apify_research.sql` — unapplied, isolated $150 research ledger and derived public metrics; no scheduler, production switch or pipeline budget changes.
+66. `20261022020702_dneskai_richer_brief_evidence.sql` — unapplied, bounded article prose stored under the existing media lease; source image alt metadata stays in the fixed plan.
+67. `20261022020759_dneskai_brief_v2_compatibility.sql` — unapplied, accept brief/2 while retaining strict brief/1 reads and old snapshots.
+68. `20261022021835_dneskai_release_lapsed_reports.sql` — future skips release only lapsed, never-generated reports; prepared, unapplied.
+69. `20261022110000_marketing_requeue_unpublished_publication.sql` — owner "give up and queue again" for a stuck publication that provably published nothing (approval-04); prepared, unapplied.
+70. `20261022141512_dneskai_owner_recovery.sql` — unapplied, owner-only release of a held report to the next nightly review and reslot of a lapsed, unadmitted brief; called only with `DNESKAI_OWNER_RECOVERY_ENABLED=true`.
+71. `20261022141613_dneskai_release_lapsed_brief.sql` — unapplied, owner-only release of a lapsed brief's selected reports; refuses to apply before migration 68; called only with `DNESKAI_LAPSED_RELEASE_ENABLED=true`.
+72. `20261022160000_dneskai_event_majority_category.sql` — unapplied, `marketing_dneskai_finish` takes an event's optional majority category from `p_events` (SEL-10); the deployed function ignores it.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.

@@ -3,7 +3,7 @@
 import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos } from './dneskai-workspace-fixtures';
 import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
 import { DneskaiWorkspaceRequestError, fitAt, previewAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
-import type { DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
+import { DNESKAI_PUBLISH_NOW_LEAD_MS, type DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
 import { applyDneskaiDeckEdit, DneskaiRevisionEditError } from '@/lib/marketing/dneskai-deck-edit';
 import type { DneskaiWorkspacePost, DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import type { DneskaiMediaRead } from '@/lib/marketing/dneskai-media-contracts';
@@ -99,6 +99,16 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async approve(id, expectedHash) {
     await pause(300);
     approveOne(id, expectedHash);
+  },
+  // The fixture post moves two minutes ahead and is approved, as the route does; the preview publishes nothing.
+  async publishNow(id, expectedHash) {
+    await pause(400);
+    const post = find(id);
+    if (post.contentHash !== expectedHash) throw new DneskaiWorkspaceRequestError('revision-changed', 409);
+    if (post.status !== 'review' || !post.ready) throw new DneskaiWorkspaceRequestError('revision-not-ready', 409);
+    post.scheduledAt = new Date(Date.now() + DNESKAI_PUBLISH_NOW_LEAD_MS).toISOString();
+    approveOne(id, expectedHash);
+    return { id, scheduledAt: post.scheduledAt };
   },
   async approveMany(posts) {
     await pause(400);

@@ -44,6 +44,28 @@ describe("migration files", () => {
       "20260916195556_link_project_references.sql",
     ]);
   });
+
+  it("list every version production recorded through 2026-10-21, and nothing older that production lacks", () => {
+    // Production's supabase_migrations.schema_migrations from 20261013 on, read on 2026-10-22. A
+    // missing version makes `supabase db push` refuse; an extra older one would be pushed out of order.
+    const production = [
+      "20261013193104", "20261013193105", "20261013193106", "20261013193107", "20261013193108", "20261013193131",
+      "20261013193132", "20261013193134", "20261013193136", "20261015234547", "20261021122104", "20261021122220",
+      "20261021122330", "20261021122453", "20261021122551", "20261021123547", "20261021124058", "20261021124144",
+      "20261021124400", "20261021124438", "20261021124628", "20261021124651", "20261021124706", "20261021124712",
+      "20261021125123",
+    ];
+    const versions = migrationFiles.map((file) => file.slice(0, 14));
+    expect(versions.filter((version) => version >= "20261013" && version <= "20261021999999")).toEqual(production);
+  });
+
+  it("leave the scheduler retention to its own pending file", () => {
+    const applied = ["20261021124400_marketing_scheduler.sql", "20261021124438_marketing_scheduler_functions.sql", "20261021124628_marketing_scheduler_cron.sql"];
+    for (const file of applied) expect(code(file), file).not.toMatch(/prune/);
+    const retention = code("20261022000000_marketing_scheduler_retention.sql");
+    expect(retention).toMatch(/create or replace function public\.marketing_scheduler_prune_ticks/);
+    expect(retention).toMatch(/cron\.schedule\('marketing-cron-history-prune'/);
+  });
 });
 
 describe("2026-09-25 integration migrations", () => {

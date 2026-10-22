@@ -21,7 +21,7 @@ beforeAll(async () => {
  insert into auth.users values('${owner}'),('${other}');
  insert into ai_links(id,user_id,record_type,title,url,description) values('${legacy}','${owner}','idea','Canonical legacy tip','https://instagram.com/p/LEGACY/','Original notes'),('${foreign}','${other}','idea','Other owner tip','https://instagram.com/p/OTHER/','Private');
  insert into projects values('${foreign}','${other}'); insert into notes values('${foreign}','${other}'); insert into prompts values('${foreign}','${other}'); insert into tools values('${foreign}','${other}');`);
- await db.exec(readFileSync("supabase/migrations/20261012233059_marketing_knowledge_import.sql", "utf8"));
+ await db.exec(readFileSync("supabase/migrations/20261013193106_marketing_knowledge_import.sql", "utf8"));
 }, 30000);
 afterAll(async () => { await db?.close(); });
 describe("Atomic owner knowledge import", () => {

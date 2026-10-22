@@ -468,7 +468,7 @@ describe('other events for the Sources tab', () => {
   it('mirrors the eligibility thresholds of the finish function it explains', async () => {
     const { DNESKAI_SELECTION_RELEVANCE_FLOOR, DNESKAI_SELECTION_NEWS_WINDOW_HOURS, DNESKAI_SELECTION_WINDOW_DAYS } = await import('@/lib/marketing/dneskai-brief-read');
     const { readFileSync } = await import('node:fs');
-    const sql = readFileSync(new URL('../../supabase/migrations/20261020150000_dneskai_events_briefs.sql', import.meta.url), 'utf8');
+    const sql = readFileSync(new URL('../../supabase/migrations/20261021124058_dneskai_events_briefs_finish.sql', import.meta.url), 'utf8');
     const eligible = sql.slice(sql.indexOf('), eligible as ('), sql.indexOf('), leads as ('));
     expect(eligible).toContain(`(candidate->>'relevance')::numeric>=${DNESKAI_SELECTION_RELEVANCE_FLOOR}`);
     expect(eligible).toContain(`candidate->>'category' in('ai-news','tech-news') then interval '${DNESKAI_SELECTION_NEWS_WINDOW_HOURS} hours' else interval '${DNESKAI_SELECTION_WINDOW_DAYS} days'`);

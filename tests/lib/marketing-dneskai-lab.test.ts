@@ -17,6 +17,10 @@ import { createDneskaiWorkspaceFixture } from '@/lib/demo/dneskai-workspace-fixt
 import { pragueScheduledAt } from '@/lib/marketing/clock';
 import { pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
 
+// The drafts read the clock (an expired time is replaced, the time window is checked): pin it to the fixture's day.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date('2026-10-22T10:00:00.000Z'));
+
 const owner = '11111111-1111-4111-8111-111111111111';
 const now = new Date('2026-10-22T10:00:00.000Z');
 const read = () => createDneskaiWorkspaceFixture(now);

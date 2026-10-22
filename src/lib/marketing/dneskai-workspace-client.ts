@@ -24,6 +24,8 @@ export const DneskaiEditResultSchema = z.strictObject({
   render: z.strictObject({ status: z.enum(['rendered', 'refused', 'failed']), problems: z.array(DneskaiRenderProblemSchema).max(100) }),
 });
 export type DneskaiEditResult = z.infer<typeof DneskaiEditResultSchema>;
+export const DneskaiPublishNowResultSchema = z.object({ id: z.uuid(), scheduledAt: z.iso.datetime({ offset: true }) });
+export type DneskaiPublishNowResult = z.infer<typeof DneskaiPublishNowResultSchema>;
 
 export interface DneskaiWorkspaceApi {
   /** True in the deterministic preview: nothing reaches a server. */
@@ -33,6 +35,8 @@ export interface DneskaiWorkspaceApi {
   loadMedia(projectId: string, candidateId: string, signal?: AbortSignal): Promise<DneskaiMediaRead>;
   loadAccounts(signal?: AbortSignal): Promise<MarketingAccountStatus[]>;
   approve(id: string, expectedHash: string): Promise<void>;
+  /** „Publish now“: approves exactly this saved version for a time two minutes ahead; the next tick publishes it. */
+  publishNow(id: string, expectedHash: string): Promise<DneskaiPublishNowResult>;
   edit(request: DneskaiEditRequest): Promise<DneskaiEditResult>;
   decide(id: string, action: 'returned' | 'skipped', feedback?: string): Promise<void>;
   /** „Approve the day“: each post bound to its own hash; one refusal never blocks the others. */
@@ -85,6 +89,11 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   },
   loadAccounts: (signal) => loadMarketingAccounts(signal),
   async approve(id, expectedHash) { await post({ action: 'approve', id, expectedHash }); },
+  async publishNow(id, expectedHash) {
+    const result = DneskaiPublishNowResultSchema.safeParse(await post({ action: 'publish-now', id, expectedHash }));
+    if (!result.success) throw new DneskaiWorkspaceRequestError('approval-unavailable', 502);
+    return result.data;
+  },
   async edit(request) {
     const result = DneskaiEditResultSchema.safeParse(await post(request));
     if (!result.success) throw new DneskaiWorkspaceRequestError('render-attach-failed', 502);

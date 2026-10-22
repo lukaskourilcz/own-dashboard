@@ -50,7 +50,7 @@ Continue with #123: exact owner-reviewed asset/text/account/time, budget ≤ $1.
 - #121 remains closed; account connection is now verified in production. Token refresh and publisher dry-run were not exercised in this browser session.
 - #122 remains open: EU LangSmith setup and later evaluation; no configuration performed here.
 - #123 remains open: exact owner review, pilot, cost evidence and receipt.
-- Migration-history reconciliation and prepared migrations remain pending. Do not run a blind database push.
+- Migration history was reconciled in the repository on 22 October (branch `fable/pilot-prereqs`); the nine prepared migrations wait for the owner's CLI push. See `docs/migration-guide.md#applying-the-prepared-migrations`.
 - Preserve owner decisions in `owner-todo.md`, follow-up feed checks on 23/25/28 October, and the staging cost ledger.
 
 ## Claude handoff
