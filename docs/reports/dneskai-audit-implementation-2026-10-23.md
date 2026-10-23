@@ -11,7 +11,8 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 - Read validation: sixty targeted tests passed across the read/API/client/Lab/component files, including 75 decisions with tied timestamps across three pages, an old decision beyond 150 newer receipts, mixed-brand job starvation, and malformed/oversized cursor rejection. Type and focused lint checks passed.
 - **C04 implemented:** `marketing_dneskai_engagement_receipts` returns one complete owner-scoped JSON aggregate, with at most 60 selected receipts and a seven-day summary independent of the current review page. It counts all matching rows and keeps the complete failure count separately from the ten displayed codes. Actual publication events determine the rolling window, with schedule time as fallback. Missing/malformed aggregate data displays an unavailable state rather than zero.
 - Aggregate validation: 29 targeted tests passed, including five tests on every migration in isolated WASM Postgres. The SQL tests cover 5,013 matches, twelve failure codes, off-page recent publications, old selected receipts, other-owner/other-brand exclusion, invoker/RLS execution, role grants and input bounds. Type and focused lint checks passed. Migration `20261023135551_dneskai_engagement_receipts.sql` was created with Supabase CLI 2.122.0 and tested locally; apply it before deploying the corresponding code.
-- **C05–C07 pending.** Upload IDs, preview retry and audio rotation follow.
+- **C05 implemented:** the audio upload form heading and track-title input use separate IDs. The rendered-form regression checks ID uniqueness and every label target. The original four baseline probes now assert corrected behavior (C02–C05); the audit folder’s historical test counts still describe the review baseline.
+- **C06–C07 pending.** Preview retry and audio rotation follow.
 
 ## Remaining batches
 

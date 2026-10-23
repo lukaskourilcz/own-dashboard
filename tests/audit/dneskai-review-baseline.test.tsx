@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-/** Audit probes: assert observed baseline defects, not desired regression behavior. Remove/invert when fixed. */
+/** Desired-behavior regressions derived from the original audit probes. */
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,7 +43,7 @@ const row = (n: number, status = 'published'): Row => ({ id: id(n), user_id: own
   content_hash: 'a'.repeat(64), created_at: '2026-10-23T08:00:00Z', replaces_id: null, approved_at: null, feedback: null, render_report: null,
   revision: { ...deckRevision(), scheduledAt: '2026-10-23T07:00:00Z' } });
 
-describe('DNESKAi audit regressions and remaining baseline probes', () => {
+describe('DNESKAi audit regressions', () => {
   it('C02: retains a pending decision behind 150 newer history revisions', async () => {
     const old = { ...row(999, 'review'), created_at: '2026-09-01T08:00:00Z', revision: { ...deckRevision(), scheduledAt: '2026-09-01T08:00:00Z' } };
     const control = await readDneskaiWorkspace(database({ marketing_revisions: [old] }), owner, now);
@@ -99,7 +99,7 @@ describe('DNESKAi audit regressions and remaining baseline probes', () => {
     const read = await readDneskaiWorkspace(db, owner, now, undefined, { engagement: true });
     expect(read.engagementSummary).toBeUndefined(); expect(read.engagementStatus).toBe('unavailable');
   });
-  it('C05: renders a duplicate title ID that resolves the input label to a heading', async () => {
+  it('C05: gives every upload field a unique ID and an associated label', async () => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [] })));
     const container = document.createElement('div'); document.body.appendChild(container);
@@ -109,11 +109,14 @@ describe('DNESKAi audit regressions and remaining baseline probes', () => {
       await act(async () => { for (let n = 0; n < 5; n++) await new Promise(resolve => setTimeout(resolve, 20)); });
       const form = container.querySelector('form')!;
       expect(form).not.toBeNull();
-      const heading = form.querySelector('h3')!;
-      const duplicates = [...form.querySelectorAll('[id]')].filter(element => element.id === heading.id);
-      expect(duplicates.map(element => element.tagName)).toEqual(['H3', 'INPUT']);
-      const label = [...form.querySelectorAll('label')].find(element => element.htmlFor === heading.id)!;
-      expect(document.getElementById(label.htmlFor)?.tagName).toBe('H3');
+      const ids = [...form.querySelectorAll('[id]')].map(element => element.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(document.getElementById(form.getAttribute('aria-labelledby')!)?.tagName).toBe('H3');
+      for (const label of form.querySelectorAll('label[for]')) {
+        const target = document.getElementById((label as HTMLLabelElement).htmlFor);
+        expect(target, label.textContent ?? '').not.toBeNull();
+        expect(['INPUT', 'SELECT', 'TEXTAREA']).toContain(target!.tagName);
+      }
     } finally { await act(async () => root.unmount()); container.remove(); client.clear(); vi.unstubAllGlobals(); }
   });
 });

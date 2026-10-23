@@ -100,8 +100,8 @@ function UploadForm({ lang }: { lang: Lang }) {
   const field = (key: 'title' | 'artist' | 'sourceUrl' | 'licenceNote', label: string, options: { type?: string; max: number; placeholder?: string }) =>
     <div className="min-w-0"><label htmlFor={`${id}-${key}`} className="text-xs font-medium">{label}</label>
       <Input id={`${id}-${key}`} type={options.type ?? 'text'} required maxLength={options.max} placeholder={options.placeholder} value={fields[key]} onChange={(event) => setFields({ ...fields, [key]: event.target.value })} /></div>;
-  return <form onSubmit={submit} className="min-w-0 space-y-3" aria-labelledby={`${id}-title`} data-testid="dneskai-audio-upload">
-    <h3 id={`${id}-title`} className="text-sm font-medium">{t.upload.title}</h3>
+  return <form onSubmit={submit} className="min-w-0 space-y-3" aria-labelledby={`${id}-heading`} data-testid="dneskai-audio-upload">
+    <h3 id={`${id}-heading`} className="text-sm font-medium">{t.upload.title}</h3>
     <div><label htmlFor={`${id}-file`} className="text-xs font-medium">{t.upload.file}</label>
       <input ref={fileRef} id={`${id}-file`} type="file" accept={ACCEPT} required className="focus-ring block min-h-11 w-full text-sm file:mr-3 file:min-h-11 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:text-sm"
         onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></div>
