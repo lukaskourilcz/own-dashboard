@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ListFilter, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
+import { ListFilter, Pencil, Plus, Trash2, ListChecks, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,9 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -37,6 +37,7 @@ import {
   safeRegex,
   sortRules,
   usableRules,
+  type RuleActionKey,
   type RuleActions,
   type RuleCondition,
   type RuleField,
@@ -71,6 +72,8 @@ type ConditionDraft = {
 
 type RuleDraft = {
   id: string | null;
+  expectedUpdatedAt: string | null;
+  enabledActions: RuleActionKey[];
   name: string;
   stage: RuleStage;
   enabled: boolean;
@@ -91,6 +94,8 @@ const emptyCondition: ConditionDraft = {
 
 const emptyDraft: RuleDraft = {
   id: null,
+  expectedUpdatedAt: null,
+  enabledActions: [],
   name: "",
   stage: "default",
   enabled: true,
@@ -135,20 +140,19 @@ function draftActions(draft: RuleDraft): RuleActions {
   });
 }
 
-/** Actions the owner actually asked for: a field left blank is not an action. */
+/** Unchecked means keep; a checked empty field explicitly clears it. */
 function chosenActions(draft: RuleDraft): RuleActions {
   const actions = draftActions(draft);
   const chosen: RuleActions = {};
-  if (actions.category != null) chosen.category = actions.category;
-  if (actions.project_id != null) chosen.project_id = actions.project_id;
-  if (actions.subscription_id != null) chosen.subscription_id = actions.subscription_id;
-  if (actions.note != null) chosen.note = actions.note;
+  for (const key of draft.enabledActions) chosen[key] = actions[key] ?? null;
   return chosen;
 }
 
 function toDraft(rule: TransactionRule): RuleDraft {
   return {
     id: rule.id,
+    expectedUpdatedAt: rule.updated_at,
+    enabledActions: RULE_ACTION_KEYS.filter(key => key in rule.actions),
     name: rule.name,
     stage: rule.stage,
     enabled: rule.enabled,
@@ -182,12 +186,13 @@ function toDraft(rule: TransactionRule): RuleDraft {
 
 /** A draft evaluated exactly like a saved rule, for the live match count. */
 function draftAsRule(draft: RuleDraft): TransactionRule {
+  const conditions = draftConditions(draft);
   return {
     id: draft.id ?? "draft",
     user_id: "",
     name: draft.name,
     stage: draft.stage,
-    conditions: draftConditions(draft),
+    conditions: conditions.length === draft.conditions.length ? conditions : [],
     actions: chosenActions(draft),
     sort_order: 0,
     enabled: draft.enabled,
@@ -231,23 +236,24 @@ export function TransactionRules({
   const dropped = rulesQuery.data?.dropped ?? 0;
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("transaction_rules").delete().eq("id", id);
-      if (error) throw error;
+    scope: { id: "transaction-rule-writes" },
+    mutationFn: async (rule: TransactionRule) => {
+      const { data, error } = await supabase.from("transaction_rules").delete().eq("id", rule.id)
+        .eq("updated_at", rule.updated_at).select("id").single();
+      if (error || data?.id !== rule.id) throw new Error("rule-delete-not-confirmed");
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.transactionRules }),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.transactionRules }),
     onError: () => toast.err(t.finances.rules.saveErr),
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const { error } = await supabase
-        .from("transaction_rules")
-        .update({ enabled })
-        .eq("id", id);
-      if (error) throw error;
+    scope: { id: "transaction-rule-writes" },
+    mutationFn: async ({ rule, enabled }: { rule: TransactionRule; enabled: boolean }) => {
+      const { data, error } = await supabase.from("transaction_rules").update({ enabled })
+        .eq("id", rule.id).eq("updated_at", rule.updated_at).select("id").single();
+      if (error || data?.id !== rule.id) throw new Error("rule-toggle-not-confirmed");
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.transactionRules }),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.transactionRules }),
     onError: () => toast.err(t.finances.rules.saveErr),
   });
 
@@ -259,7 +265,9 @@ export function TransactionRules({
         body: JSON.stringify({ mode: "apply", ...(ruleId ? { ruleId } : {}) }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      return (await res.json()) as { updated: number };
+      const result = await res.json();
+      if (!result || !Number.isSafeInteger(result.updated) || result.updated < 0) throw new Error("invalid-rule-receipt");
+      return result as { updated: number };
     },
     onSuccess: ({ updated }) => {
       toast.ok(
@@ -268,19 +276,24 @@ export function TransactionRules({
       if (updated > 0) void qc.invalidateQueries({ queryKey: qk.transactions });
     },
     onError: () => toast.err(t.finances.rules.applyErr),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.transactions }),
   });
+  const writeBusy = deleteMutation.isPending || toggleMutation.isPending || applyMutation.isPending;
+  const writable = rulesQuery.isSuccess && dropped === 0 && !writeBusy;
 
   async function requestApply(ruleId: string | null) {
+    if (!writable) return;
     const ok = await confirm({
       title: t.finances.rules.applyConfirmTitle,
       description: t.finances.rules.applyConfirmBody,
       confirmLabel: t.finances.rules.applyConfirmLabel,
       cancelLabel: t.common.cancel,
     });
-    if (ok) applyMutation.mutate(ruleId);
+    if (ok && writable) applyMutation.mutate(ruleId);
   }
 
-  async function requestDelete(id: string) {
+  async function requestDelete(rule: TransactionRule) {
+    if (!writable) return;
     const ok = await confirm({
       title: t.finances.rules.deleteConfirmTitle,
       description: t.finances.rules.deleteConfirmBody,
@@ -288,15 +301,15 @@ export function TransactionRules({
       cancelLabel: t.common.cancel,
       destructive: true,
     });
-    if (ok) deleteMutation.mutate(id);
+    if (ok && writable) deleteMutation.mutate(rule);
   }
 
   const activeRules = useMemo(() => usableRules(rules), [rules]);
 
   return (
     <Card className="lg:col-span-3">
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div>
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0 flex-1 basis-56">
           <CardTitle className="inline-flex items-center gap-1.5">
             <ListFilter className="h-3 w-3" /> {t.finances.rules.title}
           </CardTitle>
@@ -310,15 +323,15 @@ export function TransactionRules({
               size="sm"
               variant="outline"
               onClick={() => void requestApply(null)}
-              disabled={applyMutation.isPending}
+              disabled={!writable}
             >
-              <Wand2 className="h-3.5 w-3.5" />
+              <ListChecks className="h-3.5 w-3.5" />
               {applyMutation.isPending
                 ? t.finances.rules.applying
                 : t.finances.rules.apply}
             </Button>
           )}
-          <Button size="sm" onClick={() => openDraft({ ...emptyDraft })}>
+          <Button size="sm" disabled={!writable} onClick={() => openDraft({ ...emptyDraft })}>
             <Plus className="h-3.5 w-3.5" />
             {t.finances.rules.newRule}
           </Button>
@@ -327,7 +340,10 @@ export function TransactionRules({
 
       <CardContent className="space-y-3">
         {rulesQuery.isError && (
-          <p className="text-xs text-destructive">{t.finances.rules.loadErr}</p>
+          <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-destructive">
+            <p>{t.finances.rules.loadErr}</p>
+            <Button size="sm" variant="outline" onClick={() => void rulesQuery.refetch()} disabled={rulesQuery.isFetching}>{t.common.retry}</Button>
+          </div>
         )}
         {dropped > 0 && (
           <p className="text-xs text-warning">{t.finances.rules.dropped(dropped)}</p>
@@ -350,7 +366,7 @@ export function TransactionRules({
                 aria-label={stageLabel(stage, t)}
                 className="space-y-1.5"
               >
-                <SectionLabel>{stageLabel(stage, t)}</SectionLabel>
+                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{stageLabel(stage, t)}</h2>
                 <ul className="space-y-1.5">
                   {rules
                     .filter((rule) => rule.stage === stage)
@@ -362,12 +378,12 @@ export function TransactionRules({
                         projects={projects}
                         subscriptions={subscriptions}
                         onEdit={() => openDraft(toDraft(rule))}
-                        onDelete={() => void requestDelete(rule.id)}
+                        onDelete={() => void requestDelete(rule)}
                         onToggle={(enabled) =>
-                          toggleMutation.mutate({ id: rule.id, enabled })
+                          toggleMutation.mutate({ rule, enabled })
                         }
                         onApply={() => void requestApply(rule.id)}
-                        applying={applyMutation.isPending}
+                        applying={!writable}
                       />
                     ))}
                 </ul>
@@ -472,6 +488,11 @@ function actionText(
   if (actions.note != null) {
     parts.push(`${t.finances.rules.actionNote}: ${actions.note}`);
   }
+  const labels = { category: t.finances.rules.actionCategory, project_id: t.finances.rules.actionProject,
+    subscription_id: t.finances.rules.actionSubscription, note: t.finances.rules.actionNote };
+  for (const key of RULE_ACTION_KEYS) {
+    if (key in actions && actions[key] === null) parts.push(`${labels[key]}: ${t.finances.rules.clearValue}`);
+  }
   return parts;
 }
 
@@ -533,7 +554,8 @@ function RuleRow({
             id={switchId}
             checked={rule.enabled}
             onCheckedChange={onToggle}
-            aria-label={rule.enabled ? t.finances.rules.enabled : t.finances.rules.disabled}
+            disabled={applying}
+            aria-label={`${rule.enabled ? t.finances.rules.enabled : t.finances.rules.disabled}: ${rule.name || t.finances.rules.unnamed}`}
           />
           <Tooltip content={t.finances.rules.apply}>
             <Button
@@ -541,13 +563,13 @@ function RuleRow({
               variant="ghost"
               onClick={onApply}
               disabled={applying}
-              aria-label={t.finances.rules.apply}
+              aria-label={`${t.finances.rules.apply}: ${rule.name || t.finances.rules.unnamed}`}
             >
-              <Wand2 className="h-3.5 w-3.5" />
+              <ListChecks className="h-3.5 w-3.5" />
             </Button>
           </Tooltip>
           <Tooltip content={t.common.edit}>
-            <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
+            <Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={applying} aria-label={`${t.common.edit}: ${rule.name || t.finances.rules.unnamed}`}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
           </Tooltip>
@@ -556,7 +578,8 @@ function RuleRow({
               size="icon-sm"
               variant="ghost"
               onClick={onDelete}
-              aria-label={t.common.delete}
+              disabled={applying}
+              aria-label={`${t.common.delete}: ${rule.name || t.finances.rules.unnamed}`}
             >
               <Trash2 className="h-3.5 w-3.5 text-destructive" />
             </Button>
@@ -587,12 +610,16 @@ function RuleDialog({
   supabase: ReturnType<typeof createClient>;
 }) {
   const t = useDict();
-  const toast = useToast();
   const nameId = useId();
   const stageId = useId();
   const enabledId = useId();
   const [form, setForm] = useState<RuleDraft>(draft);
+  const [createId] = useState(() => crypto.randomUUID());
+  const saveGuard = useRef(false);
+  const [saveError, setSaveError] = useState(false);
+  const [checkError, setCheckError] = useState(false);
   const [fullCount, setFullCount] = useState<{
+    fingerprint: string;
     matched: number;
     changed: number;
     truncated: boolean;
@@ -612,55 +639,85 @@ function RuleDialog({
       condition.value.trim() !== "" &&
       safeRegex(condition.value.trim()) === null,
   );
-  const canSave =
-    conditions.length > 0 && RULE_ACTION_KEYS.some((key) => key in actions);
+  const completeConditions = conditions.length > 0 && conditions.length === form.conditions.length;
+  const canSave = completeConditions && RULE_ACTION_KEYS.some((key) => key in actions);
+  const fingerprint = JSON.stringify({ stage: form.stage, conditions, actions });
+  const visibleCount = fullCount?.fingerprint === fingerprint ? fullCount : null;
 
   const checkMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (snapshot: { stage: RuleStage; conditions: RuleCondition[]; actions: RuleActions; fingerprint: string }) => {
       const res = await fetch("/api/money/rules/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "preview",
-          draft: { stage: form.stage, conditions, actions },
+          draft: { stage: snapshot.stage, conditions: snapshot.conditions, actions: snapshot.actions },
         }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      return (await res.json()) as {
-        matched: number;
-        changed: number;
-        truncated?: boolean;
-      };
+      const result = await res.json();
+      if (!result || !Number.isSafeInteger(result.matched) || result.matched < 0
+        || !Number.isSafeInteger(result.changed) || result.changed < 0 || result.changed > result.matched
+        || (result.truncated !== undefined && typeof result.truncated !== "boolean")) throw new Error("invalid-rule-preview");
+      return result as { matched: number; changed: number; truncated?: boolean };
     },
-    onSuccess: (result) =>
+    onMutate: () => setCheckError(false),
+    onSuccess: (result, snapshot) =>
       setFullCount({
+        fingerprint: snapshot.fingerprint,
         matched: result.matched,
         changed: result.changed,
         truncated: result.truncated === true,
       }),
-    onError: () => toast.err(t.finances.rules.applyErr),
+    onError: () => setCheckError(true),
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const payload = {
-        user_id: userId,
-        name: form.name.trim(),
-        stage: form.stage,
-        conditions,
-        actions,
-        enabled: form.enabled,
-      };
-      const { error } = form.id
-        ? await supabase.from("transaction_rules").update(payload).eq("id", form.id)
-        : await supabase.from("transaction_rules").insert(payload);
-      if (error) throw error;
+      if (!canSave || saveGuard.current) throw new Error("invalid-or-pending");
+      saveGuard.current = true;
+      try {
+        const userId = await currentUserId(supabase);
+        if (!userId) throw new Error("no-user");
+        const payload = { name: form.name.trim(), stage: form.stage, conditions, actions, enabled: form.enabled };
+        if (form.id) {
+          const { data, error } = await supabase.from("transaction_rules").update(payload)
+            .eq("id", form.id).eq("updated_at", form.expectedUpdatedAt).select("id").single();
+          if (error || data?.id !== form.id) throw new Error("rule-save-not-confirmed");
+        } else {
+          // A retry after an ambiguous response must not create another rule.
+          const { data, error } = await supabase.from("transaction_rules").upsert(
+            { ...payload, id: createId, user_id: userId }, { onConflict: "id", ignoreDuplicates: true },
+          ).select("id");
+          if (error || !Array.isArray(data) || data.length > 1) throw new Error("rule-create-not-confirmed");
+          if (data.length === 1) {
+            if (data[0].id !== createId) throw new Error("rule-create-not-confirmed");
+          } else {
+            const existing = await supabase.from("transaction_rules").select("name,stage,conditions,actions,enabled")
+              .eq("id", createId).eq("user_id", userId).single();
+            if (existing.error || !existing.data || existing.data.name !== payload.name || existing.data.stage !== payload.stage
+              || existing.data.enabled !== payload.enabled || JSON.stringify(parseConditions(existing.data.conditions)) !== JSON.stringify(conditions)
+              || RULE_ACTION_KEYS.some(key => (key in existing.data.actions) !== (key in actions) || existing.data.actions[key] !== actions[key])) {
+              throw new Error("rule-create-not-confirmed");
+            }
+          }
+        }
+      } finally { saveGuard.current = false; }
     },
+    onMutate: () => setSaveError(false),
     onSuccess: onSaved,
-    onError: () => toast.err(t.finances.rules.saveErr),
+    onError: () => setSaveError(true),
   });
+  const busy = saveMutation.isPending || checkMutation.isPending;
+  function actionLabel(key: RuleActionKey, label: string) {
+    const id = `${nameId}-action-${key}`;
+    return <div className="flex min-h-11 items-center gap-2 md:min-h-6">
+      <Checkbox id={id} checked={form.enabledActions.includes(key)} onCheckedChange={checked => setForm(prev => ({
+        ...prev, enabledActions: checked === true ? [...new Set([...prev.enabledActions, key])] : prev.enabledActions.filter(value => value !== key),
+      }))} />
+      <Label htmlFor={id} className="flex min-h-11 flex-1 cursor-pointer items-center md:min-h-6">{label}</Label>
+    </div>;
+  }
 
   function updateCondition(index: number, patch: Partial<ConditionDraft>) {
     setForm((prev) => ({
@@ -673,8 +730,8 @@ function RuleDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+      <DialogContent className="max-w-2xl" showClose={!busy} onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onInteractOutside={event => { if (busy) event.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>
             {form.id ? t.finances.rules.editRule : t.finances.rules.newRule}
@@ -682,7 +739,7 @@ function RuleDialog({
           <DialogDescription>{t.finances.rules.stageHint}</DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
+        <fieldset disabled={busy} aria-busy={busy} className="mt-4 min-w-0 space-y-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
             <div className="space-y-1">
               <Label htmlFor={nameId}>{t.finances.rules.ruleName}</Label>
@@ -727,10 +784,10 @@ function RuleDialog({
             {form.conditions.map((condition, index) => (
               <div
                 key={index}
-                className="grid gap-2 sm:grid-cols-[minmax(0,9rem)_minmax(0,10rem)_minmax(0,1fr)_auto]"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,9rem)_minmax(0,10rem)_minmax(0,1fr)_auto]"
               >
                 <SimpleSelect
-                  aria-label={t.finances.rules.field}
+                  aria-label={`${t.finances.rules.field} ${index + 1}`}
                   value={condition.field}
                   onValueChange={(value) =>
                     updateCondition(index, { field: value as RuleField })
@@ -741,73 +798,75 @@ function RuleDialog({
                   }))}
                 />
                 <SimpleSelect
-                  aria-label={t.finances.rules.operator}
+                  aria-label={`${t.finances.rules.operator} ${index + 1}`}
                   value={condition.op}
                   onValueChange={(value) =>
                     updateCondition(index, { op: value as RuleOp })
                   }
                   options={RULE_OPS.map((op) => ({ value: op, label: opLabel(op, t) }))}
                 />
-                {condition.op === "between" ? (
-                  <div className="flex gap-2">
-                    <Input
-                      aria-label={t.finances.rules.betweenFrom}
-                      placeholder={t.finances.rules.betweenFrom}
-                      inputMode="decimal"
-                      value={condition.from}
-                      onChange={(e) => updateCondition(index, { from: e.target.value })}
+                <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:contents">
+                  {condition.op === "between" ? (
+                    <div className="flex gap-2">
+                      <Input
+                        aria-label={`${t.finances.rules.betweenFrom} ${index + 1}`}
+                        placeholder={t.finances.rules.betweenFrom}
+                        inputMode="decimal"
+                        value={condition.from}
+                        onChange={(e) => updateCondition(index, { from: e.target.value })}
+                      />
+                      <Input
+                        aria-label={`${t.finances.rules.betweenTo} ${index + 1}`}
+                        placeholder={t.finances.rules.betweenTo}
+                        inputMode="decimal"
+                        value={condition.to}
+                        onChange={(e) => updateCondition(index, { to: e.target.value })}
+                      />
+                    </div>
+                  ) : condition.field === "kind" && condition.op === "is" ? (
+                    <SimpleSelect
+                      aria-label={`${t.finances.rules.value} ${index + 1}`}
+                      value={condition.value}
+                      onValueChange={(value) => updateCondition(index, { value })}
+                      options={[
+                        { value: "expense", label: t.finances.rules.kindExpense },
+                        { value: "income", label: t.finances.rules.kindIncome },
+                      ]}
                     />
+                  ) : (
                     <Input
-                      aria-label={t.finances.rules.betweenTo}
-                      placeholder={t.finances.rules.betweenTo}
-                      inputMode="decimal"
-                      value={condition.to}
-                      onChange={(e) => updateCondition(index, { to: e.target.value })}
+                      aria-label={`${t.finances.rules.value} ${index + 1}`}
+                      placeholder={
+                        condition.op === "one_of"
+                          ? t.finances.rules.oneOfHint
+                          : condition.field === "date"
+                            ? "2026-01-31"
+                            : t.finances.rules.value
+                      }
+                      inputMode={
+                        NUMERIC_OPS.has(condition.op) && condition.field === "amount"
+                          ? "decimal"
+                          : undefined
+                      }
+                      value={condition.value}
+                      onChange={(e) => updateCondition(index, { value: e.target.value })}
                     />
-                  </div>
-                ) : condition.field === "kind" && condition.op === "is" ? (
-                  <SimpleSelect
-                    aria-label={t.finances.rules.value}
-                    value={condition.value}
-                    onValueChange={(value) => updateCondition(index, { value })}
-                    options={[
-                      { value: "expense", label: t.finances.rules.kindExpense },
-                      { value: "income", label: t.finances.rules.kindIncome },
-                    ]}
-                  />
-                ) : (
-                  <Input
-                    aria-label={t.finances.rules.value}
-                    placeholder={
-                      condition.op === "one_of"
-                        ? t.finances.rules.oneOfHint
-                        : condition.field === "date"
-                          ? "2026-01-31"
-                          : t.finances.rules.value
+                  )}
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`${t.finances.rules.removeCondition} ${index + 1}`}
+                    disabled={form.conditions.length === 1}
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        conditions: prev.conditions.filter((_, i) => i !== index),
+                      }))
                     }
-                    inputMode={
-                      NUMERIC_OPS.has(condition.op) && condition.field === "amount"
-                        ? "decimal"
-                        : undefined
-                    }
-                    value={condition.value}
-                    onChange={(e) => updateCondition(index, { value: e.target.value })}
-                  />
-                )}
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={t.finances.rules.removeCondition}
-                  disabled={form.conditions.length === 1}
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      conditions: prev.conditions.filter((_, i) => i !== index),
-                    }))
-                  }
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
             <Button
@@ -828,7 +887,7 @@ function RuleDialog({
                 {t.finances.rules.regexInvalid}
               </p>
             )}
-            {conditions.length === 0 && (
+            {!completeConditions && (
               <p className="text-[11px] text-foreground-subtle">
                 {t.finances.rules.needsCondition}
               </p>
@@ -840,58 +899,67 @@ function RuleDialog({
             <legend className="px-1 text-xs font-medium text-foreground-muted">
               {t.finances.rules.actions}
             </legend>
+            <p className="text-xs text-foreground-subtle">{t.finances.rules.actionsHint}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label>{t.finances.rules.actionCategory}</Label>
-                <CategorySelect
-                  value={form.category}
-                  onChange={(category) => setForm((prev) => ({ ...prev, category }))}
-                  used={transactions.map((tx) => tx.category)}
-                  ariaLabel={t.finances.rules.actionCategory}
-                />
+                {actionLabel("category", t.finances.rules.actionCategory)}
+                {form.enabledActions.includes("category") && (
+                  <CategorySelect
+                    value={form.category}
+                    onChange={(category) => setForm((prev) => ({ ...prev, category }))}
+                    used={transactions.map((tx) => tx.category)}
+                    ariaLabel={t.finances.rules.actionCategory}
+                  />
+                )}
               </div>
               <div className="space-y-1">
-                <Label>{t.finances.rules.actionProject}</Label>
-                <SimpleSelect
-                  aria-label={t.finances.rules.actionProject}
-                  value={form.project_id}
-                  onValueChange={(project_id) =>
-                    setForm((prev) => ({ ...prev, project_id }))
-                  }
-                  options={[
-                    { value: "", label: t.finances.noneOption },
-                    ...projects.map((project) => ({
-                      value: project.id,
-                      label: project.name,
-                    })),
-                  ]}
-                />
+                {actionLabel("project_id", t.finances.rules.actionProject)}
+                {form.enabledActions.includes("project_id") && (
+                  <SimpleSelect
+                    aria-label={t.finances.rules.actionProject}
+                    value={form.project_id}
+                    onValueChange={(project_id) =>
+                      setForm((prev) => ({ ...prev, project_id }))
+                    }
+                    options={[
+                      { value: "", label: t.finances.noneOption },
+                      ...projects.map((project) => ({
+                        value: project.id,
+                        label: project.name,
+                      })),
+                    ]}
+                  />
+                )}
               </div>
               <div className="space-y-1">
-                <Label>{t.finances.rules.actionSubscription}</Label>
-                <SimpleSelect
-                  aria-label={t.finances.rules.actionSubscription}
-                  value={form.subscription_id}
-                  onValueChange={(subscription_id) =>
-                    setForm((prev) => ({ ...prev, subscription_id }))
-                  }
-                  options={[
-                    { value: "", label: t.finances.noneOption },
-                    ...subscriptions.map((subscription) => ({
-                      value: subscription.id,
-                      label: subscription.name,
-                    })),
-                  ]}
-                />
+                {actionLabel("subscription_id", t.finances.rules.actionSubscription)}
+                {form.enabledActions.includes("subscription_id") && (
+                  <SimpleSelect
+                    aria-label={t.finances.rules.actionSubscription}
+                    value={form.subscription_id}
+                    onValueChange={(subscription_id) =>
+                      setForm((prev) => ({ ...prev, subscription_id }))
+                    }
+                    options={[
+                      { value: "", label: t.finances.noneOption },
+                      ...subscriptions.map((subscription) => ({
+                        value: subscription.id,
+                        label: subscription.name,
+                      })),
+                    ]}
+                  />
+                )}
               </div>
               <div className="space-y-1">
-                <Label>{t.finances.rules.actionNote}</Label>
-                <Input
-                  aria-label={t.finances.rules.actionNote}
-                  placeholder={t.finances.rules.actionNotePlaceholder}
-                  value={form.note}
-                  onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
-                />
+                {actionLabel("note", t.finances.rules.actionNote)}
+                {form.enabledActions.includes("note") && (
+                  <Input
+                    aria-label={t.finances.rules.actionNote}
+                    placeholder={t.finances.rules.actionNotePlaceholder}
+                    value={form.note}
+                    onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
+                  />
+                )}
               </div>
             </div>
             {!RULE_ACTION_KEYS.some((key) => key in actions) && (
@@ -905,19 +973,19 @@ function RuleDialog({
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-border-strong bg-surface-muted/30 p-3">
             <p className="flex-1 text-xs tabular text-foreground-muted" aria-live="polite">
               {t.finances.rules.matchesLoaded(matched, transactions.length)}
-              {fullCount && (
+              {visibleCount && (
                 <>
                   {" · "}
-                  {t.finances.rules.checkedResult(fullCount.matched, fullCount.changed)}
-                  {fullCount.truncated && ` ${t.finances.rules.truncated}`}
+                  {t.finances.rules.checkedResult(visibleCount.matched, visibleCount.changed)}
+                  {visibleCount.truncated && ` ${t.finances.rules.truncated}`}
                 </>
               )}
             </p>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => checkMutation.mutate()}
-              disabled={checkMutation.isPending || conditions.length === 0}
+              onClick={() => checkMutation.mutate({ stage: form.stage, conditions, actions, fingerprint })}
+              disabled={busy || !completeConditions}
             >
               {checkMutation.isPending
                 ? t.finances.rules.checking
@@ -925,18 +993,20 @@ function RuleDialog({
             </Button>
           </div>
 
+          {saveError && <p role="alert" className="text-xs text-destructive">{t.finances.rules.saveErr}</p>}
+          {checkError && <p role="alert" className="text-xs text-destructive">{t.finances.rules.applyErr}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={busy}>
               {t.common.cancel}
             </Button>
             <Button
               onClick={() => saveMutation.mutate()}
-              disabled={!canSave || saveMutation.isPending}
+              disabled={!canSave || busy}
             >
               {t.common.save}
             </Button>
           </div>
-        </div>
+        </fieldset>
       </DialogContent>
     </Dialog>
   );

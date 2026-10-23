@@ -693,7 +693,8 @@
       "path": "src/components/finances/transaction-rules.tsx",
       "lines": 943,
       "sha256": "9ae72e1d8fcf0804396d01ee35883e09e1d92eb94c4c227edde5664fe9ea9945",
-      "status": "pending"
+      "status": "source reviewed; targeted browser checks passed; final release checks pending",
+      "reviewedSha256": "3383c68ce649b9a4af8f2580232e5074354729d0b9f88478e5f16d80d3d85dfe"
     },
     {
       "path": "src/components/github/publish-to-repo-dialog.tsx",
@@ -3420,7 +3421,8 @@
       "path": "src/lib/transaction-rules.ts",
       "lines": 568,
       "sha256": "28552e186b285c368ed191729d2852883bf9a49261e62c97ad67695b7605e060",
-      "status": "pending"
+      "status": "source reviewed; regex execution follow-up and final release checks pending",
+      "reviewedSha256": "ddae685e7823d765e4ece6fc76f367ce26691165b0bda64fb66be4fc45b56b21"
     },
     {
       "path": "src/lib/types.ts",

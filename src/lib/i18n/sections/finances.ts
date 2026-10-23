@@ -191,6 +191,8 @@ type RulesStrings = {
   actionNote: string;
   actionNotePlaceholder: string;
   actionsNone: string;
+  actionsHint: string;
+  clearValue: string;
   matchesLoaded: (matched: number, loaded: number) => string;
   checkAll: string;
   checking: string;
@@ -348,7 +350,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       conditions: "Conditions",
       addCondition: "Add condition",
       removeCondition: "Remove condition",
-      needsCondition: "Add at least one condition.",
+      needsCondition: "Complete every condition, or remove the unused row.",
       needsAction: "Set at least one action.",
       field: "Field",
       operator: "Operator",
@@ -377,7 +379,9 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       actionProject: "Project",
       actionSubscription: "Subscription",
       actionNote: "Rewrite description",
-      actionNotePlaceholder: "Leave empty to keep the original",
+      actionNotePlaceholder: "Leave empty to clear the description",
+      actionsHint: "Select the fields to change. An empty selected field clears it; unselected fields stay as they are.",
+      clearValue: "Clear",
       actionsNone: "No action set",
       matchesLoaded: (matched, loaded) =>
         `${matched} of the ${loaded} loaded transactions`,
@@ -583,7 +587,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       conditions: "Podmínky",
       addCondition: "Přidat podmínku",
       removeCondition: "Odebrat podmínku",
-      needsCondition: "Přidej alespoň jednu podmínku.",
+      needsCondition: "Vyplň všechny podmínky nebo odstraň nevyužitý řádek.",
       needsAction: "Nastav alespoň jednu akci.",
       field: "Pole",
       operator: "Operátor",
@@ -612,7 +616,9 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       actionProject: "Projekt",
       actionSubscription: "Předplatné",
       actionNote: "Přepsat popis",
-      actionNotePlaceholder: "Prázdné ponechá původní popis",
+      actionNotePlaceholder: "Prázdné vymaže popis",
+      actionsHint: "Vyber pole ke změně. Vybrané prázdné pole se vymaže, nevybraná pole zůstanou beze změny.",
+      clearValue: "Vymazat",
       actionsNone: "Žádná akce",
       matchesLoaded: (matched, loaded) =>
         `${matched} z ${loaded} načtených transakcí`,
