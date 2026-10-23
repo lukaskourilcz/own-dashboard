@@ -10,6 +10,7 @@ import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_KEYWORD, DNESKAI_TOPIC_KINDS, type DneskaiTopic, type DneskaiTopicAction, type DneskaiTopicActionResult, type DneskaiTopicsRead, type DneskaiTopicStatus } from '@/lib/marketing/dneskai-topics';
 import { dneskaiTopicsApi, dneskaiTopicsKey } from '@/lib/marketing/dneskai-topics-client';
 import { cn } from '@/lib/utils';
+import { DneskaiCodeText } from '../code-text';
 
 type Lang = 'en' | 'cs';
 type Decision = 'approve' | 'reject' | 'restore';
@@ -180,6 +181,7 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
             data-testid="dneskai-topic-keyword" aria-label={topic.keyword ? t.keyword.edit(topic.keyword) : t.keyword.add}>
             {topic.keyword ? <><span className="text-foreground-muted">{t.keyword.chip}</span><span className="font-mono font-semibold">{topic.keyword}</span></> : t.keyword.add}</button>}
         </div>
+        {topic.code && <div data-testid="dneskai-topic-code"><DneskaiCodeText code={topic.code} lang={lang} tone="muted" /></div>}
         {editing && <form className="flex flex-wrap items-start gap-2" onSubmit={(event) => { event.preventDefault(); if (valid) onSaveKeyword(draft.trim() || null); }}
           onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onEdit(false); } }}>
           <div className="min-w-0 flex-1 basis-48">

@@ -15,7 +15,9 @@ export function createDneskaiTopicsFixture(now: Date): DneskaiTopicsRead {
   const topics = [
     topic(1, { kind: 'news', title: 'Ukázka: nový model zvládne delší kontext za stejnou cenu', keyword: null }),
     topic(2, { kind: 'news', title: 'Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích', source: { label: 'example.org', url: 'https://example.org/zpravy/ai-pravidla' } }),
-    topic(3, { kind: 'news', status: 'approved', approvedAt: hoursAgo(1), title: 'Ukázka: open-source nástroj na přepis schůzek offline' }),
+    // #210: approved, added by hand with a title only, so the bridge stops it with an owner-facing code.
+    topic(3, { kind: 'news', sourceKind: 'manual', source: { label: null, url: null }, status: 'approved', approvedAt: hoursAgo(1), title: 'Ukázka: open-source nástroj na přepis schůzek offline',
+      code: 'topic-source-missing' }),
     topic(4, { kind: 'education', sourceKind: 'instagram', title: 'Jak si nastavit vlastní příkazy v editoru kódu', keyword: 'PRIKAZY', verdict: 'fact',
       source: { label: '@ukazkovy.tvurce', url: 'https://www.example.com/reel/ukazka-4' } }),
     topic(5, { kind: 'education', sourceKind: 'library', title: 'Tři způsoby, jak zkrátit prompt bez ztráty kvality', keyword: 'Prompt' }),

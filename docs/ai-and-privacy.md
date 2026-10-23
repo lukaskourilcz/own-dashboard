@@ -6,6 +6,7 @@ The owner explicitly authorized model-backed marketing on 2026-10-13 in issue #9
 
 - Link enrichment reads the target URL through Jina Reader (https://r.jina.ai) and returns the page's title and description for the user to review before saving.
 - Career's saved-position URL import (`/api/jobs/enrich`) reads a job posting through the same reader and fills the title, company and description fields for review.
+- DNESKAi topic briefs (#210, behind `DNESKAI_TOPIC_BRIEFS_ENABLED`) read the stored URL of an approved link-library or manual topic through the same reader, server-side, to write the post's source text. Only that URL is sent.
 
 ## Write controls
 
@@ -14,7 +15,7 @@ The owner explicitly authorized model-backed marketing on 2026-10-13 in issue #9
 
 ## Data boundaries
 
-Both routes send Jina Reader only the URL the user submitted. The Tools section reads `about-project.md` or `package.json` from the owner's own repositories through GitHub with the owner's token on the server and parses them as text; nothing is sent to a model. Owner data (records, notes, projects, invoices, transactions, tasks) is never sent to any external model or reader. AI routes are rate-limited.
+Every caller sends Jina Reader only a URL: the one the user submitted, or the one an approved topic stores. The Tools section reads `about-project.md` or `package.json` from the owner's own repositories through GitHub with the owner's token on the server and parses them as text; nothing is sent to a model. Owner data (records, notes, projects, invoices, transactions, tasks) is never sent to any external model or reader. AI routes are rate-limited.
 
 Invoice PDF extraction is deliberately not an AI workflow. The PDF is read locally in the browser with `pdf.js`, deterministic parsing fills the editable invoice form, and the file itself is neither uploaded nor stored.
 

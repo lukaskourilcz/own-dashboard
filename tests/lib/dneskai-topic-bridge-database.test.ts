@@ -1,10 +1,11 @@
 import type { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createDneskaiBriefStore, type DneskaiBriefRow, type DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
-import { advanceDneskaiTopicBriefs, dneskaiTopicEventId, type DneskaiBridgeTopic, type DneskaiTopicBridgeStore } from '@/lib/marketing/dneskai-topic-bridge';
+import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore, dneskaiTopicEventId, type DneskaiBridgeTopic, type DneskaiTopicBridgeStore } from '@/lib/marketing/dneskai-topic-bridge';
 import { dneskaiFinishEvents, groupDneskaiEvents } from '@/lib/marketing/dneskai-events';
 import { dneskaiMediaCapabilities } from '@/lib/marketing/dneskai-media-plan';
 import { contentHash } from '@/lib/marketing/hashes';
+import type { DneskaiTopicReader } from '@/lib/marketing/dneskai-topic-source';
 import { DneskaiCandidateSchema } from '@/lib/marketing/dneskai-contracts';
 import type { DneskaiMediaAssetView } from '@/lib/marketing/dneskai-media-contracts';
 import { BRIEF_MIGRATIONS, briefsRpcClient, createBriefsDatabase, insertCandidates, pgliteRestClient, syntheticCandidate } from './marketing-dneskai-briefs-db';
@@ -50,7 +51,7 @@ function briefStore(): DneskaiBriefStore {
 /** The bridge store as SQL against the same database (the service role's writes). */
 function topicStore(): DneskaiTopicBridgeStore {
   return {
-    topics: async () => rows<DneskaiBridgeTopic>("select id,kind,status,source_ref,title_cs,brief_id,evidence from marketing_dneskai_topics where user_id=$1 and status in('approved','enriching','briefed') order by approved_at", [owner]),
+    topics: async () => rows<DneskaiBridgeTopic>("select id,kind,status,source_ref,title_cs,summary,brief_id,evidence from marketing_dneskai_topics where user_id=$1 and status in('approved','enriching','briefed') order by approved_at", [owner]),
     brief: async (_who, _project, id) => (await rows<DneskaiBriefRow>('select * from marketing_dneskai_briefs where id=$1', [id]))[0] ?? null,
     async candidate(_who, _project, id) {
       const row = (await rows<{ id: string; run_id: string; status: string; target_date: string | null; content_hash: string; candidate: unknown }>('select id,run_id,status,target_date::text,content_hash,candidate from marketing_dneskai_candidates where id=$1', [id]))[0];
@@ -130,5 +131,45 @@ describe('topic briefs (#155)', () => {
     expect(await advance()).toMatchObject({ generated: 1 });
     expect((await topic()).status).toBe('generated');
     expect(await rows('select id from marketing_jobs')).toHaveLength(1);
+  });
+});
+
+describe('link-library and manual topics (#210)', () => {
+  const libraryId = '77777777-7777-4777-8777-777777777777', manualId = '88888888-8888-4888-8888-888888888888';
+  const url = 'https://tools.example.test/notes?utm_source=library';
+
+  it('reads the stored URL once, keeps the page as an owner-link report and writes its brief; a title-only topic gets a code', async () => {
+    await db.query(`insert into marketing_dneskai_topics(id,user_id,project_id,kind,source_kind,source_ref,title_cs,summary,status,approved_at,evidence)
+      values($1,$2,$3,'education','library','library:synthetic-link','Poznámky ze snímku obrazovky','Syntetický popis odkazu z knihovny.','approved',now(),$4)`, [libraryId, owner, project, json({ urls: [url], titled: true })]);
+    await db.query(`insert into marketing_dneskai_topics(id,user_id,project_id,kind,source_kind,source_ref,title_cs,status,approved_at)
+      values($1,$2,$3,'education','manual',$4,'Jen titulek bez odkazu','approved',now())`, [manualId, owner, project, `manual:${'e'.repeat(64)}`]);
+    // The production store's reads and writes for owner links, over the same database.
+    const real = createDneskaiTopicBridgeStore(pgliteRestClient(db) as never);
+    const store: DneskaiTopicBridgeStore = { ...topics, candidateByUrl: real.candidateByUrl, latestRun: real.latestRun, insertCandidate: real.insertCandidate, insertTopicBrief: real.insertTopicBrief };
+    const reader = vi.fn<DneskaiTopicReader>(async () => ({ title: 'Synthetic notes tool', text: 'A synthetic page about a tool that turns screenshots into notes. '.repeat(6) }));
+    const pass = () => advanceDneskaiTopicBriefs({ topics: store, briefs }, { owner, project, now: new Date(instant), signal: new AbortController().signal, remainingMs: () => 40_000, reader });
+
+    expect(await pass()).toMatchObject({ enriching: 1, unsupported: 1 });
+    expect(reader).toHaveBeenCalledTimes(1);
+    expect(reader.mock.calls[0]![0]).toBe(url);
+    const library = (await rows<{ status: string; brief_id: string; evidence: Record<string, unknown> }>('select status,brief_id,evidence from marketing_dneskai_topics where id=$1', [libraryId]))[0]!;
+    expect(library.status).toBe('enriching');
+    expect(library.evidence.reportId).toBe(`owner-link:${libraryId}`);
+    const [candidate] = await rows<{ run_id: string; status: string; target_date: string; candidate: { sourceId: string; title: string; url: string } }>('select run_id,status,target_date::text,candidate from marketing_dneskai_candidates where id=$1', [`owner-link:${libraryId}`]);
+    expect(candidate).toMatchObject({ run_id: runId, status: 'selected', target_date: '2026-10-21', candidate: { sourceId: 'owner-link', title: 'Synthetic notes tool', url } });
+    const [brief] = await rows<{ rank: number; member_ids: string[]; topic_id: string }>('select rank,member_ids,topic_id from marketing_dneskai_briefs where id=$1', [library.brief_id]);
+    expect(brief).toEqual({ rank: 6, member_ids: [`owner-link:${libraryId}`], topic_id: libraryId });
+    const manual = (await rows<{ status: string; evidence: Record<string, unknown> }>('select status,evidence from marketing_dneskai_topics where id=$1', [manualId]))[0]!;
+    expect(manual).toEqual({ status: 'approved', evidence: { bridgeCode: 'topic-source-missing' } });
+
+    // The page is read once: the next pass waits for its pictures and leaves the title-only topic alone.
+    expect(await pass()).toMatchObject({ waiting: 1, unsupported: 1 });
+    expect(reader).toHaveBeenCalledTimes(1);
+  });
+
+  it('finds the stored report again by its normalised URL instead of storing the page twice', async () => {
+    const real = createDneskaiTopicBridgeStore(pgliteRestClient(db) as never);
+    expect(await real.candidateByUrl!(owner, project, contentHash('https://tools.example.test/notes'))).toEqual({ id: `owner-link:${libraryId}` });
+    expect(await real.latestRun!(owner, project)).toEqual({ id: runId });
   });
 });

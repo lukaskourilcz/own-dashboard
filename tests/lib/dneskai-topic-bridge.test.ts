@@ -17,11 +17,11 @@ function stores(topics: DneskaiBridgeTopic[], brief: Partial<DneskaiBriefRow> | 
 const run = (s: ReturnType<typeof stores>, now = new Date('2026-10-23T05:00:00Z')) => advanceDneskaiTopicBriefs({ topics: s.topicStore, briefs: s.briefStore }, { owner, project, now, signal: new AbortController().signal, remainingMs: () => 40_000 });
 
 describe('topic bridge decisions (#155)', () => {
-  it('marks a library or manual topic unsupported once, and a news topic whose brief already queued as briefed', async () => {
-    const library = stores([topic({ source_ref: 'library:abc', kind: 'education' })]);
+  it('marks an owner-link topic unsupported once when no reader is wired, and a news topic whose brief already queued as briefed', async () => {
+    const library = stores([topic({ source_ref: 'library:abc', kind: 'education', evidence: { urls: ['https://www.example.com/clanek'] } })]);
     expect(await run(library)).toMatchObject({ unsupported: 1 });
     expect(library.updates[0]!.patch).toMatchObject({ evidence: { bridgeCode: 'topic-source-unsupported' } });
-    const again = stores([topic({ source_ref: 'library:abc', kind: 'education', evidence: { bridgeCode: 'topic-source-unsupported' } })]);
+    const again = stores([topic({ source_ref: 'library:abc', kind: 'education', evidence: { urls: ['https://www.example.com/clanek'], bridgeCode: 'topic-source-unsupported' } })]);
     await run(again); expect(again.updates).toEqual([]);
     const queued = stores([topic({ brief_id: '44444444-4444-4444-8444-444444444444' })], { id: '44444444-4444-4444-8444-444444444444', status: 'queued', job_id: '55555555-5555-4555-8555-555555555555' });
     expect(await run(queued)).toMatchObject({ briefed: 1 });

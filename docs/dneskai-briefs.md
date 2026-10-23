@@ -342,8 +342,22 @@ run (rank 5–16, `topic_id`) for today when a slot at least 30 minutes ahead is
 becomes `selected` for that day, so the media step collects its pictures before the brief is built. Repeat checks,
 slot rules, the calendar entry, `marketing_enqueue_job` and the owner's approval of the rendered post are unchanged.
 The topic moves `approved` → `enriching` → `briefed` (job queued) → `generated` (draft in review); a lapsed brief
-leaves its code in `evidence.bridgeCode`. Topics from the link library or added by hand have no collected report and
-wait with `topic-source-unsupported`. The brief step without `only` never touches a topic's brief.
+leaves its code in `evidence.bridgeCode`. The brief step without `only` never touches a topic's brief.
+
+**Link-library and manual topics (#210).** They have no collected report, so the bridge makes one. It reads the
+topic's first https URL through Jina Reader (only the URL is sent, `dneskai-topic-source.ts`), stores the page as a
+candidate `owner-link:<topic id>` with source `owner-link` in the project's newest finished collection run and keeps
+its id in `evidence.reportId`. A page already stored under the same normalised URL is reused instead. From there the
+topic takes the education path above: the report is selected for its day, the media step collects its pictures (an
+`owner-link` report counts as its own site, so only that site's pictures are offered) and the brief is built and
+admitted. Codes the owner sees under the topic in Náměty:
+
+| Code | When | Next |
+| --- | --- | --- |
+| `topic-source-missing` | A manual topic with a title and no URL. A post needs a source it can cite. | Final; add the topic again with a link. |
+| `topic-source-unreadable` | The reader returned nothing. | Tried on the next pass, final after three tries. |
+| `topic-run-unavailable` | No collection run has finished yet. | Tried on the next pass. |
+| `topic-source-unsupported` | A source the bridge cannot use, or no reader wired. | Final. |
 
 The cards show the topic's working title (#211). With the same switch, the workspace read loads `title_cs` of every
 topic that reached a brief (`enriching`, `briefed`, `generated`) and uses it for the post whose brief row is the
