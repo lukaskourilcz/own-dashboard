@@ -56,6 +56,34 @@ export const SHIPPED_ENTRY_LIMIT = 2;
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-23",
+    title: "DNESKAi gets a design lab, a smaller workspace and the next phase behind switches",
+    features: [
+      {
+        title: "Six design kits and stricter post rules",
+        summary:
+          "The Design Lab offers six kits for every post: Editorial, Bold, Explainer, Magazine, Ticker and Spotlight, picked by keys 1 to 6. Spotlight can add a round inset picture to the cover. Every kit follows the post rules: the first slide shows only its headline, no slide shows page counts, picture credits or a sources slide, and the caption carries no sources and at most 10 hashtags. A post whose slot has passed can still be edited, and \"Publish now\" sends an approved post straight away.",
+        media: null,
+      },
+      {
+        title: "A DNESKAi workspace with four tabs",
+        summary:
+          "The tabs are Dnes ke schválení, Kalendář, Příspěvky and Zdroje. Errors and costs, the Instagram account, topic recovery and keyboard shortcuts open from the ⋯ menu. Cards show their state as a background tint, dates read DD/MM, and the review tab has Instagram, Threads and LinkedIn sub-tabs, the last two disabled until an account is connected. Zdroje lists the Instagram profiles and websites the pipeline reads. Every project workspace dropped its page header; the toolbar breadcrumb carries the context.",
+        media: null,
+      },
+      {
+        title: "Topics first, keyword DMs and Reels, all off until switched on",
+        summary:
+          "Built and merged, each behind its own switch that stays off until the owner turns it on: a Náměty list where the owner approves working titles before anything is generated; nightly scouting, FACT or HYPE checks and titling that fill it; a comment keyword and DM message per post, with a comment watcher and webhook that send one private reply per matching comment; and Reels rendered from the approved slides with a track from the music library or a trending Instagram sound. They need the 23 prepared migrations pushed first.",
+        media: null,
+      },
+    ],
+    fixes: [
+      "CI installs ffprobe in seconds instead of sometimes hanging until the check job timed out.",
+      "The Design Lab's decision tests freeze the browser clock only after Home unloads, which removed an intermittent hydration error.",
+    ],
+  },
+  {
     date: "2026-09-28",
     title: "IG TIPS meet the marketing calendars",
     features: [
