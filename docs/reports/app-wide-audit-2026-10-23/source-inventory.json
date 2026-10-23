@@ -63,7 +63,8 @@
       "path": "src/app/api/bank/sync/route.ts",
       "lines": 88,
       "sha256": "01c47cdd3ea8dab76bdebf9325e91877ca74f6237a28c6d5b1a3b91214232a86",
-      "status": "pending"
+      "status": "source reviewed; targeted route checks passed; final release checks pending",
+      "reviewedSha256": "adb42bb9fef390c80f84e114fb9ab95eef3d8067e82b9070df97cb005ea88b33"
     },
     {
       "path": "src/app/api/calendar/event/route.ts",
@@ -88,7 +89,8 @@
       "path": "src/app/api/cron/bank-sync/route.ts",
       "lines": 96,
       "sha256": "f376f8b7743712ec2c82f1fa308ee8907a2abe8f2260198f64646acac550eec4",
-      "status": "pending"
+      "status": "source reviewed; targeted route checks passed; final release checks pending",
+      "reviewedSha256": "f10efa1e80f82bd9bd0f765bc2c918f973ddb81dbbcaa1a1f4676d020258914e"
     },
     {
       "path": "src/app/api/cron/jobs-scrape/route.ts",

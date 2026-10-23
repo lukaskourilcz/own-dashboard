@@ -34,21 +34,19 @@ export async function GET(request: Request) {
 
   // A consent that has already passed its stated expiry is expired, whatever
   // the last sync thought. Doing this first keeps the pull below honest.
-  const { data: lapsedRows } = await admin
+  const { count: lapsed, error: expiryError } = await admin
     .from("bank_connections")
-    .update({ status: "expired", last_error: "consent-expired" })
+    .update({ status: "expired", last_error: "consent-expired" }, { count: "exact" })
     .eq("status", "linked")
     .not("consent_expires_at", "is", null)
     .lt("consent_expires_at", new Date().toISOString())
     .select("id");
-  const lapsed = (lapsedRows ?? []).length;
+  if (expiryError || typeof lapsed !== "number" || !Number.isSafeInteger(lapsed) || lapsed < 0) return NextResponse.json({ error: "Bank expiry check unavailable." }, { status: 500 });
 
-  const { data, error } = await admin
-    .from("bank_connections")
-    .select("*")
-    .eq("status", "linked");
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, count, error } = await admin.from("bank_connections").select("*", { count: "exact" })
+    .eq("status", "linked").limit(51);
+  if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count !== data.length || data.length > 50) {
+    return NextResponse.json({ error: "Bank connections unavailable." }, { status: 500 });
   }
 
   const connections = (data ?? []) as BankConnection[];
@@ -66,9 +64,9 @@ export async function GET(request: Request) {
       const res = await syncConnection(admin, conn);
       inserted += res.inserted;
       if (res.status === "linked") banks++;
-    } catch (err) {
+      else if (res.status === "error") failed++;
+    } catch {
       failed++;
-      console.error("[cron/bank-sync] connection failed:", conn.id, err);
     }
   }
 
@@ -86,11 +84,11 @@ export async function GET(request: Request) {
     detail: `inserted ${inserted}, failed ${failed}, skipped ${skipped}, expired ${lapsed}`,
   });
   return NextResponse.json({
-    ok: true,
+    ok: failed === 0,
     banks,
     inserted,
     failed,
     skipped,
     expired: lapsed,
-  });
+  }, { status: failed > 0 ? 502 : 200 });
 }
