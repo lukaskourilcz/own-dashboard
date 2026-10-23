@@ -116,7 +116,8 @@ export function WorkOverviewPanel({
       <div className="surface-band -mx-4 grid grid-cols-2 gap-y-2 px-4 py-3 sm:grid-cols-3 md:-mx-6 md:px-6 xl:-mx-8 xl:grid-cols-6 xl:px-8">
         {metrics.map(({ label, value, icon }) => <Metric key={label} label={label} value={value} icon={icon} tone={label === p.followUps && value > 0 ? "attention" : "default"} />)}
       </div>
-      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,.8fr)]">
+      <div className="mt-5 grid items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,.8fr)]">
+        <div className="space-y-4">
         <Card className="border-l-2 border-l-warning">
           <CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -128,19 +129,7 @@ export function WorkOverviewPanel({
             ))}
           </CardContent>
         </Card>
-        <div className="space-y-4">
-          <WeeklyPlanningFlow
-            reviews={reviews}
-            setReviews={setReviews}
-            reviewsStatus={reviewsStatus}
-            projects={projects}
-            organizations={organizations}
-            todos={todos}
-            lastWeekCalendar={lastWeekCalendar}
-            lastWeekCalendarStatus={lastWeekCalendarStatus}
-            isPreview={isPreview}
-          />
-          <MarketingWeekCard preview={previewMarketingCalendars} />
+        <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
           <Card>
             <CardHeader><CardTitle>{p.shippedSinceReview}</CardTitle></CardHeader>
             <CardContent className="space-y-1.5">
@@ -167,6 +156,21 @@ export function WorkOverviewPanel({
             </CardContent>
           </Card>
         </div>
+        <div className="space-y-4">
+          <WeeklyPlanningFlow
+            reviews={reviews}
+            setReviews={setReviews}
+            reviewsStatus={reviewsStatus}
+            projects={projects}
+            organizations={organizations}
+            todos={todos}
+            lastWeekCalendar={lastWeekCalendar}
+            lastWeekCalendarStatus={lastWeekCalendarStatus}
+            isPreview={isPreview}
+          />
+          <MarketingWeekCard preview={previewMarketingCalendars} />
+
+        </div>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card className={careerFollowUps.length > 0 ? "border-l-2 border-l-warning" : undefined}>
@@ -187,7 +191,6 @@ export function WorkOverviewPanel({
           </CardContent>
         </Card>
         <Card><CardHeader><CardTitle>{p.pipeline}</CardTitle></CardHeader><CardContent>{opportunities.filter((item) => !CLOSED.has(item.status)).length === 0 ? <p className="text-sm text-foreground-muted">{p.pipelineEmpty}</p> : <ul className="divide-y divide-border">{opportunities.filter((item) => !CLOSED.has(item.status)).slice(0, 6).map((item) => <li key={item.id}><Link href="/opportunities" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><StatusBadge value={item.status} /></Link></li>)}</ul>}</CardContent></Card>
-        <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
       </div>
       <Card className="mt-4">
         <CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepositories}</CardTitle></CardHeader>

@@ -115,7 +115,7 @@ function Segmented<T extends string>({
             aria-pressed={active}
             disabled={disabled}
             className={cn(
-              "inline-flex min-h-11 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0",
+              "inline-flex min-h-11 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring disabled:cursor-not-allowed disabled:opacity-60 md:min-h-8",
               active
                 ? "bg-surface text-foreground shadow-soft"
                 : "text-foreground-muted hover:text-foreground",
@@ -388,7 +388,7 @@ export function SettingsPanel({
   };
 
   return (
-    <div>
+    <div className="settings-frame">
       <PageHeader title={t.settings.title} description={t.settings.description} />
 
       {!preferencesSyncAvailable && (
@@ -400,9 +400,12 @@ export function SettingsPanel({
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <nav aria-label={t.settings.title} className="mb-5 flex flex-wrap gap-1">
+        {[["preferences", t.settings.preferences], ["projects", t.settings.activeProjects], ["project-sections", t.settings.projectSections], ["career", t.settings.careerMarket], ["cv", t.settings.cv], ["navigation", t.settings.navigation], ["integrations", t.settings.integrations], ["export", t.settings.dataExport]].map(([key, label]) => <a key={key} href={`#settings-${key}`} className="inline-flex min-h-11 items-center rounded-md px-2 text-xs text-foreground-muted hover:bg-surface-hover focus-ring md:min-h-8">{label}</a>)}
+      </nav>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         {/* Preferences — language, appearance, currency, task density, alerts */}
-        <Card className="lg:col-span-2">
+        <Card id="settings-preferences" className="scroll-mt-4 lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <SlidersHorizontal className="h-3 w-3" /> {t.settings.preferences}
@@ -450,7 +453,7 @@ export function SettingsPanel({
                     }}
                     aria-pressed={currency === c}
                     className={cn(
-                      "rounded-md border px-3 py-1.5 text-xs font-medium tabular transition-colors focus-ring",
+                      "min-h-11 rounded-md border px-3 py-1.5 text-xs font-medium tabular md:min-h-8 transition-colors focus-ring",
                       currency === c
                         ? "border-foreground/40 bg-accent text-foreground"
                         : "border-border text-foreground-muted hover:text-foreground hover:border-border-strong",
@@ -489,7 +492,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-projects" className="scroll-mt-4">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FolderKanban className="h-3 w-3" />
@@ -566,7 +569,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-project-sections" className="scroll-mt-4">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FolderKanban className="h-3 w-3" />
@@ -598,7 +601,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card id="settings-career" className="scroll-mt-4 lg:col-span-2">
           <CardHeader><CardTitle>{t.settings.careerMarket}</CardTitle></CardHeader>
           <CardContent>
             <div className="flex items-start gap-3">
@@ -617,7 +620,7 @@ export function SettingsPanel({
         </Card>
 
         {/* CV links */}
-        <Card className="lg:col-span-2">
+        <Card id="settings-cv" className="scroll-mt-4 lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FileText className="h-3 w-3" /> {t.settings.cv}
@@ -655,7 +658,7 @@ export function SettingsPanel({
         </Card>
 
         {/* Navigation sections */}
-        <Card className="lg:col-span-2">
+        <Card id="settings-navigation" className="scroll-mt-4 lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <PanelLeft className="h-3 w-3" /> {t.settings.navigation}
@@ -676,6 +679,7 @@ export function SettingsPanel({
                     {t.nav.groups[g.id]}
                   </p>
                   <DndContext
+                    id={`settings-navigation-${g.id}`}
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={(e) => handleGroupDragEnd(g.id, e)}
@@ -715,7 +719,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-integrations" className="scroll-mt-4">
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Plug className="h-3 w-3" />{t.settings.integrations}</CardTitle></CardHeader>
           <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].filter(([label, raw]) => label === "Google" || label === "GitHub" || (raw as { configured?: boolean; connected?: boolean } | undefined)?.configured || (raw as { connected?: boolean } | undefined)?.connected).map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; const value = !state ? "pending" : state.connected === true ? "connected" : state.connected === false ? "not_connected" : state.configured ? "configured" : "not_configured"; const status = !state ? "…" : state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><StatusBadge value={value} label={status} /></div>; })}
             {/* Bank sync is the one integration with several providers behind it, so it names each one and its own state. Booleans only — the endpoint carries no token or secret. */}
@@ -730,7 +734,7 @@ export function SettingsPanel({
             ))}</CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-export" className="scroll-mt-4">
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Shield className="h-3 w-3" />{t.settings.dataExport}</CardTitle></CardHeader>
           <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.dataExportDesc}</p><div className="flex flex-wrap gap-2">{[["/api/export/full", t.settings.exportFull], ["/api/export/financial", t.settings.exportFinancial], ["/api/export/professional", t.settings.exportProfessional], ["/api/export/knowledge", t.settings.exportKnowledge], ["/api/export/projects", t.settings.exportProjects], ["/api/export/notes", t.settings.exportNotes], ["/api/export/prompts", t.settings.exportPrompts], ["/api/export/career", t.settings.exportCareer], ["/api/export/financial?format=csv&table=transactions", t.settings.exportTransactionsCsv], ["/api/export/legacy", t.settings.exportLegacy]].map(([href, label]) => <Button key={href} variant="outline" size="sm" asChild><a href={href} download><Download />{label}</a></Button>)}</div></CardContent>
         </Card>
@@ -753,7 +757,7 @@ function PrefRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+    <div className="grid items-center gap-3 border-t border-border pt-4 sm:grid-cols-[14rem_minmax(0,1fr)]">
       <div className="min-w-0">
         <p className="inline-flex items-center gap-1.5 text-sm font-medium">
           <Icon className="h-3.5 w-3.5 text-foreground-muted" />
@@ -761,7 +765,7 @@ function PrefRow({
         </p>
         {desc && <p className="mt-0.5 text-xs text-foreground-subtle">{desc}</p>}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="min-w-0 justify-self-start">{children}</div>
     </div>
   );
 }

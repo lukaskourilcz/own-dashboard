@@ -915,3 +915,10 @@ transcripts. `marketing_dneskai_tiktok_runs` lists the last runs and `marketing_
 Apify ids onto its reservation once. All three functions are service-only. It needs `20261023100100` first; filename
 order does that. Replayed only in PGlite (`tests/lib/dneskai-tiktok-spend-database.test.ts`). Nothing reserves or
 runs until `DNESKAI_TIKTOK_TRENDS_ENABLED=true` and the owner has approved the spend (NEEDED.md).
+
+
+## Complete DNESKAi engagement receipts, 23 October 2026 (prepared)
+
+`20261023135551_dneskai_engagement_receipts.sql` adds `marketing_dneskai_engagement_receipts(uuid[],timestamptz,timestamptz)`. It is STABLE, security-invoker, uses an empty search path and `auth.uid()`, and grants execution only to authenticated sessions. Existing own-only table RLS remains authoritative. It returns one JSON aggregate with up to 60 selected publication receipts, a complete failure total separate from ten display buckets, and the last seven days of eligible publications independent of the selected page. Publication-event time takes precedence over schedule time. Commenter identities and messages are never returned.
+
+Apply this additive migration before deploying `codex/dneskai-audit-implementation`. Until then the new read path reports engagement as unavailable when the function is missing. It was created with Supabase CLI 2.122.0 and replayed against all migrations in isolated PGlite, including 5013 reply rows, off-page publications, grants and owner isolation. Production has not been changed by this implementation task. See [implementation validation](reports/dneskai-audit-implementation-2026-10-23.md).
