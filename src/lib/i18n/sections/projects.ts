@@ -77,6 +77,7 @@ type ProjectsStrings = {
   notes: string;
   notesPlaceholder: string;
   saveNotes: string;
+  notesLoadFailed: string;
   notesSaved: string;
   saving: string;
 
@@ -202,6 +203,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     notes: "Notes",
     notesPlaceholder: "Quick notes about this project…",
     saveNotes: "Save notes",
+    notesLoadFailed: "Project notes could not be opened. Close and reopen this panel to retry; saved notes are unchanged.",
     notesSaved: "Saved",
     saving: "Saving…",
 
@@ -327,6 +329,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     notes: "Poznámky",
     notesPlaceholder: "Rychlé poznámky k projektu…",
     saveNotes: "Uložit poznámky",
+    notesLoadFailed: "Poznámky projektu se nepodařilo otevřít. Zavřete a znovu otevřete panel; uložené poznámky zůstávají beze změny.",
     notesSaved: "Uloženo",
     saving: "Ukládám…",
 

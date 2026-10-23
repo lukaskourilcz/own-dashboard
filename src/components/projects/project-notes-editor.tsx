@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Block } from "@blocknote/core";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { NoteEditorHandle } from "@/components/notes/note-editor";
+import { useDict } from "@/lib/i18n";
 
 // Reuse the exact rich editor from the Notes section (BlockNote). Loaded lazily
 // — it's heavy and client-only.
@@ -29,7 +29,8 @@ export function ProjectNotesEditor({
   onSaveMarkdown: (markdown: string) => void;
 }) {
   const [blocks, setBlocks] = useState<Block[] | null>(null);
-  const handleRef = useRef<NoteEditorHandle | null>(null);
+  const [parseFailed, setParseFailed] = useState(false);
+  const t = useDict();
   const onSaveRef = useRef(onSaveMarkdown);
   useEffect(() => {
     onSaveRef.current = onSaveMarkdown;
@@ -44,7 +45,7 @@ export function ProjectNotesEditor({
       );
       const parsed = await markdownToBlocks(initialMarkdown || "");
       if (!cancelled) setBlocks(parsed);
-    })();
+    })().catch(() => { if (!cancelled) setParseFailed(true); });
     return () => {
       cancelled = true;
     };
@@ -53,6 +54,7 @@ export function ProjectNotesEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
+  if (parseFailed) return <p role="alert" className="p-3 text-xs text-destructive">{t.projects.notesLoadFailed}</p>;
   if (!blocks) return <Skeleton className="h-24 w-full" />;
 
   return (
@@ -60,14 +62,8 @@ export function ProjectNotesEditor({
       key={projectId}
       noteId={projectId}
       initialContent={blocks}
-      handleRef={handleRef}
-      // The editor debounces onChange (~600ms). We ignore the block payload and
-      // serialize to markdown via the handle, then persist.
-      onChange={() => {
-        void handleRef.current
-          ?.toMarkdown()
-          .then((md) => onSaveRef.current(md));
-      }}
+      onChange={() => undefined}
+      onMarkdownChange={(markdown) => onSaveRef.current(markdown)}
     />
   );
 }

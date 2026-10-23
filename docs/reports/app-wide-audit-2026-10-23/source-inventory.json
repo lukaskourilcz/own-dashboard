@@ -1039,7 +1039,7 @@
       "lines": 238,
       "sha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662"
+      "reviewedSha256": "bfbe96b5e8f785282c6350364158ee77a95891a6c2e150d0a3ad81163d80c552"
     },
     {
       "path": "src/components/notes/parse-markdown.ts",
@@ -1389,7 +1389,7 @@
       "lines": 73,
       "sha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78"
+      "reviewedSha256": "0742a51547717c27b15915d32a535c363cbe5695f773db72d2ab6604ea1e81cb"
     },
     {
       "path": "src/components/projects/project-prompts-card.tsx",

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview, watchConsole } from "./helpers";
+import { gotoPreview, watchConsole, signInFixtureUser } from "./helpers";
 
 test.use({ timezoneId: "America/Los_Angeles" });
 test("workspace tabs support keyboard navigation and communication uses local time", async ({page}) => {
@@ -47,4 +47,20 @@ test("project cron forms expose named controls and reject malformed project URLs
  await expect(page.getByRole("textbox",{name:"Schedule",exact:true})).toBeVisible();
  const axe=await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"]}).include('[role="dialog"]').withTags(["wcag2a","wcag2aa","wcag21aa","wcag22aa"]).analyze();
  expect(axe.violations).toEqual([]);
+});
+
+
+test("closing project operations flushes a note edit before its debounce expires",async ({page}) => {
+ await gotoPreview(page);await signInFixtureUser(page);await page.goto("/dev-preview?tab=projects");
+ const writes:Array<{notes?:string}>=[];
+ await page.route("**/rest/v1/projects**",async route => {
+   if(route.request().method()==="PATCH"){writes.push(route.request().postDataJSON());await route.fulfill({status:204,body:""});}
+   else await route.fulfill({status:200,contentType:"application/json",body:"[]"});
+ });
+ await page.locator("#main-content").getByRole("button",{name:"Manage operations",exact:true}).first().click();
+ const editor=page.getByRole("dialog").locator('.tiptap[contenteditable="true"]');
+ await editor.fill("Quick edit retained after closing");
+ await page.keyboard.press("Escape");
+ await expect(page.getByRole("dialog")).toBeHidden();
+ await expect.poll(()=>writes.some(row => row.notes?.includes("Quick edit retained after closing"))).toBe(true);
 });

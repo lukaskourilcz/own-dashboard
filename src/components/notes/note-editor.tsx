@@ -49,6 +49,8 @@ type Props = {
     content: Block[];
     plainText: string;
   }) => void;
+  /** Project notes need the same captured document even while refs detach on unmount. */
+  onMarkdownChange?: (markdown: string) => void;
   handleRef?: React.RefObject<NoteEditorHandle | null>;
   /** Called when the user picks the "Link to note" slash menu item. The
    * parent is expected to open a notes picker and then call
@@ -75,6 +77,7 @@ function extractTitle(doc: Block[], fallback: string): string {
 export function NoteEditor({
   initialContent,
   onChange,
+  onMarkdownChange,
   handleRef,
   onRequestNoteLink,
   onNavigateToNote,
@@ -154,13 +157,15 @@ export function NoteEditor({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const changedRef = useRef(false);
   const onChangeRef = useRef(onChange);
+  const onMarkdownChangeRef = useRef(onMarkdownChange);
   const onLinkRef = useRef(onRequestNoteLink);
   const titleFallbackRef = useRef(t.notes.untitled);
   useEffect(() => {
     onChangeRef.current = onChange;
+    onMarkdownChangeRef.current = onMarkdownChange;
     onLinkRef.current = onRequestNoteLink;
     titleFallbackRef.current = t.notes.untitled;
-  }, [onChange, onRequestNoteLink, t]);
+  }, [onChange, onMarkdownChange, onRequestNoteLink, t]);
 
   useEffect(() => {
     if (!editor) return;
@@ -174,6 +179,7 @@ export function NoteEditor({
           content: doc,
           plainText: blocksToPlainText(doc),
         });
+        onMarkdownChangeRef.current?.(editor.blocksToMarkdownLossy(doc));
         changedRef.current = false;
         timerRef.current = null;
       }, 600);
@@ -187,6 +193,7 @@ export function NoteEditor({
           content: doc,
           plainText: blocksToPlainText(doc),
         });
+        onMarkdownChangeRef.current?.(editor.blocksToMarkdownLossy(doc));
       }
       if (typeof unsubscribe === "function") unsubscribe();
     };
