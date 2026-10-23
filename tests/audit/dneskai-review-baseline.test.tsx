@@ -76,16 +76,28 @@ describe('DNESKAi audit regressions and remaining baseline probes', () => {
     const read = await readDneskaiWorkspace(database({ marketing_jobs: [...Array.from({ length: 60 }, (_, n) => job(n + 1, 'devshark')), target] }), owner, now);
     expect(read.jobs).toHaveLength(1);
   });
-  it('C04: reports only 5000 of 5001 keyword matches as an exact receipt', async () => {
+  it('C04: maps complete database counts and keeps failures beyond the top ten codes', async () => {
     const post = row(1);
     post.revision = { ...(post.revision as Row), engagement: { keyword: 'SKILL', replyMessage: 'Synthetic reply.' } };
-    const read = await readDneskaiWorkspace(database({ marketing_revisions: [post],
+    const rpc = vi.fn(async () => ({ error: null, data: {
+      receipts: [{ publicationId: id(2), commentsSeen: 6000, keywordMatches: 5001, privateSent: 5001, publicSent: 0, failedCount: 12,
+        failures: Array.from({ length: 10 }, (_, n) => ({ code: `failure-${n}`, count: 1 })), lastCheckedAt: null }],
+      summary: { posts: 2, commentsSeen: 7000, keywordMatches: 5101, privateSent: 5101, publicSent: 0, failed: 12 },
+    } }));
+    const db = Object.assign(database({ marketing_revisions: [post],
       marketing_publications: [{ id: id(2), user_id: owner, revision_id: id(1), status: 'published', scheduled_at: '2026-10-23T07:00:00Z', remote_url: null, error_code: null, last_checked_at: null }],
-      marketing_instagram_comment_replies: Array.from({ length: 5001 }, () => ({ user_id: owner, publication_id: id(2), status: 'sent', public_status: 'sent', error_code: null })),
-    }), owner, now, undefined, { engagement: true });
-    expect(read.posts).toHaveLength(1);
-    expect(read.posts[0]!.engagementReceipt?.keywordMatches).toBe(5000);
-    expect(read.engagementSummary?.privateSent).toBe(5000);
+    }), { rpc });
+    const read = await readDneskaiWorkspace(db, owner, now, undefined, { engagement: true });
+    expect(read.posts[0]!.engagementReceipt?.keywordMatches).toBe(5001);
+    expect(read.posts[0]!.engagementReceipt?.failedCount).toBe(12);
+    expect(read.engagementSummary?.privateSent).toBe(5101);
+    expect(read.engagementStatus).toBe('complete');
+    expect(rpc).toHaveBeenCalledWith('marketing_dneskai_engagement_receipts', expect.objectContaining({ p_publication_ids: [id(2)] }));
+  });
+  it('C04: exposes unavailable aggregate data rather than reporting zero when the migration is absent', async () => {
+    const db = Object.assign(database({}), { rpc: vi.fn(async () => ({ data: null, error: { code: 'PGRST202' } })) });
+    const read = await readDneskaiWorkspace(db, owner, now, undefined, { engagement: true });
+    expect(read.engagementSummary).toBeUndefined(); expect(read.engagementStatus).toBe('unavailable');
   });
   it('C05: renders a duplicate title ID that resolves the input label to a heading', async () => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

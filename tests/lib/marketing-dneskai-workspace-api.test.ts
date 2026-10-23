@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn(), readReceipts: vi.fn() }));
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks) }) }));
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks), rpc: mocks.readReceipts }) }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ rpc: mocks.rpc }) }));
 import { GET as review } from '@/app/api/marketing/dneskai/review/route';
 import { GET as costs } from '@/app/api/marketing/dneskai/costs/route';
@@ -154,11 +154,16 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     ];
     const off = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
     expect(off.posts[0]!.engagementReceipt).toBeUndefined(); expect(off.engagementSummary).toBeUndefined();
+    mocks.readReceipts.mockResolvedValue({ error: null, data: {
+      receipts: [{ publicationId, commentsSeen: 12, keywordMatches: 3, privateSent: 2, publicSent: 1, failedCount: 2,
+        failures: [{ code: 'engagement-recipient-unavailable', count: 1 }, { code: 'meta-error-100', count: 1 }], lastCheckedAt: new Date().toISOString() }],
+      summary: { posts: 1, commentsSeen: 12, keywordMatches: 3, privateSent: 2, publicSent: 1, failed: 2 },
+    } });
     vi.stubEnv('DNESKAI_ENGAGEMENT_ENABLED', 'true');
     const read = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
     vi.unstubAllEnvs();
     expect(read.posts[0]!.engagementReceipt).toMatchObject({ commentsSeen: 12, keywordMatches: 3, privateSent: 2, publicSent: 1,
-      failures: [{ code: 'meta-error-100', count: 1 }, { code: 'engagement-recipient-unavailable', count: 1 }] });
+      failures: [{ code: 'engagement-recipient-unavailable', count: 1 }, { code: 'meta-error-100', count: 1 }] });
     expect(read.engagementSummary).toEqual({ posts: 1, commentsSeen: 12, keywordMatches: 3, privateSent: 2, publicSent: 1, failed: 2 });
   });
   it('refuses a signed-out read, a bad project or date, a foreign project and hides database errors', async () => {

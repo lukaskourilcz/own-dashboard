@@ -22,7 +22,7 @@ import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_OWNER_CODES, DNESKAI_TOP
  * and validated against the browser schemas; a row that does not parse is counted, not shown.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
-type Database = Pick<SupabaseClient<any>, 'from'>;
+type Database = Pick<SupabaseClient<any>, 'from' | 'rpc'>;
 
 const POST_LIMIT = 60;
 const REVISION_READ_LIMIT = 150;
@@ -174,49 +174,31 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     return !row.job_id && brief.success && Date.parse(brief.data.scheduledAt) > now.getTime() ? [brief.data] : [];
   }).slice(0, 8);
   return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs, decisionPage: { nextCursor },
-    ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), ...(engagementSummary ? { engagementSummary } : {}), unreadable });
+    ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), ...(engagementSummary ? { engagementSummary } : {}), ...(options.engagement ? { engagementStatus: engagementSummary ? 'complete' : 'unavailable' } : {}), unreadable });
 }
 
 const ENGAGEMENT_SUMMARY_MS = 7 * 86_400_000;
-/**
- * Adds the comment watcher's receipt to each published post with a keyword and returns the seven-day totals.
- * Counts come from `marketing_instagram_comment_checks` (comments read in the last finished pass, or the pass in
- * progress when none finished yet) and `marketing_instagram_comment_replies` (matches, replies, failures by code).
- */
+const EngagementReadSchema = z.strictObject({
+  receipts: z.array(DneskaiEngagementReceiptSchema.extend({ publicationId: z.uuid() })).max(60),
+  summary: DneskaiWorkspaceReadSchema.shape.engagementSummary.unwrap(),
+});
+/** One owner/RLS-scoped aggregate: no raw-reply cap, no per-post scans and no dependency on the selected page. */
 async function attachEngagementReceipts(db: Database, owner: string, posts: DneskaiWorkspacePost[], now: Date) {
-  const watched = posts.filter((post) => post.engagement && post.publication?.status === 'published');
-  const publicationIds = watched.map((post) => post.publication!.id);
-  if (!publicationIds.length) return { posts: 0, commentsSeen: 0, keywordMatches: 0, privateSent: 0, publicSent: 0, failed: 0 };
-  const [checks, replies] = await Promise.all([
-    db.from('marketing_instagram_comment_checks').select('publication_id,comments_seen,pass_seen,last_checked_at').eq('user_id', owner).in('publication_id', publicationIds),
-    db.from('marketing_instagram_comment_replies').select('publication_id,status,public_status,error_code').eq('user_id', owner).in('publication_id', publicationIds).limit(5000),
-  ]);
-  if (checks.error || replies.error) return undefined;
-  const checkRows = (checks.data ?? []) as Array<{ publication_id: string; comments_seen: number; pass_seen: number; last_checked_at: string | null }>;
-  const replyRows = (replies.data ?? []) as Array<{ publication_id: string; status: string; public_status: string; error_code: string | null }>;
-  const summary = { posts: 0, commentsSeen: 0, keywordMatches: 0, privateSent: 0, publicSent: 0, failed: 0 };
+  z.uuid().parse(owner);
+  const watched = posts.filter(post => post.engagement && post.publication?.status === 'published');
+  const { data, error } = await db.rpc('marketing_dneskai_engagement_receipts', {
+    p_publication_ids: watched.map(post => post.publication!.id),
+    p_since: new Date(now.getTime() - ENGAGEMENT_SUMMARY_MS).toISOString(), p_until: now.toISOString(),
+  });
+  if (error) return undefined; // Includes a migration not yet applied; never present partial data as zero.
+  const parsed = EngagementReadSchema.safeParse(data);
+  if (!parsed.success) return undefined;
+  const receipts = new Map(parsed.data.receipts.map(({ publicationId, ...receipt }) => [publicationId, receipt]));
+  if (receipts.size !== parsed.data.receipts.length || watched.some(post => !receipts.has(post.publication!.id))) return undefined;
   for (const post of watched) {
-    const id = post.publication!.id;
-    const check = checkRows.find((row) => row.publication_id === id);
-    const own = replyRows.filter((row) => row.publication_id === id);
-    const failures = new Map<string, number>();
-    for (const row of own) if (row.status === 'failed' || row.status === 'uncertain' || row.public_status === 'failed' || row.public_status === 'uncertain') {
-      const code = safeCode(row.error_code) ?? 'reply-uncertain';
-      failures.set(code, (failures.get(code) ?? 0) + 1);
-    }
-    const receipt = DneskaiEngagementReceiptSchema.parse({
-      commentsSeen: check ? Math.max(check.comments_seen, check.pass_seen) : 0, keywordMatches: own.length,
-      privateSent: own.filter((row) => row.status === 'sent').length, publicSent: own.filter((row) => row.public_status === 'sent').length,
-      failures: [...failures].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([code, count]) => ({ code, count })), lastCheckedAt: iso(check?.last_checked_at ?? null),
-    });
-    post.engagementReceipt = receipt;
-    const publishedAt = Date.parse(post.publication!.publishedAt ?? post.scheduledAt);
-    if (now.getTime() - publishedAt <= ENGAGEMENT_SUMMARY_MS) {
-      summary.posts += 1; summary.commentsSeen += receipt.commentsSeen; summary.keywordMatches += receipt.keywordMatches;
-      summary.privateSent += receipt.privateSent; summary.publicSent += receipt.publicSent; summary.failed += receipt.failures.reduce((sum: number, item: { count: number }) => sum + item.count, 0);
-    }
+    post.engagementReceipt = receipts.get(post.publication!.id)!;
   }
-  return summary;
+  return parsed.data.summary;
 }
 
 const TickStepSchema = z.object({ category: z.string(), status: z.string(), code: z.string().optional() });

@@ -41,6 +41,8 @@ const count = z.number().int().nonnegative().max(1_000_000);
 export const DneskaiEngagementReceiptSchema = z.strictObject({
   commentsSeen: count, keywordMatches: count, privateSent: count, publicSent: count,
   failures: z.array(z.strictObject({ code, count })).max(10),
+  /** Complete failure count; the details list shows only the top ten codes. */
+  failedCount: count.optional(),
   lastCheckedAt: timestamp.nullable(),
 });
 export type DneskaiEngagementReceipt = z.infer<typeof DneskaiEngagementReceiptSchema>;
@@ -137,6 +139,7 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
     /** The Lab's keyword and DM editor (#159, DNESKAI_ENGAGEMENT_EDITOR_ENABLED). Absent: off. */
     engagement: z.boolean().optional() }).optional(),
   /** #162: the watcher's totals over posts published in the last seven days. Absent while the watcher is off. */
+  engagementStatus: z.enum(['complete', 'unavailable']).optional(),
   engagementSummary: z.strictObject({ posts: count, commentsSeen: count, keywordMatches: count, privateSent: count, publicSent: count, failed: count }).optional(),
   /** Stored rows (revisions, accounts) that could not be read; shown as a count, never silently dropped. */
   unreadable: z.number().int().nonnegative(),

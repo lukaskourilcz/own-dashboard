@@ -55,7 +55,10 @@ const en = {
   /** #162: what the comment watcher did. */
   engagementReceipts: {
     label: 'Keyword comments',
-    summary: (days: number) => `Last ${days} days of keyword comments`,
+    unavailable: 'Engagement data could not be loaded. Refresh to try again.',
+    otherFailures: (count: number) => `${count} more failures outside the ten most frequent codes.`,
+    summary: (days: number) => `Keyword posts published in the last ${days} days`,
+    summaryHelp: 'All recorded comments and replies for posts published in this period.',
     comments: 'Comments read', matches: 'With the keyword', sent: 'Messages sent', publicSent: 'Public replies', failed: 'Failed',
     lastCheck: 'Last check', notChecked: 'Not checked yet',
     failure: (count: number) => count === 1 ? '1 reply' : `${count} replies`,
@@ -143,8 +146,11 @@ const cs: typeof en = {
     today: 'Dnes', job: 'Návrh se připravuje',
   },
   engagementReceipts: {
+    unavailable: 'Údaje o komentářích se nepodařilo načíst. Zkuste je obnovit.',
+    otherFailures: (count: number) => `Dalších ${count} selhání mimo deset nejčastějších kódů.`,
     label: 'Komentáře s klíčovým slovem',
-    summary: (days: number) => `Komentáře s klíčovým slovem za posledních ${days} dní`,
+    summary: (days: number) => `Příspěvky s klíčovým slovem publikované za posledních ${days} dní`,
+    summaryHelp: 'Všechny zaznamenané komentáře a odpovědi u příspěvků publikovaných v tomto období.',
     comments: 'Přečtené komentáře', matches: 'S klíčovým slovem', sent: 'Odeslané zprávy', publicSent: 'Veřejné odpovědi', failed: 'Selhalo',
     lastCheck: 'Naposledy zkontrolováno', notChecked: 'Zatím nezkontrolováno',
     failure: (count: number) => count === 1 ? '1 odpověď' : count < 5 ? `${count} odpovědi` : `${count} odpovědí`,
