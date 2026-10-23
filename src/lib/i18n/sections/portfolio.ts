@@ -106,6 +106,7 @@ type PortfolioStrings = {
     quarterly: string;
     lifecycle: (started: string, ended: string | null) => string;
     confirmationResets: string;
+    allocationsSaveFailed: string;
   };
 };
 
@@ -220,6 +221,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       quarterly: "Quarterly",
       lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `since ${started}`),
       confirmationResets: "Changing the amount, currency or billing cycle clears the confirmation.",
+      allocationsSaveFailed: "Subscription saved. Project allocations could not be confirmed; review them before saving again. This form now updates the saved subscription.",
     },
   },
   cs: {
@@ -332,6 +334,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       quarterly: "Čtvrtletně",
       lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `od ${started}`),
       confirmationResets: "Změna částky, měny nebo fakturačního období ověření zruší.",
+      allocationsSaveFailed: "Předplatné je uložené. Rozdělení mezi projekty nebylo potvrzeno; před dalším uložením je zkontrolujte. Formulář nyní upravuje uložené předplatné.",
     },
   },
 };

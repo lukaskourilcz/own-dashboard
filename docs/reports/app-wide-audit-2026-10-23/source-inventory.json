@@ -658,7 +658,7 @@
       "lines": 278,
       "sha256": "aac333f17e7b1378c0baad542056a02bd2a6a23fb1bcf75b258a05fb1bdba78f",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "aac333f17e7b1378c0baad542056a02bd2a6a23fb1bcf75b258a05fb1bdba78f"
+      "reviewedSha256": "e12fcaef2adce9ad3da219176941669f0058d11fb2da34d5a31617d8b033ef1b"
     },
     {
       "path": "src/components/dashboard-shell.tsx",
@@ -1303,7 +1303,8 @@
       "path": "src/components/panels/subscriptions-panel.tsx",
       "lines": 1108,
       "sha256": "9fb74fd45e872041f03dd81e255974d97210bcd94dacd03d91e8c529dce225d0",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "7b5bbf13bfad46e9f1fab851c4211f5cc93fc104d93197307a96a9c9a3a28f66"
     },
     {
       "path": "src/components/panels/tip-export-dialog.tsx",
@@ -3299,7 +3300,8 @@
       "path": "src/lib/subscriptions.ts",
       "lines": 71,
       "sha256": "f76678845c96970e1dd9c41b356033008ebc48e564198842a0e767a732b5bf33",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "daf720fdd68420dbe821e51e0a7153189b72e7b33780bac435bf4f962dde2455"
     },
     {
       "path": "src/lib/supabase/admin.ts",

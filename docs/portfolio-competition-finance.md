@@ -144,3 +144,8 @@ tests. `tests/lib/link-library.test.ts` covers the category merge, and
 `tests/lib/migration-contracts.test.ts` covers the 2026-09-25 integration migrations.
 Browser tests: the dashboard section walk includes Competition, and the project workspace
 check includes the Competition tab.
+
+
+## Subscription save recovery — 23 October 2026
+
+A saved subscription is retained if its separate project-allocation write fails. The form stays open with the confirmed subscription id and an explicit warning, so retry updates that record rather than creating another subscription. Allocation reads reconcile after a partial failure. Pending writes disable conflicting controls, and failed toggles or deletions report their outcome. Renewal windows follow the shared browser clock without advancing or inferring any stored renewal date. No vendor connection or owner billing record was changed by this audit.

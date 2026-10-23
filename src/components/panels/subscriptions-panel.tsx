@@ -25,6 +25,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { CategorySelect } from "@/components/category-select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -44,6 +45,7 @@ import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
 import { Textarea } from "@/components/ui/textarea";
 import { amountConfirmationAfterEdit, isAmountConfirmed, isDevelopmentSubscription, staleAllocationIds, subscriptionShares } from "@/lib/dev-finance";
 import { todayKey } from "@/lib/date-keys";
+import { useNow } from "@/lib/use-now";
 import type { Project, Subscription, SubscriptionAllocation, SubscriptionBillingCycle, SubscriptionCategoryGroup, SubscriptionImportance, Updater } from "@/lib/types";
 
 // Recharts is heavy; load the donut only when this panel renders.
@@ -152,6 +154,8 @@ export function SubscriptionsPanel({
   const qc = useQueryClient();
   const t = useDict();
   const confirm = useConfirmation();
+  const toast = useToast();
+  const now = useNow();
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
@@ -176,7 +180,7 @@ export function SubscriptionsPanel({
   const monthlyTotal = totalMonthlyIn(subs, displayCurrency);
   const yearlyTotal = monthlyTotal * 12;
   const periodTotal = yearly ? yearlyTotal : monthlyTotal;
-  const renewals = useMemo(() => upcomingRenewals(subs, 30), [subs]);
+  const renewals = useMemo(() => now ? upcomingRenewals(subs, 30, now) : [], [subs, now]);
   const activeCount = subs.filter(isActive).length;
   const groupOrder = useMemo(
     () =>
@@ -250,30 +254,50 @@ export function SubscriptionsPanel({
     void qc.invalidateQueries({ queryKey: qk.subscriptionAllocations });
   }
 
+  async function finishAllocations(sub: Subscription, userId: string, rows: { project_id: string; share: number }[], startedWith: FormState["loadedAllocations"]) {
+    try {
+      await syncAllocations(sub.id, userId, rows, startedWith);
+      return { sub, allocationsSaved: true };
+    } catch {
+      void qc.invalidateQueries({ queryKey: qk.subscriptionAllocations });
+      return { sub, allocationsSaved: false };
+    }
+  }
+
+  function retainSavedSubscription({ sub, allocationsSaved }: { sub: Subscription; allocationsSaved: boolean }) {
+    setSubs(previous => previous.some(row => row.id === sub.id) ? previous.map(row => row.id === sub.id ? sub : row) : [sub, ...previous]);
+    void qc.invalidateQueries({ queryKey: qk.subscriptions });
+    if (allocationsSaved) {
+      setForm(emptyForm);
+      setFormOpen(false);
+    } else {
+      setForm(previous => ({ ...previous, id: sub.id }));
+      setError(t.portfolio.subscription.allocationsSaveFailed);
+    }
+  }
+
   const createMutation = useMutation({
-    mutationFn: async (vars: { payload: SubPayload; userId: string; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
+    mutationFn: async (vars: { payload: SubPayload; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
+      const userId = await currentUserId(supabase);
+      if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("subscriptions")
-        .insert({ ...vars.payload, user_id: vars.userId })
+        .insert({ ...vars.payload, user_id: userId })
         .select()
         .single();
       if (error) throw error;
-      await syncAllocations((data as Subscription).id, vars.userId, vars.rows, vars.startedWith);
-      return data as Subscription;
+      return finishAllocations(data as Subscription, userId, vars.rows, vars.startedWith);
     },
-    onSuccess: (sub) => {
-      setSubs((prev) => [sub, ...prev]);
-      setForm(emptyForm);
-      setFormOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.subscriptions });
-    },
+    onSuccess: retainSavedSubscription,
     onError: (e) => {
       setError((e as Error).message);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (vars: { id: string; payload: SubPayload; userId: string; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
+    mutationFn: async (vars: { id: string; payload: SubPayload; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
+      const userId = await currentUserId(supabase);
+      if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("subscriptions")
         .update({ ...vars.payload, updated_at: new Date().toISOString() })
@@ -281,15 +305,9 @@ export function SubscriptionsPanel({
         .select()
         .single();
       if (error) throw error;
-      await syncAllocations(vars.id, vars.userId, vars.rows, vars.startedWith);
-      return data as Subscription;
+      return finishAllocations(data as Subscription, userId, vars.rows, vars.startedWith);
     },
-    onSuccess: (sub) => {
-      setSubs((prev) => prev.map((s) => (s.id === sub.id ? sub : s)));
-      setForm(emptyForm);
-      setFormOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.subscriptions });
-    },
+    onSuccess: retainSavedSubscription,
     onError: (e) => {
       setError((e as Error).message);
     },
@@ -306,7 +324,9 @@ export function SubscriptionsPanel({
     onSuccess: (_data, id) => {
       setSubs((prev) => prev.filter((s) => s.id !== id));
       void qc.invalidateQueries({ queryKey: qk.subscriptions });
+      for (const queryKey of [qk.subscriptionAllocations, qk.transactions, qk.tools]) void qc.invalidateQueries({ queryKey });
     },
+    onError: () => toast.err(t.professional.couldNotSave),
   });
 
   // Optimistic toggle: flip is_active in the cache immediately, roll back on
@@ -329,6 +349,7 @@ export function SubscriptionsPanel({
     },
     onError: (_e, _vars, ctx) => {
       if (ctx?.prev) setSubs(ctx.prev);
+      toast.err(t.professional.couldNotSave);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
   });
@@ -350,19 +371,21 @@ export function SubscriptionsPanel({
       setSubs((old) => old.map((s) => (s.id === sub.id ? { ...s, amount_confirmed_on: next } : s)));
       return { prev };
     },
-    onError: (e, _vars, ctx) => {
+    onError: (_e, _vars, ctx) => {
       if (ctx?.prev) setSubs(ctx.prev);
-      setError((e as Error).message);
+      toast.err(t.professional.couldNotSave);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.subscriptions }),
   });
 
   const saving = createMutation.isPending || updateMutation.isPending;
+  const mutating = saving || deleteMutation.isPending || toggleMutation.isPending || confirmAmountMutation.isPending;
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (mutating) return;
     setError(null);
-    if (!form.name.trim() || !form.amount) {
+    if (!form.name.trim() || !form.amount || !Number.isFinite(Number(form.amount)) || Number(form.amount) < 0) {
       setError(t.subscriptions.nameAndAmountRequired);
       return;
     }
@@ -397,19 +420,15 @@ export function SubscriptionsPanel({
         { amount: Number(form.amount), currency: form.currency, billing_cycle: form.billing_cycle },
       ),
     };
-    const userId = await currentUserId(supabase);
-    if (!userId) {
-      setError(t.common.signInFirst);
-      return;
-    }
     if (form.id) {
-      updateMutation.mutate({ id: form.id, payload, userId, rows, startedWith: form.loadedAllocations });
+      updateMutation.mutate({ id: form.id, payload, rows, startedWith: form.loadedAllocations });
     } else {
-      createMutation.mutate({ payload, userId, rows, startedWith: [] });
+      createMutation.mutate({ payload, rows, startedWith: [] });
     }
   }
 
   async function handleDelete(id: string) {
+    if (mutating) return;
     if (await confirm({
       title: t.common.delete,
       description: t.common.deletePermanentlyConfirm,
@@ -420,16 +439,20 @@ export function SubscriptionsPanel({
   }
 
   function toggleActive(sub: Subscription) {
+    if (mutating) return;
     const next = !isActive(sub);
     toggleMutation.mutate({ sub, next });
   }
 
   function toggleAmountConfirmed(sub: Subscription) {
+    if (mutating) return;
     setError(null);
     confirmAmountMutation.mutate({ sub, next: isAmountConfirmed(sub) ? null : todayKey() });
   }
 
   function startEdit(sub: Subscription) {
+    if (mutating) return;
+    setError(null);
     setFormOpen(true);
     const loaded = allocations.filter((allocation) => allocation.subscription_id === sub.id);
     setForm({
@@ -509,7 +532,7 @@ export function SubscriptionsPanel({
                 {ordered.map((s) => {
                   const active = isActive(s);
                   const monthly = toMonthlyIn(s, displayCurrency);
-                  const days = daysUntilRenewal(s);
+                  const days = now ? daysUntilRenewal(s, now) : null;
                   return (
                     <li
                       key={s.id}
@@ -534,7 +557,7 @@ export function SubscriptionsPanel({
                         <p className="truncate text-[11px] text-foreground-subtle">
                           {t.subscriptions.cycle[s.billing_cycle]}
                           {s.next_billing_date
-                            ? ` · ${t.subscriptions.nextOn(s.next_billing_date)} · ${renewalDistance(days, t.subscriptions)}`
+                            ? ` · ${t.subscriptions.nextOn(s.next_billing_date)} · ${now ? renewalDistance(days, t.subscriptions) : "—"}`
                             : ` · ${t.subscriptions.renewalMissing}`}
                         </p>
                       </div>
@@ -571,7 +594,7 @@ export function SubscriptionsPanel({
       <PageHeader
         title={t.subscriptions.title}
         description={t.subscriptions.description}
-        action={<div className="flex flex-wrap items-center gap-3"><Button onClick={() => { setForm(emptyForm); setFormOpen(true); }}><Plus />{t.subscriptions.addSubscription}</Button>{          setDisplayCurrency && (
+        action={<div className="flex flex-wrap items-center gap-3"><Button disabled={mutating} onClick={() => { setError(null); setForm({ ...emptyForm, currency: displayCurrency }); setFormOpen(true); }}><Plus />{t.subscriptions.addSubscription}</Button>{          setDisplayCurrency && (
             <div className="inline-flex items-center gap-2">
               <Label className="text-foreground-subtle">
                 {t.subscriptions.displayIn}
@@ -590,7 +613,7 @@ export function SubscriptionsPanel({
           )}</div>}
       />
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{form.id ? t.subscriptions.editSubscription : t.subscriptions.addSubscription}</DialogTitle></DialogHeader><form onSubmit={handleSubmit} className="space-y-3">
+      <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{form.id ? t.subscriptions.editSubscription : t.subscriptions.addSubscription}</DialogTitle></DialogHeader><form onSubmit={handleSubmit} className="space-y-3"><fieldset disabled={mutating} aria-label={form.id ? t.subscriptions.editSubscription : t.subscriptions.addSubscription} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="sub-name">{t.subscriptions.name}</Label>
                 <Input
@@ -672,6 +695,7 @@ export function SubscriptionsPanel({
                 <Input
                   id="sub-next"
                   type="date"
+                  required
                   value={form.next_billing_date}
                   onChange={(e) =>
                     setForm({ ...form, next_billing_date: e.target.value })
@@ -705,7 +729,7 @@ export function SubscriptionsPanel({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="sub-vendor-url">{t.portfolio.subscription.vendorUrl}</Label>
-                  <Input id="sub-vendor-url" inputMode="url" value={form.vendor_url} onChange={(e) => setForm({ ...form, vendor_url: e.target.value })} placeholder="https://" />
+                  <Input id="sub-vendor-url" type="url" pattern="https?://.*" inputMode="url" value={form.vendor_url} onChange={(e) => setForm({ ...form, vendor_url: e.target.value })} placeholder="https://" />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -750,7 +774,7 @@ export function SubscriptionsPanel({
                 </fieldset>
               )}
               {error && (
-                <p className="text-xs text-destructive">{error}</p>
+                <p role="alert" className="text-xs text-destructive">{error}</p>
               )}
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving} className="flex-1">
@@ -767,7 +791,7 @@ export function SubscriptionsPanel({
                   </Button>
                 )}
               </div>
-            </form></DialogContent></Dialog>
+            </fieldset></form></DialogContent></Dialog>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
 
@@ -883,14 +907,14 @@ export function SubscriptionsPanel({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {renewals.length === 0 ? (
+            {!now ? <p role="status" className="text-xs text-foreground-subtle">{t.common.loading}</p> : renewals.length === 0 ? (
               <p className="text-xs text-foreground-subtle">
                 {t.subscriptions.nothingBilling30}
               </p>
             ) : (
               <ul className="-mx-2">
                 {renewals.map((s) => {
-                  const days = daysUntilRenewal(s);
+                  const days = now ? daysUntilRenewal(s, now) : null;
                   const soon = days !== null && days <= 3;
                   return (
                   <li
@@ -964,7 +988,7 @@ export function SubscriptionsPanel({
                   })
                   .map((s) => {
                     const active = isActive(s);
-                    const days = daysUntilRenewal(s);
+                    const days = now ? daysUntilRenewal(s, now) : null;
                     return (
                       <li
                         key={s.id}
@@ -1000,7 +1024,7 @@ export function SubscriptionsPanel({
                               ? ` · ${projects.find((project) => project.id === s.project_id)?.name ?? t.subscriptions.project}`
                               : ` · ${t.subscriptions.generalOverhead}`}
                             {s.next_billing_date
-                              ? ` · ${t.subscriptions.nextOn(s.next_billing_date)} · ${renewalDistance(days, t.subscriptions)}`
+                              ? ` · ${t.subscriptions.nextOn(s.next_billing_date)} · ${now ? renewalDistance(days, t.subscriptions) : "—"}`
                               : ` · ${t.subscriptions.renewalMissing}`}
                           </p>
                           <p className="text-[11px] text-foreground-subtle tabular">
@@ -1042,6 +1066,7 @@ export function SubscriptionsPanel({
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => toggleAmountConfirmed(s)}
+                              disabled={mutating}
                               aria-label={isAmountConfirmed(s) ? t.portfolio.finance.unconfirmAmount : t.portfolio.finance.confirmAmount}
                             >
                               <BadgeCheck className={cn("h-3.5 w-3.5", isAmountConfirmed(s) ? "text-success" : "text-foreground-subtle")} />
@@ -1054,7 +1079,7 @@ export function SubscriptionsPanel({
                               onClick={() => startEdit(s)}
                               // The editor shows this subscription's project
                               // split, which has to have loaded first.
-                              disabled={!allocationsReady}
+                              disabled={!allocationsReady || mutating}
                               aria-label={t.common.edit}
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -1071,6 +1096,7 @@ export function SubscriptionsPanel({
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => toggleActive(s)}
+                              disabled={mutating}
                               aria-label={
                                 active
                                   ? t.subscriptions.cancelAria
@@ -1089,6 +1115,7 @@ export function SubscriptionsPanel({
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => handleDelete(s.id)}
+                              disabled={mutating}
                               aria-label={t.common.delete}
                             >
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />

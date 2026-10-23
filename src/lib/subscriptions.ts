@@ -1,6 +1,7 @@
 import type { Subscription } from "@/lib/types";
 import { convert } from "@/lib/fx";
 import { parseDateOnly } from "@/lib/date-keys";
+import { differenceInCalendarDays, startOfDay } from "date-fns";
 
 export function isActive(sub: Subscription): boolean {
   // Treat undefined (pre-migration rows) as active.
@@ -42,20 +43,18 @@ export function totalMonthlyIn(
  * Negative for overdue, 0 for "today", positive for future. Floor()-ed at
  * the day boundary so "tomorrow at 23:00" still reads as 1 day, not 0.
  */
-export function daysUntilRenewal(sub: Subscription): number | null {
+export function daysUntilRenewal(sub: Subscription, now: Date = new Date()): number | null {
   if (!sub.next_billing_date) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
   const d = parseDateOnly(sub.next_billing_date);
-  return Math.round((d.getTime() - today.getTime()) / 86400000);
+  return differenceInCalendarDays(d, now);
 }
 
 export function upcomingRenewals(
   subs: Subscription[],
   withinDays = 30,
+  now: Date = new Date(),
 ): Subscription[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = startOfDay(now);
   const horizon = new Date(today);
   horizon.setDate(horizon.getDate() + withinDays);
 
