@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Implementation update (2026-10-23): [the audit implementation report](../reports/dneskai-audit-implementation-2026-10-23.md) records completed changes and exact release checks (2,779 unit/integration passes, one existing skip; 247 browser passes, 79 project-specific skips). [Actual before/after captures](../reports/dneskai-code-ux-audit-2026-10-23/implementation.html) are separate from the original proposed treatments. The new fixture matrix covers all 25 visible destinations at six widths; hidden Inbox/References retain their URL-only policy. Keyboard/focus, axe, EN/CS/theme samples, failed-save recovery, install metadata and the one-page dark-mode A4 invoice passed. Browser tests use isolated Chromium because the signed-in Chrome extension was unavailable. Manual screen-reader and actual browser zoom checks remain unrun; Production is unchanged.
+
 > Review update (2026-10-23): the [DNESKAi and application UX audit](../reports/dneskai-code-ux-audit-2026-10-23/README.md) adds current fixture screenshots, DOM measurements, code findings and a visual implementation plan against `d6f60c7`. Its [validation record](../reports/dneskai-code-ux-audit-2026-10-23/validation.md) distinguishes checks run from follow-up work. This was a review, not a new UI release or a full WCAG/A4 certification; the historical results below retain their original date.
 
 Date: 2026-07-27

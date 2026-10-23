@@ -47,10 +47,14 @@ Run these from the repository root:
 3. `python3 docs/reports/dneskai-code-ux-audit-2026-10-23/render-reports.py` builds the three HTML reading pages.
 4. `node docs/reports/dneskai-code-ux-audit-2026-10-23/verify-artifact.mjs` checks source paths/lines, local files, IDs, report anchors, highlight bounds and browser-data parity.
 
-The four audit probes in `tests/audit/dneskai-review-baseline.test.tsx` assert observed baseline defects. They pass while those defects exist; invert or replace them with desired-behavior tests as each finding is fixed. See validation.md for the 1087-test run, type/lint results and browser limits.
+At the audit baseline, the four probes asserted observed defects. On the implementation branch, `tests/audit/dneskai-review-baseline.test.tsx` now asserts corrected behavior; historical test counts in validation.md still describe the original review. See validation.md for the 1087-test run, type/lint results and browser limits.
 
 Implementation should follow the five batches in the visual plan. No migration, spend, provider setup or publication is required to read this artifact.
 
 [Claude kickoff prompt](claude-kickoff.md) carries the review baseline, implementation order and remaining live-account prerequisites into the next development session.
 
-Implementation now follows [the dated progress report](../dneskai-audit-implementation-2026-10-23.md). The evidence in this folder remains the original review baseline.
+Implementation results are tracked in [the dated implementation report](../dneskai-audit-implementation-2026-10-23.md). Open [the implemented comparison](implementation.html) for seven before/after pairs and 22 actual application captures. [Exact checks/limits](implementation-validation.json), [hashed capture provenance](implementation-evidence.json) and [local performance measurements](implementation-performance.json) are separate from the original review evidence. The implementation is local, not deployed.
+
+Rebuild the implementation comparison after a passing full release run with `python3 docs/reports/dneskai-code-ux-audit-2026-10-23/build-implementation.py`. It collects the latest audit-implementation test captures and requires a passing `implementation-validation.json`. Verify it with `node docs/reports/dneskai-code-ux-audit-2026-10-23/verify-implementation.mjs`. Pixel 5 captures retain their native 2.75 device scale; the manifest distinguishes CSS viewport dimensions from PNG pixels. Report-layout proof lives in `implementation-page-proof/`.
+
+With the local report server running on port 3943, run `node docs/reports/dneskai-code-ux-audit-2026-10-23/verify-implementation-browser.mjs` to check the report at 1440 px dark and 360 px light. It loads all 36 comparison/gallery images, checks missing assets, overflow, headings, navigation and axe, and refreshes the report-layout proof.

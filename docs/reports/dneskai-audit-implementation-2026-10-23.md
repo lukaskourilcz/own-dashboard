@@ -2,6 +2,34 @@
 
 Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit commit `e8347f6`. The original [code/UX review](dneskai-code-ux-audit-2026-10-23/README.md) remains a record of baseline `d6f60c7`. This report tracks implementation and actual validation; proposed screenshots in the review are not completion evidence.
 
+## Completed locally
+
+All five batches are implemented: C01–C07 are fixed, and U01–U16 are mapped below. Changes are committed in `/Users/lukasbarsinbars/Documents/own-dashboard-audit-20261023` on `codex/dneskai-audit-implementation`. The original checkout and its unrelated application changes remain intact. Nothing has been pushed, merged or deployed.
+
+Open the [actual before/after comparison](dneskai-code-ux-audit-2026-10-23/implementation.html), [exact validation record](dneskai-code-ux-audit-2026-10-23/implementation-validation.json) or [Claude kickoff](dneskai-code-ux-audit-2026-10-23/claude-kickoff.md). The comparison contains seven pairs and 22 actual captures with hashed provenance; original proposals remain in the historical review.
+
+| Required check | Final result |
+|---|---|
+| `npm run lint` | Passed. |
+| `npx tsc --noEmit` | Passed. |
+| `npm run test` | **2,779 passed, 1 skipped**; 273 files passed, 1 skipped; 185.27 s on the final application tree. The existing opt-in independent-session PostgreSQL pilot test has no configured local container. Migrated PGlite database tests ran. |
+| `npm run build` | Passed, optimized local fixture build with `NEXT_E2E=1` and placeholder public configuration. |
+| `npm run test:e2e` | **247 passed, 79 skipped**, 8.2 min. Skips are the suite's project-specific duplicate/once-only cases, including the six-width matrix on the second project. No failing browser cases remain. |
+
+The browser run covers 25 visible destinations at 360, 430, 768, 1024, 1440 and 1728 px (150 states), with one visible title and no document overflow. English/Czech and light/dark are sampled rather than exhaustively combined. Existing axe checks, new Settings scans at six widths, keyboard/focus checks, canonical Back/Forward, draft Save/Discard/Stay, unchanged failed-note retry, DNESKAi approval/media flows, install metadata and the Czech one-page A4 invoice passed. All 24 macOS visual baselines passed in the full run; the two changed and ten new captures were reviewed.
+
+The application source and optimized build match `e7eead8`; later commits affect documentation, its contract tests and verification artifacts. Earlier counts and pending-check statements in the development record below describe intermediate runs; the table above is the final result.
+
+### Deployment and verification limits
+
+Apply **`20261023135551_dneskai_engagement_receipts.sql` before deploying this code**. It is the only new audit migration. The earlier 23 feature migrations through `20261023130300` were already applied under owner authorisation; do not repeat that rollout. NEEDED.md, README, the migration guide and system map distinguish the completed rollout from this pending additive function.
+
+No Production data/configuration, publishing, provider calls or spend changed during this implementation. Secrets remain outside the code/report. The Chrome extension timed out on three inventory attempts, so browser evidence uses isolated Chromium and synthetic `/dev-preview` fixtures. No manual screen-reader audit or actual 200–400% browser zoom check is claimed. Local reflow, axe, keyboard and PostgreSQL evidence does not certify live latency, data cardinality or the automatic Reel publisher. Summary/detail reads, private image derivatives and an additional index remain measured experiments for the reasons recorded in Batch 5.
+
+## Development record
+
+The following intermediate checks explain the changes and repairs, not additional release claims.
+
 ## Batch 1: protect work and correct reads
 
 - **C01 implemented:** one dirty-draft guard above the persistent shell handles workspace tabs, post selection, project/sidebar/command navigation, ordinary links, document unload and managed browser Back/Forward. In-app exits offer Save / Discard / Stay. A failed save retains the editor and pending navigation; successful save resumes that navigation. Browser history restores the current entry without adding entries or dropping forward history. Native reload/close retains the browser's standard unsaved-work warning.
@@ -86,6 +114,10 @@ The final optimized fixture build, full lint and standalone type check passed. T
 
 The concurrent full unit run finished with 2,777 passes, one existing skip and two timing failures: a source test assumed its asynchronously loaded form existed after 50 ms, and a changelog assertion spent its timeout importing the full fixture module. The source test now polls for the actual form/success announcement; the changelog fixture loads with the test module. Both retain their original behavior assertions. Their focused rerun passed all nineteen tests; the complete unit suite will be rerun after the browser workload.
 
+The final documentation pass also corrected the migration guide's old “unapplied” paragraphs and five contract assertions that encoded that historical state. The assertions now require the recorded 23 October schema rollout date while retaining every RLS/private-bucket/service-role check. Documentation/migration contracts passed all 26 tests, followed by the full 2,779-pass unit run above. The new aggregate remains explicitly unapplied.
+
+Ready-content screenshot review found a subscription grid whose intrinsic minimum width could extend cards beyond the mobile content area while the outer shell hid document overflow. The grid tracks and cards can shrink to the available width, and renewal amounts wrap below their dated record on narrow screens. Period controls meet the mobile touch size; cancelled labels no longer nest a paragraph inside a paragraph. New browser assertions check each card's bounds and internal scroll width after the chart settles. Six development-browser width cases and 48 financial unit regressions passed. The optimized build and complete release suites were rerun after this correction and passed at `e7eead8`, as recorded above.
+
 ## UX recommendation map
 
 | Audit ID | Implemented treatment / retained boundary |
@@ -106,3 +138,10 @@ The concurrent full unit run finished with 2,777 passes, one existing skip and t
 | U14 | Career freshness/refresh beside count, explicit Tugedr opportunity source, compact client relationships without zero-count KPI blocks. Existing fit/detail behavior remains. |
 | U15 | Subscription creation on demand and visible renewal/classification; finance/project touch controls align. Invoice calculations, legal details, QR and print layout remain unchanged. |
 | U16 | Shared centered page/settings/form frames, content-sized panels, explicit disabled/read-error/loading states and recovery. Empty space is not filled with invented content. |
+
+
+## Final artifact checks
+
+The comparison was rebuilt from the final passing browser run: seven before/after pairs, 22 actual application PNGs and 77 local references, with SHA-256 and separate CSS viewport/PNG pixel dimensions. All 22 captures were visually reviewed; the subscription/editor captures wait for finished content. The original review verifier also passes (74 baseline captures, 155 source paths, 27 destinations and four reading pages).
+
+The implementation page passes its own 1440 px dark and 360 px light browser checks: all 36 comparison/gallery images load, no asset errors or document overflow, one heading, working anchors and zero axe violations. Two report-layout screenshots are stored separately. Rebuild/verification commands and limits are in the audit folder's README and validation JSON. The branch contains meaningful local commits; it has not been pushed, merged or deployed.
