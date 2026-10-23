@@ -30,7 +30,7 @@ import { currentUserId } from "@/lib/supabase/user";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
-import { parseBankCsv, type ParseResult } from "@/lib/bank-csv";
+import { prepareBankCsv, csvRowsToImport, CsvLegacyConflict, MAX_CSV_BYTES, type ParseResult } from "@/lib/bank-csv";
 import { applyRulesToRow, usableRules } from "@/lib/transaction-rules";
 import type { BankConnection, Project, Subscription, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -314,6 +314,9 @@ function CsvImport({
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const readingRef = useRef(false);
+  const [importError, setImportError] = useState<string | null>(null);
   // The same rule engine the sync and the retroactive apply use, so an imported
   // row lands in the category the editor's preview promised.
   const rulesQuery = useQuery({
@@ -324,14 +327,15 @@ function CsvImport({
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setFileName(file.name);
+    if (!file || readingRef.current || importMutation.isPending) return;
+    readingRef.current = true; setReading(true); setImportError(null); setParsed(null); setFileName(file.name);
     try {
-      const text = await file.text();
-      setParsed(parseBankCsv(text));
-    } catch {
-      toast.err(t.finances.bank.csvParseErr);
-      setParsed(null);
+      if (file.size > MAX_CSV_BYTES) { setImportError(t.finances.bank.csvIssue.limit); return; }
+      setParsed(await prepareBankCsv(await file.text()));
+    } catch { setImportError(t.finances.bank.csvParseErr); }
+    finally {
+      readingRef.current = false; setReading(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -341,14 +345,9 @@ function CsvImport({
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
 
-      // Skip anything we already hold (dedupe on external_id).
-      const existing = new Set(
-        transactions.map((tx) => tx.external_id).filter(Boolean) as string[],
-      );
-      const fresh = parsed.rows.filter((r) => !existing.has(r.external_id));
-      if (fresh.length === 0) {
-        return { added: 0, dup: parsed.rows.length };
-      }
+      if (!rulesQuery.isSuccess || rulesQuery.data.dropped > 0) throw new Error("rules-unavailable");
+      const fresh = csvRowsToImport(parsed.rows, transactions);
+      if (fresh.length === 0) return { added: 0, dup: parsed.rows.length };
       const rules = usableRules(rulesQuery.data?.rules ?? []);
       const owned = {
         projectIds: new Set(projects.map((p) => p.id)),
@@ -374,15 +373,18 @@ function CsvImport({
           owned,
         ),
       );
-      const { data, error } = await supabase
-        .from("transactions")
-        .upsert(payload, {
-          onConflict: "user_id,external_id",
-          ignoreDuplicates: true,
-        })
-        .select();
-      if (error) throw error;
-      const added = data?.length ?? 0;
+      let added = 0;
+      // Batches fit below the REST return limit. A failed later batch retains
+      // this file; strong unique keys make a retry safe for confirmed rows.
+      for (let offset = 0; offset < payload.length; offset += 250) {
+        const batch = payload.slice(offset, offset + 250);
+        const { data, error } = await supabase.from("transactions").upsert(batch, {
+          onConflict: "user_id,external_id", ignoreDuplicates: true,
+        }).select("id");
+        if (error || !Array.isArray(data) || data.length > batch.length || data.some(row => typeof row.id !== "string")
+          || new Set(data.map(row => row.id)).size !== data.length) throw new Error("Import not confirmed");
+        added += data.length;
+      }
       return { added, dup: parsed.rows.length - added };
     },
     onSuccess: ({ added, dup }) => {
@@ -390,13 +392,13 @@ function CsvImport({
         toast.ok(t.finances.bank.nothingToImport);
       } else {
         toast.ok(t.finances.bank.importDone(added, dup));
-        void qc.invalidateQueries({ queryKey: qk.transactions });
       }
       setParsed(null);
       setFileName(null);
       if (inputRef.current) inputRef.current.value = "";
     },
-    onError: () => toast.err(t.finances.bank.importErr),
+    onError: error => setImportError(error instanceof CsvLegacyConflict ? t.finances.bank.csvRowIssue(error.row, t.finances.bank.csvLegacyConflict) : t.finances.bank.importErr),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.transactions }); },
   });
 
   return (
@@ -414,18 +416,21 @@ function CsvImport({
           ref={inputRef}
           type="file"
           accept=".csv,text/csv,text/plain"
+          aria-label={t.finances.bank.chooseFile}
+          disabled={reading || importMutation.isPending}
           onChange={onFile}
           className="hidden"
           id="bank-csv-input"
         />
-        <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()}>
-          {t.finances.bank.chooseFile}
+        <Button size="sm" variant="outline" disabled={reading || importMutation.isPending} onClick={() => inputRef.current?.click()}>
+          {reading ? t.finances.bank.csvReading : t.finances.bank.chooseFile}
         </Button>
         {fileName && (
           <span className="truncate text-xs text-foreground-subtle">{fileName}</span>
         )}
       </div>
 
+      {importError && <p role="alert" className="mt-2 text-xs text-risk">{importError}</p>}
       {parsed && (
         <div className="mt-3 space-y-2 rounded-md border border-border bg-surface p-3">
           <p className="text-xs font-medium text-foreground">
@@ -439,16 +444,19 @@ function CsvImport({
               {t.finances.bank.csvColumns(parsed.columns.date, parsed.columns.amount)}
             </p>
           )}
-          {parsed.errors.length === 0 || parsed.rows.length > 0 ? (
+          {parsed.issues.length > 0 && <ul className="space-y-1 text-xs text-risk">{parsed.issues.slice(0, 3).map((issue, index) => <li key={index}>{issue.row ? t.finances.bank.csvRowIssue(issue.row, t.finances.bank.csvIssue[issue.code]) : t.finances.bank.csvIssue[issue.code]}</li>)}</ul>}
+          {(!rulesQuery.isSuccess || rulesQuery.data.dropped > 0) && <div role="status" className="space-y-1 text-xs text-risk">
+            <p>{rulesQuery.data?.dropped ? t.finances.rules.dropped(rulesQuery.data.dropped) : rulesQuery.isPending ? t.finances.bank.csvRulesLoading : t.finances.rules.loadErr}</p>
+            <Button size="sm" variant="outline" disabled={rulesQuery.isFetching} onClick={() => void rulesQuery.refetch()}>{t.common.retry}</Button>
+          </div>}
+          {parsed.rows.length > 0 && (
             <Button
               size="sm"
-              onClick={() => importMutation.mutate()}
-              disabled={importMutation.isPending || parsed.rows.length === 0}
+              onClick={() => { setImportError(null); importMutation.mutate(); }}
+              disabled={importMutation.isPending || reading || !rulesQuery.isSuccess || rulesQuery.data.dropped > 0}
             >
               {importMutation.isPending ? t.finances.bank.importing : t.finances.bank.import}
             </Button>
-          ) : (
-            <p className="text-[11px] text-destructive">{parsed.errors[0]}</p>
           )}
         </div>
       )}

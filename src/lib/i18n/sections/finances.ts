@@ -1,3 +1,5 @@
+import type { CsvIssueCode } from "@/lib/bank-csv";
+
 type FinancesStrings = {
   allKinds: string; allAccounts: string; filterAll: string; accountsDescription: string; transactionsDescription: string; categoriesDescription: string;
   searchTransactions: string; transactionKind: string; filteredEmpty: string; loadMore: string; importAndMatch: string;
@@ -112,6 +114,11 @@ type BankStrings = {
   importDone: (added: number, dup: number) => string;
   importErr: string;
   csvParseErr: string;
+  csvReading: string;
+  csvRulesLoading: string;
+  csvLegacyConflict: string;
+  csvIssue: Record<CsvIssueCode, string>;
+  csvRowIssue: (row: number, message: string) => string;
   nothingToImport: string;
   // Provider choice, per-connection sync and consent expiry (issue #64).
   providerStep: string;
@@ -290,8 +297,13 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importing: "Importing…",
       importDone: (added, dup) =>
         `Imported ${added}${dup ? `, skipped ${dup} duplicate${dup === 1 ? "" : "s"}` : ""}.`,
-      importErr: "Import failed. Please try again.",
+      importErr: "Could not confirm the complete import. Try this file again; confirmed rows will not be inserted twice.",
       csvParseErr: "Couldn't read that file.",
+      csvReading: "Reading statement…",
+      csvRulesLoading: "Loading classification rules…",
+      csvLegacyConflict: "An older import has different payment fields. Review that record before importing this file.",
+      csvIssue: { empty: "The file has no data rows.", headers: "Choose a statement with date and amount columns.", format: "A quoted field is not closed.", limit: "Use a CSV up to 2 MiB with at most 5,000 transactions.", row: "Check the date and amount (at most two decimal places).", currency: "Supported currencies are USD, EUR, GBP, CZK and CAD.", symbol: "The payment reference must contain at most ten digits." },
+      csvRowIssue: (row, message) => `Row ${row}: ${message}`,
       nothingToImport: "No new transactions to import.",
       providerStep: "How do you want to connect?",
       providerStepDesc:
@@ -520,8 +532,13 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importing: "Importuji…",
       importDone: (added, dup) =>
         `Naimportováno ${added}${dup ? `, přeskočeno ${dup} duplicit` : ""}.`,
-      importErr: "Import selhal. Zkus to znovu.",
+      importErr: "Celý import se nepodařilo potvrdit. Zkuste soubor znovu; potvrzené řádky se nevloží dvakrát.",
       csvParseErr: "Soubor se nepodařilo přečíst.",
+      csvReading: "Čtu výpis…",
+      csvRulesLoading: "Načítám pravidla pro zařazení…",
+      csvLegacyConflict: "Starší import má jiné platební údaje. Před importem tohoto souboru zkontrolujte původní záznam.",
+      csvIssue: { empty: "Soubor neobsahuje žádné datové řádky.", headers: "Vyberte výpis se sloupci pro datum a částku.", format: "Pole v uvozovkách není uzavřené.", limit: "Použijte CSV do 2 MiB s nejvýše 5 000 transakcemi.", row: "Zkontrolujte datum a částku (nejvýše dvě desetinná místa).", currency: "Podporované měny jsou USD, EUR, GBP, CZK a CAD.", symbol: "Platební symbol musí obsahovat nejvýše deset číslic." },
+      csvRowIssue: (row, message) => `Řádek ${row}: ${message}`,
       nothingToImport: "Žádné nové transakce k importu.",
       providerStep: "Jak se chceš připojit?",
       providerStepDesc:

@@ -1667,7 +1667,8 @@
       "path": "src/lib/bank-csv.ts",
       "lines": 253,
       "sha256": "1825cbcce2a56bcc9f649619daff18635b015fdfc08a77e0b4f597279c16a12e",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "c50aae8129b4e5a5601f1842baa2a0b9374d0358e3ec1e2b0db08742e1514669"
     },
     {
       "path": "src/lib/bank-sync-server.ts",
