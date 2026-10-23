@@ -2,7 +2,7 @@
 
 OwnDashboard can collect the existing 32 free feeds without calling Quorum. Select `MARKETING_DNESKAI_FEED_PROVIDER=native` in a reviewed deployment to use the local adapters. Unset or `bridge` selects the signed Quorum collection bridge; that is still the code default, but Quorum turned its side off on 21 October 2026, so the bridge now answers 503 until Quorum's `DNESKAI_COLLECTION_ENABLED` is on again. Production uses `native` (see the cutover below). An unknown value fails closed. This change sets no deployment variables. Verification: a live read-only comparison of all 32 feeds on 20 October 2026, described below.
 
-The local registry preserves the exact feed IDs, URLs, search queries and GitHub repositories from Quorum. `dneskai-registry.ts` is the only source registry (audit C6, 22 October 2026): identities, Prague collection cadence, the ranking tier that picks an event's primary report, and the adapter parameters (search query, GitHub repositories, Stack Exchange site). The native adapter configuration is derived from it; the former `free-feeds/registry.json` copy and its unread weights, tags and stages are gone, and no test pins a source count. `tests/lib/dneskai-source-registry.test.ts` proves the merge changed no source, URL, cadence, cap, query or tier. The Instagram profiles retain the existing capped Apify path. The local adapter boundary returns `dneskai-feed/1`; the collection runner retains candidate hashes, partial statuses and its existing cursor rules. Research candidates still require classification and owner review.
+The local registry preserves the exact feed IDs, URLs, search queries and GitHub repositories from Quorum. `dneskai-registry.ts` is the only source file (audit C6, 22 October 2026); with `DNESKAI_SOURCES_TABLE_ENABLED` the owner's `marketing_dneskai_sources` rows, seeded once from it, take its place ([source collection](dneskai-source-collection.md), #174). The file holds identities, Prague collection cadence, the ranking tier that picks an event's primary report, and the adapter parameters (search query, GitHub repositories, Stack Exchange site). The native adapter configuration is derived from it; the former `free-feeds/registry.json` copy and its unread weights, tags and stages are gone, and no test pins a source count. `tests/lib/dneskai-source-registry.test.ts` proves the merge changed no source, URL, cadence, cap, query or tier. The Instagram profiles retain the existing capped Apify path. The local adapter boundary returns `dneskai-feed/1`; the collection runner retains candidate hashes, partial statuses and its existing cursor rules. Research candidates still require classification and owner review.
 
 ## Provenance
 
@@ -50,7 +50,7 @@ A read that stopped only at its cap reports `collection-source-item-cap`: a full
 Known gaps in the cursor rule:
 
 - A read that dropped an item for prompt-injection text (`untrusted-instructions`) is partial whether it was capped or not, so it never advances. In the 20-item native run that was `the-register` (`item-cap,untrusted-instructions`), `hn-frontpage` (`untrusted-instructions,upstream-cap`, 19 items) and `simonw` (`untrusted-instructions`, 12 items). Those sources keep reading from their last successful cursor (7 days back when they never had one) and the Sources tab shows the `collection-cursor-recovery-required` note until a run ends without the extra code. This is deliberately conservative; deduplication by canonical URL keeps the re-reads from creating candidates twice. Since 22 October 2026 the pattern matches only instruction-shaped text (`ignore all previous`, `disregard any prior`, `system prompt:`, `developer message:`, `new instructions:`, `BEGIN SYSTEM`); `tool call`, `system prompt` and `developer message` as ordinary words no longer drop an item, so the vLLM, Ollama and llm-echo release notes that this rule used to drop stay as evidence. The same holds for `collection-timeout` and any other code.
-- Some publishers truncate their feed below the cap (`the-verge`, `mit-tech-review`, `variety` and `wired-ai` serve 10 items). At 20 items such a read is `ok` and the cursor moves to the run start, so "Complete" in the Sources tab means "everything the feed exposed", not "every post in the window". The feed exposes nothing older, so no extra item is lost compared with the 10-item cap, which reported `item-cap`.
+- Some publishers truncate their feed below the cap (`the-verge`, `mit-tech-review`, `variety` and `wired-ai` serve 10 items). At 20 items such a read is `ok` and the cursor moves to the run start, so "Complete" in the source status (`⋯` → Obnova témat) means "everything the feed exposed", not "every post in the window". The feed exposes nothing older, so no extra item is lost compared with the 10-item cap, which reported `item-cap`.
 
 ## Image references
 
@@ -187,7 +187,7 @@ Quorum's `DNESKAI_COLLECTION_ENABLED` was turned off the same evening and Quorum
 ## Education sources for scouting (#151)
 
 The registry tags 17 sources `topic: 'education'` (plan section 5). They sit outside `DNESKAI_SOURCES`, so the news
-list, the Sources tab and the news cadence do not change. With the server-only `DNESKAI_SCOUTING_ENABLED=true` (which
+list and the news cadence do not change. With the server-only `DNESKAI_SCOUTING_ENABLED=true` (which
 also needs `DNESKAI_TOPICS_ENABLED=true`) the nightly collection admits the ones due that weekday next to the news
 sources, reads them with the same adapters, timeouts and cursors, and never hands their reports to Jev. The scouting
 step then turns them into proposed topics.
@@ -217,6 +217,6 @@ reservations and `MARKETING_DNESKAI_APIFY_ENABLED` still decide; a profile over 
 The feed URLs come from the plan's seed list and were not fetched while building this. After the first scouting
 night, each source's stage and its row in `marketing_dneskai_source_states` show whether it answered; a feed that
 fails records its error code there and the night goes on. The profiles go through the same `apify~instagram-scraper` actor as the news
-profiles, so captions and links arrive, but not `musicInfo` or play counts; the reel scraper with transcripts comes
-with the FACT or HYPE classifier (A3).
+profiles, so captions, links, a reel's `musicInfo` and its play count arrive (the niche audio ranking of #167 reads the last two). Transcripts
+come only from the reel scraper in the FACT or HYPE step (#152).
 

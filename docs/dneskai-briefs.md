@@ -329,8 +329,9 @@ With `DNESKAI_TITLING_ENABLED=true` (and `DNESKAI_TOPICS_ENABLED=true`) the brie
 briefs on its own. For each finished run it turns the selected events into `news` topics instead: one per event,
 `source_ref = event:<eventId>`, `brief_id` pointing at the event's brief row, the member URLs and the lead report's
 text as evidence. The brief rows stay `pending`, so the Lab's "Generate now" still works on them. Titling then gives
-each topic a Czech working title, and a news topic still proposed 48 hours later moves to `expired`. Building a
-brief from an approved topic is the next step (A6); until it ships, approving a news topic does not make a post.
+each topic a Czech working title, and a news topic still proposed 48 hours later moves to `expired`. Only
+`DNESKAI_TOPIC_BRIEFS_ENABLED` (next section) builds a brief from an approved topic; without it, approving a news
+topic does not make a post.
 With the switch off the step is unchanged.
 
 ## Topic briefs (#155)
