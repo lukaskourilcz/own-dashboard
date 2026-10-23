@@ -84,8 +84,8 @@ beforeAll(async () => {
   await insertCandidates(db, owner, project, runId, [report]);
   await db.query('select marketing_dneskai_finish($1,$2,$3,$4,null,$5)', [owner, runId, fence, 'complete', json(dneskaiFinishEvents(groupDneskaiEvents([])))]);
   await db.query("insert into marketing_accounts(user_id,brand,platform,remote_account_id,handle,verified_at,enabled) values($1,'dneskai','instagram','17840000000000000','dneskai',now(),false)", [owner]);
-  await db.query(`insert into marketing_dneskai_topics(id,user_id,project_id,kind,source_kind,source_ref,title_cs,status,approved_at,evidence)
-    values($1,$2,$3,'education','feed',$4,'Nástroj z jednoho snímku obrazovky udělá poznámky','approved',now(),$5)`, [topicId, owner, project, `report:${report.id}`, json({ titled: true, urls: [report.url] })]);
+  await db.query(`insert into marketing_dneskai_topics(id,user_id,project_id,kind,source_kind,source_ref,title_cs,keyword,status,approved_at,evidence)
+    values($1,$2,$3,'education','feed',$4,'Nástroj z jednoho snímku obrazovky udělá poznámky','Poznamky','approved',now(),$5)`, [topicId, owner, project, `report:${report.id}`, json({ titled: true, urls: [report.url] })]);
   briefs = briefStore(); topics = topicStore();
 }, 60_000);
 afterAll(async () => { await db?.close(); });
@@ -118,11 +118,13 @@ describe('topic briefs (#155)', () => {
     expect(await advance()).toMatchObject({ briefed: 1 });
     const state = await topic();
     expect(state.status).toBe('briefed');
-    const jobs = await rows<{ id: string; status: string; request: { generation: { scheduledAt: string; source: { kind: string; brief: { evidence: Array<{ candidateId: string }>; media: Array<{ assetSha256: string }> } } } } }>('select id,status,request from marketing_jobs');
+    const jobs = await rows<{ id: string; status: string; request: { generation: { scheduledAt: string; education?: { keyword: string }; source: { kind: string; brief: { evidence: Array<{ candidateId: string }>; media: Array<{ assetSha256: string }> } } } } }>('select id,status,request from marketing_jobs');
     expect(jobs).toHaveLength(1);
     expect(jobs[0]!.status).toBe('queued');
     expect(state.evidence.jobId).toBe(jobs[0]!.id);
     expect(jobs[0]!.request.generation.scheduledAt).toBe('2026-10-21T06:00:00.000Z');
+    // #222: the education topic's keyword reaches generation in capitals.
+    expect(jobs[0]!.request.generation.education).toEqual({ keyword: 'POZNAMKY' });
     expect(jobs[0]!.request.generation.source.brief.evidence.map((item) => item.candidateId)).toEqual([report.id]);
     expect(jobs[0]!.request.generation.source.brief.media.map((item) => item.assetSha256)).toEqual([picture]);
     // Idempotent: nothing new on the next pass; the topic becomes generated once its draft is in review.
