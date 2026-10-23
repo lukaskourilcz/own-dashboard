@@ -59,3 +59,14 @@ describe('manual music fallback (#168)', () => {
     expect(container.innerHTML).toBe('');
   });
 });
+
+describe('the niche ranking in the badge (#167)', () => {
+  it('suggests the sound the tracked profiles use most before a library track', async () => {
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(async () => undefined) } });
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: DEMO_DNESKAI_AUDIO_TRACKS, trends: [
+      { audioId: '9', title: 'Niche Song', artist: 'Niche Artist', type: 'music', durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: 3, tiktok: false, attachable: false },
+    ] })));
+    render(<DneskaiMusicHint post={published()} position={0} preview={false} lang="en" now={now} />); await settle();
+    expect(container.textContent).toContain('Niche Song – Niche Artist');
+  });
+});

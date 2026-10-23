@@ -883,3 +883,13 @@ trended, the number of days, and two signals for later (`niche_count`, `tiktok`)
 stored. The owner reads only their own rows; the daily tick writes them with the service role. Replayed only in
 PGlite (`tests/lib/dneskai-audio-trends-database.test.ts`). Apply it with the other prepared files
 (`npx supabase db push --linked`); the daily step and the screens stay off until `DNESKAI_AUDIO_TRENDS_ENABLED=true`.
+
+## TikTok sound chart spend, 23 October 2026 (unapplied)
+
+`20261023130300_dneskai_tiktok_spend.sql` (#167) adds the kind `tiktok` to `marketing_private.dneskai_topic_spend`
+(20261023100100) and replaces `marketing_reserve_dneskai_topic_spend` with the same body plus that kind: a chart run is
+checked against its own spend under its own lock, like a transcript, so it never takes room from generation or
+transcripts. `marketing_dneskai_tiktok_runs` lists the last runs and `marketing_dneskai_tiktok_bind` writes a run's
+Apify ids onto its reservation once. All three functions are service-only. It needs `20261023100100` first; filename
+order does that. Replayed only in PGlite (`tests/lib/dneskai-tiktok-spend-database.test.ts`). Nothing reserves or
+runs until `DNESKAI_TIKTOK_TRENDS_ENABLED=true` and the owner has approved the spend (NEEDED.md).

@@ -21,7 +21,8 @@ export function DneskaiAudioPicker({ value, onChange, preview, disabled = false,
   const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal) });
   const player = useDneskaiAudioPreview();
   if (!query.data) return null;
-  const trends = query.data.trends;
+  // Only sounds in Meta's list can be attached; niche-only sounds show in Zdroje → Hudba as hints (#167).
+  const trends = query.data.trends.filter((trend) => trend.attachable);
   const tracks = query.data.tracks.filter((track) => track.source !== 'instagram-library' && (track.enabled || track.id === value));
   const chosen: DneskaiAudioTrack | null = tracks.find((track) => track.id === value) ?? null;
   const describe = (track: DneskaiAudioTrack) => `${track.title} · ${track.artist} · ${dneskaiAudioClock(track.durationMs)}`;

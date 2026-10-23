@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing functions
 type Database = Pick<SupabaseClient<any>, 'rpc'>;
 type Environment = Record<string, string | undefined>;
-export type DneskaiTopicSpendKind = 'transcript' | 'classify' | 'title';
+export type DneskaiTopicSpendKind = 'transcript' | 'classify' | 'title' | 'tiktok';
 
 /** `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, default $0.50. A malformed value refuses every transcript. */
 export const DEFAULT_DNESKAI_TRANSCRIPT_DAILY_USD = 0.5;

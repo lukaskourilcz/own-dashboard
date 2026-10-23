@@ -20,6 +20,7 @@ import { runDneskaiEngagementWatch } from "./dneskai-engagement-watch";
 import { createDneskaiEngagementGraph, createDneskaiEngagementStore } from "./dneskai-engagement-ports";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
+import { advanceDneskaiTikTokChart, dneskaiTikTokTrendsEnabled } from "./dneskai-audio-tiktok";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
 import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
@@ -55,9 +56,9 @@ export async function resolveDneskaiProjectId(db: Database, owner: string): Prom
   return matches[0].id as string;
 }
 
-/** `origin`: this deployment as the tick reached it; the Reel render (#165) is requested there. */
 /** How far ahead of its slot a Reel's MP4 is rendered (#165). */
 export const DNESKAI_REEL_PREPARE_AHEAD_MS = 45 * 60_000;
+/** `origin`: this deployment as the tick reached it; the Reel render (#165) is requested there. */
 export function createMarketingSchedulerPorts(db: Database, owner: string, env: Environment = process.env, options: { origin?: string } = {}): MarketingSchedulerPorts {
   z.uuid().parse(owner);
   const publications = (columns = "id") => db.from("marketing_publications").select(`${columns},marketing_revisions!inner(brand)`).eq("user_id", owner).eq("marketing_revisions.brand", "dneskai");
@@ -113,7 +114,13 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       if (error) throw new Error("account-unavailable");
       if (!account) return { status: "skipped", code: "account-unverified", stored: 0 };
       const config = await resolveMetaPublisherConfig(db, owner, account as MetaCredentialAccount, env);
-      return ingestDneskaiAudioTrends(db, owner, { config, remoteAccountId: String((account as { remote_account_id: string }).remote_account_id), today: pragueMarketingDate(now), signal });
+      const igUserId = String((account as { remote_account_id: string }).remote_account_id), today = pragueMarketingDate(now);
+      const trends = await ingestDneskaiAudioTrends(db, owner, { config, remoteAccountId: igUserId, today, signal });
+      // #167: the TikTok CZ chart, its own switch and daily cap; a failure there never hides Meta's list.
+      if (!dneskaiTikTokTrendsEnabled(env)) return trends;
+      const tiktok = await advanceDneskaiTikTokChart(db, owner, { config, igUserId, today, env, signal, now }).catch((failure: unknown) =>
+        ({ status: "skipped" as const, code: failure instanceof Error && /^[a-z][a-z0-9-]{1,79}$/.test(failure.message) ? failure.message : "tiktok-unavailable", started: false, read: 0, matched: 0 }));
+      return { ...trends, tiktok: { started: tiktok.started, read: tiktok.read, matched: tiktok.matched, ...(tiktok.code ? { code: tiktok.code } : {}) } };
     },
     factOrHype: (project, now, options) => advanceDneskaiFactOrHype(db, owner, project, now, { env, ...options,
       model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),

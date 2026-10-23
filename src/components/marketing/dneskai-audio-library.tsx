@@ -134,7 +134,7 @@ function TrendList({ trends, lang }: { trends: DneskaiAudioTrend[]; lang: Lang }
         {trend.coverUrl ? <Image unoptimized src={trend.coverUrl} alt="" width={44} height={44} className="size-11 shrink-0 rounded object-cover" /> : <span aria-hidden className="size-11 shrink-0 rounded bg-surface-muted" />}
         <div className="min-w-0 flex-1">
           <p className="break-words text-sm font-medium">{trend.title}{trend.artist && <span className="font-normal text-foreground-muted"> · {trend.artist}</span>}</p>
-          <p className="text-xs text-foreground-muted">{[t.type[trend.type], t.days(trend.daysSeen), trend.nicheCount ? t.niche(trend.nicheCount) : null, trend.tiktok ? t.tiktok : null].filter(Boolean).join(' · ')}</p>
+          <p className="text-xs text-foreground-muted">{[t.type[trend.type], trend.daysSeen ? t.days(trend.daysSeen) : null, trend.nicheCount ? t.niche(trend.nicheCount) : null, trend.tiktok ? t.tiktok : null, trend.attachable ? null : t.hintOnly].filter(Boolean).join(' · ')}</p>
         </div>
       </li>)}
     </ul>

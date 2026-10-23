@@ -206,7 +206,7 @@ export interface MarketingSchedulerPorts {
   /** #151: turns the night's education reports and highly rated library links into proposed topics (`scoutDneskaiTopics`). */
   scoutTopics?(project: string, now: Date): Promise<DneskaiScoutingResult>;
   /** #167: the day's trending sounds under Facebook Login; skipped (with its code) on Instagram Login. */
-  audioTrends?(now: Date, signal: AbortSignal): Promise<{ status: "done" | "skipped"; code?: string; stored: number }>;
+  audioTrends?(now: Date, signal: AbortSignal): Promise<{ status: "done" | "skipped"; code?: string; stored: number; tiktok?: { started: boolean; read: number; matched: number; code?: string } }>;
   /** #152: advances FACT or HYPE transcripts and verdicts of scouted reels, within the step's remaining time. */
   factOrHype?(project: string, now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiFactOrHypeResult>;
   /** #153: one titling call over the night's untitled topics (`titleDneskaiTopics`). */
@@ -673,7 +673,8 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     category: MARKETING_TICK_AUDIO_TRENDS, lease: null,
     async run({ signal: abort, now }): Promise<StepOutcome> {
       const result = await audioTrends(now(), abort);
-      return { status: result.status === "done" ? (result.stored ? "done" : "noop") : "skipped", ...(result.code ? { code: result.code } : {}), detail: { stored: result.stored } };
+      const tiktok: MarketingTickDetail = result.tiktok ? { tiktokStarted: result.tiktok.started, tiktokRead: result.tiktok.read, tiktokMatched: result.tiktok.matched, tiktokCode: result.tiktok.code ?? null } : {};
+      return { status: result.status === "done" ? (result.stored ? "done" : "noop") : "skipped", ...(result.code ? { code: result.code } : {}), detail: { stored: result.stored, ...tiktok } };
     },
   });
 

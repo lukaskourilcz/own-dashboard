@@ -332,6 +332,17 @@ video has no sound). Under Instagram Login such a post holds before any request
 `trending-audio-unavailable` with nothing created; the owner picks a library track and approves again. An automatic
 re-render with a library track is not built: it would publish a sound the owner did not approve.
 
-Not built yet: the niche ranking (scouting does not store reels' `musicInfo` yet) and the TikTok Creative Center CZ
-signal (a paid Apify run that needs its own budget line). Their columns (`niche_count`, `tiktok`) exist and the screens
-already show them when set.
+**Niche ranking.** The nightly Instagram collection now keeps each reel's sound (`musicInfo`: audio id, title, artist,
+original or muted) and its plays on the stored report, in the same scraper run and under the same per-profile caps.
+`loadDneskaiNicheSounds` ranks the reusable sounds (not original, not muted) the education profiles used in the last
+seven days: distinct reels times the logarithm of their plays. It costs nothing and is read when Zdroje → Hudba opens:
+Meta's sounds show how many tracked reels used them, and the niche's own top 15 follow as hints that Instagram may not
+attach. The Lab picker offers only attachable sounds; the manual music badge (#168) suggests the niche's sounds first.
+
+**TikTok CZ chart.** With `DNESKAI_TIKTOK_TRENDS_ENABLED=true` (and the Apify, paid and consent switches) the daily step
+reserves one `clockworks/tiktok-trends-scraper` run (Czech songs, surging leaderboard, 25 results, $0.10 charge cap,
+about $0.08 at $0.003 a result) in the topic spend ledger under `MARKETING_DNESKAI_TIKTOK_DAILY_USD` (default $0.10,
+migration `20261023130300`). The next daily tick reads that chart, settles its measured cost (an unknown cost counts in
+full), looks each title up in Meta's audio search for @dneskai and marks matching sounds "roste na TikToku CZ". Under
+Instagram Login nothing runs and nothing is spent. It has never been run live; the spend waits for the owner's
+approval (NEEDED.md).

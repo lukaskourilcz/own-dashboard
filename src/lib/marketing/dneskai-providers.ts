@@ -95,11 +95,22 @@ export function instagramMediaUrls(item: { displayUrl?: string; images?: readonl
   if(seen.has(key))return false;seen.add(key);return true;
  }).slice(0,DNESKAI_MEDIA_URL_LIMIT);
 }
-export function instagramItemDetail(item:{ownerUsername:string;type?:string|null;productType?:string|null;childPosts?:readonly {type?:string|null}[]}):DneskaiInstagramItem{
+/** #167: the reel's sound from the scraper's `musicInfo`; an id that is not numeric is dropped. */
+export function instagramMusic(info:Record<string,unknown>|null|undefined):DneskaiInstagramItem['music']{
+ if(!info)return undefined;
+ const id=typeof info.audio_id==='string'||typeof info.audio_id==='number'?String(info.audio_id):'';
+ if(!/^\d{1,40}$/.test(id))return undefined;
+ const text=(value:unknown)=>typeof value==='string'&&value.trim()?value.trim().slice(0,300):undefined;
+ const title=text(info.song_name),artist=text(info.artist_name);
+ return{audioId:id,...(title?{title}:{}),...(artist?{artist}:{}),originalAudio:info.uses_original_audio===true,muted:info.should_mute_audio===true};
+}
+export function instagramItemDetail(item:{ownerUsername:string;type?:string|null;productType?:string|null;childPosts?:readonly {type?:string|null}[];musicInfo?:Record<string,unknown>|null;videoPlayCount?:number|null}):DneskaiInstagramItem{
  const product=(item.productType??'').toLowerCase(),type=(item.type??'').toLowerCase();
  const mediaType=type==='video'||product==='clips'||product==='igtv'?'video' as const:type==='sidecar'?'carousel' as const:type==='image'?'image' as const:undefined;
  const containsVideo=mediaType==='carousel'&&(item.childPosts??[]).some(post=>(post.type??'').toLowerCase()==='video');
- return{...(/^[A-Za-z0-9_.]{1,30}$/.test(item.ownerUsername)?{ownerUsername:item.ownerUsername}:{}),...(mediaType?{mediaType}:{}),...(containsVideo?{containsVideo:true as const}:{})};
+ const music=mediaType==='video'?instagramMusic(item.musicInfo):undefined;
+ const plays=typeof item.videoPlayCount==='number'&&Number.isInteger(item.videoPlayCount)&&item.videoPlayCount>=0&&item.videoPlayCount<=1e12?item.videoPlayCount:undefined;
+ return{...(/^[A-Za-z0-9_.]{1,30}$/.test(item.ownerUsername)?{ownerUsername:item.ownerUsername}:{}),...(mediaType?{mediaType}:{}),...(containsVideo?{containsVideo:true as const}:{}),...(music?{music}:{}),...(music&&plays!==undefined?{plays}:{})};
 }
 export const DneskaiApifyRunSchema=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),actId:z.string(),buildNumber:z.string(),userId:z.string(),defaultDatasetId:z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),status:z.enum(['READY','RUNNING','SUCCEEDED','FAILED','TIMING-OUT','TIMED-OUT','ABORTING','ABORTED']),finishedAt:z.iso.datetime({offset:true}).nullable().optional(),usageTotalUsd:z.number().nonnegative().nullable().optional()});
 const RunSchema=DneskaiApifyRunSchema;
@@ -124,8 +135,8 @@ export async function pollDneskaiInstagram(source:DneskaiSource,registration:Dne
  if(run.status!=='SUCCEEDED')return{running:false as const,run,items:[] as DneskaiCandidate[],complete:false,errorCode:'collection-apify-failed'};
  if(!run.finishedAt||options.now.getTime()-Date.parse(run.finishedAt)<10000)return{running:true as const,run};
  if(run.usageTotalUsd==null||run.usageTotalUsd>0.04)return{running:false as const,run,items:[] as DneskaiCandidate[],complete:false,errorCode:run.usageTotalUsd==null?'collection-cost-unknown':'collection-budget-exceeded'};
- const params=new URLSearchParams({format:'json',clean:'true',limit:String(source.maxItems+1),fields:'id,shortCode,caption,timestamp,url,ownerUsername,inputUrl,coauthorProducers,type,productType,displayUrl,images,childPosts,error'});
- const data=z.array(z.object({id:z.string(),shortCode:z.string(),caption:z.string().max(12000),timestamp:z.iso.datetime({offset:true}),url:z.url(),ownerUsername:z.string(),inputUrl:z.url().max(2048).optional(),coauthorProducers:z.array(z.object({username:z.string().regex(/^[A-Za-z0-9_.]{1,30}$/)})).max(20).nullable().optional(),type:z.string().max(40).nullable().optional(),productType:z.string().max(40).nullable().optional(),displayUrl:z.url().optional(),images:z.array(z.url()).max(20).optional(),childPosts:z.array(z.object({displayUrl:z.url().optional(),type:z.string().max(40).nullable().optional()})).max(20).optional(),error:z.unknown().optional()})).max(11).parse(await jsonRequest(`https://api.apify.com/v2/datasets/${run.defaultDatasetId}/items?${params}`,{headers},fetcher,options.signal));
+ const params=new URLSearchParams({format:'json',clean:'true',limit:String(source.maxItems+1),fields:'id,shortCode,caption,timestamp,url,ownerUsername,inputUrl,coauthorProducers,type,productType,displayUrl,images,childPosts,musicInfo,videoPlayCount,error'});
+ const data=z.array(z.object({id:z.string(),shortCode:z.string(),caption:z.string().max(12000),timestamp:z.iso.datetime({offset:true}),url:z.url(),ownerUsername:z.string(),inputUrl:z.url().max(2048).optional(),coauthorProducers:z.array(z.object({username:z.string().regex(/^[A-Za-z0-9_.]{1,30}$/)})).max(20).nullable().optional(),type:z.string().max(40).nullable().optional(),productType:z.string().max(40).nullable().optional(),displayUrl:z.url().optional(),images:z.array(z.url()).max(20).optional(),childPosts:z.array(z.object({displayUrl:z.url().optional(),type:z.string().max(40).nullable().optional()})).max(20).optional(),musicInfo:z.record(z.string(),z.unknown()).nullable().optional(),videoPlayCount:z.number().nullable().optional(),error:z.unknown().optional()})).max(11).parse(await jsonRequest(`https://api.apify.com/v2/datasets/${run.defaultDatasetId}/items?${params}`,{headers},fetcher,options.signal));
  if(data.length>source.maxItems)throw new DneskaiProviderError('collection-provider-cap-exceeded');
  const username=new URL(source.url).pathname.split('/').filter(Boolean)[0];
  // A collaborator is authoritative only on the exact requested profile result. Tags and mentions are not authorship.

@@ -261,3 +261,13 @@ describe("2026-10-23 DNESKAi daily mix (#156)", () => {
     expect(guide).toMatch(/20261023100300_dneskai_daily_mix\.sql/);
   });
 });
+
+describe("2026-10-23 TikTok chart spend (#167)", () => {
+  it("adds only the tiktok kind and keeps the other kinds' ceilings", () => {
+    const sql = code("20261023130300_dneskai_tiktok_spend.sql");
+    expect(sql).toMatch(/check\(kind in\('transcript','classify','title','tiktok'\)\)/);
+    expect(sql).toMatch(/dneskai-tiktok-budget/);
+    expect(sql).toMatch(/revoke all on function public\.marketing_dneskai_tiktok_bind\(uuid,uuid,text\) from public,anon,authenticated/);
+    expect(guide).toMatch(/TikTok sound chart spend, 23 October 2026 \(unapplied\)/);
+  });
+});

@@ -521,6 +521,11 @@ const CODES = {
   // Trending audio (#167).
   'trending-audio-facebook-login-required': ['account', 'A trending Instagram sound needs a Reel and the Facebook Login connection, so nothing was published. Pick a library track or switch the account to Facebook Login.', 'Trendy zvuk z Instagramu potřebuje Reel a připojení přes Facebook Login, proto se nic nepublikovalo. Vyberte skladbu z knihovny nebo přepněte účet na Facebook Login.'],
   'trending-audio-unavailable': ['edit', 'Instagram refused this trending sound for the account, so nothing was published. Pick a library track and approve again.', 'Instagram tento trendy zvuk pro účet odmítl, proto se nic nepublikovalo. Vyberte skladbu z knihovny a schvalte znovu.'],
+  'tiktok-trends-disabled': ['none', 'The TikTok chart is switched off.', 'Žebříček TikToku je vypnutý.'],
+  'tiktok-paid-disabled': ['config', 'The TikTok chart needs the Apify and paid switches and the AI consent, so no run was started.', 'Žebříček TikToku potřebuje přepínače Apify a placených kroků a souhlas s AI, proto se běh nespustil.'],
+  'tiktok-budget-exhausted': ['budget', 'The daily TikTok chart budget is used up, so no run was started.', 'Denní rozpočet na žebříček TikToku je vyčerpaný, proto se běh nespustil.'],
+  'tiktok-apify-binding-invalid': ['investigate', 'Apify answered for a different actor, so the TikTok run was not recorded.', 'Apify odpověděl za jiného aktora, proto se běh TikToku nezaznamenal.'],
+  'tiktok-budget-unavailable': ['auto', 'The TikTok spend ledger could not be read or written.', 'Záznam útraty za TikTok nešlo načíst ani zapsat.'],
   'audio-trends-facebook-login-required': ['none', 'Trending sounds are read only under Facebook Login.', 'Trendy zvuky se čtou jen přes Facebook Login.'],
   'audio-trends-input-invalid': ['config', 'The account or API version for trending sounds is not configured.', 'Účet nebo verze API pro trendy zvuky nejsou nastavené.'],
   'audio-trends-request-failed': ['auto', 'Meta could not be reached for trending sounds.', 'Meta se pro trendy zvuky nepodařilo zastihnout.'],
