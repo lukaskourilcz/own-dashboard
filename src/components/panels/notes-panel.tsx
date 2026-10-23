@@ -793,11 +793,12 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
         >
           {selected ? (
             <div className="flex flex-col w-full">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+              <div className="flex flex-col gap-2 border-b border-border px-4 py-2.5 xl:flex-row xl:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                 <button
                   type="button"
                   onClick={backToList}
-                  className="lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
+                  className="lg:hidden inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
                   aria-label={t.notes.back}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -819,6 +820,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                   </p>
                 </div>
                 {saveMutation.isError && saveMutation.variables?.noteId === selected.id && <Button size="sm" variant="outline" onClick={() => saveMutation.mutate(saveMutation.variables!)}>{t.notes.retrySave}</Button>}
+                </div><div className="flex min-w-0 flex-wrap items-center gap-1 xl:justify-end">
                 {!embedded && (
                   <SimpleSelect
                     value={selected.project_id ?? ""}
@@ -885,6 +887,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
                 </Tooltip>
+                </div>
               </div>
 
               {/* Tag strip — chips + Add tag popover */}

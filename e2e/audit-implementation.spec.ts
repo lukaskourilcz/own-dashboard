@@ -9,10 +9,11 @@ import { dneskaiAudio } from '../src/lib/i18n/sections/dneskai-audio';
 import { nav } from '../src/lib/i18n/sections/nav';
 
 async function open(page: Page, name: string) {
+  await expect(page.getByTestId('mobile-nav')).toBeAttached();
   const mobile = await page.getByTestId('mobile-nav').isVisible();
   if (!mobile) { await page.locator('aside').getByRole('button', { name, exact: true }).click(); return; }
   const primary = page.getByTestId('mobile-nav').getByRole('button', { name, exact: true });
-  if (await primary.count()) { await primary.click(); return; }
+  if (['home', 'work', 'projects', 'tasks'].some(tab => nav.en.sections[tab as 'home' | 'work' | 'projects' | 'tasks'] === name || nav.cs.sections[tab as 'home' | 'work' | 'projects' | 'tasks'] === name)) { await primary.click(); return; }
   await page.getByTestId('mobile-nav').getByRole('button', { name: /^(More|Více)$/ }).click();
   await page.getByRole('dialog').getByRole('button', { name, exact: true }).click();
 }

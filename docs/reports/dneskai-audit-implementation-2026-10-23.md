@@ -75,3 +75,6 @@ Sparse client rows now show related-record counts inline, omit zero-count blocks
 
 
 The canonical-route Back test exposed listener ordering that the synthetic history test did not model: a descendant passive history listener could remove the draft before the guard observed it. History and draft registration now use layout effects, before passive shell subscriptions. The desktop browser regression verifies restored URL/draft, unchanged history length, Discard resuming Back and working Forward; Notes’ unchanged failed-save retry is also exercised against a forced transient response. Five focused guard tests, type checking and lint passed after the correction. Mobile and the full optimized-build run remain the final verification gate.
+
+
+Four actual-browser regressions now pass for canonical Back/Forward and unchanged failed-note retry on desktop and mobile (12.3 s, local dev build). The latter exposed a cramped mobile Notes header: title/save status now form their own row and secondary controls wrap below, so the failure remains visible. The navigation helper also waits for the selected language’s primary button instead of checking its count during hydration. Final optimized-build verification follows.
