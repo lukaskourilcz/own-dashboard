@@ -41,8 +41,6 @@ const statement = {
           column14: column("CZK"),
           column16: column("Faktura 2026007"),
         },
-        // Missing both a movement id and a date: dropped, never guessed.
-        { column1: column(10) },
       ],
     },
   },
@@ -83,9 +81,10 @@ describe("parseFioStatement", () => {
     expect(fioExternalId("1")).toBe("fio:1");
   });
 
-  it("drops a malformed entry instead of throwing", () => {
-    const parsed = parseFioStatement(statement)!;
-    expect(parsed.transactions).toHaveLength(2);
+  it("refuses a statement containing a malformed booked movement", () => {
+    const malformed = structuredClone(statement);
+    malformed.accountStatement.transactionList.transaction.push({ column1: column(10) } as typeof malformed.accountStatement.transactionList.transaction[number]);
+    expect(() => parseFioStatement(malformed)).toThrow("Invalid bank transaction");
   });
 
   it("takes the variable symbol from the dedicated column", () => {
@@ -166,4 +165,21 @@ describe("fioWindow", () => {
   it("ignores a cursor that is not a date", () => {
     expect(fioWindow("not-a-date", today).from).toBe("2026-06-18");
   });
+});
+
+it("preserves the Prague banking day in documented epoch-millisecond dates", () => {
+  const tx = parseFioTransaction({ column22: column("55"), column0: column(Date.parse("2026-09-01T00:00:00+02:00")), column1: column(1) }, "CZK");
+  expect(tx?.occurred_on).toBe("2026-09-01");
+});
+it.each(["2026-02-30+0100", "2026-13-01", "not-a-date"])("rejects an impossible banking date (%s)", date => {
+  expect(parseFioTransaction({ column22: column("55"), column0: column(date), column1: column(1) }, "CZK")).toBeNull();
+});
+it("refuses missing currencies, malformed lists, duplicate identities and invalid explicit references", () => {
+  const missingCurrency = structuredClone(statement); delete (missingCurrency.accountStatement.info as { currency?: string }).currency;
+  expect(() => parseFioStatement(missingCurrency)).toThrow("Bank currency unavailable");
+  const duplicate = structuredClone(statement); duplicate.accountStatement.transactionList.transaction.push(duplicate.accountStatement.transactionList.transaction[0]);
+  expect(() => parseFioStatement(duplicate)).toThrow("Invalid bank transaction");
+  expect(() => parseFioStatement({ accountStatement: { ...statement.accountStatement, transactionList: "bad" } })).toThrow("Invalid bank statement");
+  expect(() => parseFioStatement({ accountStatement: { info: statement.accountStatement.info } })).toThrow("Invalid bank statement");
+  expect(() => parseFioTransaction({ column22: column("55"), column0: column("2026-09-01"), column1: column(1), column5: column("12345678901") }, "CZK")).toThrow("Invalid bank reference");
 });

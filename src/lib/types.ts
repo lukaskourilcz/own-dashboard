@@ -237,8 +237,8 @@ export type BankConnection = {
   provider_ref: string | null;
   reference: string;
   status: "created" | "linked" | "expired" | "error";
-  /** When the bank consent lapses (PSD2 is 90 days). Null when the provider
-   *  states no expiry, as with a Fio token — never guessed. */
+  /** Provider-reported consent expiry. Null also means unavailable: Fio
+   * statements do not expose their token expiry. Never invent a date. */
   consent_expires_at: string | null;
   /** Short, non-sensitive reason the last sync failed. Null when healthy. */
   last_error: string | null;

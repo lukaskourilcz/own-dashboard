@@ -250,8 +250,8 @@ function ConnectionRow({
       : conn.status === "error" || conn.status === "expired"
         ? "bg-destructive/10 text-destructive"
         : "bg-warning/10 text-warning";
-  // Only ever rendered from a value the provider actually stated; a provider
-  // with no expiry (a Fio token) simply shows nothing here.
+  // Render a reported expiry only. Null does not promise unlimited validity;
+  // Fio statements do not provide the token's expiry date.
   const expiresOn = conn.consent_expires_at?.slice(0, 10) ?? null;
   const bankName = conn.institution_name ?? conn.institution_id ?? conn.provider;
   return (

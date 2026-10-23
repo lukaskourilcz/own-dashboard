@@ -75,6 +75,8 @@ The owner keeps the current Finance features and existing connections. There is 
 
 Existing configured bank connections retain their sync and revoke controls. A connection that expires must be renewed through its existing provider only if the owner still uses it. Unconfigured providers are omitted from setup controls; do not add credentials or start a provider signup as maintenance work.
 
+For an existing Fio connection, a missing displayed expiry does not mean its token never expires. The [Fio API manual](https://www.fio.cz/docs/cz/API_Bankovnictvi.pdf) requires token validity of at most 180 days, with optional renewal through internet/mobile banking login. The statement does not report that date, so OwnDashboard leaves it unknown. It also documents a 30-second interval per token. One sync shares a single request-local statement; a new sync reads afresh and an upstream cooldown is a reported failure, never an automatic retry. These maintenance notes authorize no new provider rollout.
+
 The existing cron routes remain guarded by their server secrets. Do not enable new scheduled integrations to satisfy old checklist entries. Heartbeat URLs are optional references for installations that already use monitoring.
 
 ## 8. Analytics and monitoring

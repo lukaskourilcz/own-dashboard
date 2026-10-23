@@ -685,7 +685,7 @@
       "lines": 804,
       "sha256": "3d49d9772902f162da30753d81c98c759f7457b0e5c496d9ed064e966562275f",
       "status": "source reviewed; provider/dialog recovery checks passed; final release checks pending",
-      "reviewedSha256": "7441d07b78c94d153efefdfa97dfbfeed824b11baa530c9e0faba42f6967a6ce"
+      "reviewedSha256": "63b18a4fc82b22b95eaafe2a2b16cb952d287c17470a1d75d0910a7d791c96c7"
     },
     {
       "path": "src/components/finances/payment-matches.tsx",
@@ -1638,13 +1638,15 @@
       "path": "src/lib/bank/fio-adapter.ts",
       "lines": 158,
       "sha256": "89aaf289644cf894305ece77dc8fd97754e06050645f84318693e134f183abb4",
-      "status": "pending"
+      "status": "source reviewed; request-local freshness and malformed-response checks passed; final release checks pending",
+      "reviewedSha256": "6b0bd1019d6a12b3b38705e6ef8a3680759eea7e39748d4234f8b9d34edd514d"
     },
     {
       "path": "src/lib/bank/fio-statement.ts",
       "lines": 215,
       "sha256": "e8b4e8d3b830097545a0d0e2ffd84c62695fb7e4251be101b5554e7fa696313f",
-      "status": "pending"
+      "status": "source reviewed; complete statement, date and identity checks passed; final release checks pending",
+      "reviewedSha256": "087febd7ca8fc33aa0d43f75ea20a8ee12a5ec329f53605a762c6fae4e1a1ef7"
     },
     {
       "path": "src/lib/bank/gocardless-adapter.ts",
@@ -1663,14 +1665,15 @@
       "path": "src/lib/bank/provider.ts",
       "lines": 168,
       "sha256": "3ba7eabfc4070380976ea80d9da12a96aaa4cb7457b775a064631cd463e944f3",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "c259266313df803d0cc208c3552ce42a67320d4de7be6c24b382e536190b72db"
+      "status": "source reviewed; binding and capability checks passed; final integration release checks pending",
+      "reviewedSha256": "5a55db245807dd8fd2211d4a720f717fbd7c4de21dac08ee4544a9ed12397202"
     },
     {
       "path": "src/lib/bank/registry.ts",
       "lines": 72,
       "sha256": "aeadfe55428c8e5f59c4d2b11bae0f9a1dbb6e8f527e62a42fab2d28d7897866",
-      "status": "pending"
+      "status": "source reviewed; request-local provider construction checked; aggregate availability failure semantics remain under review",
+      "reviewedSha256": "8c48034fd3826727c562ebd2b046434506cc8477dadad347569cd7957777ebb6"
     },
     {
       "path": "src/lib/bank-csv.ts",

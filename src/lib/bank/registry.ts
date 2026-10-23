@@ -1,6 +1,6 @@
 import "server-only";
 import { enableBankingProvider } from "@/lib/bank/enable-banking-adapter";
-import { fioProvider } from "@/lib/bank/fio-adapter";
+import { createFioProvider } from "@/lib/bank/fio-adapter";
 import { gocardlessProvider } from "@/lib/bank/gocardless-adapter";
 import {
   BANK_PROVIDER_IDS,
@@ -17,10 +17,10 @@ import {
  * dark for every other provider too.
  */
 
-const PROVIDERS: Record<BankProviderId, BankProvider> = {
-  gocardless: gocardlessProvider,
-  fio: fioProvider,
-  "enable-banking": enableBankingProvider,
+const PROVIDERS: Record<BankProviderId, () => BankProvider> = {
+  gocardless: () => gocardlessProvider,
+  fio: createFioProvider,
+  "enable-banking": () => enableBankingProvider,
 };
 
 /** Resolve a stored `bank_connections.provider` value. Throws for anything
@@ -28,11 +28,11 @@ const PROVIDERS: Record<BankProviderId, BankProvider> = {
  *  against the wrong bank. */
 export function getProvider(id: string): BankProvider {
   if (!isBankProviderId(id)) throw new UnknownBankProviderError(id);
-  return PROVIDERS[id];
+  return PROVIDERS[id]();
 }
 
 export function listProviders(): BankProvider[] {
-  return BANK_PROVIDER_IDS.map((id) => PROVIDERS[id]);
+  return BANK_PROVIDER_IDS.map(id => getProvider(id));
 }
 
 /** Which providers this owner could sync with right now. Never throws: one
