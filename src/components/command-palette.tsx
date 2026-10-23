@@ -1,30 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import {
-  BriefcaseBusiness,
-  CalendarDays,
-  CreditCard,
-  FileText,
-  FolderKanban,
-  Gift,
-  LayoutDashboard,
-  Languages,
-  Lightbulb,
-  ListTodo,
-  Users,
-  LogOut,
-  MessageSquareText,
-  Moon,
-  Receipt,
-  Search,
-  Settings,
-  Sun,
-  Target,
-  Wallet,
-  Wrench,
-} from "lucide-react";
+import { Languages, LogOut, Moon, Search, Settings, Sun } from "lucide-react";
+import { PRIMARY_NAV_ITEMS, NAV_GROUPS } from "@/components/nav/sidebar";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useNavVisibility } from "@/lib/use-prefs";
 import { useTheme } from "@/lib/use-theme";
 import { useDict, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -54,26 +34,20 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const { hidden } = useNavVisibility();
 
-  // Global cmd/ctrl+K toggle + Escape to close.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setOpen((prev) => {
-          if (prev) return false;
-          setQuery("");
-          setActive(0);
-          requestAnimationFrame(() => inputRef.current?.focus());
-          return true;
-        });
-      } else if (e.key === "Escape") {
-        setOpen((v) => (v ? false : v));
+        if (!open) { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setQuery(""); setActive(0); }
+        setOpen(!open);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [open]);
 
   const actions: Action[] = useMemo(() => {
     const close = () => setOpen(false);
@@ -83,30 +57,10 @@ export function CommandPalette({
     };
     const s = t.nav.sections;
     const list: Action[] = [
-      { id: "go-home", label: s.home, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g h", run: go("home") },
-      { id: "go-marketing", label: s.marketing, group: "go", icon: CalendarDays, keywords: "marketing approve posts content schvalování", run: go("marketing") },
-      { id: "go-workflows", label: s.workflows, group: "go", icon: FolderKanban, keywords: "workflows process map postup přehled návaznosti", run: go("workflows") },
-      { id: "go-work", label: s.work, group: "go", icon: BriefcaseBusiness, keywords: "work overview delivery práce", run: go("work") },
-      { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
-      { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "pipeline leads tugedr opportunities příležitosti", run: go("opportunities") },
-      { id: "go-clients", label: s.clients, group: "go", icon: Users, keywords: "clients organizations contacts klienti", run: go("clients") },
-      { id: "go-career", label: s.career, group: "go", icon: BriefcaseBusiness, keywords: "career jobs applications práce pozice", run: go("career") },
-      { id: "go-invoices", label: s.invoices, group: "go", icon: Receipt, keywords: "invoice billing vat dph faktury", run: go("invoices") },
-      { id: "go-money", label: s.money, group: "go", icon: Wallet, keywords: "money finance peníze", run: go("money") },
-      { id: "go-accounts", label: s.accounts, group: "go", icon: Wallet, keywords: "accounts bank účty", run: go("accounts") },
-      { id: "go-transactions", label: s.transactions, group: "go", icon: Wallet, keywords: "transactions income expense transakce", run: go("transactions") },
-      { id: "go-subs", label: s.subscriptions, group: "go", icon: CreditCard, keywords: "spend recurring předplatná", run: go("subscriptions") },
-      { id: "go-categories", label: s.categories, group: "go", icon: Wallet, keywords: "categories rules kategorie", run: go("categories") },
-      { id: "go-tasks", label: s.tasks, group: "go", icon: ListTodo, keywords: "todo tasks úkoly g t", run: go("tasks") },
-      { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g l", run: go("calendar") },
-      { id: "go-goals", label: s.goals, group: "go", icon: Target, keywords: "goals plans cíle", run: go("goals") },
-      { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "important deadlines dates termíny", run: go("dates") },
-      { id: "go-notes", label: s.notes, group: "go", icon: FileText, keywords: "notes writing drafts poznámky g n", run: go("notes") },
-      { id: "go-prompts", label: s.prompts, group: "go", icon: MessageSquareText, keywords: "prompts snippets templates clipboard copy library prompty g m", run: go("prompts") },
-      { id: "go-tools", label: s.tools, group: "go", icon: Wrench, keywords: "tools services stack nástroje g k", run: go("tools") },
-      { id: "go-links", label: s.links, group: "go", icon: FileText, keywords: "links tools sites odkazy", run: go("links") },
-      { id: "go-ig-tips", label: s["ig-tips"], group: "go", icon: Lightbulb, keywords: "ig tips instagram reels ideas advice tipy nápady rady", run: go("ig-tips") },
-      { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
+      ...[...PRIMARY_NAV_ITEMS, ...NAV_GROUPS.flatMap(group => group.items), { value: 'settings' as const, icon: Settings }]
+        .filter(item => !hidden.includes(item.value))
+        .map(item => ({ id: `go-${item.value}`, label: s[item.value], group: 'go' as const, icon: item.icon,
+          keywords: `${item.value} ${item.value === 'tasks' ? 'todo g t' : item.value === 'notes' ? 'writing drafts g n' : item.value === 'opportunities' ? 'pipeline leads tugedr' : item.value === 'home' ? 'dashboard g h' : ''}`, run: go(item.value) })),
       {
         id: "act-theme",
         label: theme === "dark" ? t.app.switchToLight : t.app.switchToDark,
@@ -145,7 +99,7 @@ export function CommandPalette({
       },
     ];
     return list;
-  }, [setTab, theme, toggle, lang, setLang, t]);
+  }, [setTab, theme, toggle, lang, setLang, t, hidden]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -186,33 +140,15 @@ export function CommandPalette({
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.12 }}
-          className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          />
-          <motion.div
-            role="dialog"
-            aria-label={t.app.commandPalette}
-            initial={{ opacity: 0, y: -8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg rounded-xl border border-border bg-surface shadow-elevated overflow-hidden"
-          >
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="!top-[12dvh] !translate-y-0 max-w-lg overflow-hidden p-0" showClose={false} aria-describedby={undefined}
+        onOpenAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}
+        onCloseAutoFocus={(event) => { event.preventDefault(); if (opener.current?.isConnected) opener.current.focus(); }}>
+        <DialogTitle className="sr-only">{t.app.commandPalette}</DialogTitle>
             <div className="flex items-center gap-2 px-3.5 border-b border-border">
               <Search className="h-4 w-4 text-foreground-subtle" />
               <input
+                aria-label={t.app.searchPlaceholder}
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -248,7 +184,7 @@ export function CommandPalette({
                                 onMouseEnter={() => setActive(idx)}
                                 onClick={() => it.run()}
                                 className={cn(
-                                  "w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-left transition-colors",
+                                  "min-h-11 w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-left transition-colors focus-ring md:min-h-8",
                                   isActive
                                     ? "bg-accent text-foreground"
                                     : "text-foreground-muted hover:text-foreground",
@@ -271,9 +207,7 @@ export function CommandPalette({
                 )
               )}
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   );
 }

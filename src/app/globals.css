@@ -365,9 +365,6 @@ body {
     border-bottom: 0;
   }
 
-  .mac-page-header > div:first-child {
-    display: none;
-  }
 }
 
 button,
@@ -380,6 +377,16 @@ textarea {
 
 @utility page-frame {
   width: min(100%, var(--page-max));
+  margin-inline: auto;
+}
+
+@utility settings-frame {
+  width: min(100%, 56rem);
+  margin-inline: auto;
+}
+
+@utility form-frame {
+  width: min(100%, 60rem);
   margin-inline: auto;
 }
 

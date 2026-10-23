@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   BriefcaseBusiness,
@@ -409,6 +409,7 @@ export function MobileNav({
 }) {
   const t = useDict();
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreButton = useRef<HTMLButtonElement>(null);
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
   // Four pinned destinations plus More. Inbox is hidden from navigation, so
@@ -450,6 +451,7 @@ export function MobileNav({
         })}
         <button
           type="button"
+          ref={moreButton}
           onClick={() => setMoreOpen(true)}
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
@@ -466,7 +468,7 @@ export function MobileNav({
       </div>
       </nav>
       <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
-        <DialogContent className="sheet-dialog !bottom-0 !left-0 !right-0 !top-auto !w-full !max-w-none !translate-x-0 !translate-y-0 rounded-b-none rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 md:hidden">
+        <DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); moreButton.current?.focus(); }} className="sheet-dialog !bottom-0 !left-0 !right-0 !top-auto !w-full !max-w-none !translate-x-0 !translate-y-0 rounded-b-none rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 md:hidden">
           <DialogHeader>
             <DialogTitle>{t.nav.allAreas}</DialogTitle>
             <DialogDescription>{t.nav.allAreasDescription}</DialogDescription>

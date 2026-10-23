@@ -15,9 +15,15 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 - **C06 implemented:** valid drafts whose preview failed offer an explicit retry without a text edit. Numeric and HTTP-date `Retry-After` cooldowns disable retry until allowed; successful cached previews and validation refusals keep their existing behavior. Twenty-two targeted client/workspace tests passed, including an unchanged-draft retry and no automatic retry during cooldown. Focused lint and type checking passed.
 - **C07 implemented:** stable 200-track management pages expose Load more in the library and picker. The format switch shares the same cached first read. A saved disabled/off-page selection is looked up by owner and ID and never silently becomes Automatic. Upload confirmation reads its new ID directly. Rotation filters enabled stored tracks in SQL, seeks by created-at/id and wraps with constant-size reads; it has no 200-track population cap. Forty targeted tests passed, including real PostgreSQL with 401 tracks, 200 older disabled tracks, tied timestamps, off-page selection, paging and owner isolation. Focused lint and type checks passed.
 
+## Batch 2: shared consistency
+
+- The shell explicitly owns the page title; standalone PageHeaders still render their own title. Descriptions and actions remain visible at all widths instead of being hidden by a positional desktop CSS selector.
+- The content area uses the centered page frame, with bounded settings/form utilities for the next batches. Icon buttons align with ordinary desktop fields; workspace tabs retain 44 px mobile hit areas.
+- The command palette now uses the shared modal primitive (focus trap, inert background and Escape), restores its opener and derives destinations from the sidebar registry and owner visibility preferences, including Competition. Mobile More explicitly restores its opener.
+- Eleven targeted header/navigation tests passed. Focused lint and type checks passed. Chrome extension reconnection timed out again; keyboard geometry and responsive checks will run through the repository’s isolated fixture browser, with the signed-in Chrome limitation recorded.
+
 ## Remaining batches
 
-2. Shared titles/control variants, centered content widths and keyboard focus restoration.
 3. DNESKAi topic inbox/review layout and direct Sources / Daily mix / Music access.
 4. Work/Settings/Finance destination cleanup, planning filters and library card consistency.
 5. Payload/query measurements and complete relevant test/build/responsive/accessibility verification.

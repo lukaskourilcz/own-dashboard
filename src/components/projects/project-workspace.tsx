@@ -237,7 +237,7 @@ export function ProjectWorkspace(props: Props) {
   return <div>
     <div className="mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
       <div ref={tablist} className="flex min-w-0 flex-1 gap-1 overflow-x-auto" role="tablist" aria-label={p.projectWorkspace}>
-        {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
+        {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("min-h-11 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium focus-ring md:min-h-8", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
       </div>
       {dneskai && <DneskaiOverflowMenu projectId={project.id} lang={lang} preview={!!props.isPreview} sections={dneskaiSections} activeSection={openSection?.id ?? null}
         onSection={(id) => { flushSync(() => setTab(id)); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); }} onOpenReview={openDneskaiReview} />}

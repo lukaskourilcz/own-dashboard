@@ -42,6 +42,7 @@ import {
   type SyncedUiPreferences,
 } from "@/components/preference-hydrator";
 import { MobileNav, Sidebar, type NavTab } from "@/components/nav/sidebar";
+import { ShellTitleProvider } from "@/components/ui/page-header";
 import { AppToolbar } from "@/components/nav/app-toolbar";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmationProvider } from "@/components/ui/confirmation-dialog";
@@ -383,7 +384,7 @@ function DashboardShellContent(props: Props) {
         />
         <div className="mac-content mac-content-scroll min-w-0 px-4 py-4 md:px-6 md:py-5">
         <MobileNav tab={tab} setTab={setTab} />
-        <div key={tab}>
+        <ShellTitleProvider><div key={tab} className="page-frame">
           {isHiddenNavTab(tab) && <p className="mb-3 text-xs text-foreground-subtle">{t.nav.hiddenFromNavigation}</p>}
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,
@@ -419,7 +420,7 @@ function DashboardShellContent(props: Props) {
           {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
-        </div>
+        </div></ShellTitleProvider>
       </div></main>
       </div>
     </div>

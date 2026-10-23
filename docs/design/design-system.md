@@ -34,6 +34,7 @@ Home and login may breathe. Work, Projects, Opportunities, Career, Money, and In
 
 ## Components
 
+- The shell toolbar owns the single visible page title. `PageHeader` renders its title when standalone; inside `ShellTitleProvider` it retains only descriptions, eyebrows and actions. Do not hide heading containers through positional breakpoint selectors.
 - `PageHeader` supports regular and compact density plus an optional contextual eyebrow.
 - `Card` is a compact white contained module with a hairline border, 14 px radius, 16–18 px padding, and one restrained surface shadow.
 - `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations.
@@ -60,8 +61,9 @@ Unequal Library groups use masonry-style CSS columns with `break-inside: avoid`;
 
 ## Responsive transformations
 
-- Mobile primary navigation is Home, Inbox, Work, Projects, More. More must expose all visible owner destinations and Settings.
+- Mobile primary navigation is Home, Work, Projects, Tasks, More. More must expose all visible owner destinations and Settings.
 - Tables become structured rows when comparison remains clear; wide operational, legal, or financial column sets may scroll inside a width-contained region without creating document-level overflow.
+- Command palette destinations derive from the shared sidebar registry and owner visibility preferences. Dialogs restore their opener when dismissed.
 - Filters wrap or stack; no control becomes hover-only.
 - Project workspace tabs remain horizontally scrollable with an obvious active state.
 - Split panes and form grids stack; dialogs become near-full-width with safe margins.
