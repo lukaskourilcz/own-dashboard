@@ -3,6 +3,43 @@
 Plan written 22 October 2026 and approved by the owner the same evening (decisions in section 6). Each work item
 below is one GitHub issue for Opus. State as of main `77ea0b7`; the research behind each decision is in section 9.
 
+## Status (23 October 2026)
+
+Implemented. Every item is merged to main and its issue closed; the code stays dormant behind switches that are off
+and 23 migrations that are not applied yet. Pull requests per item:
+
+| Item | Issue | PR | Item | Issue | PR |
+|---|---|---|---|---|---|
+| A1 topics table | #150 | #176 | C1 Reel renderer | #163 | #187 |
+| A2 scouting | #151 | #196 | C2 audio library | #164 | #192 |
+| A3 FACT or HYPE | #152 | #199 | C3 Reels publisher | #165 | #194 |
+| A4 titling | #153 | #201 | C4 Facebook Login | #166 | #197 |
+| A5 Náměty list | #154 | #191 | C5 trending audio | #167 | #204, #219 |
+| A6 topic bridge | #155 | #203 | C6 manual music hint | #168 | #195 |
+| A7 daily mix | #156 | #208 | D1 workspace tabs | #169 | #186 |
+| B1 engagement fields | #157 | #177 | D2 Lab channel sub-tabs | #170 | #200 |
+| B2 DM message, hashtags capped at 10 | #158 | #198 | D3 no project header | #171 | #188 |
+| B3 Lab engagement editor | #159 | #189 | D4 Lab chrome | #172 | #190 |
+| B4 comment watcher | #160 | #202 | D5 card tint, short dates | #173 | #193 |
+| B5 comment webhook | #161 | #205 | D6 Zdroje as a list | #174 | #207 |
+| B6 engagement receipts | #162 | #206 | | | |
+
+Follow-ups, also merged: #210 library and manual topics become briefs (#220), #211 the topic's working title on its
+post (#218), #212 keyword chip without `#` (#215), #213 the unused post editor removed (#214), #216 the comment
+watcher and webhook under Facebook Login (#217).
+
+What waits for the owner, tracked in #175 and `NEEDED.md`:
+- **Migration push.** `npx supabase db push --linked` for the 23 files `20261022000000` through `20261023130300`.
+- **Switches.** Astra sets them in Vercel Production after the push (#178); the list by prerequisite is in
+  `docs/SYSTEM-MAP.md`, section 6.
+- **Browser tasks for Astra.** The comment webhook (#179), DM access for connected tools (#180), the Facebook Page and
+  Facebook Login (#181), the music library (#182), LangSmith (#183), the staging cleanup (#184) and the two Czech
+  profiles (#185).
+- **TikTok spend decision.** Whether to spend up to $0.10 a day on the TikTok CZ sound chart
+  (`DNESKAI_TIKTOK_TRENDS_ENABLED`).
+
+The plan body below is unchanged from its approval.
+
 ## 1. What changes, in one paragraph
 
 Today the pipeline turns last night's news into up to four posts a day and pays for generation before the owner sees
