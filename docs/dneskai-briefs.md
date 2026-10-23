@@ -344,3 +344,11 @@ slot rules, the calendar entry, `marketing_enqueue_job` and the owner's approval
 The topic moves `approved` → `enriching` → `briefed` (job queued) → `generated` (draft in review); a lapsed brief
 leaves its code in `evidence.bridgeCode`. Topics from the link library or added by hand have no collected report and
 wait with `topic-source-unsupported`. The brief step without `only` never touches a topic's brief.
+
+## Daily mix (#156)
+
+With `DNESKAI_DAILY_MIX_ENABLED=true` the owner's mix from Zdroje → Denní mix (default 1 news and 1 education post,
+08:00 and 17:00) steers the topic path: the briefs step turns the best three events per wanted news post into news
+topics (none for zero), the bridge commits to a day only as many topics of each kind as the mix asks and moves the
+rest to the next day or keeps them waiting with `topic-daily-mix-full`, and every slot comes from the active times.
+The four times stay one list in code and SQL; the mix only switches some off.

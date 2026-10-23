@@ -202,6 +202,7 @@ Costs show in "Chyby a náklady".
 | `marketing_dneskai_runs`, `_stages`, `_candidates`, `_source_states` | Nightly collection runs, paid stages with reservations, collected stories, feed cursors |
 | `marketing_media_assets`, `_asset_links`, `_collections` | Source pictures (sha256, credit, pHash), per-story links and collection state |
 | `marketing_dneskai_briefs` | One brief per selected event and slot, its status and job |
+| `marketing_dneskai_daily_mix` | The owner's news and education posts a day and active times (prepared, `20261023100300`, behind `DNESKAI_DAILY_MIX_ENABLED`) |
 | `marketing_dneskai_topics` | Topics (náměty): working titles the owner approves before anything is paid for, with kind, source, keyword, verdict, evidence and status (prepared, `20261023100000`, behind `DNESKAI_TOPICS_ENABLED`) |
 | `marketing_campaigns`, `marketing_calendar_entries` | Daily campaign and slot entries a job is bound to |
 | `marketing_jobs` | Generation jobs: request, fence, lease, result (deck, revision, usage) |
@@ -215,7 +216,7 @@ Costs show in "Chyby a náklady".
 
 ## 6. Database and switches still to apply
 
-The repository lists every migration version production recorded (reconciled 22 October). Nineteen prepared
+The repository lists every migration version production recorded (reconciled 22 October). Twenty prepared
 migrations are not applied yet: `20261022000000` through `20261023130100`. The owner applies them with
 `npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Then the
 owner sets these switches in Vercel Production and redeploys:
