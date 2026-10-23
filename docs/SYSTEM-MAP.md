@@ -49,7 +49,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 
 | System | What OwnDashboard uses it for | Where | Production state |
 |---|---|---|---|
-| Supabase | Database, RLS, Storage (`marketing-assets`, `marketing-media`; `marketing-reels` and `marketing-audio` once migrations `20261023130000` and `20261023130100` are pushed), pg_cron scheduler, Vault secrets | `src/lib/supabase/` | Live |
+| Supabase | Database, RLS, Storage (`marketing-assets`, `marketing-media`, `marketing-reels`, `marketing-audio`; migrations through `20261023130300` applied 23 October 2026), pg_cron scheduler, Vault secrets | `src/lib/supabase/` | Live |
 | Vercel | Hosting, env vars, crons | `vercel.json` | Live |
 | GitHub | Repos `lukaskourilcz/own-dashboard` and `lukaskourilcz/quorum`; project repo stats | `src/lib/github*` | Live |
 | Google Calendar | Direct calendar read/write | `src/lib/calendar*`, `src/lib/google-*` | Live |
@@ -263,26 +263,19 @@ Costs show in "Chyby a náklady" in the `⋯` menu.
 | `notifications` | In-app notifications, including the review reminders |
 
 Storage buckets, all private: `marketing-assets` (rendered slide JPEGs), `marketing-media` (source pictures),
-`marketing-reels` (Reel MP4s, prepared `20261023130000`) and `marketing-audio` (library tracks, prepared
-`20261023130100`).
+`marketing-reels` (Reel MP4s, `20261023130000`) and `marketing-audio` (library tracks, `20261023130100`); both migrations were applied on 23 October 2026.
 
-## 6. Database and switches still to apply
+## 6. Database and activation status
 
-The repository lists every migration version production recorded (reconciled 22 October). Twenty-three prepared
-migrations are not applied yet: `20261022000000` through `20261023130300`. The owner applies them with
-`npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Until then
-the daily tick logs one harmless `retention` error. Then the switches go on in Vercel Production, grouped by what
-they wait for:
-- **The push alone:** `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`,
-  `DNESKAI_LAPSED_RELEASE_ENABLED`, `MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED`,
-  `DNESKAI_REGENERATE_ENABLED`, `DNESKAI_TOPICS_ENABLED`, `DNESKAI_SOURCES_TABLE_ENABLED`.
-- **The topics switch:** `DNESKAI_SCOUTING_ENABLED`, `DNESKAI_TITLING_ENABLED` with `DNESKAI_TOPIC_BRIEFS_ENABLED`,
-  `DNESKAI_DAILY_MIX_ENABLED`; `DNESKAI_FACT_OR_HYPE_ENABLED` also needs scouting and the Apify switch.
-- **Reels:** `MARKETING_DNESKAI_REELS_ENABLED`.
-- **Comments:** `DNESKAI_ENGAGEMENT_EDITOR_ENABLED` (needs no migration), `DNESKAI_ENGAGEMENT_ENABLED` (then the reply
-  switch in `⋯` → Účet Instagram), and the webhook values.
-- **Facebook Login:** `DNESKAI_AUDIO_TRENDS_ENABLED`, then `DNESKAI_TIKTOK_TRENDS_ENABLED` once the owner approves
-  its spend.
+The 23 prepared migrations `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation. The routine feature switches and editor activation are deployed; see NEEDED.md and the Astra handoff for the recorded state. Do not repeat the completed migration push.
+
+The audit implementation branch adds **one prepared, unapplied migration**, `20261023135551_dneskai_engagement_receipts.sql`, for the complete owner/RLS-scoped receipt aggregate. Apply it before deploying that branch. Local code/UX tests changed no Production settings or data.
+
+Remaining activation dependencies are distinct:
+
+- Facebook Login and trending Meta audio require the intended DNESKAi Facebook Page/connection (#181).
+- The live keyword-reply check needs an owner-named second account and a specifically approved keyword post (#180).
+- Optional FACT or HYPE, titling/topic-brief and TikTok activation/spend decisions remain in NEEDED.md/#178; do not infer approval from enabled routine features.
 
 Every switch, with its default and prerequisite, is listed in `docs/marketing-scheduling.md#switches`; the setup steps
 are in `docs/external-setup.md`. Astra's issue #178 sets the Vercel values.
@@ -293,13 +286,9 @@ are in `docs/external-setup.md`. Astra's issue #178 sets the Vercel values.
 - The pilot is done: a single image published at 19:01 Prague (https://www.instagram.com/p/DezenXXkev_/) and a
   five-slide carousel at 20:00 (https://www.instagram.com/p/Dezk8kMlv0P/), both on the first attempt, about $0.046 in
   total. Both were made before the post rules and kits landed, so they still carry the old elements.
-- After the pilot, publishing for `@dneskai` is off at the account switch (`marketing_accounts.enabled = false`),
-  because daily operation is not authorized yet. Both Vercel switches stay on. Turning the account back on in
-  DNESKAi → `⋯` → Účet Instagram resumes publishing; every post still needs approval of its exact version.
+- Publishing for `@dneskai` was enabled on 23 October 2026 at the owner’s explicit request. Every post still requires approval of its exact saved version. The first Reel was published through Instagram’s native uploader with a library track: [publication evidence](reports/dneskai-first-reel-2026-10-23.md). This does not verify OwnDashboard’s automatic Reel publisher.
 - Generation keeps preparing posts for review every night under the $1.00 daily ceiling.
-- The education and Reels plan (#150–#174) and its follow-ups (#210–#213, #216) are merged, all behind switches that
-  are still off. Open issues: the tracking issue #175 and Astra's browser tasks #178–#185. Open owner work is in
-  `NEEDED.md`.
+- The education/Reels plan and follow-ups are merged; routine activation is recorded in NEEDED.md. Remaining owner-dependent checks and optional spend decisions stay explicit there and in #178, #180 and #181. The local audit implementation has its own [verification report](reports/dneskai-audit-implementation-2026-10-23.md).
 
 ## 8. Where to look next
 

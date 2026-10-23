@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-// The unapplied approval-04 migration in PGlite on top of the deployed publication SQL. No production database.
+// The approval-04 migration in isolated PGlite on top of the preceding publication SQL. No production database.
 let db: PGlite;
 const owner = '11111111-1111-4111-8111-111111111111';
 const other = '22222222-2222-4222-8222-222222222222';

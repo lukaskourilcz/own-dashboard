@@ -178,17 +178,17 @@ describe("2026-10-23 DNESKAi comment replies (#160)", () => {
     expect(sql).toMatch(/comment_id text not null unique/);
     expect(sql).not.toMatch(/username|commenter|comment_text/i);
     expect(sql).toMatch(/add column engagement_enabled boolean not null default false/);
-    expect(guide).toMatch(/DNESKAi comment replies, 23 October 2026 \(unapplied\)/);
+    expect(guide).toMatch(/DNESKAi comment replies, 23 October 2026 \(schema applied 23 October 2026\)/);
   });
 });
 
 describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
-  it("keep the reel bucket private and MP4-only, documented as unapplied", () => {
+  it("keep the reel bucket private and MP4-only, documented with its applied date", () => {
     const sql = code("20261023130000_dneskai_reel_bucket.sql");
     expect(sql).toMatch(/values\('marketing-reels','marketing-reels',false,67108864,array\['video\/mp4'\]\)/);
     expect(sql).not.toMatch(/public=true/);
     expect(sql.match(/as restrictive/g)).toHaveLength(5);
-    expect(guide).toMatch(/20261023130000_dneskai_reel_bucket\.sql[\s\S]*unapplied|DNESKAi Reel bucket, 23 October 2026 \(unapplied\)/);
+    expect(guide).toMatch(/DNESKAi Reel bucket, 23 October 2026 \(schema applied 23 October 2026\)/);
   });
 
   it("keep the audio library own-only with service-role writes (#164)", () => {
@@ -197,7 +197,7 @@ describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
     expect(sql).toMatch(/revoke all on public\.marketing_audio_tracks from public,anon,authenticated/);
     expect(sql).toMatch(/grant select on public\.marketing_audio_tracks to authenticated/);
     expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_audio_tracks to authenticated/);
-    expect(guide).toMatch(/DNESKAi audio library, 23 October 2026 \(unapplied\)/);
+    expect(guide).toMatch(/DNESKAi audio library, 23 October 2026 \(schema applied 23 October 2026\)/);
   });
 
   it("keep the trending audio list own-only with service-role writes (#167)", () => {
@@ -205,7 +205,7 @@ describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
     expect(sql).toMatch(/create table public\.marketing_audio_trends/);
     expect(sql).toMatch(/revoke all on public\.marketing_audio_trends from public,anon,authenticated/);
     expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_audio_trends to authenticated/);
-    expect(guide).toMatch(/DNESKAi trending audio, 23 October 2026 \(unapplied\)/);
+    expect(guide).toMatch(/DNESKAi trending audio, 23 October 2026 \(schema applied 23 October 2026\)/);
   });
 });
 
@@ -268,6 +268,6 @@ describe("2026-10-23 TikTok chart spend (#167)", () => {
     expect(sql).toMatch(/check\(kind in\('transcript','classify','title','tiktok'\)\)/);
     expect(sql).toMatch(/dneskai-tiktok-budget/);
     expect(sql).toMatch(/revoke all on function public\.marketing_dneskai_tiktok_bind\(uuid,uuid,text\) from public,anon,authenticated/);
-    expect(guide).toMatch(/TikTok sound chart spend, 23 October 2026 \(unapplied\)/);
+    expect(guide).toMatch(/TikTok sound chart spend, 23 October 2026 \(schema applied 23 October 2026\)/);
   });
 });

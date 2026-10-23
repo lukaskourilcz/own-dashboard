@@ -728,13 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Twenty-three files are newer than anything production holds and none of them is applied: `20261022000000` through
-`20261023130300`. Apply them with the CLI, which records each file's own version:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. The audit implementation adds one later, prepared file: `20261023135551_dneskai_engagement_receipts.sql`. Check the linked project and apply that additive function before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
-npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the twenty-three files, in filename order
+npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
+npx supabase db push --linked --dry-run   # expect only 20261023135551_dneskai_engagement_receipts.sql
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -745,8 +744,7 @@ recreates the mismatch, and it holds the retention file's `delete` for a confirm
 selection (`20261022180000`), the majority category (`20261022160000`) and the unknown-cost scope (`20261022171000`)
 take effect with the push itself and need no switch. The next daily tick then records no `retention` error.
 
-After the push, set the server-only switches in Vercel Production and redeploy. Each one is off until its text is
-exactly `true`; the full table with defaults is in [marketing scheduling](marketing-scheduling.md#switches).
+The routine switch activation and deployment were completed on 23 October 2026; NEEDED.md records which optional spend and Facebook Login dependencies remain. The following table records prerequisites, not a request to enable every feature. A server switch is enabled only when its text is exactly `true`; defaults are in [marketing scheduling](marketing-scheduling.md#switches).
 
 | Switch | Needs |
 |---|---|
@@ -771,74 +769,75 @@ exactly `true`; the full table with defaults is in [marketing scheduling](market
 `MARKETING_DNESKAI_APIFY_RESEARCH_ENABLED` stays off until the owner approves the research plan; the ledger
 (`20261022013957`) spends nothing on its own.
 
-## DNESKAi research preparation, 22 October 2026 (unapplied)
+## DNESKAi research preparation, 22 October 2026 (schema applied 23 October 2026)
 
 `20261022013957_dneskai_apify_research.sql` adds the separate private research ledger, atomic service-only reserve/mark/spent RPCs, and own-only public metric reads. It preserves all pipeline and staging ledgers. No cron or live route starts research. See [research operations](dneskai-apify-research.md).
 
-This migration has only been replayed in isolated PGlite tests. Apply it with the others through [Applying the prepared migrations](#applying-the-prepared-migrations).
+Applied on 23 October 2026. Local PGlite tests cover the ledger; the schema alone does not authorize research calls or spend.
 
-## Richer brief evidence, 22 October 2026 (unapplied)
+## Richer brief evidence, 22 October 2026 (schema applied 23 October 2026)
 
 `20261022020702_dneskai_richer_brief_evidence.sql` adds bounded article prose to the owner-scoped media collection and a fenced service-only setter. Alt and figcaption metadata stay in the immutable image plan. `20261022020759_dneskai_brief_v2_compatibility.sql` accepts both brief document versions without rewriting stored briefs or changing grants.
 
-Both migrations are local preparation. Apply them with the others through [Applying the prepared migrations](#applying-the-prepared-migrations). The app defaults to the existing media columns and brief/1 writer. After both migrations have been reconciled and applied, set server-only `DNESKAI_RICH_EVIDENCE_ENABLED=true` and redeploy to enable article prose and brief/2. Both document versions remain readable. No collection switch, paid ceiling or staging ledger changes.
+Both migrations were applied on 23 October 2026. Article prose and the brief/2 writer require server-only `DNESKAI_RICH_EVIDENCE_ENABLED=true`; without it the app uses the existing media columns and brief/1 writer. Both document versions remain readable. No collection switch, paid ceiling or staging ledger changes.
 
-### Prepared: lapsed brief reports
+### Applied 23 October 2026: lapsed brief reports
 
-`20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. This migration runs no historic cleanup and remains unapplied; see [Applying the prepared migrations](#applying-the-prepared-migrations).
+`20261022021835_dneskai_release_lapsed_reports.sql` replaces the future skip path. A lapsed pending/ready brief with no job, no matching job request or revision, and no other active brief releases its selected reports back to classified `new` candidates. Ordinary freshness and ranking still apply. Covered, queued, generated and non-lapsed briefs retain their reports. The skipped brief and its source history stay intact. Applied on 23 October 2026; the migration runs no historic cleanup.
 
-## Publication re-queue, 22 October 2026 (unapplied)
+## Publication re-queue, 22 October 2026 (schema applied 23 October 2026)
 
 `20261022110000_marketing_requeue_unpublished_publication.sql` adds `marketing_requeue_publication(p_publication)` for the signed-in owner (audit finding approval-04). It accepts a publication in `reconciliation`, or a claim whose lease expired, only when it has no numeric container ID, no media ID, no URL and no `publish-intent`: such a row never reached `media_publish`. It sets the publication back to `queued` (`error_code='owner-requeued'`, container and lease cleared) and the revision back to `approved`, leaving `approved_at`, `approved_hash` and the content untouched, and records a `requeued` event. Every other row is refused with `publication may be published`, `publication not stranded` or `approval changed`.
 
-The deployed code needs nothing from this migration: container retries use the existing `marketing_checkpoint_publication`, and the route and panel stay off until `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. A missing function answers `publication-requeue-unavailable`. Replayed only in PGlite (`tests/lib/marketing-requeue-database.test.ts`). Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations).
+Applied on 23 October 2026. Container retries use the existing `marketing_checkpoint_publication`; the re-queue route and panel require `MARKETING_PUBLICATION_REQUEUE_ENABLED=true`. A missing function answers `publication-requeue-unavailable`. Local regression coverage: PGlite (`tests/lib/marketing-requeue-database.test.ts`).
 
-### Prepared: owner recovery actions
+### Applied 23 October 2026: owner recovery actions
 
 `20261022141512_dneskai_owner_recovery.sql` adds two owner-only security-definer functions, executable by `authenticated` and scoped by `auth.uid()`. `marketing_dneskai_release_candidate` returns one held report with text, published within 30 days, to the open queue (status `new`, classification cleared, authored fields unchanged); Jev reviews it again in a later nightly batch under the existing limits. `marketing_dneskai_reslot_brief` reopens a brief that lapsed (`brief-slot-passed`, `brief-target-date-passed`, `brief-slot-unavailable`) before any source head, calendar entry, job or revision existed. It takes a rebuilt brief with the same member hash, one of the four daily slots today or tomorrow at least 30 minutes ahead, no later expiry than the original and a lead report still inside the selection window. The brief becomes `pending` (`owner-reslot`, or `account-unavailable` without a verified account) and the scheduler admits it through the ordinary path.
 
 `20261022141613_dneskai_release_lapsed_brief.sql` adds `marketing_dneskai_release_brief`, the owner-triggered form of the lapse release in `20261022021835`, for briefs that lapsed before it took effect. It raises an error and changes nothing when `20261022021835` is absent.
 
-Both stay unapplied. The deployed app never calls these functions while `DNESKAI_OWNER_RECOVERY_ENABLED` and `DNESKAI_LAPSED_RELEASE_ENABLED` are unset; the ⋯ menu's Topic recovery panel (Obnova témat) then shows reslot and release as unavailable with a reason. After an approved application, set the matching server-only variable and redeploy. The owner `retry` action uses only the existing `marketing_dneskai_prepare_brief` and needs no migration.
+Both migrations were applied on 23 October 2026. `DNESKAI_OWNER_RECOVERY_ENABLED` and `DNESKAI_LAPSED_RELEASE_ENABLED` gate the respective recovery functions; if unset, the ⋯ menu's Topic recovery panel (Obnova témat) shows reslot/release as unavailable with a reason. The owner `retry` action uses the existing `marketing_dneskai_prepare_brief`.
 
-### Prepared: event category by majority (SEL-10)
+### Applied 23 October 2026: event category by majority (SEL-10)
 
-`20261022160000_dneskai_event_majority_category.sql` replaces `marketing_dneskai_finish` with a version that reads an optional `category` on each `p_events` entry. The collector sends the category most eligible reports of the event carry, tier-0/1 sources breaking ties (`dneskaiEventCategory`). The function uses it only when at least one eligible member of that event carries it; otherwise it keeps the lead report's category, as before. The lead report, each report's 48 h / 30 d window, the one-event-per-category rule and the briefs' validity rules are unchanged; `tool` and `ai-project` remain separate categories. It stays unapplied. The deployed function ignores the extra key, so the code needs no switch and changes nothing until an approved application.
+`20261022160000_dneskai_event_majority_category.sql` replaces `marketing_dneskai_finish` with a version that reads an optional `category` on each `p_events` entry. The collector sends the category most eligible reports of the event carry, tier-0/1 sources breaking ties (`dneskaiEventCategory`). The function uses it only when at least one eligible member of that event carries it; otherwise it keeps the lead report's category, as before. The lead report, each report's 48 h / 30 d window, the one-event-per-category rule and the briefs' validity rules are unchanged; `tool` and `ai-project` remain separate categories. Applied on 23 October 2026; this selection behavior requires no switch.
 
-### Prepared: unknown collection cost scoped to its day (owner decision 17)
+### Applied 23 October 2026: unknown collection cost scoped to its day (owner decision 17)
 
 `20261022171000_dneskai_collection_unresolved_scope.sql` narrows one guard in `marketing_dneskai_claim_stage`. A paid stage was refused while any stage the owner ever reserved had no cost, or a cost above its reservation, so one unknown Apify cost from the October staging pilot blocked paid collection on every later night. The guard now checks only the stages of the run being claimed and of the other runs with the same Prague date. An unknown cost tonight still stops tonight's paid work on every project. No row changes: the old reservation keeps its $0.04 and its missing cost, and still counts in its own day's $0.25 total. The per-stage $0.04 and $0.003 reservations and the $0.25 daily ceiling are unchanged.
 
-Like `20261021122330`, the file rewrites only that guard inside the current function body, raises an error if it does not find the guard exactly once, and does nothing on a second run. Replayed only in PGlite (`tests/lib/marketing-dneskai-unresolved-scope-database.test.ts`). The collector code already holds a run only for its own unresolved stages, so it needs no switch; the deployed function keeps the old, stricter guard until the migration is applied. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations).
+Like `20261021122330`, the file rewrites only that guard inside the current function body, raises an error if it does not find the guard exactly once, and does nothing on a second run. Local regression coverage: PGlite (`tests/lib/marketing-dneskai-unresolved-scope-database.test.ts`). Applied on 23 October 2026; the collector and database guard both scope unresolved stages to the run/day. No switch is required.
 
-### Prepared: story selection v2 (owner decisions 11-13)
+### Applied 23 October 2026: story selection v2 (owner decisions 11-13)
 
 `20261022180000_dneskai_relevance_first_selection.sql` replaces `marketing_dneskai_finish` with the body of `20261022160000` and changes only the ranking. The day's events are picked by relevance, and at most one of them may be outside news (`ai-news`, `tech-news`): `tool`, `ai-project` and `marketing` share that one slot, so a weak ai-project item no longer pushes out a strong news story. The 0.85 floor, the 48 h / 30 d windows, grouping, coverage, the limit of four events, member selection and briefs are unchanged. Rank 1 is the most relevant event. It must apply after `20261022160000`; filename order does that.
 
 `20261022180100_dneskai_held_requeue.sql` adds `requeued_at` to `marketing_dneskai_candidates` and the service-only `marketing_dneskai_requeue_held(p_owner, p_run, p_fence)`. Under the run's fence, while the run is running, today in Prague and before its Jev stages are planned, it opens at most 16 reports that Jev held for review (`collection-review-*`) less than 48 hours ago, with text, published within 30 days and never re-queued before, most relevant first. The release rules match `marketing_dneskai_release_candidate`. Jev then reviews them in that night's batches under the existing stage and $0.25 daily limits: at most two extra batches, $0.006. `requeued_at` is never cleared, so a report gets one second chance; a retried tick of the same run re-queues nothing.
 
-Both stay unapplied and were replayed only in PGlite (`tests/lib/marketing-dneskai-selection-v2-database.test.ts`). The selection rule changes as soon as `20261022180000` is applied; no switch gates it. The collector calls `marketing_dneskai_requeue_held`, and the Topic recovery panel explains the relevance-first rule, only with the server-only `DNESKAI_SELECTION_V2_ENABLED=true`; set it after both are applied and redeploy. A missing function while the switch is on leaves the night as it was.
+Both migrations were applied on 23 October 2026; local coverage is in `tests/lib/marketing-dneskai-selection-v2-database.test.ts`. The selection rule itself has no switch. The collector calls `marketing_dneskai_requeue_held`, and the Topic recovery panel explains the relevance-first rule, only with server-only `DNESKAI_SELECTION_V2_ENABLED=true`. A missing function while the switch is on leaves the night as it was.
 
-### Prepared: regenerate with a note (owner decision 8)
+### Applied 23 October 2026: regenerate with a note (owner decision 8)
 
 `20261022190000_dneskai_regenerate_with_note.sql` replaces `marketing_finish_job` with the body of `20261021124706` plus one step. When the finished job's request names `generation.replacesRevisionId`, and that revision is the owner's, of the same brand, still `review` or `returned` and has no claimed, published or uncertain publication, the new revision is saved through `marketing_save_revision` with it as the replaced revision: the old version becomes `superseded` and a queued publication of it is cancelled, as for an owner edit. A version the owner approved meanwhile keeps its approval; the new draft is saved beside it. Without the key the function behaves as before. Nothing here approves; the new revision is ready and in review.
 
-It stays unapplied. The app sends `replacesRevisionId` only from the Lab's „Regenerate with a note“, which the server refuses with `regenerate-unavailable` until `DNESKAI_REGENERATE_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-regenerate-database.test.ts`).
+Applied on 23 October 2026. The app sends `replacesRevisionId` only from the Lab's „Regenerate with a note“, which the server refuses with `regenerate-unavailable` until `DNESKAI_REGENERATE_ENABLED=true`. Local regression coverage: PGlite (`tests/lib/marketing-dneskai-regenerate-database.test.ts`).
 
-### Prepared: DNESKAi topics (#150, plan A1)
+### Applied 23 October 2026: DNESKAi topics (#150, plan A1)
 
 `20261023100000_dneskai_topics.sql` adds `marketing_dneskai_topics`. A topic (námět) is a working title the owner approves or rejects before the pipeline pays for enrichment, pictures or generation. Each row has a kind (`news`, `education`), a source kind (`feed`, `instagram`, `library`, `manual`) with a source reference unique per owner, the Czech title, an optional summary, an optional one-word keyword in Latin letters, an optional verdict (`fact`, `hype`, `unclear`), evidence as a JSON object, a status (`proposed`, `approved`, `rejected`, `expired`, `enriching`, `briefed`, `generated`), the Prague date it was proposed for, the approval time and an optional brief. The owner reads own rows through RLS and writes nothing directly; the pipeline writes with `service_role`. The project must belong to the row's owner (the collection ownership trigger).
 
 Three security-definer functions, executable by `authenticated` and scoped by `auth.uid()`, carry the owner's actions. `marketing_dneskai_topic_decide` approves a proposed topic, rejects a proposed or approved one, and restores a rejected or expired one to proposed. `marketing_dneskai_topic_edit` changes the title and keyword until enrichment starts. `marketing_dneskai_topic_create` adds a manual topic from an https URL, a title or both; the same URL (or, without one, the same title) cannot be added twice. None of them writes a brief, admits a job or spends money.
 
-It stays unapplied. Scouting, titling and topic briefs propose and consume topics, each behind its own switch. The app reads the table and calls the functions only with the server-only `DNESKAI_TOPICS_ENABLED=true`; without it `GET` and `POST /api/marketing/dneskai/topics` answer 404. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-topics-database.test.ts`).
+Applied on 23 October 2026. Scouting, titling and topic briefs propose and consume topics, each behind its own switch. The app reads the table and calls the functions only with the server-only `DNESKAI_TOPICS_ENABLED=true`; without it `GET` and `POST /api/marketing/dneskai/topics` answer 404. Local regression coverage: PGlite (`tests/lib/marketing-dneskai-topics-database.test.ts`).
 
-### Prepared: topic spend ledger (#152, plan A3)
+### Applied 23 October 2026: topic spend ledger (#152, plan A3)
 
 `20261023100100_dneskai_topic_spend.sql` adds `marketing_private.dneskai_topic_spend` and three service-only functions. `marketing_reserve_dneskai_topic_spend` reserves one paid topic call before it starts: a reel transcript (`transcript`) against its own ceiling (`MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, $0.50 by default) and transcript spend of the last 24 hours, or a topic model call (`classify` for FACT or HYPE, `title` for titling) against the $1 DNESKAi generation ceiling and everything generation and topics spent in 24 hours. A refused call reserves nothing. `marketing_settle_dneskai_topic_spend` records the measured cost once. A row counts at its settled cost, or at its reservation while unsettled. The file also replaces `marketing_dneskai_generation_spent` with the body of `20261021124651` plus the topic model calls, so generation jobs and topic calls never pass the ceiling together, and Errors and costs (Chyby a náklady, in the ⋯ menu) shows the combined figure.
 
-It stays unapplied. The app reserves here only with `DNESKAI_FACT_OR_HYPE_ENABLED=true` or `DNESKAI_TITLING_ENABLED=true`; `20261023130300` adds the `tiktok` kind. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-topic-spend-database.test.ts`).
-## DNESKAi sources table, 23 October 2026 (unapplied)
+Applied on 23 October 2026. The app reserves here only with `DNESKAI_FACT_OR_HYPE_ENABLED=true` or `DNESKAI_TITLING_ENABLED=true`; `20261023130300` adds the `tiktok` kind. Local regression coverage: PGlite (`tests/lib/marketing-dneskai-topic-spend-database.test.ts`).
+
+## DNESKAi sources table, 23 October 2026 (schema applied 23 October 2026)
 
 `20261023110000_dneskai_sources_table.sql` (#174) adds `marketing_dneskai_sources`: one row per source the nightly
 collection and the scouting step read, with its `source_id` (the id stages, source states and candidates carry), kind,
@@ -849,29 +848,28 @@ once while the owner has no row), `marketing_dneskai_source_save` (add, or chang
 At most 120 sources per project. When a source was last read, how many items it brought and its last error stay in
 `marketing_dneskai_source_states`.
 
-Replayed only in PGlite (`tests/lib/dneskai-sources-database.test.ts`). Apply it with the other prepared files
-(`npx supabase db push --linked`). Until `DNESKAI_SOURCES_TABLE_ENABLED=true`, Zdroje shows the registry file
-read-only and the pipeline reads the file.
+Local regression coverage: PGlite (`tests/lib/dneskai-sources-database.test.ts`). When `DNESKAI_SOURCES_TABLE_ENABLED` is off, Zdroje shows the registry file read-only and the pipeline reads the file.
 
-### Prepared: topic briefs (#155, plan A6)
+### Applied 23 October 2026: topic briefs (#155, plan A6)
 
 `20261023100200_dneskai_topic_briefs.sql` adds `marketing_dneskai_briefs.topic_id` (unique where set) and replaces the rank check: ranks 1 to 4 stay the night's selection, and only a row with a topic may use 5 to 16. An education topic that came from a collected report gets its own brief row in that report's run, with the report as its one member, so `marketing_dneskai_prepare_brief`, `marketing_dneskai_admit_brief`, the source head, the calendar entry and `marketing_enqueue_job` apply unchanged. A news topic uses the brief row its event already has. A link-library or hand-added topic (#210) has no collected report: the app reads its URL through Jina Reader and stores it as one `owner-link` report in the latest finished run, then takes the education path. No function changes.
 
-It stays unapplied. The app writes topic briefs only with `DNESKAI_TOPIC_BRIEFS_ENABLED=true`; without the switch nothing writes them, and the brief step ignores any row that has a topic. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/dneskai-topic-bridge-database.test.ts`).
+Applied on 23 October 2026. The app writes topic briefs only with `DNESKAI_TOPIC_BRIEFS_ENABLED=true`; without the switch nothing writes them, and the brief step ignores any row that has a topic. Local regression coverage: PGlite (`tests/lib/dneskai-topic-bridge-database.test.ts`).
 
 
-### Prepared: daily mix (#156, plan A7)
+### Applied 23 October 2026: daily mix (#156, plan A7)
 
 `20261023100300_dneskai_daily_mix.sql` adds `marketing_dneskai_daily_mix`, one row per owner and project: `news_per_day` and `education_per_day` (0 to 4, default 1 each) and `slots`, the active publishing times (any of 08:00, 12:30, 17:00 and 20:00, default 08:00 and 17:00). Every post needs its own time (`news_per_day + education_per_day <= cardinality(slots)`). The owner reads, inserts and updates only their own row, and the project must be theirs. No row means the default. The four times stay one list (`DNESKAI_BRIEF_SLOTS`, and the same four in `marketing_dneskai_reslot_brief`); the mix only switches some off.
 
-It stays unapplied. The app reads and writes the row only with `DNESKAI_DAILY_MIX_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-daily-mix-database.test.ts`).
-## DNESKAi comment replies, 23 October 2026 (unapplied)
+Applied on 23 October 2026. The app reads and writes the row only with `DNESKAI_DAILY_MIX_ENABLED=true`. Local regression coverage: PGlite (`tests/lib/marketing-dneskai-daily-mix-database.test.ts`).
 
-`20261023120000_dneskai_comment_replies.sql` (#160) prepares the comment watcher. `marketing_instagram_comment_replies` holds one row per keyword comment that got a reply: Instagram's comment id (unique, so a comment never gets a second private reply), the media id, the publication, the matched keyword, the private reply's status (`claimed`, `sent`, `failed`, `uncertain`) and time, the public reply's status and comment id, and an error code. It stores no commenter username, user id or comment text. `marketing_instagram_comment_checks` keeps one row per watched publication: the cursor of an unfinished pass, that pass's counts, the counts of the last finished pass and the last check time. Both are own-read; only `service_role` writes, and a trigger refuses a row whose publication belongs to another owner. `marketing_accounts` gains `engagement_enabled` (off), `engagement_blocked_code` and `engagement_blocked_at`.
+## DNESKAi comment replies, 23 October 2026 (schema applied 23 October 2026)
 
-Nothing reads these until `DNESKAI_ENGAGEMENT_ENABLED=true`; set it only after the push, because the scheduler, the accounts read and the switch route then query the new columns.
+`20261023120000_dneskai_comment_replies.sql` (#160) prepares the comment watcher. `marketing_instagram_comment_replies` holds one row per keyword comment that got a reply: Instagram's comment id (unique, so a comment never gets a second private reply), the media id, the publication, the matched keyword, the private reply's status (`claimed`, `sent`, `failed`, `uncertain`) and time, the public reply's status and comment id, and an error code. It stores no commenter username, user id or comment text. `marketing_instagram_comment_checks` keeps one row per watched publication: the cursor of an unfinished pass, that pass's counts, the counts of the last finished pass and the last check time. Both are own-read; only `service_role` writes, and a trigger refuses a row whose publication belongs to another owner. `marketing_accounts` gains `engagement_enabled` (off by default), `engagement_blocked_code` and `engagement_blocked_at`.
 
-## DNESKAi Reel bucket, 23 October 2026 (unapplied)
+The schema was applied on 23 October 2026. Reads require `DNESKAI_ENGAGEMENT_ENABLED=true`; the scheduler, account read and switch route then query these columns. Account reply activation remains separate from the server switch.
+
+## DNESKAi Reel bucket, 23 October 2026 (schema applied 23 October 2026)
 
 `20261023130000_dneskai_reel_bucket.sql` creates the private `marketing-reels` bucket: MP4 only, 64 MiB per file,
 with the same owner-prefix read policy and restrictive browser guards as `marketing-assets`. The render route
@@ -879,11 +877,10 @@ with the same owner-prefix read policy and restrictive browser guards as `market
 `<owner>/marketing/dneskai/reels/<reelKey>.mp4` with the service role and hands Instagram a seven-day signed URL.
 No table, function or existing policy changes.
 
-Replayed only in PGlite (`tests/lib/dneskai-reel-bucket.test.ts`). Apply it with the CLI like the other prepared
-files (`npx supabase db push --linked`); the route answers 404 until `MARKETING_DNESKAI_REELS_ENABLED=true`, and with
+Local regression coverage: PGlite (`tests/lib/dneskai-reel-bucket.test.ts`). The route answers 404 until `MARKETING_DNESKAI_REELS_ENABLED=true`, and with
 the switch on but the bucket missing it answers 503 `reel-bucket-required`.
 
-## DNESKAi audio library, 23 October 2026 (unapplied)
+## DNESKAi audio library, 23 October 2026 (schema applied 23 October 2026)
 
 `20261023130100_dneskai_audio_tracks.sql` (#164) adds `marketing_audio_tracks` and the private `marketing-audio`
 bucket (20 MiB per file; MP3, M4A/AAC, WAV and Ogg). A row holds the title, artist, source
@@ -894,26 +891,23 @@ an id and no file. The owner reads only their own rows and files; every write go
 `/api/marketing/dneskai/audio` with the service role. The browser uploads the file to a signed upload URL for one
 exact path, then the route checks the stored file before it records the row.
 
-Replayed only in PGlite (`tests/lib/dneskai-audio-database.test.ts`). Apply it with the other prepared files
-(`npx supabase db push --linked`). The route and Zdroje → Hudba stay hidden until `MARKETING_DNESKAI_REELS_ENABLED=true`.
+Local regression coverage: PGlite (`tests/lib/dneskai-audio-database.test.ts`). The route requires `MARKETING_DNESKAI_REELS_ENABLED=true`; direct Zdroje → Hudba shows a disabled state when off.
 
-## DNESKAi trending audio, 23 October 2026 (unapplied)
+## DNESKAi trending audio, 23 October 2026 (schema applied 23 October 2026)
 
 `20261023130200_dneskai_audio_trends.sql` (#167) adds `marketing_audio_trends`: one row per owner and Instagram audio
 id with title, artist, type (`music` or `original_sound`), length, an https cover thumbnail, the first and last day it
 trended, the number of days, and two signals: `niche_count` (how many reels of the tracked education profiles used it) and `tiktok` (the sound also rises on TikTok CZ, set by `DNESKAI_TIKTOK_TRENDS_ENABLED`). Meta's temporary preview link is not
-stored. The owner reads only their own rows; the daily tick writes them with the service role. Replayed only in
-PGlite (`tests/lib/dneskai-audio-trends-database.test.ts`). Apply it with the other prepared files
-(`npx supabase db push --linked`); the daily step and the screens stay off until `DNESKAI_AUDIO_TRENDS_ENABLED=true`.
+stored. The owner reads only their own rows; the daily tick writes them with the service role. Local regression coverage: PGlite (`tests/lib/dneskai-audio-trends-database.test.ts`). The daily step and screens require `DNESKAI_AUDIO_TRENDS_ENABLED=true`.
 
-## TikTok sound chart spend, 23 October 2026 (unapplied)
+## TikTok sound chart spend, 23 October 2026 (schema applied 23 October 2026)
 
 `20261023130300_dneskai_tiktok_spend.sql` (#167) adds the kind `tiktok` to `marketing_private.dneskai_topic_spend`
 (20261023100100) and replaces `marketing_reserve_dneskai_topic_spend` with the same body plus that kind: a chart run is
 checked against its own spend under its own lock, like a transcript, so it never takes room from generation or
 transcripts. `marketing_dneskai_tiktok_runs` lists the last runs and `marketing_dneskai_tiktok_bind` writes a run's
 Apify ids onto its reservation once. All three functions are service-only. It needs `20261023100100` first; filename
-order does that. Replayed only in PGlite (`tests/lib/dneskai-tiktok-spend-database.test.ts`). Nothing reserves or
+order does that. Local regression coverage: PGlite (`tests/lib/dneskai-tiktok-spend-database.test.ts`). Nothing reserves or
 runs until `DNESKAI_TIKTOK_TRENDS_ENABLED=true` and the owner has approved the spend (NEEDED.md).
 
 
