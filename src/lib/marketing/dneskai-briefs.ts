@@ -3,7 +3,7 @@ import { dneskaiRichEvidenceEnabled } from './dneskai-evidence-rollout';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { parseSourcePacket, type ContentRevision, type SourcePacket } from './contracts';
+import { ENGAGEMENT_KEYWORD_PATTERN, parseSourcePacket, type ContentRevision, type SourcePacket } from './contracts';
 import { DneskaiBriefSchema, type DneskaiBrief, type DneskaiBriefCategory, type DneskaiBriefEvidence, type DneskaiBriefMedia } from './dneskai-brief';
 import { dneskaiBriefLifetimeMs, dneskaiBriefSourcePacket } from './dneskai-brief-source';
 import { DneskaiCandidateSchema, type DneskaiCandidate } from './dneskai-contracts';
@@ -259,6 +259,8 @@ export interface DneskaiBriefStore {
   admit(owner: string, briefId: string, sourceUuid: string): Promise<Admitted>;
   enqueue(owner: string, request: unknown): Promise<JobAdmission>;
   queued(owner: string, briefId: string, jobId: string): Promise<void>;
+  /** #222: the keyword of the topic behind a topic brief, when that topic is `education`; null for news or none. */
+  educationKeyword?(owner: string, topicId: string): Promise<string | null>;
 }
 
 export class DneskaiBriefError extends Error { constructor(readonly code: string) { super(code); this.name = 'DneskaiBriefError'; } }
@@ -280,7 +282,7 @@ export function dneskaiBriefJobKey(owner: string, eventId: string, targetDate: s
  * brief's slot. A DNESKAi deck job renders through the carousel studio, so it carries no devShark single-layout
  * template (`templateVersion` names the studio renderer) and no presentation knowledge (#116).
  */
-export function dneskaiBriefGenerationRequest(input: { owner: string; packet: SourcePacket; account: { remote_account_id: string; handle: string }; admitted: Admitted }) {
+export function dneskaiBriefGenerationRequest(input: { owner: string; packet: SourcePacket; account: { remote_account_id: string; handle: string }; admitted: Admitted; education?: { keyword: string } | null }) {
   const brief = input.packet.brief;
   if (!brief) throw new DneskaiBriefError('brief-invalid');
   const key = dneskaiBriefJobKey(input.owner, brief.eventId, brief.targetDate, input.admitted.entryVersion);
@@ -289,6 +291,8 @@ export function dneskaiBriefGenerationRequest(input: { owner: string; packet: So
     generation: {
       source: input.packet, account: { id: input.account.remote_account_id, platform: 'instagram' as const, handle: input.account.handle }, scheduledAt: brief.scheduledAt,
       templateVersion: DNESKAI_RENDERER_VERSION, knowledge: [], consent: true, revisionId: key,
+      // #222: an education topic's keyword asks the model for the DM and lets code write the caption line.
+      ...(input.education ? { education: input.education } : {}),
     },
   };
 }
@@ -299,12 +303,22 @@ export function dneskaiBriefGenerationRequest(input: { owner: string; packet: So
  * records the job on the brief. Idempotent: a repeated call returns the same job, and a brief whose job exists
  * but was never recorded (the last step failed) records that job instead of creating another.
  */
-export async function enqueueBriefJob(store: DneskaiBriefStore, owner: string, row: Pick<DneskaiBriefRow, 'id'>, brief: DneskaiBrief, account: { remote_account_id: string; handle: string }): Promise<JobAdmission> {
+/**
+ * #222: `education: { keyword }` for a topic brief whose topic is `education` with a usable keyword (stored as Latin
+ * letters, sent in capitals). News topics, night briefs and a missing or invalid keyword get nothing (owner decision 3).
+ */
+export async function dneskaiTopicEducation(store: Pick<DneskaiBriefStore, 'educationKeyword'>, owner: string, row: Pick<DneskaiBriefRow, 'topic_id'>): Promise<{ keyword: string } | null> {
+  if (!row.topic_id || !store.educationKeyword) return null;
+  const keyword = (await store.educationKeyword(owner, row.topic_id))?.trim().toUpperCase() ?? '';
+  return ENGAGEMENT_KEYWORD_PATTERN.test(keyword) ? { keyword } : null;
+}
+
+export async function enqueueBriefJob(store: DneskaiBriefStore, owner: string, row: Pick<DneskaiBriefRow, 'id' | 'topic_id'>, brief: DneskaiBrief, account: { remote_account_id: string; handle: string }): Promise<JobAdmission> {
   const packet = dneskaiBriefSourcePacket(brief);
   const source = await store.ingest(owner, packet);
   const admitted = await store.admit(owner, row.id, source.id);
   if (admitted.jobId) { await store.queued(owner, row.id, admitted.jobId); return { jobId: admitted.jobId, status: 'recorded', duplicate: true }; }
-  const request = dneskaiBriefGenerationRequest({ owner, packet, account, admitted });
+  const request = dneskaiBriefGenerationRequest({ owner, packet, account, admitted, education: await dneskaiTopicEducation(store, owner, row) });
   const job = await store.enqueue(owner, request);
   await store.queued(owner, row.id, job.jobId);
   return job;
@@ -553,6 +567,11 @@ export function createDneskaiBriefStore(db: DneskaiBriefsDatabase, options: { en
     },
     enqueue: options.enqueue ?? ((owner, request) => enqueueMarketingJob(db, owner, request)),
     async queued(owner, briefId, jobId) { await rpc('marketing_dneskai_brief_queued', { p_owner: owner, p_brief: briefId, p_job: jobId }); },
+    // #222: only topic briefs ask, and those exist only with DNESKAI_TOPIC_BRIEFS_ENABLED after 20261023100200.
+    async educationKeyword(owner, topicId) {
+      const row = await read(db.from('marketing_dneskai_topics').select('kind,keyword').eq('user_id', owner).eq('id', topicId).maybeSingle()) as { kind: string; keyword: string | null } | null;
+      return row?.kind === 'education' && typeof row.keyword === 'string' ? row.keyword : null;
+    },
   };
 }
 
