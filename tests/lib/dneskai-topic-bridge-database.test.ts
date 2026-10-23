@@ -5,6 +5,7 @@ import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore, dneskaiTopicE
 import { dneskaiFinishEvents, groupDneskaiEvents } from '@/lib/marketing/dneskai-events';
 import { dneskaiMediaCapabilities } from '@/lib/marketing/dneskai-media-plan';
 import { contentHash } from '@/lib/marketing/hashes';
+import type { DneskaiTopicReader } from '@/lib/marketing/dneskai-topic-source';
 import { DneskaiCandidateSchema } from '@/lib/marketing/dneskai-contracts';
 import type { DneskaiMediaAssetView } from '@/lib/marketing/dneskai-media-contracts';
 import { BRIEF_MIGRATIONS, briefsRpcClient, createBriefsDatabase, insertCandidates, pgliteRestClient, syntheticCandidate } from './marketing-dneskai-briefs-db';
@@ -145,7 +146,7 @@ describe('link-library and manual topics (#210)', () => {
     // The production store's reads and writes for owner links, over the same database.
     const real = createDneskaiTopicBridgeStore(pgliteRestClient(db) as never);
     const store: DneskaiTopicBridgeStore = { ...topics, candidateByUrl: real.candidateByUrl, latestRun: real.latestRun, insertCandidate: real.insertCandidate, insertTopicBrief: real.insertTopicBrief };
-    const reader = vi.fn(async (_url: string, _signal: AbortSignal) => ({ title: 'Synthetic notes tool', text: 'A synthetic page about a tool that turns screenshots into notes. '.repeat(6) }));
+    const reader = vi.fn<DneskaiTopicReader>(async () => ({ title: 'Synthetic notes tool', text: 'A synthetic page about a tool that turns screenshots into notes. '.repeat(6) }));
     const pass = () => advanceDneskaiTopicBriefs({ topics: store, briefs }, { owner, project, now: new Date(instant), signal: new AbortController().signal, remainingMs: () => 40_000, reader });
 
     expect(await pass()).toMatchObject({ enriching: 1, unsupported: 1 });
@@ -168,8 +169,7 @@ describe('link-library and manual topics (#210)', () => {
 
   it('finds the stored report again by its normalised URL instead of storing the page twice', async () => {
     const real = createDneskaiTopicBridgeStore(pgliteRestClient(db) as never);
-    const { contentHash: hash } = await import('@/lib/marketing/hashes');
-    expect(await real.candidateByUrl!(owner, project, hash('https://tools.example.test/notes'))).toEqual({ id: `owner-link:${libraryId}` });
+    expect(await real.candidateByUrl!(owner, project, contentHash('https://tools.example.test/notes'))).toEqual({ id: `owner-link:${libraryId}` });
     expect(await real.latestRun!(owner, project)).toEqual({ id: runId });
   });
 });
