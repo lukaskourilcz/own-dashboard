@@ -13,6 +13,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -151,6 +152,7 @@ export function SubscriptionsPanel({
   const qc = useQueryClient();
   const t = useDict();
   const confirm = useConfirmation();
+  const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   // Which cadence the spend breakdown chart is showing. Monthly is the day-to-
@@ -262,11 +264,11 @@ export function SubscriptionsPanel({
     onSuccess: (sub) => {
       setSubs((prev) => [sub, ...prev]);
       setForm(emptyForm);
+      setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.subscriptions });
     },
     onError: (e) => {
       setError((e as Error).message);
-      setForm(emptyForm);
     },
   });
 
@@ -285,11 +287,11 @@ export function SubscriptionsPanel({
     onSuccess: (sub) => {
       setSubs((prev) => prev.map((s) => (s.id === sub.id ? sub : s)));
       setForm(emptyForm);
+      setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.subscriptions });
     },
     onError: (e) => {
       setError((e as Error).message);
-      setForm(emptyForm);
     },
   });
 
@@ -428,6 +430,7 @@ export function SubscriptionsPanel({
   }
 
   function startEdit(sub: Subscription) {
+    setFormOpen(true);
     const loaded = allocations.filter((allocation) => allocation.subscription_id === sub.id);
     setForm({
       id: sub.id,
@@ -568,8 +571,7 @@ export function SubscriptionsPanel({
       <PageHeader
         title={t.subscriptions.title}
         description={t.subscriptions.description}
-        action={
-          setDisplayCurrency && (
+        action={<div className="flex flex-wrap items-center gap-3"><Button onClick={() => { setForm(emptyForm); setFormOpen(true); }}><Plus />{t.subscriptions.addSubscription}</Button>{          setDisplayCurrency && (
             <div className="inline-flex items-center gap-2">
               <Label className="text-foreground-subtle">
                 {t.subscriptions.displayIn}
@@ -578,28 +580,17 @@ export function SubscriptionsPanel({
                 value={displayCurrency}
                 onValueChange={(v) => setDisplayCurrency(v)}
                 aria-label={t.subscriptions.displayIn}
-                className="h-8 w-20 text-xs"
+                className="h-11 w-20 text-xs md:h-8"
                 options={SUPPORTED_CURRENCIES.map((c) => ({
                   value: c,
                   label: c,
                 }))}
               />
             </div>
-          )
-        }
+          )}</div>}
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>
-              {form.id
-                ? t.subscriptions.editSubscription
-                : t.subscriptions.addSubscription}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-3">
+      <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{form.id ? t.subscriptions.editSubscription : t.subscriptions.addSubscription}</DialogTitle></DialogHeader><form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="sub-name">{t.subscriptions.name}</Label>
                 <Input
@@ -770,17 +761,17 @@ export function SubscriptionsPanel({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setForm(emptyForm)}
+                    onClick={() => { setForm(emptyForm); setFormOpen(false); }}
                   >
                     {t.common.cancel}
                   </Button>
                 )}
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </form></DialogContent></Dialog>
+      <div className="grid gap-4 lg:grid-cols-3">
 
-        <Card className="lg:col-span-2">
+
+        <Card className="lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>
               {yearly ? t.subscriptions.yearlySpend : t.subscriptions.monthlySpend}

@@ -364,7 +364,7 @@ function DashboardShellContent(props: Props) {
     () => projects.find((project) => project.id === selectedProjectId)?.name,
     [projects, selectedProjectId],
   );
-  const financePanel = <FinancesPanel accounts={accounts} setAccounts={setAccounts} transactions={transactions} setTransactions={setTransactions} subscriptions={subscriptions} projects={activeProjects} projectCosts={projectCosts} crons={crons} invoices={invoices} invoiceItems={invoiceItems} displayCurrency={displayCurrency} />;
+  const financePanel = <FinancesPanel view={tab === "accounts" || tab === "transactions" || tab === "categories" ? tab : "overview"} accounts={accounts} setAccounts={setAccounts} transactions={transactions} setTransactions={setTransactions} subscriptions={subscriptions} projects={activeProjects} projectCosts={projectCosts} crons={crons} invoices={invoices} invoiceItems={invoiceItems} displayCurrency={displayCurrency} />;
 
   return <MotionConfig reducedMotion="user"><TooltipProvider><ToastProvider><ConfirmationProvider>
     {!props.isPreview && (
@@ -408,7 +408,7 @@ function DashboardShellContent(props: Props) {
           {(tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
           {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} allocations={subscriptionAllocations} setAllocations={setSubscriptionAllocations} allocationsReady={subscriptionAllocationsStatus.ready} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}
           {tab === "tasks" && <TodosPanel todos={operationalTodos} projects={activeProjects} organizations={organizations} />}
-          {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
+          {tab === "calendar" && <div className="space-y-4"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
           {tab === "goals" && <PlansPanel plans={plans} setPlans={setPlans} />}
           {tab === "dates" && <ImportantDatesPanel dates={importantDates} setDates={setImportantDates} userId={user.id} projects={activeProjects} organizations={organizations} />}
           {tab === "notes" && <NotesPanel notes={notes} setNotes={setNotes} projects={activeProjects} />}

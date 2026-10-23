@@ -1,6 +1,7 @@
 import type { TaskKind, TimeBucketId } from "@/lib/task-meta";
 
 type TodosStrings = {
+  filters: string; clearFilters: string; results: (count: number) => string;
   title: string;
   description: string;
   compactTitle: string;
@@ -106,6 +107,7 @@ type TodosStrings = {
 
 export const todos: { en: TodosStrings; cs: TodosStrings } = {
   en: {
+    filters: 'Filters', clearFilters: 'Clear filters', results: (count) => `${count} tasks`,
     title: "Tasks",
     description: "What you're working on and what's coming up.",
     compactTitle: "Tasks",
@@ -229,6 +231,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     deleteTaskConfirm: "This task will be permanently deleted.",
   },
   cs: {
+    filters: 'Filtry', clearFilters: 'Zrušit filtry', results: (count) => `${count} úkolů`,
     title: "Úkoly",
     description: "Na čem pracuješ a co tě čeká.",
     compactTitle: "Úkoly",

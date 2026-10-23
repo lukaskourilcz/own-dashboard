@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/select";
@@ -101,13 +101,11 @@ export function CalendarPanel({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="inline-flex items-center gap-1.5">
+    <Dialog><DialogTrigger asChild><Button variant="outline"><CalendarPlus />{t.calendar.newEvent}</Button></DialogTrigger><DialogContent aria-describedby={undefined}><DialogHeader>
+        <DialogTitle className="inline-flex items-center gap-1.5">
           <CalendarPlus className="h-3 w-3" /> {t.calendar.newEvent}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </DialogTitle>
+      </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="cal-title">{t.calendar.title}</Label>
@@ -237,7 +235,6 @@ export function CalendarPanel({
             {submitting ? t.calendar.adding : t.calendar.addToGoogleCalendar}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+    </DialogContent></Dialog>
   );
 }

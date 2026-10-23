@@ -31,6 +31,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -521,6 +522,7 @@ export function TodosPanel({
               assignee={assigneeFilter}
               onAssigneeChange={setAssigneeFilter}
               hidden={hiddenByFilter}
+              total={open.length}
             />
           )}
           {open.length === 0 ? (
@@ -1077,7 +1079,7 @@ function TaskFilterBar({
   onKindChange,
   assignee,
   onAssigneeChange,
-  hidden,
+  hidden, total,
 }: {
   t: Dict;
   importance: number;
@@ -1088,9 +1090,12 @@ function TaskFilterBar({
   onKindChange: (v: "all" | TaskKind) => void;
   assignee: "all" | Assignee;
   onAssigneeChange: (v: "all" | Assignee) => void;
-  hidden: number;
+  hidden: number; total: number;
 }) {
-  return (
+  const [open, setOpen] = useState(false);
+  const active = Number(importance > 0) + Number(time !== 'all') + Number(kind !== 'all') + Number(assignee !== 'all');
+  const clear = () => { onImportanceChange(0); onTimeChange('all'); onKindChange('all'); onAssigneeChange('all'); };
+  const filters = (
     <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-secondary px-3 py-2">
       <FilterField icon={Flag} label={t.todos.importanceFilterLabel}>
         <SegmentedFilter
@@ -1144,6 +1149,7 @@ function TaskFilterBar({
           ]}
         />
       </FilterField>
+      {active > 0 && <Button variant="ghost" size="sm" onClick={clear}>{t.todos.clearFilters}</Button>}
       {hidden > 0 && (
         <span className="shrink-0 whitespace-nowrap text-[11px] tabular text-foreground-subtle">
           {t.todos.filterHidden(hidden)}
@@ -1151,6 +1157,15 @@ function TaskFilterBar({
       )}
     </div>
   );
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <div className="flex items-center justify-between gap-2 md:hidden">
+      <DialogTrigger asChild><Button variant="outline">{t.todos.filters}{active > 0 ? ` (${active})` : ''}</Button></DialogTrigger>
+      {active > 0 && <Button variant="ghost" size="sm" onClick={clear}>{t.todos.clearFilters}</Button>}
+      <span role="status" className="text-xs text-foreground-muted tabular">{t.todos.results(total - hidden)}</span>
+    </div>
+    <div className="hidden md:block">{filters}</div>
+    <DialogContent className="max-w-xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.todos.filters}</DialogTitle></DialogHeader>{filters}</DialogContent>
+  </Dialog>;
 }
 
 /* ------------------------------ Add dialog ------------------------------- */

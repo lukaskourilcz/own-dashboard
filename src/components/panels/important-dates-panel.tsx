@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import { Gift, Pencil, Plus, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -76,6 +77,7 @@ export function ImportantDatesPanel({
   const t = useDict();
   const confirm = useConfirmation();
   const locale = useDateLocale();
+  const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
   const occurrences = useMemo(() => buildOccurrences(dates), [dates]);
 
@@ -107,6 +109,7 @@ export function ImportantDatesPanel({
       setDates((prev) => [data, ...prev]);
       toast.ok(t.dates.added(data.title));
       setForm(empty);
+      setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.importantDates });
     },
     onError: (e) => {
@@ -131,6 +134,7 @@ export function ImportantDatesPanel({
       setDates((prev) => prev.map((d) => (d.id === data.id ? data : d)));
       toast.ok(t.dates.updated);
       setForm(empty);
+      setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.importantDates });
     },
     onError: (e) => {
@@ -175,6 +179,7 @@ export function ImportantDatesPanel({
   }
 
   function startEdit(d: ImportantDate) {
+    setFormOpen(true);
     setForm({
       id: d.id,
       title: d.title,
@@ -203,17 +208,9 @@ export function ImportantDatesPanel({
       <PageHeader
         title={t.dates.title}
         description={t.dates.description}
+        action={<Button onClick={() => { setForm(empty); setFormOpen(true); }}><Plus />{t.dates.addDate}</Button>}
       />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <Gift className="h-3 w-3" />
-              {form.id ? t.dates.editDate : t.dates.addDate}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={save} className="space-y-3">
+      <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{form.id ? t.dates.editDate : t.dates.addDate}</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="ind-title">{t.dates.titleLabel}</Label>
                 <Input
@@ -325,17 +322,17 @@ export function ImportantDatesPanel({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setForm(empty)}
+                    onClick={() => { setForm(empty); setFormOpen(false); }}
                   >
                     {t.common.cancel}
                   </Button>
                 )}
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </form></DialogContent></Dialog>
+      <div className="grid gap-4 lg:grid-cols-3">
 
-        <Card className="lg:col-span-2">
+
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>{t.dates.comingUp}</CardTitle>
           </CardHeader>

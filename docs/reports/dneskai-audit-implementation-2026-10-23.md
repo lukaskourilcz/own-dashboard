@@ -46,3 +46,8 @@ Database work follows the current [function/invoker guidance](https://supabase.c
 ## Batch 4 progress: Work and Settings
 
 Work uses content-driven column heights, with upcoming dates and shipped work below attention rather than a stretched empty card. Settings uses a centered 896 px frame, section anchors, a stable label/control grid, consistent touch/desktop segments and stable drag-context IDs. The financial and creation-form changes are being verified in the same full type/lint/unit pass; browser geometry follows.
+
+
+### Finance and planning destinations
+
+Accounts starts with balances/accounts and bank connection controls. Transactions starts with search, kind/account filters, count and a stable newest-first list with explicit Load more; import/reconciliation is an on-demand disclosure. Categories starts with rules and its category breakdown. The Money overview and financial math remain separate and unchanged. Account/transaction creation opens a dialog. Goals, Dates, subscriptions and Calendar also open existing creation forms on demand, leaving records/boards in the default space. Subscription renewal dates, classification and amount evidence remain visible; failed subscription saves retain the draft. Mobile task filters move into an opener-restoring dialog with active count, result count and clear-all. Type and full lint checks passed during development; the complete unit/browser suite is the next gate.

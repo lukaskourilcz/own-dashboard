@@ -14,6 +14,7 @@ import {
   Target,
   Trash2,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -85,6 +86,7 @@ export function PlansPanel({
   const qc = useQueryClient();
   const t = useDict();
   const confirm = useConfirmation();
+  const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
   const [error, setError] = useState<string | null>(null);
   const [calendarNote, setCalendarNote] = useState<string | null>(null);
@@ -145,6 +147,7 @@ export function PlansPanel({
     onSuccess: (saved) => {
       setPlans((prev) => [saved, ...prev]);
       setForm(empty);
+      setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.plans });
     },
     onError: (e) => {
@@ -264,12 +267,12 @@ export function PlansPanel({
         title={t.plans.title}
         description={t.plans.description}
         action={
-          <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2"><Button onClick={() => setFormOpen(true)}><Plus />{t.plans.newPlan}</Button><div className="inline-flex rounded-md border border-border p-0.5 text-xs">
             <button
               type="button"
               onClick={() => setView("board")}
               className={cn(
-                "px-2.5 py-1 rounded transition-colors",
+                "min-h-11 px-2.5 py-1 rounded transition-colors focus-ring md:min-h-8",
                 view === "board"
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground-muted hover:text-foreground",
@@ -281,7 +284,7 @@ export function PlansPanel({
               type="button"
               onClick={() => setView("timeline")}
               className={cn(
-                "px-2.5 py-1 rounded transition-colors",
+                "min-h-11 px-2.5 py-1 rounded transition-colors focus-ring md:min-h-8",
                 view === "timeline"
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground-muted hover:text-foreground",
@@ -289,19 +292,11 @@ export function PlansPanel({
             >
               {t.plans.timeline}
             </button>
-          </div>
+          </div></div>
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <Target className="h-3 w-3" /> {t.plans.newPlan}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addPlan} className="space-y-3">
+      <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.plans.newPlan}</DialogTitle></DialogHeader><form onSubmit={addPlan} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="plan-title">{t.plans.formTitle}</Label>
                 <Input
@@ -401,11 +396,12 @@ export function PlansPanel({
                 <Plus className="h-3.5 w-3.5" />
                 {saving ? t.plans.saving : t.plans.addPlan}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
+            </form></DialogContent></Dialog>
+      {calendarNote && <p role="status" className="mb-3 text-xs text-warning">{calendarNote}</p>}
+      <div className="grid gap-4 lg:grid-cols-3">
 
-        <Card className="lg:col-span-2">
+
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>
               {view === "board" ? t.plans.statusBoard : t.plans.timeline}

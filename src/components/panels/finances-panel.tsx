@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { format, parseISO } from "date-fns";
@@ -14,6 +14,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -130,6 +131,7 @@ function StatTile({
 }
 
 export function FinancesPanel({
+  view = "overview",
   accounts,
   setAccounts,
   transactions,
@@ -142,6 +144,7 @@ export function FinancesPanel({
   invoiceItems,
   displayCurrency,
 }: {
+  view?: "overview" | "accounts" | "transactions" | "categories";
   accounts: Account[];
   setAccounts: Updater<Account[]>;
   transactions: Transaction[];
@@ -161,6 +164,10 @@ export function FinancesPanel({
   const t = useDict();
   const confirm = useConfirmation();
   const locale = useDateLocale();
+  const [txOpen, setTxOpen] = useState(false), [accountOpen, setAccountOpen] = useState(false);
+  const [search, setSearch] = useState(''), [kind, setKind] = useState('all'), [accountFilter, setAccountFilter] = useState('all');
+  const [visibleCount, setVisibleCount] = useState(50);
+  const filterId = useId();
   const [txForm, setTxForm] = useState<TxForm>(emptyTx);
   const [acctForm, setAcctForm] = useState<AccountForm>(emptyAccount);
   const [editingAcct, setEditingAcct] = useState<string | null>(null);
@@ -223,6 +230,7 @@ export function FinancesPanel({
     },
     onSuccess: (tx) => {
       setTransactions((prev) => [tx, ...prev]);
+      setTxOpen(false);
       setTxForm({ ...emptyTx, currency: txForm.currency });
       void qc.invalidateQueries({ queryKey: qk.transactions });
     },
@@ -276,6 +284,7 @@ export function FinancesPanel({
     onSuccess: (account) => {
       setAccounts((prev) => [...prev, account]);
       setAcctForm(emptyAccount);
+      setAccountOpen(false);
       void qc.invalidateQueries({ queryKey: qk.accounts });
     },
   });
@@ -384,88 +393,9 @@ export function FinancesPanel({
   const thisMonth = months[months.length - 1] ?? { income: 0, expense: 0 };
   const thisMonthNet = thisMonth.income - thisMonth.expense;
 
-  return (
-    <div>
-      <PageHeader
-        title={t.finances.title}
-        description={t.finances.description}
-      />
-
-      <section className="surface-band mb-4 overflow-hidden p-4 sm:p-5">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="flex items-center gap-1.5 text-foreground-muted">
-              <Wallet className="h-3.5 w-3.5" />
-              <SectionLabel>{t.finances.netWorth}</SectionLabel>
-            </div>
-            <p className="mt-1.5 text-4xl font-semibold tracking-tight tabular text-foreground sm:text-5xl">
-              {formatCurrency(totalNet, displayCurrency)}
-            </p>
-            <p className="mt-1 text-xs text-foreground-subtle">
-              {t.finances.acrossAccounts(accounts.length)}
-            </p>
-          </div>
-          <div className="sm:text-right">
-            <SectionLabel className="!text-[10px] text-foreground-subtle">
-              {t.finances.thisMonth}
-            </SectionLabel>
-            <div className="mt-1.5 grid grid-cols-3 gap-2 sm:gap-2.5">
-              <StatTile
-                icon={ArrowUpRight}
-                tone="success"
-                label={t.finances.income}
-                value={formatCurrency(thisMonth.income, displayCurrency)}
-              />
-              <StatTile
-                icon={ArrowDownRight}
-                tone="destructive"
-                label={t.finances.expense}
-                value={formatCurrency(thisMonth.expense, displayCurrency)}
-              />
-              <StatTile
-                icon={Wallet}
-                tone="neutral"
-                label={t.finances.net}
-                value={formatCurrency(thisMonthNet, displayCurrency)}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Cost overview — aggregate project + subscription spend as pies. */}
-      <CostOverview
-        projects={projects}
-        projectCosts={projectCosts}
-        crons={crons}
-        subscriptions={subscriptions}
-        displayCurrency={displayCurrency}
-      />
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Bank sync + CSV import — pull real balances/transactions in. */}
-        <BankSync
-          transactions={transactions}
-          projects={projects}
-          subscriptions={subscriptions}
-        />
-
-        {/* Incoming payments that settled no invoice, with a manual link. */}
-        <PaymentMatches
-          transactions={transactions}
-          invoices={invoices}
-          invoiceItems={invoiceItems}
-        />
-
-        {/* Staged rules applied on sync, on import and retroactively. */}
-        <TransactionRules
-          transactions={transactions}
-          projects={projects}
-          subscriptions={subscriptions}
-        />
-
-        {/* Accounts (net worth now lives in the hero above) */}
-        <Card className="lg:col-span-1">
+  const filteredTransactions = useMemo(() => transactions.filter(tx => (kind === 'all' || tx.kind === kind) && (accountFilter === 'all' || tx.account_id === accountFilter)
+    && `${tx.note ?? ''} ${tx.category ?? ''} ${tx.amount}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).toSorted((a, b) => b.occurred_on.localeCompare(a.occurred_on) || b.id.localeCompare(a.id)), [transactions, kind, accountFilter, search]);
+  const accountsContent = (<Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <Wallet className="h-3 w-3" /> {t.finances.accountsTitle}
@@ -561,9 +491,227 @@ export function FinancesPanel({
               </ul>
             )}
 
-            <form
+
+          </CardContent>
+        </Card>);
+  const transactionsContent = (<Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>{t.finances.recentTransactions}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredTransactions.length === 0 ? (
+              <EmptyState
+                title={transactions.length ? t.finances.filteredEmpty : t.finances.noTransactionsYet}
+                description={transactions.length ? undefined : t.finances.addFewTransactions}
+              />
+            ) : (
+              <ul className="-mx-2 divide-y divide-border">
+                {filteredTransactions.slice(0, visibleCount).map((tx) => (
+                  <li
+                    key={tx.id}
+                    className="group flex items-center justify-between gap-3 px-2 py-2.5 row-hover"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={
+                          "h-7 w-7 rounded-md inline-flex items-center justify-center " +
+                          (tx.kind === "income"
+                            ? "bg-success/10 text-success"
+                            : "bg-destructive/10 text-destructive")
+                        }
+                      >
+                        {tx.kind === "income" ? (
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        ) : (
+                          <ArrowDownRight className="h-3.5 w-3.5" />
+                        )}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {tx.category ??
+                            (tx.kind === "income"
+                              ? t.finances.income
+                              : t.finances.expense)}
+                        </p>
+                        <p className="text-[11px] text-foreground-subtle tabular">
+                          {tx.occurred_on}
+                          {tx.project_id
+                            ? ` · ${projects.find((project) => project.id === tx.project_id)?.name ?? t.finances.project}`
+                            : ""}
+                          {tx.note ? ` · ${tx.note}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={
+                          "text-sm font-medium tabular " +
+                          (tx.kind === "income"
+                            ? "text-success"
+                            : "text-destructive")
+                        }
+                      >
+                        {tx.kind === "income" ? "+" : "−"}
+                        {formatCurrency(tx.amount, tx.currency)}
+                      </span>
+                      <Tooltip content={t.common.delete}>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => removeTx(tx.id)}
+                          aria-label={t.common.delete}
+                          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </Tooltip>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {filteredTransactions.length > visibleCount && <Button variant="outline" size="sm" onClick={() => setVisibleCount(count => count + 50)}>{t.finances.loadMore}</Button>}
+          </CardContent>
+        </Card>);
+  const categoryContent = (<Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t.finances.thisMonthByCategory}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {categories.length === 0 ? (
+              <EmptyState
+                title={t.finances.nothingThisMonth}
+                description={t.finances.categorizeHint}
+                className="py-10"
+              />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 items-center">
+                <div className="h-48 sm:h-56">
+                  <CategoryDonut
+                    data={categories}
+                    currency={displayCurrency}
+                    innerRadius={45}
+                    outerRadius={85}
+                  />
+                </div>
+                <ul className="space-y-1.5 text-sm">
+                  {categories.map((c, i) => (
+                    <li key={c.name} className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-sm shrink-0"
+                        style={{
+                          background: CHART_COLORS[i % CHART_COLORS.length],
+                        }}
+                      />
+                      <span className="flex-1 truncate text-foreground">
+                        {c.name}
+                      </span>
+                      <span className="text-foreground-muted tabular">
+                        {formatCurrency(c.value, displayCurrency)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>);
+  const chartContent = (<Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t.finances.last6Months}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {months.every((m) => m.income === 0 && m.expense === 0) ? (
+              <EmptyState
+                title={t.finances.noTransactionsYet}
+                description={t.finances.addFewTransactions}
+                className="py-10"
+              />
+            ) : (
+              <div className="h-52 sm:h-64">
+                <MonthsBarChart
+                  data={months}
+                  currency={displayCurrency}
+                  incomeLabel={t.finances.income}
+                  expenseLabel={t.finances.expense}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>);
+  return <div className="space-y-4" data-testid={`finance-${view}`}>
+    <PageHeader title={view === 'overview' ? t.finances.title : t.nav.sections[view]}
+      description={view === 'overview' ? t.finances.description : view === 'accounts' ? t.finances.accountsDescription : view === 'transactions' ? t.finances.transactionsDescription : t.finances.categoriesDescription}
+      action={view !== 'categories' && <div className="flex gap-2">{view !== 'transactions' && <Button onClick={() => setAccountOpen(true)}><Plus />{t.finances.addAccount}</Button>}{view !== 'accounts' && <Button onClick={() => setTxOpen(true)}><Plus />{t.finances.addTransaction}</Button>}</div>} />
+    {view === 'accounts' && <><p className="text-sm text-foreground-muted">{t.finances.netWorth}: <strong className="tabular text-foreground">{formatCurrency(totalNet, displayCurrency)}</strong></p><div className="grid items-start gap-4 lg:grid-cols-2">{accountsContent}<BankSync transactions={transactions} projects={projects} subscriptions={subscriptions} /></div></>}
+    {view === 'transactions' && <>
+      <div role="search" className="flex flex-wrap gap-2">
+        <Input aria-label={t.finances.searchTransactions} type="search" placeholder={t.finances.searchTransactions} value={search} onChange={event => { setSearch(event.target.value); setVisibleCount(50); }} className="min-w-40 flex-1" />
+        <SimpleSelect aria-label={t.finances.transactionKind} value={kind} onValueChange={value => { setKind(value); setVisibleCount(50); }} className="w-40" options={[{value:'all',label:t.finances.filterAll},{value:'income',label:t.finances.income},{value:'expense',label:t.finances.expense}]} />
+        <label htmlFor={filterId} className="sr-only">{t.finances.account}</label><select id={filterId} className="h-11 rounded-md border border-border bg-surface px-3 text-sm focus-ring md:h-8" value={accountFilter} onChange={event => { setAccountFilter(event.target.value); setVisibleCount(50); }}><option value="all">{t.finances.filterAll}</option>{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select>
+        <span role="status" className="py-2 text-xs text-foreground-muted tabular">{filteredTransactions.length} / {transactions.length}</span>
+      </div>
+      {transactionsContent}
+      <details className="border-t border-border pt-3"><summary className="min-h-11 cursor-pointer text-sm font-medium focus-ring">{t.finances.importAndMatch}</summary><div className="mt-3 grid items-start gap-4 lg:grid-cols-2"><BankSync transactions={transactions} projects={projects} subscriptions={subscriptions} /><PaymentMatches transactions={transactions} invoices={invoices} invoiceItems={invoiceItems} /></div></details>
+    </>}
+    {view === 'categories' && <div className="grid items-start gap-4 lg:grid-cols-3"><TransactionRules transactions={transactions} projects={projects} subscriptions={subscriptions} />{categoryContent}</div>}
+    {view === 'overview' && <>
+<section className="surface-band mb-4 overflow-hidden p-4 sm:p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 text-foreground-muted">
+              <Wallet className="h-3.5 w-3.5" />
+              <SectionLabel>{t.finances.netWorth}</SectionLabel>
+            </div>
+            <p className="mt-1.5 text-4xl font-semibold tracking-tight tabular text-foreground sm:text-5xl">
+              {formatCurrency(totalNet, displayCurrency)}
+            </p>
+            <p className="mt-1 text-xs text-foreground-subtle">
+              {t.finances.acrossAccounts(accounts.length)}
+            </p>
+          </div>
+          <div className="sm:text-right">
+            <SectionLabel className="!text-[10px] text-foreground-subtle">
+              {t.finances.thisMonth}
+            </SectionLabel>
+            <div className="mt-1.5 grid grid-cols-3 gap-2 sm:gap-2.5">
+              <StatTile
+                icon={ArrowUpRight}
+                tone="success"
+                label={t.finances.income}
+                value={formatCurrency(thisMonth.income, displayCurrency)}
+              />
+              <StatTile
+                icon={ArrowDownRight}
+                tone="destructive"
+                label={t.finances.expense}
+                value={formatCurrency(thisMonth.expense, displayCurrency)}
+              />
+              <StatTile
+                icon={Wallet}
+                tone="neutral"
+                label={t.finances.net}
+                value={formatCurrency(thisMonthNet, displayCurrency)}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Cost overview — aggregate project + subscription spend as pies. */}
+      <CostOverview
+        projects={projects}
+        projectCosts={projectCosts}
+        crons={crons}
+        subscriptions={subscriptions}
+        displayCurrency={displayCurrency}
+      />
+      <div className="grid items-start gap-4 lg:grid-cols-3">{accountsContent}{chartContent}{categoryContent}{transactionsContent}</div>
+    </>}
+    <Dialog open={accountOpen} onOpenChange={setAccountOpen}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>{t.finances.addAccount}</DialogTitle></DialogHeader>
+<form
               onSubmit={addAccount}
-              className="mt-4 pt-4 border-t border-border space-y-2"
+              className="space-y-3"
             >
               <Input
                 placeholder={t.finances.accountNamePlaceholder}
@@ -605,41 +753,9 @@ export function FinancesPanel({
                 <Plus className="h-3.5 w-3.5" /> {t.finances.addAccount}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-
-        {/* Bar chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t.finances.last6Months}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {months.every((m) => m.income === 0 && m.expense === 0) ? (
-              <EmptyState
-                title={t.finances.noTransactionsYet}
-                description={t.finances.addFewTransactions}
-                className="py-10"
-              />
-            ) : (
-              <div className="h-52 sm:h-64">
-                <MonthsBarChart
-                  data={months}
-                  currency={displayCurrency}
-                  incomeLabel={t.finances.income}
-                  expenseLabel={t.finances.expense}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Add transaction */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>{t.finances.addTransaction}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addTx} className="space-y-3">
+    </DialogContent></Dialog>
+    <Dialog open={txOpen} onOpenChange={setTxOpen}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>{t.finances.addTransaction}</DialogTitle></DialogHeader>
+<form onSubmit={addTx} className="space-y-3">
               <div className="grid grid-cols-2 gap-2 p-0.5 rounded-md bg-surface-muted">
                 <button
                   type="button"
@@ -761,134 +877,6 @@ export function FinancesPanel({
                 <Plus className="h-3.5 w-3.5" /> {t.common.add}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-
-        {/* Categories */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t.finances.thisMonthByCategory}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {categories.length === 0 ? (
-              <EmptyState
-                title={t.finances.nothingThisMonth}
-                description={t.finances.categorizeHint}
-                className="py-10"
-              />
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 items-center">
-                <div className="h-48 sm:h-56">
-                  <CategoryDonut
-                    data={categories}
-                    currency={displayCurrency}
-                    innerRadius={45}
-                    outerRadius={85}
-                  />
-                </div>
-                <ul className="space-y-1.5 text-sm">
-                  {categories.map((c, i) => (
-                    <li key={c.name} className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 rounded-sm shrink-0"
-                        style={{
-                          background: CHART_COLORS[i % CHART_COLORS.length],
-                        }}
-                      />
-                      <span className="flex-1 truncate text-foreground">
-                        {c.name}
-                      </span>
-                      <span className="text-foreground-muted tabular">
-                        {formatCurrency(c.value, displayCurrency)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Transactions list */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>{t.finances.recentTransactions}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {transactions.length === 0 ? (
-              <EmptyState
-                title={t.finances.noTransactionsYet}
-                description={t.finances.addOnLeft}
-              />
-            ) : (
-              <ul className="-mx-2 divide-y divide-border">
-                {transactions.slice(0, 20).map((tx) => (
-                  <li
-                    key={tx.id}
-                    className="group flex items-center justify-between gap-3 px-2 py-2.5 row-hover"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span
-                        className={
-                          "h-7 w-7 rounded-md inline-flex items-center justify-center " +
-                          (tx.kind === "income"
-                            ? "bg-success/10 text-success"
-                            : "bg-destructive/10 text-destructive")
-                        }
-                      >
-                        {tx.kind === "income" ? (
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                        ) : (
-                          <ArrowDownRight className="h-3.5 w-3.5" />
-                        )}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {tx.category ??
-                            (tx.kind === "income"
-                              ? t.finances.income
-                              : t.finances.expense)}
-                        </p>
-                        <p className="text-[11px] text-foreground-subtle tabular">
-                          {tx.occurred_on}
-                          {tx.project_id
-                            ? ` · ${projects.find((project) => project.id === tx.project_id)?.name ?? t.finances.project}`
-                            : ""}
-                          {tx.note ? ` · ${tx.note}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={
-                          "text-sm font-medium tabular " +
-                          (tx.kind === "income"
-                            ? "text-success"
-                            : "text-destructive")
-                        }
-                      >
-                        {tx.kind === "income" ? "+" : "−"}
-                        {formatCurrency(tx.amount, tx.currency)}
-                      </span>
-                      <Tooltip content={t.common.delete}>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          onClick={() => removeTx(tx.id)}
-                          aria-label={t.common.delete}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
-                      </Tooltip>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+    </DialogContent></Dialog>
+  </div>;
 }
