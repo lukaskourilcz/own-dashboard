@@ -91,8 +91,18 @@ export function pgliteRestClient(db: PGlite) {
   const rpc = briefsRpcClient(db);
   const from = (table: string) => {
     let columns = '*'; const where: string[] = []; const values: unknown[] = []; const orders: string[] = []; let limit: number | null = null; let single: 'maybe' | 'one' | null = null;
+    let insert: Record<string, unknown> | null = null;
     const add = (sql: (index: number) => string, value: unknown) => { values.push(value); where.push(sql(values.length)); return builder; };
     const run = async () => {
+      if (insert) {
+        // One row, written as the service role; errors carry the Postgres code as PostgREST does (23505 for a unique violation).
+        const keys = Object.keys(insert);
+        const params = keys.map((key) => { const value = insert![key]; return value !== null && typeof value === 'object' && !Array.isArray(value) ? JSON.stringify(value) : value; });
+        try {
+          const rows = (await db.query<{ row: Record<string, unknown> }>(`with x as (insert into public.${table}(${keys.join(',')}) values(${keys.map((_, index) => `$${index + 1}`).join(',')}) returning ${columns}) select to_jsonb(x) as row from x`, params)).rows.map((row) => row.row);
+          return { data: single ? rows[0] ?? null : rows, error: null };
+        } catch (error) { return { data: null, error: { message: error instanceof Error ? error.message : String(error), code: (error as { code?: string }).code } }; }
+      }
       const sql = `select to_jsonb(x) as row from (select ${columns} from public.${table}${where.length ? ` where ${where.join(' and ')}` : ''}${orders.length ? ` order by ${orders.join(',')}` : ''}${limit !== null ? ` limit ${limit}` : ''}) x`;
       try {
         const rows = (await db.query<{ row: Record<string, unknown> }>(sql, values)).rows.map((row) => row.row);
@@ -102,6 +112,7 @@ export function pgliteRestClient(db: PGlite) {
     };
     const builder = {
       select(value: string) { if (/[()!]/.test(value)) throw new Error(`embedded select unsupported: ${value}`); columns = value; return builder; },
+      insert(value: Record<string, unknown>) { insert = value; return builder; },
       eq: (column: string, value: unknown) => add((index) => `${column}=$${index}`, value),
       neq: (column: string, value: unknown) => add((index) => `${column}<>$${index}`, value),
       in: (column: string, value: unknown[]) => add((index) => `${column}::text=any($${index}::text[])`, value.map(String)),

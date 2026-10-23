@@ -21,6 +21,7 @@ import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
 import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
+import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
 import { dneskaiDailyMixEnabled } from "./dneskai-evidence-rollout";
@@ -119,7 +120,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     async topicBriefs(project, now, options) {
       const mix = dneskaiDailyMixEnabled(env) ? (await readDneskaiDailyMix(db, owner, project, { enabled: true })).mix : undefined;
-      return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix ? { mix } : {}) });
+      return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix ? { mix } : {}), reader: createJinaTopicReader(env) });
     },
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
