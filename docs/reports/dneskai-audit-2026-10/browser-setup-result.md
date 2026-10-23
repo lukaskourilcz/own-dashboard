@@ -2,6 +2,8 @@
 
 ## Current result
 
+> **Update, 23 October 2026.** Later on 22 October the pilot published two posts (https://www.instagram.com/p/DezenXXkev_/ and https://www.instagram.com/p/Dezk8kMlv0P/), and the account switch went off again afterwards. The rows below describe the setup as of 16:17 Prague; the account panel now lives under the DNESKAi `⋯` menu → Účet Instagram.
+
 The six browser setup tasks are complete. The later request to enable publishing is **complete**: both Production switches are true and @dneskai shows Publishing enabled. No post was approved or published, and no live pilot was run.
 
 | Task | Verified result |
