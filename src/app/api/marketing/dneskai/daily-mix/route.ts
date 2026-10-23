@@ -15,23 +15,23 @@ export const runtime = 'nodejs';
 const headers = { 'Cache-Control': 'private, no-store' };
 async function owner(request: Request) {
   const db = await createClient(); const { data: { user } } = await db.auth.getUser();
-  if (!user) return { error: Response.json({ error: 'unauthorized' }, { status: 401 }) } as const;
+  if (!user) return { ok: false, response: Response.json({ error: 'unauthorized' }, { status: 401 }) } as const;
   const projectId = new URL(request.url).searchParams.get('projectId');
-  if (!z.uuid().safeParse(projectId).success) return { error: Response.json({ error: 'invalid-project' }, { status: 400 }) } as const;
-  try { await requireDneskaiProject(db, user.id, projectId!); } catch { return { error: Response.json({ error: 'project-unavailable' }, { status: 404 }) } as const; }
-  return { db, userId: user.id, projectId: projectId! } as const;
+  if (!z.uuid().safeParse(projectId).success) return { ok: false, response: Response.json({ error: 'invalid-project' }, { status: 400 }) } as const;
+  try { await requireDneskaiProject(db, user.id, projectId!); } catch { return { ok: false, response: Response.json({ error: 'project-unavailable' }, { status: 404 }) } as const; }
+  return { ok: true, db, userId: user.id, projectId: projectId! } as const;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<Response> {
   if (!dneskaiDailyMixEnabled()) return Response.json({ error: 'not-found' }, { status: 404 });
-  const context = await owner(request); if ('error' in context) return context.error;
+  const context = await owner(request); if (!context.ok) return context.response;
   return Response.json(await readDneskaiDailyMix(context.db, context.userId, context.projectId, { enabled: true }), { headers });
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<Response> {
   if (!dneskaiDailyMixEnabled()) return Response.json({ error: 'not-found' }, { status: 404 });
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
-  const context = await owner(request); if ('error' in context) return context.error;
+  const context = await owner(request); if (!context.ok) return context.response;
   const mix = DneskaiDailyMixSchema.safeParse(await request.json().catch(() => null));
   if (!mix.success) return Response.json({ error: 'invalid-daily-mix' }, { status: 400 });
   try { await saveDneskaiDailyMix(context.db, context.userId, context.projectId, mix.data); }
