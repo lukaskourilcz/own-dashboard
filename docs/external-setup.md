@@ -179,7 +179,7 @@ published):
    (`facebook-page-link-required`).
 2. **Product.** In the Meta app add **Facebook Login for Business** with `instagram_basic`,
    `instagram_content_publish`, `pages_read_engagement` and `pages_show_list` (required here), plus
-   `instagram_manage_comments` and `instagram_manage_messages` for the comment watcher. Keep Development mode.
+   `instagram_manage_comments`, `instagram_manage_messages` and `pages_messaging` for the comment watcher. Keep Development mode.
 3. **Token.** Generate a long-lived token (a long-lived user token, or the Page token derived from it). Copy its
    expiry and granted scopes from the Access Token Debugger.
 4. **Vercel Production** (Sensitive), then redeploy:
@@ -198,6 +198,13 @@ published):
    for a Page token), stores the Instagram account id of the Page linked to `@dneskai` with login mode `facebook`,
    and shows the Page name. The panel then reads *Připojení: Facebook Login (stránka)*. The publisher calls
    `graph.facebook.com` from then on; publishing stays as switched.
+
+**Comments and DMs under Facebook Login (#216).** The comment watcher reads comments and sends public replies on
+`graph.facebook.com` with the linked Page's token, and sends the private reply through `POST /<PAGE_ID>/messages`.
+It needs `instagram_basic`, `instagram_manage_comments` and `pages_messaging` in the token's verified scopes; without
+them the watcher stops with `engagement-scopes-unverified`. The comment webhook then checks signatures with
+`MARKETING_META_APP_SECRET` (not the Instagram app secret), and **Zdroje → Účet → subscribe comments** subscribes the
+Page's `/subscribed_apps` edge with `subscribed_fields=comments`.
 
 Rollback: set the mode back to `instagram` with the Instagram Login token and verify again.
 

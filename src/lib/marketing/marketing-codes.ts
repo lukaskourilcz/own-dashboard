@@ -436,6 +436,7 @@ const CODES = {
   'account-request-failed': ['retry', 'The account request failed.', 'Požadavek na účet selhal.'],
   'refresh-instagram-login-required': ['token', 'Only an Instagram Login or Facebook Login token can be refreshed.', 'Obnovit lze jen token Instagram Login nebo Facebook Login.'],
   'refresh-app-credentials-missing': ['config', 'A Facebook Login token is renewed with the Meta app id and secret, which are not set on the server.', 'Token Facebook Login se obnovuje s ID a tajným klíčem aplikace Meta, které na serveru nejsou nastavené.'],
+  'facebook-page-token-unavailable': ['token', 'The Facebook token lists the linked Page without a Page token, so comments cannot be answered.', 'Token Facebooku vrací propojenou stránku bez jejího tokenu, proto nelze odpovídat na komentáře.'],
   'facebook-page-link-required': ['account', 'No Facebook Page of this token is linked to an Instagram professional account.', 'Žádná stránka na Facebooku z tohoto tokenu není propojená s profesionálním účtem na Instagramu.'],
   'refresh-instagram-only': ['none', 'Only Instagram tokens are refreshed.', 'Obnovují se jen instagramové tokeny.'],
   'refresh-request-uncertain': ['auto', 'Instagram did not answer the token refresh in time.', 'Instagram na obnovení tokenu neodpověděl včas.'],
