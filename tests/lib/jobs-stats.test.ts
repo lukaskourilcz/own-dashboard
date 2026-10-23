@@ -106,3 +106,15 @@ describe("applicationStats", () => {
     expect(s.last7).toBe(1);
   });
 });
+
+it("uses seven and thirty calendar dates including today, across the owner timezone midnight", () => {
+ const instant=new Date("2026-10-23T22:30:00Z");
+ const rows=[app("2026-10-24"),app("2026-10-18"),app("2026-10-17"),app("2026-09-25"),app("2026-09-24")];
+ const prague=applicationStats(rows,instant,"Europe/Prague");
+ expect(prague.last7).toBe(2);expect(prague.last30).toBe(4);
+ const west=applicationStats(rows,instant,"America/Los_Angeles");
+ expect(west.last7).toBe(2);expect(west.last30).toBe(4);
+ const response={...app("2026-10-23"),responded_on:"2026-10-24",response_kind:"positive" as const};
+ expect(applicationStats([response],instant,"Europe/Prague").responses).toBe(1);
+ expect(applicationStats([response],instant,"America/Los_Angeles").responses).toBe(0);
+});

@@ -186,6 +186,7 @@ The migrations, in the order they run:
 88. `20261023164118_app_wide_rls_initplans.sql` — prepared, unapplied; evaluate identity once per statement in 73 existing ownership policies without changing roles or ownership checks.
 89. `20261023170010_project_parent_rls_lookup.sql` — prepared, unapplied; prevent project-parent write-policy recursion with a security-invoker lookup that preserves RLS and existing parent checks.
 90. `20261023175801_daily_focus_garden_summary.sql` — prepared, unapplied; summarize all generations in the owner’s 49-day Daily Focus garden without an arbitrary generation cap.
+91. `20261023183345_career_owner_day.sql` — prepared, unapplied; validate application and response dates in the configured owner timezone, preserving the transactional application/history functions.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. Only the new audit migration 87 remains unapplied; apply it before deploying the implementation branch.

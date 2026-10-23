@@ -6,7 +6,7 @@ For a one-page overview of the current app and every outside system it uses, rea
 
 The [23 October review](docs/reports/dneskai-code-ux-audit-2026-10-23/README.md) remains evidence for baseline `d6f60c7`. Its code fixes and UX work now live on `codex/dneskai-audit-implementation`; see the [implementation/validation report](docs/reports/dneskai-audit-implementation-2026-10-23.md) and [actual before/after comparison](docs/reports/dneskai-code-ux-audit-2026-10-23/implementation.html). The release checks passed locally: 2,779 unit/integration tests and 247 browser tests. This branch is not a Production deployment. Apply migration `20261023135551_dneskai_engagement_receipts.sql` before deploying its code.
 
-The subsequent [app-wide review](docs/reports/app-wide-audit-2026-10-23/review.md) continues that implementation on `codex/app-wide-audit-20261023`. It adds two ownership-policy migrations and the complete Daily Focus garden summary; all four audit files must be applied in order before merge. Its own full release validation is still pending; the counts above describe the earlier implementation only.
+The subsequent [app-wide review](docs/reports/app-wide-audit-2026-10-23/review.md) continues that implementation on `codex/app-wide-audit-20261023`. It adds two ownership-policy migrations, the complete Daily Focus garden summary and Career date validation in the owner timezone; all five audit files must be applied in order before merge. Its own full release validation is still pending; the counts above describe the earlier implementation only.
 
 The persistent shell owns one visible page title. Shared navigation guards protect DNESKAi draft exits, including browser history, with Save / Discard / Stay. Pending reviews have independent 30-row keyset pages; recent receipts cannot displace them. Complete engagement aggregates run through the authenticated owner's RLS context. Music has explicit management pages, constant-size eligible rotation reads and direct lookup of saved off-page selections. The draft/fit and render-preview lifecycles have separate hooks; previews retry explicitly and respect server cooldowns.
 
@@ -170,7 +170,7 @@ Table-level CSV is available for non-full, non-legacy scopes through `?format=cs
 
 ## AI boundary
 
-The app has no LLM-backed AI. The only remaining "AI"-labelled route is `/api/ai-links/enrich`, which reads the URL the user submitted through Jina Reader (https://r.jina.ai) and returns page title + description for review — no model call, no owner-data context sent. Owner records (notes, projects, invoices, transactions, tasks, applications) are never sent to any external service.
+External model calls are limited to the owner-authorized marketing workflow, with explicit consent, source evidence, feature switches and spend ceilings. Other product areas make no model calls. Link and job-page enrichment send only the submitted URL to Jina Reader and return metadata for review; they do not send private notes or application drafts. Direct Google Calendar writes send the event fields the owner submits. Credentials remain server-side. See the detailed provider and data boundaries in the privacy guide.
 
 Invoice PDF extraction stays local to the browser and deterministic. The selected file is parsed with `pdf.js`, is not sent anywhere, and is not stored.
 

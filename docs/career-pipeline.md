@@ -94,7 +94,7 @@ Career and professional exports include the new directory; existing saved/applic
 | Metric | Definition |
 | --- | --- |
 | Sent | Number of recorded applications in the selected cohort |
-| Last 7 / 30 days | Sent dates within those rolling windows; future dates excluded |
+| Last 7 / 30 days | Seven or thirty calendar dates including today in the saved owner timezone (Europe/Prague by default); future dates excluded |
 | Active | Applied or interviewing |
 | Responses | Applications with an explicitly recorded response kind and valid date |
 | Response rate | Responses divided by sent applications in the selected cohort; blank for zero applications |
@@ -102,6 +102,12 @@ Career and professional exports include the new directory; existing saved/applic
 | Follow-ups due | Active applications — applied or interviewing — whose next follow-up timestamp has arrived. A malformed timestamp is skipped, not guessed at. |
 
 A recent cohort has had less time to receive replies, so its response rate should not be compared directly with a mature cohort. The median describes received replies, not the expected response time of silent companies. Rejections can be recorded as negative replies; a status change alone does not imply a reply.
+
+## October 2026 audit changes
+
+Prepared migration `20261023183345_career_owner_day.sql` aligns both transactional date checks with the owner timezone. It adds an authenticated, security-invoker date helper and preserves request idempotency and history. Apply it before deploying the timezone-aware form; it is still unapplied while the app-wide audit is in progress. An invalid legacy timezone falls back to Europe/Prague.
+
+A delayed URL enrichment cannot replace a newer URL or manually edited fields. URLs containing credentials or malformed values are rejected. Failed application deletion restores the application and its history; an optional contact-write failure preserves confirmed progress and the unsaved contact fields. Draft saving and recording a sent application cannot run together. The Strong fit filter uses the same level as its badge (75% or higher). Public research remains dated evidence and does not imply current vacancy availability or a completed relocation.
 
 ## Validation and deployment
 

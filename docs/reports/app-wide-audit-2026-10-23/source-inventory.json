@@ -14,7 +14,7 @@
       "lines": 175,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "55cc5f5d1cc6bc9014c0d1fce4017b71b041ea42e9ed6bd83e1fd9f7e930adda"
+      "reviewedSha256": "457b6f4f6ac5d4d3128c4b1ad26f41ee92d0d21f665d181b9540de34eeffbeec"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -220,7 +220,8 @@
       "path": "src/app/api/jobs/enrich/route.ts",
       "lines": 50,
       "sha256": "8e135ad82ff8c8f05528a2603020dcb916f1a7453343bb96e44dda392df1b7fc",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "169ebeda756f1b2ed8143f17f2f11738289f51d7a7f4dc48b26bab4a01f04e46"
     },
     {
       "path": "src/app/api/jobs/refresh/route.ts",
@@ -663,7 +664,7 @@
       "lines": 428,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "37dfe02204ef03cad95803bfb70aaae21a80ec12ddb305720a7d17ff260542d0"
+      "reviewedSha256": "4b2c00c2b24cde3dd7350168563f9c07c5be217907c529dbd148758f45b74f20"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1113,26 +1114,29 @@
       "path": "src/components/panels/career-board.tsx",
       "lines": 411,
       "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf"
     },
     {
       "path": "src/components/panels/career-companies.tsx",
       "lines": 114,
       "sha256": "6ea352a882de162024722122bf18d939238e08d784de7a71ce5fff091bd215b5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8495eab01f0a3e7d0d2db69eac9619bccf5daff23162467dff221fd4f37d39fe"
     },
     {
       "path": "src/components/panels/career-letter-helper.tsx",
       "lines": 250,
       "sha256": "d641db47cd512b2d249d870516721dc3a6136249f46cb18f69294f4380f41ecb",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d641db47cd512b2d249d870516721dc3a6136249f46cb18f69294f4380f41ecb"
     },
     {
       "path": "src/components/panels/career-progress-dialog.tsx",
       "lines": 89,
       "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5"
+      "reviewedSha256": "eb5a7fa81d07c155f8c52f16a4a0a6047a304b0e6230edbad5e2ebcc984ba0d9"
     },
     {
       "path": "src/components/panels/clients-panel.tsx",
@@ -1202,7 +1206,8 @@
       "path": "src/components/panels/jobs-panel.tsx",
       "lines": 2826,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "7b2a15f02e1a91e45066ce752a7f93455541df788f4417840b547dd860e0930f"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -1251,7 +1256,8 @@
       "path": "src/components/panels/oslo-career-workspace.tsx",
       "lines": 899,
       "sha256": "356d8d0e887e599350aaa9995ac772179f2461b887c290ecc3c21b503811d188",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "0db041b7bca17976d9d6f2cf54b748828adc982b47212b65c4483bb726544e10"
     },
     {
       "path": "src/components/panels/plans-panel.tsx",
@@ -2133,7 +2139,8 @@
       "path": "src/lib/jobs/board.ts",
       "lines": 137,
       "sha256": "046095e31df24c6f2c19b8daad7c55f58655e2bb4e5201218fbde8b5067a2a91",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "046095e31df24c6f2c19b8daad7c55f58655e2bb4e5201218fbde8b5067a2a91"
     },
     {
       "path": "src/lib/jobs/career-directory.ts",
@@ -2163,13 +2170,15 @@
       "path": "src/lib/jobs/enrich.ts",
       "lines": 17,
       "sha256": "16b2e5d1e6b7717e2e22897afe853a4a06b67c72116047754fa3329d40c548c0",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "4bd9cb9a8b4183a56817a072e472c79cb55b710ea5033757e9a4c9c42a091859"
     },
     {
       "path": "src/lib/jobs/filter.ts",
       "lines": 163,
       "sha256": "7c1231fbc432b611f3497ae2d39b81693af9ceaf6793c60f9a78ea7935cb2050",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "7c1231fbc432b611f3497ae2d39b81693af9ceaf6793c60f9a78ea7935cb2050"
     },
     {
       "path": "src/lib/jobs/letter-helper.ts",
@@ -2181,7 +2190,8 @@
       "path": "src/lib/jobs/match.ts",
       "lines": 250,
       "sha256": "05580a93260427159ec46bb16631c00971fd85cc4bd382cdc20ef33b294dcba5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "244e35b82d8fda6f987ab900e286c4e30c0811b2533db099d5e4ba30283e2ea7"
     },
     {
       "path": "src/lib/jobs/meta.ts",
@@ -2229,7 +2239,8 @@
       "path": "src/lib/jobs/stats.ts",
       "lines": 69,
       "sha256": "cc2689e2d900a585fe5606d129273012d27e3adadcb6e27e89bf5de63668cceb",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d3b733c4b883ff44d051dfead85716fe24478c50c2d5d508b5795195b3453f8e"
     },
     {
       "path": "src/lib/jobs/template.ts",

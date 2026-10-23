@@ -670,6 +670,7 @@ function RoleLetter({
     onDirtyChange(dirty);
   }, [dirty, onDirtyChange]);
   async function save() {
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -764,6 +765,7 @@ function RoleLetter({
       </Label>
       <Textarea
         id="oslo-letter"
+        disabled={busy}
         value={letter}
         onChange={(e) => setLetter(e.target.value)}
         rows={13}
@@ -780,6 +782,7 @@ function RoleLetter({
         </Label>
         <Textarea
           id="oslo-letter-notes"
+          disabled={busy}
           className="mt-2 bg-surface"
           rows={2}
           value={notes}
@@ -788,6 +791,7 @@ function RoleLetter({
       </div>
       <SimpleSelect
         value={readiness}
+        disabled={busy}
         onValueChange={(value) => {
           if (
             value === "draft" ||
@@ -885,8 +889,8 @@ export function OsloLetterReview() {
         </li>
         <li>
           {cs
-            ? "Opravit staré „based in Prague/Czechia“. Před 22. říjnem psát o plánovaném přestěhování, po příjezdu upravit na bydliště v Oslu. EU občanství uvést, číslo a daňovou kartu neprezentovat jako již vyřízené."
-            : "Replace stale Prague/Czechia location statements. Before October 22 describe the planned move; update to Oslo residence after arrival. State EU citizenship without implying tax/identity registration is already complete."}
+            ? "Uvádět jen potvrzené současné bydliště. Pokud přesun do Osla teprve plánujete, popište jej jako plán. EU občanství uvést, číslo a daňovou kartu neprezentovat jako již vyřízené."
+            : "Use only your confirmed current location. Describe an Oslo move as planned until it has happened. State EU citizenship without implying tax/identity registration is already complete."}
         </li>
         <li>
           {cs

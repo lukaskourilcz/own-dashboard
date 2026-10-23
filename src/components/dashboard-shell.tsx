@@ -122,7 +122,7 @@ function DestinationLoading() {
 }
 
 type Props = {
-  initialFocusTimezone?: string | null;
+  initialTimezone?: string | null;
   isPreview?: boolean;
   initialProjectId?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
@@ -445,7 +445,7 @@ function DashboardShellContent(props: Props) {
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
-            todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} timeZone={props.initialFocusTimezone ?? "Europe/Prague"} />,
+            todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} timeZone={props.initialTimezone ?? "Europe/Prague"} />,
             crons: <CronMonitorPanel isPreview={props.isPreview} />,
             "work-attention": <WorkAttention opportunities={opportunities} onOpen={() => setTab("opportunities")} />,
             subscriptions: <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} compact />,
@@ -458,7 +458,7 @@ function DashboardShellContent(props: Props) {
           {tab === "competition" && <CompetitionPanel projects={projects} competitors={competitors} setCompetitors={setCompetitors} onOpenProject={openProject} />}
           {tab === "opportunities" && <OpportunitiesPanel activated={activatedTabs.has("opportunities")} onActivate={() => activateTab("opportunities")} userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
-          {tab === "career" && <JobsPanel activated={activatedTabs.has("career")} onActivate={() => activateTab("career")} isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
+          {tab === "career" && <JobsPanel timeZone={props.initialTimezone ?? "Europe/Prague"} activated={activatedTabs.has("career")} onActivate={() => activateTab("career")} isPreview={props.isPreview} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
           {tab === "invoices" && <InvoicesPanel invoices={invoices} setInvoices={setInvoices} items={invoiceItems} setItems={setInvoiceItems} settings={invoiceSettings} setSettings={setInvoiceSettings} userId={user.id} displayCurrency={displayCurrency} organizations={organizations} projects={activeProjects} transactions={transactions} />}
           {tab === "money" && <DevFinancePanel subscriptions={subscriptions} allocations={subscriptionAllocations} transactions={transactions} projects={projects} projectCosts={projectCosts} crons={crons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} onOpenSubscriptions={() => setTab("subscriptions")} onOpenProject={openProject} />}
           {(tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}

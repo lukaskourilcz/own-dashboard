@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many requests." }, { status: 429 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { url?: string };
-  const url = normalizeJobUrl(body.url ?? "");
+  const body: unknown = await request.json().catch(() => null);
+  const url = normalizeJobUrl(body && typeof body === "object" && "url" in body ? body.url : null);
   if (!url) return NextResponse.json({ error: "A valid URL is required." }, { status: 400 });
 
   try {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const fields = jobPageTitleFields(data.title ?? "");
     const description = (data.content || data.description || "").trim().slice(0, 30_000);
     if (!fields.title) throw new Error("missing-title");
-    return NextResponse.json({ url: data.url || url, ...fields, description });
+    return NextResponse.json({ url: normalizeJobUrl(data.url) ?? url, ...fields, description });
   } catch {
     return NextResponse.json(
       { error: "Could not read that page. Complete the fields manually." },

@@ -36,6 +36,8 @@ test("prepared applications expose posting and Drive links and record a sent sna
   expect(payload!.p_request_id).toBe(payload!.p_saved_id);
   expect((payload!.p_payload as Record<string, unknown>).listing_id).toBeNull();
   await page.getByRole("button", { name: /^Applied/ }).click();
+  // Fixture queries stay isolated from live refetches; measure this recorded application cohort.
+  await page.getByRole("textbox", { name: "Search sent applications", exact: true }).fill("Example Studio");
   const row = page.getByRole("listitem").filter({ hasText: "Example Studio" });
   await row.getByRole("button", { name: "Response / follow-up", exact: true }).click();
   const progress = page.getByRole("dialog", { name: "Response and follow-up" });

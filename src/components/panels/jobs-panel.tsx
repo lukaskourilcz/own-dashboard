@@ -82,6 +82,9 @@ import { isGoogleLetterUrl, isPositionReady, readinessLabel, progressEventLabel 
 import { CareerLetterHelper } from "./career-letter-helper";
 import type { Availability } from "@/lib/jobs/availability";
 import type { LetterLanguage } from "@/lib/jobs/letter-helper";
+import { useNow } from "@/lib/use-now";
+import { focusDayKey } from "@/lib/date-keys";
+import { normalizeJobUrl } from "@/lib/jobs/enrich";
 
 // Fit-level → badge tone. Warmer/greener = stronger match.
 const FIT_TONE: Record<JobMatch["level"], string> = {
@@ -91,9 +94,6 @@ const FIT_TONE: Record<JobMatch["level"], string> = {
   weak: "bg-surface-muted text-foreground-muted border-border",
   unknown: "bg-surface text-foreground-subtle border-border",
 };
-
-// A listing counts as a "strong fit" (for the quick filter) at this score.
-const STRONG_FIT_MIN = 50;
 
 const STATUSES: JobApplicationStatus[] = [
   "applied",
@@ -106,6 +106,7 @@ const STATUSES: JobApplicationStatus[] = [
 type Props = {
   /** True after an explicit private Career data load in this page session. */
   activated: boolean;
+  timeZone?: string;
   /** Fetch Career's on-demand data and mark it active. */
   onActivate: () => Promise<void>;
   isPreview?: boolean;
@@ -125,12 +126,13 @@ type Props = {
 };
 
 /** Today's date as the YYYY-MM-DD value a date input expects. */
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+function todayIso(timeZone: string): string {
+  return focusDayKey(new Date(), timeZone);
 }
 
 export function JobsPanel({
   activated,
+  timeZone = "Europe/Prague",
   onActivate,
   isPreview = false,
   listings,
@@ -192,6 +194,7 @@ export function JobsPanel({
   // Explicit feed refresh, separate from opening a private draft or workflow.
   // The rate limit is unchanged; nothing refreshes on a timer or focus.
   async function checkOffers() {
+    if (checking) return;
     setChecking(true);
     try {
       if (!isPreview) {
@@ -351,6 +354,7 @@ export function JobsPanel({
         />
       ) : (
         <AppliedView
+          timeZone={timeZone}
           applications={visibleApplications}
           setApplications={setApplications}
           savedPositions={savedPositions}
@@ -368,6 +372,7 @@ export function JobsPanel({
       )}
 
       <ApplyDialog
+        timeZone={timeZone}
         open={applyOpen}
         onOpenChange={setApplyOpen}
         listing={applyFor}
@@ -544,8 +549,7 @@ function OpenPositionsView({
       if (role !== "all" && l.role !== role) return false;
       if (source !== "all" && l.source !== source) return false;
       if (strongFitOnly) {
-        const s = matchById.get(l.id)?.score;
-        if (s == null || s < STRONG_FIT_MIN) return false;
+        if (matchById.get(l.id)?.level !== "strong") return false;
       }
       const duplicateKey = `${l.company?.trim().toLowerCase()}|${l.title.trim().toLowerCase()}|${l.location?.trim().toLowerCase()}`;
       if (seen.has(duplicateKey)) return false;
@@ -760,9 +764,9 @@ function OpenPositionsView({
       <div className="mb-4 border-l-2 border-primary pl-4 text-sm leading-relaxed">
         <p className="font-medium">React · TypeScript · Next.js · Node.js</p>
         <p className="text-foreground-muted">
-          {cs
-            ? "Frontend a fullstack. Praha nebo práce na dálku z Česka. Junior, medior i senior."
-            : "Frontend and fullstack. Prague or remote from Czechia. Junior, medior and senior."}
+          {showCzechCareer
+            ? cs ? "Frontend a fullstack. Oslo, Praha a odpovídající nabídky na dálku. Junior, medior i senior." : "Frontend and fullstack. Oslo, Prague and compatible remote roles. Junior, medior and senior."
+            : cs ? "Frontend a fullstack. Oslo a nabídky na dálku slučitelné s prací z Norska. Junior, medior i senior." : "Frontend and fullstack. Oslo and remote roles compatible with Norway. Junior, medior and senior."}
         </p>
       </div>
       <div className="mb-4 flex flex-wrap gap-3">
@@ -772,7 +776,7 @@ function OpenPositionsView({
           className="w-full sm:w-48"
           aria-label={cs ? "Místo práce" : "Work location"}
           options={[
-            { value: "all", label: cs ? "Praha i remote" : "Prague + remote" },
+            { value: "all", label: showCzechCareer ? (cs ? "Oslo, Praha i remote" : "Oslo, Prague + remote") : "Oslo + remote" },
             ...(showCzechCareer ? [{ value: "prague", label: "Praha" }] : []),
             { value: "remote", label: "Remote" },
           ]}
@@ -1287,34 +1291,47 @@ function SavedPositionsView({
   const visible = positions.filter(row => `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
 
   function importUrl(url: string) {
+    if (enrich.isPending) return;
+    if (!normalizeJobUrl(url)) { toast.err(t.jobs.urlImportFailed); return; }
     setShowFields(true);
-    enrich.mutate(url);
+    enrich.mutate({ url, baseline: { ...form } });
   }
 
   const enrich = useMutation({
-    mutationFn: async (url: string) => {
+    mutationFn: async ({ url }: { url: string; baseline: typeof form }) => {
       const response = await fetch("/api/jobs/enrich", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(20000),
       });
       const result = (await response.json()) as Partial<typeof form> & { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "enrich-failed");
+      if (!response.ok || !result || typeof result.title !== "string") throw new Error("enrich-failed");
       return result;
     },
-    onSuccess: (result) => setForm((current) => ({ ...current, ...result })),
+    onSuccess: (result, { url, baseline }) => setForm((current) => {
+      if (current.url.trim() !== url.trim()) return current;
+      const next = { ...current };
+      for (const key of ["title", "company", "location", "description"] as const) {
+        if (current[key] === baseline[key] && typeof result[key] === "string") next[key] = result[key];
+      }
+      if (normalizeJobUrl(result.url)) next.url = normalizeJobUrl(result.url)!;
+      return next;
+    }),
     onError: () => toast.err(t.jobs.urlImportFailed),
   });
 
   const save = useMutation({
     mutationFn: async () => {
+      const url = normalizeJobUrl(form.url);
+      if (!url || !form.title.trim()) throw new Error("invalid-position");
       const { data, error } = await supabase
         .from("saved_job_positions")
         .upsert({
           user_id: userId,
           title: form.title.trim(),
           company: form.company.trim() || null,
-          url: form.url.trim(),
+          url,
           source: "manual",
           location: form.location.trim() || null,
           description: form.description.trim() || null,
@@ -1459,6 +1476,7 @@ function ApplyFitSummary({ listing }: { listing: JobListing }) {
 }
 
 function ApplyDialog({
+  timeZone,
   open,
   onOpenChange,
   listing,
@@ -1470,6 +1488,7 @@ function ApplyDialog({
   setSavedPositions,
   onApplied,
 }: {
+  timeZone: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   listing: JobListing | null;
@@ -1483,6 +1502,8 @@ function ApplyDialog({
   onApplied: () => void;
 }) {
   const t = useDict();
+  const now = useNow();
+  const today = now ? focusDayKey(now, timeZone) : todayIso(timeZone);
   const cs = useLang().lang === "cs";
   const [requestId, setRequestId] = useState("");
   const toast = useToast();
@@ -1493,7 +1514,7 @@ function ApplyDialog({
     title: "",
     company: "",
     url: "",
-    appliedOn: todayIso(),
+    appliedOn: todayIso(timeZone),
     coverLetter: "",
     coverLetterUrl: "",
     readiness: "draft",
@@ -1510,7 +1531,7 @@ function ApplyDialog({
       title: listing?.title ?? "",
       company: listing?.company ?? "",
       url: listing?.url ?? "",
-      appliedOn: todayIso(),
+      appliedOn: todayIso(timeZone),
       coverLetter: savedPosition?.cover_letter ?? "",
       coverLetterUrl: savedPosition?.cover_letter_url ?? "",
       readiness: savedPosition?.readiness ?? "draft",
@@ -1586,6 +1607,7 @@ function ApplyDialog({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (createMutation.isPending || saveDraftMutation.isPending) return;
     if (!form.title.trim()) {
       setFormError(t.jobs.positionRequired);
       return;
@@ -1657,7 +1679,7 @@ function ApplyDialog({
                 id="job-app-date"
                 type="date"
                 value={form.appliedOn}
-                max={todayIso()}
+                max={today}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, appliedOn: e.target.value }))
                 }
@@ -1705,11 +1727,11 @@ function ApplyDialog({
               </Button>
             </DialogClose>
             {savedPosition && (
-              <Button type="button" variant="outline" size="sm" onClick={() => saveDraftMutation.mutate()} disabled={saveDraftMutation.isPending}>
+              <Button type="button" variant="outline" size="sm" onClick={() => saveDraftMutation.mutate()} disabled={saveDraftMutation.isPending || createMutation.isPending}>
                 {saveDraftMutation.isPending ? t.jobs.saving : t.jobs.saveDraft}
               </Button>
             )}
-            <Button type="submit" size="sm" disabled={createMutation.isPending}>
+            <Button type="submit" size="sm" disabled={createMutation.isPending || saveDraftMutation.isPending}>
               <Check className="h-3.5 w-3.5" />
               {createMutation.isPending
                 ? t.jobs.saving
@@ -1922,6 +1944,7 @@ function CoverLetterField({
  * ========================================================================= */
 
 function AppliedView({
+  timeZone,
   applications,
   setApplications,
   savedPositions,
@@ -1932,6 +1955,7 @@ function AppliedView({
   onPrepare,
   userId,
 }: {
+  timeZone: string;
   applications: JobApplication[];
   setApplications: Updater<JobApplication[]>;
   savedPositions: SavedJobPosition[];
@@ -1960,7 +1984,8 @@ function AppliedView({
   const supabase = createClient();
   const confirm = useConfirmation();
 
-  const stats = useMemo(() => applicationStats(cohort), [cohort]);
+  const now = useNow();
+  const stats = useMemo(() => applicationStats(cohort, now ?? new Date(), timeZone), [cohort, now, timeZone]);
   const [letterFor, setLetterFor] = useState<JobApplication | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
 
@@ -1997,14 +2022,16 @@ function AppliedView({
     },
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: qk.jobApplications });
-      const prev = qc.getQueryData<JobApplication[]>(qk.jobApplications);
+      const previousApplication = applications.find(app => app.id === id);
+      const previousEvents = events.filter(event => event.application_id === id);
       setApplications((old) => old.filter((a) => a.id !== id));
       setEvents((old) => old.filter((e) => e.application_id !== id));
-      return { prev };
+      return { previousApplication, previousEvents };
     },
     onSuccess: () => toast.ok(t.jobs.applicationDeleted),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setApplications(ctx.prev);
+    onError: (_e, id, ctx) => {
+      if (ctx?.previousApplication) setApplications(current => current.some(app => app.id === id) ? current : [...current, ctx.previousApplication!]);
+      if (ctx?.previousEvents) setEvents(current => [...current.filter(event => event.application_id !== id), ...ctx.previousEvents]);
       toast.err(t.jobs.couldNotDelete);
     },
     onSettled: () => {
@@ -2129,7 +2156,7 @@ function AppliedView({
         </Card>
       )}
 
-      {progressFor && <CareerProgressDialog key={progressFor.id} app={progressFor} onClose={()=>setProgressFor(null)} setApplications={setApplications}/>}
+      {progressFor && <CareerProgressDialog timeZone={timeZone} key={progressFor.id} app={progressFor} onClose={()=>setProgressFor(null)} setApplications={setApplications}/>}
       <LetterDialog
         app={letterFor}
         onClose={() => setLetterFor(null)}

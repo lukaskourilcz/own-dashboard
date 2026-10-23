@@ -9,10 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { SimpleSelect } from "@/components/ui/select";
 import { useDict, useLang } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { useNow } from "@/lib/use-now";
+import { focusDayKey } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
 import type { JobApplication, Updater } from "@/lib/types";
 
-export function CareerProgressDialog({ app, onClose, setApplications }: {
+export function CareerProgressDialog({ app, onClose, setApplications, timeZone = "Europe/Prague" }: {
+  timeZone?: string;
   app: JobApplication; onClose: () => void; setApplications: Updater<JobApplication[]>;
 }) {
   const t = useDict();
@@ -29,7 +32,8 @@ export function CareerProgressDialog({ app, onClose, setApplications }: {
   const [contactName, setContactName] = useState(app.contact_name ?? "");
   const [contactEmail, setContactEmail] = useState(app.contact_email ?? "");
   const [contactFailed, setContactFailed] = useState(false);
-  const today = new Date().toLocaleDateString("en-CA", {timeZone:"Europe/Prague"});
+  const now = useNow();
+  const today = focusDayKey(now ?? new Date(), timeZone);
   const save = useMutation({
     mutationFn: async () => {
       if (response !== "none" && (!date || date < app.applied_on || date > today)) throw new Error("date");
@@ -48,7 +52,7 @@ export function CareerProgressDialog({ app, onClose, setApplications }: {
       if (!contactsAvailable || !changed) return { row, contactFailed: false };
       const { data: withContact, error: contactError } = await supabase.from("job_applications")
         .update({ contact_name: contactName.trim() || null, contact_email: contactEmail.trim() || null, updated_at: new Date().toISOString() })
-        .eq("id", app.id).select().single();
+        .eq("id", app.id).select().single().then(result => result, () => ({data:null,error:new Error("contact-write-failed")}));
       if (contactError || !withContact) return { row, contactFailed: true };
       return { row: withContact as JobApplication, contactFailed: false };
     },
@@ -63,7 +67,7 @@ export function CareerProgressDialog({ app, onClose, setApplications }: {
   return <Dialog open onOpenChange={open => !open && onClose()}><DialogContent className="max-w-xl">
     <DialogTitle>{cs ? "Odpověď a další postup" : "Response and follow-up"}</DialogTitle>
     <p className="text-sm text-foreground-muted break-words">{app.company} · {app.title}</p>
-    <form className="mt-3 space-y-4" onSubmit={event => {event.preventDefault();save.mutate();}}>
+    <form className="mt-3 space-y-4" onSubmit={event => {event.preventDefault();if (!save.isPending) save.mutate();}}>
       <div className="space-y-1.5"><Label>{cs ? "Stav přihlášky" : "Application status"}</Label><SimpleSelect value={status} onValueChange={value=>setStatus(value as JobApplication["status"])} aria-label={cs ? "Stav přihlášky" : "Application status"} options={[
         {value:"applied",label:cs?"Odesláno":"Applied"},{value:"interviewing",label:cs?"Pohovory":"Interviewing"},
         {value:"offer",label:cs?"Nabídka":"Offer"},{value:"rejected",label:cs?"Zamítnuto":"Rejected"},{value:"withdrawn",label:cs?"Staženo":"Withdrawn"},

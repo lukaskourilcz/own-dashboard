@@ -20,3 +20,7 @@ describe("saved job URL import", () => {
     });
   });
 });
+
+it.each([null,[],{},42,"https://user:password@jobs.example.test/role","x".repeat(2049)])("rejects malformed or credential-bearing job links (%j)",value => {
+ expect(normalizeJobUrl(value)).toBeNull();
+});

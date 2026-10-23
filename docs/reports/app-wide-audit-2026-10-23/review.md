@@ -13,7 +13,7 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Shared boundaries | Authenticated catch-all, shell, navigation, query cache, initial loading | Reviewing |
 | Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Source reviewed; targeted fixes checked; final matrix pending |
 | Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Source reviewed; project/clients checks passed; final matrix pending |
-| Career | Board, saved roles, applications, history, letters | Pending |
+| Career | Board, saved roles, applications, history, letters | Source reviewed; targeted recovery/date checks passed; final matrix pending |
 | Finance | Money, Accounts, Transactions, Categories, Subscriptions, Invoices and print | Pending |
 | Knowledge | Notes, Prompts, Tools, Links, IG TIPS, References | Pending |
 | Marketing | Review, calendar, knowledge, results, Workflows, DNESKAi workspace | Pending |
@@ -51,6 +51,9 @@ Each destination needs source/data-flow review, relevant business and failure ch
 
 22. Fixed: closing project operations during the editor’s 600 ms debounce now persists the captured Markdown directly from the editor. The previous parent callback depended on an imperative ref that React clears during unmount, losing the last edit. Two real-editor browser cases verify a quick edit followed immediately by closing. Failed Markdown parsing shows an error instead of an endless skeleton. Six current project browser cases pass after this change.
 
+23. Fixed: Career enrichment rejects malformed and credential-bearing URLs, preserves manual edits during a delayed import and cannot replace a subsequently entered URL. Failed application deletion restores its history as well as the row. Optional contact-write rejection preserves already-confirmed progress and the unsaved contact fields. Saving a draft and recording an application cannot run together. The Strong fit filter now matches its badge level (75%, formerly an inconsistent 50%). Current location guidance remains conditional on owner-confirmed facts.
+24. Fixed: Career defaults, RPC future-date checks and seven-/thirty-date statistics share the saved account timezone. Calendar-date windows include today without adding an eighth or thirty-first date; a Prague response before UTC midnight counts immediately. Four migrated-database cases preserve owner isolation, idempotency and actual future-date rejection. The fifth prepared migration adds the invoker date helper. Fifty-nine targeted Career tests pass; the current prepared-application flow passes on desktop/mobile, the Czech six-width matrix passes once, and six import/date/delete recovery cases pass. The pipeline test now filters the recorded application cohort instead of relying on fixture invalidation replacing all other sample applications. Full optimized release checks remain pending.
+
 Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
 
 Tour isolation validation adds three component tests (22 shared tests in total), two browser cases, TypeScript and targeted ESLint. The six-width destination matrix also passed after code splitting.
@@ -59,7 +62,7 @@ Tour isolation validation adds three component tests (22 shared tests in total),
 
 Read-only production advisors were inspected for the `own-dashboard` EU project. Findings need catalog verification before changes: 73 RLS init-plan warnings, 70 unindexed foreign keys, 36 unused indexes, one duplicate-index warning, 15 executable security-definer function warnings and nine intentionally private tables without browser policies. Advisor warnings alone do not justify extra indexes, index deletion or wider grants. No secret rows or credential values were read.
 
-Prepared fixes: `20261023164118_app_wide_rls_initplans.sql` converts the 73 direct identity calls to statement InitPlans, preserving every policy role and predicate. `20261023170010_project_parent_rls_lookup.sql` resolves project-write policy expansion in local PostgreSQL 18.6 with a security-invoker lookup that retains RLS. The production PostgreSQL 17 read-only planner check accepted the existing update. Ten tests pass across the real upgrade and complete engagement-aggregate suites; ownership, related parents, grants and anonymous access are covered. The local generated read schema was rebuilt from all 90 migrations. Neither new migration has been applied remotely yet.
+Prepared fixes: `20261023164118_app_wide_rls_initplans.sql` converts the 73 direct identity calls to statement InitPlans, preserving every policy role and predicate. `20261023170010_project_parent_rls_lookup.sql` resolves project-write policy expansion in local PostgreSQL 18.6 with a security-invoker lookup that retains RLS. The production PostgreSQL 17 read-only planner check accepted the existing update. Ten tests pass across the real upgrade and complete engagement-aggregate suites; ownership, related parents, grants and anonymous access are covered. The local generated read schema was rebuilt from all 91 migrations. Neither new migration has been applied remotely yet.
 
 ## Release evidence
 
