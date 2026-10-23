@@ -21,6 +21,9 @@ import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
 import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
+import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
+import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
+import { dneskaiDailyMixEnabled } from "./dneskai-evidence-rollout";
 import { createDneskaiBriefStore } from "./dneskai-briefs";
 import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
 
@@ -107,11 +110,17 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
     titleTopics: (project, now, options) => titleDneskaiTopics(db, owner, project, now, { env, signal: options.signal, model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
     expireTopics: (project, now) => expireDneskaiNewsTopics(db, owner, project, now),
-    newsTopics: (project, runId, now) => dneskaiNewsTopicsFromRun(db, owner, project, runId, now),
+    async newsTopics(project, runId, now) {
+      const mix = dneskaiDailyMixEnabled(env) ? (await readDneskaiDailyMix(db, owner, project, { enabled: true })).mix : null;
+      return dneskaiNewsTopicsFromRun(db, owner, project, runId, now, mix ? { limit: dneskaiNewsTopicLimit(mix) } : {});
+    },
     async topicBriefWork(project) {
       return any(db.from("marketing_dneskai_topics").select("id").eq("user_id", owner).eq("project_id", project).in("status", ["approved", "enriching", "briefed"]).limit(1), "topic-bridge-unavailable");
     },
-    topicBriefs: (project, now, options) => advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options }),
+    async topicBriefs(project, now, options) {
+      const mix = dneskaiDailyMixEnabled(env) ? (await readDneskaiDailyMix(db, owner, project, { enabled: true })).mix : undefined;
+      return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix ? { mix } : {}) });
+    },
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

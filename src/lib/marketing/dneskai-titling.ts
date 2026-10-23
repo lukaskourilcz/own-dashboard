@@ -127,14 +127,17 @@ type BriefRow = { id: string; event_id: string; member_ids: string[]; lead_candi
 const clip = (value: string, max: number) => { const text = value.replace(/\s+/g, ' ').trim(); return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text; };
 
 /**
- * The news events a finished run selected, as untitled `news` topics (one per event, `source_ref = event:<id>`,
+ * The news events a finished run selected (the best `limit` by rank), as untitled `news` topics (one per event, `source_ref = event:<id>`,
  * `brief_id` set), instead of briefs. Idempotent. The brief rows stay as they are, so the Lab's "Generate now" on a
  * waiting brief still works; the briefs step no longer builds or admits them on its own while titling is on.
  */
-export async function dneskaiNewsTopicsFromRun(db: Database, owner: string, project: string, runId: string, now: Date): Promise<{ events: number; inserted: number }> {
+export async function dneskaiNewsTopicsFromRun(db: Database, owner: string, project: string, runId: string, now: Date, options: { limit?: number } = {}): Promise<{ events: number; inserted: number }> {
   z.uuid().parse(owner); z.uuid().parse(project); z.uuid().parse(runId);
+  // #156: the daily mix asks for three titles per news post it wants; zero news posts propose none.
+  const limit = Math.max(0, Math.min(8, options.limit ?? 8));
+  if (!limit) return { events: 0, inserted: 0 };
   const briefs = await db.from('marketing_dneskai_briefs').select('id,event_id,member_ids,lead_candidate_id,category,target_date').eq('user_id', owner).eq('project_id', project).eq('run_id', runId)
-    .in('status', ['pending', 'ready']).order('rank').limit(8);
+    .in('status', ['pending', 'ready']).order('rank').limit(limit);
   if (briefs.error) throw new Error('news-topics-unavailable');
   const rows = (briefs.data ?? []) as BriefRow[];
   if (!rows.length) return { events: 0, inserted: 0 };
