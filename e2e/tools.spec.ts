@@ -4,7 +4,8 @@ import { projectLinks, tools } from "../src/lib/demo/fixtures";
 
 /** A tiny PostgREST stand-in for one table, seeded with fixture rows. */
 async function tableStub(page: Page, table: string, seed: Record<string, unknown>[], conflictKeys: string[] = []) {
-  const rows = seed.map((row) => ({ ...row }));
+  // The fixture session authenticates as u1; confirmed REST receipts must match it.
+  const rows: Record<string, unknown>[] = seed.map((row) => ({ ...row, user_id: "u1" }));
   let counter = 0;
   await page.route(new RegExp(`example\\.supabase\\.co/rest/v1/${table}(\\?|$)`), async (route: Route) => {
     const request = route.request();

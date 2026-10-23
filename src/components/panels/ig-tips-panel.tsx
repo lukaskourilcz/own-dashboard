@@ -124,7 +124,7 @@ export function IgTipsPanel({
   const qc = useQueryClient();
   const toast = useToast();
   const confirm = useConfirmation();
-  const relations = useProjectLinkMutations(setProjectLinks);
+  const relations = useProjectLinkMutations(setProjectLinks, projectLinks);
   const [query, setQuery] = useState(initialQuery ?? "");
   const [groupFilter, setGroupFilter] = useState<TipGroupKey | "all">("all");
   const [notApplied, setNotApplied] = useState(false);
@@ -515,7 +515,7 @@ export function IgTipsPanel({
           if (!addToProjectTip) return false;
           const saved = await relations.upsert([
             { project_id: projectId, ai_link_id: addToProjectTip.id, role, note, sort_order: nextProjectLinkOrder(projectId, projectLinks) },
-          ]);
+          ], { silent: true });
           return saved !== null;
         }}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,7 +55,7 @@ export function LinkPickerDialog({
   /** Pre-selected links (for example the suggestions for a prompt's kind).
    * Read when the picker mounts; remount it with a new `key` to reset. */
   initialSelectedIds?: string[];
-  onConfirm: (ids: string[]) => void | Promise<void>;
+  onConfirm: (ids: string[]) => void | boolean | Promise<void | boolean>;
 }) {
   const t = useDict();
   const [query, setQuery] = useState("");
@@ -63,6 +63,8 @@ export function LinkPickerDialog({
   const [limit, setLimit] = useState(LINK_PICKER_PAGE);
   const [selected, setSelected] = useState<string[]>(() => initialSelectedIds ?? []);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const [failed, setFailed] = useState(false);
   const returnFocus = useReturnFocus(open);
 
   const available = useMemo(
@@ -79,9 +81,11 @@ export function LinkPickerDialog({
     [available, categories, query, category],
   );
   const shown = matches.slice(0, limit);
+  const availableIds = new Set(available.map(link => link.id));
+  const validSelected = [...new Set(selected.filter(id => availableIds.has(id)))];
   // Without a record type the picker also offers IG tips (idea records).
   const searchLabel = recordType === "link" ? t.ai.searchPlaceholder : t.ai.pickerSearchPlaceholder;
-  const categoryName = new Map(categories.map((item) => [item.id, item.name]));
+  const categoryName = useMemo(() => new Map(categories.map(item => [item.id, item.name])), [categories]);
 
   function reset() {
     setQuery("");
@@ -89,13 +93,14 @@ export function LinkPickerDialog({
     setLimit(LINK_PICKER_PAGE);
     setSelected([]);
     setBusy(false);
+    setFailed(false);
   }
 
   function toggle(id: string, checked: boolean) {
     setSelected((previous) =>
       multiple
         ? checked
-          ? [...previous, id]
+          ? previous.includes(id) ? previous : [...previous, id]
           : previous.filter((item) => item !== id)
         : checked
           ? [id]
@@ -103,27 +108,32 @@ export function LinkPickerDialog({
     );
   }
 
+  function close(next: boolean) {
+    if (busyRef.current) return;
+    if (!next) reset();
+    onOpenChange(next);
+  }
+
   async function confirm() {
-    if (selected.length === 0) return;
-    setBusy(true);
+    if (busyRef.current || validSelected.length === 0) return;
+    busyRef.current = true; setBusy(true); setFailed(false);
     try {
-      await onConfirm(selected);
+      if (await onConfirm(validSelected) === false) { setFailed(true); return; }
       onOpenChange(false);
       reset();
+    } catch {
+      setFailed(true);
     } finally {
-      setBusy(false);
+      busyRef.current = false; setBusy(false);
     }
   }
 
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next);
-        if (!next) reset();
-      }}
+      onOpenChange={close}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col gap-3 sm:max-w-xl" onCloseAutoFocus={returnFocus}>
+      <DialogContent showClose={!busy} className="flex max-h-[90vh] flex-col gap-3 sm:max-w-xl" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{title ?? t.ai.pickerTitle}</DialogTitle>
           <DialogDescription>
@@ -134,6 +144,7 @@ export function LinkPickerDialog({
           <div className="relative min-w-0">
             <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
             <Input
+              disabled={busy}
               aria-label={searchLabel}
               placeholder={searchLabel}
               value={query}
@@ -145,6 +156,7 @@ export function LinkPickerDialog({
             />
           </div>
           <SimpleSelect
+            disabled={busy}
             aria-label={t.ai.category}
             value={category}
             onValueChange={(value) => {
@@ -182,6 +194,7 @@ export function LinkPickerDialog({
                       {multiple ? (
                         <Checkbox
                           id={id}
+                          disabled={busy}
                           checked={checked}
                           onCheckedChange={(value) => toggle(link.id, value === true)}
                         />
@@ -190,6 +203,7 @@ export function LinkPickerDialog({
                           id={id}
                           type="radio"
                           name="link-picker"
+                          disabled={busy}
                           checked={checked}
                           onChange={(event) => toggle(link.id, event.target.checked)}
                           className="h-4 w-4 shrink-0 accent-[var(--primary)] focus-ring"
@@ -212,16 +226,17 @@ export function LinkPickerDialog({
           )}
         </div>
         {matches.length > shown.length && (
-          <Button type="button" variant="outline" size="sm" onClick={() => setLimit((value) => value + LINK_PICKER_PAGE)}>
+          <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setLimit((value) => value + LINK_PICKER_PAGE)}>
             {t.ai.pickerShowMore(shown.length, matches.length)}
           </Button>
         )}
+        {failed && <p role="alert" className="text-sm text-risk">{t.ai.pickerFailed}</p>}
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" disabled={busy} onClick={() => close(false)}>
             {t.common.cancel}
           </Button>
-          <Button type="button" onClick={() => void confirm()} disabled={selected.length === 0 || busy}>
-            {t.ai.pickerAdd(selected.length)}
+          <Button type="button" onClick={() => void confirm()} disabled={validSelected.length === 0 || busy}>
+            {t.ai.pickerAdd(validSelected.length)}
           </Button>
         </DialogFooter>
       </DialogContent>

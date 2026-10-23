@@ -118,7 +118,7 @@ export function AiPanel({
   const [sort, setSort] = useState<LinkSort>("name");
   const [projectFilter, setProjectFilter] = useState("all");
   const [addToProjectLink, setAddToProjectLink] = useState<AiLink | null>(null);
-  const relationMutations = useProjectLinkMutations(setProjectLinks);
+  const relationMutations = useProjectLinkMutations(setProjectLinks, projectLinks);
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
   const projectIdsWithLinks = useMemo(() => new Set(projectLinks.map((relation) => relation.project_id)), [projectLinks]);
   const projectLinkIds = useMemo(() => linkIdsUsedByProject(projectFilter, projectLinks), [projectFilter, projectLinks]);
@@ -697,7 +697,7 @@ export function AiPanel({
             role,
             note,
             sort_order: nextProjectLinkOrder(projectId, projectLinks),
-          }]);
+          }], { silent: true });
           return saved !== null;
         }}
       />

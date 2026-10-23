@@ -748,20 +748,22 @@
       "path": "src/components/links/add-to-project-dialog.tsx",
       "lines": 126,
       "sha256": "6cf9045cc0d9b23c30bb29d6e02386f1532b11dd616630dbea8b4ef4da201f0b",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "f708b56ee5f4f181a2aed8fbdac865d5e8e155c65d46b86420f1c1c1a6d84b82"
     },
     {
       "path": "src/components/links/link-picker-dialog.tsx",
       "lines": 230,
       "sha256": "03dad2c525e524e6d0d53f4881420642ab17006ceaa8e4802c720e842677bb33",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "888f6984697c3fb3f219973fce549e1316ea582e8e9d6a85883998bc3793a50a"
     },
     {
       "path": "src/components/links/use-project-links.ts",
       "lines": 131,
       "sha256": "ee1d5c05ebe44522d061eaa5db67de38c6fa267919298ad6be8c0215f436ce21",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "ee1d5c05ebe44522d061eaa5db67de38c6fa267919298ad6be8c0215f436ce21"
+      "reviewedSha256": "8e3dfe286672231d440d5ca4d9617485c820ef9b26f190fb1c1ca113f676dd78"
     },
     {
       "path": "src/components/marketing/calendar-import.tsx",
@@ -1331,7 +1333,8 @@
       "path": "src/components/panels/tools-panel.tsx",
       "lines": 566,
       "sha256": "e8a0a0fcd2f3a1384ec83dbbb98b34e0a7491e9b23d271a9c57b8ee54a7068fe",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "171cd6619ca47828f6f30ab6861ecd501ba1615255714514e47dc379ed55d386"
     },
     {
       "path": "src/components/panels/work-overview-panel.tsx",
@@ -1399,7 +1402,7 @@
       "lines": 208,
       "sha256": "75cd1d41e054a47e399726a8f35b88b926db78121792dd7a2233ee613cd51f0d",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "75cd1d41e054a47e399726a8f35b88b926db78121792dd7a2233ee613cd51f0d"
+      "reviewedSha256": "a76e8920e046eea98535914ab6dd2dc944fb9f19f86a4325316b0c76cf7b2223"
     },
     {
       "path": "src/components/projects/project-notes-editor.tsx",
@@ -1458,7 +1461,8 @@
       "path": "src/components/tools/detected-tools-section.tsx",
       "lines": 219,
       "sha256": "a66db768b0db641a0abc353f14e7c072716aac8a2ed0257850b33c7f4007d09f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "6b813f2ece791b163c3ff96a3b7105d97c708d97c8b4e5da963d14bf910a7136"
     },
     {
       "path": "src/components/ui/button.tsx",
@@ -1488,7 +1492,8 @@
       "path": "src/components/ui/dialog.tsx",
       "lines": 132,
       "sha256": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa"
     },
     {
       "path": "src/components/ui/empty-state.tsx",
@@ -2106,7 +2111,8 @@
       "path": "src/lib/i18n/sections/tools.ts",
       "lines": 240,
       "sha256": "d2744862908eca1ba9c12cb6b85d2ada21cdf312df4b2f4c00d567e4273dc46f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d71f568999d275efc28612996196cf7edc12b37b7ebe2f102e38bb2a94a3c761"
     },
     {
       "path": "src/lib/i18n/sections/workflows.ts",
@@ -3223,7 +3229,8 @@
       "path": "src/lib/project-links.ts",
       "lines": 78,
       "sha256": "826e16d91da56b20e65bd1407e238124c9ee8944951f914ea9677ae4e1cb0e6e",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "826e16d91da56b20e65bd1407e238124c9ee8944951f914ea9677ae4e1cb0e6e"
     },
     {
       "path": "src/lib/project-match.ts",
@@ -3382,7 +3389,8 @@
       "path": "src/lib/tools.ts",
       "lines": 74,
       "sha256": "c69de44564b5b8002e3d790b23073406c6dae2316da26098097aec21b5e4db54",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "c69de44564b5b8002e3d790b23073406c6dae2316da26098097aec21b5e4db54"
     },
     {
       "path": "src/lib/transaction-rules.ts",

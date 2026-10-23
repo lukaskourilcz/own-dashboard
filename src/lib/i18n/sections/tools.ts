@@ -38,6 +38,7 @@ type ToolsStrings = {
   created: string;
   deleted: string;
   couldNotSave: string;
+  projectLinksFailed: string;
   signInFirst: string;
   save: string;
   cancel: string;
@@ -117,6 +118,7 @@ export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
     created: "Tool added.",
     deleted: "Tool deleted.",
     couldNotSave: "Could not save the tool.",
+    projectLinksFailed: "The tool is saved, but its project links could not be confirmed. Your notes are still here; save again to retry.",
     signInFirst: "Sign in first.",
     save: "Save",
     cancel: "Cancel",
@@ -197,6 +199,7 @@ export const tools: { en: ToolsStrings; cs: ToolsStrings } = {
     created: "Nástroj přidán.",
     deleted: "Nástroj smazán.",
     couldNotSave: "Nástroj se nepodařilo uložit.",
+    projectLinksFailed: "Nástroj je uložen, ale propojení s projekty se nepodařilo potvrdit. Poznámky zůstaly zde; zkuste je znovu uložit.",
     signInFirst: "Nejprve se přihlaste.",
     save: "Uložit",
     cancel: "Zrušit",

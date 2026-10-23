@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EntityBadge } from "@/components/ui/status-badge";
+import { useNow } from "@/lib/use-now";
 import { useDict, useLang } from "@/lib/i18n";
 import type { DetectedTool, DetectedToolsResponse, ProjectStackStatus } from "@/lib/stack-detection";
 import { cn } from "@/lib/utils";
@@ -54,13 +55,14 @@ export function DetectedToolsSection({
   const t = useDict();
   const tt = t.tools;
   const { lang } = useLang();
+  const hydrated = useNow() !== null;
   const [showAll, setShowAll] = useState(false);
   const shown = filtered || showAll ? tools : tools.slice(0, DETECTED_TOOLS_PAGE);
   const statuses = view.kind === "ok" ? view.data.projects : [];
   const read = statuses.filter((status) => status.status === "ok" || status.status === "empty").length;
   const hasProblem = statuses.some((status) => PROBLEM_STATUSES.has(status.status));
   const checkedAt =
-    view.kind === "ok"
+    hydrated && view.kind === "ok" && Number.isFinite(Date.parse(view.data.checkedAt))
       ? new Date(view.data.checkedAt).toLocaleTimeString(lang === "cs" ? "cs-CZ" : "en-GB", { hour: "2-digit", minute: "2-digit" })
       : null;
 
