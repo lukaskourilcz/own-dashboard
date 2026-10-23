@@ -4,44 +4,52 @@ import { computeTotals } from "@/lib/invoices";
 import {
   matchPayments,
   type MatchableInvoice,
-  type MatchableTransaction,
   type MatchResult,
 } from "@/lib/payment-matching";
 
-/**
- * Run the deterministic payment matcher for one owner and write what it found.
- *
- * Works with either client: the cron passes the service-role client and scopes
- * every query by `user_id` itself, the on-demand button passes the owner's own
- * session client and own-only RLS scopes it. Neither path can reach another
- * owner's rows, because nothing here selects without a `user_id` filter.
- *
- * Idempotent. A matched payment gets `invoice_id`, so the next run's
- * "unlinked income" query no longer returns it and the invoice is no longer
- * `issued`.
- */
+import { z } from "zod";
 
-// A personal ledger is small; the cap keeps one pathological account from
-// holding a cron invocation open.
-const TRANSACTION_LIMIT = 500;
-
-const INVOICE_SELECT = "id, number, variable_symbol, currency, status, round_total, issue_date";
-const TRANSACTION_SELECT =
-  "id, kind, amount, currency, note, occurred_on, variable_symbol, invoice_id";
-
+const id = z.uuid();
+const hash = z.string().regex(/^[a-f0-9]{32}$/);
+const invoiceSchema = z.object({
+  id, number: z.string(), variable_symbol: z.string().nullable(), currency: z.string(), status: z.string(),
+  round_total: z.boolean(), issue_date: z.iso.date(), updated_at: z.iso.datetime({ offset: true }),
+  payment_method: z.string(), items_version: hash.nullable(),
+});
+const transactionSchema = z.object({
+  id, kind: z.enum(["income", "expense"]), amount: z.number().finite().nonnegative(), currency: z.string(),
+  note: z.string().nullable(), occurred_on: z.iso.date(), variable_symbol: z.string().nullable(),
+  invoice_id: id.nullable(), match_version: hash,
+});
+const snapshotSchema = z.object({
+  invoices: z.array(invoiceSchema).max(10000),
+  items: z.array(z.object({ id, invoice_id: id, quantity: z.number().finite(), unit_price: z.number().finite(), vat_rate: z.number().finite() })).max(50000),
+  transactions: z.array(transactionSchema).max(20000),
+});
+const receiptSchema = z.array(z.object({ transaction_id: id, invoice_id: id, paid_on: z.iso.date(), changed: z.boolean() })).max(100);
+export type MatchingInvoice = z.infer<typeof invoiceSchema>;
+export type MatchingTransaction = z.infer<typeof transactionSchema>;
+type Receipt = z.infer<typeof receiptSchema>[number];
 type InvoiceRow = MatchableInvoice & { issue_date: string };
+type ItemRow = { invoice_id: string; quantity: number | string; unit_price: number | string; vat_rate: number | string };
+export type RunResult = MatchResult & { linked: number };
 
-type ItemRow = {
-  invoice_id: string;
-  quantity: number | string;
-  unit_price: number | string;
-  vat_rate: number | string;
-};
-
-export type RunResult = MatchResult & {
-  /** Links actually written. Lower than `matched.length` if a write was rejected. */
-  linked: number;
-};
+/** One complete, bounded MVCC snapshot for verified owner/session or service
+ * callers. Versions detect changed amounts, dates, headers and invoice lines.
+ * It performs no tax calculation or model call.
+ */
+export async function readPaymentMatchingSnapshot(client: SupabaseClient, userId: string,
+  filter: { transactionId?: string; invoiceId?: string } = {}) {
+  const { data, error } = await client.rpc("payment_matching_snapshot", {
+    p_user_id: userId, p_transaction_id: filter.transactionId ?? null, p_invoice_id: filter.invoiceId ?? null,
+  });
+  if (error) throw new Error("Payment snapshot unavailable");
+  const snapshot = snapshotSchema.parse(data);
+  for (const rows of [snapshot.invoices, snapshot.items, snapshot.transactions]) {
+    if (new Set(rows.map(row => row.id)).size !== rows.length) throw new Error("Duplicate matching records");
+  }
+  return snapshot;
+}
 
 /** Invoice id → amount due, derived from items exactly as the invoice prints it. */
 export function buildTotals(invoices: InvoiceRow[], items: ItemRow[]): Map<string, number> {
@@ -67,160 +75,56 @@ export function buildTotals(invoices: InvoiceRow[], items: ItemRow[]): Map<strin
   return totals;
 }
 
-export async function runPaymentMatching(
-  client: SupabaseClient,
-  userId: string,
-): Promise<RunResult> {
-  const { data: invoiceData, error: invoiceError } = await client
-    .from("invoices")
-    .select(INVOICE_SELECT)
-    .eq("user_id", userId)
-    .in("status", ["issued", "paid"])
-    .eq("payment_method", "bank");
-  if (invoiceError) throw new Error(invoiceError.message);
-  const invoices = (invoiceData ?? []) as InvoiceRow[];
-
-  const open = invoices.filter((invoice) => invoice.status === "issued");
-  if (open.length === 0) {
-    return { matched: [], unmatched: [], scanned: 0, linked: 0 };
-  }
-
-  const { data: itemData, error: itemError } = await client
-    .from("invoice_items")
-    .select("invoice_id, quantity, unit_price, vat_rate")
-    .eq("user_id", userId)
-    .in("invoice_id", open.map((invoice) => invoice.id));
-  if (itemError) throw new Error(itemError.message);
-
-  // A payment cannot predate the oldest invoice still waiting for it.
-  const since = open.reduce(
-    (oldest, invoice) => (invoice.issue_date < oldest ? invoice.issue_date : oldest),
-    open[0].issue_date,
-  );
-
-  const { data: txData, error: txError } = await client
-    .from("transactions")
-    .select(TRANSACTION_SELECT)
-    .eq("user_id", userId)
-    .eq("kind", "income")
-    .is("invoice_id", null)
-    .gte("occurred_on", since)
-    .order("occurred_on", { ascending: true })
-    .limit(TRANSACTION_LIMIT);
-  if (txError) throw new Error(txError.message);
-
-  const transactions = ((txData ?? []) as (MatchableTransaction & { amount: number | string })[]).map(
-    (row) => ({ ...row, amount: Number(row.amount) }),
-  );
-
-  const result = matchPayments({
-    // Paid invoices are passed too, with no total: they are what turns a second
-    // payment quoting a settled symbol into "already paid" rather than
-    // "unknown reference".
-    invoices,
-    totals: buildTotals(open, (itemData ?? []) as ItemRow[]),
-    transactions,
+type PaymentInput = { invoice: MatchingInvoice; transaction: MatchingTransaction; source: "auto" | "manual" };
+async function settlePayments(client: SupabaseClient, userId: string, matches: PaymentInput[]): Promise<Receipt[]> {
+  if (!matches.length) return [];
+  const { data, error } = await client.rpc("settle_invoice_payments", { p_user_id: userId,
+    p_matches: matches.map(({ invoice, transaction, source }) => ({
+      invoice_id: invoice.id, transaction_id: transaction.id, source,
+      invoice_updated_at: invoice.updated_at, items_version: invoice.items_version, transaction_version: transaction.match_version,
+    })),
   });
-
-  const byId = new Map(invoices.map((invoice) => [invoice.id, invoice]));
-  const byTransaction = new Map(transactions.map((tx) => [tx.id, tx]));
-  let linked = 0;
-
-  for (const match of result.matched) {
-    const tx = byTransaction.get(match.transactionId);
-    const invoice = byId.get(match.invoiceId);
-    if (!tx || !invoice) continue;
-    const written = await linkPayment(client, userId, {
-      transactionId: match.transactionId,
-      invoiceId: match.invoiceId,
-      paidOn: tx.occurred_on,
-      source: "auto",
-    });
-    if (!written) continue;
-    linked++;
-    await notifyPaid(client, userId, {
-      invoiceId: invoice.id,
-      number: invoice.number,
-      amount: match.total,
-      currency: invoice.currency,
-      paidOn: tx.occurred_on,
-    });
-  }
-
-  return { ...result, linked };
+  if (error) throw new Error("Payment settlement not confirmed");
+  const receipts = receiptSchema.parse(data);
+  const wanted = new Set(matches.map(m => `${m.transaction.id}:${m.invoice.id}`));
+  const returned = receipts.map(r => `${r.transaction_id}:${r.invoice_id}`);
+  if (new Set(returned).size !== returned.length || returned.some(pair => !wanted.has(pair))) throw new Error("Invalid settlement receipt");
+  return receipts;
 }
 
-/**
- * Write one payment→invoice link. Returns false when either write is rejected
- * (a foreign invoice, an already-linked payment) so the caller never reports a
- * link it did not make.
- *
- * Both statements carry `user_id`, so the service-role path is scoped the same
- * way the session path is scoped by RLS.
+/** Match all eligible payments, then settle at most 100 pairs in one bounded
+ * transaction. Older unmatched rows cannot hide later eligible payments.
+ * Remaining pairs stay eligible for the next pass; notifications are one
+ * best-effort insert and never undo settlement.
  */
-export async function linkPayment(
-  client: SupabaseClient,
-  userId: string,
-  input: {
-    transactionId: string;
-    invoiceId: string;
-    paidOn: string;
-    source: "auto" | "manual";
-  },
-): Promise<boolean> {
-  const { data, error } = await client
-    .from("transactions")
-    .update({
-      invoice_id: input.invoiceId,
-      matched_at: new Date().toISOString(),
-      match_source: input.source,
-    })
-    .eq("id", input.transactionId)
-    .eq("user_id", userId)
-    .is("invoice_id", null)
-    .select("id");
-  if (error || (data ?? []).length === 0) return false;
-
-  const { error: invoiceError } = await client
-    .from("invoices")
-    .update({
-      status: "paid",
-      // The day the money arrived, not the day the matcher ran.
-      paid_on: input.paidOn,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.invoiceId)
-    .eq("user_id", userId);
-  if (invoiceError) {
-    // Undo the half-written link rather than leaving a payment attached to an
-    // invoice that still reads as unpaid.
-    await client
-      .from("transactions")
-      .update({ invoice_id: null, matched_at: null, match_source: null })
-      .eq("id", input.transactionId)
-      .eq("user_id", userId);
-    return false;
+export async function runPaymentMatching(client: SupabaseClient, userId: string): Promise<RunResult> {
+  const snapshot = await readPaymentMatchingSnapshot(client, userId);
+  const open = snapshot.invoices.filter(invoice => invoice.status === "issued");
+  if (!open.length) return { matched: [], unmatched: [], scanned: 0, linked: 0 };
+  const result = matchPayments({ invoices: snapshot.invoices, totals: buildTotals(open, snapshot.items), transactions: snapshot.transactions });
+  const invoices = new Map(snapshot.invoices.map(invoice => [invoice.id, invoice]));
+  const transactions = new Map(snapshot.transactions.map(transaction => [transaction.id, transaction]));
+  const receipts = await settlePayments(client, userId, result.matched.slice(0, 100).map(match => ({
+    invoice: invoices.get(match.invoiceId)!, transaction: transactions.get(match.transactionId)!, source: "auto",
+  })));
+  const confirmed = receipts.filter(receipt => receipt.changed);
+  if (confirmed.length) {
+    const totals = new Map(result.matched.map(match => [match.invoiceId, match.total]));
+    try {
+      await client.from("notifications").insert(confirmed.map(receipt => {
+        const invoice = invoices.get(receipt.invoice_id)!;
+        return { user_id: userId, kind: "invoice-paid", source_type: "invoice", source_id: invoice.id,
+          title: `Invoice ${invoice.number} paid`, body: `${totals.get(invoice.id)!.toFixed(2)} ${invoice.currency} received on ${receipt.paid_on}.`, action_url: "/invoices" };
+      }));
+    } catch { /* Notification delivery never changes the financial result. */ }
   }
-  return true;
+  return { ...result, linked: confirmed.length };
 }
 
-/** Best effort: a failed notification must not undo a correct match. */
-async function notifyPaid(
-  client: SupabaseClient,
-  userId: string,
-  invoice: { invoiceId: string; number: string; amount: number; currency: string; paidOn: string },
-): Promise<void> {
-  try {
-    await client.from("notifications").insert({
-      user_id: userId,
-      kind: "invoice-paid",
-      source_type: "invoice",
-      source_id: invoice.invoiceId,
-      title: `Invoice ${invoice.number} paid`,
-      body: `${invoice.amount.toFixed(2)} ${invoice.currency} received on ${invoice.paidOn}.`,
-      action_url: "/invoices",
-    });
-  } catch {
-    // swallow — notifications are reporting, not the product contract
-  }
+/** A manual link is the owner's explicit settlement decision. Both rows are
+ * checked and written in the same transaction, with a canonical receipt/date.
+ */
+export async function linkPayment(client: SupabaseClient, userId: string,
+  input: { invoice: MatchingInvoice; transaction: MatchingTransaction }): Promise<Receipt | null> {
+  return (await settlePayments(client, userId, [{ ...input, source: "manual" }]))[0] ?? null;
 }

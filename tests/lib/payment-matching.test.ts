@@ -240,3 +240,16 @@ describe("matchPayments", () => {
     expect(result.matched).toHaveLength(1);
   });
 });
+
+describe("numeric settlement guards",()=>{
+ it.each([NaN,Infinity,-1,0])("does not settle a malformed or nonpositive payment (%s)",amount=>{
+  expect(matchPayments({invoices:[invoice()],totals:totals([["inv1",38115]]),transactions:[payment({amount})]}).matched).toEqual([]);
+ });
+ it.each([NaN,Infinity,-1,0])("does not settle an unavailable or nonpositive total (%s)",total=>{
+  expect(matchPayments({invoices:[invoice()],totals:totals([["inv1",total]]),transactions:[payment()]}).matched).toEqual([]);
+ });
+ it("compares integer cents at the existing one-cent tolerance",()=>{
+  expect(matchPayments({invoices:[invoice({round_total:false})],totals:totals([["inv1",100.99]]),transactions:[payment({amount:101})]}).matched).toHaveLength(1);
+  expect(matchPayments({invoices:[invoice({round_total:false})],totals:totals([["inv1",100.99]]),transactions:[payment({amount:101.01})]}).matched).toHaveLength(0);
+ });
+});

@@ -212,7 +212,8 @@ export function matchPayments(input: {
       unmatched.push({ transaction: tx, reason: "currency-mismatch", variableSymbol: symbol, invoiceId: invoice.id });
       continue;
     }
-    if (Math.abs(tx.amount - total) > amountTolerance(invoice)) {
+    if (!Number.isFinite(tx.amount) || !Number.isFinite(total) || tx.amount <= 0 || total <= 0
+      || Math.abs(Math.round(tx.amount * 100) - Math.round(total * 100)) > Math.round(amountTolerance(invoice) * 100)) {
       unmatched.push({ transaction: tx, reason: "amount-mismatch", variableSymbol: symbol, invoiceId: invoice.id });
       continue;
     }

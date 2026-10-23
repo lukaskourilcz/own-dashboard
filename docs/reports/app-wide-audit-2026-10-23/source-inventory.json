@@ -100,7 +100,8 @@
       "path": "src/app/api/cron/payment-match/route.ts",
       "lines": 81,
       "sha256": "b7ba1ae760f69c494bdb131c3c93a10b9c08a8665148823b2a109a08cfc970ce",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "1df68ee8685847a97c1dbcb2f24fd4746deef1ec7fcea881cdbc4907962a1102"
     },
     {
       "path": "src/app/api/cron/renewal-warnings/route.ts",
@@ -462,7 +463,8 @@
       "path": "src/app/api/money/payment-match/route.ts",
       "lines": 103,
       "sha256": "d0d6dbc88c30a1cda386937604ba3a05e57ee20590b13acbbe2f028d9c64bb2a",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "56e41fc2a20982da532b95b15eba37a8caa53a41862636c96f45aa2c77ba247a"
     },
     {
       "path": "src/app/api/money/rules/apply/route.ts",
@@ -684,7 +686,8 @@
       "path": "src/components/finances/payment-matches.tsx",
       "lines": 274,
       "sha256": "a1e2e5b5c188524c41d3ec79e8f3d7c1cdb3bd9655156a25967104ea037bc617",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "4c2ce3597068feac2501b63f1a407e52c3c4981bbb9c96068935ef281540fa75"
     },
     {
       "path": "src/components/finances/transaction-rules.tsx",
@@ -2631,7 +2634,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "26130647adbea7683a31ff2db73f2e9806104b150467a1980ab35de4a5adafc0"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3193,13 +3197,15 @@
       "path": "src/lib/payment-matching-server.ts",
       "lines": 226,
       "sha256": "9f2339ec270c7f83eb8bc0563722e9925444e34acc83e8c6fc6c5986b540abf5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "dedb5d539966eabbcf0e10cb861f8def4b526076a627a384fc78941ed90c4ac3"
     },
     {
       "path": "src/lib/payment-matching.ts",
       "lines": 225,
       "sha256": "c30bee4d976fc0c4b859374fafcc509075d1fd25ecbd0364022a1c25e510f56f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "a8162fe7e5626aa209c949b031f21c4149d6e445f93469588547b39a95ed8d22"
     },
     {
       "path": "src/lib/pdf-extract.ts",

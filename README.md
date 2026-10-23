@@ -190,9 +190,10 @@ The migrations, in the order they run:
 92. `20261023190841_invoice_document_transaction.sql` — prepared, unapplied; save invoice headers and line items atomically, with retry identity and stale/incomplete-edit protection.
 93. `20261023200938_atomic_knowledge_documents.sql` — prepared, unapplied; atomic prompt/resource saves, complete bounded owner collection snapshots and idempotent curated imports.
 94. `20261023210737_library_category_merge.sql` — prepared, unapplied; merge a library category and all its resources atomically, rejecting changed source membership.
+95. `20261023212535_atomic_payment_matching.sql` — prepared, unapplied; read complete matching inputs, settle payment/invoice pairs atomically and discover matching owners without REST truncation.
 
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The eight audit migrations 87–94 remain unapplied; apply them in filename order before deploying the implementation branch.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The nine audit migrations 87–95 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 

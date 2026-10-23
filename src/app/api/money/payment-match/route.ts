@@ -1,103 +1,46 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
-import { linkPayment, runPaymentMatching } from "@/lib/payment-matching-server";
-
-/**
- * The owner-facing half of payment matching: the "Match now" button and the
- * manual link on a leftover payment.
- *
- * Runs with the user's own session, so own-only RLS is the scope boundary and
- * there is no service-role client here. A manual link therefore cannot reach a
- * foreign invoice even if the id is guessed — the transactions update policy
- * checks the invoice's owner, and every statement carries `user_id` too.
- *
- * Body:
- *   { mode: "auto" }                                 run the matcher
- *   { mode: "link", transactionId, invoiceId }       link one payment by hand
- */
+import { rateLimit } from "@/lib/rate-limit";
+import { linkPayment, readPaymentMatchingSnapshot, runPaymentMatching } from "@/lib/payment-matching-server";
 
 export const dynamic = "force-dynamic";
+const inputSchema = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("auto") }),
+  z.object({ mode: z.literal("link"), transactionId: z.uuid(), invoiceId: z.uuid() }),
+]);
 
-type Body = {
-  mode?: "auto" | "link";
-  transactionId?: string;
-  invoiceId?: string;
-};
-
+/** Same-origin owner action. Snapshot identities and atomic settlement protect
+ * both manual and scheduled writes; no service credential reaches this route.
+ */
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request);
   if (csrf) return csrf;
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
-  let body: Body;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  const parsed = inputSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
+  const limited = await rateLimit(user.id, { key: "payment-match", limit: 10, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
   try {
-    body = (await request.json()) as Body;
+    const body = parsed.data;
+    if (body.mode === "link") {
+      const snapshot = await readPaymentMatchingSnapshot(supabase, user.id, body);
+      const transaction = snapshot.transactions.find(row => row.id === body.transactionId);
+      const invoice = snapshot.invoices.find(row => row.id === body.invoiceId);
+      if (!transaction || !invoice) return NextResponse.json({ error: "Not found." }, { status: 404 });
+      if (transaction.kind !== "income" || invoice.payment_method !== "bank") {
+        return NextResponse.json({ error: "An incoming transfer and bank invoice are required." }, { status: 400 });
+      }
+      const receipt = await linkPayment(supabase, user.id, { invoice, transaction });
+      if (!receipt) return NextResponse.json({ error: "The payment or invoice changed. Refresh before linking." }, { status: 409 });
+      return NextResponse.json({ ok: true, linked: 1, paidOn: receipt.paid_on });
+    }
+    const result = await runPaymentMatching(supabase, user.id);
+    return NextResponse.json({ ok: true, scanned: result.scanned, linked: result.linked, unmatched: result.unmatched.length });
   } catch {
-    return NextResponse.json({ error: "Invalid body." }, { status: 400 });
+    return NextResponse.json({ error: "Payment matching could not be confirmed. Refresh before retrying." }, { status: 500 });
   }
-
-  if (body.mode === "link") {
-    const transactionId = typeof body.transactionId === "string" ? body.transactionId : "";
-    const invoiceId = typeof body.invoiceId === "string" ? body.invoiceId : "";
-    if (!transactionId || !invoiceId) {
-      return NextResponse.json({ error: "Missing transaction or invoice." }, { status: 400 });
-    }
-
-    // Read the payment first: its date becomes the invoice's paid_on, and a
-    // payment that is already linked must not be silently re-pointed.
-    const { data: tx, error: txError } = await supabase
-      .from("transactions")
-      .select("id, kind, occurred_on, invoice_id")
-      .eq("id", transactionId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (txError) {
-      return NextResponse.json({ error: "Could not read the payment." }, { status: 500 });
-    }
-    if (!tx) return NextResponse.json({ error: "Not found." }, { status: 404 });
-    if (tx.kind !== "income") {
-      return NextResponse.json({ error: "Only an incoming payment can settle an invoice." }, { status: 400 });
-    }
-    if (tx.invoice_id) {
-      return NextResponse.json({ error: "That payment is already linked." }, { status: 409 });
-    }
-
-    const { data: invoice, error: invoiceError } = await supabase
-      .from("invoices")
-      .select("id, status")
-      .eq("id", invoiceId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (invoiceError) {
-      return NextResponse.json({ error: "Could not read the invoice." }, { status: 500 });
-    }
-    if (!invoice) return NextResponse.json({ error: "Not found." }, { status: 404 });
-
-    const written = await linkPayment(supabase, user.id, {
-      transactionId,
-      invoiceId,
-      paidOn: tx.occurred_on as string,
-      source: "manual",
-    });
-    if (!written) {
-      return NextResponse.json({ error: "Could not link the payment." }, { status: 409 });
-    }
-    return NextResponse.json({ ok: true, linked: 1, paidOn: tx.occurred_on });
-  }
-
-  const result = await runPaymentMatching(supabase, user.id);
-  return NextResponse.json({
-    ok: true,
-    scanned: result.scanned,
-    linked: result.linked,
-    unmatched: result.unmatched.length,
-  });
 }
