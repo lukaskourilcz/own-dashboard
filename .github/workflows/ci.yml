@@ -28,7 +28,13 @@ jobs:
       - name: Install ffprobe
         # The reel renderer test (tests/lib/dneskai-reel-render.test.ts) checks its MP4 with ffprobe;
         # the encoder itself is the ffmpeg-static binary from npm.
-        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg
+        # The runner's package index is usually fresh enough; a full `apt-get update` sometimes hung for the whole
+        # job timeout, so it only runs when the plain install fails, and the step gives up after a few minutes.
+        timeout-minutes: 6
+        run: |
+          sudo apt-get install -y -q --no-install-recommends ffmpeg \
+            || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg; }
+          ffprobe -version | head -1
 
       - name: Lint
         run: npm run lint
