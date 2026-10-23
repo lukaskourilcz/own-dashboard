@@ -38,6 +38,8 @@ import {
 } from "@/lib/finances";
 import { todayKey } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
+import { useNow } from "@/lib/use-now";
+import { useToast } from "@/components/ui/toast";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
@@ -90,7 +92,7 @@ const emptyTx: TxForm = {
   currency: "USD",
   category: "",
   note: "",
-  occurred_on: todayKey(),
+  occurred_on: "",
   account_id: "",
   project_id: "",
 };
@@ -164,12 +166,17 @@ export function FinancesPanel({
   const t = useDict();
   const confirm = useConfirmation();
   const locale = useDateLocale();
+  const toast = useToast();
+  const now = useNow();
+  const monthKey = now ? currentMonthKey(now) : null;
+  const monthStart = useMemo(() => monthKey ? parseISO(`${monthKey}-01`) : null, [monthKey]);
   const [txOpen, setTxOpen] = useState(false), [accountOpen, setAccountOpen] = useState(false);
   const [search, setSearch] = useState(''), [kind, setKind] = useState('all'), [accountFilter, setAccountFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(50);
   const filterId = useId();
-  const [txForm, setTxForm] = useState<TxForm>(emptyTx);
-  const [acctForm, setAcctForm] = useState<AccountForm>(emptyAccount);
+  const [txForm, setTxForm] = useState<TxForm>({ ...emptyTx, currency: displayCurrency });
+  const [dateChosen, setDateChosen] = useState(false);
+  const [acctForm, setAcctForm] = useState<AccountForm>({ ...emptyAccount, currency: displayCurrency });
   const [editingAcct, setEditingAcct] = useState<string | null>(null);
   const [editBuf, setEditBuf] = useState<{ name: string; balance: string }>({
     name: "",
@@ -180,16 +187,17 @@ export function FinancesPanel({
   const totalNet = netWorth(accounts, displayCurrency);
   const months = useMemo(
     () =>
-      monthlyTotals(transactions, displayCurrency, 6).map((m) => ({
+      (monthStart ? monthlyTotals(transactions, displayCurrency, 6, monthStart) : []).map((m) => ({
         ...m,
         // Re-derive the axis label in the active locale (lib emits English).
         label: format(parseISO(`${m.month}-01`), t.finances.monthFormat, {
           locale,
         }),
       })),
-    [transactions, displayCurrency, t, locale],
+    [transactions, displayCurrency, t, locale, monthStart],
   );
   const categories = useMemo(() => {
+    if (!monthKey) return [];
     const labelFor = (name: string) =>
       name === "Uncategorized"
         ? t.finances.categoryUncategorized
@@ -199,10 +207,9 @@ export function FinancesPanel({
     return expenseByCategory(
       transactions,
       displayCurrency,
-      subscriptions,
-      currentMonthKey(),
+      monthKey,
     ).map((c) => ({ ...c, name: labelFor(c.name) }));
-  }, [transactions, subscriptions, displayCurrency, t]);
+  }, [transactions, displayCurrency, t, monthKey]);
 
   // CREATE transaction: needs the server-generated id, so apply state in
   // onSuccess (non-optimistic). Validation stays in the submit handler.
@@ -220,7 +227,7 @@ export function FinancesPanel({
           currency: txForm.currency,
           category: txForm.category.trim() || null,
           note: txForm.note.trim() || null,
-          occurred_on: txForm.occurred_on,
+          occurred_on: txForm.occurred_on || todayKey(),
           project_id: txForm.project_id || null,
         })
         .select()
@@ -232,13 +239,10 @@ export function FinancesPanel({
       setTransactions((prev) => [tx, ...prev]);
       setTxOpen(false);
       setTxForm({ ...emptyTx, currency: txForm.currency });
+      setDateChosen(false);
       void qc.invalidateQueries({ queryKey: qk.transactions });
     },
-    onError: (e: unknown) => {
-      setError(
-        e instanceof Error ? e.message : t.finances.amountRequired,
-      );
-    },
+    onError: () => setError(t.professional.couldNotSave),
   });
 
   // Optimistic delete: drop the row from the cache immediately, roll back on
@@ -259,6 +263,7 @@ export function FinancesPanel({
     },
     onError: (_e, _id, ctx) => {
       if (ctx?.prev) setTransactions(ctx.prev);
+      toast.err(t.professional.couldNotSave);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.transactions }),
   });
@@ -283,13 +288,15 @@ export function FinancesPanel({
     },
     onSuccess: (account) => {
       setAccounts((prev) => [...prev, account]);
-      setAcctForm(emptyAccount);
+      setAcctForm({ ...emptyAccount, currency: acctForm.currency });
       setAccountOpen(false);
       void qc.invalidateQueries({ queryKey: qk.accounts });
     },
+    onError: () => toast.err(t.professional.couldNotSave),
   });
 
   function startEditAccount(a: Account) {
+    if (accountBusy) return;
     setEditingAcct(a.id);
     setEditBuf({ name: a.name, balance: String(a.balance) });
   }
@@ -316,11 +323,12 @@ export function FinancesPanel({
       setAccounts((old) =>
         old.map((a) => (a.id === id ? { ...a, ...patch } : a)),
       );
-      setEditingAcct(null);
       return { prev };
     },
+    onSuccess: (_result, { id }) => setEditingAcct(current => current === id ? null : current),
     onError: (_e, _vars, ctx) => {
       if (ctx?.prev) setAccounts(ctx.prev);
+      toast.err(t.professional.couldNotSave);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.accounts }),
   });
@@ -339,12 +347,16 @@ export function FinancesPanel({
     },
     onError: (_e, _id, ctx) => {
       if (ctx?.prev) setAccounts(ctx.prev);
+      toast.err(t.professional.couldNotSave);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.accounts }),
+    onSuccess: (_result, id) => setAccountFilter(current => current === id ? "all" : current),
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: qk.accounts }), qc.invalidateQueries({ queryKey: qk.transactions })]),
   });
+  const accountBusy = addAccountMutation.isPending || saveAccountMutation.isPending || deleteAccountMutation.isPending;
 
   function addTx(e: React.FormEvent) {
     e.preventDefault();
+    if (addTxMutation.isPending) return;
     setError(null);
     if (!txForm.amount || Number(txForm.amount) <= 0) {
       setError(t.finances.amountRequired);
@@ -354,6 +366,7 @@ export function FinancesPanel({
   }
 
   const removeTx = async (id: string) => {
+    if (removeTxMutation.isPending) return;
     if (await confirm({
       title: t.common.delete,
       description: t.common.deletePermanentlyConfirm,
@@ -365,13 +378,13 @@ export function FinancesPanel({
 
   function addAccount(e: React.FormEvent) {
     e.preventDefault();
-    if (!acctForm.name.trim()) return;
+    if (accountBusy || !acctForm.name.trim() || !Number.isFinite(Number(acctForm.balance))) return;
     addAccountMutation.mutate();
   }
 
   function saveAccount(id: string) {
     const balance = Number(editBuf.balance);
-    if (Number.isNaN(balance)) return;
+    if (accountBusy || !Number.isFinite(balance) || !editBuf.name.trim()) return;
     const patch = {
       name: editBuf.name.trim(),
       balance,
@@ -381,6 +394,7 @@ export function FinancesPanel({
   }
 
   const deleteAccount = async (id: string) => {
+    if (accountBusy) return;
     if (await confirm({
       title: t.common.delete,
       description: t.common.deletePermanentlyConfirm,
@@ -412,27 +426,34 @@ export function FinancesPanel({
                       className="group flex items-center justify-between gap-2 px-2 py-2 rounded-md row-hover"
                     >
                       {editing ? (
-                        <div className="flex-1 flex gap-1 items-center">
+                        <div className="flex flex-1 flex-wrap items-center gap-1">
                           <Input
+                            aria-label={t.finances.accountNamePlaceholder}
+                            required
+                            maxLength={200}
+                            disabled={accountBusy}
                             value={editBuf.name}
                             onChange={(e) =>
                               setEditBuf({ ...editBuf, name: e.target.value })
                             }
-                            className="h-7 flex-1 min-w-0 text-xs"
+                            className="h-11 flex-1 min-w-24 text-xs md:h-8"
                           />
                           <Input
                             type="number"
                             step="0.01"
+                            aria-label={t.finances.balancePlaceholder}
+                            disabled={accountBusy}
                             value={editBuf.balance}
                             onChange={(e) =>
                               setEditBuf({ ...editBuf, balance: e.target.value })
                             }
-                            className="h-7 w-24 text-xs"
+                            className="h-11 w-24 text-xs md:h-8"
                           />
                           <Button
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => saveAccount(a.id)}
+                            disabled={accountBusy || !editBuf.name.trim()}
                             aria-label={t.common.save}
                           >
                             <Check className="h-3.5 w-3.5 text-success" />
@@ -460,12 +481,13 @@ export function FinancesPanel({
                             <span className="text-sm tabular text-foreground-muted">
                               {formatCurrency(a.balance, a.currency)}
                             </span>
-                            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex opacity-100 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                               <Tooltip content={t.common.edit}>
                                 <Button
                                   size="icon-sm"
                                   variant="ghost"
                                   onClick={() => startEditAccount(a)}
+                                  disabled={accountBusy}
                                   aria-label={t.common.edit}
                                 >
                                   <Pencil className="h-3 w-3" />
@@ -476,6 +498,7 @@ export function FinancesPanel({
                                   size="icon-sm"
                                   variant="ghost"
                                   onClick={() => deleteAccount(a.id)}
+                                  disabled={accountBusy}
                                   aria-label={t.common.delete}
                                 >
                                   <Trash2 className="h-3 w-3 text-destructive" />
@@ -533,7 +556,7 @@ export function FinancesPanel({
                               ? t.finances.income
                               : t.finances.expense)}
                         </p>
-                        <p className="text-[11px] text-foreground-subtle tabular">
+                        <p className="text-[11px] text-foreground-subtle tabular [overflow-wrap:anywhere]">
                           {tx.occurred_on}
                           {tx.project_id
                             ? ` · ${projects.find((project) => project.id === tx.project_id)?.name ?? t.finances.project}`
@@ -559,6 +582,7 @@ export function FinancesPanel({
                           size="icon-sm"
                           variant="ghost"
                           onClick={() => removeTx(tx.id)}
+                          disabled={removeTxMutation.isPending}
                           aria-label={t.common.delete}
                           className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                         >
@@ -578,7 +602,7 @@ export function FinancesPanel({
             <CardTitle>{t.finances.thisMonthByCategory}</CardTitle>
           </CardHeader>
           <CardContent>
-            {categories.length === 0 ? (
+            {!monthStart ? <Skeleton className="h-48" /> : categories.length === 0 ? (
               <EmptyState
                 title={t.finances.nothingThisMonth}
                 description={t.finances.categorizeHint}
@@ -621,7 +645,7 @@ export function FinancesPanel({
             <CardTitle>{t.finances.last6Months}</CardTitle>
           </CardHeader>
           <CardContent>
-            {months.every((m) => m.income === 0 && m.expense === 0) ? (
+            {!monthStart ? <Skeleton className="h-52" /> : months.every((m) => m.income === 0 && m.expense === 0) ? (
               <EmptyState
                 title={t.finances.noTransactionsYet}
                 description={t.finances.addFewTransactions}
@@ -642,7 +666,7 @@ export function FinancesPanel({
   return <div className="space-y-4" data-testid={`finance-${view}`}>
     <PageHeader title={view === 'overview' ? t.finances.title : t.nav.sections[view]}
       description={view === 'overview' ? t.finances.description : view === 'accounts' ? t.finances.accountsDescription : view === 'transactions' ? t.finances.transactionsDescription : t.finances.categoriesDescription}
-      action={view !== 'categories' && <div className="flex gap-2">{view !== 'transactions' && <Button onClick={() => setAccountOpen(true)}><Plus />{t.finances.addAccount}</Button>}{view !== 'accounts' && <Button onClick={() => setTxOpen(true)}><Plus />{t.finances.addTransaction}</Button>}</div>} />
+      action={view !== 'categories' && <div className="flex gap-2">{view !== 'transactions' && <Button onClick={() => setAccountOpen(true)}><Plus />{t.finances.addAccount}</Button>}{view !== 'accounts' && <Button onClick={() => { setError(null); if (!dateChosen) setTxForm(current => ({ ...current, occurred_on: todayKey() })); setTxOpen(true); }}><Plus />{t.finances.addTransaction}</Button>}</div>} />
     {view === 'accounts' && <><p className="text-sm text-foreground-muted">{t.finances.netWorth}: <strong className="tabular text-foreground">{formatCurrency(totalNet, displayCurrency)}</strong></p><div className="grid items-start gap-4 lg:grid-cols-2">{accountsContent}<BankSync transactions={transactions} projects={projects} subscriptions={subscriptions} /></div></>}
     {view === 'transactions' && <>
       <div role="search" className="flex flex-wrap gap-2">
@@ -679,19 +703,19 @@ export function FinancesPanel({
                 icon={ArrowUpRight}
                 tone="success"
                 label={t.finances.income}
-                value={formatCurrency(thisMonth.income, displayCurrency)}
+                value={monthStart ? formatCurrency(thisMonth.income, displayCurrency) : "—"}
               />
               <StatTile
                 icon={ArrowDownRight}
                 tone="destructive"
                 label={t.finances.expense}
-                value={formatCurrency(thisMonth.expense, displayCurrency)}
+                value={monthStart ? formatCurrency(thisMonth.expense, displayCurrency) : "—"}
               />
               <StatTile
                 icon={Wallet}
                 tone="neutral"
                 label={t.finances.net}
-                value={formatCurrency(thisMonthNet, displayCurrency)}
+                value={monthStart ? formatCurrency(thisMonthNet, displayCurrency) : "—"}
               />
             </div>
           </div>
@@ -713,7 +737,10 @@ export function FinancesPanel({
               onSubmit={addAccount}
               className="space-y-3"
             >
+              <fieldset disabled={accountBusy} aria-label={t.finances.addAccount} className="space-y-3">
               <Input
+                required
+                maxLength={200}
                 placeholder={t.finances.accountNamePlaceholder}
                 aria-label={t.finances.accountNamePlaceholder}
                 value={acctForm.name}
@@ -749,16 +776,20 @@ export function FinancesPanel({
                 variant="outline"
                 size="sm"
                 className="w-full"
+                disabled={accountBusy || !acctForm.name.trim()}
               >
                 <Plus className="h-3.5 w-3.5" /> {t.finances.addAccount}
               </Button>
+              </fieldset>
             </form>
     </DialogContent></Dialog>
     <Dialog open={txOpen} onOpenChange={setTxOpen}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>{t.finances.addTransaction}</DialogTitle></DialogHeader>
 <form onSubmit={addTx} className="space-y-3">
+              <fieldset disabled={addTxMutation.isPending} aria-label={t.finances.addTransaction} className="space-y-3">
               <div className="grid grid-cols-2 gap-2 p-0.5 rounded-md bg-surface-muted">
                 <button
                   type="button"
+                  aria-pressed={txForm.kind === "expense"}
                   onClick={() => setTxForm({ ...txForm, kind: "expense" })}
                   className={
                     "inline-flex items-center justify-center gap-1.5 rounded text-xs font-medium py-1.5 transition-colors " +
@@ -771,6 +802,7 @@ export function FinancesPanel({
                 </button>
                 <button
                   type="button"
+                  aria-pressed={txForm.kind === "income"}
                   onClick={() => setTxForm({ ...txForm, kind: "income" })}
                   className={
                     "inline-flex items-center justify-center gap-1.5 rounded text-xs font-medium py-1.5 transition-colors " +
@@ -826,10 +858,12 @@ export function FinancesPanel({
                 <Input
                   id="tx-date"
                   type="date"
-                  value={txForm.occurred_on}
-                  onChange={(e) =>
-                    setTxForm({ ...txForm, occurred_on: e.target.value })
-                  }
+                  value={txForm.occurred_on || (now ? todayKey(now) : "")}
+                  required
+                  onChange={(e) => {
+                    setDateChosen(true);
+                    setTxForm({ ...txForm, occurred_on: e.target.value });
+                  }}
                 />
               </div>
               {accounts.length > 0 && (
@@ -872,10 +906,11 @@ export function FinancesPanel({
                   rows={2}
                 />
               </div>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              <Button type="submit" className="w-full">
+              {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={addTxMutation.isPending}>
                 <Plus className="h-3.5 w-3.5" /> {t.common.add}
               </Button>
+              </fieldset>
             </form>
     </DialogContent></Dialog>
   </div>;

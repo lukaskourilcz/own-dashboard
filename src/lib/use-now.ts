@@ -14,12 +14,20 @@ function notifyAll(): void {
   for (const cb of subscribers) cb();
 }
 
+function refreshVisibleClock(): void {
+  if (document.visibilityState === "hidden") return;
+  snapshot = Date.now();
+  notifyAll();
+}
+
 function subscribe(cb: () => void): () => void {
   const resuming = subscribers.size === 0;
   subscribers.add(cb);
   if (resuming) {
     snapshot = Date.now();
     queueMicrotask(notifyAll);
+    window.addEventListener("focus", refreshVisibleClock);
+    document.addEventListener("visibilitychange", refreshVisibleClock);
   }
   if (!timerId) {
     timerId = setInterval(() => {
@@ -32,6 +40,8 @@ function subscribe(cb: () => void): () => void {
     if (subscribers.size === 0 && timerId) {
       clearInterval(timerId);
       timerId = null;
+      window.removeEventListener("focus", refreshVisibleClock);
+      document.removeEventListener("visibilitychange", refreshVisibleClock);
     }
   };
 }

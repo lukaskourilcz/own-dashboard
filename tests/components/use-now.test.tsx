@@ -25,3 +25,11 @@ it('shares one timer across visible consumers and releases it after the last unm
   const times=host.querySelectorAll('time');expect(times[0].textContent).toBe(times[1].textContent);
   act(() => root.render(null));expect(vi.getTimerCount()).toBe(0);
 });
+it('refreshes an already-mounted destination immediately when the window regains focus', async () => {
+  vi.setSystemTime(new Date('2026-10-23T20:00:00Z'));
+  await act(async () => root.render(<Clock />));
+  vi.setSystemTime(new Date('2026-10-24T08:00:00Z'));
+  act(() => window.dispatchEvent(new Event('focus')));
+  expect(host.textContent).toBe('2026-10-24T08:00:00.000Z');
+  expect(vi.getTimerCount()).toBe(1);
+});

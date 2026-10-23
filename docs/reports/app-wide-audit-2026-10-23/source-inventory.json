@@ -657,7 +657,8 @@
       "path": "src/components/cost-overview.tsx",
       "lines": 278,
       "sha256": "aac333f17e7b1378c0baad542056a02bd2a6a23fb1bcf75b258a05fb1bdba78f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "aac333f17e7b1378c0baad542056a02bd2a6a23fb1bcf75b258a05fb1bdba78f"
     },
     {
       "path": "src/components/dashboard-shell.tsx",
@@ -1162,7 +1163,8 @@
       "path": "src/components/panels/finances-panel.tsx",
       "lines": 882,
       "sha256": "2e6ea9a3677e49cc0faf0f928c361debf734543df1bf231620ecfb765b74c6ea",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8ff3656b06ea5f23f07b107d4da4c983962db63c4644721240edeecf508897d0"
     },
     {
       "path": "src/components/panels/freelance-platforms.tsx",
@@ -1780,7 +1782,8 @@
       "path": "src/lib/finances.ts",
       "lines": 75,
       "sha256": "6192331502af54e6f4c25c3150ba69bfbae4cc7fd1a78b7f1b3159700780fcb3",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "85f7419ef8a81809e44368f43db8fbe4f3758e5685bfeaba7aee0545b87310f7"
     },
     {
       "path": "src/lib/freelance.ts",
@@ -3384,7 +3387,7 @@
       "lines": 44,
       "sha256": "c855009ac88015b173e6bf19b05703474ec90d1901c30710d53a6910b4f02efd",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "283ddb91b08e9cd15829e76b98fa1da45e0c3c1908cc7a4a8773514888ca43c0"
+      "reviewedSha256": "556a07837c51ea5c0a217c2466ae3bb6a0f47901f8b7570d782d65eebb1cdf95"
     },
     {
       "path": "src/lib/use-prefs.ts",
