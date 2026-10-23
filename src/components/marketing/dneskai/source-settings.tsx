@@ -2,15 +2,18 @@
 
 import { useId, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
+import { useDict } from '@/lib/i18n';
 import { useGuardedNavigation } from '@/components/navigation-guard';
 import { dneskaiSourceList } from '@/lib/i18n/sections/dneskai-source-list';
 import { dneskaiDailyMix } from '@/lib/i18n/sections/dneskai-daily-mix';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 import { cn } from '@/lib/utils';
 
-const Sources = dynamic(() => import('../dneskai-source-list').then(module => module.DneskaiSourceList));
-const DailyMix = dynamic(() => import('../dneskai-daily-mix').then(module => module.DneskaiDailyMixPanel));
-const Music = dynamic(() => import('../dneskai-audio-library').then(module => module.DneskaiAudioLibrary));
+function Loading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; }
+
+const Sources = dynamic(() => import('../dneskai-source-list').then(module => module.DneskaiSourceList), { loading: Loading });
+const DailyMix = dynamic(() => import('../dneskai-daily-mix').then(module => module.DneskaiDailyMixPanel), { loading: Loading });
+const Music = dynamic(() => import('../dneskai-audio-library').then(module => module.DneskaiAudioLibrary), { loading: Loading });
 const sections = ['sources', 'mix', 'music'] as const;
 type Section = typeof sections[number];
 function read(): Section {
@@ -46,8 +49,8 @@ export function DneskaiSourceSettings({ projectId, lang, preview = false }: { pr
     </div>
     <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${active}`}>
       {active === 'sources' && <Sources projectId={projectId} lang={lang} preview={preview} />}
-      {active === 'mix' && <DailyMix projectId={projectId} lang={lang} preview={preview} />}
-      {active === 'music' && <Music lang={lang} preview={preview} />}
+      {active === 'mix' && <DailyMix projectId={projectId} lang={lang} preview={preview} showDisabled />}
+      {active === 'music' && <Music lang={lang} preview={preview} showDisabled />}
     </div>
   </div>;
 }

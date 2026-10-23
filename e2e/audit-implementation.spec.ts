@@ -193,6 +193,11 @@ for (const lang of ['en', 'cs'] as const) test(`DNESKAi implementation evidence 
       for (const tab of await page.getByTestId('dneskai-source-settings').getByRole('tab').all()) expect((await tab.boundingBox())!.height).toBeGreaterThanOrEqual(44);
       if (slug === 'mix') for (const field of await page.getByTestId(panel).getByRole('combobox').all()) expect((await field.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
+    if (slug === 'mix') {
+      const control = await page.getByTestId(panel).getByRole('combobox').first().boundingBox();
+      const save = await page.getByTestId(panel).getByRole('button', { name: dneskaiDailyMix[lang].save, exact: true }).boundingBox();
+      expect(save!.height).toBe(control!.height);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: info.outputPath(`dneskai-${slug}-${lang}-${theme}-${width}.png`) });
   }

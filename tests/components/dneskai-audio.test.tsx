@@ -165,3 +165,10 @@ it('resolves a saved disabled selection outside the first page without replacing
   expect(container.querySelector(`option[value="${selected}"]`)?.textContent).toContain('Saved inactive');
   expect(onChange).not.toHaveBeenCalled();
 });
+
+
+it('explains disabled Reels on the direct Music destination', async () => {
+  library(null); render(<DneskaiAudioLibrary lang="en" showDisabled />); await settle();
+  expect(container.querySelector('[role="status"]')?.textContent).toBe(dneskaiAudio.en.reelsOff);
+  expect(container.querySelector('form')).toBeNull();
+});

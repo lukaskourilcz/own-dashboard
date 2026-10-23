@@ -78,3 +78,6 @@ The canonical-route Back test exposed listener ordering that the synthetic histo
 
 
 Four actual-browser regressions now pass for canonical Back/Forward and unchanged failed-note retry on desktop and mobile (12.3 s, local dev build). The latter exposed a cramped mobile Notes header: title/save status now form their own row and secondary controls wrap below, so the failure remains visible. The navigation helper also waits for the selected language’s primary button instead of checking its count during hydration. Final optimized-build verification follows.
+
+
+Direct Daily mix/Music destinations now show a named disabled state when their server feature is off, rather than a blank tab. Daily mix also exposes loading and explicit read Retry; section chunks use one loading message. The embedded components retain their existing hidden-when-off default for other callers. Twenty-four targeted component/documentation tests passed, including the two direct-destination disabled-state cases; focused lint and type checks passed.

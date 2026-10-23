@@ -17,7 +17,7 @@ const COUNTS = [0, 1, 2, 3, 4] as const;
  * Zdroje → Denní mix (#156): news and education posts a day and the active times. Renders nothing while the server
  * has the mix off; in the preview it shows the default and saves nothing.
  */
-export function DneskaiDailyMixPanel({ projectId, lang, preview = false }: { projectId: string; lang: Lang; preview?: boolean }) {
+export function DneskaiDailyMixPanel({ projectId, lang, preview = false, showDisabled = false }: { projectId: string; lang: Lang; preview?: boolean; showDisabled?: boolean }) {
   const t = dneskaiDailyMix[lang];
   const key = [...qk.dneskaiDailyMix, projectId, preview];
   const client = useQueryClient();
@@ -36,8 +36,9 @@ export function DneskaiDailyMixPanel({ projectId, lang, preview = false }: { pro
   const tooFew = !!draft && posts > draft.slots.length;
   useUnsavedDraft({ dirty: !preview && !!draft && !!query.data && JSON.stringify(draft) !== JSON.stringify(query.data.mix), canSave: !save.isPending && !tooFew,
     save: async () => { if (!draft || tooFew || preview) return false; try { await save.mutateAsync(draft); return true; } catch { return false; } } });
-  if (query.data === null) return null;
-  if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
+  if (query.data === null) return showDisabled ? <p role="status" className="text-sm text-foreground-muted">{t.disabled}</p> : null;
+  if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
+  if (query.isError) return <div role="alert"><p className="text-sm text-risk">{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t.retry}</Button></div>;
   if (!draft || !query.data) return null;
   const toggle = (time: DneskaiDailyMixTime, on: boolean) => setDraft({ ...draft, slots: on ? dneskaiActiveSlotTimes({ slots: [...draft.slots, time] }) : draft.slots.filter((item) => item !== time) });
   const select = (id: string, label: string, value: number, change: (value: number) => void) => <label htmlFor={id} className="flex min-w-0 flex-col gap-1 text-sm">
@@ -66,7 +67,7 @@ export function DneskaiDailyMixPanel({ projectId, lang, preview = false }: { pro
         {tooFew && <p role="alert" id={problemId} className="text-xs text-risk">{t.tooFew(posts, draft.slots.length)}</p>}
       </fieldset>
       <div className="flex flex-wrap items-center gap-3 lg:max-w-40 lg:pt-6">
-        <Button type="submit" size="sm" disabled={preview || tooFew || save.isPending}>{save.isPending ? t.saving : t.save}</Button>
+        <Button type="submit" disabled={preview || tooFew || save.isPending}>{save.isPending ? t.saving : t.save}</Button>
         <p role="status" className="text-sm empty:hidden">{notice}</p>
       </div>
     </form>

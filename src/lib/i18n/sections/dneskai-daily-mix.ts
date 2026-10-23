@@ -1,6 +1,6 @@
 /** Zdroje → Denní mix (#156). Every string exists in English and Czech with the same meaning. */
 const en = {
-  title: 'Daily mix',
+  title: 'Daily mix', loading: 'Loading the daily mix…', disabled: 'Daily mix settings are not enabled for this workspace.', retry: 'Retry',
   intro: 'How many posts a day, and at which times. The night proposes three topics for each post, and an approved topic takes the nearest free active time.',
   news: 'News posts a day',
   education: 'Education posts a day',
@@ -15,7 +15,7 @@ const en = {
   unavailable: 'The daily mix could not be loaded.',
 };
 const cs: typeof en = {
-  title: 'Denní mix',
+  title: 'Denní mix', loading: 'Načítám denní mix…', disabled: 'Nastavení denního mixu není pro tento projekt zapnuté.', retry: 'Zkusit znovu',
   intro: 'Kolik příspěvků denně a v kolik hodin. Noc navrhne ke každému příspěvku tři náměty a schválený námět dostane nejbližší volný aktivní čas.',
   news: 'Zpravodajských příspěvků denně',
   education: 'Vzdělávacích příspěvků denně',

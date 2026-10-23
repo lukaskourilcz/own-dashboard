@@ -51,3 +51,11 @@ describe('Zdroje → Denní mix (#156)', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 });
+
+
+it('explains a disabled mix on its direct destination instead of leaving a blank panel', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => respond(404, { error: 'not-found' })));
+  act(() => root.render(<QueryClientProvider client={client}><DneskaiDailyMixPanel projectId={project} lang="en" showDisabled /></QueryClientProvider>)); await wait();
+  expect(container.querySelector('[role="status"]')?.textContent).toBe(t.disabled);
+  expect(container.querySelector('form')).toBeNull();
+});

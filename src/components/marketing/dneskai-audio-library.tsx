@@ -14,17 +14,17 @@ import { DneskaiAudioRequestError, dneskaiAudioFileProblem, useDneskaiAudioLibra
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from './dneskai/audio-preview';
 
 type Lang = 'en' | 'cs';
-type Props = { lang: Lang; preview?: boolean };
+type Props = { lang: Lang; preview?: boolean; showDisabled?: boolean };
 
 /**
  * Zdroje → Hudba (#164): the tracks a Reel may play, each with its source, licence note and source page, a switch
  * for the rotation and a 10-second preview, plus the upload form. Renders nothing while Reels are switched off.
  */
-export function DneskaiAudioLibrary({ lang, preview = false }: Props) {
+export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = false }: Props) {
   const t = dneskaiAudio[lang];
   const query = useDneskaiAudioLibrary(preview);
   const player = useDneskaiAudioPreview();
-  if (query.data === null) return null;
+  if (query.data === null) return showDisabled ? <p role="status" className="text-sm text-foreground-muted">{t.reelsOff}</p> : null;
   return <section aria-labelledby="dneskai-audio-title" className="min-w-0 space-y-4" data-testid="dneskai-audio-library">
     <div className="min-w-0"><h2 id="dneskai-audio-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}

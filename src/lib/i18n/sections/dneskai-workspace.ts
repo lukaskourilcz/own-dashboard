@@ -63,7 +63,7 @@ const en = {
     lastCheck: 'Last check', notChecked: 'Not checked yet',
     failure: (count: number) => count === 1 ? '1 reply' : `${count} replies`,
   },
-  published: { title: 'Posts', intro: 'Every post with its state. Published ones carry their link to Instagram.', empty: 'No posts yet', emptyFilter: 'No post in this group',
+  published: { title: 'Posts', intro: 'Posts on this review page and recent publication context. Published posts carry their Instagram link.', empty: 'No posts yet', emptyFilter: 'No post in this group',
     filters: { label: 'Show posts', all: 'All', waiting: 'Waiting', scheduled: 'Scheduled', published: 'Published', problems: 'Errors' }, openLab: 'Open in the Lab', openLabName: (title: string) => `Open in the Lab: ${title}`,
     open: 'Open on Instagram', noLink: 'No public link recorded', at: 'Published', planned: 'Planned', account: 'Account', cover: (title: string) => `Cover of “${title}”` },
   costs: {
@@ -155,7 +155,7 @@ const cs: typeof en = {
     lastCheck: 'Naposledy zkontrolováno', notChecked: 'Zatím nezkontrolováno',
     failure: (count: number) => count === 1 ? '1 odpověď' : count < 5 ? `${count} odpovědi` : `${count} odpovědí`,
   },
-  published: { title: 'Příspěvky', intro: 'Všechny příspěvky a jejich stav. Publikované mají odkaz na Instagram.', empty: 'Zatím žádné příspěvky', emptyFilter: 'V této skupině není žádný příspěvek',
+  published: { title: 'Příspěvky', intro: 'Příspěvky z této stránky ke kontrole a nedávný kontext publikací. Publikované mají odkaz na Instagram.', empty: 'Zatím žádné příspěvky', emptyFilter: 'V této skupině není žádný příspěvek',
     filters: { label: 'Zobrazit příspěvky', all: 'Vše', waiting: 'Čeká', scheduled: 'Naplánované', published: 'Publikované', problems: 'Chyby' }, openLab: 'Otevřít v Labu', openLabName: (title: string) => `Otevřít v Labu: ${title}`,
     open: 'Otevřít na Instagramu', noLink: 'Veřejný odkaz není zaznamenaný', at: 'Publikováno', planned: 'Plán', account: 'Účet', cover: (title: string) => `Titulní slide příspěvku „${title}“` },
   costs: {
