@@ -15,7 +15,7 @@ import { MARKETING_PUBLICATION_REQUEUE_RESULTS, type MarketingPublicationRequeue
  */
 export class DneskaiWorkspaceRequestError extends Error {
   /** `revisionId`: the version an edit saved before it failed (502 render-attach-failed), so the editor can move to it. */
-  constructor(readonly code: string, readonly status: number, readonly revisionId: string | null = null) { super(code); this.name = 'DneskaiWorkspaceRequestError'; }
+  constructor(readonly code: string, readonly status: number, readonly revisionId: string | null = null, readonly retryAfterMs = 0) { super(code); this.name = 'DneskaiWorkspaceRequestError'; }
 }
 
 export const DneskaiEditResultSchema = z.strictObject({
@@ -75,7 +75,11 @@ async function failure(response: Response): Promise<DneskaiWorkspaceRequestError
     code = reason ?? (typeof body.error === 'string' && codeShape.test(body.error) ? body.error : code);
     revisionId = z.uuid().safeParse(body.id).data ?? null;
   } catch { /* the generic code stays */ }
-  return new DneskaiWorkspaceRequestError(response.status === 429 ? 'rate-limited' : code, response.status, revisionId);
+  const retryAfter = response.headers.get('Retry-After');
+  const seconds = retryAfter && /^\d+(?:\.\d+)?$/.test(retryAfter.trim()) ? Number(retryAfter) * 1000 : NaN;
+  const deadline = retryAfter ? Date.parse(retryAfter) : NaN;
+  const wait = Number.isFinite(seconds) ? seconds : Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : 0;
+  return new DneskaiWorkspaceRequestError(response.status === 429 ? 'rate-limited' : code, response.status, revisionId, wait);
 }
 async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
   const response = await fetch(url, { cache: 'no-store', signal });

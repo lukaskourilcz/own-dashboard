@@ -139,6 +139,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const [expired] = useState(() => dneskaiScheduleExpired(post));
   const [fit, setFit] = useState<DneskaiFitState>({ status: 'idle', result: null });
   const [previewMemory, setPreviewMemory] = useState<ReadonlyMap<string, DneskaiStagePreview>>(() => new Map());
+  const [retryClock, setRetryClock] = useState(() => Date.now());
   const busy = busyAction !== null;
   // The slide on show is a slide of the draft, which can have more slides than the saved version.
   const slide = Math.max(0, Math.min(requested, draft.slides.length - 1));
@@ -162,6 +163,16 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const preview: DneskaiStagePreview | null = !stageSlides[slide]?.draft ? null
     : invalidDraft ? { slide, status: 'unavailable', image: null, code: 'deck-edit-invalid' }
       : previewKey ? previewMemory.get(previewKey) ?? { slide, status: 'loading', image: null, code: null } : { slide, status: 'unavailable', image: null, code: null };
+  const retryAt = preview?.retryAt ?? 0;
+  useEffect(() => {
+    if (!retryAt || retryClock >= retryAt) return;
+    const timer = window.setTimeout(() => setRetryClock(Date.now()), Math.min(2_147_483_647, Math.max(0, retryAt - Date.now())));
+    return () => window.clearTimeout(timer);
+  }, [retryAt, retryClock]);
+  const retryPreview = previewKey && !invalidDraft && preview?.status === 'unavailable' ? () => {
+    if (Date.now() < retryAt) return;
+    setPreviewMemory((before) => { const next = new Map(before); next.delete(previewKey); return next; });
+  } : undefined;
   const remembered = previewKey ? previewMemory.has(previewKey) : true;
   useEffect(() => {
     if (!previewKey || remembered) return;
@@ -179,8 +190,8 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         if (!abort.signal.aborted) keep({ slide: index, status: result.status, image: result.image, code: result.problems.find((problem) => problem.blocking)?.code ?? null });
       } catch (failure) {
         if (abort.signal.aborted) return;
-        // Kept for this exact draft: the next change asks again (a rate limit or network failure included).
-        keep({ slide: index, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null });
+        // Keep the failed state until an explicit retry or edit; never retry in a loop.
+        keep({ slide: index, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null, retryAt: failure instanceof DneskaiWorkspaceRequestError ? Date.now() + failure.retryAfterMs : 0 });
       }
     }, 450);
     return () => { window.clearTimeout(timer); abort.abort(); };
@@ -282,7 +293,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
             {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
         </section>}
         {dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
-        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
+        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} onRetryPreview={retryPreview} retryBlocked={retryClock < retryAt} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
       <div className="min-w-0 space-y-5">
         <DneskaiKitTiles kits={lab.kits} chosen={draft.kit} onChoose={chooseKit} lang={props.lang} />

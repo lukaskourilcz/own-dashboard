@@ -220,3 +220,30 @@ describe('channel control (#170)', () => {
     expect(container.querySelector('[data-testid="dneskai-lab"]')).not.toBeNull();
   });
 });
+
+
+describe('Draft preview recovery', () => {
+  it('retries an unchanged valid draft after the server cooldown, without retrying automatically', async () => {
+    vi.spyOn(demoDneskaiWorkspaceApi, 'fit').mockReturnValue(new Promise(() => undefined));
+    const render = vi.spyOn(demoDneskaiWorkspaceApi, 'renderPreview')
+      .mockRejectedValueOnce(new DneskaiWorkspaceRequestError('rate-limited', 429, null, 300))
+      .mockResolvedValue({ schemaVersion: 'dneskai-preview/1', draft: true, slide: 0, status: 'rendered', image: 'data:image/webp;base64,AA==', problems: [] });
+    await show('dneskai-review');
+    const inspector = container.querySelector<HTMLElement>('[data-testid="dneskai-slide-inspector"]')!;
+    const label = [...inspector.querySelectorAll('label')].find((item) => item.textContent?.startsWith(dneskaiLab.en.slide.fields.headline))!;
+    type(document.getElementById(label.htmlFor) as HTMLInputElement, 'Benchmark čtěte s metodikou');
+    await wait(500);
+    const button = () => [...container.querySelectorAll('button')].find((item) => item.textContent === dneskaiLab.en.draft.retry || item.textContent === dneskaiLab.en.draft.retryWait)!;
+    expect(button().disabled).toBe(true);
+    act(() => button().click());
+    expect(render).toHaveBeenCalledTimes(1);
+    await wait(350);
+    expect(button().disabled).toBe(false);
+    expect(render).toHaveBeenCalledTimes(1);
+    act(() => button().click());
+    await wait(500);
+    expect(render).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[data-testid="dneskai-stage-draft-image"]')).not.toBeNull();
+    expect(button()).toBeUndefined();
+  });
+});

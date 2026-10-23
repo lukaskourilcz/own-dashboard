@@ -80,3 +80,13 @@ describe('DNESKAi workspace client: decisions 6, 8 and 9', () => {
     await expect(liveDneskaiWorkspaceApi.generateNow(id)).rejects.toMatchObject({ code: 'dneskai-daily-generation-budget-exhausted' });
   });
 });
+
+
+it('preserves numeric and HTTP-date Retry-After cooldowns without exposing response text', async () => {
+  stub(Response.json({ error: 'rate-limited' }, { status: 429, headers: { 'Retry-After': '15' } }));
+  await expect(liveDneskaiWorkspaceApi.decide('00000000-0000-4000-8000-000000000002', 'skipped')).rejects.toMatchObject({ retryAfterMs: 15000 });
+  const deadline = new Date(Date.now() + 30000).toUTCString();
+  stub(new Response('', { status: 503, headers: { 'Retry-After': deadline } }));
+  try { await liveDneskaiWorkspaceApi.decide('00000000-0000-4000-8000-000000000002', 'skipped'); }
+  catch (error) { expect((error as DneskaiWorkspaceRequestError).retryAfterMs).toBeGreaterThan(28000); }
+});
