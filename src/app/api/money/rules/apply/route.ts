@@ -2,14 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import {
-  parseActions,
-  parseConditions,
+  parseRule,
   parseRules,
-  ruleChanges,
-  ruleMatches,
+  createRuleEvaluator,
   usableRules,
   type OwnedIds,
-  type RuleStage,
   type TransactionRule,
 } from "@/lib/transaction-rules";
 
@@ -63,21 +60,10 @@ type Body = {
   };
 };
 
-function draftRule(draft: NonNullable<Body["draft"]>): TransactionRule {
-  const stage =
-    draft.stage === "pre" || draft.stage === "post" ? (draft.stage as RuleStage) : "default";
-  return {
-    id: "draft",
-    user_id: "",
-    name: "",
-    stage,
-    conditions: parseConditions(draft.conditions),
-    actions: parseActions(draft.actions),
-    sort_order: 0,
-    enabled: true,
-    created_at: "",
-    updated_at: "",
-  };
+function draftRule(draft: NonNullable<Body["draft"]>): TransactionRule | null {
+  return parseRule({ id: "draft", user_id: "", name: "", stage: draft.stage ?? "default",
+    conditions: draft.conditions, actions: draft.actions, sort_order: 0, enabled: true,
+    created_at: "", updated_at: "" });
 }
 
 export async function POST(request: Request) {
@@ -99,6 +85,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid body." }, { status: 400 });
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body)
+    || (body.mode !== undefined && body.mode !== "apply" && body.mode !== "preview")
+    || (body.ruleId !== undefined && (typeof body.ruleId !== "string" || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(body.ruleId)))
+    || (body.draft !== undefined && (!body.draft || typeof body.draft !== "object" || Array.isArray(body.draft)))
+    || (body.draft && body.ruleId)) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
   const mode = body.mode === "apply" ? "apply" : "preview";
   if (mode === "apply" && body.draft) {
     return NextResponse.json(
@@ -110,7 +101,9 @@ export async function POST(request: Request) {
   // Which rules to evaluate.
   let candidates: TransactionRule[];
   if (body.draft) {
-    candidates = [draftRule(body.draft)];
+    const candidate = draftRule(body.draft);
+    if (!candidate || candidate.conditions.length === 0) return NextResponse.json({ error: "Invalid rule." }, { status: 400 });
+    candidates = [candidate];
   } else {
     const query = supabase.from("transaction_rules").select("*").eq("user_id", user.id);
     const { data, error } = body.ruleId
@@ -125,7 +118,9 @@ export async function POST(request: Request) {
     if (body.ruleId && (data ?? []).length === 0) {
       return NextResponse.json({ error: "Not found." }, { status: 404 });
     }
-    candidates = parseRules(data ?? []).rules;
+    const parsed = parseRules(data);
+    if (!Array.isArray(data) || parsed.dropped > 0) return NextResponse.json({ error: "Could not read complete rules." }, { status: 500 });
+    candidates = parsed.rules;
   }
 
   // Applying only ever runs rules that are enabled and actually do something.
@@ -144,6 +139,7 @@ export async function POST(request: Request) {
   }
 
   const owned = await ownedIds(supabase, user.id);
+  const evaluator = createRuleEvaluator(rules, owned);
 
   let scanned = 0;
   let matched = 0;
@@ -167,9 +163,9 @@ export async function POST(request: Request) {
     scanned += rows.length;
 
     for (const row of rows) {
-      if (!rules.some((rule) => ruleMatches(row, rule))) continue;
+      const { matched: hit, changes } = evaluator.evaluate(row);
+      if (!hit) continue;
       matched++;
-      const changes = ruleChanges(row, rules, owned);
       if (Object.keys(changes).length === 0) continue;
       const key = JSON.stringify(changes);
       const ids = byChange.get(key);

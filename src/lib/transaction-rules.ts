@@ -14,8 +14,8 @@
  * given transaction and rule set always produce the same result.
  *
  * `conditions` and `actions` are jsonb columns filled by the owner's editor, so
- * every reader goes through {@link parseConditions} / {@link parseActions},
- * which drop malformed entries rather than trusting the column.
+ * stored readers go through {@link parseRule}, which refuses the entire rule
+ * if a condition cannot be trusted. Dropping one condition could broaden it.
  */
 
 export const RULE_FIELDS = ["note", "account", "amount", "date", "kind"] as const;
@@ -176,7 +176,7 @@ export function parseCondition(raw: unknown): RuleCondition | null {
 
   if (typedOp === "between") {
     const list = asArray(rawValue);
-    if (!list || list.length < 2) return null;
+    if (!list || list.length !== 2) return null;
     const low = finiteNumber(list[0]);
     const high = finiteNumber(list[1]);
     if (low === null || high === null) return null;
@@ -190,7 +190,7 @@ export function parseCondition(raw: unknown): RuleCondition | null {
   if (!SCALAR_OPS.has(typedOp)) return null;
 
   if (typeof rawValue === "number") {
-    if (!Number.isFinite(rawValue)) return null;
+    if (!Number.isFinite(rawValue) || typedOp === "regex") return null;
     return { field: typedField, op: typedOp, value: rawValue };
   }
   if (typeof rawValue !== "string") return null;
@@ -240,15 +240,23 @@ export function parseRule(raw: unknown): TransactionRule | null {
   const id = record.id;
   const userId = record.user_id;
   if (typeof id !== "string" || typeof userId !== "string") return null;
-  const stage = typeof record.stage === "string" && STAGE_SET.has(record.stage)
-    ? (record.stage as RuleStage)
-    : "default";
+  if (record.stage != null && (typeof record.stage !== "string" || !STAGE_SET.has(record.stage))) return null;
+  const stage = (record.stage ?? "default") as RuleStage;
+  const rawConditions = asArray(record.conditions);
+  if (!rawConditions) return null;
+  const conditions = parseConditions(rawConditions);
+  if (conditions.length !== rawConditions.length) return null;
+  const rawActions = asRecord(record.actions);
+  if (!rawActions || Object.keys(rawActions).some(key =>
+    !RULE_ACTION_KEYS.includes(key as RuleActionKey) || (rawActions[key] !== null && typeof rawActions[key] !== "string")
+  )) return null;
+  if (record.enabled != null && typeof record.enabled !== "boolean") return null;
   return {
     id,
     user_id: userId,
     name: typeof record.name === "string" ? record.name : "",
     stage,
-    conditions: parseConditions(record.conditions),
+    conditions,
     actions: parseActions(record.actions),
     sort_order: finiteNumber(record.sort_order) ?? 0,
     enabled: record.enabled !== false,
@@ -478,15 +486,7 @@ export function resolveRuleActions(
   rules: readonly TransactionRule[],
   owned?: OwnedIds,
 ): RuleActions {
-  const resolved: RuleActions = {};
-  for (const rule of sortRules(rules)) {
-    if (!ruleMatches(tx, rule)) continue;
-    const actions = sanitizeActions(rule.actions, owned);
-    for (const key of RULE_ACTION_KEYS) {
-      if (key in actions) resolved[key] = actions[key] ?? null;
-    }
-  }
-  return resolved;
+  return createRuleEvaluator(rules, owned).resolve(tx);
 }
 
 /** A transaction that already carries the columns a rule can write, so a
@@ -512,14 +512,7 @@ export function ruleChanges(
   rules: readonly TransactionRule[],
   owned?: OwnedIds,
 ): RuleActions {
-  const resolved = resolveRuleActions(tx, rules, owned);
-  const changes: RuleActions = {};
-  for (const key of RULE_ACTION_KEYS) {
-    if (!(key in resolved)) continue;
-    const next = resolved[key] ?? null;
-    if (next !== currentValue(tx, key)) changes[key] = next;
-  }
-  return changes;
+  return createRuleEvaluator(rules, owned).changes(tx);
 }
 
 /**
@@ -533,15 +526,7 @@ export function ruleColumnsForInsert(
   rules: readonly TransactionRule[],
   owned?: OwnedIds,
 ): Required<RuleActions> {
-  const resolved = resolveRuleActions(tx, rules, owned);
-  const pick = (key: RuleActionKey): string | null =>
-    key in resolved ? (resolved[key] ?? null) : currentValue(tx, key);
-  return {
-    category: pick("category"),
-    note: pick("note"),
-    project_id: pick("project_id"),
-    subscription_id: pick("subscription_id"),
-  };
+  return createRuleEvaluator(rules, owned).columnsForInsert(tx);
 }
 
 /**
@@ -565,4 +550,47 @@ export function usableRules(rules: readonly TransactionRule[]): TransactionRule[
       rule.conditions.length > 0 &&
       RULE_ACTION_KEYS.some((key) => key in rule.actions),
   );
+}
+
+/** Prepare one rule order and ownership filter for an entire batch.
+ * Conditions always inspect the original transaction, including when an
+ * earlier rule changes the note. No credentials or global owner cache. */
+export function createRuleEvaluator(rules: readonly TransactionRule[], owned?: OwnedIds) {
+  const prepared = sortRules(rules).map(rule => ({
+    ...rule, actions: sanitizeActions(rule.actions, owned),
+  }));
+  function resolveWithMatch(tx: RuleTarget) {
+    const actions: RuleActions = {};
+    let matched = false;
+    for (const rule of prepared) {
+      if (!ruleMatches(tx, rule)) continue;
+      matched = true;
+      for (const key of RULE_ACTION_KEYS) {
+        if (key in rule.actions) actions[key] = rule.actions[key] ?? null;
+      }
+    }
+    return { matched, actions };
+  }
+  function changedColumns(tx: RuleApplyTarget, actions: RuleActions): RuleActions {
+    const changes: RuleActions = {};
+    for (const key of RULE_ACTION_KEYS) {
+      if (key in actions && (actions[key] ?? null) !== currentValue(tx, key)) changes[key] = actions[key] ?? null;
+    }
+    return changes;
+  }
+  function columnsForInsert(tx: RuleApplyTarget): Required<RuleActions> {
+    const { actions } = resolveWithMatch(tx);
+    const pick = (key: RuleActionKey) => key in actions ? (actions[key] ?? null) : currentValue(tx, key);
+    return { category: pick("category"), note: pick("note"), project_id: pick("project_id"), subscription_id: pick("subscription_id") };
+  }
+  return {
+    resolve: (tx: RuleTarget) => resolveWithMatch(tx).actions,
+    changes: (tx: RuleApplyTarget) => changedColumns(tx, resolveWithMatch(tx).actions),
+    evaluate: (tx: RuleApplyTarget) => {
+      const { matched, actions } = resolveWithMatch(tx);
+      return { matched, changes: changedColumns(tx, actions) };
+    },
+    columnsForInsert,
+    applyToRow: <T extends RuleApplyTarget>(row: T): T & Required<RuleActions> => ({ ...row, ...columnsForInsert(row) }),
+  };
 }

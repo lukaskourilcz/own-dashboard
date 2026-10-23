@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProvider } from "@/lib/bank/registry";
 import { bindTransaction, type ProviderConsent } from "@/lib/bank/provider";
 import {
-  applyRulesToRow,
+  createRuleEvaluator,
   parseRules,
   usableRules,
   type OwnedIds,
@@ -141,19 +141,22 @@ async function pullConnection(
   // Transaction rules — the same staged, specificity-ranked engine the editor
   // and the retroactive apply route use, so a synced row is filed exactly as
   // the preview said it would be.
-  const { data: ruleRows } = await admin
+  const { data: ruleRows, error: rulesError } = await admin
     .from("transaction_rules")
     .select("*")
     .eq("user_id", conn.user_id)
     .order("stage", { ascending: true })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
-  const rules = usableRules(parseRules(ruleRows ?? []).rules);
+  const parsedRules = parseRules(ruleRows);
+  if (rulesError || !Array.isArray(ruleRows) || parsedRules.dropped > 0) throw new Error("rules-unavailable");
+  const rules = usableRules(parsedRules.rules);
 
   // A rule action naming a project or subscription the owner no longer has
   // would be rejected by the transactions insert policy, so unknown ids are
   // dropped before the row is built.
   const owned = await ownedIds(admin, conn.user_id);
+  const evaluator = createRuleEvaluator(rules, owned);
 
   let inserted = 0;
   let accountsLinked = 0;
@@ -204,11 +207,7 @@ async function pullConnection(
       .filter((tx) => Boolean(tx.occurred_on))
       .filter((tx) => !seen.has(tx.external_id))
       .map((tx) =>
-        applyRulesToRow(
-          bindTransaction(tx, conn.user_id, accountId),
-          rules,
-          owned,
-        ),
+        evaluator.applyToRow(bindTransaction(tx, conn.user_id, accountId)),
       );
 
     // Guard against duplicates within this batch too.

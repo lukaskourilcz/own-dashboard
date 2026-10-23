@@ -29,7 +29,7 @@ async function check(addonPlatform: string, libraryPlatform: string, libraryName
       await writeFile(trace, JSON.stringify({ files: files.map(file => path.relative(path.dirname(trace), path.join(root, file))) }));
     }
     return spawnSync(process.execPath, [path.join(root, 'scripts/check-render-traces.mjs')], {
-      encoding: 'utf8', timeout: 10_000, env: { PATH: process.env.PATH },
+      encoding: 'utf8', timeout: 10_000, env: { PATH: process.env.PATH, NODE_ENV: "test" },
     });
   } finally {
     await rm(root, { recursive: true, force: true });

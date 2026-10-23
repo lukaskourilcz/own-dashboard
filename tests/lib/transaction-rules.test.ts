@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyRulesToRow,
+  createRuleEvaluator,
   matchesCondition,
   parseActions,
   parseConditions,
@@ -213,11 +214,11 @@ describe("parseRules", () => {
     expect(result.dropped).toBe(2);
   });
 
-  it("falls back to the default stage for an unknown stage", () => {
+  it("refuses an unknown stage instead of changing rule precedence", () => {
     const { rules } = parseRules([
       { id: "r1", user_id: "u1", stage: "whenever", conditions: [], actions: {} },
     ]);
-    expect(rules[0].stage).toBe("default");
+    expect(rules).toEqual([]);
   });
 });
 
@@ -451,5 +452,60 @@ describe("usableRules", () => {
       actions: { category: "X" },
     });
     expect(usableRules([ok, noAction, noCondition, off]).map((r) => r.id)).toEqual(["ok"]);
+  });
+});
+
+describe("complete stored-rule validation", () => {
+  const valid = rule({
+    id: "strict", conditions: [{ field: "note", op: "contains", value: "albert" }],
+    actions: { category: "Groceries" },
+  });
+  it.each([
+    { conditions: [...valid.conditions, { field: "amount", op: "gt", value: "" }] },
+    { conditions: [...valid.conditions, { field: "note", op: "regex", value: "([" }] },
+    { conditions: [...valid.conditions, { field: "amount", op: "between", value: [1, 2, 3] }] },
+    { conditions: [...valid.conditions, { field: "note", op: "regex", value: 123 }] },
+    { conditions: null },
+    { actions: { category: "Groceries", project_id: 123 } },
+    { actions: { category: "Groceries", unknown_column: "anything" } },
+    { enabled: "false" },
+  ])("refuses the whole malformed row without broadening its conditions (%j)", patch => {
+    const result = parseRules([{ ...valid, ...patch }]);
+    expect(result).toEqual({ rules: [], dropped: 1 });
+    expect(resolveRuleActions(tx, result.rules)).toEqual({});
+  });
+
+  it("accepts serialized conditions/actions and preserves explicit clearing", () => {
+    const result = parseRules([{
+      ...valid, conditions: JSON.stringify(valid.conditions), actions: JSON.stringify({ category: null }),
+    }]);
+    expect(result.dropped).toBe(0);
+    expect(resolveRuleActions(tx, result.rules)).toEqual({ category: null });
+  });
+});
+
+describe("prepared batch rule evaluation", () => {
+  it("keeps stage/specificity, explicit clearing, original-note matching and ownership across a batch", () => {
+    const broad = rule({ id: "broad", stage: "pre", conditions: [{ field: "kind", op: "is", value: "expense" }], actions: { category: "Overhead", note: "Filed", project_id: "foreign" } });
+    const specific = rule({ id: "specific", conditions: [{ field: "note", op: "contains", value: "ALBERT" }], actions: { category: "Groceries", subscription_id: "own-sub" } });
+    const post = rule({ id: "post", stage: "post", conditions: [{ field: "note", op: "contains", value: "albert" }], actions: { note: null } });
+    const evaluator = createRuleEvaluator([post, specific, broad], { projectIds: new Set(), subscriptionIds: new Set(["own-sub"]) });
+    for (let index = 0; index < 500; index++) {
+      expect(evaluator.evaluate(tx)).toEqual({ matched: true, changes: { category: "Groceries", note: null, subscription_id: "own-sub" } });
+      expect(evaluator.applyToRow(tx)).toEqual({ ...tx, category: "Groceries", note: null, subscription_id: "own-sub" });
+    }
+    expect(tx.note).toBe("ALBERT 1234 PRAHA");
+    expect(evaluator.evaluate({ kind: "income" })).toEqual({ matched: false, changes: {} });
+  });
+
+  it("does not re-sort or re-filter ownership for each row", () => {
+    let reads = 0;
+    const projectIds = { has: () => { reads++; return true; } } as unknown as ReadonlySet<string>;
+    const evaluator = createRuleEvaluator([
+      rule({ id: "one", conditions: [{ field: "kind", op: "is", value: "expense" }], actions: { project_id: "own" } }),
+    ], { projectIds, subscriptionIds: new Set() });
+    expect(reads).toBe(1);
+    for (let index = 0; index < 500; index++) evaluator.columnsForInsert(tx);
+    expect(reads).toBe(1);
   });
 });

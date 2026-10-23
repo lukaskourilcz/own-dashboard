@@ -31,7 +31,7 @@ import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
 import { prepareBankCsv, csvRowsToImport, CsvLegacyConflict, MAX_CSV_BYTES, type ParseResult } from "@/lib/bank-csv";
-import { applyRulesToRow, usableRules } from "@/lib/transaction-rules";
+import { createRuleEvaluator, usableRules } from "@/lib/transaction-rules";
 import type { BankConnection, Project, Subscription, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -353,8 +353,9 @@ function CsvImport({
         projectIds: new Set(projects.map((p) => p.id)),
         subscriptionIds: new Set(subscriptions.map((s) => s.id)),
       };
+      const evaluator = createRuleEvaluator(rules, owned);
       const payload = fresh.map((r) =>
-        applyRulesToRow(
+        evaluator.applyToRow(
           {
             user_id: userId,
             account_id: null,
@@ -369,8 +370,6 @@ function CsvImport({
             // statement row with an open invoice.
             variable_symbol: r.variable_symbol,
           },
-          rules,
-          owned,
         ),
       );
       let added = 0;
