@@ -53,6 +53,16 @@ export function dneskaiFactOrHypeEnabled(env: Record<string, string | undefined>
 }
 
 /**
+ * Titling (#153). Only after 20261023100000 and 20261023100100 are applied, and only once the owner accepts that the
+ * night's news events become topics instead of briefs: until the topic-to-brief bridge (A6) ships, approving a
+ * topic does not yet make a post. The scouting step then titles untitled topics from 02:00 Prague (one Claude call,
+ * inside the $1 ceiling) and expires news topics after 48 hours.
+ */
+export function dneskaiTitlingEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_TITLING_ENABLED === 'true' && dneskaiTopicsEnabled(env);
+}
+
+/**
  * Sources as table rows (#174). Only after 20261023110000_dneskai_sources_table.sql is applied: Zdroje then edits
  * marketing_dneskai_sources (seeded once from the registry file), and the nightly collection and the scouting step read
  * those rows. Off, everything reads the registry file and Zdroje shows it read-only.

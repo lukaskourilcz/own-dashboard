@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { MarketingAccountsResponseSchema } from '@/lib/marketing/accounts-client';
-import { dneskaiEngagementWatchEnabled } from '@/lib/marketing/dneskai-engagement';
+import { dneskaiCommentWebhookConfigured, dneskaiEngagementWatchEnabled } from '@/lib/marketing/dneskai-engagement';
 
 /**
  * GET /api/marketing/accounts: the owner's connected marketing accounts with
@@ -28,7 +28,7 @@ export async function GET() {
     const token = tokenRows.data.find(item => item.account_id === row.id);
     return { id: row.id, brand: row.brand, platform: row.platform, handle: row.handle, verifiedAt: row.verified_at, enabled: row.enabled,
       token: token ? { expiresAt: token.expires_at, refreshedAt: token.refreshed_at, scopes: token.scopes, loginMode: token.login_mode } : null,
-      ...(engagement ? { engagement: { enabled: row.engagement_enabled === true, blockedCode: row.engagement_blocked_code ?? null, blockedAt: row.engagement_blocked_at ?? null } } : {}) };
+      ...(engagement ? { engagement: { enabled: row.engagement_enabled === true, blockedCode: row.engagement_blocked_code ?? null, blockedAt: row.engagement_blocked_at ?? null, webhook: dneskaiCommentWebhookConfigured(process.env) } } : {}) };
   }) });
   if (!parsed.success) return Response.json({ error: 'accounts-unavailable' }, { status: 503 });
   return Response.json(parsed.data, { headers: { 'Cache-Control': 'private, no-store' } });

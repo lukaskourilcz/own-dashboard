@@ -15,6 +15,10 @@ type Environment = Record<string, string | undefined>;
 export function dneskaiEngagementWatchEnabled(env: Environment = process.env): boolean {
   return env.DNESKAI_ENGAGEMENT_ENABLED === 'true';
 }
+/** #161: the comment webhook exists once the watcher runs and both Meta values are set on the server. */
+export function dneskaiCommentWebhookConfigured(env: Environment = process.env): boolean {
+  return dneskaiEngagementWatchEnabled(env) && (env.MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? '').length >= 16 && (env.MARKETING_INSTAGRAM_APP_SECRET ?? '').length >= 16;
+}
 export function dneskaiEngagementEditorEnabled(env: Environment = process.env): boolean {
   return env.DNESKAI_ENGAGEMENT_EDITOR_ENABLED === 'true';
 }
