@@ -1,0 +1,3372 @@
+{
+  "baseline": "dba5fc8",
+  "meaning": "Inventory only; pending entries are not reviewed.",
+  "files": [
+    {
+      "path": "src/app/[[...slug]]/loading.tsx",
+      "lines": 88,
+      "sha256": "f31603ba24d3f9a5afe9d7b0c109da9885348b6d0b626c17d8efefdd752a3520",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/[[...slug]]/page.tsx",
+      "lines": 175,
+      "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/ai-links/enrich/route.ts",
+      "lines": 103,
+      "sha256": "438a7280eb98233ba3891f9ae83da62efe6483336217913fd27378c726816a6f",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/auth/marketing-pilot/confirm/route.ts",
+      "lines": 81,
+      "sha256": "9f385879fd71c1c7715f1ad2d2c0e064017c33aa781592c3611e9116ef3956c2",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/bank/callback/route.ts",
+      "lines": 66,
+      "sha256": "a7854f178793f801adb9482ce6350c2efbc5c6c5c9cceef0c522551416517383",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/bank/connect/route.ts",
+      "lines": 92,
+      "sha256": "89e7ff1a526cc65fd2debca9731b4954cdbb6783ef0eedbb97336efad83b0e2d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/bank/credentials/route.ts",
+      "lines": 185,
+      "sha256": "d5dfb6d6f767bff0e156d9ac2a3931d58685099ada5907ba2f130d4a78bffef8",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/bank/disconnect/route.ts",
+      "lines": 73,
+      "sha256": "a8b9e467fe0329ab8730a312605729cb43ccdb4917ed00fe89200bf9b29a33f5",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/bank/institutions/route.ts",
+      "lines": 49,
+      "sha256": "f40ae4a3518963bd64accd3dc6a0db05085c9e639f54b1e93ad1e0d7b7048456",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/bank/sync/route.ts",
+      "lines": 88,
+      "sha256": "01c47cdd3ea8dab76bdebf9325e91877ca74f6237a28c6d5b1a3b91214232a86",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/calendar/event/route.ts",
+      "lines": 197,
+      "sha256": "8309195d5ce5c7c235600af9ca72fed3769c1bc3fb959e9b2b9d3c0b8fefb488",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/calendar/events/route.ts",
+      "lines": 38,
+      "sha256": "aa18394215997901eca7c931b51cd18047fee7888d1b2267b3c90d56395b391d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/calendar/list/route.ts",
+      "lines": 52,
+      "sha256": "bfcc5f6ff0b026510c5478e3b373b4a0a7280c75c283bfec1af2fed053c43a2d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/cron/bank-sync/route.ts",
+      "lines": 96,
+      "sha256": "f376f8b7743712ec2c82f1fa308ee8907a2abe8f2260198f64646acac550eec4",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/cron/jobs-scrape/route.ts",
+      "lines": 51,
+      "sha256": "5a0cf4052c04387e75d1decc78b0cf76e385d7d7109be92c6e48022ceb101c53",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/cron/payment-match/route.ts",
+      "lines": 81,
+      "sha256": "b7ba1ae760f69c494bdb131c3c93a10b9c08a8665148823b2a109a08cfc970ce",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/cron/renewal-warnings/route.ts",
+      "lines": 172,
+      "sha256": "a813f9b4a050fc6dc77681321c544db636d9414ce2225f429a43ac6819ec82d4",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/crons/log/route.ts",
+      "lines": 71,
+      "sha256": "1a58e6705b39042e88f1929ba525ba4621d7da9f990f61029ab34858771f9dcc",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/crons/registry/route.ts",
+      "lines": 118,
+      "sha256": "d486eb00146ca9cb39da756d6ff95ce4e6d5ed5ebbe9020b88ec27e5af7762a8",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/crons/runs/route.ts",
+      "lines": 49,
+      "sha256": "2c0990fcc450f0ec0a64de4c64da8733d9589869cfb5ae2b5f5c8b3a95f0daa3",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/daily-focus/route.ts",
+      "lines": 119,
+      "sha256": "985b5e4996936f1b34c095216f40da259106772196a591ba8f4935c8b9407257",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/dev-preview/dneskai-fit/route.ts",
+      "lines": 15,
+      "sha256": "a1a20c6513531e14ce73a2ee6f78f057c187367775af5b797a71f816e89566f4",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/dev-preview/dneskai-preview/route.ts",
+      "lines": 34,
+      "sha256": "1b42812bc1f033d3ae5949aeb5af9390331f4d5bbe9c970204ffa887078aff8f",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/dev-preview/dneskai-render/route.ts",
+      "lines": 39,
+      "sha256": "5c86bd677bde380a1755d047bb8b040fe6ab5c968ef0b13c45fcbb9cb41d1ee6",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/export/[scope]/route.ts",
+      "lines": 107,
+      "sha256": "fecbc0592e608df4820c207fdbf12a2cb723812af2f7afa8f4aee60ba1290f45",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/activity/route.ts",
+      "lines": 87,
+      "sha256": "ed3296d4a61a58d265ad65e27992686024345f127aeb489046b856f0abc506ad",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/commit/route.ts",
+      "lines": 156,
+      "sha256": "c4278755341e9018affdad07c21a4b92b63caafe1196bef3344117797b85bb67",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/commits/route.ts",
+      "lines": 87,
+      "sha256": "1f52d3ca392bcb89fc2311a9e2fc5f84798a2411a2d8e5e9c7d2df23ee654561",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/disconnect/route.ts",
+      "lines": 34,
+      "sha256": "7ecf58d6b110b5b7a468290df4b7130867bbb405245f41b4403a6be611730724",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/file/route.ts",
+      "lines": 81,
+      "sha256": "c33f837c9315a41f7a6e93242b521e819d232e924860bf3f66bfa7ef1b344c1d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/repos/lookup/route.ts",
+      "lines": 57,
+      "sha256": "cd4e8019a6b013b0d9f131e8ed75a9272d82011fa3469f92c3abcb2091884e18",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/github/repos/route.ts",
+      "lines": 80,
+      "sha256": "af1d5ffe51d9fc2e95cd771ea5828bed77443c5803f8559075093868d0abb921",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/google/disconnect/route.ts",
+      "lines": 34,
+      "sha256": "1322f57bd5cc24a02d6db65630d9d5a61d863aab4f274bccde08ce18991cf5d4",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/integrations/status/route.ts",
+      "lines": 43,
+      "sha256": "91e66b38fb331af050af67d77e08312cc1980988d6b3a018e671f69c983ae1fe",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/jobs/available/route.ts",
+      "lines": 92,
+      "sha256": "8b9c72a03a10a8b1dfd6ad668001e51df116f0028b0414cbd06e2d1752f72105",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/jobs/enrich/route.ts",
+      "lines": 50,
+      "sha256": "8e135ad82ff8c8f05528a2603020dcb916f1a7453343bb96e44dda392df1b7fc",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/jobs/refresh/route.ts",
+      "lines": 63,
+      "sha256": "6f95a5cfb69441489d4b3f960675bc21052c5543e202095198cc36adf80d62f9",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/jobs/research-availability/route.ts",
+      "lines": 44,
+      "sha256": "2f99d02801213352a5d275d2f42ac68b7a54c7cb21d164afc85d9b13847d4a2d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/accounts/enable/route.ts",
+      "lines": 52,
+      "sha256": "647da00a2731a93f6fd8ceab40d5cdcfd61e64399986065e28d0e8fb4ef5b45f",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/accounts/engagement/route.ts",
+      "lines": 52,
+      "sha256": "d3258702b3fccd901a9cec7ae63de319b82029e9387391c8217e45f1aa85e043",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/accounts/route.ts",
+      "lines": 35,
+      "sha256": "21f4f3c313edea0e71f63c6cfbfa569edcadaf4834addbe95c9dbdb69d9f1cae",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/accounts/verify/route.ts",
+      "lines": 38,
+      "sha256": "5cd426048129b83230eaa4bd7ac4d3c0e4873ffbc5e6a5298b871fa175c156cd",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/accounts/webhook/route.ts",
+      "lines": 39,
+      "sha256": "6816912a12bb1075fb3903eb94a515f4180f7e8f587a463551f56e1fb2cf7ffa",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/automation/route.ts",
+      "lines": 32,
+      "sha256": "4ab65b912cc46f2c93fc525fae4dab24101a94ea95dab21c3dd7aaa7d032a2ec",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/calendar-entries/route.ts",
+      "lines": 10,
+      "sha256": "bd282c84745b53c52ae355cb2846b570af9c166124c3268bf0bcc7082ae2a73e",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/calendars/route.ts",
+      "lines": 39,
+      "sha256": "49bac4efd54515da6e3ae5df3529bd509e1a817bc35bf97401337690d4361ea5",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/campaigns/route.ts",
+      "lines": 9,
+      "sha256": "45e390a471814beffc8e24d3d947532d99ca4464ecab057d5944fa10b92e90f2",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/diagnostics/[id]/route.ts",
+      "lines": 12,
+      "sha256": "e0f32b9da4c0b864e4d70b40e0a0a3372afbcbe7033905f3fb47eb92854fba7d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/audio/route.ts",
+      "lines": 82,
+      "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/briefs/route.ts",
+      "lines": 29,
+      "sha256": "3c86addd249d62c8938603870a52321d250a13676b8d6e4b613c32f20a78eceb",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/candidates/route.ts",
+      "lines": 22,
+      "sha256": "2851a336353420eb43157285719ef904f0d2b99dfd778744dc9eac22781caae5",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/collect/route.ts",
+      "lines": 4,
+      "sha256": "e541c6bef39b4dfab5f8ce7a25f42f750300785978f66c49beb4cbf9ca7692c7",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/costs/route.ts",
+      "lines": 49,
+      "sha256": "655d5d087a82742e5117483c05fc5265614ff44649daa074ba9475cec24d2ba8",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/daily-mix/route.ts",
+      "lines": 40,
+      "sha256": "edd8afb68e6b1957166e5a91fbde72c56e79def4d9366839f7ff39f5a0513925",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/fit/route.ts",
+      "lines": 22,
+      "sha256": "bb3b0fcd4df485067161ece234505b075db705e6796d483aa638f9316ffd8a2b",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/generate/route.ts",
+      "lines": 30,
+      "sha256": "25ac5eaadf4d60d1ffceaf03e4a72cc4d2153b3e90cfcf1bf0afae426af6f20b",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/media/route.ts",
+      "lines": 33,
+      "sha256": "3ceec0b9ba0501a7bdd425d0c09b720bbfcacfd347343a8ec525596a6b9a4ea6",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/preview/route.ts",
+      "lines": 49,
+      "sha256": "2c4b8b7308734b25b238d8bb1962134e82fec1937126110bd7f808030c06e216",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
+      "lines": 100,
+      "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/review/route.ts",
+      "lines": 43,
+      "sha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/source-list/route.ts",
+      "lines": 82,
+      "sha256": "0ccbf56d1282c6c88931b2ed4a1e006bd6943b6c4387cc1922d514a78320eecc",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/sources/route.ts",
+      "lines": 9,
+      "sha256": "a1c57221d710ea43c54452f40c2c84e7802310a4e7fcb2ea8f1a24b646f8cac0",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/dneskai/topics/route.ts",
+      "lines": 74,
+      "sha256": "2260a02275b60189621b37ab248bcd459357cb087168f2ba95e3f225ca33892b",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/import/route.ts",
+      "lines": 24,
+      "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
+      "lines": 24,
+      "sha256": "9306e5914f687ba910ba46496adf410a97b75a5157fe68539c921eb08a756a7a",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/jobs/[id]/route.ts",
+      "lines": 7,
+      "sha256": "302bda7fe328d1acae2fda4b8802c3f9eea09ab6beeabf2b7ec4d9d963168c7f",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/jobs/route.ts",
+      "lines": 7,
+      "sha256": "8aac141370bb0c0f9eaae82202deb7ac0fd36cdd3ecf851048f7da812aab8280",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/knowledge/callback/route.ts",
+      "lines": 30,
+      "sha256": "e78ab6464fd577c25817c00228da77ea4054cd1711ee1e610a2db20dba2a4473",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/knowledge/route.ts",
+      "lines": 99,
+      "sha256": "7bae50b4428a4fe3c07284159a9fe480d7e8aa75cb3f8a9baa3349d00c317a21",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/n8n/route.ts",
+      "lines": 168,
+      "sha256": "e0388eb027496cdf68b2dfd2e40f7ba747984dbe624cf6a2c887ca3e8319fb0c",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/offline-import/route.ts",
+      "lines": 28,
+      "sha256": "ff5e267f805d896dc7724abcb402d4fe32b1072d4baf9362eff73debda737bad",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/publications/route.ts",
+      "lines": 33,
+      "sha256": "05d8f7ccbcb8544645b986948f9d6b5026e3194e6ab248f23d5ba7815b2c0768",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/revisions/route.ts",
+      "lines": 197,
+      "sha256": "3d6cfcf7621354ae3f899f52fd3a70103691095b2bbb3f332bfe77e2c6b21b04",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/state/route.ts",
+      "lines": 24,
+      "sha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/marketing/tick/route.ts",
+      "lines": 51,
+      "sha256": "9798a66b14f2f44dfa4144415cba206bc6a5e9669b2a2b24b48214cdebe8f084",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/money/payment-match/route.ts",
+      "lines": 103,
+      "sha256": "d0d6dbc88c30a1cda386937604ba3a05e57ee20590b13acbbe2f028d9c64bb2a",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/money/rules/apply/route.ts",
+      "lines": 225,
+      "sha256": "b22fbfdd3f89b27e140b7315a1c457a7235239efd4c34078bf87669cf2f31c1d",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/registry/ares/route.ts",
+      "lines": 51,
+      "sha256": "89ec9510dda470edd29d1ad48f880ee57d59cc0860df732cafda1f1e8d9df7d6",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/registry/vies/route.ts",
+      "lines": 58,
+      "sha256": "06678aeeca2d06d42ea6441b3df5a4f7af744188be67f42d5f9144f778209dc3",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/tools/detected/route.ts",
+      "lines": 56,
+      "sha256": "888291ca887c75657a50ded899382707f2c165410d9aa44f79ca2ceee22d0ec3",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/user/preferences/route.ts",
+      "lines": 169,
+      "sha256": "c6e392390ab5721061e6b6ea139f4a288baa29c0a60c73597b3b0cc215f8d8c2",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/vercel/analytics/route.ts",
+      "lines": 37,
+      "sha256": "5fb0f85d57724038962064706bfd2ad15d29f8b291eae2cb5330cf813275cc4a",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/webhooks/instagram/route.ts",
+      "lines": 58,
+      "sha256": "1b458e1f3bf9e1c41153c4507586f5ec9212d2f0e2c0ded7833b99c1402574a8",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/api/webhooks/uptime-kuma/route.ts",
+      "lines": 160,
+      "sha256": "9498058665090aa577e01cd33e5d4acef76659cb65b185ac18fac75e3dfea3bd",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/auth/callback/route.ts",
+      "lines": 129,
+      "sha256": "d78015c1ab24138ab94a5ce28a9e28fb090b34ee41ec34481bc3a2762741411c",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/auth/signout/route.ts",
+      "lines": 27,
+      "sha256": "5bb8e3dca064023d40a688f64026b7714105fbd9058f4ebb30f1548191f38b3e",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/dev-preview/page.tsx",
+      "lines": 38,
+      "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/globals.css",
+      "lines": 769,
+      "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/guest/page.tsx",
+      "lines": 53,
+      "sha256": "11ce91658eb3ef86a98c20a86370e854347008d362811bf06490e66b73a2eb8e",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/icon.tsx",
+      "lines": 51,
+      "sha256": "4757561360dc2672a29864bda2c2514688dff80376ae40d00caaeb0096f07477",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/layout.tsx",
+      "lines": 71,
+      "sha256": "163087149b4e9d42c6e1bf6b40f7b1fcd6498ee893f853933761a462e50f05a9",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/login/page.tsx",
+      "lines": 133,
+      "sha256": "d97a6cadc15ee63fa897f70a893a7e8754fd3f49ac299b1975e95375f20d6a08",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/manifest.ts",
+      "lines": 34,
+      "sha256": "166524b9de6b7cc63a78ce4f004fdf875e97cc3aaa61e264d1e4fea8c0773050",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/not-found.tsx",
+      "lines": 52,
+      "sha256": "f3059910613de6e1d7175f779d98540dc6d97c5c6a2a45f83a65f0700544d846",
+      "status": "pending"
+    },
+    {
+      "path": "src/app/providers.tsx",
+      "lines": 27,
+      "sha256": "c7aa144540c6399c0aeaa0e7b74ff38c7e1086a40bb1ee1f95df71ffaeab38c7",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/brand-mark.tsx",
+      "lines": 22,
+      "sha256": "c0679f9833460adb994c09923887567d3bd84732f486e4c5c954596c7196960a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/calendar/calendar-picker.tsx",
+      "lines": 166,
+      "sha256": "0159c097b49c354ce0f707bfd3d4c40dde2bc5c56baab15b138451aaac512dbc",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/calendar/relink-cta.tsx",
+      "lines": 43,
+      "sha256": "ee834e27196704753ae54cce1df5f86110ecfac392865a372f9c5820915a1195",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/calendar/week-view.tsx",
+      "lines": 168,
+      "sha256": "af6e551df41b335251d2e929fe36bd0f69d0671144af79995a8b8f7adbc4ca9d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/category-select.tsx",
+      "lines": 163,
+      "sha256": "2625987ab6aeb8002a043f34dab2ab57d09e67b9ef335b788aedb4e190af35d6",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/charts/category-donut.tsx",
+      "lines": 45,
+      "sha256": "0d5d7b2e39a378a6757e2c315146fdeaedc04cdf1eba72e7841b7a1932965286",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/charts/months-bar-chart.tsx",
+      "lines": 69,
+      "sha256": "7954b567c7ebd30e6371cebc38d05e84fd008df398bc89ffc35b910df41fe730",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/charts/shared.ts",
+      "lines": 11,
+      "sha256": "7ba844d3a4ad8dde43ceefb6a64716c3c5961f31d45525f6a799211b5941a53b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/charts/spend-bar-chart.tsx",
+      "lines": 39,
+      "sha256": "f96a1921faddd6065b61d14493daee28929a52225317ca7ba9c72993bfab95e3",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/command-palette.tsx",
+      "lines": 213,
+      "sha256": "39287e1084d25bb24589c2099deddfd18c8c665eb097203e514e665ace4c4ba9",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/competition/competitor-dialog.tsx",
+      "lines": 246,
+      "sha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/competition/competitor-list.tsx",
+      "lines": 172,
+      "sha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/cost-overview.tsx",
+      "lines": 278,
+      "sha256": "aac333f17e7b1378c0baad542056a02bd2a6a23fb1bcf75b258a05fb1bdba78f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/dashboard-shell.tsx",
+      "lines": 428,
+      "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/demo-dashboard.tsx",
+      "lines": 122,
+      "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/finances/bank-sync.tsx",
+      "lines": 804,
+      "sha256": "3d49d9772902f162da30753d81c98c759f7457b0e5c496d9ed064e966562275f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/finances/payment-matches.tsx",
+      "lines": 274,
+      "sha256": "a1e2e5b5c188524c41d3ec79e8f3d7c1cdb3bd9655156a25967104ea037bc617",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/finances/transaction-rules.tsx",
+      "lines": 943,
+      "sha256": "9ae72e1d8fcf0804396d01ee35883e09e1d92eb94c4c227edde5664fe9ea9945",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/github/publish-to-repo-dialog.tsx",
+      "lines": 254,
+      "sha256": "89bbb25011eaa992115362094882107fb1fa7de7d13ada19339bde9a38cf7915",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/guest-banner.tsx",
+      "lines": 57,
+      "sha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/guest-locale.tsx",
+      "lines": 22,
+      "sha256": "01475f9bd94d0de75ea66ff6283796024b490c99b1ab36e389a37e48ad902537",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/icons/github.tsx",
+      "lines": 28,
+      "sha256": "18cd6cefd36b8290c44a58814733263ba5e6de4875153cd0209511b18838f06a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/invoices/invoice-detail.tsx",
+      "lines": 468,
+      "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/invoices/invoice-form.tsx",
+      "lines": 1129,
+      "sha256": "496a6634a8f8bff539f914f134d3ca4ba5271246709a6a2d1f2ef5ba994bf7f6",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/invoices/status-badge.tsx",
+      "lines": 16,
+      "sha256": "9ac6b8f50bf0fa0337984fccb79b140c294d54d245f30b25b8a7972cfe964041",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/invoices/supplier-settings.tsx",
+      "lines": 419,
+      "sha256": "c29a895218edaeb9160bc7d8da9a744a5d413a44398ca35f045ab2739c269dd5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/links/add-to-project-dialog.tsx",
+      "lines": 126,
+      "sha256": "6cf9045cc0d9b23c30bb29d6e02386f1532b11dd616630dbea8b4ef4da201f0b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/links/link-picker-dialog.tsx",
+      "lines": 230,
+      "sha256": "03dad2c525e524e6d0d53f4881420642ab17006ceaa8e4802c720e842677bb33",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/links/use-project-links.ts",
+      "lines": 131,
+      "sha256": "ee1d5c05ebe44522d061eaa5db67de38c6fa267919298ad6be8c0215f436ce21",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/calendar-import.tsx",
+      "lines": 11,
+      "sha256": "d3248265ca4dca971be0d498f0c34fe3a609e2a9707780cc6b5849107a51dfa4",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/calendar-slot.tsx",
+      "lines": 13,
+      "sha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/calendar-source-notes.tsx",
+      "lines": 43,
+      "sha256": "2e4ad565ce379edfa632bf08ea6078cf05348a2e090ad9a121508aa283697eb5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/audio-preview.tsx",
+      "lines": 43,
+      "sha256": "0fb560ea14c83df14e07a4df4983d7ce8bf65dca74c2594e761d8bcba5870d96",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/calendar-tab.tsx",
+      "lines": 38,
+      "sha256": "4153d6c195c48b1c1a88ce115879c96afc484dc2fe5ac22e33121fa05cf71ab1",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/code-text.tsx",
+      "lines": 33,
+      "sha256": "0dc69a69a064ab90f0fa9965ca6c8eade06dddb2f6132bacfbe7964479c4e86d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/costs-tab.tsx",
+      "lines": 183,
+      "sha256": "4e3e9debe28f537db465cd5857347812b3f9203f152414c6421932233999d7ab",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/counted-field.tsx",
+      "lines": 27,
+      "sha256": "48cd39646ca8556f18c06c406b160c3ce6dfc82269946c762bb650b312e66844",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/engagement-receipt.tsx",
+      "lines": 38,
+      "sha256": "a418c407c9bebd297ea7ede20d855dce396d8f8126ead1b0a1a61ace2c2c1662",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/focal-picker.tsx",
+      "lines": 46,
+      "sha256": "c81192fffc546b7c6ea24133e2567bd86a903feb639e70e7ba52d7013a9d4373",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
+      "lines": 50,
+      "sha256": "bc010e40745ae936c191f2ff1528f43634ad6a71be0aba39eeb88d3ac3e50653",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
+      "lines": 61,
+      "sha256": "ab3c45604258fe5690fa1cdf2adef4a160d604c91cbecc8e87fec452baa1c4c1",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/format-switch.tsx",
+      "lines": 29,
+      "sha256": "356dea24f619bbe7f46cfb6788c0d12123a406f0f29c521929d1bd054aba8d1f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/kit-tiles.tsx",
+      "lines": 37,
+      "sha256": "0b99c0a440598251396bd353a1ad5891973c9db70b1cb49cf04ae1a3a5013603",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
+      "lines": 379,
+      "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
+      "lines": 194,
+      "sha256": "c22588bb0890535b34178107e1f2d21b6d78861be2d2a25234c8e58a65664541",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/stage.tsx",
+      "lines": 169,
+      "sha256": "5a6c3b6f1eab091bbea44d9ebc6a73bacbe525dbd1ed734bd8d3d03efb1bbe06",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/topics-list.tsx",
+      "lines": 201,
+      "sha256": "f5a12f3b3ec53f5e23a45b661f3de5878b1e931749d1e3585d5676baf4594760",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/use-draft-preview.ts",
+      "lines": 49,
+      "sha256": "439e2095112e4314580d526feca28514088c6646ca535d4b26638aab2560d9b9",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/use-draft.ts",
+      "lines": 36,
+      "sha256": "e853e393cb65711a755a69779d8a57171587bc31a6bef33665e9339f9230d7ae",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/media-tray.tsx",
+      "lines": 47,
+      "sha256": "8f094f561c5645cf62955d76fb11c3d5105feb3b82edc2ae3e097c17906b30a6",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/music-hint.tsx",
+      "lines": 56,
+      "sha256": "a0c6f1429d9d57e16987273216f053bf6b8513e6f21d9b950fc7d196c1c65a1d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/overflow-menu.tsx",
+      "lines": 92,
+      "sha256": "576be5de6b91046d39345f884a65e001c3651632596d16f662663a45a5dc867c",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/published-tab.tsx",
+      "lines": 74,
+      "sha256": "03d1adc6dc39023b1ea9ee844b70329a2254ec61d5f5b519f8710c250753a6d2",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/render-problems.tsx",
+      "lines": 39,
+      "sha256": "f6fa9492693c33f4ddc664dfb325a5ffc5061bcc1fdf0abd73bb1f706d313901",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/source-settings.tsx",
+      "lines": 56,
+      "sha256": "e88e012d8384fcfcc52f98f06705d0f65077430ba41a4760d1225574d9118dcb",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/state-chip.tsx",
+      "lines": 30,
+      "sha256": "91ae561e303ba4bf406a29b398361f0f72f18d7879fea8b7d5e64c3812d5122c",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/tab-header.tsx",
+      "lines": 21,
+      "sha256": "3ec9de2cd4c39428ed72e8080428bbed17887df597ab34368b4e861a3a8dbdb5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai/workspace.tsx",
+      "lines": 124,
+      "sha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-audio-library.tsx",
+      "lines": 147,
+      "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-daily-mix.tsx",
+      "lines": 75,
+      "sha256": "c43f2b4e0174da99cce3c393099b18aa4077520a26e951a0d458b9f040b05b43",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-instagram-account.tsx",
+      "lines": 133,
+      "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-source-list.tsx",
+      "lines": 164,
+      "sha256": "27c3bc4923b8c87bc02970a0f76b54c36f14ced9e9342be7279c240d8bf4c98d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-sources.tsx",
+      "lines": 180,
+      "sha256": "703f8068fc6a58d3741f0e491d5e19e9b59a0919e9dee549f61f8dbecca68e50",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/job-health.tsx",
+      "lines": 44,
+      "sha256": "f15ce8da7c282ffdbf1dca03c4e0f8d8e2d9253cc0b9162e358a22e0985b8b89",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/knowledge-import.tsx",
+      "lines": 89,
+      "sha256": "1e1b3439f46ae1d102bca3399126390a2643627bac7189b4b5b1a9a9cc178165",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/knowledge-library.tsx",
+      "lines": 30,
+      "sha256": "f3ab0091d81598c69c25c23c2b8295c96bbaadb813c01f38c630b90a021d1a1a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/marketing-diagnostics.tsx",
+      "lines": 107,
+      "sha256": "1006b98a448dcbdd0eef40f852ade23d957d49a94be4a09a12489ea6bda194ab",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/offline-import.tsx",
+      "lines": 56,
+      "sha256": "9d808373ce57ceb9075c17c7209249d75a7cce2273249c26ad4d4976411b0660",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/use-marketing-calendars.ts",
+      "lines": 46,
+      "sha256": "1296d690d0966379c3716d7dc47f32ed1072c5215dfac5e3f8c3e85d1151ebb5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/weekly-calendar.tsx",
+      "lines": 47,
+      "sha256": "234ef5f4cc0cbd37546cb91a933c48b53a8864e35aaa158cfc7e8b6d306f97ff",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/weekly-results.tsx",
+      "lines": 108,
+      "sha256": "469d60b0c224f82b46a9bb6687329f358947031c352bcf0ab3da41ea1cd84af6",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/mobile-fab.tsx",
+      "lines": 141,
+      "sha256": "b6e36b8b1a3fdcaee92441c7bad3b83fc77b0e680b7330061d2aaa0a35a686b7",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/nav/app-toolbar.tsx",
+      "lines": 76,
+      "sha256": "cb1c2f235c1b1a3e00293c9551a70df277a1396b9b130f5f86d7b9d80307fd41",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/nav/sidebar.tsx",
+      "lines": 489,
+      "sha256": "ceb1990b1be23aa546036c076264823fb4c4b883511bd14e9b27fc0d1208b535",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/navigation-guard.tsx",
+      "lines": 143,
+      "sha256": "07b05612aacc4f043f23a39f9a4d29ae13b1c5ad8205e9d0659cdcae9a255de4",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/notes/note-editor.tsx",
+      "lines": 238,
+      "sha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/notes/parse-markdown.ts",
+      "lines": 30,
+      "sha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/cron-monitor.tsx",
+      "lines": 216,
+      "sha256": "ed8c3630dcf277ad2e0a93abc3ee19d99e797592fef1792c2b124d031a9c2fd9",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/customizable-overview.tsx",
+      "lines": 394,
+      "sha256": "66be5218aa3814e003564e455164342d492baf24c5238c795f786a4076997bb8",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/daily-focus.tsx",
+      "lines": 328,
+      "sha256": "060e5c46529d3d494dc1dcc0a1be752a53283e19cc16a26ddc4333573b8eb100",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/kpi-cards.tsx",
+      "lines": 67,
+      "sha256": "add88a3bd050014d61cab174cf610f1c4ef941b695ca8da82031b902d55f0b08",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/recurring-plans.tsx",
+      "lines": 175,
+      "sha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/today-hero.tsx",
+      "lines": 395,
+      "sha256": "fabf66fa71ad67629fb14c17af24f1b0bde34ea1048102321f8476a3bc71d749",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/overview/work-attention.tsx",
+      "lines": 19,
+      "sha256": "d0bae7a805561ba1305d3533308b256cea8bfc8957ba5259994ac4b3c535ae64",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/ai-panel.tsx",
+      "lines": 1103,
+      "sha256": "18263a624c7740d3beab0d22fece1ae6309723cfceba8574fc8d570c3babb438",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/calendar-panel.tsx",
+      "lines": 240,
+      "sha256": "dd1c25a55059a0c3ddef32671b87a5ebf6e302cbfa074cbd25501958c81c2d6a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/career-board.tsx",
+      "lines": 411,
+      "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/career-companies.tsx",
+      "lines": 114,
+      "sha256": "6ea352a882de162024722122bf18d939238e08d784de7a71ce5fff091bd215b5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/career-letter-helper.tsx",
+      "lines": 250,
+      "sha256": "d641db47cd512b2d249d870516721dc3a6136249f46cb18f69294f4380f41ecb",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/career-progress-dialog.tsx",
+      "lines": 89,
+      "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/clients-panel.tsx",
+      "lines": 226,
+      "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/competition-panel.tsx",
+      "lines": 165,
+      "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/dev-finance-panel.tsx",
+      "lines": 293,
+      "sha256": "57ed645015f03bd4d541300556e8006000bc7d28decdc750ddb6a93b733a6832",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/finances-panel.tsx",
+      "lines": 882,
+      "sha256": "2e6ea9a3677e49cc0faf0f928c361debf734543df1bf231620ecfb765b74c6ea",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/freelance-platforms.tsx",
+      "lines": 80,
+      "sha256": "7b59f61b898c86a01ebf2f13aced72aeb6f2d46407f4d91e42ca070a8ab503b4",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/ig-tips-panel.tsx",
+      "lines": 727,
+      "sha256": "bd8825210893ec2994ed3b39fd113fbacf8374f0820e4f96b7dee99a2ff5a610",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/important-dates-panel.tsx",
+      "lines": 436,
+      "sha256": "c093fb36494eb4becc725ada51351be2fb9bb7a542d862fc63d95412e882923b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/inbox-panel.tsx",
+      "lines": 129,
+      "sha256": "c52f0b0959b2d8289090148af76ba47da99e27565b37204e8392a1720a7881f9",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/invoices-panel.tsx",
+      "lines": 594,
+      "sha256": "6ff11c70c73fff51b7bb92f61adedc34bb127dff47c1c033f82b384751e30f36",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/job-sources.tsx",
+      "lines": 151,
+      "sha256": "d9bc47ab513e23b9f107a3dca202d103880debf004dcc86278793f00f811f1ec",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/jobs-panel.tsx",
+      "lines": 2826,
+      "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/link-export-dialog.tsx",
+      "lines": 134,
+      "sha256": "1c63be167668535b21efc1898843bce6c15913895a6bb3b958ea87406871eadf",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/link-library-card.tsx",
+      "lines": 89,
+      "sha256": "30894dd5178f6c777e9f3bcb992a12c69859c1265e60e50dc69d272c7194a1fd",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/marketing-panel.tsx",
+      "lines": 80,
+      "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/needed-checklist.tsx",
+      "lines": 295,
+      "sha256": "32b2e115fea7de7e1dea9ec7b13a857e810ab44db90818d4891622341c5ad4a1",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/notes-panel.tsx",
+      "lines": 1367,
+      "sha256": "af7850a690d55f1ff78cb048e62265aec7d4da2da8874e56fa6d8df235ff9cd2",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/opportunities-panel.tsx",
+      "lines": 304,
+      "sha256": "c30f26827554b028c442a8acb6c8f763d2363af90f52ec914728a6d1810807f8",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/opportunity-detail.tsx",
+      "lines": 83,
+      "sha256": "2fe9608a95012a2a1bb3706da8fadb5839a74412e60a7d805eae0b976f4fd92f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/oslo-career-workspace.tsx",
+      "lines": 899,
+      "sha256": "356d8d0e887e599350aaa9995ac772179f2461b887c290ecc3c21b503811d188",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/plans-panel.tsx",
+      "lines": 654,
+      "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/projects-panel.tsx",
+      "lines": 2069,
+      "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/prompts-panel.tsx",
+      "lines": 790,
+      "sha256": "251d5ccb8cf820fa62cf3f3b7779ce277a9590e619f1d53ddb081a633f5537fa",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/repos-panel.tsx",
+      "lines": 1384,
+      "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/settings-panel.tsx",
+      "lines": 827,
+      "sha256": "628abb698ed4d78bb009c5d8e44c2834301a57f8ea385042d7b6a3b3c33c64df",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/shortcuts-panel.tsx",
+      "lines": 760,
+      "sha256": "3ab24a31b7cfe78896188e98b4b7e71e0a9b5c2317d09ec52250f21d9af24fd7",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/subscriptions-panel.tsx",
+      "lines": 1108,
+      "sha256": "9fb74fd45e872041f03dd81e255974d97210bcd94dacd03d91e8c529dce225d0",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/tip-export-dialog.tsx",
+      "lines": 192,
+      "sha256": "dfedee33b4bf3e3b17dac9863441f2df363a116f4f7620f6974a4e9b41798b3b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/todos-panel.tsx",
+      "lines": 1473,
+      "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/tools-panel.tsx",
+      "lines": 566,
+      "sha256": "e8a0a0fcd2f3a1384ec83dbbb98b34e0a7491e9b23d271a9c57b8ee54a7068fe",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/work-overview-panel.tsx",
+      "lines": 242,
+      "sha256": "4fce3b1e3a5829aba19a3fb533cbb3c7b47164596f60180be192291afcfa1276",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/panels/workflows-panel.tsx",
+      "lines": 63,
+      "sha256": "34313af52479ae766a8b30d423e7ba8c40be6e9d89aa41ec675681dc7bf87771",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/posthog-provider.tsx",
+      "lines": 41,
+      "sha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/preference-hydrator.tsx",
+      "lines": 86,
+      "sha256": "04a46032d4a1de6b7e71592bd891bf78d5018e6b1e5a0f587c953e6b1ac55f99",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-communication-panel.tsx",
+      "lines": 99,
+      "sha256": "d281f0d6f7df6df35e4a0def001f93239a6d07d2c4b82a0641450caf51e213e2",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-competition.tsx",
+      "lines": 45,
+      "sha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-doc-panel.tsx",
+      "lines": 125,
+      "sha256": "7604b994516b54dd7f9bc54041d3d4f2471c76ee5b7019ed2432cb4b07d5553f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-github-activity.tsx",
+      "lines": 88,
+      "sha256": "aab7bb7a288c857558733be12a4bfb97e1667cb975467aad63d22066e4b7373a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-knowledge-panel.tsx",
+      "lines": 108,
+      "sha256": "ddacde8ff9992b74c2251d5ad3d8c30e2ad18ddc9e461d19f44c175bae8e9884",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-links-section.tsx",
+      "lines": 208,
+      "sha256": "75cd1d41e054a47e399726a8f35b88b926db78121792dd7a2233ee613cd51f0d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-notes-editor.tsx",
+      "lines": 73,
+      "sha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-prompts-card.tsx",
+      "lines": 100,
+      "sha256": "d9417e883ad52c0a0663e8a8d7c54ae112cf46cf1ea950ae2ca25158389dd5e4",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-traffic.tsx",
+      "lines": 132,
+      "sha256": "38125cb5d539acbf6fd22aba7999aed666655393d4bc1b6b34920d6a6749859b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/projects/project-workspace.tsx",
+      "lines": 279,
+      "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/prompts/prompt-copy-dialog.tsx",
+      "lines": 164,
+      "sha256": "f2f24e5c9da17d859113b022a3292e4ef3818eecd7c449574a9922f9b7e0bf93",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/subscriptions/subscription-icon.tsx",
+      "lines": 60,
+      "sha256": "c30fdfb3c8ba14bd2e12320a4b513097e29c90a1b253d9ef6a4762b5d159d6ce",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/tasks/task-tags.tsx",
+      "lines": 142,
+      "sha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/theme-toggle.tsx",
+      "lines": 33,
+      "sha256": "38d36e363d43b6e198c00e8740d59767d0f18cae8641ea4e96042e1833c66148",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/tools/detected-tools-section.tsx",
+      "lines": 219,
+      "sha256": "a66db768b0db641a0abc353f14e7c072716aac8a2ed0257850b33c7f4007d09f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "lines": 57,
+      "sha256": "713fb407cbc34708a07da410243ee1984b97f0f7bdec3db8d359dc0cd542d4ba",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/card.tsx",
+      "lines": 55,
+      "sha256": "561b23ae2ab2484e323787c152e683e9914dc04f48403e395bd87ebb262e3922",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/checkbox.tsx",
+      "lines": 29,
+      "sha256": "152b123ffffdc9589e5213e7a6c129e44b92d195960f06d94a8ff4aa5383841a",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/confirmation-dialog.tsx",
+      "lines": 90,
+      "sha256": "62a3315ba60dced8d68436ef47b6d038adb49fc1c2bfb8c42e7047afb5bce73f",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "lines": 132,
+      "sha256": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/empty-state.tsx",
+      "lines": 41,
+      "sha256": "a778282b542065b0a8f39521a68a18fcdf5fbbe83afb7fb764c724f97b616ecc",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/input.tsx",
+      "lines": 23,
+      "sha256": "723ebe9b92f7059504a276b973adfb4498617effbb0bf2a4017ca6beb0fc6e87",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/label.tsx",
+      "lines": 17,
+      "sha256": "2a7ac026c3fd45ed2b0043e26671cea2c421300319119e991ed3344cda345774",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/markdown.tsx",
+      "lines": 270,
+      "sha256": "8303e35641d7ca40867b789dcaabf6575e38d8afbcb1b6716927a399fe2c7b5d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/metric.tsx",
+      "lines": 28,
+      "sha256": "ba5856530f946aea1556835575c7be87c61bee5775d1ce58bd7cc6b20ce499d5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/page-header.tsx",
+      "lines": 69,
+      "sha256": "723abcb0c3fde2bc62c61c717e2c964628cd939f25dbd41aca2e2ad95f2672f9",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/progress.tsx",
+      "lines": 32,
+      "sha256": "3f400304f56a600eb6ccacc489d5c5660ba6fe3e8366021ebff0f8ea52264fd0",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/select.tsx",
+      "lines": 206,
+      "sha256": "660a5b3e1d3a51fec2cdabea14d0c51652137f0654b8a2881e668b1bd26c6a42",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/skeleton.tsx",
+      "lines": 13,
+      "sha256": "9bd544dc0021a05fdcde304fc184132559b4060ff73ef185313ec0435762f732",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/status-badge.tsx",
+      "lines": 30,
+      "sha256": "218c73e857fc78674994befca153e016c0995194bab03a2bd1f3507982719003",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/switch.tsx",
+      "lines": 31,
+      "sha256": "44a0f64a55454c2347cbfda277a376b652ff624aef6ec143a5da5d485f9ae825",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/textarea.tsx",
+      "lines": 22,
+      "sha256": "6e34da8749e928fa89a5ca6d7811caf85dad634c1f23f73e3e47dd732dc160f7",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/toast.tsx",
+      "lines": 46,
+      "sha256": "b86abdb6a19d5d6ffacba3406581e4db6d818fbd63c764a109e11698787c7e03",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/ui/tooltip.tsx",
+      "lines": 44,
+      "sha256": "d0d4f8832a9126ee10bd1129836811d931b511ded6cdc478b8c405c1538f2aa0",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/work/marketing-week.tsx",
+      "lines": 222,
+      "sha256": "dc43705296df5bb2641d3aa8c0beef59900399be7aed3f3262eb41cbd28be26e",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/work/weekly-planning.tsx",
+      "lines": 761,
+      "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/about-project.ts",
+      "lines": 1,
+      "sha256": "21364de6565d420a0a6eeaca1f1e2e5be789c67920ece8d896fcfa08c98af873",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/credentials.ts",
+      "lines": 77,
+      "sha256": "80fa920eac55cb875b9bbcbf0eebaa6a7d000f8962899ea84cb9ccb762c4f6ab",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/enable-banking-adapter.ts",
+      "lines": 80,
+      "sha256": "60499d497ae1be2b328ac1f2daa0ab09733ce34892b0633714af675793fb3721",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/enable-banking-jwt.ts",
+      "lines": 71,
+      "sha256": "9162a89e6972da1ba263f589fb626d04eb83ea4d8b0d2afc70a525b856548daf",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/fio-adapter.ts",
+      "lines": 158,
+      "sha256": "89aaf289644cf894305ece77dc8fd97754e06050645f84318693e134f183abb4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/fio-statement.ts",
+      "lines": 215,
+      "sha256": "e8b4e8d3b830097545a0d0e2ffd84c62695fb7e4251be101b5554e7fa696313f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/gocardless-adapter.ts",
+      "lines": 148,
+      "sha256": "297e4839266ed924a9624a50b79ef3db00283a2704776fd7b05fcbaa50685158",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/gocardless-mapping.ts",
+      "lines": 47,
+      "sha256": "470c2c0d880f762a9d4cea5db15a5c7128854cde8512929264b2cf24869136e0",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/provider.ts",
+      "lines": 168,
+      "sha256": "3ba7eabfc4070380976ea80d9da12a96aaa4cb7457b775a064631cd463e944f3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank/registry.ts",
+      "lines": 72,
+      "sha256": "aeadfe55428c8e5f59c4d2b11bae0f9a1dbb6e8f527e62a42fab2d28d7897866",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank-csv.ts",
+      "lines": 253,
+      "sha256": "1825cbcce2a56bcc9f649619daff18635b015fdfc08a77e0b4f597279c16a12e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/bank-sync-server.ts",
+      "lines": 249,
+      "sha256": "e5f413436cd693c468a524b382d0afa7e730fc9053935a848707c1f552bf2ca2",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/brand.ts",
+      "lines": 20,
+      "sha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/calendar-server.ts",
+      "lines": 135,
+      "sha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/calendar.ts",
+      "lines": 70,
+      "sha256": "5341c56ad0b78c970f851dfb66c1d8214a495e9abc03606569ca312c2c946f1a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/category-rules.ts",
+      "lines": 62,
+      "sha256": "6c8200a4c59ba8ff1f6a70d4caad43703a0e6cc82afff977d59f0d2e25cb94ac",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/changelog.ts",
+      "lines": 414,
+      "sha256": "44548285e642c4b3e223ec711b7ba17c0f41874e1fd9f82857e510e145e13ec4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/chart-colors.ts",
+      "lines": 7,
+      "sha256": "c7f9dfe55ca41ae5fbd757ea09a23c84bed7f81e62a66157d59ac3e5a3d4d484",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/competition.ts",
+      "lines": 53,
+      "sha256": "c0b1df04bca4cbc2ba6118511a1e2a978e31d2cabc01e84d09deb9974d0c6969",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/cron-auth.ts",
+      "lines": 42,
+      "sha256": "b84dff07e5c076975fe4ce7f1d168c7c4b5e56119ccd545370e1e892b27532fb",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/cron-heartbeat.ts",
+      "lines": 219,
+      "sha256": "57ec68c2292cae58be1f086e2e313c45123371e9c67be95f24c9f147e2cf7598",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/cron-log.ts",
+      "lines": 89,
+      "sha256": "5ae0145d8e190a30cafaab97ebb5b251cebb2e38ece890cfbcc268c20a19776f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/csrf.ts",
+      "lines": 53,
+      "sha256": "3e4ee484745ef63f99f9832b720465f206d1ecea89ff7225fc8a781219357e8a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/curated-prompts.ts",
+      "lines": 174,
+      "sha256": "7ff34a214a23a725499bf89b148aac14292501c80ad45dcd3eef16c352e31e83",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/dashboard-data.ts",
+      "lines": 213,
+      "sha256": "836110c6a6d7ec29ad11737a5dec2486b64fc690061f302dcdf2f9a6342ac734",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/dashboard-layout.ts",
+      "lines": 116,
+      "sha256": "7160e60c6d92153246cd517c1955dc63f4fff53006452b555cbb0249a7674693",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/date-keys.ts",
+      "lines": 42,
+      "sha256": "4634f3d2bb5ae34331afc6b45957ffe8f09ff7ce42983c65cda99e50fcaa955d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/demo/dneskai-topics-demo.ts",
+      "lines": 59,
+      "sha256": "9a033f95d855729dfe6092e1aa1584555f796d262428ba62895f403c7805af3b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/demo/dneskai-topics-fixtures.ts",
+      "lines": 34,
+      "sha256": "257e5e2f081b8c3b507d076729530ce8f83d69ab8f837d505550c30d06a67bec",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/demo/dneskai-workspace-demo.ts",
+      "lines": 241,
+      "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
+      "lines": 166,
+      "sha256": "3b433e3248dcddaf97a56037bcf586c0a67b2f08f82fcb261bc41dc0b258f36b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/demo/fixtures.ts",
+      "lines": 1016,
+      "sha256": "5cfb6f9d28b0478a0f28bf739d24896bd4ecd3fe7149fc5fdf3a6dd17dc7222a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/dev-finance.ts",
+      "lines": 357,
+      "sha256": "d5c95d1d2584c03398decd5cb790cc81523aedbd124e4bfa3dc1271f6d6386d3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/finances.ts",
+      "lines": 75,
+      "sha256": "6192331502af54e6f4c25c3150ba69bfbae4cc7fd1a78b7f1b3159700780fcb3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/freelance.ts",
+      "lines": 35,
+      "sha256": "7a646fb301007daa4e7f063eb65b0f58b8d6ec20d804661b27dbb7301a7e6c29",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/fx.ts",
+      "lines": 22,
+      "sha256": "bb4ceb161db39d4c1126b6649baa2a5a613c082eca1466cc54557b3556df7070",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/github-auth.ts",
+      "lines": 29,
+      "sha256": "66d1c18f0337c9523490ea5339d63607a3558975a7fecdd25b7b9bfe7ccd266f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/github-queries.ts",
+      "lines": 81,
+      "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/github-token.ts",
+      "lines": 250,
+      "sha256": "6109e58ed9dc6736b79959c37e99db940d8de72de14c6566d427a0d8be3269ee",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/github.ts",
+      "lines": 259,
+      "sha256": "8d7cb9d4f7415804d30bb88b18e393ff3939b041c0ac309e28cf3c56c18b3500",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/gocardless.ts",
+      "lines": 291,
+      "sha256": "29863eaef046bd09f5e2e4644fb24cbf8b4bf9e1b951fca3728ccb84fbfdf31f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/google-auth.ts",
+      "lines": 30,
+      "sha256": "612c3ad762c65e21cef8c63064e569ec747e48578b0b175794eed2cbb8fde329",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/google-token.ts",
+      "lines": 229,
+      "sha256": "e3eaa94b2c73e80b0f54d7bdf464d464eec41502da3147366e6ad281ce029c29",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/heartbeat.ts",
+      "lines": 56,
+      "sha256": "355ce53e734a912241abc342aa409e90d10f77211de4fa7e58c38b75aeff5839",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/index.ts",
+      "lines": 131,
+      "sha256": "7a7f89767a2e57a00296ef3dd3eb11bdefc54eecec555024aab8b2a139976ea2",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/lang.ts",
+      "lines": 45,
+      "sha256": "e6a697423336411cb2a9a88a50a5f775d5d820a42ecbcd44a2d976e4af63f393",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/ai.ts",
+      "lines": 467,
+      "sha256": "de16a495764778fdf419b4a205c004b25fae81724dcd98ec5405196397b96cc1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/app.ts",
+      "lines": 68,
+      "sha256": "7a08eaae9ec37e37f796c67608acb49e4532ea2f9973506bb943d6fe47044e5a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/calendar.ts",
+      "lines": 152,
+      "sha256": "f7fdfb2419e5adf2c96c11bb6af072c3459e5c2ef5da9a720bb1017040aaa068",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/categories.ts",
+      "lines": 44,
+      "sha256": "07f23197c54ac6188271d7f89dfc2751a60b022b8a6d63c891375df29746afbe",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/common.ts",
+      "lines": 45,
+      "sha256": "77dadc248e367806b1c1ce79e6ecbbc00cb4e06f0e81fcaf600ac15cf1ff9cd8",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/costs.ts",
+      "lines": 37,
+      "sha256": "7b16b6ef077f293e23ffe5c7e196345fe32ea6e0a55a3d2621b7e4d269850061",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dashboard.ts",
+      "lines": 134,
+      "sha256": "a7bc1aa8713b551535398db4b630f3764dad4ebcd19c013e4003bf495ea24486",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dates.ts",
+      "lines": 115,
+      "sha256": "60ad82b8a3e423cf0218ff50311334efd12d7295a750d3c2ebf20365349daacd",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-account.ts",
+      "lines": 120,
+      "sha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-audio.ts",
+      "lines": 146,
+      "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",
+      "lines": 32,
+      "sha256": "0cfdafc930049a19e271e8b9c123bf9915b38847e56feccc4cddc27d67d91c53",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-lab.ts",
+      "lines": 506,
+      "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-source-list.ts",
+      "lines": 60,
+      "sha256": "faa07a8ec8c91c1248815b5a26cf54ef8adcc4c7d42a57fd7821eeb866340259",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-sources.ts",
+      "lines": 137,
+      "sha256": "773072ca62dc418efd2976690c3ba1876149ab75630c71034d96d20d27bb65fa",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/dneskai-workspace.ts",
+      "lines": 192,
+      "sha256": "7e281eca192bf5c908eef8abbfccfbd9efb323b6a862bd33f1bb87defa1cb07f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/finances.ts",
+      "lines": 674,
+      "sha256": "f1732b0a058708f626473d17b5202cf8a51a124a4c55c847f9b739a232c5f522",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/github.ts",
+      "lines": 364,
+      "sha256": "8cfefeb5de858b420382d19bd9a07c572b55df82ef7b7ff4b750aedf0d8ae3dc",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/guest.ts",
+      "lines": 21,
+      "sha256": "ebd77abd5b735386af17a9fae6c728fa5abbab3cd9587070d79e80d093871177",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/invoices.ts",
+      "lines": 515,
+      "sha256": "35a6c4949ddf4149946c223acc8226390cf3d9d45a86ea93dd38e7778768cb0c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/jobs.ts",
+      "lines": 563,
+      "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/kpi.ts",
+      "lines": 27,
+      "sha256": "eb69f7658bf29d5e1ddd9f0469431f7bc564d559d62d34e780cf4657d2593a39",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/login.ts",
+      "lines": 42,
+      "sha256": "0af83de45d0a7de43d9ee40734f3ee8099d3da5ca84439e3988f8135ff1ec2e7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/marketing-workspace.ts",
+      "lines": 3,
+      "sha256": "c16479b4a0808d86cbedcccd1987fc344b0b2659080879841d9d65e52d413e1a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/marketing.ts",
+      "lines": 189,
+      "sha256": "86c9b7da2ac52e88a03243206eaba3e4367c103936bc0a502ebda353f40d89c0",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/nav.ts",
+      "lines": 127,
+      "sha256": "29ce7d996337cf4d3535f98473fd8f8a021685ebb5bea1f2195eae043c7be5f1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/notes.ts",
+      "lines": 188,
+      "sha256": "008714e85ff6799866968a9a9fa7b9e8e20ebbb687e5becb61609594fe2b295e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/overview.ts",
+      "lines": 104,
+      "sha256": "20e781a0711eecef1c13142765d643687edc763883a729928e90ea13328fc50d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/plans.ts",
+      "lines": 179,
+      "sha256": "69e9ace530b29fa8ef2833856f5db32a078db32d50c3ec3396318eba33f51e39",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/portfolio.ts",
+      "lines": 337,
+      "sha256": "aaa1c95cd731b3f7418a9dad19217dd5053db7b4218aa5bb82cb2ecb3c2a9029",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/professional.ts",
+      "lines": 589,
+      "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/projects.ts",
+      "lines": 374,
+      "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/prompts.ts",
+      "lines": 232,
+      "sha256": "9fbacbcb8bfa1994deb4e119f5c7310378f1205b56227f8977273d3905aa3805",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/relink.ts",
+      "lines": 15,
+      "sha256": "ec10378679e4c518460c9bba33e432a22c51010eba9f5d06997ccf2f33b8b023",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/settings.ts",
+      "lines": 247,
+      "sha256": "2e6552acd5034b59f60dd73f8697d5ae05827e9676a1ba5cf413cfd5fc7eb42b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/shortcuts.ts",
+      "lines": 169,
+      "sha256": "84e73eab3f522016feadc695a60888b30602ddf8375e1cb703df84dfa8e32fcc",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/subscriptions.ts",
+      "lines": 188,
+      "sha256": "e45f4b6a184088a9178546b1f37fce6fef05b463c5e987fd979daeb79bba6079",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/tips.ts",
+      "lines": 218,
+      "sha256": "49ad56bcdbe300f6545b7530008e5a399fa83cd358befb0db3010db3aa278dea",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/todos.ts",
+      "lines": 387,
+      "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/tools.ts",
+      "lines": 240,
+      "sha256": "d2744862908eca1ba9c12cb6b85d2ada21cdf312df4b2f4c00d567e4273dc46f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/i18n/sections/workflows.ts",
+      "lines": 86,
+      "sha256": "2b28e144fb3ba8205b5b9ac9fe8924a25242881f1843faa8687281ae4016608b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/ig-tips.ts",
+      "lines": 126,
+      "sha256": "8836ebb92e8efc89b830cd6fcf405072bbf0397a1b495903038530a44e27ee9c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/important-dates.ts",
+      "lines": 88,
+      "sha256": "385f7cc9d42ec5d107625185ea37d8b8717e3f813e7ab69fd47e778b6d709d51",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/invoice-parser.ts",
+      "lines": 220,
+      "sha256": "e1f8af46b11e4edba99935713dea75c2bf9c144b4fbff921742537965d3ff6a7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/invoices.ts",
+      "lines": 216,
+      "sha256": "a79599ca79053c5710bde64c4b547713df74e922b4f2964f2bb4ebd3ba11b535",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/apify.ts",
+      "lines": 97,
+      "sha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/availability.ts",
+      "lines": 148,
+      "sha256": "e383e7823ed3427ec33504c5d6f61dc8a8a9e6bfa4de2848331065f4d057f6de",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/board.ts",
+      "lines": 137,
+      "sha256": "046095e31df24c6f2c19b8daad7c55f58655e2bb4e5201218fbde8b5067a2a91",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/career-directory.ts",
+      "lines": 15,
+      "sha256": "c6b154bde5d4b2c36078bfe186056742cdbf16084d19ca9fc85aa6957c02982d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/companies.ts",
+      "lines": 49,
+      "sha256": "21955ca0117c4b0dbbbeedfb64cadbb7594fa3f70285a942dd0ea3fe2cf72e34",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/curated.ts",
+      "lines": 201,
+      "sha256": "877e5d15cc7144c90bacd2188640ff408fca15e912391dce00ed1410474c3ce2",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/employer-sources.ts",
+      "lines": 119,
+      "sha256": "b7663568dd2eb0ee3edfa07e0a0c25306a5e2d3e867236cfb74fc34b9275d862",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/enrich.ts",
+      "lines": 17,
+      "sha256": "16b2e5d1e6b7717e2e22897afe853a4a06b67c72116047754fa3329d40c548c0",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/filter.ts",
+      "lines": 163,
+      "sha256": "7c1231fbc432b611f3497ae2d39b81693af9ceaf6793c60f9a78ea7935cb2050",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/letter-helper.ts",
+      "lines": 219,
+      "sha256": "ef5e7283bf40f2dcc379c30dffdb9d5314346d0f09f44a90f8eafd2a178d7f9f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/match.ts",
+      "lines": 250,
+      "sha256": "05580a93260427159ec46bb16631c00971fd85cc4bd382cdc20ef33b294dcba5",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/meta.ts",
+      "lines": 154,
+      "sha256": "9adcfc76da63875ebcc5dc192894fb9e5d125e65b82a3db5b8d775dfa4f40775",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/oslo-companies.ts",
+      "lines": 454,
+      "sha256": "77648e6147dc42fca077c776a490c43930369445181cba1cf3a7d3606a398572",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/oslo-research.ts",
+      "lines": 965,
+      "sha256": "b8a9109122d1e69e33bcb1bc6b41960615c8270a93900c07ad98b7cd6e700aa3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/pipeline.ts",
+      "lines": 38,
+      "sha256": "ff9e8b89df099a9d53f10dd7256f225005f29b03279657553b9b70cfb59897c6",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/prune.ts",
+      "lines": 109,
+      "sha256": "93c3719f6902f17ce9d3374c4a682753ea4f0276571a072b143246403dff99d5",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/scrape.ts",
+      "lines": 261,
+      "sha256": "aaa4d49ed457e40aee9e0c77d465610c989f327e86edcc1e8e19b3d49a67a49d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/sources.ts",
+      "lines": 730,
+      "sha256": "2889a31b295058582ab83892a1e316cb8bea9a72629582640feb7d15273ae6e6",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/stats.ts",
+      "lines": 69,
+      "sha256": "cc2689e2d900a585fe5606d129273012d27e3adadcb6e27e89bf5de63668cceb",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/template.ts",
+      "lines": 115,
+      "sha256": "9d09e18a23792fea5317cde1eabc48f8ea3cb2c8bf4a693b05b01552ac587d52",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/jobs/types.ts",
+      "lines": 47,
+      "sha256": "0971cf6bc9b727edec0d167ed38c13b6e843b71dcfb1fa322d3d370c4dda7921",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/link-export.ts",
+      "lines": 162,
+      "sha256": "fb4dd39e96c2f8d406133b8edba6b22f8ea55b7902e6eeb2bada043fc84c7d56",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/link-library.ts",
+      "lines": 68,
+      "sha256": "a397b351ff05783a49901b5681b570392930336f8ee6f542f788ab0815f45e4c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/accounts-client.ts",
+      "lines": 67,
+      "sha256": "2b3bf1c1744f68d995b9e6862ad445259d61e553c4e3aafed11058c0cfd0bb30",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/asset-urls.ts",
+      "lines": 135,
+      "sha256": "2844672db9ed60d6550eeeb1eda0631cd3faf98a5d1b9f23c55fe93a4bc7eaee",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/automation-auth.ts",
+      "lines": 34,
+      "sha256": "df48f7ebe72ebd2782b5880449af55e48eecb2bdeca4a15c511c4c39bf061f57",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/calendar-source.ts",
+      "lines": 20,
+      "sha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/campaign-import.ts",
+      "lines": 38,
+      "sha256": "bfd46d2cfa1abc1fb8f19bfef97cb861712e7d7e831e2dbd989e110918698ef0",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/claude-call-profile.ts",
+      "lines": 31,
+      "sha256": "ef8b478bb879bb58bc7d1f363a70937961e102fa865dc014a5b7f17c147ef702",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/client.ts",
+      "lines": 26,
+      "sha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/clock.ts",
+      "lines": 14,
+      "sha256": "39da66b52da340c2004ab8d3596ff3e53613847b905fd47b8cf67a8b92e1d420",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/contracts.ts",
+      "lines": 338,
+      "sha256": "98853d6601d906d78b747c57c219b49e27f97e52747a281f797e6671d44e4171",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-apify-research-plan.ts",
+      "lines": 358,
+      "sha256": "1f39c19e72b5228020616038e01da1b3816532c7039a42fe8a66610172c467b9",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-apify-research.ts",
+      "lines": 200,
+      "sha256": "3664047f18920633bb5d1e2e7632d108bf50c73f5a53ea2c632251b8f833b8ef",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-audio-client.ts",
+      "lines": 94,
+      "sha256": "64ecb5d35f16a6099ec814f15024050a876a00a8f60073af1de94b36b4fc5fc2",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-audio-contracts.ts",
+      "lines": 114,
+      "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-audio-niche.ts",
+      "lines": 52,
+      "sha256": "acef8bf74369b3b5ad041a12074280d3d3c68df774acca85dd5bc82d0b9ffbc1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
+      "lines": 142,
+      "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-audio-trends.ts",
+      "lines": 118,
+      "sha256": "9b935d2e36d4e6eaa35d47c7250a2c8bcd85b1ae76dd41434a2d902c8cef00a6",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-audio.ts",
+      "lines": 184,
+      "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-brief-read.ts",
+      "lines": 123,
+      "sha256": "c1f51d141b5c505405112bc7db5e020a69080d534ba93b36bcb5d4690b8f2bbd",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-brief-source.ts",
+      "lines": 72,
+      "sha256": "dd72d330d9a1e66035a5e0d5fe33e8cdf778c77b1f68a96da03d72099bde6dd9",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-brief.ts",
+      "lines": 87,
+      "sha256": "fa756613860b5197c36645d2fcbac21b0573494e1cb496e74d264aee13190f10",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-briefs.ts",
+      "lines": 612,
+      "sha256": "ea73534cb67373dd09bf148765a4a543fb9a95dd437c5229d8c9016da16756aa",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-caption.ts",
+      "lines": 39,
+      "sha256": "d839e821d4807eb73f90f61878c75df2195a19d3b0e0be36c435fabc62c81a8f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-client.ts",
+      "lines": 49,
+      "sha256": "d425e7e23c3c7776b04d60f26eaebbbf9a75ed53efae808349cb21905fcc132e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-collection.ts",
+      "lines": 160,
+      "sha256": "3fb4640f98e3392083fddf48f5c102288785b9f1bd9291c9a02afebaaff2843f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-contracts.ts",
+      "lines": 107,
+      "sha256": "81393e49faa734e99dd92e32da8a46d7e0bca5a1995ab7983cfd04b0a70cf5bc",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-crop.ts",
+      "lines": 55,
+      "sha256": "336ec056f3e79cc1dd0722de60e4a91dcc419cb8c8f4dbd7f88d04847d5895e9",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-daily-mix-client.ts",
+      "lines": 26,
+      "sha256": "1a8d7965395d318f72663835db6873e8f0e10c3a2500b467513b4ee494ec9e80",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-daily-mix-read.ts",
+      "lines": 28,
+      "sha256": "80b7466914cea0b607558775eb434bdd105ef54e1d9831e10fd85e2f32ef5674",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-daily-mix.ts",
+      "lines": 36,
+      "sha256": "a902313b894e94c93e512da2eba1d249e391439069b70e8170f707c103115c8e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-deck-edit.ts",
+      "lines": 176,
+      "sha256": "b4d43e39919697d49a043c9e7ce28c01a82896fa66a74c35f29fca839b7b511a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-deck-editor.ts",
+      "lines": 408,
+      "sha256": "fe65f8bbb8983a192accf3cf8987226f28243d07d9750dc60f67791e7bfc359f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-engagement-ports.ts",
+      "lines": 194,
+      "sha256": "d4c5209978442f7c4e32112927199908e4aa00be7bfd279405af7733f774277e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-engagement-watch.ts",
+      "lines": 194,
+      "sha256": "46727126f81e9903ea6dadcc32d6811da840f5f9610673e54b2950dfc4c81afb",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-engagement.ts",
+      "lines": 26,
+      "sha256": "bed2681c5cac8174907a5e98330a7d41e592d64c7df32518dc3029a6c7df3ea7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-evaluation.ts",
+      "lines": 60,
+      "sha256": "8d6c16844207403d95f9857fd9e5a9c2d6a4f021c6a556c0462274e07ee67c95",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-events.ts",
+      "lines": 351,
+      "sha256": "6d1f48660a3d1192294acd3fcff583a5331f1a808942364926ad70588ed94e80",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-evidence-rollout.ts",
+      "lines": 88,
+      "sha256": "ae4e471aefe82c17b035ad5f48806e28ef88d2b318ba6c75ad79466f1bc8523a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-fact-or-hype.ts",
+      "lines": 226,
+      "sha256": "adcd3b1afffc951daef1c48f02227faf8f67d91c4ac4fb27f44a154e752b68ce",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-fit.ts",
+      "lines": 65,
+      "sha256": "abe11e9b01b8839623459aeb034e6b4be88413251ac9663214131d50a24d1846",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-generation.ts",
+      "lines": 599,
+      "sha256": "22eeecf2f194ba34c3a898ee6f7598e61cca55f6525d8b1c4ffa1eb35b06f0d7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-instagram-webhook.ts",
+      "lines": 42,
+      "sha256": "3d00e8db4524a1202814b3e2ea004e357020d60b74d3f09151341466d825a81d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-lab.ts",
+      "lines": 339,
+      "sha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-media-contracts.ts",
+      "lines": 126,
+      "sha256": "cc8bafa6d1931a0dd44efaba130c5cc5e895a5cb0dbeb39a3bf34c2c34af400c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-media-image.ts",
+      "lines": 162,
+      "sha256": "d6d45870a3689717bb456054fc65e204ef83b3cb84501e8c7856b4a15b8f8a4c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-media-plan.ts",
+      "lines": 407,
+      "sha256": "d50c3d274a7afaf4373cb60aee20c2d061c5699b51147453ce8389c181a95cea",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-media.ts",
+      "lines": 533,
+      "sha256": "a8a321edbaf7446b9a3db25f96e3ab5ddec9a3e42aae03b7b154a57c8609e861",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-move.ts",
+      "lines": 22,
+      "sha256": "63c093c388f42167b29332eecd0b59ca3a143ea32af9b8828d939195b4af2c06",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-native-feed.ts",
+      "lines": 90,
+      "sha256": "5b0827d6e41a7727171bba55dc8689d263daa210ccaf183a45665526514e10a3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-paid-actions.ts",
+      "lines": 177,
+      "sha256": "9823218bca61cec6468ea233bfdf36e84cef8576bad2bf91abe7180ad25ff7c7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-paid-switches.ts",
+      "lines": 12,
+      "sha256": "f348c394e205e2ef365ef0a3b5f2ed97ba216c1da1b46d5b3ba4484973605342",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-ports.ts",
+      "lines": 74,
+      "sha256": "950e789bee9091221c9e96119ed8835c43fc114acb993b843852017016a653c6",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-preview.ts",
+      "lines": 30,
+      "sha256": "2a21d1a59562b97f0c4de402f00c27d47d72c5380a099e5476f747ec141aeed6",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-providers.ts",
+      "lines": 209,
+      "sha256": "b0e519ea6628f4bfd01795d63e8f2bfe272b18c5daa6fdff1004c8f4610990ec",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-publishers.ts",
+      "lines": 18,
+      "sha256": "7f7960227414085cca9e055773707036c6be953e6584cdb2983113228de5956c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-read-database.generated.ts",
+      "lines": 177,
+      "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-recovery-rules.ts",
+      "lines": 73,
+      "sha256": "30b8c0190d89199218cc3719584039a7594b45c0b2da94fb326a005a8a248917",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-recovery.ts",
+      "lines": 154,
+      "sha256": "9a7b2148a4531bea4429c558665d823fd7715fd84e385f8f3fb0c6deb2bc1cf8",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-reel-format.ts",
+      "lines": 12,
+      "sha256": "1fd32d6aa80e3155a8a47bb720fffe9be87ed8ad8460d9ce4b110395b368a7ee",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-reel-render.ts",
+      "lines": 204,
+      "sha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-reel.ts",
+      "lines": 208,
+      "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-registry.ts",
+      "lines": 129,
+      "sha256": "935e671b4d3d254071903e1d74eee0842ecf0a8627cd3b8b8b06d09f635a00e4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-reminders.ts",
+      "lines": 85,
+      "sha256": "fa321f427e63213b5eca5cf1b09192a1b94a0b3c961b84797a7ccdcff43696c2",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-render.ts",
+      "lines": 517,
+      "sha256": "ec424d59dda7c3763bbacfa91d7c1005212c2e92b32cb5127a5c32a736e54b84",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-revision-edit.ts",
+      "lines": 127,
+      "sha256": "c317f1320d4cd875ab4bb0bef24d5ed894511fb2e9ef77c437daa92314aaecbc",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-scouting.ts",
+      "lines": 119,
+      "sha256": "8a3fed7161e9ba1b6ba967456a2b54bf310131b127bcc87569868974ccfa8762",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-slide-layout.ts",
+      "lines": 216,
+      "sha256": "4cc114cccb37f66ec76d17815d29159ed2513c3f52c11ec03c8824f86ddb3797",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-slides.ts",
+      "lines": 94,
+      "sha256": "077a35ae0dba21b4b53198e7a69bb437c1176c3c6bd1add9d42a94ef914f86be",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-source-catalog.ts",
+      "lines": 82,
+      "sha256": "58162b53aa0f5077d60d53342fd1d5f7f6314c0e1138ac7374c4bdaff6f4927b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-source-list-client.ts",
+      "lines": 24,
+      "sha256": "7eb23f5eb8f5982f61b4c7a70103ec6c2a95bda2f96dcc07729c84f7c614ff78",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-source-list.ts",
+      "lines": 122,
+      "sha256": "f08ae40c2053cf6f1ba203d57907f2b58c9eedff27f3c30e3e40281fbe172c43",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-store.ts",
+      "lines": 109,
+      "sha256": "1b3c901b8cd2c8bc831d1a81a5ca71fed475b98e690393a58fe67a88c1ab8b44",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-titling.ts",
+      "lines": 172,
+      "sha256": "5cf6c770f2454d5d4c5f263cae45dd50584d1290eaf7711513dae9f31fee9062",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-topic-bridge.ts",
+      "lines": 256,
+      "sha256": "e0db836b1f3c267561c1ca75381b8791fe103af334c87a6aaf97a8270a75e91c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-topic-model.ts",
+      "lines": 64,
+      "sha256": "6ffdd376b5583ce91643e0650c0dbb70f9a6e0211d3e94edbd19b09e80e7bc43",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-topic-source.ts",
+      "lines": 76,
+      "sha256": "83d221e795a2d32fa0e3d1de93bf3791552aa419d2399e9668a5da81fcef2a6e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-topic-spend.ts",
+      "lines": 44,
+      "sha256": "ccbfdc42cae48aab280e806283c7a907f18b75c848370254847f55d22794ed05",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-topics-client.ts",
+      "lines": 54,
+      "sha256": "2f1ef9e2e3ba899ae0b427aaeb76ba7eecdee5483f2084c63924948d4653a07f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-topics.ts",
+      "lines": 86,
+      "sha256": "bb04b9de7a38b044be39c3d6fb400b020b747771d59787ea379a6531a3328bff",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-wiring.ts",
+      "lines": 41,
+      "sha256": "129ff43ac42ee52dbf46e4434b9c70d9ee8db52c31859ba4ddd5fdea6723aba6",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-workspace-client.ts",
+      "lines": 184,
+      "sha256": "7ccf832fb792175e21060d02a2c24ec3ee0c1dd9a936cbdff59607f130a613f4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-workspace-read.ts",
+      "lines": 340,
+      "sha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-workspace.ts",
+      "lines": 377,
+      "sha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/security/content.ts",
+      "lines": 35,
+      "sha256": "2f71549cb98f6301d6c47a447806e3f27af670d28a3744bf00db066bcce70e15",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/security/pinned-fetch.ts",
+      "lines": 43,
+      "sha256": "88ca4acce4d463e5fe2003d6011574d0af097c468c25781d9dc4afec52bdb708",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/security/url.ts",
+      "lines": 265,
+      "sha256": "36eae00f66d2de188225bb9180f1ca0fb7d74e0f583e84970d6351d1b122c4bb",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/arxiv.ts",
+      "lines": 28,
+      "sha256": "1d8a08d811a1e07495dc5e74aec2636a857b91e010fb13e095838bba62a2df6a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/bluesky.ts",
+      "lines": 62,
+      "sha256": "32c7dc2e7f4b3c74284661d3f05b836fdb112c8552bfcca8fb6cbd751a3fb8c1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/github.ts",
+      "lines": 66,
+      "sha256": "21c8342559bbd36ce5c533b176f6a5676a0ff68015d928bb3bc59e9faca53461",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/hn.ts",
+      "lines": 69,
+      "sha256": "ce636597f2eb290db339a70cd335113185bbea25cbd9f4ca2a9764c243da12d5",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/hnsearch.ts",
+      "lines": 56,
+      "sha256": "a50e663ffb2df1eb951b4cd8b432213afab3279e125f48a301adaf78f28458f7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/html.ts",
+      "lines": 382,
+      "sha256": "e46782f11d3a29070d5058160697a59620f7dd377e8f7e709c542b709641ae3f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/index.ts",
+      "lines": 40,
+      "sha256": "44b7b451136c55533c75c0a6f398c7ec47886c91be117a19da9254efe0923d57",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/reader.ts",
+      "lines": 24,
+      "sha256": "23eae1f64540becaa0c873f9aa76c2c97ef5be70687deddb7e9e6579bd662a0e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/rss.ts",
+      "lines": 96,
+      "sha256": "a386bfb003d80dade36bf7824effc9aa915b7b0c62197cdd50f5e8631d6ee65b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/spaceflight.ts",
+      "lines": 52,
+      "sha256": "9fd24fcd24443065c9ea15fef118f5a691fbb44d46b552f6c4b2831fb98fe28c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/stackexchange.ts",
+      "lines": 57,
+      "sha256": "4def0dac53f0f551b731dc686c65108449c95b8d07ccaf70d31fc1762b193e29",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/adapters/util.ts",
+      "lines": 163,
+      "sha256": "0c2675ba4458ee9cdc89c18e570c91480d0215478c1ca01dfb0d3fd963625215",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/free-feeds/sources/types.ts",
+      "lines": 83,
+      "sha256": "a9331dd6412655914afaf5d15ea8a1f5d8676f39bf12250a4160e565955c8aca",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/generation-benchmark.ts",
+      "lines": 37,
+      "sha256": "e89c1503fba0ef4105fca083f4608f3f964365381e8530d7958e9a980d50e1a3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/generation.ts",
+      "lines": 554,
+      "sha256": "50280a58d5e6a68a631d2e0f58c5dcb13f8a87c65ae6bd7e9ffbb83da5267448",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/hashes.ts",
+      "lines": 28,
+      "sha256": "fbe0c961337784f761ff25d5b9d1a213cdec27e8898b81285fb3bf26fa87a878",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/http.ts",
+      "lines": 20,
+      "sha256": "5757a070f59c830d4199ad5f2f93a301f7ae6811c599e721b3eae8169f71247e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/humanizer.ts",
+      "lines": 36,
+      "sha256": "fa936a77be593c0bcb483c7032c57f788a65bcc15c3a4d8f931fa5d55be2704d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/job-health.ts",
+      "lines": 43,
+      "sha256": "22cd1471f99a9d8ef11797d9fd4c9313dcbe78c3a7a2245c19c1ba68522ea71f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/knowledge-body.ts",
+      "lines": 16,
+      "sha256": "6412bf7a958d2c51bf30a00e66201fd7d31beac81617b5f6dbffa9db21ae8750",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/knowledge-copy.ts",
+      "lines": 33,
+      "sha256": "38f98153adbd80636978fb03be52431a64938ef43934d59be8c50a34f7c611ed",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/knowledge-extraction.ts",
+      "lines": 91,
+      "sha256": "0427a487f7d8525b23dc378d1a205b759b78a2570ffafc39c31d76e93ee367f9",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/knowledge-providers.ts",
+      "lines": 43,
+      "sha256": "7c1288efd92b7cef65255e73f28dead57a170e901ed0f30602fbdc8a49b2c559",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/knowledge-runner.ts",
+      "lines": 165,
+      "sha256": "068b358a084f28c023fef6f2b04e14d68c921af98638c7be64260e6f09e608d7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/knowledge.ts",
+      "lines": 178,
+      "sha256": "0feb522e11df69b8eb71408dacb9d077eb6abf698d1699a1fd7707aab233f36c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/marketing-codes.ts",
+      "lines": 660,
+      "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/meta-account.ts",
+      "lines": 152,
+      "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/meta-credentials.ts",
+      "lines": 229,
+      "sha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/meta-facebook-page.ts",
+      "lines": 55,
+      "sha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/offline-import-client.ts",
+      "lines": 29,
+      "sha256": "9bc1566fa69a5fb200b30f592c1308b4b0527fd5f6982f78e10fbaac3fa4d506",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/offline-import-validation.ts",
+      "lines": 93,
+      "sha256": "609c83650d2d352fca4bcd48b975aa3c121c0577a13efc7e6cc3ce7204436147",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/offline-import.ts",
+      "lines": 88,
+      "sha256": "7fd45afe40ab5c8eea3dac2191c3f6dadd37418988159838ccebfad1e0d52bca",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/orchestrator.ts",
+      "lines": 187,
+      "sha256": "f83a5180ea40a9de68e97013f5d11548790e9c135005a1e35513eb489a15d8d1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/owner-edits.ts",
+      "lines": 142,
+      "sha256": "983a5a008f5d5c72d51ec133b73d00fcee6dfa8aa465b828ec5f61c32e6d722c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/owner-feedback.ts",
+      "lines": 68,
+      "sha256": "6a283d2c9df1b4252b15246fd391f91b72f87828a6e7d42231267c4fbfe5eb4b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/pilot.ts",
+      "lines": 28,
+      "sha256": "272bc806b1a7a559b011de90f524c1512a85eebd0076af2bd5f73677448ee04b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/preview-pilot.ts",
+      "lines": 30,
+      "sha256": "e46773ca615febfc88a09873fe71fb67ea98d650f824e59acd4d4e2cd6594426",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/provider-errors.ts",
+      "lines": 47,
+      "sha256": "65f9bbd15a9bdf4d4755aee6e41b6d7e505aa8bd4a0839f17c98af60d164fd72",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/publication-requeue.ts",
+      "lines": 40,
+      "sha256": "078a9afd7927baa7dc3a62e037f520d6ddd07ba0c7bbbe6af98ac75c73c036f4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/publisher.ts",
+      "lines": 549,
+      "sha256": "b7e2b2918ed933268dda8585d026ae03365fb25d5e0ca83f4c3cac481f287087",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/render-preflight.ts",
+      "lines": 54,
+      "sha256": "102e381cc742ef7b99ea53c134ed252bd9487ca2c3401f4d46ecfa6c4fd8f992",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/render.ts",
+      "lines": 278,
+      "sha256": "ee038a17d2e9dda93917f82bf583bfa956144402e00cef5a4a7968474c03bdb1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/retired-route.ts",
+      "lines": 11,
+      "sha256": "ff289d0838ebe2978df629a0cd89dbd1dd3aa036fce746bc1094dde992ee71bd",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/scheduler-ports.ts",
+      "lines": 207,
+      "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/scheduler.ts",
+      "lines": 780,
+      "sha256": "1489a79bfdc76f7252e413f6981b51481f917d2e26807ea5157cd905d7b8bc3f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/source-refresh.ts",
+      "lines": 228,
+      "sha256": "1b6dca64b8515c6da96af83011a0ef97d4705c196f1167cd2f6de9d98b7115be",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/store.ts",
+      "lines": 28,
+      "sha256": "a33362bf8531847b157635011f4dc2dcab6ee552674df524b9ec2ca35a8c33fb",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/template-registry.ts",
+      "lines": 51,
+      "sha256": "d100aa5a0a0d3365410d4a076cbdf73aeca6edb44350235d2fb050c2fb59dd49",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/tracing.ts",
+      "lines": 311,
+      "sha256": "d81618319244db9fc6e1aefd43f9ea03de5303482b03c642f326a9281bd181c9",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/weekly-analytics.ts",
+      "lines": 49,
+      "sha256": "dda18215ea00ae99bab911cc36b5a917a5fb00266b48fe7e45ab56098d880507",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/weekly-planning.ts",
+      "lines": 90,
+      "sha256": "55fa1ad21a8cff8dd25a8e0990a85a5d10c4d8952d2f4d5b8f2836bf7a48b321",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/weekly-source-candidates.ts",
+      "lines": 18,
+      "sha256": "ff80acff5981c39f47daaf31ac7617633b98dc21a08dbc17451741cf432edf21",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing/worker-runtime.ts",
+      "lines": 399,
+      "sha256": "a2121b43774eaaca2cba0dda10d58db19b293eae5055b69501bdf4bbbec209da",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing-calendars-server.ts",
+      "lines": 59,
+      "sha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/marketing-calendars.ts",
+      "lines": 409,
+      "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/nav-tabs.ts",
+      "lines": 105,
+      "sha256": "8d345659f6e33d5cf302171d9a8966ee9144a71fbbbe66d5542c332ad19cec45",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/needed-sync.ts",
+      "lines": 269,
+      "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/needed.ts",
+      "lines": 285,
+      "sha256": "7de312c49f3b1a80aec62b25360687b4aa3229c44c255c634b2abec841c8f160",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/new-project-guide.ts",
+      "lines": 49,
+      "sha256": "8f86562202cd0cd6ae7090eae8b570418e217431985979d150700a83cbe9e753",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/notes-text.ts",
+      "lines": 41,
+      "sha256": "c811879108f426e886b30f7fc029abf3ad5db14813f3f1727af22c70477de576",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/notifications.ts",
+      "lines": 22,
+      "sha256": "b2bbdabb7331e45b467be4604d79a58962a29c43d3b810c3e3080a1c18b93305",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/on-demand-load.ts",
+      "lines": 56,
+      "sha256": "3f2d188ee7b0eeec78885e4f26e303ef56ce0dfe078f28e85af848de5fbac3ae",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/payment-matching-server.ts",
+      "lines": 226,
+      "sha256": "9f2339ec270c7f83eb8bc0563722e9925444e34acc83e8c6fc6c5986b540abf5",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/payment-matching.ts",
+      "lines": 225,
+      "sha256": "c30bee4d976fc0c4b859374fafcc509075d1fd25ecbd0364022a1c25e510f56f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/pdf-extract.ts",
+      "lines": 51,
+      "sha256": "bb0949d377f664a851a588407717a3b3acba38e9fa6edcbc17e39f0909e3d623",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/plan-recurrence.ts",
+      "lines": 133,
+      "sha256": "7ad1ebe4643297dc06398e70b700c46f64af2ddda0ef2b7a7b1ae9de3648f902",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/portfolio.ts",
+      "lines": 254,
+      "sha256": "fc7d20121de9c45c7b82ae4a24611f271795b42a70de68b15d550bee95da455f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/preference-client.ts",
+      "lines": 24,
+      "sha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/project-cron-seeds.ts",
+      "lines": 51,
+      "sha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/project-health.ts",
+      "lines": 59,
+      "sha256": "11cfd5b6d912c10b0644330e0d5d0087d572e4e7cfa9a7014ee0dc1fa85d788f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/project-links.ts",
+      "lines": 78,
+      "sha256": "826e16d91da56b20e65bd1407e238124c9ee8944951f914ea9677ae4e1cb0e6e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/project-match.ts",
+      "lines": 183,
+      "sha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/project-workspace-tabs.ts",
+      "lines": 69,
+      "sha256": "f54a48225ab35bb03d367dd63cb457d1306fa7da239c08b7c40b2821afbff101",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/projects.ts",
+      "lines": 78,
+      "sha256": "bde36efad03360f148d2149342728a8fd2a19ac6b81e2fc3f321046766c8f774",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/prompt-composer.ts",
+      "lines": 113,
+      "sha256": "fb7485b7c01a96e5535439c7ea6a359e3d49b311ef2c3cf7bd42ed98497a530c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/prompt-kinds.ts",
+      "lines": 78,
+      "sha256": "bdf6b9df23a6b6543ada34656a498e21ff783b123b6417a66cee32c958a77e4c",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/prompt-links.ts",
+      "lines": 108,
+      "sha256": "2810aa9fc1e933bf07c7a7c5de65170a30d3c4f4cce7af5e80c7931173ba4d79",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/queries/entities.ts",
+      "lines": 80,
+      "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/queries/fetchers.ts",
+      "lines": 542,
+      "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/queries/keys.ts",
+      "lines": 82,
+      "sha256": "1f107c462a090179e138065bda8467b163bccb7a06f542f8808cef005bc04b6b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/rate-limit.ts",
+      "lines": 89,
+      "sha256": "dcf0c56a4a3c77004e7345580455264cdd5b6a61da308a85b91372ec0bc1fe99",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/stack-detection-server.ts",
+      "lines": 173,
+      "sha256": "669da36b688242c44ee953bb95c08f36d3fa12a4fe1d194c5fcf3374a8a94b8a",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/stack-detection.ts",
+      "lines": 410,
+      "sha256": "e1a688c71b1f13e4086b59ec58f4ee09990495336bd2bf0bf7694a6d692f6a6f",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/status-presentation.ts",
+      "lines": 45,
+      "sha256": "3f1e4168aa5056d8c6b01a262ba399a5c92c9f6600e3b5b0500a86a2fbfee2e7",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/subscription-brands.ts",
+      "lines": 59,
+      "sha256": "671167ab78fed1202023a6fe0af0e4ab71891ca021dda0f4698c4d31e66e8746",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/subscriptions.ts",
+      "lines": 71,
+      "sha256": "f76678845c96970e1dd9c41b356033008ebc48e564198842a0e767a732b5bf33",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/supabase/admin.ts",
+      "lines": 28,
+      "sha256": "8601dc6498a8eae6ab5a8d6bd3ee68cc77fe58972cb669f6a877018757a1a250",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/supabase/client.ts",
+      "lines": 10,
+      "sha256": "661aa32384926007f70f75fd3b96e9752ca09926d60be1717d7ddc3452770796",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/supabase/middleware.ts",
+      "lines": 75,
+      "sha256": "29c9d9ee5238e5ef8f037b765cd4827b609afcd862c21d03ebcab15a9e458914",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/supabase/server.ts",
+      "lines": 27,
+      "sha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/supabase/user.ts",
+      "lines": 18,
+      "sha256": "555b20560ab938f4cd3ac7cd9118b4bbd66f684b66a0a49ef7e4e4bf4073ef73",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/tag-colors.ts",
+      "lines": 33,
+      "sha256": "c6546f238515efe3f43493a4d7f6cc9829a1a5223038901598ba706b7de7e319",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/task-meta.ts",
+      "lines": 64,
+      "sha256": "422879b4f96468956e39053d738eac118e9985c98b821f80a1bf19a406d7ecf0",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/tax-registry.ts",
+      "lines": 311,
+      "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/tip-export.ts",
+      "lines": 120,
+      "sha256": "c4075ec598edea82a86b850ea3ce5942674e1cd2816e37d09565713ab09dd6bc",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/tools.ts",
+      "lines": 74,
+      "sha256": "c69de44564b5b8002e3d790b23073406c6dae2316da26098097aec21b5e4db54",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/transaction-rules.ts",
+      "lines": 568,
+      "sha256": "28552e186b285c368ed191729d2852883bf9a49261e62c97ad67695b7605e060",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/types.ts",
+      "lines": 1004,
+      "sha256": "32cd65c41e486e78479dc9fbf3b5d7f2402e147c2bee808f8658e5bdbd3ce92e",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/use-dashboard-layout.ts",
+      "lines": 66,
+      "sha256": "2a83f698129a2a0ab9a2308692fea63345b4e1d6b64ce59e58af59ce9c284f95",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/use-now.ts",
+      "lines": 44,
+      "sha256": "c855009ac88015b173e6bf19b05703474ec90d1901c30710d53a6910b4f02efd",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/use-prefs.ts",
+      "lines": 502,
+      "sha256": "eceeeb07c83f5ff9fee096ccf750da6350dae2b060b51d3c9372c4a5a26065df",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/use-return-focus.ts",
+      "lines": 26,
+      "sha256": "bd55b6e440b592e8bbcaac04032e0be074252f80064d202bf3b4c692fb0c5d47",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/use-spend-categories.ts",
+      "lines": 96,
+      "sha256": "808490821c6c04a597786e3c8eea78df10f6e382550b3c8c766adbd9034fe632",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/use-theme.ts",
+      "lines": 39,
+      "sha256": "e54eb25a772eaad399b040abe986227c710688392de96614920045a86a70c11d",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/user-prefs.ts",
+      "lines": 116,
+      "sha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "lines": 28,
+      "sha256": "cb945ce4d4ca64547fe4b83ef2864d3a6498d1ed7fb5b310969909620aeb037b",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/vercel.ts",
+      "lines": 155,
+      "sha256": "9b5a06f1c27448276f64e44672b90ec93160215fff3102f9c6aa43a1ea9f7a39",
+      "status": "pending"
+    },
+    {
+      "path": "src/lib/weekly-planning.ts",
+      "lines": 476,
+      "sha256": "74407b98155ff9bc9ec5afcb677d12f990a53359517ee5978e356e36758dc99f",
+      "status": "pending"
+    },
+    {
+      "path": "src/proxy.ts",
+      "lines": 17,
+      "sha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9",
+      "status": "pending"
+    }
+  ]
+}
