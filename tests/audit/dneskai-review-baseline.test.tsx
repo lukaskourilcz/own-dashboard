@@ -37,7 +37,7 @@ const row = (n: number, status = 'published'): Row => ({ id: id(n), user_id: own
 
 describe('DNESKAi audit: observed baseline defects', () => {
   it('C02: loses a pending decision behind 150 newer eligible revisions', async () => {
-    const old = row(999, 'review');
+    const old = { ...row(999, 'review'), created_at: '2026-09-01T08:00:00Z' };
     const control = await readDneskaiWorkspace(database({ marketing_revisions: [old] }), owner, now);
     expect(control.posts.map(p => p.id)).toContain(id(999));
     const read = await readDneskaiWorkspace(database({ marketing_revisions: [...Array.from({ length: 150 }, (_, n) => row(n + 1)), old] }), owner, now);
@@ -47,7 +47,7 @@ describe('DNESKAi audit: observed baseline defects', () => {
   it('C03: other brands fill the jobs limit before the DNESKAi filter', async () => {
     const job = (n: number, brand: string): Row => ({ id: id(n), user_id: owner, brand, status: 'queued', error_code: null,
       created_at: '2026-10-23T08:00:00Z', scheduled_at: '2026-10-23T16:00:00Z', revision_id: id(1000+n), title: 'Synthetic queued draft' });
-    const target = job(999, 'dneskai');
+    const target = { ...job(999, 'dneskai'), created_at: '2026-10-23T07:00:00Z' };
     expect((await readDneskaiWorkspace(database({ marketing_jobs: [target] }), owner, now)).jobs).toHaveLength(1);
     const read = await readDneskaiWorkspace(database({ marketing_jobs: [...Array.from({ length: 60 }, (_, n) => job(n + 1, 'devshark')), target] }), owner, now);
     expect(read.jobs).toHaveLength(0);

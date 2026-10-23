@@ -1,0 +1,5738 @@
+{
+  "baseline": "d6f60c7271c8078713fe2f56d63bc71fe10a5692",
+  "date": "23 October 2026",
+  "counts": {
+    "componentFiles": 155,
+    "marketingLibraries": 137,
+    "marketingRoutes": 37,
+    "marketingMigrations": 49
+  },
+  "spots": [
+    {
+      "id": "lab",
+      "area": "DNESKAi review",
+      "priority": "P1",
+      "title": "Bring the selected post into view",
+      "evidence": "dneskai-lab-cs-dark-1440",
+      "refs": "U01 · C01",
+      "problem": "Six topic cards push the selected post below the first viewport. Channel selection and refresh occupy separate bands. Unsaved edits can disappear on tab changes.",
+      "proposal": "One compact toolbar, a bounded topic inbox and an aligned queue / actual preview / inspector. Keep a stable action bar and guard every dirty exit.",
+      "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
+      "line": 35,
+      "hotspots": [
+        {
+          "x": 19.2,
+          "y": 16,
+          "w": 77.8,
+          "h": 12,
+          "label": "Combine channel and refresh"
+        },
+        {
+          "x": 19.2,
+          "y": 32,
+          "w": 77.8,
+          "h": 63,
+          "label": "Bound the topic inbox"
+        }
+      ],
+      "criteria": [
+        "Selected post visible before the backlog",
+        "Save / Discard / Stay on each exit",
+        "Approval still matches saved pixels"
+      ]
+    },
+    {
+      "id": "sources",
+      "area": "Sources",
+      "priority": "P2",
+      "title": "Separate source management from settings",
+      "evidence": "dneskai-sources-cs-dark-1440",
+      "refs": "U02",
+      "problem": "The Sources tab stacks 20 Instagram profiles and 41 websites before daily mix and music. Each desktop row spreads short information across a wide canvas.",
+      "proposal": "Use local Sources / Daily mix / Music navigation, search and a compact source row with stable status and action columns.",
+      "path": "src/components/marketing/dneskai-source-list.tsx",
+      "line": 1,
+      "hotspots": [
+        {
+          "x": 19.2,
+          "y": 12,
+          "w": 77.8,
+          "h": 77,
+          "label": "Compact source rows; make Music directly reachable"
+        }
+      ],
+      "criteria": [
+        "Music and Daily mix open directly",
+        "Source names, status and freshness align",
+        "Long names wrap; evidence remains reachable"
+      ]
+    },
+    {
+      "id": "mix",
+      "area": "Daily mix",
+      "priority": "P2",
+      "title": "Fit short settings to their content",
+      "evidence": "dneskai-mix-audio-cs-dark-1440",
+      "refs": "U03 · U08",
+      "problem": "Two count selects, four times and Save use separate rows inside a 1120 px section. Mobile selects measure only 36 px high.",
+      "proposal": "Use a centered bounded form. Combine counts, active times and Save when their intrinsic widths fit; wrap into labelled groups with 44 px targets on mobile.",
+      "path": "src/components/marketing/dneskai-daily-mix.tsx",
+      "line": 43,
+      "hotspots": [
+        {
+          "x": 19.2,
+          "y": 48.8,
+          "w": 77.8,
+          "h": 31.6,
+          "label": "Shrink the working width and align the controls"
+        }
+      ],
+      "criteria": [
+        "One desktop control row when it fits",
+        "44 px mobile control targets",
+        "Slot validation stays beside the affected fields"
+      ]
+    },
+    {
+      "id": "work",
+      "area": "Work overview",
+      "priority": "P2",
+      "title": "Let the attention panel end with its content",
+      "evidence": "work-cs-dark-1440",
+      "refs": "U04",
+      "problem": "One short attention record stretches into a 662 × 1455 px card beside the planner column. The first viewport contains a large blank region.",
+      "proposal": "Use content-driven card heights and a grid aligned at the top. Move upcoming work into the recovered area. Keep peer KPI cards equal.",
+      "path": "src/components/panels/work-overview-panel.tsx",
+      "line": 117,
+      "hotspots": [
+        {
+          "x": 19.2,
+          "y": 23.7,
+          "w": 46,
+          "h": 72,
+          "label": "Remove forced stretch from this task panel"
+        }
+      ],
+      "criteria": [
+        "One record produces a short card",
+        "Planner retains its natural height",
+        "Related lower modules move up"
+      ]
+    },
+    {
+      "id": "settings",
+      "area": "Settings",
+      "priority": "P2",
+      "title": "Bring labels and controls together",
+      "evidence": "settings-cs-dark-1440",
+      "refs": "U05 · U08",
+      "problem": "Preference rows span most of the canvas, with controls far from their labels. Other settings continue through a long vertical page.",
+      "proposal": "Center a bounded preference grid, group configuration by task and use section anchors. Match segmented controls; expose policy detail on demand.",
+      "path": "src/components/panels/settings-panel.tsx",
+      "line": 1,
+      "hotspots": [
+        {
+          "x": 19.2,
+          "y": 12,
+          "w": 77.8,
+          "h": 44,
+          "label": "Bound the label/control distance"
+        }
+      ],
+      "criteria": [
+        "Shared label and control columns",
+        "Peer controls use the same height",
+        "Short guidance with optional supporting detail"
+      ]
+    },
+    {
+      "id": "finance",
+      "area": "Finance navigation",
+      "priority": "P2",
+      "title": "Open each destination on its own task",
+      "evidence": "accounts-cs-dark-1440",
+      "refs": "U06",
+      "problem": "Accounts, Transactions and Categories all mount the same overview. Accounts begins around y=1508 after charts and import/reconciliation sections.",
+      "proposal": "Keep Money as the overview. Open Accounts on accounts, Transactions on its table and Categories on category management, sharing the same calculations and data layer.",
+      "path": "src/components/dashboard-shell.tsx",
+      "line": 397,
+      "hotspots": [
+        {
+          "x": 19.2,
+          "y": 11.8,
+          "w": 77.8,
+          "h": 76,
+          "label": "Move overview charts to Money; show destination records first"
+        }
+      ],
+      "criteria": [
+        "Selected destination records appear first",
+        "One contextual primary action",
+        "Static FX and financial semantics stay intact"
+      ]
+    },
+    {
+      "id": "mobile",
+      "area": "Mobile headers & controls",
+      "priority": "P2",
+      "title": "Use one title and consistent touch targets",
+      "evidence": "settings-en-light-360",
+      "refs": "U07 · U08",
+      "problem": "The shell and page body both show Settings. Currency options use smaller controls beside the taller language and appearance segments.",
+      "proposal": "Assign one title owner across breakpoints. Reuse a segmented-control variant with a 44 px hit area; retain useful descriptions and safe-area spacing.",
+      "path": "src/components/ui/page-header.tsx",
+      "line": 35,
+      "hotspots": [
+        {
+          "x": 3.5,
+          "y": 1.5,
+          "w": 91,
+          "h": 15,
+          "label": "Keep one visible page title"
+        },
+        {
+          "x": 8,
+          "y": 59,
+          "w": 85,
+          "h": 5,
+          "label": "Match touch-target sizes"
+        }
+      ],
+      "criteria": [
+        "One visible title at every breakpoint",
+        "44 px mobile interactive areas",
+        "EN/CS labels and large text reflow"
+      ]
+    },
+    {
+      "id": "tasks",
+      "area": "Task filters",
+      "priority": "P3",
+      "title": "Keep the task list close to the top",
+      "evidence": "tasks-en-light-360",
+      "refs": "U11",
+      "problem": "Four filter rows precede the task list on a 360 px screen. More planning screens keep creation forms permanently open.",
+      "proposal": "Show active-filter summary and a labelled Filter sheet on narrow screens. Keep desktop inline controls; open creation forms on demand.",
+      "path": "src/components/panels/todos-panel.tsx",
+      "line": 1,
+      "hotspots": [
+        {
+          "x": 4.5,
+          "y": 27.5,
+          "w": 91,
+          "h": 28,
+          "label": "Collapse inactive filters into a mobile sheet"
+        }
+      ],
+      "criteria": [
+        "Count and active filters remain visible",
+        "Clear all is reachable",
+        "Lists regain first-viewport space"
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "slug": "home",
+      "title": "Home",
+      "change": "Keep the daily focus hierarchy; align widget headers and collapse inactive widgets.",
+      "refs": "U16",
+      "evidence": "home-cs-dark-1440"
+    },
+    {
+      "slug": "work",
+      "title": "Work",
+      "change": "Remove stretched attention height; align independent modules at the top.",
+      "refs": "U04",
+      "evidence": "work-cs-dark-1440"
+    },
+    {
+      "slug": "marketing",
+      "title": "Marketing",
+      "change": "One compact action bar and an actionable empty state; keep project context explicit.",
+      "refs": "U16",
+      "evidence": "marketing-cs-dark-1440"
+    },
+    {
+      "slug": "workflows",
+      "title": "Workflows",
+      "change": "Reduce repeated explanatory prose; keep the process map as a reference with clear destinations.",
+      "refs": "U16",
+      "evidence": "workflows-cs-dark-1440"
+    },
+    {
+      "slug": "projects",
+      "title": "Projects",
+      "change": "Align status/cost/action columns; keep Own and Freelance grouping.",
+      "refs": "U15",
+      "evidence": "projects-cs-dark-1440"
+    },
+    {
+      "slug": "competition",
+      "title": "Competition",
+      "change": "Align project groups and compact sparse rows; retain evidence and freshness.",
+      "refs": "U14",
+      "evidence": "competition-cs-dark-1440"
+    },
+    {
+      "slug": "opportunities",
+      "title": "Opportunities",
+      "change": "Clarify the first check and freshness; keep Tugedr as the opportunity source.",
+      "refs": "U14",
+      "evidence": "opportunities-cs-dark-1440"
+    },
+    {
+      "slug": "clients",
+      "title": "Clients",
+      "change": "Use content-sized rows with stable status, count and action columns.",
+      "refs": "U14",
+      "evidence": "clients-cs-dark-1440"
+    },
+    {
+      "slug": "career",
+      "title": "Career",
+      "change": "Keep role-card hierarchy; place freshness and refresh feedback beside results.",
+      "refs": "U14",
+      "evidence": "career-cs-dark-1440"
+    },
+    {
+      "slug": "invoices",
+      "title": "Invoices",
+      "change": "Standard toolbar and row rhythm; preserve Czech invoice and A4 output.",
+      "refs": "U15",
+      "evidence": "invoices-cs-dark-1440"
+    },
+    {
+      "slug": "money",
+      "title": "Money",
+      "change": "Keep overview charts here; equalise peer metric modules.",
+      "refs": "U06 · U15",
+      "evidence": "money-cs-dark-1440"
+    },
+    {
+      "slug": "accounts",
+      "title": "Accounts",
+      "change": "Land on account balances and Add account; move overview analysis to Money.",
+      "refs": "U06",
+      "evidence": "accounts-cs-dark-1440"
+    },
+    {
+      "slug": "transactions",
+      "title": "Transactions",
+      "change": "Land on transaction search, filters and records.",
+      "refs": "U06",
+      "evidence": "transactions-cs-dark-1440"
+    },
+    {
+      "slug": "subscriptions",
+      "title": "Subscriptions",
+      "change": "Open Add on demand; show next renewal date and cost classification in the list.",
+      "refs": "U15",
+      "evidence": "subscriptions-cs-dark-1440"
+    },
+    {
+      "slug": "categories",
+      "title": "Categories",
+      "change": "Land on category management rather than the shared finance overview.",
+      "refs": "U06",
+      "evidence": "categories-cs-dark-1440"
+    },
+    {
+      "slug": "tasks",
+      "title": "Tasks",
+      "change": "Mobile active-filter summary and filter sheet; aligned desktop groups.",
+      "refs": "U07 · U11",
+      "evidence": "tasks-cs-dark-1440"
+    },
+    {
+      "slug": "calendar",
+      "title": "Calendar",
+      "change": "Prioritise upcoming events; open creation on demand and align fields.",
+      "refs": "U11",
+      "evidence": "calendar-cs-dark-1440"
+    },
+    {
+      "slug": "goals",
+      "title": "Goals",
+      "change": "Give the board default space; move new-goal form to a labelled action.",
+      "refs": "U11",
+      "evidence": "goals-cs-dark-1440"
+    },
+    {
+      "slug": "dates",
+      "title": "Dates",
+      "change": "Compact upcoming rows; keep project/client context and Add on demand.",
+      "refs": "U11",
+      "evidence": "dates-cs-dark-1440"
+    },
+    {
+      "slug": "notes",
+      "title": "Notes",
+      "change": "Clear mobile list/editor transition, consistent toolbar and save feedback.",
+      "refs": "U13",
+      "evidence": "notes-cs-dark-1440"
+    },
+    {
+      "slug": "prompts",
+      "title": "Prompts",
+      "change": "Standard search/filter toolbar; full-copy preview and one clear Copy action.",
+      "refs": "U13",
+      "evidence": "prompts-cs-dark-1440"
+    },
+    {
+      "slug": "tools",
+      "title": "Tools",
+      "change": "Align peer card metadata/action bars; keep cost classification and renewal explicit.",
+      "refs": "U13",
+      "evidence": "tools-cs-dark-1440"
+    },
+    {
+      "slug": "links",
+      "title": "Links",
+      "change": "Compact group headers and stable actions; preserve project associations.",
+      "refs": "U13",
+      "evidence": "links-cs-dark-1440"
+    },
+    {
+      "slug": "ig-tips",
+      "title": "IG TIPS",
+      "change": "Align filters and source metadata; preserve evidence and full detail.",
+      "refs": "U13",
+      "evidence": "ig-tips-cs-dark-1440"
+    },
+    {
+      "slug": "settings",
+      "title": "Settings",
+      "change": "Bound form width, group sections and remove the mobile title duplicate.",
+      "refs": "U05 · U07",
+      "evidence": "settings-cs-dark-1440"
+    },
+    {
+      "slug": "inbox",
+      "title": "Inbox · URL only",
+      "change": "Keep the hidden navigation policy; align empty and recovery states.",
+      "refs": "U16",
+      "evidence": "inbox-en-light-1440"
+    },
+    {
+      "slug": "references",
+      "title": "References · URL only",
+      "change": "Bound reading width and preserve keyboard-reference readability.",
+      "refs": "U13",
+      "evidence": "references-en-light-1440"
+    }
+  ],
+  "components": [
+    {
+      "path": "src/components/brand-mark.tsx",
+      "lines": 23,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/calendar/calendar-picker.tsx",
+      "lines": 167,
+      "family": "Planning",
+      "recommendations": [
+        "U07",
+        "U11"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/calendar/relink-cta.tsx",
+      "lines": 44,
+      "family": "Planning",
+      "recommendations": [
+        "U07",
+        "U11"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/calendar/week-view.tsx",
+      "lines": 169,
+      "family": "Planning",
+      "recommendations": [
+        "U07",
+        "U11"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/category-select.tsx",
+      "lines": 164,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/charts/category-donut.tsx",
+      "lines": 46,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/charts/months-bar-chart.tsx",
+      "lines": 70,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/charts/shared.ts",
+      "lines": 12,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/charts/spend-bar-chart.tsx",
+      "lines": 40,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/command-palette.tsx",
+      "lines": 280,
+      "family": "Shell & navigation",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U12",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/competition/competitor-dialog.tsx",
+      "lines": 247,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/competition/competitor-list.tsx",
+      "lines": 173,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/cost-overview.tsx",
+      "lines": 279,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/dashboard-shell.tsx",
+      "lines": 418,
+      "family": "Shell & navigation",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U12",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/demo-dashboard.tsx",
+      "lines": 123,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/finances/bank-sync.tsx",
+      "lines": 805,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/finances/payment-matches.tsx",
+      "lines": 275,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/finances/transaction-rules.tsx",
+      "lines": 944,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/github/publish-to-repo-dialog.tsx",
+      "lines": 255,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/guest-banner.tsx",
+      "lines": 58,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/guest-locale.tsx",
+      "lines": 23,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/icons/github.tsx",
+      "lines": 29,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/invoices/invoice-detail.tsx",
+      "lines": 469,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/invoices/invoice-form.tsx",
+      "lines": 1130,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/invoices/status-badge.tsx",
+      "lines": 17,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/invoices/supplier-settings.tsx",
+      "lines": 420,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/links/add-to-project-dialog.tsx",
+      "lines": 127,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/links/link-picker-dialog.tsx",
+      "lines": 231,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/links/use-project-links.ts",
+      "lines": 132,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/calendar-import.tsx",
+      "lines": 12,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/calendar-slot.tsx",
+      "lines": 14,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/calendar-source-notes.tsx",
+      "lines": 44,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai-audio-library.tsx",
+      "lines": 143,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai-daily-mix.tsx",
+      "lines": 72,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai-instagram-account.tsx",
+      "lines": 134,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai-source-list.tsx",
+      "lines": 154,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai-sources.tsx",
+      "lines": 181,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/audio-preview.tsx",
+      "lines": 44,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/calendar-tab.tsx",
+      "lines": 39,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/code-text.tsx",
+      "lines": 34,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/costs-tab.tsx",
+      "lines": 184,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/counted-field.tsx",
+      "lines": 28,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/engagement-receipt.tsx",
+      "lines": 36,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/focal-picker.tsx",
+      "lines": 47,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
+      "lines": 44,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
+      "lines": 62,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/format-switch.tsx",
+      "lines": 32,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/kit-tiles.tsx",
+      "lines": 38,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
+      "lines": 426,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
+      "lines": 195,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/stage.tsx",
+      "lines": 167,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/lab/topics-list.tsx",
+      "lines": 202,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/media-tray.tsx",
+      "lines": 48,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/music-hint.tsx",
+      "lines": 57,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/overflow-menu.tsx",
+      "lines": 93,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/published-tab.tsx",
+      "lines": 74,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/render-problems.tsx",
+      "lines": 40,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/state-chip.tsx",
+      "lines": 31,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/tab-header.tsx",
+      "lines": 22,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/dneskai/workspace.tsx",
+      "lines": 101,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/job-health.tsx",
+      "lines": 45,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/knowledge-import.tsx",
+      "lines": 90,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/knowledge-library.tsx",
+      "lines": 31,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/marketing-diagnostics.tsx",
+      "lines": 108,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/offline-import.tsx",
+      "lines": 57,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/use-marketing-calendars.ts",
+      "lines": 47,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/weekly-calendar.tsx",
+      "lines": 48,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/marketing/weekly-results.tsx",
+      "lines": 109,
+      "family": "DNESKAi & marketing",
+      "recommendations": [
+        "U01",
+        "U02",
+        "U03",
+        "U08",
+        "U09",
+        "U10"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/mobile-fab.tsx",
+      "lines": 142,
+      "family": "Shell & navigation",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U12",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/nav/app-toolbar.tsx",
+      "lines": 77,
+      "family": "Shell & navigation",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U12",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/nav/sidebar.tsx",
+      "lines": 488,
+      "family": "Shell & navigation",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U12",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/notes/note-editor.tsx",
+      "lines": 239,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/notes/parse-markdown.ts",
+      "lines": 31,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/cron-monitor.tsx",
+      "lines": 217,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/customizable-overview.tsx",
+      "lines": 395,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/daily-focus.tsx",
+      "lines": 329,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/kpi-cards.tsx",
+      "lines": 68,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/recurring-plans.tsx",
+      "lines": 176,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/today-hero.tsx",
+      "lines": 396,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/overview/work-attention.tsx",
+      "lines": 20,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/ai-panel.tsx",
+      "lines": 1104,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/calendar-panel.tsx",
+      "lines": 244,
+      "family": "Planning",
+      "recommendations": [
+        "U07",
+        "U11"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/career-board.tsx",
+      "lines": 412,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/career-companies.tsx",
+      "lines": 115,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/career-letter-helper.tsx",
+      "lines": 251,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/career-progress-dialog.tsx",
+      "lines": 90,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/clients-panel.tsx",
+      "lines": 227,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/competition-panel.tsx",
+      "lines": 166,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/dev-finance-panel.tsx",
+      "lines": 294,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/finances-panel.tsx",
+      "lines": 895,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/freelance-platforms.tsx",
+      "lines": 81,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/ig-tips-panel.tsx",
+      "lines": 728,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/important-dates-panel.tsx",
+      "lines": 440,
+      "family": "Planning",
+      "recommendations": [
+        "U07",
+        "U11"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/inbox-panel.tsx",
+      "lines": 130,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/invoices-panel.tsx",
+      "lines": 595,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/job-sources.tsx",
+      "lines": 152,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/jobs-panel.tsx",
+      "lines": 2829,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/link-export-dialog.tsx",
+      "lines": 135,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/link-library-card.tsx",
+      "lines": 91,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/marketing-panel.tsx",
+      "lines": 81,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/needed-checklist.tsx",
+      "lines": 296,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/notes-panel.tsx",
+      "lines": 1353,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/opportunities-panel.tsx",
+      "lines": 305,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/opportunity-detail.tsx",
+      "lines": 84,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/oslo-career-workspace.tsx",
+      "lines": 900,
+      "family": "Business & career",
+      "recommendations": [
+        "U14",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/plans-panel.tsx",
+      "lines": 659,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/projects-panel.tsx",
+      "lines": 2070,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/prompts-panel.tsx",
+      "lines": 796,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/repos-panel.tsx",
+      "lines": 1385,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/settings-panel.tsx",
+      "lines": 824,
+      "family": "Settings",
+      "recommendations": [
+        "U05",
+        "U07",
+        "U08"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/shortcuts-panel.tsx",
+      "lines": 761,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/subscriptions-panel.tsx",
+      "lines": 1118,
+      "family": "Finance & invoices",
+      "recommendations": [
+        "U06",
+        "U15"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/tip-export-dialog.tsx",
+      "lines": 193,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/todos-panel.tsx",
+      "lines": 1459,
+      "family": "Planning",
+      "recommendations": [
+        "U07",
+        "U11"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/tools-panel.tsx",
+      "lines": 567,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/work-overview-panel.tsx",
+      "lines": 240,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/panels/workflows-panel.tsx",
+      "lines": 64,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/posthog-provider.tsx",
+      "lines": 42,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/preference-hydrator.tsx",
+      "lines": 87,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-communication-panel.tsx",
+      "lines": 100,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-competition.tsx",
+      "lines": 46,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-doc-panel.tsx",
+      "lines": 126,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-github-activity.tsx",
+      "lines": 89,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-knowledge-panel.tsx",
+      "lines": 109,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-links-section.tsx",
+      "lines": 209,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-notes-editor.tsx",
+      "lines": 74,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-prompts-card.tsx",
+      "lines": 101,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-traffic.tsx",
+      "lines": 133,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/projects/project-workspace.tsx",
+      "lines": 283,
+      "family": "Projects",
+      "recommendations": [
+        "U14",
+        "U15",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/prompts/prompt-copy-dialog.tsx",
+      "lines": 165,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/subscriptions/subscription-icon.tsx",
+      "lines": 61,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/tasks/task-tags.tsx",
+      "lines": 143,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/theme-toggle.tsx",
+      "lines": 34,
+      "family": "Shared infrastructure",
+      "recommendations": [
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/tools/detected-tools-section.tsx",
+      "lines": 220,
+      "family": "Libraries",
+      "recommendations": [
+        "U13"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "lines": 58,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/card.tsx",
+      "lines": 56,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/checkbox.tsx",
+      "lines": 30,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/confirmation-dialog.tsx",
+      "lines": 91,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "lines": 121,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/empty-state.tsx",
+      "lines": 42,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/input.tsx",
+      "lines": 24,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/label.tsx",
+      "lines": 18,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/markdown.tsx",
+      "lines": 271,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/metric.tsx",
+      "lines": 29,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/page-header.tsx",
+      "lines": 59,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/progress.tsx",
+      "lines": 33,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/select.tsx",
+      "lines": 207,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/skeleton.tsx",
+      "lines": 14,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/status-badge.tsx",
+      "lines": 31,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/switch.tsx",
+      "lines": 32,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/textarea.tsx",
+      "lines": 23,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/toast.tsx",
+      "lines": 47,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/ui/tooltip.tsx",
+      "lines": 45,
+      "family": "Shared UI",
+      "recommendations": [
+        "U07",
+        "U08",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/work/marketing-week.tsx",
+      "lines": 223,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    },
+    {
+      "path": "src/components/work/weekly-planning.tsx",
+      "lines": 762,
+      "family": "Home & Work",
+      "recommendations": [
+        "U04",
+        "U16"
+      ],
+      "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "accounts-cs-dark-1440",
+      "image": "evidence/accounts-cs-dark-1440.png",
+      "dom": "evidence/accounts-cs-dark-1440.txt",
+      "metrics": "evidence/accounts-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Účty",
+          "width": 33,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Peníze",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Přehled nákladů",
+          "width": 108.8,
+          "x": 293,
+          "y": 277
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Všechny náklady",
+          "width": 129.6,
+          "x": 293,
+          "y": 318
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Projekty",
+          "width": 69,
+          "x": 663,
+          "y": 318
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Předplatná",
+          "width": 86.4,
+          "x": 1033,
+          "y": 318
+        }
+      ]
+    },
+    {
+      "id": "calendar-cs-dark-1440",
+      "image": "evidence/calendar-cs-dark-1440.png",
+      "dom": "evidence/calendar-cs-dark-1440.txt",
+      "metrics": "evidence/calendar-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Kalendář",
+          "width": 62.5,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "career-cs-dark-1440",
+      "image": "evidence/career-cs-dark-1440.png",
+      "dom": "evidence/career-cs-dark-1440.txt",
+      "metrics": "evidence/career-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Kariéra",
+          "width": 50.1,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Kariéra",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 32,
+          "tag": "H2",
+          "text": "Další krok v Oslu.",
+          "width": 837.3,
+          "x": 301,
+          "y": 205
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Fullstack Engineer",
+          "width": 323.3,
+          "x": 297,
+          "y": 520
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Frontend Engineer",
+          "width": 323.3,
+          "x": 674,
+          "y": 520
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Frontend Developer – Creator Tools",
+          "width": 323.3,
+          "x": 1052,
+          "y": 520
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Software Engineer · Control Center",
+          "width": 323.3,
+          "x": 297,
+          "y": 740
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "AI Integration Engineer",
+          "width": 323.3,
+          "x": 674,
+          "y": 740
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Software Engineer, Content Agent",
+          "width": 323.3,
+          "x": 1052,
+          "y": 740
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Full-Stack Product Engineer",
+          "width": 323.3,
+          "x": 297,
+          "y": 960
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Software Engineer (Home Energy)",
+          "width": 323.3,
+          "x": 674,
+          "y": 960
+        },
+        {
+          "height": 44,
+          "tag": "H3",
+          "text": "Digital Transformation & User Experience Tech Lead",
+          "width": 323.3,
+          "x": 1052,
+          "y": 960
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Software Engineer – IAM",
+          "width": 323.3,
+          "x": 297,
+          "y": 1186
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Fullstack Engineer",
+          "width": 323.3,
+          "x": 674,
+          "y": 1186
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Frontend Engineer",
+          "width": 323.3,
+          "x": 1052,
+          "y": 1186
+        },
+        {
+          "height": 44,
+          "tag": "H3",
+          "text": "Lead Frontend Software Engineer (React/TypeScript)",
+          "width": 323.3,
+          "x": 297,
+          "y": 1406
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Lead Front End Developer",
+          "width": 323.3,
+          "x": 674,
+          "y": 1406
+        }
+      ]
+    },
+    {
+      "id": "career-en-light-360",
+      "image": "evidence/career-en-light-360.png",
+      "dom": "evidence/career-en-light-360.txt",
+      "metrics": "evidence/career-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Career",
+          "width": 47.4,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Career",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        },
+        {
+          "height": 32,
+          "tag": "H2",
+          "text": "Your next role in Oslo.",
+          "width": 286,
+          "x": 37,
+          "y": 434
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Fullstack Engineer",
+          "width": 286,
+          "x": 37,
+          "y": 986
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Frontend Engineer",
+          "width": 286,
+          "x": 37,
+          "y": 1206
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Frontend Developer – Creator Tools",
+          "width": 286,
+          "x": 37,
+          "y": 1426
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Software Engineer · Control Center",
+          "width": 286,
+          "x": 37,
+          "y": 1646
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "AI Integration Engineer",
+          "width": 286,
+          "x": 37,
+          "y": 1866
+        },
+        {
+          "height": 44,
+          "tag": "H3",
+          "text": "Senior Software Engineer, Content Agent",
+          "width": 286,
+          "x": 37,
+          "y": 2086
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Full-Stack Product Engineer",
+          "width": 286,
+          "x": 37,
+          "y": 2312
+        },
+        {
+          "height": 44,
+          "tag": "H3",
+          "text": "Senior Software Engineer (Home Energy)",
+          "width": 286,
+          "x": 37,
+          "y": 2532
+        },
+        {
+          "height": 44,
+          "tag": "H3",
+          "text": "Digital Transformation & User Experience Tech Lead",
+          "width": 286,
+          "x": 37,
+          "y": 2758
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Software Engineer – IAM",
+          "width": 286,
+          "x": 37,
+          "y": 2984
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Fullstack Engineer",
+          "width": 286,
+          "x": 37,
+          "y": 3204
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Senior Frontend Engineer",
+          "width": 286,
+          "x": 37,
+          "y": 3424
+        },
+        {
+          "height": 44,
+          "tag": "H3",
+          "text": "Lead Frontend Software Engineer (React/TypeScript)",
+          "width": 286,
+          "x": 37,
+          "y": 3644
+        },
+        {
+          "height": 22,
+          "tag": "H3",
+          "text": "Lead Front End Developer",
+          "width": 286,
+          "x": 37,
+          "y": 3870
+        }
+      ]
+    },
+    {
+      "id": "career-refreshed-en-light-1440",
+      "image": "evidence/career-refreshed-en-light-1440.png",
+      "dom": "evidence/career-refreshed-en-light-1440.txt",
+      "metrics": "evidence/career-refreshed-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Career",
+          "width": 47.4,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Career",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 28,
+          "tag": "H2",
+          "text": "Senior Frontend Engineer (React)",
+          "width": 620.4,
+          "x": 755,
+          "y": 547
+        },
+        {
+          "height": 21,
+          "tag": "H3",
+          "text": "Job description",
+          "width": 620.4,
+          "x": 755,
+          "y": 880
+        }
+      ]
+    },
+    {
+      "id": "categories-cs-dark-1440",
+      "image": "evidence/categories-cs-dark-1440.png",
+      "dom": "evidence/categories-cs-dark-1440.txt",
+      "metrics": "evidence/categories-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Kategorie",
+          "width": 67.9,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Peníze",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Přehled nákladů",
+          "width": 108.8,
+          "x": 293,
+          "y": 277
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Všechny náklady",
+          "width": 129.6,
+          "x": 293,
+          "y": 318
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Projekty",
+          "width": 69,
+          "x": 663,
+          "y": 318
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Předplatná",
+          "width": 86.4,
+          "x": 1033,
+          "y": 318
+        }
+      ]
+    },
+    {
+      "id": "clients-cs-dark-1440",
+      "image": "evidence/clients-cs-dark-1440.png",
+      "dom": "evidence/clients-cs-dark-1440.txt",
+      "metrics": "evidence/clients-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Klienti",
+          "width": 44.1,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Klienti",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Acme s.r.o.",
+          "width": 75.2,
+          "x": 289,
+          "y": 219
+        }
+      ]
+    },
+    {
+      "id": "command-palette-en-light-1440",
+      "image": "evidence/command-palette-en-light-1440.png",
+      "dom": "evidence/command-palette-en-light-1440.txt",
+      "metrics": "evidence/command-palette-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 58.7,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "competition-cs-dark-1440",
+      "image": "evidence/competition-cs-dark-1440.png",
+      "dom": "evidence/competition-cs-dark-1440.txt",
+      "metrics": "evidence/competition-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Konkurence",
+          "width": 83.8,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Konkurence",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "dates-cs-dark-1440",
+      "image": "evidence/dates-cs-dark-1440.png",
+      "dom": "evidence/dates-cs-dark-1440.txt",
+      "metrics": "evidence/dates-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Termíny",
+          "width": 56.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Významné dny",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "dneskai-account-cs-dark-1440",
+      "image": "evidence/dneskai-account-cs-dark-1440.png",
+      "dom": "evidence/dneskai-account-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-account-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Příspěvky",
+          "width": 448.7,
+          "x": 276,
+          "y": 154
+        }
+      ]
+    },
+    {
+      "id": "dneskai-calendar-cs-dark-1440",
+      "image": "evidence/dneskai-calendar-cs-dark-1440.png",
+      "dom": "evidence/dneskai-calendar-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-calendar-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Příštích sedm dní",
+          "width": 422.3,
+          "x": 276,
+          "y": 154
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "pátek 23/10Dnes",
+          "width": 363.3,
+          "x": 277,
+          "y": 243
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "sobota 24/10",
+          "width": 363.3,
+          "x": 654,
+          "y": 243
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "neděle 25/10",
+          "width": 363.3,
+          "x": 1032,
+          "y": 243
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "pondělí 26/10",
+          "width": 363.3,
+          "x": 277,
+          "y": 650
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "úterý 27/10",
+          "width": 363.3,
+          "x": 654,
+          "y": 650
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "středa 28/10",
+          "width": 363.3,
+          "x": 1032,
+          "y": 650
+        },
+        {
+          "height": 37,
+          "tag": "H3",
+          "text": "čtvrtek 29/10",
+          "width": 363.3,
+          "x": 277,
+          "y": 1064
+        }
+      ]
+    },
+    {
+      "id": "dneskai-costs-cs-dark-1440",
+      "image": "evidence/dneskai-costs-cs-dark-1440.png",
+      "dom": "evidence/dneskai-costs-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-costs-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Příspěvky",
+          "width": 448.7,
+          "x": 276,
+          "y": 154
+        }
+      ]
+    },
+    {
+      "id": "dneskai-editor-cs-dark-1440",
+      "image": "evidence/dneskai-editor-cs-dark-1440.png",
+      "dom": "evidence/dneskai-editor-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-editor-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 4
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": 194
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 544.5,
+          "x": 289,
+          "y": -577
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 208,
+          "x": 276,
+          "y": 64
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 208,
+          "x": 276,
+          "y": 607
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 336,
+          "x": 1060,
+          "y": 1579
+        }
+      ]
+    },
+    {
+      "id": "dneskai-editor-cs-light-1440-verified",
+      "image": "evidence/dneskai-editor-cs-light-1440-verified.png",
+      "dom": "evidence/dneskai-editor-cs-light-1440-verified.txt",
+      "metrics": "evidence/dneskai-editor-cs-light-1440-verified.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": -223
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": -33
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 544.5,
+          "x": 289,
+          "y": -804
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 208,
+          "x": 276,
+          "y": -163
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 208,
+          "x": 276,
+          "y": 380
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 336,
+          "x": 1060,
+          "y": 1352
+        }
+      ]
+    },
+    {
+      "id": "dneskai-editor-cs-light-360",
+      "image": "evidence/dneskai-editor-cs-light-360.png",
+      "dom": "evidence/dneskai-editor-cs-light-360.txt",
+      "metrics": "evidence/dneskai-editor-cs-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 344,
+          "y": 230
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 302,
+          "x": 29,
+          "y": 345
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 328,
+          "x": 16,
+          "y": 1622
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 328,
+          "x": 16,
+          "y": 2070
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 328,
+          "x": 16,
+          "y": 4615
+        }
+      ]
+    },
+    {
+      "id": "dneskai-editor-focused-cs-light-360",
+      "image": "evidence/dneskai-editor-focused-cs-light-360.png",
+      "dom": "evidence/dneskai-editor-focused-cs-light-360.txt",
+      "metrics": "evidence/dneskai-editor-focused-cs-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 12,
+          "y": -3031
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 344,
+          "y": -2817
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 302,
+          "x": 29,
+          "y": -2702
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 328,
+          "x": 16,
+          "y": -1425
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 328,
+          "x": 16,
+          "y": -977
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 328,
+          "x": 16,
+          "y": 1568
+        }
+      ]
+    },
+    {
+      "id": "dneskai-editor-ready-cs-dark-1440",
+      "image": "evidence/dneskai-editor-ready-cs-dark-1440.png",
+      "dom": "evidence/dneskai-editor-ready-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-editor-ready-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 4
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": 194
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 544.5,
+          "x": 289,
+          "y": -577
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 208,
+          "x": 276,
+          "y": 64
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 208,
+          "x": 276,
+          "y": 607
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 336,
+          "x": 1060,
+          "y": 1583
+        }
+      ]
+    },
+    {
+      "id": "dneskai-lab-cs-dark-1440",
+      "image": "evidence/dneskai-lab-cs-dark-1440.png",
+      "dom": "evidence/dneskai-lab-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-lab-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": 222
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 544.5,
+          "x": 289,
+          "y": 301
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 208,
+          "x": 276,
+          "y": 942
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 208,
+          "x": 276,
+          "y": 1485
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 336,
+          "x": 1060,
+          "y": 2458
+        }
+      ]
+    },
+    {
+      "id": "dneskai-lab-en-light-1440",
+      "image": "evidence/dneskai-lab-en-light-1440.png",
+      "dom": "evidence/dneskai-lab-en-light-1440.txt",
+      "metrics": "evidence/dneskai-lab-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": 222
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Topics",
+          "width": 526.8,
+          "x": 289,
+          "y": 301
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Today",
+          "width": 208,
+          "x": 276,
+          "y": 942
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Tomorrow",
+          "width": 208,
+          "x": 276,
+          "y": 1485
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Comment and message",
+          "width": 336,
+          "x": 1060,
+          "y": 2441
+        }
+      ]
+    },
+    {
+      "id": "dneskai-mix-audio-cs-dark-1440",
+      "image": "evidence/dneskai-mix-audio-cs-dark-1440.png",
+      "dom": "evidence/dneskai-mix-audio-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-mix-audio-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 4
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 1120,
+          "x": 276,
+          "y": -5199
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 1120,
+          "x": 276,
+          "y": -5099
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 1120,
+          "x": 276,
+          "y": -3270
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 1120,
+          "x": 276,
+          "y": 440
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 1120,
+          "x": 276,
+          "y": 756
+        }
+      ]
+    },
+    {
+      "id": "dneskai-mix-cs-light-1024",
+      "image": "evidence/dneskai-mix-cs-light-1024.png",
+      "dom": "evidence/dneskai-mix-cs-light-1024.txt",
+      "metrics": "evidence/dneskai-mix-cs-light-1024.json",
+      "width": 1024,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1024,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": -223
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 704,
+          "x": 276,
+          "y": -951
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 704,
+          "x": 276,
+          "y": -851
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 704,
+          "x": 276,
+          "y": 978
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 704,
+          "x": 276,
+          "y": 4688
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 704,
+          "x": 276,
+          "y": 5004
+        }
+      ]
+    },
+    {
+      "id": "dneskai-mix-cs-light-1728",
+      "image": "evidence/dneskai-mix-cs-light-1728.png",
+      "dom": "evidence/dneskai-mix-cs-light-1728.txt",
+      "metrics": "evidence/dneskai-mix-cs-light-1728.json",
+      "width": 1728,
+      "height": 1050,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1728,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": -223
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 1408,
+          "x": 276,
+          "y": -951
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 1408,
+          "x": 276,
+          "y": -851
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 1408,
+          "x": 276,
+          "y": 978
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 1408,
+          "x": 276,
+          "y": 4688
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 1408,
+          "x": 276,
+          "y": 5004
+        }
+      ]
+    },
+    {
+      "id": "dneskai-mix-cs-light-430",
+      "image": "evidence/dneskai-mix-cs-light-430.png",
+      "dom": "evidence/dneskai-mix-cs-light-430.txt",
+      "metrics": "evidence/dneskai-mix-cs-light-430.json",
+      "width": 430,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 430,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 12,
+          "y": -5445
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 398,
+          "x": 16,
+          "y": -5319
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 398,
+          "x": 16,
+          "y": -5199
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 398,
+          "x": 16,
+          "y": -3370
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 398,
+          "x": 16,
+          "y": 440
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 398,
+          "x": 16,
+          "y": 876
+        }
+      ]
+    },
+    {
+      "id": "dneskai-mix-cs-light-768",
+      "image": "evidence/dneskai-mix-cs-light-768.png",
+      "dom": "evidence/dneskai-mix-cs-light-768.txt",
+      "metrics": "evidence/dneskai-mix-cs-light-768.json",
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 768,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": -223
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 448,
+          "x": 276,
+          "y": -951
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 448,
+          "x": 276,
+          "y": -851
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 448,
+          "x": 276,
+          "y": 978
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 448,
+          "x": 276,
+          "y": 4728
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 448,
+          "x": 276,
+          "y": 5064
+        }
+      ]
+    },
+    {
+      "id": "dneskai-posts-cs-dark-1440",
+      "image": "evidence/dneskai-posts-cs-dark-1440.png",
+      "dom": "evidence/dneskai-posts-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-posts-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Příspěvky",
+          "width": 448.7,
+          "x": 276,
+          "y": 154
+        }
+      ]
+    },
+    {
+      "id": "dneskai-sources-cs-dark-1440",
+      "image": "evidence/dneskai-sources-cs-dark-1440.png",
+      "dom": "evidence/dneskai-sources-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-sources-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 1120,
+          "x": 276,
+          "y": 154
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 1120,
+          "x": 276,
+          "y": 254
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 1120,
+          "x": 276,
+          "y": 2083
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 1120,
+          "x": 276,
+          "y": 5793
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 1120,
+          "x": 276,
+          "y": 6109
+        }
+      ]
+    },
+    {
+      "id": "dneskai-sources-cs-light-430",
+      "image": "evidence/dneskai-sources-cs-light-430.png",
+      "dom": "evidence/dneskai-sources-cs-light-430.txt",
+      "metrics": "evidence/dneskai-sources-cs-light-430.json",
+      "width": 430,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 430,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zdroje",
+          "width": 398,
+          "x": 16,
+          "y": 142
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Instagram profily 20",
+          "width": 398,
+          "x": 16,
+          "y": 262
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Weby 41",
+          "width": 398,
+          "x": 16,
+          "y": 2091
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Denní mix",
+          "width": 398,
+          "x": 16,
+          "y": 5901
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Hudba",
+          "width": 398,
+          "x": 16,
+          "y": 6337
+        }
+      ]
+    },
+    {
+      "id": "dneskai-unsaved-after-cs-dark-1440",
+      "image": "evidence/dneskai-unsaved-after-cs-dark-1440.png",
+      "dom": "evidence/dneskai-unsaved-after-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-unsaved-after-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": 222
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 544.5,
+          "x": 289,
+          "y": 301
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 208,
+          "x": 276,
+          "y": 942
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 208,
+          "x": 276,
+          "y": 1485
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 336,
+          "x": 1060,
+          "y": 2458
+        }
+      ]
+    },
+    {
+      "id": "dneskai-unsaved-before-cs-dark-1440",
+      "image": "evidence/dneskai-unsaved-before-cs-dark-1440.png",
+      "dom": "evidence/dneskai-unsaved-before-cs-dark-1440.txt",
+      "metrics": "evidence/dneskai-unsaved-before-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 4
+        },
+        {
+          "height": 1,
+          "tag": "H2",
+          "text": "Design Lab",
+          "width": 1,
+          "x": 1396,
+          "y": 194
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Náměty",
+          "width": 544.5,
+          "x": 289,
+          "y": -577
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Dnes",
+          "width": 208,
+          "x": 276,
+          "y": 64
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Zítra",
+          "width": 208,
+          "x": 276,
+          "y": 607
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Komentář a zpráva",
+          "width": 336,
+          "x": 1060,
+          "y": 1563
+        }
+      ]
+    },
+    {
+      "id": "goals-cs-dark-1440",
+      "image": "evidence/goals-cs-dark-1440.png",
+      "dom": "evidence/goals-cs-dark-1440.txt",
+      "metrics": "evidence/goals-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Cíle",
+          "width": 26.6,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Cíle",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "home-cs-dark-1440",
+      "image": "evidence/home-cs-dark-1440.png",
+      "dom": "evidence/home-cs-dark-1440.txt",
+      "metrics": "evidence/home-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Domů",
+          "width": 41.6,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 28,
+          "tag": "H2",
+          "text": "Dobré odpoledne, Jan",
+          "width": 183.4,
+          "x": 298,
+          "y": 158
+        },
+        {
+          "height": 24,
+          "tag": "H2",
+          "text": "Dnešní sedmička",
+          "width": 122.7,
+          "x": 298,
+          "y": 476
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Zahrada dokončení",
+          "width": 129.3,
+          "x": 1172,
+          "y": 553
+        },
+        {
+          "height": 24,
+          "tag": "H2",
+          "text": "Crony",
+          "width": 67.2,
+          "x": 298,
+          "y": 1264
+        }
+      ]
+    },
+    {
+      "id": "home-en-light-360",
+      "image": "evidence/home-en-light-360.png",
+      "dom": "evidence/home-en-light-360.txt",
+      "metrics": "evidence/home-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Home",
+          "width": 41.7,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 28,
+          "tag": "H2",
+          "text": "Good afternoon, Jan",
+          "width": 170.6,
+          "x": 34,
+          "y": 150
+        },
+        {
+          "height": 48,
+          "tag": "H2",
+          "text": "Today's seven",
+          "width": 56.3,
+          "x": 38,
+          "y": 764
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Completion garden",
+          "width": 128.7,
+          "x": 56,
+          "y": 1604
+        },
+        {
+          "height": 24,
+          "tag": "H2",
+          "text": "Crons",
+          "width": 67,
+          "x": 38,
+          "y": 2126
+        }
+      ]
+    },
+    {
+      "id": "ig-tips-cs-dark-1440",
+      "image": "evidence/ig-tips-cs-dark-1440.png",
+      "dom": "evidence/ig-tips-cs-dark-1440.txt",
+      "metrics": "evidence/ig-tips-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "IG TIPS",
+          "width": 51.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "IG TIPS",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Nápady na obsah1 tip",
+          "width": 1120,
+          "x": 276,
+          "y": 296
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Plan a month of posts around two topics",
+          "width": 524,
+          "x": 291,
+          "y": 350
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Formáty a úpravy1 tip",
+          "width": 1120,
+          "x": 276,
+          "y": 597
+        },
+        {
+          "height": 40,
+          "tag": "H3",
+          "text": "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post",
+          "width": 524,
+          "x": 291,
+          "y": 651
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Platformy a dosah1 tip",
+          "width": 1120,
+          "x": 276,
+          "y": 937
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Make the profile say what you offer and what to do next",
+          "width": 524,
+          "x": 291,
+          "y": 991
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Růst a udržení1 tip",
+          "width": 1120,
+          "x": 276,
+          "y": 1210
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Reward readers who bring a friend",
+          "width": 524,
+          "x": 291,
+          "y": 1264
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Bez skupiny1 tip",
+          "width": 1120,
+          "x": 276,
+          "y": 1462
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Check a free resource before relying on it",
+          "width": 524,
+          "x": 291,
+          "y": 1516
+        }
+      ]
+    },
+    {
+      "id": "inbox-en-light-1440",
+      "image": "evidence/inbox-en-light-1440.png",
+      "dom": "evidence/inbox-en-light-1440.txt",
+      "metrics": "evidence/inbox-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Inbox",
+          "width": 38.5,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Inbox",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "invoices-cs-dark-1440",
+      "image": "evidence/invoices-cs-dark-1440.png",
+      "dom": "evidence/invoices-cs-dark-1440.txt",
+      "metrics": "evidence/invoices-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Faktury",
+          "width": 53.2,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Faktury",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "invoices-en-light-360",
+      "image": "evidence/invoices-en-light-360.png",
+      "dom": "evidence/invoices-en-light-360.txt",
+      "metrics": "evidence/invoices-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Invoices",
+          "width": 57.7,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Invoices",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "id": "links-cs-dark-1440",
+      "image": "evidence/links-cs-dark-1440.png",
+      "dom": "evidence/links-cs-dark-1440.txt",
+      "metrics": "evidence/links-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Odkazy",
+          "width": 53.2,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Odkazy",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "login-cs-light-1440",
+      "image": "evidence/login-cs-light-1440.png",
+      "dom": "evidence/login-cs-light-1440.txt",
+      "metrics": "evidence/login-cs-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 180,
+          "tag": "H1",
+          "text": "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti.",
+          "width": 549.4,
+          "x": 200,
+          "y": 347
+        },
+        {
+          "height": 28,
+          "tag": "H2",
+          "text": "Přihlaste se do svého prostoru",
+          "width": 327.6,
+          "x": 887,
+          "y": 369
+        }
+      ]
+    },
+    {
+      "id": "marketing-cs-dark-1440",
+      "image": "evidence/marketing-cs-dark-1440.png",
+      "dom": "evidence/marketing-cs-dark-1440.txt",
+      "metrics": "evidence/marketing-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Marketing",
+          "width": 70.8,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Marketing",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Příprava návrhů",
+          "width": 426.8,
+          "x": 293,
+          "y": 305
+        }
+      ]
+    },
+    {
+      "id": "mobile-more-en-light-360",
+      "image": "evidence/mobile-more-en-light-360.png",
+      "dom": "evidence/mobile-more-en-light-360.txt",
+      "metrics": "evidence/mobile-more-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 58.7,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "id": "money-cs-dark-1440",
+      "image": "evidence/money-cs-dark-1440.png",
+      "dom": "evidence/money-cs-dark-1440.txt",
+      "metrics": "evidence/money-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Přehled peněz",
+          "width": 100.5,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Finance vývoje",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "notes-cs-dark-1440",
+      "image": "evidence/notes-cs-dark-1440.png",
+      "dom": "evidence/notes-cs-dark-1440.txt",
+      "metrics": "evidence/notes-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Poznámky",
+          "width": 72.9,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Poznámky",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "notes-en-light-360",
+      "image": "evidence/notes-en-light-360.png",
+      "dom": "evidence/notes-en-light-360.txt",
+      "metrics": "evidence/notes-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Notes",
+          "width": 41.6,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Notes",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "id": "opportunities-cs-dark-1440",
+      "image": "evidence/opportunities-cs-dark-1440.png",
+      "dom": "evidence/opportunities-cs-dark-1440.txt",
+      "metrics": "evidence/opportunities-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Příležitosti",
+          "width": 74.5,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Příležitosti",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Příležitosti se načtou, až o to požádáte",
+          "width": 1082,
+          "x": 295,
+          "y": 127
+        }
+      ]
+    },
+    {
+      "id": "project-activity-en-light-1440",
+      "image": "evidence/project-activity-en-light-1440.png",
+      "dom": "evidence/project-activity-en-light-1440.txt",
+      "metrics": "evidence/project-activity-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-communication-en-light-1440",
+      "image": "evidence/project-communication-en-light-1440.png",
+      "dom": "evidence/project-communication-en-light-1440.txt",
+      "metrics": "evidence/project-communication-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-competition-en-light-1440",
+      "image": "evidence/project-competition-en-light-1440.png",
+      "dom": "evidence/project-competition-en-light-1440.txt",
+      "metrics": "evidence/project-competition-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-finance-en-light-1440",
+      "image": "evidence/project-finance-en-light-1440.png",
+      "dom": "evidence/project-finance-en-light-1440.txt",
+      "metrics": "evidence/project-finance-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-knowledge-en-light-1440",
+      "image": "evidence/project-knowledge-en-light-1440.png",
+      "dom": "evidence/project-knowledge-en-light-1440.txt",
+      "metrics": "evidence/project-knowledge-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-monetization-en-light-1440",
+      "image": "evidence/project-monetization-en-light-1440.png",
+      "dom": "evidence/project-monetization-en-light-1440.txt",
+      "metrics": "evidence/project-monetization-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-overview-en-light-1440",
+      "image": "evidence/project-overview-en-light-1440.png",
+      "dom": "evidence/project-overview-en-light-1440.txt",
+      "metrics": "evidence/project-overview-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-repository-en-light-1440",
+      "image": "evidence/project-repository-en-light-1440.png",
+      "dom": "evidence/project-repository-en-light-1440.txt",
+      "metrics": "evidence/project-repository-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-scaling-en-light-1440",
+      "image": "evidence/project-scaling-en-light-1440.png",
+      "dom": "evidence/project-scaling-en-light-1440.txt",
+      "metrics": "evidence/project-scaling-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "project-tasks-en-light-1440",
+      "image": "evidence/project-tasks-en-light-1440.png",
+      "dom": "evidence/project-tasks-en-light-1440.txt",
+      "metrics": "evidence/project-tasks-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projects",
+          "width": 57.9,
+          "x": 272,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "projects-cs-dark-1440",
+      "image": "evidence/projects-cs-dark-1440.png",
+      "dom": "evidence/projects-cs-dark-1440.txt",
+      "metrics": "evidence/projects-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 58.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Projekty",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "prompts-cs-dark-1440",
+      "image": "evidence/prompts-cs-dark-1440.png",
+      "dom": "evidence/prompts-cs-dark-1440.txt",
+      "metrics": "evidence/prompts-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Prompty",
+          "width": 60.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Prompty",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 37,
+          "tag": "H2",
+          "text": "Audit projektu1 prompt",
+          "width": 1120,
+          "x": 276,
+          "y": 222
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Code review",
+          "width": 307.3,
+          "x": 289,
+          "y": 284
+        },
+        {
+          "height": 37,
+          "tag": "H2",
+          "text": "Analýza projektu1 prompt",
+          "width": 1120,
+          "x": 276,
+          "y": 434
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Explain code",
+          "width": 307.3,
+          "x": 289,
+          "y": 496
+        },
+        {
+          "height": 37,
+          "tag": "H2",
+          "text": "Dokumentace1 prompt",
+          "width": 1120,
+          "x": 276,
+          "y": 646
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Commit message",
+          "width": 307.3,
+          "x": 289,
+          "y": 708
+        },
+        {
+          "height": 37,
+          "tag": "H2",
+          "text": "SEO1 prompt",
+          "width": 1120,
+          "x": 276,
+          "y": 858
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "SEO check",
+          "width": 242.5,
+          "x": 289,
+          "y": 920
+        },
+        {
+          "height": 37,
+          "tag": "H2",
+          "text": "Marketing1 prompt",
+          "width": 1120,
+          "x": 276,
+          "y": 1070
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Launch announcement",
+          "width": 242.5,
+          "x": 289,
+          "y": 1132
+        }
+      ]
+    },
+    {
+      "id": "references-en-light-1440",
+      "image": "evidence/references-en-light-1440.png",
+      "dom": "evidence/references-en-light-1440.txt",
+      "metrics": "evidence/references-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "References",
+          "width": 79.4,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "References",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 16.5,
+          "tag": "H3",
+          "text": "Git scripts",
+          "width": 76.4,
+          "x": 289,
+          "y": 324
+        },
+        {
+          "height": 16.5,
+          "tag": "H3",
+          "text": "Essential shortcuts (translated)",
+          "width": 238.9,
+          "x": 857,
+          "y": 324
+        },
+        {
+          "height": 16.5,
+          "tag": "H3",
+          "text": "Key substitutions",
+          "width": 424.5,
+          "x": 289,
+          "y": 479
+        }
+      ]
+    },
+    {
+      "id": "settings-cs-dark-1440",
+      "image": "evidence/settings-cs-dark-1440.png",
+      "dom": "evidence/settings-cs-dark-1440.txt",
+      "metrics": "evidence/settings-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Nastavení",
+          "width": 69.6,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Nastavení",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "settings-en-light-1440",
+      "image": "evidence/settings-en-light-1440.png",
+      "dom": "evidence/settings-en-light-1440.txt",
+      "metrics": "evidence/settings-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 58.7,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "settings-en-light-360",
+      "image": "evidence/settings-en-light-360.png",
+      "dom": "evidence/settings-en-light-360.txt",
+      "metrics": "evidence/settings-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 58.7,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "id": "settings-top-cs-light-1440",
+      "image": "evidence/settings-top-cs-light-1440.png",
+      "dom": "evidence/settings-top-cs-light-1440.txt",
+      "metrics": "evidence/settings-top-cs-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Nastavení",
+          "width": 69.6,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Nastavení",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "settings-top-en-light-1440",
+      "image": "evidence/settings-top-en-light-1440.png",
+      "dom": "evidence/settings-top-en-light-1440.txt",
+      "metrics": "evidence/settings-top-en-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 58.7,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Settings",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "settings-verified-cs-light-1440",
+      "image": "evidence/settings-verified-cs-light-1440.png",
+      "dom": "evidence/settings-verified-cs-light-1440.txt",
+      "metrics": "evidence/settings-verified-cs-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Nastavení",
+          "width": 69.6,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Nastavení",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "subscriptions-cs-dark-1440",
+      "image": "evidence/subscriptions-cs-dark-1440.png",
+      "dom": "evidence/subscriptions-cs-dark-1440.txt",
+      "metrics": "evidence/subscriptions-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Předplatná",
+          "width": 76.8,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Předplatná",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "tasks-cs-dark-1440",
+      "image": "evidence/tasks-cs-dark-1440.png",
+      "dom": "evidence/tasks-cs-dark-1440.txt",
+      "metrics": "evidence/tasks-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Úkoly",
+          "width": 39.7,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Úkoly",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "tasks-en-light-360",
+      "image": "evidence/tasks-en-light-360.png",
+      "dom": "evidence/tasks-en-light-360.txt",
+      "metrics": "evidence/tasks-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Tasks",
+          "width": 40,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Tasks",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "id": "tools-cs-dark-1440",
+      "image": "evidence/tools-cs-dark-1440.png",
+      "dom": "evidence/tools-cs-dark-1440.txt",
+      "metrics": "evidence/tools-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Nástroje",
+          "width": 59.3,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Nástroje",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Používá se2 nástroje",
+          "width": 1120,
+          "x": 276,
+          "y": 182
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Supabase",
+          "width": 510,
+          "x": 307,
+          "y": 234
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Vercel",
+          "width": 510,
+          "x": 873,
+          "y": 234
+        },
+        {
+          "height": 29,
+          "tag": "H2",
+          "text": "Zkušební1 nástroj",
+          "width": 1120,
+          "x": 276,
+          "y": 509
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Figma",
+          "width": 510,
+          "x": 307,
+          "y": 561
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Zjištěno z repozitářů8 nástrojů",
+          "width": 768,
+          "x": 276,
+          "y": 769
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Next.js",
+          "width": 47.2,
+          "x": 289,
+          "y": 903
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "React",
+          "width": 38.6,
+          "x": 289,
+          "y": 1006
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Resend",
+          "width": 50.2,
+          "x": 289,
+          "y": 1090
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Sentry",
+          "width": 44.8,
+          "x": 289,
+          "y": 1173
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "sharp",
+          "width": 38.5,
+          "x": 289,
+          "y": 1256
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Stripe",
+          "width": 40.8,
+          "x": 289,
+          "y": 1339
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "TanStack Query",
+          "width": 107,
+          "x": 289,
+          "y": 1423
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Vite",
+          "width": 26.9,
+          "x": 289,
+          "y": 1506
+        }
+      ]
+    },
+    {
+      "id": "transactions-cs-dark-1440",
+      "image": "evidence/transactions-cs-dark-1440.png",
+      "dom": "evidence/transactions-cs-dark-1440.txt",
+      "metrics": "evidence/transactions-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Transakce",
+          "width": 72.2,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Peníze",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Přehled nákladů",
+          "width": 108.8,
+          "x": 293,
+          "y": 277
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Všechny náklady",
+          "width": 129.6,
+          "x": 293,
+          "y": 318
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Projekty",
+          "width": 69,
+          "x": 663,
+          "y": 318
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Předplatná",
+          "width": 86.4,
+          "x": 1033,
+          "y": 318
+        }
+      ]
+    },
+    {
+      "id": "transactions-en-light-360",
+      "image": "evidence/transactions-en-light-360.png",
+      "dom": "evidence/transactions-en-light-360.txt",
+      "metrics": "evidence/transactions-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Transactions",
+          "width": 90.6,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Money",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Cost overview",
+          "width": 95.4,
+          "x": 33,
+          "y": 420
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "All costs",
+          "width": 73.1,
+          "x": 33,
+          "y": 461
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Projects",
+          "width": 68.9,
+          "x": 33,
+          "y": 753
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Subscriptions",
+          "width": 107.3,
+          "x": 33,
+          "y": 985
+        }
+      ]
+    },
+    {
+      "id": "unauth-unknown-route-redirect-login-cs-light-1440",
+      "image": "evidence/unauth-unknown-route-redirect-login-cs-light-1440.png",
+      "dom": "evidence/unauth-unknown-route-redirect-login-cs-light-1440.txt",
+      "metrics": "evidence/unauth-unknown-route-redirect-login-cs-light-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 180,
+          "tag": "H1",
+          "text": "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti.",
+          "width": 549.4,
+          "x": 200,
+          "y": 348
+        },
+        {
+          "height": 28,
+          "tag": "H2",
+          "text": "Přihlaste se do svého prostoru",
+          "width": 327.6,
+          "x": 887,
+          "y": 371
+        }
+      ]
+    },
+    {
+      "id": "work-cs-dark-1440",
+      "image": "evidence/work-cs-dark-1440.png",
+      "dom": "evidence/work-cs-dark-1440.txt",
+      "metrics": "evidence/work-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Přehled práce",
+          "width": 97.6,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Přehled práce",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Čas podle oblasti",
+          "width": 403.6,
+          "x": 973,
+          "y": 352
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Příprava před spuštěním, termín tento týden",
+          "width": 403.6,
+          "x": 973,
+          "y": 860
+        },
+        {
+          "height": 21,
+          "tag": "H3",
+          "text": "pát 23. 10.",
+          "width": 403.6,
+          "x": 973,
+          "y": 1027
+        },
+        {
+          "height": 21,
+          "tag": "H3",
+          "text": "ned 25. 10.",
+          "width": 403.6,
+          "x": 973,
+          "y": 1177
+        }
+      ]
+    },
+    {
+      "id": "work-en-light-360",
+      "image": "evidence/work-en-light-360.png",
+      "dom": "evidence/work-en-light-360.txt",
+      "metrics": "evidence/work-en-light-360.json",
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "lang": "en",
+      "documentWidth": 360,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Work overview",
+          "width": 103.3,
+          "x": 12,
+          "y": 16
+        },
+        {
+          "height": 30,
+          "tag": "H1",
+          "text": "Work overview",
+          "width": 328,
+          "x": 16,
+          "y": 72
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Time by channel",
+          "width": 294,
+          "x": 33,
+          "y": 728
+        },
+        {
+          "height": 16,
+          "tag": "H3",
+          "text": "Pre-launch due this week",
+          "width": 294,
+          "x": 33,
+          "y": 1310
+        },
+        {
+          "height": 21,
+          "tag": "H3",
+          "text": "Fri 23 Oct",
+          "width": 294,
+          "x": 33,
+          "y": 1517
+        },
+        {
+          "height": 21,
+          "tag": "H3",
+          "text": "Sun 25 Oct",
+          "width": 294,
+          "x": 33,
+          "y": 1707
+        }
+      ]
+    },
+    {
+      "id": "workflows-cs-dark-1440",
+      "image": "evidence/workflows-cs-dark-1440.png",
+      "dom": "evidence/workflows-cs-dark-1440.txt",
+      "metrics": "evidence/workflows-cs-dark-1440.json",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "lang": "cs",
+      "documentWidth": 1440,
+      "headings": [
+        {
+          "height": 22.5,
+          "tag": "H1",
+          "text": "Workflows",
+          "width": 74,
+          "x": 272,
+          "y": 32
+        },
+        {
+          "height": 0,
+          "tag": "H1",
+          "text": "Workflows",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 24,
+          "tag": "H2",
+          "text": "Jak spolu oblasti souvisejí",
+          "width": 1120,
+          "x": 276,
+          "y": 146
+        },
+        {
+          "height": 24,
+          "tag": "H2",
+          "text": "Vyberte oblast",
+          "width": 1120,
+          "x": 276,
+          "y": 628
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Denní práce a plánování",
+          "width": 210,
+          "x": 276,
+          "y": 685
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Projekty a konkurence",
+          "width": 210,
+          "x": 276,
+          "y": 940
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Příležitosti, klienti a Kariéra",
+          "width": 210,
+          "x": 276,
+          "y": 1195
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Faktury a peníze",
+          "width": 210,
+          "x": 276,
+          "y": 1450
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Znalosti, odkazy a IG TIPS",
+          "width": 210,
+          "x": 276,
+          "y": 1685
+        },
+        {
+          "height": 40,
+          "tag": "H3",
+          "text": "Marketing pro devShark a DNESKAi",
+          "width": 210,
+          "x": 276,
+          "y": 1940
+        },
+        {
+          "height": 20,
+          "tag": "H3",
+          "text": "Nastavení a integrace",
+          "width": 210,
+          "x": 276,
+          "y": 2293
+        },
+        {
+          "height": 24,
+          "tag": "H2",
+          "text": "Od podkladu ke zkontrolovanému příspěvku",
+          "width": 332.1,
+          "x": 276,
+          "y": 2552
+        },
+        {
+          "height": 20,
+          "tag": "H2",
+          "text": "Další krok",
+          "width": 1120,
+          "x": 276,
+          "y": 3745
+        }
+      ]
+    }
+  ],
+  "code": [
+    {
+      "id": "C01",
+      "priority": "P1",
+      "title": "Protect unsaved edits",
+      "proof": "Browser reproduced"
+    },
+    {
+      "id": "C02",
+      "priority": "P2",
+      "title": "Prioritise decisions before limiting rows",
+      "proof": "Baseline probe"
+    },
+    {
+      "id": "C03",
+      "priority": "P2",
+      "title": "Filter brand before limiting jobs",
+      "proof": "Baseline probe"
+    },
+    {
+      "id": "C04",
+      "priority": "P2",
+      "title": "Aggregate complete engagement totals",
+      "proof": "Baseline probe"
+    },
+    {
+      "id": "C05",
+      "priority": "P2",
+      "title": "Fix duplicate upload field IDs",
+      "proof": "Rendered component probe"
+    },
+    {
+      "id": "C06",
+      "priority": "P2",
+      "title": "Retry an unchanged failed preview",
+      "proof": "Source trace"
+    },
+    {
+      "id": "C07",
+      "priority": "P3",
+      "title": "Filter and paginate audio rotation",
+      "proof": "Source boundary trace"
+    }
+  ]
+}

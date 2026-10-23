@@ -997,6 +997,67 @@
     ]
   },
   {
+    "id": "dneskai-editor-ready-cs-dark-1440",
+    "image": "evidence/dneskai-editor-ready-cs-dark-1440.png",
+    "dom": "evidence/dneskai-editor-ready-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-editor-ready-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 4
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 194
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": -577
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": 64
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 607
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 1583
+      }
+    ]
+  },
+  {
     "id": "dneskai-lab-cs-dark-1440",
     "image": "evidence/dneskai-lab-cs-dark-1440.png",
     "dom": "evidence/dneskai-lab-cs-dark-1440.txt",

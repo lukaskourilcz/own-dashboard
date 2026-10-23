@@ -44,7 +44,7 @@ The job query limits the owner's newest eligible jobs to 60 across brands. Only 
 
 **Location:** `src/lib/marketing/dneskai-workspace-read.ts:183`.
 
-The workspace fetches at most 5000 raw reply rows across the selected publications, with no order or pagination, and presents their lengths as exact match/sent/failure totals. At 5001 matches the receipt and seven-day summary already undercount. A server row limit could lower that threshold; the project's live limit was not inspected. Seven-day selection occurs after this shared cap, so older publications can also consume the rows needed for newer ones. The summary means lifetime engagement on posts published in the last seven days, not replies sent in that period; keep that distinction explicit in the UI.
+The workspace fetches at most 5000 raw reply rows across the selected publications, with no order or pagination, and presents their lengths as exact match/sent/failure totals. At 5001 matches the receipt and seven-day summary already undercount. A server row limit could lower that threshold; the project's live limit was not inspected. The summary also sums only the ten failure-code buckets retained for display; keep the complete failed count separate from the top-code presentation. Seven-day selection occurs after this shared cap, so older publications can also consume the rows needed for newer ones. The summary means lifetime engagement on posts published in the last seven days, not replies sent in that period; keep that distinction explicit in the UI.
 
 **Reproduction:** audit probe supplies one eligible published post and 5001 sent replies; both receipt and summary report 5000.
 
