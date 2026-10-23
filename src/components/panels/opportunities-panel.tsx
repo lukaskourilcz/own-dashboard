@@ -212,12 +212,14 @@ export function OpportunitiesPanel({
       await onActivate();
       const platformRows = isPreview
         ? PREVIEW_PLATFORMS
-        : await qc.fetchQuery({ queryKey: [...qk.freelancePlatforms, userId], queryFn: () => fetchFreelancePlatforms(userId), staleTime: 0 }).catch(() => []);
+        : await qc.fetchQuery({ queryKey: [...qk.freelancePlatforms, userId], queryFn: () => fetchFreelancePlatforms(userId), staleTime: 0 });
       await qc.invalidateQueries({ queryKey: qk.opportunityMetrics });
       recordLastLoad("opportunities", {
         opportunities: (qc.getQueryData<ClientOpportunity[]>(qk.opportunities) ?? opportunities).length,
         platforms: platformRows.length,
       });
+    } catch {
+      toast.err(t.common.dataUnavailable);
     } finally {
       setChecking(false);
     }

@@ -4,6 +4,10 @@ import { dashboardDataKeysForTab, onDemandDataKeys, serverDataKeysForTab, tabNee
 import { NAV_TABS } from "@/lib/nav-tabs";
 
 describe("dashboard route data boundaries", () => {
+  it("does not load unused relationship families for Marketing or Notes", () => {
+    expect([...dashboardDataKeysForTab("marketing")]).toEqual([]);
+    expect([...dashboardDataKeysForTab("notes")]).toEqual(["notes", "projects"]);
+  });
   it("keeps unrelated financial and career records out of Home", () => {
     const keys = dashboardDataKeysForTab("home");
     expect(keys.has("todos")).toBe(true);

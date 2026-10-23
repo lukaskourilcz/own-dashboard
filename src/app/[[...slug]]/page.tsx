@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DashboardDataUnavailable } from "@/components/dashboard-data-unavailable";
 import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
@@ -27,8 +28,20 @@ export default async function DashboardPage({
   // Client-only keys (last week's calendar) are neither loaded nor seeded
   // here: the shell fetches them in the browser's timezone.
   const requiredData = serverDataKeysForTab(initialTab);
+  const failedReads = new Set<DashboardDataKey>();
   async function loadWhen<T>(key: DashboardDataKey, load: () => PromiseLike<T>): Promise<T | null> {
-    return requiredData.has(key) ? await load() : null;
+    if (!requiredData.has(key)) return null;
+    try {
+      const result = await load();
+      if (result && typeof result === "object" && "error" in result && result.error) {
+        failedReads.add(key);
+        return null;
+      }
+      return result;
+    } catch {
+      failedReads.add(key);
+      return null;
+    }
   }
 
   const [
@@ -83,14 +96,20 @@ export default async function DashboardPage({
     loadWhen("todayCalendar", fetchTodayWindowEvents),
     loadWhen("weekCalendar", fetchUpcomingWeekEvents),
     loadUserPreferences(user.id),
-    supabase
+    // The full project read already supplies the lightweight navigation data.
+    requiredData.has("projects") ? null : supabase
       .from("projects")
       .select("id, name, slug, is_active, engagement")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-      .limit(50),
+      .limit(50)
+      .then(result => result, () => ({ data: null, error: true })),
   ]);
+
+  if (failedReads.size > 0 || navigationProjectsRes?.error) {
+    return <DashboardDataUnavailable lang={prefs.language} />;
+  }
 
   const requestedRef = slug?.[0] === "projects" && slug[1] ? slug[1] : null;
   const requestedProject = requestedRef
@@ -134,7 +153,7 @@ export default async function DashboardPage({
     initialInvoiceItems={invoiceItemsRes?.data ?? []}
     initialInvoiceSettings={invoiceSettingsRes?.data ?? null}
     initialProjects={projectsRes?.data ?? []}
-    initialNavigationProjects={navigationProjectsRes.data ?? []}
+    initialNavigationProjects={navigationProjectsRes?.data ?? (projectsRes?.data ?? []).filter(project => project.is_active).slice(0, 50)}
     initialProjectCommunications={projectCommunicationsRes?.data ?? []}
     initialProjectCosts={projectCostsRes?.data ?? []}
     initialCrons={cronsRes?.data ?? []}

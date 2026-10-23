@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
+import { DashboardDestinationBoundary } from "@/components/dashboard-destination-state";
 import { MotionConfig } from "motion/react";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { ClientsPanel } from "@/components/panels/clients-panel";
@@ -213,31 +214,31 @@ function DashboardShellContent(props: Props) {
     });
   }, [requestNavigation]);
   const { collapsed: navCollapsed } = useNavCollapsed();
-  const [subscriptions, setSubscriptions] = useEntityStore(qk.subscriptions, props.initialSubscriptions, fetchSubscriptions, dataOptions("subscriptions"));
-  const [todos] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
-  const [accounts, setAccounts] = useEntityStore(qk.accounts, props.initialAccounts, fetchAccounts, dataOptions("accounts"));
-  const [transactions, setTransactions] = useEntityStore(qk.transactions, props.initialTransactions, fetchTransactions, dataOptions("transactions"));
-  const [plans, setPlans] = useEntityStore(qk.plans, props.initialPlans, fetchPlans, dataOptions("plans"));
-  const [notes, setNotes] = useEntityStore(qk.notes, props.initialNotes, fetchNotes, dataOptions("notes"));
-  const [prompts, setPrompts] = useEntityStore(qk.prompts, props.initialPrompts, fetchPrompts, dataOptions("prompts"));
-  const [promptLinks, setPromptLinks] = useEntityStore(qk.promptLinks, props.initialPromptLinks, fetchPromptLinks, dataOptions("promptLinks"));
-  const [repoNotes, setRepoNotes] = useEntityStore(qk.repoNotes, props.initialRepoNotes, fetchRepoNotes, dataOptions("repoNotes"));
-  const [repoLinks, setRepoLinks] = useEntityStore(qk.repoLinks, props.initialRepoLinks, fetchRepoLinks, dataOptions("repoLinks"));
+  const [subscriptions, setSubscriptions, subscriptionsStatus] = useEntityStore(qk.subscriptions, props.initialSubscriptions, fetchSubscriptions, dataOptions("subscriptions"));
+  const [todos, , todosStatus] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
+  const [accounts, setAccounts, accountsStatus] = useEntityStore(qk.accounts, props.initialAccounts, fetchAccounts, dataOptions("accounts"));
+  const [transactions, setTransactions, transactionsStatus] = useEntityStore(qk.transactions, props.initialTransactions, fetchTransactions, dataOptions("transactions"));
+  const [plans, setPlans, plansStatus] = useEntityStore(qk.plans, props.initialPlans, fetchPlans, dataOptions("plans"));
+  const [notes, setNotes, notesStatus] = useEntityStore(qk.notes, props.initialNotes, fetchNotes, dataOptions("notes"));
+  const [prompts, setPrompts, promptsStatus] = useEntityStore(qk.prompts, props.initialPrompts, fetchPrompts, dataOptions("prompts"));
+  const [promptLinks, setPromptLinks, promptLinksStatus] = useEntityStore(qk.promptLinks, props.initialPromptLinks, fetchPromptLinks, dataOptions("promptLinks"));
+  const [repoNotes, setRepoNotes, repoNotesStatus] = useEntityStore(qk.repoNotes, props.initialRepoNotes, fetchRepoNotes, dataOptions("repoNotes"));
+  const [repoLinks, setRepoLinks, repoLinksStatus] = useEntityStore(qk.repoLinks, props.initialRepoLinks, fetchRepoLinks, dataOptions("repoLinks"));
   const [aiLinks, setAiLinks, aiLinksStatus] = useEntityStore(qk.aiLinks, props.initialAiLinks, fetchAiLinks, dataOptions("aiLinks"));
-  const [aiCategories, setAiCategories] = useEntityStore(qk.aiCategories, props.initialAiCategories, fetchAiCategories, dataOptions("aiCategories"));
-  const [projectLinks, setProjectLinks] = useEntityStore(qk.projectLinks, props.initialProjectLinks, fetchProjectLinks, dataOptions("projectLinks"));
-  const [tools, setTools] = useEntityStore(qk.tools, props.initialTools, fetchTools, dataOptions("tools"));
+  const [aiCategories, setAiCategories, aiCategoriesStatus] = useEntityStore(qk.aiCategories, props.initialAiCategories, fetchAiCategories, dataOptions("aiCategories"));
+  const [projectLinks, setProjectLinks, projectLinksStatus] = useEntityStore(qk.projectLinks, props.initialProjectLinks, fetchProjectLinks, dataOptions("projectLinks"));
+  const [tools, setTools, toolsStatus] = useEntityStore(qk.tools, props.initialTools, fetchTools, dataOptions("tools"));
   // A Tools card's "Show in Links" opens the library at that link's card.
   const [focusLinkId, setFocusLinkId] = useState<string | null>(null);
   // `/ig-tips?q=` applies once, on the IG TIPS panel the page opened with.
   const [tipQuery, setTipQuery] = useState<string | null>(props.initialTipQuery ?? null);
   const clearTipQuery = useCallback(() => setTipQuery(null), []);
-  const [shortcuts, setShortcuts] = useEntityStore(qk.shortcuts, props.initialShortcuts, fetchShortcuts, dataOptions("shortcuts"));
-  const [referenceRows, setReferenceRows] = useEntityStore(qk.referenceRows, props.initialReferenceRows, fetchReferenceRows, dataOptions("referenceRows"));
-  const [importantDates, setImportantDates] = useEntityStore(qk.importantDates, props.initialImportantDates, fetchImportantDates, dataOptions("importantDates"));
-  const [invoices, setInvoices] = useEntityStore(qk.invoices, props.initialInvoices, fetchInvoices, dataOptions("invoices"));
-  const [invoiceItems, setInvoiceItems] = useEntityStore(qk.invoiceItems, props.initialInvoiceItems, fetchInvoiceItems, dataOptions("invoiceItems"));
-  const [invoiceSettings, setInvoiceSettings] = useEntityStore<InvoiceSettings | null>(qk.invoiceSettings, props.initialInvoiceSettings, fetchInvoiceSettings, dataOptions("invoiceSettings"));
+  const [shortcuts, setShortcuts, shortcutsStatus] = useEntityStore(qk.shortcuts, props.initialShortcuts, fetchShortcuts, dataOptions("shortcuts"));
+  const [referenceRows, setReferenceRows, referenceRowsStatus] = useEntityStore(qk.referenceRows, props.initialReferenceRows, fetchReferenceRows, dataOptions("referenceRows"));
+  const [importantDates, setImportantDates, importantDatesStatus] = useEntityStore(qk.importantDates, props.initialImportantDates, fetchImportantDates, dataOptions("importantDates"));
+  const [invoices, setInvoices, invoicesStatus] = useEntityStore(qk.invoices, props.initialInvoices, fetchInvoices, dataOptions("invoices"));
+  const [invoiceItems, setInvoiceItems, invoiceItemsStatus] = useEntityStore(qk.invoiceItems, props.initialInvoiceItems, fetchInvoiceItems, dataOptions("invoiceItems"));
+  const [invoiceSettings, setInvoiceSettings, invoiceSettingsStatus] = useEntityStore<InvoiceSettings | null>(qk.invoiceSettings, props.initialInvoiceSettings, fetchInvoiceSettings, dataOptions("invoiceSettings"));
   const [projects, setProjects, projectsStatus] = useEntityStore(qk.projects, props.initialProjects, fetchProjects, dataOptions("projects"));
   const activeProjects = useMemo(
     () => projects.filter((project) => project.is_active),
@@ -279,10 +280,10 @@ function DashboardShellContent(props: Props) {
   }, [projects]);
   const activeNavigationProjects = useMemo(
     () =>
-      projects.length > 0
+      projectsStatus.ready
         ? activeProjects
         : props.initialNavigationProjects.filter((project) => project.is_active),
-    [activeProjects, projects.length, props.initialNavigationProjects],
+    [activeProjects, projectsStatus.ready, props.initialNavigationProjects],
   );
   const operationalTodos = useMemo(() => {
     const activeIds = new Set(activeProjects.map((project) => project.id));
@@ -295,25 +296,25 @@ function DashboardShellContent(props: Props) {
       return true;
     });
   }, [activeProjects, todos]);
-  const [projectCommunications, setProjectCommunications] = useEntityStore(qk.projectCommunications, props.initialProjectCommunications, fetchProjectCommunications, dataOptions("projectCommunications"));
-  const [projectCosts, setProjectCosts] = useEntityStore(qk.projectCosts, props.initialProjectCosts, fetchProjectCosts, dataOptions("projectCosts"));
-  const [crons, setCrons] = useEntityStore(qk.crons, props.initialCrons, fetchCrons, dataOptions("crons"));
+  const [projectCommunications, setProjectCommunications, projectCommunicationsStatus] = useEntityStore(qk.projectCommunications, props.initialProjectCommunications, fetchProjectCommunications, dataOptions("projectCommunications"));
+  const [projectCosts, setProjectCosts, projectCostsStatus] = useEntityStore(qk.projectCosts, props.initialProjectCosts, fetchProjectCosts, dataOptions("projectCosts"));
+  const [crons, setCrons, cronsStatus] = useEntityStore(qk.crons, props.initialCrons, fetchCrons, dataOptions("crons"));
   const [subscriptionAllocations, setSubscriptionAllocations, subscriptionAllocationsStatus] = useEntityStore(qk.subscriptionAllocations, props.initialSubscriptionAllocations, fetchSubscriptionAllocations, dataOptions("subscriptionAllocations"));
-  const [competitors, setCompetitors] = useEntityStore(qk.competitors, props.initialCompetitors, fetchCompetitors, dataOptions("competitors"));
-  const [organizations, setOrganizations] = useEntityStore(qk.organizations, props.initialOrganizations, fetchOrganizations, dataOptions("organizations"));
-  const [opportunities, setOpportunities] = useEntityStore(qk.opportunities, props.initialOpportunities, fetchOpportunities, dataOptions("opportunities"));
-  const [inboxItems, setInboxItems] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));
-  const [notifications, setNotifications] = useEntityStore(qk.notifications, props.initialNotifications, fetchNotifications, dataOptions("notifications"));
+  const [competitors, setCompetitors, competitorsStatus] = useEntityStore(qk.competitors, props.initialCompetitors, fetchCompetitors, dataOptions("competitors"));
+  const [organizations, setOrganizations, organizationsStatus] = useEntityStore(qk.organizations, props.initialOrganizations, fetchOrganizations, dataOptions("organizations"));
+  const [opportunities, setOpportunities, opportunitiesStatus] = useEntityStore(qk.opportunities, props.initialOpportunities, fetchOpportunities, dataOptions("opportunities"));
+  const [inboxItems, setInboxItems, inboxItemsStatus] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));
+  const [notifications, setNotifications, notificationsStatus] = useEntityStore(qk.notifications, props.initialNotifications, fetchNotifications, dataOptions("notifications"));
   const [weeklyReviews, setWeeklyReviews, weeklyReviewsStatus] = useEntityStore(qk.weeklyReviews, props.initialWeeklyReviews, fetchWeeklyReviews, dataOptions("weeklyReviews"));
-  const [jobListings] = useEntityStore(qk.jobListings, props.initialJobListings, fetchJobListings, dataOptions("jobListings"));
-  const [jobUserStates, setJobUserStates] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, fetchJobUserStates, dataOptions("jobUserStates"));
-  const [savedJobPositions, setSavedJobPositions] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
-  const [jobApplications, setJobApplications] = useEntityStore(qk.jobApplications, props.initialJobApplications, fetchJobApplications, dataOptions("jobApplications"));
-  const [jobApplicationEvents, setJobApplicationEvents] = useEntityStore(qk.jobApplicationEvents, props.initialJobApplicationEvents, fetchJobApplicationEvents, dataOptions("jobApplicationEvents"));
-  const [coverLetterTemplates, setCoverLetterTemplates] = useEntityStore(qk.coverLetterTemplates, props.initialCoverLetterTemplates, fetchCoverLetterTemplates, dataOptions("coverLetterTemplates"));
-  const [jobLastRun] = useEntityStore<JobScrapeRun | null>(qk.jobLastRun, props.initialJobLastRun, fetchJobLastRun, dataOptions("jobLastRun"));
-  const [todayCalendar] = useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
-  const [weekCalendar] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
+  const [jobListings, , jobListingsStatus] = useEntityStore(qk.jobListings, props.initialJobListings, fetchJobListings, dataOptions("jobListings"));
+  const [jobUserStates, setJobUserStates, jobUserStatesStatus] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, fetchJobUserStates, dataOptions("jobUserStates"));
+  const [savedJobPositions, setSavedJobPositions, savedJobPositionsStatus] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
+  const [jobApplications, setJobApplications, jobApplicationsStatus] = useEntityStore(qk.jobApplications, props.initialJobApplications, fetchJobApplications, dataOptions("jobApplications"));
+  const [jobApplicationEvents, setJobApplicationEvents, jobApplicationEventsStatus] = useEntityStore(qk.jobApplicationEvents, props.initialJobApplicationEvents, fetchJobApplicationEvents, dataOptions("jobApplicationEvents"));
+  const [coverLetterTemplates, setCoverLetterTemplates, coverLetterTemplatesStatus] = useEntityStore(qk.coverLetterTemplates, props.initialCoverLetterTemplates, fetchCoverLetterTemplates, dataOptions("coverLetterTemplates"));
+  const [jobLastRun, , jobLastRunStatus] = useEntityStore<JobScrapeRun | null>(qk.jobLastRun, props.initialJobLastRun, fetchJobLastRun, dataOptions("jobLastRun"));
+  const [todayCalendar, , todayCalendarStatus] = useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
+  const [weekCalendar, , weekCalendarStatus] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
   const [lastWeekCalendar, , lastWeekCalendarStatus] = useEntityStore(qk.calendarLastWeek, props.lastWeekCalendar, fetchLastWeekCalendar, dataOptions("lastWeekCalendar"));
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useDisplayCurrency();
 
@@ -342,12 +343,57 @@ function DashboardShellContent(props: Props) {
       }));
       // Do not turn a failed private-letter load into an apparently empty
       // workspace: keep the manual retry available and surface the failure.
-      if (target === "career" && results.some(result => result.status === "rejected")) {
-        throw new Error("Could not load private Career records");
+      if (results.some(result => result.status === "rejected")) {
+        throw new Error("Could not load destination records");
       }
     }
     setActivatedTabs((previous) => (previous.has(target) ? previous : new Set(previous).add(target)));
   }, [props.isPreview, qc]);
+
+  const entityStatuses = {
+    subscriptions: subscriptionsStatus,
+    todos: todosStatus,
+    accounts: accountsStatus,
+    transactions: transactionsStatus,
+    plans: plansStatus,
+    notes: notesStatus,
+    prompts: promptsStatus,
+    promptLinks: promptLinksStatus,
+    repoNotes: repoNotesStatus,
+    repoLinks: repoLinksStatus,
+    aiLinks: aiLinksStatus,
+    aiCategories: aiCategoriesStatus,
+    projectLinks: projectLinksStatus,
+    tools: toolsStatus,
+    shortcuts: shortcutsStatus,
+    referenceRows: referenceRowsStatus,
+    importantDates: importantDatesStatus,
+    invoices: invoicesStatus,
+    invoiceItems: invoiceItemsStatus,
+    invoiceSettings: invoiceSettingsStatus,
+    projects: projectsStatus,
+    projectCommunications: projectCommunicationsStatus,
+    projectCosts: projectCostsStatus,
+    crons: cronsStatus,
+    subscriptionAllocations: subscriptionAllocationsStatus,
+    competitors: competitorsStatus,
+    organizations: organizationsStatus,
+    opportunities: opportunitiesStatus,
+    inboxItems: inboxItemsStatus,
+    notifications: notificationsStatus,
+    weeklyReviews: weeklyReviewsStatus,
+    jobListings: jobListingsStatus,
+    jobUserStates: jobUserStatesStatus,
+    savedJobPositions: savedJobPositionsStatus,
+    jobApplications: jobApplicationsStatus,
+    jobApplicationEvents: jobApplicationEventsStatus,
+    coverLetterTemplates: coverLetterTemplatesStatus,
+    jobLastRun: jobLastRunStatus,
+    todayCalendar: todayCalendarStatus,
+    weekCalendar: weekCalendarStatus,
+    lastWeekCalendar: lastWeekCalendarStatus,
+  };
+  const requiredStatuses = Object.entries(entityStatuses).filter(([key]) => tabNeedsDashboardData(tab, key as DashboardDataKey, activatedTabs.has(tab)));
 
   const lastG = useRef(0);
   useEffect(() => {
@@ -386,6 +432,7 @@ function DashboardShellContent(props: Props) {
         <MobileNav tab={tab} setTab={setTab} />
         <ShellTitleProvider><div key={tab} className="page-frame">
           {isHiddenNavTab(tab) && <p className="mb-3 text-xs text-foreground-subtle">{t.nav.hiddenFromNavigation}</p>}
+          <DashboardDestinationBoundary statuses={requiredStatuses.map(([, status]) => status)} onRetry={() => void qc.refetchQueries({ type: "active", predicate: query => query.state.dataUpdatedAt === 0 })}>
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
@@ -420,6 +467,7 @@ function DashboardShellContent(props: Props) {
           {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
+          </DashboardDestinationBoundary>
         </div></ShellTitleProvider>
       </div></main>
       </div>

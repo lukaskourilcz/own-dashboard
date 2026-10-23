@@ -23,11 +23,13 @@ Each destination needs source/data-flow review, relevant business and failure ch
 
 ## Findings under review
 
-1. Server reads currently seed fallback empty records as fresh even when a query fails. Project lookup can also return a false 404 during an outage. Failed initial reads must be recoverable and must not open editable forms with fabricated empty data.
-2. Opportunities activates after failed on-demand reads; Career already rejects them. Both destinations must retain retry after a partial failure.
-3. An empty loaded project list falls back to the old sidebar projection. Distinguish a loaded empty result from a not-yet-loaded store.
+1. Fixed: failed server reads now render a bilingual retry state before mounting the shell. A successful missing-project read still returns 404; an outage does not. In-shell navigation also waits for all required entity stores before mounting writable panels. Verified cached records remain available during background failures.
+2. Fixed: both on-demand destinations reject partial read failures. Opportunities surfaces the failure and no longer records a failed platform-directory request as a successful zero-platform check.
+3. Fixed: sidebar projection fallback now checks whether projects were actually loaded, so a loaded empty list stays empty. Destinations already loading projects reuse that read for navigation rather than making a duplicate query.
 4. Every destination panel is statically imported by the persistent shell. Measure the initial script payload, then defer unused destination code while preserving SSR and shell state.
-5. Marketing loads three unused entity families; Notes loads three unused relationship families. Confirm component dependencies before removing requests.
+5. Fixed: Marketing no longer loads three unused shell entity families; Notes loads only notes and projects. Component dependencies and route-contract tests confirm the smaller boundary.
+
+Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
 
 ## Database evidence
 
