@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
+import { bankInstitutionsResponse } from "@/lib/bank/flow";
 import { createClient } from "@/lib/supabase/server";
 import { getProvider } from "@/lib/bank/registry";
-import { UnknownBankProviderError } from "@/lib/bank/provider";
 
 /**
  * List the banks a provider offers for a country (default Czech Republic) so
@@ -19,28 +21,19 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const country = (url.searchParams.get("country") ?? "cz").slice(0, 2).toLowerCase();
-  const providerId = url.searchParams.get("provider") ?? "gocardless";
-
-  let provider;
+  const parsed = z.object({ country: z.string().regex(/^[a-zA-Z]{2}$/), provider: z.enum(["gocardless", "fio", "enable-banking"]) }).safeParse({
+    country: url.searchParams.get("country") ?? "cz", provider: url.searchParams.get("provider") ?? "gocardless",
+  });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid query." }, { status: 400 });
+  const limited = await rateLimit(user.id, { key: "bank-institutions", limit: 10, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
   try {
-    provider = getProvider(providerId);
-  } catch (err) {
-    if (err instanceof UnknownBankProviderError) {
-      return NextResponse.json({ error: "Unknown provider." }, { status: 400 });
-    }
-    throw err;
-  }
-
-  if (!provider.listInstitutions || !(await provider.isConfigured(user.id))) {
-    return NextResponse.json({ error: "not-configured" }, { status: 503 });
-  }
-
-  try {
-    const institutions = await provider.listInstitutions(country);
-    return NextResponse.json({ provider: provider.id, institutions });
-  } catch (err) {
-    console.error("[api/bank/institutions] failed:", err);
+    const provider = getProvider(parsed.data.provider);
+    if (!provider.listInstitutions || !(await provider.isConfigured(user.id))) return NextResponse.json({ error: "not-configured" }, { status: 503 });
+    const { institutions } = bankInstitutionsResponse.parse({ institutions: await provider.listInstitutions(parsed.data.country.toLowerCase()) });
+    if (new Set(institutions.map(institution => institution.id)).size !== institutions.length) throw new Error("Invalid institution list");
+    return NextResponse.json({ provider: provider.id, institutions }, { headers: { "cache-control": "private, no-store" } });
+  } catch {
     return NextResponse.json(
       { error: "Could not load banks." },
       { status: 502 },

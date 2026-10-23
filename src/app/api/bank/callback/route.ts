@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProvider } from "@/lib/bank/registry";
@@ -14,9 +15,10 @@ import type { BankConnection } from "@/lib/types";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const reference = url.searchParams.get("ref");
+  const checkedReference = z.uuid().safeParse(reference);
   const finances = new URL("/finances", request.url);
 
-  if (!reference) {
+  if (!checkedReference.success) {
     finances.searchParams.set("bank", "error");
     return NextResponse.redirect(finances);
   }
@@ -29,36 +31,28 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("bank_connections")
-    .select("*")
-    .eq("reference", reference)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!data) {
-    finances.searchParams.set("bank", "error");
-    return NextResponse.redirect(finances);
-  }
-  const conn = data as BankConnection;
-
   try {
+    const admin = createAdminClient();
+    const { data, error: readError } = await admin.from("bank_connections").select("*")
+      .eq("reference", checkedReference.data).eq("user_id", user.id).maybeSingle();
+    if (readError || !data || data.user_id !== user.id || data.reference !== reference) throw new Error("Connection unavailable");
+    const conn = data as BankConnection;
     const consent = await getProvider(conn.provider).getConsent(conn);
-    await admin
+    if (!z.object({ status: z.enum(["created", "linked", "expired", "error"]), expiresAt: z.iso.datetime({ offset: true }).nullable() }).safeParse(consent).success) throw new Error("Invalid provider consent");
+    const { data: saved, error } = await admin
       .from("bank_connections")
       .update({
         status: consent.status,
         consent_expires_at: consent.expiresAt,
-        last_error: consent.error,
+        last_error: consent.status === "error" ? "bank-sync-failed" : consent.status === "expired" ? "consent-expired" : null,
       })
-      .eq("id", conn.id);
+      .eq("id", conn.id).eq("user_id", user.id).eq("updated_at", conn.updated_at).select("id").single();
+    if (error || saved?.id !== conn.id) throw new Error("Consent write unconfirmed");
     finances.searchParams.set(
       "bank",
       consent.status === "linked" ? "linked" : "error",
     );
-  } catch (err) {
-    console.error("[api/bank/callback] failed:", err);
+  } catch {
     finances.searchParams.set("bank", "error");
   }
 

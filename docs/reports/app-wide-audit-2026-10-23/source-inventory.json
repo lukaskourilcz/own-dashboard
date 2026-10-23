@@ -33,13 +33,15 @@
       "path": "src/app/api/bank/callback/route.ts",
       "lines": 66,
       "sha256": "a7854f178793f801adb9482ce6350c2efbc5c6c5c9cceef0c522551416517383",
-      "status": "pending"
+      "status": "source reviewed; consent boundary/receipt failure checks passed; final release checks pending",
+      "reviewedSha256": "3e350476cfb1c738b53e6a8c92041771b93c49c218b98e12e5d48f67494ba2f4"
     },
     {
       "path": "src/app/api/bank/connect/route.ts",
       "lines": 92,
       "sha256": "89e7ff1a526cc65fd2debca9731b4954cdbb6783ef0eedbb97336efad83b0e2d",
-      "status": "pending"
+      "status": "source reviewed; consent boundary/receipt failure checks passed; final release checks pending",
+      "reviewedSha256": "d188020fba280789befcf029597b7ace7442ceebbab7cc3c0e1720afc770525e"
     },
     {
       "path": "src/app/api/bank/credentials/route.ts",
@@ -59,7 +61,8 @@
       "path": "src/app/api/bank/institutions/route.ts",
       "lines": 49,
       "sha256": "f40ae4a3518963bd64accd3dc6a0db05085c9e639f54b1e93ad1e0d7b7048456",
-      "status": "pending"
+      "status": "source reviewed; consent boundary/receipt failure checks passed; final release checks pending",
+      "reviewedSha256": "7ebdc7cc73aee9f84853f8e2459c25bbcc1d5d58a480e033a6b68503a0353de5"
     },
     {
       "path": "src/app/api/bank/sync/route.ts",
