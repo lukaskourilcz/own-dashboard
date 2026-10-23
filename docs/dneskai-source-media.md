@@ -311,8 +311,8 @@ reel by it.
 Instagram's API puts music only on Reels, and licensed music only under Facebook Login (plan, section 2). Until
 @dneskai moves to Facebook Login (#166), Příspěvky shows **Přidat hudbu v aplikaci** on every carousel published in the
 last seven days: how to add music in the Instagram app (open the post, ⋯ → Upravit, add music, about 30 seconds) and
-a suggested track name from the library with a copy button, a different enabled track per post. When the trending
-ranking of #167 exists it can supply the name instead. The badge needs no API call and appears only while
+a suggested track name with a copy button, a different one per post: the niche's sounds from #167 first, then the
+enabled library tracks. The badge needs no API call and appears only while
 `MARKETING_DNESKAI_REELS_ENABLED=true`, because the suggestion comes from the library. Code:
 `src/components/marketing/dneskai/music-hint.tsx`.
 
