@@ -7,10 +7,10 @@
  * Reads each route's `.next/server/app/<route>/route.js.nft.json`, the list of files Vercel copies into
  * that function, and fails unless it holds the three things sharp and the vendored studio need at run time:
  *
- * - libvips: `libvips-cpp.so*` from the root `node_modules/@img/sharp-libvips-<platform>/lib`, for the same
+ * - libvips: `libvips-cpp.so*` (Linux) or `libvips-cpp.*.dylib` (macOS) from the root `node_modules/@img/sharp-libvips-<platform>/lib`, for the same
  *   platform as the addon. The default trace keeps the addon and drops this library, and sharp then fails
- *   to load (docs/marketing-render-preflight.md). The `.so` name means the check expects a Linux build, as
- *   on CI and Vercel.
+ *   to load (docs/marketing-render-preflight.md). CI and Vercel use the Linux library; local macOS
+ *   builds use the Darwin library. Each format must agree with its package platform.
  * - at least one vendored studio font under `vendor/carousel-studio/fonts/`. Without one the rasteriser
  *   has no face to draw with, because system fonts are switched off.
  * - sharp's native addon, `node_modules/@img/sharp-<platform>/lib/sharp-<platform>-<version>.node`.
@@ -44,7 +44,11 @@ const ffmpegRoutes = new Set(['/api/marketing/dneskai/render-reel', '/api/market
 const ffmpegFile = 'node_modules/ffmpeg-static/ffmpeg';
 
 const addonPattern = /^node_modules\/@img\/sharp-([^/]+)\/lib\/sharp-\1-[^/]+\.node$/;
-const libvipsPattern = /^node_modules\/@img\/sharp-libvips-([^/]+)\/lib\/libvips-cpp\.so(\.\d+)*$/;
+const libvipsPattern = /^node_modules\/@img\/sharp-libvips-((?:linux|linuxmusl)-[^/]+)\/lib\/libvips-cpp\.so(?:\.\d+)*$|^node_modules\/@img\/sharp-libvips-(darwin-[^/]+)\/lib\/libvips-cpp(?:\.\d+)*\.dylib$/;
+const libvipsPlatform = (file) => {
+  const match = libvipsPattern.exec(file);
+  return match?.[1] ?? match?.[2];
+};
 const fontPattern = /^vendor\/carousel-studio\/fonts\/.+\.(ttf|otf|woff2?)$/;
 
 /** One route's verdict: the problems found, and what was matched for the summary line. */
@@ -70,9 +74,9 @@ function checkRoute(route) {
   if (addons.length === 0) problems.push('no sharp native addon (node_modules/@img/sharp-<platform>/lib/sharp-<platform>-<version>.node)');
 
   const libvips = files.filter((file) => libvipsPattern.test(file));
-  const matchingLibvips = libvips.filter((file) => addonPlatforms.size === 0 || addonPlatforms.has(libvipsPattern.exec(file)[1]));
-  if (libvips.length === 0) problems.push('no libvips-cpp.so under node_modules/@img/sharp-libvips-<platform>/lib (is "./node_modules/@img/sharp-libvips-*/lib/**/*" still in outputFileTracingIncludes?)');
-  else if (matchingLibvips.length === 0) problems.push(`libvips is traced for ${libvips.map((file) => libvipsPattern.exec(file)[1]).join(', ')} but the addon is for ${[...addonPlatforms].join(', ')}`);
+  const matchingLibvips = libvips.filter((file) => addonPlatforms.size === 0 || addonPlatforms.has(libvipsPlatform(file)));
+  if (libvips.length === 0) problems.push('no platform-compatible libvips shared library under node_modules/@img/sharp-libvips-<platform>/lib (is "./node_modules/@img/sharp-libvips-*/lib/**/*" still in outputFileTracingIncludes?)');
+  else if (matchingLibvips.length === 0) problems.push(`libvips is traced for ${libvips.map((file) => libvipsPlatform(file)).join(', ')} but the addon is for ${[...addonPlatforms].join(', ')}`);
 
   const fonts = files.filter((file) => fontPattern.test(file));
   if (fonts.length === 0) problems.push('no vendored studio font under vendor/carousel-studio/fonts/ (is "./vendor/carousel-studio/fonts/**/*" still in outputFileTracingIncludes?)');
