@@ -54,11 +54,21 @@ describe("extractVariableSymbol", () => {
 });
 
 describe("normalizeSymbol", () => {
-  it("keeps digits only and caps at the ten SPAYD allows", () => {
+  it("keeps digits only and refuses an overlong reference", () => {
     expect(normalizeSymbol(" 2026-001 ")).toBe("2026001");
-    expect(normalizeSymbol("123456789012")).toBe("1234567890");
+    expect(normalizeSymbol("123456789012")).toBeNull();
     expect(normalizeSymbol("FV/A")).toBeNull();
   });
+});
+
+it.each(["VS: 12345678901", "variabilní symbol 12345678901", "/VS/12345678901/SS/0", "VS 12345678901"])("never extracts the prefix of an overlong reference (%s)", note => {
+  expect(extractVariableSymbol(note)).toBeNull();
+  expect(matchPayments({ invoices: [invoice({ variable_symbol: "1234567890" })], transactions: [payment({ variable_symbol: null, note })], totals: totals([["inv1", 38115]]) }).matched).toEqual([]);
+});
+it("an invalid explicit reference cannot fall back to another field and settle an invoice", () => {
+  expect(transactionSymbol(payment({ variable_symbol: "12345678901", note: "VS: 1234567890" }))).toBeNull();
+  expect(invoiceSymbol(invoice({ variable_symbol: "12345678901", number: "1234567890" }))).toBeNull();
+  expect(matchPayments({ invoices: [invoice({ variable_symbol: "1234567890" })], transactions: [payment({ variable_symbol: "12345678901" })], totals: totals([["inv1", 38115]]) }).matched).toEqual([]);
 });
 
 describe("symbol resolution", () => {

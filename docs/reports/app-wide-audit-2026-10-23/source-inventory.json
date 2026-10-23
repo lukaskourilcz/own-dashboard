@@ -3216,8 +3216,8 @@
       "path": "src/lib/payment-matching.ts",
       "lines": 225,
       "sha256": "c30bee4d976fc0c4b859374fafcc509075d1fd25ecbd0364022a1c25e510f56f",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "a8162fe7e5626aa209c949b031f21c4149d6e445f93469588547b39a95ed8d22"
+      "status": "source reviewed; full-reference and matching recovery checks passed; final release checks pending",
+      "reviewedSha256": "f264b1a8d2cc73d9fc21b115196b656c613f47a9c376f0ef005ad6c3ec90c7f6"
     },
     {
       "path": "src/lib/pdf-extract.ts",

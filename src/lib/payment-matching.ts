@@ -71,19 +71,19 @@ export type MatchResult = {
   scanned: number;
 };
 
-/** Digits only, capped at the ten the SPAYD spec allows. Empty → null. */
+/** Preserve the whole reference. An overlong value cannot become another one. */
 export function normalizeSymbol(value: string | null | undefined): string | null {
-  const digits = digitsOnly(value ?? "").slice(0, 10);
-  return digits.length > 0 ? digits : null;
+  const digits = digitsOnly(value ?? "");
+  return digits.length > 0 && digits.length <= 10 ? digits : null;
 }
 
 // "VS: 2026001", "VS 2026001", "/VS/2026001/SS/0", "variabilní symbol 2026001".
 // The separator class is deliberately narrow so "VS 2026 001" does not merge
 // two numbers into one symbol.
 const SYMBOL_PATTERNS: RegExp[] = [
-  /variabiln[ií]\s*symbol\s*[:\-/]?\s*(\d{1,10})/i,
-  /\bv\.?\s?s\.?\s*[:\-]\s*(\d{1,10})/i,
-  /\/vs\/(\d{1,10})/i,
+  /variabiln[ií]\s*symbol\s*[:\-/]?\s*(\d{1,10})(?!\d)/i,
+  /\bv\.?\s?s\.?\s*[:\-]\s*(\d{1,10})(?!\d)/i,
+  /\/vs\/(\d{1,10})(?!\d)/i,
   /\bvs\s+(\d{1,10})\b/i,
 ];
 
@@ -104,12 +104,12 @@ export function extractVariableSymbol(note: string | null | undefined): string |
 
 /** The symbol a payment quotes: the stored column first, then its note. */
 export function transactionSymbol(tx: MatchableTransaction): string | null {
-  return normalizeSymbol(tx.variable_symbol) ?? extractVariableSymbol(tx.note);
+  return tx.variable_symbol?.trim() ? normalizeSymbol(tx.variable_symbol) : extractVariableSymbol(tx.note);
 }
 
 /** The symbol an invoice asks for: its own field, else its number's digits. */
 export function invoiceSymbol(invoice: MatchableInvoice): string | null {
-  return normalizeSymbol(invoice.variable_symbol) ?? normalizeSymbol(invoice.number);
+  return invoice.variable_symbol?.trim() ? normalizeSymbol(invoice.variable_symbol) : normalizeSymbol(invoice.number);
 }
 
 /**
