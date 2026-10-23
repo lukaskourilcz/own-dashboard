@@ -14,7 +14,7 @@
       "lines": 175,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "457b6f4f6ac5d4d3128c4b1ad26f41ee92d0d21f665d181b9540de34eeffbeec"
+      "reviewedSha256": "8bcf793ba874f2a8e48dd37278f4a6680c4f7b396ddf437e5d3668dd0a3230ad"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -722,14 +722,14 @@
       "lines": 468,
       "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95"
+      "reviewedSha256": "fca47a9254a3726ab233aa0fbe91428b63250a78908cbdc037501d4f833514e0"
     },
     {
       "path": "src/components/invoices/invoice-form.tsx",
       "lines": 1129,
       "sha256": "496a6634a8f8bff539f914f134d3ca4ba5271246709a6a2d1f2ef5ba994bf7f6",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "634ba334cfeca40285e4095fbd1f82afe60cce5fbc7f8bb1e94bd020f7962e2a"
+      "reviewedSha256": "7908409c743dbb9bd671d8625712a9272a154df3b0f55a865b36001d980c17d9"
     },
     {
       "path": "src/components/invoices/status-badge.tsx",
@@ -741,7 +741,8 @@
       "path": "src/components/invoices/supplier-settings.tsx",
       "lines": 419,
       "sha256": "c29a895218edaeb9160bc7d8da9a744a5d413a44398ca35f045ab2739c269dd5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d7b63662c4852c11452490b8adebe7c5991159b3a13185d71efe992a6fff40b4"
     },
     {
       "path": "src/components/links/add-to-project-dialog.tsx",
@@ -1198,7 +1199,8 @@
       "path": "src/components/panels/invoices-panel.tsx",
       "lines": 594,
       "sha256": "6ff11c70c73fff51b7bb92f61adedc34bb127dff47c1c033f82b384751e30f36",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "0aca19d03312b6e3eae5717629aaeb6e94d7a36577bcf4207eb039a53cd40c9f"
     },
     {
       "path": "src/components/panels/job-sources.tsx",
@@ -2121,7 +2123,8 @@
       "path": "src/lib/invoice-parser.ts",
       "lines": 220,
       "sha256": "e1f8af46b11e4edba99935713dea75c2bf9c144b4fbff921742537965d3ff6a7",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "ecfd458ddc61b09d45a05c7d6f3dc8b1caac617d9e559aaff6a1dd5efbc51bcc"
     },
     {
       "path": "src/lib/invoices.ts",
@@ -3173,7 +3176,8 @@
       "path": "src/lib/pdf-extract.ts",
       "lines": 51,
       "sha256": "bb0949d377f664a851a588407717a3b3acba38e9fa6edcbc17e39f0909e3d623",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "f44a3a53fc8e360d3f5d7138846ab4a093bbc4e4e26783b661dc42ac2bbec175"
     },
     {
       "path": "src/lib/plan-recurrence.ts",
@@ -3261,7 +3265,7 @@
       "lines": 542,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f"
+      "reviewedSha256": "2aebdb5c4ecd6e43e830fcf63bb1fda27771e5b4a9dca81ca06d7d3c26034d79"
     },
     {
       "path": "src/lib/queries/keys.ts",

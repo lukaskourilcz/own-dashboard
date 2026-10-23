@@ -85,3 +85,8 @@ Reject gradients used as default decoration, glows, glass, giant display type, d
 ## Apple interaction update (2026-10-16)
 
 Applied the requested [apple-design skill](https://github.com/emilkowalski/skills/blob/main/skills/apple-design/SKILL.md): system typography with optical sizing, restrained shared modules, semantic material hierarchy and immediate press feedback. Replaced inert traffic-light decoration with the product name. Dialogs keep Radix focus/escape behavior and symmetric scale paths; Tailwind 4 owns the centering translation, so keyframes never translate the surface a second time. All icon buttons have 44 px mobile targets. Reduced motion removes spatial movement; reduced transparency and increased contrast independently produce solid readable chrome. Page actions wrap below wide-desktop widths.
+
+
+### Invoice review, 23 October 2026
+
+The light information foreground is `#005fc7`; the previous `#0064d1` measured 4.45:1 on the issued badge over the desktop content surface. Invoice paper labels use neutral 500 or darker against white. Paper remains white with fixed print colours in both themes; line tables scroll inside the document on narrow screens and remain visible for A4 printing. Payment QR codes expose the localized payment title. Controls use the shared mobile target sizes and remain visible to touch and keyboard users.

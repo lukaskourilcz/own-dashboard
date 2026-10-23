@@ -37,6 +37,7 @@ import { vatNameMismatch, vatStatusOf } from "@/lib/tax-registry";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDict } from "@/lib/i18n";
 import type { ParsedInvoice } from "@/lib/invoice-parser";
+import { importedInvoiceLine } from "@/lib/invoice-import";
 import type {
   Invoice,
   InvoiceItem,
@@ -111,14 +112,6 @@ type Initial = {
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = ["bank", "cash", "card"];
-
-/** Snap a parsed VAT ratio (vat/base) to the closest supported rate. */
-function snapVatRate(ratio: number): number {
-  const pct = ratio * 100;
-  return VAT_RATES.reduce<number>((best, r) =>
-    Math.abs(r - pct) < Math.abs(best - pct) ? r : best,
-  VAT_RATES[0]);
-}
 
 function emptyBuyer(): Buyer {
   return {
@@ -236,14 +229,7 @@ function buildInitial(
     const isVatPayer = settings?.is_vat_payer ?? false;
     const number =
       prefill?.number?.trim() || suggestInvoiceNumber(existingInvoices);
-    let unitPrice = prefill?.total;
-    let vatRate = isVatPayer ? 21 : 0;
-    if (isVatPayer && prefill?.vatBase) {
-      unitPrice = prefill.vatBase;
-      if (prefill.vatTotal) {
-        vatRate = snapVatRate(prefill.vatTotal / prefill.vatBase);
-      }
-    }
+    const importedLine = importedInvoiceLine(prefill, isVatPayer);
     return {
       isVatPayer,
       number,
@@ -257,7 +243,7 @@ function buildInitial(
       taxDate: (isVatPayer && prefill?.taxableSupplyDate) || "",
       paymentMethod: "bank",
       currency: prefill?.currency || settings?.default_currency || "CZK",
-      roundTotal: true,
+      roundTotal: importedLine.roundTotal,
       note: "",
       organizationId: "",
       projectId: "",
@@ -277,8 +263,8 @@ function buildInitial(
           description: importedItemLabel,
           quantity: "1",
           unit: "ks",
-          unit_price: unitPrice != null ? String(unitPrice) : "",
-          vat_rate: vatRate,
+          unit_price: importedLine.unitPrice != null ? String(importedLine.unitPrice) : "",
+          vat_rate: importedLine.vatRate,
         },
       ],
       supplierSnapshot: null,

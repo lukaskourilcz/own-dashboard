@@ -22,6 +22,7 @@ import {
   resolveIban,
 } from "@/lib/invoices";
 import { formatCurrency } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 import { useDict } from "@/lib/i18n";
 import type { Invoice, InvoiceItem } from "@/lib/types";
 
@@ -52,6 +53,7 @@ export function InvoiceDetail({
   onDelete: () => void;
 }) {
   const t = useDict();
+  const now = useNow();
   const isVatPayer = invoice.supplier_is_vat_payer;
   const sorted = [...items].sort((a, b) => a.position - b.position);
   const parsed = sorted.map((it) => ({
@@ -63,7 +65,7 @@ export function InvoiceDetail({
     roundTotal: invoice.round_total,
     currency: invoice.currency,
   });
-  const eff = effectiveStatus(invoice);
+  const eff = now ? effectiveStatus(invoice, now) : invoice.status;
   const iban = resolveIban(invoice);
   const spayd = iban
     ? buildSpayd({
@@ -128,9 +130,9 @@ export function InvoiceDetail({
       {/* The document — fixed "paper" colours so it reads the same in dark mode
           and prints cleanly. */}
       <div className="invoice-print-area mx-auto max-w-3xl rounded-lg border border-neutral-200 bg-white text-neutral-900">
-        <div className="p-8 sm:p-12">
+        <div className="p-4 sm:p-12 [overflow-wrap:anywhere]">
           {/* Header */}
-          <div className="flex items-start justify-between gap-6 border-b border-neutral-200 pb-8">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:gap-6 border-b border-neutral-200 pb-8">
             <div className="min-w-0">
               {logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -145,8 +147,8 @@ export function InvoiceDetail({
                 </p>
               )}
             </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
+            <div className="min-w-0 sm:text-right">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
                 {isVatPayer ? t.invoices.taxDocTitle : t.invoices.plainTitle}
               </p>
               <p className="mt-1.5 text-3xl font-bold tabular tracking-tight">
@@ -231,9 +233,10 @@ export function InvoiceDetail({
           </div>
 
           {/* Items */}
-          <table className="mt-10 w-full text-sm">
+          <div className="mt-10 overflow-x-auto print:overflow-visible" role="region" aria-label={t.invoices.sectionItems} tabIndex={0}>
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 text-left text-[11px] uppercase tracking-wider text-neutral-400">
+              <tr className="border-b border-neutral-200 text-left text-[11px] uppercase tracking-wider text-neutral-500">
                 <th className="py-2 pr-2 font-medium">
                   {t.invoices.thDescription}
                 </th>
@@ -275,6 +278,7 @@ export function InvoiceDetail({
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* Totals + VAT recap */}
           <div className="mt-6 flex flex-col items-end gap-4">
@@ -351,6 +355,7 @@ export function InvoiceDetail({
               <div className="rounded-lg border border-neutral-200 bg-white p-3">
                 <QRCodeSVG
                   value={spayd}
+                  title={t.invoices.qrTitle}
                   size={132}
                   level="M"
                   marginSize={0}
@@ -422,7 +427,7 @@ function Party({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wider text-neutral-400 mb-1">
+      <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">
         {label}
       </p>
       <p className="font-semibold">{name || "—"}</p>

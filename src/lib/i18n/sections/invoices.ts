@@ -124,6 +124,7 @@ type InvoicesStrings = {
   // Import (PDF)
   formImportTitle: string;
   importedHint: string;
+  pdfLimits: string;
   importedItem: string;
   dropTitle: string;
   dropHint: string;
@@ -298,7 +299,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
 
     formImportTitle: "Invoice from PDF",
     importedHint:
-      "We prefilled these fields from your PDF — review them and save.",
+      "Review the fields extracted from your PDF. Uncertain tax amounts are left blank; confirm the prices and VAT rates before saving.",
+    pdfLimits: "Choose a PDF up to 20 MiB and 100 pages.",
     importedItem: "As per the attached invoice",
     dropTitle: "Drop a PDF invoice here",
     dropHint: "or click to choose a file",
@@ -470,7 +472,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
 
     formImportTitle: "Faktura z PDF",
     importedHint:
-      "Údaje jsme předvyplnili z PDF — zkontrolujte je a uložte.",
+      "Zkontrolujte údaje načtené z PDF. Nejisté částky daně zůstaly prázdné; před uložením ověřte ceny a sazby DPH.",
+    pdfLimits: "Vyberte PDF do 20 MiB a 100 stran.",
     importedItem: "Dle přiložené faktury",
     dropTitle: "Přetáhněte sem PDF fakturu",
     dropHint: "nebo klikněte pro výběr souboru",

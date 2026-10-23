@@ -5,6 +5,7 @@ import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
+import { readFinancialRecords } from "@/lib/financial-records";
 import { resolveProjectRef } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
@@ -58,7 +59,7 @@ export default async function DashboardPage({
     loadWhen("subscriptions", () => supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("todos", () => supabase.from("todos").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("accounts", () => supabase.from("accounts").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("transactions", () => supabase.from("transactions").select("*").eq("user_id", user.id).order("occurred_on", { ascending: false }).limit(500)),
+    loadWhen("transactions", () => readFinancialRecords(supabase, "transactions", user.id)),
     loadWhen("plans", () => supabase.from("plans").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("notes", () => supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })),
     loadWhen("prompts", () => supabase.from("prompts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
@@ -72,8 +73,8 @@ export default async function DashboardPage({
     loadWhen("shortcuts", () => supabase.from("shortcuts").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("referenceRows", () => supabase.from("reference_rows").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("importantDates", () => supabase.from("important_dates").select("*").eq("user_id", user.id).order("the_date", { ascending: true })),
-    loadWhen("invoices", () => supabase.from("invoices").select("*").eq("user_id", user.id).order("issue_date", { ascending: false })),
-    loadWhen("invoiceItems", () => supabase.from("invoice_items").select("*").eq("user_id", user.id).limit(2000)),
+    loadWhen("invoices", () => readFinancialRecords(supabase, "invoices", user.id)),
+    loadWhen("invoiceItems", () => readFinancialRecords(supabase, "invoice_items", user.id)),
     loadWhen("invoiceSettings", () => supabase.from("invoice_settings").select("*").eq("user_id", user.id).maybeSingle()),
     loadWhen("projects", () => supabase.from("projects").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("projectCommunications", () => supabase.from("project_communications").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(500)),

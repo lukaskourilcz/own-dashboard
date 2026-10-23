@@ -1,5 +1,6 @@
 "use client";
 
+import { readFinancialRecords } from "@/lib/financial-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
 import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
@@ -133,14 +134,8 @@ export async function fetchAccounts(): Promise<Account[]> {
 }
 
 export async function fetchTransactions(): Promise<Transaction[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("*")
-    .order("occurred_on", { ascending: false })
-    .limit(500);
-  if (error) throw error;
-  return (data ?? []) as Transaction[];
+  const { data } = await readFinancialRecords(createClient(), "transactions");
+  return data;
 }
 
 export async function fetchBankConnections(): Promise<BankConnection[]> {
@@ -263,24 +258,13 @@ export async function fetchNotes(): Promise<Note[]> {
 }
 
 export async function fetchInvoices(): Promise<Invoice[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("*")
-    .order("issue_date", { ascending: false })
-    .order("number", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Invoice[];
+  const { data } = await readFinancialRecords(createClient(), "invoices");
+  return data;
 }
 
 export async function fetchInvoiceItems(): Promise<InvoiceItem[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("invoice_items")
-    .select("*")
-    .limit(2000);
-  if (error) throw error;
-  return (data ?? []) as InvoiceItem[];
+  const { data } = await readFinancialRecords(createClient(), "invoice_items");
+  return data;
 }
 
 export async function fetchInvoiceSettings(): Promise<InvoiceSettings | null> {

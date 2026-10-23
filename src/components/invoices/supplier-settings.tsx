@@ -123,6 +123,8 @@ export function SupplierSettings({
   const t = useDict();
   const [form, setForm] = useState<Form>(() => fromSettings(settings));
   const fileRef = useRef<HTMLInputElement>(null);
+  const [processingLogo, setProcessingLogo] = useState(false);
+  const logoBusy = useRef(false);
 
   function set<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -131,7 +133,7 @@ export function SupplierSettings({
   async function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ""; // allow re-picking the same file
-    if (!file) return;
+    if (!file || logoBusy.current) return;
     if (!ACCEPTED_LOGO_TYPES.includes(file.type)) {
       toast.err(t.invoices.logoInvalid);
       return;
@@ -140,10 +142,15 @@ export function SupplierSettings({
       toast.err(t.invoices.logoTooLarge);
       return;
     }
+    logoBusy.current = true;
+    setProcessingLogo(true);
     try {
       set("logo", await processLogo(file));
     } catch {
       toast.err(t.invoices.logoInvalid);
+    } finally {
+      logoBusy.current = false;
+      setProcessingLogo(false);
     }
   }
 
@@ -175,6 +182,9 @@ export function SupplierSettings({
 
   function save(e: React.FormEvent) {
     e.preventDefault();
+    if (saving || processingLogo) return;
+    const dueDays = Number(form.default_due_days);
+    if (!Number.isSafeInteger(dueDays) || dueDays < 0 || dueDays > 2147483647 || !form.default_due_days.trim()) return;
     const row = {
       user_id: userId,
       supplier_name: form.supplier_name.trim(),
@@ -187,7 +197,7 @@ export function SupplierSettings({
       is_vat_payer: form.is_vat_payer,
       bank_account: form.bank_account.trim() || null,
       iban: form.iban.trim() || null,
-      default_due_days: Math.max(0, Number(form.default_due_days) || 14),
+      default_due_days: dueDays,
       default_currency: form.default_currency,
       footer_note: form.footer_note.trim() || null,
       logo: form.logo || null,
@@ -202,13 +212,14 @@ export function SupplierSettings({
         title={t.invoices.settingsTitle}
         description={t.invoices.settingsDesc}
         action={
-          <Button size="sm" variant="outline" onClick={onBack}>
+          <Button size="sm" variant="outline" onClick={onBack} disabled={saving || processingLogo}>
             <ArrowLeft className="h-3.5 w-3.5" /> {t.invoices.back}
           </Button>
         }
       />
 
-      <form onSubmit={save} className="grid gap-4 lg:grid-cols-2">
+      <form onSubmit={save}>
+      <fieldset disabled={saving || processingLogo} className="grid min-w-0 gap-4 lg:grid-cols-2">
         {/* Supplier identity */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -377,7 +388,10 @@ export function SupplierSettings({
                 <Input
                   id="set-due"
                   type="number"
+                  required
+                  step={1}
                   min={0}
+                  max={2147483647}
                   value={form.default_due_days}
                   onChange={(e) => set("default_due_days", e.target.value)}
                 />
@@ -413,6 +427,7 @@ export function SupplierSettings({
             <Save className="h-3.5 w-3.5" /> {t.invoices.saveSettings}
           </Button>
         </div>
+      </fieldset>
       </form>
     </div>
   );

@@ -33,6 +33,7 @@ import { computeTotals, effectiveStatus } from "@/lib/invoices";
 import { extractPdfText } from "@/lib/pdf-extract";
 import { parseInvoiceText, type ParsedInvoice } from "@/lib/invoice-parser";
 import { formatCurrency } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 import { useDict } from "@/lib/i18n";
 import type {
   Invoice,
@@ -83,6 +84,7 @@ export function InvoicesPanel({
   /** Read-only: the bank payment that settled a paid invoice, when there is one. */
   transactions: Transaction[];
 }) {
+  const now = useNow();
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
@@ -90,16 +92,19 @@ export function InvoicesPanel({
   const confirm = useConfirmation();
   const [view, setView] = useState<View>({ mode: "list" });
   const [parsing, setParsing] = useState(false);
+  const parsingRef = useRef(false);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Drag a PDF onto the list → extract text → parse → open the form prefilled.
   async function handleFile(file: File | undefined) {
-    if (!file) return;
+    if (!file || parsingRef.current) return;
     if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
       toast.err(t.invoices.notPdf);
       return;
     }
+    if (file.size > 20 * 1024 * 1024) { toast.err(t.invoices.pdfLimits); return; }
+    parsingRef.current = true;
     setParsing(true);
     try {
       const text = await extractPdfText(file);
@@ -108,6 +113,7 @@ export function InvoicesPanel({
     } catch {
       toast.err(t.invoices.parseFailed);
     } finally {
+      parsingRef.current = false;
       setParsing(false);
     }
   }
@@ -173,7 +179,7 @@ export function InvoicesPanel({
     let overdueCount = 0;
     for (const inv of invoices) {
       const d = totalsById.get(inv.id)?.display ?? 0;
-      const eff = effectiveStatus(inv);
+      const eff = now ? effectiveStatus(inv, now) : inv.status;
       if (eff === "issued" || eff === "overdue") {
         outstanding += d;
         outstandingCount += 1;
@@ -185,7 +191,7 @@ export function InvoicesPanel({
       if (eff === "paid") paid += d;
     }
     return { outstanding, overdue, paid, outstandingCount, overdueCount };
-  }, [invoices, totalsById]);
+  }, [invoices, totalsById, now]);
 
   // Optimistic: flip status in the cache before the await, roll back on error,
   // reconcile via invalidate once settled.
@@ -194,15 +200,16 @@ export function InvoicesPanel({
       const patch = paid
         ? { status: "paid" as const, paid_on: todayKey() }
         : { status: "issued" as const, paid_on: null };
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("invoices")
         .update({ ...patch, updated_at: new Date().toISOString() })
-        .eq("id", inv.id);
-      if (error) throw error;
+        .eq("id", inv.id).select().single();
+      if (error || !data) throw new Error(t.invoices.errorToast);
+      return data as Invoice;
     },
     onMutate: async ({ inv, paid }) => {
       await qc.cancelQueries({ queryKey: qk.invoices });
-      const prev = qc.getQueryData<Invoice[]>(qk.invoices);
+      const prev = qc.getQueryData<Invoice[]>(qk.invoices)?.find((item) => item.id === inv.id) ?? inv;
       const patch = paid
         ? { status: "paid" as const, paid_on: todayKey() }
         : { status: "issued" as const, paid_on: null };
@@ -211,18 +218,19 @@ export function InvoicesPanel({
       );
       return { prev };
     },
-    onError: (error, _vars, ctx) => {
-      if (ctx?.prev) setInvoices(ctx.prev);
+    onError: (error, { inv }, ctx) => {
+      if (ctx?.prev) setInvoices((current) => current.map((item) => item.id === inv.id ? ctx.prev : item));
       toast.err((error as Error).message);
     },
-    onSuccess: (_data, { paid }) => {
+    onSuccess: (saved, { paid }) => {
+      setInvoices((current) => current.map((item) => item.id === saved.id ? saved : item));
       toast.ok(paid ? t.invoices.markedPaidToast : t.invoices.markedUnpaidToast);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.invoices }),
   });
 
   function setPaid(inv: Invoice, paid: boolean) {
-    setPaidMutation.mutate({ inv, paid });
+    if (!setPaidMutation.isPending && !removeMutation.isPending) setPaidMutation.mutate({ inv, paid });
   }
 
   // Optimistic delete: drop the invoice and its items from the cache before the
@@ -238,22 +246,23 @@ export function InvoicesPanel({
     onMutate: async (inv) => {
       await qc.cancelQueries({ queryKey: qk.invoices });
       await qc.cancelQueries({ queryKey: qk.invoiceItems });
-      const prevInvoices = qc.getQueryData<Invoice[]>(qk.invoices);
-      const prevItems = qc.getQueryData<InvoiceItem[]>(qk.invoiceItems);
+      const prevInvoice = qc.getQueryData<Invoice[]>(qk.invoices)?.find((item) => item.id === inv.id) ?? inv;
+      const prevItems = (qc.getQueryData<InvoiceItem[]>(qk.invoiceItems) ?? items).filter((item) => item.invoice_id === inv.id);
       setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
       setItems((prev) => prev.filter((i) => i.invoice_id !== inv.id));
       setView({ mode: "list" });
-      return { prevInvoices, prevItems };
+      return { prevInvoice, prevItems };
     },
-    onError: (error, _inv, ctx) => {
-      if (ctx?.prevInvoices) setInvoices(ctx.prevInvoices);
-      if (ctx?.prevItems) setItems(ctx.prevItems);
+    onError: (error, inv, ctx) => {
+      if (ctx?.prevInvoice) setInvoices((current) => current.some((item) => item.id === inv.id) ? current : [ctx.prevInvoice, ...current]);
+      if (ctx?.prevItems) setItems((current) => [...current.filter((item) => item.invoice_id !== inv.id), ...ctx.prevItems]);
       toast.err((error as Error).message);
     },
     onSuccess: () => toast.ok(t.invoices.deletedToast),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.invoices });
       void qc.invalidateQueries({ queryKey: qk.invoiceItems });
+      void qc.invalidateQueries({ queryKey: qk.transactions });
     },
   });
 
@@ -264,7 +273,7 @@ export function InvoicesPanel({
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-    })) removeMutation.mutate(inv);
+    }) && !setPaidMutation.isPending && !removeMutation.isPending) removeMutation.mutate(inv);
   }
 
   // ── Sub-views ────────────────────────────────────────────────────────────
@@ -459,18 +468,18 @@ export function InvoicesPanel({
           ) : (
             <ul className="-mx-2 divide-y divide-border">
               {invoices.map((inv) => {
-                const eff = effectiveStatus(inv);
+                const eff = now ? effectiveStatus(inv, now) : inv.status;
                 const own = totalsById.get(inv.id)?.own ?? 0;
                 const payment = paymentByInvoice.get(inv.id);
                 return (
                   <li
                     key={inv.id}
-                    className="group flex items-center gap-3 px-2 py-2.5 row-hover"
+                    className="group flex flex-wrap items-center gap-2 px-2 py-2.5 row-hover sm:gap-3"
                   >
                     <button
                       type="button"
                       onClick={() => setView({ mode: "detail", id: inv.id })}
-                      className="flex flex-1 items-center gap-3 min-w-0 text-left focus-ring rounded-md"
+                      className="flex min-w-0 basis-full items-center gap-3 text-left focus-ring rounded-md sm:flex-1 sm:basis-auto"
                     >
                       <span className="h-8 w-8 shrink-0 rounded-md bg-surface-muted text-foreground-muted inline-flex items-center justify-center">
                         <Receipt className="h-4 w-4" />
@@ -496,14 +505,15 @@ export function InvoicesPanel({
                         )}
                       </div>
                     </button>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
                       <span className="text-sm font-medium tabular whitespace-nowrap">
                         {formatCurrency(own, inv.currency)}
                       </span>
                       <StatusBadge status={eff} />
-                      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                         <Tooltip content={t.invoices.duplicate}>
                           <Button
+                            disabled={setPaidMutation.isPending || removeMutation.isPending}
                             size="icon-sm"
                             variant="ghost"
                             onClick={() =>
@@ -517,7 +527,8 @@ export function InvoicesPanel({
                         {inv.status === "paid" ? (
                           <Tooltip content={t.invoices.markUnpaid}>
                             <Button
-                              size="icon-sm"
+                              disabled={setPaidMutation.isPending || removeMutation.isPending}
+                            size="icon-sm"
                               variant="ghost"
                               onClick={() => setPaid(inv, false)}
                               aria-label={t.invoices.markUnpaid}
@@ -528,7 +539,8 @@ export function InvoicesPanel({
                         ) : (
                           <Tooltip content={t.invoices.markPaid}>
                             <Button
-                              size="icon-sm"
+                              disabled={setPaidMutation.isPending || removeMutation.isPending}
+                            size="icon-sm"
                               variant="ghost"
                               onClick={() => setPaid(inv, true)}
                               aria-label={t.invoices.markPaid}
@@ -539,6 +551,7 @@ export function InvoicesPanel({
                         )}
                         <Tooltip content={t.invoices.delete}>
                           <Button
+                            disabled={setPaidMutation.isPending || removeMutation.isPending}
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => remove(inv)}
