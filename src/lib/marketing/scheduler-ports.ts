@@ -22,6 +22,8 @@ import { scoutDneskaiTopics } from "./dneskai-scouting";
 import { ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
+import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
+import { createDneskaiBriefStore } from "./dneskai-briefs";
 import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
 
 /**
@@ -115,6 +117,10 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     titleTopics: (project, now, options) => titleDneskaiTopics(db, owner, project, now, { env, signal: options.signal, model: () => createClaudeTopicModel(dneskaiTopicModelConfiguration(env)) }),
     expireTopics: (project, now) => expireDneskaiNewsTopics(db, owner, project, now),
     newsTopics: (project, runId, now) => dneskaiNewsTopicsFromRun(db, owner, project, runId, now),
+    async topicBriefWork(project) {
+      return any(db.from("marketing_dneskai_topics").select("id").eq("user_id", owner).eq("project_id", project).in("status", ["approved", "enriching", "briefed"]).limit(1), "topic-bridge-unavailable");
+    },
+    topicBriefs: (project, now, options) => advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options }),
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

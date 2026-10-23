@@ -228,6 +228,8 @@ export type DneskaiBriefRow = {
   id: string; user_id: string; project_id: string; run_id: string; event_id: string; target_date: string; rank: number; category: DneskaiBriefCategory;
   member_ids: string[]; lead_candidate_id: string; member_hash: string; status: 'pending' | 'ready' | 'queued' | 'skipped'; code: string | null;
   brief: unknown; scheduled_at: string | null; calendar_entry_id: string | null; job_id: string | null; created_at: string; updated_at: string;
+  /** #155: the topic this brief was built for (20261023100200); absent before that migration. */
+  topic_id?: string | null;
 };
 export type DneskaiBriefMemberRow = { id: string; status: DneskaiCandidate['status']; target_date: string | null; content_hash: string; candidate: DneskaiCandidate };
 /** `jobId` is set when the entry already has this brief's job (a retry after `queued` failed). */
@@ -307,7 +309,8 @@ export async function enqueueBriefJob(store: DneskaiBriefStore, owner: string, r
   return job;
 }
 
-const memberHash = (members: ReadonlyArray<{ id: string; content_hash: string }>) =>
+/** The member hash `marketing_private.dneskai_member_hash` computes: sha256 over the sorted "id:contentHash" lines. */
+export const dneskaiMemberHash = (members: ReadonlyArray<{ id: string; content_hash: string }>) =>
   createHash('sha256').update(`dneskai-event-members/1\n${members.map((member) => `${member.id}:${member.content_hash}`).sort().join('\n')}`).digest('hex');
 /**
  * Admission failures the same brief can get past later in its day: the rolling job budget frees up, the owner
@@ -324,7 +327,11 @@ export const DNESKAI_BRIEF_RETRYABLE_CODES: ReadonlySet<string> = new Set(['job-
  * A held brief stops waiting once its slot is under 30 minutes away, and the target-day check below once the day
  * has no slot left.
  */
-export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, input: Parameters<CreateDneskaiBriefs>[0], options: { now?: () => Date } = {}): ReturnType<CreateDneskaiBriefs> {
+/**
+ * `only` (#155): the topic bridge processes just these briefs. Without it, briefs built for a topic (`topic_id`) are
+ * left to the bridge and only the night's own selection is processed, as before.
+ */
+export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, input: Parameters<CreateDneskaiBriefs>[0], options: { now?: () => Date; only?: ReadonlySet<string> } = {}): ReturnType<CreateDneskaiBriefs> {
   z.uuid().parse(input.owner); z.uuid().parse(input.project); z.uuid().parse(input.runId);
   const clock = options.now ?? (() => new Date());
   const result: Awaited<ReturnType<CreateDneskaiBriefs>> = { created: [], skipped: [], pending: false };
@@ -332,7 +339,7 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   if (!run) throw new DneskaiBriefError('brief-run-unavailable');
   if (run.status === 'running') return { ...result, pending: true };
   const rows = (await store.briefs(input.owner, input.project, input.runId)).sort((a, b) => a.rank - b.rank);
-  const pendingOrReady = rows.filter((row) => row.status === 'pending' || row.status === 'ready');
+  const pendingOrReady = rows.filter((row) => (row.status === 'pending' || row.status === 'ready') && (options.only ? options.only.has(row.id) : !row.topic_id));
   if (!pendingOrReady.length) return result;
   const skip = async (row: DneskaiBriefRow, code: string, duplicateOf: string | null = null) => {
     await store.skip(input.owner, row.id, code, duplicateOf); result.skipped.push({ eventId: row.event_id, code });
@@ -362,7 +369,9 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   const owed = await store.owedMedia(input.owner, input.project, [...new Set(open.flatMap((row) => row.member_ids))]);
   // Slots go in rank order: a brief still waiting for media reserves the next free one for this call, and a brief
   // takes its slot only once it is built, so a repeat or an unusable event leaves its slot to the next one.
-  const slots = dneskaiSlotAllocator(run.target_date, [...await store.takenSlots(input.owner, input.project, run.target_date, input.runId),
+  // A topic brief (#155) may target another day than its run; every other brief uses the run's target day.
+  const slotDay = open.find((row) => row.topic_id)?.target_date ?? run.target_date;
+  const slots = dneskaiSlotAllocator(slotDay, [...await store.takenSlots(input.owner, input.project, slotDay, input.runId),
     ...rows.flatMap((row) => row.status !== 'skipped' && row.scheduled_at ? [row.scheduled_at] : [])], clock());
   let coverage: Promise<DneskaiCoverage[]> | null = null;
   for (const row of open) {
@@ -382,7 +391,7 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
     } else {
       if (row.member_ids.some((id) => owed.has(id))) { const reserved = slots.peek(); if (reserved) slots.take(reserved); result.pending = true; continue; }
       const members = await store.members(input.owner, input.project, row.member_ids);
-      if (members.length !== row.member_ids.length || members.some((member) => member.status !== 'selected' || member.target_date !== row.target_date) || memberHash(members) !== row.member_hash) {
+      if (members.length !== row.member_ids.length || members.some((member) => member.status !== 'selected' || member.target_date !== row.target_date) || dneskaiMemberHash(members) !== row.member_hash) {
         await skip(row, 'brief-members-changed'); continue;
       }
       const slot = slots.peek();

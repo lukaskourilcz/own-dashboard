@@ -747,3 +747,20 @@ describe('titling (#153)', () => {
     expect((await harness({ titleTopics, expireTopics }, new Clock(two)).tick(on)).did.map((entry) => entry.category)).not.toContain('scouting');
   });
 });
+
+describe('enrichment step (#155)', () => {
+  const bridgeOn = { ...on, DNESKAI_TOPIC_BRIEFS_ENABLED: 'true', DNESKAI_TOPICS_ENABLED: 'true' };
+  const moved = { enriching: 1, briefed: 1, generated: 0, waiting: 0, unsupported: 0 };
+  it('runs right after briefs under the briefs lease when a topic waits, and is absent while off', async () => {
+    const topicBriefs = vi.fn(async () => moved);
+    const { tick, store } = harness({ topicBriefs, topicBriefWork: async () => true });
+    const result = await tick(bridgeOn);
+    const order = result.did.map((entry) => entry.category);
+    expect(order.indexOf('enrichment')).toBe(order.indexOf('briefs') + 1);
+    expect(step(result, 'enrichment')).toMatchObject({ status: 'done', detail: moved });
+    expect(store.acquired).toContain('briefs');
+    expect((await harness({ topicBriefs, topicBriefWork: async () => false }).tick(bridgeOn)).did.find((entry) => entry.category === 'enrichment')).toMatchObject({ status: 'noop' });
+    expect((await harness({ topicBriefs, topicBriefWork: async () => true }).tick(on)).did.map((entry) => entry.category)).not.toContain('enrichment');
+    expect(topicBriefs).toHaveBeenCalledTimes(1);
+  });
+});
