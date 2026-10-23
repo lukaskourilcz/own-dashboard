@@ -42,7 +42,8 @@ describe('DNESKAi topics list (#154)', () => {
     expect(lists).toEqual([t.listLabel('News'), t.listLabel('Education')]);
     expect(row(4)!.textContent).toContain('@ukazkovy.tvurce');
     expect(row(4)!.textContent).toContain(t.verdict.fact);
-    expect(row(4)!.textContent).toContain('#PRIKAZY');
+    expect(row(4)!.textContent).toContain(`${t.keyword.chip}PRIKAZY`);
+    expect(row(4)!.textContent).not.toContain('#PRIKAZY');
     expect(row(3)!.textContent).toContain(t.approved);
     expect(button(row(3)!, `${t.approve}: ${row(3)!.querySelector('p')!.textContent}`)).toBeUndefined();
   });
@@ -112,7 +113,7 @@ describe('DNESKAi topics list (#154)', () => {
     set('Zkratky');
     act(() => button(row(5)!, t.keyword.save)!.click());
     await wait();
-    expect(row(5)!.textContent).toContain('#Zkratky');
+    expect(row(5)!.textContent).toContain(`${t.keyword.chip}Zkratky`);
     expect(container.textContent).toContain(t.done.edit);
   });
 
