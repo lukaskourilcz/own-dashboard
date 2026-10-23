@@ -1,6 +1,8 @@
 'use client';
 
 import { useGuardedNavigation, useUnsavedDraft } from '@/components/navigation-guard';
+import { useDneskaiDraft } from './use-draft';
+import { useDneskaiDraftPreview } from './use-draft-preview';
 import { DneskaiAudioPicker } from './audio-picker';
 import { DneskaiFormatSwitch } from './format-switch';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -14,8 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
-import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
+import { createDeckDraft, setDraftKit, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX } from '@/lib/marketing/dneskai-deck-editor';
+import { dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
@@ -25,7 +27,7 @@ import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTin
 import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiEngagementEditor } from './engagement-editor';
 import { DneskaiTopicsList } from './topics-list';
-import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
+import { DneskaiSlideInspector } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
 type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; guest?: boolean; onSavedRevision?: () => void };
@@ -119,8 +121,6 @@ export function DneskaiLabTab(props: Props) {
   </section>;
 }
 
-/** The most render-only previews one edit session keeps (each is a ~100 KB data URL). */
-const PREVIEW_MEMORY = 16;
 /** Draft problems that make the edit itself invalid, so no preview can be drawn until the owner fixes them. */
 const PREVIEW_BLOCKERS = new Set(['text-missing', 'alt-missing', 'deck-edit-slide-count']);
 
@@ -128,7 +128,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const t = copy[props.lang];
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
-  const [draft, setDraft] = useState<DeckDraft>(() => createDeckDraft(post, account?.id ?? null));
+  const { draft, setDraft, fit, setFit, expired, request, editable, dirty, onlyTimeChanged } = useDneskaiDraft(post, account?.id ?? null, props.preview, !!props.guest, onDirty);
   const [view, setView] = useState<DneskaiStageView>('feed');
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());
   const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
@@ -136,21 +136,9 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   // Owner decision 6: the slot shown in the confirmation is the one the request binds; the server checks it again.
   const [moveTarget, setMoveTarget] = useState<string | null>(null);
   const [regenerateNote, setRegenerateNote] = useState(() => post.feedback ?? '');
-  // Read once when the post opens: an expired time is replaced in the draft by the nearest possible one (createDeckDraft).
-  const [expired] = useState(() => dneskaiScheduleExpired(post));
-  const [fit, setFit] = useState<DneskaiFitState>({ status: 'idle', result: null });
-  const [previewMemory, setPreviewMemory] = useState<ReadonlyMap<string, DneskaiStagePreview>>(() => new Map());
-  const [retryClock, setRetryClock] = useState(() => Date.now());
   const busy = busyAction !== null;
   // The slide on show is a slide of the draft, which can have more slides than the saved version.
   const slide = Math.max(0, Math.min(requested, draft.slides.length - 1));
-  const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== account?.id ? draft.accountId : null); } catch { return null; } })();
-  // Only a post that can still be edited has unsaved changes; once approved, the draft is no longer an edit.
-  const editable = ['review', 'returned'].includes(post.status);
-  const dirty = editable && (!request || !!request.deck || request.caption !== post.caption || Date.parse(request.scheduledAt) !== Date.parse(post.scheduledAt) || !!request.accountId || request.audioTrackId !== undefined || request.engagement !== undefined || request.format !== undefined);
-  // Publish now replaces the time itself, so a draft that differs only in its time may use it.
-  const onlyTimeChanged = !!request && !request.deck && request.caption === post.caption && !request.accountId && request.audioTrackId === undefined && request.engagement === undefined && request.format === undefined;
-  useEffect(() => onDirty(dirty), [dirty, onDirty]);
   // REN-01: a draft slide whose pixels differ from the saved JPEG (other words, pictures, crop, type, place or deck
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
   const savedSlides = post.deck?.slides ?? [];
@@ -161,61 +149,16 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   });
   const invalidDraft = draftProblems(post, draft).some((problem) => PREVIEW_BLOCKERS.has(problem.code));
   const previewKey = !props.guest && stageSlides[slide]?.draft && request?.deck && !invalidDraft ? JSON.stringify({ deck: request.deck, slide }) : null;
+  const { preview: renderedPreview, retryPreview, retryBlocked } = useDneskaiDraftPreview(previewKey, post.id, props.preview);
   const preview: DneskaiStagePreview | null = !stageSlides[slide]?.draft ? null
     : invalidDraft ? { slide, status: 'unavailable', image: null, code: 'deck-edit-invalid' }
-      : previewKey ? previewMemory.get(previewKey) ?? { slide, status: 'loading', image: null, code: null } : { slide, status: 'unavailable', image: null, code: null };
-  const retryAt = preview?.retryAt ?? 0;
-  useEffect(() => {
-    if (!retryAt || retryClock >= retryAt) return;
-    const timer = window.setTimeout(() => setRetryClock(Date.now()), Math.min(2_147_483_647, Math.max(0, retryAt - Date.now())));
-    return () => window.clearTimeout(timer);
-  }, [retryAt, retryClock]);
-  const retryPreview = previewKey && !invalidDraft && preview?.status === 'unavailable' ? () => {
-    if (Date.now() < retryAt) return;
-    setPreviewMemory((before) => { const next = new Map(before); next.delete(previewKey); return next; });
-  } : undefined;
-  const remembered = previewKey ? previewMemory.has(previewKey) : true;
-  useEffect(() => {
-    if (!previewKey || remembered) return;
-    const abort = new AbortController();
-    const { deck, slide: index } = JSON.parse(previewKey) as { deck: NonNullable<typeof request>['deck']; slide: number };
-    const keep = (value: DneskaiStagePreview) => setPreviewMemory((before) => {
-      const next = new Map(before).set(previewKey, value);
-      while (next.size > PREVIEW_MEMORY) next.delete(next.keys().next().value!);
-      return next;
-    });
-    // Debounced like the fit check, so typing renders once per pause, not per key.
-    const timer = window.setTimeout(async () => {
-      try {
-        const result = await (await dneskaiWorkspaceApi(props.preview)).renderPreview({ id: post.id, deck: deck!, slide: index }, abort.signal);
-        if (!abort.signal.aborted) keep({ slide: index, status: result.status, image: result.image, code: result.problems.find((problem) => problem.blocking)?.code ?? null });
-      } catch (failure) {
-        if (abort.signal.aborted) return;
-        // Keep the failed state until an explicit retry or edit; never retry in a loop.
-        keep({ slide: index, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null, retryAt: failure instanceof DneskaiWorkspaceRequestError ? Date.now() + failure.retryAfterMs : 0 });
-      }
-    }, 450);
-    return () => { window.clearTimeout(timer); abort.abort(); };
-  }, [previewKey, remembered, post.id, props.preview]);
+      : previewKey ? renderedPreview : { slide, status: 'unavailable', image: null, code: null };
 
   const keys = dneskaiWorkspaceKeys(props.projectId);
   const media = useQueries({ queries: [...new Set((post.brief?.evidence ?? []).map((item) => item.candidateId))].slice(0, 8).map((candidateId) => ({ queryKey: keys.media(candidateId), staleTime: 30 * 60_000, retry: false,
     queryFn: async ({ signal }: { signal: AbortSignal }) => (await dneskaiWorkspaceApi(props.preview)).loadMedia(props.projectId, candidateId, signal) })) });
   const previews = useMemo(() => new Map(media.flatMap((entry) => (entry.data?.candidates ?? []).flatMap((candidate) => candidate.assets.flatMap((asset) => asset.previewUrl ? [[asset.sha256, asset.previewUrl] as const] : [])))), [media]);
   const mediaState = media.some((item) => item.isPending) ? 'loading' : media.some((item) => item.isError) ? 'unavailable' : 'ready';
-  useEffect(() => {
-    if (props.guest) return;
-    const abort = new AbortController();
-    const timer = window.setTimeout(async () => {
-      try {
-        const slides = draft.slides.map((item) => dneskaiFitSlide(item.slide));
-        setFit({ status: 'checking', result: null });
-        const result = await (await dneskaiWorkspaceApi(props.preview)).fit({ kit: draft.kit, slides }, abort.signal);
-        if (!abort.signal.aborted) setFit({ status: 'ready', result });
-      } catch { if (!abort.signal.aborted) setFit({ status: 'unavailable', result: null }); }
-    }, 300);
-    return () => { window.clearTimeout(timer); abort.abort(); };
-  }, [draft.slides, draft.kit, props.preview, props.guest]);
   const onLoaded = (url: string, ok: boolean) => setLoaded((before) => before.get(url) === ok ? before : new Map(before).set(url, ok));
   const allLoaded = lab.slides.length > 0 && lab.slides.every((item) => item.render && loaded.get(item.render.url) === true);
   const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
@@ -294,7 +237,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
             {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
         </section>}
         {dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
-        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} onRetryPreview={retryPreview} retryBlocked={retryClock < retryAt} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
+        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} onRetryPreview={retryPreview} retryBlocked={retryBlocked} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
       <div className="min-w-0 space-y-5">
         <DneskaiKitTiles kits={lab.kits} chosen={draft.kit} onChoose={chooseKit} lang={props.lang} />

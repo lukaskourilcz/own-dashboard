@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import type { DneskaiReadDatabase } from './dneskai-read-database.generated';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiRenderReportSchema, parseContentRevision, type ContentRevision } from './contracts';
 import { DneskaiBriefSchema, type DneskaiBrief } from './dneskai-brief';
@@ -21,8 +22,7 @@ import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_OWNER_CODES, DNESKAI_TOP
  * function `authenticated` cannot execute) is made by the route for the authenticated owner only. Results are bounded
  * and validated against the browser schemas; a row that does not parse is counted, not shown.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
-type Database = Pick<SupabaseClient<any>, 'from' | 'rpc'>;
+type Database = Pick<SupabaseClient<DneskaiReadDatabase>, 'from' | 'rpc'>;
 
 const POST_LIMIT = 60;
 const REVISION_READ_LIMIT = 150;
@@ -40,9 +40,10 @@ const money = (value: unknown): number | null => {
 const safeCode = (value: unknown): string | null => typeof value === 'string' && /^[a-z][a-z0-9_-]{0,99}$/.test(value) ? value : null;
 const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string): T[] => { if (result.error) throw new Error(failure); return result.data ?? []; };
 
-type RevisionRow = { id: string; replaces_id: string | null; status: string; ready: boolean; content_hash: string; created_at: string; approved_at: string | null; feedback: string | null; revision: unknown; render_report: unknown };
-type PublicationRow = { id: string; revision_id: string; status: string; scheduled_at: string; remote_url: string | null; error_code: string | null; last_checked_at: string | null };
-type BriefRow = { id: string; event_id: string; member_hash: string; brief: unknown };
+type Tables = DneskaiReadDatabase['public']['Tables'];
+type RevisionRow = Pick<Tables['marketing_revisions']['Row'], 'id' | 'replaces_id' | 'status' | 'ready' | 'content_hash' | 'created_at' | 'approved_at' | 'feedback' | 'revision' | 'render_report'>;
+type PublicationRow = Pick<Tables['marketing_publications']['Row'], 'id' | 'revision_id' | 'status' | 'scheduled_at' | 'remote_url' | 'error_code' | 'last_checked_at'>;
+type BriefRow = Pick<Tables['marketing_dneskai_briefs']['Row'], 'id' | 'event_id' | 'member_hash' | 'brief'>;
 type TopicTitleRow = { brief_id: string | null; title_cs: string; job_id: string | null };
 
 /**
