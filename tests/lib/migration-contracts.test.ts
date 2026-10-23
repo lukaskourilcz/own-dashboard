@@ -233,3 +233,13 @@ describe("2026-10-23 DNESKAi sources table (#174)", () => {
     expect(sql).toMatch(/>=120 then raise exception 'source limit'/);
   });
 });
+
+describe("2026-10-23 DNESKAi topic briefs (#155)", () => {
+  it("keeps ranks 1 to 4 for the night and gives ranks above 4 only to a topic's brief", () => {
+    const sql = code("20261023100200_dneskai_topic_briefs.sql");
+    expect(sql).toMatch(/add column topic_id uuid references public\.marketing_dneskai_topics\(id\)/);
+    expect(sql).toMatch(/check\(rank between 1 and 16 and \(rank<=4 or topic_id is not null\)\)/);
+    expect(sql).not.toMatch(/create (or replace )?function/);
+    expect(guide).toMatch(/20261023100200_dneskai_topic_briefs\.sql/);
+  });
+});

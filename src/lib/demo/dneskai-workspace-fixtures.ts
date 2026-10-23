@@ -99,6 +99,9 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     base(5, 'd', { title: 'Kdy stačí menší model', status: 'approved', approvedAt: created(5), scheduledAt: at(2, '12:30'),
       publication: { id: id(105), status: 'queued', scheduledAt: at(2, '12:30'), remoteUrl: null, errorCode: null, lastCheckedAt: null, publishedAt: null } }),
     base(6, 'e', { title: 'Pět otázek před nasazením asistenta', status: 'published', approvedAt: created(40), scheduledAt: at(-1, '17:00'),
+      // #162: a published education post whose keyword comments the watcher answered; one reply failed.
+      engagement: { keyword: 'OTAZKY', replyMessage: 'Díky za komentář. Tady je pět otázek, které si položit před nasazením asistenta.', publicReply: 'Poslali jsme vám to do zpráv.' },
+      engagementReceipt: { commentsSeen: 48, keywordMatches: 17, privateSent: 16, publicSent: 16, failures: [{ code: 'engagement-recipient-unavailable', count: 1 }], lastCheckedAt: at(0, '07:55') },
       publication: { id: id(106), status: 'published', scheduledAt: at(-1, '17:00'), remoteUrl: 'https://www.example.com/instagram/dneskai/ukazka-1', errorCode: null, lastCheckedAt: at(-1, '17:05'), publishedAt: at(-1, '17:01') } }),
     base(7, 'f', { title: 'Kdy ověřit odpověď modelu', status: 'reconciliation', approvedAt: created(20), scheduledAt: at(0, '08:00'),
       publication: { id: id(107), status: 'reconciliation', scheduledAt: at(0, '08:00'), remoteUrl: null, errorCode: 'meta-request-uncertain', lastCheckedAt: at(0, '08:31'), publishedAt: null } }),
@@ -125,6 +128,7 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
       { briefId: id(502), title: 'Kdy pomůže vyhledávání v dokumentech', scheduledAt: at(0, '20:00'), status: 'ready', code: null },
     ],
     capabilities: { regenerate: true, generateNow: true, engagement: true },
+    engagementSummary: { posts: 1, commentsSeen: 48, keywordMatches: 17, privateSent: 16, publicSent: 16, failed: 1 },
     unreadable: 0,
   };
 }

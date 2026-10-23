@@ -332,3 +332,15 @@ text as evidence. The brief rows stay `pending`, so the Lab's "Generate now" sti
 each topic a Czech working title, and a news topic still proposed 48 hours later moves to `expired`. Building a
 brief from an approved topic is the next step (A6); until it ships, approving a news topic does not make a post.
 With the switch off the step is unchanged.
+
+## Topic briefs (#155)
+
+With `DNESKAI_TOPIC_BRIEFS_ENABLED=true` the tick's `enrichment` step, right after briefs and under the same lease,
+takes approved topics through this same path. A news topic builds and admits the brief row of its event (the
+night's selection, ranks 1–4). An education topic from a collected report gets its own brief row in the report's
+run (rank 5–16, `topic_id`) for today when a slot at least 30 minutes ahead is free, otherwise tomorrow; the report
+becomes `selected` for that day, so the media step collects its pictures before the brief is built. Repeat checks,
+slot rules, the calendar entry, `marketing_enqueue_job` and the owner's approval of the rendered post are unchanged.
+The topic moves `approved` → `enriching` → `briefed` (job queued) → `generated` (draft in review); a lapsed brief
+leaves its code in `evidence.bridgeCode`. Topics from the link library or added by hand have no collected report and
+wait with `topic-source-unsupported`. The brief step without `only` never touches a topic's brief.

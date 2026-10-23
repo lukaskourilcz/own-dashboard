@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Nineteen files are newer than anything production holds and none of them is applied: `20261022000000` through
+Twenty files are newer than anything production holds and none of them is applied: `20261022000000` through
 `20261023130100`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the nineteen files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the twenty files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -830,6 +830,12 @@ At most 120 sources per project. When a source was last read, how many items it 
 Replayed only in PGlite (`tests/lib/dneskai-sources-database.test.ts`). Apply it with the other prepared files
 (`npx supabase db push --linked`). Until `DNESKAI_SOURCES_TABLE_ENABLED=true`, Zdroje shows the registry file
 read-only and the pipeline reads the file.
+
+### Prepared: topic briefs (#155, plan A6)
+
+`20261023100200_dneskai_topic_briefs.sql` adds `marketing_dneskai_briefs.topic_id` (unique where set) and replaces the rank check: ranks 1 to 4 stay the night's selection, and only a row with a topic may use 5 to 16. An education topic that came from a collected report gets its own brief row in that report's run, with the report as its one member, so `marketing_dneskai_prepare_brief`, `marketing_dneskai_admit_brief`, the source head, the calendar entry and `marketing_enqueue_job` apply unchanged. A news topic uses the brief row its event already has. No function changes.
+
+It stays unapplied. The app writes topic briefs only with `DNESKAI_TOPIC_BRIEFS_ENABLED=true`; without the switch nothing writes them, and the brief step ignores any row that has a topic. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/dneskai-topic-bridge-database.test.ts`).
 
 ## DNESKAi comment replies, 23 October 2026 (unapplied)
 

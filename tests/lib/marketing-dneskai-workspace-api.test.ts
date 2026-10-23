@@ -133,6 +133,26 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(read.posts[0]!.engagement).toEqual(engagement);
     expect(read.capabilities?.engagement).toBe(true);
   });
+  it('adds each published keyword post’s comment receipt and the seven-day totals only with the watcher on (#162)', async () => {
+    const publicationId = '99999999-9999-4999-8999-aaaaaaaaaaaa';
+    const engagement = { keyword: 'SKILL', replyMessage: 'Návod.', publicReply: 'Poslali jsme vám to do zpráv.' };
+    mocks.tables.marketing_revisions![0] = { ...mocks.tables.marketing_revisions![0]!, status: 'published', revision: { ...revision, scheduledAt: new Date(Date.now() - 86_400_000).toISOString(), engagement } };
+    mocks.tables.marketing_publications = [{ id: publicationId, user_id: owner, revision_id: revisionId, status: 'published', scheduled_at: new Date(Date.now() - 86_400_000).toISOString(), remote_url: 'https://www.instagram.com/p/TEST/', error_code: null, last_checked_at: null }];
+    mocks.tables.marketing_instagram_comment_checks = [{ user_id: owner, publication_id: publicationId, comments_seen: 12, pass_seen: 3, last_checked_at: new Date().toISOString() }];
+    mocks.tables.marketing_instagram_comment_replies = [
+      { user_id: owner, publication_id: publicationId, status: 'sent', public_status: 'sent', error_code: null },
+      { user_id: owner, publication_id: publicationId, status: 'sent', public_status: 'failed', error_code: 'meta-error-100' },
+      { user_id: owner, publication_id: publicationId, status: 'failed', public_status: 'none', error_code: 'engagement-recipient-unavailable' },
+    ];
+    const off = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
+    expect(off.posts[0]!.engagementReceipt).toBeUndefined(); expect(off.engagementSummary).toBeUndefined();
+    vi.stubEnv('DNESKAI_ENGAGEMENT_ENABLED', 'true');
+    const read = DneskaiWorkspaceReadSchema.parse(await (await get(review, `projectId=${project}`)).json());
+    vi.unstubAllEnvs();
+    expect(read.posts[0]!.engagementReceipt).toMatchObject({ commentsSeen: 12, keywordMatches: 3, privateSent: 2, publicSent: 1,
+      failures: [{ code: 'meta-error-100', count: 1 }, { code: 'engagement-recipient-unavailable', count: 1 }] });
+    expect(read.engagementSummary).toEqual({ posts: 1, commentsSeen: 12, keywordMatches: 3, privateSent: 2, publicSent: 1, failed: 2 });
+  });
   it('refuses a signed-out read, a bad project or date, a foreign project and hides database errors', async () => {
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
     expect((await get(review, `projectId=${project}`)).status).toBe(401);

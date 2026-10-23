@@ -68,6 +68,14 @@ const en = {
     title: 'Next seven days', intro: 'Publishing slots in Europe/Prague and what is planned in each.', free: 'Free slot', dst: 'Clocks change on this day; times are local Prague time.',
     today: 'Today', job: 'Draft being prepared',
   },
+  /** #162: what the comment watcher did. */
+  engagementReceipts: {
+    label: 'Keyword comments',
+    summary: (days: number) => `Last ${days} days of keyword comments`,
+    comments: 'Comments read', matches: 'With the keyword', sent: 'Messages sent', publicSent: 'Public replies', failed: 'Failed',
+    lastCheck: 'Last check', notChecked: 'Not checked yet',
+    failure: (count: number) => count === 1 ? '1 reply' : `${count} replies`,
+  },
   published: { title: 'Posts', intro: 'Every post with its state. Published ones carry their link to Instagram.', empty: 'No posts yet', emptyFilter: 'No post in this group',
     filters: { label: 'Show posts', all: 'All', waiting: 'Waiting', scheduled: 'Scheduled', published: 'Published', problems: 'Errors' }, openLab: 'Open in the Lab', openLabName: (title: string) => `Open in the Lab: ${title}`,
     open: 'Open on Instagram', noLink: 'No public link recorded', at: 'Published', planned: 'Planned', account: 'Account', cover: (title: string) => `Cover of “${title}”` },
@@ -165,6 +173,13 @@ const cs: typeof en = {
   calendar: {
     title: 'Příštích sedm dní', intro: 'Publikační sloty v čase Europe/Prague a co je v nich naplánované.', free: 'Volný slot', dst: 'Tento den se mění čas; časy jsou místní pražské.',
     today: 'Dnes', job: 'Návrh se připravuje',
+  },
+  engagementReceipts: {
+    label: 'Komentáře s klíčovým slovem',
+    summary: (days: number) => `Komentáře s klíčovým slovem za posledních ${days} dní`,
+    comments: 'Přečtené komentáře', matches: 'S klíčovým slovem', sent: 'Odeslané zprávy', publicSent: 'Veřejné odpovědi', failed: 'Selhalo',
+    lastCheck: 'Naposledy zkontrolováno', notChecked: 'Zatím nezkontrolováno',
+    failure: (count: number) => count === 1 ? '1 odpověď' : count < 5 ? `${count} odpovědi` : `${count} odpovědí`,
   },
   published: { title: 'Příspěvky', intro: 'Všechny příspěvky a jejich stav. Publikované mají odkaz na Instagram.', empty: 'Zatím žádné příspěvky', emptyFilter: 'V této skupině není žádný příspěvek',
     filters: { label: 'Zobrazit příspěvky', all: 'Vše', waiting: 'Čeká', scheduled: 'Naplánované', published: 'Publikované', problems: 'Chyby' }, openLab: 'Otevřít v Labu', openLabName: (title: string) => `Otevřít v Labu: ${title}`,

@@ -70,3 +70,11 @@ export function dneskaiTitlingEnabled(env: Record<string, string | undefined> = 
 export function dneskaiSourcesTableEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_SOURCES_TABLE_ENABLED === 'true';
 }
+
+/**
+ * Topic briefs (#155). Only after 20261023100200_dneskai_topic_briefs.sql is applied: the scheduler's `enrichment`
+ * step turns approved topics into briefs and queued generation jobs through the ordinary guarded path.
+ */
+export function dneskaiTopicBriefsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_TOPIC_BRIEFS_ENABLED === 'true' && dneskaiTopicsEnabled(env);
+}
