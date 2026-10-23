@@ -146,7 +146,11 @@ export const ContentRevisionSchema = z.strictObject({
    * The audio library track a Reel of this post plays (#164, `marketing_audio_tracks.id`). Part of the approval hash, so
    * the owner approves the exact track. Absent: a Reel takes the next track in rotation; a carousel ignores it.
    */
-  audio: z.strictObject({ trackId: z.uuid() }).optional(),
+  audio: z.union([
+    z.strictObject({ trackId: z.uuid() }),
+    // #167: a trending sound Instagram attaches to the Reel (`audio_configuration`), under Facebook Login only.
+    z.strictObject({ instagramAudioId: z.string().regex(/^\d{1,40}$/) }),
+  ]).optional(),
 }).superRefine((revision, context) => {
   // A keyword comment is answered by an Instagram private reply; no other platform has one.
   if (revision.engagement && revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "engagement replies are sent on Instagram", path: ["engagement"] });

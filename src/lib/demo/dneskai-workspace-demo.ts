@@ -1,5 +1,6 @@
 'use client';
 
+import { dneskaiAudioChoiceKey, dneskaiAudioFromKey } from '@/lib/marketing/dneskai-audio-contracts';
 import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos } from './dneskai-workspace-fixtures';
 import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
 import { DneskaiWorkspaceRequestError, fitAt, previewAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
@@ -212,7 +213,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
     }
     if (!ready) assets = [];
     const account = request.accountId ? read().accounts.find((item) => item.id === request.accountId) : null;
-    const audioTrackId = request.audioTrackId === undefined ? post.audio?.trackId ?? null : request.audioTrackId;
+    const audioTrackId = request.audioTrackId === undefined ? dneskaiAudioChoiceKey(post.audio) : request.audioTrackId;
     const { audio: savedAudio, ...unchanged } = clone(post);
     void savedAudio;
     const next: DneskaiWorkspacePost = {
@@ -220,7 +221,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
       caption: request.caption, scheduledAt: new Date(request.scheduledAt).toISOString(), format: request.format ?? post.format,
       account: account ? { id: account.remoteId, handle: account.handle, platform: 'instagram' } : post.account,
       // #164: absent keeps the saved track, null returns the post to the rotation.
-      ...(audioTrackId ? { audio: { trackId: audioTrackId } } : {}),
+      ...(audioTrackId ? { audio: dneskaiAudioFromKey(audioTrackId)! } : {}),
       deck: post.deck ? editedDeck(post, request, slides) : null, fields: slides.map(demoFieldLimits), assets: clone(assets),
       renderReport: { schemaVersion: 'dneskai-render-report/1', status: ready ? 'rendered' : 'refused', problems, renderKeys: [], renderedAt: new Date().toISOString() },
       // #157: left out keeps the keyword and messages, null removes them, as the route does.

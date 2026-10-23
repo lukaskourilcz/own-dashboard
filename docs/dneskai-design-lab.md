@@ -34,7 +34,7 @@ The Lab shows posts, not explanations. It has no visible heading or intro (an `s
 
 Lab queue cards and Příspěvky cards carry no state chip. Their background is the soft token of the state's tone over an opaque surface: published success, scheduled and approved information, review and returned warning, problem risk, preparing and skipped the muted surface. `DNESKAI_STATE_TONES` stays the only state-to-tone mapping; `DNESKAI_TONE_TINTS` (in `state-chip.tsx`) maps a tone to its `dneskai-tint-*` utility in `globals.css`. The state words stay in the card's accessible name and in its tooltip, so colour is never the only carrier. The chip remains in the Calendar, the Errors and costs lists and above the Lab stage.
 
-Every DNESKAi date reads `DD/MM` in Europe/Prague through `formatDneskaiDay` (and `formatDneskaiDayTime` for `DD/MM HH:MM`), in the Lab, Kalendář (weekday name plus `DD/MM`), Příspěvky, Chyby a náklady and the post editor. Times stay `HH:MM`. The day headers of Dnes ke schválení read only „Dnes“ / „Zítra“.
+Every DNESKAi date reads `DD/MM` in Europe/Prague through `formatDneskaiDay` (and `formatDneskaiDayTime` for `DD/MM HH:MM`), in the Lab, Kalendář (weekday name plus `DD/MM`), Příspěvky and Chyby a náklady. Times stay `HH:MM`. The day headers of Dnes ke schválení read only „Dnes“ / „Zítra“.
 
 ## Expired time and Publish now (22 October 2026)
 
