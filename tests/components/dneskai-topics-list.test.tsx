@@ -9,6 +9,7 @@ import { demoTopicId } from '@/lib/demo/dneskai-topics-fixtures';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiTopicsKey } from '@/lib/marketing/dneskai-topics-client';
 import type { DneskaiTopicsRead } from '@/lib/marketing/dneskai-topics';
+import { describeMarketingCode } from '@/lib/marketing/marketing-codes';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -45,7 +46,7 @@ describe('DNESKAi topics list (#154)', () => {
     expect(row(4)!.textContent).toContain('#PRIKAZY');
     expect(row(3)!.textContent).toContain(t.approved);
     // #210: an approved title-only topic says why it does not move on.
-    expect(row(3)!.querySelector('[data-testid="dneskai-topic-code"]')!.textContent).toBe(t.codes['topic-source-missing']);
+    expect(row(3)!.querySelector('[data-testid="dneskai-topic-code"]')!.textContent).toContain(describeMarketingCode('topic-source-missing', 'en').happened);
     expect(row(1)!.querySelector('[data-testid="dneskai-topic-code"]')).toBeNull();
     expect(button(row(3)!, `${t.approve}: ${row(3)!.querySelector('p')!.textContent}`)).toBeUndefined();
   });

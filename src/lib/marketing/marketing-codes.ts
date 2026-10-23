@@ -29,6 +29,8 @@ const NEXT = {
   investigate: { en: 'This needs investigation; nothing is retried automatically.', cs: 'Je potřeba to prošetřit; nic se automaticky neopakuje.' },
   source: { en: 'The topic waits until its sources are current; the next source check refreshes them.', cs: 'Téma čeká, až budou zdroje aktuální; obnoví je další kontrola zdrojů.' },
   media: { en: 'The picture stays out of the media pool; the other pictures can still be used.', cs: 'Obrázek v zásobníku chybí; ostatní obrázky lze použít dál.' },
+  topicLink: { en: 'Add the topic again with a link the post can cite.', cs: 'Přidejte námět znovu s odkazem, ze kterého příspěvek může čerpat.' },
+  topicReader: { en: 'The next run reads it again, three times in all. After that, add the topic again with another link.', cs: 'Další běh ho přečte znovu, celkem třikrát. Potom přidejte námět znovu s jiným odkazem.' },
 } satisfies Record<string, Text>;
 type Next = keyof typeof NEXT;
 type Entry = readonly [Next, string, string];
@@ -570,6 +572,11 @@ const CODES = {
   'titling-write-failed': ['auto', 'The new titles could not be saved.', 'Nové titulky se nepodařilo uložit.'],
   'news-topics-unavailable': ['auto', 'The night\'s events could not be read as topics.', 'Noční události se nepodařilo načíst jako náměty.'],
   'news-topics-write-failed': ['auto', 'The night\'s news topics could not be saved.', 'Noční zpravodajské náměty se nepodařilo uložit.'],
+  // #210: why an approved link-library or manual topic does not become a brief.
+  'topic-source-missing': ['topicLink', 'The topic has no link, so there is no source to write the post from.', 'Námět nemá odkaz, takže chybí zdroj, ze kterého psát.'],
+  'topic-source-unreadable': ['topicReader', 'The topic\'s link could not be read.', 'Odkaz námětu se nepodařilo přečíst.'],
+  'topic-run-unavailable': ['auto', 'No evening source check has finished yet, so the topic waits for the first one.', 'Ještě neskončila žádná večerní kontrola zdrojů, námět čeká na první.'],
+  'topic-source-unsupported': ['investigate', 'This kind of source cannot become a post yet.', 'Z tohoto druhu zdroje zatím příspěvek nevznikne.'],
   'topic-expiry-failed': ['auto', 'Old news topics could not be moved to expired.', 'Staré zpravodajské náměty se nepodařilo přesunout mezi propadlé.'],
   'daily-mix-unavailable': ['retry', 'The daily mix could not be read or saved.', 'Denní mix se nepodařilo načíst ani uložit.'],
   'invalid-daily-mix': ['none', 'The mix needs a time for every post.', 'Mix potřebuje pro každý příspěvek vlastní čas.'],
