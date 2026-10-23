@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
+import { readTextPrefix } from "@/lib/bounded-text";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -12,9 +13,10 @@ import { rateLimit } from "@/lib/rate-limit";
  * applies the result to the form.
  */
 
-type Body = { url?: string };
+type Body = { url?: unknown };
 
-function normalizeUrl(raw: string): string | null {
+function normalizeUrl(raw: unknown): string | null {
+  if (typeof raw !== "string" || raw.length > 4096) return null;
   const trimmed = raw.trim();
   if (!trimmed) return null;
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
@@ -22,7 +24,7 @@ function normalizeUrl(raw: string): string | null {
     : `https://${trimmed}`;
   try {
     const u = new URL(withScheme);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if ((u.protocol !== "http:" && u.protocol !== "https:") || u.username || u.password) return null;
     return u.href;
   } catch {
     return null;
@@ -43,13 +45,15 @@ async function readWithJina(
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return null;
-    const json = (await res.json()) as {
-      data?: { title?: string; description?: string };
-    };
-    const d = json.data ?? {};
+    const body = await readTextPrefix(res, 512 * 1024);
+    if (body.truncated) return null;
+    const json: unknown = JSON.parse(body.text);
+    if (!json || typeof json !== "object" || !("data" in json) || !json.data || typeof json.data !== "object") return null;
+    const d = json.data;
+    if (!("title" in d) || typeof d.title !== "string" || ("description" in d && d.description != null && typeof d.description !== "string")) return null;
     return {
-      title: (d.title ?? "").trim(),
-      description: (d.description ?? "").trim(),
+      title: d.title.trim().slice(0, 120),
+      description: ("description" in d && typeof d.description === "string" ? d.description : "").trim().slice(0, 10000),
     };
   } catch {
     return null;
@@ -81,7 +85,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as Body;
-  const url = normalizeUrl(body.url ?? "");
+  const url = normalizeUrl(body && typeof body === "object" ? body.url : null);
   if (!url) {
     return NextResponse.json({ error: "A valid URL is required." }, { status: 400 });
   }

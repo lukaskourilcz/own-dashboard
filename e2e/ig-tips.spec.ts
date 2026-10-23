@@ -123,7 +123,7 @@ test("adds a tip with a topic and a description, then edits it", async ({ page }
   await page.getByRole("button", { name: "Add tip", exact: true }).first().click();
   const dialog = page.getByRole("dialog", { name: "New tip" });
   await dialog.getByRole("button", { name: "Add tip", exact: true }).click();
-  await expect(dialog.getByRole("alert")).toHaveText("Give the tip a title.");
+  expect(await dialog.locator("#tip-title").evaluate((element: HTMLInputElement) => element.validity.valueMissing)).toBe(true);
   await dialog.getByLabel("Title", { exact: true }).fill("Film the hook first");
   await dialog.getByLabel("Original URL", { exact: true }).fill("www.instagram.com/p/EXAMPLE0009/");
   await dialog.getByRole("combobox", { name: "Topic" }).click();

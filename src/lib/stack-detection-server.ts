@@ -1,4 +1,5 @@
 import "server-only";
+import { readTextPrefix } from "@/lib/bounded-text";
 import { ABOUT_PROJECT_FILE } from "@/lib/about-project";
 import {
   MAX_DETECTED_REPOSITORIES,
@@ -59,8 +60,7 @@ export async function readRepoText(
     if (response.status === 401) return { kind: "disconnected" };
     if (response.status === 404) return { kind: "not-found" };
     if (!response.ok) return { kind: "error", status: response.status };
-    const text = await response.text();
-    return { kind: "ok", text: text.slice(0, maxCharacters), truncated: text.length > maxCharacters };
+    return { kind: "ok", ...await readTextPrefix(response, maxCharacters) };
   } catch {
     return { kind: "error", status: null };
   }
@@ -91,12 +91,14 @@ type RepoRead =
 async function readRepoStack(fetcher: GitHubFetch, repo: string): Promise<RepoRead> {
   const about = await readRepoText(fetcher, repo, ABOUT_PROJECT_FILE);
   if (about.kind === "disconnected") return { status: "disconnected" };
+  if (about.kind === "ok" && about.truncated) return { status: "error" };
   if (about.kind === "ok") {
     const parsed = parseAboutProjectStack(about.text);
     if (parsed.entries.length > 0) return { status: "ok", source: "about-project", entries: parsed.entries };
   }
   const manifest = await readRepoText(fetcher, repo, "package.json");
   if (manifest.kind === "disconnected") return { status: "disconnected" };
+  if (manifest.kind === "ok" && manifest.truncated) return { status: "error" };
   if (manifest.kind === "ok") {
     const entries = parsePackageJsonStack(manifest.text) ?? [];
     if (entries.length > 0) return { status: "ok", source: "package-json", entries };

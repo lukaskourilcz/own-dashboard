@@ -16,8 +16,9 @@ export type MarketingView =
   | { kind: "ok"; data: MarketingCalendarsResponse };
 
 /**
- * The marketing calendars, read once per page session and shared by IG TIPS
- * and the Work overview through one query key. `preview` is the fixture the
+ * The marketing calendars, cached for 30 minutes and shared by IG TIPS
+ * and the Work overview through one query key. Reopening a stale destination
+ * or an explicit check refreshes; focus alone does not. `preview` is the fixture the
  * public tour and the preview harness pass instead of reading GitHub.
  */
 export function useMarketingCalendars(preview?: MarketingCalendarsResponse) {

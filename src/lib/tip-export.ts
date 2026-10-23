@@ -1,3 +1,4 @@
+import { projectLinkUsageByLink } from "@/lib/project-links";
 import { TIP_GROUPS, UNGROUPED_TIPS, isTipGroup, tipGroupKey, type TipGroup, type TipGroupKey } from "@/lib/ig-tips";
 import { escapeMd, linkDescription, type LinkExportRelations } from "@/lib/link-export";
 import type { AiLink } from "@/lib/types";
@@ -35,15 +36,10 @@ export function selectExportTips(links: AiLink[], options: TipExportOptions = {}
 
 export function buildTipExport(links: AiLink[], options: TipExportOptions = {}) {
   const selection = options.selection ?? "all";
-  const projectsById = new Map((options.relations?.projects ?? []).map((project) => [project.id, project]));
-  const usedBy = (linkId: string) =>
-    (options.relations?.projectLinks ?? [])
-      .filter((relation) => relation.ai_link_id === linkId && projectsById.has(relation.project_id))
-      .map((relation) => {
-        const project = projectsById.get(relation.project_id)!;
-        return { project: project.name, slug: project.slug, role: relation.role, note: relation.note };
-      })
-      .sort((a, b) => a.project.localeCompare(b.project));
+  const usage = projectLinkUsageByLink(options.relations?.projectLinks ?? [], options.relations?.projects ?? []);
+  const usedBy = (linkId: string) => (usage.get(linkId) ?? []).map(({ project, relation }) => ({
+    project: project.name, slug: project.slug, role: relation.role, note: relation.note,
+  }));
   const order: TipGroupKey[] = [...TIP_GROUPS, UNGROUPED_TIPS];
   const tips = selectExportTips(links, options).sort(
     (a, b) => order.indexOf(tipGroupKey(a)) - order.indexOf(tipGroupKey(b)) || a.title.localeCompare(b.title),
@@ -84,7 +80,9 @@ export function shapeTipExport(data: TipExportData, shape: TipExportShape) {
   }
   if (shape === "grouped") {
     const groups = new Map<TipGroup | null, TipExportData["items"]>();
-    for (const item of data.items) groups.set(item.tip_group, [...(groups.get(item.tip_group) ?? []), item]);
+    for (const item of data.items) {
+      const items = groups.get(item.tip_group) ?? []; items.push(item); groups.set(item.tip_group, items);
+    }
     return {
       version: data.version,
       scope: data.scope,

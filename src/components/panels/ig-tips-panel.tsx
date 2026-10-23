@@ -48,7 +48,7 @@ import {
   type TipUsage,
 } from "@/lib/marketing-calendars";
 import { resourceKey } from "@/lib/link-library";
-import { nextProjectLinkOrder, projectsUsingLink } from "@/lib/project-links";
+import { nextProjectLinkOrder, projectLinkUsageByLink } from "@/lib/project-links";
 import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
@@ -163,6 +163,7 @@ export function IgTipsPanel({
   const groups = useMemo(() => groupTips(filtered), [filtered]);
   const availableGroups = useMemo(() => groupTips(tips).map((entry) => entry.group), [tips]);
   const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
+  const projectUsage = useMemo(() => projectLinkUsageByLink(projectLinks, projects), [projectLinks, projects]);
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
   const searching = query.trim().length > 0 || groupFilter !== "all" || (notApplied && usageRead);
 
@@ -199,13 +200,14 @@ export function IgTipsPanel({
     });
 
   const saveTip = useMutation({
-    mutationFn: async (vars: { id?: string; record_type: "link" | "idea"; title: string; url: string; tip_group: TipGroup | null; tip_summary: string | null; description: string | null }) => {
-      const { id, ...values } = vars;
+    scope: { id: "library-writes" },
+    mutationFn: async (vars: { id?: string; expectedUpdatedAt?: string; record_type: "link" | "idea"; title: string; url: string; tip_group: TipGroup | null; tip_summary: string | null; description: string | null }) => {
+      const { id, expectedUpdatedAt, ...values } = vars;
       if (id) {
         const { data, error } = await supabase
           .from("ai_links")
           .update({ ...values, updated_at: new Date().toISOString() })
-          .eq("id", id)
+          .eq("id", id).eq("updated_at", expectedUpdatedAt!)
           .select()
           .single();
         if (error || !data) throw error ?? new Error("no-data");
@@ -227,32 +229,25 @@ export function IgTipsPanel({
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
       setDialogOpen(false);
     },
-    onError: (error) => toast.err((error as Error)?.message === "no-user" ? tt.signInFirst : tt.couldNotSave),
+    onError: (error) => setFormError((error as Error)?.message === "no-user" ? tt.signInFirst : tt.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.aiLinks }); },
   });
 
-  // Optimistic, with a rollback; project_links rows cascade in the database.
+  // Apply confirmed deletions only; all dependent lists reconcile after the write.
   const deleteTip = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ai_links").delete().eq("id", id);
       if (error) throw error;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.aiLinks });
-      const previousLinks = qc.getQueryData<AiLink[]>(qk.aiLinks);
-      const previousRelations = qc.getQueryData<ProjectLink[]>(qk.projectLinks);
-      setAiLinks((old) => old.filter((link) => link.id !== id));
-      setProjectLinks((old) => old.filter((relation) => relation.ai_link_id !== id));
-      return { previousLinks, previousRelations };
+    scope: { id: "library-writes" },
+    onSuccess: (_data, id) => {
+      setAiLinks(rows => rows.filter(row => row.id !== id));
+      setProjectLinks(rows => rows.filter(row => row.ai_link_id !== id));
+      toast.ok(tt.deleted);
     },
-    onSuccess: () => toast.ok(tt.deleted),
-    onError: (_error, _id, context) => {
-      if (context?.previousLinks) setAiLinks(context.previousLinks);
-      if (context?.previousRelations) setProjectLinks(context.previousRelations);
-      toast.err(tt.couldNotDelete);
-    },
+    onError: () => toast.err(tt.couldNotDelete),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: qk.aiLinks });
-      void qc.invalidateQueries({ queryKey: qk.projectLinks });
+      for (const queryKey of [qk.aiLinks, qk.projectLinks, qk.tools, qk.promptLinks]) void qc.invalidateQueries({ queryKey });
     },
   });
 
@@ -280,6 +275,8 @@ export function IgTipsPanel({
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (saveTip.isPending) return;
+    setFormError(null);
     const title = form.title.trim();
     if (!title) return setFormError(tt.titleRequired);
     if (!form.url.trim()) return setFormError(tt.urlRequired);
@@ -290,6 +287,7 @@ export function IgTipsPanel({
     }
     saveTip.mutate({
       id: editing?.id,
+      expectedUpdatedAt: editing?.updated_at,
       record_type: form.recordType,
       title,
       url,
@@ -357,7 +355,7 @@ export function IgTipsPanel({
               placeholder={tt.searchPlaceholder}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-9 w-full max-w-sm"
+              className="h-11 w-full sm:h-9 sm:max-w-sm"
             />
             <div role="group" aria-label={tt.groupFilter} className="flex flex-wrap gap-1.5">
               {(["all", ...availableGroups] as const).map((group) => (
@@ -423,7 +421,7 @@ export function IgTipsPanel({
                       <TipCard
                         key={tip.id}
                         tip={tip}
-                        forProjects={projectsUsingLink(tip.id, projectLinks, projects).map(({ project }) => project.name)}
+                        forProjects={(projectUsage.get(tip.id) ?? []).map(({ project }) => project.name)}
                         usage={usage ? usageForTip(usage, tip.title) : NO_USAGE}
                         expanded={expanded.has(tip.id)}
                         onToggle={() => toggle(tip.id)}
@@ -440,13 +438,14 @@ export function IgTipsPanel({
         </>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={returnFocus}>
+      <Dialog open={dialogOpen} onOpenChange={next => { if (!saveTip.isPending) setDialogOpen(next); }}>
+        <DialogContent showClose={!saveTip.isPending} className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={returnFocus}>
           <DialogHeader>
             <DialogTitle>{editing ? tt.editTitle : tt.newTitle}</DialogTitle>
             <DialogDescription className="sr-only">{tt.description}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={submit} className="mt-3 space-y-3">
+          <form onSubmit={submit}>
+            <fieldset disabled={saveTip.isPending} className="mt-3 space-y-3">
             {editing && <div className="space-y-1.5">
               <Label htmlFor="tip-record-type">{t.ai.recordType}</Label>
               <SimpleSelect id="tip-record-type" value={form.recordType}
@@ -455,11 +454,11 @@ export function IgTipsPanel({
             </div>}
             <div className="space-y-1.5">
               <Label htmlFor="tip-title">{tt.titleLabel}</Label>
-              <Input id="tip-title" value={form.title} maxLength={200} autoFocus onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
+              <Input required id="tip-title" value={form.title} maxLength={200} autoFocus onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tip-url">{tt.urlLabel}</Label>
-              <Input id="tip-url" value={form.url} inputMode="url" placeholder="https://…" onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))} />
+              <Input required maxLength={4096} id="tip-url" value={form.url} inputMode="url" placeholder="https://…" onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tip-group">{tt.groupField}</Label>
@@ -485,6 +484,7 @@ export function IgTipsPanel({
             <div className="space-y-1.5">
               <Label htmlFor="tip-notes">{tt.notesLabel}</Label>
               <Textarea
+                maxLength={10000}
                 id="tip-notes"
                 value={form.notes}
                 rows={4}
@@ -502,6 +502,7 @@ export function IgTipsPanel({
                 {saveTip.isPending ? tt.saving : editing ? tt.save : tt.create}
               </Button>
             </div>
+            </fieldset>
           </form>
         </DialogContent>
       </Dialog>

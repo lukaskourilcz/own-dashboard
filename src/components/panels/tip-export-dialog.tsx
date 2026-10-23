@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,17 +25,32 @@ import type { AiLink } from "@/lib/types";
  * and each item names its topic and card text as `tip_group` and
  * `tip_summary`, the shape a plan generator reads.
  */
-export function TipExportDialog({ links, relations }: { links: AiLink[]; relations?: LinkExportRelations }) {
+type TipExportProps = { links: AiLink[]; relations?: LinkExportRelations };
+
+export function TipExportDialog(props: TipExportProps) {
+  const [open, setOpen] = useState(false);
+  const t = useDict();
+
+  const label = t.ai.exportIdeasTitle;
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button variant="outline" size="sm">{label}</Button></DialogTrigger>
+    {open && <TipExportContent {...props} />}
+  </Dialog>;
+}
+
+function TipExportContent({ links, relations }: TipExportProps) {
   const t = useDict();
   const a = t.ai;
   const tt = t.tips;
-  const [open, setOpen] = useState(false);
   const [format, setFormat] = useState("json");
   const [shape, setShape] = useState<TipExportShape>("detailed");
   const [selection, setSelection] = useState<TipExportSelection>("all");
   const [topics, setTopics] = useState<Set<TipGroupKey>>(() => new Set());
   const [itemIds, setItemIds] = useState<Set<string>>(() => new Set());
   const [status, setStatus] = useState("");
+  const [statusFor, setStatusFor] = useState("");
+  const [copying, setCopying] = useState(false);
+  const copyPending = useRef(false);
   const tips = useMemo(() => links.filter(isTip), [links]);
   const available = useMemo(() => groupTips(tips), [tips]);
   const data = useMemo(
@@ -56,12 +71,14 @@ export function TipExportDialog({ links, relations }: { links: AiLink[]; relatio
   }
 
   async function copy() {
+    if (copyPending.current) return;
+    copyPending.current = true; setCopying(true); setStatus(""); setStatusFor(content);
     try {
       await navigator.clipboard.writeText(content);
       setStatus(a.exportCopied);
     } catch {
       setStatus(a.exportCopyFailed);
-    }
+    } finally { copyPending.current = false; setCopying(false); }
   }
 
   function download() {
@@ -75,17 +92,12 @@ export function TipExportDialog({ links, relations }: { links: AiLink[]; relatio
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" onClick={() => setStatus("")}>
-          {a.exportIdeasTitle}
-        </Button>
-      </DialogTrigger>
       <DialogContent className="w-[calc(100%_-_2rem)] max-w-4xl" showClose={false}>
         <DialogHeader>
           <DialogTitle>{a.exportIdeasTitle}</DialogTitle>
           <DialogDescription>{tt.exportHint}</DialogDescription>
         </DialogHeader>
+        <fieldset disabled={copying} className="min-w-0">
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="tip-export-format">{a.exportFormat}</Label>
@@ -143,7 +155,7 @@ export function TipExportDialog({ links, relations }: { links: AiLink[]; relatio
             <legend className="px-1 text-xs font-medium">{tt.exportChooseTopics}</legend>
             <div className="grid max-h-36 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
               {available.map((entry) => (
-                <label key={entry.group} className="flex min-h-8 cursor-pointer items-center gap-2 rounded px-1 text-sm hover:bg-surface-hover">
+                <label key={entry.group} className="flex min-h-11 sm:min-h-8 cursor-pointer items-center gap-2 rounded px-1 text-sm hover:bg-surface-hover">
                   <Checkbox checked={topics.has(entry.group)} onCheckedChange={(checked) => toggle(setTopics, entry.group, checked === true)} />
                   <span className="min-w-0 truncate">{tt.groupLabel[entry.group]}</span>
                   <span className="ml-auto text-xs tabular text-foreground-subtle">{entry.tips.length}</span>
@@ -158,7 +170,7 @@ export function TipExportDialog({ links, relations }: { links: AiLink[]; relatio
             <legend className="px-1 text-xs font-medium">{a.exportChooseIdeas}</legend>
             <div className="grid max-h-48 gap-1 overflow-y-auto sm:grid-cols-2">
               {available.flatMap((entry) => entry.tips).map((tip) => (
-                <label key={tip.id} className="flex min-h-9 cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-surface-hover">
+                <label key={tip.id} className="flex min-h-11 sm:min-h-9 cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-surface-hover">
                   <Checkbox checked={itemIds.has(tip.id)} onCheckedChange={(checked) => toggle(setItemIds, tip.id, checked === true)} />
                   <span className="min-w-0 truncate">{tip.title}</span>
                 </label>
@@ -167,26 +179,26 @@ export function TipExportDialog({ links, relations }: { links: AiLink[]; relatio
           </fieldset>
         )}
 
+        </fieldset>
         <p className="my-3 text-xs text-foreground-muted" role="status">
           {a.exportCount(data.items.length)}
         </p>
         <Label htmlFor="tip-export-preview">{a.exportPreview}</Label>
         <Textarea id="tip-export-preview" value={content} readOnly rows={14} className="mt-1.5 max-h-[45vh] font-mono text-xs" />
         <p role="status" className="mt-2 text-xs text-foreground-muted">
-          {status}
+          {statusFor === content ? status : ""}
         </p>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <DialogClose asChild>
             <Button variant="ghost">{a.cancel}</Button>
           </DialogClose>
-          <Button variant="outline" onClick={download} disabled={data.items.length === 0}>
+          <Button variant="outline" onClick={download} disabled={copying || data.items.length === 0}>
             {a.exportDownload}
           </Button>
-          <Button onClick={copy} disabled={data.items.length === 0}>
+          <Button onClick={copy} disabled={copying || data.items.length === 0}>
             {a.exportCopy}
           </Button>
         </div>
       </DialogContent>
-    </Dialog>
   );
 }

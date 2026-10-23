@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -21,9 +21,21 @@ import {
 } from "@/lib/link-export";
 import type { AiCategory, AiLink } from "@/lib/types";
 
-export function LinkExportDialog({ links, categories, scope, relations }: { links: AiLink[]; categories: AiCategory[]; scope: Exclude<LinkExportScope, "all">; relations?: LinkExportRelations }) {
-  const t = useDict().ai;
+type LinkExportProps = { links: AiLink[]; categories: AiCategory[]; scope: Exclude<LinkExportScope, "all">; relations?: LinkExportRelations };
+
+export function LinkExportDialog(props: LinkExportProps) {
   const [open, setOpen] = useState(false);
+  const t = useDict().ai;
+  const scope = props.scope;
+  const label = scope === "idea" ? t.exportIdeasTitle : t.exportLinksTitle;
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button variant="outline" size="sm">{label}</Button></DialogTrigger>
+    {open && <LinkExportContent {...props} />}
+  </Dialog>;
+}
+
+function LinkExportContent({ links, categories, scope, relations }: LinkExportProps) {
+  const t = useDict().ai;
   const [format, setFormat] = useState("json");
   const [shape, setShape] = useState<LinkExportShape>("detailed");
   const [pricing, setPricing] = useState<LinkPricingFilter>("all");
@@ -31,6 +43,9 @@ export function LinkExportDialog({ links, categories, scope, relations }: { link
   const [categoryIds, setCategoryIds] = useState<Set<string>>(() => new Set());
   const [itemIds, setItemIds] = useState<Set<string>>(() => new Set());
   const [status, setStatus] = useState("");
+  const [statusFor, setStatusFor] = useState("");
+  const [copying, setCopying] = useState(false);
+  const copyPending = useRef(false);
   const scopedLinks = useMemo(() => links.filter((link) => (link.record_type ?? "link") === scope), [links, scope]);
   const availableCategories = useMemo(() => {
     const used = new Set(scopedLinks.map((link) => link.category_id ?? UNCATEGORIZED_EXPORT));
@@ -59,12 +74,14 @@ export function LinkExportDialog({ links, categories, scope, relations }: { link
   }
 
   async function copy() {
+    if (copyPending.current) return;
+    copyPending.current = true; setCopying(true); setStatus(""); setStatusFor(content);
     try {
       await navigator.clipboard.writeText(content);
       setStatus(t.exportCopied);
     } catch {
       setStatus(t.exportCopyFailed);
-    }
+    } finally { copyPending.current = false; setCopying(false); }
   }
 
   function download() {
@@ -77,13 +94,13 @@ export function LinkExportDialog({ links, categories, scope, relations }: { link
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  return <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button variant="outline" size="sm" onClick={() => setStatus("")}>{triggerLabel}</Button></DialogTrigger>
+  return (
       <DialogContent className="w-[calc(100%_-_2rem)] max-w-4xl" showClose={false}>
         <DialogHeader>
           <DialogTitle>{triggerLabel}</DialogTitle>
           <DialogDescription>{t.exportHint}</DialogDescription>
         </DialogHeader>
+        <fieldset disabled={copying} className="min-w-0">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5"><Label htmlFor="link-export-format">{t.exportFormat}</Label>
             <SimpleSelect id="link-export-format" value={format} onValueChange={(value) => { setFormat(value); setStatus(""); }} options={[{ value: "json", label: "JSON" }, { value: "markdown", label: "Markdown" }]} />
@@ -102,7 +119,7 @@ export function LinkExportDialog({ links, categories, scope, relations }: { link
         {selection === "categories" && <fieldset className="mt-4 rounded-lg border border-border bg-surface-muted/30 p-3">
           <legend className="px-1 text-xs font-medium">{t.exportChooseCategories}</legend>
           <div className="grid max-h-36 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
-            {availableCategories.map((category) => <label key={category.id} className="flex min-h-8 cursor-pointer items-center gap-2 rounded px-1 text-sm hover:bg-surface-hover">
+            {availableCategories.map((category) => <label key={category.id} className="flex min-h-11 sm:min-h-8 cursor-pointer items-center gap-2 rounded px-1 text-sm hover:bg-surface-hover">
               <Checkbox checked={categoryIds.has(category.id)} onCheckedChange={(checked) => toggle(setCategoryIds, category.id, checked === true)} />
               <span className="min-w-0 truncate">{category.name}</span>
               <span className="ml-auto text-xs tabular text-foreground-subtle">{scopedLinks.filter((link) => (link.category_id ?? UNCATEGORIZED_EXPORT) === category.id).length}</span>
@@ -113,22 +130,23 @@ export function LinkExportDialog({ links, categories, scope, relations }: { link
         {selection === "items" && <fieldset className="mt-4 rounded-lg border border-border bg-surface-muted/30 p-3">
           <legend className="px-1 text-xs font-medium">{scope === "idea" ? t.exportChooseIdeas : t.exportChooseLinks}</legend>
           <div className="grid max-h-48 gap-1 overflow-y-auto sm:grid-cols-2">
-            {scopedLinks.map((link) => <label key={link.id} className="flex min-h-9 cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-surface-hover">
+            {scopedLinks.map((link) => <label key={link.id} className="flex min-h-11 sm:min-h-9 cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-surface-hover">
               <Checkbox checked={itemIds.has(link.id)} onCheckedChange={(checked) => toggle(setItemIds, link.id, checked === true)} />
               <span className="min-w-0 truncate">{link.title}</span>
             </label>)}
           </div>
         </fieldset>}
 
+        </fieldset>
         <p className="my-3 text-xs text-foreground-muted" role="status">{t.exportCount(data.items.length)}</p>
         <Label htmlFor="link-export-preview">{t.exportPreview}</Label>
         <Textarea id="link-export-preview" value={content} readOnly rows={14} className="mt-1.5 max-h-[45vh] font-mono text-xs" />
-        <p role="status" className="mt-2 text-xs text-foreground-muted">{status}</p>
+        <p role="status" className="mt-2 text-xs text-foreground-muted">{statusFor === content ? status : ""}</p>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <DialogClose asChild><Button variant="ghost">{t.cancel}</Button></DialogClose>
-          <Button variant="outline" onClick={download} disabled={data.items.length === 0}>{t.exportDownload}</Button>
-          <Button onClick={copy} disabled={data.items.length === 0}>{t.exportCopy}</Button>
+          <Button variant="outline" onClick={download} disabled={copying || data.items.length === 0}>{t.exportDownload}</Button>
+          <Button onClick={copy} disabled={copying || data.items.length === 0}>{t.exportCopy}</Button>
         </div>
       </DialogContent>
-    </Dialog>;
+  );
 }

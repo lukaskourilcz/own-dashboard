@@ -20,7 +20,8 @@
       "path": "src/app/api/ai-links/enrich/route.ts",
       "lines": 103,
       "sha256": "438a7280eb98233ba3891f9ae83da62efe6483336217913fd27378c726816a6f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "9a13dab15393b6c843558a38c3c2e7b7093d01ee8bbcf6b539648d1ddd75399d"
     },
     {
       "path": "src/app/api/auth/marketing-pilot/confirm/route.ts",
@@ -1003,7 +1004,8 @@
       "path": "src/components/marketing/use-marketing-calendars.ts",
       "lines": 46,
       "sha256": "1296d690d0966379c3716d7dc47f32ed1072c5215dfac5e3f8c3e85d1151ebb5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "79f08f487c6721d4ef7efcfa1d21cb692f17f357c0d9a7b394b07f0befdc849c"
     },
     {
       "path": "src/components/marketing/weekly-calendar.tsx",
@@ -1109,7 +1111,8 @@
       "path": "src/components/panels/ai-panel.tsx",
       "lines": 1103,
       "sha256": "18263a624c7740d3beab0d22fece1ae6309723cfceba8574fc8d570c3babb438",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "3dcf7912d5bd070ca750ac07bcb6e6d89d978c23cb5035e77e68675d2a233050"
     },
     {
       "path": "src/components/panels/calendar-panel.tsx",
@@ -1183,7 +1186,8 @@
       "path": "src/components/panels/ig-tips-panel.tsx",
       "lines": 727,
       "sha256": "bd8825210893ec2994ed3b39fd113fbacf8374f0820e4f96b7dee99a2ff5a610",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "9f917f0fba8bdc30b457e59427031b2997e70f06cb16d02255d96df365a0e943"
     },
     {
       "path": "src/components/panels/important-dates-panel.tsx",
@@ -1223,13 +1227,15 @@
       "path": "src/components/panels/link-export-dialog.tsx",
       "lines": 134,
       "sha256": "1c63be167668535b21efc1898843bce6c15913895a6bb3b958ea87406871eadf",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "5f6f7537acf50d2ca741d21b7c73fcbd91acf1e4d0250783b73c7d2fd827a987"
     },
     {
       "path": "src/components/panels/link-library-card.tsx",
       "lines": 89,
       "sha256": "30894dd5178f6c777e9f3bcb992a12c69859c1265e60e50dc69d272c7194a1fd",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "1c547b70bfdfd619b7c6963df03d3c8b186f036e9f8a8a2a0066e26d7fa2ad4f"
     },
     {
       "path": "src/components/panels/marketing-panel.tsx",
@@ -1320,7 +1326,8 @@
       "path": "src/components/panels/tip-export-dialog.tsx",
       "lines": 192,
       "sha256": "dfedee33b4bf3e3b17dac9863441f2df363a116f4f7620f6974a4e9b41798b3b",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "aa302eb8238f64c7bea06925e1090eade057e9432bbfc7530af6c41cdbe4b007"
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
@@ -2124,7 +2131,8 @@
       "path": "src/lib/ig-tips.ts",
       "lines": 126,
       "sha256": "8836ebb92e8efc89b830cd6fcf405072bbf0397a1b495903038530a44e27ee9c",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8836ebb92e8efc89b830cd6fcf405072bbf0397a1b495903038530a44e27ee9c"
     },
     {
       "path": "src/lib/important-dates.ts",
@@ -2282,13 +2290,15 @@
       "path": "src/lib/link-export.ts",
       "lines": 162,
       "sha256": "fb4dd39e96c2f8d406133b8edba6b22f8ea55b7902e6eeb2bada043fc84c7d56",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8a16a2e185a0f22d80a16f42f96fea41d3d91b11b5b94d35ab0534ded8702ed3"
     },
     {
       "path": "src/lib/link-library.ts",
       "lines": 68,
       "sha256": "a397b351ff05783a49901b5681b570392930336f8ee6f542f788ab0815f45e4c",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "a397b351ff05783a49901b5681b570392930336f8ee6f542f788ab0815f45e4c"
     },
     {
       "path": "src/lib/marketing/accounts-client.ts",
@@ -3122,7 +3132,8 @@
       "path": "src/lib/marketing-calendars-server.ts",
       "lines": 59,
       "sha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d"
     },
     {
       "path": "src/lib/marketing-calendars.ts",
@@ -3230,7 +3241,7 @@
       "lines": 78,
       "sha256": "826e16d91da56b20e65bd1407e238124c9ee8944951f914ea9677ae4e1cb0e6e",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "826e16d91da56b20e65bd1407e238124c9ee8944951f914ea9677ae4e1cb0e6e"
+      "reviewedSha256": "b4dc1be71bf8b5e57cc5aab063a37406e9e611aa765a3ca5e8c5d38af157b1b4"
     },
     {
       "path": "src/lib/project-match.ts",
@@ -3302,13 +3313,15 @@
       "path": "src/lib/stack-detection-server.ts",
       "lines": 173,
       "sha256": "669da36b688242c44ee953bb95c08f36d3fa12a4fe1d194c5fcf3374a8a94b8a",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "f437757255922c343349082b3ff7ef306d12f43db499e7532e09a57766b50614"
     },
     {
       "path": "src/lib/stack-detection.ts",
       "lines": 410,
       "sha256": "e1a688c71b1f13e4086b59ec58f4ee09990495336bd2bf0bf7694a6d692f6a6f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "e1a688c71b1f13e4086b59ec58f4ee09990495336bd2bf0bf7694a6d692f6a6f"
     },
     {
       "path": "src/lib/status-presentation.ts",
@@ -3383,7 +3396,8 @@
       "path": "src/lib/tip-export.ts",
       "lines": 120,
       "sha256": "c4075ec598edea82a86b850ea3ce5942674e1cd2816e37d09565713ab09dd6bc",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "757fdac341002f6e34da3e2d4dfafa8d264495c75a87a6b453900e3f0135065b"
     },
     {
       "path": "src/lib/tools.ts",
@@ -3545,6 +3559,14 @@
       "addedAfterBaseline": true,
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "97015ca5ca148fbbc919375ef01fed8b20ad47bd933b69e097fa0f9c66a00d62"
+    },
+    {
+      "path": "src/lib/bounded-text.ts",
+      "lines": 26,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "fd97ec2d21e0845c64f752df33c71f3bafd71a948f2f132376b6eb1d594b8a46"
     }
   ],
   "baselineFileCount": 561
