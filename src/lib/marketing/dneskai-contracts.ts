@@ -22,6 +22,15 @@ export const DneskaiCandidateSchema = z.strictObject({
     ownerUsername: z.string().regex(/^[A-Za-z0-9_.]{1,30}$/).optional(),
     mediaType: z.enum(['image', 'carousel', 'video']).optional(),
     containsVideo: z.literal(true).optional(),
+    /** #167: a reel's sound as the scraper reports it (`musicInfo`), and its plays, for the niche audio ranking. */
+    music: z.strictObject({
+      audioId: z.string().regex(/^\d{1,40}$/),
+      title: z.string().max(300).optional(),
+      artist: z.string().max(300).optional(),
+      originalAudio: z.boolean(),
+      muted: z.boolean(),
+    }).optional(),
+    plays: z.number().int().min(0).max(1e12).optional(),
   }).optional(),
   category: z.enum(['ai-news', 'tech-news', 'marketing', 'tool', 'ai-project', 'other']).nullable(),
   relevance: z.number().min(0).max(1).nullable(), duplicateOf: z.string().max(200).nullable(),
