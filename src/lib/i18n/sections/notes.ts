@@ -6,6 +6,8 @@ type NotesStrings = {
   editorLabel: string;
   newNote: string;
   unsavedChanges: string;
+  unsupportedContent: string;
+  downloadOriginal: string;
   importMd: string;
   untitled: string;
   signInFirst: string;
@@ -33,6 +35,8 @@ type NotesStrings = {
   /** Date-fns format string for the saved-at time (locale-aware). */
   savedTimeFormat: string;
   copyAsMarkdown: string;
+  copyContext: string;
+  copiedContext: string;
   downloadMd: string;
   downloadAsMarkdown: string;
   unpin: string;
@@ -73,6 +77,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     editorLabel: "Note content",
     newNote: "New note",
     unsavedChanges: "Unsaved changes",
+    unsupportedContent: "This saved note uses a format the editor cannot read. The original content is preserved; download it for recovery.",
+    downloadOriginal: "Download original data",
     importMd: "Import MD",
     untitled: "Untitled",
     signInFirst: "Sign in first.",
@@ -98,6 +104,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     savedAt: (time) => `Saved ${time}`,
     savedTimeFormat: "HH:mm",
     copyAsMarkdown: "Copy as Markdown",
+    copyContext: "Copy note context",
+    copiedContext: "Note context copied.",
     downloadMd: "Download .md",
     downloadAsMarkdown: "Download as Markdown",
     unpin: "Unpin",
@@ -136,6 +144,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     editorLabel: "Obsah poznámky",
     newNote: "Nová poznámka",
     unsavedChanges: "Neuložené změny",
+    unsupportedContent: "Uložená poznámka má formát, který editor neumí přečíst. Původní obsah zůstal zachován; stáhněte jej pro obnovení.",
+    downloadOriginal: "Stáhnout původní data",
     importMd: "Importovat MD",
     untitled: "Bez názvu",
     signInFirst: "Nejprve se přihlaste.",
@@ -161,6 +171,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     savedAt: (time) => `Uloženo ${time}`,
     savedTimeFormat: "HH:mm",
     copyAsMarkdown: "Kopírovat jako Markdown",
+    copyContext: "Kopírovat kontext poznámky",
+    copiedContext: "Kontext poznámky zkopírován.",
     downloadMd: "Stáhnout .md",
     downloadAsMarkdown: "Stáhnout jako Markdown",
     unpin: "Odepnout",

@@ -12,7 +12,7 @@ The persistent shell owns one visible page title. Shared navigation guards prote
 
 Accounts, Transactions and Categories are focused destinations with their own route data needs. Planning/subscription creation opens on demand; mobile Tasks uses a filter dialog. Settings has a centered label/control grid and section navigation. 
 
-Notes never removes drafts merely because they look empty or old. Failed Markdown imports keep their text and show an inline error. It retains per-note drafts in memory across note changes and exposes failed-save retry. The shared navigation guard protects edits before the debounce, saves all pending drafts on request, and stops unsent writes after explicit discard. Metadata rollback preserves confirmed document content.
+Notes never removes drafts merely because they look empty or old. Failed Markdown imports keep their text and show an inline error. It retains per-note drafts in memory across note changes and exposes failed-save retry. The shared navigation guard protects edits before the debounce, saves all pending drafts on request, and stops unsent writes after explicit discard. Metadata rollback preserves confirmed document content. Unsupported saved formats stay intact and offer an original-data download instead of an empty editor. Context copy and full Markdown export are separate actions.
 
 Prompt categories use masonry with one preview/copy action. 
 

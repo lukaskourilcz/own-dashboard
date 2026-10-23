@@ -1247,7 +1247,7 @@
       "lines": 1367,
       "sha256": "af7850a690d55f1ff78cb048e62265aec7d4da2da8874e56fa6d8df235ff9cd2",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "35738396671103a9b694d3b9dca834a7c37df86f3ebaf022edc7c52e9c3a1775"
+      "reviewedSha256": "8aa5313ef9e3860c6e4b54dc9f370b9997b60fc0d02223423e5a8fb0fe1985d6"
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
@@ -2023,7 +2023,8 @@
       "path": "src/lib/i18n/sections/notes.ts",
       "lines": 188,
       "sha256": "008714e85ff6799866968a9a9fa7b9e8e20ebbb687e5becb61609594fe2b295e",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "003966440d5bbb14eae5fe7faacc0058cd3424e5fdd92fc97c390453b0b572cf"
     },
     {
       "path": "src/lib/i18n/sections/overview.ts",

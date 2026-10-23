@@ -31,7 +31,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistance } from "date-fns";
 import {
   Check,
   ChevronLeft,
@@ -65,6 +65,7 @@ import { qk } from "@/lib/queries/keys";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Note, Project, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 import { tagColor } from "@/lib/tag-colors";
 import { useUnsavedDraft } from "@/components/navigation-guard";
 import { useNoteAutosave } from "@/components/notes/use-note-autosave";
@@ -140,11 +141,13 @@ function downloadBlob(filename: string, content: string, type: string) {
 }
 
 function safeFilename(title: string): string {
-  return (title || "note")
-    .toLowerCase()
-    .replace(/[^a-z0-9-_ ]+/g, "")
-    .replace(/\s+/g, "-")
-    .slice(0, 60);
+  return title.normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}\p{M}_ -]+/gu, "")
+    .trim().replace(/\s+/g, "-").slice(0, 60) || "note";
+}
+
+function relativeNoteDate(note: Note, now: Date | null, locale: ReturnType<typeof useDateLocale>) {
+  const date = noteDate(note);
+  return now ? formatDistance(date, now, { addSuffix: true, locale }) : "—";
 }
 
 const subscribeWideNotes = (changed: () => void) => { const media = window.matchMedia('(min-width: 1024px)'); media.addEventListener('change', changed); return () => media.removeEventListener('change', changed); };
@@ -157,6 +160,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   const confirm = useConfirmation();
   const t = useDict();
   const locale = useDateLocale();
+  const now = useNow();
   const wide = useSyncExternalStore(subscribeWideNotes, readWideNotes, () => false);
   const noteOpener = useRef<HTMLElement | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -373,7 +377,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
       .trim();
     try {
       await navigator.clipboard.writeText(context);
-      toast.ok(t.notes.copiedAsMarkdown);
+      toast.ok(t.notes.copiedContext);
     } catch {
       toast.err(t.notes.couldNotCopy);
     }
@@ -680,6 +684,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                           <SortableNoteRow
                             key={n.id}
                             note={n}
+                            now={now}
                             isActive={n.id === effectiveId}
                             onSelect={() => openNote(n.id)}
                             onCopy={() => void copyNoteContext(n)}
@@ -701,6 +706,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     <NoteRow
                       key={n.id}
                       note={n}
+                      now={now}
                       isActive={n.id === effectiveId}
                       onSelect={() => openNote(n.id)}
                       onCopy={() => void copyNoteContext(n)}
@@ -770,6 +776,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     size="icon-sm"
                     variant="ghost"
                     onClick={copyAsMarkdown}
+                    disabled={!Array.isArray(selected.content)}
                     aria-label={t.notes.copyAsMarkdown}
                   >
                     <Clipboard className="h-3.5 w-3.5" />
@@ -780,6 +787,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     size="icon-sm"
                     variant="ghost"
                     onClick={downloadAsMarkdown}
+                    disabled={!Array.isArray(selected.content)}
                     aria-label={t.notes.downloadAsMarkdown}
                   >
                     <Download className="h-3.5 w-3.5" />
@@ -790,6 +798,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => setPublishOpen(true)}
+                    disabled={!Array.isArray(selected.content)}
                     aria-label={t.github.publish}
                   >
                     <GithubIcon className="h-3.5 w-3.5" />
@@ -854,7 +863,13 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
               </div>
 
               <div className="flex-1 overflow-auto" inert={deleteMutation.isPending}>
-                <NoteEditor
+                {!Array.isArray(selected.content) ? <div className="space-y-3 p-5">
+                  <p role="alert" className="text-sm text-risk">{t.notes.unsupportedContent}</p>
+                  <Button variant="outline" size="sm" onClick={() => downloadBlob(`${safeFilename(selected.title)}.json`,
+                    JSON.stringify({ title: selected.title, content: selected.content }, null, 2), "application/json")}>
+                    <Download className="h-3.5 w-3.5" /> {t.notes.downloadOriginal}
+                  </Button>
+                </div> : <NoteEditor
                   key={`${selected.id}:${autosave.generation}`}
                   noteId={selected.id}
                   handleRef={editorHandleRef}
@@ -863,14 +878,10 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     setLinkPickerOpen(true);
                   }}
                   onNavigateToNote={(id) => openNote(id)}
-                  initialContent={
-                    (Array.isArray(selected.content)
-                      ? selected.content
-                      : []) as never
-                  }
+                  initialContent={selected.content as never}
                   onDirtyChange={() => { if (!deletedIds.current.has(selected.id)) autosave.markDirty(selected.id); }}
                   onChange={(doc) => saveDoc(selected.id, doc)}
-                />
+                />}
               </div>
             </div>
           ) : (
@@ -917,12 +928,14 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
 
 function NoteRow({
   note,
+  now,
   isActive,
   onSelect,
   onCopy,
   dragHandle,
 }: {
   note: Note;
+  now: Date | null;
   isActive: boolean;
   onSelect: () => void;
   onCopy: () => void;
@@ -978,18 +991,15 @@ function NoteRow({
               })}
             </div>
           )}
-          <p className="text-[10px] text-foreground-muted tabular mt-0.5">
-            {formatDistanceToNow(noteDate(note), {
-              addSuffix: true,
-              locale,
-            })}
-          </p>
+          <time dateTime={noteDate(note).toISOString()} className="mt-0.5 block text-[10px] text-foreground-muted tabular">
+            {relativeNoteDate(note, now, locale)}
+          </time>
         </button>
-        <Tooltip content={t.notes.copyAsMarkdown}>
+        <Tooltip content={t.notes.copyContext}>
           <button
             type="button"
             onClick={onCopy}
-            aria-label={t.notes.copyAsMarkdown}
+            aria-label={t.notes.copyContext}
             className="my-auto inline-flex h-11 w-11 md:h-7 md:w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
           >
             <Clipboard className="h-3.5 w-3.5" />
@@ -1002,11 +1012,13 @@ function NoteRow({
 
 function SortableNoteRow({
   note,
+  now,
   isActive,
   onSelect,
   onCopy,
 }: {
   note: Note;
+  now: Date | null;
   isActive: boolean;
   onSelect: () => void;
   onCopy: () => void;
@@ -1045,11 +1057,11 @@ function SortableNoteRow({
         >
           <GripVertical className="h-3 w-3" />
         </button>
-        <Tooltip content={t.notes.copyAsMarkdown}>
+        <Tooltip content={t.notes.copyContext}>
           <button
             type="button"
             onClick={onCopy}
-            aria-label={t.notes.copyAsMarkdown}
+            aria-label={t.notes.copyContext}
             className="my-auto inline-flex h-11 w-11 md:h-7 md:w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
           >
             <Clipboard className="h-3.5 w-3.5" />
@@ -1091,12 +1103,9 @@ function SortableNoteRow({
               })}
             </div>
           )}
-          <p className="text-[10px] text-foreground-muted tabular mt-0.5">
-            {formatDistanceToNow(noteDate(note), {
-              addSuffix: true,
-              locale,
-            })}
-          </p>
+          <time dateTime={noteDate(note).toISOString()} className="mt-0.5 block text-[10px] text-foreground-muted tabular">
+            {relativeNoteDate(note, now, locale)}
+          </time>
         </button>
       </div>
     </li>
