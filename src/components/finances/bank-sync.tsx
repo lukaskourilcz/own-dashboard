@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
+import { importTransactionBatch } from "@/lib/transaction-import";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
@@ -330,9 +330,6 @@ function CsvImport({
   const importMutation = useMutation({
     mutationFn: async () => {
       if (!parsed || parsed.rows.length === 0) return { added: 0, dup: 0 };
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-
       if (!rulesQuery.isSuccess || rulesQuery.data.dropped > 0) throw new Error("rules-unavailable");
       const fresh = csvRowsToImport(parsed.rows, transactions);
       if (fresh.length === 0) return { added: 0, dup: parsed.rows.length };
@@ -345,7 +342,6 @@ function CsvImport({
       const payload = fresh.map((r) =>
         evaluator.applyToRow(
           {
-            user_id: userId,
             account_id: null,
             kind: r.kind,
             amount: r.amount,
@@ -365,12 +361,7 @@ function CsvImport({
       // this file; strong unique keys make a retry safe for confirmed rows.
       for (let offset = 0; offset < payload.length; offset += 250) {
         const batch = payload.slice(offset, offset + 250);
-        const { data, error } = await supabase.from("transactions").upsert(batch, {
-          onConflict: "user_id,external_id", ignoreDuplicates: true,
-        }).select("id");
-        if (error || !Array.isArray(data) || data.length > batch.length || data.some(row => typeof row.id !== "string")
-          || new Set(data.map(row => row.id)).size !== data.length) throw new Error("Import not confirmed");
-        added += data.length;
+        added += await importTransactionBatch(supabase, batch);
       }
       return { added, dup: parsed.rows.length - added };
     },

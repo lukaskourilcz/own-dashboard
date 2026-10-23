@@ -96,7 +96,11 @@ export function bindTransaction(
   userId: string,
   accountId: string | null,
 ): NormalizedTransaction {
-  return { ...tx, user_id: userId, account_id: accountId };
+  return {
+    kind: tx.kind, amount: tx.amount, currency: tx.currency, category: tx.category,
+    note: tx.note, occurred_on: tx.occurred_on, external_id: tx.external_id,
+    variable_symbol: tx.variable_symbol, user_id: userId, account_id: accountId,
+  };
 }
 
 export type BeginLinkInput = {

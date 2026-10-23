@@ -1,15 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-const getAccountTransactions = vi.fn();
+const { getAccountTransactions, getRequisition, getAccountBalances, getAccountDetails } = vi.hoisted(() => ({
+  getAccountTransactions: vi.fn(), getRequisition: vi.fn(), getAccountBalances: vi.fn(), getAccountDetails: vi.fn(),
+}));
 vi.mock("@/lib/gocardless", () => ({
   createRequisition: vi.fn(),
   deleteRequisition: vi.fn(),
-  getAccountBalances: vi.fn(),
-  getAccountDetails: vi.fn(),
+  getAccountBalances,
+  getAccountDetails,
   getAccountTransactions: (...args: unknown[]) => getAccountTransactions(...args),
   getEndUserAgreement: vi.fn(),
-  getRequisition: vi.fn(),
+  getRequisition,
   isGoCardlessConfigured: () => true,
   listInstitutions: vi.fn(),
   mapTransaction: (tx: { id: string; bookingDate: string }) => ({
@@ -31,6 +33,9 @@ const conn = { id: "c1", provider: "gocardless" } as BankConnection;
 
 beforeEach(() => {
   getAccountTransactions.mockReset();
+  getRequisition.mockReset().mockResolvedValue({ accounts: ["account"] });
+  getAccountBalances.mockReset().mockRejectedValue(new Error("Synthetic balance outage"));
+  getAccountDetails.mockReset().mockRejectedValue(new Error("Synthetic details outage"));
 });
 
 describe("gocardlessProvider.fetchTransactions", () => {
@@ -51,4 +56,12 @@ describe("gocardlessProvider.fetchTransactions", () => {
       gocardlessProvider.fetchTransactions(conn, "acc-1", "2026-10-02"),
     ).rejects.toThrow("429");
   });
+});
+
+it("never invents EUR when both account metadata reads fail", async () => {
+  await expect(gocardlessProvider.listAccounts({ ...conn, provider_ref: "requisition" })).rejects.toThrow("bank-account-currency-unavailable");
+  getAccountDetails.mockResolvedValue({ account: { name: "Synthetic account", currency: "CZK" } });
+  expect(await gocardlessProvider.listAccounts({ ...conn, provider_ref: "requisition" })).toEqual([
+    { accountRef: "account", name: "Synthetic account", currency: "CZK", balance: null },
+  ]);
 });

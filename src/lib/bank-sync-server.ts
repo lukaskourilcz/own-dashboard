@@ -7,6 +7,8 @@ import {
   usableRules,
 } from "@/lib/transaction-rules";
 import { readTransactionRuleContext } from "@/lib/transaction-rule-data";
+import { importTransactionBatch } from "@/lib/transaction-import";
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import type { BankConnection } from "@/lib/types";
 
 export type SyncResult = {
@@ -30,6 +32,17 @@ function nextStatus(
   return consent.status;
 }
 
+type FailureCode = "bank-sync-failed" | "bank-write-unconfirmed" | "bank-balance-unavailable" | "bank-data-unavailable" | "bank-rules-unavailable";
+class BankSyncFailure extends Error {
+  constructor(readonly code: FailureCode) { super(code); }
+}
+
+async function writeConnection(admin: SupabaseClient, conn: BankConnection, patch: Record<string, unknown>) {
+  const { data, error } = await admin.from("bank_connections").update(patch)
+    .eq("id", conn.id).eq("user_id", conn.user_id).select("id").single();
+  if (error || data?.id !== conn.id) throw new BankSyncFailure("bank-write-unconfirmed");
+}
+
 /**
  * Pull balances + transactions for one bank connection and fold them into the
  * accounts / transactions tables. Idempotent: accounts are keyed by
@@ -43,64 +56,33 @@ function nextStatus(
  * `admin` must be the service-role client — it writes rows for the user and
  * updates the connection's status/last_synced_at.
  */
-export async function syncConnection(
-  admin: SupabaseClient,
-  conn: BankConnection,
-): Promise<SyncResult> {
-  const provider = getProvider(conn.provider);
-
-  let consent: ProviderConsent;
+export async function syncConnection(admin: SupabaseClient, conn: BankConnection): Promise<SyncResult> {
+  const startedAt = new Date();
   try {
-    consent = await provider.getConsent(conn);
-  } catch (error) {
-    await admin
-      .from("bank_connections")
-      .update({ last_error: describeError(error) })
-      .eq("id", conn.id);
-    throw error;
-  }
-
-  const status = nextStatus(conn.status, consent);
-  if (consent.status !== "linked") {
-    await admin
-      .from("bank_connections")
-      .update({
-        status,
-        consent_expires_at: consent.expiresAt,
-        last_error: consent.error,
-      })
-      .eq("id", conn.id);
-    return { inserted: 0, accountsLinked: 0, status };
-  }
-
-  try {
+    const provider = getProvider(conn.provider);
+    const consent = await provider.getConsent(conn);
+    if (consent.status !== "linked") {
+      await writeConnection(admin, conn, {
+        status: nextStatus(conn.status, consent), consent_expires_at: consent.expiresAt,
+        last_error: consent.status === "error" ? "bank-sync-failed" : consent.status === "expired" ? "consent-expired" : null,
+      });
+      // The persisted status keeps a transient outage eligible for cron retry;
+      // the returned status must still report that this pull failed.
+      return { inserted: 0, accountsLinked: 0, status: consent.status };
+    }
     const result = await pullConnection(admin, conn, provider);
-    await admin
-      .from("bank_connections")
-      .update({
-        status: "linked",
-        consent_expires_at: consent.expiresAt,
-        last_error: null,
-        sync_cursor: new Date().toISOString().slice(0, 10),
-        last_synced_at: new Date().toISOString(),
-      })
-      .eq("id", conn.id);
+    await writeConnection(admin, conn, {
+      status: "linked", consent_expires_at: consent.expiresAt, last_error: null,
+      sync_cursor: startedAt.toISOString().slice(0, 10), last_synced_at: new Date().toISOString(),
+    });
     return result;
   } catch (error) {
-    await admin
-      .from("bank_connections")
-      .update({ last_error: describeError(error) })
-      .eq("id", conn.id);
-    throw error;
+    const code = error instanceof BankSyncFailure ? error.code : "bank-sync-failed";
+    // Fixed codes only: provider and database messages can contain credentials
+    // or financial values even when they contain no URL.
+    try { await writeConnection(admin, conn, { last_error: code }); } catch { /* keep the original failure */ }
+    throw new BankSyncFailure(code);
   }
-}
-
-/** A short, non-sensitive reason for the connection row. Provider errors can
- *  carry a URL with a token in it, so only the error's name and a truncated
- *  message are kept, never a request URL. */
-function describeError(error: unknown): string {
-  const raw = error instanceof Error ? `${error.name}: ${error.message}` : "sync failed";
-  return raw.replace(/https?:\/\/\S+/g, "[url]").slice(0, 200);
 }
 
 async function pullConnection(
@@ -108,18 +90,8 @@ async function pullConnection(
   conn: BankConnection,
   provider: ReturnType<typeof getProvider>,
 ): Promise<SyncResult> {
-  // Existing dedupe key set for this user — cheap at personal scale.
-  const { data: existingRows } = await admin
-    .from("transactions")
-    .select("external_id")
-    .eq("user_id", conn.user_id)
-    .not("external_id", "is", null);
-  const seen = new Set<string>(
-    (existingRows ?? []).map((r: { external_id: string }) => r.external_id),
-  );
-
   const context = await readTransactionRuleContext(admin, conn.user_id);
-  if (context.dropped > 0) throw new Error("rules-unavailable");
+  if (context.dropped > 0) throw new BankSyncFailure("bank-rules-unavailable");
   const rules = usableRules(context.rules);
   const evaluator = createRuleEvaluator(rules, {
     projectIds: new Set(context.projectIds), subscriptionIds: new Set(context.subscriptionIds),
@@ -128,41 +100,41 @@ async function pullConnection(
   let inserted = 0;
   let accountsLinked = 0;
 
-  for (const account of await provider.listAccounts(conn)) {
-    accountsLinked++;
+  const accounts = await provider.listAccounts(conn);
+  if (!Array.isArray(accounts) || accounts.length === 0 || accounts.length > 50) throw new BankSyncFailure("bank-data-unavailable");
+  for (const account of accounts) {
+    if (!account || typeof account.accountRef !== "string" || !account.accountRef || typeof account.name !== "string"
+      || !(SUPPORTED_CURRENCIES as readonly string[]).includes(account.currency)
+      || (account.balance !== null && (typeof account.balance !== "number" || !Number.isFinite(account.balance)))) {
+      throw new BankSyncFailure("bank-data-unavailable");
+    }
 
     // Resolve (or create) our local account row for this bank account.
-    const { data: existing } = await admin
+    const { data: existing, error: lookupError } = await admin
       .from("accounts")
       .select("id")
       .eq("user_id", conn.user_id)
       .eq("external_ref", account.accountRef)
       .maybeSingle();
 
+    if (lookupError) throw new BankSyncFailure("bank-write-unconfirmed");
     let accountId: string | null = existing?.id ?? null;
     if (accountId) {
-      await admin
-        .from("accounts")
-        .update({
-          balance: account.balance ?? 0,
-          currency: account.currency,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", accountId);
+      const { data, error } = await admin.from("accounts").update({
+        ...(account.balance === null ? {} : { balance: account.balance }),
+        currency: account.currency, updated_at: new Date().toISOString(),
+      }).eq("id", accountId).eq("user_id", conn.user_id).select("id").single();
+      if (error || data?.id !== accountId) throw new BankSyncFailure("bank-write-unconfirmed");
     } else {
-      const { data: created } = await admin
-        .from("accounts")
-        .insert({
-          user_id: conn.user_id,
-          name: account.name,
-          balance: account.balance ?? 0,
-          currency: account.currency,
-          external_ref: account.accountRef,
-        })
-        .select("id")
-        .single();
-      accountId = created?.id ?? null;
+      if (account.balance === null) throw new BankSyncFailure("bank-balance-unavailable");
+      const { data, error } = await admin.from("accounts").insert({
+        user_id: conn.user_id, name: account.name, balance: account.balance,
+        currency: account.currency, external_ref: account.accountRef,
+      }).select("id").single();
+      if (error || !data?.id) throw new BankSyncFailure("bank-write-unconfirmed");
+      accountId = data.id;
     }
+    accountsLinked++;
 
     // Pull transactions and insert only the ones we haven't seen before.
     const provided = await provider.fetchTransactions(
@@ -170,24 +142,12 @@ async function pullConnection(
       account.accountRef,
       conn.sync_cursor,
     );
-    const rows = provided
-      .filter((tx) => Boolean(tx.occurred_on))
-      .filter((tx) => !seen.has(tx.external_id))
-      .map((tx) =>
-        evaluator.applyToRow(bindTransaction(tx, conn.user_id, accountId)),
-      );
-
-    // Guard against duplicates within this batch too.
-    const batch: typeof rows = [];
-    for (const row of rows) {
-      if (seen.has(row.external_id)) continue;
-      seen.add(row.external_id);
-      batch.push(row);
-    }
-
-    if (batch.length) {
-      const { error } = await admin.from("transactions").insert(batch);
-      if (!error) inserted += batch.length;
+    if (!Array.isArray(provided) || provided.length > 20000) throw new BankSyncFailure("bank-data-unavailable");
+    const rows = provided.map(tx => evaluator.applyToRow(bindTransaction(tx, conn.user_id, accountId)));
+    // Database conflict handling covers the complete ledger, including rows
+    // outside a REST page. Each confirmed batch is safe to replay after failure.
+    for (let offset = 0; offset < rows.length; offset += 250) {
+      inserted += await importTransactionBatch(admin, rows.slice(offset, offset + 250), conn.user_id);
     }
   }
 
@@ -204,12 +164,13 @@ export async function syncConnectionById(
   userId: string,
   connectionId: string,
 ): Promise<SyncResult | null> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("bank_connections")
     .select("*")
     .eq("id", connectionId)
     .eq("user_id", userId)
     .maybeSingle();
+  if (error) throw new BankSyncFailure("bank-write-unconfirmed");
   if (!data) return null;
   return syncConnection(admin, data as BankConnection);
 }

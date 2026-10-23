@@ -109,6 +109,8 @@ export const gocardlessProvider: BankProvider = {
       const details = await getAccountDetails(accountRef).catch(() => null);
       const balances = await getAccountBalances(accountRef).catch(() => null);
       const balance = balances ? pickBalance(balances.balances) : null;
+      const currency = balance?.currency ?? details?.account?.currency;
+      if (!currency) throw new Error("bank-account-currency-unavailable");
       accounts.push({
         accountRef,
         name:
@@ -116,7 +118,7 @@ export const gocardlessProvider: BankProvider = {
           details?.account?.product ??
           conn.institution_name ??
           "Bank account",
-        currency: balance?.currency ?? details?.account?.currency ?? "EUR",
+        currency,
         balance: balance?.amount ?? null,
       });
     }

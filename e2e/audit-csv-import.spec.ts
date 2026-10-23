@@ -7,11 +7,11 @@ for(const lang of ["en","cs"] as const){
  test(`${lang}: a partial CSV import retains the file and safely retries confirmed batches`,async({page})=>{
   await gotoPreview(page,{lang});await signInFixtureUser(page);await page.goto("/dev-preview?tab=transactions");await page.getByText(finances[lang].importAndMatch,{exact:true}).click();
   const saved=new Map<string,string>();let attempts=0;let release!:()=>void;const payloads:Record<string,unknown>[][]=[];
-  await page.route("**/rest/v1/transactions**",async route=>{
+  await page.route("**/rpc/import_transaction_batch",async route=>{
    if(route.request().method()!=="POST")return route.fulfill({status:200,contentType:"application/json",body:"[]"});
-   const rows=route.request().postDataJSON() as Record<string,unknown>[];payloads.push(rows);
+   const rows=route.request().postDataJSON().p_rows as Record<string,unknown>[];payloads.push(rows);
    if(++attempts===2){await new Promise<void>(r=>{release=r;});return route.fulfill({status:500,contentType:"application/json",body:'{"message":"Synthetic batch failure"}'});}
-   const added=[];for(const row of rows){const key=String(row.external_id);if(!saved.has(key)){const id=`audit-csv-${saved.size}`;saved.set(key,id);added.push({id});}}
+   const added=[];for(const row of rows){const key=String(row.external_id);if(!saved.has(key)){const id=`11111111-0000-4000-8000-${String(saved.size).padStart(12,"0")}`;saved.set(key,id);added.push(id);}}
    return route.fulfill({status:201,contentType:"application/json",body:JSON.stringify(added)});
   });
   const csv="Date;Amount;Currency;Description;VS\n"+Array.from({length:501},(_,n)=>`2026-10-23;1;CZK;Synthetic row ${n};2026001`).join("\n");
