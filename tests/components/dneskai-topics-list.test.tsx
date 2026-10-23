@@ -44,6 +44,9 @@ describe('DNESKAi topics list (#154)', () => {
     expect(row(4)!.textContent).toContain(t.verdict.fact);
     expect(row(4)!.textContent).toContain('#PRIKAZY');
     expect(row(3)!.textContent).toContain(t.approved);
+    // #210: an approved title-only topic says why it does not move on.
+    expect(row(3)!.querySelector('[data-testid="dneskai-topic-code"]')!.textContent).toBe(t.codes['topic-source-missing']);
+    expect(row(1)!.querySelector('[data-testid="dneskai-topic-code"]')).toBeNull();
     expect(button(row(3)!, `${t.approve}: ${row(3)!.querySelector('p')!.textContent}`)).toBeUndefined();
   });
 

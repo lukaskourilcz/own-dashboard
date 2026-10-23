@@ -41,8 +41,13 @@ export const DneskaiTopicSchema = z.strictObject({
   approvedAt: timestamp.nullable(),
   createdAt: timestamp,
   updatedAt: timestamp,
+  /** #210: why an approved topic is not on its way to a brief (`evidence.bridgeCode`); absent when nothing is wrong. */
+  code: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/).nullable().optional(),
 });
 export type DneskaiTopic = z.infer<typeof DneskaiTopicSchema>;
+/** #210: the bridge codes the owner can act on, shown under an approved topic. */
+export const DNESKAI_TOPIC_OWNER_CODES = ['topic-source-missing', 'topic-source-unreadable', 'topic-run-unavailable', 'topic-source-unsupported'] as const;
+export type DneskaiTopicOwnerCode = (typeof DNESKAI_TOPIC_OWNER_CODES)[number];
 
 const statusGroups = z.strictObject(Object.fromEntries(DNESKAI_TOPIC_STATUSES.map((status) => [status, z.array(DneskaiTopicSchema).max(120)])) as Record<DneskaiTopicStatus, z.ZodArray<typeof DneskaiTopicSchema>>);
 

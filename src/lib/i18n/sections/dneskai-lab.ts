@@ -1,5 +1,6 @@
 import type { DneskaiKit, DneskaiLabApprovalBlock } from '@/lib/marketing/dneskai-lab';
 import type { DneskaiShapeId } from '@/lib/marketing/dneskai-slide-layout';
+import type { DneskaiTopicOwnerCode } from '@/lib/marketing/dneskai-topics';
 
 /** The DNESKAi Design Lab (design-lab-spec.md). Every string exists in English and Czech with the same meaning. */
 const en = {
@@ -222,6 +223,13 @@ const en = {
     listLabel: (group: string) => `${group}: proposed topics`,
     verdict: { fact: 'Fact', hype: 'Hype', unclear: 'Unclear' } as Record<'fact' | 'hype' | 'unclear', string>,
     manual: 'Added by hand',
+    /** #210: why an approved topic does not move on to a brief. */
+    codes: {
+      'topic-source-missing': 'No link to write from. Add the topic again with a link.',
+      'topic-source-unreadable': 'The link could not be read in three tries. Reject the topic, or add it again with another link.',
+      'topic-run-unavailable': 'Waits for the first evening source check.',
+      'topic-source-unsupported': 'This source cannot become a post yet.',
+    } satisfies Record<DneskaiTopicOwnerCode, string>,
     approved: 'Approved',
     approve: 'Approve',
     reject: 'Reject',
@@ -469,6 +477,12 @@ const cs: typeof en = {
     listLabel: (group: string) => `${group}: navržené náměty`,
     verdict: { fact: 'Fact', hype: 'Hype', unclear: 'Nejasné' },
     manual: 'Přidáno ručně',
+    codes: {
+      'topic-source-missing': 'Chybí odkaz, ze kterého psát. Přidejte námět znovu i s odkazem.',
+      'topic-source-unreadable': 'Odkaz se ani na třetí pokus nepodařilo přečíst. Námět zamítněte, nebo ho přidejte znovu s jiným odkazem.',
+      'topic-run-unavailable': 'Čeká na první večerní kontrolu zdrojů.',
+      'topic-source-unsupported': 'Z tohoto zdroje zatím příspěvek nevznikne.',
+    },
     approved: 'Schváleno',
     approve: 'Schválit',
     reject: 'Zamítnout',

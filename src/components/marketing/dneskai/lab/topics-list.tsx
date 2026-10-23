@@ -161,6 +161,8 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
   const titleId = useId(), helpId = useId();
   const [draft, setDraft] = useState(topic.keyword ?? '');
   const valid = draft.trim() === '' || DNESKAI_TOPIC_KEYWORD.test(draft.trim());
+  // #210: why an approved topic is not on its way to a brief.
+  const codeText = topic.code ? (t.codes as Record<string, string>)[topic.code] : undefined;
   const proposed = topic.status === 'proposed';
   return <li data-topic-row={topic.id} tabIndex={tabStop ? 0 : -1} onFocus={(event) => { if (event.target === event.currentTarget) onFocus(); }} aria-labelledby={titleId}
     className="flex flex-col gap-2 py-2 focus-ring rounded-sm sm:flex-row sm:items-start">
@@ -179,6 +181,7 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
             className="inline-flex min-h-6 items-center rounded-sm border border-dashed border-border-strong px-2 font-mono text-[11px] text-foreground hover:bg-surface-secondary focus-ring disabled:opacity-50"
             aria-label={topic.keyword ? t.keyword.edit(topic.keyword) : t.keyword.add}>{topic.keyword ? `#${topic.keyword}` : t.keyword.add}</button>}
         </div>
+        {codeText && <p className="text-xs text-foreground-muted" data-testid="dneskai-topic-code">{codeText}</p>}
         {editing && <form className="flex flex-wrap items-start gap-2" onSubmit={(event) => { event.preventDefault(); if (valid) onSaveKeyword(draft.trim() || null); }}
           onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onEdit(false); } }}>
           <div className="min-w-0 flex-1 basis-48">

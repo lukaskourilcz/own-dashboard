@@ -51,6 +51,16 @@ describe('readDneskaiTopics (#150)', () => {
     expect(calls[2]).toContainEqual(['neq', ['source_kind', 'manual']]);
   });
 
+  it('carries the bridge code the owner can act on, and only that (#210)', async () => {
+    const approved = { status: 'approved', approved_at: '2026-10-23T06:00:00Z' };
+    const { db } = fakeDb([
+      { data: [row(1, { ...approved, source_kind: 'manual', evidence: { bridgeCode: 'topic-source-missing' } }), row(2, { ...approved, evidence: { bridgeCode: 'topic-daily-mix-full' } }), row(3, approved)], error: null },
+      { data: [], error: null }, { data: [], error: null },
+    ]);
+    const topics = (await readDneskaiTopics(db, owner, project, now, { enabled: true }))!.groups.education.approved;
+    expect(topics.map((topic) => [topic.id, topic.code])).toEqual([[id(1), 'topic-source-missing'], [id(2), undefined], [id(3), undefined]]);
+  });
+
   it('fails the read when a query fails', async () => {
     const { db } = fakeDb([{ data: null, error: { message: 'x' } }, { data: [], error: null }, { data: [], error: null }]);
     await expect(readDneskaiTopics(db, owner, project, now, { enabled: true })).rejects.toThrow('dneskai-topics-unavailable');

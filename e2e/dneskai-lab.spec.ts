@@ -346,6 +346,8 @@ for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360
   await expect(topics).toBeVisible();
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.news) })).toBeVisible();
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.education) })).toBeVisible();
+  // #210: an approved topic with no link says why it waits.
+  await expect(topics.getByTestId('dneskai-topic-code')).toHaveText(t.codes['topic-source-missing']);
   const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-topics"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
   expect(axe.violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
