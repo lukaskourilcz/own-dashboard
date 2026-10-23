@@ -176,8 +176,9 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
           {topic.verdict && <StatusBadge value={`topic-${topic.verdict}`} label={t.verdict[topic.verdict]} tone={VERDICT_TONE[topic.verdict]} />}
           {topic.status === 'approved' && <StatusBadge value="topic-approved" label={t.approved} tone="success" />}
           {!editing && <button type="button" disabled={busy} onClick={() => { setDraft(topic.keyword ?? ''); onEdit(true); }}
-            className="inline-flex min-h-6 items-center rounded-sm border border-dashed border-border-strong px-2 font-mono text-[11px] text-foreground hover:bg-surface-secondary focus-ring disabled:opacity-50"
-            aria-label={topic.keyword ? t.keyword.edit(topic.keyword) : t.keyword.add}>{topic.keyword ? `#${topic.keyword}` : t.keyword.add}</button>}
+            className="inline-flex min-h-6 items-center gap-1 rounded-sm border border-dashed border-border-strong px-2 text-[11px] text-foreground hover:bg-surface-secondary focus-ring disabled:opacity-50"
+            data-testid="dneskai-topic-keyword" aria-label={topic.keyword ? t.keyword.edit(topic.keyword) : t.keyword.add}>
+            {topic.keyword ? <><span className="text-foreground-muted">{t.keyword.chip}</span><span className="font-mono font-semibold">{topic.keyword}</span></> : t.keyword.add}</button>}
         </div>
         {editing && <form className="flex flex-wrap items-start gap-2" onSubmit={(event) => { event.preventDefault(); if (valid) onSaveKeyword(draft.trim() || null); }}
           onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onEdit(false); } }}>
