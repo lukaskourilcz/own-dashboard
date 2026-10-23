@@ -145,6 +145,7 @@ export type DailyFocus = {
   generation: number;
   items: DailyFocusItem[];
   garden: DailyFocusDay[];
+  gardenAvailable?: boolean;
 };
 
 export type Account = {

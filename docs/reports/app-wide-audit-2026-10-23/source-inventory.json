@@ -14,7 +14,7 @@
       "lines": 175,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "dbbf88868d139e48bd58f120fcebf80f82d8d08575da1bac4964c87dabebfee8"
+      "reviewedSha256": "55cc5f5d1cc6bc9014c0d1fce4017b71b041ea42e9ed6bd83e1fd9f7e930adda"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -129,7 +129,8 @@
       "path": "src/app/api/daily-focus/route.ts",
       "lines": 119,
       "sha256": "985b5e4996936f1b34c095216f40da259106772196a591ba8f4935c8b9407257",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "b65b2d0669826a5f4b783e1efd88a20b7684773e17e59729cd6f9e9644d9c93d"
     },
     {
       "path": "src/app/api/dev-preview/dneskai-fit/route.ts",
@@ -661,7 +662,7 @@
       "lines": 428,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "bd8fe1c957e0150d09796dc1d1dc209766d407460d54504aa8b329e8681c2bc0"
+      "reviewedSha256": "37dfe02204ef03cad95803bfb70aaae21a80ec12ddb305720a7d17ff260542d0"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1060,7 +1061,8 @@
       "path": "src/components/overview/daily-focus.tsx",
       "lines": 328,
       "sha256": "060e5c46529d3d494dc1dcc0a1be752a53283e19cc16a26ddc4333573b8eb100",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "800e687e3c5c1d7ea895edeac09a73d4c14750e4e3571bc27ac07c43b7b4efb8"
     },
     {
       "path": "src/components/overview/kpi-cards.tsx",
@@ -1715,7 +1717,7 @@
       "lines": 42,
       "sha256": "4634f3d2bb5ae34331afc6b45957ffe8f09ff7ce42983c65cda99e50fcaa955d",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "4634f3d2bb5ae34331afc6b45957ffe8f09ff7ce42983c65cda99e50fcaa955d"
+      "reviewedSha256": "9d4d5a0289c633602adf35292857d041f0d0b38db30a8949aa3b5c7521e5cb41"
     },
     {
       "path": "src/lib/demo/dneskai-topics-demo.ts",

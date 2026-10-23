@@ -4,6 +4,15 @@ export function todayKey(ref: Date = new Date()): string {
   return format(ref, "yyyy-MM-dd");
 }
 
+/** Match the timezone used by create_daily_focus_set, independent of the browser. */
+export function focusDayKey(ref: Date, timeZone = "Europe/Prague"): string {
+  let formatter: Intl.DateTimeFormat;
+  try { formatter = new Intl.DateTimeFormat("en", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }); }
+  catch { formatter = new Intl.DateTimeFormat("en", { timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit" }); }
+  const parts = formatter.formatToParts(ref);
+  return ["year", "month", "day"].map(type => parts.find(part => part.type === type)!.value).join("-");
+}
+
 /**
  * Whole calendar days from today until a `yyyy-MM-dd` date. Negative = overdue,
  * 0 = due today, positive = days remaining. Powers task "time to finish".

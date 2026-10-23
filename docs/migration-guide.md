@@ -728,12 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Three prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql` and `20261023170010_project_parent_rls_lookup.sql`. Check the linked project and apply this chain before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Four prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql`, `20261023170010_project_parent_rls_lookup.sql` and `20261023175801_daily_focus_garden_summary.sql`. Check the linked project and apply this chain before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect the three audit files listed above
+npx supabase db push --linked --dry-run   # expect the four audit files listed above
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -924,3 +924,8 @@ Apply this additive migration before deploying `codex/dneskai-audit-implementati
 `20261023170010_project_parent_rls_lookup.sql` moves the project parent lookup behind `project_parent_is_owned(uuid)`, a STABLE security-invoker SQL function with an empty search path. This prevents recursive write-policy expansion in local PostgreSQL 18.6 without bypassing RLS or adding a security-definer function. Production PostgreSQL 17 accepted a read-only EXPLAIN of the old update; no production data was changed by that check. The helper grants execution only to authenticated sessions. Insert/update checks still require the current owner, an owned organization, an owned parent and a different parent id on update.
 
 The upgrade test starts before these files, compares every public policy, then verifies owned and foreign reads/writes, parent attachment, self-parent rejection, anonymous exclusion and function grants. Apply in filename order together with the engagement aggregate before merging the audit branch. See [app-wide review](reports/app-wide-audit-2026-10-23/review.md) for rollout evidence; these two files remain unapplied until that report records the push.
+
+
+## Complete Daily Focus garden — prepared 23 October 2026
+
+`20261023175801_daily_focus_garden_summary.sql` adds `daily_focus_garden(date)`, a STABLE security-invoker aggregate over the owner’s full 49-day window. It returns at most one row per day, preferring any complete seven-task generation, then the highest completion count and latest generation. It replaces the API’s truncated 350-generation history read. Existing set/item indexes support the joins; no new index or browser grant is added. Only authenticated sessions can execute it, under existing RLS. Apply it before deploying the caller; a failed summary read preserves today’s tasks and shows history as unavailable. Local migrated-database tests cover more than 350 generations, window edges, ties and foreign-owner isolation.

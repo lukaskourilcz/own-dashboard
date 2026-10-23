@@ -97,6 +97,8 @@ type TodosStrings = {
   dailyFocusUnavailableDescription: string;
   dailyFocusRefreshErr: string;
   dailyFocusRetry: string;
+  dailyFocusCachedWarning: string;
+  gardenUnavailable: string;
   waitingFor: (duration: string) => string;
   completionGarden: string;
   completionGardenDescription: string;
@@ -222,6 +224,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dailyFocusRefreshErr:
       "Tasks were refreshed, but today's seven could not be regenerated.",
     dailyFocusRetry: "Try again",
+    dailyFocusCachedWarning: "The change or refresh could not be confirmed. Your last saved focus is still shown.",
+    gardenUnavailable: "Completion history could not be loaded. Your tasks are still available.",
     waitingFor: (duration) => `Waiting ${duration}`,
     completionGarden: "Completion garden",
     completionGardenDescription:
@@ -366,6 +370,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dailyFocusRefreshErr:
       "Úkoly byly obnoveny, ale dnešní sedmičku se nepodařilo vygenerovat.",
     dailyFocusRetry: "Zkusit znovu",
+    dailyFocusCachedWarning: "Změna nebo obnovení nebyly potvrzeny. Stále se zobrazuje poslední uložená sedmička.",
+    gardenUnavailable: "Historii dokončení se nepodařilo načíst. Úkoly jsou stále dostupné.",
     waitingFor: (duration) => `Čeká ${duration}`,
     completionGarden: "Zahrada dokončení",
     completionGardenDescription:

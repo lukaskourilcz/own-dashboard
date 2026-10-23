@@ -122,6 +122,7 @@ function DestinationLoading() {
 }
 
 type Props = {
+  initialFocusTimezone?: string | null;
   isPreview?: boolean;
   initialProjectId?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
@@ -444,7 +445,7 @@ function DashboardShellContent(props: Props) {
           {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
-            todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} />,
+            todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} timeZone={props.initialFocusTimezone ?? "Europe/Prague"} />,
             crons: <CronMonitorPanel isPreview={props.isPreview} />,
             "work-attention": <WorkAttention opportunities={opportunities} onOpen={() => setTab("opportunities")} />,
             subscriptions: <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} compact />,

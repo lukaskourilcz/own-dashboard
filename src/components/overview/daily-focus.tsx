@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, subDays } from "date-fns";
-import { AlertTriangle, Check, RefreshCw, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, ListTodo, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,6 +17,8 @@ import { useDateLocale, useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import type { DailyFocus, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { focusDayKey, parseDateOnly } from "@/lib/date-keys";
+import { useNow } from "@/lib/use-now";
 
 async function loadDailyFocus(): Promise<DailyFocus> {
   const response = await fetch("/api/daily-focus", { cache: "no-store" });
@@ -30,19 +32,23 @@ async function loadDailyFocus(): Promise<DailyFocus> {
 export function DailyFocusPanel({
   todos,
   isPreview = false,
+  timeZone = "Europe/Prague",
 }: {
   todos: Todo[];
   isPreview?: boolean;
+  timeZone?: string;
 }) {
   const t = useDict();
   const locale = useDateLocale();
   const qc = useQueryClient();
   const supabase = createClient();
+  const now = useNow();
+  const day = now ? focusDayKey(now, timeZone) : null;
   const focus = useQuery({
-    queryKey: qk.dailyFocus,
+    queryKey: [...qk.dailyFocus, day],
     queryFn: loadDailyFocus,
     staleTime: 60_000,
-    enabled: !isPreview,
+    enabled: !isPreview && day !== null,
   });
   const regenerate = useMutation({
     mutationFn: async () => {
@@ -55,7 +61,7 @@ export function DailyFocusPanel({
       }
       return body;
     },
-    onSuccess: (data) => qc.setQueryData(qk.dailyFocus, data),
+    onSuccess: (data) => qc.setQueryData([...qk.dailyFocus, data.date], data),
   });
   const toggle = useMutation({
     mutationFn: async ({
@@ -92,7 +98,7 @@ export function DailyFocusPanel({
   const previewData = useMemo<DailyFocus>(
     () => ({
       setId: "preview-daily-focus",
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: day ?? "",
       generation: 1,
       items: todos
         .filter(
@@ -117,10 +123,10 @@ export function DailyFocusPanel({
         })),
       garden: [],
     }),
-    [todos],
+    [todos, day],
   );
   const data = isPreview ? previewData : focus.data;
-  const completed = data?.items.filter((item) => item.completed_at).length ?? 0;
+  const completed = data?.items.filter((item) => item.completed_at || (item.todo_id && doneByTodo.get(item.todo_id) === true)).length ?? 0;
   const total = data?.items.length ?? 0;
   const gardenByDate = useMemo(
     () => new Map((data?.garden ?? []).map((day) => [day.date, day])),
@@ -128,12 +134,12 @@ export function DailyFocusPanel({
   );
   const garden = useMemo(
     () =>
-      Array.from({ length: 49 }, (_, index) => {
-        const date = subDays(new Date(), 48 - index);
+      day ? Array.from({ length: 49 }, (_, index) => {
+        const date = subDays(parseDateOnly(day), 48 - index);
         const key = format(date, "yyyy-MM-dd");
         return { key, date, day: gardenByDate.get(key) };
-      }),
-    [gardenByDate],
+      }) : [],
+    [gardenByDate, day],
   );
 
   return (
@@ -158,7 +164,7 @@ export function DailyFocusPanel({
           size="sm"
           variant="outline"
           onClick={() => regenerate.mutate()}
-          disabled={isPreview || regenerate.isPending || focus.isLoading}
+          disabled={isPreview || !day || regenerate.isPending || focus.isLoading}
         >
           <RefreshCw
             className={cn("h-3.5 w-3.5", regenerate.isPending && "animate-spin")}
@@ -169,9 +175,11 @@ export function DailyFocusPanel({
         </Button>
       </div>
 
+      {data && (focus.isError || regenerate.isError || toggle.isError) && <p role="alert" className="border-b border-border px-5 py-3 text-sm text-warning">{t.todos.dailyFocusCachedWarning}</p>}
+
       <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_260px]">
         <div className="min-w-0 border-b border-border xl:border-b-0 xl:border-r">
-          {!isPreview && focus.isLoading ? (
+          {!day || (!isPreview && focus.isPending) ? (
             <div className="space-y-2 p-5" aria-live="polite">
               {Array.from({ length: 4 }, (_, index) => (
                 <div
@@ -180,7 +188,7 @@ export function DailyFocusPanel({
                 />
               ))}
             </div>
-          ) : focus.isError || regenerate.isError ? (
+          ) : !data && (focus.isError || regenerate.isError) ? (
             <EmptyState
               icon={AlertTriangle}
               title={t.todos.dailyFocusUnavailable}
@@ -189,8 +197,8 @@ export function DailyFocusPanel({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => regenerate.mutate()}
-                  disabled={regenerate.isPending}
+                  onClick={() => void focus.refetch()}
+                  disabled={focus.isFetching}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   {t.todos.dailyFocusRetry}
@@ -200,7 +208,7 @@ export function DailyFocusPanel({
             />
           ) : total === 0 ? (
             <EmptyState
-              icon={Sparkles}
+              icon={ListTodo}
               title={t.todos.dailyFocusEmpty}
               description={t.todos.dailyFocusEmptyDescription}
               className="py-12"
@@ -295,7 +303,7 @@ export function DailyFocusPanel({
           <p className="mt-1 text-[11px] text-foreground-subtle">
             {t.todos.completionGardenDescription}
           </p>
-          <div className="mt-4 grid grid-flow-col grid-rows-7 gap-1" role="list">
+          {!day || (!data && focus.isPending) ? <p role="status" className="mt-4 text-xs text-foreground-muted">{t.common.loading}</p> : data?.gardenAvailable === false || (!data && focus.isError) ? <p role="alert" className="mt-4 text-xs text-foreground-muted">{t.todos.gardenUnavailable}</p> : <div className="mt-4 grid grid-flow-col grid-rows-7 gap-1" role="list">
             {garden.map(({ key, date, day }) => {
               const label = day?.completed
                 ? t.todos.completedDay
@@ -320,7 +328,7 @@ export function DailyFocusPanel({
                 </Tooltip>
               );
             })}
-          </div>
+          </div>}
         </section>
       </div>
     </Card>

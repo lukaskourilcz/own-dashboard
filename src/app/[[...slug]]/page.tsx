@@ -128,6 +128,7 @@ export default async function DashboardPage({
 
   return <DashboardShell
     initialTab={initialTab}
+    initialFocusTimezone={prefs.timezone}
     initialTipQuery={initialTipQuery}
     initialProjectId={requestedProject?.id}
     initialDataKeys={[...requiredData]}
