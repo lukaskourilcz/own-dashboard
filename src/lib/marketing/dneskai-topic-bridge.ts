@@ -6,6 +6,7 @@ import { DneskaiCandidateSchema, type DneskaiCandidate } from './dneskai-contrac
 import { createDneskaiBriefsWithStore, dneskaiFreeSlots, dneskaiMemberHash, type DneskaiBriefRow, type DneskaiBriefStore } from './dneskai-briefs';
 import { pragueDayAfter } from './dneskai-workspace';
 import { pragueMarketingDate } from './weekly-planning';
+import { dneskaiActiveSlotTimes, type DneskaiDailyMix } from './dneskai-daily-mix';
 
 /**
  * The topic-to-brief bridge (#155, plan A6). An approved topic (námět) becomes a brief, then a queued generation job
@@ -41,6 +42,8 @@ export interface DneskaiTopicBridgeStore {
   updateTopic(owner: string, topicId: string, patch: { status?: 'approved' | 'enriching' | 'briefed' | 'generated'; brief_id?: string; evidence?: Record<string, unknown> }): Promise<void>;
   /** The job's status and its draft revision id. */
   job(owner: string, jobId: string): Promise<{ status: string; revisionId: string | null } | null>;
+  /** #156: kinds of the topics already committed to a Prague day (enriching, briefed or generated for it). */
+  committed?(owner: string, project: string, date: string): Promise<Array<'news' | 'education'>>;
 }
 
 export type DneskaiTopicBridgeResult = { enriching: number; briefed: number; generated: number; waiting: number; unsupported: number };
@@ -50,16 +53,25 @@ export function dneskaiTopicEventId(topicId: string): string {
   return createHash('sha256').update(`dneskai-topic-event/1\n${z.uuid().parse(topicId)}`).digest('hex');
 }
 
-/** Today when it still has a free slot at least 30 minutes ahead, else tomorrow, else null. */
-export async function dneskaiTopicTargetDate(store: Pick<DneskaiBriefStore, 'takenSlots'>, owner: string, project: string, now: Date): Promise<string | null> {
+/**
+ * Today when it still has a free slot at least 30 minutes ahead, else tomorrow, else null. With a daily mix (#156)
+ * only the active times count, and a day that already holds as many topics of this kind as the mix asks is full.
+ */
+export async function dneskaiTopicTargetDate(store: Pick<DneskaiBriefStore, 'takenSlots'>, owner: string, project: string, now: Date,
+  mix?: { daily: DneskaiDailyMix; kind: 'news' | 'education'; committed?: DneskaiTopicBridgeStore['committed'] }): Promise<string | null> {
   for (const date of [pragueMarketingDate(now), pragueDayAfter(pragueMarketingDate(now), 1)]) {
+    if (mix) {
+      const target = mix.kind === 'news' ? mix.daily.newsPerDay : mix.daily.educationPerDay;
+      const used = mix.committed ? (await mix.committed(owner, project, date)).filter((kind) => kind === mix.kind).length : 0;
+      if (used >= target) continue;
+    }
     // The run id only excludes that run's own briefs; a nil id excludes none.
-    if (dneskaiFreeSlots(date, await store.takenSlots(owner, project, date, '00000000-0000-4000-8000-000000000000'), now).length) return date;
+    if (dneskaiFreeSlots(date, await store.takenSlots(owner, project, date, '00000000-0000-4000-8000-000000000000'), now, mix ? dneskaiActiveSlotTimes(mix.daily) : undefined).length) return date;
   }
   return null;
 }
 
-export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBridgeStore; briefs: DneskaiBriefStore }, input: { owner: string; project: string; now: Date; signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiTopicBridgeResult> {
+export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBridgeStore; briefs: DneskaiBriefStore }, input: { owner: string; project: string; now: Date; signal: AbortSignal; remainingMs: () => number; mix?: DneskaiDailyMix }): Promise<DneskaiTopicBridgeResult> {
   const { owner, project, now } = input;
   z.uuid().parse(owner); z.uuid().parse(project);
   const result: DneskaiTopicBridgeResult = { enriching: 0, briefed: 0, generated: 0, waiting: 0, unsupported: 0 };
@@ -68,7 +80,7 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
 
   /** Builds and admits one brief row; moves the topic to briefed when its job exists. */
   const admit = async (topic: DneskaiBridgeTopic, row: DneskaiBriefRow) => {
-    const outcome = await createDneskaiBriefsWithStore(stores.briefs, { owner, project, runId: row.run_id, signal: input.signal }, { now: () => now, only: new Set([row.id]) });
+    const outcome = await createDneskaiBriefsWithStore(stores.briefs, { owner, project, runId: row.run_id, signal: input.signal }, { now: () => now, only: new Set([row.id]), ...(input.mix ? { slotTimes: dneskaiActiveSlotTimes(input.mix) } : {}) });
     const created = outcome.created.find((item) => item.briefId === row.id);
     if (created?.jobId) {
       await stores.topics.updateTopic(owner, topic.id, { status: 'briefed', brief_id: row.id, evidence: evidence(topic, { jobId: created.jobId, bridgeCode: null }) });
@@ -79,7 +91,7 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
     result.waiting++;
   };
 
-  for (const topic of await stores.topics.topics(owner, project)) {
+  for (let topic of await stores.topics.topics(owner, project)) {
     if (!time()) break;
     if (topic.status === 'briefed') {
       // Generation finished: the topic is generated and points at its draft.
@@ -94,6 +106,13 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
       if (!row) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: 'topic-brief-unavailable' }) }); result.unsupported++; continue; }
       if (row.status === 'queued' && row.job_id) { await stores.topics.updateTopic(owner, topic.id, { status: 'briefed', evidence: evidence(topic, { jobId: row.job_id, bridgeCode: null }) }); result.briefed++; continue; }
       if (row.status === 'skipped') { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: row.code ?? 'brief-skipped' }) }); result.waiting++; continue; }
+      // #156: a news event belongs to its own day; it waits while that day already has the news posts the mix asks for.
+      if (input.mix && topic.status === 'approved') {
+        const used = stores.topics.committed ? (await stores.topics.committed(owner, project, row.target_date)).filter((kind) => kind === 'news').length : 0;
+        if (used >= input.mix.newsPerDay) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: 'topic-daily-mix-full' }) }); result.waiting++; continue; }
+        await stores.topics.updateTopic(owner, topic.id, { status: 'enriching', evidence: evidence(topic, { targetDate: row.target_date, bridgeCode: null }) });
+        topic = { ...topic, status: 'enriching', evidence: evidence(topic, { targetDate: row.target_date }) };
+      }
       await admit(topic, row); continue;
     }
     if (!topic.source_ref.startsWith('report:')) {
@@ -110,12 +129,12 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
     // approved, from a report: pick the day, select the report and write the brief row.
     const candidate = await stores.topics.candidate(owner, project, topic.source_ref.slice('report:'.length));
     if (!candidate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: 'topic-source-unavailable' }) }); result.unsupported++; continue; }
-    const targetDate = await dneskaiTopicTargetDate(stores.briefs, owner, project, now);
-    if (!targetDate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: 'topic-slot-unavailable' }) }); result.waiting++; continue; }
+    const targetDate = await dneskaiTopicTargetDate(stores.briefs, owner, project, now, input.mix ? { daily: input.mix, kind: topic.kind, committed: stores.topics.committed } : undefined);
+    if (!targetDate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: input.mix ? 'topic-daily-mix-full' : 'topic-slot-unavailable' }) }); result.waiting++; continue; }
     if (candidate.status !== 'selected' || candidate.target_date !== targetDate) await stores.topics.selectCandidate(owner, project, candidate, targetDate);
     const row = await stores.topics.insertTopicBrief(owner, { project_id: project, run_id: candidate.run_id, event_id: dneskaiTopicEventId(topic.id), target_date: targetDate,
       category: topic.kind === 'news' ? 'ai-news' : 'tool', member_ids: [candidate.id], lead_candidate_id: candidate.id, member_hash: dneskaiMemberHash([candidate]), topic_id: topic.id });
-    await stores.topics.updateTopic(owner, topic.id, { status: 'enriching', brief_id: row.id, evidence: evidence(topic, { bridgeCode: null }) });
+    await stores.topics.updateTopic(owner, topic.id, { status: 'enriching', brief_id: row.id, evidence: evidence(topic, { targetDate, bridgeCode: null }) });
     result.enriching++;
   }
   return result;
@@ -155,6 +174,11 @@ export function createDneskaiTopicBridgeStore(db: Database): DneskaiTopicBridgeS
     async updateTopic(owner, topicId, patch) {
       const { error } = await db.from('marketing_dneskai_topics').update({ ...patch, updated_at: new Date().toISOString() }).eq('user_id', owner).eq('id', topicId);
       if (error) throw new Error('topic-bridge-write-failed');
+    },
+    async committed(owner, project, date) {
+      const rows = (read(await db.from('marketing_dneskai_topics').select('kind').eq('user_id', owner).eq('project_id', project).in('status', ['enriching', 'briefed', 'generated'])
+        .eq('evidence->>targetDate', date).limit(20), 'topic-bridge-unavailable') ?? []) as Array<{ kind: 'news' | 'education' }>;
+      return rows.map((row) => row.kind);
     },
     async job(owner, jobId) {
       const row = read(await db.from('marketing_jobs').select('status,revision_id:request->generation->>revisionId').eq('user_id', owner).eq('id', jobId).maybeSingle(), 'topic-bridge-unavailable') as { status: string; revision_id: string | null } | null;

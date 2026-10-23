@@ -86,27 +86,28 @@ export const DNESKAI_COVERING_REVISION_STATUSES = ['review', 'approved', 'publis
 const MINUTE = 60000;
 
 /** The four slot instants of a Prague day, DST-correct (25 October 2026 has 25 hours). */
-export function dneskaiBriefSlots(targetDate: string): string[] {
-  return DNESKAI_BRIEF_SLOTS.map((time) => pragueScheduledAt(targetDate, time));
+/** The day's slot instants; `times` (#156, the owner's active times) narrows the four. */
+export function dneskaiBriefSlots(targetDate: string, times: readonly string[] = DNESKAI_BRIEF_SLOTS): string[] {
+  return DNESKAI_BRIEF_SLOTS.filter((time) => times.includes(time)).map((time) => pragueScheduledAt(targetDate, time));
 }
 
 /**
  * The free slots of one target day. A slot is free when no other post or brief of the day is scheduled within an
  * hour of it and it is at least 30 minutes away; `take` marks a slot used.
  */
-export function dneskaiSlotAllocator(targetDate: string, taken: readonly string[], now: Date) {
+export function dneskaiSlotAllocator(targetDate: string, taken: readonly string[], now: Date, times: readonly string[] = DNESKAI_BRIEF_SLOTS) {
   const used = [...taken];
   const free = (slot: string) => Date.parse(slot) >= now.getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE
     && !used.some((value) => Math.abs(Date.parse(value) - Date.parse(slot)) < DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES * MINUTE);
   return {
-    peek: (): string | null => dneskaiBriefSlots(targetDate).find(free) ?? null,
+    peek: (): string | null => dneskaiBriefSlots(targetDate, times).find(free) ?? null,
     take(slot: string) { used.push(slot); },
   };
 }
 
 /** Every free slot of one target day under the allocator's rules, earliest first. */
-export function dneskaiFreeSlots(targetDate: string, taken: readonly string[], now: Date): string[] {
-  return dneskaiBriefSlots(targetDate).filter((slot) => Date.parse(slot) >= now.getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE
+export function dneskaiFreeSlots(targetDate: string, taken: readonly string[], now: Date, times: readonly string[] = DNESKAI_BRIEF_SLOTS): string[] {
+  return dneskaiBriefSlots(targetDate, times).filter((slot) => Date.parse(slot) >= now.getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE
     && !taken.some((value) => Math.abs(Date.parse(value) - Date.parse(slot)) < DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES * MINUTE));
 }
 
@@ -331,7 +332,7 @@ export const DNESKAI_BRIEF_RETRYABLE_CODES: ReadonlySet<string> = new Set(['job-
  * `only` (#155): the topic bridge processes just these briefs. Without it, briefs built for a topic (`topic_id`) are
  * left to the bridge and only the night's own selection is processed, as before.
  */
-export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, input: Parameters<CreateDneskaiBriefs>[0], options: { now?: () => Date; only?: ReadonlySet<string> } = {}): ReturnType<CreateDneskaiBriefs> {
+export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, input: Parameters<CreateDneskaiBriefs>[0], options: { now?: () => Date; only?: ReadonlySet<string>; slotTimes?: readonly string[] } = {}): ReturnType<CreateDneskaiBriefs> {
   z.uuid().parse(input.owner); z.uuid().parse(input.project); z.uuid().parse(input.runId);
   const clock = options.now ?? (() => new Date());
   const result: Awaited<ReturnType<CreateDneskaiBriefs>> = { created: [], skipped: [], pending: false };
@@ -348,7 +349,7 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   // holds a slot of that day, so it lapses as brief-slot-passed like every earlier held brief; only a brief never
   // built (still waiting for media) closes as brief-target-date-passed (briefs-10).
   // The day is the brief's own: an owner reslot (briefs-07) may move a built brief of this run to the next day.
-  const dayOpen = (date: string) => dneskaiBriefSlots(date).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE);
+  const dayOpen = (date: string) => dneskaiBriefSlots(date, options.slotTimes).some((slot) => Date.parse(slot) >= clock().getTime() + DNESKAI_BRIEF_MIN_LEAD_MINUTES * MINUTE);
   for (const row of pendingOrReady) if (!dayOpen(row.target_date)) await skip(row, row.brief ? 'brief-slot-passed' : 'brief-target-date-passed');
   const open = pendingOrReady.filter((row) => dayOpen(row.target_date));
   if (!open.length) return result;
@@ -372,7 +373,7 @@ export async function createDneskaiBriefsWithStore(store: DneskaiBriefStore, inp
   // A topic brief (#155) may target another day than its run; every other brief uses the run's target day.
   const slotDay = open.find((row) => row.topic_id)?.target_date ?? run.target_date;
   const slots = dneskaiSlotAllocator(slotDay, [...await store.takenSlots(input.owner, input.project, slotDay, input.runId),
-    ...rows.flatMap((row) => row.status !== 'skipped' && row.scheduled_at ? [row.scheduled_at] : [])], clock());
+    ...rows.flatMap((row) => row.status !== 'skipped' && row.scheduled_at ? [row.scheduled_at] : [])], clock(), options.slotTimes);
   let coverage: Promise<DneskaiCoverage[]> | null = null;
   for (const row of open) {
     if (input.signal?.aborted) { result.pending = true; break; }

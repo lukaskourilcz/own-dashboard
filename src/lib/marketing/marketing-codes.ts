@@ -578,6 +578,8 @@ const CODES = {
   'news-topics-unavailable': ['auto', 'The night\'s events could not be read as topics.', 'Noční události se nepodařilo načíst jako náměty.'],
   'news-topics-write-failed': ['auto', 'The night\'s news topics could not be saved.', 'Noční zpravodajské náměty se nepodařilo uložit.'],
   'topic-expiry-failed': ['auto', 'Old news topics could not be moved to expired.', 'Staré zpravodajské náměty se nepodařilo přesunout mezi propadlé.'],
+  'daily-mix-unavailable': ['retry', 'The daily mix could not be read or saved.', 'Denní mix se nepodařilo načíst ani uložit.'],
+  'invalid-daily-mix': ['none', 'The mix needs a time for every post.', 'Mix potřebuje pro každý příspěvek vlastní čas.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;

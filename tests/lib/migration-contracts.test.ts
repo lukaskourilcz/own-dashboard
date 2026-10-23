@@ -251,3 +251,13 @@ describe("2026-10-23 DNESKAi topic briefs (#155)", () => {
     expect(guide).toMatch(/20261023100200_dneskai_topic_briefs\.sql/);
   });
 });
+
+describe("2026-10-23 DNESKAi daily mix (#156)", () => {
+  it("keeps the mix own-only, within the four times and with a time for every post", () => {
+    const sql = code("20261023100300_dneskai_daily_mix.sql");
+    expect(sql).toMatch(/slots <@ array\['08:00','12:30','17:00','20:00'\]/);
+    expect(sql).toMatch(/check\(news_per_day\+education_per_day<=cardinality\(slots\)\)/);
+    expect(sql.match(/\(select auth\.uid\(\)\)=user_id/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(guide).toMatch(/20261023100300_dneskai_daily_mix\.sql/);
+  });
+});
