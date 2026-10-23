@@ -13,6 +13,13 @@ vi.mock("@/lib/calendar-server", () => ({ fetchTodayWindowEvents: async () => ({
 vi.mock("@/lib/user-prefs", () => ({ loadUserPreferences: async () => ({ language: "cs" }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
   auth: { getUser: async () => ({ data: { user: { id: "owner", user_metadata: {} } } }) },
+  rpc: (_name: string, args: { p_entity: string }) => {
+    const table = args.p_entity;
+    state.reads.push(table);
+    return state.rejected.has(table) ? Promise.reject(new Error("network")) : Promise.resolve({
+      data: [], error: state.failures.has(table) ? { message: "database unavailable" } : null,
+    });
+  },
   from: (table: string) => {
     state.reads.push(table);
     const query = {

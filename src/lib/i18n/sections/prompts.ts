@@ -42,7 +42,7 @@ type PromptsStrings = {
   noPromptsDescription: string;
   noMatches: string;
   noMatchesDescription: string;
-  // Curated import, public sharing, kinds and links
+  // Curated source classification, kinds and links
   addCurated: string;
   addingCurated: string;
   curatedAdded: (n: number) => string;
@@ -73,7 +73,9 @@ type PromptsStrings = {
   copyPreview: string;
   copyAction: string;
   couldNotCopyManual: string;
-  linksSaveFailed: string;
+  saveConflict: string;
+  unavailableLink: (position: number) => string;
+  tooManyLinks: string;
   groupCount: (n: number) => string;
   workspacePromptsInfo: string;
 };
@@ -122,13 +124,13 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     addingCurated: "Adding…",
     curatedAdded: (n) => `Added ${n} curated prompt${n === 1 ? "" : "s"}.`,
     curatedNoneNew: "All curated prompts are already in your library.",
-    makePublic: "Public prompt",
-    makePublicHint: "Marks a curated or shared prompt with a Public badge.",
+    makePublic: "Curated prompt",
+    makePublicHint: "Mark a prompt collected from another source. Your library stays private.",
     kind: "Kind of job",
     kindLabel: { design: "Design", audit: "Audit", competition: "Competition", "ux-ui": "UX & UI", analysis: "Analysis", documentation: "Documentation", "new-project": "New project", seo: "SEO", marketing: "Marketing", other: "Other" },
     allKinds: "All kinds",
     kindFilter: "Filter by kind",
-    publicBadge: "Public",
+    publicBadge: "Curated",
     defaultProject: "Default project",
     defaultProjectHint: "Preselected when copying. The prompt itself stays universal.",
     placeholdersHint: "Placeholders: {{project.name}}, {{project.repo}}, {{project.url}}, {{project.dev_url}}.",
@@ -148,7 +150,9 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     copyPreview: "Preview",
     copyAction: "Copy",
     couldNotCopyManual: "Could not copy. Select the preview text and copy it manually.",
-    linksSaveFailed: "The prompt was saved, but its links could not be updated.",
+    saveConflict: "This prompt or its resources changed. Your draft is kept here; reopen the prompt before trying again.",
+    unavailableLink: (position) => `Unavailable resource ${position}`,
+    tooManyLinks: "Use at most 1,000 resources in one prompt.",
     groupCount: (n) => `${n} prompt${n === 1 ? "" : "s"}`,
     workspacePromptsInfo: "Every prompt, grouped by kind. Copying fills in this project and its links.",
   },
@@ -199,13 +203,13 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
       return `Přidáno ${n} doporučených promptů.`;
     },
     curatedNoneNew: "Všechny doporučené prompty už v knihovně máš.",
-    makePublic: "Veřejný prompt",
-    makePublicHint: "Označí vybraný nebo sdílený prompt štítkem Veřejný.",
+    makePublic: "Doporučený prompt",
+    makePublicHint: "Označuje prompt převzatý z jiného zdroje. Knihovna zůstává soukromá.",
     kind: "Druh práce",
     kindLabel: { design: "Návrh designu", audit: "Audit projektu", competition: "Konkurence", "ux-ui": "Kontrola UX a UI", analysis: "Analýza projektu", documentation: "Dokumentace", "new-project": "Nový projekt z nápadu", seo: "SEO", marketing: "Marketing", other: "Ostatní" },
     allKinds: "Všechny druhy",
     kindFilter: "Filtrovat podle druhu",
-    publicBadge: "Veřejný",
+    publicBadge: "Doporučený",
     defaultProject: "Výchozí projekt",
     defaultProjectHint: "Předvybraný při kopírování. Prompt sám zůstává univerzální.",
     placeholdersHint: "Zástupné znaky: {{project.name}}, {{project.repo}}, {{project.url}}, {{project.dev_url}}.",
@@ -225,7 +229,9 @@ export const prompts: { en: PromptsStrings; cs: PromptsStrings } = {
     copyPreview: "Náhled",
     copyAction: "Kopírovat",
     couldNotCopyManual: "Kopírování se nezdařilo. Označte text náhledu a zkopírujte ho ručně.",
-    linksSaveFailed: "Prompt se uložil, ale jeho odkazy se nepodařilo upravit.",
+    saveConflict: "Prompt nebo jeho zdroje se změnily. Koncept zůstal zde; před dalším pokusem prompt znovu otevřete.",
+    unavailableLink: (position) => `Nedostupný zdroj ${position}`,
+    tooManyLinks: "V jednom promptu použijte nejvýše 1 000 zdrojů.",
     groupCount: (n) => `${n} ${n === 1 ? "prompt" : n < 5 ? "prompty" : "promptů"}`,
     workspacePromptsInfo: "Všechny prompty podle druhu. Kopírování doplní tento projekt a jeho odkazy.",
   },

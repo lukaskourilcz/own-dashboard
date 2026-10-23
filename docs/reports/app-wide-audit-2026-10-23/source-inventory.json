@@ -1,6 +1,6 @@
 {
   "baseline": "dba5fc8",
-  "meaning": "Baseline inventory. Source review and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
+  "meaning": "Baseline source inventory plus files added during review (sha256 null for additions). Source review and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
   "files": [
     {
       "path": "src/app/[[...slug]]/loading.tsx",
@@ -14,7 +14,7 @@
       "lines": 175,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "8bcf793ba874f2a8e48dd37278f4a6680c4f7b396ddf437e5d3668dd0a3230ad"
+      "reviewedSha256": "3c57d1f7b198fc6149e473fa0bcff94b8af9641746c91c6ed46e914964c4908e"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -1286,7 +1286,8 @@
       "path": "src/components/panels/prompts-panel.tsx",
       "lines": 790,
       "sha256": "251d5ccb8cf820fa62cf3f3b7779ce277a9590e619f1d53ddb081a633f5537fa",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "b8ce4d274c426f6563df1d27a2c34354a0580bb0c3db9d139942103578ae05db"
     },
     {
       "path": "src/components/panels/repos-panel.tsx",
@@ -1432,7 +1433,8 @@
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
       "lines": 164,
       "sha256": "f2f24e5c9da17d859113b022a3292e4ef3818eecd7c449574a9922f9b7e0bf93",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "2f1ceaf5910bacd35bb6c5c29a1aed9028350eab599adc84ce4b48053a50232c"
     },
     {
       "path": "src/components/subscriptions/subscription-icon.tsx",
@@ -1728,7 +1730,8 @@
       "path": "src/lib/curated-prompts.ts",
       "lines": 174,
       "sha256": "7ff34a214a23a725499bf89b148aac14292501c80ad45dcd3eef16c352e31e83",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "7ff34a214a23a725499bf89b148aac14292501c80ad45dcd3eef16c352e31e83"
     },
     {
       "path": "src/lib/dashboard-data.ts",
@@ -2060,7 +2063,8 @@
       "path": "src/lib/i18n/sections/prompts.ts",
       "lines": 232,
       "sha256": "9fbacbcb8bfa1994deb4e119f5c7310378f1205b56227f8977273d3905aa3805",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "1a9b73505fb81f37749707cdb3ff62aaefd2deefe469caaf0f6405689e845f83"
     },
     {
       "path": "src/lib/i18n/sections/relink.ts",
@@ -3244,19 +3248,22 @@
       "path": "src/lib/prompt-composer.ts",
       "lines": 113,
       "sha256": "fb7485b7c01a96e5535439c7ea6a359e3d49b311ef2c3cf7bd42ed98497a530c",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "fb7485b7c01a96e5535439c7ea6a359e3d49b311ef2c3cf7bd42ed98497a530c"
     },
     {
       "path": "src/lib/prompt-kinds.ts",
       "lines": 78,
       "sha256": "bdf6b9df23a6b6543ada34656a498e21ff783b123b6417a66cee32c958a77e4c",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "72cc93c38ddc1db945b95c01aa3d0c126aaf93d08c8448c11a2ff3bfd1ed7e81"
     },
     {
       "path": "src/lib/prompt-links.ts",
       "lines": 108,
       "sha256": "2810aa9fc1e933bf07c7a7c5de65170a30d3c4f4cce7af5e80c7931173ba4d79",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "496e16ffe16e3be18d4d2f410078b469b861a494032b412dee6c5f74dd82c372"
     },
     {
       "path": "src/lib/queries/entities.ts",
@@ -3270,7 +3277,7 @@
       "lines": 542,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "2aebdb5c4ecd6e43e830fcf63bb1fda27771e5b4a9dca81ca06d7d3c26034d79"
+      "reviewedSha256": "443977cfac4b90c7c6360f378dfe49b43a65fbeb9bddc70044462f59ad089172"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -3413,7 +3420,8 @@
       "path": "src/lib/use-return-focus.ts",
       "lines": 26,
       "sha256": "bd55b6e440b592e8bbcaac04032e0be074252f80064d202bf3b4c692fb0c5d47",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "bd55b6e440b592e8bbcaac04032e0be074252f80064d202bf3b4c692fb0c5d47"
     },
     {
       "path": "src/lib/use-spend-categories.ts",
@@ -3457,6 +3465,79 @@
       "lines": 17,
       "sha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9",
       "status": "pending"
+    },
+    {
+      "path": "src/components/dashboard-data-unavailable.tsx",
+      "lines": 22,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "7856870ebc79b070f11a424d0eb024bb8bdba7599da16fe284090daf653c862d"
+    },
+    {
+      "path": "src/components/dashboard-destination-state.tsx",
+      "lines": 18,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "092bd4441f577ac4b54d267f4ccdf7f95b074c73b81810f9af1d2a765e36ebc8"
+    },
+    {
+      "path": "src/components/guest-boundary.tsx",
+      "lines": 52,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "22b95961e2b8fdbb82fb8b2c04a1d4cb80ee47f50b748f7d1969587008d1012a"
+    },
+    {
+      "path": "src/components/invoices/invoice-editor.tsx",
+      "lines": 23,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "9669bacf59e61ac686c7c8aceb25b0d031ba3412436ccc3289550c507aa9e6d9"
+    },
+    {
+      "path": "src/components/notes/use-note-autosave.ts",
+      "lines": 130,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "03e6ca650f30717d23b475879e6711a4849258d40e02d6a20665155d831d7f31"
+    },
+    {
+      "path": "src/lib/calendar-event.ts",
+      "lines": 39,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "0ded942234d4f8d11112ed169b0d5adad9ad02e9c0820630ee3e8465a1ebcffb"
+    },
+    {
+      "path": "src/lib/guest-requests.ts",
+      "lines": 28,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "9e2f9893a11c0bc5ba73245ba5e27d21fc3e93887ea575a637ee05e41c7cc79d"
+    },
+    {
+      "path": "src/lib/invoice-import.ts",
+      "lines": 22,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "fdf8089454ef636a5271259fdc914d75f26d79dfd838bdeb983fef7836780b3d"
+    },
+    {
+      "path": "src/lib/owned-records.ts",
+      "lines": 32,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "97015ca5ca148fbbc919375ef01fed8b20ad47bd933b69e097fa0f9c66a00d62"
     }
-  ]
+  ],
+  "baselineFileCount": 561
 }

@@ -5,7 +5,7 @@ import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
-import { readFinancialRecords } from "@/lib/financial-records";
+import { readOwnedCollection } from "@/lib/owned-records";
 import { resolveProjectRef } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
@@ -59,22 +59,22 @@ export default async function DashboardPage({
     loadWhen("subscriptions", () => supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("todos", () => supabase.from("todos").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("accounts", () => supabase.from("accounts").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("transactions", () => readFinancialRecords(supabase, "transactions", user.id)),
+    loadWhen("transactions", () => readOwnedCollection(supabase, "transactions", user.id)),
     loadWhen("plans", () => supabase.from("plans").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
     loadWhen("notes", () => supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })),
-    loadWhen("prompts", () => supabase.from("prompts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("promptLinks", () => supabase.from("prompt_links").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(2000)),
+    loadWhen("prompts", () => readOwnedCollection(supabase, "prompts", user.id)),
+    loadWhen("promptLinks", () => readOwnedCollection(supabase, "prompt_links", user.id)),
     loadWhen("repoNotes", () => supabase.from("repo_notes").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true })),
     loadWhen("repoLinks", () => supabase.from("repo_links").select("*").eq("user_id", user.id)),
-    loadWhen("aiLinks", () => supabase.from("ai_links").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("aiCategories", () => supabase.from("ai_categories").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
-    loadWhen("projectLinks", () => supabase.from("project_links").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(2000)),
+    loadWhen("aiLinks", () => readOwnedCollection(supabase, "ai_links", user.id)),
+    loadWhen("aiCategories", () => readOwnedCollection(supabase, "ai_categories", user.id)),
+    loadWhen("projectLinks", () => readOwnedCollection(supabase, "project_links", user.id)),
     loadWhen("tools", () => supabase.from("tools").select("*").eq("user_id", user.id).order("created_at", { ascending: true }).limit(500)),
     loadWhen("shortcuts", () => supabase.from("shortcuts").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("referenceRows", () => supabase.from("reference_rows").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("importantDates", () => supabase.from("important_dates").select("*").eq("user_id", user.id).order("the_date", { ascending: true })),
-    loadWhen("invoices", () => readFinancialRecords(supabase, "invoices", user.id)),
-    loadWhen("invoiceItems", () => readFinancialRecords(supabase, "invoice_items", user.id)),
+    loadWhen("invoices", () => readOwnedCollection(supabase, "invoices", user.id)),
+    loadWhen("invoiceItems", () => readOwnedCollection(supabase, "invoice_items", user.id)),
     loadWhen("invoiceSettings", () => supabase.from("invoice_settings").select("*").eq("user_id", user.id).maybeSingle()),
     loadWhen("projects", () => supabase.from("projects").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
     loadWhen("projectCommunications", () => supabase.from("project_communications").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(500)),

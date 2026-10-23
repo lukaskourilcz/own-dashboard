@@ -728,12 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Six prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql`, `20261023170010_project_parent_rls_lookup.sql`, `20261023175801_daily_focus_garden_summary.sql`, `20261023183345_career_owner_day.sql` and `20261023190841_invoice_document_transaction.sql`. Check the linked project and apply this chain before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Seven prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql`, `20261023170010_project_parent_rls_lookup.sql`, `20261023175801_daily_focus_garden_summary.sql`, `20261023183345_career_owner_day.sql`, `20261023190841_invoice_document_transaction.sql` and `20261023200938_atomic_knowledge_documents.sql`. Check the linked project and apply this chain before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect the six audit files listed above
+npx supabase db push --linked --dry-run   # expect the seven audit files listed above
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -941,3 +941,12 @@ The upgrade test starts before these files, compares every public policy, then v
 `20261023190841_invoice_document_transaction.sql` adds `save_invoice_document`, an authenticated-only, security-invoker function with an empty search path. Invoice headers and all lines commit in one transaction. Failed replacement inserts preserve the original header and lines. Client-generated request ids make an identical retry safe; changed create retries, stale versions and incomplete source item collections are rejected without overwriting data. Edits retain the issued supplier snapshot, status and payment metadata. Existing RLS checks still enforce both owner and related organization/project ownership. Quantity zero is preserved, negative prices remain available for discounts, and excess numeric precision is rejected instead of changing previewed amounts. No tax calculation is duplicated in SQL.
 
 Apply before deploying the RPC caller. Five migrated-database cases cover rollback after line deletion, retry identity, zero quantity, stale/incomplete edits, precision loss and ownership. To roll back, deploy the previous client first; this additive function can remain safely installed. Never restore the previous three-request edit path while relying on atomic saves.
+
+
+## Atomic Knowledge documents and bounded snapshots — prepared 23 October 2026
+
+`20261023200938_atomic_knowledge_documents.sql` adds three authenticated-only, security-invoker functions with empty search paths. `save_prompt_document` commits a prompt and its complete resource list together, keeps existing link ids, and rejects stale/incomplete source versions and changed retries. A client request id makes an identical create/edit retry safe. `add_curated_prompts` compares all owned names inside a serialized transaction, skips repeated names and preserves custom prompts. The stored `is_public` field remains own-only provenance metadata; the interface calls it Curated.
+
+`read_owned_collection` permits only eight fixed entity names. It returns a complete ordered JSON array in one statement snapshot, with owner filtering and existing RLS, bypassing the outer REST row cap without changing project-wide API limits. Bounds: transactions 20,000; invoices 10,000; invoice items 50,000; prompts 10,000; prompt links 20,000; project links 20,000; library links 10,000; categories 1,000. Every response is also bounded to 10 MiB of encoded JSON. A bound failure raises an error rather than returning a partial collection. It replaces the audit’s earlier multi-request financial reader. No tax arithmetic moves into SQL.
+
+Apply before deploying these callers. Tests replay the entire migration chain and cover 1,201 complete financial records, all collection roles, storage rollback, related-owner rejection, retry identity, stale/incomplete editors, repeat-safe curated imports, row limits and encoded byte limits. Read-only Production counts and row-JSON size estimates were checked on 23 October; every affected collection fits these bounds. No records were changed. Roll back application callers first; these additive functions can remain installed safely. Retain the complete-read and atomic-write guarantees when replacing them.

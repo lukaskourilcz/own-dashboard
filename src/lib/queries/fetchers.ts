@@ -1,6 +1,6 @@
 "use client";
 
-import { readFinancialRecords } from "@/lib/financial-records";
+import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
 import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
@@ -134,7 +134,7 @@ export async function fetchAccounts(): Promise<Account[]> {
 }
 
 export async function fetchTransactions(): Promise<Transaction[]> {
-  const { data } = await readFinancialRecords(createClient(), "transactions");
+  const { data } = await readOwnedCollection(createClient(), "transactions");
   return data;
 }
 
@@ -258,12 +258,12 @@ export async function fetchNotes(): Promise<Note[]> {
 }
 
 export async function fetchInvoices(): Promise<Invoice[]> {
-  const { data } = await readFinancialRecords(createClient(), "invoices");
+  const { data } = await readOwnedCollection(createClient(), "invoices");
   return data;
 }
 
 export async function fetchInvoiceItems(): Promise<InvoiceItem[]> {
-  const { data } = await readFinancialRecords(createClient(), "invoice_items");
+  const { data } = await readOwnedCollection(createClient(), "invoice_items");
   return data;
 }
 
@@ -278,25 +278,13 @@ export async function fetchInvoiceSettings(): Promise<InvoiceSettings | null> {
 }
 
 export async function fetchPrompts(): Promise<Prompt[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("prompts")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Prompt[];
+  const { data } = await readOwnedCollection(createClient(), "prompts");
+  return data;
 }
 
 export async function fetchPromptLinks(): Promise<PromptLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("prompt_links")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(2000);
-  if (error) throw error;
-  return (data ?? []) as PromptLink[];
+  const { data } = await readOwnedCollection(createClient(), "prompt_links");
+  return data;
 }
 
 export async function fetchRepoNotes(): Promise<RepoNote[]> {
@@ -371,36 +359,18 @@ export async function fetchCompetitors(): Promise<Competitor[]> {
 }
 
 export async function fetchAiLinks(): Promise<AiLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("ai_links")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as AiLink[];
+  const { data } = await readOwnedCollection(createClient(), "ai_links");
+  return data;
 }
 
 export async function fetchAiCategories(): Promise<AiCategory[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("ai_categories")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as AiCategory[];
+  const { data } = await readOwnedCollection(createClient(), "ai_categories");
+  return data;
 }
 
 export async function fetchProjectLinks(): Promise<ProjectLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("project_links")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(2000);
-  if (error) throw error;
-  return (data ?? []) as ProjectLink[];
+  const { data } = await readOwnedCollection(createClient(), "project_links");
+  return data;
 }
 
 export async function fetchTools(): Promise<Tool[]> {
