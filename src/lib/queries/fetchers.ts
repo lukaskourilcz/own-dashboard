@@ -3,7 +3,7 @@
 import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
-import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
+import type { TransactionRuleSet } from "@/lib/transaction-rules";
 import type {
   Account,
   AiCategory,
@@ -165,12 +165,13 @@ export async function fetchCategoryRules(): Promise<CategoryRule[]> {
  */
 export async function fetchTransactionRules(): Promise<TransactionRuleSet> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("transaction_rules")
-    .select("*")
-    .order("stage", { ascending: true })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  // The rule engine is needed only by Finance. Keep it out of shared Home
+  // fetchers, and load it alongside the rule read rather than after the read.
+  const [{ data, error }, { parseRules }] = await Promise.all([
+    supabase.from("transaction_rules").select("*")
+      .order("stage", { ascending: true }).order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
+    import("@/lib/transaction-rules"),
+  ]);
   if (error) throw error;
   return parseRules(data ?? []);
 }

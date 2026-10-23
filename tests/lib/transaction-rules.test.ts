@@ -509,3 +509,25 @@ describe("prepared batch rule evaluation", () => {
     expect(reads).toBe(1);
   });
 });
+
+describe("bounded non-backtracking rule patterns", () => {
+  it.each(["(a+)+$", "(a|aa)+$", "^([a-z]+)*$"])("finishes a nested-pattern nonmatch without native backtracking (%s)", pattern => {
+    const compiled = safeRegex(pattern);
+    expect(compiled).not.toBeNull();
+    expect(compiled!.test("a".repeat(100_000) + "!")).toBe(false);
+  }, 2000);
+
+  it.each(["(a)\\1", "(?=merchant)merchant", "(?<=bank)merchant", "a".repeat(201)])("refuses unsupported or excessive patterns (%s)", pattern => {
+    expect(safeRegex(pattern)).toBeNull();
+    expect(parseRules([rule({ id: "unsafe", conditions: [{ field: "note", op: "regex", value: pattern }], actions: { category: "Work" } })])).toEqual({ rules: [], dropped: 1 });
+  });
+
+  it("keeps common anchors, alternation, Unicode literals and translated Unicode escapes", () => {
+    expect(safeRegex("^albert\\s+\\d+$")!.test("ALBERT 123")).toBe(true);
+    expect(safeRegex("bank|merchant")!.test("A merchant payment")).toBe(true);
+    expect(safeRegex("žluťoučký")!.test("ŽLUŤOUČKÝ")).toBe(true);
+    expect(safeRegex("\\u017e")!.test("ž")).toBe(true);
+    const pattern = safeRegex("merchant")!;
+    expect(pattern.test("A merchant")).toBe(true); expect(pattern.test("other")).toBe(false); expect(pattern.test("MERCHANT")).toBe(true);
+  });
+});

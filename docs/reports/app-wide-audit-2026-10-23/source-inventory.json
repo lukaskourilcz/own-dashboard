@@ -3421,8 +3421,8 @@
       "path": "src/lib/transaction-rules.ts",
       "lines": 568,
       "sha256": "28552e186b285c368ed191729d2852883bf9a49261e62c97ad67695b7605e060",
-      "status": "source reviewed; regex execution follow-up and final release checks pending",
-      "reviewedSha256": "ddae685e7823d765e4ece6fc76f367ce26691165b0bda64fb66be4fc45b56b21"
+      "status": "source reviewed; targeted rule checks passed; final release checks pending",
+      "reviewedSha256": "498ba03929abe59cef7251d45354b7f750e553479b3e8088ae802b8600831ba0"
     },
     {
       "path": "src/lib/types.ts",

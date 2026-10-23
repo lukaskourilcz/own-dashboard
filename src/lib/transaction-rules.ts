@@ -1,3 +1,5 @@
+import { RE2JS } from "re2js";
+
 /**
  * The transaction rule engine.
  *
@@ -285,25 +287,28 @@ export function parseRules(rows: readonly unknown[] | null | undefined): Transac
 /* -------------------------------- matching -------------------------------- */
 
 const MAX_PATTERN_LENGTH = 200;
-const regexCache = new Map<string, RegExp | null>();
+const MAX_CACHED_PATTERNS = 32;
+const regexCache = new Map<string, RE2JS | null>();
 
 /**
- * A case-insensitive RegExp for an owner-authored pattern, or null when the
- * pattern is invalid or absurdly long. Memoised, because the editor's live
- * match count re-evaluates the same pattern across every loaded transaction.
+ * Case-insensitive, non-backtracking RE2 matching for owner-authored patterns.
+ * Unsupported syntax fails closed; never fall back to native RegExp matching.
+ * The small LRU bounds retained compiled patterns during long editing sessions.
  */
-export function safeRegex(pattern: string): RegExp | null {
+export function safeRegex(pattern: string): RE2JS | null {
   if (pattern.length === 0 || pattern.length > MAX_PATTERN_LENGTH) return null;
   const cached = regexCache.get(pattern);
-  if (cached !== undefined) return cached;
-  let compiled: RegExp | null = null;
+  if (cached !== undefined) {
+    regexCache.delete(pattern); regexCache.set(pattern, cached);
+    return cached;
+  }
+  let compiled: RE2JS | null = null;
   try {
-    compiled = new RegExp(pattern, "i");
+    compiled = RE2JS.compile(RE2JS.translateRegExp(pattern), RE2JS.CASE_INSENSITIVE);
   } catch {
     compiled = null;
   }
-  // Bound the cache so a long editing session cannot grow it without limit.
-  if (regexCache.size > 200) regexCache.clear();
+  if (regexCache.size >= MAX_CACHED_PATTERNS) regexCache.delete(regexCache.keys().next().value!);
   regexCache.set(pattern, compiled);
   return compiled;
 }
