@@ -66,3 +66,17 @@ describe('Zdroje source list (#174)', () => {
     expect(keys(dneskaiSourceList.cs).sort()).toEqual(keys(dneskaiSourceList.en).sort());
   });
 });
+
+
+it.each(['en', 'cs'] as const)('filters registry sources by kind and search without a server request (%s)', async lang => {
+  const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
+  render(lang, true); await wait();
+  const field = container.querySelector<HTMLInputElement>('input[type="search"]')!;
+  type(field, 'mosseri');
+  expect(container.querySelectorAll('[data-testid="dneskai-source-row"]')).toHaveLength(1);
+  const filter = container.querySelector<HTMLSelectElement>('select')!;
+  act(() => { filter.value = 'web'; filter.dispatchEvent(new Event('change', { bubbles: true })); });
+  expect(container.querySelectorAll('[data-testid="dneskai-source-row"]')).toHaveLength(0);
+  expect(container.textContent).toContain(dneskaiSourceList[lang].noMatches);
+  expect(fetcher).not.toHaveBeenCalled();
+});

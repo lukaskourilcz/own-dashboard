@@ -83,7 +83,7 @@ export function DneskaiOverflowMenu({ projectId, lang, preview, sections, active
           {panel && panel !== 'costs' && <DialogDescription>{t[`${panel}Description`]}</DialogDescription>}
         </DialogHeader>
         {panel === 'costs' && <WorkspaceTab tab="dneskai-costs" projectId={projectId} lang={lang} preview={preview} />}
-        {panel === 'account' && <InstagramAccount lang={lang} disabled={preview} />}
+        {panel === 'account' && <InstagramAccount lang={lang} disabled={preview} embedded />}
         {panel === 'recovery' && <Sources projectId={projectId} lang={lang} disabled={preview} onOpenReview={() => { focusMoved.current = true; setPanel(null); onOpenReview(); }} />}
         {panel === 'shortcuts' && <dl className="space-y-2 text-xs">{dneskaiLab[lang].shortcuts.rows.map(([key, value]) => <div key={key} className="flex justify-between gap-4"><dt className="font-mono">{key}</dt><dd>{value}</dd></div>)}</dl>}
       </DialogContent>

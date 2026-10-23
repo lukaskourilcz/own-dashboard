@@ -64,7 +64,8 @@ export function DneskaiLabTab(props: Props) {
     return () => window.removeEventListener('popstate', onPop);
   }, [dirty]);
   return <section className="space-y-4" data-testid="dneskai-lab">
-    <div className="flex items-center justify-end gap-3">
+    <div className="flex items-center justify-between gap-3">
+      <button type="button" className="min-h-11 rounded px-2 text-xs font-medium text-foreground-muted underline focus-ring md:min-h-8" onClick={() => document.getElementById(`${props.projectId}-topics-title`)?.scrollIntoView({ block: 'start', behavior: 'instant' })}>{t.topics.title}</button>
       <h2 className="sr-only">{t.title}</h2>
       <Tooltip content={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh}>
         <Button variant="ghost" size="icon" aria-label={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh} aria-busy={props.refreshing} disabled={props.refreshing || dirty} onClick={props.onRefresh} data-testid="dneskai-lab-refresh">
@@ -74,7 +75,6 @@ export function DneskaiLabTab(props: Props) {
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {props.preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{props.guest ? t.publicTour : dneskaiWorkspace[props.lang].preview}</p>}
-    <DneskaiTopicsList projectId={props.projectId} lang={props.lang} preview={props.preview} />
     <div className="grid min-w-0 gap-4 xl:grid-cols-[13rem_minmax(0,1fr)]">
       <nav onKeyDown={(event) => {
         if (event.altKey || event.ctrlKey || event.metaKey || !active) return;
@@ -113,6 +113,7 @@ export function DneskaiLabTab(props: Props) {
         onSaved={(post, saved) => { props.onSavedRevision?.(); setNotice(saved ?? t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
     </div>
 
+    <DneskaiTopicsList projectId={props.projectId} lang={props.lang} preview={props.preview} />
     {props.preview && <details className="border-t border-border pt-3 text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.specimens.title}</summary><div className="space-y-6">{DNESKAI_KITS.map((kit) => <figure key={kit} className="space-y-2"><figcaption className="text-foreground-muted">{t.specimens.help(t.kits.names[kit])}</figcaption><a href={`/demo/dneskai/kit-${kit}.png`} target="_blank" rel="noreferrer"><Image unoptimized src={`/demo/dneskai/kit-${kit}.png`} alt={t.specimens.help(t.kits.names[kit])} width={1944} height={2574} sizes="100vw" className="h-auto w-full" /></a></figure>)}</div></details>}
     {batch && <ApproveDay {...props} day={batch} onClose={() => setBatch(null)} />}
   </section>;
@@ -283,7 +284,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     event.preventDefault();
   }
   return <div ref={rootRef} tabIndex={-1} onKeyDown={shortcut} className="min-w-0 space-y-4 focus:outline-none" data-testid="dneskai-lab-session" aria-busy={busy}>
-    <div className="flex flex-wrap items-center gap-2"><DneskaiStateChip detail={lab.state} lang={props.lang} /></div>
+    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="min-w-0 text-sm font-semibold">{post.title}</h3><DneskaiStateChip detail={lab.state} lang={props.lang} /></div>
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
       <div className="min-w-0 space-y-3">{missed && <section aria-labelledby={`${id}-moved`} className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-xs" data-testid="dneskai-lab-moved">
@@ -303,7 +304,8 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview} lang={props.lang} />}
           {props.read.capabilities?.engagement && <DneskaiEngagementEditor id={`${id}-engagement`} draft={draft} onDraft={setDraft} handle={post.account.handle} lang={props.lang} />}
-          <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />
+          {draft.format === 'reel' && <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />}
+          {post.deck?.format === 'single-image' && <p className="text-xs text-foreground-muted">{t.post.reelRequiresDeck}</p>}
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>
         </fieldset>
@@ -319,10 +321,12 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       <div className="flex flex-wrap items-center gap-2">
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>
         <Button variant="outline" disabled={props.guest || busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>
-        {publishable && <Button variant="outline" data-testid="dneskai-lab-publish-now" disabled={busy || !!publishBlock} title={publishBlock ?? undefined} onClick={() => setDialog('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNow}</Button>}
         {post.status === 'review' && regeneratable && <Button variant="outline" data-testid="dneskai-lab-regenerate" disabled={busy || !!regenerateBlock} title={regenerateBlock ?? undefined} onClick={() => { setError(null); setDialog('regenerate'); }}>{busyAction === 'regenerate' ? t.actions.regenerating : t.actions.regenerate}</Button>}
         {dirty && <Button variant="ghost" disabled={busy} onClick={() => setDraft(createDeckDraft(post, account?.id ?? null))}>{t.actions.discard}</Button>}
+        <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3 sm:ml-auto">
+        {publishable && <Button variant="outline" data-testid="dneskai-lab-publish-now" disabled={busy || !!publishBlock} title={publishBlock ?? undefined} onClick={() => setDialog('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNow}</Button>}
         <Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
+        </div>
       </div>
     </div>
     <Dialog open={dialog !== null} onOpenChange={(open) => { if (!open && !busy) setDialog(null); }}><DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); rootRef.current?.focus(); }}>

@@ -24,7 +24,15 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 
 ## Remaining batches
 
-3. DNESKAi topic inbox/review layout and direct Sources / Daily mix / Music access.
+## Batch 3: DNESKAi workflow
+
+- Selected revision, state, real preview and inspector precede the bounded topic inbox. The toolbar links to topics; topic counts and keyboard decisions remain available. Mobile keyword controls meet the shared touch size.
+- Sources / Daily mix / Music have direct URL-backed local tabs. Only the selected section mounts its code and reads. Sources supports local search/kind filtering, counts, compact rows and retry. Daily mix uses a centered 960 px maximum form with aligned desktop controls, 44 px mobile labels/fields and adjacent announced validation. Its unsaved edits use the navigation guard.
+- Music upload opens in a shared dialog with one title. The Instagram dialog removes its repeated heading and discloses connection detail on demand. Reel music is conditional on Reel format; single-image drafts explain the carousel requirement. Publish/return/skip are separated from save/approve without changing their safeguards.
+- Seventy-one existing targeted workflow tests passed; the final focused rerun passed 47 tests, including EN/CS source filtering and corrected modal field associations. Type and focused lint checks passed. Daily mix/Music end-to-end tests now use their direct URLs; complete browser checks follow.
+
+## Remaining batches
+
 4. Work/Settings/Finance destination cleanup, planning filters and library card consistency.
 5. Payload/query measurements and complete relevant test/build/responsive/accessibility verification.
 

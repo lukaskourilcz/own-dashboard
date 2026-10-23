@@ -14,7 +14,7 @@ for (const lang of ['en', 'cs'] as const) test(`Sources → Daily mix shows the 
   const calls: string[] = []; page.on('request', (request) => { if (request.url().includes('/api/marketing/')) calls.push(request.url()); });
   if (info.project.name === 'mobile') await page.setViewportSize({ width: 360, height: 800 });
   await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
-  await page.goto('/dev-preview?project=dneskai&projectTab=sources');
+  await page.goto('/dev-preview?project=dneskai&projectTab=sources&sourceSection=mix');
   const mix = page.getByTestId('dneskai-daily-mix');
   await expect(mix).toBeVisible();
   await expect(mix.getByRole('heading', { name: t.title, exact: true })).toBeVisible();

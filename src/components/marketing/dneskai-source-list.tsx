@@ -26,6 +26,9 @@ const select = 'min-h-11 w-full rounded-md border border-border bg-surface px-2 
  */
 export function DneskaiSourceList({ projectId, lang, preview = false }: { projectId: string; lang: Lang; preview?: boolean }) {
   const t = copy[lang];
+  const [search, setSearch] = useState('');
+  const [kind, setKind] = useState('all');
+  const filterId = useId();
   const client = useQueryClient();
   const key = [...qk.dneskaiSourceList, projectId, preview];
   const query = useQuery({ queryKey: key, retry: false, staleTime: 30_000, queryFn: ({ signal }) => loadDneskaiSourceList(projectId, preview, signal) });
@@ -43,17 +46,25 @@ export function DneskaiSourceList({ projectId, lang, preview = false }: { projec
     if (await confirm({ title: t.removeTitle(label), description: t.removeDescription, confirmLabel: t.removeConfirm, cancelLabel: t.cancel, destructive: true })) mutation.mutate({ action: 'remove', projectId, sourceId: row.sourceId });
   };
   const data = query.data;
+  const filtered = data?.items.filter(item => (kind === 'all' || (item.row.kind === 'instagram' ? 'instagram' : 'web') === kind) && `${dneskaiSourceLabel(item.row)} ${item.row.name} ${item.row.handleOrUrl}`.toLocaleLowerCase(lang).includes(search.trim().toLocaleLowerCase(lang))) ?? [];
   const editable = !!data?.editable && !preview;
   return <section aria-labelledby="dneskai-source-list-title" className="min-w-0 space-y-5" data-testid="dneskai-source-list">
     <div><h2 id="dneskai-source-list-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
     {data && !editable && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{preview ? t.preview : data.notice ? t.tableMissing : t.readOnly}</p>}
     <div aria-live="polite">{status && <p role={status.error ? 'alert' : 'status'} className={cn('text-sm', status.error ? 'text-risk' : 'text-success')}>{status.text}</p>}</div>
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
-      : query.isError || !data ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
+      : query.isError || !data ? <div role="alert"><p className="text-sm text-risk">{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t.retry}</Button></div>
         : <>
           {editable && <AddSource lang={lang} items={data.items} busy={mutation.isPending} onAdd={save} />}
+          <div className="flex flex-wrap items-end gap-3" role="search">
+            <div className="min-w-48 flex-1"><label htmlFor={`${filterId}-search`} className="sr-only">{t.search}</label><Input id={`${filterId}-search`} type="search" placeholder={t.search} value={search} onChange={event => setSearch(event.target.value)} /></div>
+            <label className="sr-only" htmlFor={`${filterId}-kind`}>{t.allKinds}</label><select id={`${filterId}-kind`} value={kind} onChange={event => setKind(event.target.value)} className="min-h-11 rounded-md border border-border bg-surface px-3 text-sm focus-ring md:min-h-8"><option value="all">{t.allKinds}</option><option value="instagram">{t.instagram}</option><option value="web">{t.web}</option></select>
+            <span role="status" className="py-2 text-xs text-foreground-muted tabular">{filtered.length} / {data.items.length}</span>
+          </div>
+          {!filtered.length && <p role="status" className="text-sm text-foreground-muted">{search || kind !== 'all' ? t.noMatches : t.empty}</p>}
           {(['instagram', 'web'] as const).map((group) => {
-            const items = data.items.filter((item) => (item.row.kind === 'instagram') === (group === 'instagram'));
+            const items = filtered.filter((item) => (item.row.kind === 'instagram') === (group === 'instagram'));
+            if (!items.length) return null;
             return <section key={group} aria-labelledby={`dneskai-sources-${group}`} className="min-w-0 space-y-2" data-testid={`dneskai-sources-${group}`}>
               <h3 id={`dneskai-sources-${group}`} className="text-sm font-semibold">{t[group]} <span className="font-normal text-foreground-muted tabular">{items.length}</span></h3>
               {items.length === 0 ? <p className="text-sm text-foreground-muted">{t.empty}</p>
@@ -71,17 +82,17 @@ function SourceRow({ item, lang, editable, busy, onToggle, onEdit, onRemove }: {
   const { row } = item;
   const label = dneskaiSourceLabel(row);
   const days = row.weekdays.length === 7 ? t.everyDay : [...row.weekdays].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((day) => t.weekdays[day]).join(' ');
-  return <li className={cn('grid min-w-0 grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-3 px-3 py-2.5', !row.enabled && 'text-foreground-muted')} data-testid="dneskai-source-row" data-source={row.sourceId}>
-    <span aria-hidden className="flex size-8 items-center justify-center rounded-full border border-border bg-surface-inset text-xs font-semibold uppercase">{label.replace('@', '').slice(0, 1)}</span>
-    <div className="min-w-0 space-y-1">
+  return <li className={cn('grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:items-center gap-3 px-3 py-2.5', !row.enabled && 'text-foreground-muted')} data-testid="dneskai-source-row" data-source={row.sourceId}>
+    <span aria-hidden className="hidden size-8 items-center sm:flex justify-center rounded-full border border-border bg-surface-inset text-xs font-semibold uppercase">{label.replace('@', '').slice(0, 1)}</span>
+    <div className="grid min-w-0 gap-x-4 gap-y-1 lg:grid-cols-[minmax(0,1fr)_auto]">
       <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"><span className="break-all text-sm font-medium">{label}</span>{row.name !== row.handleOrUrl && row.name !== label.replace('@', '') && <span className="text-xs text-foreground-muted">{row.name}</span>}</p>
       <p className="flex flex-wrap items-center gap-1.5 text-xs text-foreground-muted">
         <EntityBadge>{t.topics[row.topic]}</EntityBadge><EntityBadge><span title={t.tiersHelp}>{t.tiers[row.tier]}</span></EntityBadge><span>{days}</span>
       </p>
-      <p className="text-xs text-foreground-muted">{item.lastReadAt ? <>{t.lastRead}: <time dateTime={item.lastReadAt} className="tabular">{formatDneskaiDayTime(item.lastReadAt)}</time>{item.lastItems !== null && <> · {t.items(item.lastItems)}</>}</> : t.neverRead}
+      <p className="text-xs text-foreground-muted lg:col-start-1">{item.lastReadAt ? <>{t.lastRead}: <time dateTime={item.lastReadAt} className="tabular">{formatDneskaiDayTime(item.lastReadAt)}</time>{item.lastItems !== null && <> · {t.items(item.lastItems)}</>}</> : t.neverRead}
         {item.lastErrorCode && <span className="text-risk"> · <code className="font-mono">{item.lastErrorCode}</code></span>}</p>
     </div>
-    <div className="flex items-center gap-1">
+    <div className="col-start-2 row-start-1 flex flex-wrap sm:col-start-3 items-center justify-end gap-1 max-sm:max-w-32">
       <Switch checked={row.enabled} disabled={!editable || busy} aria-label={t.readSwitch(label)} onCheckedChange={onToggle} />
       {editable && <><Button variant="ghost" size="sm" disabled={busy} aria-label={t.editName(label)} onClick={onEdit}>{t.edit}</Button>
         <Button variant="ghost" size="sm" disabled={busy} aria-label={t.removeName(label)} onClick={onRemove}>{t.remove}</Button></>}

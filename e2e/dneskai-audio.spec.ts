@@ -15,7 +15,7 @@ for (const lang of ['en', 'cs'] as const) test(`Sources → Music lists the samp
   const calls: string[] = []; page.on('request', (request) => { if (request.url().includes('/api/marketing/')) calls.push(request.url()); });
   if (info.project.name === 'mobile') await page.setViewportSize({ width: 360, height: 800 });
   await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
-  await page.goto('/dev-preview?project=dneskai&projectTab=sources');
+  await page.goto('/dev-preview?project=dneskai&projectTab=sources&sourceSection=music');
   const music = page.getByTestId('dneskai-audio-library');
   await expect(music).toBeVisible();
   await expect(music.getByRole('heading', { name: t.title, exact: true })).toBeVisible();

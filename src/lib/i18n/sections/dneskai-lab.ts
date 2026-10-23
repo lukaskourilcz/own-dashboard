@@ -105,7 +105,7 @@ const en = {
   },
   post: {
     title: 'Post',
-    caption: 'Caption',
+    caption: 'Caption', reelRequiresDeck: 'Reels need a carousel deck. Create or regenerate a carousel before choosing Reel and music.',
     feedLine: 'First line in the feed',
     slot: 'Time', sources: 'Sources', disclosure: 'AI disclosure',
     slotExpired: (time: string) => `The original time ${time} has passed. The nearest possible time is filled in; change it if you like, then save.`,
@@ -356,7 +356,7 @@ const cs: typeof en = {
   },
   post: {
     title: 'Příspěvek',
-    caption: 'Popisek',
+    caption: 'Popisek', reelRequiresDeck: 'Reels vyžadují carousel. Nejdřív vytvořte nebo znovu vygenerujte carousel, pak vyberte Reel a hudbu.',
     feedLine: 'První řádek ve feedu',
     slot: 'Čas', sources: 'Zdroje', disclosure: 'Označení AI',
     slotExpired: (time: string) => `Původní čas ${time} už minul. Je doplněný nejbližší možný čas. Můžete ho změnit, pak uložte.`,

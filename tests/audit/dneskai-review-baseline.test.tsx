@@ -107,11 +107,13 @@ describe('DNESKAi audit regressions', () => {
     try {
       await act(async () => { root.render(<QueryClientProvider client={client}><DneskaiAudioLibrary lang="en" /></QueryClientProvider>); });
       await act(async () => { for (let n = 0; n < 5; n++) await new Promise(resolve => setTimeout(resolve, 20)); });
-      const form = container.querySelector('form')!;
+      await act(async () => { [...container.querySelectorAll('button')].find(button => button.textContent === 'Upload a track')!.click(); });
+      const form = document.querySelector<HTMLFormElement>('[data-testid="dneskai-audio-upload"]')!;
       expect(form).not.toBeNull();
       const ids = [...form.querySelectorAll('[id]')].map(element => element.id);
       expect(new Set(ids).size).toBe(ids.length);
-      expect(document.getElementById(form.getAttribute('aria-labelledby')!)?.tagName).toBe('H3');
+      expect(form.getAttribute('aria-label')).toBe('Upload a track');
+      expect(document.querySelectorAll('[role="dialog"] h2')).toHaveLength(1);
       for (const label of form.querySelectorAll('label[for]')) {
         const target = document.getElementById((label as HTMLLabelElement).htmlFor);
         expect(target, label.textContent ?? '').not.toBeNull();

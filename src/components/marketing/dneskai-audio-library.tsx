@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -32,7 +33,9 @@ export function DneskaiAudioLibrary({ lang, preview = false }: Props) {
         : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} /><TrendList trends={query.data?.trends ?? []} lang={lang} /></>}
     {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
-    {!preview && query.isSuccess && <UploadForm lang={lang} />}
+    {!preview && query.isSuccess && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
+      <DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.upload.title}</DialogTitle></DialogHeader><UploadForm lang={lang} embedded /></DialogContent>
+    </Dialog>}
   </section>;
 }
 
@@ -71,7 +74,7 @@ function TrackList({ tracks, lang, preview, player }: { tracks: DneskaiAudioTrac
 
 const ACCEPT = Object.keys(DNESKAI_AUDIO_TYPES).join(',');
 
-function UploadForm({ lang }: { lang: Lang }) {
+function UploadForm({ lang, embedded = false }: { lang: Lang; embedded?: boolean }) {
   const t = dneskaiAudio[lang];
   const id = useId();
   const client = useQueryClient();
@@ -102,8 +105,8 @@ function UploadForm({ lang }: { lang: Lang }) {
   const field = (key: 'title' | 'artist' | 'sourceUrl' | 'licenceNote', label: string, options: { type?: string; max: number; placeholder?: string }) =>
     <div className="min-w-0"><label htmlFor={`${id}-${key}`} className="text-xs font-medium">{label}</label>
       <Input id={`${id}-${key}`} type={options.type ?? 'text'} required maxLength={options.max} placeholder={options.placeholder} value={fields[key]} onChange={(event) => setFields({ ...fields, [key]: event.target.value })} /></div>;
-  return <form onSubmit={submit} className="min-w-0 space-y-3" aria-labelledby={`${id}-heading`} data-testid="dneskai-audio-upload">
-    <h3 id={`${id}-heading`} className="text-sm font-medium">{t.upload.title}</h3>
+  return <form onSubmit={submit} className="min-w-0 space-y-3" aria-labelledby={embedded ? undefined : `${id}-heading`} aria-label={embedded ? t.upload.title : undefined} data-testid="dneskai-audio-upload">
+    {!embedded && <h3 id={`${id}-heading`} className="text-sm font-medium">{t.upload.title}</h3>}
     <div><label htmlFor={`${id}-file`} className="text-xs font-medium">{t.upload.file}</label>
       <input ref={fileRef} id={`${id}-file`} type="file" accept={ACCEPT} required className="focus-ring block min-h-11 w-full text-sm file:mr-3 file:min-h-11 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:text-sm"
         onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></div>

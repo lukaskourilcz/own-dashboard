@@ -8,17 +8,17 @@ import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
 import { loadMarketingAccounts, marketingTokenState, MarketingAccountRequestError, setMarketingAccountEnabled, setMarketingAccountEngagement, marketingCommentSubscription, verifyMarketingAccount, type MarketingAccountStatus, type MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
 
 type Lang = 'en' | 'cs';
-type Props = { lang: Lang; disabled?: boolean; now?: Date };
+type Props = { lang: Lang; disabled?: boolean; now?: Date; embedded?: boolean };
 
 /** Owner check of the @dneskai Instagram connection (#121). It never shows or receives a token. */
-export function DneskaiInstagramAccount({ lang, disabled = false, now = new Date() }: Props) {
+export function DneskaiInstagramAccount({ lang, disabled = false, now = new Date(), embedded = false }: Props) {
   const t = dneskaiAccount[lang];
   const client = useQueryClient();
   const query = useQuery({ queryKey: qk.marketingAccounts, enabled: !disabled, retry: false, staleTime: 30000, queryFn: ({ signal }) => loadMarketingAccounts(signal) });
   const verify = useMutation({ mutationFn: () => verifyMarketingAccount('dneskai', 'instagram'), onSettled: () => client.invalidateQueries({ queryKey: qk.marketingAccounts }) });
   const account = query.data?.find(value => value.brand === 'dneskai' && value.platform === 'instagram') ?? null;
-  return <section aria-labelledby="dneskai-account-title" className="min-w-0 space-y-4" data-testid="dneskai-instagram-account">
-    <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 id="dneskai-account-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
+  return <section aria-labelledby={embedded ? undefined : "dneskai-account-title"} aria-label={embedded ? t.title : undefined} className="min-w-0 space-y-4" data-testid="dneskai-instagram-account">
+    <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0">{!embedded && <h2 id="dneskai-account-title" className="text-sm font-semibold">{t.title}</h2>}<details className="max-w-3xl text-xs text-foreground-muted"><summary className="min-h-11 cursor-pointer py-3 focus-ring md:min-h-8">{t.details}</summary><p>{t.intro}</p></details></div>
       <Button variant="outline" className="min-h-11" disabled={disabled || verify.isPending} aria-busy={verify.isPending} onClick={() => verify.mutate()}>{verify.isPending ? t.verifying : t.verify}</Button></div>
     <div aria-live="polite">{verify.isSuccess ? <p role="status" className="text-sm text-success">{verificationMessage(verify.data, lang)}</p> : verify.isError ? <p role="alert" className="text-sm text-risk">{verificationError(verify.error, lang)}</p> : null}</div>
     {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>

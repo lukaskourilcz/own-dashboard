@@ -1,5 +1,6 @@
 /** Zdroje as a source list (#174). Every string exists in English and Czech with the same meaning. */
 const en = {
+  sections: 'Source settings', search: 'Search sources', allKinds: 'All kinds', noMatches: 'No matching sources.', retry: 'Retry',
   title: 'Sources', intro: 'What DNESKAi reads each night at 22:00, and how the last read went.',
   instagram: 'Instagram profiles', web: 'Websites', empty: 'No source in this list yet.',
   loading: 'Loading sources…', unavailable: 'Sources could not be loaded. Check the connection, then refresh.',
@@ -28,6 +29,7 @@ const en = {
 };
 
 const cs: typeof en = {
+  sections: 'Nastavení zdrojů', search: 'Hledat zdroje', allKinds: 'Všechny druhy', noMatches: 'Žádné odpovídající zdroje.', retry: 'Zkusit znovu',
   title: 'Zdroje', intro: 'Co DNESKAi čte každý večer ve 22:00 a jak dopadlo poslední čtení.',
   instagram: 'Instagram profily', web: 'Weby', empty: 'V tomto seznamu zatím není žádný zdroj.',
   loading: 'Načítám zdroje…', unavailable: 'Zdroje se nepodařilo načíst. Zkontrolujte připojení a obnovte.',

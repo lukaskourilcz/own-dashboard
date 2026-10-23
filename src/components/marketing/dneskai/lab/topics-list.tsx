@@ -121,14 +121,14 @@ export function DneskaiTopicsList({ projectId, lang, preview }: { projectId: str
   const tabStop = focusId && rows.some((topic) => topic.id === focusId) ? focusId : rows[0]?.id;
   const time = read.lastProposedAt ? new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { timeZone: 'Europe/Prague', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(read.lastProposedAt)) : null;
 
-  return <section aria-labelledby={`${projectId}-topics-title`} className="space-y-3 rounded-md border border-border bg-surface p-3" data-testid="dneskai-topics" aria-busy={mutation.isPending}>
+  return <section aria-labelledby={`${projectId}-topics-title`} className="space-y-3 border-t border-border pt-4" data-testid="dneskai-topics" aria-busy={mutation.isPending}>
     <div className="flex flex-wrap items-start justify-between gap-2">
-      <div className="min-w-0"><h3 id={`${projectId}-topics-title`} className="text-sm font-semibold">{t.title}</h3><p className="text-xs text-foreground-muted">{t.intro}</p></div>
+      <div className="min-w-0"><h3 id={`${projectId}-topics-title`} className="scroll-mt-4 text-sm font-semibold">{t.title} <span className="font-normal text-foreground-muted tabular">{rows.length}</span></h3><p className="text-xs text-foreground-muted">{t.intro}</p></div>
       {chosen.length > 0 && <Button size="sm" disabled={mutation.isPending} onClick={() => decide('approve', chosen)} data-testid="dneskai-topics-approve-selected">{t.approveSelected(chosen.length)}</Button>}
     </div>
     <p role="status" className="text-xs empty:hidden">{notice}</p>
     {rows.length === 0 ? <div className="text-sm" data-testid="dneskai-topics-empty"><p className="font-medium">{t.empty}</p><p className="text-xs text-foreground-muted">{time ? t.lastSearch(time) : t.noSearch}</p></div>
-      : <div ref={listRef} onKeyDown={onKeyDown} className="space-y-3">
+      : <div ref={listRef} onKeyDown={onKeyDown} className="max-h-[28rem] space-y-3 overflow-y-auto overscroll-contain pr-1">
         <p className="text-xs text-foreground-muted">{t.keys}</p>
         {open.filter((group) => group.topics.length).map((group) => <div key={group.kind} className="space-y-1">
           <h4 className="text-xs font-semibold">{t.groups[group.kind]} <span className="font-normal text-foreground-muted tabular">{group.topics.length}</span></h4>
@@ -142,7 +142,7 @@ export function DneskaiTopicsList({ projectId, lang, preview }: { projectId: str
         </div>)}
       </div>}
     <details className="text-sm" data-testid="dneskai-topics-archive">
-      <summary className="cursor-pointer text-xs font-medium focus-ring rounded-sm">{t.archive(archived.length)}</summary>
+      <summary className="min-h-11 cursor-pointer py-3 text-xs font-medium focus-ring rounded-sm md:min-h-8">{t.archive(archived.length)}</summary>
       {archived.length === 0 ? <p className="mt-2 text-xs text-foreground-muted">{t.archiveEmpty}</p> : <ul className="mt-2 divide-y divide-border">
         {archived.map((topic) => <li key={topic.id} className="flex flex-wrap items-center gap-2 py-2">
           <span className="min-w-0 flex-1 break-words text-foreground-muted">{topic.title}</span>
@@ -177,7 +177,7 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
           {topic.verdict && <StatusBadge value={`topic-${topic.verdict}`} label={t.verdict[topic.verdict]} tone={VERDICT_TONE[topic.verdict]} />}
           {topic.status === 'approved' && <StatusBadge value="topic-approved" label={t.approved} tone="success" />}
           {!editing && <button type="button" disabled={busy} onClick={() => { setDraft(topic.keyword ?? ''); onEdit(true); }}
-            className="inline-flex min-h-6 items-center gap-1 rounded-sm border border-dashed border-border-strong px-2 text-[11px] text-foreground hover:bg-surface-secondary focus-ring disabled:opacity-50"
+            className="inline-flex min-h-11 items-center md:min-h-7 gap-1 rounded-sm border border-dashed border-border-strong px-2 text-[11px] text-foreground hover:bg-surface-secondary focus-ring disabled:opacity-50"
             data-testid="dneskai-topic-keyword" aria-label={topic.keyword ? t.keyword.edit(topic.keyword) : t.keyword.add}>
             {topic.keyword ? <><span className="text-foreground-muted">{t.keyword.chip}</span><span className="font-mono font-semibold">{topic.keyword}</span></> : t.keyword.add}</button>}
         </div>

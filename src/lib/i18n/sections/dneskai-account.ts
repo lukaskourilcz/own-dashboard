@@ -1,5 +1,5 @@
 const en = {
-  title: 'Instagram account',
+  title: 'Instagram account', details: 'Connection details',
   intro: 'Publishing to @dneskai uses an Instagram Login token. Verification checks the account with the valid token that expires later, the stored one or the one installed on the server, and stores it. Publishing stays off until you enable it.',
   verify: 'Verify account', verifying: 'Verifying…', loading: 'Loading account status…', unavailable: 'Account status could not be loaded. Try again.',
   preview: 'Preview only. Account status is not loaded.',
@@ -59,7 +59,7 @@ const en = {
   },
 };
 const cs: typeof en = {
-  title: 'Instagramový účet',
+  title: 'Instagramový účet', details: 'Podrobnosti připojení',
   intro: 'Publikování na @dneskai používá token Instagram Login. Ověření zkontroluje účet platným tokenem s pozdějším koncem platnosti, uloženým nebo tím na serveru, a uloží ho. Publikování zůstane vypnuté, dokud ho nezapnete.',
   verify: 'Ověřit účet', verifying: 'Ověřuji…', loading: 'Načítám stav účtu…', unavailable: 'Stav účtu nelze načíst. Zkuste to znovu.',
   preview: 'Pouze náhled. Stav účtu nenačítáme.',
