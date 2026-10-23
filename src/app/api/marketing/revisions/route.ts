@@ -8,6 +8,8 @@ import { ContentEngagementEditSchema, parseContentRevision, type ContentRevision
 import { refreshMarketingAssetUrls } from '@/lib/marketing/asset-urls';
 import { recordMarketingOwnerFeedback } from '@/lib/marketing/owner-feedback';
 import { revisionContentHash } from '@/lib/marketing/hashes';
+import { DneskaiAudioChoiceKeySchema, dneskaiAudioFromKey } from '@/lib/marketing/dneskai-audio-contracts';
+import { dneskaiAudioTrendsEnabled } from '@/lib/marketing/dneskai-audio-trends';
 import { dneskaiReelsEnabled } from '@/lib/marketing/dneskai-reel';
 import { DneskaiDeckEditSchema, DneskaiRevisionEditError, prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from '@/lib/marketing/dneskai-revision-edit';
 import { getBriefAssetHashLister, getBriefPoolLoader, getDneskaiMediaLoader, getRenderDneskaiDeck } from '@/lib/marketing/dneskai-wiring';
@@ -26,7 +28,7 @@ const Input=z.discriminatedUnion('action',[
  z.strictObject({action:z.enum(['returned','skipped']),id:z.uuid(),feedback:z.string().max(2000).optional()}),
  // A deck edit (DNESKAi marketing-content/2) re-renders through the wired renderer unless the deck is unchanged; `accountId` is a marketing_accounts row.
  // `engagement` (#157): the keyword, DM and public reply; null removes them. Accepted only with DNESKAI_ENGAGEMENT_EDITOR_ENABLED.
- z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional(),engagement:ContentEngagementEditSchema.optional(),audioTrackId:z.uuid().nullable().optional(),format:z.enum(['carousel','reel']).optional()}),
+ z.strictObject({action:z.literal('edit'),id:z.uuid(),caption:z.string().min(1).max(2200),scheduledAt:z.iso.datetime({offset:true}),accountId:z.uuid().optional(),deck:DneskaiDeckEditSchema.optional(),engagement:ContentEngagementEditSchema.optional(),audioTrackId:DneskaiAudioChoiceKeySchema.nullable().optional(),format:z.enum(['carousel','reel']).optional()}),
  // „Publish now“: the exact saved version the owner reviewed (expectedHash), moved to DNESKAI_PUBLISH_NOW_LEAD_MS from now
  // and approved in the same request. The next scheduler tick (every 5 minutes) publishes it.
  z.strictObject({action:z.literal('publish-now'),id:z.uuid(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/)}),
@@ -117,12 +119,16 @@ export async function POST(request:Request){
    if(input.audioTrackId!==undefined&&(!current.deck||!dneskaiReelsEnabled()))return NextResponse.json({error:'audio-track-unavailable'},{status:409});
    // #165: publishing a deck as a Reel needs the Reels switch; going back to a carousel is always allowed.
    if(input.format==='reel'&&(!current.deck||!dneskaiReelsEnabled()))return NextResponse.json({error:'revision-format-unsupported'},{status:409});
-   if(input.audioTrackId){
+   // #167: a trending Instagram sound needs its own switch, Facebook Login and today's trend list.
+   if(input.audioTrackId?.startsWith('ig:')){
+    const {data:trend,error:trendError}=await db.from('marketing_audio_trends').select('audio_id').eq('audio_id',input.audioTrackId.slice(3)).eq('user_id',user.id).maybeSingle();
+    if(!dneskaiAudioTrendsEnabled()||trendError||!trend)return NextResponse.json({error:'audio-track-unavailable'},{status:409});
+   }else if(input.audioTrackId){
     const {data:track,error:trackError}=await db.from('marketing_audio_tracks').select('id,enabled,source').eq('id',input.audioTrackId).eq('user_id',user.id).maybeSingle();
     if(trackError||!track||!track.enabled||track.source==='instagram-library')return NextResponse.json({error:'audio-track-unavailable'},{status:409});
    }
    if(current.deck){
-    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,engagement:input.engagement,...(input.audioTrackId!==undefined?{audio:input.audioTrackId?{trackId:input.audioTrackId}:null}:{}),...(input.format?{format:input.format}:{})});
+    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,engagement:input.engagement,...(input.audioTrackId!==undefined?{audio:dneskaiAudioFromKey(input.audioTrackId)}:{}),...(input.format?{format:input.format}:{})});
     if(edited instanceof Response)return edited;
     return NextResponse.json({id:edited.id,ready:edited.ready,contentHash:edited.contentHash,render:{status:edited.report.status,problems:edited.report.problems}});
    }

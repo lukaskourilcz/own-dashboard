@@ -122,6 +122,8 @@ export function publicationGate(state: PublisherState, config: MetaPublisherConf
   if (revision.format === 'post' && revision.account.platform === 'instagram' && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'image/jpeg')) return 'unsupported-post-assets';
   if (revision.format === 'reel' && !deckReel(revision) && (revision.assets.length !== 1 || revision.assets[0]!.mimeType !== 'video/mp4')) return 'unsupported-reel-assets';
   if (deckReel(revision) && (revision.assets.length < 2 || revision.assets.some(asset => asset.mimeType !== 'image/jpeg'))) return 'unsupported-reel-assets';
+  // #167: Instagram attaches a trending sound only through the Audio API, which needs Facebook Login.
+  if (revision.audio && 'instagramAudioId' in revision.audio && (!deckReel(revision) || config.loginMode !== 'facebook')) return 'trending-audio-facebook-login-required';
   if (revision.assets.some(asset => asset.alt.length > INSTAGRAM_ALT_TEXT_MAX)) return 'asset-alt-too-long';
   if (instagramFeed(revision)) {
     // Declared geometry is checked here; the downloaded bytes are decoded and checked again before any container exists.
@@ -455,6 +457,8 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
         // #165: the rendered slideshow as a Reel, slide 1 as its cover, shown in the feed grid too.
         if (!input.reel) throw new MetaFailure('reel-video-missing');
         Object.assign(fields, { media_type: 'REELS', video_url: input.reel.url, cover_url: revision.assets[0]!.url, share_to_feed: 'true' });
+        // #167: a trending sound over the silent MP4. Meta takes volumes 1 to 100; the video has no sound to mix.
+        if (revision.audio && 'instagramAudioId' in revision.audio) fields.audio_configuration = JSON.stringify({ audio_id: revision.audio.instagramAudioId, audio_volume: 100 });
       } else if (revision.format === 'carousel') {
         const children: string[] = [];
         for (const asset of revision.assets) children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
@@ -470,7 +474,12 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       // Co-authors go on the post itself, never on carousel children, and only when the revision records them.
       if (instagramFeed(revision) && revision.collaborators?.length) fields.collaborators = JSON.stringify(revision.collaborators);
       // auto_publish_text is omitted: container creation cannot approve or publish a thread.
-      container = await create(fields);
+      try { container = await create(fields); }
+      catch (error) {
+        // A sound Instagram refuses for this account or region (#167): nothing was created; the owner picks a library track.
+        if (fields.audio_configuration && error instanceof MetaFailure && /^meta-http-4\d\d$/.test(error.code) && error.code !== 'meta-http-429') throw new MetaFailure('trending-audio-unavailable');
+        throw error;
+      }
       await save('container-created', result('pending', 'container-pending', container));
     }
     if (!idValid(container)) throw new MetaFailure('container-identity-unavailable');

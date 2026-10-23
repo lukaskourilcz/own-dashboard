@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
-import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-contracts';
-import { DneskaiAudioRequestError, dneskaiAudioFileProblem, loadDneskaiAudioLibrary, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
+import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack, type DneskaiAudioTrend } from '@/lib/marketing/dneskai-audio-contracts';
+import Image from 'next/image';
+import { DneskaiAudioRequestError, dneskaiAudioFileProblem, loadDneskaiAudioOptions, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from './dneskai/audio-preview';
 
 type Lang = 'en' | 'cs';
@@ -20,7 +21,7 @@ type Props = { lang: Lang; preview?: boolean };
  */
 export function DneskaiAudioLibrary({ lang, preview = false }: Props) {
   const t = dneskaiAudio[lang];
-  const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioLibrary(preview, signal) });
+  const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal) });
   const player = useDneskaiAudioPreview();
   if (query.data === null) return null;
   return <section aria-labelledby="dneskai-audio-title" className="min-w-0 space-y-4" data-testid="dneskai-audio-library">
@@ -28,7 +29,7 @@ export function DneskaiAudioLibrary({ lang, preview = false }: Props) {
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
       : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
-        : <TrackList tracks={query.data} lang={lang} preview={preview} player={player} />}
+        : <><TrackList tracks={query.data.tracks} lang={lang} preview={preview} player={player} /><TrendList trends={query.data.trends} lang={lang} /></>}
     {!preview && query.isSuccess && <UploadForm lang={lang} />}
   </section>;
 }
@@ -119,4 +120,23 @@ function UploadForm({ lang }: { lang: Lang }) {
     <div aria-live="polite">{message && <p role={message.tone === 'risk' ? 'alert' : 'status'} className={message.tone === 'risk' ? 'text-sm text-risk' : 'text-sm text-success'}>{message.text}</p>}</div>
     <Button type="submit" className="min-h-11" disabled={upload.isPending} aria-busy={upload.isPending}>{upload.isPending ? t.upload.uploading : t.upload.submit}</Button>
   </form>;
+}
+
+/** Trendy zvuky (#167): today's trending sounds from Meta's Audio API. Instagram attaches them; nothing is downloaded. */
+function TrendList({ trends, lang }: { trends: DneskaiAudioTrend[]; lang: Lang }) {
+  const t = dneskaiAudio[lang].trends;
+  if (!trends.length) return null;
+  return <section aria-labelledby="dneskai-audio-trends-title" className="min-w-0 space-y-2" data-testid="dneskai-audio-trends">
+    <h3 id="dneskai-audio-trends-title" className="text-sm font-medium">{t.title}</h3>
+    <p className="text-xs text-foreground-muted">{t.intro}</p>
+    <ul className="divide-y divide-border border-y border-border">
+      {trends.map((trend) => <li key={trend.audioId} className="flex min-w-0 items-center gap-3 py-2">
+        {trend.coverUrl ? <Image unoptimized src={trend.coverUrl} alt="" width={44} height={44} className="size-11 shrink-0 rounded object-cover" /> : <span aria-hidden className="size-11 shrink-0 rounded bg-surface-muted" />}
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-medium">{trend.title}{trend.artist && <span className="font-normal text-foreground-muted"> · {trend.artist}</span>}</p>
+          <p className="text-xs text-foreground-muted">{[t.type[trend.type], t.days(trend.daysSeen), trend.nicheCount ? t.niche(trend.nicheCount) : null, trend.tiktok ? t.tiktok : null].filter(Boolean).join(' · ')}</p>
+        </div>
+      </li>)}
+    </ul>
+  </section>;
 }

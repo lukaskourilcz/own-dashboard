@@ -69,6 +69,8 @@ export async function POST(request: Request) {
       loadSlide: (renderKey) => loadDneskaiSlideBytes(db, ownerId, renderKey),
       // The track the owner approved (#164); without one, the rotation's track the scheduler names, or silence.
       loadAudio: async (revision) => {
+        // A trending Instagram sound (#167) is attached by Instagram: the MP4 stays silent.
+        if (revision.audio && 'instagramAudioId' in revision.audio) return null;
         const trackId = revision.audio?.trackId ?? input.audioTrackId ?? null;
         return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId) : null;
       },

@@ -43,7 +43,8 @@ describe('DNESKAi topics list (#154)', () => {
     expect(lists).toEqual([t.listLabel('News'), t.listLabel('Education')]);
     expect(row(4)!.textContent).toContain('@ukazkovy.tvurce');
     expect(row(4)!.textContent).toContain(t.verdict.fact);
-    expect(row(4)!.textContent).toContain('#PRIKAZY');
+    expect(row(4)!.textContent).toContain(`${t.keyword.chip}PRIKAZY`);
+    expect(row(4)!.textContent).not.toContain('#PRIKAZY');
     expect(row(3)!.textContent).toContain(t.approved);
     // #210: an approved title-only topic says why it does not move on.
     expect(row(3)!.querySelector('[data-testid="dneskai-topic-code"]')!.textContent).toContain(describeMarketingCode('topic-source-missing', 'en').happened);
@@ -116,7 +117,7 @@ describe('DNESKAi topics list (#154)', () => {
     set('Zkratky');
     act(() => button(row(5)!, t.keyword.save)!.click());
     await wait();
-    expect(row(5)!.textContent).toContain('#Zkratky');
+    expect(row(5)!.textContent).toContain(`${t.keyword.chip}Zkratky`);
     expect(container.textContent).toContain(t.done.edit);
   });
 

@@ -5,6 +5,8 @@ import { rateLimit } from '@/lib/rate-limit';
 import { DneskaiAudioRequestSchema, type DneskaiAudioRequest } from '@/lib/marketing/dneskai-audio-contracts';
 import { DneskaiAudioError, createDneskaiAudioTrack, listDneskaiAudioTracks, prepareDneskaiAudioUpload, setDneskaiAudioTrackEnabled } from '@/lib/marketing/dneskai-audio';
 import { dneskaiReelsEnabled } from '@/lib/marketing/dneskai-reel';
+import { dneskaiAudioTrendsEnabled, listDneskaiAudioTrends } from '@/lib/marketing/dneskai-audio-trends';
+import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 
 export const runtime = 'nodejs';
 /** A create downloads the uploaded file (at most 20 MiB) and probes it with ffmpeg. */
@@ -33,7 +35,13 @@ export async function GET() {
   if (!dneskaiReelsEnabled()) return Response.json({ error: 'not-found' }, { status: 404, headers });
   const user = await owner();
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401, headers });
-  try { return Response.json({ tracks: await listDneskaiAudioTracks(createAdminClient(), user) }, { headers }); }
+  try {
+    const db = createAdminClient();
+    const tracks = await listDneskaiAudioTracks(db, user);
+    // #167: today's trending sounds, only while their switch is on.
+    const trends = dneskaiAudioTrendsEnabled() ? await listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date())).catch(() => []) : undefined;
+    return Response.json({ tracks, ...(trends ? { trends } : {}) }, { headers });
+  }
   catch (failure) { return failed(failure); }
 }
 

@@ -17,7 +17,7 @@ const video = Buffer.from('test-only-mp4-bytes');
 beforeAll(async () => { slide = await sharp({ create: { width: 1080, height: 1350, channels: 3, background: '#2f5ae6' } }).jpeg().toBuffer(); });
 type Call = { url: URL; method: string; body: URLSearchParams };
 
-function fixture(options: { graph?: (call: Call) => Response | undefined; reel?: PublishMarketingInput['reel']; videoBytes?: Buffer; publication?: Partial<PublishMarketingInput['publication']> } = {}) {
+function fixture(options: { graph?: (call: Call) => Response | undefined; reel?: PublishMarketingInput['reel']; videoBytes?: Buffer; publication?: Partial<PublishMarketingInput['publication']>; audio?: ContentRevision['audio']; facebook?: boolean } = {}) {
   const content = { title: 'OFFLINE QA', body: 'Syntetický zdroj.', category: 'tool', difficulty: null, code: null, options: [], answer: null, explanation: null,
     evidence: [{ url: 'https://example.invalid/source', title: 'QA', excerpt: 'QA', checkedAt: now.toISOString() }], image: null };
   const source = parseSourcePacket({ schemaVersion: 'marketing-source/1', brand: 'dneskai', kind: 'article', sourceId: 'article:reel-qa', sourceRevision: 'qa/1', contentHash: contentHash(content),
@@ -26,7 +26,7 @@ function fixture(options: { graph?: (call: Call) => Response | undefined; reel?:
     sources: [{ sourceId: source.sourceId, sourceRevision: source.sourceRevision, contentHash: source.contentHash }], knowledgeIds: [],
     assets: [1, 2, 3].map((n) => ({ url: `https://assets.example.invalid/slide-${n}.jpg`, sha256: sha(slide), mimeType: 'image/jpeg', width: 1080, height: 1350, alt: `Slide ${n}` })),
     account: { id: '17841400000000001', platform: 'instagram', handle: 'dneskai' }, scheduledAt: now.toISOString(), timeZone: 'Europe/Prague',
-    templateVersion: 'qa/1', promptVersion: 'qa/1', model: 'none-offline', traceId: null, deck: deck() });
+    templateVersion: 'qa/1', promptVersion: 'qa/1', model: 'none-offline', traceId: null, deck: deck(), ...(options.audio ? { audio: options.audio } : {}) });
   const hash = revisionHash(revision);
   const calls: Call[] = []; const checkpoints: PublisherCheckpoint[] = [];
   const served = options.videoBytes ?? video;
@@ -36,8 +36,8 @@ function fixture(options: { graph?: (call: Call) => Response | undefined; reel?:
     publication: { id: '33333333-3333-4333-8333-333333333333', user_id: owner, revision_id: '22222222-2222-4222-8222-222222222222', platform: 'instagram', status: 'claimed', lease_until: '2026-10-23T15:10:00Z', remote_container_id: null, remote_media_id: null, remote_url: null, error_code: null, ...options.publication },
     account: { id: '44444444-4444-4444-8444-444444444444', user_id: owner, brand: 'dneskai', platform: 'instagram', remote_account_id: '17841400000000001', handle: 'dneskai', verified_at: '2026-10-23T06:00:00Z', enabled: true },
     sources: [source],
-    config: { enabled: true, apiVersion: 'v99.0', apiVersionVerifiedAt: '2026-10-23T06:00:00Z', loginMode: 'instagram', accessToken: 'TEST-ONLY-TOKEN', tokenExpiresAt: '2026-12-01T00:00:00Z',
-      scopes: ['instagram_business_basic', 'instagram_business_content_publish'], approvedAssetHosts: ['assets.example.invalid'], pollIntervalMs: 0, credentialSource: 'database' },
+    config: { enabled: true, apiVersion: 'v99.0', apiVersionVerifiedAt: '2026-10-23T06:00:00Z', loginMode: options.facebook ? 'facebook' : 'instagram', accessToken: 'TEST-ONLY-TOKEN', tokenExpiresAt: '2026-12-01T00:00:00Z',
+      scopes: options.facebook ? ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement'] : ['instagram_business_basic', 'instagram_business_content_publish'], approvedAssetHosts: ['assets.example.invalid'], pollIntervalMs: 0, credentialSource: 'database' },
     checkpoint: async (value) => { checkpoints.push(value); }, revalidate: async () => input, wait: async () => undefined,
     fetcher: async (value, init) => {
       const url = new URL(String(value)); const method = init?.method ?? 'GET'; const body = new URLSearchParams(String(init?.body ?? '')); const call = { url, method, body }; calls.push(call);
@@ -46,7 +46,7 @@ function fixture(options: { graph?: (call: Call) => Response | undefined; reel?:
         return new Response(new Uint8Array(slide), { headers: { 'Content-Type': 'image/jpeg' } });
       }
       const custom = options.graph?.(call); if (custom) return custom;
-      if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json({ id: '1234567', user_id: '17841400000000001', username: 'dneskai' });
+      if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json(options.facebook ? { id: '17841400000000001', username: 'dneskai' } : { id: '1234567', user_id: '17841400000000001', username: 'dneskai' });
       if (url.pathname.endsWith('/content_publishing_limit')) return Response.json({ data: [{ quota_usage: 3, config: { quota_total: 100, quota_duration: 86400 } }] });
       if (url.pathname.endsWith('/media_publish') && method === 'POST') { expect(checkpoints.at(-1)).toMatchObject({ stage: 'publish-intent' }); return Response.json({ id: '90001' }); }
       if (url.pathname.endsWith('/media') && method === 'POST') return Response.json({ id: '300' });
@@ -111,5 +111,25 @@ describe('a DNESKAi deck Reel (#165)', () => {
     });
     expect(await publishMarketingRevision(input)).toMatchObject({ status: 'published', remoteMediaId: '90001', remoteUrl: 'https://www.instagram.com/reel/offline-qa/' });
     expect(posts()).toEqual([]);
+  });
+});
+
+describe('a Reel with a trending Instagram sound (#167)', () => {
+  const audio = { instagramAudioId: '587784541076604' };
+  it('sends audio_configuration over the silent video under Facebook Login', async () => {
+    const { input, posts, calls } = fixture({ audio, facebook: true });
+    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'published' });
+    expect(calls.some((call) => call.url.hostname === 'graph.facebook.com')).toBe(true);
+    expect(Object.fromEntries(posts()[0]!.body)).toEqual({ caption, media_type: 'REELS', video_url: 'https://assets.example.invalid/reels/reel.mp4', cover_url: 'https://assets.example.invalid/slide-1.jpg',
+      share_to_feed: 'true', audio_configuration: JSON.stringify({ audio_id: '587784541076604', audio_volume: 100 }) });
+  });
+  it('reports a sound Instagram refuses as trending-audio-unavailable, with nothing created', async () => {
+    const { input, posts } = fixture({ audio, facebook: true, graph: (call) => call.method === 'POST' && call.url.pathname.endsWith('/media') ? new Response('{}', { status: 400 }) : undefined });
+    expect(await publishMarketingRevision(input)).toMatchObject({ status: 'failed', errorCode: 'trending-audio-unavailable' });
+    expect(posts().some((call) => call.url.pathname.endsWith('/media_publish'))).toBe(false);
+  });
+  it('holds a trending sound under Instagram Login before any request', () => {
+    const { input } = fixture({ audio });
+    expect(publicationGate(input, input.config, now)).toBe('trending-audio-facebook-login-required');
   });
 });

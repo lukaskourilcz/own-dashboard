@@ -199,6 +199,14 @@ describe("2026-10-23 DNESKAi Reels migrations (#163)", () => {
     expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_audio_tracks to authenticated/);
     expect(guide).toMatch(/DNESKAi audio library, 23 October 2026 \(unapplied\)/);
   });
+
+  it("keep the trending audio list own-only with service-role writes (#167)", () => {
+    const sql = code("20261023130200_dneskai_audio_trends.sql");
+    expect(sql).toMatch(/create table public\.marketing_audio_trends/);
+    expect(sql).toMatch(/revoke all on public\.marketing_audio_trends from public,anon,authenticated/);
+    expect(sql).not.toMatch(/grant (insert|update|delete|all) on public\.marketing_audio_trends to authenticated/);
+    expect(guide).toMatch(/DNESKAi trending audio, 23 October 2026 \(unapplied\)/);
+  });
 });
 
 describe("2026-10-23 DNESKAi topic spend (#152)", () => {
