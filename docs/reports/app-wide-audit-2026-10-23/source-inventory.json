@@ -1313,7 +1313,8 @@
       "path": "src/components/panels/shortcuts-panel.tsx",
       "lines": 760,
       "sha256": "3ab24a31b7cfe78896188e98b4b7e71e0a9b5c2317d09ec52250f21d9af24fd7",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "28d98568ba16fca4b216a7a7cf1d93945487d8e460143056f39f6dd1b374f8d2"
     },
     {
       "path": "src/components/panels/subscriptions-panel.tsx",
@@ -1536,7 +1537,8 @@
       "path": "src/components/ui/page-header.tsx",
       "lines": 69,
       "sha256": "723abcb0c3fde2bc62c61c717e2c964628cd939f25dbd41aca2e2ad95f2672f9",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "723abcb0c3fde2bc62c61c717e2c964628cd939f25dbd41aca2e2ad95f2672f9"
     },
     {
       "path": "src/components/ui/progress.tsx",
@@ -2094,7 +2096,8 @@
       "path": "src/lib/i18n/sections/shortcuts.ts",
       "lines": 169,
       "sha256": "84e73eab3f522016feadc695a60888b30602ddf8375e1cb703df84dfa8e32fcc",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "84e73eab3f522016feadc695a60888b30602ddf8375e1cb703df84dfa8e32fcc"
     },
     {
       "path": "src/lib/i18n/sections/subscriptions.ts",
