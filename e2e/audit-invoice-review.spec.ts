@@ -33,7 +33,7 @@ test("editing supplier defaults preserves the unsaved invoice on return", async 
   await page.locator("#i-number").fill("UNSAVED-2026-12");
   await page.getByLabel(t.itemDescriptionPlaceholder, { exact: true }).fill("Unsaved invoice line");
   await page.getByRole("button", { name: t.editSupplier, exact: true }).click();
-  await expect(page.getByLabel(t.supplierNameLabel, { exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: t.supplierNameLabel, exact: true })).toBeVisible();
   await page.getByRole("button", { name: t.back, exact: true }).click();
   await expect(page.locator("#b-name")).toHaveValue("Unsaved invoice buyer");
   await expect(page.locator("#i-number")).toHaveValue("UNSAVED-2026-12");
