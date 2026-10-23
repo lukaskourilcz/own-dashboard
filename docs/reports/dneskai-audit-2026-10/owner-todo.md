@@ -1,5 +1,7 @@
 # What I need from you
 
+> **Superseded on 23 October 2026.** This list is a snapshot from the evening of 22 October. Since then the pilot has published, 23 migrations wait instead of 13, and the education and Reels plan added new owner steps. The current list is [`NEEDED.md`](../../../NEEDED.md).
+
 Updated after browser setup on 22 October 2026. See [verified setup and exact continuation point](browser-setup-result.md). Product decisions below remain pending; setup completion does not prove the live publication chain.
 
 Each item says how long it takes and what it costs. Where you have to choose, I put my recommendation first so you can answer "yes, your pick" if you agree.

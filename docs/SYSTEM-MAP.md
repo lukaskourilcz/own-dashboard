@@ -306,7 +306,6 @@ are in `docs/external-setup.md`. Astra's issue #178 sets the Vercel values.
 | Question | Read |
 |---|---|
 | Owner's open actions | `NEEDED.md` |
-| Owner list in plain language | `docs/reports/dneskai-audit-2026-10/owner-todo.md` |
 | Migrations and their order | `docs/migration-guide.md` |
 | Env vars and external setup | `docs/external-setup.md` |
 | Generation, prompt, costs | `docs/marketing-generation.md` |
