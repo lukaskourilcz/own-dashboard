@@ -13,7 +13,8 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The full vitest run, the build and the ffprobe install now take 6 to 10 minutes on a shared runner.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
