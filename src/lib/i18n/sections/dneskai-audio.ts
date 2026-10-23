@@ -46,6 +46,15 @@ const en = {
     help: 'Used when this post publishes as a Reel. A carousel has no music.',
     none: 'The music library is empty. Upload tracks in Sources → Music.',
   },
+  trends: {
+    title: 'Trending sounds',
+    intro: 'Today’s trending sounds that Instagram lets @dneskai use, from Meta’s audio API. A Reel with one of them publishes silent and Instagram adds the sound.',
+    type: { music: 'Music', original_sound: 'Original sound' },
+    days: (count: number) => count === 1 ? 'trending 1 day' : `trending ${count} days`,
+    niche: (count: number) => `used by ${count} tracked profiles`,
+    tiktok: 'rising on TikTok CZ',
+    attached: 'Instagram adds this sound to the Reel; the video itself stays silent.',
+  },
   hint: {
     badge: 'Add music in the app',
     help: 'Instagram cannot add music to a published carousel through the API. In the Instagram app open the post, tap ⋯ → Edit, then add music; it takes about 30 seconds. Use a track from the music library.',
@@ -105,6 +114,15 @@ const cs: typeof en = {
     rotation: (next: string | null) => next ? `Automaticky: další v pořadí (${next})` : 'Automaticky: další v pořadí',
     help: 'Použije se, když příspěvek vyjde jako Reel. Karusel hudbu nemá.',
     none: 'Hudební knihovna je prázdná. Nahrajte skladby v Zdroje → Hudba.',
+  },
+  trends: {
+    title: 'Trendy zvuky',
+    intro: 'Dnešní trendy zvuky, které Instagram dovolí @dneskai použít, z audio API Mety. Reel s některým z nich vyjde bez zvuku a zvuk přidá Instagram.',
+    type: { music: 'Hudba', original_sound: 'Původní zvuk' },
+    days: (count: number) => count === 1 ? 'v trendu 1 den' : count < 5 ? `v trendu ${count} dny` : `v trendu ${count} dní`,
+    niche: (count: number) => `používá ${count} sledovaných profilů`,
+    tiktok: 'roste na TikToku CZ',
+    attached: 'Tento zvuk k Reelu přidá Instagram; samotné video zůstane bez zvuku.',
   },
   hint: {
     badge: 'Přidat hudbu v aplikaci',

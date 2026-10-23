@@ -208,6 +208,7 @@ Costs show in "Chyby a náklady".
 | `marketing_campaigns`, `marketing_calendar_entries` | Daily campaign and slot entries a job is bound to |
 | `marketing_jobs` | Generation jobs: request, fence, lease, result (deck, revision, usage) |
 | `marketing_revisions` | Every version of a post: content, `content_hash`, render report, status, `approved_hash` |
+| `marketing_audio_trends` | Trending sounds from Meta's Audio API per day (prepared, #167; Facebook Login only) |
 | `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
 | `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (prepared, `20261023120000`) |

@@ -874,3 +874,12 @@ exact path, then the route checks the stored file before it records the row.
 
 Replayed only in PGlite (`tests/lib/dneskai-audio-database.test.ts`). Apply it with the other prepared files
 (`npx supabase db push --linked`). The route and Zdroje → Hudba stay hidden until `MARKETING_DNESKAI_REELS_ENABLED=true`.
+
+## DNESKAi trending audio, 23 October 2026 (unapplied)
+
+`20261023130200_dneskai_audio_trends.sql` (#167) adds `marketing_audio_trends`: one row per owner and Instagram audio
+id with title, artist, type (`music` or `original_sound`), length, an https cover thumbnail, the first and last day it
+trended, the number of days, and two signals for later (`niche_count`, `tiktok`). Meta's temporary preview link is not
+stored. The owner reads only their own rows; the daily tick writes them with the service role. Replayed only in
+PGlite (`tests/lib/dneskai-audio-trends-database.test.ts`). Apply it with the other prepared files
+(`npx supabase db push --linked`); the daily step and the screens stay off until `DNESKAI_AUDIO_TRENDS_ENABLED=true`.

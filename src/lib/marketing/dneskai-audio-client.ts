@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
 import {
   DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema,
-  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioType,
+  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType,
 } from './dneskai-audio-contracts';
 
 /** The browser side of the audio library (#164): `/api/marketing/dneskai/audio` and the signed upload into `marketing-audio`. */
@@ -38,11 +38,17 @@ export const DEMO_DNESKAI_AUDIO_TRACKS: DneskaiAudioTrack[] = [
  * In the preview, the sample tracks.
  */
 export async function loadDneskaiAudioLibrary(preview: boolean, signal?: AbortSignal): Promise<DneskaiAudioTrack[] | null> {
-  if (preview) return DEMO_DNESKAI_AUDIO_TRACKS;
+  return (await loadDneskaiAudioOptions(preview, signal))?.tracks ?? null;
+}
+
+/** The library and, while their switch is on, today's trending sounds (#167). Null while Reels are off. */
+export async function loadDneskaiAudioOptions(preview: boolean, signal?: AbortSignal): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[] } | null> {
+  if (preview) return { tracks: DEMO_DNESKAI_AUDIO_TRACKS, trends: [] };
   const response = await fetch(URL_PATH, { cache: 'no-store', signal });
   if (response.status === 404) return null;
   if (!response.ok) throw await failure(response);
-  return DneskaiAudioLibrarySchema.parse(await response.json()).tracks;
+  const parsed = DneskaiAudioLibrarySchema.parse(await response.json());
+  return { tracks: parsed.tracks, trends: parsed.trends ?? [] };
 }
 
 export async function setDneskaiAudioTrackEnabled(id: string, enabled: boolean): Promise<void> {

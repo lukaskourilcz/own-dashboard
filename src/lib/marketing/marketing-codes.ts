@@ -517,6 +517,13 @@ const CODES = {
   'reel-render-pending': ['wait', 'The Reel video is being made; the post publishes on a following run inside its window.', 'Video Reelu se vyrábí; příspěvek vyjde při některém dalším běhu v rámci svého okna.'],
   'reel-render-unavailable': ['retry', 'The Reel video could not be requested, so the post waits.', 'Video Reelu nešlo vyžádat, proto příspěvek čeká.'],
   'reel-video-missing': ['investigate', 'The Reel had no stored video at publishing time, so nothing was sent.', 'Reel neměl při publikování uložené video, proto se nic neodeslalo.'],
+  // Trending audio (#167).
+  'trending-audio-facebook-login-required': ['account', 'A trending Instagram sound needs a Reel and the Facebook Login connection, so nothing was published. Pick a library track or switch the account to Facebook Login.', 'Trendy zvuk z Instagramu potřebuje Reel a připojení přes Facebook Login, proto se nic nepublikovalo. Vyberte skladbu z knihovny nebo přepněte účet na Facebook Login.'],
+  'trending-audio-unavailable': ['edit', 'Instagram refused this trending sound for the account, so nothing was published. Pick a library track and approve again.', 'Instagram tento trendy zvuk pro účet odmítl, proto se nic nepublikovalo. Vyberte skladbu z knihovny a schvalte znovu.'],
+  'audio-trends-facebook-login-required': ['none', 'Trending sounds are read only under Facebook Login.', 'Trendy zvuky se čtou jen přes Facebook Login.'],
+  'audio-trends-input-invalid': ['config', 'The account or API version for trending sounds is not configured.', 'Účet nebo verze API pro trendy zvuky nejsou nastavené.'],
+  'audio-trends-request-failed': ['auto', 'Meta could not be reached for trending sounds.', 'Meta se pro trendy zvuky nepodařilo zastihnout.'],
+  'audio-trends-store-failed': ['auto', 'The trending sounds could not be stored.', 'Trendy zvuky se nepodařilo uložit.'],
   // Audio library (#164): Zdroje → Hudba.
   'audio-library-unavailable': ['retry', 'The audio library could not be read or written.', 'Hudební knihovnu nešlo načíst ani uložit.'],
   'audio-upload-missing': ['retry', 'The uploaded file did not arrive; upload it again.', 'Nahraný soubor nedorazil; nahrajte ho znovu.'],

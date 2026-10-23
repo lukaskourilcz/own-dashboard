@@ -315,3 +315,23 @@ a suggested track name from the library with a copy button, a different enabled 
 ranking of #167 exists it can supply the name instead. The badge needs no API call and appears only while
 `MARKETING_DNESKAI_REELS_ENABLED=true`, because the suggestion comes from the library. Code:
 `src/components/marketing/dneskai/music-hint.tsx`.
+
+## Trending sounds (#167)
+
+Under Facebook Login (#166) Meta's Audio API answers `GET /ig_audio?audio_type=music|original_sound&user_id=<ig id>`
+without a search query with the sounds trending now that @dneskai may use. With `DNESKAI_AUDIO_TRENDS_ENABLED=true`
+the daily tick reads both types (at most 25 each) and records them in `marketing_audio_trends`: title, artist, type,
+length, cover, first and last day trending and the number of days. Zdroje → Hudba shows them as "Trendy zvuky" and the
+Lab picker offers them above the library.
+
+A post with a trending sound stores `revision.audio = { instagramAudioId }`, so approval binds that exact sound. Its
+Reel renders silent; the publisher sends `audio_configuration={"audio_id":…,"audio_volume":100}` on the REELS
+container and Instagram lays the sound over it (Meta accepts volumes 1 to 100, so `video_volume` is left out; the
+video has no sound). Under Instagram Login such a post holds before any request
+(`trending-audio-facebook-login-required`). A sound Instagram refuses for the account or region ends as
+`trending-audio-unavailable` with nothing created; the owner picks a library track and approves again. An automatic
+re-render with a library track is not built: it would publish a sound the owner did not approve.
+
+Not built yet: the niche ranking (scouting does not store reels' `musicInfo` yet) and the TikTok Creative Center CZ
+signal (a paid Apify run that needs its own budget line). Their columns (`niche_count`, `tiktok`) exist and the screens
+already show them when set.

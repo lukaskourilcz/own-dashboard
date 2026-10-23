@@ -180,6 +180,7 @@ The migrations, in the order they run:
 82. `20261023120000_dneskai_comment_replies.sql` — unapplied, `marketing_instagram_comment_replies` (one private reply per keyword comment, unique comment id, no commenter data) and `marketing_instagram_comment_checks` (where the comment watcher continues and the counts of its last pass), both own-read with service-role writes, plus the per-account comment-reply switch on `marketing_accounts`; used only with `DNESKAI_ENGAGEMENT_ENABLED=true`.
 83. `20261023130000_dneskai_reel_bucket.sql` — unapplied, the private `marketing-reels` bucket (MP4 only, 64 MiB) for rendered DNESKAi Reels, owner-prefix reads and no browser writes; used only with `MARKETING_DNESKAI_REELS_ENABLED=true`.
 84. `20261023130100_dneskai_audio_tracks.sql` — unapplied, the DNESKAi audio library: `marketing_audio_tracks` (own-only reads, service-role writes) and the private `marketing-audio` bucket; used only with `MARKETING_DNESKAI_REELS_ENABLED=true`.
+85. `20261023130200_dneskai_audio_trends.sql` — unapplied, `marketing_audio_trends`: the day's trending sounds from Meta's Audio API under Facebook Login (own-only reads, service-role writes); used only with `DNESKAI_AUDIO_TRENDS_ENABLED=true`.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
