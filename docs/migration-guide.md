@@ -728,13 +728,13 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-Twenty files are newer than anything production holds and none of them is applied: `20261022000000` through
+Twenty-one files are newer than anything production holds and none of them is applied: `20261022000000` through
 `20261023130100`. Apply them with the CLI, which records each file's own version:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # local and remote columns agree up to 20261021125123
-npx supabase db push --linked --dry-run   # lists exactly the twenty files, in filename order
+npx supabase db push --linked --dry-run   # lists exactly the twenty-one files, in filename order
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -837,6 +837,12 @@ read-only and the pipeline reads the file.
 
 It stays unapplied. The app writes topic briefs only with `DNESKAI_TOPIC_BRIEFS_ENABLED=true`; without the switch nothing writes them, and the brief step ignores any row that has a topic. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/dneskai-topic-bridge-database.test.ts`).
 
+
+### Prepared: daily mix (#156, plan A7)
+
+`20261023100300_dneskai_daily_mix.sql` adds `marketing_dneskai_daily_mix`, one row per owner and project: `news_per_day` and `education_per_day` (0 to 4, default 1 each) and `slots`, the active publishing times (any of 08:00, 12:30, 17:00 and 20:00, default 08:00 and 17:00). Every post needs its own time (`news_per_day + education_per_day <= cardinality(slots)`). The owner reads, inserts and updates only their own row, and the project must be theirs. No row means the default. The four times stay one list (`DNESKAI_BRIEF_SLOTS`, and the same four in `marketing_dneskai_reslot_brief`); the mix only switches some off.
+
+It stays unapplied. The app reads and writes the row only with `DNESKAI_DAILY_MIX_ENABLED=true`. Apply it with the other prepared migrations through [Applying the prepared migrations](#applying-the-prepared-migrations), then set the switch and redeploy. Replayed only in PGlite (`tests/lib/marketing-dneskai-daily-mix-database.test.ts`).
 ## DNESKAi comment replies, 23 October 2026 (unapplied)
 
 `20261023120000_dneskai_comment_replies.sql` (#160) prepares the comment watcher. `marketing_instagram_comment_replies` holds one row per keyword comment that got a reply: Instagram's comment id (unique, so a comment never gets a second private reply), the media id, the publication, the matched keyword, the private reply's status (`claimed`, `sent`, `failed`, `uncertain`) and time, the public reply's status and comment id, and an error code. It stores no commenter username, user id or comment text. `marketing_instagram_comment_checks` keeps one row per watched publication: the cursor of an unfinished pass, that pass's counts, the counts of the last finished pass and the last check time. Both are own-read; only `service_role` writes, and a trigger refuses a row whose publication belongs to another owner. `marketing_accounts` gains `engagement_enabled` (off), `engagement_blocked_code` and `engagement_blocked_at`.

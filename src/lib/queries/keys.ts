@@ -66,6 +66,8 @@ export const qk = {
   dneskaiMedia: ["marketing", "dneskai-media"] as const,
   // Topics (náměty, #154), followed by the project id; read by the Lab only when the server has them on.
   dneskaiTopics: ["marketing", "dneskai-topics"] as const,
+  // Zdroje → Denní mix (#156), followed by the project id.
+  dneskaiDailyMix: ["marketing", "dneskai-daily-mix"] as const,
   // Not a server read: the versions this browser session saw fail to attach their render, shared by the tabs.
   dneskaiRenderFailed: ["marketing", "dneskai-render-failed"] as const,
   dneskaiAudio: ["marketing", "dneskai-audio"] as const,

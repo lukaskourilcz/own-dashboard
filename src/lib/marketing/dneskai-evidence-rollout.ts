@@ -78,3 +78,11 @@ export function dneskaiSourcesTableEnabled(env: Record<string, string | undefine
 export function dneskaiTopicBriefsEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_TOPIC_BRIEFS_ENABLED === 'true' && dneskaiTopicsEnabled(env);
 }
+
+/**
+ * Daily mix (#156). Only after 20261023100300_dneskai_daily_mix.sql is applied: Zdroje shows "Denní mix", and the
+ * news topics, the topic bridge's day caps and its slots follow the owner's setting instead of the default.
+ */
+export function dneskaiDailyMixEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_DAILY_MIX_ENABLED === 'true' && dneskaiTopicsEnabled(env);
+}
