@@ -45,7 +45,8 @@ describe('Zdroje source list (#174)', () => {
     const list = { ...dneskaiRegistrySourceList(), editable: true };
     const fetch = vi.fn(async (url: string, init?: RequestInit) => init?.method === 'POST' ? new Response(JSON.stringify({ ok: true }), { status: 200 }) : new Response(JSON.stringify(list), { status: 200 }));
     vi.stubGlobal('fetch', fetch);
-    render('cs', false); await wait();
+    render('cs', false);
+    await vi.waitFor(async () => { await wait(0); expect(container.querySelector('form')).not.toBeNull(); });
     const t = dneskaiSourceList.cs;
     const form = container.querySelector('form')!;
     type(form.querySelector('input')!, '@NewProfile');
@@ -54,7 +55,7 @@ describe('Zdroje source list (#174)', () => {
     const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST')!;
     expect(JSON.parse(String(post[1]!.body))).toEqual({ action: 'save', projectId: project,
       source: { sourceId: 'instagram:newprofile', kind: 'instagram', topic: 'education', handleOrUrl: 'newprofile', name: 'newprofile', tier: 0, weekdays: [0, 1, 2, 3, 4, 5, 6], maxItems: 10, enabled: true } });
-    expect(container.querySelector('[role="status"]')!.textContent).toBe(t.saved);
+    await vi.waitFor(async () => { await wait(0); expect(container.querySelector('[aria-live="polite"] [role="status"]')?.textContent).toBe(t.saved); });
     // A source already in the list is refused before any request.
     type(form.querySelector('input')!, 'mosseri');
     await act(async () => { form.querySelector<HTMLButtonElement>('button[type="submit"]')!.click(); });

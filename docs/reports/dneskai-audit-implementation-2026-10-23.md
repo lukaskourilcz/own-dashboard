@@ -32,7 +32,7 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 
 ## Environment and boundaries
 
-The original user checkout remains separate. Application changes and tests live in the implementation checkout. No secrets are read into files or logs, no content is published, and no live configuration, spend, schema or data is changed by local tests. The Chrome extension did not respond to two inventory attempts; signed-in browser checks remain pending while local fixture tests continue.
+The original user checkout remains separate. Application changes and tests live in the implementation checkout. No secrets are read into files or logs, no content is published, and no live configuration, spend, schema or data is changed by local tests. The Chrome extension did not respond to three inventory attempts; browser verification uses isolated Chromium instead of the owner's signed-in session.
 
 Database work follows the current [function/invoker guidance](https://supabase.com/docs/guides/database/functions) and [PostgREST filter guidance](https://supabase.com/docs/reference/javascript/or). The public changelog was checked on 23 October; the reviewed TLS and server-adapter notices require no change to this project’s existing JS/SSR client for these fixes.
 
@@ -83,3 +83,26 @@ Four actual-browser regressions now pass for canonical Back/Forward and unchange
 Direct Daily mix/Music destinations now show a named disabled state when their server feature is off, rather than a blank tab. Daily mix also exposes loading and explicit read Retry; section chunks use one loading message. The embedded components retain their existing hidden-when-off default for other callers. Twenty-four targeted component/documentation tests passed, including the two direct-destination disabled-state cases; focused lint and type checks passed.
 
 The final optimized fixture build, full lint and standalone type check passed. The six macOS visual tests passed after updating their navigation-dialog action to the shared translated label. Two desktop Lab captures changed; ten new stage captures cover the older pending fixtures now reachable through the corrected queue. Every changed/new PNG was visually reviewed. The full browser and unit suites are running separately; updating snapshots alone is not their completion evidence.
+
+The concurrent full unit run finished with 2,777 passes, one existing skip and two timing failures: a source test assumed its asynchronously loaded form existed after 50 ms, and a changelog assertion spent its timeout importing the full fixture module. The source test now polls for the actual form/success announcement; the changelog fixture loads with the test module. Both retain their original behavior assertions. Their focused rerun passed all nineteen tests; the complete unit suite will be rerun after the browser workload.
+
+## UX recommendation map
+
+| Audit ID | Implemented treatment / retained boundary |
+|---|---|
+| U01 | Selected revision before the bounded topic inbox; real saved pixels remain the approval surface. |
+| U02 | URL-backed Sources / Daily mix / Music sections, search, source-kind filtering and compact rows. |
+| U03 | Centered 960 px maximum mix form; paired control heights, labelled mobile groups and adjacent validation. |
+| U04 | Attention card follows its content; upcoming dates and shipped work use the freed column. |
+| U05 | Centered 896 px settings grid and section anchors; short preferences retain nearby controls. |
+| U06 | Accounts, Transactions and Categories have focused landings and route-specific data needs; Money retains the overview. |
+| U07 | Explicit shell title ownership; descriptions/actions survive without duplicate mobile headings. |
+| U08 | Shared desktop heights and 44 px mobile controls/tabs; no forced equal height for unrelated content. |
+| U09 | One upload-dialog title with unique form IDs; account detail disclosed from a compact connection summary. |
+| U10 | Save/approve separated from publish/return/skip; conditional Reel music, format guidance and explicit preview retry. |
+| U11 | Mobile filter dialog with counts/clear-all; Calendar, Goals and Dates creation forms open on demand. |
+| U12 | Shared palette modal traps/restores focus, uses canonical destination visibility and includes Competition; More restores its opener. |
+| U13 | One prompt preview/copy entry, masonry categories, aligned tool actions, no duplicate expanded-link action; Notes has mobile list/detail and persistent failed-save retry. Existing library evidence/project associations remain. |
+| U14 | Career freshness/refresh beside count, explicit Tugedr opportunity source, compact client relationships without zero-count KPI blocks. Existing fit/detail behavior remains. |
+| U15 | Subscription creation on demand and visible renewal/classification; finance/project touch controls align. Invoice calculations, legal details, QR and print layout remain unchanged. |
+| U16 | Shared centered page/settings/form frames, content-sized panels, explicit disabled/read-error/loading states and recovery. Empty space is not filled with invented content. |

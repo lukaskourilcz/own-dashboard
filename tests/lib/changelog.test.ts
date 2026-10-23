@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { weeklyReviews } from "@/lib/demo/fixtures";
 import {
   CHANGELOG,
   SHIPPED_ENTRY_LIMIT,
@@ -153,8 +154,7 @@ describe("entriesSince", () => {
     expect(entriesSince(entries, "2026-09-16", 10)).toEqual([]);
   });
 
-  it("gives the demo fixture's completed review a non-empty window", async () => {
-    const { weeklyReviews } = await import("@/lib/demo/fixtures");
+  it("gives the demo fixture's completed review a non-empty window", () => {
     const since = previousCompletedReviewDate(weeklyReviews, "2099-01-05");
 
     expect(since).not.toBeNull();
