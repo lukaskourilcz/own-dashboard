@@ -359,6 +359,11 @@ admitted. Codes the owner sees under the topic in Náměty:
 | `topic-run-unavailable` | No collection run has finished yet. | Tried on the next pass. |
 | `topic-source-unsupported` | A source the bridge cannot use, or no reader wired. | Final. |
 
+The cards show the topic's working title (#211). With the same switch, the workspace read loads `title_cs` of every
+topic that reached a brief (`enriching`, `briefed`, `generated`) and uses it for the post whose brief row is the
+topic's `brief_id`, for the queued job in `evidence.jobId` and for a waiting brief. The source title stays in the
+brief and in the model's input. With the switch off, or when the topics read fails, the cards keep the source title.
+
 ## Daily mix (#156)
 
 With `DNESKAI_DAILY_MIX_ENABLED=true` the owner's mix from Zdroje → Denní mix (default 1 news and 1 education post,

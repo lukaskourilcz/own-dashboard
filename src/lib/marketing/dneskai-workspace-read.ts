@@ -40,14 +40,31 @@ const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string):
 
 type RevisionRow = { id: string; replaces_id: string | null; status: string; ready: boolean; content_hash: string; created_at: string; approved_at: string | null; feedback: string | null; revision: unknown; render_report: unknown };
 type PublicationRow = { id: string; revision_id: string; status: string; scheduled_at: string; remote_url: string | null; error_code: string | null; last_checked_at: string | null };
-type BriefRow = { event_id: string; member_hash: string; brief: unknown };
+type BriefRow = { id: string; event_id: string; member_hash: string; brief: unknown };
+type TopicTitleRow = { brief_id: string | null; title_cs: string; job_id: string | null };
 
-function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBrief | null, publication: PublicationRow | null, publishedAt: string | null): DneskaiWorkspacePost {
+/**
+ * #211: the Czech working titles the owner approved in Náměty, by brief row id and by job id. A post, a queued job
+ * or a waiting brief made from a topic shows this title instead of the source's. Topics that never reached a brief
+ * are left out; a read that fails returns no titles, and the cards keep the source title.
+ */
+export function dneskaiTopicTitles(rows: readonly TopicTitleRow[]): { byBrief: ReadonlyMap<string, string>; byJob: ReadonlyMap<string, string> } {
+  const byBrief = new Map<string, string>(), byJob = new Map<string, string>();
+  for (const row of rows) {
+    const title = typeof row.title_cs === 'string' ? row.title_cs.trim().slice(0, 300) : '';
+    if (!title) continue;
+    if (typeof row.brief_id === 'string' && !byBrief.has(row.brief_id)) byBrief.set(row.brief_id, title);
+    if (typeof row.job_id === 'string' && !byJob.has(row.job_id)) byJob.set(row.job_id, title);
+  }
+  return { byBrief, byJob };
+}
+
+function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBrief | null, publication: PublicationRow | null, publishedAt: string | null, topicTitle?: string): DneskaiWorkspacePost {
   const report = DneskaiRenderReportSchema.safeParse(row.render_report);
   return {
     id: row.id, replacesId: row.replaces_id, status: row.status as DneskaiWorkspacePost['status'], ready: row.ready, contentHash: row.content_hash,
     createdAt: iso(row.created_at)!, approvedAt: iso(row.approved_at), feedback: row.feedback ? row.feedback.slice(0, 2000) : null,
-    title: revision.title, caption: revision.caption, format: revision.format, scheduledAt: new Date(revision.scheduledAt).toISOString(),
+    title: topicTitle ?? revision.title, caption: revision.caption, format: revision.format, scheduledAt: new Date(revision.scheduledAt).toISOString(),
     account: { id: revision.account.id, handle: revision.account.handle, platform: revision.account.platform },
     templateVersion: revision.templateVersion, traceId: revision.traceId, deck: revision.deck ?? null,
     ...(revision.audio ? { audio: revision.audio } : {}),
@@ -68,7 +85,7 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
  * days, newest first, up to 60 posts in all. At four posts a day that keeps every undecided post and the coming week
  * and leaves room for roughly the last week of receipts; older receipts drop off first.
  */
-export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean } = {}): Promise<DneskaiWorkspaceRead> {
+export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean } = {}): Promise<DneskaiWorkspaceRead> {
   z.uuid().parse(owner); z.iso.date().parse(today);
   const windowStart = Date.parse(pragueScheduledAt(pragueDayAfter(today, -30), '00:00'));
   const windowEnd = Date.parse(pragueScheduledAt(pragueDayAfter(today, 7), '00:00'));
@@ -99,22 +116,26 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
   const selected = [0, 1, 2].flatMap((tier) => parsed.filter((item) => rank(item) === tier)).slice(0, POST_LIMIT);
   const ids = selected.map((item) => item.row.id);
   const eventIds = [...new Set(selected.flatMap((item) => item.revision.sources[0]?.sourceId ?? []).filter((id) => /^[a-f0-9]{64}$/.test(id)))];
-  const [publicationResult, eventResult, briefResult] = await Promise.all([
+  const [publicationResult, eventResult, briefResult, topicResult] = await Promise.all([
     ids.length ? db.from('marketing_publications').select('id,revision_id,status,scheduled_at,remote_url,error_code,last_checked_at').eq('user_id', owner).in('revision_id', ids).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
     ids.length ? db.from('marketing_events').select('revision_id,created_at').eq('user_id', owner).eq('kind', 'published').in('revision_id', ids).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-    eventIds.length ? db.from('marketing_dneskai_briefs').select('event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
+    eventIds.length ? db.from('marketing_dneskai_briefs').select('id,event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
+    // #211: only with the topic bridge on, because marketing_dneskai_topics exists only after 20261023100000.
+    options.topicTitles ? db.from('marketing_dneskai_topics').select('brief_id,title_cs,job_id:evidence->>jobId').eq('user_id', owner).in('status', ['enriching', 'briefed', 'generated'])
+      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
   ]);
+  const topicTitles = dneskaiTopicTitles(topicResult.error ? [] : (topicResult.data ?? []) as TopicTitleRow[]);
   const publications = rows(publicationResult as { data: PublicationRow[] | null; error: unknown }, 'dneskai-workspace-unavailable');
   const published = new Map(rows(eventResult as { data: Array<{ revision_id: string; created_at: string }> | null; error: unknown }, 'dneskai-workspace-unavailable').map((event) => [event.revision_id, iso(event.created_at)]));
   const briefs = rows(briefResult as { data: BriefRow[] | null; error: unknown }, 'dneskai-workspace-unavailable').flatMap((row) => {
     const brief = DneskaiBriefSchema.safeParse(row.brief);
-    return brief.success && brief.data.eventId === row.event_id && brief.data.memberHash === row.member_hash ? [brief.data] : [];
+    return brief.success && brief.data.eventId === row.event_id && brief.data.memberHash === row.member_hash ? [{ rowId: row.id, brief: brief.data }] : [];
   });
   const posts = selected.flatMap(({ row, revision }) => {
     const source = revision.sources[0];
-    const brief = briefs.find((item) => item.eventId === source?.sourceId && item.memberHash === source?.sourceRevision) ?? null;
+    const match = briefs.find((item) => item.brief.eventId === source?.sourceId && item.brief.memberHash === source?.sourceRevision) ?? null;
     const publication = publications.find((item) => item.revision_id === row.id && item.status !== 'cancelled') ?? null;
-    const view = DneskaiWorkspacePostSchema.safeParse(postView(row, revision, brief, publication, published.get(row.id) ?? null));
+    const view = DneskaiWorkspacePostSchema.safeParse(postView(row, revision, match?.brief ?? null, publication, published.get(row.id) ?? null, match ? topicTitles.byBrief.get(match.rowId) : undefined));
     if (!view.success) { unreadable += 1; return []; }
     return [view.data];
   });
@@ -127,7 +148,7 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     // A failed draft for a slot that already passed is history, not work for today.
     if (row.status === 'failed' && scheduledAt && Date.parse(scheduledAt) < Date.parse(pragueScheduledAt(today, '00:00'))) return [];
     const job = DneskaiWorkspaceJobSchema.safeParse({ id: row.id, status: row.status, errorCode: marketingJobErrorCode(row.error_code), createdAt: iso(row.created_at),
-      title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt });
+      title: (typeof row.id === 'string' ? topicTitles.byJob.get(row.id) : undefined) ?? (typeof row.title === 'string' ? row.title.slice(0, 300) : ''), scheduledAt });
     return job.success ? [job.data] : [];
   }).slice(0, 20);
   // One account row that does not parse is counted as unreadable, not a failed read.
@@ -139,7 +160,8 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     });
   // A waiting brief is optional context: a read that fails leaves the list out rather than the whole workspace.
   const waiting = waitingResult.error ? undefined : ((waitingResult.data ?? []) as Array<Record<string, unknown>>).flatMap((row) => {
-    const brief = DneskaiWorkspaceWaitingSchema.safeParse({ briefId: row.id, title: typeof row.title === 'string' && row.title.trim() ? row.title.slice(0, 300) : '—', scheduledAt: iso(row.scheduled_at), status: row.status, code: safeCode(row.code) });
+    const topicTitle = typeof row.id === 'string' ? topicTitles.byBrief.get(row.id) : undefined;
+    const brief = DneskaiWorkspaceWaitingSchema.safeParse({ briefId: row.id, title: topicTitle ?? (typeof row.title === 'string' && row.title.trim() ? row.title.slice(0, 300) : '—'), scheduledAt: iso(row.scheduled_at), status: row.status, code: safeCode(row.code) });
     return !row.job_id && brief.success && Date.parse(brief.data.scheduledAt) > now.getTime() ? [brief.data] : [];
   }).slice(0, 8);
   return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs,

@@ -98,7 +98,8 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     base(4, 'c', { title: 'Tři zkratky pro terminál', status: 'returned', scheduledAt: at(2, '08:00'), feedback: 'Titulek je moc dlouhý, zkraťte ho na jednu krátkou větu.' }),
     base(5, 'd', { title: 'Kdy stačí menší model', status: 'approved', approvedAt: created(5), scheduledAt: at(2, '12:30'),
       publication: { id: id(105), status: 'queued', scheduledAt: at(2, '12:30'), remoteUrl: null, errorCode: null, lastCheckedAt: null, publishedAt: null } }),
-    base(6, 'e', { title: 'Pět otázek před nasazením asistenta', status: 'published', approvedAt: created(40), scheduledAt: at(-1, '17:00'),
+    // #211: made from an approved topic, so the card shows the working title, not its brief's source title.
+    base(6, 'e', { title: 'Pět otázek před nasazením asistenta', status: 'published', approvedAt: created(40), scheduledAt: at(-1, '17:00'), brief: brief('Ukázkový článek: kontrolní seznam pro firemní asistenty', -1),
       // #162: a published education post whose keyword comments the watcher answered; one reply failed.
       engagement: { keyword: 'OTAZKY', replyMessage: 'Díky za komentář. Tady je pět otázek, které si položit před nasazením asistenta.', publicReply: 'Poslali jsme vám to do zpráv.' },
       engagementReceipt: { commentsSeen: 48, keywordMatches: 17, privateSent: 16, publicSent: 16, failures: [{ code: 'engagement-recipient-unavailable', count: 1 }], lastCheckedAt: at(0, '07:55') },

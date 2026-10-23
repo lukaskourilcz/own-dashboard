@@ -163,6 +163,9 @@ test('every DNESKAi tab reflows at 360, 430, 768 and 1280 px and passes axe', as
   await expect(filters.getByRole('button')).toHaveCount(5);
   await filters.getByRole('button', { name: new RegExp(`^${t.published.filters.published}`) }).click();
   await expect(posts.getByTestId('dneskai-post-row')).toHaveCount(1);
+  // #211: a post made from an approved topic carries the topic's working title, not its source's.
+  await expect(posts.getByTestId('dneskai-post-row')).toContainText('Pět otázek před nasazením asistenta');
+  await expect(posts.getByTestId('dneskai-post-row')).not.toContainText('Ukázkový článek: kontrolní seznam');
   // #162: keyword comments: the seven-day totals above the list and the receipt on the published post, failure by code.
   await expect(posts.getByTestId('dneskai-engagement-summary')).toContainText(t.engagementReceipts.summary(7));
   const receipt = posts.getByTestId('dneskai-post-row').getByTestId('dneskai-engagement-receipt');

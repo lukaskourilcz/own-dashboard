@@ -9,7 +9,8 @@ import { INSTAGRAM_WEBHOOK_MAX_BYTES, instagramCommentEvents, instagramWebhookSi
  * Instagram comment webhook (#161), the upgrade over the comment watcher's polling (#160).
  *
  * GET answers Meta's subscription check: `hub.challenge` when `hub.verify_token` equals
- * MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN. POST checks `X-Hub-Signature-256` against MARKETING_INSTAGRAM_APP_SECRET,
+ * MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN. POST checks `X-Hub-Signature-256` against MARKETING_INSTAGRAM_APP_SECRET
+ * (MARKETING_META_APP_SECRET under Facebook Login, #216),
  * answers 200 at once and hands the comments to the same matcher and one-reply claim as polling through `after()`, so a
  * comment delivered twice, or seen by polling too, is answered once. Off (404) unless DNESKAI_ENGAGEMENT_ENABLED and
  * both values are set; the replies go to the marketing owner's DNESKAi account (MARKETING_OWNER_ID).
@@ -18,7 +19,9 @@ export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 function configured(env: Record<string, string | undefined>) {
-  const verifyToken = env.MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? '', secret = env.MARKETING_INSTAGRAM_APP_SECRET ?? '', owner = env.MARKETING_OWNER_ID ?? '';
+  // #216: under Facebook Login Meta signs with the Meta app's own secret; under Instagram Login with the Instagram app secret.
+  const facebook = env.MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE === 'facebook';
+  const verifyToken = env.MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? '', secret = (facebook ? env.MARKETING_META_APP_SECRET : env.MARKETING_INSTAGRAM_APP_SECRET) ?? '', owner = env.MARKETING_OWNER_ID ?? '';
   if (!dneskaiEngagementWatchEnabled(env) || verifyToken.length < 16 || secret.length < 16 || !/^[0-9a-f-]{36}$/i.test(owner)) return null;
   return { verifyToken, secret, owner };
 }
