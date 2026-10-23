@@ -76,7 +76,7 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
     refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
 }
 
-type LabProps = Omit<Parameters<typeof DneskaiLabTab>[0], 'guest' | 'onDirtyChange'>;
+type LabProps = Omit<Parameters<typeof DneskaiLabTab>[0], 'guest'>;
 const CHANNELS = ['instagram', 'threads', 'linkedin'] as const;
 
 /**

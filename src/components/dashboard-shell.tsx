@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
 import { MotionConfig } from "motion/react";
 import { CalendarPanel } from "@/components/panels/calendar-panel";
 import { ClientsPanel } from "@/components/panels/clients-panel";
@@ -182,6 +183,11 @@ const TAB_CHORDS: Record<string, NavTab> = {
 };
 
 export function DashboardShell(props: Props) {
+  return <NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider>;
+}
+
+function DashboardShellContent(props: Props) {
+  const requestNavigation = useGuardedNavigation();
   const { user } = props;
   const t = useDict();
   const [tab, setTabState] = useState<NavTab>(props.initialTab);
@@ -198,11 +204,13 @@ export function DashboardShell(props: Props) {
     onDemand: onDemandDataKeys(tab).includes(key),
   }), [seededData, tab, activatedTabs]);
   const setTab = useCallback((next: NavTab) => {
+    requestNavigation(() => {
     setTabState(next);
     setSelectedProjectId(null);
     const path = tabToPath(next);
-    if (typeof window !== "undefined" && window.location.pathname !== path) window.history.pushState(null, "", path);
-  }, []);
+    if (typeof window !== "undefined" && window.location.pathname !== path) pushDashboardHistory(path);
+    });
+  }, [requestNavigation]);
   const { collapsed: navCollapsed } = useNavCollapsed();
   const [subscriptions, setSubscriptions] = useEntityStore(qk.subscriptions, props.initialSubscriptions, fetchSubscriptions, dataOptions("subscriptions"));
   const [todos] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
@@ -236,14 +244,16 @@ export function DashboardShell(props: Props) {
   );
   const openProject = useCallback(
     (project: Pick<Project, "id" | "slug">) => {
+      requestNavigation(() => {
       setTabState("projects");
       setSelectedProjectId(project.id);
       const path = `/projects/${encodeURIComponent(project.slug)}`;
       if (window.location.pathname !== path) {
-        window.history.pushState(null, "", path);
+        pushDashboardHistory(path);
       }
+      });
     },
-    [],
+    [requestNavigation],
   );
   useEffect(() => {
     const onPop = () => {

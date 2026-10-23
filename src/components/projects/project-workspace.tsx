@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useSyncExternalStore } from "react";
+import { useGuardedNavigation } from "@/components/navigation-guard";
 import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import {
@@ -139,15 +140,16 @@ function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
 }
 
 export function ProjectWorkspace(props: Props) {
+  const requestNavigation = useGuardedNavigation();
   const { project, displayCurrency } = props;
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
   const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => '');
-  const setTab = (tab: ProjectTabId) => {
+  const setTab = (tab: ProjectTabId) => requestNavigation(() => {
     const url = new URL(window.location.href); url.searchParams.set('projectTab', tab);
     window.history.replaceState(window.history.state, '', url); window.dispatchEvent(new Event('project-tab'));
-  };
+  });
   const tablist = useRef<HTMLDivElement>(null);
   // Sources sends the owner to the final review; focus moves to the selected tab instead of being lost with the panel.
   const openDneskaiReview = () => { flushSync(() => setTab("dneskai-review")); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); };

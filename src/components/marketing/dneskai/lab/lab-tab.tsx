@@ -1,5 +1,6 @@
 'use client';
 
+import { useGuardedNavigation, useUnsavedDraft } from '@/components/navigation-guard';
 import { DneskaiAudioPicker } from './audio-picker';
 import { DneskaiFormatSwitch } from './format-switch';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -27,7 +28,7 @@ import { DneskaiTopicsList } from './topics-list';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
-type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; onDirtyChange?: (value: boolean) => void; guest?: boolean };
+type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; guest?: boolean };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
 function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
@@ -41,10 +42,8 @@ export function DneskaiLabTab(props: Props) {
   const [chosen, setChosen] = useState(selection);
   const [now, setNow] = useState(() => Date.parse(props.read.generatedAt));
   const [dirty, setDirty] = useState(false);
-  const onDirtyChange = props.onDirtyChange;
-  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
+  const requestNavigation = useGuardedNavigation();
   const [notice, setNotice] = useState('');
-  const [pending, setPending] = useState<string | null>(null);
   const [batch, setBatch] = useState<DneskaiLabDay | null>(null);
   const days = useMemo(() => dneskaiLabQueue(props.read, now, props.renderFailed), [props.read, now, props.renderFailed]);
   const ordered = dneskaiLabOrder(days);
@@ -56,8 +55,8 @@ export function DneskaiLabTab(props: Props) {
     return () => window.clearInterval(timer);
   }, [props.preview]);
   const choose = (post: string) => {
-    if (dirty && post !== active?.post.id) { setPending(post); return; }
-    setChosen({ post, slide: 0 }); remember(post, 0);
+    if (post === active?.post.id) return;
+    requestNavigation(() => { setDirty(false); setChosen({ post, slide: 0 }); remember(post, 0); });
   };
   useEffect(() => {
     const onPop = () => { if (!dirty) setChosen(selection()); };
@@ -113,9 +112,7 @@ export function DneskaiLabTab(props: Props) {
         onChoose={choose} onBatch={() => { const day = days.find((item) => item.date === active.deadline.date); if (day && !dirty && day.approvable.length) setBatch(structuredClone(day)); }}
         onSaved={(post, saved) => { setNotice(saved ?? t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
     </div>
-    <Dialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }}><DialogContent><DialogHeader><DialogTitle>{t.actions.discard}</DialogTitle><DialogDescription>{t.actions.dirty}</DialogDescription></DialogHeader>
-      <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setPending(null)}>{t.actions.cancel}</Button><Button onClick={() => { const post = pending!; setPending(null); setDirty(false); setChosen({ post, slide: 0 }); remember(post, 0); }}>{t.actions.discard}</Button></div>
-    </DialogContent></Dialog>
+
     {props.preview && <details className="border-t border-border pt-3 text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.specimens.title}</summary><div className="space-y-6">{DNESKAI_KITS.map((kit) => <figure key={kit} className="space-y-2"><figcaption className="text-foreground-muted">{t.specimens.help(t.kits.names[kit])}</figcaption><a href={`/demo/dneskai/kit-${kit}.png`} target="_blank" rel="noreferrer"><Image unoptimized src={`/demo/dneskai/kit-${kit}.png`} alt={t.specimens.help(t.kits.names[kit])} width={1944} height={2574} sizes="100vw" className="h-auto w-full" /></a></figure>)}</div></details>}
     {batch && <ApproveDay {...props} day={batch} onClose={() => setBatch(null)} />}
   </section>;
@@ -188,11 +185,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     }, 450);
     return () => { window.clearTimeout(timer); abort.abort(); };
   }, [previewKey, remembered, post.id, props.preview]);
-  useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
-    if (dirty) window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+
   const keys = dneskaiWorkspaceKeys(props.projectId);
   const media = useQueries({ queries: [...new Set((post.brief?.evidence ?? []).map((item) => item.candidateId))].slice(0, 8).map((candidateId) => ({ queryKey: keys.media(candidateId), staleTime: 30 * 60_000, retry: false,
     queryFn: async ({ signal }: { signal: AbortSignal }) => (await dneskaiWorkspaceApi(props.preview)).loadMedia(props.projectId, candidateId, signal) })) });
@@ -224,11 +217,11 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const regeneratable = (post.status === 'review' || post.status === 'returned') && !!post.deck;
   const regenerateBlock = props.guest ? t.publicTour : !props.read.capabilities?.regenerate ? t.actions.regenerateOff : dirty && !onlyTimeChanged ? t.actions.dirty : null;
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
-  async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate') {
-    if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return;
+  async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate'): Promise<boolean> {
+    if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return false;
     if (action === 'save') {
       const problems = draftProblems(post, draft, fit.status === 'ready' ? fit.result : null);
-      if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? problems.find((problem) => problem.field.startsWith('engagement.'))?.code ?? 'deck-edit-invalid'); return; }
+      if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? problems.find((problem) => problem.field.startsWith('engagement.'))?.code ?? 'deck-edit-invalid'); return false; }
     }
     setBusyAction(action); setError(null); setMessage('');
     try {
@@ -246,12 +239,15 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       }
       else { await api.decide(post.id, action === 'return' ? 'returned' : 'skipped', action === 'return' ? note : undefined); setMessage(action === 'return' ? t.actions.returned : t.actions.skipped); setDialog(null); }
       await refresh();
+      return true;
     } catch (failure) {
       setError(failure instanceof DneskaiWorkspaceRequestError ? failure.code : 'decision-failed');
       if (failure instanceof DneskaiWorkspaceRequestError && failure.revisionId) { props.addRenderFailed(failure.revisionId); onSaved(failure.revisionId); }
       await refresh();
+      return false;
     } finally { setBusyAction(null); }
   }
+  useUnsavedDraft({ dirty, canSave: !busy && !!request && draftProblems(post, draft, fit.status === 'ready' ? fit.result : null).length === 0, save: () => perform('save') });
   // A kit switch is a draft edit: every slide shows as a render-only preview in the new kit until it is saved.
   function chooseKit(kit: DneskaiKit) {
     if (props.guest || busy || !editable) return;

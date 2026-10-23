@@ -52,3 +52,5 @@ The four audit probes in `tests/audit/dneskai-review-baseline.test.tsx` assert o
 Implementation should follow the five batches in the visual plan. No migration, spend, provider setup or publication is required to read this artifact.
 
 [Claude kickoff prompt](claude-kickoff.md) carries the review baseline, implementation order and remaining live-account prerequisites into the next development session.
+
+Implementation now follows [the dated progress report](../dneskai-audit-implementation-2026-10-23.md). The evidence in this folder remains the original review baseline.
