@@ -728,12 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Five prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql`, `20261023170010_project_parent_rls_lookup.sql`, `20261023175801_daily_focus_garden_summary.sql` and `20261023183345_career_owner_day.sql`. Check the linked project and apply this chain before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Six prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql`, `20261023170010_project_parent_rls_lookup.sql`, `20261023175801_daily_focus_garden_summary.sql`, `20261023183345_career_owner_day.sql` and `20261023190841_invoice_document_transaction.sql`. Check the linked project and apply this chain before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect the five audit files listed above
+npx supabase db push --linked --dry-run   # expect the six audit files listed above
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -934,3 +934,10 @@ The upgrade test starts before these files, compares every public policy, then v
 ## Career owner day — prepared 23 October 2026
 
 `20261023183345_career_owner_day.sql` adds the authenticated, security-invoker `current_owner_day()` helper and changes only the future-date boundary in the two existing application/progress functions. It uses the caller’s own saved timezone, defaulting to Europe/Prague and recovering invalid legacy timezone names. Atomic writes, request idempotency, history and foreign-owner rejection remain unchanged. The matching form and seven-/thirty-date statistics use the same timezone. Four migrated-database cases cover Prague before UTC midnight, a west-of-UTC preference, invalid legacy values, idempotency and ownership. Apply before deploying the form’s timezone-aware default.
+
+
+## Atomic invoice documents — prepared 23 October 2026
+
+`20261023190841_invoice_document_transaction.sql` adds `save_invoice_document`, an authenticated-only, security-invoker function with an empty search path. Invoice headers and all lines commit in one transaction. Failed replacement inserts preserve the original header and lines. Client-generated request ids make an identical retry safe; changed create retries, stale versions and incomplete source item collections are rejected without overwriting data. Edits retain the issued supplier snapshot, status and payment metadata. Existing RLS checks still enforce both owner and related organization/project ownership. Quantity zero is preserved, negative prices remain available for discounts, and excess numeric precision is rejected instead of changing previewed amounts. No tax calculation is duplicated in SQL.
+
+Apply before deploying the RPC caller. Five migrated-database cases cover rollback after line deletion, retry identity, zero quantity, stale/incomplete edits, precision loss and ownership. To roll back, deploy the previous client first; this additive function can remain safely installed. Never restore the previous three-request edit path while relying on atomic saves.

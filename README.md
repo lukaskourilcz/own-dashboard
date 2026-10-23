@@ -187,9 +187,10 @@ The migrations, in the order they run:
 89. `20261023170010_project_parent_rls_lookup.sql` — prepared, unapplied; prevent project-parent write-policy recursion with a security-invoker lookup that preserves RLS and existing parent checks.
 90. `20261023175801_daily_focus_garden_summary.sql` — prepared, unapplied; summarize all generations in the owner’s 49-day Daily Focus garden without an arbitrary generation cap.
 91. `20261023183345_career_owner_day.sql` — prepared, unapplied; validate application and response dates in the configured owner timezone, preserving the transactional application/history functions.
+92. `20261023190841_invoice_document_transaction.sql` — prepared, unapplied; save invoice headers and line items atomically, with retry identity and stale/incomplete-edit protection.
 
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. Only the new audit migration 87 remains unapplied; apply it before deploying the implementation branch.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The six audit migrations 87–92 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 

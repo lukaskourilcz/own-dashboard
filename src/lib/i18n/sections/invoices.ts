@@ -160,6 +160,8 @@ type InvoicesStrings = {
   numberRequired: string;
   itemRequired: string;
   numberTaken: string;
+  saveConflict: string;
+  invalidAmount: string;
   errorToast: string;
   savedSettingsToast: string;
   deletedToast: string;
@@ -332,6 +334,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     numberRequired: "Enter an invoice number.",
     itemRequired: "Add at least one item with a description and price.",
     numberTaken: "An invoice with this number already exists.",
+    saveConflict: "This invoice changed or its lines were not fully loaded. Your changes are kept here; reopen the invoice before trying again.",
+    invalidAmount: "Enter valid quantities and prices before saving.",
     errorToast: "Something went wrong.",
     savedSettingsToast: "Settings saved.",
     deletedToast: "Invoice deleted.",
@@ -502,6 +506,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     numberRequired: "Vyplňte číslo faktury.",
     itemRequired: "Přidejte alespoň jednu položku s popisem a cenou.",
     numberTaken: "Faktura s tímto číslem už existuje.",
+    saveConflict: "Faktura se změnila nebo se nenačetly všechny položky. Vaše změny zůstaly zde; před dalším pokusem fakturu znovu otevřete.",
+    invalidAmount: "Před uložením zadejte platná množství a ceny.",
     errorToast: "Něco se pokazilo.",
     savedSettingsToast: "Nastavení uloženo.",
     deletedToast: "Faktura smazána.",

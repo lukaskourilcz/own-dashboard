@@ -721,13 +721,15 @@
       "path": "src/components/invoices/invoice-detail.tsx",
       "lines": 468,
       "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95"
     },
     {
       "path": "src/components/invoices/invoice-form.tsx",
       "lines": 1129,
       "sha256": "496a6634a8f8bff539f914f134d3ca4ba5271246709a6a2d1f2ef5ba994bf7f6",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "634ba334cfeca40285e4095fbd1f82afe60cce5fbc7f8bb1e94bd020f7962e2a"
     },
     {
       "path": "src/components/invoices/status-badge.tsx",
@@ -2125,7 +2127,8 @@
       "path": "src/lib/invoices.ts",
       "lines": 216,
       "sha256": "a79599ca79053c5710bde64c4b547713df74e922b4f2964f2bb4ebd3ba11b535",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "a79599ca79053c5710bde64c4b547713df74e922b4f2964f2bb4ebd3ba11b535"
     },
     {
       "path": "src/lib/jobs/apify.ts",
