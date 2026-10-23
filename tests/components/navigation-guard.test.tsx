@@ -12,24 +12,31 @@ const click = async (text: string) => {
   const button = [...document.querySelectorAll('button')].find(e => e.textContent === text)!;
   expect(button, text).toBeTruthy(); await act(async () => button.click());
 };
-function Form({ save, ready, leave }: { save: () => Promise<boolean>; ready: boolean; leave: () => void }) {
+function Form({ save, ready, leave, discard }: { save: () => Promise<boolean>; ready: boolean; leave: () => void; discard?: () => void }) {
   const [text, setText] = useState('');
   const request = useGuardedNavigation();
-  useUnsavedDraft({ dirty: !!text, canSave: ready, save });
+  useUnsavedDraft({ dirty: !!text, canSave: ready, save, discard });
   return <><input aria-label="Draft" value={text} onChange={e => setText(e.target.value)} /><button onClick={() => request(leave)}>Leave</button>
     {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- test the native anchor capture/replay boundary */}
     <a href="/elsewhere" onClick={e => { e.preventDefault(); leave(); }}>Other project</a></>;
 }
-function Harness({ save, ready = true }: { save: () => Promise<boolean>; ready?: boolean }) {
+function Harness({ save, ready = true, discard }: { save: () => Promise<boolean>; ready?: boolean; discard?: () => void }) {
   const [editing, setEditing] = useState(true);
-  return <NavigationGuardProvider>{editing ? <Form save={save} ready={ready} leave={() => setEditing(false)} /> : <h1>Other destination</h1>}</NavigationGuardProvider>;
+  return <NavigationGuardProvider>{editing ? <Form save={save} ready={ready} discard={discard} leave={() => setEditing(false)} /> : <h1>Other destination</h1>}</NavigationGuardProvider>;
 }
-const show = async (save = vi.fn(async () => true), ready = true) => { await act(async () => root.render(<Harness save={save} ready={ready} />)); return save; };
+const show = async (save = vi.fn(async () => true), ready = true, discard?: () => void) => { await act(async () => root.render(<Harness save={save} ready={ready} discard={discard} />)); return save; };
 const edit = async () => { const input = document.querySelector('input')!; await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'Keep this draft'); input.dispatchEvent(new Event('input', { bubbles: true })); }); };
 beforeEach(() => { window.history.replaceState({ ownDashboardIndex: 0 }, '', 'http://localhost:3000/start'); container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); });
 
 describe('persistent-shell draft navigation', () => {
+  it('notifies the editor of an explicit discard before navigation can unmount it', async () => {
+    const discard = vi.fn(() => expect(document.querySelector('input')).not.toBeNull());
+    await show(vi.fn(async () => true), true, discard); await edit(); await click('Leave');
+    await click(t.stay); expect(discard).not.toHaveBeenCalled();
+    await click('Leave'); await click(t.discard);
+    expect(discard).toHaveBeenCalledOnce(); expect(container.textContent).toContain('Other destination');
+  });
   it('keeps the draft on Stay/Escape and warns on document unload, then discards on the chosen exit', async () => {
     await show(); await edit();
     const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload); expect(unload.defaultPrevented).toBe(true);

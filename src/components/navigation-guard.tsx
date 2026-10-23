@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useDict } from '@/lib/i18n';
 
 const HISTORY_INDEX = 'ownDashboardIndex';
-type Draft = { dirty: boolean; canSave: boolean; save: () => Promise<boolean> };
+type Draft = { dirty: boolean; canSave: boolean; save: () => Promise<boolean>; discard?: () => void };
 type Navigation = () => void;
 type Guard = { request: (action: Navigation) => void; register: (key: symbol, draft: Draft) => () => void };
 const unguarded: Guard = { request: action => action(), register: () => () => {} };
@@ -49,8 +49,9 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     setPending(null);
     setFailed(false);
   };
-  const proceed = () => {
+  const proceed = (discard = false) => {
     const action = pendingRef.current;
+    if (discard) for (const draft of drafts.current.values()) if (draft.dirty) draft.discard?.();
     pendingRef.current = null;
     setPending(null);
     drafts.current.clear();
@@ -127,7 +128,7 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
         {!canSave && !saving && <p className="text-sm text-foreground-muted">{t.invalid}</p>}
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <Button variant="outline" disabled={saving} onClick={stay}>{t.stay}</Button>
-          <Button variant="ghost" disabled={saving} onClick={proceed}>{t.discard}</Button>
+          <Button variant="ghost" disabled={saving} onClick={() => proceed(true)}>{t.discard}</Button>
           <Button disabled={!canSave || saving} aria-busy={saving} onClick={() => void save()}>{saving ? t.saving : t.save}</Button>
         </div>
       </DialogContent>

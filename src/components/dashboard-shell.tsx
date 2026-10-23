@@ -215,13 +215,14 @@ function DashboardShellContent(props: Props) {
     onDemand: onDemandDataKeys(tab).includes(key),
   }), [seededData, tab, activatedTabs, props.isPreview]);
   const setTab = useCallback((next: NavTab) => {
+    if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {
     setTabState(next);
     setSelectedProjectId(null);
     const path = tabToPath(next);
     if (typeof window !== "undefined" && window.location.pathname !== path) pushDashboardHistory(path);
     });
-  }, [requestNavigation]);
+  }, [requestNavigation, tab, selectedProjectId]);
   const { collapsed: navCollapsed } = useNavCollapsed();
   const [subscriptions, setSubscriptions, subscriptionsStatus] = useEntityStore(qk.subscriptions, props.initialSubscriptions, fetchSubscriptions, dataOptions("subscriptions"));
   const [todos, , todosStatus] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));

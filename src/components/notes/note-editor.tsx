@@ -35,6 +35,7 @@ const editorSchema = BlockNoteSchema.create({
 export type NoteEditorHandle = {
   toMarkdown: () => Promise<string>;
   insertNoteLink: (noteId: string, title: string) => void;
+  getDocument: () => { title: string; content: Block[]; plainText: string };
 };
 
 /** Internal href format for an in-app note link. Parsed by the click
@@ -51,6 +52,8 @@ type Props = {
   }) => void;
   /** Project notes need the same captured document even while refs detach on unmount. */
   onMarkdownChange?: (markdown: string) => void;
+  /** Cheap immediate notification; persistence still uses the debounce. */
+  onDirtyChange?: () => void;
   handleRef?: React.RefObject<NoteEditorHandle | null>;
   /** Called when the user picks the "Link to note" slash menu item. The
    * parent is expected to open a notes picker and then call
@@ -78,6 +81,7 @@ export function NoteEditor({
   initialContent,
   onChange,
   onMarkdownChange,
+  onDirtyChange,
   handleRef,
   onRequestNoteLink,
   onNavigateToNote,
@@ -133,6 +137,10 @@ export function NoteEditor({
   useImperativeHandle(
     handleRef ?? { current: null },
     () => ({
+      getDocument: () => {
+        const content = editor.document as Block[];
+        return { title: extractTitle(content, t.notes.untitled), content, plainText: blocksToPlainText(content) };
+      },
       toMarkdown: async () => {
         return await editor.blocksToMarkdownLossy(editor.document as Block[]);
       },
@@ -150,7 +158,7 @@ export function NoteEditor({
         editor.focus();
       },
     }),
-    [editor],
+    [editor, t.notes.untitled],
   );
 
   // Debounced onChange — fire 600ms after the last edit.
@@ -158,19 +166,22 @@ export function NoteEditor({
   const changedRef = useRef(false);
   const onChangeRef = useRef(onChange);
   const onMarkdownChangeRef = useRef(onMarkdownChange);
+  const onDirtyChangeRef = useRef(onDirtyChange);
   const onLinkRef = useRef(onRequestNoteLink);
   const titleFallbackRef = useRef(t.notes.untitled);
   useEffect(() => {
     onChangeRef.current = onChange;
     onMarkdownChangeRef.current = onMarkdownChange;
+    onDirtyChangeRef.current = onDirtyChange;
     onLinkRef.current = onRequestNoteLink;
     titleFallbackRef.current = t.notes.untitled;
-  }, [onChange, onMarkdownChange, onRequestNoteLink, t]);
+  }, [onChange, onMarkdownChange, onDirtyChange, onRequestNoteLink, t]);
 
   useEffect(() => {
     if (!editor) return;
     const unsubscribe = editor.onChange(() => {
       changedRef.current = true;
+      onDirtyChangeRef.current?.();
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         const doc = editor.document as Block[];

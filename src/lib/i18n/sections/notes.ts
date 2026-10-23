@@ -5,11 +5,13 @@ type NotesStrings = {
   loadingEditor: string;
   editorLabel: string;
   newNote: string;
+  unsavedChanges: string;
   importMd: string;
   untitled: string;
   signInFirst: string;
   couldNotCreateNote: string;
   couldNotSaveNote: string;
+  couldNotDeleteNote: string;
   deleteConfirm: string;
   copiedAsMarkdown: string;
   couldNotCopy: string;
@@ -70,11 +72,13 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     loadingEditor: "Loading editor…",
     editorLabel: "Note content",
     newNote: "New note",
+    unsavedChanges: "Unsaved changes",
     importMd: "Import MD",
     untitled: "Untitled",
     signInFirst: "Sign in first.",
     couldNotCreateNote: "Could not create note.",
     couldNotSaveNote: "Could not save note.",
+    couldNotDeleteNote: "Could not delete note. Your document is still here.",
     deleteConfirm: "Delete this note? This cannot be undone.",
     copiedAsMarkdown: "Copied as Markdown.",
     couldNotCopy: "Could not copy.",
@@ -131,11 +135,13 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     loadingEditor: "Načítání editoru…",
     editorLabel: "Obsah poznámky",
     newNote: "Nová poznámka",
+    unsavedChanges: "Neuložené změny",
     importMd: "Importovat MD",
     untitled: "Bez názvu",
     signInFirst: "Nejprve se přihlaste.",
     couldNotCreateNote: "Poznámku se nepodařilo vytvořit.",
     couldNotSaveNote: "Poznámku se nepodařilo uložit.",
+    couldNotDeleteNote: "Poznámku se nepodařilo smazat. Dokument zůstal zde.",
     deleteConfirm: "Smazat tuto poznámku? Tuto akci nelze vrátit zpět.",
     copiedAsMarkdown: "Zkopírováno jako Markdown.",
     couldNotCopy: "Nepodařilo se zkopírovat.",

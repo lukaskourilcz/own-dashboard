@@ -665,7 +665,7 @@
       "lines": 428,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "4b2c00c2b24cde3dd7350168563f9c07c5be217907c529dbd148758f45b74f20"
+      "reviewedSha256": "996497e007bb4c2df53f4f95fa706fa43967dbec6185ed377a315e6e94fccd66"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1037,20 +1037,21 @@
       "path": "src/components/navigation-guard.tsx",
       "lines": 143,
       "sha256": "07b05612aacc4f043f23a39f9a4d29ae13b1c5ad8205e9d0659cdcae9a255de4",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d4f6ea1668f4154d87d0cb1c0b43286e0c2de8c572eca87b11a26786dd7b7c97"
     },
     {
       "path": "src/components/notes/note-editor.tsx",
       "lines": 238,
       "sha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662",
-      "status": "source reviewed; fixes and final release checks pending",
-      "reviewedSha256": "bfbe96b5e8f785282c6350364158ee77a95891a6c2e150d0a3ad81163d80c552"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "4d0150ee4701c4da8301ca7a70ebe28a1ce7559513153d24c40f6c6cfae478b8"
     },
     {
       "path": "src/components/notes/parse-markdown.ts",
       "lines": 30,
       "sha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf",
-      "status": "source reviewed; fixes and final release checks pending",
+      "status": "source reviewed; final release checks pending",
       "reviewedSha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf"
     },
     {
@@ -1245,8 +1246,8 @@
       "path": "src/components/panels/notes-panel.tsx",
       "lines": 1367,
       "sha256": "af7850a690d55f1ff78cb048e62265aec7d4da2da8874e56fa6d8df235ff9cd2",
-      "status": "source reviewed; fixes and final release checks pending",
-      "reviewedSha256": "d8d75295b5bd9a879e623921be57535bbfdba083580818658a95f61482daa21a"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "35738396671103a9b694d3b9dca834a7c37df86f3ebaf022edc7c52e9c3a1775"
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
@@ -3148,7 +3149,7 @@
       "path": "src/lib/notes-text.ts",
       "lines": 41,
       "sha256": "c811879108f426e886b30f7fc029abf3ad5db14813f3f1727af22c70477de576",
-      "status": "source reviewed; fixes and final release checks pending",
+      "status": "source reviewed; final release checks pending",
       "reviewedSha256": "c811879108f426e886b30f7fc029abf3ad5db14813f3f1727af22c70477de576"
     },
     {
