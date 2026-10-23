@@ -18,6 +18,7 @@ async function open(page: Page, name: string) {
 }
 
 test.beforeEach(async ({ page }) => {
+  page.setDefaultTimeout(15_000);
   await page.route('**/api/vercel/analytics?**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"kind":"unconfigured"}' }));
 });
 
@@ -127,9 +128,10 @@ test('focused finance routes and on-demand creation preserve keyboard continuity
 test('browser Back restores the dirty entry without adding history, then resumes the requested step', async ({ page }) => {
   await gotoPreview(page);
   await open(page, 'Projects');
-  await page.locator('a[href="/projects/dneskai"]').first().click();
+  await page.locator('a[href="/projects/dneskai"]:visible').first().click();
   const field = page.getByTestId('dneskai-slide-inspector').getByRole('textbox', { name: dneskaiLab.en.slide.fields.headline, exact: true });
   await field.fill('Krátký ověřený titulek');
+  await expect(page.getByTestId('dneskai-fit-summary')).toContainText(dneskaiLab.en.slide.fitSummaryOk(1));
   const length = await page.evaluate(() => history.length);
   await page.goBack();
   const dialog = page.getByRole('dialog', { name: common.en.unsaved.title });
@@ -167,6 +169,30 @@ test('Notes keeps a failed document available for an unchanged retry', async ({ 
   await expect(page.getByText('Could not save note.', { exact: true })).toBeVisible();
   await retry.click();
   await expect(retry).toHaveCount(0);
-  expect(writes).toHaveLength(2);
+  await expect.poll(() => writes.length).toBe(2);
   expect(writes[1]).toEqual(writes[0]);
+});
+
+for (const lang of ['en', 'cs'] as const) test(`DNESKAi implementation evidence (${lang})`, async ({ page }, info) => {
+  const width = info.project.name === 'mobile' ? 360 : 1440;
+  const theme = lang === 'cs' ? 'dark' : 'light';
+  await page.setViewportSize({ width, height: 900 });
+  await page.clock.setFixedTime(new Date('2026-10-23T12:00:00Z'));
+  await gotoPreview(page, { lang, theme });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const session = page.getByTestId('dneskai-lab-session'), topics = page.getByTestId('dneskai-topics');
+  await expect(session).toBeVisible(); await expect(topics).toBeVisible();
+  expect((await session.boundingBox())!.y).toBeLessThan((await topics.boundingBox())!.y);
+  await page.screenshot({ path: info.outputPath(`dneskai-review-${lang}-${theme}-${width}.png`) });
+  await page.getByRole('tab', { name: lang === 'cs' ? 'Zdroje (DNESKAi)' : 'Sources (DNESKAi)', exact: true }).click();
+  for (const [name, panel, slug] of [[dneskaiSourceList[lang].title, 'dneskai-source-list', 'sources'], [dneskaiDailyMix[lang].title, 'dneskai-daily-mix', 'mix'], [dneskaiAudio[lang].title, 'dneskai-audio-library', 'music']] as const) {
+    await page.getByRole('tab', { name, exact: true }).click();
+    await expect(page.getByTestId(panel)).toBeVisible();
+    if (width < 768) {
+      for (const tab of await page.getByTestId('dneskai-source-settings').getByRole('tab').all()) expect((await tab.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      if (slug === 'mix') for (const field of await page.getByTestId(panel).getByRole('combobox').all()) expect((await field.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await page.screenshot({ path: info.outputPath(`dneskai-${slug}-${lang}-${theme}-${width}.png`) });
+  }
 });

@@ -72,3 +72,6 @@ The first optimized-build browser pass confirmed the new guard, direct local tab
 
 
 Sparse client rows now show related-record counts inline, omit zero-count blocks and keep a single meaningful empty relationship label. Their layout stacks before the constrained tablet content area. The responsive matrix covers all 25 visible destinations; hidden Inbox/References policy is retained.
+
+
+The canonical-route Back test exposed listener ordering that the synthetic history test did not model: a descendant passive history listener could remove the draft before the guard observed it. History and draft registration now use layout effects, before passive shell subscriptions. The desktop browser regression verifies restored URL/draft, unchanged history length, Discard resuming Back and working Forward; Notes’ unchanged failed-save retry is also exercised against a forced transient response. Five focused guard tests, type checking and lint passed after the correction. Mobile and the full optimized-build run remain the final verification gate.

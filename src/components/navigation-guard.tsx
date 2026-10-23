@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDict } from '@/lib/i18n';
@@ -68,7 +68,8 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     } catch { setFailed(true); }
     finally { savingRef.current = false; setSaving(false); }
   };
-  useEffect(() => {
+  // Install before the shell’s passive history listeners can unmount a dirty editor.
+  useLayoutEffect(() => {
     let currentIndex = Number(window.history.state?.[HISTORY_INDEX] ?? 0);
     window.history.replaceState({ ...window.history.state, [HISTORY_INDEX]: currentIndex }, '', window.location.href);
     let restoring = false;
@@ -138,5 +139,5 @@ export function useGuardedNavigation() { return useContext(NavigationContext).re
 export function useUnsavedDraft(draft: Draft) {
   const { register } = useContext(NavigationContext);
   const key = useMemo(() => Symbol('draft'), []);
-  useEffect(() => register(key, draft), [key, register, draft]);
+  useLayoutEffect(() => register(key, draft), [key, register, draft]);
 }
