@@ -4,30 +4,10 @@ import { getProvider } from "@/lib/bank/registry";
 import { bindTransaction, type ProviderConsent } from "@/lib/bank/provider";
 import {
   createRuleEvaluator,
-  parseRules,
   usableRules,
-  type OwnedIds,
 } from "@/lib/transaction-rules";
+import { readTransactionRuleContext } from "@/lib/transaction-rule-data";
 import type { BankConnection } from "@/lib/types";
-
-/**
- * The owner's own project and subscription ids. A rule action may name either,
- * and the transactions insert/update policies verify the row belongs to the
- * same owner — so an id that is not in these sets is dropped before the write
- * rather than turning into a rejected insert.
- */
-async function ownedIds(admin: SupabaseClient, userId: string): Promise<OwnedIds> {
-  const [projects, subscriptions] = await Promise.all([
-    admin.from("projects").select("id").eq("user_id", userId),
-    admin.from("subscriptions").select("id").eq("user_id", userId),
-  ]);
-  const ids = (rows: { id: string }[] | null) =>
-    new Set<string>((rows ?? []).map((row) => row.id));
-  return {
-    projectIds: ids(projects.data as { id: string }[] | null),
-    subscriptionIds: ids(subscriptions.data as { id: string }[] | null),
-  };
-}
 
 export type SyncResult = {
   inserted: number;
@@ -138,25 +118,12 @@ async function pullConnection(
     (existingRows ?? []).map((r: { external_id: string }) => r.external_id),
   );
 
-  // Transaction rules — the same staged, specificity-ranked engine the editor
-  // and the retroactive apply route use, so a synced row is filed exactly as
-  // the preview said it would be.
-  const { data: ruleRows, error: rulesError } = await admin
-    .from("transaction_rules")
-    .select("*")
-    .eq("user_id", conn.user_id)
-    .order("stage", { ascending: true })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  const parsedRules = parseRules(ruleRows);
-  if (rulesError || !Array.isArray(ruleRows) || parsedRules.dropped > 0) throw new Error("rules-unavailable");
-  const rules = usableRules(parsedRules.rules);
-
-  // A rule action naming a project or subscription the owner no longer has
-  // would be rejected by the transactions insert policy, so unknown ids are
-  // dropped before the row is built.
-  const owned = await ownedIds(admin, conn.user_id);
-  const evaluator = createRuleEvaluator(rules, owned);
+  const context = await readTransactionRuleContext(admin, conn.user_id);
+  if (context.dropped > 0) throw new Error("rules-unavailable");
+  const rules = usableRules(context.rules);
+  const evaluator = createRuleEvaluator(rules, {
+    projectIds: new Set(context.projectIds), subscriptionIds: new Set(context.subscriptionIds),
+  });
 
   let inserted = 0;
   let accountsLinked = 0;

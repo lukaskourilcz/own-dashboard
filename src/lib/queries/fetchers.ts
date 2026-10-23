@@ -3,7 +3,7 @@
 import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
-import type { TransactionRuleSet } from "@/lib/transaction-rules";
+import type { TransactionRuleContext } from "@/lib/transaction-rule-data";
 import type {
   Account,
   AiCategory,
@@ -163,17 +163,16 @@ export async function fetchCategoryRules(): Promise<CategoryRule[]> {
  * goes through the engine's parser; rows it refuses are counted as `dropped`
  * and reported in the editor instead of disappearing silently.
  */
-export async function fetchTransactionRules(): Promise<TransactionRuleSet> {
+export async function fetchTransactionRules(): Promise<TransactionRuleContext> {
   const supabase = createClient();
-  // The rule engine is needed only by Finance. Keep it out of shared Home
-  // fetchers, and load it alongside the rule read rather than after the read.
-  const [{ data, error }, { parseRules }] = await Promise.all([
-    supabase.from("transaction_rules").select("*")
-      .order("stage", { ascending: true }).order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
-    import("@/lib/transaction-rules"),
+  // Keep Finance's matcher/validators out of shared Home fetchers. Load them
+  // alongside the complete read rather than adding a request waterfall.
+  const [{ data, error }, { parseTransactionRuleContext }] = await Promise.all([
+    supabase.rpc("transaction_rule_context", { p_user_id: null }),
+    import("@/lib/transaction-rule-data"),
   ]);
-  if (error) throw error;
-  return parseRules(data ?? []);
+  if (error) throw new Error("Rule context unavailable");
+  return parseTransactionRuleContext(data);
 }
 
 export async function fetchPlans(): Promise<Plan[]> {

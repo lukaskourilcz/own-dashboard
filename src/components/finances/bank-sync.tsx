@@ -32,7 +32,7 @@ import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
 import { prepareBankCsv, csvRowsToImport, CsvLegacyConflict, MAX_CSV_BYTES, type ParseResult } from "@/lib/bank-csv";
 import { createRuleEvaluator, usableRules } from "@/lib/transaction-rules";
-import type { BankConnection, Project, Subscription, Transaction } from "@/lib/types";
+import type { BankConnection, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Institution = { id: string; name: string; bic: string | null; logo: string | null };
@@ -59,14 +59,8 @@ async function fetchBankProviders(): Promise<ProviderState[]> {
 
 export function BankSync({
   transactions,
-  projects,
-  subscriptions,
 }: {
   transactions: Transaction[];
-  /** Used only to keep a rule action from writing a relationship the owner no
-   * longer has, which the transactions RLS policies would reject outright. */
-  projects: Project[];
-  subscriptions: Subscription[];
 }) {
   const t = useDict();
   const qc = useQueryClient();
@@ -200,8 +194,6 @@ export function BankSync({
 
         <CsvImport
           transactions={transactions}
-          projects={projects}
-          subscriptions={subscriptions}
         />
       </CardContent>
 
@@ -300,12 +292,8 @@ function ConnectionRow({
 
 function CsvImport({
   transactions,
-  projects,
-  subscriptions,
 }: {
   transactions: Transaction[];
-  projects: Project[];
-  subscriptions: Subscription[];
 }) {
   const t = useDict();
   const supabase = createClient();
@@ -350,8 +338,8 @@ function CsvImport({
       if (fresh.length === 0) return { added: 0, dup: parsed.rows.length };
       const rules = usableRules(rulesQuery.data?.rules ?? []);
       const owned = {
-        projectIds: new Set(projects.map((p) => p.id)),
-        subscriptionIds: new Set(subscriptions.map((s) => s.id)),
+        projectIds: new Set(rulesQuery.data.projectIds),
+        subscriptionIds: new Set(rulesQuery.data.subscriptionIds),
       };
       const evaluator = createRuleEvaluator(rules, owned);
       const payload = fresh.map((r) =>

@@ -2637,7 +2637,7 @@
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "26130647adbea7683a31ff2db73f2e9806104b150467a1980ab35de4a5adafc0"
+      "reviewedSha256": "d1351ccb8d9f4a0ebd324a039f1032c69c348ce80903c831315580cb3a183852"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3579,6 +3579,14 @@
       "addedAfterBaseline": true,
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "fd97ec2d21e0845c64f752df33c71f3bafd71a948f2f132376b6eb1d594b8a46"
+    },
+    {
+      "path": "src/lib/transaction-rule-data.ts",
+      "lines": 29,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; targeted context checks passed; final release checks pending",
+      "reviewedSha256": "f72c5ebd5b99bf12bc557ee2e5faa01fa9b3f5e0e8b76a7b4b13a55888ccdb7f"
     }
   ],
   "baselineFileCount": 561

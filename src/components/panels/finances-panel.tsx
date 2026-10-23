@@ -667,7 +667,7 @@ export function FinancesPanel({
     <PageHeader title={view === 'overview' ? t.finances.title : t.nav.sections[view]}
       description={view === 'overview' ? t.finances.description : view === 'accounts' ? t.finances.accountsDescription : view === 'transactions' ? t.finances.transactionsDescription : t.finances.categoriesDescription}
       action={view !== 'categories' && <div className="flex gap-2">{view !== 'transactions' && <Button onClick={() => setAccountOpen(true)}><Plus />{t.finances.addAccount}</Button>}{view !== 'accounts' && <Button onClick={() => { setError(null); if (!dateChosen) setTxForm(current => ({ ...current, occurred_on: todayKey() })); setTxOpen(true); }}><Plus />{t.finances.addTransaction}</Button>}</div>} />
-    {view === 'accounts' && <><p className="text-sm text-foreground-muted">{t.finances.netWorth}: <strong className="tabular text-foreground">{formatCurrency(totalNet, displayCurrency)}</strong></p><div className="grid items-start gap-4 lg:grid-cols-2">{accountsContent}<BankSync transactions={transactions} projects={projects} subscriptions={subscriptions} /></div></>}
+    {view === 'accounts' && <><p className="text-sm text-foreground-muted">{t.finances.netWorth}: <strong className="tabular text-foreground">{formatCurrency(totalNet, displayCurrency)}</strong></p><div className="grid items-start gap-4 lg:grid-cols-2">{accountsContent}<BankSync transactions={transactions} /></div></>}
     {view === 'transactions' && <>
       <div role="search" className="flex flex-wrap gap-2">
         <Input aria-label={t.finances.searchTransactions} type="search" placeholder={t.finances.searchTransactions} value={search} onChange={event => { setSearch(event.target.value); setVisibleCount(50); }} className="min-w-40 flex-1" />
@@ -676,7 +676,7 @@ export function FinancesPanel({
         <span role="status" className="py-2 text-xs text-foreground-muted tabular">{filteredTransactions.length} / {transactions.length}</span>
       </div>
       {transactionsContent}
-      <details className="border-t border-border pt-3"><summary className="min-h-11 cursor-pointer text-sm font-medium focus-ring">{t.finances.importAndMatch}</summary><div className="mt-3 grid items-start gap-4 lg:grid-cols-2"><BankSync transactions={transactions} projects={projects} subscriptions={subscriptions} /><PaymentMatches transactions={transactions} invoices={invoices} invoiceItems={invoiceItems} /></div></details>
+      <details className="border-t border-border pt-3"><summary className="min-h-11 cursor-pointer text-sm font-medium focus-ring">{t.finances.importAndMatch}</summary><div className="mt-3 grid items-start gap-4 lg:grid-cols-2"><BankSync transactions={transactions} /><PaymentMatches transactions={transactions} invoices={invoices} invoiceItems={invoiceItems} /></div></details>
     </>}
     {view === 'categories' && <div className="grid items-start gap-4 lg:grid-cols-3"><TransactionRules transactions={transactions} projects={projects} subscriptions={subscriptions} />{categoryContent}</div>}
     {view === 'overview' && <>

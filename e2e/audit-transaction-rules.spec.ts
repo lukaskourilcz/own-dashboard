@@ -20,6 +20,7 @@ for (const lang of ["en", "cs"] as const) {
       if (writes === 1) { await new Promise<void>(resolve => { release = resolve; }); return route.fulfill({ status: 500, json: { message: "Synthetic conflict" } }); }
       return route.fulfill({ json: { id: row.id } });
     });
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: [row], project_ids: [], subscription_ids: [] } }));
     await page.goto("/dev-preview?tab=categories");
     await page.getByRole("button", { name: `${lang === "cs" ? "Upravit" : "Edit"}: Audit rule`, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: copy.editRule });
@@ -65,6 +66,7 @@ for (const lang of ["en", "cs"] as const) {
       }
       return route.fulfill({ json: url.searchParams.has("id") ? created : created ? [created] : [] });
     });
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: created ? [created] : [], project_ids: [], subscription_ids: [] } }));
     await page.goto("/dev-preview?tab=categories"); await page.getByRole("button", { name: copy.newRule, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: copy.newRule });
     await dialog.getByRole("textbox", { name: `${copy.value} 1`, exact: true }).fill("merchant");
