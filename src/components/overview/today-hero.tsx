@@ -274,7 +274,7 @@ export function TodayHero({
                         href={ev.htmlLink}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-foreground-subtle hover:text-foreground transition-colors"
+                        className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring"
                         aria-label={t.overview.openInGoogleCalendar}
                       >
                         <ExternalLink className="h-3 w-3" />

@@ -12,7 +12,9 @@ import { MarketingWeekCard } from "@/components/work/marketing-week";
 import { WeeklyPlanningFlow } from "@/components/work/weekly-planning";
 import { useDict } from "@/lib/i18n";
 import { CHANGELOG, entriesSince, previousCompletedReviewDate } from "@/lib/changelog";
-import { mondayKey } from "@/lib/date-keys";
+import { mondayKey, todayKey } from "@/lib/date-keys";
+import { buildOccurrences } from "@/lib/important-dates";
+import { useNow } from "@/lib/use-now";
 import { assessProjectHealth } from "@/lib/project-health";
 import { useCrossProjectActivityQuery } from "@/lib/github-queries";
 import { dueFollowUps } from "@/lib/jobs/board";
@@ -61,7 +63,8 @@ export function WorkOverviewPanel({
 }) {
   const t = useDict();
   const p = t.professional;
-  const weekStart = mondayKey();
+  const now = useNow();
+  const weekStart = mondayKey(now ?? undefined);
   // The window the "shipped" block covers: everything published after the last
   // review that was actually completed. Null means there is none to measure
   // from — the first review, or one older than the twelve weeks the loader
@@ -76,11 +79,11 @@ export function WorkOverviewPanel({
     [projects, todos, costs, crons],
   );
   const dueOpportunityFollowUps = opportunities.filter((item) =>
-    !CLOSED.has(item.status) && item.next_follow_up_at && new Date(item.next_follow_up_at) <= new Date(),
+    now && !CLOSED.has(item.status) && item.next_follow_up_at && new Date(item.next_follow_up_at) <= now,
   ).length;
   // Applications whose follow-up date has arrived, derived with the same rule
   // the Career board and its "Follow-ups due" metric use.
-  const careerFollowUps = useMemo(() => dueFollowUps(jobApplications), [jobApplications]);
+  const careerFollowUps = useMemo(() => now ? dueFollowUps(jobApplications, now) : [], [jobApplications, now]);
 
   const projectRepos = projects
     .filter((x) => x.is_active && x.status !== "archived" && x.repo_full_name)
@@ -98,10 +101,8 @@ export function WorkOverviewPanel({
     { label: p.currentApplications, value: jobApplications.filter((x) => !["rejected", "withdrawn"].includes(x.status)).length, icon: BriefcaseBusiness },
   ];
 
-  const upcomingDates = importantDates
-    .filter((item) => item.the_date >= new Date().toISOString().slice(0, 10))
-    .sort((a, b) => a.the_date.localeCompare(b.the_date))
-    .slice(0, 6);
+  const upcomingDates = useMemo(() => now ? buildOccurrences(importantDates, now)
+    .filter(item => item.daysUntil >= 0).slice(0, 6) : [], [importantDates, now]);
   const healthReason = (reason: string) => {
     if (reason === "Project is on hold") return p.projectOnHold;
     if (reason === "Running costs without recorded revenue") return p.costsWithoutRevenue;
@@ -129,7 +130,7 @@ export function WorkOverviewPanel({
             ))}
           </CardContent>
         </Card>
-        <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.date.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.date.title}</span><span className="text-xs tabular text-foreground-muted">{todayKey(item.next)}</span></Link></li>)}</ul>}</CardContent></Card>
           <Card>
             <CardHeader><CardTitle>{p.shippedSinceReview}</CardTitle></CardHeader>
             <CardContent className="space-y-1.5">

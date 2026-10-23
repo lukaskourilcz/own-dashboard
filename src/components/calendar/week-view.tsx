@@ -148,7 +148,7 @@ export function WeekView({
                             href={ev.htmlLink}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-foreground-subtle hover:text-foreground transition-colors pt-0.5 opacity-0 group-hover:opacity-100"
+                            className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 focus-ring"
                             aria-label={t.calendar.openInGoogleCalendar}
                           >
                             <ExternalLink className="h-3 w-3" />

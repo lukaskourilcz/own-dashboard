@@ -15,8 +15,9 @@ function notifyAll(): void {
 }
 
 function subscribe(cb: () => void): () => void {
+  const resuming = subscribers.size === 0;
   subscribers.add(cb);
-  if (snapshot === 0) {
+  if (resuming) {
     snapshot = Date.now();
     queueMicrotask(notifyAll);
   }
