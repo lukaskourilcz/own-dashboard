@@ -81,3 +81,5 @@ Four actual-browser regressions now pass for canonical Back/Forward and unchange
 
 
 Direct Daily mix/Music destinations now show a named disabled state when their server feature is off, rather than a blank tab. Daily mix also exposes loading and explicit read Retry; section chunks use one loading message. The embedded components retain their existing hidden-when-off default for other callers. Twenty-four targeted component/documentation tests passed, including the two direct-destination disabled-state cases; focused lint and type checks passed.
+
+The final optimized fixture build, full lint and standalone type check passed. The six macOS visual tests passed after updating their navigation-dialog action to the shared translated label. Two desktop Lab captures changed; ten new stage captures cover the older pending fixtures now reachable through the corrected queue. Every changed/new PNG was visually reviewed. The full browser and unit suites are running separately; updating snapshots alone is not their completion evidence.
