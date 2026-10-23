@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
@@ -54,6 +54,7 @@ import { assigneeForTodo, type Assignee } from "@/lib/needed";
 import {
   diffNeededTodos,
   removeFinishedFromNeeded,
+  readNeededTodoSnapshot,
   scanNeededRepos,
 } from "@/lib/needed-sync";
 import { TaskTags } from "@/components/tasks/task-tags";
@@ -66,6 +67,7 @@ import {
 import type { Locale } from "date-fns";
 import type { Organization, Project, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 
 export function TodosPanel({
   todos,
@@ -108,6 +110,7 @@ export function TodosPanel({
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
   // query off in the compact dashboard widget.
   const reposQuery = useReposQuery(!compact);
+  const projectByTodo = useMemo(() => new Map(todos.map(todo => [todo.id, findProjectForTask(todo, projects)])), [todos, projects]);
 
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -145,6 +148,7 @@ export function TodosPanel({
       void qc.invalidateQueries({ queryKey: qk.todos });
       void qc.invalidateQueries({ queryKey: qk.dailyFocus });
     },
+    onError: () => toast.err(t.todos.saveErr),
   });
 
   // Optimistic toggle: flip in the cache immediately, roll back on error,
@@ -167,6 +171,7 @@ export function TodosPanel({
     },
     onError: (_e, _td, ctx) => {
       if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
+      toast.err(t.todos.saveErr);
     },
     onSettled: () =>
       Promise.all([
@@ -190,6 +195,7 @@ export function TodosPanel({
     },
     onError: (_e, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
+      toast.err(t.todos.saveErr);
     },
     onSettled: () =>
       Promise.all([
@@ -220,14 +226,17 @@ export function TodosPanel({
         nowIso,
       );
 
-      const { data: existing } = await supabase
+      const existing = await readNeededTodoSnapshot((from, to) => supabase
         .from("todos")
-        .select("*")
-        .eq("user_id", userId);
+        .select("id, source, repo_id, needed_raw, title, done")
+        .eq("user_id", userId)
+        .eq("source", "github")
+        .order("id")
+        .range(from, to));
       const { toInsert, toDeleteIds } = diffNeededTodos(
         scanned,
         freshRows,
-        (existing ?? []) as Todo[],
+        existing,
       );
 
       if (toDeleteIds.length) {
@@ -243,12 +252,13 @@ export function TodosPanel({
       }
       const focusResponse = await fetch("/api/daily-focus", {
         method: "POST",
-      });
+        signal: AbortSignal.timeout(20000),
+      }).catch(() => null);
       return {
         added: toInsert.length,
         removed: toDeleteIds.length,
         missing,
-        dailyFocusUpdated: focusResponse.ok,
+        dailyFocusUpdated: focusResponse?.ok === true,
       };
     },
     onSuccess: async ({ added, removed, missing, dailyFocusUpdated }) => {
@@ -265,6 +275,8 @@ export function TodosPanel({
       if (!dailyFocusUpdated) toast.err(t.todos.dailyFocusRefreshErr);
     },
     onError: (e) => {
+      void qc.invalidateQueries({ queryKey: qk.todos });
+      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
       const m = (e as Error).message;
       toast.err(
         m === "disconnected"
@@ -329,11 +341,11 @@ export function TodosPanel({
 
   function addTodo(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || addMutation.isPending) return;
     addMutation.mutate();
   }
 
-  const toggle = (td: Todo) => toggleMutation.mutate(td);
+  const toggle = (td: Todo) => { if (!toggleMutation.isPending) toggleMutation.mutate(td); };
   const remove = async (id: string) => {
     if (await confirm({
       title: t.common.delete,
@@ -423,7 +435,7 @@ export function TodosPanel({
     .filter((td) => td.is_global)
     .sort(byImportanceThenDue);
 
-  const projectForTodo = (todo: Todo) => findProjectForTask(todo, projects);
+  const projectForTodo = (todo: Todo) => projectByTodo.get(todo.id);
 
   const taskGroupMap = new Map<
     string,
@@ -831,7 +843,7 @@ function TaskSubcard({
           type="button"
           onClick={() => onRemove(td.id)}
           aria-label={t.common.delete}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+          className="inline-flex min-h-6 min-w-6 items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -842,7 +854,9 @@ function TaskSubcard({
 
 /** The "time to finish" chip — colour shifts as the 7-day timer runs down. */
 function TimeChip({ t, due }: { t: Dict; due: string }) {
-  const left = daysUntilDate(due);
+  const now = useNow();
+  if (!now) return null;
+  const left = daysUntilDate(due, now);
   return (
     <span
       className={cn(
@@ -1385,6 +1399,7 @@ function QuickAddForm({
   return (
     <form onSubmit={onSubmit} className="flex gap-2 mb-3">
       <Input
+        aria-label={t.todos.taskLabel}
         placeholder={t.todos.quickAddPlaceholder}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -1459,7 +1474,7 @@ function TodoList({
                   type="button"
                   onClick={() => onRemove(td.id)}
                   aria-label={t.common.delete}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive"
+                  className="inline-flex min-h-6 min-w-6 items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

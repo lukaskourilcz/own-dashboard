@@ -21,6 +21,24 @@ import type { Todo } from "./types";
 /** Every generated task gets this many days before it's due. */
 export const TASK_TIMER_DAYS = 7;
 
+export type NeededTodoSnapshot = Pick<Todo, "id" | "source" | "repo_id" | "needed_raw" | "title" | "done">;
+export const NEEDED_SNAPSHOT_PAGE_SIZE = 500;
+
+/** Never diff a truncated or failed owner read as an empty task list. */
+export async function readNeededTodoSnapshot(
+  loadPage: (from: number, to: number) => PromiseLike<{ data: NeededTodoSnapshot[] | null; error: unknown }>,
+): Promise<NeededTodoSnapshot[]> {
+  const rows: NeededTodoSnapshot[] = [];
+  for (let page = 0; page < 100; page++) {
+    const from = page * NEEDED_SNAPSHOT_PAGE_SIZE;
+    const { data, error } = await loadPage(from, from + NEEDED_SNAPSHOT_PAGE_SIZE - 1);
+    if (error || !data) throw new Error("Could not read existing tasks.");
+    rows.push(...data);
+    if (data.length < NEEDED_SNAPSHOT_PAGE_SIZE) return rows;
+  }
+  throw new Error("Task snapshot limit reached; no synchronization was performed.");
+}
+
 /** The insert shape for a NEEDED-sourced task (before the DB fills id/created). */
 export type NeededTodoRow = {
   user_id: string;
@@ -107,7 +125,7 @@ export function buildNeededRows(
 export function diffNeededTodos(
   scannedRepoIds: Set<string>,
   freshRows: NeededTodoRow[],
-  existing: Todo[],
+  existing: NeededTodoSnapshot[],
 ): { toInsert: NeededTodoRow[]; toDeleteIds: string[] } {
   const freshKeys = new Set(
     freshRows.map((r) => neededKey(r.repo_id, r.needed_raw, r.title)),

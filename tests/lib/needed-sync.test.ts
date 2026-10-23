@@ -320,3 +320,27 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     expect(removal).toEqual({ cleared: ["gone-1", "gone-2"], missing: ["me/archived-notes"] });
   });
 });
+
+describe("complete owner task snapshot", () => {
+  it("reads beyond the REST row cap before calculating the import diff", async () => {
+    const { readNeededTodoSnapshot } = await import("@/lib/needed-sync");
+    const rows=Array.from({length:1201},(_,i) => todo({id:String(i),source:"github",repo_id:"42",needed_raw:i===1200?"- [ ] First task":`- [ ] Older ${i}`}));
+    const ranges:number[][]=[];
+    const snapshot=await readNeededTodoSnapshot(async (from,to) => {ranges.push([from,to]);return {data:rows.slice(from,to+1),error:null};});
+    expect(ranges).toEqual([[0,499],[500,999],[1000,1499]]);
+    expect(snapshot).toHaveLength(1201);
+    const fresh=buildNeededRows("u",repo,NEEDED,repo.html_url,"2026-10-23T10:00:00Z");
+    expect(diffNeededTodos(new Set(["42"]),fresh,snapshot).toInsert.map(row => row.title)).toEqual(["Second task"]);
+  });
+  it("aborts on a later read failure rather than returning a partial snapshot", async () => {
+    const { readNeededTodoSnapshot } = await import("@/lib/needed-sync");
+    let calls=0;
+    await expect(readNeededTodoSnapshot(async () => ++calls===1?{data:Array.from({length:500},() => todo({})),error:null}:{data:null,error:new Error("offline")})).rejects.toThrow("Could not read existing tasks");
+    expect(calls).toBe(2);
+  });
+  it("keeps an actual empty list distinct from a failed read", async () => {
+    const { readNeededTodoSnapshot } = await import("@/lib/needed-sync");
+    expect(await readNeededTodoSnapshot(async () => ({data:[],error:null}))).toEqual([]);
+    await expect(readNeededTodoSnapshot(async () => ({data:null,error:null}))).rejects.toThrow();
+  });
+});

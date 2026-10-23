@@ -1304,7 +1304,8 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1473,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "27441d30478579f476ebb30f0f1805da891baca80cb32696bcb71daa7d9d0bc1"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -3093,7 +3094,8 @@
       "path": "src/lib/needed-sync.ts",
       "lines": 269,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "483644279a1ee89110ac56eb770257b3f155bdde3dbd874cce06577c046694c6"
     },
     {
       "path": "src/lib/needed.ts",
@@ -3183,7 +3185,8 @@
       "path": "src/lib/project-match.ts",
       "lines": 183,
       "sha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9"
     },
     {
       "path": "src/lib/project-workspace-tabs.ts",
