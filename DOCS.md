@@ -53,6 +53,8 @@ These are real foreign-key relationships. RLS policies verify that every referen
 
 `src/components/dashboard-shell.tsx` keeps the existing single-shell architecture. Entity state is stored in the shared TanStack Query cache through `useEntityStore`, so existing high-value panels remain controlled and cache invalidation stays centralized.
 
+Failed initial reads render a retry state before editable panels mount; verified cached records remain available during background failures. Destination panels load on demand while preserving server rendering and shell state. Public tour data lives in a separate query cache and cannot reach live APIs, Supabase, exports, sign-out or OAuth linking. Fixture entity stores never refetch live records. Dev-preview retains its production 404 guard and also isolates real backend configurations; only the nonexistent E2E backend permits mocked mutation requests.
+
 The shell switches canonical routes with the History API for an SPA feel. Browser back/forward is synchronized through `popstate`. The sidebar, mobile navigation, keyboard chords, and command palette all use the same `NavTab` source of truth. Project detail is the one supported nested route: `/projects/[id-or-slug]`. The authenticated server boundary resolves it only against the current user's loaded projects; unknown or cross-user identifiers return 404.
 
 ## Hubs

@@ -23,7 +23,7 @@ Outside Marketing, provider configuration is limited to the optional `JINA_API_K
 
 ## Public tour isolation
 
-`/guest` renders deterministic fixtures in a separate React Query cache. Its network boundary blocks application API requests, Supabase requests, exports, sign-out submissions and provider-linking actions even when the browser already has the owner's session. The boundary remains active during in-shell navigation and restores normal request behavior when the tour unmounts. Static assets and ordinary sign-in navigation remain available. `/dev-preview` is a separate development/E2E harness whose interactions can use explicitly mocked requests.
+`/guest` renders deterministic fixtures in a separate React Query cache. Its network boundary blocks application API requests, Supabase requests, exports, sign-out submissions and provider-linking actions even when the browser already has the owner's session. The boundary remains active during in-shell navigation and restores normal request behavior when the tour unmounts. Static assets and ordinary sign-in navigation remain available. Fixture entity stores never refetch live records. `/dev-preview` uses the same isolation with a real backend; interactions may use mocked requests only with the deliberately nonexistent E2E backend (`https://example.supabase.co`).
 
 ## Marketing-only exception (2026-10-13)
 

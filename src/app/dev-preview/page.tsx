@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DemoDashboard } from "@/components/demo-dashboard";
+import { GuestBoundary } from "@/components/guest-boundary";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
 import { isNavTab } from "@/lib/nav-tabs";
 
@@ -27,7 +28,7 @@ export default async function PreviewPage({
   // `?q=` is the IG TIPS deep link, as `/ig-tips?q=` is in the app.
   // `?calendars=live` reads the marketing calendars from the API route (which
   // Playwright stubs) instead of the fixture.
-  return (
+  const preview = (
     <DemoDashboard
       projectRef={project}
       initialTab={isNavTab(tab) ? tab : undefined}
@@ -35,4 +36,9 @@ export default async function PreviewPage({
       initialTipQuery={tab === "ig-tips" ? tipDeepLinkQuery(q) : null}
     />
   );
+  // Mutation tests use a deliberately nonexistent backend. A developer's
+  // signed-in real backend must never receive fixture writes or private reads.
+  return process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"
+    ? preview
+    : <GuestBoundary>{preview}</GuestBoundary>;
 }

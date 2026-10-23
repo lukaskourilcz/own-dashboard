@@ -210,9 +210,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: !props.isPreview && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs]);
+  }), [seededData, tab, activatedTabs, props.isPreview]);
   const setTab = useCallback((next: NavTab) => {
     requestNavigation(() => {
     setTabState(next);

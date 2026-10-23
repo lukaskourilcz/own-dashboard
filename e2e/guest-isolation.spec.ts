@@ -13,7 +13,8 @@ test("public tour keeps live writes, exports and authentication out of the sessi
     liveRequests.push(route.request().url());
     return route.fulfill({ status: 200, contentType: "application/json", body: '[]' });
   });
-  await page.goto("/guest?lang=en");
+  // The assertion concerns live-data isolation, not third-party icon loading.
+  await page.goto("/guest?lang=en", { waitUntil: "domcontentloaded" });
   await expect(page.getByText("Guest tour", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign out", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "New calendar event", exact: true }).click();
