@@ -1,6 +1,6 @@
 # Marketing scheduling (pg_cron tick)
 
-Code behavior reviewed on 22 October 2026; deployment evidence remains separately dated. Originally documented for [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120).
+Code behavior reviewed on 23 October 2026; deployment evidence remains separately dated. Originally documented for [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120).
 Owner decision 4 of [#110](https://github.com/lukaskourilcz/own-dashboard/issues/110): scheduling runs
 in Supabase with pg_cron and pg_net. n8n keeps no marketing timer.
 
@@ -47,8 +47,10 @@ tick. Each precheck still runs once per tick: the order is chosen from its answe
 | # | Category | Runs when | One unit | Switch |
 |---|---|---|---|---|
 | 1 | collection | a run of the last two days is `running`, or it is 22:00 or later in Prague and today has no run | one `tickDneskaiCollection` (at most five operations, 45 s): up to three free reads concurrently, each admitted with its 25 s timeout available; paid starts and polls remain serial. Without a running run it admits today's run. `retryAfterSeconds` becomes the next allowed time; `continue: false` ends it. A date held by a retained collection-pilot run is a no-op (`collection-pilot-today`), because admission refuses it; pilot runs are never ticked here and never feed briefs. | `MARKETING_DNESKAI_COLLECTION_ENABLED`; inside the tick `MARKETING_DNESKAI_PAID_ENABLED` holds Apify and Jev, and Apify also needs `MARKETING_DNESKAI_APIFY_ENABLED` |
+| 1a | scouting | only with `DNESKAI_SCOUTING_ENABLED` or `DNESKAI_TITLING_ENABLED` (both need `DNESKAI_TOPICS_ENABLED`): once an hour from 22:00 to 08:00 Prague (every twelfth tick) | `scoutDneskaiTopics` turns the night's education reports and library links rated 4 or 5 into proposed topics, with no model call. With `DNESKAI_FACT_OR_HYPE_ENABLED` it then buys transcripts of FACT or HYPE reels and classifies each with one Claude call. With titling it expires news topics older than 48 hours and, from 02:00, titles up to 40 untitled topics in one Claude call. Holds no lease (`dneskai-scouting.ts`, `dneskai-fact-or-hype.ts`, `dneskai-titling.ts`) | `DNESKAI_SCOUTING_ENABLED`, `DNESKAI_FACT_OR_HYPE_ENABLED`, `DNESKAI_TITLING_ENABLED` |
 | 2 | media | `pendingDneskaiMediaCandidates` is not empty | one `collectDneskaiMedia` for up to eight candidates, budget at most 40 s. A `busy` candidate waits 125 s (its claim lasts 120 s), a failed pass waits 10 minutes. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 3 | briefs | the newest finished run of the last two days | `getCreateDneskaiBriefs(db)` (#115) for that run. Once a call reports `pending: false` the run is left alone. A call stays `pending` while a brief waits for media, for a verified account, or for a job admission that failed with a code in `DNESKAI_BRIEF_RETRYABLE_CODES`. The step has no backoff, so it calls once per five-minute tick until that brief's slot, or the target day's last slot, is under 30 minutes away. | `MARKETING_DNESKAI_COLLECTION_ENABLED` |
+| 3a | enrichment | only with `DNESKAI_TOPIC_BRIEFS_ENABLED`: an approved topic waits | `advanceDneskaiTopicBriefs` (`dneskai-topic-bridge.ts`) under the briefs lease: a news topic takes its event's brief, an education topic gets a brief of its report, and a link-library or hand-added topic first has its URL read through Jina Reader and stored as an `owner-link` report. The brief is admitted to the next free slot and its generation job queued through the ordinary guards; the topic moves approved → enriching → briefed → generated | `DNESKAI_TOPIC_BRIEFS_ENABLED`, `MARKETING_DNESKAI_COLLECTION_ENABLED` |
 | 4 | generation | a queued `marketing_jobs` row of brand `dneskai` | `executeMarketingJob` for the oldest one, with `deferRetry`: a first attempt that fails copy validation puts the job back in the queue with its retry feedback, and the next tick makes the second attempt (GEN-14, see [marketing generation](marketing-generation.md)). A job that throws before it is claimed is set aside for an hour so younger jobs still run. | `MARKETING_AI_CONSENT` (and the generation module's own limits) |
 | 5 | publishing | a queued DNESKAi publication inside its 15-minute window, or a claimed one waiting for its container | `publishDueMarketing(db, owner, 'dneskai', dryRun, signal)`. Live only when `MARKETING_PUBLISH_ENABLED` and `MARKETING_DNESKAI_PUBLISH_ENABLED` are both `true`; otherwise a dry run with no Meta write. | both publish switches; `marketing_accounts.enabled` is enforced by the publisher |
 | 6 | reconciliation | a DNESKAi publication in `reconciliation` not checked for 30 minutes; when there is none, a `claimed` one whose lease expired (the function died mid-publish), which only `marketing_claim_due` would otherwise move to `reconciliation` | `reconcileStoredMarketingPublication`: Graph GET requests only, and the receipt when the media is found | none (read-only) |
@@ -103,6 +105,7 @@ find the media lease held by a minute tick. It runs only these duties.
 | renewal | For the newest 50 approved or ready-for-review revisions of any brand, reads the expiry from each signed asset URL and calls `renewStoredRevisionAssetUrls` for those that expire within 48 hours or cannot be read, at most ten a day. The approval hash does not change. A revision refused with a code that cannot change (`revision-identity-mismatch`, for example one stored before #118, `revision-not-renewable`, `revision-unavailable`, `asset-input-invalid`) is set aside for seven days (`detail.setAside`); any other failure is tried again the next day, while its URLs still have a day left. |
 | purge | `purgeUnusedDneskaiMedia(db, owner, 30)` under the media lease, and only when no media candidate is claimed by a collection pass. A day it is refused (`busy`, `backoff`, `media-collection-in-progress`) waits for the next daily tick; retention is 30 days, so one day later costs nothing. |
 | retention | Deletes `marketing_ticks` rows older than 14 days. |
+| audio-trends | Only with `DNESKAI_AUDIO_TRENDS_ENABLED` and Facebook Login: reads Meta's trending sounds (`GET /ig_audio`) and stores the day's list in `marketing_audio_trends`, at most 25 per type. With `DNESKAI_TIKTOK_TRENDS_ENABLED` it also reads yesterday's TikTok CZ sound chart run, marks the matching rows `tiktok`, then reserves and starts today's run (`dneskai-audio-trends.ts`, `dneskai-audio-tiktok.ts`). |
 
 pg_cron writes one `cron.job_run_details` row per run (`cron.log_run` is on in Supabase) and never
 deletes them. A third job, `marketing-cron-history-prune` (`43 3 * * *`, UTC), runs inside the
@@ -188,15 +191,18 @@ slot, all without a single n8n execution.
 - Vercel: 289 function invocations a day. A tick with nothing to do makes a handful of small reads.
   A category takes its lease only after a cheap read found work for it (briefs also reads its stored
   state under the lease).
-- Money is spent only where it was spent before: Apify and Jev inside collection (behind
-  `MARKETING_DNESKAI_PAID_ENABLED` and the run's reservations) and Claude inside generation (behind
-  `MARKETING_AI_CONSENT` and the generation module's limits). The scheduler adds no paid call.
+- Money is spent in four places: Apify and Jev inside collection (behind `MARKETING_DNESKAI_PAID_ENABLED` and the
+  run's reservations), Claude inside generation (behind `MARKETING_AI_CONSENT` and the $1 daily ceiling), the
+  scouting step's transcripts and Claude Haiku calls (behind `DNESKAI_FACT_OR_HYPE_ENABLED` or
+  `DNESKAI_TITLING_ENABLED`, reserved in the topic spend ledger: transcripts under their own $0.50 a day, model calls
+  inside the $1), and the daily TikTok chart run (behind `DNESKAI_TIKTOK_TRENDS_ENABLED`, its own $0.10 a day). With
+  those three switches off the scheduler adds no paid call.
 - n8n: 0 executions for DNESKAi. The retired timers used 720 a month (collection) and about 720 a
   month (hourly publisher recovery); see `workflows/marketing/retired/README.md`.
 
 ## Release prerequisite
 
-These are setup procedures, not authorization to run them. Production reports migration `20261021125123`, while local scheduler/media/brief filenames and ordering differ. Reconcile that history using [migration-guide.md](migration-guide.md) before applying anything. The 22 October continuation prepares additive migrations only; it deploys and applies none.
+These are setup procedures, not authorization to run them. Production has every migration up to `20261021125123`, and its history matches the repository since the 22 October reconciliation. The 23 prepared migrations after it (`20261022000000` through `20261023130300`) are not applied; the owner pushes them as [migration-guide.md](migration-guide.md#applying-the-prepared-migrations) describes.
 
 The prepared lapse-release migration changes future skips only: reports return to classified `new` status when a brief lapses without a job/revision or another active brief. The skipped brief stays as history. Never reset historic selections or reservations as a rollout shortcut.
 
@@ -265,7 +271,7 @@ To start the jobs again after `cron.unschedule`, run the last `do $schedule$ …
 
 ## Switches
 
-Every `MARKETING_*` and `DNESKAI_*` environment variable the code reads, taken from `src/` on 22 October
+Every `MARKETING_*` and `DNESKAI_*` environment variable the code reads, taken from `src/` on 23 October
 2026 (audit finding cost-08). The defaults are what the code does when the variable is unset; this table
 records no deployed value. A boolean switch is on only for the exact text `true`.
 
@@ -289,19 +295,20 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `MARKETING_KNOWLEDGE_WORKER_ENABLED` | off | Paid analysis of queued knowledge (IG TIPS) sources; off holds the queue | Live |
 | `MARKETING_DNESKAI_FEED_PROVIDER` | `bridge` | `native` reads the free feeds with OwnDashboard's adapters; unset or `bridge` calls the signed Quorum bridge | Live (`bridge` is the rollback) |
 | `MARKETING_PUBLICATION_REQUEUE_ENABLED` | off | "Give up and queue again" for a stranded publication (`/api/marketing/publications`) | Off until migration `20261022110000` |
-| `DNESKAI_OWNER_RECOVERY_ENABLED` | off | Sources: Re-review of held reports and Move to next free slot | Off until migration `20261022141512` |
-| `DNESKAI_LAPSED_RELEASE_ENABLED` | off | Sources: Release reports of a lapsed brief | Off until migrations `20261022021835` and `20261022141613` |
-| `DNESKAI_SELECTION_V2_ENABLED` | off | Collection: one automatic re-review of recent Jev holds; Sources: the relevance-first explanation | Off until migrations `20261022180000` and `20261022180100` |
+| `DNESKAI_OWNER_RECOVERY_ENABLED` | off | Topic recovery (⋯ menu): Re-review of held reports and Move to next free slot | Off until migration `20261022141512` |
+| `DNESKAI_LAPSED_RELEASE_ENABLED` | off | Topic recovery (⋯ menu): Release reports of a lapsed brief | Off until migrations `20261022021835` and `20261022141613` |
+| `DNESKAI_SELECTION_V2_ENABLED` | off | Collection: one automatic re-review of recent Jev holds; Topic recovery (⋯ menu): the relevance-first explanation | Off until migrations `20261022180000` and `20261022180100` |
 | `DNESKAI_ENGAGEMENT_ENABLED` | off | The tick's `engagement` step, the account's reply switch (`/api/marketing/accounts/engagement`) and the accounts read of its columns | Off until migration `20261023120000` |
 | `DNESKAI_REVIEW_REMINDERS_ENABLED` | on | The tick's `reminder` step; only `false` turns it off | Live |
 | `DNESKAI_REGENERATE_ENABLED` | off | Lab: Regenerate with a note (`action: "regenerate"`) | Off until migration `20261022190000` |
 | `DNESKAI_TOPICS_ENABLED` | off | Topics (náměty): `GET` and `POST /api/marketing/dneskai/topics` and their read model; off answers 404 | Off until migration `20261023100000` |
 | `DNESKAI_SCOUTING_ENABLED` | off | Collection also reads the education sources (never sent to Jev); the tick's `scouting` step turns them and library links rated 4 or 5 into proposed topics, hourly 22:00–08:00 | Needs `DNESKAI_TOPICS_ENABLED` and migration `20261023100000` |
-| `DNESKAI_FACT_OR_HYPE_ENABLED` | off | Scouting step: transcripts of FACT or HYPE reels (Apify, $0.05 each, own ceiling `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, default $0.50) and one Claude call each for tool and verdict | Needs scouting and migration `20261023100100` |
-| `DNESKAI_TITLING_ENABLED` | off | Briefs step: a finished run's selected events become news topics instead of briefs. Scouting step: news topics expire after 48 hours; from 02:00 one Claude call titles up to 40 untitled topics | Needs `DNESKAI_TOPICS_ENABLED` and migrations `20261023100000`, `20261023100100`; stops automatic briefs until A6 ships |
+| `DNESKAI_FACT_OR_HYPE_ENABLED` | off | Scouting step: transcripts of FACT or HYPE reels (Apify, $0.05 each, own ceiling `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD`, default $0.50) and one Claude call each for tool and verdict | Needs scouting, migration `20261023100100`, `MARKETING_DNESKAI_APIFY_ENABLED`, `MARKETING_DNESKAI_PAID_ENABLED`, `MARKETING_AI_CONSENT` and `APIFY_TOKEN` |
+| `DNESKAI_TITLING_ENABLED` | off | Briefs step: a finished run's selected events become news topics instead of briefs. Scouting step: news topics expire after 48 hours; from 02:00 one Claude call titles up to 40 untitled topics | Needs `DNESKAI_TOPICS_ENABLED` and migrations `20261023100000`, `20261023100100`, `MARKETING_AI_CONSENT`; set it with `DNESKAI_TOPIC_BRIEFS_ENABLED`, since titling stops the automatic briefs |
 | `DNESKAI_TOPIC_BRIEFS_ENABLED` | off | Tick step `enrichment` after briefs: approved topics become briefs and queued generation jobs through the ordinary guards | Needs `DNESKAI_TOPICS_ENABLED` and migrations `20261023100000`, `20261023100200` |
 | `DNESKAI_DAILY_MIX_ENABLED` | off | Zdroje → Denní mix; the briefs step proposes three news topics per wanted news post; the topic bridge fills each day with the wanted number of topics per kind and only the active times | Needs `DNESKAI_TOPICS_ENABLED` and migration `20261023100300` |
-| `DNESKAI_TIKTOK_TRENDS_ENABLED` | off | Inside the daily `audio-trends` step: one TikTok CZ sound chart run a day (Apify, $0.10 cap, `MARKETING_DNESKAI_TIKTOK_DAILY_USD`), read the next day | Off until migration `20261023130300`, Facebook Login and the owner's spend approval |
+| `DNESKAI_SOURCES_TABLE_ENABLED` | off | Zdroje edits `marketing_dneskai_sources` (seeded once from the registry file); the nightly collection and the scouting step read those rows. Off, both read the registry file and Zdroje shows it read-only | Off until migration `20261023110000` |
+| `DNESKAI_TIKTOK_TRENDS_ENABLED` | off | Inside the daily `audio-trends` step: one TikTok CZ sound chart run a day (Apify, $0.10 cap, `MARKETING_DNESKAI_TIKTOK_DAILY_USD`), read the next day | Off until migration `20261023130300`; needs `DNESKAI_AUDIO_TRENDS_ENABLED`, Facebook Login, `MARKETING_DNESKAI_APIFY_ENABLED`, `MARKETING_DNESKAI_PAID_ENABLED`, `MARKETING_AI_CONSENT` and the owner's spend approval |
 | `DNESKAI_AUDIO_TRENDS_ENABLED` | off | Daily `audio-trends` step (Meta's trending sounds, Facebook Login only), "Trendy zvuky" in Zdroje → Hudba and the picker, `audio_configuration` on a Reel | Off until migration `20261023130200` and Facebook Login (#166) |
 | `MARKETING_DNESKAI_REELS_ENABLED` | off | Reels: the render route (#163), Zdroje → Hudba and the Lab's music picker (#164), the Formát switch, Reel generation for education posts and Reel publishing (#165) | Off until migrations `20261023130000` and `20261023130100` |
 | `DNESKAI_ENGAGEMENT_EDITOR_ENABLED` | off | Lab: the comment keyword, DM message and public reply editor; `engagement` in `action: "edit"` | Off, needs no migration |
@@ -324,6 +331,14 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `MARKETING_CLAUDE_INPUT_USD_PER_MTOK`, `MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK` | 2 and 10 for the default model | Cost accounting of model calls | Live |
 | `MARKETING_DNESKAI_DAILY_GENERATION_USD` | 1 | Rolling daily DNESKAi generation ceiling; a malformed value refuses every paid call | Live |
 | `MARKETING_DNESKAI_APIFY_ACTOR_ID`, `MARKETING_DNESKAI_APIFY_BUILD` | unset: Apify stages refuse | The pinned Instagram actor and build | Live |
+| `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD` | 0.50 | Daily ceiling of FACT or HYPE reel transcripts; a malformed value refuses every transcript | Off until migration `20261023100100` |
+| `MARKETING_DNESKAI_TIKTOK_DAILY_USD` | 0.10 | Daily ceiling of the TikTok CZ chart run (at most 1); a malformed value refuses every run | Off until migration `20261023130300` |
+| `MARKETING_DNESKAI_REEL_ACTOR_ID`, `MARKETING_DNESKAI_REEL_BUILD` | `apify~instagram-reel-scraper` (`xMc5Ga1oCONPmWJIa`), build `0.0.617` | The reel transcript actor of FACT or HYPE | Off until migration `20261023100100` |
+| `MARKETING_DNESKAI_TOPIC_MODEL` | `claude-haiku-5-5` | The model of FACT or HYPE and titling | Off until migration `20261023100100` |
+| `MARKETING_DNESKAI_TOPIC_INPUT_USD_PER_MTOK`, `MARKETING_DNESKAI_TOPIC_OUTPUT_USD_PER_MTOK` | 0.1 and 0.5 for the default model; another model needs both | Cost accounting of topic model calls | Off until migration `20261023100100` |
+| `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE` | `instagram` | `facebook` switches verification, publishing, the comment watcher and the webhook signature to Facebook Login for Business (#166, #216) | Live (`instagram`) |
+| `MARKETING_META_APP_ID`, `MARKETING_META_APP_SECRET` | unset | Facebook Login: token renewal through `fb_exchange_token`, and the webhook signature under Facebook Login | Waits for Facebook Login |
+| `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, `MARKETING_INSTAGRAM_APP_SECRET` | unset: `/api/webhooks/instagram` answers 404 | The comment webhook's verify token (at least 16 characters; 32 recommended) and the Instagram app secret that signs its deliveries under Instagram Login | Waits for `DNESKAI_ENGAGEMENT_ENABLED` |
 | `MARKETING_APPROVED_ASSET_HOSTS` | empty | Hosts the publisher may hand to Meta | Live |
 | `MARKETING_DNESKAI_INSTAGRAM_*`, `MARKETING_DEVSHARK_INSTAGRAM_*`, `MARKETING_<BRAND>_THREADS_*` | unset | Bootstrap Meta credential: `_ACCESS_TOKEN`, `_TOKEN_EXPIRES_AT`, `_VERIFIED_SCOPES`, `_LOGIN_MODE`, `_API_VERSION`, `_API_VERSION_VERIFIED_AT` | Live for account verification and publishing |
 | `MARKETING_DNESKAI_SOURCE_URL`, `MARKETING_DNESKAI_SOURCE_SECRET` | unset | Signed Quorum bridge for `bridge` feeds and DNESKAi source refresh | Rollback for the native feeds |
