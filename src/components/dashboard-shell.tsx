@@ -1,33 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
 import { DashboardDestinationBoundary } from "@/components/dashboard-destination-state";
 import { MotionConfig } from "motion/react";
-import { CalendarPanel } from "@/components/panels/calendar-panel";
-import { ClientsPanel } from "@/components/panels/clients-panel";
-import { FinancesPanel } from "@/components/panels/finances-panel";
-import { InboxPanel } from "@/components/panels/inbox-panel";
-import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
-import { InvoicesPanel } from "@/components/panels/invoices-panel";
-import { JobsPanel } from "@/components/panels/jobs-panel";
-import { NotesPanel } from "@/components/panels/notes-panel";
-import { OpportunitiesPanel } from "@/components/panels/opportunities-panel";
-import { PlansPanel } from "@/components/panels/plans-panel";
-import { ProjectsPanel } from "@/components/panels/projects-panel";
-import { CompetitionPanel } from "@/components/panels/competition-panel";
-import { DevFinancePanel } from "@/components/panels/dev-finance-panel";
-import { PromptsPanel } from "@/components/panels/prompts-panel";
-import { SettingsPanel } from "@/components/panels/settings-panel";
-import { ShortcutsPanel } from "@/components/panels/shortcuts-panel";
-import { SubscriptionsPanel } from "@/components/panels/subscriptions-panel";
-import { TodosPanel } from "@/components/panels/todos-panel";
-import { ToolsPanel } from "@/components/panels/tools-panel";
-import { WorkOverviewPanel } from "@/components/panels/work-overview-panel";
-import { AiPanel } from "@/components/panels/ai-panel";
-import { MarketingPanel } from "@/components/panels/marketing-panel";
-import { WorkflowsPanel } from "@/components/panels/workflows-panel";
-import { IgTipsPanel } from "@/components/panels/ig-tips-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
@@ -112,6 +89,37 @@ import type {
   Note, Organization, Plan, Project, ProjectCommunication, ProjectCost, ProjectLink, Prompt, PromptLink, ReferenceRow, RepoLink, RepoNote,
   Shortcut, Subscription, SubscriptionAllocation, Todo, Tool, Transaction, WeeklyReview,
 } from "@/lib/types";
+
+// Keep destination code out of the initial shell; initial panels still render on the server.
+const CalendarPanel = dynamic(() => import("@/components/panels/calendar-panel").then(module => module.CalendarPanel), { loading: DestinationLoading });
+const ClientsPanel = dynamic(() => import("@/components/panels/clients-panel").then(module => module.ClientsPanel), { loading: DestinationLoading });
+const FinancesPanel = dynamic(() => import("@/components/panels/finances-panel").then(module => module.FinancesPanel), { loading: DestinationLoading });
+const InboxPanel = dynamic(() => import("@/components/panels/inbox-panel").then(module => module.InboxPanel), { loading: DestinationLoading });
+const ImportantDatesPanel = dynamic(() => import("@/components/panels/important-dates-panel").then(module => module.ImportantDatesPanel), { loading: DestinationLoading });
+const InvoicesPanel = dynamic(() => import("@/components/panels/invoices-panel").then(module => module.InvoicesPanel), { loading: DestinationLoading });
+const JobsPanel = dynamic(() => import("@/components/panels/jobs-panel").then(module => module.JobsPanel), { loading: DestinationLoading });
+const NotesPanel = dynamic(() => import("@/components/panels/notes-panel").then(module => module.NotesPanel), { loading: DestinationLoading });
+const OpportunitiesPanel = dynamic(() => import("@/components/panels/opportunities-panel").then(module => module.OpportunitiesPanel), { loading: DestinationLoading });
+const PlansPanel = dynamic(() => import("@/components/panels/plans-panel").then(module => module.PlansPanel), { loading: DestinationLoading });
+const ProjectsPanel = dynamic(() => import("@/components/panels/projects-panel").then(module => module.ProjectsPanel), { loading: DestinationLoading });
+const CompetitionPanel = dynamic(() => import("@/components/panels/competition-panel").then(module => module.CompetitionPanel), { loading: DestinationLoading });
+const DevFinancePanel = dynamic(() => import("@/components/panels/dev-finance-panel").then(module => module.DevFinancePanel), { loading: DestinationLoading });
+const PromptsPanel = dynamic(() => import("@/components/panels/prompts-panel").then(module => module.PromptsPanel), { loading: DestinationLoading });
+const SettingsPanel = dynamic(() => import("@/components/panels/settings-panel").then(module => module.SettingsPanel), { loading: DestinationLoading });
+const ShortcutsPanel = dynamic(() => import("@/components/panels/shortcuts-panel").then(module => module.ShortcutsPanel), { loading: DestinationLoading });
+const SubscriptionsPanel = dynamic(() => import("@/components/panels/subscriptions-panel").then(module => module.SubscriptionsPanel), { loading: DestinationLoading });
+const TodosPanel = dynamic(() => import("@/components/panels/todos-panel").then(module => module.TodosPanel), { loading: DestinationLoading });
+const ToolsPanel = dynamic(() => import("@/components/panels/tools-panel").then(module => module.ToolsPanel), { loading: DestinationLoading });
+const WorkOverviewPanel = dynamic(() => import("@/components/panels/work-overview-panel").then(module => module.WorkOverviewPanel), { loading: DestinationLoading });
+const AiPanel = dynamic(() => import("@/components/panels/ai-panel").then(module => module.AiPanel), { loading: DestinationLoading });
+const MarketingPanel = dynamic(() => import("@/components/panels/marketing-panel").then(module => module.MarketingPanel), { loading: DestinationLoading });
+const WorkflowsPanel = dynamic(() => import("@/components/panels/workflows-panel").then(module => module.WorkflowsPanel), { loading: DestinationLoading });
+const IgTipsPanel = dynamic(() => import("@/components/panels/ig-tips-panel").then(module => module.IgTipsPanel), { loading: DestinationLoading });
+
+function DestinationLoading() {
+  const t = useDict();
+  return <p role="status" className="py-6 text-sm text-foreground-muted">{t.common.loading}</p>;
+}
 
 type Props = {
   isPreview?: boolean;
