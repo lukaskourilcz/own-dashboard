@@ -321,7 +321,7 @@ New briefs use `dneskai-brief/2`; the strict reader still accepts unmodified `dn
 
 The richer text travels through the owner-scoped media read into a new brief, its source packet and the bounded generation offer. Article text counts toward the format thresholds (400 characters for the primary report, 800 for the whole pack); source alt text is metadata, not a vision result or fact verification. The offer keeps the same evidence-size plans, source ordering and token/cost guards. Caption-only evidence never receives article prose or becomes a transcript. Historical briefs are not rewritten.
 
-The matching migrations are unapplied; production needs a separately approved release after migration-history reconciliation.
+The matching migrations (`20261022020702`, `20261022020759`) are unapplied; production's history is reconciled, so they go out with the owner's push of the 23 prepared files ([migration guide](migration-guide.md#applying-the-prepared-migrations)), after which `DNESKAI_RICH_EVIDENCE_ENABLED=true` turns brief/2 on.
 
 ## Titling switch (#153)
 
