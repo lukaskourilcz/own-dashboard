@@ -1,0 +1,275 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-1",
+      "height": 491.5,
+      "tag": "DIV",
+      "text": "Nový plánNázevStavNápadNápadAktivníHotovoZrušenoOpakováníJednorázověJednorázověTýdněJednou za 14 dníMěsíčněCílové datumPoznámkyPřidat jako u",
+      "width": 362.7,
+      "x": 276,
+      "y": 136
+    },
+    {
+      "className": "space-y-3",
+      "height": 425.5,
+      "tag": "FORM",
+      "text": "NázevStavNápadNápadAktivníHotovoZrušenoOpakováníJednorázověJednorázověTýdněJednou za 14 dníMěsíčněCílové datumPoznámkyPřidat jako událost do",
+      "width": 324.7,
+      "x": 295,
+      "y": 185
+    },
+    {
+      "className": "flex min-h-[88px] w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:min-h-[72px] md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+      "height": 72,
+      "tag": "TEXTAREA",
+      "text": "",
+      "width": 324.7,
+      "x": 295,
+      "y": 466
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 491.5,
+      "tag": "DIV",
+      "text": "Nástěnka stavůNápad1Run a half marathon2027-01-21Aktivní4Launch side project2026-12-07Weekly reviewTýdněPay rentMěsíčněDeep-clean flatCo 14 ",
+      "width": 741.3,
+      "x": 655,
+      "y": 136
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Nástěnka",
+      "width": 72.8,
+      "x": 279,
+      "y": 95
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Časová osa",
+      "width": 84.6,
+      "x": 352,
+      "y": 95
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Dokončit vedlejší projekt",
+      "width": 324.7,
+      "x": 295,
+      "y": 206
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Nápad",
+      "width": 324.7,
+      "x": 295,
+      "y": 271
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "NápadAktivníHotovoZrušeno",
+      "width": 1,
+      "x": 294,
+      "y": 308
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Jednorázově",
+      "width": 324.7,
+      "x": 295,
+      "y": 336
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "JednorázověTýdněJednou za 14 dníMěsíčně",
+      "width": 1,
+      "x": 294,
+      "y": 373
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 324.7,
+      "x": 295,
+      "y": 401
+    },
+    {
+      "disabled": false,
+      "height": 14,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 14,
+      "x": 295,
+      "y": 552
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat plán",
+      "width": 324.7,
+      "x": 295,
+      "y": 579
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Změnit stav",
+      "width": 10,
+      "x": 796,
+      "y": 232
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat plán",
+      "width": 10,
+      "x": 810,
+      "y": 232
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Změnit stav",
+      "width": 10,
+      "x": 975,
+      "y": 232
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat plán",
+      "width": 10,
+      "x": 989,
+      "y": 232
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Změnit stav",
+      "width": 10,
+      "x": 975,
+      "y": 307
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat plán",
+      "width": 10,
+      "x": 989,
+      "y": 307
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Změnit stav",
+      "width": 10,
+      "x": 975,
+      "y": 372
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat plán",
+      "width": 10,
+      "x": 989,
+      "y": 372
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Změnit stav",
+      "width": 10,
+      "x": 975,
+      "y": 437
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat plán",
+      "width": 10,
+      "x": 989,
+      "y": 437
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Cíle",
+      "width": 26.6,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Cíle",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

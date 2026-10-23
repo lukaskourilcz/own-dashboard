@@ -1,0 +1,172 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Career" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - heading "Career" [level=1]
+  - paragraph: Frontend, fullstack and AI integration roles in Oslo. Prepare and track each application.
+  - button "Check for new offers":
+    - text: Check for new offers
+  - button "Oslo"
+  - button "Open positions"
+  - button "Saved0"
+  - button "Applications to send1"
+  - button "Applied5"
+  - button "Cover letters"
+  - button "Career links"
+  - region "Oslo opportunities":
+    - paragraph: OSLO · NORWAY
+    - heading "Your next role in Oslo." [level=2]
+    - paragraph: Frontend, fullstack and practical AI integrations. Strong matches first, with senior stretches and concrete gaps in each detail.
+    - paragraph:
+      - text: Oslo area · remote roles compatible with Norway
+    - term: Priority matches
+    - definition: "14"
+    - term: Researched roles
+    - definition: "33"
+    - textbox "Search Oslo positions":
+      - /placeholder: Company, role or technology
+    - combobox "Opportunity filter":
+      - generic: Priority matches · 75%+
+    - paragraph: Percentages measure profile fit, not hiring probability. Researched 2026-10-16. Recheck availability and requirements before applying.
+    - button "Aidn · Fullstack Engineer · 88% match":
+      - generic: Aidn
+      - heading "Fullstack Engineer" [level=3]
+      - paragraph: React · Next.js · TypeScript
+      - text: Oslo / anywhere in Norway
+      - generic: Employer
+      - strong: 88%
+      - generic: profile match
+    - button "Flowcase · Senior Frontend Engineer · 88% match":
+      - generic: Flowcase
+      - heading "Senior Frontend Engineer" [level=3]
+      - paragraph: React · TypeScript · React Query
+      - text: Oslo
+      - generic: The Hub
+      - strong: 88%
+      - generic: profile match
+    - button "Attensi · Frontend Developer – Creator Tools · 88% match":
+      - generic: Attensi
+      - heading "Frontend Developer – Creator Tools" [level=3]
+      - paragraph: TypeScript · SvelteKit · Tailwind CSS
+      - text: Oslo
+      - generic: The Hub
+      - strong: 88%
+      - generic: profile match
+    - button "Pexip · Software Engineer · Control Center · 88% match":
+      - generic: Pexip
+      - heading "Software Engineer · Control Center" [level=3]
+      - paragraph: React · TypeScript · APIs
+      - text: Oslo
+      - generic: LinkedIn
+      - strong: 88%
+      - generic: profile match
+    - button "No Isolation · AI Integration Engineer · 86% match":
+      - generic: No Isolation
+      - heading "AI Integration Engineer" [level=3]
+      - paragraph: n8n · APIs · Webhooks
+      - text: Oslo
+      - generic: The Hub
+      - strong: 86%
+      - generic: profile match
+    - button "Sanity · Senior Software Engineer, Content Agent · 86% match":
+      - generic: Sanity
+      - heading "Senior Software Engineer, Content Agent" [level=3]
+      - paragraph: TypeScript · React · AI agents
+      - text: Oslo
+      - generic: Stretch role
+      - strong: 86%
+      - generic: profile match
+    - button "The Flex / Base360.ai · Senior Full-Stack Product Engineer · 86% match":
+      - generic: The Flex / Base360.ai
+      - heading "Senior Full-Stack Product Engineer" [level=3]
+      - paragraph: React · TypeScript · Supabase
+      - text: Norway · Remote
+      - generic: Stretch role
+      - strong: 86%
+      - generic: profile match
+    - button "Enode · Senior Software Engineer (Home Energy) · 85% match":
+      - generic: Enode
+      - heading "Senior Software Engineer (Home Energy)" [level=3]
+      - paragraph: Node.js · TypeScript · APIs
+      - text: Remote Europe / Oslo office
+      - generic: Stretch role
+      - strong: 85%
+      - generic: profile match
+    - button "Euronext Securities Oslo · Digital Transformation & User Experience Tech Lead · 85% match":
+      - generic: Euronext Securities Oslo
+      - heading "Digital Transformation & User Experience Tech Lead" [level=3]
+      - paragraph: React · Node.js · BFF
+      - text: Oslo / Porto
+      - generic: Stretch role
+      - strong: 85%
+      - generic: profile match
+    - button "Aize · Senior Software Engineer – IAM · 84% match":
+      - generic: Aize
+      - heading "Senior Software Engineer – IAM" [level=3]
+      - paragraph: React · TypeScript · IAM
+      - text: Oslo
+      - generic: LinkedIn
+      - strong: 84%
+      - generic: profile match
+    - button "Aidn · Senior Fullstack Engineer · 84% match":
+      - generic: Aidn
+      - heading "Senior Fullstack Engineer" [level=3]
+      - paragraph: React · Next.js · TypeScript
+      - text: Oslo / Norway
+      - generic: LinkedIn
+      - strong: 84%
+      - generic: profile match
+    - button "Six Robotics · Senior Frontend Engineer · 79% match":
+      - generic: Six Robotics
+      - heading "Senior Frontend Engineer" [level=3]
+      - paragraph: React · TypeScript · Real-time
+      - text: Oslo
+      - generic: Stretch role
+      - strong: 79%
+      - generic: profile match
+    - button "Halliburton · Lead Frontend Software Engineer (React/TypeScript) · 77% match":
+      - generic: Halliburton
+      - heading "Lead Frontend Software Engineer (React/TypeScript)" [level=3]
+      - paragraph: React · TypeScript · TanStack
+      - text: Oslo
+      - generic: Stretch role
+      - strong: 77%
+      - generic: profile match
+    - button "Tenth Revolution Group · Lead Front End Developer · 75% match":
+      - generic: Tenth Revolution Group
+      - heading "Lead Front End Developer" [level=3]
+      - paragraph: React · TypeScript · TanStack
+      - text: Oslo
+      - generic: Stretch role
+      - strong: 75%
+      - generic: profile match
+    - generic "How scoring and listing age work"
+    - link "LinkedIn · ≤ 5 weeks":
+      - /url: https://www.linkedin.com/jobs/search/?keywords=frontend%20fullstack%20typescript&location=Oslo%2C%20Norway&f_TPR=r3024000
+      - text: LinkedIn · ≤ 5 weeks
+    - link "Saved on The Hub":
+      - /url: https://thehub.io/client/my-jobs
+      - text: Saved on The Hub
+    - link "FINN · Oslo":
+      - /url: https://www.finn.no/job/search?location=1.20001.20061&q=react
+      - text: FINN · Oslo
+    - link "NAV · Arbeidsplassen":
+      - /url: https://arbeidsplassen.nav.no/stillinger
+      - text: NAV · Arbeidsplassen
+    - link "Startuplab · Jobs":
+      - /url: https://jobs.startuplab.no/jobs
+      - text: Startuplab · Jobs
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

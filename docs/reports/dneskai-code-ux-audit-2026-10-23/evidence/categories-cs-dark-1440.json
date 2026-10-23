@@ -1,0 +1,677 @@
+{
+  "containers": [
+    {
+      "className": "surface-band mb-4 overflow-hidden p-4 sm:p-5",
+      "height": 132.5,
+      "tag": "SECTION",
+      "text": "Čisté jmění200 250,00 Kčna 2 účtechTento měsícPříjem117 030,00 KčVýdaj21 352,79 KčNetto95 677,21 Kč",
+      "width": 1120,
+      "x": 276,
+      "y": 106
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4",
+      "height": 533,
+      "tag": "DIV",
+      "text": "Přehled nákladůMěsíčněRočněVšechny náklady3 279,05 Kč/měs3 279,05 KčVývoj1 515,35 KčProjekty1 290,70 KčZábava448,00 KčInfrastruktura25,00 Kč",
+      "width": 1120,
+      "x": 276,
+      "y": 255
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-3",
+      "height": 196,
+      "tag": "DIV",
+      "text": "Import výpisů a bankovní synchronizaceImportuj CSV výpis nebo obnov existující bankovní připojení.Import z CSVExportuj výpis z internetového",
+      "width": 1120,
+      "x": 276,
+      "y": 803
+    },
+    {
+      "className": "rounded-lg border border-dashed border-border-strong bg-surface-muted/30 p-3.5",
+      "height": 106.5,
+      "tag": "DIV",
+      "text": "Import z CSVExportuj výpis z internetového bankovnictví (CSV) a nahraj ho sem.Vybrat CSV soubor",
+      "width": 1082,
+      "x": 295,
+      "y": 876
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-3",
+      "height": 371,
+      "tag": "DIV",
+      "text": "Nespárované platbyPříchozí platby, které neodpovídají žádné vystavené faktuře — nebo odpovídají jiné částkou.Spárovat teďZbývají 4 platby · ",
+      "width": 1120,
+      "x": 276,
+      "y": 1015
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-3",
+      "height": 89.5,
+      "tag": "DIV",
+      "text": "Pravidla pro transakcePodmínky, které transakci zařadí automaticky při každé synchronizaci a importu.Nové pravidlo",
+      "width": 1120,
+      "x": 276,
+      "y": 1402
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-1",
+      "height": 328,
+      "tag": "DIV",
+      "text": "ÚčtyCheckingCZK48 250,00 KčSavingsCZK152 000,00 KčUSDUSDEURGBPCZKCAD Přidat účet",
+      "width": 362.7,
+      "x": 276,
+      "y": 1508
+    },
+    {
+      "className": "mt-4 pt-4 border-t border-border space-y-2",
+      "height": 125,
+      "tag": "FORM",
+      "text": "USDUSDEURGBPCZKCAD Přidat účet",
+      "width": 324.7,
+      "x": 295,
+      "y": 1694
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 328,
+      "tag": "DIV",
+      "text": "Posledních 6 měsícůPříjemVýdajkvěčvnčvcsrpzářříj0300006000090000120000",
+      "width": 741.3,
+      "x": 655,
+      "y": 1508
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-1",
+      "height": 582,
+      "tag": "DIV",
+      "text": "Přidat transakci Výdaj PříjemČástkaMěnaUSDUSDEURGBPCZKCADKategorieBez kategorieBez kategorieDevelopmentDiningGroceriesInterestRentSalaryTran",
+      "width": 362.7,
+      "x": 276,
+      "y": 1852
+    },
+    {
+      "className": "space-y-3",
+      "height": 516,
+      "tag": "FORM",
+      "text": "Výdaj PříjemČástkaMěnaUSDUSDEURGBPCZKCADKategorieBez kategorieBez kategorieDevelopmentDiningGroceriesInterestRentSalaryTransportDatumÚčet— Ž",
+      "width": 324.7,
+      "x": 295,
+      "y": 1901
+    },
+    {
+      "className": "flex min-h-[88px] w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:min-h-[72px] md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+      "height": 72,
+      "tag": "TEXTAREA",
+      "text": "",
+      "width": 324.7,
+      "x": 295,
+      "y": 2301
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 582,
+      "tag": "DIV",
+      "text": "Tento měsíc podle kategorieRent14 500,00 KčGroceries3 200,00 KčPředplatná1 988,35 KčDevelopment1 522,79 KčDining1 240,00 KčTransport890,00 K",
+      "width": 741.3,
+      "x": 655,
+      "y": 1852
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-3",
+      "height": 755,
+      "tag": "DIV",
+      "text": "Poslední transakceSalary2026-10-18 · June+62 000,00 KčRent2026-10-19−14 500,00 KčGroceries2026-10-20−3 200,00 KčTransport2026-10-21−890,00 K",
+      "width": 1120,
+      "x": 276,
+      "y": 2450
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Měsíčně",
+      "width": 68.1,
+      "x": 1252,
+      "y": 275
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Ročně",
+      "width": 56,
+      "x": 1320,
+      "y": 275
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vybrat CSV soubor",
+      "width": 136,
+      "x": 310,
+      "y": 939
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spárovat teď",
+      "width": 122.9,
+      "x": 1254,
+      "y": 1032
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Přiřadit k faktuře — 62 000,00 Kč, 2026-10-18",
+      "width": 208,
+      "x": 1095,
+      "y": 1132
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přiřadit — 62 000,00 Kč, 2026-10-18",
+      "width": 68.4,
+      "x": 1309,
+      "y": 1134
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Přiřadit k faktuře — 38 030,00 Kč, 2026-10-21",
+      "width": 208,
+      "x": 1095,
+      "y": 1195
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přiřadit — 38 030,00 Kč, 2026-10-21",
+      "width": 68.4,
+      "x": 1309,
+      "y": 1197
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Přiřadit k faktuře — 12 000,00 Kč, 2026-10-22",
+      "width": 208,
+      "x": 1095,
+      "y": 1259
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přiřadit — 12 000,00 Kč, 2026-10-22",
+      "width": 68.4,
+      "x": 1309,
+      "y": 1261
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Přiřadit k faktuře — 5 000,00 Kč, 2026-10-23",
+      "width": 208,
+      "x": 1095,
+      "y": 1322
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přiřadit — 5 000,00 Kč, 2026-10-23",
+      "width": 68.4,
+      "x": 1309,
+      "y": 1324
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Nové pravidlo",
+      "width": 127.2,
+      "x": 1250,
+      "y": 1419
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 564,
+      "y": 1585
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 592,
+      "y": 1585
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 564,
+      "y": 1638
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 592,
+      "y": 1638
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Název účtu",
+      "width": 324.7,
+      "x": 295,
+      "y": 1711
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Zůstatek",
+      "width": 158.3,
+      "x": 295,
+      "y": 1751
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Měna",
+      "width": 158.3,
+      "x": 461,
+      "y": 1751
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "USDEURGBPCZKCAD",
+      "width": 1,
+      "x": 294,
+      "y": 1750
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat účet",
+      "width": 324.7,
+      "x": 295,
+      "y": 1791
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Výdaj",
+      "width": 156.3,
+      "x": 297,
+      "y": 1903
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příjem",
+      "width": 156.3,
+      "x": 461,
+      "y": 1903
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "12.50",
+      "width": 213.8,
+      "x": 295,
+      "y": 1966
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "USD",
+      "width": 102.9,
+      "x": 517,
+      "y": 1966
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "USDEURGBPCZKCAD",
+      "width": 1,
+      "x": 516,
+      "y": 2003
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Kategorie",
+      "width": 282.7,
+      "x": 295,
+      "y": 2039
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "Bez kategorieDevelopmentDiningGroceriesInterestRentSalaryTransport",
+      "width": 1,
+      "x": 294,
+      "y": 2054
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat kategorie",
+      "width": 36,
+      "x": 584,
+      "y": 2037
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 324.7,
+      "x": 295,
+      "y": 2106
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "— Žádný —",
+      "width": 324.7,
+      "x": 295,
+      "y": 2171
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "— Žádný —CheckingSavings",
+      "width": 1,
+      "x": 294,
+      "y": 2208
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "— Žádný —",
+      "width": 324.7,
+      "x": 295,
+      "y": 2236
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "— Žádný —DNESKAiown-dashboarddevSharkboardlessAIDesign LabGoVIRALRecipe box appAcme customer portalH",
+      "width": 1,
+      "x": 294,
+      "y": 2273
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat",
+      "width": 324.7,
+      "x": 295,
+      "y": 2385
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2513
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2571
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2628
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2686
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2743
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2801
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2858
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2916
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 2973
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 3031
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 3088
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 28,
+      "x": 1349,
+      "y": 3146
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Kategorie",
+      "width": 67.9,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Peníze",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Přehled nákladů",
+      "width": 108.8,
+      "x": 293,
+      "y": 277
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Všechny náklady",
+      "width": 129.6,
+      "x": 293,
+      "y": 318
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Projekty",
+      "width": 69,
+      "x": 663,
+      "y": 318
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Předplatná",
+      "width": 86.4,
+      "x": 1033,
+      "y": 318
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

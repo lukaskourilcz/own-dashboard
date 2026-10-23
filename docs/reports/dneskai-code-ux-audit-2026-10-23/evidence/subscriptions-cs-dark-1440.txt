@@ -1,0 +1,275 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná" [active]:
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Předplatná" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - generic: Zobrazit v
+  - combobox "Zobrazit v":
+    - generic: CZK
+  - generic: Přidat předplatné
+  - text: Název
+  - textbox "Název":
+    - /placeholder: Netflix
+  - text: Částka
+  - spinbutton "Částka"
+  - text: Měna
+  - combobox "Měna":
+    - generic: USD
+  - combobox
+  - text: Fakturační cyklus
+  - combobox "Fakturační cyklus":
+    - generic: Měsíčně
+  - combobox
+  - text: Kategorie
+  - combobox "Kategorie":
+    - generic: Bez kategorie
+  - combobox
+  - button "Spravovat kategorie":
+  - text: Skupina výdajů
+  - combobox "Skupina výdajů":
+    - generic: Ostatní
+  - combobox
+  - text: Důležitost
+  - combobox "Důležitost":
+    - generic: Užitečné
+  - combobox
+  - text: Příští platba
+  - textbox "Příští platba"
+  - text: Projekt
+  - combobox "Projekt":
+    - generic: Obecná režie
+  - combobox
+  - text: Začátek
+  - textbox "Začátek"
+  - text: Konec
+  - textbox "Konec"
+  - text: Plán
+  - textbox "Plán":
+    - /placeholder: Pro, Max 20x, Starter…
+  - text: Stránka fakturace
+  - textbox "Stránka fakturace":
+    - /placeholder: https://
+  - text: Poznámky
+  - textbox "Poznámky":
+    - /placeholder: Čísla faktur, problémy s platbou, k čemu se používá…
+  - group "Rozdělení na projekty":
+    - generic: Rozdělení na projekty
+    - paragraph: Rozdělte měsíční částku mezi projekty. Zbytek zůstane nepřiřazený.
+    - button "Přidat podíl projektu":
+      - text: Přidat podíl projektu
+    - generic: přiřazeno 0 %
+  - button "Přidat":
+    - text: Přidat
+  - generic: Měsíční výdaje
+  - group "Zobrazení výdajů":
+    - button "Měsíčně" [pressed]
+    - button "Ročně"
+  - application
+  - paragraph: 1 988,35 Kč
+  - paragraph: měsíčně
+  - paragraph: ≈ 23 860,19 Kč ročně
+  - list:
+    - generic: Vývoj
+    - generic: 1 515,35 Kč
+    - generic: Zábava
+    - generic: 448,00 Kč
+    - generic: Infrastruktura
+    - generic: 25,00 Kč
+  - text: Příštích 30 dní
+  - list:
+    - generic: 2026-10-26
+    - generic: Spotify
+    - generic: za 3 d
+    - generic: 169,00 Kč
+    - generic: 2026-10-31
+    - generic: Netflix
+    - generic: za 8 d
+    - generic: 279,00 Kč
+    - generic: 2026-11-04
+    - generic: Vercel
+    - generic: za 12 d
+    - text: $20.00
+    - generic: ≈ 465,12 Kč
+    - generic: 2026-11-04
+    - generic: S
+    - generic: Supabase
+    - generic: za 12 d
+    - text: $25.00
+    - generic: ≈ 581,40 Kč
+    - generic: 2026-11-12
+    - generic: iCloud+
+    - generic: za 20 d
+    - generic: 25,00 Kč
+  - generic: Všechna předplatná
+  - list:
+    - paragraph: Figma
+    - paragraph: 1 440,00 Kč · Ročně · Work · Vývoj · Užitečné · Obecná režie · další 2027-02-20 · za 120 d
+    - paragraph: 120,00 Kč/měs · 1 440,00 Kč/rok · Professional · od 2026-02-20
+    - paragraph: Částka neověřena
+    - button "Ověřit částku proti faktuře":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - generic: M
+    - paragraph: Mobbin
+    - paragraph: $45.00 · Čtvrtletně · Design research · Vývoj · Užitečné · Obecná režie · další 2027-01-01 · za 70 d
+    - paragraph: 348,84 Kč/měs · 4 186,05 Kč/rok · Pro · od 2026-10-03
+    - paragraph: Design Lab 100%
+    - paragraph: Částka neověřena
+    - paragraph: Quarterly invoice; the amount comes from the renewal notice, not from the receipt.
+    - button "Ověřit částku proti faktuře":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - generic: S
+    - paragraph: Supabase
+    - paragraph: $25.00 · Měsíčně · Database · Vývoj · Nezbytné · Obecná režie · další 2026-11-04 · za 12 d
+    - paragraph: 581,40 Kč/měs · 6 976,74 Kč/rok · Pro · od 2026-08-24
+    - paragraph: own-dashboard 50% · Acme customer portal 50%
+    - paragraph: Částka ověřena 2026-09-06
+    - button "Označit částku jako neověřenou":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - paragraph: Vercel
+    - paragraph: $20.00 · Měsíčně · Hosting · Vývoj · Nezbytné · Obecná režie · další 2026-11-04 · za 12 d
+    - paragraph: 465,12 Kč/měs · 5 581,40 Kč/rok · Pro · od 2026-08-24
+    - paragraph: DNESKAi 40% · own-dashboard 30% · Acme customer portal 30%
+    - paragraph: Částka ověřena 2026-10-05
+    - paragraph: Shared by every deployed project.
+    - button "Označit částku jako neověřenou":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - paragraph: iCloud+
+    - paragraph: 25,00 Kč · Měsíčně · Storage · Infrastruktura · Nezbytné · Obecná režie · další 2026-11-12 · za 20 d
+    - paragraph: 25,00 Kč/měs · 300,00 Kč/rok
+    - button "Ověřit částku proti faktuře":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - paragraph: Netflix
+    - paragraph: 279,00 Kč · Měsíčně · Entertainment · Zábava · Volitelné · Obecná režie · další 2026-10-31 · za 8 d
+    - paragraph: 279,00 Kč/měs · 3 348,00 Kč/rok
+    - button "Ověřit částku proti faktuře":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - paragraph: Spotify
+    - paragraph: 169,00 Kč · Měsíčně · Music · Zábava · Volitelné · Obecná režie · další 2026-10-26 · za 3 d
+    - paragraph: 169,00 Kč/měs · 2 028,00 Kč/rok
+    - button "Ověřit částku proti faktuře":
+    - button "Upravit":
+    - button "Zrušit předplatné":
+    - button "Smazat":
+    - generic: U
+    - paragraph:
+      - text: UptimeRobot
+      - paragraph: zrušeno
+    - paragraph: 9,68 € · Měsíčně · Monitoring · Vývoj · Volitelné · Obecná režie · chybí příští platba
+    - paragraph: 243,13 Kč/měs · 2 917,51 Kč/rok · Solo · 2026-06-25 – 2026-10-04
+    - paragraph: Downgraded to the free plan.
+    - button "Ověřit částku proti faktuře":
+    - button "Upravit":
+    - button "Obnovit předplatné":
+    - button "Smazat":
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

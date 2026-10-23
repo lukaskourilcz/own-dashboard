@@ -1,0 +1,565 @@
+{
+  "containers": [
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 597.5,
+      "tag": "DIV",
+      "text": "Good afternoon, JanFriday, October 23 · 14:42NextGymin 3h 17m📄Contract renewalin 12 daysToday's events09:30Standup12:30Lunch with Petr18:00",
+      "width": 328,
+      "x": 16,
+      "y": 132
+    },
+    {
+      "className": "relative overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-card md:p-5",
+      "height": 595.5,
+      "tag": "SECTION",
+      "text": "Good afternoon, JanFriday, October 23 · 14:42NextGymin 3h 17m📄Contract renewalin 12 daysToday's events09:30Standup12:30Lunch with Petr18:00",
+      "width": 326,
+      "x": 17,
+      "y": 133
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 1071.5,
+      "tag": "DIV",
+      "text": "Today's seven0 of 7 completedA daily focus drawn from active projects, highest priority first.Generate a new seven1Review the weekly operati",
+      "width": 328,
+      "x": 16,
+      "y": 746
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden",
+      "height": 1069.5,
+      "tag": "DIV",
+      "text": "Today's seven0 of 7 completedA daily focus drawn from active projects, highest priority first.Generate a new seven1Review the weekly operati",
+      "width": 326,
+      "x": 17,
+      "y": 747
+    },
+    {
+      "className": "p-4",
+      "height": 227,
+      "tag": "SECTION",
+      "text": "Completion gardenA green day means all seven selected tasks were completed.",
+      "width": 324,
+      "x": 18,
+      "y": 1588
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 259,
+      "tag": "DIV",
+      "text": "Monthly recurring1 988,35 KčsubscriptionsOpen tasks111 doneActive projects9professional portfolio",
+      "width": 328,
+      "x": 16,
+      "y": 1833
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 79,
+      "tag": "DIV",
+      "text": "Monthly recurring1 988,35 Kčsubscriptions",
+      "width": 326,
+      "x": 17,
+      "y": 1834
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 79,
+      "tag": "DIV",
+      "text": "Open tasks111 done",
+      "width": 326,
+      "x": 17,
+      "y": 1923
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 79,
+      "tag": "DIV",
+      "text": "Active projects9professional portfolio",
+      "width": 326,
+      "x": 17,
+      "y": 2012
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 145,
+      "tag": "DIV",
+      "text": "CronsNo cron runs recorded today.",
+      "width": 328,
+      "x": 16,
+      "y": 2108
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden",
+      "height": 143,
+      "tag": "DIV",
+      "text": "CronsNo cron runs recorded today.",
+      "width": 326,
+      "x": 17,
+      "y": 2109
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 108,
+      "tag": "DIV",
+      "text": "Needs attentionOpportunitiesAcme customer portalProposal sent",
+      "width": 328,
+      "x": 16,
+      "y": 2269
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 106,
+      "tag": "DIV",
+      "text": "Needs attentionOpportunitiesAcme customer portalProposal sent",
+      "width": 326,
+      "x": 17,
+      "y": 2270
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 549,
+      "tag": "DIV",
+      "text": "Subscriptions23 860,19 Kč per year · 7 active1 988,35 Kč/moSSupabaseMonthly · next 2026-11-04 · in 12d$25.00VercelMonthly · next 2026-11-04 ",
+      "width": 328,
+      "x": 16,
+      "y": 2393
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 547,
+      "tag": "DIV",
+      "text": "Subscriptions23 860,19 Kč per year · 7 active1 988,35 Kč/moSSupabaseMonthly · next 2026-11-04 · in 12d$25.00VercelMonthly · next 2026-11-04 ",
+      "width": 326,
+      "x": 17,
+      "y": 2394
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 454,
+      "tag": "DIV",
+      "text": "New calendar eventTitleDateStartEndAll dayDoesn't repeatDoesn't repeatDailyWeeklyMonthlyAdd to Google Calendar",
+      "width": 328,
+      "x": 16,
+      "y": 2958
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 452,
+      "tag": "DIV",
+      "text": "New calendar eventTitleDateStartEndAll dayDoesn't repeatDoesn't repeatDailyWeeklyMonthlyAdd to Google Calendar",
+      "width": 326,
+      "x": 17,
+      "y": 2959
+    },
+    {
+      "className": "space-y-3",
+      "height": 388,
+      "tag": "FORM",
+      "text": "TitleDateStartEndAll dayDoesn't repeatDoesn't repeatDailyWeeklyMonthlyAdd to Google Calendar",
+      "width": 292,
+      "x": 34,
+      "y": 3006
+    },
+    {
+      "className": "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:h-8 md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 tabular",
+      "height": 44,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3027
+    },
+    {
+      "className": "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:h-8 md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 tabular",
+      "height": 44,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3104
+    },
+    {
+      "className": "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:h-8 md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 tabular",
+      "height": 44,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3177
+    },
+    {
+      "className": "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:h-8 md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 tabular",
+      "height": 44,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3250
+    },
+    {
+      "className": "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-[13px] font-medium transition-[background,color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none focus-ring disabled:pointer-events-none disabled:opacity-40 [&>svg]:shrink-0 [&>svg]:size-4 mac-primary-button border border-primary/60 text-primary-foreground shadow-soft hover:brightness-105 h-11 px-3.5 md:h-8 w-full",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Add to Google Calendar",
+      "width": 292,
+      "x": 34,
+      "y": 3350
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 231,
+      "tag": "DIV",
+      "text": "Recurring plans2/3Weekly reviewWeekly·2 days leftPay rentMonthly·8 days leftDeep-clean flatBiweekly·Done",
+      "width": 328,
+      "x": 16,
+      "y": 3428
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 229,
+      "tag": "DIV",
+      "text": "Recurring plans2/3Weekly reviewWeekly·2 days leftPay rentMonthly·8 days leftDeep-clean flatBiweekly·Done",
+      "width": 326,
+      "x": 17,
+      "y": 3429
+    },
+    {
+      "className": "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors",
+      "height": 51,
+      "tag": "LI",
+      "text": "Weekly reviewWeekly·2 days left",
+      "width": 292,
+      "x": 34,
+      "y": 3476
+    },
+    {
+      "className": "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors",
+      "height": 51,
+      "tag": "LI",
+      "text": "Pay rentMonthly·8 days left",
+      "width": 292,
+      "x": 34,
+      "y": 3533
+    },
+    {
+      "className": "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors opacity-60",
+      "height": 51,
+      "tag": "LI",
+      "text": "Deep-clean flatBiweekly·Done",
+      "width": 292,
+      "x": 34,
+      "y": 3590
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Home",
+      "width": 65.6,
+      "x": 8,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Work overview",
+      "width": 65.6,
+      "x": 78,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 65.6,
+      "x": 147,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 65.6,
+      "x": 217,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "More",
+      "width": 65.6,
+      "x": 286,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Customize",
+      "width": 109.2,
+      "x": 235,
+      "y": 72
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Generate a new seven",
+      "width": 175.3,
+      "x": 147,
+      "y": 764
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the weekly operating plan",
+      "width": 16,
+      "x": 66,
+      "y": 929
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Generate real app icons with Recraft",
+      "width": 16,
+      "x": 66,
+      "y": 1033
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Verify project deployment",
+      "width": 16,
+      "x": 66,
+      "y": 1138
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Add UPSTASH_REDIS_REST_URL in Vercel",
+      "width": 16,
+      "x": 66,
+      "y": 1222
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the ingestion retry policy",
+      "width": 16,
+      "x": 66,
+      "y": 1327
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review dashboard accessibility report",
+      "width": 16,
+      "x": 66,
+      "y": 1411
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Document the release migration",
+      "width": 16,
+      "x": 66,
+      "y": 1516
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Opportunities",
+      "width": 75.7,
+      "x": 250,
+      "y": 2290
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Dentist appointment",
+      "width": 292,
+      "x": 34,
+      "y": 3027
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3104
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3177
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 292,
+      "x": 34,
+      "y": 3250
+    },
+    {
+      "disabled": false,
+      "height": 14,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 14,
+      "x": 34,
+      "y": 3323
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "repeats",
+      "width": 128,
+      "x": 110,
+      "y": 3306
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "Doesn't repeatDailyWeeklyMonthly",
+      "width": 1,
+      "x": 109,
+      "y": 3337
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add to Google Calendar",
+      "width": 292,
+      "x": 34,
+      "y": 3350
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Mark done",
+      "width": 20,
+      "x": 45,
+      "y": 3492
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Mark done",
+      "width": 20,
+      "x": 45,
+      "y": 3549
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Mark not done",
+      "width": 20,
+      "x": 45,
+      "y": 3606
+    }
+  ],
+  "documentWidth": 360,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Home",
+      "width": 41.7,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "height": 28,
+      "tag": "H2",
+      "text": "Good afternoon, Jan",
+      "width": 170.6,
+      "x": 34,
+      "y": 150
+    },
+    {
+      "height": 48,
+      "tag": "H2",
+      "text": "Today's seven",
+      "width": 56.3,
+      "x": 38,
+      "y": 764
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Completion garden",
+      "width": 128.7,
+      "x": 56,
+      "y": 1604
+    },
+    {
+      "height": 24,
+      "tag": "H2",
+      "text": "Crons",
+      "width": 67,
+      "x": 38,
+      "y": 2126
+    }
+  ],
+  "viewport": {
+    "height": 800,
+    "width": 360
+  }
+}

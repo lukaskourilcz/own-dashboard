@@ -1,0 +1,516 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 rounded-lg border border-border bg-surface",
+      "height": 46,
+      "tag": "DETAILS",
+      "text": "Návod pro nový projekt — standardy pro napojení repozitáře na OwnDashboardNew project guide — wiring a repo into OwnDashboardStandards every",
+      "width": 1120,
+      "x": 276,
+      "y": 138
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 290,
+      "tag": "DIV",
+      "text": "Měsíční náklady podle projektu2 686,05 Kčcelkem měsíčně · 9 aktivních projektů32 232,56 Kč/rokDNESKAi1 476,74 Kčown-dashboard430,23 KčAcme c",
+      "width": 1120,
+      "x": 276,
+      "y": 200
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mt-4 overflow-hidden p-0",
+      "height": 878.5,
+      "tag": "DIV",
+      "text": "Přetáhni pro změnu pořadíProjektKlientStavRepozitářMěsíční nákladyOtevřené úkolyPříští termínAkceDNESKAiDaily reader for the AI and technolo",
+      "width": 1120,
+      "x": 276,
+      "y": 506
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Zobrazit v",
+      "width": 80,
+      "x": 342,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat projekt",
+      "width": 126.5,
+      "x": 430,
+      "y": 94
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 588
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 590
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 590
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 590
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 590
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 675
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 677
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 677
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 677
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 677
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 762
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 764
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 764
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 764
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 764
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 849
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 851
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 851
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 851
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 851
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 938
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 938
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 938
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 938
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 1026
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 1026
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 1026
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 1026
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 1111
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 1113
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 1113
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 1113
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 1113
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 1238
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 1240
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 1240
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 1240
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 1240
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 32,
+      "x": 285,
+      "y": 1325
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat provoz",
+      "width": 28,
+      "x": 1324,
+      "y": 1327
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit",
+      "width": 28,
+      "x": 1356,
+      "y": 1327
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako neaktivní",
+      "width": 28,
+      "x": 1388,
+      "y": 1327
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat projekt",
+      "width": 28,
+      "x": 1420,
+      "y": 1327
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Projekty",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

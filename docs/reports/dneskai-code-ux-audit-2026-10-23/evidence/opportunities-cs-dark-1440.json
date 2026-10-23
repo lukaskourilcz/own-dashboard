@@ -1,0 +1,66 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 162,
+      "tag": "DIV",
+      "text": "Příležitosti se načtou, až o to požádáteDokud nezkontrolujete, nic se nenačítá. Kontrola načte pipeline, katalog platforem a metriky odpověd",
+      "width": 1120,
+      "x": 276,
+      "y": 106
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zkontrolovat nové nabídky",
+      "width": 215.7,
+      "x": 295,
+      "y": 219
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Příležitosti",
+      "width": 74.5,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Příležitosti",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Příležitosti se načtou, až o to požádáte",
+      "width": 1082,
+      "x": 295,
+      "y": 127
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

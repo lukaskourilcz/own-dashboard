@@ -1,0 +1,972 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 46,
+      "tag": "DIV",
+      "text": "Dnes ke schváleníKalendářPříspěvkyZdroje (DNESKAi)",
+      "width": 1120,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "className": "min-w-0 space-y-5",
+      "height": 5607,
+      "tag": "SECTION",
+      "text": "ZdrojeCo DNESKAi čte každý večer ve 22:00 a jak dopadlo poslední čtení.Náhled: zdroje zapsané v kódu. Nic se neukládá.Instagram profily 20m@",
+      "width": 1120,
+      "x": 276,
+      "y": 154
+    },
+    {
+      "className": "min-w-0 space-y-2",
+      "height": 1809,
+      "tag": "SECTION",
+      "text": "Instagram profily 20m@mosseriZprávyPůvodníKaždý denZatím nečtenom@meta.aiZprávyPůvodníKaždý denZatím nečtenot@technologyZprávyAgregátorPo Čt",
+      "width": 1120,
+      "x": 276,
+      "y": 254
+    },
+    {
+      "className": "divide-y divide-border rounded-lg border border-border bg-surface",
+      "height": 1781,
+      "tag": "UL",
+      "text": "m@mosseriZprávyPůvodníKaždý denZatím nečtenom@meta.aiZprávyPůvodníKaždý denZatím nečtenot@technologyZprávyAgregátorPo ČtZatím nečtenoi@insid",
+      "width": 1120,
+      "x": 276,
+      "y": 282
+    },
+    {
+      "className": "min-w-0 space-y-2",
+      "height": 3678,
+      "tag": "SECTION",
+      "text": "Weby 414404media.co404 MediaZprávyRedakceČtZatím nečtenoaanthropic.comAnthropicZprávyPůvodníKaždý denZatím nečtenoffeeds.arstechnica.comArs ",
+      "width": 1120,
+      "x": 276,
+      "y": 2083
+    },
+    {
+      "className": "divide-y divide-border rounded-lg border border-border bg-surface",
+      "height": 3650,
+      "tag": "UL",
+      "text": "4404media.co404 MediaZprávyRedakceČtZatím nečtenoaanthropic.comAnthropicZprávyPůvodníKaždý denZatím nečtenoffeeds.arstechnica.comArs Technic",
+      "width": 1120,
+      "x": 276,
+      "y": 2111
+    },
+    {
+      "className": "min-w-0 space-y-4",
+      "height": 284,
+      "tag": "SECTION",
+      "text": "Denní mixKolik příspěvků denně a v kolik hodin. Noc navrhne ke každému příspěvku tři náměty a schválený námět dostane nejbližší volný aktivn",
+      "width": 1120,
+      "x": 276,
+      "y": 5793
+    },
+    {
+      "className": "space-y-4",
+      "height": 168,
+      "tag": "FORM",
+      "text": "Zpravodajských příspěvků denně01234Vzdělávacích příspěvků denně01234Aktivní časy08:0012:3017:0020:00Uložit mix",
+      "width": 1120,
+      "x": 276,
+      "y": 5909
+    },
+    {
+      "className": "min-w-0 space-y-4",
+      "height": 307,
+      "tag": "SECTION",
+      "text": "HudbaSkladby, které může Reel hrát. Používejte jen stažené skladby z Meta Sound Collection, které jsou pro Instagram schválené, hudbu z Pixa",
+      "width": 1120,
+      "x": 276,
+      "y": 6109
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Dnes ke schválení",
+      "width": 127.4,
+      "x": 281,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Kalendář",
+      "width": 75.2,
+      "x": 412,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Příspěvky",
+      "width": 80.7,
+      "x": 492,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Zdroje (DNESKAi)",
+      "width": 126.5,
+      "x": 576,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Více",
+      "width": 36,
+      "x": 1355,
+      "y": 97
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @mosseri",
+      "width": 36,
+      "x": 1347,
+      "y": 293
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @meta.ai",
+      "width": 36,
+      "x": 1347,
+      "y": 382
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @technology",
+      "width": 36,
+      "x": 1347,
+      "y": 471
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @insidertech",
+      "width": 36,
+      "x": 1347,
+      "y": 560
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @activeprogrammer",
+      "width": 36,
+      "x": 1347,
+      "y": 649
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @tiffintech",
+      "width": 36,
+      "x": 1347,
+      "y": 738
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @robotic",
+      "width": 36,
+      "x": 1347,
+      "y": 827
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @evolving.ai",
+      "width": 36,
+      "x": 1347,
+      "y": 916
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @techcrunch",
+      "width": 36,
+      "x": 1347,
+      "y": 1005
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @theapplehub",
+      "width": 36,
+      "x": 1347,
+      "y": 1094
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @itstundeanthony",
+      "width": 36,
+      "x": 1347,
+      "y": 1183
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @godofprompt",
+      "width": 36,
+      "x": 1347,
+      "y": 1272
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @rowancheung",
+      "width": 36,
+      "x": 1347,
+      "y": 1361
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @mreflow",
+      "width": 36,
+      "x": 1347,
+      "y": 1450
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @bensbites",
+      "width": 36,
+      "x": 1347,
+      "y": 1539
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @futurepedia",
+      "width": 36,
+      "x": 1347,
+      "y": 1628
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @therundownai",
+      "width": 36,
+      "x": 1347,
+      "y": 1717
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @czechcrunch",
+      "width": 36,
+      "x": 1347,
+      "y": 1806
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @aimanie",
+      "width": 36,
+      "x": 1347,
+      "y": 1895
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst @digitalnihumanista",
+      "width": 36,
+      "x": 1347,
+      "y": 1984
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst 404media.co",
+      "width": 36,
+      "x": 1347,
+      "y": 2122
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst anthropic.com",
+      "width": 36,
+      "x": 1347,
+      "y": 2211
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst feeds.arstechnica.com",
+      "width": 36,
+      "x": 1347,
+      "y": 2300
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst export.arxiv.org",
+      "width": 36,
+      "x": 1347,
+      "y": 2389
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst export.arxiv.org",
+      "width": 36,
+      "x": 1347,
+      "y": 2478
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst api.bsky.app",
+      "width": 36,
+      "x": 1347,
+      "y": 2567
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst deepmind.google",
+      "width": 36,
+      "x": 1347,
+      "y": 2656
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst digiday.com",
+      "width": 36,
+      "x": 1347,
+      "y": 2745
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst github.com",
+      "width": 36,
+      "x": 1347,
+      "y": 2834
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst research.google",
+      "width": 36,
+      "x": 1347,
+      "y": 2923
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst huggingface.co",
+      "width": 36,
+      "x": 1347,
+      "y": 3012
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst hacker-news.firebaseio.com",
+      "width": 36,
+      "x": 1347,
+      "y": 3101
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst jack-clark.net",
+      "width": 36,
+      "x": 1347,
+      "y": 3190
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst interconnects.ai",
+      "width": 36,
+      "x": 1347,
+      "y": 3279
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst ai.meta.com",
+      "width": 36,
+      "x": 1347,
+      "y": 3368
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst technologyreview.com",
+      "width": 36,
+      "x": 1347,
+      "y": 3457
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst niemanlab.org",
+      "width": 36,
+      "x": 1347,
+      "y": 3546
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst openai.com",
+      "width": 36,
+      "x": 1347,
+      "y": 3635
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst platformer.news",
+      "width": 36,
+      "x": 1347,
+      "y": 3724
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst restofworld.org",
+      "width": 36,
+      "x": 1347,
+      "y": 3813
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst simonwillison.net",
+      "width": 36,
+      "x": 1347,
+      "y": 3902
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst socialmediatoday.com",
+      "width": 36,
+      "x": 1347,
+      "y": 3991
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst api.spaceflightnewsapi.net",
+      "width": 36,
+      "x": 1347,
+      "y": 4080
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst api.stackexchange.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4169
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst stratechery.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4258
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst techcrunch.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4347
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst tensorfeed.ai",
+      "width": 36,
+      "x": 1347,
+      "y": 4436
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst theregister.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4525
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst theverge.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4614
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst tubefilter.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4703
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst variety.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4792
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst wired.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4881
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst code.claude.com",
+      "width": 36,
+      "x": 1347,
+      "y": 4970
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst producthunt.com",
+      "width": 36,
+      "x": 1347,
+      "y": 5059
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst hn.algolia.com",
+      "width": 36,
+      "x": 1347,
+      "y": 5148
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst bensbites.com",
+      "width": 36,
+      "x": 1347,
+      "y": 5237
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst aisdg.substack.com",
+      "width": 36,
+      "x": 1347,
+      "y": 5326
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst perplexity.ai",
+      "width": 36,
+      "x": 1347,
+      "y": 5415
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst dev.to",
+      "width": 36,
+      "x": 1347,
+      "y": 5504
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst webcrew.cz",
+      "width": 36,
+      "x": 1347,
+      "y": 5593
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Číst cc.cz",
+      "width": 36,
+      "x": 1347,
+      "y": 5682
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "SELECT",
+      "text": "01234",
+      "width": 96,
+      "x": 276,
+      "y": 5933
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "SELECT",
+      "text": "01234",
+      "width": 96,
+      "x": 518,
+      "y": 5933
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 16,
+      "x": 276,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 16,
+      "x": 260,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 16,
+      "x": 355,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 16,
+      "x": 339,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 16,
+      "x": 433,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 16,
+      "x": 417,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 16,
+      "x": 512,
+      "y": 6015
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 16,
+      "x": 496,
+      "y": 6015
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Uložit mix",
+      "width": 83.1,
+      "x": 276,
+      "y": 6049
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Není co přehrát",
+      "width": 44,
+      "x": 276,
+      "y": 6258
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Používat Quiet Circuit v Reelech",
+      "width": 36,
+      "x": 1360,
+      "y": 6270
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Není co přehrát",
+      "width": 44,
+      "x": 276,
+      "y": 6343
+    },
+    {
+      "disabled": true,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Používat Morning Signal v Reelech",
+      "width": 36,
+      "x": 1360,
+      "y": 6355
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Zdroje",
+      "width": 1120,
+      "x": 276,
+      "y": 154
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Instagram profily 20",
+      "width": 1120,
+      "x": 276,
+      "y": 254
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Weby 41",
+      "width": 1120,
+      "x": 276,
+      "y": 2083
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Denní mix",
+      "width": 1120,
+      "x": 276,
+      "y": 5793
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Hudba",
+      "width": 1120,
+      "x": 276,
+      "y": 6109
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

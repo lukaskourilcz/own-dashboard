@@ -1,0 +1,257 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card p-0 overflow-hidden hidden lg:block",
+      "height": 540,
+      "tag": "DIV",
+      "text": "PřipnutéProject ideasworkideaspřed 7 minutami\n    To pick up a draggable item, press the space bar.\n    While dragging, use the arrow keys t",
+      "width": 280,
+      "x": 276,
+      "y": 171
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card min-h-[60vh] p-0 overflow-hidden",
+      "height": 540,
+      "tag": "DIV",
+      "text": "Project ideasUloženo 14:25Bez projektuworkideasPřidat štítek@media (max-width: 35.99375em) {.mantine-visible-from-xs {display: none !importa",
+      "width": 824,
+      "x": 572,
+      "y": 171
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Importovat MD",
+      "width": 133.6,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Nová poznámka",
+      "width": 139.5,
+      "x": 416,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "home",
+      "width": 47.7,
+      "x": 294,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "ideas",
+      "width": 46.6,
+      "x": 348,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "work",
+      "width": 44,
+      "x": 400,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Hledat název + obsah…",
+      "width": 254,
+      "x": 289,
+      "y": 184
+    },
+    {
+      "disabled": false,
+      "height": 74,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetažením změňte pořadí",
+      "width": 28,
+      "x": 283,
+      "y": 259
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat jako Markdown",
+      "width": 28,
+      "x": 311,
+      "y": 282
+    },
+    {
+      "disabled": false,
+      "height": 74,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Project ideasworkideaspřed 7 minutami",
+      "width": 210,
+      "x": 339,
+      "y": 259
+    },
+    {
+      "disabled": false,
+      "height": 74,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Grocery listhomepřed 7 minutami",
+      "width": 238,
+      "x": 283,
+      "y": 366
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat jako Markdown",
+      "width": 28,
+      "x": 521,
+      "y": 389
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Propojený projekt",
+      "width": 160,
+      "x": 1039,
+      "y": 182
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat jako Markdown",
+      "width": 28,
+      "x": 1207,
+      "y": 184
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Stáhnout jako Markdown",
+      "width": 28,
+      "x": 1243,
+      "y": 184
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Publikovat do repo",
+      "width": 28,
+      "x": 1279,
+      "y": 184
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Připnout",
+      "width": 28,
+      "x": 1315,
+      "y": 184
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat poznámku",
+      "width": 28,
+      "x": 1351,
+      "y": 184
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Odebrat work",
+      "width": 10,
+      "x": 628,
+      "y": 240
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Odebrat ideas",
+      "width": 10,
+      "x": 695,
+      "y": 240
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat štítek",
+      "width": 97.1,
+      "x": 720,
+      "y": 233
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Poznámky",
+      "width": 72.9,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Poznámky",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

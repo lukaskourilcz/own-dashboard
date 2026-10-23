@@ -1,0 +1,722 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 rounded-lg border border-border bg-surface px-3",
+      "height": 42,
+      "tag": "DETAILS",
+      "text": "Správa kategoriíPřidatVytvoř kategorie jako DESIGN nebo SECURITY pro seskupení odkazů.",
+      "width": 1120,
+      "x": 276,
+      "y": 254
+    },
+    {
+      "className": "flex max-w-md items-center gap-2 pb-3",
+      "height": 44,
+      "tag": "FORM",
+      "text": "Přidat",
+      "width": 448,
+      "x": 289,
+      "y": 295
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 208,
+      "tag": "DIV",
+      "text": "DESIGN2Figmafigma.comNástrojZdarma i placené tarifyInterface design and prototyping.https://www.figma.comPřidat k projektuMidjourneymidjourn",
+      "width": 552,
+      "x": 276,
+      "y": 312
+    },
+    {
+      "className": "min-w-0",
+      "height": 93,
+      "tag": "ARTICLE",
+      "text": "Figmafigma.comNástrojZdarma i placené tarifyInterface design and prototyping.https://www.figma.comPřidat k projektu",
+      "width": 550,
+      "x": 277,
+      "y": 358
+    },
+    {
+      "className": "min-w-0",
+      "height": 68,
+      "tag": "ARTICLE",
+      "text": "Midjourneymidjourney.comPouze placenéAI image generation for moodboards and concepts.https://www.midjourney.comPřidat k projektu",
+      "width": 550,
+      "x": 277,
+      "y": 451
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 115,
+      "tag": "DIV",
+      "text": "SECURITY1Have I Been Pwnedhaveibeenpwned.comPlně zdarmaCheck if credentials appeared in a breach.https://haveibeenpwned.comPřidat k projektu",
+      "width": 552,
+      "x": 276,
+      "y": 536
+    },
+    {
+      "className": "min-w-0",
+      "height": 68,
+      "tag": "ARTICLE",
+      "text": "Have I Been Pwnedhaveibeenpwned.comPlně zdarmaCheck if credentials appeared in a breach.https://haveibeenpwned.comPřidat k projektu",
+      "width": 550,
+      "x": 277,
+      "y": 582
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 83,
+      "tag": "DIV",
+      "text": "IDEAS0Zatím tu nejsou žádné odkazy.",
+      "width": 552,
+      "x": 276,
+      "y": 667
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 139,
+      "tag": "DIV",
+      "text": "HOSTING1Vercelvercel.comNástrojPoužívádevSharkDNESKAiZdarma i placené tarifyHosting for Next.js and static sites with preview deployments.ht",
+      "width": 552,
+      "x": 276,
+      "y": 766
+    },
+    {
+      "className": "min-w-0",
+      "height": 92,
+      "tag": "ARTICLE",
+      "text": "Vercelvercel.comNástrojPoužívádevSharkDNESKAiZdarma i placené tarifyHosting for Next.js and static sites with preview deployments.https://ve",
+      "width": 550,
+      "x": 277,
+      "y": 812
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 232,
+      "tag": "DIV",
+      "text": "SEO2Google Search Consolesearch.google.comPoužíváDNESKAiPlně zdarmaIndexing, search queries and structured-data reports for a site.https://s",
+      "width": 552,
+      "x": 844,
+      "y": 312
+    },
+    {
+      "className": "min-w-0",
+      "height": 93,
+      "tag": "ARTICLE",
+      "text": "Google Search Consolesearch.google.comPoužíváDNESKAiPlně zdarmaIndexing, search queries and structured-data reports for a site.https://searc",
+      "width": 550,
+      "x": 845,
+      "y": 358
+    },
+    {
+      "className": "min-w-0",
+      "height": 92,
+      "tag": "ARTICLE",
+      "text": "PageSpeed Insightspagespeed.web.devPoužíváDNESKAiPlně zdarmaCore Web Vitals and Lighthouse checks for one URL.https://pagespeed.web.devPouží",
+      "width": 550,
+      "x": 845,
+      "y": 451
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 139,
+      "tag": "DIV",
+      "text": "DATABASE1Supabasesupabase.comNástrojPoužíváown-dashboardZdarma i placené tarifyPostgres, Auth and row-level security as a managed service.ht",
+      "width": 552,
+      "x": 844,
+      "y": 560
+    },
+    {
+      "className": "min-w-0",
+      "height": 92,
+      "tag": "ARTICLE",
+      "text": "Supabasesupabase.comNástrojPoužíváown-dashboardZdarma i placené tarifyPostgres, Auth and row-level security as a managed service.https://sup",
+      "width": 550,
+      "x": 845,
+      "y": 606
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-flex w-full break-inside-avoid flex-col overflow-hidden p-0 align-top",
+      "height": 103.5,
+      "tag": "DIV",
+      "text": "Bez kategorie1Hugging Facehuggingface.coZdarma i placené tarifyOpen models, datasets, and demos.\n\nExample library note: compare a small prot",
+      "width": 552,
+      "x": 844,
+      "y": 715
+    },
+    {
+      "className": "min-w-0",
+      "height": 68,
+      "tag": "ARTICLE",
+      "text": "Hugging Facehuggingface.coZdarma i placené tarifyOpen models, datasets, and demos.\n\nExample library note: compare a small prototype with the",
+      "width": 550,
+      "x": 845,
+      "y": 750
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat odkazy do JSON / Markdown",
+      "width": 249.8,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat odkaz",
+      "width": 120.5,
+      "x": 534,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Hledat odkazy…",
+      "width": 345.3,
+      "x": 276,
+      "y": 166
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Kategorie",
+      "width": 345.3,
+      "x": 629,
+      "y": 166
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Cena",
+      "width": 131.6,
+      "x": 983,
+      "y": 166
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Řazení odkazů",
+      "width": 113.9,
+      "x": 1122,
+      "y": 166
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Používá projekt",
+      "width": 152,
+      "x": 1244,
+      "y": 166
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Rozbalit vše",
+      "width": 95.8,
+      "x": 1210,
+      "y": 210
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sbalit vše",
+      "width": 82.2,
+      "x": 1314,
+      "y": 210
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Přidat kategorii",
+      "width": 357.5,
+      "x": 289,
+      "y": 295
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat",
+      "width": 82.5,
+      "x": 654,
+      "y": 297
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přejmenovat kategorii: DESIGN",
+      "width": 28,
+      "x": 727,
+      "y": 321
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sloučit kategorii: DESIGN",
+      "width": 28,
+      "x": 757,
+      "y": 321
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat kategorii: DESIGN",
+      "width": 28,
+      "x": 787,
+      "y": 321
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Figma",
+      "width": 444,
+      "x": 289,
+      "y": 366
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Figma",
+      "width": 32,
+      "x": 751,
+      "y": 388
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Figma",
+      "width": 32,
+      "x": 783,
+      "y": 388
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Midjourney",
+      "width": 444,
+      "x": 289,
+      "y": 459
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Midjourney",
+      "width": 32,
+      "x": 751,
+      "y": 469
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Midjourney",
+      "width": 32,
+      "x": 783,
+      "y": 469
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přejmenovat kategorii: SECURITY",
+      "width": 28,
+      "x": 727,
+      "y": 545
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sloučit kategorii: SECURITY",
+      "width": 28,
+      "x": 757,
+      "y": 545
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat kategorii: SECURITY",
+      "width": 28,
+      "x": 787,
+      "y": 545
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Have I Been Pwned",
+      "width": 444,
+      "x": 289,
+      "y": 590
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Have I Been Pwned",
+      "width": 32,
+      "x": 751,
+      "y": 600
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Have I Been Pwned",
+      "width": 32,
+      "x": 783,
+      "y": 600
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přejmenovat kategorii: IDEAS",
+      "width": 28,
+      "x": 727,
+      "y": 676
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sloučit kategorii: IDEAS",
+      "width": 28,
+      "x": 757,
+      "y": 676
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat kategorii: IDEAS",
+      "width": 28,
+      "x": 787,
+      "y": 676
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přejmenovat kategorii: HOSTING",
+      "width": 28,
+      "x": 727,
+      "y": 775
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sloučit kategorii: HOSTING",
+      "width": 28,
+      "x": 757,
+      "y": 775
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat kategorii: HOSTING",
+      "width": 28,
+      "x": 787,
+      "y": 775
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Vercel",
+      "width": 444,
+      "x": 289,
+      "y": 820
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Vercel",
+      "width": 32,
+      "x": 751,
+      "y": 842
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Vercel",
+      "width": 32,
+      "x": 783,
+      "y": 842
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přejmenovat kategorii: SEO",
+      "width": 28,
+      "x": 1295,
+      "y": 321
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sloučit kategorii: SEO",
+      "width": 28,
+      "x": 1325,
+      "y": 321
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat kategorii: SEO",
+      "width": 28,
+      "x": 1355,
+      "y": 321
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Google Search Console",
+      "width": 444,
+      "x": 857,
+      "y": 366
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Google Search Console",
+      "width": 32,
+      "x": 1319,
+      "y": 388
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Google Search Console",
+      "width": 32,
+      "x": 1351,
+      "y": 388
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: PageSpeed Insights",
+      "width": 444,
+      "x": 857,
+      "y": 459
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: PageSpeed Insights",
+      "width": 32,
+      "x": 1319,
+      "y": 481
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: PageSpeed Insights",
+      "width": 32,
+      "x": 1351,
+      "y": 481
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přejmenovat kategorii: DATABASE",
+      "width": 28,
+      "x": 1295,
+      "y": 569
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sloučit kategorii: DATABASE",
+      "width": 28,
+      "x": 1325,
+      "y": 569
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat kategorii: DATABASE",
+      "width": 28,
+      "x": 1355,
+      "y": 569
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Supabase",
+      "width": 444,
+      "x": 857,
+      "y": 614
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Supabase",
+      "width": 32,
+      "x": 1319,
+      "y": 636
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Supabase",
+      "width": 32,
+      "x": 1351,
+      "y": 636
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit podrobnosti: Hugging Face",
+      "width": 444,
+      "x": 857,
+      "y": 758
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Hugging Face",
+      "width": 32,
+      "x": 1319,
+      "y": 768
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat odkaz: Hugging Face",
+      "width": 32,
+      "x": 1351,
+      "y": 768
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Odkazy",
+      "width": 53.2,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Odkazy",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

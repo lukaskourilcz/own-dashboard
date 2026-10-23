@@ -1,0 +1,351 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů" [active]:
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Domů" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - paragraph
+  - button "Přizpůsobit":
+    - text: Přizpůsobit
+  - heading "Dobré odpoledne, Jan" [level=2]
+  - paragraph: pátek 23. října · 14:31
+  - generic: Další
+  - generic: Gym
+  - generic: za 3 h 28 min
+  - paragraph:
+    - generic: 📄
+    - generic: Contract renewal
+    - generic: za 12 dní
+  - paragraph:
+    - text: Dnešní události
+  - list:
+    - generic: 09:30
+    - generic: Standup
+    - generic: 12:30
+    - generic: Lunch with Petr
+    - generic: 18:00
+    - generic: Gym
+  - paragraph:
+    - text: Blíží se termín
+  - list:
+    - generic: 1 d po
+    - generic: Reply to landlord
+    - generic: dnes
+    - generic: Submit Q2 invoice
+    - generic: dnes
+    - generic: Review the weekly operating plan
+    - generic: za 1 d
+    - generic: Generate real app icons with Recraft
+  - paragraph:
+    - text: Follow-upy
+  - list:
+    - generic: Práce
+    - generic: Senior React Engineer · Harbour Systems
+    - generic: 2026-10-20
+    - generic: Zakázka
+    - generic: Acme customer portal
+    - generic: 2026-10-24
+  - heading "Dnešní sedmička" [level=2]
+  - generic: Hotovo 0 z 7
+  - paragraph: Denní výběr z aktivních projektů, nejvyšší priority mají přednost.
+  - button "Vygenerovat novou sedmičku" [disabled]:
+    - text: Vygenerovat novou sedmičku
+  - progressbar "Hotovo 0 z 7"
+  - list:
+    - generic: "1"
+    - checkbox "Review the weekly operating plan" [disabled]
+    - paragraph: Review the weekly operating plan
+    - paragraph:
+      - generic: Čeká 12 dní
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: GLOBÁLNÍ
+    - generic: "2"
+    - checkbox "Generate real app icons with Recraft" [disabled]
+    - paragraph: Generate real app icons with Recraft
+    - paragraph:
+      - generic: react-express-app
+      - generic: Čeká 7 dní
+    - generic "Důležitost 5/6":
+      - text: "5"
+    - generic: "3"
+    - checkbox "Verify project deployment" [disabled]
+    - paragraph: Verify project deployment
+    - paragraph:
+      - generic: DNESKAi
+      - generic: Čeká 4 dny
+    - generic "Důležitost 4/6":
+      - text: "4"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: "4"
+    - checkbox "Add UPSTASH_REDIS_REST_URL in Vercel" [disabled]
+    - paragraph: Add UPSTASH_REDIS_REST_URL in Vercel
+    - paragraph:
+      - generic: own-dashboard
+      - generic: Čeká 3 dny
+    - generic "Důležitost 3/6":
+      - text: "3"
+    - generic: "5"
+    - checkbox "Review the ingestion retry policy" [disabled]
+    - paragraph: Review the ingestion retry policy
+    - paragraph:
+      - generic: DNESKAi
+      - generic: Čeká 5 dní
+    - generic "Důležitost 3/6":
+      - text: "3"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: "6"
+    - checkbox "Review dashboard accessibility report" [disabled]
+    - paragraph: Review dashboard accessibility report
+    - paragraph:
+      - generic: own-dashboard
+      - generic: Čeká 3 dny
+    - generic "Důležitost 2/6":
+      - text: "2"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: "7"
+    - checkbox "Document the release migration" [disabled]
+    - paragraph: Document the release migration
+    - paragraph:
+      - generic: own-dashboard
+      - generic: Čeká 7 dní
+    - generic "Důležitost 2/6":
+      - text: "2"
+    - 'generic "Pro: Já"':
+      - text: Já
+  - region "Zahrada dokončení":
+    - heading "Zahrada dokončení" [level=3]
+    - paragraph: Zelený den znamená, že bylo dokončeno všech sedm vybraných úkolů.
+    - list:
+      - 'listitem "5. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "6. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "7. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "8. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "9. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "10. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "11. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "12. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "13. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "14. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "15. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "16. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "17. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "18. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "19. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "20. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "21. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "22. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "23. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "24. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "25. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "26. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "27. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "28. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "29. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "30. září 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "1. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "2. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "3. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "4. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "5. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "6. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "7. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "8. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "9. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "10. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "11. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "12. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "13. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "14. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "15. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "16. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "17. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "18. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "19. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "20. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "21. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "22. října 2026: Denní výběr nebyl dokončen"'
+      - 'listitem "23. října 2026: Denní výběr nebyl dokončen"'
+  - generic: Měsíční výdaje
+  - paragraph: 1 988,35 Kč
+  - paragraph: předplatná
+  - generic: Otevřené úkoly
+  - paragraph: "11"
+  - paragraph: 1 hotovo
+  - generic: Aktivní projekty
+  - paragraph: "9"
+  - paragraph: profesní portfolio
+  - heading "Crony" [level=2]:
+    - text: Crony
+  - paragraph: Dnes nebyl zaznamenán žádný běh cronu.
+  - text: Vyžaduje pozornost
+  - button "Příležitosti"
+  - list:
+    - generic: Acme customer portal
+    - generic: Nabídka odeslána
+  - text: Předplatná
+  - generic: 23 860,19 Kč ročně · 7 aktivních
+  - paragraph: 1 988,35 Kč/měs
+  - list:
+    - generic: S
+    - paragraph: Supabase
+    - paragraph: Měsíčně · další 2026-11-04 · za 12 d
+    - paragraph: $25.00
+    - paragraph: Vercel
+    - paragraph: Měsíčně · další 2026-11-04 · za 12 d
+    - paragraph: $20.00
+    - generic: M
+    - paragraph: Mobbin
+    - paragraph: Čtvrtletně · další 2027-01-01 · za 70 d
+    - paragraph: $45.00
+    - paragraph: ≈ 348,84 Kč/měs
+    - paragraph: Netflix
+    - paragraph: Měsíčně · další 2026-10-31 · za 8 d
+    - paragraph: 279,00 Kč
+    - paragraph: Spotify
+    - paragraph: Měsíčně · další 2026-10-26 · za 3 d
+    - paragraph: 169,00 Kč
+    - paragraph: Figma
+    - paragraph: Ročně · další 2027-02-20 · za 120 d
+    - paragraph: 1 440,00 Kč
+    - paragraph: ≈ 120,00 Kč/měs
+    - paragraph: iCloud+
+    - paragraph: Měsíčně · další 2026-11-12 · za 20 d
+    - paragraph: 25,00 Kč
+    - generic: U
+    - paragraph: UptimeRobot
+    - paragraph: Měsíčně · chybí příští platba
+    - paragraph: 9,68 €
+  - text: Nová událost v kalendáři
+  - text: Název
+  - textbox "Název":
+    - /placeholder: Návštěva zubaře
+  - text: Datum
+  - textbox "Datum": 2026-10-23
+  - text: Začátek
+  - textbox "Začátek": 09:00
+  - text: Konec
+  - textbox "Konec": 10:00
+  - checkbox "Celodenní"
+  - text: Celodenní
+  - combobox "opakuje se":
+    - generic: Neopakuje se
+  - combobox
+  - button "Přidat do Kalendáře Google"
+  - text: Opakující se plány
+  - generic: 2/3
+  - list:
+    - button "Označit jako hotové"
+    - paragraph: Weekly review
+    - paragraph:
+      - text: Týdně
+      - generic: ·
+      - generic: zbývají 2 dny
+    - button "Označit jako hotové"
+    - paragraph: Pay rent
+    - paragraph:
+      - text: Měsíčně
+      - generic: ·
+      - generic: zbývá 8 dní
+    - button "Označit jako nehotové" [pressed]:
+    - paragraph: Deep-clean flat
+    - paragraph:
+      - text: Co 14 dní
+      - generic: ·
+      - generic: Hotovo
+  - status
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

@@ -1,0 +1,341 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Collapse sidebar" [expanded]:
+  - navigation:
+    - button "Home":
+      - generic: Home
+    - paragraph: Work
+    - button "Work overview":
+      - generic: Work overview
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projects":
+      - generic: Projects
+    - list:
+      - link "DNESKAi" [active]:
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Competition":
+      - generic: Competition
+    - button "Opportunities":
+      - generic: Opportunities
+    - button "Clients":
+      - generic: Clients
+    - button "Career":
+      - generic: Career
+    - button "Invoices":
+      - generic: Invoices
+    - paragraph: Money
+    - button "Money overview":
+      - generic: Money overview
+    - button "Accounts":
+      - generic: Accounts
+    - button "Transactions":
+      - generic: Transactions
+    - button "Subscriptions":
+      - generic: Subscriptions
+    - button "Categories":
+      - generic: Categories
+    - paragraph: Planning
+    - button "Tasks":
+      - generic: Tasks
+    - button "Calendar":
+      - generic: Calendar
+    - button "Goals":
+      - generic: Goals
+    - button "Dates":
+      - generic: Dates
+    - paragraph: Library
+    - button "Notes":
+      - generic: Notes
+    - button "Prompts":
+      - generic: Prompts
+    - button "Tools":
+      - generic: Tools
+    - button "Links":
+      - generic: Links
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Settings":
+  - button "Switch to dark mode":
+  - button "Sign out":
+- main:
+  - heading "Projects" [level=1]:
+    - button "Projects"
+  - generic: ›
+  - generic: DNESKAi
+  - button "Command palette":
+    - generic: Type a command or search…
+    - text: K
+  - tablist "Project workspace":
+    - tab "For review today" [selected]
+    - tab "Calendar"
+    - tab "Posts"
+    - tab "Sources (DNESKAi)"
+  - button "More":
+  - group "Channel":
+    - button "Instagram" [pressed]
+    - button "Threads" [disabled]
+    - button "LinkedIn" [disabled]
+  - heading "Design Lab" [level=2]
+  - button "Refresh":
+  - paragraph: Preview with demo posts. Edits redraw synthetic fixture slides. Nothing is published or stored.
+  - region "Topics":
+    - heading "Topics" [level=3]
+    - paragraph: Working titles for the next posts. Nothing is researched or generated until you approve a title.
+    - paragraph: Arrow keys move between topics. A approves, Z rejects.
+    - heading "News 3" [level=4]
+    - 'list "News: proposed topics"':
+      - 'listitem "Ukázka: nový model zvládne delší kontext za stejnou cenu"':
+        - 'checkbox "Select: Ukázka: nový model zvládne delší kontext za stejnou cenu"'
+        - paragraph: "Ukázka: nový model zvládne delší kontext za stejnou cenu"
+        - generic: News
+        - link "example.com":
+          - /url: https://www.example.com/clanek/1
+        - button "Add keyword"
+        - 'button "Approve: Ukázka: nový model zvládne delší kontext za stejnou cenu"': Approve
+        - 'button "Reject: Ukázka: nový model zvládne delší kontext za stejnou cenu"': Reject
+      - 'listitem "Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"':
+        - 'checkbox "Select: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"'
+        - paragraph: "Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"
+        - generic: News
+        - link "example.org":
+          - /url: https://example.org/zpravy/ai-pravidla
+        - button "Add keyword"
+        - 'button "Approve: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"': Approve
+        - 'button "Reject: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"': Reject
+      - 'listitem "Ukázka: open-source nástroj na přepis schůzek offline"':
+        - paragraph: "Ukázka: open-source nástroj na přepis schůzek offline"
+        - generic: News
+        - generic: Added by hand
+        - generic: Approved
+        - button "Add keyword"
+        - paragraph:
+          - generic: "What happened:"
+          - text: The topic has no link, so there is no source to write the post from.
+        - paragraph:
+          - generic: "What happens next:"
+          - text: Add the topic again with a link the post can cite.
+        - generic "Details"
+        - 'button "Reject: Ukázka: open-source nástroj na přepis schůzek offline"': Reject
+    - heading "Education 3" [level=4]
+    - 'list "Education: proposed topics"':
+      - listitem "Jak si nastavit vlastní příkazy v editoru kódu":
+        - 'checkbox "Select: Jak si nastavit vlastní příkazy v editoru kódu"'
+        - paragraph: Jak si nastavit vlastní příkazy v editoru kódu
+        - generic: Education
+        - link "@ukazkovy.tvurce":
+          - /url: https://www.example.com/reel/ukazka-4
+        - generic: Fact
+        - button "Comment keyword PRIKAZY, edit":
+          - generic: Comment keyword
+          - generic: PRIKAZY
+        - 'button "Approve: Jak si nastavit vlastní příkazy v editoru kódu"': Approve
+        - 'button "Reject: Jak si nastavit vlastní příkazy v editoru kódu"': Reject
+      - listitem "Tři způsoby, jak zkrátit prompt bez ztráty kvality":
+        - 'checkbox "Select: Tři způsoby, jak zkrátit prompt bez ztráty kvality"'
+        - paragraph: Tři způsoby, jak zkrátit prompt bez ztráty kvality
+        - generic: Education
+        - link "example.com":
+          - /url: https://www.example.com/clanek/5
+        - button "Comment keyword Prompt, edit":
+          - generic: Comment keyword
+          - generic: Prompt
+        - 'button "Approve: Tři způsoby, jak zkrátit prompt bez ztráty kvality"': Approve
+        - 'button "Reject: Tři způsoby, jak zkrátit prompt bez ztráty kvality"': Reject
+      - listitem "Aplikace, která z fotky tabule udělá poznámky":
+        - 'checkbox "Select: Aplikace, která z fotky tabule udělá poznámky"'
+        - paragraph: Aplikace, která z fotky tabule udělá poznámky
+        - generic: Education
+        - link "@ukazkovy.tvurce":
+          - /url: https://www.example.com/reel/ukazka-6
+        - generic: Unclear
+        - button "Comment keyword Tabule, edit":
+          - generic: Comment keyword
+          - generic: Tabule
+        - 'button "Approve: Aplikace, která z fotky tabule udělá poznámky"': Approve
+        - 'button "Reject: Aplikace, která z fotky tabule udělá poznámky"': Reject
+    - generic "Show rejected and expired (2)"
+  - navigation "Posts by day":
+    - heading "Today" [level=3]
+    - list:
+      - button "08:00 Kdy ověřit odpověď modelu, Slot passed, Error or unclear result":
+        - generic: 08:00
+        - generic: Kdy ověřit odpověď modelu
+        - generic: Slot passed
+      - button "14:08 Malý model bez připojení, Moved, approve again, Waiting for review":
+        - generic: 14:08
+        - generic: Malý model bez připojení
+        - generic: Moved, approve again
+    - list:
+      - paragraph: 17:00 · Waits for the scheduler
+      - paragraph: Jak číst kartu modelu
+      - 'button "Generate now: Jak číst kartu modelu"': Generate now
+      - paragraph: 20:00 · Waits for the scheduler
+      - paragraph: Kdy pomůže vyhledávání v dokumentech
+      - 'button "Generate now: Kdy pomůže vyhledávání v dokumentech"': Generate now
+    - paragraph: Drafts this topic now instead of at the next scheduler run, within 5 minutes. One draft costs about $0.02 and counts toward the $1 daily limit.
+    - status
+    - button "Approve the day (0 waiting)" [disabled]
+    - heading "Tomorrow" [level=3]
+    - list:
+      - button "08:00 Benchmark není žebříček, in 17 h 31 min, Waiting for review":
+        - generic: 08:00
+        - generic: Benchmark není žebříček
+        - generic: in 17 h 31 min
+      - 'button "12:30 Tip dne: kontext místo proseb, in 22 h 1 min, Waiting for review"':
+        - generic: 12:30
+        - generic: "Tip dne: kontext místo proseb"
+        - generic: in 22 h 1 min
+      - button "17:00 Proč verzovat prompty, in 26 h 31 min, Error or unclear result":
+        - generic: 17:00
+        - generic: Proč verzovat prompty
+        - generic: in 26 h 31 min
+    - paragraph: 20:00 · Preparing
+    - button "Approve the day (2 waiting)"
+  - generic: Waiting for review
+  - region "Benchmark není žebříček":
+    - group "Preview":
+      - generic: Preview
+      - radio "Feed" [checked]
+      - text: Feed
+      - radio "Profile"
+      - text: Profile
+      - radio "1:1"
+      - text: 1:1
+    - figure "Slide 1 of 4":
+      - generic: dneskai
+      - img "Ukázková rozostřená fotografie s titulkem o čtení benchmarků."
+      - paragraph: "dneskai Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn. Než podle výsledku vyberete model, zjistěte, co test měří, porovnávejte stejné podmínky a ověřte rozptyl mezi běhy. Text připravil jazykový model. Výběr a schválení: redakce DNESKAi. #dneskai #ai #umelainteligence"
+      - generic: Slide 1 of 4
+    - navigation "All slides":
+      - button "Previous slide" [disabled]:
+      - list:
+        - button "Show slide 1 · Cover"
+        - button "Show slide 2 · Picture"
+        - button "Show slide 3 · Split"
+        - button "Show slide 4 · Statement"
+      - button "Next slide":
+  - group "Kit":
+    - generic: Kit
+    - radio "1 Editorial, Current" [checked]
+    - generic: 1 Editorial
+    - generic: fits
+    - radio "2 Bold"
+    - generic: Choose to preview
+    - generic: 2 Bold
+    - radio "3 Explainer"
+    - generic: Choose to preview
+    - generic: 3 Explainer
+    - radio "4 Magazine"
+    - generic: Choose to preview
+    - generic: 4 Magazine
+    - radio "5 Ticker"
+    - generic: Choose to preview
+    - generic: 5 Ticker
+    - radio "6 Spotlight"
+    - generic: Choose to preview
+    - generic: 6 Spotlight
+  - group "Post":
+    - generic: Post
+    - region "Slide 1 · Cover":
+      - heading "Slide 1 · Cover" [level=4]
+      - text: Slide type
+      - combobox "Slide type":
+        - option "Cover" [selected]
+        - option "Picture"
+        - option "Split"
+      - paragraph: Only the types this slide’s pictures allow are listed. A change needs a new approval.
+      - generic: Headline
+      - generic: 46 / 110
+      - textbox "Headline": Benchmark není žebříček. Jak ho číst bez omylu
+      - generic "Alt text"
+      - status: The text check is not available here. The counters still show the limits; saving checks the text again.
+      - heading "Pictures" [level=5]
+      - paragraph:
+        - text: Picture 1
+        - generic: 1600 × 1200
+      - 'group "Picture 1: Focal point"'
+      - paragraph: Click or tap the picture, or use the arrow keys (2 % per press, Home centres it).
+      - status: "Focal point: 42 % across, 55 % down"
+      - generic: Zoom
+      - slider "Zoom": "1"
+      - status: 1.00×
+      - 'img "Real crop: Picture 1"'
+      - paragraph: Real crop
+      - paragraph: The highlighted area is exactly what the slide shows.
+      - paragraph: Stretched 1.13×
+      - button "Swap picture":
+        - text: Swap picture
+      - generic "Add a slide after this one"
+      - option "Picture" [selected]
+      - option "Split"
+      - option "Statement · accent"
+      - option "Statement · ink"
+    - generic: Caption
+    - generic: 311 / 2200
+    - textbox "Caption": "Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn. Než podle výsledku vyberete model, zjistěte, co test měří, porovnávejte stejné podmínky a ověřte rozptyl mezi běhy. Text připravil jazykový model. Výběr a schválení: redakce DNESKAi. #dneskai #ai #umelainteligence"
+    - group "Format":
+      - generic: Format
+      - radiogroup "Format":
+        - radio "Carousel" [checked]
+        - radio "Reel"
+      - paragraph: A Reel is these slides as a video with music, 3.5 seconds each. Changing the format makes a new version that needs its own approval.
+    - region "Comment and message":
+      - heading "Comment and message" [level=3]
+      - paragraph: This post has no keyword. News posts usually go without one.
+      - button "Add a keyword"
+    - text: Reel music
+    - combobox "Reel music":
+      - 'option "Automatic: next in rotation" [selected]'
+      - option "Quiet Circuit · Sample artist · 1:12"
+    - paragraph: Used when this post publishes as a Reel. A carousel has no music.
+    - generic: Time · Europe/Prague
+    - textbox "Time · Europe/Prague": 2026-10-24T08:00
+  - heading "AI disclosure" [level=4]
+  - paragraph: This deck has no disclosure slide.
+  - generic "Sources"
+  - generic "Post actions":
+    - button "Approve · fc4a3b2":
+      - text: Approve ·
+      - generic: fc4a3b2
+    - button "Save and render" [disabled]
+    - button "Publish now" [disabled]
+    - button "Regenerate with a note (≈ $0.02)"
+    - button "Return with a note"
+    - button "Skip"
+  - generic "Kit specimens"
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

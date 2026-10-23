@@ -1,0 +1,123 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Collapse sidebar" [expanded]:
+  - navigation:
+    - button "Home":
+      - generic: Home
+    - paragraph: Work
+    - button "Work overview":
+      - generic: Work overview
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projects":
+      - generic: Projects
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Competition":
+      - generic: Competition
+    - button "Opportunities":
+      - generic: Opportunities
+    - button "Clients":
+      - generic: Clients
+    - button "Career":
+      - generic: Career
+    - button "Invoices":
+      - generic: Invoices
+    - paragraph: Money
+    - button "Money overview":
+      - generic: Money overview
+    - button "Accounts":
+      - generic: Accounts
+    - button "Transactions":
+      - generic: Transactions
+    - button "Subscriptions":
+      - generic: Subscriptions
+    - button "Categories":
+      - generic: Categories
+    - paragraph: Planning
+    - button "Tasks":
+      - generic: Tasks
+    - button "Calendar":
+      - generic: Calendar
+    - button "Goals":
+      - generic: Goals
+    - button "Dates":
+      - generic: Dates
+    - paragraph: Library
+    - button "Notes":
+      - generic: Notes
+    - button "Prompts":
+      - generic: Prompts
+    - button "Tools":
+      - generic: Tools
+    - button "Links":
+      - generic: Links
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Settings":
+  - button "Switch to dark mode":
+  - button "Sign out":
+- main:
+  - heading "Inbox" [level=1]
+  - button "Command palette":
+    - generic: Type a command or search…
+    - text: K
+  - paragraph: Hidden from navigation. This section stays available at its URL.
+  - paragraph: Processing creates the destination and updates Inbox together. A failed route changes neither record.
+  - paragraph: Action feed
+  - paragraph: Acme follow-up is due tomorrow
+  - paragraph: Review the proposal before contacting Eva.
+  - link "Open source":
+    - /url: /opportunities
+    - text: Open source
+  - button "Mark read"
+  - button "Snooze until tomorrow"
+  - button "Dismiss"
+  - textbox "Paste a thought, request, or loose commitment…"
+  - button "Capture" [disabled]:
+    - text: Capture
+  - textbox "Search Inbox…"
+  - combobox "Status":
+    - generic: Pending
+  - combobox "All sources":
+    - generic: All sources
+  - combobox "All destinations":
+    - generic: All destinations
+  - paragraph: Review Acme analytics request
+  - generic: Pending
+  - generic: Manual
+  - paragraph: Decide whether this belongs in the current scope.
+  - 'combobox "Process: Review Acme analytics request"':
+    - generic: Task
+  - button "Process"
+  - button "Snooze until tomorrow"
+  - button "Dismiss"
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

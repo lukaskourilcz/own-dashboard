@@ -1,0 +1,196 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4",
+      "height": 128,
+      "tag": "DIV",
+      "text": "Action feedAcme follow-up is due tomorrowReview the proposal before contacting Eva.Open sourceMark readSnooze until tomorrowDismiss",
+      "width": 1120,
+      "x": 276,
+      "y": 182
+    },
+    {
+      "className": "flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-start",
+      "height": 66,
+      "tag": "DIV",
+      "text": "Acme follow-up is due tomorrowReview the proposal before contacting Eva.Open sourceMark readSnooze until tomorrowDismiss",
+      "width": 1082,
+      "x": 295,
+      "y": 227
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 74.5,
+      "tag": "DIV",
+      "text": "Review Acme analytics requestPendingManualDecide whether this belongs in the current scope.TaskProcessSnooze until tomorrowDismiss",
+      "width": 1120,
+      "x": 276,
+      "y": 422
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Command palette",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Mark read",
+      "width": 82.1,
+      "x": 1051,
+      "y": 240
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Snooze until tomorrow",
+      "width": 154.1,
+      "x": 1137,
+      "y": 240
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Dismiss",
+      "width": 69,
+      "x": 1295,
+      "y": 240
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Paste a thought, request, or loose commitment…",
+      "width": 1010.4,
+      "x": 276,
+      "y": 326
+    },
+    {
+      "disabled": true,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Capture",
+      "width": 101.6,
+      "x": 1294,
+      "y": 326
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Search Inbox…",
+      "width": 274,
+      "x": 276,
+      "y": 374
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Status",
+      "width": 274,
+      "x": 558,
+      "y": 374
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "All sources",
+      "width": 274,
+      "x": 840,
+      "y": 374
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "All destinations",
+      "width": 274,
+      "x": 1122,
+      "y": 374
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Process: Review Acme analytics request",
+      "width": 176,
+      "x": 868,
+      "y": 441
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Process",
+      "width": 72.2,
+      "x": 1056,
+      "y": 443
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Snooze until tomorrow",
+      "width": 156.1,
+      "x": 1140,
+      "y": 443
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Dismiss",
+      "width": 69,
+      "x": 1308,
+      "y": 443
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Inbox",
+      "width": 38.5,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Inbox",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

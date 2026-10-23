@@ -1,0 +1,344 @@
+{
+  "containers": [
+    {
+      "className": "",
+      "height": 303,
+      "tag": "SECTION",
+      "text": "Používá se2 nástrojeSupabaseDATABASEPostgres database, Auth and row-level security.Používá se vown-dashboard — Stores every record behind ow",
+      "width": 1120,
+      "x": 276,
+      "y": 182
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 262,
+      "tag": "LI",
+      "text": "SupabaseDATABASEPostgres database, Auth and row-level security.Používá se vown-dashboard — Stores every record behind own-only RLS.Uvedeno t",
+      "width": 554,
+      "x": 276,
+      "y": 223
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 262,
+      "tag": "LI",
+      "text": "VercelHOSTINGBuilds and hosts the web apps with preview deployments.Používá se vdevShark — Hosts the React client and the twelve API handler",
+      "width": 554,
+      "x": 842,
+      "y": 223
+    },
+    {
+      "className": "",
+      "height": 235.5,
+      "tag": "SECTION",
+      "text": "Zkušební1 nástrojFigmaDESIGN120,00 Kč/měs.Screen designs and design-system components.Používá se vZatím není propojený s projektem.Označit j",
+      "width": 1120,
+      "x": 276,
+      "y": 509
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 194.5,
+      "tag": "LI",
+      "text": "FigmaDESIGN120,00 Kč/měs.Screen designs and design-system components.Používá se vZatím není propojený s projektem.Označit jako vyřazený",
+      "width": 554,
+      "x": 276,
+      "y": 550
+    },
+    {
+      "className": "space-y-3",
+      "height": 810,
+      "tag": "SECTION",
+      "text": "Zjištěno z repozitářů8 nástrojůNačteno z about-project.md každého aktivního projektu (Tech stack a Third-party libraries), případně ze závis",
+      "width": 1120,
+      "x": 276,
+      "y": 769
+    },
+    {
+      "className": "divide-y divide-border rounded-lg border border-border bg-surface",
+      "height": 687,
+      "tag": "UL",
+      "text": "Next.jsDNESKAiown-dashboardboardlessAIThe app shell and its API routesZjištěno automaticky · package.json, about-project.mdJak ho používají ",
+      "width": 1120,
+      "x": 276,
+      "y": 892
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat nástroj",
+      "width": 125.7,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Filtrovat nástroje",
+      "width": 224,
+      "x": 940,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Filtrovat podle projektu",
+      "width": 224,
+      "x": 1172,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit v odkazech: Supabase",
+      "width": 28,
+      "x": 317,
+      "y": 450
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Supabase",
+      "width": 28,
+      "x": 349,
+      "y": 450
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako vyřazený: Supabase",
+      "width": 172.5,
+      "x": 649,
+      "y": 450
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit v odkazech: Vercel",
+      "width": 28,
+      "x": 883,
+      "y": 450
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Vercel",
+      "width": 28,
+      "x": 915,
+      "y": 450
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako vyřazený: Vercel",
+      "width": 172.5,
+      "x": 1215,
+      "y": 450
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit v odkazech: Figma",
+      "width": 28,
+      "x": 317,
+      "y": 710
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Figma",
+      "width": 28,
+      "x": 349,
+      "y": 710
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako vyřazený: Figma",
+      "width": 172.5,
+      "x": 649,
+      "y": 710
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Znovu zkontrolovat repozitáře",
+      "width": 199,
+      "x": 1197,
+      "y": 797
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Nástroje",
+      "width": 59.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Nástroje",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Používá se2 nástroje",
+      "width": 1120,
+      "x": 276,
+      "y": 182
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Supabase",
+      "width": 510,
+      "x": 307,
+      "y": 234
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Vercel",
+      "width": 510,
+      "x": 873,
+      "y": 234
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Zkušební1 nástroj",
+      "width": 1120,
+      "x": 276,
+      "y": 509
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Figma",
+      "width": 510,
+      "x": 307,
+      "y": 561
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Zjištěno z repozitářů8 nástrojů",
+      "width": 768,
+      "x": 276,
+      "y": 769
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Next.js",
+      "width": 47.2,
+      "x": 289,
+      "y": 903
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "React",
+      "width": 38.6,
+      "x": 289,
+      "y": 1006
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Resend",
+      "width": 50.2,
+      "x": 289,
+      "y": 1090
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Sentry",
+      "width": 44.8,
+      "x": 289,
+      "y": 1173
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "sharp",
+      "width": 38.5,
+      "x": 289,
+      "y": 1256
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Stripe",
+      "width": 40.8,
+      "x": 289,
+      "y": 1339
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "TanStack Query",
+      "width": 107,
+      "x": 289,
+      "y": 1423
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Vite",
+      "width": 26.9,
+      "x": 289,
+      "y": 1506
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

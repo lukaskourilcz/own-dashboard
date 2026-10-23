@@ -1,0 +1,690 @@
+{
+  "containers": [
+    {
+      "className": "flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-secondary px-3 py-2",
+      "height": 218,
+      "tag": "DIV",
+      "text": "ImportanceAll1+2+3+4+5TimeAll≤15m≤1h≤4hCategoryAllForAllMeAI",
+      "width": 328,
+      "x": 16,
+      "y": 223
+    },
+    {
+      "className": "inline-flex h-11 min-w-0 grow rounded-md border border-border md:h-8 max-w-[20rem]",
+      "height": 44,
+      "tag": "DIV",
+      "text": "AllMeAI",
+      "width": 255,
+      "x": 76,
+      "y": 388
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 162.5,
+      "tag": "DIV",
+      "text": "GLOBAL1 taskReview the weekly operating plan6Medue today",
+      "width": 328,
+      "x": 16,
+      "y": 457
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Review the weekly operating plan6Medue today",
+      "width": 302,
+      "x": 29,
+      "y": 515
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 182.5,
+      "tag": "DIV",
+      "text": "devShark1 taskGenerate real app icons with Recraft5generated 17 Oct1 day left",
+      "width": 328,
+      "x": 16,
+      "y": 636
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 111.5,
+      "tag": "LI",
+      "text": "Generate real app icons with Recraft5generated 17 Oct1 day left",
+      "width": 302,
+      "x": 29,
+      "y": 694
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 262,
+      "tag": "DIV",
+      "text": "DNESKAi2 tasksVerify project deployment4Me1 day leftReview the ingestion retry policy3Me4 days left",
+      "width": 328,
+      "x": 16,
+      "y": 834
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Verify project deployment4Me1 day left",
+      "width": 302,
+      "x": 29,
+      "y": 892
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Review the ingestion retry policy3Me4 days left",
+      "width": 302,
+      "x": 29,
+      "y": 992
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 521,
+      "tag": "DIV",
+      "text": "own-dashboard4 tasksAdd UPSTASH_REDIS_REST_URL in Vercel3generated 21 Oct5 days leftReview dashboard accessibility report2Me3 days leftDocum",
+      "width": 328,
+      "x": 16,
+      "y": 1112
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 111.5,
+      "tag": "LI",
+      "text": "Add UPSTASH_REDIS_REST_URL in Vercel3generated 21 Oct5 days left",
+      "width": 302,
+      "x": 29,
+      "y": 1170
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 111.5,
+      "tag": "LI",
+      "text": "Review dashboard accessibility report2Me3 days left",
+      "width": 302,
+      "x": 29,
+      "y": 1290
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Document the release migration2Me5 days left",
+      "width": 302,
+      "x": 29,
+      "y": 1409
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 111.5,
+      "tag": "LI",
+      "text": "Verify integration reconnect states1Me6 days left",
+      "width": 302,
+      "x": 29,
+      "y": 1509
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 361.5,
+      "tag": "DIV",
+      "text": "Manual tasks3 tasksSubmit Q2 invoice4Medue todayReply to landlord3Me1d overdueBuy running shoesMe2 days left",
+      "width": 328,
+      "x": 16,
+      "y": 1649
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Submit Q2 invoice4Medue today",
+      "width": 302,
+      "x": 29,
+      "y": 1707
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Reply to landlord3Me1d overdue",
+      "width": 302,
+      "x": 29,
+      "y": 1807
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Buy running shoesMe2 days left",
+      "width": 302,
+      "x": 29,
+      "y": 1906
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 43.3,
+      "tag": "DIV",
+      "text": "Finished tasks1 doneShow finished",
+      "width": 328,
+      "x": 16,
+      "y": 2043
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Home",
+      "width": 65.6,
+      "x": 8,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Work overview",
+      "width": 65.6,
+      "x": 78,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 65.6,
+      "x": 147,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 65.6,
+      "x": 217,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "More",
+      "width": 65.6,
+      "x": 286,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Refresh",
+      "width": 92.6,
+      "x": 16,
+      "y": 138
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add task",
+      "width": 44,
+      "x": 117,
+      "y": 138
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "All",
+      "width": 33.5,
+      "x": 124,
+      "y": 233
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "1+",
+      "width": 34.5,
+      "x": 158,
+      "y": 233
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "2+",
+      "width": 34.5,
+      "x": 192,
+      "y": 233
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "3+",
+      "width": 34.5,
+      "x": 227,
+      "y": 233
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "4+",
+      "width": 34.5,
+      "x": 261,
+      "y": 233
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "5",
+      "width": 34.5,
+      "x": 296,
+      "y": 233
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "All",
+      "width": 60.1,
+      "x": 86,
+      "y": 285
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "≤15m",
+      "width": 61.2,
+      "x": 147,
+      "y": 285
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "≤1h",
+      "width": 61.2,
+      "x": 208,
+      "y": 285
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "≤4h",
+      "width": 61.2,
+      "x": 269,
+      "y": 285
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Category",
+      "width": 220.8,
+      "x": 110,
+      "y": 336
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "All",
+      "width": 83.7,
+      "x": 77,
+      "y": 389
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Me",
+      "width": 84.7,
+      "x": 161,
+      "y": 389
+    },
+    {
+      "disabled": false,
+      "height": 42,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "AI",
+      "width": 84.7,
+      "x": 245,
+      "y": 389
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Collapse",
+      "width": 24,
+      "x": 25,
+      "y": 468
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the weekly operating plan",
+      "width": 16,
+      "x": 42,
+      "y": 526
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 524
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Collapse",
+      "width": 24,
+      "x": 25,
+      "y": 647
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Generate real app icons with Recraft",
+      "width": 16,
+      "x": 42,
+      "y": 705
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 703
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Collapse",
+      "width": 24,
+      "x": 25,
+      "y": 845
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Verify project deployment",
+      "width": 16,
+      "x": 42,
+      "y": 903
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 901
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the ingestion retry policy",
+      "width": 16,
+      "x": 42,
+      "y": 1003
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1001
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Collapse",
+      "width": 24,
+      "x": 25,
+      "y": 1123
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Add UPSTASH_REDIS_REST_URL in Vercel",
+      "width": 16,
+      "x": 42,
+      "y": 1181
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1179
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review dashboard accessibility report",
+      "width": 16,
+      "x": 42,
+      "y": 1301
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1299
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Document the release migration",
+      "width": 16,
+      "x": 42,
+      "y": 1420
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1418
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Verify integration reconnect states",
+      "width": 16,
+      "x": 42,
+      "y": 1520
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1518
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Collapse",
+      "width": 24,
+      "x": 25,
+      "y": 1660
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Submit Q2 invoice",
+      "width": 16,
+      "x": 42,
+      "y": 1718
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1716
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Reply to landlord",
+      "width": 16,
+      "x": 42,
+      "y": 1818
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1816
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Buy running shoes",
+      "width": 16,
+      "x": 42,
+      "y": 1917
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 22,
+      "x": 296,
+      "y": 1915
+    },
+    {
+      "disabled": false,
+      "height": 20.3,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Finished tasks1 doneShow finished",
+      "width": 236.4,
+      "x": 33,
+      "y": 2054
+    }
+  ],
+  "documentWidth": 360,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Tasks",
+      "width": 40,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "height": 30,
+      "tag": "H1",
+      "text": "Tasks",
+      "width": 328,
+      "x": 16,
+      "y": 72
+    }
+  ],
+  "viewport": {
+    "height": 800,
+    "width": 360
+  }
+}

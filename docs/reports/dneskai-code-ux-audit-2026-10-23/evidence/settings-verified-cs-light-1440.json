@@ -1,0 +1,1196 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 413.5,
+      "tag": "DIV",
+      "text": "PředvolbyJazyk, vzhled, měna, hustota úkolů a upozornění.JazykČeštinaEnglishVzhledSvětlýTmavýZobrazená měnaUSDEURGBPCZKCADÚkoly3510VšeUpozor",
+      "width": 1120,
+      "x": 276,
+      "y": -744
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 754.5,
+      "tag": "DIV",
+      "text": "Aktivní projektyV navigaci, selektorech, denním výběru a provozních tabulkách se zobrazují jen aktivní GitHub projekty. Výběr se synchronizu",
+      "width": 552,
+      "x": 276,
+      "y": -315
+    },
+    {
+      "className": "divide-y divide-border rounded-md border border-border",
+      "height": 469,
+      "tag": "UL",
+      "text": "DNESKAilukaskourilcz/aifirstVlastníFreelanceown-dashboardlukaskourilcz/own-dashboardVlastníFreelancedevSharklukaskourilcz/react-express-appV",
+      "width": 514,
+      "x": 295,
+      "y": -154
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 754.5,
+      "tag": "DIV",
+      "text": "Sekce projektového workspaceVyber, které záložky se zobrazí uvnitř každého projektu. Přehled zůstává vždy viditelný.PřehledVždy viditelnéÚko",
+      "width": 552,
+      "x": 844,
+      "y": -315
+    },
+    {
+      "className": "divide-y divide-border rounded-md border border-border",
+      "height": 442,
+      "tag": "UL",
+      "text": "PřehledVždy viditelnéÚkolyAktivitaKomunikaceRepozitářFinanceKonkurenceZnalostiŠkálováníMonetizace",
+      "width": 514,
+      "x": 863,
+      "y": -238
+    },
+    {
+      "className": "divide-y divide-border rounded-md border border-border",
+      "height": 178,
+      "tag": "UL",
+      "text": "Dnes ke schváleníKalendářPříspěvkyZdroje (DNESKAi)",
+      "width": 514,
+      "x": 863,
+      "y": 245
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 127,
+      "tag": "DIV",
+      "text": "Hledání práceZobrazit český obsah KariéryKariéra se zaměřuje na Oslo a práci dostupnou z Norska. Zaškrtnutím zobrazíte také české portály, f",
+      "width": 1120,
+      "x": 276,
+      "y": 456
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 147,
+      "tag": "DIV",
+      "text": "Odkazy na CVOdkazy na tvoje životopisy v Google Docs — zobrazí se jako tlačítka na stránce Práce. Vlož sdílecí URL; úpravy dokumentu odkaz n",
+      "width": 1120,
+      "x": 276,
+      "y": 599
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 1222,
+      "tag": "DIV",
+      "text": "Sekce navigaceZapněte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Inbox zůstávají připnuté.DomůVždy viditelnéPrácePř",
+      "width": 1120,
+      "x": 276,
+      "y": 762
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 222,
+      "tag": "DIV",
+      "text": "IntegraceZobrazuje se pouze stav připojení. Přihlašovací údaje ani tokeny poskytovatelů se zde nikdy neodhalují.Google…GitHub…",
+      "width": 552,
+      "x": 276,
+      "y": 2000
+    },
+    {
+      "className": "flex items-center justify-between gap-3 rounded-md border border-border p-3",
+      "height": 50,
+      "tag": "DIV",
+      "text": "Google…",
+      "width": 514,
+      "x": 295,
+      "y": 2093
+    },
+    {
+      "className": "flex items-center justify-between gap-3 rounded-md border border-border p-3",
+      "height": 50,
+      "tag": "DIV",
+      "text": "GitHub…",
+      "width": 514,
+      "x": 295,
+      "y": 2155
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 222,
+      "tag": "DIV",
+      "text": "Data a exportStáhněte přenositelný JSON. Starší osobní data zůstávají dostupná i po odstranění zdrojových tabulek.Úplný exportFinanceProfesn",
+      "width": 552,
+      "x": 844,
+      "y": 2000
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Čeština",
+      "width": 67.7,
+      "x": 1241,
+      "y": -644
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "English",
+      "width": 65.9,
+      "x": 1309,
+      "y": -644
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Světlý",
+      "width": 79.7,
+      "x": 1214,
+      "y": -579
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tmavý",
+      "width": 81.6,
+      "x": 1293,
+      "y": -579
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "USD",
+      "width": 51.5,
+      "x": 1098,
+      "y": -516
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "EUR",
+      "width": 50.2,
+      "x": 1156,
+      "y": -516
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "GBP",
+      "width": 50.8,
+      "x": 1212,
+      "y": -516
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "CZK",
+      "width": 50.8,
+      "x": 1269,
+      "y": -516
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "CAD",
+      "width": 51.6,
+      "x": 1325,
+      "y": -516
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "3",
+      "width": 31.7,
+      "x": 1229,
+      "y": -451
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "5",
+      "width": 31.6,
+      "x": 1261,
+      "y": -451
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "10",
+      "width": 37.5,
+      "x": 1292,
+      "y": -451
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vše",
+      "width": 45.1,
+      "x": 1330,
+      "y": -451
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Upozornění na obnovení předplatného",
+      "width": 36,
+      "x": 1341,
+      "y": -380
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": -141
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": -141
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "DNESKAi",
+      "width": 36,
+      "x": 760,
+      "y": -137
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": -89
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": -89
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "own-dashboard",
+      "width": 36,
+      "x": 760,
+      "y": -85
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": -37
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": -37
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "devShark",
+      "width": 36,
+      "x": 760,
+      "y": -33
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": 15
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 15
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "boardlessAI",
+      "width": 36,
+      "x": 760,
+      "y": 19
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": 67
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 67
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Design Lab",
+      "width": 36,
+      "x": 760,
+      "y": 71
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": 119
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 119
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "GoVIRAL",
+      "width": 36,
+      "x": 760,
+      "y": 123
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": 171
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 171
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Recipe box app",
+      "width": 36,
+      "x": 760,
+      "y": 175
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": 223
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 223
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Acme customer portal",
+      "width": 36,
+      "x": 760,
+      "y": 227
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vlastní",
+      "width": 63.5,
+      "x": 602,
+      "y": 275
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 275
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Harbor Bakery website",
+      "width": 36,
+      "x": 760,
+      "y": 279
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Úkoly",
+      "width": 36,
+      "x": 1328,
+      "y": -181
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Aktivita",
+      "width": 36,
+      "x": 1328,
+      "y": -137
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Komunikace",
+      "width": 36,
+      "x": 1328,
+      "y": -93
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Repozitář",
+      "width": 36,
+      "x": 1328,
+      "y": -49
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Finance",
+      "width": 36,
+      "x": 1328,
+      "y": -5
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Konkurence",
+      "width": 36,
+      "x": 1328,
+      "y": 39
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Znalosti",
+      "width": 36,
+      "x": 1328,
+      "y": 83
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Škálování",
+      "width": 36,
+      "x": 1328,
+      "y": 127
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Monetizace",
+      "width": 36,
+      "x": 1328,
+      "y": 171
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Dnes ke schválení (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 257
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Kalendář (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 301
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Příspěvky (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 345
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Zdroje (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 390
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 16,
+      "x": 295,
+      "y": 505
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "https://docs.google.com/document/d/…",
+      "width": 535,
+      "x": 295,
+      "y": 697
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "https://docs.google.com/document/d/…",
+      "width": 535,
+      "x": 842,
+      "y": 697
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 922
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Přehled práce",
+      "width": 36,
+      "x": 1333,
+      "y": 920
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 962
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Marketing",
+      "width": 36,
+      "x": 1333,
+      "y": 960
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1002
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Workflows",
+      "width": 36,
+      "x": 1333,
+      "y": 1000
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1042
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Projekty",
+      "width": 36,
+      "x": 1333,
+      "y": 1040
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1082
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Konkurence",
+      "width": 36,
+      "x": 1333,
+      "y": 1080
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1122
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Příležitosti",
+      "width": 36,
+      "x": 1333,
+      "y": 1120
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1162
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Klienti",
+      "width": 36,
+      "x": 1333,
+      "y": 1160
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1202
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Kariéra",
+      "width": 36,
+      "x": 1333,
+      "y": 1200
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1242
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Faktury",
+      "width": 36,
+      "x": 1333,
+      "y": 1240
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1313
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Přehled peněz",
+      "width": 36,
+      "x": 1333,
+      "y": 1311
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1353
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Účty",
+      "width": 36,
+      "x": 1333,
+      "y": 1351
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1393
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Transakce",
+      "width": 36,
+      "x": 1333,
+      "y": 1391
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1433
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Předplatná",
+      "width": 36,
+      "x": 1333,
+      "y": 1431
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1473
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Kategorie",
+      "width": 36,
+      "x": 1333,
+      "y": 1471
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1544
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Úkoly",
+      "width": 36,
+      "x": 1333,
+      "y": 1542
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1584
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Kalendář",
+      "width": 36,
+      "x": 1333,
+      "y": 1582
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1624
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Cíle",
+      "width": 36,
+      "x": 1333,
+      "y": 1622
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1664
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Termíny",
+      "width": 36,
+      "x": 1333,
+      "y": 1662
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1735
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Poznámky",
+      "width": 36,
+      "x": 1333,
+      "y": 1733
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1775
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Prompty",
+      "width": 36,
+      "x": 1333,
+      "y": 1773
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1815
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Nástroje",
+      "width": 36,
+      "x": 1333,
+      "y": 1813
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1855
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Odkazy",
+      "width": 36,
+      "x": 1333,
+      "y": 1853
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Přetáhni pro změnu pořadí",
+      "width": 16,
+      "x": 303,
+      "y": 1895
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "IG TIPS",
+      "width": 36,
+      "x": 1333,
+      "y": 1893
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit navigaci",
+      "width": 144.3,
+      "x": 295,
+      "y": 1939
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Nastavení",
+      "width": 69.6,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Nastavení",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

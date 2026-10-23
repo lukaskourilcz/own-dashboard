@@ -1,0 +1,244 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly" [active]:
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Úkoly" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Obnovit" [disabled]:
+    - text: Obnovit
+  - button "Přidat úkol":
+  - text: Důležitost
+  - group "Důležitost":
+    - button "Vše" [pressed]
+    - button "1+"
+    - button "2+"
+    - button "3+"
+    - button "4+"
+    - button "5"
+  - text: Čas
+  - group "Čas":
+    - button "Vše" [pressed]
+    - button "≤15m"
+    - button "≤1h"
+    - button "≤4h"
+  - text: Kategorie
+  - combobox "Kategorie":
+    - generic: Vše
+  - text: Pro
+  - group "Pro":
+    - button "Vše" [pressed]
+    - button "Já"
+    - button "AI"
+  - button "Sbalit" [expanded]:
+  - text: GLOBÁLNÍ
+  - generic: 1 úkol
+  - list:
+    - checkbox "Review the weekly operating plan"
+    - paragraph: Review the weekly operating plan
+    - generic "Důležitost 6/6":
+      - text: "6"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: termín dnes
+    - button "Smazat":
+  - button "Sbalit" [expanded]:
+  - link "devShark":
+    - /url: https://github.com/lukaskourilcz/react-express-app
+    - generic: devShark
+  - generic: 1 úkol
+  - list:
+    - checkbox "Generate real app icons with Recraft"
+    - paragraph: Generate real app icons with Recraft
+    - generic "Důležitost 5/6":
+      - text: "5"
+    - generic: vygenerováno 17. říj
+    - generic: zbývá 1 den
+    - button "Smazat":
+  - button "Sbalit" [expanded]:
+  - link "DNESKAi":
+    - /url: https://github.com/lukaskourilcz/aifirst
+    - generic: DNESKAi
+  - generic: 2 úkoly
+  - list:
+    - checkbox "Verify project deployment"
+    - paragraph: Verify project deployment
+    - generic "Důležitost 4/6":
+      - text: "4"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: zbývá 1 den
+    - button "Smazat":
+    - checkbox "Review the ingestion retry policy"
+    - paragraph: Review the ingestion retry policy
+    - generic "Důležitost 3/6":
+      - text: "3"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: zbývají 4 dny
+    - button "Smazat":
+  - button "Sbalit" [expanded]:
+  - link "own-dashboard":
+    - /url: https://github.com/lukaskourilcz/own-dashboard
+    - generic: own-dashboard
+  - generic: 4 úkoly
+  - list:
+    - checkbox "Add UPSTASH_REDIS_REST_URL in Vercel"
+    - paragraph: Add UPSTASH_REDIS_REST_URL in Vercel
+    - generic "Důležitost 3/6":
+      - text: "3"
+    - generic: vygenerováno 21. říj
+    - generic: zbývá 5 dní
+    - button "Smazat":
+    - checkbox "Review dashboard accessibility report"
+    - paragraph: Review dashboard accessibility report
+    - generic "Důležitost 2/6":
+      - text: "2"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: zbývají 3 dny
+    - button "Smazat":
+    - checkbox "Document the release migration"
+    - paragraph: Document the release migration
+    - generic "Důležitost 2/6":
+      - text: "2"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: zbývá 5 dní
+    - button "Smazat":
+    - checkbox "Verify integration reconnect states"
+    - paragraph: Verify integration reconnect states
+    - generic "Důležitost 1/6":
+      - text: "1"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: zbývá 6 dní
+    - button "Smazat":
+  - button "Sbalit" [expanded]:
+  - text: Ruční úkoly
+  - generic: 3 úkoly
+  - list:
+    - checkbox "Submit Q2 invoice"
+    - paragraph: Submit Q2 invoice
+    - generic "Důležitost 4/6":
+      - text: "4"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: termín dnes
+    - button "Smazat":
+    - checkbox "Reply to landlord"
+    - paragraph: Reply to landlord
+    - generic "Důležitost 3/6":
+      - text: "3"
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: 1 d po termínu
+    - button "Smazat":
+    - checkbox "Buy running shoes"
+    - paragraph: Buy running shoes
+    - 'generic "Pro: Já"':
+      - text: Já
+    - generic: zbývají 2 dny
+    - button "Smazat":
+  - button "Hotové úkoly 1 hotový Zobrazit hotové":
+    - text: Hotové úkoly
+    - generic: 1 hotový
+    - generic: Zobrazit hotové
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

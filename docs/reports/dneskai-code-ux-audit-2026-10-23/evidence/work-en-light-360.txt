@@ -1,0 +1,174 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Work overview" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - heading "Work overview" [level=1]
+  - paragraph: The operating view for active delivery, pipeline, and follow-ups.
+  - generic: Active projects
+  - paragraph: "9"
+  - generic: Open opportunities
+  - paragraph: "1"
+  - generic: Follow-ups due
+  - paragraph: "0"
+  - generic: Unpaid invoices
+  - paragraph: "1"
+  - generic: Clients
+  - paragraph: "1"
+  - generic: Current applications
+  - paragraph: "4"
+  - generic: Needs attention
+  - link "DNESKAi Attention Running costs without recorded revenue":
+    - /url: /projects/dneskai
+    - paragraph: DNESKAi
+    - generic: Attention
+    - paragraph: Running costs without recorded revenue
+  - generic: Weekly planning
+  - paragraph: "Five short steps: last week's time, what you finished, what carries over, next week's objectives, and a summary."
+  - paragraph: Step 1/5 · Time by channel
+  - progressbar "Step 1/5"
+  - region "Time by channel":
+    - heading "Time by channel" [level=3]
+    - paragraph: Time from the calendars you selected, grouped by what each event names. Only the totals are saved. 2026-10-12
+    - list:
+      - generic: Client work
+      - generic: 1 h 30 m · 46%
+      - generic: Own projects
+      - generic: 1 h 0 m · 31%
+      - generic: Admin and other
+      - generic: 45 m · 23%
+    - term: Events naming no project or client
+    - definition: "1"
+    - term: All-day entries, not counted
+    - definition: "1"
+  - button "Back" [disabled]
+  - button "Next"
+  - button "Save draft" [disabled]
+  - button "Complete week" [disabled]
+  - heading "Marketing" [level=2]
+  - paragraph: "The next seven days across the marketing calendars. Read-only: each plan is edited in its own calendar."
+  - paragraph:
+    - text: Marketing starts Mon 2 Nov
+    - generic: · in 10 days · DNESKAi
+  - region "Pre-launch due this week":
+    - heading "Pre-launch due this week" [level=3]
+    - list:
+      - link "Profile bio, link and three pinned posts (opens in a new tab)":
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=caught-up
+        - text: Profile bio, link and three pinned posts
+        - generic: (opens in a new tab)
+      - generic: Overdue
+      - generic: Planned
+      - paragraph: Thu 22 Oct · DNESKAi · Owner
+      - link "Share images for every edition (opens in a new tab)":
+        - /url: https://github.com/lukaskourilcz/aifirst/issues/99
+        - text: Share images for every edition
+        - generic: (opens in a new tab)
+      - generic: Planned
+      - paragraph: Mon 26 Oct · DNESKAi · Agent · lukaskourilcz/aifirst#99
+  - region "Fri 23 Oct":
+    - heading "Fri 23 Oct" [level=3]
+    - list:
+      - link "What the practice queue taught me this week (opens in a new tab)":
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&week=2026-10-19&entry=ds-003
+        - text: What the practice queue taught me this week
+        - generic: (opens in a new tab)
+      - generic: Queued
+      - paragraph: 12:00 · devShark · Threads · Thread
+      - link "Five interview questions juniors get wrong (opens in a new tab)":
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&week=2026-10-19&entry=ds-002
+        - text: Five interview questions juniors get wrong
+        - generic: (opens in a new tab)
+      - generic: Drafted
+      - paragraph: 17:30 · devShark · Instagram · Carousel
+  - region "Sun 25 Oct":
+    - heading "Sun 25 Oct" [level=3]
+    - list:
+      - 'link "Screen recording: one bug fixed in 60 seconds (opens in a new tab)"':
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&week=2026-10-19&entry=ds-004
+        - text: "Screen recording: one bug fixed in 60 seconds"
+        - generic: (opens in a new tab)
+      - generic: Planned
+      - paragraph: 18:00 · devShark · Instagram · Reel
+  - link "Open the devShark calendar (opens in a new tab)":
+    - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark
+    - text: Open the devShark calendar
+    - generic: (opens in a new tab)
+  - link "Open the DNESKAi calendar (opens in a new tab)":
+    - /url: https://boardless-ai.vercel.app/admin/calendar?venture=caught-up
+    - text: Open the DNESKAi calendar
+    - generic: (opens in a new tab)
+  - generic: Checked at 14:25
+  - button "Check the calendars again" [disabled]
+  - generic: Shipped since last review
+  - paragraph: Changelog entries published after your last completed review.
+  - list:
+    - paragraph: DNESKAi gets a design lab, a smaller workspace and the next phase behind switches
+    - generic: 2026-10-23
+    - list:
+      - listitem: Six design kits and stricter post rules
+      - listitem: A DNESKAi workspace with four tabs
+      - listitem: Topics first, keyword DMs and Reels, all off until switched on
+    - paragraph: IG TIPS meet the marketing calendars
+    - generic: 2026-09-28
+    - list:
+      - listitem: Tips know which plans apply them
+      - listitem: A marketing week in the Work overview
+      - listitem: IG TIPS export by topic
+  - generic: Career follow-ups due
+  - list:
+    - link "Senior React Engineer · Harbour Systems due 2026-10-20":
+      - /url: /career
+      - generic: Senior React Engineer · Harbour Systems
+      - generic: due 2026-10-20
+  - generic: Opportunity pipeline
+  - list:
+    - link "Acme customer portal Proposal sent":
+      - /url: /opportunities
+      - generic: Acme customer portal
+      - generic: Proposal sent
+  - generic: Upcoming professional dates
+  - list:
+    - link "Contract renewal 2026-11-04":
+      - /url: /dates
+      - generic: Contract renewal
+      - generic: 2026-11-04
+    - link "Conference CFP 2026-11-17":
+      - /url: /dates
+      - generic: Conference CFP
+      - generic: 2026-11-17
+  - text: Project repositories
+  - paragraph: Open a project to see its recent commits and code volume.
+  - list:
+    - link "DNESKAi lukaskourilcz/aifirst":
+      - /url: /projects/dneskai
+      - generic: DNESKAi
+      - generic: lukaskourilcz/aifirst
+    - link "own-dashboard lukaskourilcz/own-dashboard":
+      - /url: /projects/own-dashboard
+      - generic: own-dashboard
+      - generic: lukaskourilcz/own-dashboard
+    - link "devShark lukaskourilcz/react-express-app":
+      - /url: /projects/devshark
+      - generic: devShark
+      - generic: lukaskourilcz/react-express-app
+    - link "boardlessAI lukaskourilcz/quorum":
+      - /url: /projects/boardlessai
+      - generic: boardlessAI
+      - generic: lukaskourilcz/quorum
+  - text: Recent commits across projects
+  - paragraph: The latest commits from your active project repositories.
+  - paragraph: GitHub is disconnected
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

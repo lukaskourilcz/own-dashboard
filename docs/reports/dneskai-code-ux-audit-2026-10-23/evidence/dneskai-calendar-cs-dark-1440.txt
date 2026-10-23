@@ -1,0 +1,234 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Projekty" [level=1]:
+    - button "Projekty"
+  - generic: ›
+  - generic: DNESKAi
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - tablist "Projektový prostor":
+    - tab "Dnes ke schválení"
+    - tab "Kalendář" [active] [selected]
+    - tab "Příspěvky"
+    - tab "Zdroje (DNESKAi)"
+  - button "Více":
+  - region "Příštích sedm dní":
+    - heading "Příštích sedm dní" [level=2]
+    - paragraph: Publikační sloty v čase Europe/Prague a co je v nich naplánované.
+    - button "Obnovit"
+    - paragraph: Náhled s ukázkovými příspěvky. Úpravy překreslí syntetické ukázkové slidy. Nic se nepublikuje ani neukládá.
+    - list:
+      - heading "pátek 23/10 Dnes" [level=3]:
+        - generic: pátek 23/10
+        - generic: Dnes
+      - list:
+        - time: 08:00
+        - paragraph: Kdy ověřit odpověď modelu
+        - generic: Chyba nebo nejasný výsledek
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: Instagram neodpověděl včas; příspěvek možná existuje, možná ne.
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: Zkontrolujte příspěvek na Instagramu. Další kontrola výsledek porovná; nic se nepublikuje dvakrát.
+        - generic "Podrobnosti"
+        - time: 12:30
+        - generic: Volný slot
+        - time: 14:08
+        - paragraph: Malý model bez připojení
+        - generic: Čeká na kontrolu
+        - time: 17:00
+        - generic: Volný slot
+        - time: 20:00
+        - generic: Volný slot
+      - heading "sobota 24/10" [level=3]:
+        - generic: sobota 24/10
+      - list:
+        - time: 08:00
+        - paragraph: Benchmark není žebříček
+        - generic: Čeká na kontrolu
+        - time: 12:30
+        - paragraph: "Tip dne: kontext místo proseb"
+        - generic: Čeká na kontrolu
+        - time: 17:00
+        - paragraph: Proč verzovat prompty
+        - generic: Chyba nebo nejasný výsledek
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: Text se nevejde a byl by oříznutý. Zkraťte ho.
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: Upravte příspěvek a uložte ho; nová verze se před schválením zkontroluje znovu.
+        - generic "Podrobnosti"
+        - time: 20:00
+        - paragraph: Jak odhadnout cenu jednoho dotazu
+        - generic: Připravuje se
+      - heading "neděle 25/10" [level=3]:
+        - generic: neděle 25/10
+      - paragraph: Tento den se mění čas; časy jsou místní pražské.
+      - list:
+        - time: 08:00
+        - paragraph: Tři zkratky pro terminál
+        - generic: Vráceno
+        - time: 12:30
+        - paragraph: Kdy stačí menší model
+        - generic: Naplánováno
+        - time: 17:00
+        - paragraph: Co je kontextové okno
+        - generic: Chyba nebo nejasný výsledek
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: Denní limit generování DNESKAi je vyčerpaný.
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: Generování pokračuje, až útrata za posledních 24 hodin klesne pod denní limit.
+        - generic "Podrobnosti"
+        - time: 20:00
+        - generic: Volný slot
+      - heading "pondělí 26/10" [level=3]:
+        - generic: pondělí 26/10
+      - list:
+        - time: 08:00
+        - paragraph: Schválený příspěvek bez zařazení
+        - generic: Schváleno
+        - time: 12:30
+        - paragraph: Co stojí jeden dotaz
+        - generic: Chyba nebo nejasný výsledek
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: "Nová verze se uložila, ale slidy se k ní nepřipojily: připojení selhalo nebo vykreslování nestihlo časový limit. Nelze ji schválit."
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: "Otevřete editor a uložte znovu: příspěvek se vykreslí ještě jednou jako nová verze. Samo se nic nevykreslí."
+        - generic "Podrobnosti"
+        - time: 17:00
+        - paragraph: Lokální model na notebooku
+        - generic: Připravuje se
+        - time: 20:00
+        - generic: Volný slot
+      - heading "úterý 27/10" [level=3]:
+        - generic: úterý 27/10
+      - list:
+        - time: 08:00
+        - generic: Volný slot
+        - time: 12:30
+        - generic: Volný slot
+        - time: 17:00
+        - generic: Volný slot
+        - time: 20:00
+        - generic: Volný slot
+      - heading "středa 28/10" [level=3]:
+        - generic: středa 28/10
+      - list:
+        - time: 08:00
+        - generic: Volný slot
+        - time: 12:30
+        - generic: Volný slot
+        - time: 17:00
+        - generic: Volný slot
+        - time: 20:00
+        - generic: Volný slot
+      - heading "čtvrtek 29/10" [level=3]:
+        - generic: čtvrtek 29/10
+      - list:
+        - time: 08:00
+        - generic: Volný slot
+        - time: 12:30
+        - generic: Volný slot
+        - time: 17:00
+        - generic: Volný slot
+        - time: 20:00
+        - generic: Volný slot
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

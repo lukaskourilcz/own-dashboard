@@ -1,0 +1,148 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky" [active]:
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Poznámky" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Importovat MD":
+    - text: Importovat MD
+  - button "Nová poznámka":
+    - text: Nová poznámka
+  - button "home"
+  - button "ideas"
+  - button "work"
+  - textbox "Hledat název + obsah…"
+  - paragraph: Připnuté
+  - list:
+    - button "Přetažením změňte pořadí":
+    - button "Kopírovat jako Markdown":
+    - button "Project ideas work ideas před 7 minutami":
+      - generic: Project ideas
+      - generic: work
+      - generic: ideas
+      - paragraph: před 7 minutami
+  - status
+  - paragraph: Poznámky
+  - list:
+    - button "Grocery list home před 7 minutami":
+      - generic: Grocery list
+      - generic: home
+      - paragraph: před 7 minutami
+    - button "Kopírovat jako Markdown":
+  - paragraph: Project ideas
+  - paragraph: Uloženo 14:25
+  - combobox "Propojený projekt":
+    - generic: Bez projektu
+  - button "Kopírovat jako Markdown":
+  - button "Stáhnout jako Markdown":
+  - button "Publikovat do repo":
+  - button "Připnout":
+  - button "Smazat poznámku":
+  - text: work
+  - button "Odebrat work":
+  - text: ideas
+  - button "Odebrat ideas":
+  - button "Přidat štítek":
+    - text: Přidat štítek
+  - textbox:
+    - paragraph
+    - text: Enter text or type '/' for commands
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

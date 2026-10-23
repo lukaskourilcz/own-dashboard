@@ -1,0 +1,184 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed border-border-strong bg-surface-muted/40 px-4 py-3 text-sm transition-colors hover:border-foreground/30 focus-ring disabled:opacity-60",
+      "height": 66,
+      "tag": "BUTTON",
+      "text": "Drop a PDF invoice here or click to choose a file",
+      "width": 328,
+      "x": 16,
+      "y": 223
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 109,
+      "tag": "DIV",
+      "text": "Outstanding38 115,00 Kč1 · Issued",
+      "width": 328,
+      "x": 16,
+      "y": 305
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 109,
+      "tag": "DIV",
+      "text": "Overdue0,00 Kč0 · Overdue",
+      "width": 328,
+      "x": 16,
+      "y": 430
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 109,
+      "tag": "DIV",
+      "text": "Paid0,00 KčPaid",
+      "width": 328,
+      "x": 16,
+      "y": 555
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 226.5,
+      "tag": "DIV",
+      "text": "2026001 · Acme s.r.o.Issued 16. 10. 2026 · Due 30. 10. 202638 115,00 KčIssued",
+      "width": 328,
+      "x": 16,
+      "y": 680
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Home",
+      "width": 65.6,
+      "x": 8,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Work overview",
+      "width": 65.6,
+      "x": 78,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 65.6,
+      "x": 147,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 65.6,
+      "x": 217,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "More",
+      "width": 65.6,
+      "x": 286,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Invoicing settings",
+      "width": 149.8,
+      "x": 16,
+      "y": 138
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "New invoice",
+      "width": 117.5,
+      "x": 174,
+      "y": 138
+    },
+    {
+      "disabled": false,
+      "height": 66,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Drop a PDF invoice here or click to choose a file",
+      "width": 328,
+      "x": 16,
+      "y": 223
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Duplicate",
+      "width": 44,
+      "x": 223,
+      "y": 773
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Mark as paid",
+      "width": 44,
+      "x": 267,
+      "y": 773
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 44,
+      "x": 311,
+      "y": 773
+    }
+  ],
+  "documentWidth": 360,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Invoices",
+      "width": 57.7,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "height": 30,
+      "tag": "H1",
+      "text": "Invoices",
+      "width": 328,
+      "x": 16,
+      "y": 72
+    }
+  ],
+  "viewport": {
+    "height": 800,
+    "width": 360
+  }
+}

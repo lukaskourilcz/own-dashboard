@@ -1,0 +1,256 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce" [active]:
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Přehled práce" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - generic: Aktivní projekty
+  - paragraph: "9"
+  - generic: Otevřené příležitosti
+  - paragraph: "1"
+  - generic: Follow-upy k řešení
+  - paragraph: "0"
+  - generic: Neuhrazené faktury
+  - paragraph: "1"
+  - generic: Klienti
+  - paragraph: "1"
+  - generic: Aktuální žádosti
+  - paragraph: "4"
+  - generic: Vyžaduje pozornost
+  - link "DNESKAi Pozornost Provozní náklady bez evidovaných příjmů":
+    - /url: /projects/dneskai
+    - paragraph: DNESKAi
+    - generic: Pozornost
+    - paragraph: Provozní náklady bez evidovaných příjmů
+  - generic: Týdenní plánování
+  - paragraph: "Pět krátkých kroků: čas minulého týdne, co jste dokončili, co se přenáší, cíle na příští týden a shrnutí."
+  - paragraph: Krok 1/5 · Čas podle oblasti
+  - progressbar "Krok 1/5"
+  - region "Čas podle oblasti":
+    - heading "Čas podle oblasti" [level=3]
+    - paragraph: Čas z vybraných kalendářů, rozdělený podle toho, co která událost pojmenovává. Ukládají se jen součty. 2026-10-12
+    - list:
+      - generic: Klientská práce
+      - generic: 1 h 30 min · 46%
+      - generic: Vlastní projekty
+      - generic: 1 h 0 min · 31%
+      - generic: Administrativa a ostatní
+      - generic: 45 min · 23%
+    - term: Události bez projektu nebo klienta v názvu
+    - definition: "1"
+    - term: Celodenní záznamy, nepočítají se
+    - definition: "1"
+  - button "Zpět" [disabled]
+  - button "Další"
+  - button "Uložit rozpracované" [disabled]
+  - button "Dokončit týden" [disabled]
+  - heading "Marketing" [level=2]
+  - paragraph: "Příštích sedm dní napříč marketingovými kalendáři. Jen ke čtení: každý plán se upravuje ve svém kalendáři."
+  - paragraph:
+    - text: Marketing začíná pon 2. 11.
+    - generic: · za 10 dní · DNESKAi
+  - region "Příprava před spuštěním, termín tento týden":
+    - heading "Příprava před spuštěním, termín tento týden" [level=3]
+    - list:
+      - link "Profile bio, link and three pinned posts (otevře se na nové kartě)":
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=caught-up
+        - text: Profile bio, link and three pinned posts
+        - generic: (otevře se na nové kartě)
+      - generic: Po termínu
+      - generic: Naplánováno
+      - paragraph: čtv 22. 10. · DNESKAi · Vlastník
+      - link "Share images for every edition (otevře se na nové kartě)":
+        - /url: https://github.com/lukaskourilcz/aifirst/issues/99
+        - text: Share images for every edition
+        - generic: (otevře se na nové kartě)
+      - generic: Naplánováno
+      - paragraph: pon 26. 10. · DNESKAi · Agent · lukaskourilcz/aifirst#99
+  - region "pát 23. 10.":
+    - heading "pát 23. 10." [level=3]
+    - list:
+      - link "What the practice queue taught me this week (otevře se na nové kartě)":
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&week=2026-10-19&entry=ds-003
+        - text: What the practice queue taught me this week
+        - generic: (otevře se na nové kartě)
+      - generic: Ve frontě
+      - paragraph: 12:00 · devShark · Threads · Vlákno
+      - link "Five interview questions juniors get wrong (otevře se na nové kartě)":
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&week=2026-10-19&entry=ds-002
+        - text: Five interview questions juniors get wrong
+        - generic: (otevře se na nové kartě)
+      - generic: Koncept
+      - paragraph: 17:30 · devShark · Instagram · Karusel
+  - region "ned 25. 10.":
+    - heading "ned 25. 10." [level=3]
+    - list:
+      - 'link "Screen recording: one bug fixed in 60 seconds (otevře se na nové kartě)"':
+        - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&week=2026-10-19&entry=ds-004
+        - text: "Screen recording: one bug fixed in 60 seconds"
+        - generic: (otevře se na nové kartě)
+      - generic: Naplánováno
+      - paragraph: 18:00 · devShark · Instagram · Reel
+  - link "Otevřít kalendář devShark (otevře se na nové kartě)":
+    - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark
+    - text: Otevřít kalendář devShark
+    - generic: (otevře se na nové kartě)
+  - link "Otevřít kalendář DNESKAi (otevře se na nové kartě)":
+    - /url: https://boardless-ai.vercel.app/admin/calendar?venture=caught-up
+    - text: Otevřít kalendář DNESKAi
+    - generic: (otevře se na nové kartě)
+  - generic: Zkontrolováno v 14:25
+  - button "Znovu zkontrolovat kalendáře" [disabled]
+  - generic: Nasazeno od poslední revize
+  - paragraph: Záznamy changelogu zveřejněné po vaší poslední dokončené revizi.
+  - list:
+    - paragraph: DNESKAi gets a design lab, a smaller workspace and the next phase behind switches
+    - generic: 2026-10-23
+    - list:
+      - listitem: Six design kits and stricter post rules
+      - listitem: A DNESKAi workspace with four tabs
+      - listitem: Topics first, keyword DMs and Reels, all off until switched on
+    - paragraph: IG TIPS meet the marketing calendars
+    - generic: 2026-09-28
+    - list:
+      - listitem: Tips know which plans apply them
+      - listitem: A marketing week in the Work overview
+      - listitem: IG TIPS export by topic
+  - generic: Přihlášky k připomenutí
+  - list:
+    - link "Senior React Engineer · Harbour Systems termín 2026-10-20":
+      - /url: /career
+      - generic: Senior React Engineer · Harbour Systems
+      - generic: termín 2026-10-20
+  - generic: Pipeline příležitostí
+  - list:
+    - link "Acme customer portal Nabídka odeslána":
+      - /url: /opportunities
+      - generic: Acme customer portal
+      - generic: Nabídka odeslána
+  - generic: Nadcházející profesní data
+  - list:
+    - link "Contract renewal 2026-11-04":
+      - /url: /dates
+      - generic: Contract renewal
+      - generic: 2026-11-04
+    - link "Conference CFP 2026-11-17":
+      - /url: /dates
+      - generic: Conference CFP
+      - generic: 2026-11-17
+  - text: Repozitáře projektů
+  - paragraph: Otevři projekt a uvidíš jeho poslední commity a objem kódu.
+  - list:
+    - link "DNESKAi lukaskourilcz/aifirst":
+      - /url: /projects/dneskai
+      - generic: DNESKAi
+      - generic: lukaskourilcz/aifirst
+    - link "own-dashboard lukaskourilcz/own-dashboard":
+      - /url: /projects/own-dashboard
+      - generic: own-dashboard
+      - generic: lukaskourilcz/own-dashboard
+    - link "devShark lukaskourilcz/react-express-app":
+      - /url: /projects/devshark
+      - generic: devShark
+      - generic: lukaskourilcz/react-express-app
+    - link "boardlessAI lukaskourilcz/quorum":
+      - /url: /projects/boardlessai
+      - generic: boardlessAI
+      - generic: lukaskourilcz/quorum
+  - text: Poslední commity napříč projekty
+  - paragraph: Poslední commity z repozitářů tvých aktivních projektů.
+  - paragraph: Načítám poslední commity…
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+  - text: Compiling
+  - generic: .
+  - generic: .
+  - generic: .
+- alert

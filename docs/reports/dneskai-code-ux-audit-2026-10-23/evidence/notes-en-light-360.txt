@@ -1,0 +1,49 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Notes" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - heading "Notes" [level=1]
+  - paragraph: A quiet place for thoughts, prompts, and drafts.
+  - button "Import MD":
+    - text: Import MD
+  - button "New note":
+    - text: New note
+  - button "home"
+  - button "ideas"
+  - button "work"
+  - button "Back":
+  - paragraph: Project ideas
+  - paragraph: Saved 14:25
+  - button "Copy as Markdown":
+  - button "Download as Markdown":
+  - button "Publish to repo":
+  - button "Pin":
+  - button "Delete note":
+  - text: work
+  - button "Remove work":
+  - text: ideas
+  - button "Remove ideas":
+  - button "Add tag":
+    - text: Add tag
+  - textbox "Note content":
+    - paragraph
+    - text: Enter text or type '/' for commands
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "0"
+  - generic: "1"
+  - generic: Issue
+- button "Collapse issues badge":
+- alert

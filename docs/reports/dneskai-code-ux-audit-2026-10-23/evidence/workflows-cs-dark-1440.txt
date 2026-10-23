@@ -1,0 +1,368 @@
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows" [active]:
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Workflows" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - paragraph: Implementaci jsme ověřili 22. října 2026. Toto je průvodce, nikoli živý přehled stavu.
+  - region "Jak spolu oblasti souvisejí":
+    - heading "Jak spolu oblasti souvisejí" [level=2]
+    - figure "Práce pro klienta":
+      - generic: Práce pro klienta
+      - list "Práce pro klienta":
+        - generic: "1"
+        - generic: Příležitost
+        - generic: "2"
+        - generic: Vy ji převedete na projekt
+        - generic: "3"
+        - generic: Projekt a klient
+        - generic: "4"
+        - generic: Vy připravíte fakturu
+      - paragraph: Převod vytvoří propojený projekt a organizaci. Přípravu a odeslání faktury potvrdíte zvlášť.
+    - figure "Denní práce":
+      - generic: Denní práce
+      - list "Denní práce":
+        - generic: "1"
+        - generic: Úkoly a kalendář
+        - generic: "2"
+        - generic: Denní výběr na Domů
+        - generic: "3"
+        - generic: Týdenní plánování v Přehledu práce
+      - paragraph: Domů vybere nejvýše sedm otevřených úkolů. Vy dokončujete úkoly a v Přehledu práce zapisujete cíle na další týden.
+    - figure "Marketing":
+      - generic: Marketing
+      - list "Marketing":
+        - generic: "1"
+        - generic: Platný veřejný podklad
+        - generic: "2"
+        - generic: Návrh a grafika v pilotu
+        - generic: "3"
+        - generic: Vaše schválení přesné verze
+        - generic: "4"
+        - generic: "Plánované publikování: vypnuté"
+      - paragraph: Zkontrolované IG TIPS mohou poradit s formátem. Schválení podkladu ani šablony neschvaluje příspěvek.
+  - region "Vyberte oblast":
+    - heading "Vyberte oblast" [level=2]
+    - region "Denní práce a plánování":
+      - heading "Denní práce a plánování" [level=3]
+      - paragraph: Funguje
+      - paragraph: Vyberte dnešní práci a hlídejte termíny.
+      - term: Vstup
+      - definition: Vaše úkoly, cíle, termíny a připojené Google kalendáře.
+      - term: Váš krok
+      - definition: Dokončujte úkoly, udržujte termíny a dokončete týdenní revizi v Přehledu práce.
+      - term: Co dělá aplikace
+      - definition: Domů vybere denní úkoly; týdenní revize shrne čas z vybraných kalendářů, pokud máte připojený Google.
+      - term: Výsledek
+      - definition: Denní seznam a uložené cíle na další týden.
+      - navigation "Denní práce a plánování":
+        - link "Domů":
+          - /url: /
+          - text: Domů
+        - link "Přehled práce":
+          - /url: /work
+          - text: Přehled práce
+        - link "Úkoly":
+          - /url: /tasks
+          - text: Úkoly
+        - link "Kalendář":
+          - /url: /calendar
+          - text: Kalendář
+        - link "Cíle":
+          - /url: /goals
+          - text: Cíle
+        - link "Termíny":
+          - /url: /dates
+          - text: Termíny
+    - region "Projekty a konkurence":
+      - heading "Projekty a konkurence" [level=3]
+      - paragraph: Funguje
+      - paragraph: Držte práci, náklady a průzkum u příslušného projektu.
+      - term: Vstup
+      - definition: Vaše projekty, propojené repozitáře, úkoly, poznámky, komunikace a záznamy o konkurenci.
+      - term: Váš krok
+      - definition: Otevřete projekt, zapište postup a zkontrolujte starší průzkum konkurence.
+      - term: Co dělá aplikace
+      - definition: Projektový pohled seskupí související záznamy a ukáže evidované náklady a vysvětlená upozornění.
+      - term: Výsledek
+      - definition: Jeden kontext projektu, s vlastními produkty oddělenými od práce pro klienty.
+      - navigation "Projekty a konkurence":
+        - link "Projekty":
+          - /url: /projects
+          - text: Projekty
+        - link "Konkurence":
+          - /url: /competition
+          - text: Konkurence
+    - region "Příležitosti, klienti a Kariéra":
+      - heading "Příležitosti, klienti a Kariéra" [level=3]
+      - paragraph: Funguje
+      - paragraph: Sledujte nabídky klientů a pracovní přihlášky až k dalšímu rozhodnutí.
+      - term: Vstup
+      - definition: Příležitosti z Tugedru, přímého oslovení a doporučení; pracovní nabídky; vaše organizace a přihlášky.
+      - term: Váš krok
+      - definition: Zkontrolujte nové nabídky a rozhodněte o převodu příležitosti nebo odeslání přihlášky.
+      - term: Co dělá aplikace
+      - definition: Potvrzený převod vytvoří propojený projekt a organizaci. Nové nabídky aplikace kontroluje po stisku tlačítka.
+      - term: Výsledek
+      - definition: Propojená práce pro klienta nebo historie přihlášek. Připravené odpovědi stále odesíláte vy.
+      - navigation "Příležitosti, klienti a Kariéra":
+        - link "Příležitosti":
+          - /url: /opportunities
+          - text: Příležitosti
+        - link "Klienti":
+          - /url: /clients
+          - text: Klienti
+        - link "Kariéra":
+          - /url: /career
+          - text: Kariéra
+    - region "Faktury a peníze":
+      - heading "Faktury a peníze" [level=3]
+      - paragraph: Funguje
+      - paragraph: Připravte české faktury a sledujte výdaje projektů.
+      - term: Vstup
+      - definition: Údaje klienta, položky faktur, platby, účty a data obnovy předplatných.
+      - term: Váš krok
+      - definition: Zkontrolujte fakturu a DPH, vystavte či odešlete ji a udržujte platby a obnovy.
+      - term: Co dělá aplikace
+      - definition: Aplikace spočítá součty, platební QR a rozdělení nákladů podle své pevné kurzové tabulky.
+      - term: Výsledek
+      - definition: Faktury a srovnatelné náklady projektů. Bankovní záznamy závisejí na vašem připojení nebo importu.
+      - navigation "Faktury a peníze":
+        - link "Faktury":
+          - /url: /invoices
+          - text: Faktury
+        - link "Přehled peněz":
+          - /url: /money
+          - text: Přehled peněz
+        - link "Účty":
+          - /url: /accounts
+          - text: Účty
+        - link "Transakce":
+          - /url: /transactions
+          - text: Transakce
+        - link "Předplatná":
+          - /url: /subscriptions
+          - text: Předplatná
+        - link "Kategorie":
+          - /url: /categories
+          - text: Kategorie
+    - region "Znalosti, odkazy a IG TIPS":
+      - heading "Znalosti, odkazy a IG TIPS" [level=3]
+      - paragraph: Funguje
+      - paragraph: Uložte užitečné podklady a propojte je s prací, která je potřebuje.
+      - term: Vstup
+      - definition: Vaše poznámky, prompty, nástroje, odkazy a zachycené instagramové tipy.
+      - term: Váš krok
+      - definition: Doplňte kontext, propojte podklady s projekty a před použitím v marketingu zkontrolujte rady k formátu.
+      - term: Co dělá aplikace
+      - definition: Knihovna seskupí záznamy a může doplnit vložený odkaz. Samotné zachycení Saved nespouští placenou analýzu.
+      - term: Výsledek
+      - definition: Použitelné poznámky a zkontrolované rady. Získání posledních Instagram Saved jsme odložili na další session.
+      - navigation "Znalosti, odkazy a IG TIPS":
+        - link "Poznámky":
+          - /url: /notes
+          - text: Poznámky
+        - link "Prompty":
+          - /url: /prompts
+          - text: Prompty
+        - link "Nástroje":
+          - /url: /tools
+          - text: Nástroje
+        - link "Odkazy":
+          - /url: /links
+          - text: Odkazy
+        - link "IG TIPS":
+          - /url: /ig-tips
+          - text: IG TIPS
+    - region "Marketing pro devShark a DNESKAi":
+      - heading "Marketing pro devShark a DNESKAi" [level=3]
+      - paragraph: Pilot / rozpracováno
+      - paragraph: Zkontrolujte přesné návrhy a sledujte jejich plánované zveřejnění.
+      - term: Vstup
+      - definition: Platné otázky devSharku nebo aktivní coding tasky; zadání DNESKAi ze zpravodajských událostí, které vybere placená klasifikace Jev; schválené šablony a rady.
+      - term: Váš krok
+      - definition: "U každého příspěvku zkontrolujte finální text, grafiku, účet a čas: devShark v Marketingu, DNESKAi v Design Labu na kartě „Dnes ke schválení“ projektu DNESKAi. Tam opravte text nebo slidy a přesnou verzi vraťte, vynechte nebo schvalte."
+      - term: Co dělá aplikace
+      - definition: U DNESKAi pětiminutový plánovač v Supabase sbírá zprávy; když placená klasifikace Jev vybere události, připravuje z nich zadání a carousely a po zapnutí publikování zveřejňuje schválené příspěvky. Izolovaný pilot devSharku kontroluje zdroje a zapisuje stav přípravy; jeho plánovaná příprava, publikování a analytika ještě čekají na dokončení a nastavení.
+      - term: Výsledek
+      - definition: Fronta ke schválení a potvrzení po povoleném zveřejnění. Úspěšný krok přípravy textu sám neznamená hotový carousel.
+      - navigation "Marketing pro devShark a DNESKAi":
+        - link "Marketing":
+          - /url: /marketing
+          - text: Marketing
+    - region "Nastavení a integrace":
+      - heading "Nastavení a integrace" [level=3]
+      - paragraph: Funguje
+      - paragraph: Upravte jazyk, vzhled, viditelné sekce a připojení.
+      - term: Vstup
+      - definition: Vaše preference a služby, které se rozhodnete připojit.
+      - term: Váš krok
+      - definition: Připojte potřebnou službu, vyberte kalendáře a před změnou oprávnění zkontrolujte přístup.
+      - term: Co dělá aplikace
+      - definition: Aplikace uloží preference a ukáže stav nastavených integrací.
+      - term: Výsledek
+      - definition: Stejný pracovní prostor ve zvoleném jazyce a vzhledu. Chybějící připojení zůstávají viditelná jako potřebné nastavení.
+      - navigation "Nastavení a integrace":
+        - link "Nastavení":
+          - /url: /settings
+          - text: Nastavení
+  - region "Od podkladu ke zkontrolovanému příspěvku":
+    - heading "Od podkladu ke zkontrolovanému příspěvku" [level=2]
+    - generic: Pilot / rozpracováno
+    - paragraph: Supabase pg_cron volá OwnDashboard každých pět minut a každé volání udělá v každém kroku nejvýše jednu dávku práce. Po 22:00 v Praze sbírá bezplatné zpravodajské feedy. Placená klasifikace Jev pak nové položky ohodnotí a událostmi se stanou jen ty, které vyhodnotí jako relevantní. Ke každé vybrané události plánovač stáhne obrázky ze zdrojů a sestaví zadání; Claude Sonnet pak napíše text a studio DNESKAi, které je součástí OwnDashboardu, ho vykreslí do carouselu. n8n workflows pro DNESKAi jsme vyřadili. Podklady devSharku pro první týden jsou hotové offline; živý import do stagingu čeká na ověření. Týdenní koncepty devSharku zůstávají v n8n uložené jako neaktivní návrhy se zástupným připojením.
+    - 'figure "DNESKAi: denní zprávy"':
+      - generic: "DNESKAi: denní zprávy"
+      - 'list "DNESKAi: denní zprávy"':
+        - generic: "1"
+        - generic: Bezplatné zpravodajské feedy po 22:00 v Praze
+        - generic: "2"
+        - generic: Nejvýše čtyři události podle placené klasifikace Jev
+        - generic: "3"
+        - generic: Zadání, text od Claude Sonnet a carousel ze studia
+        - generic: "4"
+        - generic: Kontrola přesného příspěvku v Design Labu na kartě „Dnes ke schválení“ projektu DNESKAi
+      - paragraph: "Plánovač pokračuje ve večerním sběru po pěti minutách, dokud běh neskončí. Události vybírá jen Jev: tato placená klasifikace relevance a duplicit běží, když jsou zapnuté placené kontroly a souhlas s voláním AI a je nastavené připojení Jev. Bez ní se feedy dál sbírají, ale žádná událost se nevybere a nevznikne žádné zadání ani příspěvek. Každá vybraná událost dostane obrázky ze zdrojů a zadání; po ověření účtu @dneskai i jednu úlohu generování. Ve Zdrojích projektu DNESKAi uvidíte kontroly, částečné výsledky, chyby a evidované náklady. Sběr (s obrázky a zadáními) i generování mají vlastní vypínač a po vypnutí se bez nákladů přeskočí. Publikování se nepřeskakuje: dokud je vypnuté, běží jen jako zkušební běh bez zápisu do Meta. Sběr běží každou noc od 21. října 2026; živé publikování zůstane vypnuté až do dne pilotu. Když Jev téma pozastaví nebo zadání propadne, nabídnou Zdroje projektu DNESKAi obnovu. „Zopakovat zařazení“ u zadání, jehož zařazení selhalo, funguje už teď. „Znovu zkontrolovat“ u pozastavené zprávy, „Přesunout na další volný čas“ a „Uvolnit zprávy“ zůstávají vypnuté, dokud nepoužijete připravené migrace a nezapnete jejich přepínače. Podle vašeho rozhodnutí z 20. října 2026 jsou články DNESKAi pozastavené a připravují se jen social příspěvky. Výběr události nic neschvaluje: schvalujete přesný vykreslený příspěvek."
+    - 'figure "devShark: nedělní příprava"':
+      - generic: "devShark: nedělní příprava"
+      - 'list "devShark: nedělní příprava"':
+        - generic: "1"
+        - generic: Platná otázka nebo aktivní veřejný coding task
+        - generic: "2"
+        - generic: Kontrola aktuální platnosti
+        - generic: "3"
+        - generic: Příprava příštích sedmi dnů
+        - generic: "4"
+        - generic: Majitel zkontroluje každý přesný příspěvek
+      - paragraph: "Nedělní příprava pokrývá sedm dnů: každý den jeden příspěvek do Instagram feedu, dva příspěvky na Threads a tři Stories. Hotové offline podklady prvního týdne ještě potřebují ověřený živý import do stagingu a vaše schválení přesných verzí. Vzdálenější termíny zůstávají v backlogu."
+    - figure "Společná příprava a schválení":
+      - generic: Společná příprava a schválení
+      - list "Společná příprava a schválení":
+        - generic: "1"
+        - generic: Zkontrolované rady z knihovny, pokud je máme
+        - generic: "2"
+        - generic: Text přes Claude / LangChain a Humanizer
+        - generic: "3"
+        - generic: "devShark: schválené rozvržení z Claude Design; DNESKAi: sada Editorial ze studia v OwnDashboardu"
+        - generic: "4"
+        - generic: Finální náhled v Marketingu, u DNESKAi v Design Labu
+      - paragraph: "Znalosti radí s formátem a postupem; nenahrazují důkazy o zdroji. V Design Labu můžete u slidu změnit text, kredit, alternativní text, obrázky, typ a variantu, nebo vložit slide s nepoužitým obrázkem z citovaného zdroje. Studio vykreslí každý změněný slide jako neuložený náhled za 0 $: bez volání modelu a bez uloženého souboru. Schválit můžete jen uloženou verzi a každé uložení potřebuje nové schválení. Vykreslit zatím umíme jen sadu Editorial; další čtyři sady čekají na svůj návrh. Offline podklady prvního týdne používají deterministické renderování bez dalšího volání modelu. LangSmith pomáhá dohledat chyby placené přípravy z redigovaných záznamů."
+    - figure "Po schválení":
+      - generic: Po schválení
+      - list "Po schválení":
+        - generic: "1"
+        - generic: Čekání na schválený termín
+        - generic: "2"
+        - generic: Kontrola zdroje, účtu a přesné verze
+        - generic: "3"
+        - generic: "Publikování přes Meta: vypnuté"
+        - generic: "4"
+        - generic: Potvrzení a týdenní vyhodnocení
+      - paragraph: U DNESKAi plánovač zveřejní schválený příspěvek v jeho termínu, jen přesně schválenou verzi a jen při zapnutém publikování; do té doby každý termín projde zkušebním během bez zápisu do Meta. Když publikace uvízne dřív, než Instagram dostane požadavek na zveřejnění, vrátí ji akce „Vzdát a zařadit znovu“ v Chybách a nákladech do fronty se stejným schválením i obrázky; tato akce zůstává vypnutá, dokud nepoužijete připravenou migraci a nezapnete její přepínač. devShark zatím nemá aktivní plán publikování. Instagramová analytika potřebuje další schválený přístup a Threads vlastní připojení.
+    - paragraph: Placená příprava ve svém limitu tří úloh nevytvořila hotový uložený návrh. Offline podklady příspěvky neschvalují. Další placený pokus potřebuje nový limit schválený majitelem.
+    - paragraph: Týdenní přehled ukazuje zaznamenané výsledky plánovaných termínů za sedm dnů z načteného vzorku. Dosah, uložení, sdílení ani odpovědi jsme zatím nezměřili; chybějící údaj neznamená nulový zájem. Před úpravou dalšího nedělního plánu porovnejte naměřené výsledky stejně starých příspěvků; malé vzorky neurčují vítězný formát.
+    - paragraph: "Čeká na nastavení: Instagram Insights · Threads"
+  - region "Další krok":
+    - heading "Další krok" [level=2]
+    - paragraph: V Marketingu zkontrolujte stav návrhů a schválení devSharku; příspěvky DNESKAi najdete v Design Labu na kartě „Dnes ke schválení“ projektu DNESKAi a akce obnovy v jeho Zdrojích. Připojení řešte v Nastavení. Tato stránka workflow nespouští ani nedělá rozhodnutí.
+    - link "Marketing":
+      - /url: /marketing
+      - text: Marketing
+    - link "Nastavení":
+      - /url: /settings
+      - text: Nastavení
+    - link "Ověření a zbývající práce":
+      - /url: https://github.com/lukaskourilcz/own-dashboard/issues/102
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

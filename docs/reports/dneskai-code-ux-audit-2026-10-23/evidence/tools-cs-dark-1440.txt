@@ -1,0 +1,219 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje" [active]:
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Nástroje" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Přidat nástroj":
+    - text: Přidat nástroj
+  - status: 3 nástroje
+  - textbox "Filtrovat nástroje"
+  - combobox "Filtrovat podle projektu":
+    - generic: Všechny projekty
+  - region "Používá se 2 nástroje":
+    - heading "Používá se 2 nástroje" [level=2]:
+      - text: Používá se
+      - generic: 2 nástroje
+    - list:
+      - img "Zdarma i placené tarify"
+      - heading "Supabase" [level=3]
+      - generic: DATABASE
+      - paragraph: Postgres database, Auth and row-level security.
+      - paragraph: Používá se v
+      - 'list "Používá se v: Supabase"':
+        - text: own-dashboard
+        - generic: — Stores every record behind own-only RLS.
+      - paragraph: Uvedeno také v repozitářích projektů own-dashboard, devShark
+      - 'link "Otevřít odkaz: Supabase"':
+        - /url: https://supabase.com
+      - 'button "Zobrazit v odkazech: Supabase"':
+      - 'button "Upravit: Supabase"':
+      - 'button "Označit jako vyřazený: Supabase"':
+        - text: Označit jako vyřazený
+      - img "Zdarma i placené tarify"
+      - heading "Vercel" [level=3]
+      - generic: HOSTING
+      - paragraph: Builds and hosts the web apps with preview deployments.
+      - paragraph: Používá se v
+      - 'list "Používá se v: Vercel"':
+        - text: devShark
+        - generic: — Hosts the React client and the twelve API handlers.
+        - text: DNESKAi
+        - generic: — Hosts the static magazine.
+      - paragraph: Uvedeno také v repozitářích projektů own-dashboard, boardlessAI
+      - 'link "Otevřít odkaz: Vercel"':
+        - /url: https://vercel.com
+      - 'button "Zobrazit v odkazech: Vercel"':
+      - 'button "Upravit: Vercel"':
+      - 'button "Označit jako vyřazený: Vercel"':
+        - text: Označit jako vyřazený
+  - region "Zkušební 1 nástroj":
+    - heading "Zkušební 1 nástroj" [level=2]:
+      - text: Zkušební
+      - generic: 1 nástroj
+    - list:
+      - img "Zdarma i placené tarify"
+      - heading "Figma" [level=3]
+      - generic: DESIGN
+      - generic: 120,00 Kč/měs.
+      - paragraph: Screen designs and design-system components.
+      - paragraph: Používá se v
+      - paragraph: Zatím není propojený s projektem.
+      - 'link "Otevřít odkaz: Figma"':
+        - /url: https://www.figma.com
+      - 'button "Zobrazit v odkazech: Figma"':
+      - 'button "Upravit: Figma"':
+      - 'button "Označit jako vyřazený: Figma"':
+        - text: Označit jako vyřazený
+  - region "Zjištěno z repozitářů 8 nástrojů":
+    - heading "Zjištěno z repozitářů 8 nástrojů" [level=2]:
+      - text: Zjištěno z repozitářů
+      - generic: 8 nástrojů
+    - paragraph: "Načteno z about-project.md každého aktivního projektu (Tech stack a Third-party libraries), případně ze závislostí v package.json, když soubor nic neuvádí. Nic se neukládá: zdrojem zůstávají repozitáře."
+    - generic: Zkontrolováno v 14:25
+    - button "Znovu zkontrolovat repozitáře" [disabled]
+    - 'generic "Repozitáře: načteno 4 z 9 aktivních projektů"'
+    - list:
+      - heading "Next.js" [level=3]
+      - 'list "Používá se v: Next.js"':
+        - generic: DNESKAi
+        - generic: own-dashboard
+        - generic: boardlessAI
+      - paragraph: The app shell and its API routes
+      - paragraph: Zjištěno automaticky · package.json, about-project.md
+      - generic "Jak ho používají jednotlivé projekty"
+      - heading "React" [level=3]
+      - 'list "Používá se v: React"':
+        - generic: DNESKAi
+        - generic: devShark
+      - paragraph: The learning client
+      - paragraph: Zjištěno automaticky · package.json, about-project.md
+      - heading "Resend" [level=3]
+      - 'list "Používá se v: Resend"':
+        - generic: boardlessAI
+      - paragraph: The daily summary email
+      - paragraph: Zjištěno automaticky · about-project.md
+      - heading "Sentry" [level=3]
+      - 'list "Používá se v: Sentry"':
+        - generic: own-dashboard
+      - paragraph: Error monitoring
+      - paragraph: Zjištěno automaticky · about-project.md
+      - heading "sharp" [level=3]
+      - 'list "Používá se v: sharp"':
+        - generic: DNESKAi
+      - paragraph: Běhová závislost v package.json
+      - paragraph: Zjištěno automaticky · package.json
+      - heading "Stripe" [level=3]
+      - 'list "Používá se v: Stripe"':
+        - generic: devShark
+      - paragraph: Optional support payments
+      - paragraph: Zjištěno automaticky · about-project.md
+      - heading "TanStack Query" [level=3]
+      - 'list "Používá se v: TanStack Query"':
+        - generic: own-dashboard
+      - paragraph: The client-side data cache
+      - paragraph: Zjištěno automaticky · about-project.md
+      - heading "Vite" [level=3]
+      - 'list "Používá se v: Vite"':
+        - generic: devShark
+      - paragraph: Builds the client
+      - paragraph: Zjištěno automaticky · about-project.md
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

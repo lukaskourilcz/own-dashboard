@@ -1,0 +1,172 @@
+{
+  "containers": [
+    {
+      "className": "surface-band p-4 sm:p-5",
+      "height": 152.5,
+      "tag": "SECTION",
+      "text": "Opakované měsíčně2 806,05 KčOpakované ročně: 33 672,56 Kč · Zaplaceno za posledních 12 měsíců: 2 899,53 Kč468,84 Kč měsíčně u 2 předplatných",
+      "width": 1120,
+      "x": 276,
+      "y": 138
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 342,
+      "tag": "DIV",
+      "text": "Měsíční výdaje na vývojZávazky = předplatná aktivní v daném měsíci přepočtená na měsíc. Zaplaceno = faktury a jednorázové nákupy zaznamenané",
+      "width": 1120,
+      "x": 276,
+      "y": 307
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 290,
+      "tag": "DIV",
+      "text": "Podle projektuDNESKAi1 476,74 KčAcme customer portal430,23 Kčown-dashboard430,23 KčDesign Lab348,84 KčNepřiřazeno120,00 Kč",
+      "width": 552,
+      "x": 276,
+      "y": 665
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 290,
+      "tag": "DIV",
+      "text": "Podle dodavateleSupabase581,40 KčVercel465,12 KčMobbin348,84 KčFigma120,00 Kč",
+      "width": 552,
+      "x": 844,
+      "y": 665
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 373.5,
+      "tag": "DIV",
+      "text": "Podle projektuPřiřazené podíly se řídí předplatným; zaplacené faktury dědí stejné rozdělení.ProjektTyp spolupráceMěsíčněRočněJednorázově (12",
+      "width": 1120,
+      "x": 276,
+      "y": 971
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 571.2,
+      "tag": "DIV",
+      "text": "Podle dodavateleČástka převzatá z oznámení o obnovení nebo ze změny ceny je odhad, dokud se neotevře faktura. Ověřte ji v Předplatných; pozd",
+      "width": 1120,
+      "x": 276,
+      "y": 1360
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 280,
+      "tag": "DIV",
+      "text": "Platby za vývoj2026-10-05Vercel Pro + usage invoiceHradí Vercel$65.482026-09-23fal.ai credit top-upboardlessAI$10.002026-09-06Supabase Pro i",
+      "width": 1120,
+      "x": 276,
+      "y": 1947
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Zobrazit v",
+      "width": 80,
+      "x": 342,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Spravovat předplatná",
+      "width": 171.6,
+      "x": 430,
+      "y": 94
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "DNESKAi",
+      "width": 60.1,
+      "x": 289,
+      "y": 1090
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Acme customer portal",
+      "width": 146,
+      "x": 289,
+      "y": 1135
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "own-dashboard",
+      "width": 104.3,
+      "x": 289,
+      "y": 1180
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Design Lab",
+      "width": 73.7,
+      "x": 289,
+      "y": 1225
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "boardlessAI",
+      "width": 77.9,
+      "x": 289,
+      "y": 1270
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Přehled peněz",
+      "width": 100.5,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Finance vývoje",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

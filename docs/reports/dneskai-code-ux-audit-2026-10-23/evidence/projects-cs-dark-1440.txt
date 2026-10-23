@@ -1,0 +1,349 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty" [active]:
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Projekty" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - generic: Zobrazit v
+  - combobox "Zobrazit v":
+    - generic: CZK
+  - button "Přidat projekt":
+    - text: Přidat projekt
+  - generic "Návod pro nový projekt — standardy pro napojení repozitáře na OwnDashboard"
+  - generic: Měsíční náklady podle projektu
+  - application
+  - paragraph: 2 686,05 Kč
+  - paragraph: celkem měsíčně · 9 aktivních projektů
+  - paragraph: 32 232,56 Kč/rok
+  - list:
+    - generic: DNESKAi
+    - generic: 1 476,74 Kč
+    - generic: own-dashboard
+    - generic: 430,23 Kč
+    - generic: Acme customer portal
+    - generic: 430,23 Kč
+    - generic: Design Lab
+    - generic: 348,84 Kč
+  - table:
+    - rowgroup:
+      - row "Přetáhni pro změnu pořadí Projekt Klient Stav Repozitář Měsíční náklady Otevřené úkoly Příští termín Akce":
+        - columnheader "Přetáhni pro změnu pořadí":
+          - generic: Přetáhni pro změnu pořadí
+        - columnheader "Projekt"
+        - columnheader "Klient"
+        - columnheader "Stav"
+        - columnheader "Repozitář"
+        - columnheader "Měsíční náklady"
+        - columnheader "Otevřené úkoly"
+        - columnheader "Příští termín"
+        - columnheader "Akce":
+          - generic: Akce
+    - rowgroup:
+      - row "Přetáhni pro změnu pořadí DNESKAi Daily reader for the AI and technology news that mattered. Aktivní — Pozornost lukaskourilcz/aifirst 1 476,74 Kč 2 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "DNESKAi Daily reader for the AI and technology news that mattered. Aktivní":
+          - link "DNESKAi":
+            - /url: /projects/dneskai
+          - paragraph: Daily reader for the AI and technology news that mattered.
+          - generic: Aktivní
+        - cell "—"
+        - cell "Pozornost":
+          - generic: Pozornost
+        - cell "lukaskourilcz/aifirst":
+          - link "lukaskourilcz/aifirst":
+            - /url: https://github.com/lukaskourilcz/aifirst
+        - cell "1 476,74 Kč"
+        - cell "2"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/dneskai
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "Přetáhni pro změnu pořadí own-dashboard The operating dashboard this tour shows. Aktivní — V pořádku lukaskourilcz/own-dashboard 430,23 Kč 4 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "own-dashboard The operating dashboard this tour shows. Aktivní":
+          - link "own-dashboard":
+            - /url: /projects/own-dashboard
+          - paragraph: The operating dashboard this tour shows.
+          - generic: Aktivní
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "lukaskourilcz/own-dashboard":
+          - link "lukaskourilcz/own-dashboard":
+            - /url: https://github.com/lukaskourilcz/own-dashboard
+        - cell "430,23 Kč"
+        - cell "4"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/own-dashboard
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "Přetáhni pro změnu pořadí devShark Developer-learning product with coding tasks graded on the server. Aktivní — V pořádku lukaskourilcz/react-express-app 0,00 Kč 1 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "devShark Developer-learning product with coding tasks graded on the server. Aktivní":
+          - link "devShark":
+            - /url: /projects/devshark
+          - paragraph: Developer-learning product with coding tasks graded on the server.
+          - generic: Aktivní
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "lukaskourilcz/react-express-app":
+          - link "lukaskourilcz/react-express-app":
+            - /url: https://github.com/lukaskourilcz/react-express-app
+        - cell "0,00 Kč"
+        - cell "1"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/devshark
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "Přetáhni pro změnu pořadí boardlessAI Agent council that runs a small venture portfolio in git. Aktivní — V pořádku lukaskourilcz/quorum 0,00 Kč 0 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "boardlessAI Agent council that runs a small venture portfolio in git. Aktivní":
+          - link "boardlessAI":
+            - /url: /projects/boardlessai
+          - paragraph: Agent council that runs a small venture portfolio in git.
+          - generic: Aktivní
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "lukaskourilcz/quorum":
+          - link "lukaskourilcz/quorum":
+            - /url: https://github.com/lukaskourilcz/quorum
+        - cell "0,00 Kč"
+        - cell "0"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/boardlessai
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "Design Lab Layout renderer for the portfolio magazines' carousels and covers. Aktivní Podsekce — V pořádku — 348,84 Kč 0 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell:
+          - generic: ↳
+        - cell "Design Lab Layout renderer for the portfolio magazines' carousels and covers. Aktivní Podsekce":
+          - link "Design Lab":
+            - /url: /projects/design-lab
+          - paragraph: Layout renderer for the portfolio magazines' carousels and covers.
+          - generic: Aktivní
+          - generic: Podsekce
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "—"
+        - cell "348,84 Kč"
+        - cell "0"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/design-lab
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "GoVIRAL Weekly trend brief for the portfolio's ventures. Aktivní Podsekce — V pořádku — 0,00 Kč 0 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell:
+          - generic: ↳
+        - cell "GoVIRAL Weekly trend brief for the portfolio's ventures. Aktivní Podsekce":
+          - link "GoVIRAL":
+            - /url: /projects/goviral
+          - paragraph: Weekly trend brief for the portfolio's ventures.
+          - generic: Aktivní
+          - generic: Podsekce
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "—"
+        - cell "0,00 Kč"
+        - cell "0"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/goviral
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "Přetáhni pro změnu pořadí Recipe box app Offline recipe collection with weekly shopping lists. Aktivní — V pořádku — 0,00 Kč 0 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "Recipe box app Offline recipe collection with weekly shopping lists. Aktivní":
+          - link "Recipe box app":
+            - /url: /projects/recipe-box
+          - paragraph: Offline recipe collection with weekly shopping lists.
+          - generic: Aktivní
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "—"
+        - cell "0,00 Kč"
+        - cell "0"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/recipe-box
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+    - rowgroup:
+      - row "Freelance":
+        - rowheader "Freelance"
+      - row "Přetáhni pro změnu pořadí Acme customer portal Customer portal for Acme's service team. Aktivní Acme s.r.o. V pořádku — 430,23 Kč 0 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "Acme customer portal Customer portal for Acme's service team. Aktivní":
+          - link "Acme customer portal":
+            - /url: /projects/acme-portal
+          - paragraph: Customer portal for Acme's service team.
+          - generic: Aktivní
+        - cell "Acme s.r.o."
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "—"
+        - cell "430,23 Kč"
+        - cell "0"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/acme-portal
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+      - row "Přetáhni pro změnu pořadí Harbor Bakery website Ordering website for a neighbourhood bakery. Aktivní — V pořádku — 0,00 Kč 0 — Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+        - cell "Přetáhni pro změnu pořadí":
+          - button "Přetáhni pro změnu pořadí":
+        - cell "Harbor Bakery website Ordering website for a neighbourhood bakery. Aktivní":
+          - link "Harbor Bakery website":
+            - /url: /projects/harbor-bakery
+          - paragraph: Ordering website for a neighbourhood bakery.
+          - generic: Aktivní
+        - cell "—"
+        - cell "V pořádku":
+          - generic: V pořádku
+        - cell "—"
+        - cell "0,00 Kč"
+        - cell "0"
+        - cell "—"
+        - cell "Workspace Spravovat provoz Upravit Označit jako neaktivní Smazat projekt":
+          - link "Workspace":
+            - /url: /projects/harbor-bakery
+          - button "Spravovat provoz":
+          - button "Upravit":
+          - button "Označit jako neaktivní":
+          - button "Smazat projekt":
+  - status
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+  - text: Compiling
+  - generic: .
+  - generic: .
+  - generic: .
+- alert

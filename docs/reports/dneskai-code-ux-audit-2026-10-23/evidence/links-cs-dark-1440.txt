@@ -1,0 +1,250 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy" [active]:
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Odkazy" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Kopírovat odkazy do JSON / Markdown"
+  - button "Přidat odkaz":
+    - text: Přidat odkaz
+  - generic "Legenda cen":
+    - generic: Legenda cen
+    - img "Plně zdarma"
+    - text: Plně zdarma
+    - img "Zdarma i placené tarify"
+    - text: Zdarma i placené tarify
+    - img "Pouze placené"
+    - text: Pouze placené
+  - textbox "Hledat odkazy…"
+  - combobox "Kategorie":
+    - generic: Všechny kategorie
+  - combobox "Cena":
+    - generic: Všechny ceny
+  - combobox "Řazení odkazů":
+    - generic: Název A–Z
+  - combobox "Používá projekt":
+    - generic: Všechny projekty
+  - status: 8 z 8 zdrojů
+  - button "Rozbalit vše"
+  - button "Sbalit vše" [disabled]
+  - generic "Správa kategorií"
+  - generic: DESIGN
+  - generic: "2"
+  - 'button "Přejmenovat kategorii: DESIGN"':
+  - 'button "Sloučit kategorii: DESIGN"':
+  - 'button "Smazat kategorii: DESIGN"':
+  - article:
+    - 'button "Zobrazit podrobnosti: Figma"':
+      - generic: Figma
+    - 'link "Otevřít: Figma"':
+      - /url: https://www.figma.com
+      - generic: figma.com
+    - generic: Nástroj
+    - img "Zdarma i placené tarify"
+    - 'button "Upravit: Figma"':
+    - 'button "Smazat odkaz: Figma"':
+  - article:
+    - 'button "Zobrazit podrobnosti: Midjourney"':
+      - generic: Midjourney
+    - 'link "Otevřít: Midjourney"':
+      - /url: https://www.midjourney.com
+      - generic: midjourney.com
+    - img "Pouze placené"
+    - 'button "Upravit: Midjourney"':
+    - 'button "Smazat odkaz: Midjourney"':
+  - generic: SECURITY
+  - generic: "1"
+  - 'button "Přejmenovat kategorii: SECURITY"':
+  - 'button "Sloučit kategorii: SECURITY"':
+  - 'button "Smazat kategorii: SECURITY"':
+  - article:
+    - 'button "Zobrazit podrobnosti: Have I Been Pwned"':
+      - generic: Have I Been Pwned
+    - 'link "Otevřít: Have I Been Pwned"':
+      - /url: https://haveibeenpwned.com
+      - generic: haveibeenpwned.com
+    - img "Plně zdarma"
+    - 'button "Upravit: Have I Been Pwned"':
+    - 'button "Smazat odkaz: Have I Been Pwned"':
+  - generic: IDEAS
+  - generic: "0"
+  - 'button "Přejmenovat kategorii: IDEAS"':
+  - 'button "Sloučit kategorii: IDEAS"':
+  - 'button "Smazat kategorii: IDEAS"':
+  - paragraph: Zatím tu nejsou žádné odkazy.
+  - generic: HOSTING
+  - generic: "1"
+  - 'button "Přejmenovat kategorii: HOSTING"':
+  - 'button "Sloučit kategorii: HOSTING"':
+  - 'button "Smazat kategorii: HOSTING"':
+  - article:
+    - 'button "Zobrazit podrobnosti: Vercel"':
+      - generic: Vercel
+    - 'link "Otevřít: Vercel"':
+      - /url: https://vercel.com
+      - generic: vercel.com
+    - generic: Nástroj
+    - generic: Používá
+    - 'list "Používá: Vercel"':
+      - generic: devShark
+      - generic: DNESKAi
+    - img "Zdarma i placené tarify"
+    - 'button "Upravit: Vercel"':
+    - 'button "Smazat odkaz: Vercel"':
+  - generic: SEO
+  - generic: "2"
+  - 'button "Přejmenovat kategorii: SEO"':
+  - 'button "Sloučit kategorii: SEO"':
+  - 'button "Smazat kategorii: SEO"':
+  - article:
+    - 'button "Zobrazit podrobnosti: Google Search Console"':
+      - generic: Google Search Console
+    - 'link "Otevřít: Google Search Console"':
+      - /url: https://search.google.com/search-console
+      - generic: search.google.com
+    - generic: Používá
+    - 'list "Používá: Google Search Console"':
+      - generic: DNESKAi
+    - img "Plně zdarma"
+    - 'button "Upravit: Google Search Console"':
+    - 'button "Smazat odkaz: Google Search Console"':
+  - article:
+    - 'button "Zobrazit podrobnosti: PageSpeed Insights"':
+      - generic: PageSpeed Insights
+    - 'link "Otevřít: PageSpeed Insights"':
+      - /url: https://pagespeed.web.dev
+      - generic: pagespeed.web.dev
+    - generic: Používá
+    - 'list "Používá: PageSpeed Insights"':
+      - generic: DNESKAi
+    - img "Plně zdarma"
+    - 'button "Upravit: PageSpeed Insights"':
+    - 'button "Smazat odkaz: PageSpeed Insights"':
+  - generic: DATABASE
+  - generic: "1"
+  - 'button "Přejmenovat kategorii: DATABASE"':
+  - 'button "Sloučit kategorii: DATABASE"':
+  - 'button "Smazat kategorii: DATABASE"':
+  - article:
+    - 'button "Zobrazit podrobnosti: Supabase"':
+      - generic: Supabase
+    - 'link "Otevřít: Supabase"':
+      - /url: https://supabase.com
+      - generic: supabase.com
+    - generic: Nástroj
+    - generic: Používá
+    - 'list "Používá: Supabase"':
+      - generic: own-dashboard
+    - img "Zdarma i placené tarify"
+    - 'button "Upravit: Supabase"':
+    - 'button "Smazat odkaz: Supabase"':
+  - generic: Bez kategorie
+  - generic: "1"
+  - article:
+    - 'button "Zobrazit podrobnosti: Hugging Face"':
+      - generic: Hugging Face
+    - 'link "Otevřít: Hugging Face"':
+      - /url: https://huggingface.co
+      - generic: huggingface.co
+    - img "Zdarma i placené tarify"
+    - 'button "Upravit: Hugging Face"':
+    - 'button "Smazat odkaz: Hugging Face"':
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

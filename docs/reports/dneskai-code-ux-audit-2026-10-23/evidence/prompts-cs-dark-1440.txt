@@ -1,0 +1,185 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty" [active]:
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Prompty" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Přidat doporučené":
+    - text: Přidat doporučené
+  - button "Nový prompt":
+    - text: Nový prompt
+  - textbox "Hledat prompty…"
+  - group "Filtrovat podle druhu":
+    - button "Všechny druhy" [pressed]
+    - button "Audit projektu"
+    - button "Analýza projektu"
+    - button "Dokumentace"
+    - button "SEO"
+    - button "Marketing"
+  - region "Audit projektu 1 prompt":
+    - heading "Audit projektu 1 prompt" [level=2]:
+      - button "Audit projektu 1 prompt" [expanded]:
+        - text: Audit projektu
+        - generic: 1 prompt
+    - article:
+      - heading "Code review" [level=3]
+      - 'button "Kopírovat s projektem a odkazy: Code review"':
+      - 'button "Kopírovat s projektem a odkazy: Code review"':
+        - paragraph: Reviews a pull request for correctness, security, and clarity.
+      - text: 1 odkaz
+      - 'button "Upravit: Code review"':
+      - 'button "Smazat prompt: Code review"':
+  - region "Analýza projektu 1 prompt":
+    - heading "Analýza projektu 1 prompt" [level=2]:
+      - button "Analýza projektu 1 prompt" [expanded]:
+        - text: Analýza projektu
+        - generic: 1 prompt
+    - article:
+      - heading "Explain code" [level=3]
+      - 'button "Kopírovat s projektem a odkazy: Explain code"':
+      - 'button "Kopírovat s projektem a odkazy: Explain code"':
+        - paragraph: Explains a function step by step and lists its edge cases.
+      - text: 0 odkazy
+      - 'button "Upravit: Explain code"':
+      - 'button "Smazat prompt: Explain code"':
+  - region "Dokumentace 1 prompt":
+    - heading "Dokumentace 1 prompt" [level=2]:
+      - button "Dokumentace 1 prompt" [expanded]:
+        - text: Dokumentace
+        - generic: 1 prompt
+    - article:
+      - heading "Commit message" [level=3]
+      - 'button "Kopírovat s projektem a odkazy: Commit message"':
+      - 'button "Kopírovat s projektem a odkazy: Commit message"':
+        - paragraph: Writes a conventional-commit message from the staged diff.
+      - text: 0 odkazy
+      - 'button "Upravit: Commit message"':
+      - 'button "Smazat prompt: Commit message"':
+  - region "SEO 1 prompt":
+    - heading "SEO 1 prompt" [level=2]:
+      - button "SEO 1 prompt" [expanded]:
+        - text: SEO
+        - generic: 1 prompt
+    - article:
+      - heading "SEO check" [level=3]
+      - generic: Veřejný
+      - 'button "Kopírovat s projektem a odkazy: SEO check"':
+      - 'button "Kopírovat s projektem a odkazy: SEO check"':
+        - paragraph: Checks indexing, metadata, structured data and Core Web Vitals.
+      - text: 1 odkaz
+      - generic: · DNESKAi
+      - 'button "Upravit: SEO check"':
+      - 'button "Smazat prompt: SEO check"':
+  - region "Marketing 1 prompt":
+    - heading "Marketing 1 prompt" [level=2]:
+      - button "Marketing 1 prompt" [expanded]:
+        - text: Marketing
+        - generic: 1 prompt
+    - article:
+      - heading "Launch announcement" [level=3]
+      - generic: Veřejný
+      - 'button "Kopírovat s projektem a odkazy: Launch announcement"':
+      - 'button "Kopírovat s projektem a odkazy: Launch announcement"':
+        - paragraph: Writes a short, factual launch post for each channel.
+      - text: 0 odkazy
+      - 'button "Upravit: Launch announcement"':
+      - 'button "Smazat prompt: Launch announcement"':
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

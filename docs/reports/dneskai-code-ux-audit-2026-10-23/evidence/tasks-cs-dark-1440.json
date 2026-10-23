@@ -1,0 +1,641 @@
+{
+  "containers": [
+    {
+      "className": "flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-secondary px-3 py-2",
+      "height": 50,
+      "tag": "DIV",
+      "text": "DůležitostVše1+2+3+4+5ČasVše≤15m≤1h≤4hKategorieVšeProVšeJáAI",
+      "width": 1120,
+      "x": 276,
+      "y": 142
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 162.5,
+      "tag": "DIV",
+      "text": "GLOBÁLNÍ1 úkolReview the weekly operating plan6Játermín dnes",
+      "width": 552,
+      "x": 276,
+      "y": 208
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Review the weekly operating plan6Játermín dnes",
+      "width": 526,
+      "x": 289,
+      "y": 266
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 162.5,
+      "tag": "DIV",
+      "text": "devShark1 úkolGenerate real app icons with Recraft5vygenerováno 17. říjzbývá 1 den",
+      "width": 552,
+      "x": 276,
+      "y": 387
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Generate real app icons with Recraft5vygenerováno 17. říjzbývá 1 den",
+      "width": 526,
+      "x": 289,
+      "y": 445
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 262,
+      "tag": "DIV",
+      "text": "DNESKAi2 úkolyVerify project deployment4Jázbývá 1 denReview the ingestion retry policy3Jázbývají 4 dny",
+      "width": 552,
+      "x": 276,
+      "y": 565
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Verify project deployment4Jázbývá 1 den",
+      "width": 526,
+      "x": 289,
+      "y": 623
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Review the ingestion retry policy3Jázbývají 4 dny",
+      "width": 526,
+      "x": 289,
+      "y": 723
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 461,
+      "tag": "DIV",
+      "text": "own-dashboard4 úkolyAdd UPSTASH_REDIS_REST_URL in Vercel3vygenerováno 21. říjzbývá 5 dníReview dashboard accessibility report2Jázbývají 3 dn",
+      "width": 552,
+      "x": 844,
+      "y": 208
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Add UPSTASH_REDIS_REST_URL in Vercel3vygenerováno 21. říjzbývá 5 dní",
+      "width": 526,
+      "x": 857,
+      "y": 266
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Review dashboard accessibility report2Jázbývají 3 dny",
+      "width": 526,
+      "x": 857,
+      "y": 366
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Document the release migration2Jázbývá 5 dní",
+      "width": 526,
+      "x": 857,
+      "y": 465
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Verify integration reconnect states1Jázbývá 6 dní",
+      "width": 526,
+      "x": 857,
+      "y": 565
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mb-4 inline-block w-full break-inside-avoid overflow-hidden p-0 align-top",
+      "height": 361.5,
+      "tag": "DIV",
+      "text": "Ruční úkoly3 úkolySubmit Q2 invoice4Játermín dnesReply to landlord3Já1 d po termínuBuy running shoesJázbývají 2 dny",
+      "width": 552,
+      "x": 844,
+      "y": 685
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Submit Q2 invoice4Játermín dnes",
+      "width": 526,
+      "x": 857,
+      "y": 743
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Reply to landlord3Já1 d po termínu",
+      "width": 526,
+      "x": 857,
+      "y": 843
+    },
+    {
+      "className": "group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2",
+      "height": 91.5,
+      "tag": "LI",
+      "text": "Buy running shoesJázbývají 2 dny",
+      "width": 526,
+      "x": 857,
+      "y": 942
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 43.3,
+      "tag": "DIV",
+      "text": "Hotové úkoly1 hotovýZobrazit hotové",
+      "width": 1120,
+      "x": 276,
+      "y": 1079
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit",
+      "width": 93.3,
+      "x": 276,
+      "y": 96
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat úkol",
+      "width": 36,
+      "x": 377,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vše",
+      "width": 41.1,
+      "x": 377,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "1+",
+      "width": 41.7,
+      "x": 418,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "2+",
+      "width": 41.8,
+      "x": 459,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "3+",
+      "width": 41.7,
+      "x": 501,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "4+",
+      "width": 41.8,
+      "x": 543,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "5",
+      "width": 41.7,
+      "x": 585,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vše",
+      "width": 53.6,
+      "x": 694,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "≤15m",
+      "width": 54.9,
+      "x": 748,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "≤1h",
+      "width": 54.6,
+      "x": 803,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "≤4h",
+      "width": 54.6,
+      "x": 857,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Kategorie",
+      "width": 162.2,
+      "x": 1013,
+      "y": 151
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vše",
+      "width": 46.9,
+      "x": 1239,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Já",
+      "width": 47.9,
+      "x": 1286,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "AI",
+      "width": 47.9,
+      "x": 1334,
+      "y": 152
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sbalit",
+      "width": 24,
+      "x": 285,
+      "y": 219
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the weekly operating plan",
+      "width": 16,
+      "x": 302,
+      "y": 277
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 780,
+      "y": 275
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sbalit",
+      "width": 24,
+      "x": 285,
+      "y": 398
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Generate real app icons with Recraft",
+      "width": 16,
+      "x": 302,
+      "y": 456
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 780,
+      "y": 454
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sbalit",
+      "width": 24,
+      "x": 285,
+      "y": 576
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Verify project deployment",
+      "width": 16,
+      "x": 302,
+      "y": 634
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 780,
+      "y": 632
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the ingestion retry policy",
+      "width": 16,
+      "x": 302,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 780,
+      "y": 732
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sbalit",
+      "width": 24,
+      "x": 853,
+      "y": 219
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Add UPSTASH_REDIS_REST_URL in Vercel",
+      "width": 16,
+      "x": 870,
+      "y": 277
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 275
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review dashboard accessibility report",
+      "width": 16,
+      "x": 870,
+      "y": 377
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 375
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Document the release migration",
+      "width": 16,
+      "x": 870,
+      "y": 476
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 474
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Verify integration reconnect states",
+      "width": 16,
+      "x": 870,
+      "y": 576
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 574
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sbalit",
+      "width": 24,
+      "x": 853,
+      "y": 696
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Submit Q2 invoice",
+      "width": 16,
+      "x": 870,
+      "y": 754
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 752
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Reply to landlord",
+      "width": 16,
+      "x": 870,
+      "y": 854
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 852
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Buy running shoes",
+      "width": 16,
+      "x": 870,
+      "y": 953
+    },
+    {
+      "disabled": false,
+      "height": 22,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat",
+      "width": 22,
+      "x": 1348,
+      "y": 951
+    },
+    {
+      "disabled": false,
+      "height": 20.3,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Hotové úkoly1 hotovýZobrazit hotové",
+      "width": 246.1,
+      "x": 293,
+      "y": 1090
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Úkoly",
+      "width": 39.7,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Úkoly",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

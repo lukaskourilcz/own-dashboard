@@ -1,0 +1,357 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Collapse sidebar" [expanded]:
+  - navigation:
+    - button "Home":
+      - generic: Home
+    - paragraph: Work
+    - button "Work overview":
+      - generic: Work overview
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projects":
+      - generic: Projects
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Competition":
+      - generic: Competition
+    - button "Opportunities":
+      - generic: Opportunities
+    - button "Clients":
+      - generic: Clients
+    - button "Career":
+      - generic: Career
+    - button "Invoices":
+      - generic: Invoices
+    - paragraph: Money
+    - button "Money overview":
+      - generic: Money overview
+    - button "Accounts":
+      - generic: Accounts
+    - button "Transactions":
+      - generic: Transactions
+    - button "Subscriptions":
+      - generic: Subscriptions
+    - button "Categories":
+      - generic: Categories
+    - paragraph: Planning
+    - button "Tasks":
+      - generic: Tasks
+    - button "Calendar":
+      - generic: Calendar
+    - button "Goals":
+      - generic: Goals
+    - button "Dates":
+      - generic: Dates
+    - paragraph: Library
+    - button "Notes":
+      - generic: Notes
+    - button "Prompts":
+      - generic: Prompts
+    - button "Tools":
+      - generic: Tools
+    - button "Links":
+      - generic: Links
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Settings":
+  - button "Switch to dark mode":
+  - button "Sign out":
+- main:
+  - heading "Settings" [level=1]
+  - button "Command palette":
+    - generic: Type a command or search…
+    - text: K
+  - text: Preferences
+  - paragraph: Language, appearance, currency, task density, and alerts.
+  - paragraph:
+    - text: Language
+  - button "Čeština"
+  - button "English" [pressed]
+  - paragraph:
+    - text: Appearance
+  - button "Light" [pressed]:
+    - text: Light
+  - button "Dark":
+    - text: Dark
+  - paragraph:
+    - text: Display currency
+  - button "USD"
+  - button "EUR"
+  - button "GBP"
+  - button "CZK" [pressed]
+  - button "CAD"
+  - paragraph:
+    - text: Tasks
+  - button "3"
+  - button "5" [pressed]
+  - button "10"
+  - button "All"
+  - paragraph:
+    - text: Subscription renewal warnings
+  - paragraph: Allow scheduled email warnings for active subscriptions renewing today or in three days.
+  - switch "Subscription renewal warnings" [checked]
+  - text: Active projects
+  - paragraph: Only active GitHub projects appear in navigation, selectors, daily focus, and operational tables. This selection is synchronized between devices.
+  - paragraph: Own or Freelance places an active project above or below the Freelance divider in the sidebar and in Projects.
+  - paragraph: 9 of 9 active
+  - status
+  - list:
+    - paragraph: DNESKAi
+    - paragraph: lukaskourilcz/aifirst
+    - 'group "Own or Freelance: DNESKAi"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "DNESKAi" [checked]
+    - paragraph: own-dashboard
+    - paragraph: lukaskourilcz/own-dashboard
+    - 'group "Own or Freelance: own-dashboard"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "own-dashboard" [checked]
+    - paragraph: devShark
+    - paragraph: lukaskourilcz/react-express-app
+    - 'group "Own or Freelance: devShark"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "devShark" [checked]
+    - paragraph: boardlessAI
+    - paragraph: lukaskourilcz/quorum
+    - 'group "Own or Freelance: boardlessAI"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "boardlessAI" [checked]
+    - paragraph: Design Lab
+    - paragraph: No GitHub repository linked
+    - 'group "Own or Freelance: Design Lab"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "Design Lab" [checked]
+    - paragraph: GoVIRAL
+    - paragraph: No GitHub repository linked
+    - 'group "Own or Freelance: GoVIRAL"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "GoVIRAL" [checked]
+    - paragraph: Recipe box app
+    - paragraph: No GitHub repository linked
+    - 'group "Own or Freelance: Recipe box app"':
+      - button "Own" [pressed]
+      - button "Freelance"
+    - switch "Recipe box app" [checked]
+    - paragraph: Acme customer portal
+    - paragraph: No GitHub repository linked
+    - 'group "Own or Freelance: Acme customer portal"':
+      - button "Own"
+      - button "Freelance" [pressed]
+    - switch "Acme customer portal" [checked]
+    - paragraph: Harbor Bakery website
+    - paragraph: No GitHub repository linked
+    - 'group "Own or Freelance: Harbor Bakery website"':
+      - button "Own"
+      - button "Freelance" [pressed]
+    - switch "Harbor Bakery website" [checked]
+  - text: Project workspace sections
+  - paragraph: Choose which tabs appear inside every project workspace. Overview always stays visible.
+  - list:
+    - generic: Overview
+    - paragraph: Always visible
+    - generic: Tasks
+    - switch "Tasks" [checked]
+    - generic: Activity
+    - switch "Activity" [checked]
+    - generic: Communication
+    - switch "Communication" [checked]
+    - generic: Repository
+    - switch "Repository" [checked]
+    - generic: Finance
+    - switch "Finance" [checked]
+    - generic: Competition
+    - switch "Competition" [checked]
+    - generic: Knowledge
+    - switch "Knowledge" [checked]
+    - generic: Scaling
+    - switch "Scaling" [checked]
+    - generic: Monetization
+    - switch "Monetization" [checked]
+  - paragraph: Only in the DNESKAi project
+  - list "Only in the DNESKAi project":
+    - generic: For review today
+    - switch "For review today (DNESKAi)" [checked]
+    - generic: Calendar
+    - switch "Calendar (DNESKAi)" [checked]
+    - generic: Posts
+    - switch "Posts (DNESKAi)" [checked]
+    - generic: Sources (DNESKAi)
+    - switch "Sources (DNESKAi)" [checked]
+  - generic: Career search
+  - checkbox "Show Czech Career contents"
+  - text: Show Czech Career contents
+  - paragraph: Career focuses on Oslo and work available from Norway. Enable this to also show Czech job boards, companies and earlier Czech applications. Your history stays saved.
+  - text: CV links
+  - paragraph: Google Docs links to your CVs — shown as buttons on the Career page. Paste the share URL; editing the doc keeps the same link.
+  - text: 🇨🇿 Czech CV
+  - textbox "🇨🇿 Czech CV":
+    - /placeholder: https://docs.google.com/document/d/…
+  - text: 🇬🇧 English CV
+  - textbox "🇬🇧 English CV":
+    - /placeholder: https://docs.google.com/document/d/…
+  - text: Navigation sections
+  - paragraph: Toggle which sections appear in navigation and drag to reorder within each group. Home and Inbox stay pinned.
+  - generic: Home
+  - paragraph: Always visible
+  - paragraph: Work
+  - list:
+    - button "Drag to reorder":
+    - generic: Work overview
+    - switch "Work overview" [checked]
+    - button "Drag to reorder":
+    - generic: Marketing
+    - switch "Marketing" [checked]
+    - button "Drag to reorder":
+    - generic: Workflows
+    - switch "Workflows" [checked]
+    - button "Drag to reorder":
+    - generic: Projects
+    - switch "Projects" [checked]
+    - button "Drag to reorder":
+    - generic: Competition
+    - switch "Competition" [checked]
+    - button "Drag to reorder":
+    - generic: Opportunities
+    - switch "Opportunities" [checked]
+    - button "Drag to reorder":
+    - generic: Clients
+    - switch "Clients" [checked]
+    - button "Drag to reorder":
+    - generic: Career
+    - switch "Career" [checked]
+    - button "Drag to reorder":
+    - generic: Invoices
+    - switch "Invoices" [checked]
+  - status
+  - paragraph: Money
+  - list:
+    - button "Drag to reorder":
+    - generic: Money overview
+    - switch "Money overview" [checked]
+    - button "Drag to reorder":
+    - generic: Accounts
+    - switch "Accounts" [checked]
+    - button "Drag to reorder":
+    - generic: Transactions
+    - switch "Transactions" [checked]
+    - button "Drag to reorder":
+    - generic: Subscriptions
+    - switch "Subscriptions" [checked]
+    - button "Drag to reorder":
+    - generic: Categories
+    - switch "Categories" [checked]
+  - status
+  - paragraph: Planning
+  - list:
+    - button "Drag to reorder":
+    - generic: Tasks
+    - switch "Tasks" [checked]
+    - button "Drag to reorder":
+    - generic: Calendar
+    - switch "Calendar" [checked]
+    - button "Drag to reorder":
+    - generic: Goals
+    - switch "Goals" [checked]
+    - button "Drag to reorder":
+    - generic: Dates
+    - switch "Dates" [checked]
+  - status
+  - paragraph: Library
+  - list:
+    - button "Drag to reorder":
+    - generic: Notes
+    - switch "Notes" [checked]
+    - button "Drag to reorder":
+    - generic: Prompts
+    - switch "Prompts" [checked]
+    - button "Drag to reorder":
+    - generic: Tools
+    - switch "Tools" [checked]
+    - button "Drag to reorder":
+    - generic: Links
+    - switch "Links" [checked]
+    - button "Drag to reorder":
+    - generic: IG TIPS
+    - switch "IG TIPS" [checked]
+  - status
+  - button "Reset navigation":
+    - text: Reset navigation
+  - text: Integrations
+  - paragraph: Connection state only. Credentials and provider tokens are never exposed here.
+  - paragraph: Google
+  - generic: …
+  - paragraph: GitHub
+  - generic: …
+  - text: Data & export
+  - paragraph: Download portable JSON. Legacy personal data remains available after its source tables are removed.
+  - link "Full export":
+    - /url: /api/export/full
+    - text: Full export
+  - link "Financial":
+    - /url: /api/export/financial
+    - text: Financial
+  - link "Professional":
+    - /url: /api/export/professional
+    - text: Professional
+  - link "Knowledge":
+    - /url: /api/export/knowledge
+    - text: Knowledge
+  - link "Projects":
+    - /url: /api/export/projects
+    - text: Projects
+  - link "Notes":
+    - /url: /api/export/notes
+    - text: Notes
+  - link "Prompts":
+    - /url: /api/export/prompts
+    - text: Prompts
+  - link "Career":
+    - /url: /api/export/career
+    - text: Career
+  - link "Transactions CSV":
+    - /url: /api/export/financial?format=csv&table=transactions
+    - text: Transactions CSV
+  - link "Legacy archive":
+    - /url: /api/export/legacy
+    - text: Legacy archive
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "0"
+  - generic: "1"
+  - generic: Issue
+- button "Collapse issues badge":
+- alert

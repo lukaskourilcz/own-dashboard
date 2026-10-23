@@ -1,0 +1,66 @@
+{
+  "containers": [
+    {
+      "className": "flex flex-col justify-between border-b border-border px-6 py-8 sm:px-10 sm:py-10 lg:border-b-0 lg:border-r lg:px-14 lg:py-14",
+      "height": 900,
+      "tag": "SECTION",
+      "text": "OwnDashboardSoukromý profesní operační systémVítejte zpětOsobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, pláno",
+      "width": 662.4,
+      "x": 144,
+      "y": 0
+    },
+    {
+      "className": "flex items-center px-6 py-10 sm:px-10 lg:px-14",
+      "height": 900,
+      "tag": "SECTION",
+      "text": "Přihlaste se do svého prostoruSoukromý profesní operační systémPokračovat přes GoogleŽádáme o přístup ke Kalendáři pro vytváření událostí z ",
+      "width": 489.6,
+      "x": 806,
+      "y": 0
+    },
+    {
+      "className": "w-full rounded-lg border border-border bg-surface p-5 shadow-soft sm:p-6",
+      "height": 308.6,
+      "tag": "DIV",
+      "text": "Přihlaste se do svého prostoruSoukromý profesní operační systémPokračovat přes GoogleŽádáme o přístup ke Kalendáři pro vytváření událostí z ",
+      "width": 377.6,
+      "x": 862,
+      "y": 296
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 40,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Pokračovat přes Google",
+      "width": 327.6,
+      "x": 887,
+      "y": 437
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 180,
+      "tag": "H1",
+      "text": "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti.",
+      "width": 549.4,
+      "x": 200,
+      "y": 347
+    },
+    {
+      "height": 28,
+      "tag": "H2",
+      "text": "Přihlaste se do svého prostoru",
+      "width": 327.6,
+      "x": 887,
+      "y": 369
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

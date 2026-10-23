@@ -1,0 +1,274 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card border-l-2 border-l-warning",
+      "height": 1454.5,
+      "tag": "DIV",
+      "text": "Vyžaduje pozornostDNESKAiPozornostProvozní náklady bez evidovaných příjmů",
+      "width": 662.4,
+      "x": 276,
+      "y": 213
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 506.5,
+      "tag": "DIV",
+      "text": "Týdenní plánováníPět krátkých kroků: čas minulého týdne, co jste dokončili, co se přenáší, cíle na příští týden a shrnutí.Krok 1/5 · Čas pod",
+      "width": 441.6,
+      "x": 954,
+      "y": 213
+    },
+    {
+      "className": "space-y-3",
+      "height": 249,
+      "tag": "SECTION",
+      "text": "Čas podle oblastiČas z vybraných kalendářů, rozdělený podle toho, co která událost pojmenovává. Ukládají se jen součty. 2026-10-12Klientská ",
+      "width": 403.6,
+      "x": 973,
+      "y": 352
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 623,
+      "tag": "DIV",
+      "text": "MarketingPříštích sedm dní napříč marketingovými kalendáři. Jen ke čtení: každý plán se upravuje ve svém kalendáři.Marketing začíná pon 2. 1",
+      "width": 441.6,
+      "x": 954,
+      "y": 735
+    },
+    {
+      "className": "space-y-1.5",
+      "height": 155,
+      "tag": "SECTION",
+      "text": "Příprava před spuštěním, termín tento týdenProfile bio, link and three pinned posts (otevře se na nové kartě)Po termínuNaplánovánočtv 22. 10",
+      "width": 403.6,
+      "x": 973,
+      "y": 860
+    },
+    {
+      "className": "",
+      "height": 138,
+      "tag": "SECTION",
+      "text": "pát 23. 10.What the practice queue taught me this week (otevře se na nové kartě)Ve frontě12:00 · devShark · Threads · VláknoFive interview q",
+      "width": 403.6,
+      "x": 973,
+      "y": 1027
+    },
+    {
+      "className": "",
+      "height": 95,
+      "tag": "SECTION",
+      "text": "ned 25. 10.Screen recording: one bug fixed in 60 seconds (otevře se na nové kartě)Naplánováno18:00 · devShark · Instagram · Reel",
+      "width": 403.6,
+      "x": 973,
+      "y": 1177
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 293,
+      "tag": "DIV",
+      "text": "Nasazeno od poslední revizeZáznamy changelogu zveřejněné po vaší poslední dokončené revizi.DNESKAi gets a design lab, a smaller workspace an",
+      "width": 441.6,
+      "x": 954,
+      "y": 1374
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card border-l-2 border-l-warning",
+      "height": 110,
+      "tag": "DIV",
+      "text": "Přihlášky k připomenutíSenior React Engineer · Harbour Systemstermín 2026-10-20",
+      "width": 552,
+      "x": 276,
+      "y": 1683
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 110,
+      "tag": "DIV",
+      "text": "Pipeline příležitostíAcme customer portalNabídka odeslána",
+      "width": 552,
+      "x": 844,
+      "y": 1683
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 155,
+      "tag": "DIV",
+      "text": "Nadcházející profesní dataContract renewal2026-11-04Conference CFP2026-11-17",
+      "width": 552,
+      "x": 276,
+      "y": 1809
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mt-4",
+      "height": 186,
+      "tag": "DIV",
+      "text": "Repozitáře projektůOtevři projekt a uvidíš jeho poslední commity a objem kódu.DNESKAilukaskourilcz/aifirstown-dashboardlukaskourilcz/own-das",
+      "width": 1120,
+      "x": 276,
+      "y": 1980
+    },
+    {
+      "className": "flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 hover:border-border-strong focus-ring",
+      "height": 44,
+      "tag": "A",
+      "text": "DNESKAilukaskourilcz/aifirst",
+      "width": 539,
+      "x": 295,
+      "y": 2057
+    },
+    {
+      "className": "flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 hover:border-border-strong focus-ring",
+      "height": 44,
+      "tag": "A",
+      "text": "own-dashboardlukaskourilcz/own-dashboard",
+      "width": 539,
+      "x": 838,
+      "y": 2057
+    },
+    {
+      "className": "flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 hover:border-border-strong focus-ring",
+      "height": 44,
+      "tag": "A",
+      "text": "devSharklukaskourilcz/react-express-app",
+      "width": 539,
+      "x": 295,
+      "y": 2105
+    },
+    {
+      "className": "flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 hover:border-border-strong focus-ring",
+      "height": 44,
+      "tag": "A",
+      "text": "boardlessAIlukaskourilcz/quorum",
+      "width": 539,
+      "x": 838,
+      "y": 2105
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card mt-4",
+      "height": 114,
+      "tag": "DIV",
+      "text": "Poslední commity napříč projektyPoslední commity z repozitářů tvých aktivních projektů.Načítám poslední commity…",
+      "width": 1120,
+      "x": 276,
+      "y": 2182
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": true,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zpět",
+      "width": 58.9,
+      "x": 973,
+      "y": 630
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Další",
+      "width": 60.3,
+      "x": 1040,
+      "y": 630
+    },
+    {
+      "disabled": true,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Uložit rozpracované",
+      "width": 153.3,
+      "x": 1224,
+      "y": 630
+    },
+    {
+      "disabled": true,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Dokončit týden",
+      "width": 123.5,
+      "x": 973,
+      "y": 670
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Znovu zkontrolovat kalendáře",
+      "width": 196.8,
+      "x": 1180,
+      "y": 1313
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Přehled práce",
+      "width": 97.6,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Přehled práce",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Čas podle oblasti",
+      "width": 403.6,
+      "x": 973,
+      "y": 352
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Příprava před spuštěním, termín tento týden",
+      "width": 403.6,
+      "x": 973,
+      "y": 860
+    },
+    {
+      "height": 21,
+      "tag": "H3",
+      "text": "pát 23. 10.",
+      "width": 403.6,
+      "x": 973,
+      "y": 1027
+    },
+    {
+      "height": 21,
+      "tag": "H3",
+      "text": "ned 25. 10.",
+      "width": 403.6,
+      "x": 973,
+      "y": 1177
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

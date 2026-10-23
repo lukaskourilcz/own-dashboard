@@ -1,0 +1,302 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Projekty" [level=1]:
+    - button "Projekty"
+  - generic: ›
+  - generic: DNESKAi
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - tablist "Projektový prostor":
+    - tab "Dnes ke schválení"
+    - tab "Kalendář"
+    - tab "Příspěvky" [active] [selected]
+    - tab "Zdroje (DNESKAi)"
+  - button "Více":
+  - region "Příspěvky":
+    - heading "Příspěvky" [level=2]
+    - paragraph: Všechny příspěvky a jejich stav. Publikované mají odkaz na Instagram.
+    - button "Obnovit"
+    - paragraph: Náhled s ukázkovými příspěvky. Úpravy překreslí syntetické ukázkové slidy. Nic se nepublikuje ani neukládá.
+    - region "Komentáře s klíčovým slovem za posledních 7 dní":
+      - paragraph: Komentáře s klíčovým slovem za posledních 7 dní
+      - term: "Přečtené komentáře:"
+      - definition: "48"
+      - term: "S klíčovým slovem:"
+      - definition: "17"
+      - term: "Odeslané zprávy:"
+      - definition: "16"
+      - term: "Veřejné odpovědi:"
+      - definition: "16"
+      - term: "Selhalo:"
+      - definition: "1"
+    - group "Zobrazit příspěvky":
+      - button "Vše 11" [pressed]:
+        - text: Vše
+        - generic: "11"
+      - button "Čeká 5":
+        - text: Čeká
+        - generic: "5"
+      - button "Naplánované 2":
+        - text: Naplánované
+        - generic: "2"
+      - button "Publikované 1":
+        - text: Publikované
+        - generic: "1"
+      - button "Chyby 3":
+        - text: Chyby
+        - generic: "3"
+    - list:
+      - 'article "Lokální model na notebooku: Připravuje se"':
+        - generic: Slidy ještě nejsou vykreslené.
+        - paragraph: Lokální model na notebooku
+        - term: "Plán:"
+        - definition:
+          - time: 26/10 17:00
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - 'button "Otevřít v Labu: Lokální model na notebooku"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Co stojí jeden dotaz: Chyba nebo nejasný výsledek"':
+        - generic: Slidy ještě nejsou vykreslené.
+        - paragraph: Co stojí jeden dotaz
+        - term: "Plán:"
+        - definition:
+          - time: 26/10 12:30
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: "Nová verze se uložila, ale slidy se k ní nepřipojily: připojení selhalo nebo vykreslování nestihlo časový limit. Nelze ji schválit."
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: "Otevřete editor a uložte znovu: příspěvek se vykreslí ještě jednou jako nová verze. Samo se nic nevykreslí."
+        - generic "Podrobnosti"
+        - 'button "Otevřít v Labu: Co stojí jeden dotaz"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Schválený příspěvek bez zařazení: Schváleno"':
+        - img "Titulní slide příspěvku „Schválený příspěvek bez zařazení“"
+        - paragraph: Schválený příspěvek bez zařazení
+        - term: "Plán:"
+        - definition:
+          - time: 26/10 08:00
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - generic "Podrobnosti"
+      - 'article "Kdy stačí menší model: Naplánováno"':
+        - img "Titulní slide příspěvku „Kdy stačí menší model“"
+        - paragraph: Kdy stačí menší model
+        - term: "Plán:"
+        - definition:
+          - time: 25/10 12:30
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - generic "Podrobnosti"
+      - 'article "Tři zkratky pro terminál: Vráceno"':
+        - img "Titulní slide příspěvku „Tři zkratky pro terminál“"
+        - paragraph: Tři zkratky pro terminál
+        - term: "Plán:"
+        - definition:
+          - time: 25/10 08:00
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - 'button "Otevřít v Labu: Tři zkratky pro terminál"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Proč verzovat prompty: Chyba nebo nejasný výsledek"':
+        - generic: Slidy ještě nejsou vykreslené.
+        - paragraph: Proč verzovat prompty
+        - term: "Plán:"
+        - definition:
+          - time: 24/10 17:00
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: Text se nevejde a byl by oříznutý. Zkraťte ho.
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: Upravte příspěvek a uložte ho; nová verze se před schválením zkontroluje znovu.
+        - generic "Podrobnosti"
+        - 'button "Otevřít v Labu: Proč verzovat prompty"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Tip dne: kontext místo proseb: Čeká na kontrolu"':
+        - 'img "Titulní slide příspěvku „Tip dne: kontext místo proseb“"'
+        - paragraph: "Tip dne: kontext místo proseb"
+        - term: "Plán:"
+        - definition:
+          - time: 24/10 12:30
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - 'button "Otevřít v Labu: Tip dne: kontext místo proseb"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Benchmark není žebříček: Čeká na kontrolu"':
+        - img "Titulní slide příspěvku „Benchmark není žebříček“"
+        - paragraph: Benchmark není žebříček
+        - term: "Plán:"
+        - definition:
+          - time: 24/10 08:00
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - 'button "Otevřít v Labu: Benchmark není žebříček"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Malý model bez připojení: Čeká na kontrolu"':
+        - img "Titulní slide příspěvku „Malý model bez připojení“"
+        - paragraph: Malý model bez připojení
+        - term: "Plán:"
+        - definition:
+          - time: 23/10 14:08
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - 'button "Otevřít v Labu: Malý model bez připojení"': Otevřít v Labu
+        - generic "Podrobnosti"
+      - 'article "Kdy ověřit odpověď modelu: Chyba nebo nejasný výsledek"':
+        - img "Titulní slide příspěvku „Kdy ověřit odpověď modelu“"
+        - paragraph: Kdy ověřit odpověď modelu
+        - term: "Plán:"
+        - definition:
+          - time: 23/10 08:00
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: Instagram neodpověděl včas; příspěvek možná existuje, možná ne.
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: Zkontrolujte příspěvek na Instagramu. Další kontrola výsledek porovná; nic se nepublikuje dvakrát.
+        - generic "Podrobnosti"
+        - generic "Podrobnosti"
+      - 'article "Pět otázek před nasazením asistenta: Publikováno"':
+        - img "Titulní slide příspěvku „Pět otázek před nasazením asistenta“"
+        - paragraph: Pět otázek před nasazením asistenta
+        - term: "Publikováno:"
+        - definition:
+          - time: 22/10 17:01
+        - term: "Účet:"
+        - definition: "@dneskai"
+        - 'link "Otevřít na Instagramu: Pět otázek před nasazením asistenta"':
+          - /url: https://www.example.com/instagram/dneskai/ukazka-1
+          - text: Otevřít na Instagramu
+        - region "Komentáře s klíčovým slovem":
+          - paragraph: Komentáře s klíčovým slovem
+          - term: "Přečtené komentáře:"
+          - definition: "48"
+          - term: "S klíčovým slovem:"
+          - definition: "17"
+          - term: "Odeslané zprávy:"
+          - definition: "16"
+          - term: "Veřejné odpovědi:"
+          - definition: "16"
+          - term: "Selhalo:"
+          - definition: "1"
+          - term: "Naposledy zkontrolováno:"
+          - definition:
+            - time: 23/10 07:55
+          - list:
+            - generic: "1 odpověď:"
+            - paragraph:
+              - generic: "Co se stalo:"
+              - text: Komentujícímu nelze poslat zprávu.
+            - paragraph:
+              - generic: "Co bude dál:"
+              - text: Není potřeba nic dělat.
+            - generic "Podrobnosti"
+        - paragraph:
+          - text: Přidat hudbu v aplikaci
+        - paragraph: Instagram přes API hudbu ke zveřejněnému karuselu přidat neumí. V aplikaci Instagram otevřete příspěvek, klepněte na ⋯ → Upravit a přidejte hudbu; trvá to asi 30 sekund. Použijte skladbu z hudební knihovny.
+        - generic: "Navržená skladba:"
+        - generic: Quiet Circuit – Sample artist
+        - button "Zkopírovat název skladby Quiet Circuit – Sample artist":
+        - status
+        - generic "Podrobnosti"
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

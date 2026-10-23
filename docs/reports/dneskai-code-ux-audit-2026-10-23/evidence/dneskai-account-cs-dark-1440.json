@@ -1,0 +1,383 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 46,
+      "tag": "DIV",
+      "text": "Dnes ke schváleníKalendářPříspěvkyZdroje (DNESKAi)",
+      "width": 1120,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "className": "min-w-0 space-y-5",
+      "height": 2049,
+      "tag": "SECTION",
+      "text": "PříspěvkyVšechny příspěvky a jejich stav. Publikované mají odkaz na Instagram.ObnovitNáhled s ukázkovými příspěvky. Úpravy překreslí synteti",
+      "width": 1120,
+      "x": 276,
+      "y": 154
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface p-3 text-xs",
+      "height": 62,
+      "tag": "SECTION",
+      "text": "Komentáře s klíčovým slovem za posledních 7 dníPřečtené komentáře: 48S klíčovým slovem: 17Odeslané zprávy: 16Veřejné odpovědi: 16Selhalo: 1",
+      "width": 1120,
+      "x": 276,
+      "y": 242
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-neutral border-border",
+      "height": 126,
+      "tag": "ARTICLE",
+      "text": "Slidy ještě nejsou vykreslené.Lokální model na notebookuPlán: 26/10 17:00Účet: @dneskaiOtevřít v LabuPodrobnostiRevize: d0e5ca10-0000-4000-8",
+      "width": 1120,
+      "x": 276,
+      "y": 372
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-risk border-risk/25",
+      "height": 194,
+      "tag": "ARTICLE",
+      "text": "Slidy ještě nejsou vykreslené.Co stojí jeden dotazPlán: 26/10 12:30Účet: @dneskaiCo se stalo: Nová verze se uložila, ale slidy se k ní nepři",
+      "width": 1120,
+      "x": 276,
+      "y": 506
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-information border-information/25",
+      "height": 115.5,
+      "tag": "ARTICLE",
+      "text": "Schválený příspěvek bez zařazeníPlán: 26/10 08:00Účet: @dneskaiPodrobnostiRevize: d0e5ca10-0000-4000-8000-000000000008Otisk obsahu: e251d930",
+      "width": 1120,
+      "x": 276,
+      "y": 708
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-information border-information/25",
+      "height": 115.5,
+      "tag": "ARTICLE",
+      "text": "Kdy stačí menší modelPlán: 25/10 12:30Účet: @dneskaiPodrobnostiPublikace: d0e5ca10-0000-4000-8000-000000000105Revize: d0e5ca10-0000-4000-800",
+      "width": 1120,
+      "x": 276,
+      "y": 832
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-warning border-warning/25",
+      "height": 126,
+      "tag": "ARTICLE",
+      "text": "Tři zkratky pro terminálPlán: 25/10 08:00Účet: @dneskaiOtevřít v LabuPodrobnostiRevize: d0e5ca10-0000-4000-8000-000000000004Otisk obsahu: f1",
+      "width": 1120,
+      "x": 276,
+      "y": 955
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-risk border-risk/25",
+      "height": 194,
+      "tag": "ARTICLE",
+      "text": "Slidy ještě nejsou vykreslené.Proč verzovat promptyPlán: 24/10 17:00Účet: @dneskaiCo se stalo: Text se nevejde a byl by oříznutý. Zkraťte ho",
+      "width": 1120,
+      "x": 276,
+      "y": 1089
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-warning border-warning/25",
+      "height": 126,
+      "tag": "ARTICLE",
+      "text": "Tip dne: kontext místo prosebPlán: 24/10 12:30Účet: @dneskaiOtevřít v LabuPodrobnostiRevize: d0e5ca10-0000-4000-8000-000000000002Otisk obsah",
+      "width": 1120,
+      "x": 276,
+      "y": 1291
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-warning border-warning/25",
+      "height": 126,
+      "tag": "ARTICLE",
+      "text": "Benchmark není žebříčekPlán: 24/10 08:00Účet: @dneskaiOtevřít v LabuPodrobnostiRevize: d0e5ca10-0000-4000-8000-000000000001Otisk obsahu: fc4",
+      "width": 1120,
+      "x": 276,
+      "y": 1425
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-warning border-warning/25",
+      "height": 126,
+      "tag": "ARTICLE",
+      "text": "Malý model bez připojeníPlán: 23/10 14:08Účet: @dneskaiOtevřít v LabuPodrobnostiRevize: d0e5ca10-0000-4000-8000-000000000011Otisk obsahu: d7",
+      "width": 1120,
+      "x": 276,
+      "y": 1559
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-risk border-risk/25",
+      "height": 162,
+      "tag": "ARTICLE",
+      "text": "Kdy ověřit odpověď modeluPlán: 23/10 08:00Účet: @dneskaiCo se stalo: Instagram neodpověděl včas; příspěvek možná existuje, možná ne.Co bude ",
+      "width": 1120,
+      "x": 276,
+      "y": 1693
+    },
+    {
+      "className": "grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-lg border p-3 sm:grid-cols-[4.5rem_minmax(0,1fr)] dneskai-tint-success border-success/25",
+      "height": 340,
+      "tag": "ARTICLE",
+      "text": "Pět otázek před nasazením asistentaPublikováno: 22/10 17:01Účet: @dneskaiOtevřít na InstagramuKomentáře s klíčovým slovemPřečtené komentáře:",
+      "width": 1120,
+      "x": 276,
+      "y": 1863
+    },
+    {
+      "className": "space-y-1 text-xs",
+      "height": 104,
+      "tag": "SECTION",
+      "text": "Komentáře s klíčovým slovemPřečtené komentáře: 48S klíčovým slovem: 17Odeslané zprávy: 16Veřejné odpovědi: 16Selhalo: 1Naposledy zkontrolová",
+      "width": 1010,
+      "x": 373,
+      "y": 1948
+    },
+    {
+      "className": "min-w-0 space-y-1 rounded-md border border-border p-2 text-xs",
+      "height": 106,
+      "tag": "DIV",
+      "text": "Přidat hudbu v aplikaciInstagram přes API hudbu ke zveřejněnému karuselu přidat neumí. V aplikaci Instagram otevřete příspěvek, klepněte na ",
+      "width": 1010,
+      "x": 373,
+      "y": 2056
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Dnes ke schválení",
+      "width": 127.4,
+      "x": 281,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Kalendář",
+      "width": 75.2,
+      "x": 412,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Příspěvky",
+      "width": 80.7,
+      "x": 492,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Zdroje (DNESKAi)",
+      "width": 126.5,
+      "x": 576,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Více",
+      "width": 36,
+      "x": 1355,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit",
+      "width": 78.6,
+      "x": 1317,
+      "y": 154
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vše 11",
+      "width": 66.6,
+      "x": 276,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Čeká 5",
+      "width": 66.7,
+      "x": 347,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Naplánované 2",
+      "width": 112.5,
+      "x": 417,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Publikované 1",
+      "width": 107.3,
+      "x": 534,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Chyby 3",
+      "width": 74.2,
+      "x": 645,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Lokální model na notebooku",
+      "width": 107.4,
+      "x": 373,
+      "y": 429
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Co stojí jeden dotaz",
+      "width": 107.4,
+      "x": 373,
+      "y": 631
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Tři zkratky pro terminál",
+      "width": 107.4,
+      "x": 373,
+      "y": 1012
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Proč verzovat prompty",
+      "width": 107.4,
+      "x": 373,
+      "y": 1214
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Tip dne: kontext místo proseb",
+      "width": 107.4,
+      "x": 373,
+      "y": 1348
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Benchmark není žebříček",
+      "width": 107.4,
+      "x": 373,
+      "y": 1482
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Otevřít v Labu: Malý model bez připojení",
+      "width": 107.4,
+      "x": 373,
+      "y": 1616
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zkopírovat název skladby Quiet Circuit – Sample artist",
+      "width": 32,
+      "x": 665,
+      "y": 2121
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Příspěvky",
+      "width": 448.7,
+      "x": 276,
+      "y": 154
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

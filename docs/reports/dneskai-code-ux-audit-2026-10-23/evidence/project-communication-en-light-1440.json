@@ -1,0 +1,276 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 42,
+      "tag": "DIV",
+      "text": "OverviewTasks & NotesActivityCommunicationRepositoryFinanceCompetitionKnowledgeScalingMonetization",
+      "width": 1120,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 639.9,
+      "tag": "DIV",
+      "text": "Add communicationDate and timeChannelEmailEmailCallMeetingChatOtherDirectionOutboundInboundOutboundInternal noteContactSubjectSummaryNext ac",
+      "width": 352.3,
+      "x": 276,
+      "y": 150
+    },
+    {
+      "className": "space-y-3",
+      "height": 573.9,
+      "tag": "FORM",
+      "text": "Date and timeChannelEmailEmailCallMeetingChatOtherDirectionOutboundInboundOutboundInternal noteContactSubjectSummaryNext actionAdd communica",
+      "width": 314.3,
+      "x": 295,
+      "y": 199
+    },
+    {
+      "className": "flex min-h-[88px] w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:min-h-[72px] md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+      "height": 110.9,
+      "tag": "TEXTAREA",
+      "text": "",
+      "width": 314.3,
+      "x": 295,
+      "y": 553
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 639.9,
+      "tag": "DIV",
+      "text": "Client communicationClient communicationNo related records.",
+      "width": 751.7,
+      "x": 644,
+      "y": 150
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 57.9,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Command palette",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Overview",
+      "width": 77.9,
+      "x": 281,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Tasks & Notes",
+      "width": 106.1,
+      "x": 363,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Activity",
+      "width": 67.7,
+      "x": 473,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Communication",
+      "width": 114.4,
+      "x": 545,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Repository",
+      "width": 86.3,
+      "x": 663,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Finance",
+      "width": 69,
+      "x": 753,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Competition",
+      "width": 94.8,
+      "x": 826,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Knowledge",
+      "width": 88,
+      "x": 925,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Scaling",
+      "width": 66.4,
+      "x": 1017,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Monetization",
+      "width": 99.1,
+      "x": 1088,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 314.3,
+      "x": 295,
+      "y": 220
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Channel",
+      "width": 314.3,
+      "x": 295,
+      "y": 285
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "EmailCallMeetingChatOther",
+      "width": 1,
+      "x": 294,
+      "y": 322
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Direction",
+      "width": 314.3,
+      "x": 295,
+      "y": 352
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "InboundOutboundInternal note",
+      "width": 1,
+      "x": 294,
+      "y": 389
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 314.3,
+      "x": 295,
+      "y": 423
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 314.3,
+      "x": 295,
+      "y": 488
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Follow-up or commitment…",
+      "width": 314.3,
+      "x": 295,
+      "y": 697
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add communication",
+      "width": 175.1,
+      "x": 295,
+      "y": 741
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projects",
+      "width": 57.9,
+      "x": 272,
+      "y": 32
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

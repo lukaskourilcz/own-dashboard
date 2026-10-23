@@ -1,0 +1,549 @@
+{
+  "containers": [
+    {
+      "className": "",
+      "height": 188,
+      "tag": "SECTION",
+      "text": "Audit projektu1 promptCode reviewReviews a pull request for correctness, security, and clarity.1 odkaz",
+      "width": 1120,
+      "x": 276,
+      "y": 222
+    },
+    {
+      "className": "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong",
+      "height": 139,
+      "tag": "ARTICLE",
+      "text": "Code reviewReviews a pull request for correctness, security, and clarity.1 odkaz",
+      "width": 365.3,
+      "x": 276,
+      "y": 271
+    },
+    {
+      "className": "",
+      "height": 188,
+      "tag": "SECTION",
+      "text": "Analýza projektu1 promptExplain codeExplains a function step by step and lists its edge cases.0 odkazy",
+      "width": 1120,
+      "x": 276,
+      "y": 434
+    },
+    {
+      "className": "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong",
+      "height": 139,
+      "tag": "ARTICLE",
+      "text": "Explain codeExplains a function step by step and lists its edge cases.0 odkazy",
+      "width": 365.3,
+      "x": 276,
+      "y": 483
+    },
+    {
+      "className": "",
+      "height": 188,
+      "tag": "SECTION",
+      "text": "Dokumentace1 promptCommit messageWrites a conventional-commit message from the staged diff.0 odkazy",
+      "width": 1120,
+      "x": 276,
+      "y": 646
+    },
+    {
+      "className": "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong",
+      "height": 139,
+      "tag": "ARTICLE",
+      "text": "Commit messageWrites a conventional-commit message from the staged diff.0 odkazy",
+      "width": 365.3,
+      "x": 276,
+      "y": 695
+    },
+    {
+      "className": "",
+      "height": 188,
+      "tag": "SECTION",
+      "text": "SEO1 promptSEO checkVeřejnýChecks indexing, metadata, structured data and Core Web Vitals.1 odkaz· DNESKAi",
+      "width": 1120,
+      "x": 276,
+      "y": 858
+    },
+    {
+      "className": "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong",
+      "height": 139,
+      "tag": "ARTICLE",
+      "text": "SEO checkVeřejnýChecks indexing, metadata, structured data and Core Web Vitals.1 odkaz· DNESKAi",
+      "width": 365.3,
+      "x": 276,
+      "y": 907
+    },
+    {
+      "className": "",
+      "height": 188,
+      "tag": "SECTION",
+      "text": "Marketing1 promptLaunch announcementVeřejnýWrites a short, factual launch post for each channel.0 odkazy",
+      "width": 1120,
+      "x": 276,
+      "y": 1070
+    },
+    {
+      "className": "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong",
+      "height": 139,
+      "tag": "ARTICLE",
+      "text": "Launch announcementVeřejnýWrites a short, factual launch post for each channel.0 odkazy",
+      "width": 365.3,
+      "x": 276,
+      "y": 1119
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat doporučené",
+      "width": 155.1,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Nový prompt",
+      "width": 122.7,
+      "x": 439,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Hledat prompty…",
+      "width": 384,
+      "x": 276,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Všechny druhy",
+      "width": 107.4,
+      "x": 276,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Audit projektu",
+      "width": 103.5,
+      "x": 389,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Analýza projektu",
+      "width": 118.7,
+      "x": 499,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Dokumentace",
+      "width": 101.9,
+      "x": 624,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "SEO",
+      "width": 46.4,
+      "x": 732,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Marketing",
+      "width": 79.9,
+      "x": 784,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Audit projektu1 prompt",
+      "width": 174.6,
+      "x": 276,
+      "y": 222
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Code review",
+      "width": 24,
+      "x": 604,
+      "y": 280
+    },
+    {
+      "disabled": false,
+      "height": 64,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Code review",
+      "width": 363.3,
+      "x": 277,
+      "y": 313
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Code review",
+      "width": 24,
+      "x": 578,
+      "y": 377
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat prompt: Code review",
+      "width": 24,
+      "x": 604,
+      "y": 377
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Analýza projektu1 prompt",
+      "width": 192.4,
+      "x": 276,
+      "y": 434
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Explain code",
+      "width": 24,
+      "x": 604,
+      "y": 492
+    },
+    {
+      "disabled": false,
+      "height": 64,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Explain code",
+      "width": 363.3,
+      "x": 277,
+      "y": 525
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Explain code",
+      "width": 24,
+      "x": 578,
+      "y": 589
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat prompt: Explain code",
+      "width": 24,
+      "x": 604,
+      "y": 589
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Dokumentace1 prompt",
+      "width": 172.7,
+      "x": 276,
+      "y": 646
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Commit message",
+      "width": 24,
+      "x": 604,
+      "y": 704
+    },
+    {
+      "disabled": false,
+      "height": 64,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Commit message",
+      "width": 363.3,
+      "x": 277,
+      "y": 737
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Commit message",
+      "width": 24,
+      "x": 578,
+      "y": 801
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat prompt: Commit message",
+      "width": 24,
+      "x": 604,
+      "y": 801
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "SEO1 prompt",
+      "width": 107.5,
+      "x": 276,
+      "y": 858
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: SEO check",
+      "width": 24,
+      "x": 604,
+      "y": 916
+    },
+    {
+      "disabled": false,
+      "height": 64,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: SEO check",
+      "width": 363.3,
+      "x": 277,
+      "y": 949
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: SEO check",
+      "width": 24,
+      "x": 578,
+      "y": 1013
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat prompt: SEO check",
+      "width": 24,
+      "x": 604,
+      "y": 1013
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Marketing1 prompt",
+      "width": 147.1,
+      "x": 276,
+      "y": 1070
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Launch announcement",
+      "width": 24,
+      "x": 604,
+      "y": 1128
+    },
+    {
+      "disabled": false,
+      "height": 64,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat s projektem a odkazy: Launch announcement",
+      "width": 363.3,
+      "x": 277,
+      "y": 1161
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Launch announcement",
+      "width": 24,
+      "x": 578,
+      "y": 1225
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat prompt: Launch announcement",
+      "width": 24,
+      "x": 604,
+      "y": 1225
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Prompty",
+      "width": 60.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Prompty",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 37,
+      "tag": "H2",
+      "text": "Audit projektu1 prompt",
+      "width": 1120,
+      "x": 276,
+      "y": 222
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Code review",
+      "width": 307.3,
+      "x": 289,
+      "y": 284
+    },
+    {
+      "height": 37,
+      "tag": "H2",
+      "text": "Analýza projektu1 prompt",
+      "width": 1120,
+      "x": 276,
+      "y": 434
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Explain code",
+      "width": 307.3,
+      "x": 289,
+      "y": 496
+    },
+    {
+      "height": 37,
+      "tag": "H2",
+      "text": "Dokumentace1 prompt",
+      "width": 1120,
+      "x": 276,
+      "y": 646
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Commit message",
+      "width": 307.3,
+      "x": 289,
+      "y": 708
+    },
+    {
+      "height": 37,
+      "tag": "H2",
+      "text": "SEO1 prompt",
+      "width": 1120,
+      "x": 276,
+      "y": 858
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "SEO check",
+      "width": 242.5,
+      "x": 289,
+      "y": 920
+    },
+    {
+      "height": 37,
+      "tag": "H2",
+      "text": "Marketing1 prompt",
+      "width": 1120,
+      "x": 276,
+      "y": 1070
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Launch announcement",
+      "width": 242.5,
+      "x": 289,
+      "y": 1132
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

@@ -1,0 +1,364 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení" [active]:
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Nastavení" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - text: Předvolby
+  - paragraph: Jazyk, vzhled, měna, hustota úkolů a upozornění.
+  - paragraph:
+    - text: Jazyk
+  - button "Čeština" [pressed]
+  - button "English"
+  - paragraph:
+    - text: Vzhled
+  - button "Světlý":
+    - text: Světlý
+  - button "Tmavý" [pressed]:
+    - text: Tmavý
+  - paragraph:
+    - text: Zobrazená měna
+  - button "USD"
+  - button "EUR"
+  - button "GBP"
+  - button "CZK" [pressed]
+  - button "CAD"
+  - paragraph:
+    - text: Úkoly
+  - button "3"
+  - button "5" [pressed]
+  - button "10"
+  - button "Vše"
+  - paragraph:
+    - text: Upozornění na obnovení předplatného
+  - paragraph: Povolte plánované e-mailové upozornění pro aktivní předplatná obnovovaná dnes nebo za tři dny.
+  - switch "Upozornění na obnovení předplatného" [checked]
+  - text: Aktivní projekty
+  - paragraph: V navigaci, selektorech, denním výběru a provozních tabulkách se zobrazují jen aktivní GitHub projekty. Výběr se synchronizuje mezi zařízeními.
+  - paragraph: Vlastní nebo Freelance určuje, jestli se aktivní projekt v postranním panelu a v Projektech zobrazí nad oddělovačem Freelance, nebo pod ním.
+  - paragraph: 9 z 9 aktivních
+  - status
+  - list:
+    - paragraph: DNESKAi
+    - paragraph: lukaskourilcz/aifirst
+    - 'group "Vlastní nebo Freelance: DNESKAi"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "DNESKAi" [checked]
+    - paragraph: own-dashboard
+    - paragraph: lukaskourilcz/own-dashboard
+    - 'group "Vlastní nebo Freelance: own-dashboard"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "own-dashboard" [checked]
+    - paragraph: devShark
+    - paragraph: lukaskourilcz/react-express-app
+    - 'group "Vlastní nebo Freelance: devShark"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "devShark" [checked]
+    - paragraph: boardlessAI
+    - paragraph: lukaskourilcz/quorum
+    - 'group "Vlastní nebo Freelance: boardlessAI"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "boardlessAI" [checked]
+    - paragraph: Design Lab
+    - paragraph: Bez napojeného GitHub repozitáře
+    - 'group "Vlastní nebo Freelance: Design Lab"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "Design Lab" [checked]
+    - paragraph: GoVIRAL
+    - paragraph: Bez napojeného GitHub repozitáře
+    - 'group "Vlastní nebo Freelance: GoVIRAL"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "GoVIRAL" [checked]
+    - paragraph: Recipe box app
+    - paragraph: Bez napojeného GitHub repozitáře
+    - 'group "Vlastní nebo Freelance: Recipe box app"':
+      - button "Vlastní" [pressed]
+      - button "Freelance"
+    - switch "Recipe box app" [checked]
+    - paragraph: Acme customer portal
+    - paragraph: Bez napojeného GitHub repozitáře
+    - 'group "Vlastní nebo Freelance: Acme customer portal"':
+      - button "Vlastní"
+      - button "Freelance" [pressed]
+    - switch "Acme customer portal" [checked]
+    - paragraph: Harbor Bakery website
+    - paragraph: Bez napojeného GitHub repozitáře
+    - 'group "Vlastní nebo Freelance: Harbor Bakery website"':
+      - button "Vlastní"
+      - button "Freelance" [pressed]
+    - switch "Harbor Bakery website" [checked]
+  - text: Sekce projektového workspace
+  - paragraph: Vyber, které záložky se zobrazí uvnitř každého projektu. Přehled zůstává vždy viditelný.
+  - list:
+    - generic: Přehled
+    - paragraph: Vždy viditelné
+    - generic: Úkoly
+    - switch "Úkoly" [checked]
+    - generic: Aktivita
+    - switch "Aktivita" [checked]
+    - generic: Komunikace
+    - switch "Komunikace" [checked]
+    - generic: Repozitář
+    - switch "Repozitář" [checked]
+    - generic: Finance
+    - switch "Finance" [checked]
+    - generic: Konkurence
+    - switch "Konkurence" [checked]
+    - generic: Znalosti
+    - switch "Znalosti" [checked]
+    - generic: Škálování
+    - switch "Škálování" [checked]
+    - generic: Monetizace
+    - switch "Monetizace" [checked]
+  - paragraph: Jen v projektu DNESKAi
+  - list "Jen v projektu DNESKAi":
+    - generic: Dnes ke schválení
+    - switch "Dnes ke schválení (DNESKAi)" [checked]
+    - generic: Kalendář
+    - switch "Kalendář (DNESKAi)" [checked]
+    - generic: Příspěvky
+    - switch "Příspěvky (DNESKAi)" [checked]
+    - generic: Zdroje (DNESKAi)
+    - switch "Zdroje (DNESKAi)" [checked]
+  - generic: Hledání práce
+  - checkbox "Zobrazit český obsah Kariéry"
+  - text: Zobrazit český obsah Kariéry
+  - paragraph: Kariéra se zaměřuje na Oslo a práci dostupnou z Norska. Zaškrtnutím zobrazíte také české portály, firmy a dřívější české přihlášky. Historie zůstává uložená.
+  - text: Odkazy na CV
+  - paragraph: Odkazy na tvoje životopisy v Google Docs — zobrazí se jako tlačítka na stránce Práce. Vlož sdílecí URL; úpravy dokumentu odkaz nemění.
+  - text: 🇨🇿 České CV
+  - textbox "🇨🇿 České CV":
+    - /placeholder: https://docs.google.com/document/d/…
+  - text: 🇬🇧 Anglické CV
+  - textbox "🇬🇧 Anglické CV":
+    - /placeholder: https://docs.google.com/document/d/…
+  - text: Sekce navigace
+  - paragraph: Zapněte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Inbox zůstávají připnuté.
+  - generic: Domů
+  - paragraph: Vždy viditelné
+  - paragraph: Práce
+  - list:
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Přehled práce
+    - switch "Přehled práce" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Marketing
+    - switch "Marketing" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Workflows
+    - switch "Workflows" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Projekty
+    - switch "Projekty" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Konkurence
+    - switch "Konkurence" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Příležitosti
+    - switch "Příležitosti" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Klienti
+    - switch "Klienti" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Kariéra
+    - switch "Kariéra" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Faktury
+    - switch "Faktury" [checked]
+  - status
+  - paragraph: Peníze
+  - list:
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Přehled peněz
+    - switch "Přehled peněz" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Účty
+    - switch "Účty" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Transakce
+    - switch "Transakce" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Předplatná
+    - switch "Předplatná" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Kategorie
+    - switch "Kategorie" [checked]
+  - status
+  - paragraph: Plánování
+  - list:
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Úkoly
+    - switch "Úkoly" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Kalendář
+    - switch "Kalendář" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Cíle
+    - switch "Cíle" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Termíny
+    - switch "Termíny" [checked]
+  - status
+  - paragraph: Knihovna
+  - list:
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Poznámky
+    - switch "Poznámky" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Prompty
+    - switch "Prompty" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Nástroje
+    - switch "Nástroje" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: Odkazy
+    - switch "Odkazy" [checked]
+    - button "Přetáhni pro změnu pořadí":
+    - generic: IG TIPS
+    - switch "IG TIPS" [checked]
+  - status
+  - button "Obnovit navigaci":
+    - text: Obnovit navigaci
+  - text: Integrace
+  - paragraph: Zobrazuje se pouze stav připojení. Přihlašovací údaje ani tokeny poskytovatelů se zde nikdy neodhalují.
+  - paragraph: Google
+  - generic: …
+  - paragraph: GitHub
+  - generic: …
+  - text: Data a export
+  - paragraph: Stáhněte přenositelný JSON. Starší osobní data zůstávají dostupná i po odstranění zdrojových tabulek.
+  - link "Úplný export":
+    - /url: /api/export/full
+    - text: Úplný export
+  - link "Finance":
+    - /url: /api/export/financial
+    - text: Finance
+  - link "Profesní":
+    - /url: /api/export/professional
+    - text: Profesní
+  - link "Znalosti":
+    - /url: /api/export/knowledge
+    - text: Znalosti
+  - link "Projekty":
+    - /url: /api/export/projects
+    - text: Projekty
+  - link "Poznámky":
+    - /url: /api/export/notes
+    - text: Poznámky
+  - link "Prompty":
+    - /url: /api/export/prompts
+    - text: Prompty
+  - link "Kariéra":
+    - /url: /api/export/career
+    - text: Kariéra
+  - link "Transakce CSV":
+    - /url: /api/export/financial?format=csv&table=transactions
+    - text: Transakce CSV
+  - link "Archiv starších dat":
+    - /url: /api/export/legacy
+    - text: Archiv starších dat
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

@@ -1,0 +1,159 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 42,
+      "tag": "DIV",
+      "text": "OverviewTasks & NotesActivityCommunicationRepositoryFinanceCompetitionKnowledgeScalingMonetization",
+      "width": 1120,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 87,
+      "tag": "DIV",
+      "text": "Repositorylukaskourilcz/own-dashboard",
+      "width": 1120,
+      "x": 276,
+      "y": 150
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 57.9,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Command palette",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Overview",
+      "width": 77.9,
+      "x": 281,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Tasks & Notes",
+      "width": 106.1,
+      "x": 363,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Activity",
+      "width": 67.7,
+      "x": 473,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Communication",
+      "width": 114.4,
+      "x": 545,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Repository",
+      "width": 86.3,
+      "x": 663,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Finance",
+      "width": 69,
+      "x": 753,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Competition",
+      "width": 94.8,
+      "x": 826,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Knowledge",
+      "width": 88,
+      "x": 925,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Scaling",
+      "width": 66.4,
+      "x": 1017,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Monetization",
+      "width": 99.1,
+      "x": 1088,
+      "y": 97
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projects",
+      "width": 57.9,
+      "x": 272,
+      "y": 32
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

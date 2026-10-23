@@ -1,0 +1,416 @@
+{
+  "containers": [
+    {
+      "className": "flex h-full w-full cursor-copy items-start gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 pr-7 text-left shadow-soft transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring",
+      "height": 48.3,
+      "tag": "BUTTON",
+      "text": "sudo docker compose up -d seaweedfs-s3",
+      "width": 274,
+      "x": 276,
+      "y": 235
+    },
+    {
+      "className": "flex h-full w-full cursor-copy items-start gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 pr-7 text-left shadow-soft transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring",
+      "height": 48.3,
+      "tag": "BUTTON",
+      "text": "git push -u origin HEAD",
+      "width": 274,
+      "x": 558,
+      "y": 235
+    },
+    {
+      "className": "flex h-full w-full cursor-copy items-start gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 pr-7 text-left shadow-soft transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring",
+      "height": 48.3,
+      "tag": "BUTTON",
+      "text": "npm run dev",
+      "width": 274,
+      "x": 840,
+      "y": 235
+    },
+    {
+      "className": "flex h-full w-full cursor-copy items-start gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 pr-7 text-left shadow-soft transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring",
+      "height": 48.3,
+      "tag": "BUTTON",
+      "text": "kubectl get pods -A",
+      "width": 274,
+      "x": 1122,
+      "y": 235
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 139.3,
+      "tag": "DIV",
+      "text": "Git scriptsAdd rowCommandDescriptiongit fetch originDownload new commits from the remote without touching your files.git pull --rebaseFetch,",
+      "width": 552,
+      "x": 276,
+      "y": 315
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 139.3,
+      "tag": "DIV",
+      "text": "Essential shortcuts (translated)Add rowActionWindowsMac keyboardCommand PaletteCtrl + Shift + PCmd + Shift + PComment LineCtrl + K  Ctrl + C",
+      "width": 552,
+      "x": 844,
+      "y": 315
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 162.8,
+      "tag": "DIV",
+      "text": "Key substitutionsFollowing a Windows VS Code tutorial? Press these on your Mac keyboard instead.Add rowWindowsMac keyboardCtrlCommand (Cmd ⌘",
+      "width": 552,
+      "x": 276,
+      "y": 470
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Command palette",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add shortcut",
+      "width": 123.1,
+      "x": 276,
+      "y": 120
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Search shortcuts…",
+      "width": 384,
+      "x": 276,
+      "y": 187
+    },
+    {
+      "disabled": false,
+      "height": 48.3,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Click to copy: sudo docker compose up -d seaweedfs-s3",
+      "width": 274,
+      "x": 276,
+      "y": 235
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 20,
+      "x": 504,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete shortcut",
+      "width": 20,
+      "x": 526,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 48.3,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Click to copy: git push -u origin HEAD",
+      "width": 274,
+      "x": 558,
+      "y": 235
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 20,
+      "x": 786,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete shortcut",
+      "width": 20,
+      "x": 808,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 48.3,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Click to copy: npm run dev",
+      "width": 274,
+      "x": 840,
+      "y": 235
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 20,
+      "x": 1068,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete shortcut",
+      "width": 20,
+      "x": 1090,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 48.3,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Click to copy: kubectl get pods -A",
+      "width": 274,
+      "x": 1122,
+      "y": 235
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 20,
+      "x": 1350,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete shortcut",
+      "width": 20,
+      "x": 1372,
+      "y": 239
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add row",
+      "width": 93.5,
+      "x": 722,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 24,
+      "x": 769,
+      "y": 392
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 24,
+      "x": 795,
+      "y": 392
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 24,
+      "x": 769,
+      "y": 425
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 24,
+      "x": 795,
+      "y": 425
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add row",
+      "width": 93.5,
+      "x": 1290,
+      "y": 324
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 24,
+      "x": 1337,
+      "y": 392
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 24,
+      "x": 1363,
+      "y": 392
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 24,
+      "x": 1337,
+      "y": 425
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 24,
+      "x": 1363,
+      "y": 425
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add row",
+      "width": 93.5,
+      "x": 722,
+      "y": 479
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 24,
+      "x": 769,
+      "y": 571
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 24,
+      "x": 795,
+      "y": 571
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit",
+      "width": 24,
+      "x": 769,
+      "y": 604
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete",
+      "width": 24,
+      "x": 795,
+      "y": 604
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "References",
+      "width": 79.4,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "References",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 16.5,
+      "tag": "H3",
+      "text": "Git scripts",
+      "width": 76.4,
+      "x": 289,
+      "y": 324
+    },
+    {
+      "height": 16.5,
+      "tag": "H3",
+      "text": "Essential shortcuts (translated)",
+      "width": 238.9,
+      "x": 857,
+      "y": 324
+    },
+    {
+      "height": 16.5,
+      "tag": "H3",
+      "text": "Key substitutions",
+      "width": 424.5,
+      "x": 289,
+      "y": 479
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

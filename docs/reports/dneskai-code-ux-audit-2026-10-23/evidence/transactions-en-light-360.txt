@@ -1,0 +1,248 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Transactions" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - heading "Money" [level=1]
+  - paragraph: Accounts, transactions, and trends.
+  - paragraph: Net worth
+  - paragraph: 200 250,00 Kč
+  - paragraph: across 2 accounts
+  - paragraph: This month
+  - generic: Income
+  - paragraph: 117 030,00 Kč
+  - generic: Expense
+  - paragraph: 21 352,79 Kč
+  - generic: Net
+  - paragraph: 95 677,21 Kč
+  - heading "Cost overview" [level=2]
+  - button "Monthly" [pressed]
+  - button "Yearly"
+  - heading "All costs" [level=3]
+  - generic: 3 279,05 Kč/mo
+  - generic: 3 279,05 Kč
+  - list:
+    - generic: Development
+    - generic: 1 515,35 Kč
+    - generic: Projects
+    - generic: 1 290,70 Kč
+    - generic: Entertainment
+    - generic: 448,00 Kč
+    - generic: Infrastructure
+    - generic: 25,00 Kč
+  - heading "Projects" [level=3]
+  - generic: 1 290,70 Kč/mo
+  - generic: 1 290,70 Kč
+  - list:
+    - generic: DNESKAi
+    - generic: 1 290,70 Kč
+  - heading "Subscriptions" [level=3]
+  - generic: 1 988,35 Kč/mo
+  - generic: 1 988,35 Kč
+  - list:
+    - generic: Development
+    - generic: 1 515,35 Kč
+    - generic: Entertainment
+    - generic: 448,00 Kč
+    - generic: Infrastructure
+    - generic: 25,00 Kč
+  - paragraph: Supabase
+  - paragraph: Development · Essential
+  - paragraph: next 2026-11-04 · in 12d
+  - generic: 581,40 Kč/mo
+  - paragraph: Vercel
+  - paragraph: Development · Essential
+  - paragraph: next 2026-11-04 · in 12d
+  - generic: 465,12 Kč/mo
+  - paragraph: iCloud+
+  - paragraph: Infrastructure · Essential
+  - paragraph: next 2026-11-12 · in 20d
+  - generic: 25,00 Kč/mo
+  - paragraph: Mobbin
+  - paragraph: Development · Useful
+  - paragraph: next 2027-01-01 · in 70d
+  - generic: 348,84 Kč/mo
+  - paragraph: Figma
+  - paragraph: Development · Useful
+  - paragraph: next 2027-02-20 · in 120d
+  - generic: 120,00 Kč/mo
+  - paragraph: Netflix
+  - paragraph: Entertainment · Optional
+  - paragraph: next 2026-10-31 · in 8d
+  - generic: 279,00 Kč/mo
+  - paragraph: Spotify
+  - paragraph: Entertainment · Optional
+  - paragraph: next 2026-10-26 · in 3d
+  - generic: 169,00 Kč/mo
+  - text: Statement import and bank sync
+  - paragraph: Import a CSV statement or refresh an existing bank connection.
+  - generic: Import from CSV
+  - paragraph: Export a statement from internet banking (CSV) and drop it here.
+  - button "Choose CSV file"
+  - text: Unmatched payments
+  - paragraph: Incoming payments that quote no open invoice, or quote one for a different amount.
+  - button "Match now":
+    - text: Match now
+  - paragraph: 4 payments left over · Payments are matched on a schedule; this button runs the same check now.
+  - list:
+    - paragraph: 62 000,00 KčJune
+    - paragraph:
+      - generic: 2026-10-18
+      - generic: "VS: no symbol"
+      - generic: No variable symbol
+    - combobox "Link to invoice — 62 000,00 Kč, 2026-10-18":
+    - button "Link — 62 000,00 Kč, 2026-10-18" [disabled]: Link
+    - paragraph: 38 030,00 KčPlatba VS 2026001
+    - paragraph:
+      - generic: 2026-10-21
+      - generic: "VS: 2026001"
+      - generic: Amount doesn't match
+    - combobox "Link to invoice — 38 030,00 Kč, 2026-10-21":
+      - generic: 2026001 — 38 115,00 Kč
+    - button "Link — 38 030,00 Kč, 2026-10-21": Link
+    - paragraph: 12 000,00 KčÚhrada VS 2025044
+    - paragraph:
+      - generic: 2026-10-22
+      - generic: "VS: 2025044"
+      - generic: No invoice with that symbol
+    - combobox "Link to invoice — 12 000,00 Kč, 2026-10-22":
+    - button "Link — 12 000,00 Kč, 2026-10-22" [disabled]: Link
+    - paragraph: 5 000,00 Kč—
+    - paragraph:
+      - generic: 2026-10-23
+      - generic: "VS: no symbol"
+      - generic: No variable symbol
+    - combobox "Link to invoice — 5 000,00 Kč, 2026-10-23":
+    - button "Link — 5 000,00 Kč, 2026-10-23" [disabled]: Link
+  - text: Transaction rules
+  - paragraph: Conditions that file a transaction automatically on every sync and import.
+  - button "New rule":
+    - text: New rule
+  - text: Accounts
+  - list:
+    - paragraph: Checking
+    - paragraph: CZK
+    - generic: 48 250,00 Kč
+    - button "Edit":
+    - button "Delete":
+    - paragraph: Savings
+    - paragraph: CZK
+    - generic: 152 000,00 Kč
+    - button "Edit":
+    - button "Delete":
+  - textbox "Account name"
+  - spinbutton "Balance": "0"
+  - combobox "CCY":
+    - generic: USD
+  - combobox
+  - button "Add account":
+    - text: Add account
+  - generic: Last 6 months
+  - generic: Add transaction
+  - button "Expense":
+    - text: Expense
+  - button "Income":
+    - text: Income
+  - text: Amount
+  - spinbutton "Amount"
+  - text: CCY
+  - combobox "CCY":
+    - generic: USD
+  - combobox
+  - text: Category
+  - combobox "Category":
+    - generic: No category
+  - combobox
+  - button "Manage categories":
+  - text: Date
+  - textbox "Date": 2026-10-23
+  - text: Account
+  - combobox "Account":
+    - generic: — None —
+  - combobox
+  - text: Project
+  - combobox "Project":
+    - generic: — None —
+  - combobox
+  - text: Note
+  - textbox "Note":
+    - /placeholder: Optional
+  - button "Add":
+    - text: Add
+  - generic: This month by category
+  - list:
+    - generic: Rent
+    - generic: 14 500,00 Kč
+    - generic: Groceries
+    - generic: 3 200,00 Kč
+    - generic: Subscriptions
+    - generic: 1 988,35 Kč
+    - generic: Development
+    - generic: 1 522,79 Kč
+    - generic: Dining
+    - generic: 1 240,00 Kč
+    - generic: Transport
+    - generic: 890,00 Kč
+  - generic: Recent transactions
+  - list:
+    - paragraph: Salary
+    - paragraph: 2026-10-18 · June
+    - generic: +62 000,00 Kč
+    - button "Delete":
+    - paragraph: Rent
+    - paragraph: 2026-10-19
+    - generic: −14 500,00 Kč
+    - button "Delete":
+    - paragraph: Groceries
+    - paragraph: 2026-10-20
+    - generic: −3 200,00 Kč
+    - button "Delete":
+    - paragraph: Transport
+    - paragraph: 2026-10-21
+    - generic: −890,00 Kč
+    - button "Delete":
+    - paragraph: Dining
+    - paragraph: 2026-10-22 · Dinner
+    - generic: −1 240,00 Kč
+    - button "Delete":
+    - paragraph: Interest
+    - paragraph: 2026-10-23
+    - generic: +5 000,00 Kč
+    - button "Delete":
+    - paragraph: Development
+    - paragraph: 2026-09-05 · Vercel Pro invoice
+    - generic: −$24.20
+    - button "Delete":
+    - paragraph: Development
+    - paragraph: 2026-10-05 · Vercel Pro + usage invoice
+    - generic: −$65.48
+    - button "Delete":
+    - paragraph: Development
+    - paragraph: 2026-09-06 · Supabase Pro invoice
+    - generic: −$25.00
+    - button "Delete":
+    - paragraph: Development
+    - paragraph: 2026-09-23 · boardlessAI · fal.ai credit top-up
+    - generic: −$10.00
+    - button "Delete":
+    - paragraph: Income
+    - paragraph: 2026-10-21 · Platba VS 2026001
+    - generic: +38 030,00 Kč
+    - button "Delete":
+    - paragraph: Income
+    - paragraph: 2026-10-22 · Úhrada VS 2025044
+    - generic: +12 000,00 Kč
+    - button "Delete":
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

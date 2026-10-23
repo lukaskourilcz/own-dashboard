@@ -1,0 +1,159 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Tasks" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - heading "Tasks" [level=1]
+  - paragraph: What you're working on and what's coming up.
+  - button "Refresh":
+    - text: Refresh
+  - button "Add task":
+  - text: Importance
+  - group "Importance":
+    - button "All" [pressed]
+    - button "1+"
+    - button "2+"
+    - button "3+"
+    - button "4+"
+    - button "5"
+  - text: Time
+  - group "Time":
+    - button "All" [pressed]
+    - button "≤15m"
+    - button "≤1h"
+    - button "≤4h"
+  - text: Category
+  - combobox "Category":
+    - generic: All
+  - text: For
+  - group "For":
+    - button "All" [pressed]
+    - button "Me"
+    - button "AI"
+  - button "Collapse" [expanded]:
+  - text: GLOBAL
+  - generic: 1 task
+  - list:
+    - checkbox "Review the weekly operating plan"
+    - paragraph: Review the weekly operating plan
+    - generic "Importance 6/6":
+      - text: "6"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: due today
+    - button "Delete":
+  - button "Collapse" [expanded]:
+  - link "devShark":
+    - /url: https://github.com/lukaskourilcz/react-express-app
+    - generic: devShark
+  - generic: 1 task
+  - list:
+    - checkbox "Generate real app icons with Recraft"
+    - paragraph: Generate real app icons with Recraft
+    - generic "Importance 5/6":
+      - text: "5"
+    - generic: generated 17 Oct
+    - generic: 1 day left
+    - button "Delete":
+  - button "Collapse" [expanded]:
+  - link "DNESKAi":
+    - /url: https://github.com/lukaskourilcz/aifirst
+    - generic: DNESKAi
+  - generic: 2 tasks
+  - list:
+    - checkbox "Verify project deployment"
+    - paragraph: Verify project deployment
+    - generic "Importance 4/6":
+      - text: "4"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 1 day left
+    - button "Delete":
+    - checkbox "Review the ingestion retry policy"
+    - paragraph: Review the ingestion retry policy
+    - generic "Importance 3/6":
+      - text: "3"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 4 days left
+    - button "Delete":
+  - button "Collapse" [expanded]:
+  - link "own-dashboard":
+    - /url: https://github.com/lukaskourilcz/own-dashboard
+    - generic: own-dashboard
+  - generic: 4 tasks
+  - list:
+    - checkbox "Add UPSTASH_REDIS_REST_URL in Vercel"
+    - paragraph: Add UPSTASH_REDIS_REST_URL in Vercel
+    - generic "Importance 3/6":
+      - text: "3"
+    - generic: generated 21 Oct
+    - generic: 5 days left
+    - button "Delete":
+    - checkbox "Review dashboard accessibility report"
+    - paragraph: Review dashboard accessibility report
+    - generic "Importance 2/6":
+      - text: "2"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 3 days left
+    - button "Delete":
+    - checkbox "Document the release migration"
+    - paragraph: Document the release migration
+    - generic "Importance 2/6":
+      - text: "2"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 5 days left
+    - button "Delete":
+    - checkbox "Verify integration reconnect states"
+    - paragraph: Verify integration reconnect states
+    - generic "Importance 1/6":
+      - text: "1"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 6 days left
+    - button "Delete":
+  - button "Collapse" [expanded]:
+  - text: Manual tasks
+  - generic: 3 tasks
+  - list:
+    - checkbox "Submit Q2 invoice"
+    - paragraph: Submit Q2 invoice
+    - generic "Importance 4/6":
+      - text: "4"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: due today
+    - button "Delete":
+    - checkbox "Reply to landlord"
+    - paragraph: Reply to landlord
+    - generic "Importance 3/6":
+      - text: "3"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 1d overdue
+    - button "Delete":
+    - checkbox "Buy running shoes"
+    - paragraph: Buy running shoes
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: 2 days left
+    - button "Delete":
+  - button "Finished tasks 1 done Show finished":
+    - text: Finished tasks
+    - generic: 1 done
+    - generic: Show finished
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

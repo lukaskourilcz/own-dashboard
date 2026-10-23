@@ -1,0 +1,354 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie" [active]:
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Kategorie" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - paragraph: Čisté jmění
+  - paragraph: 200 250,00 Kč
+  - paragraph: na 2 účtech
+  - paragraph: Tento měsíc
+  - generic: Příjem
+  - paragraph: 117 030,00 Kč
+  - generic: Výdaj
+  - paragraph: 21 352,79 Kč
+  - generic: Netto
+  - paragraph: 95 677,21 Kč
+  - heading "Přehled nákladů" [level=2]
+  - button "Měsíčně" [pressed]
+  - button "Ročně"
+  - heading "Všechny náklady" [level=3]
+  - generic: 3 279,05 Kč/měs
+  - application
+  - generic: 3 279,05 Kč
+  - list:
+    - generic: Vývoj
+    - generic: 1 515,35 Kč
+    - generic: Projekty
+    - generic: 1 290,70 Kč
+    - generic: Zábava
+    - generic: 448,00 Kč
+    - generic: Infrastruktura
+    - generic: 25,00 Kč
+  - heading "Projekty" [level=3]
+  - generic: 1 290,70 Kč/měs
+  - application
+  - generic: 1 290,70 Kč
+  - list:
+    - generic: DNESKAi
+    - generic: 1 290,70 Kč
+  - heading "Předplatná" [level=3]
+  - generic: 1 988,35 Kč/měs
+  - application
+  - generic: 1 988,35 Kč
+  - list:
+    - generic: Vývoj
+    - generic: 1 515,35 Kč
+    - generic: Zábava
+    - generic: 448,00 Kč
+    - generic: Infrastruktura
+    - generic: 25,00 Kč
+  - paragraph: Supabase
+  - paragraph: Vývoj · Nezbytné
+  - paragraph: další 2026-11-04 · za 12 d
+  - generic: 581,40 Kč/měs
+  - paragraph: Vercel
+  - paragraph: Vývoj · Nezbytné
+  - paragraph: další 2026-11-04 · za 12 d
+  - generic: 465,12 Kč/měs
+  - paragraph: iCloud+
+  - paragraph: Infrastruktura · Nezbytné
+  - paragraph: další 2026-11-12 · za 20 d
+  - generic: 25,00 Kč/měs
+  - paragraph: Mobbin
+  - paragraph: Vývoj · Užitečné
+  - paragraph: další 2027-01-01 · za 70 d
+  - generic: 348,84 Kč/měs
+  - paragraph: Figma
+  - paragraph: Vývoj · Užitečné
+  - paragraph: další 2027-02-20 · za 120 d
+  - generic: 120,00 Kč/měs
+  - paragraph: Netflix
+  - paragraph: Zábava · Volitelné
+  - paragraph: další 2026-10-31 · za 8 d
+  - generic: 279,00 Kč/měs
+  - paragraph: Spotify
+  - paragraph: Zábava · Volitelné
+  - paragraph: další 2026-10-26 · za 3 d
+  - generic: 169,00 Kč/měs
+  - text: Import výpisů a bankovní synchronizace
+  - paragraph: Importuj CSV výpis nebo obnov existující bankovní připojení.
+  - generic: Import z CSV
+  - paragraph: Exportuj výpis z internetového bankovnictví (CSV) a nahraj ho sem.
+  - button "Vybrat CSV soubor"
+  - text: Nespárované platby
+  - paragraph: Příchozí platby, které neodpovídají žádné vystavené faktuře — nebo odpovídají jiné částkou.
+  - button "Spárovat teď":
+    - text: Spárovat teď
+  - paragraph: Zbývají 4 platby · Platby se párují pravidelně, tohle tlačítko spustí stejnou kontrolu hned.
+  - list:
+    - paragraph: 62 000,00 KčJune
+    - paragraph:
+      - generic: 2026-10-18
+      - generic: "VS: bez symbolu"
+      - generic: Bez variabilního symbolu
+    - combobox "Přiřadit k faktuře — 62 000,00 Kč, 2026-10-18":
+    - button "Přiřadit — 62 000,00 Kč, 2026-10-18" [disabled]: Přiřadit
+    - paragraph: 38 030,00 KčPlatba VS 2026001
+    - paragraph:
+      - generic: 2026-10-21
+      - generic: "VS: 2026001"
+      - generic: Nesedí částka
+    - combobox "Přiřadit k faktuře — 38 030,00 Kč, 2026-10-21":
+      - generic: 2026001 — 38 115,00 Kč
+    - button "Přiřadit — 38 030,00 Kč, 2026-10-21": Přiřadit
+    - paragraph: 12 000,00 KčÚhrada VS 2025044
+    - paragraph:
+      - generic: 2026-10-22
+      - generic: "VS: 2025044"
+      - generic: K symbolu není faktura
+    - combobox "Přiřadit k faktuře — 12 000,00 Kč, 2026-10-22":
+    - button "Přiřadit — 12 000,00 Kč, 2026-10-22" [disabled]: Přiřadit
+    - paragraph: 5 000,00 Kč—
+    - paragraph:
+      - generic: 2026-10-23
+      - generic: "VS: bez symbolu"
+      - generic: Bez variabilního symbolu
+    - combobox "Přiřadit k faktuře — 5 000,00 Kč, 2026-10-23":
+    - button "Přiřadit — 5 000,00 Kč, 2026-10-23" [disabled]: Přiřadit
+  - text: Pravidla pro transakce
+  - paragraph: Podmínky, které transakci zařadí automaticky při každé synchronizaci a importu.
+  - button "Nové pravidlo":
+    - text: Nové pravidlo
+  - text: Účty
+  - list:
+    - paragraph: Checking
+    - paragraph: CZK
+    - generic: 48 250,00 Kč
+    - button "Upravit":
+    - button "Smazat":
+    - paragraph: Savings
+    - paragraph: CZK
+    - generic: 152 000,00 Kč
+    - button "Upravit":
+    - button "Smazat":
+  - textbox "Název účtu"
+  - spinbutton "Zůstatek": "0"
+  - combobox "Měna":
+    - generic: USD
+  - combobox
+  - button "Přidat účet":
+    - text: Přidat účet
+  - generic: Posledních 6 měsíců
+  - list:
+    - img "Příjem legend icon"
+    - text: Příjem
+    - img "Výdaj legend icon"
+    - text: Výdaj
+  - application:
+    - generic: kvě
+    - generic: čvn
+    - generic: čvc
+    - generic: srp
+    - generic: zář
+    - generic: říj
+    - generic: "0"
+    - generic: "30000"
+    - generic: "60000"
+    - generic: "90000"
+    - generic: "120000"
+  - generic: Přidat transakci
+  - button "Výdaj":
+    - text: Výdaj
+  - button "Příjem":
+    - text: Příjem
+  - text: Částka
+  - spinbutton "Částka"
+  - text: Měna
+  - combobox "Měna":
+    - generic: USD
+  - combobox
+  - text: Kategorie
+  - combobox "Kategorie":
+    - generic: Bez kategorie
+  - combobox
+  - button "Spravovat kategorie":
+  - text: Datum
+  - textbox "Datum": 2026-10-23
+  - text: Účet
+  - combobox "Účet":
+    - generic: — Žádný —
+  - combobox
+  - text: Projekt
+  - combobox "Projekt":
+    - generic: — Žádný —
+  - combobox
+  - text: Poznámka
+  - textbox "Poznámka":
+    - /placeholder: Volitelné
+  - button "Přidat":
+    - text: Přidat
+  - generic: Tento měsíc podle kategorie
+  - application
+  - list:
+    - generic: Rent
+    - generic: 14 500,00 Kč
+    - generic: Groceries
+    - generic: 3 200,00 Kč
+    - generic: Předplatná
+    - generic: 1 988,35 Kč
+    - generic: Development
+    - generic: 1 522,79 Kč
+    - generic: Dining
+    - generic: 1 240,00 Kč
+    - generic: Transport
+    - generic: 890,00 Kč
+  - generic: Poslední transakce
+  - list:
+    - paragraph: Salary
+    - paragraph: 2026-10-18 · June
+    - generic: +62 000,00 Kč
+    - button "Smazat":
+    - paragraph: Rent
+    - paragraph: 2026-10-19
+    - generic: −14 500,00 Kč
+    - button "Smazat":
+    - paragraph: Groceries
+    - paragraph: 2026-10-20
+    - generic: −3 200,00 Kč
+    - button "Smazat":
+    - paragraph: Transport
+    - paragraph: 2026-10-21
+    - generic: −890,00 Kč
+    - button "Smazat":
+    - paragraph: Dining
+    - paragraph: 2026-10-22 · Dinner
+    - generic: −1 240,00 Kč
+    - button "Smazat":
+    - paragraph: Interest
+    - paragraph: 2026-10-23
+    - generic: +5 000,00 Kč
+    - button "Smazat":
+    - paragraph: Development
+    - paragraph: 2026-09-05 · Vercel Pro invoice
+    - generic: −$24.20
+    - button "Smazat":
+    - paragraph: Development
+    - paragraph: 2026-10-05 · Vercel Pro + usage invoice
+    - generic: −$65.48
+    - button "Smazat":
+    - paragraph: Development
+    - paragraph: 2026-09-06 · Supabase Pro invoice
+    - generic: −$25.00
+    - button "Smazat":
+    - paragraph: Development
+    - paragraph: 2026-09-23 · boardlessAI · fal.ai credit top-up
+    - generic: −$10.00
+    - button "Smazat":
+    - paragraph: Příjem
+    - paragraph: 2026-10-21 · Platba VS 2026001
+    - generic: +38 030,00 Kč
+    - button "Smazat":
+    - paragraph: Příjem
+    - paragraph: 2026-10-22 · Úhrada VS 2025044
+    - generic: +12 000,00 Kč
+    - button "Smazat":
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"
