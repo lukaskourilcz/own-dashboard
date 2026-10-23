@@ -2,7 +2,7 @@
 
 The current state of the app, written for a reader who has not seen the repository. Each part says what it does,
 where the code lives, which outside system it talks to and what is switched on in production. State as of
-22 October 2026 evening, main `7ef2247` (own-dashboard) and `893a495` (Quorum). Details live in the linked docs;
+23 October 2026, main `1568076` (own-dashboard) and `893a495` (Quorum). Details live in the linked docs;
 this page is the index to them.
 
 ## 1. What OwnDashboard is
@@ -41,7 +41,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
   (section 4).
 - **Preview without data.** `/dev-preview` renders every screen from deterministic fixtures
   (`src/lib/demo/`) for visual and accessibility tests. It never calls a marketing API.
-- **Gates.** `npm run lint`, `./node_modules/.bin/tsc --noEmit`, `npm run test` (vitest, about 2,440 tests, PGlite
+- **Gates.** `npm run lint`, `./node_modules/.bin/tsc --noEmit`, `npm run test` (vitest, about 2,750 tests, PGlite
   for SQL), `npm run build`, `./node_modules/.bin/playwright test` (port 3939). CI (`.github/workflows/ci.yml`) runs
   `check` and `e2e` on every push.
 
@@ -49,18 +49,20 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 
 | System | What OwnDashboard uses it for | Where | Production state |
 |---|---|---|---|
-| Supabase | Database, RLS, Storage (`marketing-assets`, `marketing-media`, `marketing-reels` once migration `20261023130000` is pushed), pg_cron scheduler, Vault secrets | `src/lib/supabase/` | Live |
+| Supabase | Database, RLS, Storage (`marketing-assets`, `marketing-media`; `marketing-reels` and `marketing-audio` once migrations `20261023130000` and `20261023130100` are pushed), pg_cron scheduler, Vault secrets | `src/lib/supabase/` | Live |
 | Vercel | Hosting, env vars, crons | `vercel.json` | Live |
 | GitHub | Repos `lukaskourilcz/own-dashboard` and `lukaskourilcz/quorum`; project repo stats | `src/lib/github*` | Live |
 | Google Calendar | Direct calendar read/write | `src/lib/calendar*`, `src/lib/google-*` | Live |
 | Bank (GoCardless) | Daily transaction sync | `src/lib/gocardless.ts`, `src/lib/bank*` | As configured; no new bank work planned |
 | Jina Reader | Link enrichment: only the submitted URL is sent; DNESKAi topic briefs: only an approved link-library or manual topic's URL (#210) | `src/lib/link-library.ts`, `src/lib/marketing/dneskai-topic-source.ts` | Live; topic briefs behind `DNESKAI_TOPIC_BRIEFS_ENABLED` |
 | **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
-| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0; Facebook Login for Business is a prepared second mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
-| **Meta webhooks** (inbound) | Instagram sends new comments to `POST /api/webhooks/instagram` (signed with the app secret); the comment watcher answers them at once, polling stays the fallback (#161) | `src/app/api/webhooks/instagram/route.ts`, `dneskai-instagram-webhook.ts` | Prepared, **off**: needs `DNESKAI_ENGAGEMENT_ENABLED`, `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, `MARKETING_INSTAGRAM_APP_SECRET` and the Meta app callback |
-| **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions | `src/lib/marketing/generation.ts`, `dneskai-generation.ts` | Key set, live |
+| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0: carousels, single images and Reels (`media_type=REELS`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
+| **Facebook Login for Business** | A second credential mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE=facebook`): `graph.facebook.com` with the token of the Facebook Page linked to `@dneskai`, renewal through `fb_exchange_token` (`MARKETING_META_APP_ID`, `MARKETING_META_APP_SECRET`), private replies through `POST /<PAGE_ID>/messages` (#216) | `meta-credentials.ts`, `meta-account.ts`, `dneskai-engagement-ports.ts` | Prepared, **not set up**: no Page linked yet (Astra #181) |
+| **Meta Audio API** | `GET /ig_audio`: the trending music and original sounds `@dneskai` may use; exists only under Facebook Login (#167) | `dneskai-audio-trends.ts` | Prepared, **off** (`DNESKAI_AUDIO_TRENDS_ENABLED`) |
+| **Meta webhooks** (inbound) | Instagram sends new comments to `POST /api/webhooks/instagram` (signed with the Instagram app secret, or the Meta app secret under Facebook Login); the comment watcher answers them at once, polling stays the fallback (#161) | `src/app/api/webhooks/instagram/route.ts`, `dneskai-instagram-webhook.ts` | Prepared, **off**: needs `DNESKAI_ENGAGEMENT_ENABLED`, `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, the signing secret and the Meta app callback (Astra #179) |
+| **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions; Claude Haiku 5.5 titles topics and gives FACT or HYPE verdicts | `src/lib/marketing/generation.ts`, `dneskai-generation.ts`, `dneskai-topic-model.ts` | Key set; generation live, Haiku calls **off** (`DNESKAI_TITLING_ENABLED`, `DNESKAI_FACT_OR_HYPE_ENABLED`) |
 | **Jev** (typesafe.ai, `jev-1.13.0`) | Classifies collected stories (category, relevance, on-topic) | `src/lib/marketing/dneskai-providers.ts` | Live, about $0.002 a night |
-| Apify | Instagram profile collection and a research plan | `dneskai-collection.ts`, `dneskai-apify-research*.ts` | Token set, **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`) |
+| Apify | Instagram profile collection (news and, with scouting, education profiles); a $126 research plan; reel transcripts for FACT or HYPE (`apify~instagram-reel-scraper`, $0.05 each, $0.50 a day); the TikTok CZ sound chart (`clockworks~tiktok-trends-scraper`, $0.10 a day) | `dneskai-collection.ts`, `dneskai-apify-research*.ts`, `dneskai-fact-or-hype.ts`, `dneskai-audio-tiktok.ts` | Token set, all **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`; research, transcripts and TikTok behind their own switches) |
 | LangSmith (EU) | Redacted traces of each generation and owner feedback | `src/lib/marketing/tracing.ts` | **Off**: no `LANGSMITH_*` in Production |
 | n8n | Formerly ran DNESKAi; those workflows are archived and the routes answer 410 | `workflows/marketing/retired/` | Retired for DNESKAi |
 
@@ -90,8 +92,14 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
-| 8 engagement | Prepared, off: replies once by DM to a keyword comment under a post of the last seven days, then posts the public reply (`DNESKAI_ENGAGEMENT_ENABLED`, #160) | `dneskai-engagement-watch.ts`, `dneskai-engagement-ports.ts` |
+| 8 engagement | Prepared, off: replies once by DM to a keyword comment under a post of the last seven days, then posts the public reply (`DNESKAI_ENGAGEMENT_ENABLED`, #160); the webhook (#161) hands a new comment to the same watcher code at once | `dneskai-engagement-watch.ts`, `dneskai-engagement-ports.ts` |
 | 9 reminder | In-app notifications: first post of the day ready, and 60 minutes before the first unapproved slot | `dneskai-reminders.ts` |
+
+The daily tick runs four duties instead: **renewal** (signed asset URLs that expire within 48 hours), **purge** (source
+pictures unused for 30 days), **retention** (`marketing_ticks` older than 14 days; it records an error until
+`20261022000000` is pushed) and, only with `DNESKAI_AUDIO_TRENDS_ENABLED`, **audio-trends**: the day's trending sounds
+from Meta's Audio API and, with `DNESKAI_TIKTOK_TRENDS_ENABLED`, one TikTok CZ chart run that marks matching sounds
+(`dneskai-audio-trends.ts`, `dneskai-audio-tiktok.ts`).
 
 Details: `docs/marketing-scheduling.md`, `docs/dneskai-native-feeds.md`, `docs/dneskai-source-media.md`,
 `docs/dneskai-briefs.md`.
@@ -102,7 +110,7 @@ Jev marks each candidate's category (`ai-news`, `tech-news`, `tool`, `ai-project
 relevance. Eligible stories: relevance at least 0.85, news within 48 hours, others within 30 days. Similar
 headlines become one event. The deployed SQL (`marketing_dneskai_finish`) picks one event per category, then by
 relevance. A prepared migration switches this to relevance first, with at most one non-news story a day, and gives
-held stories one automatic second review (section 8).
+held stories one automatic second review (section 6).
 
 ### Generation (`marketing-copy/7`)
 
@@ -163,10 +171,20 @@ hash; approval binds exactly that hash (`marketing_approve_revision`). Actions:
 - **Vygenerovat hned:** admit a waiting brief now.
 - **Vrátit**, **Přeskočit**, and **Schválit celý den**.
 
-The "Zdroje (DNESKAi)" tab shows sources, feeds, the Instagram account panel ("Ověřit účet", publishing switch, token
-expiry) and recovery actions. "Publikované" lists receipts; "Chyby a náklady" shows costs.
+The DNESKAi workspace has four tabs and a `⋯` menu (#169; the project header is gone from every project, #171):
+- **Dnes ke schválení:** Náměty (topics to approve or reject, #154) above the Lab, which has channel sub-tabs
+  Instagram, Threads and LinkedIn (the last two disabled, #170). The Lab also edits the comment keyword, DM and public
+  reply (`DNESKAI_ENGAGEMENT_EDITOR_ENABLED`, #159), the format (Karusel or Reel) and the Reel's music.
+- **Kalendář:** the week's slots.
+- **Příspěvky:** every post, latest first, with filter chips, the Instagram link, keyword-comment receipts (#162) and
+  a hint to add music in the app to a fresh carousel (#168).
+- **Zdroje:** the source list (Instagram profiles and websites, editable with `DNESKAI_SOURCES_TABLE_ENABLED`, #174),
+  Denní mix (#156) and Hudba, the Reel music library with its Trendy zvuky (#164, #167).
+- **`⋯` menu:** Chyby a náklady (costs and errors), Účet Instagram ("Ověřit účet", the publishing switch, token
+  expiry, the comment-reply switch and the webhook subscription), Obnova témat (last night's collection, held topics and
+  the recovery actions) and Klávesové zkratky, then the general project sections.
 
-### Reels (prepared, off)
+### Reels and music (prepared, off)
 
 `renderDneskaiReel` (`dneskai-reel-render.ts`, #163) turns a post's rendered slides into a 1080 × 1920 MP4 with
 `ffmpeg-static`: 3.5 s per slide, 0.5 s crossfades, a gentle zoom, AAC audio or a silent track. The route
@@ -175,13 +193,17 @@ revision hash and audio in the private `marketing-reels` bucket and returns a si
 `MARKETING_DNESKAI_REELS_ENABLED`. The owner's audio library lives in Zdroje → Hudba; the Lab post card picks a
 track, which joins the revision and its hash. A carousel post can switch to "Reel" in the Lab (education posts start as
 one); the publishing step renders its MP4 up to 45 minutes before the slot and publishes it as `media_type=REELS`
-with slide 1 as the cover. Details: `docs/dneskai-source-media.md`, `docs/marketing-scheduling.md#reels-165`.
+with slide 1 as the cover. Under Facebook Login a Reel may instead carry a trending sound from Meta's Audio API:
+the MP4 is then silent and the publisher sends `audio_configuration` (`DNESKAI_AUDIO_TRENDS_ENABLED`, #167). Zdroje →
+Hudba → Trendy zvuky ranks those sounds by how often the tracked education profiles used them in their reels this
+week, and marks the ones also rising on TikTok CZ. Details: `docs/dneskai-source-media.md`,
+`docs/marketing-scheduling.md#reels-165`.
 
 ### Publishing
 
 A post publishes only when all three are true: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the
-account's own `enabled` switch. The two Vercel switches are on; the account switch is off since the pilot. The publisher checks the JPEGs (format, size, 8 MB),
-the caption limits and the 24-hour quota. It creates the Instagram containers and the carousel parent, polls, and
+account's own `enabled` switch. The two Vercel switches are on; the account switch is off since the pilot. The publisher checks the JPEGs (format, size, 8 MB) or
+the Reel's MP4 (size, sha256), the caption limits and the 24-hour quota. It creates the Instagram containers and the carousel parent, polls, and
 calls `media_publish` once. It stores `remote_media_id` and the permalink (`marketing_publications`). After a timeout
 it only reads the media list; it never posts twice.
 
@@ -192,8 +214,29 @@ it only reads the media list; it never posts twice.
 - A call the provider refused before billing counts $0.
 - An unknown cost counts in full.
 - Jev and Apify have their own nightly caps.
+- Paid topic work goes through a second ledger, `marketing_private.dneskai_topic_spend`: Claude Haiku calls for
+  titling and FACT or HYPE count inside the $1.00 ceiling; reel transcripts have their own
+  `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD` (default $0.50) and the TikTok chart run its own
+  `MARKETING_DNESKAI_TIKTOK_DAILY_USD` (default $0.10).
 
-Costs show in "Chyby a náklady".
+Costs show in "Chyby a náklady" in the `⋯` menu.
+
+### Routes
+
+| Route | What it does |
+|---|---|
+| `POST /api/marketing/tick` | The scheduler, signed by pg_cron |
+| `GET /api/marketing/dneskai/review` | The workspace read: posts, decks, briefs, publications, jobs |
+| `GET`, `POST /api/marketing/dneskai/topics` | Topics and the owner's approve, reject, restore, edit and create (404 without `DNESKAI_TOPICS_ENABLED`) |
+| `GET`, `PUT /api/marketing/dneskai/daily-mix` | The daily mix (404 without `DNESKAI_DAILY_MIX_ENABLED`) |
+| `GET`, `POST /api/marketing/dneskai/source-list` | The sources Zdroje lists, and the owner's save and remove |
+| `GET`, `POST /api/marketing/dneskai/audio` | The music library, uploads and the day's trending sounds (404 without `MARKETING_DNESKAI_REELS_ENABLED`) |
+| `POST /api/marketing/dneskai/render-reel` | Renders and stores a Reel's MP4 (404 without `MARKETING_DNESKAI_REELS_ENABLED`) |
+| `POST /api/marketing/dneskai/generate`, `briefs`, `candidates` | Generate now; retry, reslot and release a brief; re-review a held report |
+| `GET /api/marketing/dneskai/costs`, `media`, `sources`; `POST fit`, `preview` | Errors and costs, the picture tray, the recovery read, text fit and one-slide preview |
+| `POST /api/marketing/revisions` | Edit, approve, approve the day, approve-at, publish now, regenerate, return, skip |
+| `POST /api/marketing/accounts/verify`, `enable`, `engagement`, `webhook` | Verify the account, its publishing switch, its reply switch and the comment subscription |
+| `GET`, `POST /api/webhooks/instagram` | Meta's subscription check and signed comment deliveries (404 until configured) |
 
 ## 5. Data model (marketing, main tables)
 
@@ -208,33 +251,43 @@ Costs show in "Chyby a náklady".
 | `marketing_campaigns`, `marketing_calendar_entries` | Daily campaign and slot entries a job is bound to |
 | `marketing_jobs` | Generation jobs: request, fence, lease, result (deck, revision, usage) |
 | `marketing_revisions` | Every version of a post: content, `content_hash`, render report, status, `approved_hash` |
-| `marketing_audio_trends` | Trending sounds from Meta's Audio API per day (prepared, #167; Facebook Login only) |
-| `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, #164) |
+| `marketing_audio_trends` | Trending sounds from Meta's Audio API per day, with the niche count and the TikTok mark (prepared, `20261023130200`, #167; Facebook Login only) |
+| `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, `20261023130100`, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
 | `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (prepared, `20261023120000`) |
 | `marketing_instagram_comment_replies`, `marketing_instagram_comment_checks` | One private reply per keyword comment (comment id, media, keyword, status; no commenter data) and the watcher's cursor and counts per post (prepared, `20261023120000`, #160) |
+| `marketing_private.dneskai_topic_spend` | Paid topic work: transcripts, topic model calls and TikTok chart runs, each reserved before it starts (prepared, `20261023100100`, `20261023130300`) |
+| `marketing_private.dneskai_apify_research`, `marketing_dneskai_research_metrics` | The research plan's ledger and its derived public metrics (prepared, `20261022013957`) |
+| `marketing_events` | Publication and revision events, including one `dneskai-reel-rendered` row per stored Reel |
 | `marketing_ticks`, `marketing_scheduler_state` | Scheduler record and leases |
 | `notifications` | In-app notifications, including the review reminders |
 
+Storage buckets, all private: `marketing-assets` (rendered slide JPEGs), `marketing-media` (source pictures),
+`marketing-reels` (Reel MP4s, prepared `20261023130000`) and `marketing-audio` (library tracks, prepared
+`20261023130100`).
+
 ## 6. Database and switches still to apply
 
-The repository lists every migration version production recorded (reconciled 22 October). Twenty-one prepared
-migrations are not applied yet: `20261022000000` through `20261023130100`. The owner applies them with
-`npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Then the
-owner sets these switches in Vercel Production and redeploys:
-- `DNESKAI_RICH_EVIDENCE_ENABLED`
-- `DNESKAI_OWNER_RECOVERY_ENABLED`
-- `DNESKAI_LAPSED_RELEASE_ENABLED`
-- `MARKETING_PUBLICATION_REQUEUE_ENABLED`
-- `DNESKAI_SELECTION_V2_ENABLED`
-- `DNESKAI_REGENERATE_ENABLED`
-- `DNESKAI_TOPICS_ENABLED` (after `20261023100000`)
-- `DNESKAI_ENGAGEMENT_ENABLED` (after `20261023120000`; then the account's reply switch in Zdroje)
+The repository lists every migration version production recorded (reconciled 22 October). Twenty-three prepared
+migrations are not applied yet: `20261022000000` through `20261023130300`. The owner applies them with
+`npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Until then
+the daily tick logs one harmless `retention` error. Then the switches go on in Vercel Production, grouped by what
+they wait for:
+- **The push alone:** `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`,
+  `DNESKAI_LAPSED_RELEASE_ENABLED`, `MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED`,
+  `DNESKAI_REGENERATE_ENABLED`, `DNESKAI_TOPICS_ENABLED`, `DNESKAI_SOURCES_TABLE_ENABLED`.
+- **The topics switch:** `DNESKAI_SCOUTING_ENABLED`, `DNESKAI_TITLING_ENABLED` with `DNESKAI_TOPIC_BRIEFS_ENABLED`,
+  `DNESKAI_DAILY_MIX_ENABLED`; `DNESKAI_FACT_OR_HYPE_ENABLED` also needs scouting and the Apify switch.
+- **Reels:** `MARKETING_DNESKAI_REELS_ENABLED`.
+- **Comments:** `DNESKAI_ENGAGEMENT_EDITOR_ENABLED` (needs no migration), `DNESKAI_ENGAGEMENT_ENABLED` (then the reply
+  switch in `⋯` → Účet Instagram), and the webhook values.
+- **Facebook Login:** `DNESKAI_AUDIO_TRENDS_ENABLED`, then `DNESKAI_TIKTOK_TRENDS_ENABLED` once the owner approves
+  its spend.
 
-Until then those features stay hidden or off and the daily tick logs one harmless `retention` error. Every switch is
-listed in `docs/external-setup.md` and `docs/marketing-scheduling.md`.
+Every switch, with its default and prerequisite, is listed in `docs/marketing-scheduling.md#switches`; the setup steps
+are in `docs/external-setup.md`. Astra's issue #178 sets the Vercel values.
 
-## 7. Production state on 22 October 2026
+## 7. Production state on 23 October 2026
 
 - Collection, Jev, media and briefs have run every night since 21 October.
 - The pilot is done: a single image published at 19:01 Prague (https://www.instagram.com/p/DezenXXkev_/) and a
@@ -242,9 +295,11 @@ listed in `docs/external-setup.md` and `docs/marketing-scheduling.md`.
   total. Both were made before the post rules and kits landed, so they still carry the old elements.
 - After the pilot, publishing for `@dneskai` is off at the account switch (`marketing_accounts.enabled = false`),
   because daily operation is not authorized yet. Both Vercel switches stay on. Turning the account back on in
-  DNESKAi → Zdroje resumes publishing; every post still needs approval of its exact version.
+  DNESKAi → `⋯` → Účet Instagram resumes publishing; every post still needs approval of its exact version.
 - Generation keeps preparing posts for review every night under the $1.00 daily ceiling.
-- No GitHub issue is open in either repository; open owner work is in `NEEDED.md`.
+- The education and Reels plan (#150–#174) and its follow-ups (#210–#213, #216) are merged, all behind switches that
+  are still off. Open issues: the tracking issue #175 and Astra's browser tasks #178–#185. Open owner work is in
+  `NEEDED.md`.
 
 ## 8. Where to look next
 
@@ -257,6 +312,7 @@ listed in `docs/external-setup.md` and `docs/marketing-scheduling.md`.
 | Generation, prompt, costs | `docs/marketing-generation.md` |
 | Scheduler | `docs/marketing-scheduling.md` |
 | Design Lab | `docs/dneskai-design-lab.md` |
+| The education and Reels plan | `docs/plans/2026-10-22-dneskai-education-reels-plan.md` |
 | Kits (Quorum) | `quorum/docs/design-lab/dneskai-kits/ADR.md` |
 | Post content rules | `.claude/skills/dneskai-post-content/SKILL.md` |
 | Privacy and model calls | `docs/ai-and-privacy.md` |
