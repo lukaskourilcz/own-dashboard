@@ -63,6 +63,15 @@ export function dneskaiTitlingEnabled(env: Record<string, string | undefined> = 
 }
 
 /**
+ * Sources as table rows (#174). Only after 20261023110000_dneskai_sources_table.sql is applied: Zdroje then edits
+ * marketing_dneskai_sources (seeded once from the registry file), and the nightly collection and the scouting step read
+ * those rows. Off, everything reads the registry file and Zdroje shows it read-only.
+ */
+export function dneskaiSourcesTableEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_SOURCES_TABLE_ENABLED === 'true';
+}
+
+/**
  * Topic briefs (#155). Only after 20261023100200_dneskai_topic_briefs.sql is applied: the scheduler's `enrichment`
  * step turns approved topics into briefs and queued generation jobs through the ordinary guarded path.
  */
