@@ -729,7 +729,7 @@
       "lines": 1129,
       "sha256": "496a6634a8f8bff539f914f134d3ca4ba5271246709a6a2d1f2ef5ba994bf7f6",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "7908409c743dbb9bd671d8625712a9272a154df3b0f55a865b36001d980c17d9"
+      "reviewedSha256": "ed5dfd94a89ee587f3bd313f3ad7e309469980f66f2102c653217606ff7cbe7f"
     },
     {
       "path": "src/components/invoices/status-badge.tsx",
@@ -1200,7 +1200,7 @@
       "lines": 594,
       "sha256": "6ff11c70c73fff51b7bb92f61adedc34bb127dff47c1c033f82b384751e30f36",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0aca19d03312b6e3eae5717629aaeb6e94d7a36577bcf4207eb039a53cd40c9f"
+      "reviewedSha256": "d7652e13b0a87ed24e03e7ebcb167e67bac019dd4d2c0c41aa262e1181b0bf6c"
     },
     {
       "path": "src/components/panels/job-sources.tsx",

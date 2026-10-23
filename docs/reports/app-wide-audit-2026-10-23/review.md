@@ -66,6 +66,8 @@ Each destination needs source/data-flow review, relevant business and failure ch
 
 30. Fixed: opening Notes no longer deletes old rows that look empty from their title/plain-text projection. Legacy rich content can exist without either projection, and genuinely empty drafts also belong to the owner. The automatic destructive effect was removed; deletion remains an explicit confirmed owner action. A mounted-library regression includes both an old untitled rich-content note and an old empty draft, and verifies no delete or cache-removal action occurs. Notes autosave, import recovery and full interaction review continue separately.
 
+31. Fixed: opening supplier defaults from an invoice keeps the document form mounted, so returning preserves its unsaved buyer, number and lines. New documents follow updated supplier defaults; issued edits retain their original supplier snapshot. Pending PDF extraction disables conflicting list actions so a completed parse cannot replace a newly opened invoice draft. Two desktop/mobile return-flow cases pass. The test checks the actual supplier form because the persistent shell intentionally owns the sole page heading.
+
 Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
 
 Tour isolation validation adds three component tests (22 shared tests in total), two browser cases, TypeScript and targeted ESLint. The six-width destination matrix also passed after code splitting.

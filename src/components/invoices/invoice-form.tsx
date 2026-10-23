@@ -369,7 +369,7 @@ export function InvoiceForm({
       t.invoices.importedItem,
     ),
   );
-  const isVatPayer = init.isVatPayer;
+  const isVatPayer = init.supplierSnapshot?.supplier_is_vat_payer ?? settings?.is_vat_payer ?? false;
 
   const [number, setNumber] = useState(init.number);
   const [variableSymbol, setVariableSymbol] = useState(init.variableSymbol);

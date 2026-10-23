@@ -24,6 +24,22 @@ test("supplier payment terms preserve zero and a failed save keeps the draft", a
   await expect(page.getByLabel(t.defaultDueDays, { exact: true })).toHaveValue("0");
 });
 
+test("editing supplier defaults preserves the unsaved invoice on return", async ({ page }) => {
+  const t = invoices.en;
+  await gotoPreview(page);
+  await page.goto("/dev-preview?tab=invoices");
+  await page.getByRole("button", { name: t.newInvoice, exact: true }).click();
+  await page.locator("#b-name").fill("Unsaved invoice buyer");
+  await page.locator("#i-number").fill("UNSAVED-2026-12");
+  await page.getByLabel(t.itemDescriptionPlaceholder, { exact: true }).fill("Unsaved invoice line");
+  await page.getByRole("button", { name: t.editSupplier, exact: true }).click();
+  await expect(page.getByLabel(t.supplierNameLabel, { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: t.back, exact: true }).click();
+  await expect(page.locator("#b-name")).toHaveValue("Unsaved invoice buyer");
+  await expect(page.locator("#i-number")).toHaveValue("UNSAVED-2026-12");
+  await expect(page.getByLabel(t.itemDescriptionPlaceholder, { exact: true })).toHaveValue("Unsaved invoice line");
+});
+
 test("invoice list actions and document reflow remain accessible with print isolation", async ({ page }, info) => {
   const t = invoices.en;
   await gotoPreview(page);

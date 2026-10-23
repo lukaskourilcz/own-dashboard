@@ -22,7 +22,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { StatusBadge } from "@/components/invoices/status-badge";
-import { InvoiceForm } from "@/components/invoices/invoice-form";
+import { InvoiceEditor } from "@/components/invoices/invoice-editor";
 import { InvoiceDetail } from "@/components/invoices/invoice-detail";
 import { SupplierSettings } from "@/components/invoices/supplier-settings";
 import { createClient } from "@/lib/supabase/client";
@@ -291,7 +291,7 @@ export function InvoicesPanel({
 
   if (view.mode === "new" || view.mode === "import") {
     return (
-      <InvoiceForm
+      <InvoiceEditor
         mode={view.mode === "import" ? "import" : "create"}
         prefill={view.mode === "import" ? view.prefill : undefined}
         settings={settings}
@@ -303,7 +303,7 @@ export function InvoicesPanel({
         projects={projects}
         onCancel={() => setView({ mode: "list" })}
         onDone={(id) => setView({ mode: "detail", id })}
-        onEditSupplier={() => setView({ mode: "settings" })}
+        onSettingsSaved={setSettings}
       />
     );
   }
@@ -312,7 +312,7 @@ export function InvoicesPanel({
     const src = invoices.find((i) => i.id === view.id);
     if (src) {
       return (
-        <InvoiceForm
+        <InvoiceEditor
           mode={view.mode === "edit" ? "edit" : "duplicate"}
           source={{
             invoice: src,
@@ -327,7 +327,7 @@ export function InvoicesPanel({
           projects={projects}
           onCancel={() => setView({ mode: "list" })}
           onDone={(id) => setView({ mode: "detail", id })}
-          onEditSupplier={() => setView({ mode: "settings" })}
+          onSettingsSaved={setSettings}
         />
       );
     }
@@ -359,8 +359,10 @@ export function InvoicesPanel({
   // ── List ─────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      className="relative"
+    <fieldset
+      disabled={parsing}
+      aria-label={t.invoices.title}
+      className="relative min-w-0"
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
@@ -569,7 +571,7 @@ export function InvoicesPanel({
           )}
         </CardContent>
       </Card>
-    </div>
+    </fieldset>
   );
 }
 
