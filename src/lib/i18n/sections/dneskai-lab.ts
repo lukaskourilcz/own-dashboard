@@ -230,7 +230,8 @@ const en = {
     select: (title: string) => `Select: ${title}`,
     keyword: {
       add: 'Add keyword',
-      edit: (keyword: string) => `Keyword ${keyword}, edit`,
+      chip: 'Comment keyword',
+      edit: (keyword: string) => `Comment keyword ${keyword}, edit`,
       label: 'Keyword',
       help: 'One word, 2 to 24 Latin letters without diacritics. Leave empty to remove it.',
       save: 'Save',
@@ -477,7 +478,8 @@ const cs: typeof en = {
     select: (title: string) => `Vybrat: ${title}`,
     keyword: {
       add: 'Přidat klíčové slovo',
-      edit: (keyword: string) => `Klíčové slovo ${keyword}, upravit`,
+      chip: 'Slovo do komentáře',
+      edit: (keyword: string) => `Slovo do komentáře ${keyword}, upravit`,
       label: 'Klíčové slovo',
       help: 'Jedno slovo, 2 až 24 písmen latinky bez diakritiky. Prázdné pole slovo odebere.',
       save: 'Uložit',
