@@ -14,6 +14,8 @@ type CalendarStrings = {
   descriptionPlaceholder: string;
   titleAndDateRequired: string;
   startAndEndRequired: string;
+  endAfterStart: string;
+  resultUnconfirmed: string;
   couldNotCreateEvent: string;
   tokenRejected: string;
   eventAdded: string;
@@ -50,9 +52,11 @@ type CalendarStrings = {
 
 export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
   en: {
+    resultUnconfirmed: "The calendar result was not confirmed. Check Google Calendar before creating another event.",
+    endAfterStart: "End time must be after start time.",
     newEvent: "New calendar event",
     title: "Title",
-    titlePlaceholder: "Dentist appointment",
+    titlePlaceholder: "Project review",
     date: "Date",
     start: "Start",
     end: "End",
@@ -68,15 +72,15 @@ export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
     titleAndDateRequired: "Title and date are required.",
     startAndEndRequired: "Start and end time are required.",
     couldNotCreateEvent: "Could not create event.",
-    tokenRejected: "Google rejected the calendar token. Re-link to refresh access.",
+    tokenRejected: "Calendar access expired. Reconnect Google to continue.",
     eventAdded: "Event added to your Google Calendar.",
     open: "Open",
     adding: "Adding…",
     addToGoogleCalendar: "Add to Google Calendar",
     next7Days: "Next 7 days",
     dayHeadingFormat: "EEEE, MMM d",
-    errUnauthorized: "Google rejected the calendar token.",
-    errNoToken: "We don't have a Calendar token yet.",
+    errUnauthorized: "Calendar access expired. Reconnect Google to load events.",
+    errNoToken: "Connect Google to load your calendar.",
     errLoad: "Couldn't load events from Google.",
     nothingScheduled: "Nothing scheduled",
     weekWideOpen: "Your week is wide open.",
@@ -99,9 +103,11 @@ export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
     save: "Save",
   },
   cs: {
+    resultUnconfirmed: "Výsledek nebyl potvrzen. Než vytvoříte další událost, zkontrolujte Kalendář Google.",
+    endAfterStart: "Konec musí být po začátku.",
     newEvent: "Nová událost v kalendáři",
     title: "Název",
-    titlePlaceholder: "Návštěva zubaře",
+    titlePlaceholder: "Kontrola projektu",
     date: "Datum",
     start: "Začátek",
     end: "Konec",
@@ -118,15 +124,15 @@ export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
     startAndEndRequired: "Začátek a konec jsou povinné.",
     couldNotCreateEvent: "Událost se nepodařilo vytvořit.",
     tokenRejected:
-      "Google odmítl token kalendáře. Pro obnovení přístupu se znovu propojte.",
+      "Přístup ke kalendáři vypršel. Pro pokračování znovu propojte Google.",
     eventAdded: "Událost byla přidána do Kalendáře Google.",
     open: "Otevřít",
     adding: "Přidávání…",
     addToGoogleCalendar: "Přidat do Kalendáře Google",
     next7Days: "Příštích 7 dní",
     dayHeadingFormat: "EEEE d. MMMM",
-    errUnauthorized: "Google odmítl token kalendáře.",
-    errNoToken: "Zatím nemáme token kalendáře.",
+    errUnauthorized: "Přístup ke kalendáři vypršel. Pro načtení událostí znovu propojte Google.",
+    errNoToken: "Pro načtení kalendáře propojte Google.",
     errLoad: "Události z Google se nepodařilo načíst.",
     nothingScheduled: "Nic naplánováno",
     weekWideOpen: "Tvůj týden je úplně volný.",

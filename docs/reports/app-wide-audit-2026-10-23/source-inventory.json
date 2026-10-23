@@ -68,7 +68,8 @@
       "path": "src/app/api/calendar/event/route.ts",
       "lines": 197,
       "sha256": "8309195d5ce5c7c235600af9ca72fed3769c1bc3fb959e9b2b9d3c0b8fefb488",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "2d8497a5ed0f63f98cdcffb45befb4ca867caff64496774177d01a6f6656e1d0"
     },
     {
       "path": "src/app/api/calendar/events/route.ts",
@@ -524,7 +525,8 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 38,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "94e6b18387f4c83f061596a140df59444b6fb75483519cbc7ee33cbbaa5849cb"
     },
     {
       "path": "src/app/globals.css",
@@ -598,7 +600,7 @@
       "lines": 168,
       "sha256": "af6e551df41b335251d2e929fe36bd0f69d0671144af79995a8b8f7adbc4ca9d",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "797fa5fc0ded20e407e0aa7791b491a7796b587d7d0ad7a99a8e3c327e34fed6"
+      "reviewedSha256": "f3b4720470d76f0dcc3920391894c3157a678a1c00cfe0a34c187a059e545074"
     },
     {
       "path": "src/components/category-select.tsx",
@@ -659,7 +661,7 @@
       "lines": 428,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "567f69d8c161901644baed20d38c9152f176db8d6495dbef89755d940dec44a7"
+      "reviewedSha256": "bd8fe1c957e0150d09796dc1d1dc209766d407460d54504aa8b329e8681c2bc0"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1079,7 +1081,7 @@
       "lines": 395,
       "sha256": "fabf66fa71ad67629fb14c17af24f1b0bde34ea1048102321f8476a3bc71d749",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "41583a95b2a7528d3a72fc1da0d06ed60f4590c7b6b6592a1018a6ca88302af3"
+      "reviewedSha256": "27f2e0ff44abfecafdc47a92ece95f6f77549019a24171113401685762d9467d"
     },
     {
       "path": "src/components/overview/work-attention.tsx",
@@ -1098,7 +1100,8 @@
       "path": "src/components/panels/calendar-panel.tsx",
       "lines": 240,
       "sha256": "dd1c25a55059a0c3ddef32671b87a5ebf6e302cbfa074cbd25501958c81c2d6a",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "366dda83e523001a2206317b41236e863ec23c536efdba06aadb1ffa3b0634b5"
     },
     {
       "path": "src/components/panels/career-board.tsx",
@@ -1122,20 +1125,22 @@
       "path": "src/components/panels/career-progress-dialog.tsx",
       "lines": 89,
       "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5"
     },
     {
       "path": "src/components/panels/clients-panel.tsx",
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36"
+      "reviewedSha256": "13e1b791cd9a37cd596b0860220e98a0b831c9e9b3c3e8f342d2246b2c328510"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
       "lines": 165,
       "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5"
     },
     {
       "path": "src/components/panels/dev-finance-panel.tsx",
@@ -1165,7 +1170,8 @@
       "path": "src/components/panels/important-dates-panel.tsx",
       "lines": 436,
       "sha256": "c093fb36494eb4becc725ada51351be2fb9bb7a542d862fc63d95412e882923b",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "bdc3b25561f175f6009c8fb8e9cf34789b3d5d7d932197ff5228fc5ae608f5db"
     },
     {
       "path": "src/components/panels/inbox-panel.tsx",
@@ -1245,7 +1251,8 @@
       "path": "src/components/panels/plans-panel.tsx",
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "f0c82f7b7fca3873998850acfa5b04237750f68703ccf02a4bb7994731c57e25"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
@@ -1331,7 +1338,8 @@
       "path": "src/components/projects/project-communication-panel.tsx",
       "lines": 99,
       "sha256": "d281f0d6f7df6df35e4a0def001f93239a6d07d2c4b82a0641450caf51e213e2",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d281f0d6f7df6df35e4a0def001f93239a6d07d2c4b82a0641450caf51e213e2"
     },
     {
       "path": "src/components/projects/project-competition.tsx",
@@ -1680,7 +1688,8 @@
       "path": "src/lib/csrf.ts",
       "lines": 53,
       "sha256": "3e4ee484745ef63f99f9832b720465f206d1ecea89ff7225fc8a781219357e8a",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "3e4ee484745ef63f99f9832b720465f206d1ecea89ff7225fc8a781219357e8a"
     },
     {
       "path": "src/lib/curated-prompts.ts",
@@ -3372,7 +3381,8 @@
       "path": "src/lib/user-prefs.ts",
       "lines": 116,
       "sha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05"
     },
     {
       "path": "src/lib/utils.ts",

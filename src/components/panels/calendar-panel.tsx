@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/queries/keys";
 import { CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -47,6 +49,7 @@ export function CalendarPanel({
   initialTitle?: string;
 }) {
   const t = useDict();
+  const qc = useQueryClient();
   const [defaultDate, setDefaultDate] = useState(todayKey);
   const [form, setForm] = useState<FormState>(() =>
     ({ ...empty, date: defaultDate, ...(initialTitle ? { title: initialTitle } : {}) }),
@@ -56,6 +59,7 @@ export function CalendarPanel({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setResult(null);
     if (!form.title.trim() || !form.date) {
       setResult({ kind: "error", message: t.calendar.titleAndDateRequired });
@@ -65,10 +69,15 @@ export function CalendarPanel({
       setResult({ kind: "error", message: t.calendar.startAndEndRequired });
       return;
     }
+    if (!form.allDay && form.endTime <= form.startTime) {
+      setResult({ kind: "error", message: t.calendar.endAfterStart });
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/calendar/event", {
         method: "POST",
+        signal: AbortSignal.timeout(20_000),
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           title: form.title.trim(),
@@ -78,6 +87,7 @@ export function CalendarPanel({
           description: form.description.trim(),
           allDay: form.allDay,
           recurrence: form.recurrence,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
       const json = await res.json();
@@ -88,16 +98,21 @@ export function CalendarPanel({
       if (!res.ok) {
         setResult({
           kind: "error",
-          message: json.error ?? t.calendar.couldNotCreateEvent,
+          message: json.reason === "unconfirmed" ? t.calendar.resultUnconfirmed : json.error === t.guest.readOnlyAction ? json.error : t.calendar.couldNotCreateEvent,
         });
+        return;
+      }
+      if (typeof json.id !== "string" || !json.id) {
+        setResult({ kind: "error", message: t.calendar.resultUnconfirmed });
         return;
       }
       setResult({ kind: "ok", link: json.htmlLink });
       setForm({ ...empty, date: form.date });
-    } catch (err) {
-      setResult({ kind: "error", message: (err as Error).message });
+    } catch {
+      setResult({ kind: "error", message: t.calendar.resultUnconfirmed });
     } finally {
       setSubmitting(false);
+      for (const queryKey of [qk.calendarToday, qk.calendarWeek, qk.calendarLastWeek]) void qc.invalidateQueries({ queryKey });
     }
   }
 
@@ -117,6 +132,7 @@ export function CalendarPanel({
             <Label htmlFor="cal-title">{t.calendar.title}</Label>
             <Input
               id="cal-title"
+              maxLength={500}
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder={t.calendar.titlePlaceholder}
@@ -201,6 +217,7 @@ export function CalendarPanel({
               <Label htmlFor="cal-desc">{t.calendar.description}</Label>
               <Textarea
                 id="cal-desc"
+                maxLength={10_000}
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
@@ -211,7 +228,7 @@ export function CalendarPanel({
             </div>
           )}
           {result?.kind === "error" && (
-            <p className="text-xs text-destructive">{result.message}</p>
+            <p role="alert" className="text-xs text-destructive">{result.message}</p>
           )}
           {result?.kind === "expired" && (
             <div className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3">

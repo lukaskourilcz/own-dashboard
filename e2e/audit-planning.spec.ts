@@ -56,3 +56,20 @@ test("calendar times hydrate in the browser timezone without rebuilding the page
   await expect(page.locator("#main-content").getByText("Standup", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("calendar creation sends the browser timezone and confirms the saved event", async ({ page }) => {
+  const errors = watchConsole(page);
+  await gotoPreview(page);
+  let payload: Record<string, unknown> | null = null;
+  await page.route("**/api/calendar/event", async route => {
+    payload = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: "fixture-event", htmlLink: "https://calendar.google.com/" }) });
+  });
+  await page.getByRole("button", { name: "New calendar event", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Project review");
+  await dialog.locator('button[type="submit"]').click();
+  await expect(dialog.getByText("Event added to your Google Calendar.")).toBeVisible();
+  expect(payload).toMatchObject({ title: "Project review", timeZone: "America/Los_Angeles", startTime: "09:00", endTime: "10:00" });
+  expect(errors).toEqual([]);
+});

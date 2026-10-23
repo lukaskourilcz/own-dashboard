@@ -3,41 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { fetchWithGoogleAuth } from "@/lib/google-token";
 import { rejectCrossOrigin } from "@/lib/csrf";
-
-type Recurrence = "none" | "daily" | "weekly" | "monthly";
-
-type Payload = {
-  title?: string;
-  date?: string;
-  startTime?: string;
-  endTime?: string;
-  description?: string;
-  allDay?: boolean;
-  recurrence?: Recurrence;
-};
-
-type GcalTime = { dateTime: string; timeZone: string } | { date: string };
-
-type GcalPayload = {
-  summary: string;
-  description: string;
-  start: GcalTime;
-  end: GcalTime;
-  recurrence?: string[];
-};
-
-function rrule(rec: Recurrence): string[] | undefined {
-  if (rec === "daily") return ["RRULE:FREQ=DAILY"];
-  if (rec === "weekly") return ["RRULE:FREQ=WEEKLY"];
-  if (rec === "monthly") return ["RRULE:FREQ=MONTHLY"];
-  return undefined;
-}
-
-function addDays(iso: string, n: number): string {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+import { calendarDeleteInput, calendarEventInput, googleCalendarEvent } from "@/lib/calendar-event";
 
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request);
@@ -51,64 +17,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as Payload;
-  const { title, date, startTime, endTime, description, allDay, recurrence } = body;
-
-  if (!title || !date) {
-    return NextResponse.json(
-      { error: "title and date are required." },
-      { status: 400 },
-    );
-  }
-
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  let event: GcalPayload;
-
-  if (allDay) {
-    // Google expects an exclusive end date for all-day events.
-    event = {
-      summary: title,
-      description: description ?? "",
-      start: { date },
-      end: { date: addDays(date, 1) },
-    };
-  } else {
-    if (!startTime || !endTime) {
-      return NextResponse.json(
-        { error: "startTime and endTime are required for timed events." },
-        { status: 400 },
-      );
-    }
-    const start = new Date(`${date}T${startTime}:00`);
-    const end = new Date(`${date}T${endTime}:00`);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return NextResponse.json({ error: "Invalid date/time." }, { status: 400 });
-    }
-    if (end <= start) {
-      return NextResponse.json(
-        { error: "End time must be after start time." },
-        { status: 400 },
-      );
-    }
-    event = {
-      summary: title,
-      description: description ?? "",
-      start: { dateTime: `${date}T${startTime}:00`, timeZone },
-      end: { dateTime: `${date}T${endTime}:00`, timeZone },
-    };
-  }
-
-  const rule = rrule((recurrence ?? "none") as Recurrence);
-  if (rule) event.recurrence = rule;
+  const parsed = calendarEventInput.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid calendar event." }, { status: 400 });
+  const event = googleCalendarEvent(parsed.data);
 
   const res = await fetchWithGoogleAuth(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
     {
       method: "POST",
+      signal: AbortSignal.timeout(15_000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(event),
     },
-  );
+  ).catch(() => null);
+  if (!res) return NextResponse.json({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, { status: 502 });
 
   if (res.status === 401 && res.statusText === "no-token") {
     return NextResponse.json(
@@ -124,21 +46,22 @@ export async function POST(request: Request) {
   }
 
   if (!res.ok) {
-    // Log the upstream detail server-side, return only a generic message to
-    // the client to avoid leaking internal endpoints / quota messages.
-    const errText = await res.text();
+    // Keep upstream bodies out of telemetry: they can echo private event text.
     Sentry.captureMessage("calendar.event.POST upstream rejected", {
       level: "error",
-      extra: { status: res.status, detail: errText },
+      extra: { status: res.status },
     });
     return NextResponse.json(
-      { error: "Google Calendar API rejected the event." },
+      { error: "Google Calendar API rejected the event.", ...(res.status >= 500 ? { reason: "unconfirmed" } : {}) },
       { status: res.status },
     );
   }
 
-  const created = await res.json();
-  return NextResponse.json({ id: created.id, htmlLink: created.htmlLink });
+  const created = await res.json().catch(() => null);
+  if (!created || typeof created.id !== "string" || !created.id) {
+    return NextResponse.json({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, { status: 502 });
+  }
+  return NextResponse.json({ id: created.id, htmlLink: typeof created.htmlLink === "string" ? created.htmlLink : undefined });
 }
 
 /**
@@ -157,15 +80,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { id?: string };
-  if (!body.id) {
-    return NextResponse.json({ error: "id is required." }, { status: 400 });
-  }
+  const parsed = calendarDeleteInput.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
 
   const res = await fetchWithGoogleAuth(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(body.id)}?sendUpdates=none`,
-    { method: "DELETE" },
-  );
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(parsed.data.id)}?sendUpdates=none`,
+    { method: "DELETE", signal: AbortSignal.timeout(15_000) },
+  ).catch(() => null);
+  if (!res) return NextResponse.json({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, { status: 502 });
 
   // 404 / 410 — event already gone. Treat as success so plan deletion proceeds.
   if (res.status === 404 || res.status === 410 || res.ok) {
@@ -185,10 +107,9 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const errText = await res.text();
   Sentry.captureMessage("calendar.event.DELETE upstream rejected", {
     level: "error",
-    extra: { status: res.status, detail: errText },
+    extra: { status: res.status },
   });
   return NextResponse.json(
     { error: "Could not delete event." },

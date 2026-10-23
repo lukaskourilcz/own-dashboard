@@ -30,7 +30,7 @@ export function eventStart(ev: GcalEvent): Date | null {
 
 export function eventEnd(ev: GcalEvent): Date | null {
   if (ev.end.dateTime) return new Date(ev.end.dateTime);
-  if (ev.end.date) return new Date(`${ev.end.date}T23:59:59`);
+  if (ev.end.date) return new Date(`${ev.end.date}T00:00:00`);
   return null;
 }
 
