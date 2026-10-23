@@ -85,6 +85,7 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | 1a scouting | Only with `DNESKAI_SCOUTING_ENABLED`: hourly from 22:00 to 08:00, turns the night's reports from education sources and library links rated 4 or 5 into proposed topics (`marketing_dneskai_topics`), no model call and no lease; with `DNESKAI_FACT_OR_HYPE_ENABLED` it also buys transcripts of FACT or HYPE reels and asks Claude Haiku 5.5 for the verdict; with `DNESKAI_TITLING_ENABLED` it expires news topics after 48 hours and from 02:00 titles the untitled ones in one Claude Haiku 5.5 call | `dneskai-scouting.ts`, `dneskai-fact-or-hype.ts`, `dneskai-titling.ts` |
 | 2 media | Downloads the pictures of selected stories (og:image, article figures), stores them by sha256 with credit, pHash and size | `dneskai-media*.ts` |
 | 3 briefs | Groups stories into events, picks up to four, writes one brief per slot (`marketing_dneskai_briefs`); with `DNESKAI_TITLING_ENABLED` the events become news topics instead | `dneskai-events.ts`, `dneskai-briefs.ts` |
+| 3a enrichment | Only with `DNESKAI_TOPIC_BRIEFS_ENABLED`: approved topics become briefs (news: the event's brief; education: a brief of the report) and queued jobs; topic status approved → enriching → briefed → generated | `dneskai-topic-bridge.ts` |
 | 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
@@ -214,7 +215,7 @@ Costs show in "Chyby a náklady".
 
 ## 6. Database and switches still to apply
 
-The repository lists every migration version production recorded (reconciled 22 October). Eighteen prepared
+The repository lists every migration version production recorded (reconciled 22 October). Nineteen prepared
 migrations are not applied yet: `20261022000000` through `20261023130100`. The owner applies them with
 `npx supabase db push --linked` (steps in `docs/migration-guide.md`, "Applying the prepared migrations"). Then the
 owner sets these switches in Vercel Production and redeploys:
