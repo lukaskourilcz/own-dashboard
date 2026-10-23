@@ -110,7 +110,7 @@ describe('Lab format switch (#165)', () => {
 });
 
 describe('trending sounds in the picker and in Hudba (#167)', () => {
-  const trend = { audioId: '587784541076604', title: 'Trend Song', artist: 'Trend Artist', type: 'music' as const, durationMs: 30_000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false };
+  const trend = { audioId: '587784541076604', title: 'Trend Song', artist: 'Trend Artist', type: 'music' as const, durationMs: 30_000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false, attachable: true };
   it('lists trending sounds above the library and says Instagram adds the chosen one', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [track({ id: '11111111-1111-4111-8111-111111111111', title: 'One' })], trends: [trend] })));
     render(<DneskaiAudioPicker value="ig:587784541076604" onChange={() => {}} preview={false} lang="cs" />); await settle();

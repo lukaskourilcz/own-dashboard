@@ -52,7 +52,7 @@ describe('trending audio ingest (#167)', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
   it('lists recent sounds for the picker', async () => {
-    expect(await listDneskaiAudioTrends(store().db, owner, '2026-10-23')).toEqual([{ audioId: '1', title: 'Song', artist: 'Artist', type: 'music', durationMs: 30000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false }]);
+    expect(await listDneskaiAudioTrends(store().db, owner, '2026-10-23')).toEqual([{ audioId: '1', title: 'Song', artist: 'Artist', type: 'music', durationMs: 30000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false, attachable: true }]);
   });
 });
 
@@ -65,5 +65,15 @@ describe('a trending sound on the revision', () => {
     expect(dneskaiAudioChoiceKey(revision.audio)).toBe('ig:587784541076604');
     expect(dneskaiAudioFromKey('ig:587784541076604')).toEqual({ instagramAudioId: '587784541076604' });
     expect(dneskaiAudioFromKey('44444444-4444-4444-8444-444444444444')).toEqual({ trackId: '44444444-4444-4444-8444-444444444444' });
+  });
+});
+
+describe('the niche ranking (#167)', () => {
+  it('joins the ranking to Meta\'s list by audio id and appends the niche\'s own sounds as hints', async () => {
+    const niche = [{ audioId: '1', title: 'Song', artist: 'Artist', reels: 4, plays: 1000, score: 12 }, { audioId: '9', title: 'Niche Song', artist: null, reels: 2, plays: 50, score: 4 }, { audioId: '8', title: null, artist: null, reels: 1, plays: 0, score: 1 }];
+    expect(await listDneskaiAudioTrends(store().db, owner, '2026-10-23', niche)).toEqual([
+      expect.objectContaining({ audioId: '1', nicheCount: 4, attachable: true }),
+      { audioId: '9', title: 'Niche Song', artist: null, type: 'music', durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: 2, tiktok: false, attachable: false },
+    ]);
   });
 });

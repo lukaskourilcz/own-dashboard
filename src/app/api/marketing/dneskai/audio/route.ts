@@ -7,6 +7,8 @@ import { DneskaiAudioError, createDneskaiAudioTrack, listDneskaiAudioTracks, pre
 import { dneskaiReelsEnabled } from '@/lib/marketing/dneskai-reel';
 import { dneskaiAudioTrendsEnabled, listDneskaiAudioTrends } from '@/lib/marketing/dneskai-audio-trends';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
+import { loadDneskaiNicheSounds } from '@/lib/marketing/dneskai-audio-niche';
+import { resolveDneskaiProjectId } from '@/lib/marketing/scheduler-ports';
 
 export const runtime = 'nodejs';
 /** A create downloads the uploaded file (at most 20 MiB) and probes it with ffmpeg. */
@@ -39,7 +41,11 @@ export async function GET() {
     const db = createAdminClient();
     const tracks = await listDneskaiAudioTracks(db, user);
     // #167: today's trending sounds, only while their switch is on.
-    const trends = dneskaiAudioTrendsEnabled() ? await listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date())).catch(() => []) : undefined;
+    // #167: Meta's list joined with the niche ranking of the tracked education profiles (both $0, read from storage).
+    const trends = dneskaiAudioTrendsEnabled() ? await (async () => {
+      const niche = await resolveDneskaiProjectId(db, user).then((project) => loadDneskaiNicheSounds(db, user, project, new Date())).catch(() => []);
+      return listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date()), niche).catch(() => []);
+    })() : undefined;
     return Response.json({ tracks, ...(trends ? { trends } : {}) }, { headers });
   }
   catch (failure) { return failed(failure); }

@@ -55,9 +55,9 @@ export async function resolveDneskaiProjectId(db: Database, owner: string): Prom
   return matches[0].id as string;
 }
 
-/** `origin`: this deployment as the tick reached it; the Reel render (#165) is requested there. */
 /** How far ahead of its slot a Reel's MP4 is rendered (#165). */
 export const DNESKAI_REEL_PREPARE_AHEAD_MS = 45 * 60_000;
+/** `origin`: this deployment as the tick reached it; the Reel render (#165) is requested there. */
 export function createMarketingSchedulerPorts(db: Database, owner: string, env: Environment = process.env, options: { origin?: string } = {}): MarketingSchedulerPorts {
   z.uuid().parse(owner);
   const publications = (columns = "id") => db.from("marketing_publications").select(`${columns},marketing_revisions!inner(brand)`).eq("user_id", owner).eq("marketing_revisions.brand", "dneskai");

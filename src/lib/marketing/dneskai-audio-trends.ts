@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { MetaPublisherConfig } from "./publisher";
 import type { DneskaiAudioTrend } from "./dneskai-audio-contracts";
+import type { DneskaiNicheSound } from "./dneskai-audio-niche";
 
 /**
  * DNESKAi trending audio (#167, plan C5). Meta's Audio API (`GET /ig_audio`) returns, without a search query, the
@@ -89,16 +90,29 @@ export async function ingestDneskaiAudioTrends(db: Database, owner: string, inpu
   return { status: "done", stored: rows.length };
 }
 
-/** The sounds seen in the last two days, most persistent first, for Zdroje → Hudba and the Lab picker. */
-export async function listDneskaiAudioTrends(db: Database, owner: string, today: string): Promise<DneskaiAudioTrend[]> {
+/** Niche-only sounds shown next to Meta's list. */
+export const DNESKAI_NICHE_SOUNDS_SHOWN = 15;
+
+/**
+ * The sounds seen in the last two days, most persistent first, for Zdroje → Hudba and the Lab picker, joined by audio
+ * id with the niche ranking (#167): Meta's sounds get their niche count; the niche's own top sounds follow as hints
+ * that Instagram may not attach.
+ */
+export async function listDneskaiAudioTrends(db: Database, owner: string, today: string, niche: readonly DneskaiNicheSound[] = []): Promise<DneskaiAudioTrend[]> {
   z.uuid().parse(owner);
   const since = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
   const { data, error } = await db.from("marketing_audio_trends").select("audio_id,title,display_artist,audio_type,duration_ms,cover_artwork_thumbnail_url,days_seen,niche_count,tiktok,last_seen")
     .eq("user_id", owner).gte("last_seen", since).order("days_seen", { ascending: false }).limit(50);
   if (error) throw new Error("audio-trends-store-failed");
-  return (data as Array<Record<string, unknown>> ?? []).map((row) => ({
+  const ranked = new Map(niche.map((sound) => [sound.audioId, sound]));
+  const meta: DneskaiAudioTrend[] = (data as Array<Record<string, unknown>> ?? []).map((row) => ({
     audioId: String(row.audio_id), title: String(row.title), artist: (row.display_artist as string | null) ?? null, type: row.audio_type as DneskaiAudioTrend["type"],
     durationMs: (row.duration_ms as number | null) ?? null, coverUrl: (row.cover_artwork_thumbnail_url as string | null) ?? null,
-    daysSeen: Number(row.days_seen), nicheCount: Number(row.niche_count), tiktok: row.tiktok === true,
+    daysSeen: Number(row.days_seen), nicheCount: ranked.get(String(row.audio_id))?.reels ?? Number(row.niche_count), tiktok: row.tiktok === true, attachable: true,
   }));
+  const listed = new Set(meta.map((sound) => sound.audioId));
+  const nicheOnly: DneskaiAudioTrend[] = niche.filter((sound) => !listed.has(sound.audioId) && sound.title).slice(0, DNESKAI_NICHE_SOUNDS_SHOWN).map((sound) => ({
+    audioId: sound.audioId, title: sound.title!, artist: sound.artist, type: "music", durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: sound.reels, tiktok: false, attachable: false,
+  }));
+  return [...meta.sort((a, b) => b.nicheCount - a.nicheCount || b.daysSeen - a.daysSeen), ...nicheOnly];
 }

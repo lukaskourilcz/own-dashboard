@@ -33,8 +33,11 @@ export function DneskaiMusicHint({ post, position, preview, lang, now = new Date
   const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal) });
   const [copied, setCopied] = useState<'done' | 'failed' | null>(null);
   if (!query.data || !dneskaiMusicHintDue(post, now)) return null;
-  const track = dneskaiMusicHintTrack(query.data.tracks, position);
-  const name = track ? `${track.title} – ${track.artist}` : null;
+  // #167: the niche ranking's sounds first (what the tracked profiles use), else the library.
+  const niche = query.data.trends.filter((trend) => trend.nicheCount > 0).sort((a, b) => b.nicheCount - a.nicheCount);
+  const sound = niche.length ? niche[Math.abs(position) % niche.length]! : null;
+  const track = sound ? null : dneskaiMusicHintTrack(query.data.tracks, position);
+  const name = sound ? [sound.title, sound.artist].filter(Boolean).join(' – ') : track ? `${track.title} – ${track.artist}` : null;
   const copy = async () => {
     try { await navigator.clipboard.writeText(name!); setCopied('done'); } catch { setCopied('failed'); }
   };

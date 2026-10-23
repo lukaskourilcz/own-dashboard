@@ -53,6 +53,7 @@ const en = {
     days: (count: number) => count === 1 ? 'trending 1 day' : `trending ${count} days`,
     niche: (count: number) => `used by ${count} tracked profiles`,
     tiktok: 'rising on TikTok CZ',
+    hintOnly: 'from tracked profiles only, not in Instagram’s list for this account',
     attached: 'Instagram adds this sound to the Reel; the video itself stays silent.',
   },
   hint: {
@@ -122,6 +123,7 @@ const cs: typeof en = {
     days: (count: number) => count === 1 ? 'v trendu 1 den' : count < 5 ? `v trendu ${count} dny` : `v trendu ${count} dní`,
     niche: (count: number) => `používá ${count} sledovaných profilů`,
     tiktok: 'roste na TikToku CZ',
+    hintOnly: 'jen ze sledovaných profilů, není v seznamu Instagramu pro tento účet',
     attached: 'Tento zvuk k Reelu přidá Instagram; samotné video zůstane bez zvuku.',
   },
   hint: {
