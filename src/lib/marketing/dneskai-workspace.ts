@@ -33,6 +33,18 @@ export type DneskaiFieldLimit = z.infer<typeof DneskaiFieldLimitSchema>;
 export const DNESKAI_REVISION_STATUSES = ['review', 'approved', 'publishing', 'published', 'failed', 'reconciliation', 'returned', 'skipped', 'superseded'] as const;
 export const DNESKAI_PUBLICATION_STATUSES = ['queued', 'claimed', 'published', 'failed', 'reconciliation', 'cancelled'] as const;
 
+const count = z.number().int().nonnegative().max(1_000_000);
+/**
+ * #162: what the comment watcher did for one published post: comments read in the last finished pass, keyword
+ * comments, private and public replies sent, failures by code, and when it last looked. No commenter data.
+ */
+export const DneskaiEngagementReceiptSchema = z.strictObject({
+  commentsSeen: count, keywordMatches: count, privateSent: count, publicSent: count,
+  failures: z.array(z.strictObject({ code, count })).max(10),
+  lastCheckedAt: timestamp.nullable(),
+});
+export type DneskaiEngagementReceipt = z.infer<typeof DneskaiEngagementReceiptSchema>;
+
 export const DneskaiWorkspacePostSchema = z.strictObject({
   id: uuid,
   replacesId: uuid.nullable(),
@@ -58,6 +70,8 @@ export const DneskaiWorkspacePostSchema = z.strictObject({
   renderReport: DneskaiRenderReportSchema.nullable(),
   /** The keyword, DM and public reply this version carries (#157), null without one. Absent from older responses. */
   engagement: ContentEngagementSchema.nullable().optional(),
+  /** #162: the watcher's receipt for a published post with a keyword. Absent while the watcher is off. */
+  engagementReceipt: DneskaiEngagementReceiptSchema.optional(),
   brief: z.strictObject({
     eventId: z.string().min(1).max(200),
     title: z.string().min(1).max(300),
@@ -117,6 +131,8 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
   capabilities: z.strictObject({ regenerate: z.boolean(), generateNow: z.boolean(),
     /** The Lab's keyword and DM editor (#159, DNESKAI_ENGAGEMENT_EDITOR_ENABLED). Absent: off. */
     engagement: z.boolean().optional() }).optional(),
+  /** #162: the watcher's totals over posts published in the last seven days. Absent while the watcher is off. */
+  engagementSummary: z.strictObject({ posts: count, commentsSeen: count, keywordMatches: count, privateSent: count, publicSent: count, failed: count }).optional(),
   /** Stored rows (revisions, accounts) that could not be read; shown as a count, never silently dropped. */
   unreadable: z.number().int().nonnegative(),
 });
