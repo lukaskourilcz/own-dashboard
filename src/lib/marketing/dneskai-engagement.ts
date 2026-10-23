@@ -17,7 +17,9 @@ export function dneskaiEngagementWatchEnabled(env: Environment = process.env): b
 }
 /** #161: the comment webhook exists once the watcher runs and both Meta values are set on the server. */
 export function dneskaiCommentWebhookConfigured(env: Environment = process.env): boolean {
-  return dneskaiEngagementWatchEnabled(env) && (env.MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? '').length >= 16 && (env.MARKETING_INSTAGRAM_APP_SECRET ?? '').length >= 16;
+  // #216: the signing secret is the Meta app's under Facebook Login, the Instagram app's under Instagram Login.
+  const secret = env.MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE === 'facebook' ? env.MARKETING_META_APP_SECRET : env.MARKETING_INSTAGRAM_APP_SECRET;
+  return dneskaiEngagementWatchEnabled(env) && (env.MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN ?? '').length >= 16 && (secret ?? '').length >= 16;
 }
 export function dneskaiEngagementEditorEnabled(env: Environment = process.env): boolean {
   return env.DNESKAI_ENGAGEMENT_EDITOR_ENABLED === 'true';

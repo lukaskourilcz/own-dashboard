@@ -4,6 +4,7 @@ import type { createAdminClient } from '@/lib/supabase/admin';
 import { ContentEngagementSchema } from './contracts';
 import { resolveMetaPublisherConfig } from './meta-credentials';
 import type { MetaPublisherConfig } from './publisher';
+import { FacebookPageError, resolveFacebookPage, type FacebookPage } from './meta-facebook-page';
 import {
   DNESKAI_ENGAGEMENT_WINDOW_MS, EngagementGraphError, engagementGraphError, type EngagementGraph, type EngagementStore, type EngagementTarget,
 } from './dneskai-engagement-watch';
@@ -85,12 +86,19 @@ export async function instagramCommentSubscription(db: Database, owner: string, 
   env: Environment = process.env, fetcher: typeof fetch = fetch): Promise<{ subscribed: boolean }> {
   const settings = await resolveMetaPublisherConfig(db, owner, { id: account.id, user_id: owner, brand: 'dneskai', platform: 'instagram' }, env);
   if (settings.credentialHold) throw new EngagementGraphError(settings.credentialHold, 'definite', 'run');
-  if (settings.loginMode !== 'instagram' || !/^v\d+\.\d+$/.test(settings.apiVersion)) throw new EngagementGraphError('api-version-unverified', 'definite', 'run');
+  if ((settings.loginMode !== 'instagram' && settings.loginMode !== 'facebook') || !/^v\d+\.\d+$/.test(settings.apiVersion)) throw new EngagementGraphError('api-version-unverified', 'definite', 'run');
   if (!numericId.safeParse(account.remoteAccountId).success) throw new EngagementGraphError('account-unavailable', 'definite', 'run');
-  const url = new URL(`https://graph.instagram.com/${settings.apiVersion}/${account.remoteAccountId}/subscribed_apps`);
+  // Instagram Login subscribes the Instagram account on graph.instagram.com; Facebook Login (#216) subscribes the linked
+  // Page on graph.facebook.com with the Page token.
+  let node = account.remoteAccountId, host = 'graph.instagram.com', token = settings.accessToken;
+  if (settings.loginMode === 'facebook') {
+    const page = await facebookPage(settings, account.remoteAccountId, fetcher);
+    node = page.pageId; host = 'graph.facebook.com'; token = page.pageToken;
+  }
+  const url = new URL(`https://${host}/${settings.apiVersion}/${node}/subscribed_apps`);
   if (action === 'subscribe') url.searchParams.set('subscribed_fields', 'comments');
   let response: Response;
-  try { response = await fetcher(url.href, { method: action === 'subscribe' ? 'POST' : 'GET', headers: { Authorization: `Bearer ${settings.accessToken}` }, redirect: 'error', signal: AbortSignal.timeout(10_000) }); }
+  try { response = await fetcher(url.href, { method: action === 'subscribe' ? 'POST' : 'GET', headers: { Authorization: `Bearer ${token}` }, redirect: 'error', signal: AbortSignal.timeout(10_000) }); }
   catch { throw new EngagementGraphError('meta-request-uncertain', 'uncertain'); }
   let body: unknown = null;
   try { body = await response.json(); } catch { body = null; }
@@ -106,11 +114,24 @@ export async function instagramCommentSubscription(db: Database, owner: string, 
 
 /** The scopes a private reply and a public reply need under Instagram Login. */
 export const DNESKAI_ENGAGEMENT_SCOPES = ['instagram_business_basic', 'instagram_business_manage_comments'] as const;
+/** Under Facebook Login (#216): comments and replies need `instagram_manage_comments`, a private reply `pages_messaging`. */
+export const DNESKAI_ENGAGEMENT_FACEBOOK_SCOPES = ['instagram_basic', 'instagram_manage_comments', 'pages_messaging'] as const;
+
+/** The Page and Page token, or the watcher's run-level error code. */
+async function facebookPage(settings: MetaPublisherConfig, igUserId: string, fetcher: typeof fetch, signal?: AbortSignal): Promise<FacebookPage> {
+  try { return await resolveFacebookPage(settings, igUserId, { fetcher, signal }); }
+  catch (failure) {
+    if (failure instanceof FacebookPageError) throw new EngagementGraphError(failure.code, failure.uncertain ? 'uncertain' : 'definite', 'run');
+    throw failure;
+  }
+}
 
 /**
- * Graph calls through Instagram Login (`graph.instagram.com`) with the account's stored token, resolved once per
- * account per tick. The token travels only in the Authorization header. Comments: `GET /<media-id>/comments`;
- * private reply: `POST /<IG_ID>/messages` with `recipient.comment_id`; public reply: `POST /<comment-id>/replies`.
+ * Graph calls with the account's stored token, resolved once per account per tick. The token travels only in the
+ * Authorization header. Comments: `GET /<media-id>/comments`; public reply: `POST /<comment-id>/replies`.
+ * - Instagram Login: `graph.instagram.com`, private reply `POST /<IG_ID>/messages`.
+ * - Facebook Login (#216): `graph.facebook.com` with the linked Page's token; private reply `POST /<PAGE_ID>/messages`.
+ * Both send `recipient.comment_id` and the approved message.
  */
 export function createDneskaiEngagementGraph(db: Database, owner: string, env: Environment = process.env, fetcher: typeof fetch = fetch): EngagementGraph {
   const configs = new Map<string, Promise<MetaPublisherConfig>>();
@@ -119,15 +140,25 @@ export function createDneskaiEngagementGraph(db: Database, owner: string, env: E
     if (!found) { found = resolveMetaPublisherConfig(db, owner, { id: target.accountId, user_id: owner, brand: 'dneskai', platform: 'instagram' }, env); configs.set(target.accountId, found); }
     return found;
   };
-  async function call(target: EngagementTarget, path: string, init: { method: 'GET' | 'POST'; query?: Record<string, string>; json?: unknown; form?: Record<string, string> }, signal: AbortSignal) {
+  const pages = new Map<string, Promise<FacebookPage>>();
+  const page = (target: EngagementTarget, settings: MetaPublisherConfig, signal: AbortSignal) => {
+    let found = pages.get(target.accountId);
+    if (!found) { found = facebookPage(settings, target.igUserId, fetcher, signal); pages.set(target.accountId, found); found.catch(() => pages.delete(target.accountId)); }
+    return found;
+  };
+  /** `path` may name the Instagram account (`IG`) in front; under Facebook Login a private reply goes to the Page instead. */
+  async function call(target: EngagementTarget, path: string | ((node: { pageId: string | null }) => string), init: { method: 'GET' | 'POST'; query?: Record<string, string>; json?: unknown; form?: Record<string, string> }, signal: AbortSignal) {
     const settings = await config(target);
     if (settings.credentialHold) throw new EngagementGraphError(settings.credentialHold, 'definite', 'run');
-    if (settings.loginMode !== 'instagram') throw new EngagementGraphError('login-mode-mismatch', 'definite', 'run');
+    if (settings.loginMode !== 'instagram' && settings.loginMode !== 'facebook') throw new EngagementGraphError('login-mode-mismatch', 'definite', 'run');
     if (!/^v\d+\.\d+$/.test(settings.apiVersion)) throw new EngagementGraphError('api-version-unverified', 'definite', 'run');
-    if (DNESKAI_ENGAGEMENT_SCOPES.some((scope) => !settings.scopes.includes(scope))) throw new EngagementGraphError('engagement-scopes-unverified', 'definite', 'run');
-    const url = new URL(`https://graph.instagram.com/${settings.apiVersion}/${path}`);
+    const facebook = settings.loginMode === 'facebook';
+    if ((facebook ? DNESKAI_ENGAGEMENT_FACEBOOK_SCOPES : DNESKAI_ENGAGEMENT_SCOPES).some((scope) => !settings.scopes.includes(scope))) throw new EngagementGraphError('engagement-scopes-unverified', 'definite', 'run');
+    const linked = facebook ? await page(target, settings, signal) : null;
+    const resolved = typeof path === 'function' ? path({ pageId: linked?.pageId ?? null }) : path;
+    const url = new URL(`https://${facebook ? 'graph.facebook.com' : 'graph.instagram.com'}/${settings.apiVersion}/${resolved}`);
     for (const [key, value] of Object.entries(init.query ?? {})) url.searchParams.set(key, value);
-    const headers: Record<string, string> = { Authorization: `Bearer ${settings.accessToken}` };
+    const headers: Record<string, string> = { Authorization: `Bearer ${linked?.pageToken ?? settings.accessToken}` };
     let body: string | undefined;
     if (init.json !== undefined) { headers['Content-Type'] = 'application/json'; body = JSON.stringify(init.json); }
     else if (init.form) { headers['Content-Type'] = 'application/x-www-form-urlencoded'; body = new URLSearchParams(init.form).toString(); }
@@ -151,7 +182,7 @@ export function createDneskaiEngagementGraph(db: Database, owner: string, env: E
       return { comments: page.data.data, after: page.data.paging?.next ? page.data.paging.cursors?.after ?? null : null };
     },
     async privateReply(target, commentId, signal) {
-      await call(target, `${target.igUserId}/messages`, { method: 'POST', json: { recipient: { comment_id: commentId }, message: { text: target.replyMessage } } }, signal);
+      await call(target, ({ pageId }) => `${pageId ?? target.igUserId}/messages`, { method: 'POST', json: { recipient: { comment_id: commentId }, message: { text: target.replyMessage } } }, signal);
     },
     async publicReply(target, commentId, signal) {
       const raw = await call(target, `${commentId}/replies`, { method: 'POST', form: { message: target.publicReply ?? '' } }, signal);
