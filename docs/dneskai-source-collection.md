@@ -2,7 +2,36 @@
 
 Owner schválil tento režim 13. října 2026. OwnDashboard je ovládací místo na
 `https://own-dashboard-tau.vercel.app/`. V projektu DNESKAi záložka **Zdroje**
-ukazuje rozvrh, výsledky kontrol, problémy a vybraná témata.
+ukazuje, co se čte (#174); rozvrh, výsledky kontrol, problémy a vybraná témata
+jsou pod ⋯ → **Obnova témat**, účet pod ⋯ → **Účet Instagram**.
+
+## Zdroje jako seznam (#174, 23. října 2026)
+
+Zdroje mají dva seznamy, **Instagram profily** a **Weby**. Řádek ukazuje účet nebo
+doménu, druh (Zprávy / Vzdělávání), úroveň (Původní / Redakce / Agregátor), dny
+čtení, kdy se zdroj naposledy četl a kolik položek přinesl (z
+`marketing_dneskai_source_states`), poslední chybu a přepínač.
+
+Dokud `DNESKAI_SOURCES_TABLE_ENABLED` není `true`, seznam ukazuje soubor
+`dneskai-registry.ts` jen pro čtení a sběr i scouting čtou soubor. Po nasazení
+migrace `20261023110000_dneskai_sources_table.sql` a zapnutí přepínače první
+otevření Zdrojů zapíše soubor jako první řádky `marketing_dneskai_sources`
+(jednou; odebraný zdroj se už nevrátí). Profily @aimanie a @digitalnihumanista
+jsou vypnuté, dokud je neprověří Astra ([#185](https://github.com/lukaskourilcz/own-dashboard/issues/185)).
+Od té chvíle vlastník přidává zdroj zadáním @účtu, profilu na instagram.com nebo
+adresy (adresa s `rss`, `atom`, `feed` nebo `.xml` se čte jako feed, jiná jako
+stránka; Atom čte stejný adaptér jako RSS), upravuje název, druh, úroveň, dny a
+počet položek a zdroj odebírá po potvrzení. Adresa zdroje se nemění: nová adresa
+je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy).
+
+Sběr i scouting čtou zdroje přes jeden katalog (`dneskai-source-catalog.ts`):
+řádky vlastníka, jsou-li přepínač zapnutý a řádky existují, jinak soubor. Chyba
+čtení tabulky vrátí soubor, takže chybějící tabulka noc nezastaví. Zdroj odebraný
+během běžící noci skončí jako `collection-source-removed` bez čtení. Přidané weby
+mají ID `web-<doména>-<6 hex>` a čte je jen nativní poskytovatel feedů
+(`MARKETING_DNESKAI_FEED_PROVIDER=native`); kontroly URL a adres adaptérů platí dál.
+Instagram profil se čte přes Apify jako ostatní, jen se zapnutým
+`MARKETING_DNESKAI_APIFY_ENABLED` a v denních limitech.
 
 Každý den ve 22:00 Europe/Prague zahájí sběr pro následující den plánovač v Supabase
 (pg_cron, [#120](https://github.com/lukaskourilcz/own-dashboard/issues/120)); popis je v

@@ -2,7 +2,8 @@ import 'server-only';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiCandidateSchema, type DneskaiCandidate } from './dneskai-contracts';
-import { DNESKAI_EDUCATION_SOURCES, dneskaiCheapIdentity, dneskaiSourceById } from './dneskai-registry';
+import { dneskaiCheapIdentity } from './dneskai-registry';
+import { DNESKAI_REGISTRY_CATALOG, loadDneskaiSourceCatalog, type DneskaiSourceCatalog } from './dneskai-source-catalog';
 import { DNESKAI_TOPIC_TITLE_MAX } from './dneskai-topics';
 import { pragueMarketingDate } from './weekly-planning';
 
@@ -40,8 +41,8 @@ const clip = (value: string, max: number) => { const text = value.replace(/\s+/g
 const canonical = (url: string) => { try { return dneskaiCheapIdentity({ title: '', text: '', url }).canonicalUrl; } catch { return null; } };
 
 /** One topic per education report: its title (or the caption's first line), first URL, handle and an excerpt. */
-export function dneskaiReportTopic(candidate: DneskaiCandidate): DneskaiScoutingTopic | null {
-  const source = dneskaiSourceById(candidate.sourceId);
+export function dneskaiReportTopic(candidate: DneskaiCandidate, catalog: Pick<DneskaiSourceCatalog, 'byId'> = DNESKAI_REGISTRY_CATALOG): DneskaiScoutingTopic | null {
+  const source = catalog.byId(candidate.sourceId);
   const url = canonical(candidate.url);
   const title = clip(candidate.title || candidate.text.split('\n')[0] || '', DNESKAI_TOPIC_TITLE_MAX);
   if (!source || !url || !title) return null;
@@ -87,9 +88,11 @@ export function dneskaiScoutingPicks(reports: readonly DneskaiScoutingTopic[], l
 const rows = <T>(result: { data: T[] | null; error: unknown }, code: string): T[] => { if (result.error) throw new Error(code); return result.data ?? []; };
 
 /** One scouting pass for the owner's DNESKAi project. Idempotent: a second pass inserts nothing new. */
-export async function scoutDneskaiTopics(db: Database, owner: string, project: string, now: Date): Promise<DneskaiScoutingResult> {
+export async function scoutDneskaiTopics(db: Database, owner: string, project: string, now: Date, env: Record<string, string | undefined> = process.env): Promise<DneskaiScoutingResult> {
   z.uuid().parse(owner); z.uuid().parse(project);
-  const educationIds = DNESKAI_EDUCATION_SOURCES.map((source) => source.id);
+  // #174: the owner's rows while DNESKAI_SOURCES_TABLE_ENABLED is on, so a profile added in Zdroje is scouted the next night.
+  const catalog = await loadDneskaiSourceCatalog(db as never, owner, project, env);
+  const educationIds = catalog.educationIds();
   const [candidateResult, libraryResult, topicResult] = await Promise.all([
     db.from('marketing_dneskai_candidates').select('candidate').eq('user_id', owner).eq('project_id', project).in('candidate->>sourceId', educationIds)
       .gte('created_at', new Date(now.getTime() - DNESKAI_SCOUTING_WINDOW_MS).toISOString()).order('created_at', { ascending: false }).limit(CANDIDATE_READ_LIMIT),
@@ -99,7 +102,7 @@ export async function scoutDneskaiTopics(db: Database, owner: string, project: s
   ]);
   const reports = rows(candidateResult as { data: Array<{ candidate: unknown }> | null; error: unknown }, 'scouting-reports-unavailable').flatMap((row) => {
     const candidate = DneskaiCandidateSchema.safeParse(row.candidate);
-    const topic = candidate.success ? dneskaiReportTopic(candidate.data) : null;
+    const topic = candidate.success ? dneskaiReportTopic(candidate.data, catalog) : null;
     return topic ? [topic] : [];
   });
   const library = rows(libraryResult as { data: LibraryLink[] | null; error: unknown }, 'scouting-library-unavailable').flatMap((link) => { const topic = dneskaiLibraryTopic(link); return topic ? [topic] : []; });

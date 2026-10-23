@@ -4,6 +4,7 @@ import type { createAdminClient } from '@/lib/supabase/admin';
 import { DneskaiCandidateSchema,DneskaiCollectionStateSchema,type DneskaiCandidate,type DneskaiSource } from './dneskai-contracts';
 import { DNESKAI_SOURCES,isDneskaiProject,dneskaiCheapIdentity } from './dneskai-registry';
 import { contentHash } from './hashes';
+import { loadDneskaiSourceCatalog,type DneskaiSourceCatalog } from './dneskai-source-catalog';
 import type { JevHistory } from './dneskai-providers';
 import { previewPilotRetired } from './preview-pilot';
 import { DNESKAI_FINISH_EVENT_LIMIT,dneskaiEventCategory,dneskaiFinishEvents,groupDneskaiEvents } from './dneskai-events';
@@ -25,6 +26,8 @@ export interface DneskaiCollectionStore{
  planJev(owner:string,runId:string,fence:string,count:number):Promise<number>;
  /** Decision 13: returns recent Jev holds to the queue once, before the Jev plan (migration 20261022180100). */
  requeueHeld?(owner:string,runId:string,fence:string):Promise<number>;
+ /** Which sources exist (#174): the owner's table rows while DNESKAI_SOURCES_TABLE_ENABLED is on, else the registry file. */
+ catalog?(owner:string,project:string,env:Record<string,string|undefined>):Promise<DneskaiSourceCatalog>;
 }
 export async function requireDneskaiProject(db:DneskaiDatabase,owner:string,projectId:string){
  z.uuid().parse(owner);z.uuid().parse(projectId);
@@ -56,6 +59,7 @@ export function createDneskaiCollectionStore(db:DneskaiDatabase):DneskaiCollecti
   async finish(owner,runId,fence,status,errorCode){const grouping=status==='running'?null:await finishEvents(db,owner,runId);return rpc('marketing_dneskai_finish',{p_owner:owner,p_run:runId,p_fence:fence,p_status:status,p_error:errorCode??(grouping?.partial?'collection-event-window-partial':null),...(grouping?{p_events:grouping.events}:{})}) as Promise<DneskaiRun>;},
   planJev:(owner,runId,fence,count)=>rpc('marketing_dneskai_plan_jev',{p_owner:owner,p_run:runId,p_fence:fence,p_count:count}) as Promise<number>,
   requeueHeld:(owner,runId,fence)=>rpc('marketing_dneskai_requeue_held',{p_owner:owner,p_run:runId,p_fence:fence}) as Promise<number>,
+  catalog:(owner,project,env)=>loadDneskaiSourceCatalog(db as never,owner,project,env),
  };
 }
 /**
