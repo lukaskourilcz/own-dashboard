@@ -1,5 +1,7 @@
 # NEEDED
 
+Browser steps are GitHub issues labelled `astra`; [docs/astra-handoff.md](docs/astra-handoff.md) orders them for Codex Astra.
+
 - [ ] **Review Oslo application drafts before sending** — adjust relocation tense after 22 October, confirm individual security/citizenship requirements, choose the appropriate Aidn level and check agency-client duplicates. Specialist ML/embedded, Norwegian-required and expired roles are flagged for review. [imp:4] [owner:me] [time:30m] [kind:content]
 
 - [ ] **Decide whether @dneskai publishes daily** — the pilot published two posts on 22 October (single image https://www.instagram.com/p/DezenXXkev_/ and five-slide carousel https://www.instagram.com/p/Dezk8kMlv0P/, about $0.046 in total, [#123](https://github.com/lukaskourilcz/own-dashboard/issues/123)). Publishing is off at the account switch, as the pilot rules ask. To publish daily, turn it on in DNESKAi → `⋯` → Účet Instagram; both Vercel switches stay on. Every post still needs your approval of its exact version. [imp:5] [owner:me] [time:2m] [kind:decision]
