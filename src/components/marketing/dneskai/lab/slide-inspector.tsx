@@ -15,7 +15,7 @@ import Image from 'next/image';
 import { dneskaiCropFractions, dneskaiCropRegion, dneskaiCropUpscale, dneskaiSlotFrame } from '@/lib/marketing/dneskai-crop';
 import type { DneskaiFitField, DneskaiFitResult } from '@/lib/marketing/dneskai-lab';
 import type { DneskaiWorkspacePost } from '@/lib/marketing/dneskai-workspace';
-import { CountedField } from '../post-editor';
+import { CountedField } from '../counted-field';
 import { cn } from '@/lib/utils';
 import { DneskaiFocalPicker } from '../focal-picker';
 import { DneskaiMediaTray } from '../media-tray';

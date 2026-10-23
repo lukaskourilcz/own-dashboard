@@ -7,7 +7,7 @@ import { ENGAGEMENT_KEYWORD_PATTERN, ENGAGEMENT_PUBLIC_REPLY_MAX, ENGAGEMENT_REP
 import { dneskaiEngagementKeyword, newEngagementDraft, type DeckDraft, type EngagementDraft } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiCaptionWithKeyword } from '@/lib/marketing/dneskai-caption';
 import { cn } from '@/lib/utils';
-import { CountedField } from '../post-editor';
+import { CountedField } from '../counted-field';
 
 /**
  * „Komentář a zpráva“ (#159): the comment keyword, the DM text a keyword comment receives and the public reply under

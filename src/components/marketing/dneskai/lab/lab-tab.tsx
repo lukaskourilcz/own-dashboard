@@ -18,7 +18,7 @@ import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfi
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
-import { CountedField } from '../post-editor';
+import { CountedField } from '../counted-field';
 import { DneskaiCodeText } from '../code-text';
 import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
