@@ -169,9 +169,11 @@ export function dneskaiLabDay(read: DneskaiWorkspaceRead, date: string, now: num
   return { date, posts, jobs, approvable, waiting };
 }
 
-/** The days the Lab queue shows: today and tomorrow (the night's collection prepares tomorrow's posts). */
+/** Today and tomorrow first, then any other dates carrying pending decisions on this cursor page. */
 export function dneskaiLabQueue(read: DneskaiWorkspaceRead, now: number, renderFailed?: ReadonlySet<string>): DneskaiLabDay[] {
-  return [read.today, pragueDayAfter(read.today, 1)].map((date) => dneskaiLabDay(read, date, now, renderFailed));
+  const primary = [read.today, pragueDayAfter(read.today, 1)];
+  const other = [...new Set(read.posts.filter(post => post.status === 'review' || post.status === 'returned').map(post => pragueDate(post.scheduledAt)))].filter(date => !primary.includes(date)).sort();
+  return [...primary, ...other].map(date => dneskaiLabDay(read, date, now, renderFailed));
 }
 
 /** Every reviewable post across the queue in order, the J/K and ↑/↓ path. */

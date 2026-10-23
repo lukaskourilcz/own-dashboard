@@ -112,6 +112,9 @@ export const DneskaiWorkspaceWaitingSchema = z.strictObject({
 });
 export type DneskaiWorkspaceWaiting = z.infer<typeof DneskaiWorkspaceWaitingSchema>;
 
+export const DneskaiDecisionCursorSchema = z.strictObject({ createdAt: timestamp, id: uuid });
+export type DneskaiDecisionCursor = z.infer<typeof DneskaiDecisionCursorSchema>;
+
 export const DneskaiWorkspaceReadSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_WORKSPACE_VERSION),
   /** Prague date the read was built for; the calendar starts here. */
@@ -121,6 +124,8 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
   slots: z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)).max(8),
   accounts: z.array(z.strictObject({ id: uuid, remoteId: z.string().min(1).max(200), handle: z.string().min(1).max(100), verified: z.boolean(), enabled: z.boolean() })).max(4),
   posts: z.array(DneskaiWorkspacePostSchema).max(60),
+  /** Pending decisions are keyset-paged independently of bounded recent history. */
+  decisionPage: z.strictObject({ nextCursor: DneskaiDecisionCursorSchema.nullable() }).optional(),
   jobs: z.array(DneskaiWorkspaceJobSchema).max(20),
   /**
    * Topics of today and tomorrow whose brief waits for the scheduler: pending or ready, with no drafting job yet

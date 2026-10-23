@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { requireDneskaiProject } from '@/lib/marketing/dneskai-store';
 import { readDneskaiWorkspace } from '@/lib/marketing/dneskai-workspace-read';
-import { pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
+import { DneskaiDecisionCursorSchema, pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 import { dneskaiPaidActionCapabilities } from '@/lib/marketing/dneskai-paid-switches';
 import { dneskaiEngagementEditorEnabled, dneskaiEngagementWatchEnabled } from '@/lib/marketing/dneskai-engagement';
@@ -27,10 +27,16 @@ export async function GET(request: Request) {
   const today = pragueMarketingDate(now);
   const date = params.get('date') ?? today;
   if (!z.iso.date().safeParse(date).success || date < pragueDayAfter(today, -7) || date > pragueDayAfter(today, 7)) return Response.json({ error: 'invalid-date' }, { status: 400 });
+  let decisionsBefore;
+  try {
+    const before = params.get('before');
+    if (before && before.length > 200) throw new Error('cursor');
+    decisionsBefore = before ? DneskaiDecisionCursorSchema.parse(JSON.parse(before)) : undefined;
+  } catch { return Response.json({ error: 'invalid-cursor' }, { status: 400 }); }
   try { await requireDneskaiProject(db, user.id, projectId!); }
   catch { return Response.json({ error: 'project-unavailable' }, { status: 404 }); }
   try {
-    return Response.json(await readDneskaiWorkspace(db, user.id, now, date, { capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() }, engagement: dneskaiEngagementWatchEnabled(), topicTitles: dneskaiTopicBriefsEnabled() }), { headers: { 'Cache-Control': 'private, no-store' } });
+    return Response.json(await readDneskaiWorkspace(db, user.id, now, date, { decisionsBefore, capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() }, engagement: dneskaiEngagementWatchEnabled(), topicTitles: dneskaiTopicBriefsEnabled() }), { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {
     return Response.json({ error: 'dneskai-workspace-unavailable' }, { status: 503 });
   }

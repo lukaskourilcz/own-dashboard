@@ -21,6 +21,8 @@ function table(state: typeof mocks) {
       eq: (field: string, value: unknown) => { state.filters.push([name, 'eq', field, value]); rows = rows.filter((row) => !(field in row) || row[field] === value); return query; },
       neq: (field: string, value: unknown) => { rows = rows.filter((row) => row[field] !== value); return query; },
       in: (field: string, values: unknown[]) => { rows = rows.filter((row) => !(field in row) || values.includes(row[field])); return query; },
+      not: (field: string, operator: string, value: string) => { if (operator === 'in') rows = rows.filter(row => !value.slice(1, -1).split(',').includes(String(row[field]))); return query; },
+      or: () => query,
       gte: () => query, order: () => query,
       limit: (count: number) => { limit = count; return query; },
       maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
@@ -75,6 +77,12 @@ beforeEach(() => {
 const get = (route: typeof review, query: string) => route(new Request(`https://own.example/api/marketing/dneskai/x?${query}`));
 
 describe('GET /api/marketing/dneskai/review (#119)', () => {
+  it('rejects malformed or oversized decision cursors before querying revisions', async () => {
+    for (const before of ['{bad', JSON.stringify({ createdAt: 'not-a-date', id: project }), 'x'.repeat(201)]) {
+      const response = await get(review, new URLSearchParams({ projectId: project, before }).toString());
+      expect(response.status).toBe(400); expect(await response.json()).toEqual({ error: 'invalid-cursor' });
+    }
+  });
   it('returns the owner-scoped workspace with deck, fields, brief media and drafting jobs, and counts an unreadable row', async () => {
     const response = await get(review, `projectId=${project}`); const body = await response.json();
     expect(response.status).toBe(200); expect(response.headers.get('cache-control')).toBe('private, no-store');

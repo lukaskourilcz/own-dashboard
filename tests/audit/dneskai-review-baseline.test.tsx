@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }));
 import { DneskaiAudioLibrary } from '@/components/marketing/dneskai-audio-library';
+import { dneskaiLabOrder, dneskaiLabQueue } from '@/lib/marketing/dneskai-lab';
 import { readDneskaiWorkspace } from '@/lib/marketing/dneskai-workspace-read';
 import { deckRevision } from '../lib/marketing-dneskai-revision-fixture';
 
@@ -17,16 +18,23 @@ type Row = Record<string, unknown>;
 /** Applies requested filters and limits, so a SQL limit cannot disappear inside a forgiving stub. */
 function database(tables: Record<string, Row[]>) {
   return { from(table: string) {
-    let result = [...(tables[table] ?? [])];
+    let result = [...(tables[table] ?? [])], limit = Infinity;
+    const order: Array<{ key: string; ascending: boolean }> = [];
+    const column = (key: string) => key === 'request->generation->source->>brand' ? 'brand' : key;
     const query = {
       select: () => query,
-      eq: (key: string, value: unknown) => { result = result.filter(r => r[key] === value); return query; },
+      eq: (key: string, value: unknown) => { result = result.filter(r => r[column(key)] === value); return query; },
       neq: (key: string, value: unknown) => { result = result.filter(r => r[key] !== value); return query; },
       in: (key: string, values: unknown[]) => { result = result.filter(r => values.includes(r[key])); return query; },
+      not: (key: string, operator: string, value: string) => { if (operator === 'in') result = result.filter(r => !value.slice(1, -1).split(',').includes(String(r[key]))); return query; },
       gte: (key: string, value: string) => { result = result.filter(r => String(r[key]) >= value); return query; },
-      order: () => query, // input rows are already newest first
-      limit: (count: number) => { result = result.slice(0, count); return query; },
-      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: result, error: null }).then(resolve),
+      or: (filter: string) => { const match = /^created_at.lt.(.+),and\(created_at.eq.(.+),id.lt.(.+)\)$/.exec(filter)!; result = result.filter(r => String(r.created_at) < match[1]! || (r.created_at === match[2] && String(r.id) < match[3]!)); return query; },
+      order: (key: string, options?: { ascending?: boolean }) => { order.push({ key, ascending: options?.ascending !== false }); return query; },
+      limit: (count: number) => { limit = count; return query; },
+      then: (resolve: (value: unknown) => unknown) => {
+        result.sort((a,b) => { for (const by of order) { const cmp = String(a[by.key]).localeCompare(String(b[by.key])); if (cmp) return by.ascending ? cmp : -cmp; } return 0; });
+        return Promise.resolve({ data: result.slice(0, limit), error: null }).then(resolve);
+      },
     };
     return query;
   } } as never;
@@ -35,9 +43,9 @@ const row = (n: number, status = 'published'): Row => ({ id: id(n), user_id: own
   content_hash: 'a'.repeat(64), created_at: '2026-10-23T08:00:00Z', replaces_id: null, approved_at: null, feedback: null, render_report: null,
   revision: { ...deckRevision(), scheduledAt: '2026-10-23T07:00:00Z' } });
 
-describe('DNESKAi audit: observed baseline defects', () => {
-  it('C02: loses a pending decision behind 150 newer eligible revisions', async () => {
-    const old = { ...row(999, 'review'), created_at: '2026-09-01T08:00:00Z' };
+describe('DNESKAi audit regressions and remaining baseline probes', () => {
+  it('C02: retains a pending decision behind 150 newer history revisions', async () => {
+    const old = { ...row(999, 'review'), created_at: '2026-09-01T08:00:00Z', revision: { ...deckRevision(), scheduledAt: '2026-09-01T08:00:00Z' } };
     const control = await readDneskaiWorkspace(database({ marketing_revisions: [old] }), owner, now);
     expect(control.posts.map(p => p.id)).toContain(id(999));
     const newer = Array.from({ length: 150 }, (_, n) => {
@@ -47,15 +55,26 @@ describe('DNESKAi audit: observed baseline defects', () => {
     });
     const read = await readDneskaiWorkspace(database({ marketing_revisions: [...newer, old] }), owner, now);
     expect(read.unreadable).toBe(0);
-    expect(read.posts.map(p => p.id)).not.toContain(id(999));
+    expect(read.posts.map(p => p.id)).toContain(id(999));
+    expect(dneskaiLabOrder(dneskaiLabQueue(read, now.getTime())).map(item => item.post.id)).toContain(id(999));
   });
-  it('C03: other brands fill the jobs limit before the DNESKAi filter', async () => {
+  it('C02: reaches every pending decision across stable keyset pages, including equal timestamps', async () => {
+    const pending = Array.from({ length: 75 }, (_, n) => row(n + 1, 'review'));
+    const db = database({ marketing_revisions: pending });
+    const first = await readDneskaiWorkspace(db, owner, now);
+    const second = await readDneskaiWorkspace(db, owner, now, undefined, { decisionsBefore: first.decisionPage!.nextCursor! });
+    const third = await readDneskaiWorkspace(db, owner, now, undefined, { decisionsBefore: second.decisionPage!.nextCursor! });
+    expect([first.posts.length, second.posts.length, third.posts.length]).toEqual([30, 30, 15]);
+    expect(new Set([...first.posts, ...second.posts, ...third.posts].map(p => p.id)).size).toBe(75);
+    expect(third.decisionPage!.nextCursor).toBeNull();
+  });
+  it('C03: filters other brands before the DNESKAi jobs limit', async () => {
     const job = (n: number, brand: string): Row => ({ id: id(n), user_id: owner, brand, status: 'queued', error_code: null,
       created_at: '2026-10-23T08:00:00Z', scheduled_at: '2026-10-23T16:00:00Z', revision_id: id(1000+n), title: 'Synthetic queued draft' });
     const target = { ...job(999, 'dneskai'), created_at: '2026-10-23T07:00:00Z' };
     expect((await readDneskaiWorkspace(database({ marketing_jobs: [target] }), owner, now)).jobs).toHaveLength(1);
     const read = await readDneskaiWorkspace(database({ marketing_jobs: [...Array.from({ length: 60 }, (_, n) => job(n + 1, 'devshark')), target] }), owner, now);
-    expect(read.jobs).toHaveLength(0);
+    expect(read.jobs).toHaveLength(1);
   });
   it('C04: reports only 5000 of 5001 keyword matches as an exact receipt', async () => {
     const post = row(1);

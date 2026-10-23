@@ -6,7 +6,10 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 
 - **C01 implemented:** one dirty-draft guard above the persistent shell handles workspace tabs, post selection, project/sidebar/command navigation, ordinary links, document unload and managed browser Back/Forward. In-app exits offer Save / Discard / Stay. A failed save retains the editor and pending navigation; successful save resumes that navigation. Browser history restores the current entry without adding entries or dropping forward history. Native reload/close retains the browser's standard unsaved-work warning.
 - Guard validation: five component tests passed, covering Stay/Escape, Discard, failed-save retry, readiness changes, SPA link replay and Back restoration. The existing thirteen DNESKAi workspace component tests also passed. Focused lint and type checking passed during development; full release checks follow the remaining batches.
-- **C02–C07 pending.** Database eligibility, complete counts, upload IDs, preview retry and audio rotation follow C01.
+- **C02 implemented:** pending decisions have a separate owner/brand/status-filtered SQL read, stable created-at/id cursors and 30-row pages. Recent receipts cannot evict them. The Lab also shows pending dates outside today/tomorrow. Paging is guarded for dirty drafts, survives reload in the URL and resets after a saved successor. The 60-post response and 150-row recent-context bounds remain explicit.
+- **C03 implemented:** workspace and cost job reads filter the generation source brand before their row limits.
+- Read validation: sixty targeted tests passed across the read/API/client/Lab/component files, including 75 decisions with tied timestamps across three pages, an old decision beyond 150 newer receipts, mixed-brand job starvation, and malformed/oversized cursor rejection. Type and focused lint checks passed.
+- **C04–C07 pending.** Complete counts, upload IDs, preview retry and audio rotation follow.
 
 ## Remaining batches
 

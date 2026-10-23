@@ -28,7 +28,7 @@ import { DneskaiTopicsList } from './topics-list';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
-type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; guest?: boolean };
+type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; guest?: boolean; onSavedRevision?: () => void };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
 function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
@@ -85,7 +85,7 @@ export function DneskaiLabTab(props: Props) {
         choose(ordered[Math.max(0, Math.min(ordered.length - 1, at + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
       }} aria-label={t.queue.label} className="min-w-0 space-y-4" data-testid="dneskai-lab-queue">
         {days.map((day, index) => <section key={day.date} className="space-y-2">
-          <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow}</h3>
+          <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : index === 1 ? t.queue.tomorrow : formatDneskaiDay(day.date)}</h3>
           <ol className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
             {day.posts.map((item) => {
               // #173: the card's tint carries the state; its words stay in the accessible name and the tooltip.
@@ -110,7 +110,7 @@ export function DneskaiLabTab(props: Props) {
       {active ? <LabSession key={`${active.post.id}:${active.revision.contentHash}`} {...props} now={now} lab={active} slide={Math.min(chosen.slide, 9)}
         onSlide={(slide) => { setChosen({ post: active.post.id, slide }); remember(active.post.id, slide); }} onDirty={setDirty}
         onChoose={choose} onBatch={() => { const day = days.find((item) => item.date === active.deadline.date); if (day && !dirty && day.approvable.length) setBatch(structuredClone(day)); }}
-        onSaved={(post, saved) => { setNotice(saved ?? t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
+        onSaved={(post, saved) => { props.onSavedRevision?.(); setNotice(saved ?? t.actions.saved); setDirty(false); setChosen({ post, slide: chosen.slide }); remember(post, chosen.slide); }} order={ordered} /> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noPost}</p>}
     </div>
 
     {props.preview && <details className="border-t border-border pt-3 text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.specimens.title}</summary><div className="space-y-6">{DNESKAI_KITS.map((kit) => <figure key={kit} className="space-y-2"><figcaption className="text-foreground-muted">{t.specimens.help(t.kits.names[kit])}</figcaption><a href={`/demo/dneskai/kit-${kit}.png`} target="_blank" rel="noreferrer"><Image unoptimized src={`/demo/dneskai/kit-${kit}.png`} alt={t.specimens.help(t.kits.names[kit])} width={1944} height={2574} sizes="100vw" className="h-auto w-full" /></a></figure>)}</div></details>}

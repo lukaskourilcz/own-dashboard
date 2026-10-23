@@ -5,6 +5,7 @@ import { DneskaiRenderProblemSchema } from './contracts';
 import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, type DneskaiCostsRead, type DneskaiWorkspaceRead } from './dneskai-workspace';
 import type { DneskaiEditRequest } from './dneskai-deck-editor';
 import { DneskaiApproveManyResultSchema, DneskaiFitResultSchema, DneskaiPreviewResultSchema, type DneskaiApproveManyResult, type DneskaiFitRequest, type DneskaiFitResult, type DneskaiPreviewRequest, type DneskaiPreviewResult } from './dneskai-lab';
+import type { DneskaiDecisionCursor } from './dneskai-workspace';
 import { qk } from '@/lib/queries/keys';
 import { MARKETING_PUBLICATION_REQUEUE_RESULTS, type MarketingPublicationRequeueResult } from './publication-requeue';
 
@@ -38,7 +39,7 @@ export type DneskaiPaidActionResult = z.infer<typeof DneskaiPaidActionResultSche
 export interface DneskaiWorkspaceApi {
   /** True in the deterministic preview: nothing reaches a server. */
   readonly preview: boolean;
-  loadReview(projectId: string, signal?: AbortSignal): Promise<DneskaiWorkspaceRead>;
+  loadReview(projectId: string, signal?: AbortSignal, before?: DneskaiDecisionCursor): Promise<DneskaiWorkspaceRead>;
   loadCosts(projectId: string, signal?: AbortSignal): Promise<DneskaiCostsRead>;
   loadMedia(projectId: string, candidateId: string, signal?: AbortSignal): Promise<DneskaiMediaRead>;
   loadAccounts(signal?: AbortSignal): Promise<MarketingAccountStatus[]>;
@@ -91,8 +92,10 @@ async function post(body: unknown, url = '/api/marketing/revisions', signal?: Ab
 
 export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: false,
-  async loadReview(projectId, signal) {
-    return DneskaiWorkspaceReadSchema.parse(await getJson(`/api/marketing/dneskai/review?projectId=${encodeURIComponent(projectId)}`, signal));
+  async loadReview(projectId, signal, before) {
+    const params = new URLSearchParams({ projectId });
+    if (before) params.set('before', JSON.stringify(before));
+    return DneskaiWorkspaceReadSchema.parse(await getJson(`/api/marketing/dneskai/review?${params}`, signal));
   },
   async loadCosts(projectId, signal) {
     return DneskaiCostsReadSchema.parse(await getJson(`/api/marketing/dneskai/costs?projectId=${encodeURIComponent(projectId)}`, signal));
@@ -169,6 +172,7 @@ export function dneskaiWorkspaceApi(preview: boolean): Promise<DneskaiWorkspaceA
 export function dneskaiWorkspaceKeys(projectId: string) {
   return {
     review: [...qk.dneskaiReview, projectId] as const,
+    reviewPage: (before: DneskaiDecisionCursor) => [...qk.dneskaiReview, projectId, before.createdAt, before.id] as const,
     costs: [...qk.dneskaiCosts, projectId] as const,
     media: (candidateId: string) => [...qk.dneskaiMedia, projectId, candidateId] as const,
     renderFailed: [...qk.dneskaiRenderFailed, projectId] as const,

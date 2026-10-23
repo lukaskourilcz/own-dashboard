@@ -10,7 +10,7 @@ import { marketingPublicationRequeueable } from './publication-requeue';
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import {
-  DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiEngagementReceiptSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
+  DneskaiDecisionCursorSchema, type DneskaiDecisionCursor, DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiEngagementReceiptSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
   DneskaiWorkspaceReadSchema, DneskaiWorkspaceWaitingSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
 import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_OWNER_CODES, DNESKAI_TOPICS_VERSION, type DneskaiTopicOwnerCode, DneskaiTopicSchema, DneskaiTopicsReadSchema, emptyDneskaiTopicGroups, type DneskaiTopic, type DneskaiTopicsRead } from './dneskai-topics';
@@ -26,6 +26,8 @@ type Database = Pick<SupabaseClient<any>, 'from'>;
 
 const POST_LIMIT = 60;
 const REVISION_READ_LIMIT = 150;
+const DECISION_PAGE_SIZE = 30;
+const REVISION_COLUMNS = 'id,replaces_id,status,ready,content_hash,created_at,approved_at,feedback,revision,render_report';
 
 /** The written fields a slide's template draws, with the most characters its layer holds (browser-safe in `dneskai-slide-layout.ts`). */
 export { dneskaiSlideFieldLimits };
@@ -79,29 +81,36 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
   };
 }
 
-/**
- * The workspace read for one Prague day, from the 150 newest DNESKAi revisions that are not superseded: posts still
- * waiting for a decision, then posts planned from today through the next seven days, then receipts of the last 30
- * days, newest first, up to 60 posts in all. At four posts a day that keeps every undecided post and the coming week
- * and leaves room for roughly the last week of receipts; older receipts drop off first.
+/** Read 30 undecided revisions per cursor page, then fill the 60-post budget from recent history.
+ * Decisions have their own owner/brand/status-filtered SQL read and can never be evicted by newer receipts.
+ * Recent calendar/history context remains bounded to the newest 150 other revisions and the existing date window.
  */
-export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean } = {}): Promise<DneskaiWorkspaceRead> {
+export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean; decisionsBefore?: DneskaiDecisionCursor } = {}): Promise<DneskaiWorkspaceRead> {
   z.uuid().parse(owner); z.iso.date().parse(today);
   const windowStart = Date.parse(pragueScheduledAt(pragueDayAfter(today, -30), '00:00'));
   const windowEnd = Date.parse(pragueScheduledAt(pragueDayAfter(today, 7), '00:00'));
-  const [revisionResult, accountResult, jobResult, waitingResult] = await Promise.all([
-    db.from('marketing_revisions').select('id,replaces_id,status,ready,content_hash,created_at,approved_at,feedback,revision,render_report')
-      .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT),
+  const cursor = options.decisionsBefore ? DneskaiDecisionCursorSchema.parse(options.decisionsBefore) : null;
+  let decisions = db.from('marketing_revisions').select(REVISION_COLUMNS).eq('user_id', owner).eq('brand', 'dneskai')
+    .in('status', ['review', 'returned']).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(DECISION_PAGE_SIZE + 1);
+  if (cursor) decisions = decisions.or(`created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`);
+  const [decisionResult, revisionResult, accountResult, jobResult, waitingResult] = await Promise.all([
+    decisions,
+    db.from('marketing_revisions').select(REVISION_COLUMNS)
+      .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').not('status', 'in', '(review,returned)').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT),
     db.from('marketing_accounts').select('id,remote_account_id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4),
     db.from('marketing_jobs').select('id,status,error_code,created_at,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,revision_id:request->generation->>revisionId,brand:request->generation->source->>brand')
-      .eq('user_id', owner).in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60),
+      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60),
     // Owner decision 9: built briefs of today and tomorrow that wait for the scheduler, with no job yet.
     db.from('marketing_dneskai_briefs').select('id,status,code,job_id,scheduled_at,title:brief->>title').eq('user_id', owner).in('status', ['pending', 'ready'])
       .in('target_date', [today, pragueDayAfter(today, 1)]).order('scheduled_at').limit(16),
   ]);
+  const decisionRows = rows(decisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable');
+  const page = decisionRows.slice(0, DECISION_PAGE_SIZE);
+  const last = page.at(-1);
+  const nextCursor = decisionRows.length > DECISION_PAGE_SIZE && last ? DneskaiDecisionCursorSchema.parse({ createdAt: last.created_at, id: last.id }) : null;
   let unreadable = 0;
   const parsed: Array<{ row: RevisionRow; revision: ContentRevision }> = [];
-  for (const row of rows(revisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable')) {
+  for (const row of [...page, ...rows(revisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable')]) {
     try {
       const revision = parseContentRevision(row.revision);
       if (revision.brand !== 'dneskai') continue;
@@ -164,7 +173,7 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     const brief = DneskaiWorkspaceWaitingSchema.safeParse({ briefId: row.id, title: topicTitle ?? (typeof row.title === 'string' && row.title.trim() ? row.title.slice(0, 300) : '—'), scheduledAt: iso(row.scheduled_at), status: row.status, code: safeCode(row.code) });
     return !row.job_id && brief.success && Date.parse(brief.data.scheduledAt) > now.getTime() ? [brief.data] : [];
   }).slice(0, 8);
-  return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs,
+  return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs, decisionPage: { nextCursor },
     ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), ...(engagementSummary ? { engagementSummary } : {}), unreadable });
 }
 
@@ -240,7 +249,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const [runResult, jobResult, publicationResult, tickResult] = await Promise.all([
     db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14),
     db.from('marketing_jobs').select('id,status,error_code,created_at,cost_usd:result->usage->>estimatedCostUsd,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,brand:request->generation->source->>brand')
-      .eq('user_id', owner).gte('created_at', weekStart).order('created_at', { ascending: false }).limit(100),
+      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').gte('created_at', weekStart).order('created_at', { ascending: false }).limit(100),
     db.from('marketing_publications').select('id,revision_id,status,error_code,scheduled_at,last_checked_at,remote_container_id,remote_media_id,remote_url,lease_until,marketing_revisions!inner(brand,title:revision->>title)')
       .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20),
     db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors').eq('user_id', owner).gte('started_at', dayAgo).order('started_at', { ascending: false }).limit(1500),
