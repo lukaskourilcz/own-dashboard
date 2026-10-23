@@ -79,7 +79,7 @@ test('source settings navigate directly without mounting the other libraries', a
 
 for (const width of [360, 430, 768, 1024, 1440, 1728]) test(`implemented destinations reflow and retain one title at ${width}px`, async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'Run the width matrix once.');
-  const lang = width === 430 || width === 1024 || width === 1728 ? 'cs' : 'en';
+  const lang = width === 430 || width === 1024 || width === 1440 || width === 1728 ? 'cs' : 'en';
   const theme = width === 430 || width === 1440 ? 'dark' : 'light';
   await page.setViewportSize({ width, height: 1000 });
   await gotoPreview(page, { lang, theme });
@@ -121,4 +121,51 @@ test('focused finance routes and on-demand creation preserve keyboard continuity
     await page.keyboard.press('Escape');
     await expect(button).toBeFocused();
   }
+});
+
+test('browser Back restores the dirty entry without adding history, then resumes the requested step', async ({ page }) => {
+  await gotoPreview(page);
+  await open(page, 'Projects');
+  await page.locator('a[href="/projects/dneskai"]').first().click();
+  const field = page.getByTestId('dneskai-slide-inspector').getByRole('textbox', { name: dneskaiLab.en.slide.fields.headline, exact: true });
+  await field.fill('Krátký ověřený titulek');
+  const length = await page.evaluate(() => history.length);
+  await page.goBack();
+  const dialog = page.getByRole('dialog', { name: common.en.unsaved.title });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: common.en.unsaved.stay, exact: true }).click();
+  await expect(page).toHaveURL(/\/projects\/dneskai/);
+  await expect(field).toHaveValue('Krátký ověřený titulek');
+  expect(await page.evaluate(() => history.length)).toBe(length);
+  await page.goBack();
+  await dialog.getByRole('button', { name: common.en.unsaved.discard, exact: true }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.getByTestId('dneskai-lab')).toHaveCount(0);
+  await page.goForward();
+  await expect(page.getByTestId('dneskai-lab')).toBeVisible();
+  expect(await page.evaluate(() => history.length)).toBe(length);
+});
+
+test('Notes keeps a failed document available for an unchanged retry', async ({ page }, info) => {
+  await gotoPreview(page);
+  const writes: Record<string, unknown>[] = [];
+  await page.route('**/rest/v1/notes?**', async route => {
+    if (route.request().method() !== 'PATCH') { await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); return; }
+    const doc = route.request().postDataJSON() as Record<string, unknown>;
+    writes.push(doc);
+    await route.fulfill(writes.length === 1 ? { status: 503, contentType: 'application/json', body: '{"message":"Synthetic transient save failure"}' }
+      : { status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'n1', user_id: 'u1', title: 'Project ideas', content: [], plain_text: '', is_pinned: true, tags: ['work', 'ideas'], created_at: '2026-10-23T10:00:00Z', updated_at: '2026-10-23T10:00:00Z', ...doc }) });
+  });
+  await open(page, 'Notes');
+  if (info.project.name === 'mobile') await page.getByRole('button', { name: /Project ideas/ }).click();
+  const editor = page.locator('[contenteditable="true"]').first();
+  await expect(editor).toBeVisible();
+  await editor.fill('Retry this unchanged document');
+  const retry = page.getByRole('button', { name: 'Retry save', exact: true });
+  await expect(retry).toBeVisible();
+  await expect(page.getByText('Could not save note.', { exact: true })).toBeVisible();
+  await retry.click();
+  await expect(retry).toHaveCount(0);
+  expect(writes).toHaveLength(2);
+  expect(writes[1]).toEqual(writes[0]);
 });

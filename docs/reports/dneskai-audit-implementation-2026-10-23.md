@@ -22,8 +22,6 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 - The command palette now uses the shared modal primitive (focus trap, inert background and Escape), restores its opener and derives destinations from the sidebar registry and owner visibility preferences, including Competition. Mobile More explicitly restores its opener.
 - Eleven targeted header/navigation tests passed. Focused lint and type checks passed. Chrome extension reconnection timed out again; keyboard geometry and responsive checks will run through the repository’s isolated fixture browser, with the signed-in Chrome limitation recorded.
 
-## Remaining batches
-
 ## Batch 3: DNESKAi workflow
 
 - Selected revision, state, real preview and inspector precede the bounded topic inbox. The toolbar links to topics; topic counts and keyboard decisions remain available. Mobile keyword controls meet the shared touch size.
@@ -31,10 +29,6 @@ Started 23 October 2026 on `codex/dneskai-audit-implementation`, from audit comm
 - Music upload opens in a shared dialog with one title. The Instagram dialog removes its repeated heading and discloses connection detail on demand. Reel music is conditional on Reel format; single-image drafts explain the carousel requirement. Publish/return/skip are separated from save/approve without changing their safeguards.
 - Seventy-one existing targeted workflow tests passed; the final focused rerun passed 47 tests, including EN/CS source filtering and corrected modal field associations. Type and focused lint checks passed. Daily mix/Music end-to-end tests now use their direct URLs; complete browser checks follow.
 
-## Remaining batches
-
-4. Work/Settings/Finance destination cleanup, planning filters and library card consistency.
-5. Payload/query measurements and complete relevant test/build/responsive/accessibility verification.
 
 ## Environment and boundaries
 
@@ -43,7 +37,7 @@ The original user checkout remains separate. Application changes and tests live 
 Database work follows the current [function/invoker guidance](https://supabase.com/docs/guides/database/functions) and [PostgREST filter guidance](https://supabase.com/docs/reference/javascript/or). The public changelog was checked on 23 October; the reviewed TLS and server-adapter notices require no change to this project’s existing JS/SSR client for these fixes.
 
 
-## Batch 4 progress: Work and Settings
+## Batch 4: destination cleanup
 
 Work uses content-driven column heights, with upcoming dates and shipped work below attention rather than a stretched empty card. Settings uses a centered 896 px frame, section anchors, a stable label/control grid, consistent touch/desktop segments and stable drag-context IDs. The financial and creation-form changes are being verified in the same full type/lint/unit pass; browser geometry follows.
 
@@ -70,3 +64,8 @@ The complete unit suite passed **272 files / 2776 tests**, with one existing ski
 - On a disposable 25,000-row PostgreSQL dataset, the existing pending-decision plan took 2.162 ms versus 0.089 ms with a 221,184-byte partial owner/brand/time/id index. These are warm WASM-local measurements, not Production timings. The existing read is already inexpensive in this fixture; no unconditional index migration is shipped without live cardinality/write-cost evidence. Both plans and the synthetic owner-isolation check are recorded.
 
 Browser verification, reviewed screenshots and the final complete release commands follow below.
+
+
+### Browser-driven refinements
+
+The first optimized-build browser pass confirmed the new guard, direct local tabs, all six reflow widths, one visible title and Settings axe checks. Screenshot review tightened mobile Settings anchors into one scrolling row, kept short preference controls beside labels, changed sparse prompt categories to masonry and restored visible touch actions. Finance filter defaults now name kinds/accounts explicitly. The first Lab pass found a real light-theme success-badge contrast failure (4.44:1 on the inset canvas); the semantic success text token is darkened before rerunning axe. Tests that assumed exactly two Lab dates now scope generated-job checks to their actual day and choose an enabled day-approval button. Pending decisions outside the original window remain reachable.

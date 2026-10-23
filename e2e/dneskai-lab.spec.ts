@@ -68,7 +68,7 @@ test('Lab saves a new version, shows new pixels, then approves only its hash', a
 
 test('Approve the day shows exact versions and per-item results', async ({ page }) => {
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
-  await page.getByTestId('dneskai-lab-queue').getByRole('button', { name: /Approve the day/ }).last().click();
+  await page.getByTestId('dneskai-lab-queue').locator('button:enabled').filter({ hasText: /Approve the day/ }).last().click();
   const dialog = page.getByTestId('dneskai-approve-day');
   await expect(dialog).toContainText('Each post below');
   const approve = dialog.getByRole('button', { name: /^Approve \d/ });
@@ -328,7 +328,7 @@ for (const lang of ['en', 'cs'] as const) test(`a waiting topic is generated now
   await first.focus(); await page.keyboard.press('Enter');
   await expect(waiting.getByRole('status')).toContainText(t.queue.generateNowQueued);
   await expect(waiting.getByText(t.queue.waiting)).toHaveCount(1);
-  await expect(page.getByTestId('dneskai-lab-queue').getByText(`17:00 · ${t.queue.preparing}`)).toBeVisible();
+  await expect(waiting.locator('..').getByText(`17:00 · ${t.queue.preparing}`)).toBeVisible();
   await waiting.getByRole('button', { name: t.queue.generateNowName('Kdy pomůže vyhledávání v dokumentech') }).click();
   await expect(waiting.getByRole('status')).toContainText(lang === 'cs' ? 'Denní limit generování DNESKAi je vyčerpaný.' : 'The DNESKAi daily generation limit is reached.');
   await expect(waiting.getByText(t.queue.waiting)).toHaveCount(1);

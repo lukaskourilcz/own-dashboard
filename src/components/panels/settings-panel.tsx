@@ -400,8 +400,8 @@ export function SettingsPanel({
         </div>
       )}
 
-      <nav aria-label={t.settings.title} className="mb-5 flex flex-wrap gap-1">
-        {[["preferences", t.settings.preferences], ["projects", t.settings.activeProjects], ["project-sections", t.settings.projectSections], ["career", t.settings.careerMarket], ["cv", t.settings.cv], ["navigation", t.settings.navigation], ["integrations", t.settings.integrations], ["export", t.settings.dataExport]].map(([key, label]) => <a key={key} href={`#settings-${key}`} className="inline-flex min-h-11 items-center rounded-md px-2 text-xs text-foreground-muted hover:bg-surface-hover focus-ring md:min-h-8">{label}</a>)}
+      <nav aria-label={t.settings.title} className="mb-5 flex gap-1 overflow-x-auto pb-1">
+        {[["preferences", t.settings.preferences], ["projects", t.settings.activeProjects], ["project-sections", t.settings.projectSections], ["career", t.settings.careerMarket], ["cv", t.settings.cv], ["navigation", t.settings.navigation], ["integrations", t.settings.integrations], ["export", t.settings.dataExport]].map(([key, label]) => <a key={key} href={`#settings-${key}`} className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs text-foreground-muted hover:bg-surface-hover focus-ring md:min-h-8">{label}</a>)}
       </nav>
       <div className="grid items-start gap-4 lg:grid-cols-2">
         {/* Preferences — language, appearance, currency, task density, alerts */}
@@ -441,7 +441,7 @@ export function SettingsPanel({
                 ]}
               />
             </PrefRow>
-            <PrefRow icon={Coins} label={t.settings.currency}>
+            <PrefRow icon={Coins} label={t.settings.currency} stacked>
               <div className="inline-flex flex-wrap justify-end gap-1.5">
                 {SUPPORTED_CURRENCIES.map((c) => (
                   <button
@@ -749,15 +749,15 @@ function PrefRow({
   icon: Icon,
   label,
   desc,
-  children,
+  children, stacked = false,
 }: {
   icon: typeof Sun;
   label: string;
   desc?: string;
-  children: ReactNode;
+  children: ReactNode; stacked?: boolean;
 }) {
   return (
-    <div className="grid items-center gap-3 border-t border-border pt-4 sm:grid-cols-[14rem_minmax(0,1fr)]">
+    <div className={cn("grid items-center gap-3 border-t border-border pt-4 sm:grid-cols-[14rem_minmax(0,1fr)]", !stacked && "grid-cols-[minmax(0,1fr)_auto]")}>
       <div className="min-w-0">
         <p className="inline-flex items-center gap-1.5 text-sm font-medium">
           <Icon className="h-3.5 w-3.5 text-foreground-muted" />

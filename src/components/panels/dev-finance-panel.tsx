@@ -94,7 +94,7 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
             {setDisplayCurrency && (
               <>
                 <Label className="hidden text-foreground-subtle sm:inline">{t.projects.displayIn}</Label>
-                <SimpleSelect value={displayCurrency} onValueChange={setDisplayCurrency} aria-label={t.projects.displayIn} className="h-8 w-20 text-xs" options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))} />
+                <SimpleSelect value={displayCurrency} onValueChange={setDisplayCurrency} aria-label={t.projects.displayIn} className="h-11 w-20 text-xs md:h-8" options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))} />
               </>
             )}
             <Button size="sm" variant="outline" onClick={onOpenSubscriptions}><CreditCard className="h-3.5 w-3.5" />{f.manageSubscriptions}</Button>

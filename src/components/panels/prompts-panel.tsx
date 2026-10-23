@@ -457,12 +457,12 @@ export function PromptsPanel({
           className="py-16"
         />
       ) : (
-        <div className="space-y-6">
+        <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
           {groups.map((group) => {
             const open = searching || !collapsed.has(group.kind);
             const regionId = `prompt-kind-${group.kind}`;
             return (
-              <section key={group.kind} aria-labelledby={`${regionId}-heading`}>
+              <section key={group.kind} className="mb-5 break-inside-avoid" aria-labelledby={`${regionId}-heading`}>
                 <h2 id={`${regionId}-heading`} className="mb-3 border-b border-border pb-2">
                   <button
                     type="button"
@@ -476,7 +476,7 @@ export function PromptsPanel({
                         return next;
                       })
                     }
-                    className="inline-flex min-h-9 items-center gap-2 rounded text-sm font-semibold text-foreground focus-ring sm:min-h-7"
+                    className="inline-flex min-h-11 items-center gap-2 rounded text-sm font-semibold text-foreground focus-ring md:min-h-8"
                   >
                     <ChevronDown aria-hidden="true" className={cn("h-3.5 w-3.5 text-foreground-muted transition-transform motion-reduce:transition-none", !open && "-rotate-90")} />
                     {t.prompts.kindLabel[group.kind]}
@@ -485,7 +485,7 @@ export function PromptsPanel({
                     </span>
                   </button>
                 </h2>
-                <div id={regionId} hidden={!open} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div id={regionId} hidden={!open} className="space-y-3">
                   {group.prompts.map((p) => (
                     <PromptCard
                       key={p.id}
@@ -740,7 +740,7 @@ function PromptCard({
         </Tooltip>
       </div>
 
-      <div className="min-h-24 flex-1 px-3 pb-2 pt-2">
+      <div className="min-h-16 flex-1 px-3 pb-2 pt-2">
         {prompt.description?.trim() ? (
           <p className="line-clamp-3 text-[11px] leading-[15px] text-foreground-muted">
             {prompt.description}

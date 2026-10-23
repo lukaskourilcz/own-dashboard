@@ -647,8 +647,8 @@ export function FinancesPanel({
     {view === 'transactions' && <>
       <div role="search" className="flex flex-wrap gap-2">
         <Input aria-label={t.finances.searchTransactions} type="search" placeholder={t.finances.searchTransactions} value={search} onChange={event => { setSearch(event.target.value); setVisibleCount(50); }} className="min-w-40 flex-1" />
-        <SimpleSelect aria-label={t.finances.transactionKind} value={kind} onValueChange={value => { setKind(value); setVisibleCount(50); }} className="w-40" options={[{value:'all',label:t.finances.filterAll},{value:'income',label:t.finances.income},{value:'expense',label:t.finances.expense}]} />
-        <label htmlFor={filterId} className="sr-only">{t.finances.account}</label><select id={filterId} className="h-11 rounded-md border border-border bg-surface px-3 text-sm focus-ring md:h-8" value={accountFilter} onChange={event => { setAccountFilter(event.target.value); setVisibleCount(50); }}><option value="all">{t.finances.filterAll}</option>{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select>
+        <SimpleSelect aria-label={t.finances.transactionKind} value={kind} onValueChange={value => { setKind(value); setVisibleCount(50); }} className="w-40" options={[{value:'all',label:t.finances.allKinds},{value:'income',label:t.finances.income},{value:'expense',label:t.finances.expense}]} />
+        <label htmlFor={filterId} className="sr-only">{t.finances.account}</label><select id={filterId} className="h-11 rounded-md border border-border bg-surface px-3 text-sm focus-ring md:h-8" value={accountFilter} onChange={event => { setAccountFilter(event.target.value); setVisibleCount(50); }}><option value="all">{t.finances.allAccounts}</option>{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select>
         <span role="status" className="py-2 text-xs text-foreground-muted tabular">{filteredTransactions.length} / {transactions.length}</span>
       </div>
       {transactionsContent}

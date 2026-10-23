@@ -822,7 +822,7 @@ function ProjectsListPanel({
                   value={displayCurrency}
                   onValueChange={(v) => setDisplayCurrency(v)}
                   aria-label={t.projects.displayIn}
-                  className="h-8 w-20 text-xs"
+                  className="h-11 w-20 text-xs md:h-8"
                   options={SUPPORTED_CURRENCIES.map((c) => ({
                     value: c,
                     label: c,
@@ -1545,7 +1545,7 @@ function CostsSection({
           value={currency}
           onValueChange={setCurrency}
           aria-label={t.projects.currency}
-          className="h-8 w-20 text-xs"
+          className="h-11 w-20 text-xs md:h-8"
           options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
         />
         <Input

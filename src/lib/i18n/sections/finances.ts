@@ -1,5 +1,5 @@
 type FinancesStrings = {
-  filterAll: string; accountsDescription: string; transactionsDescription: string; categoriesDescription: string;
+  allKinds: string; allAccounts: string; filterAll: string; accountsDescription: string; transactionsDescription: string; categoriesDescription: string;
   searchTransactions: string; transactionKind: string; filteredEmpty: string; loadMore: string; importAndMatch: string;
   title: string;
   description: string;
@@ -208,7 +208,7 @@ type RulesStrings = {
 
 export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
   en: {
-    filterAll: 'All',
+    allKinds: 'All kinds', allAccounts: 'All accounts', filterAll: 'All',
     accountsDescription: 'Balances and bank connections.', transactionsDescription: 'Find, record and reconcile transactions.', categoriesDescription: 'Categorisation rules and this month’s spending.',
     searchTransactions: 'Search transactions', transactionKind: 'Transaction kind', filteredEmpty: 'No transactions match these filters.', loadMore: 'Load more transactions', importAndMatch: 'Import and reconcile',
     title: "Money",
@@ -430,7 +430,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     },
   },
   cs: {
-    filterAll: 'Vše',
+    allKinds: 'Všechny druhy', allAccounts: 'Všechny účty', filterAll: 'Vše',
     accountsDescription: 'Zůstatky a bankovní připojení.', transactionsDescription: 'Vyhledejte, zapište a spárujte transakce.', categoriesDescription: 'Pravidla kategorií a výdaje tohoto měsíce.',
     searchTransactions: 'Hledat transakce', transactionKind: 'Druh transakce', filteredEmpty: 'Těmto filtrům neodpovídají žádné transakce.', loadMore: 'Načíst další transakce', importAndMatch: 'Import a párování',
     title: "Peníze",

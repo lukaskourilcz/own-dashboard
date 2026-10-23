@@ -1036,7 +1036,7 @@ export function SubscriptionsPanel({
                           )}
                           </div>
                         </div>
-                        <div className="flex gap-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        <div className="flex gap-0.5 shrink-0 opacity-100 transition-opacity md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
                           <Tooltip content={isAmountConfirmed(s) ? t.portfolio.finance.unconfirmAmount : t.portfolio.finance.confirmAmount}>
                             <Button
                               size="icon-sm"

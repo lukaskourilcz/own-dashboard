@@ -1052,7 +1052,7 @@ function NoteRow({
             type="button"
             onClick={onCopy}
             aria-label={t.notes.copyAsMarkdown}
-            className="my-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
+            className="my-auto inline-flex h-11 w-11 md:h-7 md:w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
           >
             <Clipboard className="h-3.5 w-3.5" />
           </button>
@@ -1112,7 +1112,7 @@ function SortableNoteRow({
             type="button"
             onClick={onCopy}
             aria-label={t.notes.copyAsMarkdown}
-            className="my-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
+            className="my-auto inline-flex h-11 w-11 md:h-7 md:w-7 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
           >
             <Clipboard className="h-3.5 w-3.5" />
           </button>
