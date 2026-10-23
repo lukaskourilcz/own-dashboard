@@ -26,7 +26,7 @@ type FormState = {
 
 const empty: FormState = {
   title: "",
-  date: todayKey(),
+  date: "",
   startTime: "09:00",
   endTime: "10:00",
   description: "",
@@ -47,8 +47,9 @@ export function CalendarPanel({
   initialTitle?: string;
 }) {
   const t = useDict();
+  const [defaultDate, setDefaultDate] = useState(todayKey);
   const [form, setForm] = useState<FormState>(() =>
-    initialTitle ? { ...empty, title: initialTitle } : empty,
+    ({ ...empty, date: defaultDate, ...(initialTitle ? { title: initialTitle } : {}) }),
   );
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Submission | null>(null);
@@ -101,7 +102,12 @@ export function CalendarPanel({
   }
 
   return (
-    <Dialog><DialogTrigger asChild><Button variant="outline"><CalendarPlus />{t.calendar.newEvent}</Button></DialogTrigger><DialogContent aria-describedby={undefined}><DialogHeader>
+    <Dialog onOpenChange={open => {
+      if (!open) return;
+      const date = todayKey();
+      setForm(previous => ({ ...previous, date: previous.date === defaultDate ? date : previous.date }));
+      setDefaultDate(date);
+    }}><DialogTrigger asChild><Button variant="outline"><CalendarPlus />{t.calendar.newEvent}</Button></DialogTrigger><DialogContent aria-describedby={undefined}><DialogHeader>
         <DialogTitle className="inline-flex items-center gap-1.5">
           <CalendarPlus className="h-3 w-3" /> {t.calendar.newEvent}
         </DialogTitle>

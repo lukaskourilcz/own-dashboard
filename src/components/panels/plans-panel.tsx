@@ -30,6 +30,8 @@ import { currentUserId } from "@/lib/supabase/user";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
+import { parseDateOnly } from "@/lib/date-keys";
+import { useNow } from "@/lib/use-now";
 import type { Plan, PlanRecurrence, PlanStatus, Updater } from "@/lib/types";
 
 const RECURRENCES: PlanRecurrence[] = ["none", "weekly", "biweekly", "monthly"];
@@ -86,6 +88,7 @@ export function PlansPanel({
   const qc = useQueryClient();
   const t = useDict();
   const confirm = useConfirmation();
+  const now = useNow();
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
   const [error, setError] = useState<string | null>(null);
@@ -118,27 +121,36 @@ export function PlansPanel({
 
       let saved: Plan = plan;
       if (form.addToCalendar && form.target_date) {
-        const res = await fetch("/api/calendar/event", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            title: form.title.trim(),
-            date: form.target_date,
-            allDay: true,
-            description: form.notes.trim(),
-            recurrence: "none",
-          }),
-        });
-        if (res.ok) {
-          const ev = await res.json();
-          const { data: updated } = await supabase
-            .from("plans")
-            .update({ linked_calendar_event_id: ev.id })
-            .eq("id", plan.id)
-            .select()
-            .single();
-          if (updated) saved = updated;
-        } else {
+        // The plan already exists. An optional calendar failure must not make
+        // the owner retry the insert and create another plan.
+        try {
+          const res = await fetch("/api/calendar/event", {
+            method: "POST",
+            signal: AbortSignal.timeout(15_000),
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              title: form.title.trim(),
+              date: form.target_date,
+              allDay: true,
+              description: form.notes.trim(),
+              recurrence: "none",
+            }),
+          });
+          if (res.ok) {
+            const ev = await res.json();
+            if (typeof ev.id !== "string" || !ev.id) { setCalendarNote(t.plans.calendarLinkFailed); return saved; }
+            const { data: updated, error: linkError } = await supabase
+              .from("plans")
+              .update({ linked_calendar_event_id: ev.id })
+              .eq("id", plan.id)
+              .select()
+              .single();
+            if (linkError || !updated) setCalendarNote(t.plans.calendarLinkFailed);
+            else saved = updated;
+          } else {
+            setCalendarNote(t.plans.calendarEventFailed);
+          }
+        } catch {
           setCalendarNote(t.plans.calendarEventFailed);
         }
       }
@@ -177,6 +189,7 @@ export function PlansPanel({
     },
     onError: (_e, _vars, ctx) => {
       if (ctx?.prev) setPlans(ctx.prev);
+      setError(t.plans.couldNotSavePlan);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.plans }),
   });
@@ -212,6 +225,7 @@ export function PlansPanel({
 
   function addPlan(e: React.FormEvent) {
     e.preventDefault();
+    if (addMutation.isPending) return;
     setError(null);
     setCalendarNote(null);
     if (!form.title.trim()) {
@@ -271,6 +285,7 @@ export function PlansPanel({
             <button
               type="button"
               onClick={() => setView("board")}
+              aria-pressed={view === "board"}
               className={cn(
                 "min-h-11 px-2.5 py-1 rounded transition-colors focus-ring md:min-h-8",
                 view === "board"
@@ -283,6 +298,7 @@ export function PlansPanel({
             <button
               type="button"
               onClick={() => setView("timeline")}
+              aria-pressed={view === "timeline"}
               className={cn(
                 "min-h-11 px-2.5 py-1 rounded transition-colors focus-ring md:min-h-8",
                 view === "timeline"
@@ -398,6 +414,7 @@ export function PlansPanel({
               </Button>
             </form></DialogContent></Dialog>
       {calendarNote && <p role="status" className="mb-3 text-xs text-warning">{calendarNote}</p>}
+      {error && !formOpen && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}
       <div className="grid gap-4 lg:grid-cols-3">
 
 
@@ -456,6 +473,7 @@ export function PlansPanel({
                   <TimelineRow
                     key={p.id}
                     plan={p}
+                    now={now}
                     onStatus={(status) => updateStatus(p, status)}
                     onDelete={() => removePlan(p.id)}
                   />
@@ -499,7 +517,7 @@ function PlanCard({
           type="button"
           onClick={() => setEditingStatus((v) => !v)}
           aria-label={t.plans.changeStatus}
-          className="text-foreground-subtle hover:text-foreground transition-colors"
+          className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring"
         >
           <Pencil className="h-2.5 w-2.5" />
         </button>
@@ -507,7 +525,7 @@ function PlanCard({
           type="button"
           onClick={onDelete}
           aria-label={t.plans.deletePlan}
-          className="text-foreground-subtle hover:text-destructive transition-colors"
+          className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-destructive transition-colors focus-ring"
         >
           <Trash2 className="h-2.5 w-2.5" />
         </button>
@@ -560,18 +578,20 @@ function PlanCard({
 
 function TimelineRow({
   plan,
+  now,
   onStatus,
   onDelete,
 }: {
   plan: Plan;
+  now: Date | null;
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
 }) {
   const t = useDict();
   const locale = useDateLocale();
   const statusMeta = STATUSES.find((s) => s.key === plan.status)!;
-  const daysOut = plan.target_date
-    ? differenceInCalendarDays(new Date(plan.target_date), new Date())
+  const daysOut = plan.target_date && now
+    ? differenceInCalendarDays(parseDateOnly(plan.target_date), now)
     : null;
   return (
     <motion.li
@@ -582,7 +602,7 @@ function TimelineRow({
         {plan.target_date ? (
           <>
             <p className="font-medium text-foreground">
-              {format(new Date(plan.target_date), t.plans.timelineDateFormat, {
+              {format(parseDateOnly(plan.target_date), t.plans.timelineDateFormat, {
                 locale,
               })}
             </p>
@@ -630,6 +650,7 @@ function TimelineRow({
         )}
       </div>
       <SimpleSelect
+        aria-label={`${plan.title}: ${t.plans.status}`}
         value={plan.status}
         onValueChange={(v) => onStatus(v as PlanStatus)}
         className={cn("h-7 w-24 text-[11px]", statusMeta.tone)}
@@ -644,7 +665,7 @@ function TimelineRow({
           variant="ghost"
           onClick={onDelete}
           aria-label={t.plans.deletePlan}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          className="transition-opacity md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Trash2 className="h-3.5 w-3.5 text-destructive" />
         </Button>

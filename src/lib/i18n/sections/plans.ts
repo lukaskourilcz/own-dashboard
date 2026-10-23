@@ -33,6 +33,7 @@ type PlansStrings = {
   targetDateRequiredForCalendar: string;
   couldNotSavePlan: string;
   calendarEventFailed: string;
+  calendarLinkFailed: string;
   saving: string;
   addPlan: string;
   statusBoard: string;
@@ -52,6 +53,7 @@ type PlansStrings = {
 
 export const plans: { en: PlansStrings; cs: PlansStrings } = {
   en: {
+    calendarLinkFailed: "The plan and calendar event were saved, but their link could not be stored. Check Calendar before adding another event.",
     title: "Goals",
     description: "Outcomes you're working toward.",
     board: "Board",
@@ -97,7 +99,7 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
       "Target date is required to add to calendar.",
     couldNotSavePlan: "Could not save plan.",
     calendarEventFailed:
-      "Plan saved, but the calendar event couldn't be created.",
+      "Plan saved. The calendar event was not confirmed; check Calendar before adding another event.",
     saving: "Saving…",
     addPlan: "Add plan",
     statusBoard: "Status board",
@@ -114,6 +116,7 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     noDate: "no date",
   },
   cs: {
+    calendarLinkFailed: "Plán i událost jsou uložené, ale jejich propojení se nepodařilo uložit. Než přidáte další událost, zkontrolujte Kalendář.",
     title: "Cíle",
     description: "Výsledky, ke kterým směřujete.",
     board: "Nástěnka",
@@ -160,7 +163,7 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
       "Pro přidání do kalendáře je nutné cílové datum.",
     couldNotSavePlan: "Plán se nepodařilo uložit.",
     calendarEventFailed:
-      "Plán byl uložen, ale událost v kalendáři se nepodařilo vytvořit.",
+      "Plán je uložený. Událost v kalendáři nebyla potvrzena; než přidáte další, zkontrolujte Kalendář.",
     saving: "Ukládání…",
     addPlan: "Přidat plán",
     statusBoard: "Nástěnka stavů",

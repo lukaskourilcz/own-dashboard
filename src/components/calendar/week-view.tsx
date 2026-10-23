@@ -14,6 +14,7 @@ import {
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { CalendarPicker } from "@/components/calendar/calendar-picker";
 import { useDict, useDateLocale } from "@/lib/i18n";
+import { useNow } from "@/lib/use-now";
 
 type DayBucket = { key: string; date: Date; events: GcalEvent[] };
 
@@ -51,9 +52,11 @@ export function WeekView({
 }) {
   const t = useDict();
   const locale = useDateLocale();
+  const now = useNow();
+  const hydrated = now !== null;
   const buckets = useMemo(
-    () => (calendar.ok ? bucketByDay(calendar.events) : []),
-    [calendar],
+    () => (hydrated && calendar.ok ? bucketByDay(calendar.events) : []),
+    [calendar, hydrated],
   );
 
   return (
@@ -65,7 +68,7 @@ export function WeekView({
         <CalendarPicker initialSelected={selectedCalendarIds} />
       </CardHeader>
       <CardContent>
-        {!calendar.ok ? (
+        {!hydrated ? <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p> : !calendar.ok ? (
           <div className="space-y-3">
             <p className="text-sm text-foreground-muted">
               {calendar.reason === "unauthorized"
@@ -89,7 +92,7 @@ export function WeekView({
         ) : (
           <ul className="space-y-5">
             {buckets.map((b) => {
-              const today = isSameDay(b.date, new Date());
+              const today = isSameDay(b.date, now!);
               return (
                 <li key={b.key}>
                   <p

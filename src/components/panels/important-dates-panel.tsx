@@ -20,7 +20,8 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { buildOccurrences } from "@/lib/important-dates";
-import { todayKey } from "@/lib/date-keys";
+import { parseDateOnly, todayKey } from "@/lib/date-keys";
+import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import type { ImportantDate, Organization, Project, RecurrenceUnit, Updater } from "@/lib/types";
@@ -49,7 +50,7 @@ type FormState = {
 
 const empty: FormState = {
   title: "",
-  the_date: todayKey(),
+  the_date: "",
   is_recurring: true,
   recurrence_unit: "yearly",
   emoji: "",
@@ -57,6 +58,7 @@ const empty: FormState = {
   project_id: "",
   organization_id: "",
 };
+const freshForm = (): FormState => ({ ...empty, the_date: todayKey() });
 
 export function ImportantDatesPanel({
   dates,
@@ -78,8 +80,10 @@ export function ImportantDatesPanel({
   const confirm = useConfirmation();
   const locale = useDateLocale();
   const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(empty);
-  const occurrences = useMemo(() => buildOccurrences(dates), [dates]);
+  const [form, setForm] = useState<FormState>(freshForm);
+  const now = useNow();
+  const day = now ? todayKey(now) : null;
+  const occurrences = useMemo(() => day ? buildOccurrences(dates, parseDateOnly(day)) : [], [dates, day]);
 
   function buildPayload() {
     return {
@@ -108,7 +112,7 @@ export function ImportantDatesPanel({
     onSuccess: (data) => {
       setDates((prev) => [data, ...prev]);
       toast.ok(t.dates.added(data.title));
-      setForm(empty);
+      setForm(freshForm());
       setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.importantDates });
     },
@@ -133,7 +137,7 @@ export function ImportantDatesPanel({
     onSuccess: (data) => {
       setDates((prev) => prev.map((d) => (d.id === data.id ? data : d)));
       toast.ok(t.dates.updated);
-      setForm(empty);
+      setForm(freshForm());
       setFormOpen(false);
       void qc.invalidateQueries({ queryKey: qk.importantDates });
     },
@@ -167,6 +171,7 @@ export function ImportantDatesPanel({
 
   function save(e: React.FormEvent) {
     e.preventDefault();
+    if (addMutation.isPending || updateMutation.isPending) return;
     if (!form.title.trim() || !form.the_date) {
       toast.err(t.dates.titleAndDateRequired);
       return;
@@ -208,7 +213,7 @@ export function ImportantDatesPanel({
       <PageHeader
         title={t.dates.title}
         description={t.dates.description}
-        action={<Button onClick={() => { setForm(empty); setFormOpen(true); }}><Plus />{t.dates.addDate}</Button>}
+        action={<Button onClick={() => { setForm(freshForm()); setFormOpen(true); }}><Plus />{t.dates.addDate}</Button>}
       />
       <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{form.id ? t.dates.editDate : t.dates.addDate}</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-3">
               <div className="space-y-1.5">
@@ -314,7 +319,7 @@ export function ImportantDatesPanel({
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
+                <Button type="submit" disabled={addMutation.isPending || updateMutation.isPending} className="flex-1">
                   <Plus className="h-3.5 w-3.5" />
                   {form.id ? t.common.save : t.common.add}
                 </Button>
@@ -322,7 +327,7 @@ export function ImportantDatesPanel({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => { setForm(empty); setFormOpen(false); }}
+                    onClick={() => { setForm(freshForm()); setFormOpen(false); }}
                   >
                     {t.common.cancel}
                   </Button>
@@ -337,7 +342,7 @@ export function ImportantDatesPanel({
             <CardTitle>{t.dates.comingUp}</CardTitle>
           </CardHeader>
           <CardContent>
-            {occurrences.length === 0 ? (
+            {!day ? <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p> : occurrences.length === 0 ? (
               <EmptyState
                 icon={Gift}
                 title={t.dates.noDatesYet}
@@ -399,7 +404,7 @@ export function ImportantDatesPanel({
                           </p>
                         </div>
                         {isOwn && (
-                          <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-0.5 shrink-0 transition-opacity md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100">
                             <Tooltip content={t.common.edit}>
                               <Button
                                 size="icon-sm"

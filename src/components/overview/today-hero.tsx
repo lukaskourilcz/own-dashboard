@@ -69,10 +69,12 @@ export function TodayHero({
   const display = now ?? new Date(0);
   const greeting = now ? greetingFor(now, t) : null;
   const firstName = (userName?.trim() || userEmail).split(/[\s@]/)[0];
-  const today = todayKey();
+  // The server cannot know the browser's time zone. Keep event times out of
+  // the hydration snapshot, then resolve the local day from the shared clock.
+  const today = now ? todayKey(now) : null;
 
   const todayEvents = useMemo(() => {
-    if (!calendar.ok) return [];
+    if (!calendar.ok || !today) return [];
     return calendar.events
       .filter((ev) => eventDateKey(ev) === today)
       .sort((a, b) => {
@@ -214,7 +216,7 @@ export function TodayHero({
           tone="red"
           label={t.overview.todaysEvents}
           empty={
-            !calendar.ok
+            calendar.ok && !now ? t.common.loading : !calendar.ok
               ? calendar.reason === "unauthorized"
                 ? t.overview.calendarTokenExpired
                 : calendar.reason === "no-token"
