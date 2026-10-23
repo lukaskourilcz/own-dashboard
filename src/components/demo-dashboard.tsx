@@ -8,14 +8,15 @@ import { resolveProjectRef } from "@/lib/projects";
 /**
  * The real `DashboardShell` wired to the deterministic demo fixtures.
  *
- * Two routes render it and neither has a Supabase session:
+ * Two routes render it:
  * `/dev-preview` (development and E2E only) and `/guest` (the public tour).
  * Keeping the prop wiring here means a new `DashboardShell` prop is added once
  * rather than drifting between the two callers.
  *
- * `isPreview` turns off preference and repository syncing, so nothing here
- * attempts a write. Anonymous writes would fail against own-only RLS anyway;
- * this keeps the UI from trying in the first place.
+ * `isPreview` turns off preference and repository syncing. The public tour
+ * additionally isolates its cache and blocks live requests in GuestBoundary,
+ * including when the owner already has a session. Dev-preview remains the
+ * deterministic interaction harness for mocked mutation tests.
  */
 export function DemoDashboard({
   projectRef,

@@ -382,7 +382,7 @@ export function Sidebar({
           <Tooltip content={t.nav.theme} side={collapsed ? "right" : "top"}>
             <span><ThemeToggle syncPreferences={syncPreferences} /></span>
           </Tooltip>
-          <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
+          {syncPreferences && <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
@@ -392,7 +392,7 @@ export function Sidebar({
                 <LogOut className="h-3.5 w-3.5" />
               </button>
             </form>
-          </Tooltip>
+          </Tooltip>}
         </div>
       </div>
     </aside>

@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
@@ -9,6 +10,7 @@ const SCOPES = [
 ].join(" ");
 
 export async function relinkGoogle(): Promise<{ error?: string }> {
+  if (isGuestTour()) return { error: guestReadOnlyError() };
   const supabase = createClient();
   // prompt=consent + access_type=offline forces Google to mint a fresh
   // refresh_token (which /auth/callback persists into google_oauth).

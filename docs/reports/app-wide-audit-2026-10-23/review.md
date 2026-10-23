@@ -28,8 +28,11 @@ Each destination needs source/data-flow review, relevant business and failure ch
 3. Fixed: sidebar projection fallback now checks whether projects were actually loaded, so a loaded empty list stays empty. Destinations already loading projects reuse that read for navigation rather than making a duplicate query.
 4. Fixed: 24 destination panels now load through top-level dynamic imports, preserving SSR and the persistent shell. On the same optimized fixture build and browser, initial Home script transfer fell from 1,038,179 to 625,902 bytes (39.7%); decoded script bytes fell from 3,560,086 to 1,996,846 (43.9%). The script count changed from 26 to 27 because chunks are smaller. Raw resource measurements are committed beside this report. All 25 visible destinations passed the six-width reflow/title matrix (150 rendered states); full interaction checks remain pending.
 5. Fixed: Marketing no longer loads three unused shell entity families; Notes loads only notes and projects. Component dependencies and route-contract tests confirm the smaller boundary.
+6. Fixed: the public tour previously relied on anonymous RLS and per-panel preview flags. Several mutations and Calendar still reached live clients in a signed-in browser; the tour could also reuse a parent query cache. GuestBoundary now isolates fixture queries and blocks live API/database traffic, export/sign-out actions and OAuth linking throughout the tour session. Three component tests verify cache isolation, blocked requests and cleanup; desktop and mobile browser tests verify no live requests leave the tour even when the backend stand-in would accept them. No existing session was read or changed during verification.
 
 Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
+
+Tour isolation validation adds three component tests (22 shared tests in total), two browser cases, TypeScript and targeted ESLint. The six-width destination matrix also passed after code splitting.
 
 ## Database evidence
 

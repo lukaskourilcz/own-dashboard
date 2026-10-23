@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
 
 // `repo` grants read/write to code in public AND private repos (OAuth Apps are
 // coarse-grained — there's no per-repo Contents scope). `read:user` lets us
@@ -17,6 +18,7 @@ const SCOPES = ["repo", "read:user"].join(" ");
  * configured there with an OAuth App.
  */
 export async function connectGitHub(): Promise<{ error?: string }> {
+  if (isGuestTour()) return { error: guestReadOnlyError() };
   const supabase = createClient();
   const { error } = await supabase.auth.linkIdentity({
     provider: "github",

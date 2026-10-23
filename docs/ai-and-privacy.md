@@ -19,7 +19,11 @@ Every caller sends Jina Reader only a URL: the one the user submitted, or the on
 
 Invoice PDF extraction is deliberately not an AI workflow. The PDF is read locally in the browser with `pdf.js`, deterministic parsing fills the editable invoice form, and the file itself is neither uploaded nor stored.
 
-Provider configuration is limited to the optional `JINA_API_KEY`, which only raises Jina's anonymous rate limit. The Anthropic SDK and every Claude-backed route (project copilot, career copilot, weekly brief, knowledge review, quick-add intent, AI search) were removed in the drop-AI-features commit.
+Outside Marketing, provider configuration is limited to the optional `JINA_API_KEY`, which only raises Jina's anonymous rate limit. The earlier project copilot, career copilot, weekly brief, knowledge review, quick-add intent and AI search routes remain removed. The Anthropic SDK is present for the separately authorized Marketing workflows below.
+
+## Public tour isolation
+
+`/guest` renders deterministic fixtures in a separate React Query cache. Its network boundary blocks application API requests, Supabase requests, exports, sign-out submissions and provider-linking actions even when the browser already has the owner's session. The boundary remains active during in-shell navigation and restores normal request behavior when the tour unmounts. Static assets and ordinary sign-in navigation remain available. `/dev-preview` is a separate development/E2E harness whose interactions can use explicitly mocked requests.
 
 ## Marketing-only exception (2026-10-13)
 
