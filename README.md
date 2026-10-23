@@ -183,6 +183,8 @@ The migrations, in the order they run:
 85. `20261023130200_dneskai_audio_trends.sql` — applied 23 October 2026; `marketing_audio_trends`: the day's trending sounds from Meta's Audio API under Facebook Login (own-only reads, service-role writes); used only with `DNESKAI_AUDIO_TRENDS_ENABLED=true`.
 86. `20261023130300_dneskai_tiktok_spend.sql` — applied 23 October 2026; a fourth kind `tiktok` in the topic spend ledger for the daily TikTok CZ sound chart under its own ceiling, plus service-only run lookup and binding; used only with `DNESKAI_TIKTOK_TRENDS_ENABLED=true`.
 87. `20261023135551_dneskai_engagement_receipts.sql` — prepared, unapplied; an authenticated-owner, security-invoker JSON aggregate for complete DNESKAi engagement receipts and the independent seven-day publication summary. Apply before deploying the audit implementation branch.
+88. `20261023164118_app_wide_rls_initplans.sql` — prepared, unapplied; evaluate identity once per statement in 73 existing ownership policies without changing roles or ownership checks.
+89. `20261023170010_project_parent_rls_lookup.sql` — prepared, unapplied; prevent project-parent write-policy recursion with a security-invoker lookup that preserves RLS and existing parent checks.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. Only the new audit migration 87 remains unapplied; apply it before deploying the implementation branch.

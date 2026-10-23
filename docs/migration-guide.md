@@ -728,12 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. The audit implementation adds one later, prepared file: `20261023135551_dneskai_engagement_receipts.sql`. Check the linked project and apply that additive function before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Three prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql` and `20261023170010_project_parent_rls_lookup.sql`. Check the linked project and apply this chain before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect only 20261023135551_dneskai_engagement_receipts.sql
+npx supabase db push --linked --dry-run   # expect the three audit files listed above
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -916,3 +916,11 @@ runs until `DNESKAI_TIKTOK_TRENDS_ENABLED=true` and the owner has approved the s
 `20261023135551_dneskai_engagement_receipts.sql` adds `marketing_dneskai_engagement_receipts(uuid[],timestamptz,timestamptz)`. It is STABLE, security-invoker, uses an empty search path and `auth.uid()`, and grants execution only to authenticated sessions. Existing own-only table RLS remains authoritative. It returns one JSON aggregate with up to 60 selected publication receipts, a complete failure total separate from ten display buckets, and the last seven days of eligible publications independent of the selected page. Publication-event time takes precedence over schedule time. Commenter identities and messages are never returned.
 
 Apply this additive migration before deploying `codex/dneskai-audit-implementation`. Until then the new read path reports engagement as unavailable when the function is missing. It was created with Supabase CLI 2.122.0 and replayed against all migrations in isolated PGlite, including 5013 reply rows, off-page publications, grants and owner isolation. Production has not been changed by this implementation task. See [implementation validation](reports/dneskai-audit-implementation-2026-10-23.md).
+
+## App-wide ownership query review, 23 October 2026 (prepared)
+
+`20261023164118_app_wide_rls_initplans.sql` wraps session identity evaluation in scalar subqueries in 73 existing policies across 28 tables. Policy roles, commands, ownership comparisons and related-record checks remain unchanged. Local catalog comparison verifies that normalization removes the entire difference; EXPLAIN verifies an InitPlan for project reads. No table grants or indexes change.
+
+`20261023170010_project_parent_rls_lookup.sql` moves the project parent lookup behind `project_parent_is_owned(uuid)`, a STABLE security-invoker SQL function with an empty search path. This prevents recursive write-policy expansion in local PostgreSQL 18.6 without bypassing RLS or adding a security-definer function. Production PostgreSQL 17 accepted a read-only EXPLAIN of the old update; no production data was changed by that check. The helper grants execution only to authenticated sessions. Insert/update checks still require the current owner, an owned organization, an owned parent and a different parent id on update.
+
+The upgrade test starts before these files, compares every public policy, then verifies owned and foreign reads/writes, parent attachment, self-parent rejection, anonymous exclusion and function grants. Apply in filename order together with the engagement aggregate before merging the audit branch. See [app-wide review](reports/app-wide-audit-2026-10-23/review.md) for rollout evidence; these two files remain unapplied until that report records the push.

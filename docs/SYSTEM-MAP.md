@@ -269,7 +269,7 @@ Storage buckets, all private: `marketing-assets` (rendered slide JPEGs), `market
 
 The 23 prepared migrations `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation. The routine feature switches and editor activation are deployed; see NEEDED.md and the Astra handoff for the recorded state. Do not repeat the completed migration push.
 
-The audit implementation branch adds **one prepared, unapplied migration**, `20261023135551_dneskai_engagement_receipts.sql`, for the complete owner/RLS-scoped receipt aggregate. Apply it before deploying that branch. Local code/UX tests changed no Production settings or data.
+The audit implementation and subsequent app-wide review add **three prepared, unapplied migrations**: `20261023135551_dneskai_engagement_receipts.sql` for the complete owner/RLS-scoped receipt aggregate, `20261023164118_app_wide_rls_initplans.sql` for statement-level identity checks in existing policies, and `20261023170010_project_parent_rls_lookup.sql` for non-recursive parent ownership checks. Apply in filename order before merging the audit branch. Local code/UX tests changed no Production settings or data. Current validation and rollout status: [app-wide review](reports/app-wide-audit-2026-10-23/review.md).
 
 Remaining activation dependencies are distinct:
 
