@@ -42,6 +42,8 @@ Each destination needs source/data-flow review, relevant business and failure ch
 
 17. Fixed: Daily Focus now summarizes every saved generation within its 49-day window in one RLS-scoped database read. More than 350 regenerations cannot erase a completed day. Failed history reads remain unavailable rather than displaying invented incomplete days. Cached tasks survive refresh/regeneration failures; retrying a failed initial read does not regenerate the selection. The query changes at midnight in the stored focus timezone, including after an idle tab resumes. Four component recovery cases and migrated-database/window tests cover these boundaries. The fourth prepared migration must precede deployment.
 
+18. Fixed: Home layout synchronization failures are visible and editing makes inner widget actions inert for both pointer and keyboard users. Recurring-plan failures report their rollback and pending toggles cannot race. Goal deletion reports a failed optional Calendar cleanup while retaining the confirmed local deletion. Preferences reject malformed bodies, invalid timezones/reminder hours and currencies outside the static FX table before any write. Unknown widget ids cannot enter the saved layout. Fourteen preference-route cases and the customization interaction check complement the existing plan failure tests.
+
 Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
 
 Tour isolation validation adds three component tests (22 shared tests in total), two browser cases, TypeScript and targeted ESLint. The six-width destination matrix also passed after code splitting.

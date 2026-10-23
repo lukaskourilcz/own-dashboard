@@ -11,8 +11,7 @@ const RATES_IN_USD: Record<string, number> = {
 
 export const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "CZK", "CAD"] as const;
 
-/** Device-local key for the last-good live snapshot, so reloads start from
- * live rates instead of the stale hardcoded fallback. */
+/** Convert with the shared static rate table; unsupported pairs retain their amount. */
 export function convert(amount: number, from: string, to: string): number {
   if (from === to) return amount;
   const fromRate = RATES_IN_USD[from];

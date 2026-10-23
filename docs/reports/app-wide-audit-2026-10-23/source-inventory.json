@@ -490,7 +490,8 @@
       "path": "src/app/api/user/preferences/route.ts",
       "lines": 169,
       "sha256": "c6e392390ab5721061e6b6ea139f4a288baa29c0a60c73597b3b0cc215f8d8c2",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "db9ee54e25d5a68893ee3bd5f5ba63e7377f37c63fff5baa3075d0d8d7e2c1e8"
     },
     {
       "path": "src/app/api/vercel/analytics/route.ts",
@@ -1055,7 +1056,8 @@
       "path": "src/components/overview/customizable-overview.tsx",
       "lines": 394,
       "sha256": "66be5218aa3814e003564e455164342d492baf24c5238c795f786a4076997bb8",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "901c784e3edf3d60a67df2bd949ad466994224a95c9d4f948e343f1500e08308"
     },
     {
       "path": "src/components/overview/daily-focus.tsx",
@@ -1076,7 +1078,7 @@
       "lines": 175,
       "sha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c"
+      "reviewedSha256": "f96c07481410b1bc4985e96203f4287cabde80e6c4b5fc90aa3fd3d89b3cc13f"
     },
     {
       "path": "src/components/overview/today-hero.tsx",
@@ -1254,7 +1256,7 @@
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "f0c82f7b7fca3873998850acfa5b04237750f68703ccf02a4bb7994731c57e25"
+      "reviewedSha256": "b3e75d7b9b99ed5f73a95623bbdfbee920ba064090b0aa4d35b746e1127c4e18"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
@@ -1771,7 +1773,8 @@
       "path": "src/lib/fx.ts",
       "lines": 22,
       "sha256": "bb4ceb161db39d4c1126b6649baa2a5a613c082eca1466cc54557b3556df7070",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "b097b68c0ac93cf3755dd9252cac6331501b67a03637c90f3afd4fdd381c2b5b"
     },
     {
       "path": "src/lib/github-auth.ts",
@@ -3346,7 +3349,8 @@
       "path": "src/lib/use-dashboard-layout.ts",
       "lines": 66,
       "sha256": "2a83f698129a2a0ab9a2308692fea63345b4e1d6b64ce59e58af59ce9c284f95",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "2a83f698129a2a0ab9a2308692fea63345b4e1d6b64ce59e58af59ce9c284f95"
     },
     {
       "path": "src/lib/use-now.ts",

@@ -98,10 +98,14 @@ export function CustomizableOverview({
   const { isHidden } = useNavVisibility();
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const persistLayout = (next: readonly WidgetId[]) => {
     setLayout(next);
     if (!syncPreferences) return;
-    void saveUserPreferences({ dashboard_layout: next }).catch(() => undefined);
+    void saveUserPreferences({ dashboard_layout: next }).then(
+      () => setSaveFailed(false),
+      () => setSaveFailed(true),
+    );
   };
 
   // Respect the Settings nav-visibility choices: drop widgets whose section
@@ -131,6 +135,7 @@ export function CustomizableOverview({
 
   return (
     <div className="space-y-4">
+      {saveFailed && <p role="alert" className="text-xs text-destructive">{t.dashboard.layoutSaveFailed}</p>}
       {/* Toolbar — Customize toggles edit mode; while editing, add/reset/done. */}
       <div className="flex flex-wrap items-center gap-2">
         <p className="hidden min-w-0 flex-1 truncate text-xs text-foreground-subtle sm:block">
@@ -315,7 +320,7 @@ function SortableWidget({
         )}
         {/* Disable inner interactions while editing so drags/clicks don't fire
             the widget's own handlers. */}
-        <div className={cn(editing && "pointer-events-none select-none")}>
+        <div inert={editing} className={cn(editing && "pointer-events-none select-none")}>
           {children}
         </div>
       </div>

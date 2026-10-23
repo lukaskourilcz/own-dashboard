@@ -203,22 +203,23 @@ export function PlansPanel({
       if (error) throw error;
       return id;
     },
-    onSuccess: (id) => {
+    onSuccess: async (id) => {
       const plan = plans.find((p) => p.id === id);
       setPlans((prev) => prev.filter((p) => p.id !== id));
-      // Best-effort: delete the linked Google Calendar event so it doesn't
-      // orphan. Server treats 404/410 as success; failures here are silent.
+      // Keep the confirmed local deletion even if optional Calendar cleanup fails.
       if (plan?.linked_calendar_event_id) {
-        fetch("/api/calendar/event", {
+        const response = await fetch("/api/calendar/event", {
           method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ id: plan.linked_calendar_event_id }),
-        }).catch(() => {
-          /* network blip — event will be left as is in GCal */
-        });
+          signal: AbortSignal.timeout(20000),
+        }).catch(() => null);
+        if (!response?.ok) setCalendarNote(t.plans.calendarDeleteFailed);
+        void qc.invalidateQueries({ queryKey: ["calendar"] });
       }
       void qc.invalidateQueries({ queryKey: qk.plans });
     },
+    onError: () => setError(t.plans.couldNotSavePlan),
   });
 
   const saving = addMutation.isPending;

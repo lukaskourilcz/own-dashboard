@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
-import { DEFAULT_LAYOUT } from "@/lib/dashboard-layout";
+import { DEFAULT_LAYOUT, isWidgetId } from "@/lib/dashboard-layout";
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { normalizeHiddenProjectTabs } from "@/lib/project-workspace-tabs";
 
 type Patch = {
@@ -68,7 +69,26 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as Patch;
+  const input: unknown = await request.json().catch(() => null);
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return NextResponse.json({ error: "Expected a preferences object." }, { status: 400 });
+  }
+  const body = input as Patch;
+  if ("timezone" in body && body.timezone !== null) {
+    try {
+      if (typeof body.timezone !== "string" || !body.timezone || body.timezone.length > 100) throw new Error();
+      new Intl.DateTimeFormat("en", { timeZone: body.timezone }).format();
+    } catch {
+      return NextResponse.json({ error: "Invalid timezone." }, { status: 400 });
+    }
+  }
+  if ("nudge_hour" in body && body.nudge_hour !== null &&
+      (!Number.isInteger(body.nudge_hour) || Number(body.nudge_hour) < 0 || Number(body.nudge_hour) > 23)) {
+    return NextResponse.json({ error: "Invalid reminder hour." }, { status: 400 });
+  }
+  if ("display_currency" in body && !SUPPORTED_CURRENCIES.includes(body.display_currency as typeof SUPPORTED_CURRENCIES[number])) {
+    return NextResponse.json({ error: "Unsupported display currency." }, { status: 400 });
+  }
   const patch: Record<string, unknown> = {
     user_id: user.id,
     updated_at: new Date().toISOString(),
@@ -132,9 +152,7 @@ export async function PATCH(request: Request) {
   if (Array.isArray(body.dashboard_layout)) {
     patch.dashboard_layout = Array.from(
       new Set(
-        body.dashboard_layout.filter(
-          (value) => typeof value === "string" && value.length > 0,
-        ),
+        body.dashboard_layout.filter(isWidgetId),
       ),
     ).slice(0, 20);
   }

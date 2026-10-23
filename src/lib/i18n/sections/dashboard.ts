@@ -12,6 +12,7 @@ type DashboardStrings = {
   remove: string;
   dragToReorder: string;
   editingHint: string;
+  layoutSaveFailed: string;
   emptyTitle: string;
   emptyDescription: string;
   widgetNames: Record<WidgetId, string>;
@@ -45,6 +46,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     remove: "Remove widget",
     dragToReorder: "Drag to reorder",
     editingHint: "Drag widgets to reorder, or remove them with ×.",
+    layoutSaveFailed: "Layout changed on this device, but could not sync. Make another layout change to retry.",
     emptyTitle: "Your dashboard is empty",
     emptyDescription: "Add a widget to get started.",
     widgetNames: {
@@ -94,6 +96,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     remove: "Odebrat widget",
     dragToReorder: "Přetažením změníte pořadí",
     editingHint: "Přetažením změníte pořadí, křížkem × widget odeberete.",
+    layoutSaveFailed: "Rozložení se změnilo na tomto zařízení, ale nepodařilo se synchronizovat. Další změnou rozložení to zkusíte znovu.",
     emptyTitle: "Nástěnka je prázdná",
     emptyDescription: "Začněte přidáním widgetu.",
     widgetNames: {

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
+import { useToast } from "@/components/ui/toast";
 import { Check, Repeat } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -27,6 +28,7 @@ export function RecurringPlans({
   setPlans: Updater<Plan[]>;
 }) {
   const t = useDict();
+  const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
   const now = useNow();
@@ -55,6 +57,7 @@ export function RecurringPlans({
     },
     onError: (_e, _vars, ctx) => {
       if (ctx?.prev) setPlans(ctx.prev);
+      toast.err(t.plans.couldNotSavePlan);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.plans }),
   });
@@ -119,11 +122,12 @@ export function RecurringPlans({
                   >
                     <button
                       type="button"
+                      disabled={toggleMutation.isPending}
                       onClick={() => toggleMutation.mutate({ plan, done: !done })}
                       aria-pressed={done}
                       aria-label={done ? t.plans.markNotDone : t.plans.markDone}
                       className={cn(
-                        "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors focus-ring",
+                        "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors focus-ring disabled:cursor-wait",
                         done
                           ? "border-success bg-success text-white"
                           : "border-border-strong hover:border-success",

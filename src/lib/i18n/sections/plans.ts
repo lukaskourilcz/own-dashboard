@@ -34,6 +34,7 @@ type PlansStrings = {
   couldNotSavePlan: string;
   calendarEventFailed: string;
   calendarLinkFailed: string;
+  calendarDeleteFailed: string;
   saving: string;
   addPlan: string;
   statusBoard: string;
@@ -53,6 +54,7 @@ type PlansStrings = {
 
 export const plans: { en: PlansStrings; cs: PlansStrings } = {
   en: {
+    calendarDeleteFailed: "Plan deleted. The calendar event removal was not confirmed; check Calendar before trying again.",
     calendarLinkFailed: "The plan and calendar event were saved, but their link could not be stored. Check Calendar before adding another event.",
     title: "Goals",
     description: "Outcomes you're working toward.",
@@ -116,6 +118,7 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     noDate: "no date",
   },
   cs: {
+    calendarDeleteFailed: "Plán je smazaný. Odstranění události nebylo potvrzeno; před dalším pokusem zkontrolujte Kalendář.",
     calendarLinkFailed: "Plán i událost jsou uložené, ale jejich propojení se nepodařilo uložit. Než přidáte další událost, zkontrolujte Kalendář.",
     title: "Cíle",
     description: "Výsledky, ke kterým směřujete.",
