@@ -81,7 +81,7 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 
 | Step | What it does | Code |
 |---|---|---|
-| 1 collection | From 22:00 Prague, reads the native feeds (RSS, Atom, JSON, HTML; registry in `dneskai-registry.ts`), dedups, and asks Jev to classify the candidates | `dneskai-collection.ts`, `dneskai-native-feed.ts`, `free-feeds/` |
+| 1 collection | From 22:00 Prague, reads the native feeds (RSS, Atom, JSON, HTML; registry in `dneskai-registry.ts`, or the owner's `marketing_dneskai_sources` rows with `DNESKAI_SOURCES_TABLE_ENABLED`, through `dneskai-source-catalog.ts`), dedups, and asks Jev to classify the candidates | `dneskai-collection.ts`, `dneskai-native-feed.ts`, `free-feeds/` |
 | 1a scouting | Only with `DNESKAI_SCOUTING_ENABLED`: hourly from 22:00 to 08:00, turns the night's reports from education sources and library links rated 4 or 5 into proposed topics (`marketing_dneskai_topics`), no model call and no lease; with `DNESKAI_FACT_OR_HYPE_ENABLED` it also buys transcripts of FACT or HYPE reels and asks Claude Haiku 5.5 for the verdict; with `DNESKAI_TITLING_ENABLED` it expires news topics after 48 hours and from 02:00 titles the untitled ones in one Claude Haiku 5.5 call | `dneskai-scouting.ts`, `dneskai-fact-or-hype.ts`, `dneskai-titling.ts` |
 | 2 media | Downloads the pictures of selected stories (og:image, article figures), stores them by sha256 with credit, pHash and size | `dneskai-media*.ts` |
 | 3 briefs | Groups stories into events, picks up to four, writes one brief per slot (`marketing_dneskai_briefs`); with `DNESKAI_TITLING_ENABLED` the events become news topics instead | `dneskai-events.ts`, `dneskai-briefs.ts` |
@@ -202,6 +202,7 @@ Costs show in "Chyby a náklady".
 | `marketing_dneskai_runs`, `_stages`, `_candidates`, `_source_states` | Nightly collection runs, paid stages with reservations, collected stories, feed cursors |
 | `marketing_media_assets`, `_asset_links`, `_collections` | Source pictures (sha256, credit, pHash), per-story links and collection state |
 | `marketing_dneskai_briefs` | One brief per selected event and slot, its status and job |
+| `marketing_dneskai_sources` | The sources Zdroje edits: Instagram handles and websites with kind, topic, tier, weekdays, item cap and switch; seeded once from the registry file (prepared, `20261023110000`, behind `DNESKAI_SOURCES_TABLE_ENABLED`) |
 | `marketing_dneskai_topics` | Topics (náměty): working titles the owner approves before anything is paid for, with kind, source, keyword, verdict, evidence and status (prepared, `20261023100000`, behind `DNESKAI_TOPICS_ENABLED`) |
 | `marketing_campaigns`, `marketing_calendar_entries` | Daily campaign and slot entries a job is bound to |
 | `marketing_jobs` | Generation jobs: request, fence, lease, result (deck, revision, usage) |

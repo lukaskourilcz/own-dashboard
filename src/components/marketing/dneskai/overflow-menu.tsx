@@ -39,6 +39,8 @@ export function DneskaiOverflowMenu({ projectId, lang, preview, sections, active
   const [panel, setPanel] = useState<Panel | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  // Set when a panel hands focus elsewhere (recovery opens the review tab), so closing does not pull it back to ⋯.
+  const focusMoved = useRef(false);
   // Up and Down move between the items, Home and End jump to the ends; Tab works as usual.
   const onKeyDown = (event: KeyboardEvent) => {
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
@@ -75,14 +77,14 @@ export function DneskaiOverflowMenu({ projectId, lang, preview, sections, active
     </Popover.Root>
     <Dialog open={panel !== null} onOpenChange={(next) => { if (!next) setPanel(null); }}>
       <DialogContent className={cn(panel === 'costs' || panel === 'recovery' ? 'max-w-5xl' : 'max-w-xl')} data-testid={panel ? `dneskai-more-${panel}` : undefined}
-        {...(panel === 'costs' ? { 'aria-describedby': undefined } : {})} onCloseAutoFocus={(event) => { event.preventDefault(); trigger.current?.focus(); }}>
+        {...(panel === 'costs' ? { 'aria-describedby': undefined } : {})} onCloseAutoFocus={(event) => { event.preventDefault(); if (focusMoved.current) focusMoved.current = false; else trigger.current?.focus(); }}>
         <DialogHeader>
           <DialogTitle>{panel ? t[panel] : ''}</DialogTitle>
           {panel && panel !== 'costs' && <DialogDescription>{t[`${panel}Description`]}</DialogDescription>}
         </DialogHeader>
         {panel === 'costs' && <WorkspaceTab tab="dneskai-costs" projectId={projectId} lang={lang} preview={preview} />}
         {panel === 'account' && <InstagramAccount lang={lang} disabled={preview} />}
-        {panel === 'recovery' && <Sources projectId={projectId} lang={lang} disabled={preview} onOpenReview={() => { setPanel(null); onOpenReview(); }} />}
+        {panel === 'recovery' && <Sources projectId={projectId} lang={lang} disabled={preview} onOpenReview={() => { focusMoved.current = true; setPanel(null); onOpenReview(); }} />}
         {panel === 'shortcuts' && <dl className="space-y-2 text-xs">{dneskaiLab[lang].shortcuts.rows.map(([key, value]) => <div key={key} className="flex justify-between gap-4"><dt className="font-mono">{key}</dt><dd>{value}</dd></div>)}</dl>}
       </DialogContent>
     </Dialog>

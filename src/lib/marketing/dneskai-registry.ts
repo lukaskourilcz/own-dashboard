@@ -99,6 +99,16 @@ export const DNESKAI_EDUCATION_SOURCES: readonly DneskaiSource[] = Object.freeze
 const allRows: ReadonlyMap<string, DneskaiSource> = new Map([...DNESKAI_SOURCES, ...DNESKAI_EDUCATION_SOURCES].map((row) => [row.id, row]));
 /** A news or education source row by id. */
 export function dneskaiSourceById(sourceId: string): DneskaiSource | undefined { return allRows.get(sourceId); }
+/**
+ * The registry as seed rows of marketing_dneskai_sources (#174): every news and education source with its tier and
+ * topic, plus the education profiles that wait for the owner's check, seeded switched off (Astra #185).
+ */
+export function dneskaiRegistrySeed(): Array<DneskaiSource & { tier: DneskaiSourceTier; topic: 'news' | 'education'; enabled: boolean }> {
+  const pending = DNESKAI_EDUCATION_PENDING_PROFILES.map((handle) => ({ ...educationProfile(handle, [2, 5]), pending: true }));
+  return [...entries.values(), ...pending].map((entry) => ({
+    ...publicRow(entry), tier: entry.tier ?? 1, topic: entry.topic ?? 'news', enabled: !('pending' in entry),
+  }));
+}
 /** True for a scouting source: its reports become topics and never reach Jev. */
 export function isDneskaiEducationSource(sourceId: string): boolean { return entries.get(sourceId)?.topic === 'education'; }
 /** Unknown sources count as newsrooms (1). */
