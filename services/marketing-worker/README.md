@@ -4,9 +4,9 @@
 
 The normal DNESKAi pipeline runs in OwnDashboard's Node routes and `src/lib/marketing` modules. `scheduler-ports.ts` connects collection, media, briefs and the durable `marketing_jobs` queue to the Supabase tick. `executeMarketingJob` claims the persisted job and uses the guarded generation/renderer adapters. No separately provisioned worker service or n8n timer is needed for that path. See [scheduling](../../docs/marketing-scheduling.md).
 
-The prepared continuation adds strict brief `/2` evidence while keeping `/1` readable. Brief offers use a conservative bytes/2 token estimate plus fixed token overhead; dollar reservations remain byte-based, and token/cost/job ceilings are unchanged. A refused Apify start settles at zero only with a definite pre-request or typed official refusal; ambiguous starts retain their reservation. Free source reads may overlap up to three at a time, within five operations and 45 seconds. Paid starts stay serial.
+The code on main adds strict brief `/2` evidence while keeping `/1` readable. Brief offers use a conservative bytes/2 token estimate plus fixed token overhead; dollar reservations remain byte-based, and token/cost/job ceilings are unchanged. A refused Apify start settles at zero only with a definite pre-request or typed official refusal; ambiguous starts retain their reservation. Free source reads may overlap up to three at a time, within five operations and 45 seconds. Paid starts stay serial.
 
-These are local branch changes, with unapplied SQL migrations and unresolved production migration history. This document does not mark them deployed.
+This code is deployed. Brief `/2` stays off until migrations `20261022020702` and `20261022020759` are pushed and `DNESKAI_RICH_EVIDENCE_ENABLED=true` is set; production's migration history matches the repository since 22 October.
 
 ## HTTP protocol
 

@@ -49,8 +49,8 @@ winning format. Recent Saved acquisition is deferred under
 Scheduling runs in Supabase ([marketing scheduling](marketing-scheduling.md), #120).
 pg_cron calls `POST /api/marketing/tick` every five minutes and once a day, and a
 tick runs at most one unit of work per step. After 22:00 Europe/Prague it collects
-the free news feeds, through the Quorum bridge by default or directly with
-`MARKETING_DNESKAI_FEED_PROVIDER=native`, and continues every five minutes until
+the free news feeds directly (`MARKETING_DNESKAI_FEED_PROVIDER=native` in
+Production; the Quorum bridge is the rollback), and continues every five minutes until
 the run is finished.
 
 Events come only from Jev, the paid TypeSafe classification of relevance and
@@ -65,14 +65,16 @@ one generation job each. Claude Sonnet
 writes the copy and the carousel studio renders the slides. The owner reviews
 each exact post in the DNESKAi project's „Dnes ke schválení“ (“For review today”)
 tab. A post is published only after that exact approval and only while both
-publish switches are on.
+publish switches and the account's own switch are on.
 
 While `MARKETING_DNESKAI_COLLECTION_ENABLED` is not `true`, collection, media and
 briefs are a recorded skip that costs nothing; without `MARKETING_AI_CONSENT`
 generation is skipped the same way. Publishing is never skipped: while either
 publish switch is off, each due slot gets a dry run with no Meta write. Collection
-and live publishing stay off until the pilot
-([#123](https://github.com/lukaskourilcz/own-dashboard/issues/123)).
+runs every night since 21 October. The pilot
+([#123](https://github.com/lukaskourilcz/own-dashboard/issues/123)) published two
+posts on 22 October; since then the account switch is off, so a due slot holds
+without a Meta write.
 
 The DNESKAi n8n workflows are retired
 ([retired exports](../workflows/marketing/retired/README.md)). By the owner's

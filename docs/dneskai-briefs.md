@@ -321,7 +321,7 @@ New briefs use `dneskai-brief/2`; the strict reader still accepts unmodified `dn
 
 The richer text travels through the owner-scoped media read into a new brief, its source packet and the bounded generation offer. Article text counts toward the format thresholds (400 characters for the primary report, 800 for the whole pack); source alt text is metadata, not a vision result or fact verification. The offer keeps the same evidence-size plans, source ordering and token/cost guards. Caption-only evidence never receives article prose or becomes a transcript. Historical briefs are not rewritten.
 
-The matching migrations are unapplied; production needs a separately approved release after migration-history reconciliation.
+The matching migrations (`20261022020702`, `20261022020759`) are unapplied; production's history is reconciled, so they go out with the owner's push of the 23 prepared files ([migration guide](migration-guide.md#applying-the-prepared-migrations)), after which `DNESKAI_RICH_EVIDENCE_ENABLED=true` turns brief/2 on.
 
 ## Titling switch (#153)
 
@@ -329,8 +329,9 @@ With `DNESKAI_TITLING_ENABLED=true` (and `DNESKAI_TOPICS_ENABLED=true`) the brie
 briefs on its own. For each finished run it turns the selected events into `news` topics instead: one per event,
 `source_ref = event:<eventId>`, `brief_id` pointing at the event's brief row, the member URLs and the lead report's
 text as evidence. The brief rows stay `pending`, so the Lab's "Generate now" still works on them. Titling then gives
-each topic a Czech working title, and a news topic still proposed 48 hours later moves to `expired`. Building a
-brief from an approved topic is the next step (A6); until it ships, approving a news topic does not make a post.
+each topic a Czech working title, and a news topic still proposed 48 hours later moves to `expired`. Only
+`DNESKAI_TOPIC_BRIEFS_ENABLED` (next section) builds a brief from an approved topic; without it, approving a news
+topic does not make a post.
 With the switch off the step is unchanged.
 
 ## Topic briefs (#155)

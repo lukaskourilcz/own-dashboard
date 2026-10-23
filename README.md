@@ -23,7 +23,7 @@ Pulse, habits/streaks, books/reading, and couples mode are retired. The cleanup 
 
 ## AI and safety boundaries
 
-Outside the owner-authorized marketing workflow (DNESKAi generation with Claude and story classification with Jev, see the [system map](./docs/SYSTEM-MAP.md)), OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md). Invoices are marked paid by the deterministic payment matcher in `src/lib/payment-matching.ts`, which compares a variable symbol and an amount, or by hand.
+Outside the owner-authorized marketing workflow (DNESKAi generation with Claude, story classification with Jev, and topic titling and FACT or HYPE verdicts with Claude Haiku behind their switches; see the [system map](./docs/SYSTEM-MAP.md)), OwnDashboard makes no model calls. Link enrichment reads the submitted URL through Jina Reader and fills the form for review; the prompt library only composes text for the owner to copy. Owner records are never sent to an external model. See [AI and privacy](./docs/ai-and-privacy.md). Invoices are marked paid by the deterministic payment matcher in `src/lib/payment-matching.ts`, which compares a variable symbol and an amount, or by hand.
 
 ## Architecture and stack
 
@@ -184,7 +184,7 @@ The migrations, in the order they run:
 86. `20261023130300_dneskai_tiktok_spend.sql` — unapplied, a fourth kind `tiktok` in the topic spend ledger for the daily TikTok CZ sound chart under its own ceiling, plus service-only run lookup and binding; used only with `DNESKAI_TIKTOK_TRENDS_ENABLED=true`.
 
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Marketing migrations 39–46 require the separate rollout described in the guide; their presence here does not imply a production deployment.
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. No repository change claims that a linked/production database was migrated. Follow [Migration and rollback](./docs/migration-guide.md).
 
