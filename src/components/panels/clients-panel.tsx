@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -63,6 +63,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   importantDates: ImportantDate[];
   displayCurrency: string;
 }) {
+  const formId = useId();
   const t = useDict();
   const p = t.professional;
   const { lang } = useLang();
@@ -157,7 +158,10 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   });
   const removeMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("organizations").delete().eq("id", id); if (error) throw error; return id; },
-    onSuccess: (id) => setOrganizations((old) => old.filter((item) => item.id !== id)),
+    onSuccess: (id) => {
+      setOrganizations((old) => old.filter((item) => item.id !== id));
+      for (const queryKey of [qk.organizations, qk.projects, qk.opportunities, qk.invoices, qk.todos, qk.notes, qk.importantDates]) void qc.invalidateQueries({ queryKey });
+    },
     onError: () => toast.err(p.couldNotSave),
   });
   const removeOrganization = async (id: string) => {
@@ -169,6 +173,25 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       destructive: true,
     })) removeMutation.mutate(id);
   };
+  // Build relationships when records change, rather than rescanning every
+  // collection for every client on each keystroke. Totals are needed only for
+  // the one expanded client.
+  const related = useMemo(() => {
+    function group<T extends { organization_id?: string | null }>(rows: T[]) {
+      const map = new Map<string, T[]>();
+      for (const row of rows) if (row.organization_id) {
+        const list = map.get(row.organization_id) ?? [];
+        list.push(row); map.set(row.organization_id, list);
+      }
+      return map;
+    }
+    return { projects: group(projects), opportunities: group(opportunities), invoices: group(invoices), todos: group(todos), notes: group(notes), dates: group(importantDates) };
+  }, [projects, opportunities, invoices, todos, notes, importantDates]);
+  const itemsByInvoice = useMemo(() => {
+    const map = new Map<string, InvoiceItem[]>();
+    for (const item of invoiceItems) { const list = map.get(item.invoice_id) ?? []; list.push(item); map.set(item.invoice_id, list); }
+    return map;
+  }, [invoiceItems]);
   const clientQuery = search.trim().toLocaleLowerCase();
   const visibleOrganizations = organizations.filter((org) =>
     (typeFilter === "all" || org.type === typeFilter) &&
@@ -176,31 +199,31 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   );
   return <div>
     <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button onClick={() => setOpen((x) => !x)}><Plus />{p.newClient}</Button>} />
-    {open && <Card className="mb-4"><CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-      <div className="space-y-1.5"><Label>{p.name}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+    {open && <Card className="mb-4"><CardContent className="p-4"><form className="grid gap-3 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); if (form.name.trim() && !createMutation.isPending) createMutation.mutate(); }}>
+      <div className="space-y-1.5"><Label htmlFor={`${formId}-name`}>{p.name}</Label><Input id={`${formId}-name`} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
       <div className="space-y-1.5"><Label>{p.type}</Label><SimpleSelect aria-label={p.type} value={form.type} onValueChange={(type) => setForm({ ...form, type: type as OrganizationType })} options={TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))} /></div>
-      <div className="space-y-1.5"><Label>{p.website}</Label><Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
-      <div className="space-y-1.5"><Label>{p.email}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor={`${formId}-website`}>{p.website}</Label><Input id={`${formId}-website`} type="url" pattern="https?://.+" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor={`${formId}-email`}>{p.email}</Label><Input id={`${formId}-email`} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor="org-ico">{p.companyId}</Label><div className="flex gap-2"><Input id="org-ico" inputMode="numeric" value={form.companyId} onChange={(e) => setForm({ ...form, companyId: e.target.value })} /><Button type="button" variant="outline" disabled={ares.busy || !form.companyId.trim()} onClick={() => void fillFromAres()}><Building2 />{p.fillFromAres}</Button></div></div>
       <div className="space-y-1.5"><Label htmlFor="org-dic">{p.vatId}</Label><Input id="org-dic" value={form.vatId} onChange={(e) => setForm({ ...form, vatId: e.target.value })} /></div>
       {ares.message && <p className="text-xs text-foreground-muted sm:col-span-2" role="status">{ares.message}</p>}
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="org-address">{p.address}</Label><Input id="org-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor="org-city">{p.city}</Label><Input id="org-city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label htmlFor="org-zip">{p.zip}</Label><Input id="org-zip" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor="org-country">{p.country}</Label><Input id="org-country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div></div>
-      <div className="space-y-1.5 sm:col-span-2"><Label>{p.notes}</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-      <Button className="sm:col-span-2" disabled={!form.name.trim() || createMutation.isPending} onClick={() => createMutation.mutate()}>{p.create}</Button>
-    </CardContent></Card>}
+      <div className="space-y-1.5 sm:col-span-2"><Label htmlFor={`${formId}-notes`}>{p.notes}</Label><Textarea id={`${formId}-notes`} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+      <Button type="submit" className="sm:col-span-2" disabled={!form.name.trim() || createMutation.isPending}>{p.create}</Button>
+    </form></CardContent></Card>}
     <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
     {visibleOrganizations.length === 0 ? <EmptyState title={organizations.length === 0 ? p.clientsEmpty : t.common.none} icon={Users} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">{visibleOrganizations.map((org) => {
-      const relatedProjects = projects.filter((x) => x.organization_id === org.id);
-      const relatedOpportunities = opportunities.filter((x) => x.organization_id === org.id);
-      const relatedInvoices = invoices.filter((x) => x.organization_id === org.id);
-      const relatedTodos = todos.filter((x) => x.organization_id === org.id);
-      const relatedNotes = notes.filter((x) => x.organization_id === org.id);
-      const relatedDates = importantDates.filter((x) => x.organization_id === org.id);
+      const relatedProjects = related.projects.get(org.id) ?? [];
+      const relatedOpportunities = related.opportunities.get(org.id) ?? [];
+      const relatedInvoices = related.invoices.get(org.id) ?? [];
+      const relatedTodos = related.todos.get(org.id) ?? [];
+      const relatedNotes = related.notes.get(org.id) ?? [];
+      const relatedDates = related.dates.get(org.id) ?? [];
       const counts = { projects: relatedProjects.length, opportunities: relatedOpportunities.length, invoices: relatedInvoices.length };
-      const invoiceTotal = relatedInvoices.reduce((sum, invoice) => sum + convert(computeTotals(invoiceItems.filter((item) => item.invoice_id === invoice.id).map((item) => ({ quantity: Number(item.quantity), unit_price: Number(item.unit_price), vat_rate: Number(item.vat_rate) })), { roundTotal: invoice.round_total, currency: invoice.currency }).total, invoice.currency, displayCurrency), 0);
       const expanded = expandedId === org.id;
+      const invoiceTotal = expanded ? relatedInvoices.reduce((sum, invoice) => sum + convert(computeTotals((itemsByInvoice.get(invoice.id) ?? []).map((item) => ({ quantity: Number(item.quantity), unit_price: Number(item.unit_price), vat_rate: Number(item.vat_rate) })), { roundTotal: invoice.round_total, currency: invoice.currency }).total, invoice.currency, displayCurrency), 0) : 0;
       const vatStatus = vatStatusOf(org);
       const vatIsFresh = vatCheckIsFresh(org, new Date());
       const canVerifyVat = isEuVatId(org.vat_id);

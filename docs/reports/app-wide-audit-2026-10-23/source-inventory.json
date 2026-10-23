@@ -1,18 +1,20 @@
 {
   "baseline": "dba5fc8",
-  "meaning": "Inventory only; pending entries are not reviewed.",
+  "meaning": "Baseline inventory. Source review and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
   "files": [
     {
       "path": "src/app/[[...slug]]/loading.tsx",
       "lines": 88,
       "sha256": "f31603ba24d3f9a5afe9d7b0c109da9885348b6d0b626c17d8efefdd752a3520",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "f31603ba24d3f9a5afe9d7b0c109da9885348b6d0b626c17d8efefdd752a3520"
     },
     {
       "path": "src/app/[[...slug]]/page.tsx",
       "lines": 175,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "dbbf88868d139e48bd58f120fcebf80f82d8d08575da1bac4964c87dabebfee8"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -534,7 +536,8 @@
       "path": "src/app/guest/page.tsx",
       "lines": 53,
       "sha256": "11ce91658eb3ef86a98c20a86370e854347008d362811bf06490e66b73a2eb8e",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "30ff56e6c321413be6bc9d3d0d3d8a7f628e66d2bada79f082f0d6dfbafa3b4c"
     },
     {
       "path": "src/app/icon.tsx",
@@ -594,7 +597,8 @@
       "path": "src/components/calendar/week-view.tsx",
       "lines": 168,
       "sha256": "af6e551df41b335251d2e929fe36bd0f69d0671144af79995a8b8f7adbc4ca9d",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "797fa5fc0ded20e407e0aa7791b491a7796b587d7d0ad7a99a8e3c327e34fed6"
     },
     {
       "path": "src/components/category-select.tsx",
@@ -654,7 +658,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 428,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "567f69d8c161901644baed20d38c9152f176db8d6495dbef89755d940dec44a7"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -690,13 +695,15 @@
       "path": "src/components/guest-banner.tsx",
       "lines": 57,
       "sha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631"
     },
     {
       "path": "src/components/guest-locale.tsx",
       "lines": 22,
       "sha256": "01475f9bd94d0de75ea66ff6283796024b490c99b1ab36e389a37e48ad902537",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "01475f9bd94d0de75ea66ff6283796024b490c99b1ab36e389a37e48ad902537"
     },
     {
       "path": "src/components/icons/github.tsx",
@@ -1038,7 +1045,8 @@
       "path": "src/components/overview/cron-monitor.tsx",
       "lines": 216,
       "sha256": "ed8c3630dcf277ad2e0a93abc3ee19d99e797592fef1792c2b124d031a9c2fd9",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "ed8c3630dcf277ad2e0a93abc3ee19d99e797592fef1792c2b124d031a9c2fd9"
     },
     {
       "path": "src/components/overview/customizable-overview.tsx",
@@ -1056,25 +1064,29 @@
       "path": "src/components/overview/kpi-cards.tsx",
       "lines": 67,
       "sha256": "add88a3bd050014d61cab174cf610f1c4ef941b695ca8da82031b902d55f0b08",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "add88a3bd050014d61cab174cf610f1c4ef941b695ca8da82031b902d55f0b08"
     },
     {
       "path": "src/components/overview/recurring-plans.tsx",
       "lines": 175,
       "sha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c"
     },
     {
       "path": "src/components/overview/today-hero.tsx",
       "lines": 395,
       "sha256": "fabf66fa71ad67629fb14c17af24f1b0bde34ea1048102321f8476a3bc71d749",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "41583a95b2a7528d3a72fc1da0d06ed60f4590c7b6b6592a1018a6ca88302af3"
     },
     {
       "path": "src/components/overview/work-attention.tsx",
       "lines": 19,
       "sha256": "d0bae7a805561ba1305d3533308b256cea8bfc8957ba5259994ac4b3c535ae64",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d0bae7a805561ba1305d3533308b256cea8bfc8957ba5259994ac4b3c535ae64"
     },
     {
       "path": "src/components/panels/ai-panel.tsx",
@@ -1116,7 +1128,8 @@
       "path": "src/components/panels/clients-panel.tsx",
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
@@ -1158,7 +1171,8 @@
       "path": "src/components/panels/inbox-panel.tsx",
       "lines": 129,
       "sha256": "c52f0b0959b2d8289090148af76ba47da99e27565b37204e8392a1720a7881f9",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "a53bc179cfb6ba6e9e9ca8bc2f5d09716b59924c4a1c24ea08e8d96e39509e3a"
     },
     {
       "path": "src/components/panels/invoices-panel.tsx",
@@ -1194,7 +1208,8 @@
       "path": "src/components/panels/marketing-panel.tsx",
       "lines": 80,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
@@ -1290,13 +1305,15 @@
       "path": "src/components/panels/work-overview-panel.tsx",
       "lines": 242,
       "sha256": "4fce3b1e3a5829aba19a3fb533cbb3c7b47164596f60180be192291afcfa1276",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "c79016ad8a2d9e38ef418e0d896e4ecfec7cdca821ff7f0c65f0028a46b13c39"
     },
     {
       "path": "src/components/panels/workflows-panel.tsx",
       "lines": 63,
       "sha256": "34313af52479ae766a8b30d423e7ba8c40be6e9d89aa41ec675681dc7bf87771",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "34313af52479ae766a8b30d423e7ba8c40be6e9d89aa41ec675681dc7bf87771"
     },
     {
       "path": "src/components/posthog-provider.tsx",
@@ -1608,7 +1625,8 @@
       "path": "src/lib/calendar-server.ts",
       "lines": 135,
       "sha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac"
     },
     {
       "path": "src/lib/calendar.ts",
@@ -1674,7 +1692,8 @@
       "path": "src/lib/dashboard-data.ts",
       "lines": 213,
       "sha256": "836110c6a6d7ec29ad11737a5dec2486b64fc690061f302dcdf2f9a6342ac734",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "e0111e299de9116fbacfe7c6dbf89c109d7152d787a5de2bd523a2027cc6775c"
     },
     {
       "path": "src/lib/dashboard-layout.ts",
@@ -1686,7 +1705,8 @@
       "path": "src/lib/date-keys.ts",
       "lines": 42,
       "sha256": "4634f3d2bb5ae34331afc6b45957ffe8f09ff7ce42983c65cda99e50fcaa955d",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "4634f3d2bb5ae34331afc6b45957ffe8f09ff7ce42983c65cda99e50fcaa955d"
     },
     {
       "path": "src/lib/demo/dneskai-topics-demo.ts",
@@ -1746,13 +1766,15 @@
       "path": "src/lib/github-auth.ts",
       "lines": 29,
       "sha256": "66d1c18f0337c9523490ea5339d63607a3558975a7fecdd25b7b9bfe7ccd266f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8b4c3e547f7f05434621949fd1300fb2a378b44d594c86b5a0505084347b8c37"
     },
     {
       "path": "src/lib/github-queries.ts",
       "lines": 81,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba"
     },
     {
       "path": "src/lib/github-token.ts",
@@ -1776,7 +1798,8 @@
       "path": "src/lib/google-auth.ts",
       "lines": 30,
       "sha256": "612c3ad762c65e21cef8c63064e569ec747e48578b0b175794eed2cbb8fde329",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "836b528e46b8a183f7d2606b2c924aabab178fd240b5c59799c95bbad1afe712"
     },
     {
       "path": "src/lib/google-token.ts",
@@ -2052,7 +2075,8 @@
       "path": "src/lib/important-dates.ts",
       "lines": 88,
       "sha256": "385f7cc9d42ec5d107625185ea37d8b8717e3f813e7ab69fd47e778b6d709d51",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "385f7cc9d42ec5d107625185ea37d8b8717e3f813e7ab69fd47e778b6d709d51"
     },
     {
       "path": "src/lib/invoice-parser.ts",
@@ -3048,7 +3072,8 @@
       "path": "src/lib/nav-tabs.ts",
       "lines": 105,
       "sha256": "8d345659f6e33d5cf302171d9a8966ee9144a71fbbbe66d5542c332ad19cec45",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8d345659f6e33d5cf302171d9a8966ee9144a71fbbbe66d5542c332ad19cec45"
     },
     {
       "path": "src/lib/needed-sync.ts",
@@ -3180,13 +3205,15 @@
       "path": "src/lib/queries/entities.ts",
       "lines": 80,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907"
     },
     {
       "path": "src/lib/queries/fetchers.ts",
       "lines": 542,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -3240,7 +3267,8 @@
       "path": "src/lib/supabase/client.ts",
       "lines": 10,
       "sha256": "661aa32384926007f70f75fd3b96e9752ca09926d60be1717d7ddc3452770796",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "f46dbaa1d653b6d8b1915dea262bcdf3f01a5c025337d740cd94630283d46e03"
     },
     {
       "path": "src/lib/supabase/middleware.ts",
@@ -3258,7 +3286,8 @@
       "path": "src/lib/supabase/user.ts",
       "lines": 18,
       "sha256": "555b20560ab938f4cd3ac7cd9118b4bbd66f684b66a0a49ef7e4e4bf4073ef73",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "555b20560ab938f4cd3ac7cd9118b4bbd66f684b66a0a49ef7e4e4bf4073ef73"
     },
     {
       "path": "src/lib/tag-colors.ts",
@@ -3312,7 +3341,8 @@
       "path": "src/lib/use-now.ts",
       "lines": 44,
       "sha256": "c855009ac88015b173e6bf19b05703474ec90d1901c30710d53a6910b4f02efd",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "512c24c0df4842a54187fc59787c1b476b94ab36a23781794ffd248f639983fa"
     },
     {
       "path": "src/lib/use-prefs.ts",

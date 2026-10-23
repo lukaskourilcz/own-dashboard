@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -360,6 +360,7 @@ export function InvoiceForm({
   onDone: (id: string) => void;
   onEditSupplier: () => void;
 }) {
+  const formId = useId();
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
@@ -926,7 +927,7 @@ export function InvoiceForm({
             <CardTitle>{t.invoices.sectionItems}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <datalist id="unit-suggestions">
+            <datalist id={`${formId}-unit-suggestions`}>
               {UNIT_SUGGESTIONS.map((u) => (
                 <option key={u} value={u} />
               ))}
@@ -940,12 +941,14 @@ export function InvoiceForm({
                       onChange={(e) =>
                         setItemField(it.key, "description", e.target.value)
                       }
+                      aria-label={t.invoices.itemDescriptionPlaceholder}
                       placeholder={t.invoices.itemDescriptionPlaceholder}
                     />
                     <div className="flex flex-wrap items-end gap-2">
                       <div className="space-y-1 w-20">
-                        <Label>{t.invoices.itemQuantity}</Label>
+                        <Label htmlFor={`${formId}-item-${i}-quantity`}>{t.invoices.itemQuantity}</Label>
                         <Input
+                          id={`${formId}-item-${i}-quantity`}
                           type="number"
                           step="0.001"
                           min={0}
@@ -957,9 +960,10 @@ export function InvoiceForm({
                         />
                       </div>
                       <div className="space-y-1 w-16">
-                        <Label>{t.invoices.itemUnit}</Label>
+                        <Label htmlFor={`${formId}-item-${i}-unit`}>{t.invoices.itemUnit}</Label>
                         <Input
-                          list="unit-suggestions"
+                          id={`${formId}-item-${i}-unit`}
+                          list={`${formId}-unit-suggestions`}
                           value={it.unit}
                           onChange={(e) =>
                             setItemField(it.key, "unit", e.target.value)
@@ -968,8 +972,9 @@ export function InvoiceForm({
                         />
                       </div>
                       <div className="space-y-1 w-28">
-                        <Label>{t.invoices.itemUnitPrice}</Label>
+                        <Label htmlFor={`${formId}-item-${i}-unit_price`}>{t.invoices.itemUnitPrice}</Label>
                         <Input
+                          id={`${formId}-item-${i}-unit_price`}
                           type="number"
                           step="0.01"
                           value={it.unit_price}
@@ -982,8 +987,9 @@ export function InvoiceForm({
                       </div>
                       {isVatPayer && (
                         <div className="space-y-1 w-20">
-                          <Label>{t.invoices.itemVat}</Label>
+                          <Label htmlFor={`${formId}-item-${i}-vat_rate`}>{t.invoices.itemVat}</Label>
                           <SimpleSelect
+                          id={`${formId}-item-${i}-vat_rate`}
                             value={String(it.vat_rate)}
                             onValueChange={(v) =>
                               setItemField(it.key, "vat_rate", Number(v))
