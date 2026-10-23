@@ -280,6 +280,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   }
 
   async function createNote(seedContent?: unknown, seedTitle?: string) {
+    if (createMutation.isPending) return null;
     try {
       return await createMutation.mutateAsync({
         content: seedContent ?? [],
@@ -296,22 +297,12 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   }
 
   async function importMarkdownAsNote(md: string) {
-    try {
-      const { markdownToBlocks } = await import(
-        "@/components/notes/parse-markdown"
-      );
-      const blocks = await markdownToBlocks(md);
-      const title =
-        md
-          .split("\n")
-          .map((l) => l.replace(/^#+\s*/, "").trim())
-          .find((l) => l.length > 0)
-          ?.slice(0, 80) ?? t.notes.importedNote;
-      await createNote(blocks, title);
-      toast.ok(t.notes.importedAsNewNote);
-    } catch (err) {
-      toast.err((err as Error).message);
-    }
+    const { markdownToBlocks } = await import("@/components/notes/parse-markdown");
+    const blocks = await markdownToBlocks(md);
+    const title = md.split("\n").map((line) => line.replace(/^#+\s*/, "").trim())
+      .find((line) => line.length > 0)?.slice(0, 80) ?? t.notes.importedNote;
+    await createMutation.mutateAsync({ content: blocks, title });
+    toast.ok(t.notes.importedAsNewNote);
   }
 
   // DELETE — optimistic (row removed before the await in the original).
@@ -608,8 +599,8 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
     <div>
       {embedded ? (
         <div className="mb-3 flex items-center justify-end gap-1.5">
-          <ImportMarkdownButton onCreate={importMarkdownAsNote} />
-          <Button size="sm" onClick={() => createNote()}>
+          <ImportMarkdownButton onCreate={importMarkdownAsNote} disabled={createMutation.isPending} />
+          <Button size="sm" onClick={() => createNote()} disabled={createMutation.isPending}>
             <Plus className="h-3.5 w-3.5" />
             {t.notes.newNote}
           </Button>
@@ -620,8 +611,8 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
           description={t.notes.description}
           action={
             <div className="flex items-center gap-1.5">
-              <ImportMarkdownButton onCreate={importMarkdownAsNote} />
-              <Button size="sm" onClick={() => createNote()}>
+              <ImportMarkdownButton onCreate={importMarkdownAsNote} disabled={createMutation.isPending} />
+              <Button size="sm" onClick={() => createNote()} disabled={createMutation.isPending}>
                 <Plus className="h-3.5 w-3.5" />
                 {t.notes.newNote}
               </Button>
@@ -641,6 +632,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
               <button
                 key={tag}
                 type="button"
+                aria-pressed={on}
                 onClick={() => toggleTagFilter(tag)}
                 className={cn(
                   "text-[11px] font-medium rounded-full px-2 py-[3px] transition-colors border",
@@ -682,10 +674,11 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-foreground-subtle" />
               <Input
+                aria-label={t.notes.searchPlaceholder}
                 placeholder={t.notes.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="pl-7 h-8 text-xs"
+                className="pl-7 h-11 text-xs md:h-8"
               />
             </div>
           </div>
@@ -843,7 +836,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => togglePin(selected)}
-                    aria-label={t.notes.pin}
+                    aria-label={selected.is_pinned ? t.notes.unpin : t.notes.pin}
                   >
                     {selected.is_pinned ? (
                       <PinOff className="h-3.5 w-3.5" />
@@ -884,7 +877,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                         type="button"
                         onClick={() => removeTag(selected, tag)}
                         aria-label={t.notes.removeTag(tag)}
-                        className="opacity-50 group-hover:opacity-100 transition-opacity"
+                        className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm opacity-70 hover:opacity-100 focus-ring"
                       >
                         <X className="h-2.5 w-2.5" />
                       </button>
@@ -1178,12 +1171,13 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
           <form onSubmit={submit} className="flex gap-1.5">
             <Input
               autoFocus
+              aria-label={t.notes.addTagPlaceholder}
               placeholder={t.notes.addTagPlaceholder}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               className="h-8 text-xs"
             />
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" aria-label={t.notes.addTag}>
               <Check className="h-3.5 w-3.5" />
             </Button>
           </form>
@@ -1200,31 +1194,37 @@ function AddTagButton({ onAdd }: { onAdd: (tag: string) => void }) {
 
 function ImportMarkdownButton({
   onCreate,
+  disabled,
 }: {
   onCreate: (md: string) => Promise<void> | void;
+  disabled?: boolean;
 }) {
   const t = useDict();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (busy || disabled || !text.trim()) return;
     setBusy(true);
+    setFailed(false);
     try {
       await onCreate(text);
       setText("");
       setOpen(false);
+    } catch {
+      setFailed(true);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => { if (!busy) setOpen(next); }}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" disabled={disabled}>
           <Upload className="h-3.5 w-3.5" />
           {t.notes.importMd}
         </Button>
@@ -1235,7 +1235,10 @@ function ImportMarkdownButton({
           <DialogDescription>{t.notes.importDialogDescription}</DialogDescription>
         </DialogHeader>
           <form onSubmit={submit} className="mt-3 space-y-3">
+            <fieldset disabled={busy} className="min-w-0 space-y-3">
             <Textarea
+              aria-label={t.notes.importFromMarkdown}
+              maxLength={1_000_000}
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={12}
@@ -1243,6 +1246,7 @@ function ImportMarkdownButton({
               className="font-mono text-xs"
               autoFocus
             />
+            {failed && <p role="alert" className="text-sm text-risk">{t.notes.couldNotCreateNote}</p>}
             <div className="flex items-center justify-end gap-2">
               <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
@@ -1254,6 +1258,7 @@ function ImportMarkdownButton({
                 {busy ? t.notes.importing : t.notes.createNote}
               </Button>
             </div>
+            </fieldset>
           </form>
       </DialogContent>
     </Dialog>
@@ -1298,6 +1303,7 @@ function NoteLinkPicker({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              aria-label={t.notes.findNoteToLink}
               placeholder={t.notes.findNoteToLink}
               className="flex-1 h-11 bg-transparent text-sm outline-none placeholder:text-foreground-subtle"
             />

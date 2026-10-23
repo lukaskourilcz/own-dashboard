@@ -1043,14 +1043,15 @@
       "path": "src/components/notes/note-editor.tsx",
       "lines": 238,
       "sha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662",
-      "status": "source reviewed; final release checks pending",
+      "status": "source reviewed; fixes and final release checks pending",
       "reviewedSha256": "bfbe96b5e8f785282c6350364158ee77a95891a6c2e150d0a3ad81163d80c552"
     },
     {
       "path": "src/components/notes/parse-markdown.ts",
       "lines": 30,
       "sha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf",
-      "status": "pending"
+      "status": "source reviewed; fixes and final release checks pending",
+      "reviewedSha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf"
     },
     {
       "path": "src/components/overview/cron-monitor.tsx",
@@ -1244,7 +1245,8 @@
       "path": "src/components/panels/notes-panel.tsx",
       "lines": 1367,
       "sha256": "af7850a690d55f1ff78cb048e62265aec7d4da2da8874e56fa6d8df235ff9cd2",
-      "status": "pending"
+      "status": "source reviewed; fixes and final release checks pending",
+      "reviewedSha256": "d8d75295b5bd9a879e623921be57535bbfdba083580818658a95f61482daa21a"
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
@@ -3146,7 +3148,8 @@
       "path": "src/lib/notes-text.ts",
       "lines": 41,
       "sha256": "c811879108f426e886b30f7fc029abf3ad5db14813f3f1727af22c70477de576",
-      "status": "pending"
+      "status": "source reviewed; fixes and final release checks pending",
+      "reviewedSha256": "c811879108f426e886b30f7fc029abf3ad5db14813f3f1727af22c70477de576"
     },
     {
       "path": "src/lib/notifications.ts",

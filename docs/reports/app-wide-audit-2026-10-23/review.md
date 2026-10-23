@@ -68,6 +68,8 @@ Each destination needs source/data-flow review, relevant business and failure ch
 
 31. Fixed: opening supplier defaults from an invoice keeps the document form mounted, so returning preserves its unsaved buyer, number and lines. New documents follow updated supplier defaults; issued edits retain their original supplier snapshot. Pending PDF extraction disables conflicting list actions so a completed parse cannot replace a newly opened invoice draft. Two desktop/mobile return-flow cases pass. The test locates the visible supplier textbox: the shell owns the sole heading, and label-only queries also include the intentionally hidden mounted invoice form.
 
+32. Fixed: failed Markdown imports retain their text and show an inline error; they no longer close the dialog with a false success toast after the create failure was swallowed. Pending imports protect their input and cannot overlap another note creation. Search, Markdown, tag and note-link inputs have explicit accessible names; icon-only tag submission is named, tag filters expose pressed state, and tag removal meets the minimum target size. Four EN/CS desktop/mobile import recovery cases pass with complete dialog accessibility scans; TypeScript and targeted ESLint pass. Autosave draft retention across note changes remains in progress.
+
 Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
 
 Tour isolation validation adds three component tests (22 shared tests in total), two browser cases, TypeScript and targeted ESLint. The six-width destination matrix also passed after code splitting.
