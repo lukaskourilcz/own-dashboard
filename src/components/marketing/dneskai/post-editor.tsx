@@ -26,6 +26,7 @@ import { DneskaiMediaTray } from './media-tray';
 import { DneskaiRenderProblems, dneskaiFieldLabel } from './render-problems';
 import { DneskaiCodeText, DneskaiDetails } from './code-text';
 import { DneskaiStateChip } from './state-chip';
+import { CountedField } from './counted-field';
 
 type Lang = 'en' | 'cs';
 const shortHash = (hash: string) => hash.slice(0, 7);
@@ -287,25 +288,5 @@ function SlideFields({ item, index, lang, onChange }: { item: DeckDraft['slides'
   return <div className="space-y-3">
     <h4 className="text-xs font-semibold">{t.editor.text}</h4>
     {item.fields.map(({ field, max }) => <CountedField key={field} id={`slide-${index}-${field}`} label={t.fields[field]} value={item.slide[field] ?? ''} max={max} multiline={field === 'body' || field === 'headline'} rows={field === 'body' ? 4 : 2} lang={lang} onChange={(value) => onChange(field, value)} />)}
-  </div>;
-}
-
-/** A labelled text field with a character counter tied to it; past the limit the counter says by how much. */
-export function CountedField({ id, label, value, max, multiline, rows = 3, help, lang, onChange }: {
-  id: string; label: string; value: string; max: number; multiline?: boolean; rows?: number; help?: string; lang: Lang; onChange: (value: string) => void;
-}) {
-  const t = dneskaiWorkspace[lang];
-  const count = characterCount(value.trim());
-  const over = count - max;
-  const described = [`${id}-count`, help ? `${id}-help` : ''].filter(Boolean).join(' ');
-  const props = { id, value, 'aria-describedby': described, 'aria-invalid': over > 0 || undefined, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(event.target.value),
-    className: cn(over > 0 && 'border-risk') };
-  return <div className="min-w-0 space-y-1" data-testid={`dneskai-field-${id}`}>
-    <div className="flex items-baseline justify-between gap-2">
-      <label htmlFor={id} className="text-xs font-medium text-foreground-muted">{label}</label>
-      <span id={`${id}-count`} className={cn('text-[11px] tabular', over > 0 ? 'font-semibold text-risk' : 'text-foreground-muted')}>{t.counter(count, max)}{over > 0 ? ` · ${t.over(over)}` : ''}</span>
-    </div>
-    {multiline ? <Textarea rows={rows} {...props} className={cn('min-h-0 md:min-h-0', props.className)} /> : <Input {...props} />}
-    {help && <p id={`${id}-help`} className="text-xs text-foreground-muted">{help}</p>}
   </div>;
 }
