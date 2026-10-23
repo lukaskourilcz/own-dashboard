@@ -128,3 +128,16 @@ describe('trending sounds in the picker and in Hudba (#167)', () => {
     expect(list.textContent).toContain(`${t.type.music} · ${t.days(3)}`);
   });
 });
+
+describe('niche sounds (#167)', () => {
+  it('shows niche-only sounds in Hudba as hints and keeps them out of the picker', async () => {
+    const hint = { audioId: '9', title: 'Niche Song', artist: null, type: 'music' as const, durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: 2, tiktok: true, attachable: false };
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trends: [hint] })));
+    render(<DneskaiAudioLibrary lang="en" />); await settle();
+    const t = dneskaiAudio.en.trends;
+    expect(container.querySelector('[data-testid="dneskai-audio-trends"]')?.textContent).toContain(`${t.type.music} · ${t.niche(2)} · ${t.tiktok} · ${t.hintOnly}`);
+    act(() => root.unmount()); root = createRoot(container); client.clear();
+    render(<DneskaiAudioPicker value={null} onChange={() => {}} preview={false} lang="en" />); await settle();
+    expect(container.querySelector('option[value="ig:9"]')).toBeNull();
+  });
+});
