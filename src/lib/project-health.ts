@@ -1,4 +1,5 @@
 import { staleCronCount } from "@/lib/cron-heartbeat";
+import { taskBelongsToProject } from "@/lib/project-match";
 import type { Cron, Project, ProjectCost, Todo } from "@/lib/types";
 
 export type ProjectHealth = "healthy" | "attention" | "at_risk";
@@ -19,7 +20,7 @@ export function assessProjectHealth(
   const reasons: string[] = [];
   const overdue = todos.filter(
     (todo) =>
-      todo.project_id === project.id &&
+      taskBelongsToProject(todo, project) &&
       !todo.done &&
       todo.due_date != null &&
       new Date(`${todo.due_date}T23:59:59`).getTime() < now.getTime(),

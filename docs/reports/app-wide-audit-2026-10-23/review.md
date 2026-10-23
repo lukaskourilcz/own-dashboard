@@ -11,8 +11,8 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Area | Destinations | State |
 | --- | --- | --- |
 | Shared boundaries | Authenticated catch-all, shell, navigation, query cache, initial loading | Reviewing |
-| Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Pending |
-| Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Pending |
+| Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Source reviewed; targeted fixes checked; final matrix pending |
+| Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Source reviewed; project/clients checks passed; final matrix pending |
 | Career | Board, saved roles, applications, history, letters | Pending |
 | Finance | Money, Accounts, Transactions, Categories, Subscriptions, Invoices and print | Pending |
 | Knowledge | Notes, Prompts, Tools, Links, IG TIPS, References | Pending |
@@ -45,6 +45,9 @@ Each destination needs source/data-flow review, relevant business and failure ch
 18. Fixed: Home layout synchronization failures are visible and editing makes inner widget actions inert for both pointer and keyboard users. Recurring-plan failures report their rollback and pending toggles cannot race. Goal deletion reports a failed optional Calendar cleanup while retaining the confirmed local deletion. Preferences reject malformed bodies, invalid timezones/reminder hours and currencies outside the static FX table before any write. Unknown widget ids cannot enter the saved layout. Fourteen preference-route cases and the customization interaction check complement the existing plan failure tests.
 
 19. Fixed: Tasks refresh now pages a stable, owner-scoped projection of existing GitHub tasks before calculating its diff. Failed, null or over-limit snapshots abort instead of importing against an invented empty list. A 1,201-row regression catches the REST-cap duplicate risk. A failed Daily Focus request cannot misreport the already-saved task sync as failed, and failed mutations refresh cache state and show a bilingual warning. Task/project matches are memoized, due chips update from the shared clock, and delete controls remain discoverable by keyboard and narrow-screen touch. Forty NEEDED parsing/sync tests pass; TypeScript and targeted ESLint pass.
+
+20. Fixed: Project health recognizes overdue repository tasks by the shared id/name matcher, including renames. Project next dates use recurrence and the browser day rather than UTC and the original stored date. Workspace invoice totals group items once instead of rescanning every line for every invoice; subscription calculations reuse their inputs. Failed automatic repository updates no longer cause an unconditional invalidation loop. Project deletion refreshes related entity caches after database cascades or cleared links.
+21. Fixed: Project-note writes are serialized, so a slow older save cannot overwrite a newer edit; a controlled delayed-write component test verifies ordering. Workspace tabs have roving keyboard focus and a named panel. Communication timestamps display browser-local time with the original instant retained in a time element. Project URLs validate before submit; expanded cron controls have accessible names and actions remain available on narrow screens and keyboard focus. Disabled repository-document integrations cannot be bypassed through the refresh button, and a failed legacy-file fallback remains an error. Four desktop/mobile browser cases in Los Angeles pass with full accessibility scans. Twenty-three targeted project/clock cases pass; TypeScript and targeted ESLint pass.
 
 Targeted validation for these shared changes: 19 tests passed across server-page, route-data and real query-cache/retry component tests; TypeScript and targeted ESLint passed. Full release and rendered checks remain pending.
 

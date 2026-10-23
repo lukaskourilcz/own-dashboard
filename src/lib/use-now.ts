@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 // Module-singleton clock store. Returns null until hydration (server and client
 // then render identical markup) and ticks every 30s — enough granularity for
@@ -41,5 +41,5 @@ const getServerSnapshot = (): number => 0;
 
 export function useNow(): Date | null {
   const tick = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  return tick === 0 ? null : new Date(tick);
+  return useMemo(() => tick === 0 ? null : new Date(tick), [tick]);
 }

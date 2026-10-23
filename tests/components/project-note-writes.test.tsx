@@ -1,0 +1,34 @@
+// @vitest-environment happy-dom
+import { act, type ComponentProps } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, expect, it, vi } from "vitest";
+import { ProjectsPanel } from "@/components/panels/projects-panel";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ConfirmationProvider } from "@/components/ui/confirmation-dialog";
+import { projects } from "@/lib/demo/fixtures";
+const state=vi.hoisted(() => ({ save:null as null|((text:string) => Promise<void>),write:vi.fn() }));
+vi.mock("next/dynamic",() => ({default:() => () => null}));
+vi.mock("@/components/projects/project-workspace",() => ({ProjectWorkspace:() => null}));
+vi.mock("@/components/projects/project-notes-editor",() => ({ProjectNotesEditor:(props:{onSaveMarkdown:(text:string)=>Promise<void>}) => {state.save=props.onSaveMarkdown;return null;}}));
+vi.mock("@/lib/github-queries",() => ({useReposQuery:() => ({data:undefined})}));
+vi.mock("@/lib/supabase/client",() => ({createClient:() => ({from:() => ({update:(payload:unknown) => ({eq:() => state.write(payload)})})})}));
+(globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
+let root:Root|undefined,host:HTMLDivElement,client:QueryClient;
+afterEach(() => {act(() => root?.unmount());host?.remove();client?.clear();document.documentElement.lang="";vi.clearAllMocks();});
+it("finishes an earlier note write before starting the newer one",async () => {
+ document.documentElement.lang="en";
+ host=document.createElement("div");document.body.append(host);root=createRoot(host);client=new QueryClient();
+ let release!:()=>void;
+ state.write.mockImplementationOnce(() => new Promise(resolve => {release=()=>resolve({error:null});})).mockResolvedValue({error:null});
+ const noop=()=>undefined;
+ const props:ComponentProps<typeof ProjectsPanel>={projects:[projects[0]],setProjects:noop,costs:[],setCosts:noop,crons:[],setCrons:noop,displayCurrency:"CZK",onOpenProject:noop,todos:[],notes:[],setNotes:noop,invoices:[],invoiceItems:[],subscriptions:[],subscriptionAllocations:[],transactions:[],organizations:[],opportunities:[],importantDates:[],prompts:[],inboxItems:[],repoNotes:[],setRepoNotes:noop,repoLinks:[],setRepoLinks:noop,communications:[],setCommunications:noop,aiLinks:[],aiCategories:[],projectLinks:[],setProjectLinks:noop,promptLinks:[],competitors:[],setCompetitors:noop,isPreview:true,syncRepositories:false};
+ await act(async () => root!.render(<QueryClientProvider client={client}><TooltipProvider><ConfirmationProvider><ProjectsPanel {...props}/></ConfirmationProvider></TooltipProvider></QueryClientProvider>));
+ await act(async () => ([...host.querySelectorAll("button")].find(button => button.getAttribute("aria-label")==="Manage operations")!).click());
+ expect(state.save).not.toBeNull();
+ let first!:Promise<void>,second!:Promise<void>;
+ await act(async () => {first=state.save!("Earlier notes");second=state.save!("Latest notes");await Promise.resolve();});
+ expect(state.write).toHaveBeenCalledTimes(1);expect(state.write.mock.calls[0][0]).toMatchObject({notes:"Earlier notes"});
+ await act(async () => {release();await first;await second;});
+ expect(state.write).toHaveBeenCalledTimes(2);expect(state.write.mock.calls[1][0]).toMatchObject({notes:"Latest notes"});
+});

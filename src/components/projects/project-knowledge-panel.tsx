@@ -46,7 +46,7 @@ export function ProjectKnowledgePanel({
           size="sm"
           variant="outline"
           onClick={() => void query.refetch()}
-          disabled={!repoFullName || query.isFetching}
+          disabled={!enabled || !owner || !repo || query.isFetching}
         >
           <RefreshCw
             className={cn("h-3.5 w-3.5", query.isFetching && "animate-spin")}

@@ -38,6 +38,7 @@ type ProjectsStrings = {
   active: string;
   inactive: string;
   synced: string;
+  syncFailed: string;
   syncedHint: string;
   collapse: string;
   expand: string;
@@ -163,6 +164,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     active: "active",
     inactive: "inactive",
     synced: "Repository",
+    syncFailed: "Project synchronization could not finish. Check Projects before retrying.",
     syncedHint: "Synced automatically from its linked GitHub repository.",
     collapse: "Collapse",
     expand: "Expand",
@@ -286,6 +288,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     active: "aktivní",
     inactive: "neaktivní",
     synced: "Repozitář",
+    syncFailed: "Synchronizace projektů se nedokončila. Před dalším pokusem zkontrolujte Projekty.",
     syncedHint:
       "Automaticky synchronizováno z propojeného GitHub repozitáře.",
     collapse: "Sbalit",

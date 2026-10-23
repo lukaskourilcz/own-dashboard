@@ -52,3 +52,10 @@ describe("assessProjectHealth", () => {
     expect(result.reasons).toContain("Running costs without recorded revenue");
   });
 });
+
+it("counts imported repository tasks across renames and honors an explicit different project", () => {
+ const linked={...project,repo_id:42,repo_full_name:"owner/new-name",previous_repo_full_names:["owner/old-name"]};
+ const base={id:"a",user_id:"u1",title:"Release",done:false,due_date:"2026-10-01",category:null,created_at:"",source:"github" as const,repo_id:"42",repo_full_name:"owner/old-name",repo_owner:"owner",repo_name:"old-name",repo_url:null,needed_raw:null,generated_at:null,importance:3,project_id:null};
+ const result=assessProjectHealth(linked,[base,{...base,id:"b",repo_id:null},{...base,id:"foreign",project_id:"another-project"}],[],[],new Date("2026-10-23T12:00:00Z"));
+ expect(result.health).toBe("at_risk");expect(result.reasons).toEqual(["2 overdue tasks"]);
+});

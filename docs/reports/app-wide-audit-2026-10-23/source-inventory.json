@@ -755,7 +755,8 @@
       "path": "src/components/links/use-project-links.ts",
       "lines": 131,
       "sha256": "ee1d5c05ebe44522d061eaa5db67de38c6fa267919298ad6be8c0215f436ce21",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "ee1d5c05ebe44522d061eaa5db67de38c6fa267919298ad6be8c0215f436ce21"
     },
     {
       "path": "src/components/marketing/calendar-import.tsx",
@@ -1037,7 +1038,8 @@
       "path": "src/components/notes/note-editor.tsx",
       "lines": 238,
       "sha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662"
     },
     {
       "path": "src/components/notes/parse-markdown.ts",
@@ -1262,7 +1264,8 @@
       "path": "src/components/panels/projects-panel.tsx",
       "lines": 2069,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "8124cb0d95a742e628455779d43e15f7ef4ad31bbaa434c61f76c410d547c790"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1344,61 +1347,70 @@
       "lines": 99,
       "sha256": "d281f0d6f7df6df35e4a0def001f93239a6d07d2c4b82a0641450caf51e213e2",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "d281f0d6f7df6df35e4a0def001f93239a6d07d2c4b82a0641450caf51e213e2"
+      "reviewedSha256": "0d930291accaa873a82756ac744a5f2352d4c64c92d29a55bca19842cfdc1a72"
     },
     {
       "path": "src/components/projects/project-competition.tsx",
       "lines": 45,
       "sha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6"
     },
     {
       "path": "src/components/projects/project-doc-panel.tsx",
       "lines": 125,
       "sha256": "7604b994516b54dd7f9bc54041d3d4f2471c76ee5b7019ed2432cb4b07d5553f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "b5302ad64853eae254acd46283d3c61e25698ec72303f0c41ce1abcf1128f4e6"
     },
     {
       "path": "src/components/projects/project-github-activity.tsx",
       "lines": 88,
       "sha256": "aab7bb7a288c857558733be12a4bfb97e1667cb975467aad63d22066e4b7373a",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "aab7bb7a288c857558733be12a4bfb97e1667cb975467aad63d22066e4b7373a"
     },
     {
       "path": "src/components/projects/project-knowledge-panel.tsx",
       "lines": 108,
       "sha256": "ddacde8ff9992b74c2251d5ad3d8c30e2ad18ddc9e461d19f44c175bae8e9884",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "76cc599500a80b0885d0ca7d8ca5ee8cb244449cea6b88cfe7436b7ef5e61a0a"
     },
     {
       "path": "src/components/projects/project-links-section.tsx",
       "lines": 208,
       "sha256": "75cd1d41e054a47e399726a8f35b88b926db78121792dd7a2233ee613cd51f0d",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "75cd1d41e054a47e399726a8f35b88b926db78121792dd7a2233ee613cd51f0d"
     },
     {
       "path": "src/components/projects/project-notes-editor.tsx",
       "lines": 73,
       "sha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78"
     },
     {
       "path": "src/components/projects/project-prompts-card.tsx",
       "lines": 100,
       "sha256": "d9417e883ad52c0a0663e8a8d7c54ae112cf46cf1ea950ae2ca25158389dd5e4",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d9417e883ad52c0a0663e8a8d7c54ae112cf46cf1ea950ae2ca25158389dd5e4"
     },
     {
       "path": "src/components/projects/project-traffic.tsx",
       "lines": 132,
       "sha256": "38125cb5d539acbf6fd22aba7999aed666655393d4bc1b6b34920d6a6749859b",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "38125cb5d539acbf6fd22aba7999aed666655393d4bc1b6b34920d6a6749859b"
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
       "lines": 279,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "d307b7f3795e8ace3ac965456d65c1106d0a27fc97f1c17cdd621689af3ff274"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -3173,7 +3185,8 @@
       "path": "src/lib/project-health.ts",
       "lines": 59,
       "sha256": "11cfd5b6d912c10b0644330e0d5d0087d572e4e7cfa9a7014ee0dc1fa85d788f",
-      "status": "pending"
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "21cb1c9db1d226192e670356222e8229c2ab9faea404ff840d6bb897fcdc65dd"
     },
     {
       "path": "src/lib/project-links.ts",
@@ -3360,7 +3373,7 @@
       "lines": 44,
       "sha256": "c855009ac88015b173e6bf19b05703474ec90d1901c30710d53a6910b4f02efd",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "512c24c0df4842a54187fc59787c1b476b94ab36a23781794ffd248f639983fa"
+      "reviewedSha256": "283ddb91b08e9cd15829e76b98fa1da45e0c3c1908cc7a4a8773514888ca43c0"
     },
     {
       "path": "src/lib/use-prefs.ts",

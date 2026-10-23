@@ -41,7 +41,7 @@ export function ProjectDocPanel({
       const primary = await loadRepoFile(owner, repo, file);
       if (primary.kind === "not-found" && fallbackFile) {
         const legacy = await loadRepoFile(owner, repo, fallbackFile);
-        if (legacy.kind === "ok") return legacy;
+        return legacy;
       }
       return primary;
     },
@@ -65,7 +65,7 @@ export function ProjectDocPanel({
           size="sm"
           variant="outline"
           onClick={() => void query.refetch()}
-          disabled={!repoFullName || query.isFetching}
+          disabled={!enabled || !owner || !repo || query.isFetching}
         >
           <RefreshCw
             className={cn("h-3.5 w-3.5", query.isFetching && "animate-spin")}

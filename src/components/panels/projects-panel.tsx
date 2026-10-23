@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistance } from "date-fns";
 import {
   DndContext,
   KeyboardSensor,
@@ -68,6 +68,9 @@ import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
+import { useNow } from "@/lib/use-now";
+import { buildOccurrences } from "@/lib/important-dates";
+import { todayKey } from "@/lib/date-keys";
 import { useReposQuery } from "@/lib/github-queries";
 import {
   readRepoFilter,
@@ -279,6 +282,7 @@ function ProjectsListPanel({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [manageProjectId, setManageProjectId] = useState<string | null>(null);
+  const now = useNow();
 
   // --- Sync active Repositories → Projects -------------------------------
   // The active repos are the shared Repositories allow-list applied to the live
@@ -321,6 +325,7 @@ function ProjectsListPanel({
   const lookedUpProjects = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    if (isPreview || !syncRepositories) return;
     // Plan only against loaded projects: an unfetched placeholder list would
     // make every repository look missing.
     if (!qc.getQueryState(qk.projects)?.dataUpdatedAt) return;
@@ -380,8 +385,9 @@ function ProjectsListPanel({
 
       let plan = planRepositorySync(activeRepos, current);
       for (const { project, update } of plan.updates) {
-        replace(await applyUpdate(project, update));
-        changed = true;
+        const saved = await applyUpdate(project, update);
+        replace(saved);
+        changed ||= saved !== project;
       }
 
       // Before creating anything, resolve projects that still carry only a
@@ -397,8 +403,9 @@ function ProjectsListPanel({
           if (!identity) continue;
           const update = repositoryIdentityUpdate(project, identity);
           if (update) {
-            replace(await applyUpdate(project, update));
-            changed = true;
+            const saved = await applyUpdate(project, update);
+            replace(saved);
+            changed ||= saved !== project;
           }
         }
         plan = planRepositorySync(activeRepos, current);
@@ -474,7 +481,7 @@ function ProjectsListPanel({
       if (changed) void qc.invalidateQueries({ queryKey: qk.projects });
     }
 
-    void sync();
+    void sync().catch(() => toast.err(t.projects.syncFailed));
     // Re-run when the active repo set or the loaded projects change. Writes
     // already in flight are skipped by the guards above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -544,6 +551,8 @@ function ProjectsListPanel({
           changed = true;
           setProjects((prev) => [...prev, data as Project]);
         }
+      } catch {
+        toast.err(t.projects.syncFailed);
       } finally {
         registrySyncing.current = false;
         // Cache writes above go to the shared query client, so they stay
@@ -575,7 +584,15 @@ function ProjectsListPanel({
     return map;
   }, [crons]);
 
-  const active = projects.filter((p) => p.is_active);
+  const active = useMemo(() => projects.filter((p) => p.is_active), [projects]);
+  const nextDateByProject = useMemo(() => {
+    const result = new Map<string, string>();
+    if (now) for (const occurrence of buildOccurrences(importantDates, now)) {
+      const id = occurrence.date.project_id;
+      if (id && occurrence.daysUntil >= 0 && !result.has(id)) result.set(id, todayKey(occurrence.next));
+    }
+    return result;
+  }, [importantDates, now]);
 
   // Manual order — the card list is driven purely by sort_order (drag updates
   // it), with created_at as a stable tie-breaker for equal orders.
@@ -701,6 +718,7 @@ function ProjectsListPanel({
 
   async function submitProject(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
     setError(null);
     if (!form.name.trim()) return setError(t.projects.nameRequired);
     const slug = slugify(form.slug || form.name);
@@ -787,6 +805,9 @@ function ProjectsListPanel({
     setCrons((prev) => prev.filter((c) => c.project_id !== p.id));
     setProjectLinks((prev) => prev.filter((relation) => relation.project_id !== p.id));
     void qc.invalidateQueries({ queryKey: qk.projectLinks });
+    for (const queryKey of [qk.todos, qk.notes, qk.invoices, qk.transactions, qk.opportunities, qk.importantDates, qk.projectCommunications, qk.projectCosts, qk.crons, qk.subscriptionAllocations, qk.competitors, qk.subscriptions]) {
+      void qc.invalidateQueries({ queryKey });
+    }
     if (form.id === p.id) setForm(emptyProjectForm);
     void qc.invalidateQueries({ queryKey: qk.projects });
   }
@@ -953,6 +974,8 @@ function ProjectsListPanel({
               <Label htmlFor="proj-url">{t.projects.url}</Label>
               <Input
                 id="proj-url"
+                type="url"
+                pattern="https?://.*"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
                 placeholder={t.projects.urlPlaceholder}
@@ -990,6 +1013,8 @@ function ProjectsListPanel({
               <Label htmlFor="proj-dev-url">{t.projects.devUrl}</Label>
               <Input
                 id="proj-dev-url"
+                type="url"
+                pattern="https?://.*"
                 value={form.dev_url}
                 onChange={(e) => setForm({ ...form, dev_url: e.target.value })}
                 placeholder={t.projects.devUrlPlaceholder}
@@ -1064,7 +1089,6 @@ function ProjectsListPanel({
               )}
               {projectGroups[group].flatMap((top) => [top, ...childProjects(projects, top.id).filter((child) => child.is_active)]).map((p) => {
                 const projectTodos = todos.filter((item) => taskBelongsToProject(item, p));
-                const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
                 const organization = organizations.find((item) => item.id === p.organization_id);
                 return <SortableProjectRow
                   key={p.id}
@@ -1079,10 +1103,10 @@ function ProjectsListPanel({
                   onDelete={() => deleteProject(p)}
                   onManage={() => setManageProjectId(p.id)}
                   onOpen={() => onOpenProject(p)}
-                  health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
+                  health={now ? assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], now).health : null}
                   openTaskCount={projectTodos.filter((item) => !item.done).length}
                   organizationName={organization?.name}
-                  nextDate={projectDates[0]?.the_date}
+                  nextDate={nextDateByProject.get(p.id)}
                 />
               })}
                   </tbody>
@@ -1100,8 +1124,7 @@ function ProjectsListPanel({
           {ordered.find((project) => project.id === manageProjectId) && (() => {
             const project = ordered.find((item) => item.id === manageProjectId)!;
             const projectTodos = todos.filter((item) => taskBelongsToProject(item, project));
-            const projectDates = importantDates.filter((item) => item.project_id === project.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
-            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
+            return <ProjectCard key={project.id} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1133,7 +1156,7 @@ type ProjectCardProps = {
   onToggleActive: () => void;
   onDelete: () => void;
   onOpen: () => void;
-  health: ProjectHealth;
+  health: ProjectHealth | null;
   openTaskCount: number;
   organizationName?: string;
   nextDate?: string;
@@ -1163,7 +1186,7 @@ function SortableProjectRow({
   monthlyCost: number;
   displayCurrency: string;
   synced: boolean;
-  health: ProjectHealth;
+  health: ProjectHealth | null;
   openTaskCount: number;
   organizationName?: string;
   nextDate?: string;
@@ -1196,7 +1219,7 @@ function SortableProjectRow({
       <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
       <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
-      <td className="px-3 py-2.5"><StatusBadge value={health} /></td>
+      <td className="px-3 py-2.5">{health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}</td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
       <td className="px-3 py-2.5 text-right font-medium tabular">{formatCurrency(monthlyCost, displayCurrency)}</td>
       <td className="px-3 py-2.5 text-right tabular text-foreground-muted">{openTaskCount}</td>
@@ -1268,7 +1291,7 @@ function ProjectCard({
               <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
               <span className="truncate">{project.name}</span>
               <StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />
-              <StatusBadge value={health} />
+              {health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}
               {!project.is_active && (
                 <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
               )}
@@ -1438,7 +1461,7 @@ function CostsSection({
 
   async function addCost(e: React.FormEvent) {
     e.preventDefault();
-    if (!label.trim() || !amount) return;
+    if (busy || !label.trim() || !amount) return;
     setBusy(true);
     try {
       const userId = await currentUserId(supabase);
@@ -1514,7 +1537,7 @@ function CostsSection({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                className="shrink-0 opacity-0 group-hover:opacity-100"
+                className="shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                 onClick={() => removeCost(c.id)}
                 aria-label={t.projects.deleteCost}
               >
@@ -1583,10 +1606,11 @@ function NotesSection({
   // trigger a spurious write.
   const lastSavedRef = useRef(project.notes ?? "");
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current); }, []);
 
   // Realtime autosave — the editor debounces, this persists. No save button.
-  async function saveMarkdown(md: string) {
-    const next = md.trim();
+  async function persistMarkdown(next: string) {
     if (next === (lastSavedRef.current ?? "").trim()) return;
     setStatus("saving");
     const { error } = await supabase
@@ -1605,6 +1629,15 @@ function NotesSection({
     setStatus("saved");
     if (savedTimer.current) clearTimeout(savedTimer.current);
     savedTimer.current = setTimeout(() => setStatus("idle"), 1500);
+  }
+
+  function saveMarkdown(md: string) {
+    // Serialize writes: a slow earlier response must never overwrite newer notes.
+    saveQueue.current = saveQueue.current.then(() => persistMarkdown(md.trim())).catch(() => {
+      setStatus("idle");
+      toast.err(t.professional.couldNotSave);
+    });
+    return saveQueue.current;
   }
 
   return (
@@ -1669,7 +1702,8 @@ function emptyCronForm(currency: string): CronForm {
 function HeartbeatPill({ cron }: { cron: Cron }) {
   const t = useDict();
   const locale = useDateLocale();
-  const { state, lastSuccessAt } = cronHeartbeatState(cron);
+  const now = useNow();
+  const { state, lastSuccessAt } = cronHeartbeatState(cron, now ?? new Date(0));
   const map: Record<
     CronHeartbeatState,
     { label: string; cls: string; Icon: typeof Check }
@@ -1703,7 +1737,7 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
   const entry = map[state];
   const detail = lastSuccessAt
     ? t.projects.heartbeatLastSuccess(
-        formatDistanceToNow(lastSuccessAt, { addSuffix: true, locale }),
+        now ? formatDistance(lastSuccessAt, now, { addSuffix: true, locale }) : "—",
       )
     : state === "unmonitored"
       ? t.projects.heartbeatUnmonitoredHint
@@ -1750,7 +1784,7 @@ function CronsSection({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (busy || !form.name.trim()) return;
     setBusy(true);
     const payload = {
       name: form.name.trim(),
@@ -1904,7 +1938,7 @@ function CronsSection({
                     />
                   </span>
                 </Tooltip>
-                <div className="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100">
+                <div className="flex shrink-0 gap-0.5 opacity-100 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                   <Button
                     size="icon-sm"
                     variant="ghost"
@@ -1937,6 +1971,7 @@ function CronsSection({
             <div className="space-y-1">
               <Label className="text-xs">{t.projects.cronName}</Label>
               <Input
+                aria-label={t.projects.cronName}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder={t.projects.cronNamePlaceholder}
@@ -1946,6 +1981,7 @@ function CronsSection({
             <div className="space-y-1">
               <Label className="text-xs">{t.projects.schedule}</Label>
               <Input
+                aria-label={t.projects.schedule}
                 value={form.schedule}
                 onChange={(e) => setForm({ ...form, schedule: e.target.value })}
                 placeholder={t.projects.schedulePlaceholder}
@@ -1956,7 +1992,8 @@ function CronsSection({
           <div className="space-y-1">
             <Label className="text-xs">{t.projects.endpoint}</Label>
             <Input
-              value={form.endpoint}
+              aria-label={t.projects.endpoint}
+                value={form.endpoint}
               onChange={(e) => setForm({ ...form, endpoint: e.target.value })}
               placeholder={t.projects.endpointPlaceholder}
               className="h-8 text-sm font-mono"
@@ -1965,7 +2002,8 @@ function CronsSection({
           <div className="space-y-1">
             <Label className="text-xs">{t.projects.cronDescription}</Label>
             <Input
-              value={form.description}
+              aria-label={t.projects.cronDescription}
+                value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder={t.projects.cronDescriptionPlaceholder}
               className="h-8 text-sm"
@@ -2015,7 +2053,8 @@ function CronsSection({
                 <Input
                   type="number"
                   step="0.0001"
-                  value={form.cost_per_run}
+                  aria-label={t.projects.costPerRun}
+                value={form.cost_per_run}
                   onChange={(e) =>
                     setForm({ ...form, cost_per_run: e.target.value })
                   }
@@ -2026,6 +2065,7 @@ function CronsSection({
               <div className="space-y-1">
                 <Label className="text-xs">{t.projects.currency}</Label>
                 <SimpleSelect
+                  aria-label={t.projects.currency}
                   value={form.currency}
                   onValueChange={(v) => setForm({ ...form, currency: v })}
                   className="h-8 text-xs"
@@ -2036,7 +2076,8 @@ function CronsSection({
                 <Label className="text-xs">{t.projects.runsPerMonth}</Label>
                 <Input
                   type="number"
-                  value={form.runs_per_month}
+                  aria-label={t.projects.runsPerMonth}
+                value={form.runs_per_month}
                   onChange={(e) =>
                     setForm({ ...form, runs_per_month: e.target.value })
                   }
