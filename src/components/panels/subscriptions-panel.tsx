@@ -768,25 +768,25 @@ export function SubscriptionsPanel({
                 )}
               </div>
             </form></DialogContent></Dialog>
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
 
-        <Card className="lg:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <Card className="min-w-0 lg:col-span-3">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
             <CardTitle>
               {yearly ? t.subscriptions.yearlySpend : t.subscriptions.monthlySpend}
             </CardTitle>
             <div
               role="group"
               aria-label={t.subscriptions.spendView}
-              className="inline-flex rounded-md border border-border p-0.5 text-xs"
+              className="inline-flex shrink-0 rounded-md border border-border p-0.5 text-xs"
             >
               <button
                 type="button"
                 aria-pressed={!yearly}
                 onClick={() => setSpendPeriod("monthly")}
                 className={cn(
-                  "rounded px-2 py-1 font-medium transition-colors focus-ring",
+                  "min-h-11 rounded px-2 py-1 font-medium transition-colors focus-ring md:min-h-7",
                   !yearly
                     ? "bg-accent text-foreground"
                     : "text-foreground-subtle hover:text-foreground",
@@ -799,7 +799,7 @@ export function SubscriptionsPanel({
                 aria-pressed={yearly}
                 onClick={() => setSpendPeriod("yearly")}
                 className={cn(
-                  "rounded px-2 py-1 font-medium transition-colors focus-ring",
+                  "min-h-11 rounded px-2 py-1 font-medium transition-colors focus-ring md:min-h-7",
                   yearly
                     ? "bg-accent text-foreground"
                     : "text-foreground-subtle hover:text-foreground",
@@ -875,7 +875,7 @@ export function SubscriptionsPanel({
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="min-w-0 lg:col-span-3">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <CalendarClock className="h-3 w-3" />
@@ -895,9 +895,9 @@ export function SubscriptionsPanel({
                   return (
                   <li
                     key={s.id}
-                    className="flex items-center justify-between rounded-md px-2 py-2 row-hover"
+                    className="grid gap-2 rounded-md px-2 py-2 row-hover sm:flex sm:items-center sm:justify-between"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                       <span className="tabular text-xs text-foreground-subtle w-20 shrink-0">
                         {s.next_billing_date}
                       </span>
@@ -920,7 +920,7 @@ export function SubscriptionsPanel({
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-foreground-muted shrink-0 tabular">
+                    <div className="text-sm text-foreground-muted tabular sm:shrink-0 sm:text-right">
                       {formatCurrency(s.amount, s.currency)}
                       {s.currency !== displayCurrency && (
                         <span className="text-xs text-foreground-subtle ml-1">
@@ -939,7 +939,7 @@ export function SubscriptionsPanel({
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="min-w-0 lg:col-span-3">
           <CardHeader>
             <CardTitle>{t.subscriptions.allSubscriptions}</CardTitle>
           </CardHeader>
@@ -977,7 +977,7 @@ export function SubscriptionsPanel({
                         <div className="flex min-w-0 items-center gap-3">
                           <SubscriptionIcon name={s.name} size={34} />
                           <div className="min-w-0">
-                          <p
+                          <div
                             className={cn(
                               "font-medium text-sm truncate",
                               !active && "line-through",
@@ -989,7 +989,7 @@ export function SubscriptionsPanel({
                                 {t.subscriptions.cancelled}
                               </SectionLabel>
                             )}
-                          </p>
+                          </div>
                           <p className="text-xs text-foreground-subtle tabular">
                             {formatCurrency(s.amount, s.currency)} ·{" "}
                             {t.subscriptions.cycle[s.billing_cycle]}

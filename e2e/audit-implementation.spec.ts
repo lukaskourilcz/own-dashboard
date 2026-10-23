@@ -100,7 +100,25 @@ for (const width of [360, 430, 768, 1024, 1440, 1728]) test(`implemented destina
       const card = page.locator('[data-section="work"] .border-l-warning').first();
       expect((await card.boundingBox())!.height).toBeLessThan(600);
     }
-    if (['work', 'settings', 'transactions', 'subscriptions', 'tasks', 'notes', 'prompts'].includes(tab)) await page.screenshot({ path: info.outputPath(`${tab}-${lang}-${theme}-${width}.png`) });
+    if (['work', 'settings', 'transactions', 'subscriptions', 'tasks', 'notes', 'prompts'].includes(tab)) {
+      if (tab === 'notes' && width >= 1024) await expect(page.locator('[contenteditable="true"]').first()).toBeVisible();
+      if (tab === 'subscriptions') {
+        const sector = page.locator('path.recharts-sector').last();
+        await expect(sector).toBeVisible();
+        await expect.poll(async () => {
+          const before = await sector.getAttribute('d');
+          await page.waitForTimeout(120);
+          return await sector.getAttribute('d') === before;
+        }).toBe(true);
+        const cards = page.locator('[data-section="subscriptions"] .shadow-card');
+        for (const card of await cards.all()) {
+          const box = await card.boundingBox();
+          expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+          expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+        }
+      }
+      await page.screenshot({ path: info.outputPath(`${tab}-${lang}-${theme}-${width}.png`) });
+    }
   }
   await open(page, nav[lang].sections.settings);
   const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('#main-content').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
