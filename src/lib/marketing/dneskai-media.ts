@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiCandidateSchema } from './dneskai-contracts';
 import { dneskaiSourceById } from './dneskai-registry';
+import { dneskaiOwnerLinkSource } from './dneskai-topic-source';
 import { safeFetch, SourceHttpError, UnsafeUrlError } from './free-feeds/security/url';
 import { SOURCE_USER_AGENT } from './free-feeds/sources/adapters/util';
 import { DneskaiMediaImageError, inspectDneskaiImage } from './dneskai-media-image';
@@ -294,7 +295,8 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
     return row.asset_count;
   };
   const parsed = DneskaiCandidateSchema.safeParse(begun.candidate);
-  const source = parsed.success ? dneskaiSourceById(parsed.data.sourceId) : undefined;
+  // #210: a link-library or manual topic's page stands for its own site.
+  const source = parsed.success ? dneskaiSourceById(parsed.data.sourceId) ?? dneskaiOwnerLinkSource(parsed.data) : undefined;
   if (!parsed.success || !source) {
     if (!state.plan) await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: [], p_page_status: 'not-applicable', p_page_error: null });
     const skipped = [{ position: -1, code: parsed.success ? 'media-source-unknown' : 'media-candidate-invalid', retryable: false, attempts: 1 }];
