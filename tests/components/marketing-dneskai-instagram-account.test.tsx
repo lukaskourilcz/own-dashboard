@@ -3,7 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DneskaiEngagementSwitch, DneskaiInstagramAccount, DneskaiInstagramAccountRecord } from '@/components/marketing/dneskai-instagram-account';
+import { DneskaiCommentSubscription, DneskaiEngagementSwitch, DneskaiInstagramAccount, DneskaiInstagramAccountRecord } from '@/components/marketing/dneskai-instagram-account';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
 import type { MarketingAccountStatus } from '@/lib/marketing/accounts-client';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
@@ -108,5 +108,28 @@ describe('replies to keyword comments (#160)', () => {
     act(() => container.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     await settle();
     expect(container.querySelector('[role="alert"]')?.textContent).toBe(dneskaiAccount.cs.engagement.errors['engagement-scopes-unverified']);
+  });
+});
+
+describe('comment webhook subscription (#161)', () => {
+  it('reads the state once, offers to subscribe when Instagram does not send comments, and shows the result', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => { const action = JSON.parse(String(init?.body)).action as string; calls.push(action); return Response.json({ subscribed: action === 'subscribe' }); }));
+    render(<DneskaiCommentSubscription account={account()} lang="cs" />);
+    await settle();
+    expect(container.textContent).toContain(dneskaiAccount.cs.engagement.webhookOff);
+    act(() => container.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await settle();
+    expect(calls).toEqual(['status', 'subscribe']);
+    expect(container.textContent).toContain(dneskaiAccount.cs.engagement.webhookOn);
+    expect(container.querySelector('button')).toBeNull();
+  });
+  it('appears only when the server has the webhook configured', () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ subscribed: true })));
+    render(<DneskaiEngagementSwitch account={account({ engagement: { enabled: true, blockedCode: null, blockedAt: null } })} lang="en" now={now} />);
+    expect(container.querySelector('[data-testid="dneskai-comment-subscription"]')).toBeNull();
+    act(() => root.unmount()); root = createRoot(container);
+    render(<DneskaiEngagementSwitch account={account({ engagement: { enabled: true, blockedCode: null, blockedAt: null, webhook: true } })} lang="en" now={now} />);
+    expect(container.querySelector('[data-testid="dneskai-comment-subscription"]')).not.toBeNull();
   });
 });

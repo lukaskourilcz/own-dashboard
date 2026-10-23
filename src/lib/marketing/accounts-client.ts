@@ -10,7 +10,9 @@ export const MarketingAccountStatusSchema = z.strictObject({
    * #160: replies to keyword comments for this account. Present only while the server runs the comment watcher
    * (DNESKAI_ENGAGEMENT_ENABLED); `blockedCode` says why replies stopped, such as messaging switched off.
    */
-  engagement: z.strictObject({ enabled: z.boolean(), blockedCode: z.string().regex(/^[a-z0-9-]{1,100}$/).nullable(), blockedAt: timestamp.nullable() }).optional(),
+  engagement: z.strictObject({ enabled: z.boolean(), blockedCode: z.string().regex(/^[a-z0-9-]{1,100}$/).nullable(), blockedAt: timestamp.nullable(),
+    /** #161: the comment webhook is configured on the server, so the panel offers the subscription. Absent: not. */
+    webhook: z.boolean().optional() }).optional(),
 });
 export type MarketingAccountStatus = z.infer<typeof MarketingAccountStatusSchema>;
 export const MarketingAccountsResponseSchema = z.strictObject({ accounts: z.array(MarketingAccountStatusSchema).max(4) });
@@ -45,6 +47,12 @@ export async function verifyMarketingAccount(brand: 'dneskai', platform: 'instag
   const response = await fetch('/api/marketing/accounts/verify', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand, platform }) });
   if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
   return MarketingAccountVerifyResponseSchema.parse(await response.json());
+}
+/** #161: whether Meta sends the account's comments to the webhook, or a request to subscribe it ($0, one Graph call). */
+export async function marketingCommentSubscription(accountId: string, action: 'status' | 'subscribe', signal?: AbortSignal): Promise<boolean> {
+  const response = await fetch('/api/marketing/accounts/webhook', { method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId, action }) });
+  if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
+  return z.strictObject({ subscribed: z.boolean() }).parse(await response.json()).subscribed;
 }
 /** #160: turns replies to keyword comments on or off for one account; turning them on clears an earlier block. */
 export async function setMarketingAccountEngagement(accountId: string, enabled: boolean): Promise<MarketingAccountStatus> {

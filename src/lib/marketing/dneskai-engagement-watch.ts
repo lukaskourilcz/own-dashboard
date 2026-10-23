@@ -105,18 +105,55 @@ export async function runDneskaiEngagementWatch(input: { store: EngagementStore;
         if (!Number.isFinite(at) || now().getTime() - at > DNESKAI_ENGAGEMENT_WINDOW_MS) { check.passSkippedOld += 1; result.skippedOld += 1; continue; }
         if (!commentMatchesKeyword(comment.text, target.keyword)) continue;
         check.passMatches += 1; result.matches += 1;
-        if (!(await store.claim({ publicationId: target.publicationId, mediaId: target.mediaId, commentId: comment.id, keyword: target.keyword }))) continue;
-        const outcome = await reply(graph, target, comment.id, signal, now);
-        await store.finish(comment.id, outcome.finish);
-        if (outcome.finish.status === 'sent') result.sent += 1; else if (outcome.finish.status === 'failed') result.failed += 1; else result.uncertain += 1;
-        if (outcome.finish.publicStatus === 'sent') result.publicSent += 1;
-        if (outcome.scope === 'account') { blocked.add(target.accountId); result.blockedAccounts += 1; await store.blockAccount(target.accountId, outcome.finish.errorCode!, now()); errorCode = outcome.finish.errorCode; break pages; }
-        if (outcome.scope === 'run') { result.stopCode = outcome.finish.errorCode; errorCode = outcome.finish.errorCode; break pages; }
+        const outcome = await answerComment({ store, graph, target, commentId: comment.id, signal, now }, result);
+        if (outcome === 'account') { blocked.add(target.accountId); errorCode = 'engagement-messaging-disabled'; break pages; }
+        if (outcome === 'run') { errorCode = result.stopCode; break pages; }
       }
       after = page.after;
       if (!after) { finished = true; break; }
     }
     await store.saveCheck(target, { ...check, afterCursor: finished ? null : after, finished, errorCode, at: now() });
+  }
+  return result;
+}
+
+/**
+ * One matched comment: claim it, send the private reply and then the public one, record the result. Shared by the
+ * polling pass and the webhook (#161), so both obey the same one-reply rule. Returns what the outcome stops.
+ */
+async function answerComment(input: { store: EngagementStore; graph: EngagementGraph; target: EngagementTarget; commentId: string; signal: AbortSignal; now: () => Date },
+  result: EngagementWatchResult): Promise<'claimed-before' | 'comment' | 'account' | 'run'> {
+  const { store, graph, target, commentId, signal, now } = input;
+  if (!(await store.claim({ publicationId: target.publicationId, mediaId: target.mediaId, commentId, keyword: target.keyword }))) return 'claimed-before';
+  const outcome = await reply(graph, target, commentId, signal, now);
+  await store.finish(commentId, outcome.finish);
+  if (outcome.finish.status === 'sent') result.sent += 1; else if (outcome.finish.status === 'failed') result.failed += 1; else result.uncertain += 1;
+  if (outcome.finish.publicStatus === 'sent') result.publicSent += 1;
+  if (outcome.scope === 'account') { result.blockedAccounts += 1; await store.blockAccount(target.accountId, outcome.finish.errorCode!, now()); }
+  if (outcome.scope === 'run') result.stopCode = outcome.finish.errorCode;
+  return outcome.scope;
+}
+
+/** A comment as a webhook delivers it (#161): no timestamp, the time of delivery counts. */
+export type EngagementCommentEvent = { commentId: string; mediaId: string; text: string };
+/**
+ * Comments delivered by the Instagram webhook (#161): each one is matched against the keyword of its post, when that
+ * post is a current target, and answered through the same claim as the polling pass, so polling never answers it
+ * again. Events for other posts, or after a blocked account or a run-wide failure, are skipped.
+ */
+export async function handleDneskaiCommentEvents(input: { store: EngagementStore; graph: EngagementGraph; now: () => Date; signal: AbortSignal; events: EngagementCommentEvent[] }): Promise<EngagementWatchResult> {
+  const result: EngagementWatchResult = { media: 0, comments: 0, matches: 0, sent: 0, failed: 0, uncertain: 0, publicSent: 0, skippedOld: 0, blockedAccounts: 0, stopCode: null };
+  if (!input.events.length) return result;
+  const targets = await input.store.targets(input.now());
+  const blocked = new Set<string>();
+  for (const event of input.events.slice(0, 50)) {
+    if (input.signal.aborted || result.stopCode) break;
+    const target = targets.find((item) => item.mediaId === event.mediaId);
+    if (!target || blocked.has(target.accountId)) continue;
+    result.comments += 1;
+    if (!commentMatchesKeyword(event.text, target.keyword)) continue;
+    result.matches += 1;
+    if ((await answerComment({ store: input.store, graph: input.graph, target, commentId: event.commentId, signal: input.signal, now: input.now }, result)) === 'account') blocked.add(target.accountId);
   }
   return result;
 }

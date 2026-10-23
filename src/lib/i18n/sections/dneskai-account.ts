@@ -50,7 +50,12 @@ const en = {
     enabledNow: 'Replies to keyword comments are on.', disabledNow: 'Replies to keyword comments are off.',
     blocked: 'Replies stopped because Instagram refused a message.',
     blockedHelp: 'In the Instagram app open Settings, Messages and story replies, Message controls, Connected tools, and allow access to messages. Then turn replies on again here.',
-    errors: { 'engagement-scopes-unverified': 'The stored token lacks instagram_business_manage_comments. Add it, then verify the account again.', 'engagement-unavailable': 'Comment replies are not switched on on the server.' } as Record<string, string>,
+    webhookChecking: 'Checking whether Instagram sends comments right away…',
+    webhookOn: 'Instagram sends new comments right away. Replies usually leave within seconds.',
+    webhookOff: 'Instagram does not send comments right away yet. Replies leave at the next check, within about five minutes.',
+    webhookSubscribe: 'Subscribe to comments',
+    errors: { 'engagement-scopes-unverified': 'The stored token lacks instagram_business_manage_comments. Add it, then verify the account again.', 'engagement-unavailable': 'Comment replies are not switched on on the server.',
+      'webhook-unavailable': 'The comment webhook is not configured on the server.' } as Record<string, string>,
   },
 };
 const cs: typeof en = {
@@ -104,7 +109,12 @@ const cs: typeof en = {
     enabledNow: 'Odpovědi na komentáře s klíčovým slovem jsou zapnuté.', disabledNow: 'Odpovědi na komentáře s klíčovým slovem jsou vypnuté.',
     blocked: 'Odpovědi se zastavily, protože Instagram zprávu odmítl.',
     blockedHelp: 'V aplikaci Instagram otevřete Nastavení, Zprávy a odpovědi na příběhy, Ovládání zpráv, Propojené nástroje a povolte přístup ke zprávám. Pak tady odpovědi znovu zapněte.',
-    errors: { 'engagement-scopes-unverified': 'Uloženému tokenu chybí oprávnění instagram_business_manage_comments. Doplňte ho a účet ověřte znovu.', 'engagement-unavailable': 'Odpovědi na komentáře nejsou na serveru zapnuté.' },
+    webhookChecking: 'Zjišťuji, jestli Instagram posílá komentáře hned…',
+    webhookOn: 'Instagram posílá nové komentáře hned. Odpovědi obvykle odejdou během několika sekund.',
+    webhookOff: 'Instagram zatím neposílá komentáře hned. Odpovědi odejdou při další kontrole, nejpozději asi za pět minut.',
+    webhookSubscribe: 'Odebírat komentáře',
+    errors: { 'engagement-scopes-unverified': 'Uloženému tokenu chybí oprávnění instagram_business_manage_comments. Doplňte ho a účet ověřte znovu.', 'engagement-unavailable': 'Odpovědi na komentáře nejsou na serveru zapnuté.',
+      'webhook-unavailable': 'Webhook pro komentáře není na serveru nastavený.' },
   },
 };
 export const dneskaiAccount = { en, cs };

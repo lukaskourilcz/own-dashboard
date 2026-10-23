@@ -77,6 +77,33 @@ export function createDneskaiEngagementStore(db: Database, owner: string): Engag
   };
 }
 
+/**
+ * #161: whether Meta sends this account's comments to the app's webhook, and the owner's request to subscribe it
+ * (`GET` / `POST /<IG_ID>/subscribed_apps`, field `comments`). Called only from the owner's account panel.
+ */
+export async function instagramCommentSubscription(db: Database, owner: string, account: { id: string; remoteAccountId: string }, action: 'status' | 'subscribe',
+  env: Environment = process.env, fetcher: typeof fetch = fetch): Promise<{ subscribed: boolean }> {
+  const settings = await resolveMetaPublisherConfig(db, owner, { id: account.id, user_id: owner, brand: 'dneskai', platform: 'instagram' }, env);
+  if (settings.credentialHold) throw new EngagementGraphError(settings.credentialHold, 'definite', 'run');
+  if (settings.loginMode !== 'instagram' || !/^v\d+\.\d+$/.test(settings.apiVersion)) throw new EngagementGraphError('api-version-unverified', 'definite', 'run');
+  if (!numericId.safeParse(account.remoteAccountId).success) throw new EngagementGraphError('account-unavailable', 'definite', 'run');
+  const url = new URL(`https://graph.instagram.com/${settings.apiVersion}/${account.remoteAccountId}/subscribed_apps`);
+  if (action === 'subscribe') url.searchParams.set('subscribed_fields', 'comments');
+  let response: Response;
+  try { response = await fetcher(url.href, { method: action === 'subscribe' ? 'POST' : 'GET', headers: { Authorization: `Bearer ${settings.accessToken}` }, redirect: 'error', signal: AbortSignal.timeout(10_000) }); }
+  catch { throw new EngagementGraphError('meta-request-uncertain', 'uncertain'); }
+  let body: unknown = null;
+  try { body = await response.json(); } catch { body = null; }
+  if (!response.ok || (body && typeof body === 'object' && 'error' in body)) throw engagementGraphError(response.status, body);
+  if (action === 'subscribe') {
+    if (!z.object({ success: z.literal(true) }).safeParse(body).success) throw new EngagementGraphError('meta-invalid-response', 'uncertain');
+    return { subscribed: true };
+  }
+  const listed = z.object({ data: z.array(z.object({ subscribed_fields: z.array(z.string()).default([]) }).passthrough()).max(20) }).safeParse(body);
+  if (!listed.success) throw new EngagementGraphError('meta-invalid-response', 'definite');
+  return { subscribed: listed.data.data.some((app) => app.subscribed_fields.includes('comments')) };
+}
+
 /** The scopes a private reply and a public reply need under Instagram Login. */
 export const DNESKAI_ENGAGEMENT_SCOPES = ['instagram_business_basic', 'instagram_business_manage_comments'] as const;
 
