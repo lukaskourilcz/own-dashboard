@@ -139,6 +139,9 @@ type BankStrings = {
   fioSaving: string;
   fioSaved: string;
   fioErr: string;
+  fioInvalid: string;
+  fioSyncErr: string;
+  credentialsLoadErr: string;
   fioStored: string;
   syncThis: string;
   consentExpires: (date: string) => string;
@@ -332,8 +335,11 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       fioPlaceholder: "Paste the token",
       fioSave: "Save token",
       fioSaving: "Saving…",
-      fioSaved: "Token saved — syncing…",
-      fioErr: "That token was not accepted.",
+      fioSaved: "Token saved and sync confirmed.",
+      fioErr: "The token save could not be confirmed. Refresh before retrying.",
+      fioInvalid: "Enter a token between 16 and 512 characters.",
+      fioSyncErr: "Token saved. The first sync failed; retry the sync below.",
+      credentialsLoadErr: "Could not check whether a token is stored.",
       fioStored: "A token is already stored.",
       syncThis: "Sync this bank",
       consentExpires: (date) => `consent expires ${date}`,
@@ -575,8 +581,11 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       fioPlaceholder: "Vlož token",
       fioSave: "Uložit token",
       fioSaving: "Ukládám…",
-      fioSaved: "Token uložen — synchronizuji…",
-      fioErr: "Token nebyl přijat.",
+      fioSaved: "Token uložen a synchronizace potvrzena.",
+      fioErr: "Uložení tokenu nebylo potvrzeno. Před dalším pokusem obnov stránku.",
+      fioInvalid: "Vlož token o délce 16 až 512 znaků.",
+      fioSyncErr: "Token uložen. První synchronizace selhala; zkus ji znovu níže.",
+      credentialsLoadErr: "Nepodařilo se ověřit, zda je token uložený.",
       fioStored: "Token už je uložený.",
       syncThis: "Synchronizovat tuhle banku",
       consentExpires: (date) => `souhlas platí do ${date}`,

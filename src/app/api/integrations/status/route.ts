@@ -37,7 +37,7 @@ export async function GET() {
   return NextResponse.json({
     google: { connected: google, configured: Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET) },
     github: { connected: github, configured: Boolean(process.env.GITHUB_OAUTH_CLIENT_ID && process.env.GITHUB_OAUTH_CLIENT_SECRET) },
-    bank: { connected: (banks ?? []).some((item) => item.status === "linked"), configured: providers.some((provider) => provider.configured), last_synced_at: (banks ?? []).map((item) => item.last_synced_at).filter(Boolean).sort().at(-1) ?? null, providers: providers.map((provider) => ({ id: provider.id, label: provider.label, configured: provider.configured, connected: connectedProviders.has(provider.id) })) },
+    bank: { connected: (banks ?? []).some((item) => item.status === "linked"), configured: providers.some((provider) => provider.configured), last_synced_at: (banks ?? []).map((item) => item.last_synced_at).filter(Boolean).sort().at(-1) ?? null, providers: providers.map((provider) => ({ id: provider.id, label: provider.label, configured: provider.configured, supportsInstitutionPicker: provider.supportsInstitutionPicker, connected: connectedProviders.has(provider.id) })) },
     email: { configured: Boolean(process.env.RESEND_API_KEY) },
   }, { headers: { "cache-control": "private, no-store" } });
 }

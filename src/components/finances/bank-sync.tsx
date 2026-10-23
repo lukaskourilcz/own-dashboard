@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
+import { bankConsentUrl, bankInstitutionsResponse, bankProvidersResponse, type BankInstitution as Institution, type BankProviderState as ProviderState } from "@/lib/bank/flow";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -36,27 +38,18 @@ import { createRuleEvaluator, usableRules } from "@/lib/transaction-rules";
 import type { BankConnection, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type Institution = { id: string; name: string; bic: string | null; logo: string | null };
-
-type ProviderState = {
-  id: string;
-  label: string;
-  configured: boolean;
-  connected: boolean;
-  /** False for a token provider such as Fio, which has no bank list and no
-   *  redirect — it is configured in this dialog instead. */
-  supportsInstitutionPicker: boolean;
-};
-
 /** Which providers this server can actually use. Comes from the same
  *  authenticated status endpoint Settings reads, which reports booleans only —
  *  no token or secret value is ever part of this shape. */
-async function fetchBankProviders(): Promise<ProviderState[]> {
-  const res = await fetch("/api/integrations/status", { cache: "no-store" });
+async function fetchBankProviders({ signal }: { signal: AbortSignal }): Promise<ProviderState[]> {
+  const res = await fetch("/api/integrations/status", { cache: "no-store", signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) });
   if (!res.ok) throw new Error(String(res.status));
-  const json = (await res.json()) as { bank?: { providers?: ProviderState[] } };
-  return json.bank?.providers ?? [];
+  const providers = bankProvidersResponse.parse(await res.json()).bank.providers;
+  if (new Set(providers.map(provider => provider.id)).size !== providers.length) throw new Error("Invalid provider list");
+  return providers;
 }
+
+class BankNotConfigured extends Error {}
 
 export function BankSync({
   transactions,
@@ -475,35 +468,39 @@ function BankPickerDialog({
 }) {
   const t = useDict();
   const qc = useQueryClient();
-  const toast = useToast();
   const [step, setStep] = useState<"provider" | "institutions" | "token">("provider");
   const [providerId, setProviderId] = useState("gocardless");
   const [query, setQuery] = useState("");
   const [connectingId, setConnectingId] = useState<string | null>(null);
-  const [notConfigured, setNotConfigured] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [connectUnavailable, setConnectUnavailable] = useState(false);
+  const [tokenBusy, setTokenBusy] = useState(false);
+  const connectingRef = useRef(false);
+  const busy = connectingId !== null || tokenBusy;
 
   const providersQuery = useQuery({
     queryKey: ["bank", "providers"],
     enabled: open,
     queryFn: fetchBankProviders,
+    retry: false,
   });
 
   const institutionsQuery = useQuery({
     queryKey: ["bank", "institutions", providerId, "cz"],
     enabled: open && step === "institutions",
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/bank/institutions?country=cz&provider=${encodeURIComponent(providerId)}`,
-      );
-      if (res.status === 503) {
-        setNotConfigured(true);
-        return [] as Institution[];
-      }
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const res = await fetch(`/api/bank/institutions?country=cz&provider=${encodeURIComponent(providerId)}`, {
+        cache: "no-store", signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+      });
+      if (res.status === 503) throw new BankNotConfigured();
       if (!res.ok) throw new Error(String(res.status));
-      const json = (await res.json()) as { institutions: Institution[] };
-      return json.institutions;
+      const institutions = bankInstitutionsResponse.parse(await res.json()).institutions;
+      if (new Set(institutions.map(bank => bank.id)).size !== institutions.length) throw new Error("Invalid institution list");
+      return institutions;
     },
   });
+  const notConfigured = connectUnavailable || institutionsQuery.error instanceof BankNotConfigured;
 
   const filtered = useMemo(() => {
     const all = institutionsQuery.data ?? [];
@@ -513,38 +510,29 @@ function BankPickerDialog({
   }, [institutionsQuery.data, query]);
 
   async function connect(inst: Institution) {
-    setConnectingId(inst.id);
+    if (connectingRef.current || tokenBusy) return;
+    connectingRef.current = true; setConnectingId(inst.id); setConnectError(null);
+    let navigating = false;
     try {
       const res = await fetch("/api/bank/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: providerId,
-          institutionId: inst.id,
-          institutionName: inst.name,
-        }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: providerId, institutionId: inst.id, institutionName: inst.name }),
+        signal: AbortSignal.timeout(30_000),
       });
-      if (res.status === 503) {
-        setNotConfigured(true);
-        return;
-      }
+      if (res.status === 503) { setConnectUnavailable(true); return; }
       if (!res.ok) throw new Error(String(res.status));
-      const { link } = (await res.json()) as { link: string };
-      window.location.assign(link);
-    } catch {
-      toast.err(t.finances.bank.connectErr);
-      setConnectingId(null);
-    }
+      const json: unknown = await res.json();
+      const { link } = z.object({ link: z.string() }).parse(json);
+      window.location.assign(bankConsentUrl(providerId, link));
+      navigating = true;
+    } catch { setConnectError(t.finances.bank.connectErr); }
+    finally { if (!navigating) { connectingRef.current = false; setConnectingId(null); } }
   }
 
   function choose(provider: ProviderState) {
-    setProviderId(provider.id);
-    if (!provider.supportsInstitutionPicker) {
-      setStep("token");
-      return;
-    }
-    setNotConfigured(!provider.configured);
-    setStep("institutions");
+    if (busy) return;
+    setProviderId(provider.id); setQuery(""); setConnectError(null); setConnectUnavailable(false);
+    setStep(provider.supportsInstitutionPicker ? "institutions" : "token");
   }
 
   const chosen =
@@ -566,10 +554,12 @@ function BankPickerDialog({
   // Closing is what resets the flow, so reopening always starts at the provider
   // step and a previous choice never decides the next one.
   function handleOpenChange(next: boolean) {
+    if (!next && busy) return;
     if (!next) {
       setStep("provider");
       setQuery("");
-      setNotConfigured(false);
+      setConnectUnavailable(false);
+      setConnectError(null);
       setConnectingId(null);
       setProviderId("gocardless");
     }
@@ -578,7 +568,7 @@ function BankPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-w-md flex-col">
+      <DialogContent className="flex max-w-md flex-col" aria-busy={busy}>
         <DialogHeader>
           <DialogTitle>{heading}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -586,7 +576,7 @@ function BankPickerDialog({
 
         {step !== "provider" && (
           <div className="mt-3">
-            <Button size="sm" variant="ghost" onClick={() => setStep("provider")}>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setStep("provider"); setConnectError(null); }}>
               <ArrowLeft className="h-3.5 w-3.5" />
               {t.finances.bank.providerBack}
             </Button>
@@ -604,7 +594,7 @@ function BankPickerDialog({
                   <button
                     type="button"
                     onClick={() => choose(provider)}
-                    disabled={!usable}
+                    disabled={!usable || busy}
                     className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-surface-muted">
@@ -627,8 +617,9 @@ function BankPickerDialog({
               );
             })}
             {providersQuery.isError && (
-              <li className="py-8 text-center text-xs text-destructive">
-                {t.finances.bank.loadBanksErr}
+              <li role="alert" className="space-y-2 py-4 text-center text-xs text-destructive">
+                <p>{t.finances.bank.providersLoadErr}</p>
+                <Button size="sm" variant="outline" disabled={providersQuery.isFetching} onClick={() => void providersQuery.refetch()}>{t.common.retry}</Button>
               </li>
             )}
           </ul>
@@ -636,16 +627,18 @@ function BankPickerDialog({
 
         {step === "token" && (
           <FioTokenForm
-            onSaved={() => {
+            onBusyChange={setTokenBusy}
+            onSaved={(synced) => {
               void qc.invalidateQueries({ queryKey: qk.bankConnections });
               void qc.invalidateQueries({ queryKey: qk.transactions });
               void qc.invalidateQueries({ queryKey: qk.accounts });
               void providersQuery.refetch();
-              handleOpenChange(false);
+              if (synced) { onOpenChange(false); setStep("provider"); }
             }}
           />
         )}
 
+        {connectError && <p role="alert" className="mt-3 text-xs text-destructive">{connectError}</p>}
         {step === "institutions" &&
           (notConfigured ? (
             <p className="mt-4 rounded-md border border-border bg-surface-muted/40 p-3 text-xs text-foreground-muted">
@@ -657,6 +650,8 @@ function BankPickerDialog({
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-subtle" />
                 <Input
                   value={query}
+                  aria-label={t.finances.bank.searchBank}
+                  disabled={busy}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t.finances.bank.searchBank}
                   className="pl-8"
@@ -667,9 +662,10 @@ function BankPickerDialog({
                 {institutionsQuery.isPending ? (
                   <p className="py-8 text-center text-xs text-foreground-subtle">…</p>
                 ) : institutionsQuery.isError ? (
-                  <p className="py-8 text-center text-xs text-destructive">
-                    {t.finances.bank.loadBanksErr}
-                  </p>
+                  <div role="alert" className="space-y-2 py-4 text-center text-xs text-destructive">
+                    <p>{t.finances.bank.loadBanksErr}</p>
+                    <Button size="sm" variant="outline" disabled={institutionsQuery.isFetching || busy} onClick={() => void institutionsQuery.refetch()}>{t.common.retry}</Button>
+                  </div>
                 ) : filtered.length === 0 ? (
                   <p className="py-8 text-center text-xs text-foreground-subtle">
                     {t.finances.bank.noBanks}
@@ -681,13 +677,14 @@ function BankPickerDialog({
                         <button
                           type="button"
                           onClick={() => connect(inst)}
-                          disabled={connectingId !== null}
-                          className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring disabled:opacity-60"
+                          disabled={busy}
+                          className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring disabled:opacity-60 md:min-h-10"
                         >
-                          {inst.logo ? (
+                          {inst.logo && /^https:\/\//i.test(inst.logo) ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={inst.logo}
+                              referrerPolicy="no-referrer"
                               alt=""
                               className="h-6 w-6 shrink-0 rounded object-contain"
                             />
@@ -720,92 +717,69 @@ function BankPickerDialog({
  * beside it reports presence as a boolean, which is all this form needs to say
  * a token is already stored.
  */
-function FioTokenForm({ onSaved }: { onSaved: () => void }) {
+function FioTokenForm({ onSaved, onBusyChange }: { onSaved: (synced: boolean) => void; onBusyChange: (busy: boolean) => void }) {
   const t = useDict();
   const toast = useToast();
   const [token, setToken] = useState("");
-
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedConnectionId, setSavedConnectionId] = useState<string | null>(null);
   const storedQuery = useQuery({
-    queryKey: ["bank", "credentials"],
-    queryFn: async () => {
-      const res = await fetch("/api/bank/credentials", { cache: "no-store" });
+    queryKey: ["bank", "credentials"], retry: false,
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/bank/credentials", { cache: "no-store", signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) });
       if (!res.ok) throw new Error(String(res.status));
-      const json = (await res.json()) as { stored?: Record<string, boolean> };
-      return Boolean(json.stored?.fio);
+      return z.object({ stored: z.object({ fio: z.boolean() }) }).parse(await res.json()).stored.fio;
     },
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (value: string) => {
-      const res = await fetch("/api/bank/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: "fio", token: value }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      const { connectionId } = (await res.json()) as {
-        connectionId: string | null;
-      };
-      // Saving proves nothing on its own; the first sync is what shows whether
-      // Fio accepts the token, so it runs immediately.
-      if (connectionId) {
-        await fetch("/api/bank/sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ connectionId }),
+  // A credential must not be retained in React Query's mutation variables/cache.
+  // Saving and verification are distinct receipts; a failed pull can be retried
+  // with the confirmed connection id, without posting the credential again.
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (savingRef.current) return;
+    const value = token.trim();
+    if (!savedConnectionId && (value.length < 16 || value.length > 512)) { setError(t.finances.bank.fioInvalid); return; }
+    savingRef.current = true; setSaving(true); onBusyChange(true); setError(null);
+    let connectionId = savedConnectionId;
+    try {
+      if (!connectionId) {
+        const res = await fetch("/api/bank/credentials", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider: "fio", token: value }), signal: AbortSignal.timeout(30_000),
         });
+        if (!res.ok) throw new Error("Store not confirmed");
+        const receipt = z.object({ ok: z.literal(true), connectionId: z.uuid() }).parse(await res.json());
+        connectionId = receipt.connectionId; setSavedConnectionId(connectionId); setToken("");
       }
-    },
-    onSuccess: () => {
+      const response = await fetch("/api/bank/sync", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ connectionId }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!response.ok) throw new Error("Sync not confirmed");
+      z.object({ inserted: z.number().int().nonnegative() }).parse(await response.json());
       toast.ok(t.finances.bank.fioSaved);
-      setToken("");
-      onSaved();
-    },
-    onError: () => toast.err(t.finances.bank.fioErr),
-  });
-
+      onSaved(true);
+    } catch { setError(connectionId ? t.finances.bank.fioSyncErr : t.finances.bank.fioErr); if (connectionId) onSaved(false); }
+    finally { savingRef.current = false; setSaving(false); onBusyChange(false); }
+  }
   return (
-    <form
-      className="mt-4 space-y-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const value = token.trim();
-        if (value.length < 16) {
-          toast.err(t.finances.bank.fioErr);
-          return;
-        }
-        saveMutation.mutate(value);
-      }}
-    >
+    <form className="mt-4 space-y-3" onSubmit={submit}>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium" htmlFor="fio-token">
-          {t.finances.bank.fioTitle}
-        </label>
-        <Input
-          id="fio-token"
-          type="password"
-          autoComplete="off"
-          value={token}
-          onChange={(event) => setToken(event.target.value)}
-          placeholder={t.finances.bank.fioPlaceholder}
-        />
-        <p className="text-[11px] text-foreground-subtle">
-          {t.finances.bank.serverSideOnly}
-        </p>
-        {storedQuery.data === true && (
-          <p className="text-[11px] text-foreground-subtle">
-            {t.finances.bank.fioStored}
-          </p>
-        )}
+        <label className="text-xs font-medium" htmlFor="fio-token">{t.finances.bank.fioTitle}</label>
+        <Input id="fio-token" type="password" autoComplete="off" value={token} disabled={saving || savedConnectionId !== null}
+          maxLength={512} onChange={event => setToken(event.target.value)} placeholder={t.finances.bank.fioPlaceholder} />
+        <p className="text-[11px] text-foreground-subtle">{t.finances.bank.serverSideOnly}</p>
+        {(storedQuery.data === true || savedConnectionId) && <p role="status" className="text-xs text-foreground-muted">{t.finances.bank.fioStored}</p>}
+        {storedQuery.isError && <div role="alert" className="space-y-1 text-xs text-destructive">
+          <p>{t.finances.bank.credentialsLoadErr}</p><Button size="sm" variant="outline" disabled={saving || storedQuery.isFetching} onClick={() => void storedQuery.refetch()}>{t.common.retry}</Button>
+        </div>}
       </div>
-      <Button
-        type="submit"
-        size="sm"
-        disabled={saveMutation.isPending || token.trim().length === 0}
-      >
-        {saveMutation.isPending
-          ? t.finances.bank.fioSaving
-          : t.finances.bank.fioSave}
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      <Button type="submit" size="sm" disabled={saving || (!savedConnectionId && !token.trim())}>
+        {saving ? t.finances.bank.fioSaving : savedConnectionId ? t.finances.bank.syncNow : t.finances.bank.fioSave}
       </Button>
     </form>
   );

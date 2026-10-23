@@ -683,8 +683,8 @@
       "path": "src/components/finances/bank-sync.tsx",
       "lines": 804,
       "sha256": "3d49d9772902f162da30753d81c98c759f7457b0e5c496d9ed064e966562275f",
-      "status": "source reviewed; provider connection/token-dialog follow-up and final release checks pending",
-      "reviewedSha256": "3b08b29797cc34bceae6434f349f7057fe27e7081c8d6c76be9bc02517d6262a"
+      "status": "source reviewed; provider/dialog recovery checks passed; final release checks pending",
+      "reviewedSha256": "7441d07b78c94d153efefdfa97dfbfeed824b11baa530c9e0faba42f6967a6ce"
     },
     {
       "path": "src/components/finances/payment-matches.tsx",
@@ -1992,7 +1992,8 @@
       "path": "src/lib/i18n/sections/finances.ts",
       "lines": 674,
       "sha256": "f1732b0a058708f626473d17b5202cf8a51a124a4c55c847f9b739a232c5f522",
-      "status": "pending"
+      "status": "source reviewed; EN/CS Finance checks passed; final localization sweep pending",
+      "reviewedSha256": "76a72a9f1e4866d46290285aed4e5ecdebcc0fa6ecefbc56ef2b4188ec645c75"
     },
     {
       "path": "src/lib/i18n/sections/github.ts",
@@ -3602,6 +3603,13 @@
       "addedAfterBaseline": true,
       "status": "source reviewed; targeted import checks passed; final release checks pending",
       "reviewedSha256": "0407532d019bb9dbef061dcf79dea900f13067cb00de990e175f2930e9e7d2a1"
+    },
+    {
+      "path": "src/lib/bank/flow.ts",
+      "lines": 30,
+      "sha256": null,
+      "status": "source reviewed; provider contract and redirect boundaries checked; final release checks pending",
+      "reviewedSha256": "a08b29336faeab92da03579100ec233e01c01e479e457ee5fd507f820819fbce"
     }
   ],
   "baselineFileCount": 561
