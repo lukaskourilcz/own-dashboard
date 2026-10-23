@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
@@ -232,33 +232,8 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
     ? notes.find((n) => n.id === effectiveId) ?? null
     : null;
 
-  useEffect(() => {
-    const staleEmptyIds = notes
-      .filter((note) => {
-        const empty =
-          !(note.plain_text ?? "").trim() &&
-          (!note.title.trim() || note.title === t.notes.untitled);
-        return (
-          empty &&
-          Date.now() - noteDate(note).getTime() > 10 * 60_000 &&
-          note.id !== selected?.id
-        );
-      })
-      .map((note) => note.id);
-    if (staleEmptyIds.length === 0) return;
-    void supabase
-      .from("notes")
-      .delete()
-      .in("id", staleEmptyIds)
-      .then(({ error }) => {
-        if (!error) {
-          setNotes((current) =>
-            current.filter((note) => !staleEmptyIds.includes(note.id)),
-          );
-          void qc.invalidateQueries({ queryKey: qk.notes });
-        }
-      });
-  }, [notes, qc, selected?.id, setNotes, supabase, t.notes.untitled]);
+  // Viewing or filtering notes never deletes them. Legacy notes may contain
+  // rich content without a populated plain_text projection or a custom title.
 
   // CREATE — non-optimistic. The insert returns the row; we prepend it and
   // select it in onSuccess, then invalidate to reconcile with the server.
