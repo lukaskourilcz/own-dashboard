@@ -1,4 +1,5 @@
 type NotesStrings = {
+  retrySave: string;
   title: string;
   description: string;
   loadingEditor: string;
@@ -63,6 +64,7 @@ type NotesStrings = {
 
 export const notes: { en: NotesStrings; cs: NotesStrings } = {
   en: {
+    retrySave: 'Retry save',
     title: "Notes",
     description: "A quiet place for thoughts, prompts, and drafts.",
     loadingEditor: "Loading editor…",
@@ -123,6 +125,7 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     linkToNoteSubtext: "Reference another note",
   },
   cs: {
+    retrySave: 'Zkusit uložit znovu',
     title: "Poznámky",
     description: "Klidné místo pro myšlenky, nápady a koncepty.",
     loadingEditor: "Načítání editoru…",

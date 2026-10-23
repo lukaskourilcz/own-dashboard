@@ -370,7 +370,7 @@ export function ToolsPanel({
                   const detected = matches.get(tool);
                   return (
                     <li key={tool.id} data-tool-card={tool.id} className="flex min-w-0 flex-col rounded-lg border border-border bg-surface">
-                      <div className="flex items-start gap-2 border-b border-border px-3 py-2.5">
+                      <div className="flex min-h-16 items-start gap-2 border-b border-border px-3 py-2.5">
                         <span className="mt-1"><PricingDot pricing={link?.pricing ?? null} /></span>
                         <div className="min-w-0 flex-1">
                           <h3 className="truncate text-sm font-semibold" title={name}>{name}</h3>
@@ -403,19 +403,19 @@ export function ToolsPanel({
                           </p>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5">
+                      <div className="mt-auto flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5">
                         {safeUrl && (
                           <Tooltip content={tt.openLink}>
-                            <Button asChild size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost">
+                            <Button asChild size="icon-sm" className="h-11 w-11 md:h-8 md:w-8" variant="ghost">
                               <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${tt.openLink}: ${name}`}><ExternalLink /></a>
                             </Button>
                           </Tooltip>
                         )}
                         <Tooltip content={tt.showInLibrary}>
-                          <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => onShowInLibrary(tool.ai_link_id)} aria-label={`${tt.showInLibrary}: ${name}`}><Library /></Button>
+                          <Button size="icon-sm" className="h-11 w-11 md:h-8 md:w-8" variant="ghost" onClick={() => onShowInLibrary(tool.ai_link_id)} aria-label={`${tt.showInLibrary}: ${name}`}><Library /></Button>
                         </Tooltip>
                         <Tooltip content={t.common.edit}>
-                          <Button size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7" variant="ghost" onClick={() => startEdit(tool)} aria-label={`${t.common.edit}: ${name}`}><Pencil /></Button>
+                          <Button size="icon-sm" className="h-11 w-11 md:h-8 md:w-8" variant="ghost" onClick={() => startEdit(tool)} aria-label={`${t.common.edit}: ${name}`}><Pencil /></Button>
                         </Tooltip>
                         <div className="ml-auto">
                           {tool.status === "retired" ? (
@@ -525,7 +525,7 @@ export function ToolsPanel({
                         />
                       </div>
                       <Tooltip content={tt.removeProject(label)}>
-                        <Button type="button" size="icon-sm" variant="ghost" className="h-11 w-11 sm:h-7 sm:w-7 mt-5" aria-label={tt.removeProject(label)} onClick={() => setForm({ ...form, usage: form.usage.filter((item) => item.project_id !== row.project_id) })}>
+                        <Button type="button" size="icon-sm" variant="ghost" className="h-11 w-11 md:h-8 md:w-8 mt-5" aria-label={tt.removeProject(label)} onClick={() => setForm({ ...form, usage: form.usage.filter((item) => item.project_id !== row.project_id) })}>
                           <X />
                         </Button>
                       </Tooltip>

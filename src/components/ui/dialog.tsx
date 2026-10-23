@@ -45,8 +45,9 @@ export const DialogContent = React.forwardRef<
     /** Show the top-right ✕ close button (default true). */
     showClose?: boolean;
   }
->(({ className, children, showClose = true, ...props }, ref) => {
+>(({ className, children, showClose = true, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
   const cs = useLang().lang === "cs";
+  const opener = React.useRef<HTMLElement | null>(null);
   return (
   <DialogPortal>
     <DialogOverlay />
@@ -57,6 +58,17 @@ export const DialogContent = React.forwardRef<
         className,
       )}
       {...props}
+      onOpenAutoFocus={(event) => {
+        opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        onOpenAutoFocus?.(event);
+      }}
+      onCloseAutoFocus={(event) => {
+        onCloseAutoFocus?.(event);
+        if (!event.defaultPrevented && opener.current?.isConnected && opener.current !== document.body) {
+          event.preventDefault(); opener.current.focus();
+        }
+        opener.current = null;
+      }}
     >
       {children}
       {showClose && (

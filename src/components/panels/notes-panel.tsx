@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
@@ -145,6 +145,9 @@ function safeFilename(title: string): string {
     .slice(0, 60);
 }
 
+const subscribeWideNotes = (changed: () => void) => { const media = window.matchMedia('(min-width: 1024px)'); media.addEventListener('change', changed); return () => media.removeEventListener('change', changed); };
+const readWideNotes = () => window.matchMedia('(min-width: 1024px)').matches;
+
 export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, embedded }: Props) {
   // Scope to a single project's notes when embedded in a project workspace.
   const notes = useMemo(
@@ -157,6 +160,8 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   const confirm = useConfirmation();
   const t = useDict();
   const locale = useDateLocale();
+  const wide = useSyncExternalStore(subscribeWideNotes, readWideNotes, () => false);
+  const noteOpener = useRef<HTMLElement | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // True only right after the user taps the mobile back arrow: it suppresses the
   // "auto-open the first note" default so the full list is shown instead. Opening
@@ -220,7 +225,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   // Default to the first note so desktop opens it beside the list on entry.
   // The mobile back arrow sets `wentBackToList`, which suppresses that default
   // so the full list is shown (and clearing it never snaps back to a note).
-  const effectiveId = wentBackToList
+  const effectiveId = wentBackToList || !wide
     ? selectedId
     : selectedId ?? pinned[0]?.id ?? unpinned[0]?.id ?? null;
   const selected = effectiveId
@@ -288,12 +293,15 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   // Open a note in the detail pane (clearing the "back to list" state), or pass
   // null to return to the full list (mobile back arrow).
   function openNote(id: string) {
+    noteOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-note-editor-title]')?.focus());
     setSelectedId(id);
     setWentBackToList(false);
   }
   function backToList() {
     setSelectedId(null);
     setWentBackToList(true);
+    requestAnimationFrame(() => { if (noteOpener.current?.isConnected) noteOpener.current.focus(); });
   }
 
   async function createNote(seedContent?: unknown, seedTitle?: string) {
@@ -433,6 +441,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   // onMutate and cleared in onSettled to drive the "saving…" indicator,
   // mirroring the original set-before-await / clear-after-await behaviour.
   const saveMutation = useMutation({
+    scope: { id: "notes-autosave" },
     mutationFn: async (vars: {
       noteId: string;
       doc: { title: string; content: unknown; plainText: string };
@@ -453,7 +462,8 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
     onMutate: ({ noteId }) => {
       setSavingId(noteId);
     },
-    onSuccess: (data, { noteId }) => {
+    onSuccess: (data, { noteId, doc }) => {
+      lastSavedRef.current.set(noteId, JSON.stringify(doc));
       setNotes((prev) => prev.map((n) => (n.id === noteId ? data : n)));
     },
     onError: (e) => {
@@ -470,7 +480,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   ) {
     const serialized = JSON.stringify(doc);
     if (lastSavedRef.current.get(noteId) === serialized) return;
-    lastSavedRef.current.set(noteId, serialized);
+
 
     saveMutation.mutate({ noteId, doc });
   }
@@ -728,6 +738,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                     {t.notes.pinned}
                   </SectionLabel>
                   <DndContext
+                    id="notes-pinned-order"
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handlePinnedDragEnd}
@@ -786,17 +797,17 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                 <button
                   type="button"
                   onClick={backToList}
-                  className="lg:hidden inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
+                  className="lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors focus-ring"
                   aria-label={t.notes.back}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">
+                  <p tabIndex={-1} data-note-editor-title className="text-xs font-medium truncate focus:outline-none">
                     {selected.title || t.notes.untitled}
                   </p>
-                  <p className="text-[10px] text-foreground-muted tabular">
-                    {savingId === selected.id
+                  <p role="status" className="text-[10px] text-foreground-muted tabular">
+                    {saveMutation.isError && saveMutation.variables?.noteId === selected.id ? t.notes.couldNotSaveNote : savingId === selected.id
                       ? t.notes.saving
                       : t.notes.savedAt(
                           format(
@@ -807,6 +818,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
                         )}
                   </p>
                 </div>
+                {saveMutation.isError && saveMutation.variables?.noteId === selected.id && <Button size="sm" variant="outline" onClick={() => saveMutation.mutate(saveMutation.variables!)}>{t.notes.retrySave}</Button>}
                 {!embedded && (
                   <SimpleSelect
                     value={selected.project_id ?? ""}

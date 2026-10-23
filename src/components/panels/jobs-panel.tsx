@@ -880,6 +880,7 @@ function OpenPositionsView({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
+          <span role="status" className="tabular">{visible.length} {t.jobs.listingsShown}</span>
           {failedSources.length > 0 && (
             <Tooltip
               content={`${t.jobs.sourceErrors}: ${failedSources
@@ -995,9 +996,6 @@ function OpenPositionsView({
         />
       ) : (
         <>
-          <p className="mb-2 text-[11px] text-foreground-subtle tabular">
-            {visible.length} {t.jobs.listingsShown}
-          </p>
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(280px,2fr)_minmax(360px,3fr)]">
             <div className="min-w-0 divide-y divide-border rounded-md border border-border bg-surface">
               {visible.map((l) => (

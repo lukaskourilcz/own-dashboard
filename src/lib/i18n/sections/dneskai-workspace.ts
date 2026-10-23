@@ -146,9 +146,9 @@ const cs: typeof en = {
     today: 'Dnes', job: 'Návrh se připravuje',
   },
   engagementReceipts: {
+    label: 'Komentáře s klíčovým slovem',
     unavailable: 'Údaje o komentářích se nepodařilo načíst. Zkuste je obnovit.',
     otherFailures: (count: number) => `Dalších ${count} selhání mimo deset nejčastějších kódů.`,
-    label: 'Komentáře s klíčovým slovem',
     summary: (days: number) => `Příspěvky s klíčovým slovem publikované za posledních ${days} dní`,
     summaryHelp: 'Všechny zaznamenané komentáře a odpovědi u příspěvků publikovaných v tomto období.',
     comments: 'Přečtené komentáře', matches: 'S klíčovým slovem', sent: 'Odeslané zprávy', publicSent: 'Veřejné odpovědi', failed: 'Selhalo',

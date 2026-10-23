@@ -50,7 +50,7 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete, us
           <span className="min-w-0 truncate text-sm font-medium">{link.title}</span>
           <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 text-foreground-muted transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} />
         </button>
-        <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${t.ai.visit}: ${link.title}`} title={link.url} className="focus-ring ml-8 flex min-h-7 min-w-0 items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground hover:underline sm:min-h-5"><span className="truncate">{hostOf(link.url)}</span><ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>
+        <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${t.ai.visit}: ${link.title}`} title={link.url} className="focus-ring ml-8 flex min-h-11 min-w-0 items-center gap-1 rounded text-xs text-foreground-muted hover:text-foreground hover:underline md:min-h-8"><span className="truncate">{hostOf(link.url)}</span><ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>
         {(usedBy.length > 0 || isTool) && <div className="ml-8 mt-1 flex min-w-0 flex-wrap items-center gap-1 text-[11px] text-foreground-muted">
           {isTool && <EntityBadge className="min-h-5 py-0">{t.ai.toolBadge}</EntityBadge>}
           {usedBy.length > 0 && <>
@@ -82,7 +82,6 @@ export function LinkLibraryCard({ link, expanded, onToggle, onEdit, onDelete, us
             <summary className="cursor-pointer focus-ring">{t.ai.sources}</summary>
             <ul className="mt-1 space-y-1 break-all">{sourceUrls.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer" className="underline">{url}</a></li>)}</ul>
           </details>}
-      <a href={safeUrl} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 rounded text-foreground underline [overflow-wrap:anywhere] sm:min-h-8">{link.url}<ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" /></a>
       {usedBy.length > 0 && <p className="text-xs"><span className="font-medium text-foreground">{t.ai.usedBy}:</span> {usedBy.map((project) => project.name).join(", ")}</p>}
       {onAddToProject && <button type="button" onClick={onAddToProject} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded text-xs font-medium text-foreground underline sm:min-h-8"><FolderPlus aria-hidden="true" className="h-3.5 w-3.5" />{t.ai.addToProject}</button>}
     </div>

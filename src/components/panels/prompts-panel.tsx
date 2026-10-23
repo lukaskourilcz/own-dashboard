@@ -720,7 +720,7 @@ function PromptCard({
       data-prompt-card={prompt.id}
       className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong"
     >
-      <div className="flex items-center gap-2 border-b border-border bg-surface-muted px-3 py-2">
+      <div className="flex min-h-12 items-center gap-2 border-b border-border bg-surface-muted px-3 py-2">
         <h3
           className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground"
           title={prompt.name}
@@ -733,19 +733,14 @@ function PromptCard({
             type="button"
             onClick={onCopy}
             aria-label={`${t.prompts.copyWithContext}: ${prompt.name}`}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring sm:h-6 sm:w-6"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring md:h-8 md:w-8"
           >
             <Copy className="h-3.5 w-3.5" />
           </button>
         </Tooltip>
       </div>
 
-      <button
-        type="button"
-        onClick={onCopy}
-        aria-label={`${t.prompts.copyWithContext}: ${prompt.name}`}
-        className="min-h-[64px] flex-1 cursor-copy px-3 pb-2 pt-2 text-left focus-ring"
-      >
+      <div className="min-h-24 flex-1 px-3 pb-2 pt-2">
         {prompt.description?.trim() ? (
           <p className="line-clamp-3 text-[11px] leading-[15px] text-foreground-muted">
             {prompt.description}
@@ -759,7 +754,7 @@ function PromptCard({
             {t.prompts.noDescription}
           </p>
         )}
-      </button>
+            </div>
 
       <div className="flex items-center gap-2 px-3 pb-2 text-[11px] text-foreground-muted">
         <span className="inline-flex min-w-0 items-center gap-1 truncate">
@@ -773,7 +768,7 @@ function PromptCard({
               type="button"
               onClick={onEdit}
               aria-label={`${t.prompts.edit}: ${prompt.name}`}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring sm:h-6 sm:w-6"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring md:h-8 md:w-8"
             >
               <Pencil className="h-3 w-3" />
             </button>
@@ -783,7 +778,7 @@ function PromptCard({
               type="button"
               onClick={onDelete}
               aria-label={`${t.prompts.deletePrompt}: ${prompt.name}`}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring sm:h-6 sm:w-6"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring md:h-8 md:w-8"
             >
               <Trash2 className="h-3 w-3" />
             </button>

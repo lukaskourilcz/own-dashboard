@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
+import { common } from '../src/lib/i18n/sections/common';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
 import { describeMarketingCode } from '../src/lib/marketing/marketing-codes';
@@ -26,7 +27,7 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
   await page.locator('[data-testid="dneskai-lab-queue-post"]:not([aria-current="true"])').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('dialog').getByRole('button', { name: t.actions.cancel, exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: common[lang].unsaved.stay, exact: true }).click();
   await lab.getByRole('button', { name: t.actions.discard, exact: true }).click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   const session = page.getByTestId('dneskai-lab-session'); await session.focus();

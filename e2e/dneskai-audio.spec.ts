@@ -33,6 +33,7 @@ test('Lab picks a Reel track, saves a new version and approves its hash', async 
   const errors = watchConsole(page), t = dneskaiLab.en, audio = dneskaiAudio.en;
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const lab = page.getByTestId('dneskai-lab');
+  await lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: audio.format.reel, exact: true }).click();
   const picker = lab.getByTestId('dneskai-audio-picker');
   await expect(picker).toBeVisible();
   const select = picker.getByRole('combobox', { name: audio.picker.label, exact: true });
