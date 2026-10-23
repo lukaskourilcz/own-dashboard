@@ -1,10 +1,8 @@
 'use client';
 
 import { useId } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
-import { loadDneskaiAudioOptions } from '@/lib/marketing/dneskai-audio-client';
+import { useDneskaiAudioLibrary } from '@/lib/marketing/dneskai-audio-client';
 import { cn } from '@/lib/utils';
 
 type Format = 'carousel' | 'reel';
@@ -17,7 +15,7 @@ type Props = { value: string; onChange: (format: Format) => void; preview: boole
 export function DneskaiFormatSwitch({ value, onChange, preview, disabled = false, lang }: Props) {
   const t = dneskaiAudio[lang].format;
   const id = useId();
-  const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal) });
+  const query = useDneskaiAudioLibrary(preview);
   if (!query.data || (value !== 'carousel' && value !== 'reel')) return null;
   return <fieldset className="min-w-0 space-y-1" disabled={disabled} aria-describedby={`${id}-help`} data-testid="dneskai-format-switch">
     <legend className="text-xs font-medium">{t.label}</legend>

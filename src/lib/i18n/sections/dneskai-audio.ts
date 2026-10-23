@@ -3,6 +3,7 @@ import type { DneskaiAudioSource } from '@/lib/marketing/dneskai-audio-contracts
 /** Zdroje → Hudba and the Lab's audio picker (#164). */
 const en = {
   title: 'Music',
+  loadMore: 'Load more tracks', retry: 'Retry', selectedMissing: 'Saved selection (details unavailable)',
   intro: 'Tracks a Reel may play. Use only Meta Sound Collection downloads, which are cleared for Instagram, Pixabay Music under the Pixabay Content License, or your own recordings. Record where each file came from.',
   loading: 'Loading the music library…',
   unavailable: 'The music library could not be loaded. Try again.',
@@ -73,6 +74,7 @@ const en = {
 
 const cs: typeof en = {
   title: 'Hudba',
+  loadMore: 'Načíst další skladby', retry: 'Zkusit znovu', selectedMissing: 'Uložený výběr (podrobnosti nedostupné)',
   intro: 'Skladby, které může Reel hrát. Používejte jen stažené skladby z Meta Sound Collection, které jsou pro Instagram schválené, hudbu z Pixabay pod licencí Pixabay Content License, nebo vlastní nahrávky. U každého souboru zapište, odkud pochází.',
   loading: 'Načítám hudební knihovnu…',
   unavailable: 'Hudební knihovnu nešlo načíst. Zkuste to znovu.',

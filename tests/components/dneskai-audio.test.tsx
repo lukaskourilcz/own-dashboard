@@ -141,3 +141,27 @@ describe('niche sounds (#167)', () => {
     expect(container.querySelector('option[value="ig:9"]')).toBeNull();
   });
 });
+
+
+it('loads a second music page only when requested and keeps the first page visible', async () => {
+  const fetcher = vi.fn(async (url: string) => Response.json(url.includes('offset=200') ? { tracks: [track({ id: '22222222-2222-4222-8222-222222222222', title: 'Later track' })], nextOffset: null } : { tracks: [track({ title: 'First track' })], nextOffset: 200 }));
+  vi.stubGlobal('fetch', fetcher);
+  render(<DneskaiAudioLibrary lang="en" />); await settle();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  const more = [...container.querySelectorAll('button')].find(button => button.textContent === dneskaiAudio.en.loadMore)!;
+  act(() => more.click()); await settle();
+  expect(container.querySelectorAll('[data-testid="dneskai-audio-track"]')).toHaveLength(2);
+  expect(container.textContent).toContain('First track');
+  expect(container.textContent).toContain('Later track');
+  expect([...container.querySelectorAll('button')].some(button => button.textContent === dneskaiAudio.en.loadMore)).toBe(false);
+});
+
+it('resolves a saved disabled selection outside the first page without replacing it with rotation', async () => {
+  const selected = '22222222-2222-4222-8222-222222222222';
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => Response.json(url.includes('trackId=') ? { tracks: [track({ id: selected, title: 'Saved inactive', enabled: false })] } : { tracks: [track({ title: 'First page' })], nextOffset: 200 })));
+  const onChange = vi.fn();
+  render(<DneskaiAudioPicker value={selected} onChange={onChange} preview={false} lang="en" />); await settle();
+  expect(container.querySelector('select')?.value).toBe(selected);
+  expect(container.querySelector(`option[value="${selected}"]`)?.textContent).toContain('Saved inactive');
+  expect(onChange).not.toHaveBeenCalled();
+});

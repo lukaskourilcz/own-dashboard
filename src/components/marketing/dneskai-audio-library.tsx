@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useRef, useState, type FormEvent } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -9,7 +9,7 @@ import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack, type DneskaiAudioTrend } from '@/lib/marketing/dneskai-audio-contracts';
 import Image from 'next/image';
-import { DneskaiAudioRequestError, dneskaiAudioFileProblem, loadDneskaiAudioOptions, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
+import { DneskaiAudioRequestError, dneskaiAudioFileProblem, useDneskaiAudioLibrary, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from './dneskai/audio-preview';
 
 type Lang = 'en' | 'cs';
@@ -21,15 +21,17 @@ type Props = { lang: Lang; preview?: boolean };
  */
 export function DneskaiAudioLibrary({ lang, preview = false }: Props) {
   const t = dneskaiAudio[lang];
-  const query = useQuery({ queryKey: [...qk.dneskaiAudio, preview], retry: false, staleTime: 30000, queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal) });
+  const query = useDneskaiAudioLibrary(preview);
   const player = useDneskaiAudioPreview();
   if (query.data === null) return null;
   return <section aria-labelledby="dneskai-audio-title" className="min-w-0 space-y-4" data-testid="dneskai-audio-library">
     <div className="min-w-0"><h2 id="dneskai-audio-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
-      : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
-        : <><TrackList tracks={query.data.tracks} lang={lang} preview={preview} player={player} /><TrendList trends={query.data.trends} lang={lang} /></>}
+      : query.isError && !query.data ? <div role="alert"><p className="text-sm text-risk">{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t.retry}</Button></div>
+        : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} /><TrendList trends={query.data?.trends ?? []} lang={lang} /></>}
+    {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
+    {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
     {!preview && query.isSuccess && <UploadForm lang={lang} />}
   </section>;
 }

@@ -56,7 +56,7 @@ export const DneskaiAudioTrendSchema = z.strictObject({
 });
 export type DneskaiAudioTrend = z.infer<typeof DneskaiAudioTrendSchema>;
 /** `trends` only while `DNESKAI_AUDIO_TRENDS_ENABLED` is on. */
-export const DneskaiAudioLibrarySchema = z.strictObject({ tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(50).optional() });
+export const DneskaiAudioLibrarySchema = z.strictObject({ tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(50).optional(), nextOffset: z.number().int().min(0).max(1_000_000).nullable().optional() });
 export type DneskaiAudioLibrary = z.infer<typeof DneskaiAudioLibrarySchema>;
 
 export const DneskaiAudioPrepareSchema = z.strictObject({

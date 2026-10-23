@@ -61,7 +61,7 @@ function storage(bytes: Buffer | null) {
   const inserted: unknown[] = [];
   const rows: Record<string, unknown>[] = [];
   const query = {
-    select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: rows, error: null })),
+    select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), range: vi.fn(async () => ({ data: rows, error: null })), limit: vi.fn(async () => ({ data: rows, error: null })),
     maybeSingle: vi.fn(async () => ({ data: rows[0] ?? null, error: null })),
     insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, created_at: "2026-10-23T08:00:00Z" }); return { error: null }; }),
   };
@@ -105,11 +105,17 @@ describe("audio route", () => {
     expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 10 }))).status).toBe(404);
     expect(mocks.admin).not.toHaveBeenCalled();
   });
+  it("rejects malformed page and track selectors", async () => {
+    vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
+    for (const query of ["offset=-1", "offset=1000001", "offset=1.5", "trackId=not-a-uuid"]) {
+      expect((await GET(new Request(`${url}?${query}`))).status).toBe(400);
+    }
+  });
   it("lists the library and hands out one signed upload path", async () => {
     vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
     const { db, files } = storage(null);
     mocks.admin.mockReturnValue(db);
-    expect(await (await GET()).json()).toEqual({ tracks: [] });
+    expect(await (await GET()).json()).toEqual({ tracks: [], nextOffset: null });
     const prepared = await (await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 1024 }))).json();
     expect(prepared).toMatchObject({ token: "upload-token" });
     expect(prepared.path).toMatch(new RegExp(`^${owner}/[0-9a-f-]{36}\\.mp3$`));

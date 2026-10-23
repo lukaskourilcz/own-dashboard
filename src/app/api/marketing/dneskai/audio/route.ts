@@ -1,9 +1,10 @@
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
 import { DneskaiAudioRequestSchema, type DneskaiAudioRequest } from '@/lib/marketing/dneskai-audio-contracts';
-import { DneskaiAudioError, createDneskaiAudioTrack, listDneskaiAudioTracks, prepareDneskaiAudioUpload, setDneskaiAudioTrackEnabled } from '@/lib/marketing/dneskai-audio';
+import { DneskaiAudioError, createDneskaiAudioTrack, listDneskaiAudioTracks, listDneskaiAudioPage, prepareDneskaiAudioUpload, setDneskaiAudioTrackEnabled } from '@/lib/marketing/dneskai-audio';
 import { dneskaiReelsEnabled } from '@/lib/marketing/dneskai-reel';
 import { dneskaiAudioTrendsEnabled, listDneskaiAudioTrends } from '@/lib/marketing/dneskai-audio-trends';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
@@ -33,20 +34,25 @@ function failed(failure: unknown) {
  * GET /api/marketing/dneskai/audio (#164): the owner's audio library with one-hour preview URLs.
  * Answers 404 unless `MARKETING_DNESKAI_REELS_ENABLED=true`, so Zdroje → Hudba and the Lab picker stay hidden.
  */
-export async function GET() {
+export async function GET(request?: Request) {
   if (!dneskaiReelsEnabled()) return Response.json({ error: 'not-found' }, { status: 404, headers });
   const user = await owner();
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401, headers });
   try {
     const db = createAdminClient();
-    const tracks = await listDneskaiAudioTracks(db, user);
+    const params = new URL(request?.url ?? 'https://local.invalid').searchParams;
+    const selected = params.get('trackId');
+    const offset = params.get('offset') ?? '0';
+    if (!/^\d{1,7}$/.test(offset) || Number(offset) > 1_000_000 || (selected && !z.uuid().safeParse(selected).success)) return Response.json({ error: 'invalid-request' }, { status: 400, headers });
+    if (selected) return Response.json({ tracks: await listDneskaiAudioTracks(db, user, selected), nextOffset: null }, { headers });
+    const page = await listDneskaiAudioPage(db, user, Number(offset));
     // #167: today's trending sounds, only while their switch is on.
     // #167: Meta's list joined with the niche ranking of the tracked education profiles (both $0, read from storage).
-    const trends = dneskaiAudioTrendsEnabled() ? await (async () => {
+    const trends = Number(offset) === 0 && dneskaiAudioTrendsEnabled() ? await (async () => {
       const niche = await resolveDneskaiProjectId(db, user).then((project) => loadDneskaiNicheSounds(db, user, project, new Date())).catch(() => []);
       return listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date()), niche).catch(() => []);
     })() : undefined;
-    return Response.json({ tracks, ...(trends ? { trends } : {}) }, { headers });
+    return Response.json({ ...page, ...(trends ? { trends } : {}) }, { headers });
   }
   catch (failure) { return failed(failure); }
 }

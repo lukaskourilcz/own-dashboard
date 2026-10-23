@@ -1,5 +1,7 @@
 'use client';
 
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { qk } from '@/lib/queries/keys';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -42,13 +44,16 @@ export async function loadDneskaiAudioLibrary(preview: boolean, signal?: AbortSi
 }
 
 /** The library and, while their switch is on, today's trending sounds (#167). Null while Reels are off. */
-export async function loadDneskaiAudioOptions(preview: boolean, signal?: AbortSignal): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[] } | null> {
+export async function loadDneskaiAudioOptions(preview: boolean, signal?: AbortSignal, offset = 0, trackId?: string): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[]; nextOffset?: number | null } | null> {
   if (preview) return { tracks: DEMO_DNESKAI_AUDIO_TRACKS, trends: [] };
-  const response = await fetch(URL_PATH, { cache: 'no-store', signal });
+  const params = new URLSearchParams();
+  if (offset) params.set('offset', String(offset));
+  if (trackId) params.set('trackId', trackId);
+  const response = await fetch(`${URL_PATH}${params.size ? `?${params}` : ''}`, { cache: 'no-store', signal });
   if (response.status === 404) return null;
   if (!response.ok) throw await failure(response);
   const parsed = DneskaiAudioLibrarySchema.parse(await response.json());
-  return { tracks: parsed.tracks, trends: parsed.trends ?? [] };
+  return { tracks: parsed.tracks, trends: parsed.trends ?? [], nextOffset: parsed.nextOffset ?? null };
 }
 
 export async function setDneskaiAudioTrackEnabled(id: string, enabled: boolean): Promise<void> {
@@ -73,4 +78,17 @@ export async function uploadDneskaiAudioTrack(file: File, fields: DneskaiAudioUp
   if (error) throw new DneskaiAudioRequestError('audio-upload-missing', 0);
   const created = z.strictObject({ track: DneskaiAudioTrackSchema }).parse(await post({ action: 'create', uploadId: prepared.uploadId, contentType, ...fields }));
   return created.track;
+}
+
+
+/** Shared first-page read for the format switch, picker and library; later pages are explicit owner actions. */
+export function useDneskaiAudioLibrary(preview: boolean) {
+  const query = useInfiniteQuery({ queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0, retry: false, staleTime: 30000,
+    queryFn: ({ signal, pageParam }) => loadDneskaiAudioOptions(preview, signal, pageParam),
+    getNextPageParam: (last) => last?.nextOffset ?? undefined });
+  const pages = query.data?.pages;
+  const data = !pages ? undefined : pages[0] === null ? null : {
+    tracks: pages.flatMap(page => page?.tracks ?? []), trends: pages[0]?.trends ?? [],
+  };
+  return { ...query, data };
 }

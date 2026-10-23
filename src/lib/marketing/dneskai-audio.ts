@@ -7,7 +7,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import {
-  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioTrackSchema, nextDneskaiAudioTrack,
+  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioTrackSchema,
   type DneskaiAudioCreate, type DneskaiAudioPrepared, type DneskaiAudioTrack, type DneskaiAudioType,
 } from "./dneskai-audio-contracts";
 import { dneskaiFfmpegPath } from "./dneskai-reel-render";
@@ -42,12 +42,25 @@ function objectFromPath(owner: string, storagePath: string | null): string | nul
   return storagePath?.startsWith(prefix) ? storagePath.slice(DNESKAI_AUDIO_BUCKET.length + 1) : null;
 }
 
-/** The owner's tracks, oldest first, each with a one-hour signed preview URL. */
-export async function listDneskaiAudioTracks(db: Database, owner: string): Promise<DneskaiAudioTrack[]> {
-  z.uuid().parse(owner);
-  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner).order("created_at", { ascending: true }).limit(200);
+/** Owner-only stable pages. New uploads append; tracks are never deleted by this interface. */
+export async function listDneskaiAudioPage(db: Database, owner: string, offset = 0): Promise<{ tracks: DneskaiAudioTrack[]; nextOffset: number | null }> {
+  z.uuid().parse(owner); z.number().int().min(0).max(1_000_000).parse(offset);
+  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner)
+    .order("created_at", { ascending: true }).order("id", { ascending: true }).range(offset, offset + 200);
   if (error || !data) throw new DneskaiAudioError("audio-library-unavailable");
-  const rows = data as TrackRow[];
+  return { tracks: await signAudioRows(db, owner, (data as TrackRow[]).slice(0, 200)), nextOffset: data.length > 200 ? offset + 200 : null };
+}
+
+/** First management page, or one chosen track regardless of its age or enabled state. */
+export async function listDneskaiAudioTracks(db: Database, owner: string, trackId?: string): Promise<DneskaiAudioTrack[]> {
+  if (!trackId) return (await listDneskaiAudioPage(db, owner)).tracks;
+  z.uuid().parse(owner); z.uuid().parse(trackId);
+  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner).eq("id", trackId).maybeSingle();
+  if (error) throw new DneskaiAudioError("audio-library-unavailable");
+  return signAudioRows(db, owner, data ? [data as TrackRow] : []);
+}
+
+async function signAudioRows(db: Database, owner: string, rows: TrackRow[]): Promise<DneskaiAudioTrack[]> {
   const names = rows.map((row) => objectFromPath(owner, row.storage_path));
   const wanted = names.filter((name): name is string => !!name);
   const signed = new Map<string, string>();
@@ -124,7 +137,7 @@ export async function createDneskaiAudioTrack(db: Database, owner: string, input
     source_url: input.sourceUrl, storage_path: `${DNESKAI_AUDIO_BUCKET}/${name}`, duration_ms: durationMs, mood: [...new Set(input.mood)], enabled: true,
   });
   if (error) return discard("audio-track-write-failed");
-  const track = (await listDneskaiAudioTracks(db, owner)).find((item) => item.id === input.uploadId);
+  const track = (await listDneskaiAudioTracks(db, owner, input.uploadId)).find((item) => item.id === input.uploadId);
   if (!track) throw new DneskaiAudioError("audio-track-write-failed");
   return track;
 }
@@ -151,9 +164,21 @@ export async function loadDneskaiAudioTrack(db: Database, owner: string, trackId
 /** The track rotation picks after `previousId` among the owner's enabled stored tracks, or null for an empty library. */
 export async function nextDneskaiAudioTrackId(db: Database, owner: string, previousId: string | null): Promise<string | null> {
   z.uuid().parse(owner);
-  const { data, error } = await db.from("marketing_audio_tracks").select("id,enabled,source").eq("user_id", owner).order("created_at", { ascending: true }).limit(200);
-  if (error || !data) throw new DneskaiAudioError("audio-library-unavailable");
-  // Rotation plays only files the renderer can bake in; Instagram library tracks need the Facebook Login path (C5).
-  const stored = (data as Array<{ id: string; enabled: boolean; source: string }>).filter((track) => track.source !== "instagram-library");
-  return nextDneskaiAudioTrack(stored, previousId)?.id ?? null;
+  const eligible = () => db.from("marketing_audio_tracks").select("id,created_at").eq("user_id", owner)
+    .eq("enabled", true).neq("source", "instagram-library").not("storage_path", "is", null);
+  // Read the predecessor separately, even if it was disabled after the last publication.
+  if (previousId && z.uuid().safeParse(previousId).success) {
+    const previous = await db.from("marketing_audio_tracks").select("id,created_at").eq("user_id", owner).eq("id", previousId).maybeSingle();
+    if (previous.error) throw new DneskaiAudioError("audio-library-unavailable");
+    const at = z.iso.datetime({ offset: true }).safeParse(previous.data?.created_at);
+    if (at.success) {
+      const next = await eligible().or(`created_at.gt.${at.data},and(created_at.eq.${at.data},id.gt.${previousId})`)
+        .order("created_at", { ascending: true }).order("id", { ascending: true }).limit(1).maybeSingle();
+      if (next.error) throw new DneskaiAudioError("audio-library-unavailable");
+      if (next.data) return next.data.id;
+    }
+  }
+  const first = await eligible().order("created_at", { ascending: true }).order("id", { ascending: true }).limit(1).maybeSingle();
+  if (first.error) throw new DneskaiAudioError("audio-library-unavailable");
+  return first.data?.id ?? null;
 }
