@@ -133,7 +133,7 @@ The project's display name and slug do not follow the repository name; change th
 
 ## 11. Instagram publishing for @dneskai (#121)
 
-**Verified 22 October 2026:** Production key and Instagram configuration are set; Sources verifies @dneskai successfully. Publishing activation requested by the owner is complete: both Production switches are true, the redeployment is Ready, and @dneskai is enabled. The owner explicitly accepted the five granted scopes (basic, messages, content publish, insights, comments), superseding the two-scope setup plan for this account. See [current evidence and resume steps](reports/dneskai-audit-2026-10/browser-setup-result.md). The steps below are the setup reference; do not recreate completed credentials or the app.
+**Verified 22 October 2026:** Production key and Instagram configuration are set, and the account panel verifies @dneskai. Both Production publishing switches are true. The account switch was on for the pilot, which published two posts on 22 October; it is off again since then (`marketing_accounts.enabled = false`), so nothing publishes until the owner turns it on in the `⋯` menu → Účet Instagram. The owner explicitly accepted the five granted scopes (basic, messages, content publish, insights, comments), superseding the two-scope setup plan for this account. See [current evidence and resume steps](reports/dneskai-audit-2026-10/browser-setup-result.md). The steps below are the setup reference; do not recreate completed credentials or the app.
 
 The code connects one Instagram professional account through the Instagram API with Instagram Login (host `graph.instagram.com`). The owner creates the account, the app and the token; nothing in this repository registers, buys or publishes. Publishing stays off throughout this setup: `MARKETING_PUBLISH_ENABLED`, `MARKETING_DNESKAI_PUBLISH_ENABLED` and the account's `enabled` column remain false until the pilot (#123).
 
@@ -158,7 +158,7 @@ The code connects one Instagram professional account through the Instagram API w
    | `MARKETING_APPROVED_ASSET_HOSTS` | The Supabase Storage host of the production project, `<project-ref>.supabase.co`. Meta downloads the signed JPEG URLs from it. |
 
 8. **Database.** Apply `supabase/migrations/20261021122220_marketing_account_tokens.sql` before the code that uses it is deployed. It adds `marketing_account_tokens`, which no API role can read directly; only service-role functions read or write the token, and the owner sees expiry, refresh time and scopes. Without the migration, every publish and reconciliation holds with `credential-store-unavailable` and the panel shows the account as unavailable.
-9. **Verify.** After the deploy, open the DNESKAi project, tab **Sources**, panel **Instagram account**, and press **Verify account**. The server reads `GET /<version>/me?fields=user_id,username,account_type` with the bootstrap token (or a stored token that expires later) and stores the professional `user_id`, the handle and the token. The expected result is *Verified*, *Publishing disabled* and a valid token with its expiry date. Verification allows five attempts per ten minutes.
+9. **Verify.** After the deploy, open the DNESKAi project, the `⋯` menu → **Instagram account** (Účet Instagram), and press **Verify account**. The server reads `GET /<version>/me?fields=user_id,username,account_type` with the bootstrap token (or a stored token that expires later) and stores the professional `user_id`, the handle and the token. The expected result is *Verified*, *Publishing disabled* and a valid token with its expiry date. Verification allows five attempts per ten minutes.
 
 ### Token lifetime
 
@@ -193,7 +193,7 @@ published):
    | `MARKETING_META_APP_ID`, `MARKETING_META_APP_SECRET` | The app's id and secret. Needed only to renew an expiring token through `fb_exchange_token`; without them the token step holds with `refresh-app-credentials-missing`. |
 
    `MARKETING_DNESKAI_INSTAGRAM_API_VERSION` and its verified-at date stay as they are.
-5. **Verify.** Zdroje → Účet → Ověřit účet. The server reads
+5. **Verify.** `⋯` → Účet Instagram → Ověřit účet. The server reads
    `GET graph.facebook.com/<version>/me/accounts?fields=id,name,instagram_business_account{id,username}` (or `/me`
    for a Page token), stores the Instagram account id of the Page linked to `@dneskai` with login mode `facebook`,
    and shows the Page name. The panel then reads *Připojení: Facebook Login (stránka)*. The publisher calls
@@ -203,7 +203,7 @@ published):
 `graph.facebook.com` with the linked Page's token, and sends the private reply through `POST /<PAGE_ID>/messages`.
 It needs `instagram_basic`, `instagram_manage_comments` and `pages_messaging` in the token's verified scopes; without
 them the watcher stops with `engagement-scopes-unverified`. The comment webhook then checks signatures with
-`MARKETING_META_APP_SECRET` (not the Instagram app secret), and **Zdroje → Účet → subscribe comments** subscribes the
+`MARKETING_META_APP_SECRET` (not the Instagram app secret), and **`⋯` → Účet Instagram → Odebírat komentáře** subscribes the
 Page's `/subscribed_apps` edge with `subscribed_fields=comments`.
 
 Rollback: set the mode back to `instagram` with the Instagram Login token and verify again.
@@ -223,17 +223,23 @@ Rollback: set the mode back to `instagram` with the Instagram Login token and ve
 - **Topics (náměty)** need `supabase/migrations/20261023100000_dneskai_topics.sql` and the server-only `DNESKAI_TOPICS_ENABLED=true`. Both are off by default; apply the migration with the other prepared ones ([migration guide](migration-guide.md#prepared-dneskai-topics-150-plan-a1)), then set the variable and redeploy. Until then `/api/marketing/dneskai/topics` answers 404.
 - **Scouting** needs the topics switch above and the server-only `DNESKAI_SCOUTING_ENABLED=true`; no migration of its own. The education feeds are free; the education Instagram profiles also need `MARKETING_DNESKAI_APIFY_ENABLED=true` and stay inside the existing Apify reservations ([education sources](dneskai-native-feeds.md#education-sources-for-scouting-151)).
 - **FACT or HYPE** needs scouting, migration `20261023100100_dneskai_topic_spend.sql` and the server-only `DNESKAI_FACT_OR_HYPE_ENABLED=true`. It also needs `MARKETING_DNESKAI_APIFY_ENABLED`, `MARKETING_DNESKAI_PAID_ENABLED`, `MARKETING_AI_CONSENT`, `APIFY_TOKEN` and `ANTHROPIC_API_KEY`. Optional: `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD` (default 0.50), `MARKETING_DNESKAI_REEL_ACTOR_ID` and `MARKETING_DNESKAI_REEL_BUILD` (default the pinned reel scraper), `MARKETING_DNESKAI_TOPIC_MODEL` (default `claude-haiku-5-5`; another model needs `MARKETING_DNESKAI_TOPIC_INPUT_USD_PER_MTOK` and `MARKETING_DNESKAI_TOPIC_OUTPUT_USD_PER_MTOK`).
-- **Titling** needs the topics switch, migration `20261023100100_dneskai_topic_spend.sql`, `MARKETING_AI_CONSENT`, `ANTHROPIC_API_KEY` and the server-only `DNESKAI_TITLING_ENABLED=true`. It uses the same `MARKETING_DNESKAI_TOPIC_MODEL` as FACT or HYPE. Turning it on stops the briefs step from building briefs on its own: the night's events wait in Náměty, and until the topic-to-brief bridge (A6) ships an approved topic does not become a post. "Generate now" on a waiting brief still works.
-- **Topic briefs** need the topics switch, migration `20261023100200_dneskai_topic_briefs.sql` and the server-only `DNESKAI_TOPIC_BRIEFS_ENABLED=true`. They use the existing generation consent, account, job limit and $1 ceiling; nothing new is paid for until generation runs.
+- **Titling** needs the topics switch, migration `20261023100100_dneskai_topic_spend.sql`, `MARKETING_AI_CONSENT`, `ANTHROPIC_API_KEY` and the server-only `DNESKAI_TITLING_ENABLED=true`. It uses the same `MARKETING_DNESKAI_TOPIC_MODEL` as FACT or HYPE. Turning it on stops the briefs step from building briefs on its own: the night's events wait in Náměty, and only `DNESKAI_TOPIC_BRIEFS_ENABLED` turns an approved topic into a post, so set both together. "Generate now" on a waiting brief still works.
+- **Topic briefs** need the topics switch, migration `20261023100200_dneskai_topic_briefs.sql` and the server-only `DNESKAI_TOPIC_BRIEFS_ENABLED=true`. They use the existing generation consent, account, job limit and $1 ceiling; nothing new is paid for until generation runs. A link-library or hand-added topic (#210) has its URL read through Jina Reader first, the same call link enrichment makes (only the URL goes out; `JINA_API_KEY` is optional).
 - **Daily mix** needs the topics switch, migration `20261023100300_dneskai_daily_mix.sql` and the server-only `DNESKAI_DAILY_MIX_ENABLED=true`. Until the owner saves a mix in Zdroje the default applies: 1 news post at 08:00 and 1 education post at 17:00.
+- **Editable sources** need migration `20261023110000_dneskai_sources_table.sql` and the server-only `DNESKAI_SOURCES_TABLE_ENABLED=true`. The first visit to Zdroje then copies the registry file into `marketing_dneskai_sources` once; from then on the nightly collection and the scouting step read those rows. Off, Zdroje shows the registry file read-only.
+- **Owner recovery** (re-review a held report, move a lapsed brief to the next free slot) needs `20261022141512_dneskai_owner_recovery.sql` and `DNESKAI_OWNER_RECOVERY_ENABLED=true`. **Release a lapsed brief's reports** needs `20261022021835` and `20261022141613` and `DNESKAI_LAPSED_RELEASE_ENABLED=true`. Both actions live in the `⋯` menu → Obnova témat.
+- **Richer evidence** (article text and picture descriptions in briefs, brief/2) needs `20261022020702` and `20261022020759` and `DNESKAI_RICH_EVIDENCE_ENABLED=true`.
 
-### DNESKAi Reels (#163)
+### DNESKAi Reels and music (#163–#168)
 
-- The Reel renderer needs `supabase/migrations/20261023130000_dneskai_reel_bucket.sql` (the private `marketing-reels` bucket) and the server-only `MARKETING_DNESKAI_REELS_ENABLED=true`. Both are off by default. Until the switch is on, `/api/marketing/dneskai/render-reel` answers 404. The encoder is the `ffmpeg-static` binary that `npm ci` downloads during the Vercel build; there is nothing to install. Decision and measurements: [source media](dneskai-source-media.md#reels-slideshow-video-163).
+- Reels need `supabase/migrations/20261023130000_dneskai_reel_bucket.sql` (the private `marketing-reels` bucket), `20261023130100_dneskai_audio_tracks.sql` (`marketing_audio_tracks` and the private `marketing-audio` bucket) and the server-only `MARKETING_DNESKAI_REELS_ENABLED=true`. All are off by default. Until the switch is on, `/api/marketing/dneskai/render-reel` and `/api/marketing/dneskai/audio` answer 404 and Zdroje → Hudba, the Lab's Formát switch and its music picker stay hidden. With it on, education posts generate as Reels and the publishing step renders a Reel's MP4 up to 45 minutes before its slot ([scheduling](marketing-scheduling.md#reels-165)).
+- **Music library.** Upload instrumental tracks in Zdroje → Hudba with their source page and licence note: Meta Sound Collection or Pixabay Music only (Astra's #182). A Reel plays its library track inside the MP4. The API cannot add music to a carousel, so Příspěvky suggests adding it in the Instagram app for seven days after a carousel publishes (#168).
+- **Trending sounds** need Facebook Login (below), `20261023130200_dneskai_audio_trends.sql` and `DNESKAI_AUDIO_TRENDS_ENABLED=true`. The daily tick then stores Meta's trending sounds (`GET /ig_audio`) in `marketing_audio_trends`; Zdroje → Hudba → Trendy zvuky and the Lab picker offer them, ranked with the sounds the tracked education profiles used in their reels, and a Reel with one publishes a silent MP4 with `audio_configuration`.
+- **TikTok CZ chart** needs the trending sounds above, `20261023130300_dneskai_tiktok_spend.sql`, `DNESKAI_TIKTOK_TRENDS_ENABLED=true`, `MARKETING_DNESKAI_APIFY_ENABLED`, `MARKETING_DNESKAI_PAID_ENABLED`, `MARKETING_AI_CONSENT` and `APIFY_TOKEN`. One Apify `clockworks/tiktok-trends-scraper` run a day, at most $0.10 (`MARKETING_DNESKAI_TIKTOK_DAILY_USD` may lower it), marks the Meta sounds that also rise on TikTok CZ. The owner has not decided on this spend yet. The encoder is the `ffmpeg-static` binary that `npm ci` downloads during the Vercel build; there is nothing to install. Decision and measurements: [source media](dneskai-source-media.md#reels-slideshow-video-163).
 
 ### Comment keyword and DM message (#157, #159)
 
-- A DNESKAi post may carry an `engagement`: a one-word keyword, the DM text sent to whoever comments it, and an optional public reply under the comment. It lives on the revision, so approval covers the exact words. Nothing sends it yet; the comment watcher comes later and has its own switch.
+- A DNESKAi post may carry an `engagement`: a one-word keyword, the DM text sent to whoever comments it, and an optional public reply under the comment. It lives on the revision, so approval covers the exact words. The comment watcher sends it once `DNESKAI_ENGAGEMENT_ENABLED` is on (next section).
 - Editing it needs only the server-only `DNESKAI_ENGAGEMENT_EDITOR_ENABLED=true` and a redeploy; no migration. Off, the edit route answers `engagement-disabled` to an `engagement` field and the Lab shows no editor.
 
 ### Replies to keyword comments (#160)
@@ -241,7 +247,7 @@ Rollback: set the mode back to `instagram` with the Instagram Login token and ve
 - Apply `20261023120000_dneskai_comment_replies.sql` with the other prepared migrations, then set the server-only `DNESKAI_ENGAGEMENT_ENABLED=true` and redeploy.
 - The stored Instagram Login token needs `instagram_business_manage_comments` next to `instagram_business_basic`. List it in `MARKETING_DNESKAI_INSTAGRAM_VERIFIED_SCOPES` and verify the account again, or the reply switch answers `engagement-scopes-unverified`.
 - In the Instagram app, allow connected tools to message (Settings, Messages and story replies, Message controls, Connected tools, Allow access to messages). Without it Instagram refuses the first reply with code 10 and the account panel shows the block.
-- Turn the reply switch on in DNESKAi, Zdroje, Instagram account. Polling needs no webhook.
+- Turn the reply switch on in DNESKAi, `⋯` menu, Účet Instagram. Polling needs no webhook.
 
 ### Instagram comment webhook (#161)
 
@@ -249,7 +255,7 @@ The webhook makes replies leave within seconds instead of at the next five-minut
 
 1. In Vercel Production set two server-only values and redeploy: `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, a random string of at least 32 characters you choose, and `MARKETING_INSTAGRAM_APP_SECRET`, the Instagram app secret from the Meta app (App settings, Basic, or Instagram, API setup with Instagram login). `DNESKAI_ENGAGEMENT_ENABLED=true` must already be set; until all three are set the route answers 404.
 2. In the Meta app (Instagram, API setup with Instagram login, Webhooks) set the callback URL `https://own-dashboard-tau.vercel.app/api/webhooks/instagram` and the same verify token, then verify and save. Subscribe the field `comments`.
-3. In DNESKAi, Zdroje, Instagram account, press „Odebírat komentáře“ (`POST /<IG_ID>/subscribed_apps?subscribed_fields=comments`). The panel then says Instagram sends comments right away.
+3. In DNESKAi, `⋯` menu, Účet Instagram, press „Odebírat komentáře“ (`POST /<IG_ID>/subscribed_apps?subscribed_fields=comments`). The panel then says Instagram sends comments right away.
 4. Allow access to messages for connected tools in the Instagram app (see above).
 5. While the Meta app is in Development mode, Meta may deliver nothing for the account. If a test comment does not arrive within a minute, the app needs to be switched to Live. Meta may also ask for Advanced Access to `comments`; applying for it is an app review, so decide that yourself.
 
@@ -269,4 +275,4 @@ opens the devShark and knowledge operations of `/api/marketing/n8n`).
 
 ### Story selection v2 switch (owner decisions 11-13)
 
-`DNESKAI_SELECTION_V2_ENABLED` is a server-only Vercel variable, off by default. Set it to `true` in Production and redeploy only after migrations `20261022180000_dneskai_relevance_first_selection.sql` and `20261022180100_dneskai_held_requeue.sql` are applied ([migration guide](migration-guide.md#prepared-story-selection-v2-owner-decisions-11-13)). With it on, the nightly collection gives reports that Jev held in the last 48 hours one more Jev review (at most 16 a night, within the existing $0.25 daily collection ceiling), and the Sources tab explains an unpicked event by the relevance-first rule. The rule itself changes when `20261022180000` is applied, with or without the switch. Turning it off stops the re-queue; reports already re-queued keep their record and never get a third review.
+`DNESKAI_SELECTION_V2_ENABLED` is a server-only Vercel variable, off by default. Set it to `true` in Production and redeploy only after migrations `20261022180000_dneskai_relevance_first_selection.sql` and `20261022180100_dneskai_held_requeue.sql` are applied ([migration guide](migration-guide.md#prepared-story-selection-v2-owner-decisions-11-13)). With it on, the nightly collection gives reports that Jev held in the last 48 hours one more Jev review (at most 16 a night, within the existing $0.25 daily collection ceiling), and the Topic recovery panel (`⋯` → Obnova témat) explains an unpicked event by the relevance-first rule. The rule itself changes when `20261022180000` is applied, with or without the switch. Turning it off stops the re-queue; reports already re-queued keep their record and never get a third review.
