@@ -84,10 +84,11 @@ for (const width of [360, 430, 768, 1024, 1440, 1728]) test(`implemented destina
   await page.setViewportSize({ width, height: 1000 });
   await gotoPreview(page, { lang, theme });
   const errors = watchConsole(page);
-  for (const tab of ['work', 'settings', 'accounts', 'transactions', 'categories', 'subscriptions', 'tasks', 'calendar', 'goals', 'dates', 'notes', 'prompts', 'tools', 'links', 'ig-tips'] as const) {
+  for (const tab of ['home', 'work', 'marketing', 'workflows', 'projects', 'competition', 'opportunities', 'clients', 'career', 'invoices', 'money', 'settings', 'accounts', 'transactions', 'categories', 'subscriptions', 'tasks', 'calendar', 'goals', 'dates', 'notes', 'prompts', 'tools', 'links', 'ig-tips'] as const) {
     await open(page, nav[lang].sections[tab]);
     await expect(page.locator('.mac-toolbar h1')).toHaveText(nav[lang].sections[tab]);
     await expect(page.locator('h1:visible')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(theme === 'dark');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${tab} at ${width}`).toBe(true);
     if (tab === 'settings') {
       const box = await page.locator('.settings-frame').boundingBox();

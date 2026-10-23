@@ -69,3 +69,6 @@ Browser verification, reviewed screenshots and the final complete release comman
 ### Browser-driven refinements
 
 The first optimized-build browser pass confirmed the new guard, direct local tabs, all six reflow widths, one visible title and Settings axe checks. Screenshot review tightened mobile Settings anchors into one scrolling row, kept short preference controls beside labels, changed sparse prompt categories to masonry and restored visible touch actions. Finance filter defaults now name kinds/accounts explicitly. The first Lab pass found a real light-theme success-badge contrast failure (4.44:1 on the inset canvas); the semantic success text token is darkened before rerunning axe. Tests that assumed exactly two Lab dates now scope generated-job checks to their actual day and choose an enabled day-approval button. Pending decisions outside the original window remain reachable.
+
+
+Sparse client rows now show related-record counts inline, omit zero-count blocks and keep a single meaningful empty relationship label. Their layout stacks before the constrained tablet content area. The responsive matrix covers all 25 visible destinations; hidden Inbox/References policy is retained.
