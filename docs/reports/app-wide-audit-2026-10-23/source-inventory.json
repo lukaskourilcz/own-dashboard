@@ -51,7 +51,8 @@
       "path": "src/app/api/bank/disconnect/route.ts",
       "lines": 73,
       "sha256": "a8b9e467fe0329ab8730a312605729cb43ccdb4917ed00fe89200bf9b29a33f5",
-      "status": "pending"
+      "status": "source reviewed; targeted disconnect checks passed; final release checks pending",
+      "reviewedSha256": "b08904733bc082ffe8236b833aa30ee4180511bc1460187410cac11cd0dc1e35"
     },
     {
       "path": "src/app/api/bank/institutions/route.ts",
@@ -682,14 +683,15 @@
       "path": "src/components/finances/bank-sync.tsx",
       "lines": 804,
       "sha256": "3d49d9772902f162da30753d81c98c759f7457b0e5c496d9ed064e966562275f",
-      "status": "pending"
+      "status": "source reviewed; provider connection/token-dialog follow-up and final release checks pending",
+      "reviewedSha256": "3b08b29797cc34bceae6434f349f7057fe27e7081c8d6c76be9bc02517d6262a"
     },
     {
       "path": "src/components/finances/payment-matches.tsx",
       "lines": 274,
       "sha256": "a1e2e5b5c188524c41d3ec79e8f3d7c1cdb3bd9655156a25967104ea037bc617",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "4c2ce3597068feac2501b63f1a407e52c3c4981bbb9c96068935ef281540fa75"
+      "reviewedSha256": "9b9febd343abaffb28b1c7bbd90e8d8d64819cb6145e603fdc5daffb80bfa93d"
     },
     {
       "path": "src/components/finances/transaction-rules.tsx",
@@ -3311,7 +3313,7 @@
       "lines": 542,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "443977cfac4b90c7c6360f378dfe49b43a65fbeb9bddc70044462f59ad089172"
+      "reviewedSha256": "39f1c1da5e6e8b921686ba1380fe6073cebf215289ad929b5b4baf1ab4e76895"
     },
     {
       "path": "src/lib/queries/keys.ts",

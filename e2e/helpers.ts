@@ -59,6 +59,7 @@ export async function stubBackend(page: Page): Promise<void> {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
+      ...(url.includes("/rest/v1/bank_connections") ? { headers: { "access-control-expose-headers": "content-range", "content-range": "*/0" } } : {}),
       body: url.includes("/rpc/transaction_rule_context") ? JSON.stringify({ owner_id: "u1", rules: [], project_ids: [], subscription_ids: [] }) : isCurrentUser
         ? JSON.stringify({ id: "u1", aud: "authenticated", role: "authenticated", email: "jan.novak@example.com", user_metadata: {}, created_at: "2025-01-01T00:00:00Z" })
         : isAuth ? "{}" : "[]",

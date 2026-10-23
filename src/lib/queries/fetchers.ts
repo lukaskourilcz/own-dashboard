@@ -140,12 +140,12 @@ export async function fetchTransactions(): Promise<Transaction[]> {
 
 export async function fetchBankConnections(): Promise<BankConnection[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("bank_connections")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as BankConnection[];
+  const { data, count, error } = await supabase.from("bank_connections").select("*", { count: "exact" })
+    .order("created_at", { ascending: true }).limit(51).retry(false).abortSignal(AbortSignal.timeout(15000));
+  if (error || !Array.isArray(data) || count !== data.length || data.length > 50
+    || data.some(row => !row || typeof row.id !== "string" || typeof row.user_id !== "string")
+    || new Set(data.map(row => row.id)).size !== data.length) throw new Error("Bank connections unavailable");
+  return data as BankConnection[];
 }
 
 export async function fetchCategoryRules(): Promise<CategoryRule[]> {

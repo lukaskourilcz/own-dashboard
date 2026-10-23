@@ -141,7 +141,7 @@ export function PaymentMatches({
   );
 
   return (
-    <Card className="lg:col-span-3">
+    <Card className="min-w-0" data-testid="payment-matches">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div>
           <CardTitle className="inline-flex items-center gap-1.5">

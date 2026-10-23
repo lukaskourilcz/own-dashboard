@@ -98,6 +98,12 @@ type BankStrings = {
   linkErrToast: string;
   disconnect: string;
   disconnectConfirm: string;
+  disconnectErr: string;
+  revokeUnconfirmed: string;
+  connectionsLoadErr: string;
+  providersLoadErr: string;
+  balanceUnavailable: string;
+  lastSyncFailed: string;
   lastSynced: (date: string) => string;
   neverSynced: string;
   statusLinked: string;
@@ -256,8 +262,8 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categorySubscriptions: "Subscriptions",
     monthFormat: "MMM",
     bank: {
-      title: "Statement import and bank sync",
-      subtitle: "Import a CSV statement or refresh an existing bank connection.",
+      title: "Bank connections",
+      subtitle: "Read-only sync and CSV statements.",
       connect: "Connect bank",
       connecting: "Connecting…",
       pickBank: "Choose your bank",
@@ -277,6 +283,12 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       linkedToast: "Bank linked — syncing…",
       linkErrToast: "Bank connection failed.",
       disconnect: "Disconnect",
+      lastSyncFailed: "The last sync was not confirmed.",
+      disconnectErr: "The disconnect could not be confirmed. Refresh and try again.",
+      revokeUnconfirmed: "Disconnected here. Bank access could not be revoked; remove it in your bank's connected apps.",
+      connectionsLoadErr: "Couldn't load your bank connections.",
+      providersLoadErr: "Couldn't check available bank providers.",
+      balanceUnavailable: "The bank did not report an opening balance. Try syncing again when it is available.",
       disconnectConfirm:
         "Disconnect this bank? Transactions already imported will stay.",
       lastSynced: (date) => `synced ${date}`,
@@ -287,7 +299,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       statusError: "Error",
       importTitle: "Import from CSV",
       csvHint:
-        "Export a statement from internet banking (CSV) and drop it here.",
+        "Choose a CSV statement exported from internet banking.",
       chooseFile: "Choose CSV file",
       csvReady: (rows, skipped) =>
         `${rows} row${rows === 1 ? "" : "s"} ready${
@@ -485,8 +497,8 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categorySubscriptions: "Předplatná",
     monthFormat: "LLL",
     bank: {
-      title: "Import výpisů a bankovní synchronizace",
-      subtitle: "Importuj CSV výpis nebo obnov existující bankovní připojení.",
+      title: "Bankovní připojení",
+      subtitle: "Synchronizace pro čtení a výpisy CSV.",
       connect: "Připojit banku",
       connecting: "Připojuji…",
       pickBank: "Vyber svou banku",
@@ -509,6 +521,12 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       linkedToast: "Banka propojena — synchronizuji…",
       linkErrToast: "Napojení banky selhalo.",
       disconnect: "Odpojit",
+      lastSyncFailed: "Poslední synchronizace nebyla potvrzena.",
+      disconnectErr: "Odpojení se nepodařilo potvrdit. Obnov seznam a zkus to znovu.",
+      revokeUnconfirmed: "Zde odpojeno. Odebrání přístupu v bance se nepodařilo potvrdit; odeber ho v připojených aplikacích své banky.",
+      connectionsLoadErr: "Nepodařilo se načíst tvá bankovní připojení.",
+      providersLoadErr: "Nepodařilo se ověřit dostupná bankovní napojení.",
+      balanceUnavailable: "Banka neposkytla počáteční zůstatek. Až bude dostupný, zkus synchronizaci znovu.",
       disconnectConfirm:
         "Odpojit tuto banku? Už naimportované transakce zůstanou.",
       lastSynced: (date) => `synchronizováno ${date}`,
@@ -519,7 +537,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       statusError: "Chyba",
       importTitle: "Import z CSV",
       csvHint:
-        "Exportuj výpis z internetového bankovnictví (CSV) a nahraj ho sem.",
+        "Vyber výpis CSV exportovaný z internetového bankovnictví.",
       chooseFile: "Vybrat CSV soubor",
       csvReady: (rows, skipped) => {
         const r =

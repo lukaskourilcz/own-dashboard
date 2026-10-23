@@ -294,3 +294,10 @@ English, 1280 px, light:
 Czech, 360 px, dark (the fixed phone navigation crosses the element capture):
 
 ![Topics list in Czech at 360 px](screenshots/dneskai-topics-cs-360.png)
+
+
+## App-wide Finance controls — 24 October 2026
+
+The ongoing app-wide review checked Bank connections beside payment matching at 360, 430, 768, 1024, 1440 and 1728 px. Desktop peers have equal widths and aligned top edges, without implicit grid columns. Bank actions remain visible, named per connection and 44 px on mobile. Headings/copy are shorter, and the CSV instruction describes file selection rather than an unsupported drop action.
+
+Sixteen EN/CS desktop/mobile browser cases pass across bank failure/retry, pending actions, disconnect failure/partial revocation, CSV partial import recovery and payment selection recovery. Eight bank cases pass again after the final copy change. The failure-retry case uses a dark context; action/reflow/axe checks use light. All requests/records are isolated fixtures. This is targeted evidence; the final whole-app matrix and release verification remain pending.

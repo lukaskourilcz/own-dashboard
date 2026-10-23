@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { importTransactionBatch } from "@/lib/transaction-import";
@@ -66,15 +67,19 @@ export function BankSync({
   const qc = useQueryClient();
   const toast = useToast();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const confirm = useConfirmation();
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const connectionsQuery = useQuery({
     queryKey: qk.bankConnections,
     queryFn: fetchBankConnections,
+    retry: false,
   });
   const connections = connectionsQuery.data ?? [];
   const providersQuery = useQuery({
     queryKey: ["bank", "providers"],
     queryFn: fetchBankProviders,
+    retry: false,
   });
   const canConnect = (providersQuery.data ?? []).some(provider => provider.configured || provider.connected);
 
@@ -93,28 +98,41 @@ export function BankSync({
           : {}),
       });
       if (!res.ok) throw new Error(String(res.status));
-      return (await res.json()) as { inserted: number };
+      const result = await res.json();
+      if (!result || !Number.isSafeInteger(result.inserted) || result.inserted < 0) throw new Error("Invalid sync receipt");
+      return result as { inserted: number };
     },
-    onSuccess: ({ inserted }) => {
-      toast.ok(inserted > 0 ? t.finances.bank.syncDone(inserted) : t.finances.bank.syncNothing);
-      void qc.invalidateQueries({ queryKey: qk.transactions });
-      void qc.invalidateQueries({ queryKey: qk.accounts });
-      void qc.invalidateQueries({ queryKey: qk.bankConnections });
-    },
-    onError: () => toast.err(t.finances.bank.syncErr),
+    onMutate: () => setActionError(null),
+    onSuccess: ({ inserted }) => toast.ok(inserted > 0 ? t.finances.bank.syncDone(inserted) : t.finances.bank.syncNothing),
+    onError: () => setActionError(t.finances.bank.syncErr),
+    onSettled: () => Promise.all([
+      qc.invalidateQueries({ queryKey: qk.transactions }), qc.invalidateQueries({ queryKey: qk.accounts }),
+      qc.invalidateQueries({ queryKey: qk.bankConnections }),
+    ]),
   });
 
   const disconnectMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch("/api/bank/disconnect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }),
       });
       if (!res.ok) throw new Error(String(res.status));
+      const result = await res.json();
+      if (result?.ok !== true || typeof result.upstreamRevoked !== "boolean") throw new Error("Invalid disconnect receipt");
+      return result as { upstreamRevoked: boolean };
     },
+    onMutate: () => setActionError(null),
+    onSuccess: result => { if (!result.upstreamRevoked) setActionError(t.finances.bank.revokeUnconfirmed); },
+    onError: () => setActionError(t.finances.bank.disconnectErr),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.bankConnections }),
   });
+  const busy = syncMutation.isPending || disconnectMutation.isPending;
+  async function disconnect(id: string) {
+    if (busy) return;
+    const accepted = await confirm({ title: t.finances.bank.disconnect, description: t.finances.bank.disconnectConfirm,
+      confirmLabel: t.finances.bank.disconnect, cancelLabel: t.common.cancel, destructive: true });
+    if (accepted && !busy) disconnectMutation.mutate(id);
+  }
 
   // Handle the return trip from the bank consent screen (?bank=linked|error).
   const handledReturn = useRef(false);
@@ -141,9 +159,9 @@ export function BankSync({
   const syncingAll = syncMutation.isPending && syncMutation.variables === undefined;
 
   return (
-    <Card className="lg:col-span-3">
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div>
+    <Card className="min-w-0" data-testid="bank-sync">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0 flex-1 basis-40">
           <CardTitle className="inline-flex items-center gap-1.5">
             <Landmark className="h-3 w-3" /> {t.finances.bank.title}
           </CardTitle>
@@ -151,13 +169,13 @@ export function BankSync({
             {t.finances.bank.subtitle}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           {connections.length > 0 && (
             <Button
               size="sm"
               variant="outline"
               onClick={() => syncMutation.mutate(undefined)}
-              disabled={syncMutation.isPending}
+              disabled={busy || !connectionsQuery.isSuccess}
             >
               <RefreshCw
                 className={cn("h-3.5 w-3.5", syncingAll && "animate-spin")}
@@ -165,13 +183,20 @@ export function BankSync({
               {syncingAll ? t.finances.bank.syncing : t.finances.bank.syncNow}
             </Button>
           )}
-          {canConnect && <Button size="sm" onClick={() => setPickerOpen(true)}>
+          {canConnect && <Button size="sm" disabled={busy || !providersQuery.isSuccess} onClick={() => setPickerOpen(true)}>
             <Plus className="h-3.5 w-3.5" />
             {t.finances.bank.connect}
           </Button>}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {actionError && <p role="alert" className="text-xs text-destructive">{actionError}</p>}
+        {connectionsQuery.isError && <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-destructive">
+          <p>{t.finances.bank.connectionsLoadErr}</p><Button size="sm" variant="outline" disabled={connectionsQuery.isFetching || busy} onClick={() => void connectionsQuery.refetch()}>{t.common.retry}</Button>
+        </div>}
+        {providersQuery.isError && <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-destructive">
+          <p>{t.finances.bank.providersLoadErr}</p><Button size="sm" variant="outline" disabled={providersQuery.isFetching || busy} onClick={() => void providersQuery.refetch()}>{t.common.retry}</Button>
+        </div>}
         {connections.length > 0 && (
           <ul className="-mx-2 divide-y divide-border">
             {connections.map((c) => (
@@ -182,11 +207,9 @@ export function BankSync({
                 syncing={
                   syncMutation.isPending && syncMutation.variables === c.id
                 }
-                onDisconnect={() => {
-                  if (window.confirm(t.finances.bank.disconnectConfirm))
-                    disconnectMutation.mutate(c.id);
-                }}
-                disconnecting={disconnectMutation.isPending}
+                onDisconnect={() => void disconnect(c.id)}
+                disabled={busy || !connectionsQuery.isSuccess}
+                disconnecting={disconnectMutation.isPending && disconnectMutation.variables === c.id}
               />
             ))}
           </ul>
@@ -209,12 +232,14 @@ function ConnectionRow({
   onSync,
   syncing,
   onDisconnect,
+  disabled,
   disconnecting,
 }: {
   conn: BankConnection;
   onSync: () => void;
   syncing: boolean;
   onDisconnect: () => void;
+  disabled: boolean;
   disconnecting: boolean;
 }) {
   const t = useDict();
@@ -235,15 +260,15 @@ function ConnectionRow({
   // Only ever rendered from a value the provider actually stated; a provider
   // with no expiry (a Fio token) simply shows nothing here.
   const expiresOn = conn.consent_expires_at?.slice(0, 10) ?? null;
+  const bankName = conn.institution_name ?? conn.institution_id ?? conn.provider;
   return (
-    <li className="group flex items-center gap-3 px-2 py-2.5">
+    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 px-2 py-2.5">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-muted text-foreground-muted">
         <Building2 className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {conn.institution_name ?? conn.institution_id ?? conn.provider}
-        </p>
+        <p className="truncate text-sm font-medium" title={bankName}>{bankName}</p>
+        <span className={cn("inline-block rounded px-1.5 text-[10px] font-medium", tone)}>{statusLabel}</span>
         <p className="text-[11px] text-foreground-subtle tabular">
           {conn.last_synced_at
             ? t.finances.bank.lastSynced(conn.last_synced_at.slice(0, 10))
@@ -255,19 +280,16 @@ function ConnectionRow({
             {t.finances.bank.consentExpired}
           </p>
         ) : conn.last_error ? (
-          <p className="truncate text-[11px] text-destructive">{conn.last_error}</p>
+          <p className="text-[11px] text-destructive">{conn.last_error === "bank-balance-unavailable" ? t.finances.bank.balanceUnavailable : t.finances.bank.lastSyncFailed}</p>
         ) : null}
       </div>
-      <span className={cn("shrink-0 rounded-full px-2 py-[3px] text-[10px] font-medium", tone)}>
-        {statusLabel}
-      </span>
       <Tooltip content={t.finances.bank.syncThis}>
         <Button
           size="icon-sm"
           variant="ghost"
           onClick={onSync}
-          disabled={syncing}
-          aria-label={t.finances.bank.syncThis}
+          disabled={disabled}
+          aria-label={`${t.finances.bank.syncThis}: ${bankName}`}
         >
           <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
         </Button>
@@ -277,11 +299,11 @@ function ConnectionRow({
           size="icon-sm"
           variant="ghost"
           onClick={onDisconnect}
-          disabled={disconnecting}
-          aria-label={t.finances.bank.disconnect}
-          className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          disabled={disabled}
+          aria-label={`${t.finances.bank.disconnect}: ${bankName}`}
+          aria-busy={disconnecting}
         >
-          <Unlink className="h-3.5 w-3.5 text-destructive" />
+          {disconnecting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Unlink className="h-3.5 w-3.5 text-destructive" />}
         </Button>
       </Tooltip>
     </li>
