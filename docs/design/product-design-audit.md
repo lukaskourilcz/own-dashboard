@@ -1,5 +1,7 @@
 # OwnDashboard product design audit
 
+Latest companion review: [23 October DNESKAi code and whole-app UX audit](../reports/dneskai-code-ux-audit-2026-10-23/README.md), including authentic current screenshots and proposed component treatments. Its implementation plan is review-only against baseline `d6f60c7`.
+
 Status: authoritative baseline for the July 2026 design overhaul. Repository code remains the source of truth for behavior.
 
 > Note (2026-07-29, `5d32e6b`): Agents and every model-backed AI feature were removed. The Agents sentence under Product and audience and the AI mentions below are historical.

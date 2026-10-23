@@ -1,0 +1,19 @@
+# Claude kickoff: implement the DNESKAi and application UX review
+
+Work in `lukaskourilcz/own-dashboard`. Read AGENTS.md and CLAUDE.md, then the focused project skills and the relevant guides under `node_modules/next/dist/docs/` before writing framework code. Search before creating; preserve the catch-all persistent shell, route-scoped React Query loading, own-only Supabase RLS, static FX, Czech invoice correctness, AI consent/evidence boundaries, EN/CS parity and the retired personal scope. Tugedr is an opportunity source. Keep project communications scoped and subscription renewal dates/classification explicit.
+
+Read the complete audit folder `docs/reports/dneskai-code-ux-audit-2026-10-23/`: start with README.md, code-review.md, ux-audit.md and validation.md, then open index.html for the visual treatments and consult the recorded evidence. The audit is on `codex/dneskai-code-ux-audit-20261023` if it has not yet merged. Its baseline is `d6f60c7271c8078713fe2f56d63bc71fe10a5692`; reconcile later changes before treating a finding as still current. Inventory scanning and sampled browser coverage do not mean every dialog or Production state passed.
+
+Implement the five batches in the audit's order, with meaningful commits and a reviewable PR for each batch:
+
+1. Protect unsaved Lab work on tab/project/shell/history exits (C01), then fix pending-decision and brand filtering before limits (C02/C03), complete owner-scoped engagement aggregates (C04), duplicate audio field IDs (C05) and unchanged-preview retry (C06). Address the audio rotation boundary C07 when changing that flow. The four audit probes intentionally pass while their defects exist: convert them into desired-behavior regressions rather than deleting the evidence silently.
+2. Establish one title owner, consistent button/input/select/segmented variants, bounded centered form widths and focus restoration. Preserve 44 px mobile hit areas and a coherent heading outline.
+3. Reorganise DNESKAi's topic inbox and selected-post review layout; give Sources, Daily mix and Music direct access. Keep exact saved pixels/content hashes as the approval surface and preserve publishing/reconciliation safeguards.
+4. Remove the stretched Work attention panel, center compact Settings forms, make finance destinations open on their records, and apply the planning/library/card improvements documented per destination.
+5. Measure list payload, private thumbnail transfer and database query plans before changing indexes or cache behavior. Complete both languages/themes, all six widths, keyboard/axe/screen-reader checks, non-happy states and the A4 invoice regression before claiming release readiness.
+
+Use authentic `/dev-preview` UI and real fixtures in before/after evidence. Proposed layouts in the audit are design directions, not already implemented screens. Keep unrelated user changes intact and avoid broad rewrites.
+
+For any remaining live-account handoff work, first read docs/astra-handoff.md, NEEDED.md and the bodies/comments of issues #178–#185. The first Reel was published through Instagram's native interface: https://www.instagram.com/dneskai/reel/De1iVdTpiTP/. That proves the native publication route, not OwnDashboard's approval/render/scheduler/publisher flow. The report is docs/reports/dneskai-first-reel-2026-10-23.md. A DNESKAi Facebook Page/connection and a keyword-post test from an owner-named second account remain separate prerequisites; optional spend decisions remain in NEEDED.md. Do not create a duplicate of the first Reel or fabricate an application receipt. Keep all live secrets only in their Vercel fields; write “set” in docs and chat. Finish the code/UX work without making unrelated account, spend or publishing changes.
+
+After each batch, update the relevant audit finding, tests and product documentation with actual outcomes and remaining limits. Report what changed, what passed and what still needs the owner.

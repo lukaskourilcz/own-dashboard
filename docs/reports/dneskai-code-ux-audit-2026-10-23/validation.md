@@ -6,7 +6,7 @@
 
 - Focused DNESKAi suite: `npx vitest run --maxWorkers=4 tests/lib/dneskai*.test.ts tests/lib/marketing-dneskai*.test.ts tests/components/*dneskai*.test.tsx tests/audit/dneskai-review-baseline.test.tsx`. **108 files, 1087 tests passed**, 62.86 seconds. Includes unit, component and local database-contract tests; no live database migration or provider call. Four tests intentionally assert baseline defects C02–C05. The four probes were rerun after making their synthetic row chronology explicit; all passed.
 - `npx tsc --noEmit`: **passed**, exit 0.
-- `npm run lint`: **passed**, exit 0. A focused lint of the final artifact/probe files follows artifact completion; see the final verification result.
+- `npm run lint`: **passed**, exit 0. Final artifact/probe lint also passed with exit 0.
 - `node --check` on plan.js and plan-data.js: syntax checked. Local references, data IDs, component source paths, evidence files and report anchors checked by `verify-artifact.mjs`.
 - Source scan: 155 component files, 137 marketing libraries, 37 marketing routes and 49 related migrations. All paths appear in inventory.json. Component family/recommendation mapping appears in component-coverage.json.
 
@@ -19,7 +19,7 @@ Used the owner's Google Chrome extension through Cua. All application captures u
 - Width samples: DNESKAi 360/430/768/1024/1440/1728; additional main destinations at 360 and 1440. EN/light and CS/dark across selected views, with additional CS/light samples. No claim of a full cross-product matrix.
 - Reproduced unsaved headline loss by leaving and returning to the Lab, using fixture edits only. Opened Sources/mix/music, project tabs, command palette and mobile More. Exercised Career's fixture-only Check for new offers. No content was published by these tests.
 - Mobile More backward Tab wrapped to Close; Escape dismissed it but focus returned to BODY. Command palette Escape also returned focus to BODY. The report recommends opener restoration rather than claiming full keyboard compliance.
-- Plan interactions: switched visual treatments, toggled proposed width, opened/enlarged a screenshot, dismissed it with Escape and verified opener focus returned. Component search for DNESKAi returned 39 matching records; an unmatched destination search returned a clear zero-result state. At 360 px the plan's document width matched the viewport.
+- Plan interactions: switched visual treatments, toggled proposed width, opened/enlarged a screenshot, dismissed it with Escape and verified opener focus returned. Component search for DNESKAi returned 39 matching records; an unmatched destination search returned a clear zero-result state. All eight visual treatments had no broken images or document overflow at 1440 px; the evidence gallery returned 74 captures and its 430 px filter returned two. At 360 px the plan's document width matched the viewport. The generated code-review reading page was also opened and checked in Chrome.
 
 The initial local preview on 127.0.0.1 showed fit endpoint 403 responses and dev-only indicator overlays. A subsequent localhost preview with NEXT_E2E enabled showed settled fit feedback and the real fixture headline render. These local setup responses are not treated as Production defects. Some early captures include the PWA prompt or a chart mid-animation. The current UI images stay authentic; the HTML labels proposed structures separately. The example slide in the Lab proposal is a Chrome screenshot crop of the current fixture render.
 

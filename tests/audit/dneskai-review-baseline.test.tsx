@@ -40,7 +40,12 @@ describe('DNESKAi audit: observed baseline defects', () => {
     const old = { ...row(999, 'review'), created_at: '2026-09-01T08:00:00Z' };
     const control = await readDneskaiWorkspace(database({ marketing_revisions: [old] }), owner, now);
     expect(control.posts.map(p => p.id)).toContain(id(999));
-    const read = await readDneskaiWorkspace(database({ marketing_revisions: [...Array.from({ length: 150 }, (_, n) => row(n + 1)), old] }), owner, now);
+    const newer = Array.from({ length: 150 }, (_, n) => {
+      const at = new Date(now.getTime() - n * 6 * 3600_000).toISOString();
+      const item = row(n + 1);
+      return { ...item, created_at: at, revision: { ...(item.revision as Row), scheduledAt: at } };
+    });
+    const read = await readDneskaiWorkspace(database({ marketing_revisions: [...newer, old] }), owner, now);
     expect(read.unreadable).toBe(0);
     expect(read.posts.map(p => p.id)).not.toContain(id(999));
   });

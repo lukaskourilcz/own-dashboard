@@ -2,6 +2,10 @@
 
 For a one-page overview of the current app and every outside system it uses, read [the system map](docs/SYSTEM-MAP.md) first.
 
+## Current review plan
+
+The [23 October DNESKAi code and application UX audit](docs/reports/dneskai-code-ux-audit-2026-10-23/README.md) records seven code findings, sixteen UX recommendations and an [interactive local visual plan](docs/reports/dneskai-code-ux-audit-2026-10-23/index.html). It reviews baseline `d6f60c7`; its proposed layouts are not implemented product behavior. Start with C01 (unsaved editor exits), then correct bounded reads and apply the shared-component plan. The audit records its source/browser coverage and unrun checks explicitly.
+
 ## Product model
 
 OwnDashboard is an own-only professional operating system. The main entities form a connected graph:

@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Review update (2026-10-23): the [DNESKAi and application UX audit](../reports/dneskai-code-ux-audit-2026-10-23/README.md) adds current fixture screenshots, DOM measurements, code findings and a visual implementation plan against `d6f60c7`. Its [validation record](../reports/dneskai-code-ux-audit-2026-10-23/validation.md) distinguishes checks run from follow-up work. This was a review, not a new UI release or a full WCAG/A4 certification; the historical results below retain their original date.
+
 Date: 2026-07-27
 
 > Note (2026-07-29, commit `268062b`): the natural-language Quick Add control and its mobile fixed-position button were removed. The "mobile Quick Add clearance" checks and the "Quick Add control positioned above [safe-area navigation]" constraint referenced below no longer apply. The remainder of this report reflects the state on 2026-07-27.
