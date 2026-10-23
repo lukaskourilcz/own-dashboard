@@ -8,7 +8,7 @@ weekly reviews. The owner-authorized Marketing workspace alone can use Claude th
 
 ## Tech stack
 
-- **Next.js 16 (App Router) and TypeScript** — the authenticated shell and API routes
+- **Next.js 16.4.3 (App Router), React 19.2.4 and TypeScript** — the authenticated shell and API routes
 - **Tailwind CSS 4, Radix primitives, Recharts, BlockNote, dnd-kit** — UI, charts, notes editor, drag handles
 - **Supabase and TanStack Query** — Postgres, Auth, owner-only RLS, route-scoped loading
 - **Marketing** — a Supabase pg_cron tick that drives DNESKAi from collection to publishing, n8n Cloud for devShark and knowledge only, deterministic carousels (devShark from a Claude Design-derived layout, DNESKAi through the vendored Quorum carousel studio in `vendor/carousel-studio`), Reels encoded with `ffmpeg-static`, LangChain and redacted EU LangSmith diagnostics

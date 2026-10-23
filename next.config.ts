@@ -69,6 +69,19 @@ const sharpLibvips = "./node_modules/@img/sharp-libvips-*/lib/**/*";
 const nextConfig: NextConfig = {
   // Native bindings loaded through platform-suffixed specifiers no bundler can resolve.
   serverExternalPackages: ["sharp", "@resvg/resvg-js", "ffmpeg-static"],
+  // Marketing file reads use templates, vendored fonts/kits and generated
+  // temporary files. The compiler can conservatively trace the repository for
+  // dynamic paths; build/test/source files are not runtime assets. Keep the
+  // fixture-only dev-preview routes separate: they read public demo images.
+  outputFileTracingExcludes: {
+    "/api/marketing/**": [
+      "./docs/**/*", "./tests/**/*", "./e2e/**/*", "./src/**/*", "./services/**/*",
+      "./supabase/**/*", "./media/**/*", "./public/**/*", "./scripts/**/*",
+      "./.claude/**/*", "./.agents/**/*", "./.github/**/*", "./.vercel/**/*",
+      "./skill-observations/**/*", "./.env*", "./*.md", "./*.html",
+      "./tsconfig.tsbuildinfo", "./vitest.config.mts", "./playwright.config.ts", "./package-lock.json",
+    ],
+  },
   outputFileTracingIncludes: {
     "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],

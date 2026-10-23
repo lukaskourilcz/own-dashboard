@@ -37,7 +37,11 @@ test("a failed pin change cannot replace a successfully saved document", async (
   if (info.project.name === "mobile") await page.getByRole("button", { name: t.back, exact: true }).click();
   await page.getByRole("button", { name: /Release checklist/ }).click();
   if (info.project.name === "mobile") await page.getByRole("button", { name: t.back, exact: true }).click();
-  await page.getByRole("button", { name: /Confirmed document after pin request/ }).click();
+  // The failed optimistic pin moves the row between lists; wait for the old
+  // AnimatePresence row to finish leaving before selecting the retained one.
+  const retained = page.getByRole("button", { name: /Confirmed document after pin request/ });
+  await expect(retained).toHaveCount(1);
+  await retained.click();
   await expect(editor).toHaveText("Confirmed document after pin request");
 });
 

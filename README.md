@@ -29,7 +29,7 @@ Outside the owner-authorized marketing workflow (DNESKAi generation with Claude,
 
 | Layer | Implementation |
 | --- | --- |
-| Web | Modified Next.js `16.2.6` App Router, React `19.2`, strict TypeScript 5, Tailwind CSS 4, Motion |
+| Web | Modified Next.js `16.4.3` App Router, React `19.2`, strict TypeScript 5, Tailwind CSS 4, Motion |
 | Data/auth | Supabase Postgres and Auth via `@supabase/ssr`/`supabase-js`; explicit Data API grants and own-only RLS |
 | Client data | TanStack React Query 5 with centralized keys, route-scoped server seeds, lazy destination fetches, bounded stale times, invalidation, cancellation, and optimistic updates where reversible |
 | UI | Radix primitives, Lucide, Recharts, BlockNote, date-fns, QRCode |

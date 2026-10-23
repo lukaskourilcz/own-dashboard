@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 const routes = ['tick', 'revisions', 'jobs/[id]/execute', 'dneskai/media', 'n8n', 'offline-import', 'dneskai/render-reel', 'dneskai/audio'];
 
-async function check(addonPlatform: string, libraryPlatform: string, libraryName: string, omitLibrary = false) {
+async function check(addonPlatform: string, libraryPlatform: string, libraryName: string, omitLibrary = false, extraFiles: string[] = []) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'render-trace-check-'));
   try {
     await mkdir(path.join(root, 'scripts'));
@@ -17,6 +17,7 @@ async function check(addonPlatform: string, libraryPlatform: string, libraryName
       library,
       'vendor/carousel-studio/fonts/test.ttf',
       'node_modules/ffmpeg-static/ffmpeg',
+      ...extraFiles,
     ];
     for (const file of files) {
       if (omitLibrary && file === library) continue;
@@ -59,4 +60,13 @@ describe('native render trace checker platform boundaries', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('8 of 8 marketing routes');
   });
+});
+
+describe('render function package boundaries', () => {
+  it.each(['docs/report.md', 'tests/fixture.ts', 'src/private-source.ts', '.env.production', 'package-lock.json'])(
+    'refuses build-only material even when native assets are complete (%s)', async file => {
+      const result = await check('linux-x64', 'linux-x64', 'libvips-cpp.so.8.18.7', false, [file]);
+      expect(result.status).toBe(1); expect(result.stderr).toContain('build-only file in runtime package');
+    },
+  );
 });

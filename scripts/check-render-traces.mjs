@@ -68,6 +68,11 @@ function checkRoute(route) {
   const files = trace.files.map((file) => path.relative(root, path.resolve(path.dirname(tracePath), file)).split(path.sep).join('/'));
   const missingOnDisk = (file) => !existsSync(path.join(root, file));
   const problems = [];
+  const buildOnly = /^(?:(?:docs|tests|e2e|src|services|supabase|media|public|scripts|\.claude|\.agents|\.github|\.vercel|skill-observations)\/|\.env(?:\.|$)|[^/]+\.(?:md|html)$|(?:tsconfig\.tsbuildinfo|vitest\.config\.mts|playwright\.config\.ts|package-lock\.json)$)/;
+  for (const file of files) {
+    if (file.startsWith('../') || path.isAbsolute(file)) problems.push(`outside project: ${file}`);
+    else if (buildOnly.test(file)) problems.push(`build-only file in runtime package: ${file}`);
+  }
 
   const addons = files.filter((file) => addonPattern.test(file));
   const addonPlatforms = new Set(addons.map((file) => addonPattern.exec(file)[1]));
