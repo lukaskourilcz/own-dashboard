@@ -77,3 +77,19 @@ Lukáš publishes the first Reel himself and says when it is out.
 
 One comment per issue as above, and a short summary to Lukáš: what is done, what waits for him, and anything that
 did not match the issue text.
+
+## Verified browser progress — 23 October 2026
+
+This status supersedes the initial “every feature is off” and migration-waiting descriptions above. Lukáš explicitly authorised the agent to push migrations, use his signed-in EU LangSmith account, and perform the exact #184 cleanup. Secrets are omitted. Read the latest issue comments before continuing.
+
+- **Database / #178:** all 23 migrations through `20261023130300` applied successfully to Production (`gcctapykhrdyxikieemn`) using the Supabase CLI from main commit `30982f6cd19418f4bf9f155d0b8159309ee4fc98`. A second dry run reported up to date. All seven new public tables have RLS enabled; `marketing-reels` and `marketing-audio` buckets are private; scheduler-pruning cron exists. Do not push this batch again.
+- **#178:** the editor and all 12 routine phase-1 switches listed above are set in Production. Cleanup and the 12-switch batch were deployed together: `6xLiVF6oFxoht6VZYCyRz9nzTfGu`, Ready / Current, 23 October 12:09 CEST. Account reverified at 12:10; replies ON, publishing OFF. Fact-or-hype, TikTok, titling/topic briefs and audio trends remain off for the choices/dependencies above. Issue stays open.
+- **#184 CLOSED:** three named retired n8n credentials deleted; all 59 Preview variables scoped to `codex/marketing-automation` deleted; Production manual-run, manual-secret and collection-secret variables deleted. The two listed Production n8n webhook variables were already absent. No workflows, Supabase branches or ledgers deleted. Full names are in the issue comment.
+- **#185 CLOSED:** profile findings are in the issue; both candidate sources remain disabled.
+- **#180:** owner confirmed mobile message access is enabled. Account verification and replies are ready, but neither of the two recent published posts has a keyword: **no keyword post yet**. No test comment or DM sent. Needs a suitable published post and an owner-named second account.
+- **#183:** signed-in EU LangSmith workspace `Workspace 1`; created `dneskai-production` agent with a Local tracing environment. Base retention is 14 days (shortest offered). Scoped Service Key dialog is prepared but unsubmitted. No key generated, no LangSmith Vercel values set, tracing still off. Confirm the app’s `LANGSMITH_PROJECT` maps to the intended EU tracing project before enabling traces.
+- **#179:** Meta app remains Development/unpublished. Current Instagram API setup says webhook reception requires the app to be published, contrary to the earlier Development-mode expectation. Callback URL drafted only; verification token/app secret not installed, callback unverified, comments not subscribed. Resolve this requirement before claiming webhook readiness.
+- **#182:** library still empty. Meta Sound Collection requires owner acceptance of its Terms of Use. Pixabay alternative was researched; Download for Technology by AtlasAudio (1:12) was blocked by Chrome at `cdn.pixabay.com` (`ERR_BLOCKED_BY_CLIENT`) before saving a file. No protection bypass, track upload or Reel publication occurred. Source: https://pixabay.com/music/beats-technology-613340/ .
+- **#181:** waits for the first Reel with library music and an owner-named Facebook Page. No Facebook Login migration/token change performed.
+
+Remaining live Chrome tabs are prepared for EU LangSmith key creation, Meta webhook setup, music terms/download access, and the OwnDashboard account/library. New credential/access grants and binding terms require action-specific consent or an owner click; do not treat this status as that consent.
