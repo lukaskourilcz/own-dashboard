@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
+import { readTextPrefix } from "@/lib/bounded-text";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import {
-  deleteProviderSecret,
   hasProviderSecret,
-  writeProviderSecret,
 } from "@/lib/bank/credentials";
 import { isBankProviderId, type BankProviderId } from "@/lib/bank/provider";
-import { getProvider } from "@/lib/bank/registry";
 
 /**
  * The only path by which a per-user bank provider secret enters the system, and
@@ -46,8 +46,7 @@ export async function GET() {
       stored[provider] = await hasProviderSecret(admin, user.id, provider);
     }
   } catch {
-    // Without a service-role key nothing can be stored, so nothing is stored.
-    for (const provider of TOKEN_PROVIDERS) stored[provider] = false;
+    return NextResponse.json({ error: "Credential status unavailable." }, { status: 503 });
   }
 
   return NextResponse.json(
@@ -68,77 +67,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  let body: { provider?: string; token?: string };
+  let body: { provider: "fio"; token: string };
   try {
-    body = await request.json();
+    const prefix = await readTextPrefix(new Response(request.body), 4096);
+    if (prefix.truncated) return NextResponse.json({ error: "Invalid body." }, { status: 413 });
+    const parsed = z.object({ provider: z.literal("fio"), token: z.string().trim().min(16).max(512) }).strict().safeParse(JSON.parse(prefix.text));
+    if (!parsed.success) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
+    body = parsed.data;
+  } catch { return NextResponse.json({ error: "Invalid body." }, { status: 400 }); }
+  const limited = await rateLimit(user.id, { key: "bank-credentials", limit: 5, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
+
+  let connectionId: string;
+  try {
+    const { data, error } = await createAdminClient().rpc("store_bank_token", { p_user_id: user.id, p_provider: body.provider, p_secret: body.token });
+    const receipt = z.uuid().safeParse(data);
+    if (error || !receipt.success) throw new Error("Store unconfirmed");
+    connectionId = receipt.data;
   } catch {
-    return NextResponse.json({ error: "Invalid body." }, { status: 400 });
-  }
-
-  const provider = tokenProvider(body.provider);
-  if (!provider) {
-    return NextResponse.json(
-      { error: "Unsupported provider." },
-      { status: 400 },
-    );
-  }
-
-  const token = body.token?.trim() ?? "";
-  if (token.length < 16 || token.length > 512) {
-    return NextResponse.json({ error: "Invalid token." }, { status: 400 });
-  }
-
-  let connectionId: string | null = null;
-  try {
-    const admin = createAdminClient();
-    await writeProviderSecret(admin, user.id, provider, token);
-    connectionId = await ensureConnection(admin, user.id, provider);
-  } catch (err) {
-    console.error("[api/bank/credentials] store failed:", err);
-    return NextResponse.json(
-      { error: "Could not store the token." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Could not confirm token storage. Refresh before retrying." }, { status: 500 });
   }
 
   // The caller syncs this id next; the sync is what proves the token works, so
   // the row starts as pending rather than claiming a link nobody verified.
   return NextResponse.json({ ok: true, connectionId });
-}
-
-/** A token provider has no redirect flow, so its `bank_connections` row is
- *  created here — that row is what puts it in the connection list, the sync
- *  loop and the daily cron. */
-async function ensureConnection(
-  admin: ReturnType<typeof createAdminClient>,
-  userId: string,
-  provider: BankProviderId,
-): Promise<string | null> {
-  const { data: existing } = await admin
-    .from("bank_connections")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("provider", provider)
-    .maybeSingle();
-  if (existing) {
-    await admin
-      .from("bank_connections")
-      .update({ status: "created", last_error: null })
-      .eq("id", existing.id);
-    return (existing as { id: string }).id;
-  }
-  const { data: created } = await admin
-    .from("bank_connections")
-    .insert({
-      user_id: userId,
-      provider,
-      institution_name: getProvider(provider).label,
-      reference: crypto.randomUUID(),
-      status: "created",
-    })
-    .select("id")
-    .single();
-  return (created as { id: string } | null)?.id ?? null;
 }
 
 export async function DELETE(request: Request) {
@@ -163,18 +115,13 @@ export async function DELETE(request: Request) {
     );
   }
 
+  const limited = await rateLimit(user.id, { key: "bank-credentials", limit: 5, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
   try {
     const admin = createAdminClient();
-    await deleteProviderSecret(admin, user.id, provider);
-    // Forgetting the token also removes the connection it backed; imported
-    // transactions stay, exactly as a disconnect leaves them.
-    await admin
-      .from("bank_connections")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("provider", provider);
-  } catch (err) {
-    console.error("[api/bank/credentials] delete failed:", err);
+    const { data, error } = await admin.rpc("forget_bank_token", { p_user_id: user.id, p_provider: provider });
+    if (error || data !== true) throw new Error("Removal unconfirmed");
+  } catch {
     return NextResponse.json(
       { error: "Could not remove the token." },
       { status: 500 },

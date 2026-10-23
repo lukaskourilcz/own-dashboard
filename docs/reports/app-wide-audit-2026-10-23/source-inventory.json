@@ -45,7 +45,8 @@
       "path": "src/app/api/bank/credentials/route.ts",
       "lines": 185,
       "sha256": "d5dfb6d6f767bff0e156d9ac2a3931d58685099ada5907ba2f130d4a78bffef8",
-      "status": "pending"
+      "status": "source reviewed; atomic service-only storage/removal checks passed; final release checks pending",
+      "reviewedSha256": "e6f3b1608ccb15916906ca3859c1d41c6bff506eb9b6438dfb15b5bb56561122"
     },
     {
       "path": "src/app/api/bank/disconnect/route.ts",
@@ -1618,7 +1619,8 @@
       "path": "src/lib/bank/credentials.ts",
       "lines": 77,
       "sha256": "80fa920eac55cb875b9bbcbf0eebaa6a7d000f8962899ea84cb9ccb762c4f6ab",
-      "status": "pending"
+      "status": "source reviewed; presence failure and role/privacy boundaries checked; provider session review remains",
+      "reviewedSha256": "49fb4b2a80b970090d8f571414c7b5f6e22fbcb7cfb0b27bd23fa4fd2ce546ef"
     },
     {
       "path": "src/lib/bank/enable-banking-adapter.ts",
@@ -3365,7 +3367,8 @@
       "path": "src/lib/supabase/admin.ts",
       "lines": 28,
       "sha256": "8601dc6498a8eae6ab5a8d6bd3ee68cc77fe58972cb669f6a877018757a1a250",
-      "status": "pending"
+      "status": "source reviewed; server-only cached service client boundary retained; final auth review pending",
+      "reviewedSha256": "8601dc6498a8eae6ab5a8d6bd3ee68cc77fe58972cb669f6a877018757a1a250"
     },
     {
       "path": "src/lib/supabase/client.ts",

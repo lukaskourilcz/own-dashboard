@@ -26,7 +26,8 @@ export async function readProviderSecret(
     .eq("user_id", userId)
     .eq("provider", provider)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error) throw new Error("Bank credential read failed");
+  if (!data) return null;
   const secret = (data as { secret: string | null }).secret;
   return secret && secret.length > 0 ? secret : null;
 }
@@ -42,25 +43,8 @@ export async function hasProviderSecret(
     .eq("user_id", userId)
     .eq("provider", provider)
     .maybeSingle();
-  return !error && Boolean(data);
-}
-
-export async function writeProviderSecret(
-  admin: SupabaseClient,
-  userId: string,
-  provider: BankProviderId,
-  secret: string,
-): Promise<void> {
-  const { error } = await admin.from(TABLE).upsert(
-    {
-      user_id: userId,
-      provider,
-      secret,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,provider" },
-  );
-  if (error) throw error;
+  if (error) throw new Error("Bank credential status unavailable");
+  return Boolean(data);
 }
 
 export async function deleteProviderSecret(
