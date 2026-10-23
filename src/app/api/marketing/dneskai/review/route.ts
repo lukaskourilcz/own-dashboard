@@ -5,7 +5,7 @@ import { readDneskaiWorkspace } from '@/lib/marketing/dneskai-workspace-read';
 import { pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 import { dneskaiPaidActionCapabilities } from '@/lib/marketing/dneskai-paid-switches';
-import { dneskaiEngagementEditorEnabled } from '@/lib/marketing/dneskai-engagement';
+import { dneskaiEngagementEditorEnabled, dneskaiEngagementWatchEnabled } from '@/lib/marketing/dneskai-engagement';
 
 export const runtime = 'nodejs';
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   try { await requireDneskaiProject(db, user.id, projectId!); }
   catch { return Response.json({ error: 'project-unavailable' }, { status: 404 }); }
   try {
-    return Response.json(await readDneskaiWorkspace(db, user.id, now, date, { capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() } }), { headers: { 'Cache-Control': 'private, no-store' } });
+    return Response.json(await readDneskaiWorkspace(db, user.id, now, date, { capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() }, engagement: dneskaiEngagementWatchEnabled() }), { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {
     return Response.json({ error: 'dneskai-workspace-unavailable' }, { status: 503 });
   }

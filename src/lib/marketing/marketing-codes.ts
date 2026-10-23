@@ -567,6 +567,15 @@ const CODES = {
   'topic-model-pricing-required': ['config', 'A topic model other than Claude Haiku 5.5 needs both price variables.', 'Jiný model pro náměty než Claude Haiku 5.5 potřebuje obě proměnné s cenou.'],
   'topic-model-configuration-required': ['config', 'The topic model or its API key is not configured.', 'Model pro náměty nebo jeho API klíč není nastavený.'],
   'topic-model-unsafe-native-tracing': ['config', 'Native LangChain tracing is on; topic model calls stay off.', 'Je zapnuté nativní trasování LangChain; volání modelu pro náměty zůstávají vypnutá.'],
+  'titling-topics-unavailable': ['auto', 'The untitled topics could not be read, so nothing was titled.', 'Náměty bez titulku se nepodařilo načíst, nic se neotitulkovalo.'],
+  'titling-timeout': ['auto', 'The titling call ran out of time. Its reservation counts until the day ends.', 'Volání pro titulky nestihlo doběhnout. Jeho rezervace se počítá až do konce dne.'],
+  'titling-provider-failed': ['auto', 'The titling call failed. Its reservation counts until the day ends.', 'Volání pro titulky selhalo. Jeho rezervace se počítá až do konce dne.'],
+  'titling-usage-unavailable': ['auto', 'The titling answer carried no usage; its reservation counts as spent.', 'Odpověď s titulky neobsahovala spotřebu; rezervace se počítá jako utracená.'],
+  'titling-output-invalid': ['auto', 'The titling answer was not usable; the topics stay untitled.', 'Odpověď s titulky se nedala použít; náměty zůstávají bez titulku.'],
+  'titling-write-failed': ['auto', 'The new titles could not be saved.', 'Nové titulky se nepodařilo uložit.'],
+  'news-topics-unavailable': ['auto', 'The night\'s events could not be read as topics.', 'Noční události se nepodařilo načíst jako náměty.'],
+  'news-topics-write-failed': ['auto', 'The night\'s news topics could not be saved.', 'Noční zpravodajské náměty se nepodařilo uložit.'],
+  'topic-expiry-failed': ['auto', 'Old news topics could not be moved to expired.', 'Staré zpravodajské náměty se nepodařilo přesunout mezi propadlé.'],
 } as const satisfies Record<string, Entry>;
 
 export type MarketingCode = keyof typeof CODES;

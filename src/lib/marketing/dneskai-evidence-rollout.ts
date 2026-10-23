@@ -51,3 +51,13 @@ export function dneskaiScoutingEnabled(env: Record<string, string | undefined> =
 export function dneskaiFactOrHypeEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_FACT_OR_HYPE_ENABLED === 'true' && dneskaiScoutingEnabled(env);
 }
+
+/**
+ * Titling (#153). Only after 20261023100000 and 20261023100100 are applied, and only once the owner accepts that the
+ * night's news events become topics instead of briefs: until the topic-to-brief bridge (A6) ships, approving a
+ * topic does not yet make a post. The scouting step then titles untitled topics from 02:00 Prague (one Claude call,
+ * inside the $1 ceiling) and expires news topics after 48 hours.
+ */
+export function dneskaiTitlingEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_TITLING_ENABLED === 'true' && dneskaiTopicsEnabled(env);
+}
