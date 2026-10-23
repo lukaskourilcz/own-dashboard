@@ -1655,14 +1655,15 @@
       "path": "src/lib/bank/gocardless-adapter.ts",
       "lines": 148,
       "sha256": "297e4839266ed924a9624a50b79ef3db00283a2704776fd7b05fcbaa50685158",
-      "status": "source reviewed; malformed-provider response follow-up and final release checks pending",
-      "reviewedSha256": "5852ba1aa47d7aa1627874ae6f6abf679a1b2d6d52613e1fcf711ab2ed8f6b71"
+      "status": "source reviewed; request-local ownership/metadata cases passed; overall sync deadline follow-up pending",
+      "reviewedSha256": "d5b7c7b59a891fd96ac2210a7472f49060cec65ae57e777f11a682f28e678f58"
     },
     {
       "path": "src/lib/bank/gocardless-mapping.ts",
       "lines": 47,
       "sha256": "470c2c0d880f762a9d4cea5db15a5c7128854cde8512929264b2cf24869136e0",
-      "status": "pending"
+      "status": "source reviewed; balance/currency and status cases passed; final release checks pending",
+      "reviewedSha256": "218ab6ffe536d828fb6c65ef6207db5ef3569815bfa7a97bdd14815aa6936d31"
     },
     {
       "path": "src/lib/bank/provider.ts",
@@ -1676,7 +1677,7 @@
       "lines": 72,
       "sha256": "aeadfe55428c8e5f59c4d2b11bae0f9a1dbb6e8f527e62a42fab2d28d7897866",
       "status": "source reviewed; request-local provider construction checked; aggregate availability failure semantics remain under review",
-      "reviewedSha256": "8c48034fd3826727c562ebd2b046434506cc8477dadad347569cd7957777ebb6"
+      "reviewedSha256": "56ab66f0bbe2df7c86c4bafaa7b2d53b030ca0f811c5b01f95cae62edd9f6ddb"
     },
     {
       "path": "src/lib/bank-csv.ts",
@@ -1873,7 +1874,8 @@
       "path": "src/lib/gocardless.ts",
       "lines": 291,
       "sha256": "29863eaef046bd09f5e2e4644fb24cbf8b4bf9e1b951fca3728ccb84fbfdf31f",
-      "status": "pending"
+      "status": "source reviewed; HTTP/schema/identity cases passed; overall sync deadline and cross-account identity follow-up pending",
+      "reviewedSha256": "23f217fbf79d2617f1755f429973df51c93e6600428fed05f8ae07d4a1a0c0c7"
     },
     {
       "path": "src/lib/google-auth.ts",

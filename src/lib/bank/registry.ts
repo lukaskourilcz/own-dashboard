@@ -1,7 +1,7 @@
 import "server-only";
 import { enableBankingProvider } from "@/lib/bank/enable-banking-adapter";
 import { createFioProvider } from "@/lib/bank/fio-adapter";
-import { gocardlessProvider } from "@/lib/bank/gocardless-adapter";
+import { createGoCardlessProvider } from "@/lib/bank/gocardless-adapter";
 import {
   BANK_PROVIDER_IDS,
   UnknownBankProviderError,
@@ -18,7 +18,7 @@ import {
  */
 
 const PROVIDERS: Record<BankProviderId, () => BankProvider> = {
-  gocardless: () => gocardlessProvider,
+  gocardless: createGoCardlessProvider,
   fio: createFioProvider,
   "enable-banking": () => enableBankingProvider,
 };
