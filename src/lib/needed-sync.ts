@@ -1,4 +1,5 @@
 import { addDays, format } from "date-fns";
+import { loadNeededBatch } from "@/lib/needed-batch-client";
 import type { CommitOutcome, GithubRepo } from "./github";
 import {
   loadNeededFile,
@@ -182,14 +183,17 @@ export async function scanNeededRepos(
   userId: string,
   repos: GithubRepo[],
   nowIso: string,
-  load: NeededFileLoader = loadNeededFile,
+  load?: NeededFileLoader,
 ): Promise<NeededScan> {
+  const batch = load ? null : await loadNeededBatch(repos);
+  if (batch?.kind === "disconnected") throw new Error("disconnected");
+  const files = new Map(batch?.kind === "ok" ? batch.files.map(file => [file.repoId, file.result]) : []);
   const scanned = new Set<string>();
   const freshRows: NeededTodoRow[] = [];
   const missing: string[] = [];
   const unavailable: string[] = [];
   for (const repo of repos) {
-    const res = await load(repo.owner, repo.name);
+    const res = load ? await load(repo.owner, repo.name) : files.get(String(repo.id)) ?? { kind: "error" as const };
     if (res.kind === "disconnected") throw new Error("disconnected");
     if (res.kind === "ok") {
       scanned.add(String(repo.id));

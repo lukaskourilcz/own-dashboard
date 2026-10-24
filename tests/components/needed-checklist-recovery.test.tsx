@@ -10,7 +10,9 @@ import { common } from "@/lib/i18n/sections/common";
 import { github } from "@/lib/i18n/sections/github";
 import type { GithubRepo } from "@/lib/github";
 import type { NeededFileResult } from "@/lib/needed";
+import { neededBatchQueryKey } from "@/lib/needed-batch-client";
 const state = vi.hoisted(() => ({ load: vi.fn(), rpc: vi.fn(), commit: vi.fn(), ok: vi.fn(), err: vi.fn() }));
+vi.mock("@/lib/needed-batch-client", async load => ({ ...await load<object>(), loadNeededBatch: async () => ({ kind: "ok", files: [{ repoId: "123", result: await state.load() }] }) }));
 vi.mock("@/lib/needed", async load => ({ ...await load<object>(), loadNeededFile: (...args: unknown[]) => state.load(...args) }));
 vi.mock("@/lib/github", async load => ({ ...await load<object>(), commitFile: (...args: unknown[]) => state.commit(...args) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: (...args: unknown[]) => ({ abortSignal: () => state.rpc(...args) }) }) }));
@@ -50,4 +52,19 @@ it("refreshes a conflicted file once and presents its version conflict", async (
   state.load.mockResolvedValue(file("- [ ] Actual task")); state.commit.mockResolvedValue({ ok: false, status: 409, error: "conflict" }); await mount();
   await act(async () => { host.querySelector<HTMLButtonElement>(`button[aria-label="${github.en.needed.checkOff}: Actual task"]`)!.click(); await new Promise(resolve => setTimeout(resolve, 20)); });
   expect(state.err).toHaveBeenCalledWith(github.en.fileChanged); expect(state.load).toHaveBeenCalledTimes(2); expect(state.commit.mock.calls[0][0]).toMatchObject({ intent: "edit", expectedSha: "a".repeat(40) });
+});
+it("updates a confirmed check-off from its receipt without another source read", async () => {
+  state.load.mockResolvedValue(file("- [ ] Actual task\n- [ ] Second task"));
+  state.commit.mockResolvedValue({ ok: true, result: { path: "NEEDED.md", updated: true, unchanged: false, commit: { sha: "b".repeat(40), html_url: "https://github.com/owner/fixture/commit/fixture" }, content: { sha: "c".repeat(40), html_url: "https://github.com/owner/fixture/blob/main/NEEDED.md" } } }); await mount();
+  await act(async () => { host.querySelector<HTMLButtonElement>(`button[aria-label="${github.en.needed.checkOff}: Actual task"]`)!.click(); await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(state.ok).toHaveBeenCalled(); expect(state.load).toHaveBeenCalledOnce(); expect(host.textContent).not.toContain("Actual task"); expect(host.textContent).toContain("Second task");
+  expect(client.getQueryData(neededBatchQueryKey([repo]))).toMatchObject({ kind: "ok", files: [{ result: { content: "- [ ] Second task", sha: "c".repeat(40) } }] });
+});
+it("does not replace a disconnected cache with a late manual retry", async () => {
+  state.load.mockResolvedValue({ kind: "error" }); await mount(); let release!: (value: NeededFileResult) => void;
+  state.load.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  await act(async () => { button(common.en.retry).click(); });
+  await act(async () => { client.setQueryData(neededBatchQueryKey([repo]), { kind: "disconnected" }); });
+  await act(async () => { release(file("- [ ] Late source")); await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(client.getQueryData(neededBatchQueryKey([repo]))).toEqual({ kind: "disconnected" }); expect(host.textContent).not.toContain("Late source");
 });

@@ -233,10 +233,10 @@
     },
     {
       "path": "src/app/api/github/file/route.ts",
-      "lines": 23,
+      "lines": 21,
       "sha256": "c33f837c9315a41f7a6e93242b521e819d232e924860bf3f66bfa7ef1b344c1d",
-      "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending",
-      "reviewedSha256": "0ee663a38725c27bf2a9f1e370890ff842a8e241812c827300fd460e0f5e90e5"
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending",
+      "reviewedSha256": "8a737537337ff0e39b402846f84b1420ffdf7abf76a1623e68e4f7a5777bba16"
     },
     {
       "path": "src/app/api/github/repos/lookup/route.ts",
@@ -1370,10 +1370,10 @@
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
-      "lines": 273,
+      "lines": 269,
       "sha256": "32b2e115fea7de7e1dea9ec7b13a857e810ab44db90818d4891622341c5ad4a1",
-      "status": "partially reviewed; task synchronization checks pass; scan/CRUD follow-ups pending",
-      "reviewedSha256": "1ee1a1475f045cff1551244dbe669047857865e844c334adc0849ab1ba0a4aab"
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending",
+      "reviewedSha256": "3af9e61e7847f1fa0544cb2bda7847c1b623abad87b3cc54f2fd9b8c1b6efe9e"
     },
     {
       "path": "src/components/panels/notes-panel.tsx",
@@ -3392,17 +3392,17 @@
     },
     {
       "path": "src/lib/needed-sync.ts",
-      "lines": 294,
+      "lines": 298,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
-      "status": "partially reviewed; task synchronization checks pass; scan/CRUD follow-ups pending",
-      "reviewedSha256": "d9291b18e40289572eed44d9d5fb63d63fb6cad09b15bbf7ba4a37ec6b90d65d"
+      "status": "partially reviewed; scan/import checks pass; finished-removal budget pending",
+      "reviewedSha256": "b5df34f527d95ee0acc9bd0540cf7fbb06b72882ea18eca5bf22aa65d83c88c6"
     },
     {
       "path": "src/lib/needed.ts",
-      "lines": 307,
+      "lines": 302,
       "sha256": "7de312c49f3b1a80aec62b25360687b4aa3229c44c255c634b2abec841c8f160",
-      "status": "source reviewed; task synchronization checks pass; final release checks pending",
-      "reviewedSha256": "fc73f6392218c72177eef0061c8235cff8b9af42638cc5a3604d79ed46a751ce"
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending",
+      "reviewedSha256": "d29e2ceb9ebe422f0b27cd15f2d651634a95ef43d3b51fbc5a85ae4c8a22ccb7"
     },
     {
       "path": "src/lib/new-project-guide.ts",
@@ -3819,9 +3819,9 @@
     {
       "path": "src/lib/provider-auth-fetch.ts",
       "sha256": null,
-      "lines": 56,
-      "reviewedSha256": "07957706d439cac677fe5fea735eb36c98c8364344af04a94e7695b429ef5dc5",
-      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending"
+      "lines": 58,
+      "reviewedSha256": "0100e018102c0ea15e0d0c6dd0677d4b9bd83620ef1c3c3afc1b51880a113cc7",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
     },
     {
       "path": "src/lib/oauth-grant-verification.ts",
@@ -3855,15 +3855,15 @@
       "path": "src/lib/github-file-contract.ts",
       "sha256": null,
       "lines": 28,
-      "reviewedSha256": "c2472abe32d45b7075500cdcf7e22c1f084aa054fafcd36bae2f68d517a0fcb1",
-      "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending"
+      "reviewedSha256": "e6ff0739e5d0abc3abdde1484a9188b271479a17093614a5500f30ac49f2d1aa",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
     },
     {
       "path": "src/lib/github-file-server.ts",
       "sha256": null,
-      "lines": 26,
-      "reviewedSha256": "7ac64ec6ae1a0890151335b964753ddcb93b6456cc85a3c7d9f78053ed5f949e",
-      "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending"
+      "lines": 39,
+      "reviewedSha256": "11c018671077222f09c01ebe85e0c5a59abfe21c8fa7a428d3ee47b221d00d9e",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
     },
     {
       "path": "src/lib/github-path.ts",
@@ -3906,6 +3906,41 @@
       "lines": 88,
       "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
+    },
+    {
+      "path": "src/app/api/github/needed/route.ts",
+      "sha256": null,
+      "lines": 30,
+      "reviewedSha256": "15a98b5e84c7eff68fbc90a5b944cca19e2b49a296ce3c56fc88375445926e26",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-batch-client.ts",
+      "sha256": null,
+      "lines": 34,
+      "reviewedSha256": "a61e2e200a7300fd1f1c5bead566dd68a89a2b87daef335f399f3e283c9830ff",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-batch-contract.ts",
+      "sha256": null,
+      "lines": 16,
+      "reviewedSha256": "5f7f1bd9b8e610e4cc1420839673c89fe03c5a726868033f245ce48b51b2d671",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-batch-server.ts",
+      "sha256": null,
+      "lines": 36,
+      "reviewedSha256": "b8f2d1c772e65ec905ff6612451ead6e1b7db79112a8914eb548bfc82c57f1e6",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-paths.ts",
+      "sha256": null,
+      "lines": 3,
+      "reviewedSha256": "6ae44662ac720b75157fc231f1e4f3167e6ee0039450213a1cf931a3e695140a",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
     }
   ],
   "baselineFileCount": 561

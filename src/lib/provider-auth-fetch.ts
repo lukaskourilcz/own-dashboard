@@ -20,7 +20,9 @@ export function createOAuthFetcher(provider: OAuthProvider, userId: string, pare
     const callSignal = AbortSignal.any([signal, ...(init.signal ? [init.signal] : [])]);
     callSignal.throwIfAborted();
     initial ??= getOAuthAccessToken(provider, userId, signal);
-    const token = await awaitWithSignal(initial, callSignal);
+    // New work in the same request uses its refreshed grant immediately;
+    // only calls already in flight need the old-token 401/retry path.
+    const token = await awaitWithSignal(refreshed ?? initial, callSignal);
     if (!token) return new Response(null, { status: 401, statusText: "no-token" });
     const send = async (access: string) => {
       const headers = new Headers(init.headers);

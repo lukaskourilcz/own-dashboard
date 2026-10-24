@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   ExternalLink,
@@ -27,13 +27,9 @@ import {
   type NeededItem,
 } from "@/lib/needed";
 import { buildNeededRows } from "@/lib/needed-sync";
+import { setReposDisconnected } from "@/lib/github-queries";
 import { syncNeededTasks } from "@/lib/needed-task-store";
-
-// Under ["github", "file"] so the Tasks panel's clear-finished invalidation
-// reaches it. The file may live at NEEDED.md or docs/NEEDED.md.
-function fileQueryKey(repoId: string) {
-  return ["github", "file", repoId, "needed"] as const;
-}
+import { loadNeededBatch, neededBatchQueryKey, type NeededBatchResult } from "@/lib/needed-batch-client";
 
 export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   const t = useDict();
@@ -41,34 +37,30 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   const qc = useQueryClient();
   const supabase = createClient();
 
-  // Sync every repo's NEEDED.md (root, then docs/), 5-min freshness.
-  const results = useQueries({
-    queries: repos.map((repo) => ({
-      queryKey: fileQueryKey(String(repo.id)),
-      queryFn: () => loadNeededFile(repo.owner, repo.name),
-      staleTime: 5 * 60_000,
-    })),
-  });
-
-  const loading = results.some((r) => r.isPending);
-  const disconnected = results.some(
-    (r) => r.data?.kind === "disconnected",
-  );
-
-  const unavailable = repos.filter((_repo, index) => results[index]?.isError || (results[index]?.data && results[index].data.kind !== "ok" && results[index].data.kind !== "disconnected"));
-  const retryUnavailable = () => { void Promise.allSettled(results.filter((_result, index) => unavailable.includes(repos[index])).map(result => result.refetch())); };
-
-  const groups = useMemo(() => {
-    return repos
-      .map((repo, i) => {
-        const res = results[i]?.data;
-        if (!res || res.kind !== "ok") return null;
-        const items = neededTodoItems(res.content, repo, res.htmlUrl);
-        if (items.length === 0) return null;
-        return { repo, items, htmlUrl: res.htmlUrl };
-      })
-      .filter((g): g is NonNullable<typeof g> => g !== null);
-  }, [repos, results]);
+  const queryKey = neededBatchQueryKey(repos);
+  const batch = useQuery({ queryKey, queryFn: ({ signal }) => loadNeededBatch(repos, signal), staleTime: 5 * 60_000, refetchOnWindowFocus: false });
+  const files = useMemo(() => new Map(batch.data?.kind === "ok" ? batch.data.files.map(file => [file.repoId, file.result]) : []), [batch.data]);
+  const loading = batch.isPending, disconnected = batch.data?.kind === "disconnected";
+  useEffect(() => { if (disconnected) void setReposDisconnected(qc); }, [disconnected, qc]);
+  const unavailable = repos.filter(repo => files.get(String(repo.id))?.kind !== "ok");
+  function mergeSources(expected: Map<string, NeededFileResult>, update: NeededBatchResult) {
+    qc.setQueryData<NeededBatchResult>(queryKey, current => {
+      if (current?.kind !== "ok") return current;
+      if (update.kind === "disconnected") return update;
+      const changes = new Map(update.files.map(file => [file.repoId, file.result]));
+      return { kind: "ok", files: current.files.map(file => changes.has(file.repoId) && file.result === expected.get(file.repoId) ? { ...file, result: changes.get(file.repoId)! } : file) };
+    });
+  }
+  const retrySources = useMutation({ gcTime: 0, mutationFn: async () => {
+    const expected = new Map(files);
+    mergeSources(expected, await loadNeededBatch(unavailable));
+  } });
+  const groups = useMemo(() => repos.flatMap(repo => {
+    const res = files.get(String(repo.id));
+    if (res?.kind !== "ok") return [];
+    const items = neededTodoItems(res.content, repo, res.htmlUrl);
+    return items.length ? [{ repo, items, htmlUrl: res.htmlUrl }] : [];
+  }), [repos, files]);
 
   const totalItems = groups.reduce((n, g) => n + g.items.length, 0);
 
@@ -78,13 +70,14 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   // is the repo name; existing tasks (same category + title) are skipped so
   // re-clicking never duplicates.
   const importTodos = useMutation({
+    gcTime: 0,
     mutationFn: async () => {
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
 
       const nowIso = new Date().toISOString();
-      const candidates = repos.flatMap((repo, i) => {
-        const res = results[i]?.data;
+      const candidates = repos.flatMap(repo => {
+        const res = files.get(String(repo.id));
         if (!res || res.kind !== "ok") return [];
         return buildNeededRows(userId, repo, res.content, res.htmlUrl, nowIso);
       });
@@ -112,10 +105,11 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   });
 
   const checkOff = useMutation({
+    gcTime: 0,
     mutationFn: async (item: NeededItem) => {
-      const cached = qc.getQueryData<NeededFileResult>(
-        fileQueryKey(item.repoId),
-      );
+      await qc.cancelQueries({ queryKey });
+      const current = qc.getQueryData<NeededBatchResult>(queryKey);
+      const cached = current?.kind === "ok" ? current.files.find(file => file.repoId === item.repoId)?.result : undefined;
       if (!cached || cached.kind !== "ok") throw new Error("stale");
       const { next, removed } = removeNeededLine(cached.content, item.raw);
       if (!removed) throw new Error("gone"); // already removed elsewhere
@@ -128,17 +122,19 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
         message: t.github.needed.commitMessage(item.text.slice(0, 64)),
       });
       if (!outcome.ok) throw outcome;
+      mergeSources(new Map([[item.repoId, cached]]), { kind: "ok", files: [{ repoId: item.repoId, result: { kind: "ok", path: cached.path, content: next, sha: outcome.result.content.sha, htmlUrl: outcome.result.content.html_url } }] });
       return { item, path: cached.path };
     },
-    onSuccess: ({ item, path }) => {
-      toast.ok(t.github.needed.removedFrom(item.repo, path));
-    },
-    onSettled: (_data, _error, item) => qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) }),
-    onError: (e) => {
+    onSuccess: ({ item, path }) => { toast.ok(t.github.needed.removedFrom(item.repo, path)); },
+    onError: async (e, item) => {
       const status = (e as { status?: number }).status;
-      toast.err(
-        status === 401 ? t.github.needed.reconnect : status === 409 ? t.github.fileChanged : t.github.needed.updateErr,
-      );
+      toast.err(status === 401 ? t.github.needed.reconnect : status === 409 ? t.github.fileChanged : t.github.needed.updateErr);
+      if (status === 401) { await setReposDisconnected(qc); return; }
+      const current = qc.getQueryData<NeededBatchResult>(queryKey);
+      if (current?.kind !== "ok") return;
+      const expected = new Map(current.files.map(file => [file.repoId, file.result]));
+      const result = await loadNeededFile(item.owner, item.repo);
+      mergeSources(expected, result.kind === "disconnected" ? { kind: "disconnected" } : { kind: "ok", files: [{ repoId: item.repoId, result }] });
     },
   });
 
@@ -186,7 +182,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
 
       {!loading && !disconnected && unavailable.length > 0 && <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <p className="min-w-0 flex-1 break-words text-xs text-foreground-muted">{t.github.needed.unavailable(unavailable.map(repo => repo.full_name).join(", "))}</p>
-        <Button size="sm" variant="outline" onClick={retryUnavailable}>{t.common.retry}</Button>
+        <Button size="sm" variant="outline" onClick={() => retrySources.mutate()} disabled={retrySources.isPending || batch.isFetching || checkOff.isPending}>{t.common.retry}</Button>
       </div>}
       {loading ? (
         <div className="space-y-2 p-4">

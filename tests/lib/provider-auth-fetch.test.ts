@@ -5,6 +5,13 @@ vi.mock("@/lib/oauth-access-token", () => ({ getOAuthAccessToken: state.token })
 import { createOAuthFetcher } from "@/lib/provider-auth-fetch";
 beforeEach(() => { state.token.mockReset().mockResolvedValue("synthetic-access"); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+it("uses the refreshed grant for later requests without another rejected round trip", async () => {
+  state.token.mockResolvedValueOnce("synthetic-access").mockResolvedValueOnce("synthetic-rotated");
+  const fetcher = vi.fn<typeof fetch>(async (_url, init) => new Response(null, { status: new Headers(init?.headers).get("authorization") === "Bearer synthetic-rotated" ? 200 : 401 })); vi.stubGlobal("fetch", fetcher);
+  const request = createOAuthFetcher("github", "owner");
+  expect((await request("/repos/owner/one")).ok).toBe(true); expect((await request("/repos/owner/two")).ok).toBe(true);
+  expect(state.token).toHaveBeenCalledTimes(2); expect(fetcher).toHaveBeenCalledTimes(3);
+});
 it("uses one owner read for concurrent fan-out and preserves Headers objects", async () => {
   const fetcher = vi.fn<typeof fetch>(async () => Response.json({})); vi.stubGlobal("fetch", fetcher);
   const request = createOAuthFetcher("github", "owner");

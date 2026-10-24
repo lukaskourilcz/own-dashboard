@@ -24,3 +24,16 @@ export function decodeGithubFile(raw: unknown, expectedPath: string) {
   const content = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
   return { content, html_url: file.html_url, sha: file.sha };
 }
+
+export async function readGithubTextFile(fetcher: (path: string) => Promise<Response>, owner: string, repo: string, path: string, signal: AbortSignal) {
+  try {
+    const response = await awaitWithSignal(fetcher(`/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}`), signal);
+    if (!response.ok) {
+      void response.body?.cancel().catch(() => undefined);
+      return { ok: false as const, status: [401, 403, 404].includes(response.status) ? response.status : 502 };
+    }
+    const raw = await readGithubJson(response, 1_500_000, signal);
+    if (Array.isArray(raw)) return { ok: false as const, status: 422 };
+    return { ok: true as const, file: decodeGithubFile(raw, path) };
+  } catch { return { ok: false as const, status: 502 }; }
+}

@@ -8,9 +8,9 @@ export const githubWebUrl = z.url().refine(value => {
   return url.protocol === "https:" && url.hostname === "github.com" && !url.port && !url.username && !url.password;
 });
 
-const name = z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9._-]+$/).refine(value => value !== "." && value !== "..");
+export const githubRepositoryName = z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9._-]+$/).refine(value => value !== "." && value !== "..");
 const commonInput = z.object({
-  owner: name, repo: name, path: z.string().transform(normalizeRepoPath).pipe(z.string()),
+  owner: githubRepositoryName, repo: githubRepositoryName, path: z.string().transform(normalizeRepoPath).pipe(z.string()),
   content: z.string().max(MAX_GITHUB_FILE_BYTES), message: z.string().trim().min(1).max(2000),
   branch: z.string().trim().min(1).max(255).regex(/^[^\x00-\x1f\x7f]+$/).optional(),
 });

@@ -54,6 +54,7 @@ export async function stubBackend(page: Page): Promise<void> {
     contentType: "application/json",
     body: JSON.stringify({ repos: [] }),
   }));
+  await page.route("**/api/github/needed", route => route.fulfill({ json: { kind: "ok", files: (route.request().postDataJSON().repos as { id: number }[]).map(repo => ({ repoId: String(repo.id), result: { kind: "not-found" } })) } }));
   await page.route("**/api/github/activity**", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",

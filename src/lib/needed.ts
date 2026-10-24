@@ -5,13 +5,8 @@ import {
 } from "@/lib/github";
 import { isTaskKind, parseTimeToMinutes, type TaskKind } from "@/lib/task-meta";
 
-/**
- * Where a repository keeps its open action items, tried in this order. The
- * root is the convention; quorum moved its list to `docs/NEEDED.md` on
- * 2026-08-08, and a root-only reader imported nothing from it.
- */
-export const NEEDED_FILE_PATHS = ["NEEDED.md", "docs/NEEDED.md"] as const;
-export type NeededFilePath = (typeof NEEDED_FILE_PATHS)[number];
+import { NEEDED_FILE_PATHS, type NeededFilePath } from "@/lib/needed-paths";
+export { NEEDED_FILE_PATHS, type NeededFilePath };
 
 /**
  * A repository's NEEDED.md as read from GitHub, with the path it was found

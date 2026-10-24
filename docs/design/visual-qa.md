@@ -331,3 +331,6 @@ Four EN/CS desktop/mobile cases pass on the actual dev-preview repository compon
 ## Repository task lists, 24 October 2026
 
 Eight EN/CS desktop/mobile repository cases pass after atomic task import, including four note regressions. Unavailable source files show a retry message and no All clear; only actionable tasks appear in checkbox-based files. Failed imports preserve the list and a stale file version refreshes once. Checks cover 360/430/768/1024/1440/1728 px, long-name wrapping, keyboard note recovery and main-region axe. All data/providers are fixtures. This does not complete cold project-tab selection or the final optimized app-wide interaction matrix.
+
+
+Repository scan follow-up: eight EN/CS desktop/mobile repository cases pass again after sharing the bounded scan. Initial load and retry use the shared request; a source-file conflict refreshes only that file, with no extra batch request. Existing note recovery, six-width reflow and main-region axe checks pass in the same run. Cache-order and late-disconnect behavior have separate component/client tests. No production provider ran.
