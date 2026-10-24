@@ -41,6 +41,9 @@ describe("upload checks", () => {
     expect(parseFfmpegAudioProbe("Duration: 00:01:02.50, start: 0\n  Stream #0:0: Audio: mp3, 44100 Hz")).toBe(62_500);
     expect(parseFfmpegAudioProbe("Duration: 00:00:05.00\n  Stream #0:0: Video: h264")).toBeNull();
     expect(parseFfmpegAudioProbe("Invalid data found")).toBeNull();
+    expect(parseFfmpegAudioProbe("title: Duration: 00:00:02.00\n Stream #0:0: Audio: mp3")).toBeNull();
+    expect(parseFfmpegAudioProbe("Duration: 00:99:02.00\n Stream #0:0: Audio: mp3")).toBeNull();
+    expect(parseFfmpegAudioProbe("Duration: 00:00:02.00\n title: Stream #0:0: Audio: mp3")).toBeNull();
   });
   it("measures a real file with ffmpeg-static", async () => {
     const bytes = execFileSync(ffmpegPath as unknown as string, ["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-f", "mp3", "pipe:1"]);

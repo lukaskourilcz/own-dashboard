@@ -2892,10 +2892,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
-      "lines": 203,
+      "lines": 219,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial; captured/idempotent creation preserves objects and confirms actual owner/file/metadata, real SDK/migrated Storage and retry/download-count checks pass (finding 154); list validation, budgets, probes, cleanup lifecycle and release remain pending",
-      "reviewedSha256": "8e0d7c6fa6475974ec2618b3345fe7b16a1879ba9b0ee5e3f3b34a14304a18c2"
+      "status": "partial; captured/idempotent creation preserves objects (154), bounded cancellable local audio probing and native metadata/format/process checks pass (155); complete list validation, request/storage/database budgets, cleanup lifecycle and release remain pending",
+      "reviewedSha256": "cad46a03ee6483b3dbef78ecb0573fdbe87b12b5c7f32c2a649d21c0520dd997"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",

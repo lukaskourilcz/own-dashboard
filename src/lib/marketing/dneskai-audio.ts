@@ -90,28 +90,41 @@ export async function prepareDneskaiAudioUpload(db: Database, owner: string, con
 
 /** Reads `Duration: hh:mm:ss.cc` from ffmpeg's probe of the file; null when ffmpeg finds no audio stream. */
 export function parseFfmpegAudioProbe(stderr: string): number | null {
-  if (!/Stream #\d+:\d+[^:]*: Audio:/.test(stderr)) return null;
-  const match = /Duration: (\d{2}):(\d{2}):(\d{2}(?:\.\d+)?)/.exec(stderr);
+  if (!/^[ \t]*Stream #\d+:\d+[^:\r\n]*: Audio:/m.test(stderr)) return null;
+  const match = /^[ \t]*Duration: (\d{2}):([0-5]\d):([0-5]\d(?:\.\d+)?)(?:,|[ \t]*$)/m.exec(stderr);
   if (!match) return null;
   return Math.round((Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3])) * 1000);
 }
 
-/** The audio's length in milliseconds, measured by the same ffmpeg the renderer uses. */
-export async function probeDneskaiAudioDuration(bytes: Buffer, options: { ffmpegPath?: string } = {}): Promise<number | null> {
-  const binary = options.ffmpegPath ?? await dneskaiFfmpegPath();
+/** Probe only supported local audio containers, decoding one second under a 15s process cap. */
+export const DNESKAI_AUDIO_PROBE_TIMEOUT_MS = 15_000;
+export async function probeDneskaiAudioDuration(bytes: Buffer, options: { ffmpegPath?: string; signal?: AbortSignal; timeoutMs?: number } = {}): Promise<number | null> {
+  const check = () => { if (options.signal?.aborted) throw new DOMException("Request aborted", "AbortError"); };
+  check();
+  if (!Buffer.isBuffer(bytes) || !bytes.length || bytes.length > DNESKAI_AUDIO_MAX_BYTES) return null;
+  const timeout = options.timeoutMs ?? DNESKAI_AUDIO_PROBE_TIMEOUT_MS;
+  if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > DNESKAI_AUDIO_PROBE_TIMEOUT_MS) throw new DneskaiAudioError("audio-library-unavailable");
+  const binary = options.ffmpegPath ?? await dneskaiFfmpegPath(); check();
   const dir = await mkdtemp(path.join(tmpdir(), "dneskai-audio-"));
   try {
     const file = path.join(dir, "probe");
-    await writeFile(file, bytes);
-    const stderr = await new Promise<string>((resolve) => {
-      let output = "";
-      const child = spawn(binary, ["-hide_banner", "-nostdin", "-i", file], { stdio: ["ignore", "ignore", "pipe"] });
+    await writeFile(file, bytes); check();
+    return await new Promise<number | null>((resolve, reject) => {
+      let output = "", failed = false;
+      const child = spawn(binary, ["-hide_banner", "-nostdin", "-max_alloc", "67108864", "-threads", "1",
+        "-protocol_whitelist", "file,pipe", "-format_whitelist", "aac,mp3,mov,mp4,m4a,3gp,3g2,mj2,wav,ogg",
+        "-probesize", "1048576", "-analyzeduration", "5000000", "-max_streams", "8",
+        "-i", file, "-map", "0:a:0", "-t", "1", "-f", "null", "-"],
+      { stdio: ["ignore", "ignore", "pipe"], timeout, killSignal: "SIGKILL", signal: options.signal });
       child.stderr?.on("data", (chunk: Buffer) => { output = (output + chunk.toString()).slice(-8000); });
-      child.on("error", () => resolve(""));
-      // ffmpeg exits 1 without an output file; the probe text is complete either way.
-      child.on("close", () => resolve(output));
+      // Wait for close, including after an abort/error, before removing its files.
+      child.on("error", () => { failed = true; });
+      child.on("close", (code, signal) => {
+        if (options.signal?.aborted) reject(new DOMException("Request aborted", "AbortError"));
+        else if (failed || signal) reject(new DneskaiAudioError("audio-library-unavailable"));
+        else resolve(code === 0 ? parseFfmpegAudioProbe(output) : null);
+      });
     });
-    return parseFfmpegAudioProbe(stderr);
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => undefined);
   }
@@ -148,7 +161,10 @@ export async function createDneskaiAudioTrack(db: Database, owner: string, value
   if (!downloaded.data.size || downloaded.data.size > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
   const bytes = Buffer.from(await downloaded.data.arrayBuffer());
   if (!bytes.length || bytes.length > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
-  const durationMs = await (options.probe ?? probeDneskaiAudioDuration)(bytes).catch(() => null);
+  const durationMs = await (options.probe ?? probeDneskaiAudioDuration)(bytes).catch(error => {
+    if (error instanceof DneskaiAudioError || (error instanceof DOMException && error.name === "AbortError")) throw error;
+    throw new DneskaiAudioError("audio-library-unavailable");
+  });
   if (durationMs === null || !Number.isSafeInteger(durationMs) || durationMs < 1000 || durationMs > 900000) throw new DneskaiAudioError("audio-upload-invalid");
   // A duplicate or ambiguous insert can already be the winning request. Read
   // its persisted metadata; never clean up an object on a write error.
