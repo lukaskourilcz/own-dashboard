@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { readFullMarketingCalendar } from '@/lib/marketing/calendar-source';
-import { fetchWithGitHubAuth } from '@/lib/github-token';
+import { createGitHubFetcher } from '@/lib/github-token';
 import { BrandSchema } from '@/lib/marketing/contracts';
 import { planCampaignImport } from '@/lib/marketing/campaign-import';
 const Input=z.union([z.strictObject({plan:z.unknown(),startsOn:z.iso.date(),apply:z.boolean()}),z.strictObject({source:z.literal('repository'),brand:BrandSchema,startsOn:z.iso.date(),apply:z.boolean(),expectedHash:z.string().regex(/^[a-f0-9]{64}$/).optional()})]);
@@ -14,7 +14,7 @@ export async function POST(request:Request){
  try{
   const input=Input.parse(await request.json());
   const {data,error}=await db.from('ai_links').select('id,title').eq('user_id',user.id).eq('record_type','idea').limit(1000);if(error)throw error;
-  const plan='plan' in input?input.plan:await readFullMarketingCalendar(fetchWithGitHubAuth,input.brand);
+  const plan='plan' in input?input.plan:await readFullMarketingCalendar(createGitHubFetcher(user.id),input.brand);
   const prepared=planCampaignImport(plan,input.startsOn,data??[]);
   if('source' in input&&input.apply&&input.expectedHash!==prepared.campaign.source_hash)return NextResponse.json({error:'calendar-source-changed'},{status:409});
   if(!input.apply)return NextResponse.json(prepared);

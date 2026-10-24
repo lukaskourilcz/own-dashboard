@@ -107,10 +107,10 @@
     },
     {
       "path": "src/app/api/calendar/event/route.ts",
-      "lines": 112,
+      "lines": 114,
       "sha256": "8309195d5ce5c7c235600af9ca72fed3769c1bc3fb959e9b2b9d3c0b8fefb488",
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "97244f15116530b4b56e0103309c2bdc650e87bc00208fed4b258b817689acf6"
+      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending",
+      "reviewedSha256": "c8a0dfff94b833e3967003dd5f602de021ea158f63b10f536f4e063a7b17d578"
     },
     {
       "path": "src/app/api/calendar/events/route.ts",
@@ -120,9 +120,10 @@
     },
     {
       "path": "src/app/api/calendar/list/route.ts",
-      "lines": 52,
+      "lines": 53,
       "sha256": "bfcc5f6ff0b026510c5478e3b373b4a0a7280c75c283bfec1af2fed053c43a2d",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "6dbbaeacf874dce1751597a1bde700e048a645145b96a320f4848cd5f126f7b0"
     },
     {
       "path": "src/app/api/cron/bank-sync/route.ts",
@@ -201,21 +202,24 @@
     },
     {
       "path": "src/app/api/github/activity/route.ts",
-      "lines": 87,
+      "lines": 88,
       "sha256": "ed3296d4a61a58d265ad65e27992686024345f127aeb489046b856f0abc506ad",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "ce4fe97b411c9caac526bb2d5ef87e413c9e4fd14a881f5f4c7a08233935eee5"
     },
     {
       "path": "src/app/api/github/commit/route.ts",
-      "lines": 156,
+      "lines": 160,
       "sha256": "c4278755341e9018affdad07c21a4b92b63caafe1196bef3344117797b85bb67",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "5f3b864f75826e7443cd56e1dbc4cbadd041b9faf1290f6143a37dd1f0bc9a36"
     },
     {
       "path": "src/app/api/github/commits/route.ts",
-      "lines": 87,
+      "lines": 88,
       "sha256": "1f52d3ca392bcb89fc2311a9e2fc5f84798a2411a2d8e5e9c7d2df23ee654561",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "0f2c0797a761b81625506a1098bd4382e9c876a5c3c7d57894e00e39f4a58131"
     },
     {
       "path": "src/app/api/github/disconnect/route.ts",
@@ -225,21 +229,24 @@
     },
     {
       "path": "src/app/api/github/file/route.ts",
-      "lines": 81,
+      "lines": 82,
       "sha256": "c33f837c9315a41f7a6e93242b521e819d232e924860bf3f66bfa7ef1b344c1d",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "62aec4e55b6103930a979aef079183a8175b7c6db254421896326b9f5dd45590"
     },
     {
       "path": "src/app/api/github/repos/lookup/route.ts",
-      "lines": 57,
+      "lines": 58,
       "sha256": "cd4e8019a6b013b0d9f131e8ed75a9272d82011fa3469f92c3abcb2091884e18",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "33a4e3e52ca840478af740963994231cdc654ad0f7b03b9cb84f727677786c98"
     },
     {
       "path": "src/app/api/github/repos/route.ts",
-      "lines": 80,
+      "lines": 81,
       "sha256": "af1d5ffe51d9fc2e95cd771ea5828bed77443c5803f8559075093868d0abb921",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "b482b1b765ffc4789041f6fabf87a0b14c86773e83ac016a7e9b4eadf2e985e8"
     },
     {
       "path": "src/app/api/google/disconnect/route.ts",
@@ -323,9 +330,10 @@
     },
     {
       "path": "src/app/api/marketing/calendars/route.ts",
-      "lines": 39,
+      "lines": 40,
       "sha256": "49bac4efd54515da6e3ae5df3529bd509e1a817bc35bf97401337690d4361ea5",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "2b7cdc552f669eaf8a9acc12f36028bf9cf54aa355ab3027b603502f6129f1db"
     },
     {
       "path": "src/app/api/marketing/campaigns/route.ts",
@@ -433,7 +441,8 @@
       "path": "src/app/api/marketing/import/route.ts",
       "lines": 24,
       "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "689029699fd9542aeb0ae8df5749db502e577750186a6cb5f359f68d9ae8ef63"
     },
     {
       "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
@@ -529,9 +538,10 @@
     },
     {
       "path": "src/app/api/tools/detected/route.ts",
-      "lines": 56,
+      "lines": 57,
       "sha256": "888291ca887c75657a50ded899382707f2c165410d9aa44f79ca2ceee22d0ec3",
-      "status": "pending"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "f612c0aa467a24878a1ef1d5429018fee10d23c0e70d69846164da3a64cd4ea9"
     },
     {
       "path": "src/app/api/user/preferences/route.ts",
@@ -560,10 +570,10 @@
     },
     {
       "path": "src/app/auth/callback/route.ts",
-      "lines": 129,
+      "lines": 132,
       "sha256": "d78015c1ab24138ab94a5ce28a9e28fb090b34ee41ec34481bc3a2762741411c",
-      "status": "source reviewed; normalized redirect/privacy checks passed; provider-grant binding/expiry follow-up pending",
-      "reviewedSha256": "dd32a90168524434580fa313978e98b571a60fd3e8c6629fea3cc8606ef606d5"
+      "status": "partial source review; redirect, storage receipt and provider TTL checked; provider-grant binding remains",
+      "reviewedSha256": "7f5a2133d2dbf8eb1af27172eac5cd70e2bbca19360877c010e40cec1e55f1f0"
     },
     {
       "path": "src/app/auth/signout/route.ts",
@@ -1263,7 +1273,7 @@
       "path": "src/components/panels/competition-panel.tsx",
       "lines": 165,
       "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
-      "status": "source reviewed; final release checks pending",
+      "status": "partial source review; all lines read; child list/dialog writes and project grouping/filter recovery remain",
       "reviewedSha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5"
     },
     {
@@ -1362,9 +1372,10 @@
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
-      "lines": 304,
+      "lines": 306,
       "sha256": "c30f26827554b028c442a8acb6c8f763d2363af90f52ec914728a6d1810807f8",
-      "status": "pending"
+      "status": "partial source review; all lines read; form validation, mutation receipts/pending protection, conversion recovery and metrics completeness require checks",
+      "reviewedSha256": "8b49fa1f86af949f311426888a1d2b2a38b29678a9722f8878ab10a3414e390d"
     },
     {
       "path": "src/components/panels/opportunity-detail.tsx",
@@ -1404,7 +1415,8 @@
       "path": "src/components/panels/repos-panel.tsx",
       "lines": 1384,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "pending"
+      "status": "partial source review; all 1384 lines read; note autosave/versioned clearing, link/write pending controls, receipt validation and labels require fixes",
+      "reviewedSha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -1839,10 +1851,10 @@
     },
     {
       "path": "src/lib/calendar-server.ts",
-      "lines": 135,
+      "lines": 137,
       "sha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
+      "reviewedSha256": "80acaa3c5ab2a33c2caa481e59c7da1332042caf82b25fb6511ed86b7ca4da95"
     },
     {
       "path": "src/lib/calendar.ts",
@@ -1984,29 +1996,31 @@
     },
     {
       "path": "src/lib/github-auth.ts",
-      "lines": 29,
+      "lines": 31,
       "sha256": "66d1c18f0337c9523490ea5339d63607a3558975a7fecdd25b7b9bfe7ccd266f",
-      "status": "source reviewed; final release checks pending",
+      "status": "partial source review; all lines read; provider-grant binding and thrown connect failures remain",
       "reviewedSha256": "8b4c3e547f7f05434621949fd1300fb2a378b44d594c86b5a0505084347b8c37"
     },
     {
       "path": "src/lib/github-queries.ts",
       "lines": 81,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
-      "status": "source reviewed; final release checks pending",
+      "status": "partial source review; all lines read; canonical keys, retained data and shared disconnect invalidation remain",
       "reviewedSha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba"
     },
     {
       "path": "src/lib/github-token.ts",
-      "lines": 250,
+      "lines": 99,
       "sha256": "6109e58ed9dc6736b79959c37e99db940d8de72de14c6566d427a0d8be3269ee",
-      "status": "pending"
+      "status": "partial source review; durable refresh and request coalescing checked; grant binding and revoke receipts remain",
+      "reviewedSha256": "b756efb41c9343760c375aaa5130b7ad509da40761bcc127586a28d50b46a579"
     },
     {
       "path": "src/lib/github.ts",
       "lines": 259,
       "sha256": "8d7cb9d4f7415804d30bb88b18e393ff3939b041c0ac309e28cf3c56c18b3500",
-      "status": "pending"
+      "status": "partial source review; all lines read; bounded response validation, safe links and abort handling remain",
+      "reviewedSha256": "8d7cb9d4f7415804d30bb88b18e393ff3939b041c0ac309e28cf3c56c18b3500"
     },
     {
       "path": "src/lib/gocardless.ts",
@@ -2024,9 +2038,10 @@
     },
     {
       "path": "src/lib/google-token.ts",
-      "lines": 229,
+      "lines": 76,
       "sha256": "e3eaa94b2c73e80b0f54d7bdf464d464eec41502da3147366e6ad281ce029c29",
-      "status": "pending"
+      "status": "partial source review; durable refresh and request coalescing checked; grant binding and revoke receipts remain",
+      "reviewedSha256": "a3d0dc56681577bddc6c12d90d47cc8e8a4ad988ad25482c86fb56b18f8ff754"
     },
     {
       "path": "src/lib/guest-requests.ts",
@@ -3509,7 +3524,8 @@
       "path": "src/lib/rate-limit.ts",
       "lines": 89,
       "sha256": "dcf0c56a4a3c77004e7345580455264cdd5b6a61da308a85b91372ec0bc1fe99",
-      "status": "pending"
+      "status": "partial source review; all lines read; memory cleanup, configuration identity and remote deadline remain",
+      "reviewedSha256": "dcf0c56a4a3c77004e7345580455264cdd5b6a61da308a85b91372ec0bc1fe99"
     },
     {
       "path": "src/lib/stack-detection-server.ts",
@@ -3690,7 +3706,7 @@
       "path": "src/lib/user-prefs.ts",
       "lines": 116,
       "sha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05",
-      "status": "source reviewed; final release checks pending",
+      "status": "partial source review; all lines read; selected-calendar bounds, read cancellation and strict preference validation remain",
       "reviewedSha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05"
     },
     {
@@ -3752,6 +3768,20 @@
       "lines": 23,
       "reviewedSha256": "8a778f39cf882f9b604370283b9f55a5f480d5e7628da7d4ad7f43dad689ed01",
       "status": "source reviewed; integration metadata targeted checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/oauth-access-token.ts",
+      "sha256": null,
+      "lines": 67,
+      "reviewedSha256": "5ca931bac88cce7ec15d36b0dcded2b8f35feb865ecd2a7e56bec9740d58314f",
+      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/provider-auth-fetch.ts",
+      "sha256": null,
+      "lines": 56,
+      "reviewedSha256": "07957706d439cac677fe5fea735eb36c98c8364344af04a94e7695b429ef5dc5",
+      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending"
     }
   ],
   "baselineFileCount": 561

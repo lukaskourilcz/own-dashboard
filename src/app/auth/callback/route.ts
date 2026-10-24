@@ -67,8 +67,9 @@ async function captureGitHub(session: SessionLike, user: User): Promise<void> {
       userId: user.id,
       accessToken,
       refreshToken,
-      // Only treat as expiring when a refresh_token exists (GitHub App mode).
-      expiresInSeconds: refreshToken ? (session.expires_in ?? null) : null,
+      // Supabase session expiry is not the provider token expiry. A rotating
+      // grant obtains its actual TTL on the first provider refresh.
+      expiresInSeconds: null,
       scopes: parseScopes(session),
       githubLogin: login,
       githubId,
@@ -96,7 +97,7 @@ async function captureGoogle(session: SessionLike, user: User): Promise<void> {
       userId: user.id,
       refreshToken,
       accessToken: session.provider_token ?? null,
-      expiresInSeconds: session.expires_in ?? null,
+      expiresInSeconds: null,
       scopes: parseScopes(session),
       googleSub: typeof googleSub === "string" ? googleSub : null,
     });

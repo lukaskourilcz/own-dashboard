@@ -1,33 +1,8 @@
 import "server-only";
-import { createClient as createUserClient } from "@/lib/supabase/server";
+import { createOAuthFetcher } from "@/lib/provider-auth-fetch";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
 const GITHUB_API = "https://api.github.com";
-
-/**
- * Skew applied when deciding whether a cached, expiring access_token is still
- * usable. Only relevant in GitHub-App "expiring tokens" mode; standard OAuth
- * App tokens never expire.
- */
-const EXPIRY_SKEW_SECONDS = 60;
-
-type GitHubTokenRow = {
-  user_id: string;
-  access_token: string;
-  refresh_token: string | null;
-  expires_at: string | null;
-  scopes: string[];
-};
-
-type RefreshResponse = {
-  access_token: string;
-  expires_in?: number;
-  refresh_token?: string;
-  refresh_token_expires_in?: number;
-  scope?: string;
-  token_type?: string;
-};
 
 /**
  * OAuth App client credentials. Optional: only needed to (a) refresh an
@@ -60,11 +35,11 @@ export async function storeGitHubTokens(args: {
   const expires_at =
     args.expiresInSeconds != null
       ? new Date(
-          Date.now() + (args.expiresInSeconds - EXPIRY_SKEW_SECONDS) * 1000,
+          Date.now() + args.expiresInSeconds * 1000,
         ).toISOString()
       : null;
 
-  await admin.from("github_tokens").upsert(
+  const result = await admin.from("github_tokens").upsert(
     {
       user_id: args.userId,
       access_token: args.accessToken,
@@ -76,105 +51,8 @@ export async function storeGitHubTokens(args: {
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },
-  );
-}
-
-/**
- * Returns a usable GitHub access token for the current user, or null if GitHub
- * isn't connected (caller should surface a "Connect GitHub" CTA).
- *
- * Standard OAuth App tokens never expire, so the common path just returns the
- * stored token. When GitHub is in expiring-token mode (expires_at set + a
- * refresh_token on file) we refresh under a per-user advisory lock, exactly
- * like the Google flow, to avoid racing a refresh_token rotation.
- */
-async function getGitHubAccessToken(
-  opts: { force?: boolean } = {},
-): Promise<string | null> {
-  const supabase = await createUserClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  return await refreshUnderLock(user.id, opts.force ?? false);
-}
-
-async function refreshUnderLock(
-  userId: string,
-  force: boolean,
-): Promise<string | null> {
-  const admin = createAdminClient();
-
-  const { data: lockRows, error: lockErr } = await admin.rpc(
-    "github_tokens_acquire_refresh_lock",
-    { p_user_id: userId },
-  );
-  if (lockErr) throw new Error(`github refresh lock failed: ${lockErr.message}`);
-
-  const data = (lockRows as GitHubTokenRow[] | null)?.[0] ?? null;
-  if (!data?.access_token) return null;
-
-  // Non-expiring token (classic OAuth App): nothing to refresh.
-  if (!data.expires_at || !data.refresh_token) return data.access_token;
-
-  if (!force) {
-    const msLeft = new Date(data.expires_at).getTime() - Date.now();
-    if (msLeft > EXPIRY_SKEW_SECONDS * 1000) return data.access_token;
-  }
-
-  const creds = getGitHubCreds();
-  if (!creds) {
-    // Can't refresh without the app secret — hand back what we have and let
-    // the upstream 401 surface a reconnect CTA if it's truly stale.
-    return data.access_token;
-  }
-
-  const res = await fetch(GITHUB_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-    },
-    body: new URLSearchParams({
-      client_id: creds.id,
-      client_secret: creds.secret,
-      grant_type: "refresh_token",
-      refresh_token: data.refresh_token,
-    }),
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(`GitHub token refresh failed: ${res.status}`);
-  }
-
-  const json = (await res.json()) as RefreshResponse & { error?: string };
-  if (json.error || !json.access_token) {
-    // invalid_grant — the grant was revoked. Force a reconnect.
-    await admin.from("github_tokens").delete().eq("user_id", userId);
-    return null;
-  }
-
-  const expires_at =
-    json.expires_in != null
-      ? new Date(
-          Date.now() + (json.expires_in - EXPIRY_SKEW_SECONDS) * 1000,
-        ).toISOString()
-      : null;
-
-  await admin
-    .from("github_tokens")
-    .update({
-      access_token: json.access_token,
-      expires_at,
-      scopes: json.scope ? json.scope.split(" ") : data.scopes,
-      ...(json.refresh_token ? { refresh_token: json.refresh_token } : {}),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
-
-  return json.access_token;
+  ).select("user_id").single();
+  if (result.error || result.data?.user_id !== args.userId) throw new Error("OAuth grant storage unconfirmed");
 }
 
 /**
@@ -214,37 +92,8 @@ export async function revokeGitHubAccess(userId: string): Promise<void> {
   await admin.from("github_tokens").delete().eq("user_id", userId);
 }
 
-/**
- * Fetch the GitHub API with auth + the standard versioned headers, retrying
- * once on 401 after forcing a token refresh. Returns the raw Response so
- * callers keep control over parsing and error mapping.
- */
-export async function fetchWithGitHubAuth(
-  path: string,
-  init: RequestInit = {},
-): Promise<Response> {
-  let token = await getGitHubAccessToken();
-  if (!token) {
-    // Synthetic 401 so callers share the "token revoked" branch.
-    return new Response(null, { status: 401, statusText: "no-token" });
-  }
-
-  const url = path.startsWith("http") ? path : `${GITHUB_API}${path}`;
-  const buildInit = (t: string): RequestInit => ({
-    ...init,
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(init.headers ?? {}),
-      Authorization: `Bearer ${t}`,
-    },
-    cache: "no-store",
-  });
-
-  const first = await fetch(url, buildInit(token));
-  if (first.status !== 401) return first;
-
-  token = await getGitHubAccessToken({ force: true });
-  if (!token) return first;
-  return await fetch(url, buildInit(token));
+/** The route supplies its already verified owner. Keep this fetcher local to
+ * that request; never place it in a module-level cache. */
+export function createGitHubFetcher(userId: string, signal?: AbortSignal) {
+  return createOAuthFetcher("github", userId, signal);
 }

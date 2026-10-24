@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGitHubAuth } from "@/lib/github-token";
+import { createGitHubFetcher } from "@/lib/github-token";
 import { rateLimit } from "@/lib/rate-limit";
 import { detectProjectStacks } from "@/lib/stack-detection-server";
 
@@ -31,6 +31,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
 
   const limited = await rateLimit(user.id, { key: "tools-detected", limit: 10, windowSec: 60 });
   if (!limited.ok) {

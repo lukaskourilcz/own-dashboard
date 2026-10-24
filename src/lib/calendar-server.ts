@@ -1,5 +1,5 @@
 import "server-only";
-import { fetchWithGoogleAuth } from "@/lib/google-token";
+import { createGoogleFetcher } from "@/lib/google-token";
 import { createClient as createUserClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
 import type { EventsResult, GcalEvent } from "@/lib/calendar";
@@ -7,6 +7,7 @@ import type { EventsResult, GcalEvent } from "@/lib/calendar";
 type RawEvent = GcalEvent & { _calendarId?: string };
 
 async function fetchOne(
+  fetchWithGoogleAuth: ReturnType<typeof createGoogleFetcher>,
   calendarId: string,
   timeMin: Date,
   timeMax: Date,
@@ -68,6 +69,7 @@ async function fetchWindow(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, reason: "no-token" };
 
+  const fetcher = createGoogleFetcher(user.id);
   const prefs = await loadUserPreferences(user.id);
   const calendarIds =
     prefs.selected_calendar_ids.length > 0
@@ -75,7 +77,7 @@ async function fetchWindow(
       : ["primary"];
 
   const results = await Promise.all(
-    calendarIds.map((id) => fetchOne(id, timeMin, timeMax, maxResults)),
+    calendarIds.map((id) => fetchOne(fetcher, id, timeMin, timeMax, maxResults)),
   );
 
   // If every single fetch failed with no-token / unauthorized, surface that

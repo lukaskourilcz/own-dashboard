@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGitHubAuth } from "@/lib/github-token";
+import { createGitHubFetcher } from "@/lib/github-token";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { normalizeRepoPath, type GithubCommitResult } from "@/lib/github";
 
@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
 
   let body: Record<string, unknown>;
   try {
@@ -103,7 +104,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const put = await fetchWithGitHubAuth(base, {
+  // The read may have resolved a repository rename. Use that canonical API
+  // path rather than replaying a redirected write. The fetcher validates origins.
+  const writePath = head.url ? new URL(head.url).pathname : base;
+  const put = await fetchWithGitHubAuth(writePath, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

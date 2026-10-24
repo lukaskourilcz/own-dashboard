@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGitHubAuth } from "@/lib/github-token";
+import { createGitHubFetcher } from "@/lib/github-token";
 import type { GithubRepo } from "@/lib/github";
 
 /** Raw subset of the GitHub repo object we care about. */
@@ -34,6 +34,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
 
   const res = await fetchWithGitHubAuth(
     "/user/repos?sort=pushed&per_page=100&affiliation=owner,collaborator,organization_member",

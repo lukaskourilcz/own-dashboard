@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGoogleAuth } from "@/lib/google-token";
+import { createGoogleFetcher } from "@/lib/google-token";
 
 export type GcalCalendarEntry = {
   id: string;
@@ -23,6 +23,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGoogleAuth = createGoogleFetcher(user.id);
 
   const res = await fetchWithGoogleAuth(
     "https://www.googleapis.com/calendar/v3/users/me/calendarList?fields=items(id,summary,primary,backgroundColor,accessRole,selected)",

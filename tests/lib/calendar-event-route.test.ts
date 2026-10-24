@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ user: true, google: vi.fn(), capture: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user ? { id: "owner" } : null } }) } }) }));
-vi.mock("@/lib/google-token", () => ({ fetchWithGoogleAuth: state.google }));
+vi.mock("@/lib/google-token", () => ({ createGoogleFetcher: () => state.google }));
 vi.mock("@/lib/sentry-server", () => ({ captureCalendarRejection: state.capture }));
 import { POST, DELETE } from "@/app/api/calendar/event/route";
 import { eventEnd, eventStart } from "@/lib/calendar";

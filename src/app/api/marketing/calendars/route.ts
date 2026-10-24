@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGitHubAuth } from "@/lib/github-token";
+import { createGitHubFetcher } from "@/lib/github-token";
 import { readMarketingCalendars } from "@/lib/marketing-calendars-server";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -25,6 +25,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
 
   const limited = await rateLimit(user.id, { key: "marketing-calendars", limit: 10, windowSec: 60 });
   if (!limited.ok) {

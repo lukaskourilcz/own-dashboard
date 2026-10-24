@@ -1,45 +1,8 @@
 import "server-only";
-import { createClient as createUserClient } from "@/lib/supabase/server";
+import { createOAuthFetcher } from "@/lib/provider-auth-fetch";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
-
-/**
- * Skew applied when checking whether the cached access_token is still usable.
- * Refresh 60 seconds before Google would consider it expired to absorb clock
- * drift and round-trip latency.
- */
-const EXPIRY_SKEW_SECONDS = 60;
-
-type GoogleOAuthRow = {
-  user_id: string;
-  refresh_token: string;
-  access_token: string | null;
-  expires_at: string | null;
-  scopes: string[];
-  google_sub: string | null;
-};
-
-type RefreshResponse = {
-  access_token: string;
-  expires_in: number;
-  scope?: string;
-  refresh_token?: string;
-  token_type?: string;
-};
-
-function getGoogleCreds() {
-  const id = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const secret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-  if (!id || !secret) {
-    throw new Error(
-      "GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET are not set. " +
-        "Copy them from the Google OAuth client configured in Supabase Auth.",
-    );
-  }
-  return { id, secret };
-}
 
 /**
  * Persist the refresh token captured at /auth/callback. This is the ONLY
@@ -58,11 +21,11 @@ export async function storeGoogleTokens(args: {
   const expires_at =
     args.expiresInSeconds != null
       ? new Date(
-          Date.now() + (args.expiresInSeconds - EXPIRY_SKEW_SECONDS) * 1000,
+          Date.now() + args.expiresInSeconds * 1000,
         ).toISOString()
       : null;
 
-  await admin.from("google_oauth").upsert(
+  const result = await admin.from("google_oauth").upsert(
     {
       user_id: args.userId,
       refresh_token: args.refreshToken,
@@ -73,99 +36,8 @@ export async function storeGoogleTokens(args: {
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },
-  );
-}
-
-/**
- * Returns a fresh Google access token for the current user, or null if no
- * refresh token is on file (caller should surface a "reconnect Google" CTA).
- *
- * Uses a Postgres advisory lock keyed on the user to serialize concurrent
- * refreshes — Google may rotate the refresh_token in the response, so two
- * simultaneous refresh requests would race-overwrite each other otherwise.
- *
- * Pass { force: true } to ignore the cached access_token (e.g. after a 401
- * from Google indicates the cached token went stale before its stamped expiry).
- */
-async function getGoogleAccessToken(
-  opts: { force?: boolean } = {},
-): Promise<string | null> {
-  const supabase = await createUserClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  return await refreshUnderLock(user.id, opts.force ?? false);
-}
-
-async function refreshUnderLock(
-  userId: string,
-  force: boolean,
-): Promise<string | null> {
-  const admin = createAdminClient();
-
-  // Acquire a per-user transactional advisory lock + read the row under
-  // SELECT ... FOR UPDATE. Concurrent callers block on the lock instead of
-  // racing the refresh_token rotation (see google_oauth_acquire_refresh_lock
-  // SQL function).
-  const { data: lockRows, error: lockErr } = await admin.rpc(
-    "google_oauth_acquire_refresh_lock",
-    { p_user_id: userId },
-  );
-
-  if (lockErr) throw new Error(`refresh lock failed: ${lockErr.message}`);
-  const data = (lockRows as GoogleOAuthRow[] | null)?.[0] ?? null;
-  if (!data?.refresh_token) return null;
-
-  if (!force && data.access_token && data.expires_at) {
-    const msLeft = new Date(data.expires_at).getTime() - Date.now();
-    if (msLeft > EXPIRY_SKEW_SECONDS * 1000) return data.access_token;
-  }
-
-  const { id, secret } = getGoogleCreds();
-  const body = new URLSearchParams({
-    client_id: id,
-    client_secret: secret,
-    refresh_token: data.refresh_token,
-    grant_type: "refresh_token",
-  });
-
-  const res = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-    cache: "no-store",
-  });
-
-  if (res.status === 400 || res.status === 401) {
-    // invalid_grant — refresh token revoked / expired / wrong client. Force
-    // the user back through OAuth.
-    await admin.from("google_oauth").delete().eq("user_id", userId);
-    return null;
-  }
-  if (!res.ok) {
-    throw new Error(`Google token refresh failed: ${res.status}`);
-  }
-
-  const json = (await res.json()) as RefreshResponse;
-  const expires_at = new Date(
-    Date.now() + (json.expires_in - EXPIRY_SKEW_SECONDS) * 1000,
-  ).toISOString();
-  const scopes = json.scope ? json.scope.split(" ") : data.scopes;
-
-  await admin
-    .from("google_oauth")
-    .update({
-      access_token: json.access_token,
-      expires_at,
-      scopes,
-      ...(json.refresh_token ? { refresh_token: json.refresh_token } : {}),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
-
-  return json.access_token;
+  ).select("user_id").single();
+  if (result.error || result.data?.user_id !== args.userId) throw new Error("OAuth grant storage unconfirmed");
 }
 
 /**
@@ -197,33 +69,8 @@ export async function revokeGoogleAccess(userId: string): Promise<void> {
   await admin.from("google_oauth").delete().eq("user_id", userId);
 }
 
-/**
- * Fetch with a single automatic retry on 401: forces a token refresh and
- * retries the request once. Returns the final Response untouched so callers
- * keep full control over parsing + error handling.
- */
-export async function fetchWithGoogleAuth(
-  input: string,
-  init: RequestInit = {},
-): Promise<Response> {
-  let token = await getGoogleAccessToken();
-  if (!token) {
-    // Surface as a synthetic 401 so callers can use the same branch as
-    // "token revoked by Google".
-    return new Response(null, { status: 401, statusText: "no-token" });
-  }
-
-  const buildInit = (t: string): RequestInit => ({
-    ...init,
-    headers: { ...(init.headers ?? {}), Authorization: `Bearer ${t}` },
-    cache: "no-store",
-  });
-
-  const first = await fetch(input, buildInit(token));
-  if (first.status !== 401) return first;
-
-  // Force a refresh and retry exactly once.
-  token = await getGoogleAccessToken({ force: true });
-  if (!token) return first;
-  return await fetch(input, buildInit(token));
+/** The route supplies its already verified owner. Keep this fetcher local to
+ * that request; never place it in a module-level cache. */
+export function createGoogleFetcher(userId: string, signal?: AbortSignal) {
+  return createOAuthFetcher("google", userId, signal);
 }

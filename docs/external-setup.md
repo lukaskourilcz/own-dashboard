@@ -52,6 +52,8 @@ The app requests profile/email plus Calendar access when Google is deliberately 
 4. Grant only the repository access needed for repository discovery, Markdown reads, NEEDED.md synchronization, and confirmed file commits.
 5. Link GitHub in Settings, activate a repository as a project, inspect documents, then perform a disposable confirmed Markdown commit.
 
+Both Google and GitHub use private database refresh reservations and owner/request-scoped token reads. Concurrent rotation reports unavailable rather than racing; transient errors preserve the grant. Apply the OAuth reservation migration before its callers. A timed-out upstream rotation may require reauthorization; no refresh design can recover a rotated token that the provider delivered only to a crashed worker.
+
 OwnDashboard does not read GitHub Actions. Known schedules are seeded from `src/lib/project-cron-seeds.ts` when a project is linked to its repository; the app never triggers workflows or edits workflow cron files.
 
 ## 5. Link enrichment

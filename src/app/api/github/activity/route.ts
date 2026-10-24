@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGitHubAuth } from "@/lib/github-token";
+import { createGitHubFetcher } from "@/lib/github-token";
 
 /**
  * Cross-project recent-commit feed: read-only, bounded fan-out across the
@@ -28,6 +28,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
 
   const { data: rows } = await supabase
     .from("projects")

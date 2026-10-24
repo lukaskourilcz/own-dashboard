@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { captureCalendarRejection } from "@/lib/sentry-server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGoogleAuth } from "@/lib/google-token";
+import { createGoogleFetcher } from "@/lib/google-token";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { calendarDeleteInput, calendarEventInput, googleCalendarEvent } from "@/lib/calendar-event";
 
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGoogleAuth = createGoogleFetcher(user.id);
 
   const parsed = calendarEventInput.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid calendar event." }, { status: 400 });
@@ -76,6 +77,7 @@ export async function DELETE(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  const fetchWithGoogleAuth = createGoogleFetcher(user.id);
 
   const parsed = calendarDeleteInput.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });

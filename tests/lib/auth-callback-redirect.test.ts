@@ -27,7 +27,7 @@ it("logs fixed storage failure codes without private provider causes", async () 
   const log = vi.spyOn(console, "error").mockImplementation(() => {});
   state.session = { provider_token: "synthetic-inert-fixture", provider_refresh_token: "synthetic-inert-refresh-fixture" };
   state.google.mockRejectedValue(new Error("Synthetic private provider cause"));
-  await callback("/"); expect(log).toHaveBeenLastCalledWith("[auth/callback] google-token-storage-unconfirmed");
+  await callback("/"); expect(state.google.mock.calls[0][0].expiresInSeconds).toBeNull(); expect(log).toHaveBeenLastCalledWith("[auth/callback] google-token-storage-unconfirmed");
   state.github.mockRejectedValue(new Error("Synthetic private provider cause"));
   await callback("/", "&link=github"); expect(log).toHaveBeenLastCalledWith("[auth/callback] github-token-storage-unconfirmed");
 });
