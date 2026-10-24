@@ -21,7 +21,7 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Backend and operations | API routes, cron/provider budgets, database ownership and query plans | Reviewing |
 | Release | Current-doc reconciliation, full validation, additive migrations, PR, main merge, deployment | Pending |
 
-The [working visual plan](visual-plan.html) annotates authentic preview screenshots of the changed login, repository, Money and cron-history components. It has desktop/mobile switches and keeps remaining areas explicitly pending. Rebuild it with `node scripts/build-app-audit-visual-plan.mjs` after updating this report or the inventory.
+The [working visual plan](visual-plan.html) annotates authentic preview screenshots of the changed login, repository notes, repository activity, Money and cron-history components. It has desktop/mobile switches and keeps remaining areas explicitly pending. Rebuild it with `node scripts/build-app-audit-visual-plan.mjs` after updating this report or the inventory.
 
 ## Findings under review
 
@@ -285,3 +285,6 @@ At commit `4a34a20`, the full unit suite passes 3,817 cases with one intentional
 At commit `afa8476`, the full unit suite passes 3,878 cases with one intentional skip (389 passed files, one skipped file), in 146.44 seconds with two workers. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight actual render traces and post-build TypeScript pass. Public fixture configuration and `NEXT_E2E=0` are used; these local artifacts must not be deployed. Targeted browser evidence is in findings 114–115. Nineteen audit migrations remain prepared/unapplied (105 local files). The working plan contains 626 source entries, 318 pending and 33 partial. Activity/commit reads, project synchronization/mutations, the remaining source ledger, optimized interactions, current-doc reconciliation and main merge remain pending.
 
 Further source observations, not yet fixed: the shared currency formatter constructs Intl formatters for each value; it needs a measured bounded-reuse check and an honest invalid-currency fallback. Competition freshness accepts impossible date strings after JavaScript calendar normalization. Freelance URL handling needs the shared length/control-character rules, and the generated new-project Git instructions need reconciliation with this repository's explicit-push policy. These remain part of their focused page reviews.
+
+
+The working visual plan now includes five authentic desktop/mobile capture pairs at source snapshot `2330aad`, ten coverage rows and the current inventory (629 entries, 317 pending, 32 partial). All images load in both modes; controls, six-width document reflow, axe and page errors pass. The final screenshot was inspected. An initial verification used Playwright's page shortcut, which axe cannot open a second page from; the explicit-context run above is the passing evidence. Remaining source review, migrations and main merge are still pending.
