@@ -3,6 +3,13 @@
   "meaning": "Baseline source inventory plus files added during review (sha256 null for additions). Source review and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
   "files": [
     {
+      "path": "instrumentation-client.ts",
+      "sha256": null,
+      "lines": 16,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "195e97bae8ec64573ccf15822e6eb7941150c25f847cd5343a0f4a58c68b0358"
+    },
+    {
       "path": "instrumentation.ts",
       "sha256": "69357a59e8ac36530a66866d6fd73e12b5b97e1df6b40719844ccabfc2b8350c",
       "lines": 15,
@@ -239,6 +246,13 @@
       "sha256": "c33f837c9315a41f7a6e93242b521e819d232e924860bf3f66bfa7ef1b344c1d",
       "status": "source reviewed; bounded repository scan checks pass; final release checks pending",
       "reviewedSha256": "8a737537337ff0e39b402846f84b1420ffdf7abf76a1623e68e4f7a5777bba16"
+    },
+    {
+      "path": "src/app/api/github/needed/route.ts",
+      "sha256": null,
+      "lines": 30,
+      "reviewedSha256": "15a98b5e84c7eff68fbc90a5b944cca19e2b49a296ce3c56fc88375445926e26",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
     },
     {
       "path": "src/app/api/github/repos/lookup/route.ts",
@@ -798,11 +812,46 @@
       "reviewedSha256": "36ebc57e8483fabe3d08a22598102e6a01afe94849a062c8a996609fe869c387"
     },
     {
+      "path": "src/components/github/history-read-notice.tsx",
+      "sha256": null,
+      "lines": 12,
+      "status": "source reviewed; bilingual shared history failure/retry browser checks pass; final optimized release pending",
+      "reviewedSha256": "f0d8a3fd94d9cb369369f2c4418bd307d3ed066ff5e09590808d7388162ebb53"
+    },
+    {
       "path": "src/components/github/publish-to-repo-dialog.tsx",
       "lines": 268,
       "sha256": "89bbb25011eaa992115362094882107fb1fa7de7d13ada19339bde9a38cf7915",
       "status": "source reviewed; archived/pending/disconnected and confirmed receipt recovery checks pass; final optimized release pending",
       "reviewedSha256": "7ae5bc649b26c08fc7015c675a6ec531ff8d611c36a96f06b773c2d803278aec"
+    },
+    {
+      "path": "src/components/github/repository-filter-dialog.tsx",
+      "sha256": null,
+      "lines": 174,
+      "status": "source reviewed; pending/navigation/conflict/off-page selection states tested; rendered six-width/a11y checks pass; final release pending",
+      "reviewedSha256": "0c1db3f3d619b77501bfb4e10b0c052782795eb224e9bc7fe509652b1aec0bdb"
+    },
+    {
+      "path": "src/components/github/repository-link-control.tsx",
+      "sha256": null,
+      "lines": 122,
+      "status": "source reviewed; retained link drafts, pending/conflict/navigation/URL/a11y states tested; rendered checks pass; final release pending",
+      "reviewedSha256": "4179366ee9fda2d881141c27cd524e27d61df21b6438c87d7f0cd635ceaffa31"
+    },
+    {
+      "path": "src/components/github/use-repository-filter-save.ts",
+      "sha256": null,
+      "lines": 30,
+      "status": "source reviewed; serialized guarded filter submission and honest confirmation copy tested; rendered checks pass; final release pending",
+      "reviewedSha256": "39a81490724e9171ff9c551f60e939c4b79dd9aca24fe42db8d6881af8f3c53d"
+    },
+    {
+      "path": "src/components/github/use-repository-note-autosave.ts",
+      "sha256": null,
+      "lines": 76,
+      "reviewedSha256": "5900b0821add141e7a78d522d6e7eb399303db20e5813ad554240500f769b105",
+      "status": "source reviewed; repository receipt checks pass; final release checks pending"
     },
     {
       "path": "src/components/guest-banner.tsx",
@@ -1426,10 +1475,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2069,
+      "lines": 1976,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, ordering, guarded/retained notes, operations layout and confirmed active controls checked; metadata/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "74902bf9e24ecb2e0eea04b333647e8be4b60714a3dcf45a9aea98a54f5fdd03"
+      "status": "partially reviewed; complete reads, ordering, retained notes, manual edit recovery, operations layout and confirmed active controls checked; creation/delete/cost/cron/sync writes pending in review.md",
+      "reviewedSha256": "b8dc095afad020beba3172261005b37332dafc4c8e7489db7d60fa75b75ee424"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1583,6 +1632,27 @@
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partial: tab hydration, repository flows, task identity, bilingual health and local-day memo changes checked; remaining tabs/business flow pending",
       "reviewedSha256": "86fe1f18f05a01cef59708137009a45abb5984318fd319874d07cef48e66f62b"
+    },
+    {
+      "path": "src/components/projects/use-project-details-form.ts",
+      "sha256": null,
+      "lines": 201,
+      "status": "partially reviewed; captured-source edits and guarded in-memory form lifecycle checked; creation confirmation/idempotence and final release pending",
+      "reviewedSha256": "52c31eab64eaa7ab988a3f5dd2c6f977c1a8c298beae8cd93899112abe255e5e"
+    },
+    {
+      "path": "src/components/projects/use-project-notes-autosave.ts",
+      "sha256": null,
+      "lines": 113,
+      "status": "source reviewed; ordered saves, ambiguity/conflict, immediate guard, reload/discard, availability and late-callback tests pass; rendered retention checked; final release pending",
+      "reviewedSha256": "a2f05ebc134e7a4feb2bd264aed2dd20119e0ab63ce7cde836654920a437f786"
+    },
+    {
+      "path": "src/components/projects/use-project-preferences-save.ts",
+      "sha256": null,
+      "lines": 34,
+      "status": "source reviewed; pending guards, same-event deduplication, confirmed-only cache writes and ambiguity/conflict reconciliation checked; EN/CS rendered controls pass; final optimized release pending",
+      "reviewedSha256": "9020a8acc7243adb270cc9a008426267b153d7a8b030e058121704bb85d522c2"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -1778,6 +1848,13 @@
       "reviewedSha256": "21364de6565d420a0a6eeaca1f1e2e5be789c67920ece8d896fcfa08c98af873"
     },
     {
+      "path": "src/lib/auth-actions.ts",
+      "sha256": null,
+      "lines": 17,
+      "reviewedSha256": "7e328d2a3e0b13fad6557d02f3919cb1d50d79c4f6215b6a98d85a1e8f05743b",
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
+    },
+    {
       "path": "src/lib/bank-csv.ts",
       "lines": 253,
       "sha256": "1825cbcce2a56bcc9f649619daff18635b015fdfc08a77e0b4f597279c16a12e",
@@ -1889,12 +1966,33 @@
       "reviewedSha256": "0a2e426ec3f1f7d0e09a5679e5fd01915546654d092cd33d186d14ec737e27f9"
     },
     {
+      "path": "src/lib/calendar-client.ts",
+      "sha256": null,
+      "lines": 27,
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "526d22c5ad3ce7308f7a985b38d538fbd786326ddd35c18366f1ac409f7b14ce"
+    },
+    {
       "path": "src/lib/calendar-event.ts",
       "lines": 39,
       "sha256": null,
       "addedAfterBaseline": true,
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "0ded942234d4f8d11112ed169b0d5adad9ad02e9c0820630ee3e8465a1ebcffb"
+    },
+    {
+      "path": "src/lib/calendar-google-read.ts",
+      "sha256": null,
+      "lines": 40,
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "33bf70d2a6587f8333d52c0738a8a454d6cee5dee85fe913150c38f371275853"
+    },
+    {
+      "path": "src/lib/calendar-response.ts",
+      "sha256": null,
+      "lines": 37,
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "4a798b1dbb89a3559bf4861fae20630ad9b9f86c4c762139b6a80d75d7b2304c"
     },
     {
       "path": "src/lib/calendar-server.ts",
@@ -1951,11 +2049,25 @@
       "reviewedSha256": "ad8e1e6d253e82b065cdd5c2873dd60ec6f34b3e03435b686b6b94180b7cb5cd"
     },
     {
+      "path": "src/lib/cron-log-contract.ts",
+      "sha256": null,
+      "lines": 8,
+      "reviewedSha256": "ec70741c3e0ec4661533cd05e774782c168ab9e28be33293c9f7e57f6f9899a3",
+      "status": "source reviewed; ownership, bounded logging and monitoring tests pass; final app-wide release checks pending"
+    },
+    {
       "path": "src/lib/cron-log.ts",
       "lines": 89,
       "sha256": "5ae0145d8e190a30cafaab97ebb5b251cebb2e38ece890cfbcc268c20a19776f",
       "status": "source reviewed; ownership, bounded logging and monitoring tests pass; final app-wide release checks pending",
       "reviewedSha256": "0226dd1fb6032c0506b3607f4ba75832ac2b431c2c1b117206599be962c01abf"
+    },
+    {
+      "path": "src/lib/cron-runs.ts",
+      "sha256": null,
+      "lines": 25,
+      "reviewedSha256": "a5b42f52aed174d9f65ca6145cfa79ebce82872092de92f55f539f1f773ea8a5",
+      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending"
     },
     {
       "path": "src/lib/csrf.ts",
@@ -1983,6 +2095,13 @@
       "lines": 116,
       "sha256": "7160e60c6d92153246cd517c1955dc63f4fff53006452b555cbb0249a7674693",
       "status": "pending"
+    },
+    {
+      "path": "src/lib/database-version.ts",
+      "sha256": null,
+      "lines": 12,
+      "status": "source reviewed; bounded PostgreSQL microsecond parsing, timezone equivalence, negative epoch and invalid-date tests pass; final release pending",
+      "reviewedSha256": "6647575d10ae821afbd81759df8c0fb06e1247e879fa89d122cb080b231ce5c5"
     },
     {
       "path": "src/lib/date-keys.ts",
@@ -2050,6 +2169,20 @@
       "reviewedSha256": "d3b484a3ec02a1630a37d3baee1fc40b88adee5e325b4c6b5370867f35749adc"
     },
     {
+      "path": "src/lib/github-activity-contract.ts",
+      "sha256": null,
+      "lines": 59,
+      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
+      "reviewedSha256": "8a87de204cc350dbfa2b6db63d2165b2611215d0a9547d014bdf7dc85ec41ded"
+    },
+    {
+      "path": "src/lib/github-activity-server.ts",
+      "sha256": null,
+      "lines": 39,
+      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
+      "reviewedSha256": "7a2e940012c24d1b255daa95f836f886df8afcd2c9765c18945570b2ea3974e4"
+    },
+    {
       "path": "src/lib/github-auth.ts",
       "lines": 32,
       "sha256": "66d1c18f0337c9523490ea5339d63607a3558975a7fecdd25b7b9bfe7ccd266f",
@@ -2057,11 +2190,39 @@
       "reviewedSha256": "2ffe41fe69d4bde5e375f284275d3ffa9b977edec054e5bc52576f3a4b5cdf09"
     },
     {
+      "path": "src/lib/github-file-contract.ts",
+      "sha256": null,
+      "lines": 28,
+      "reviewedSha256": "e6ff0739e5d0abc3abdde1484a9188b271479a17093614a5500f30ac49f2d1aa",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/github-file-server.ts",
+      "sha256": null,
+      "lines": 39,
+      "reviewedSha256": "11c018671077222f09c01ebe85e0c5a59abfe21c8fa7a428d3ee47b221d00d9e",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/github-path.ts",
+      "sha256": null,
+      "lines": 8,
+      "reviewedSha256": "e70f09e68df9a031967c3d245bcc84bb3e0dd2485f4b8e1e9f6c2d015b4a3b5c",
+      "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending"
+    },
+    {
       "path": "src/lib/github-queries.ts",
       "lines": 93,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
       "status": "source reviewed; expected-id metadata, retained history and disconnect cache tests pass; final optimized release pending",
       "reviewedSha256": "35ea7d4a33e42bd6b50f1ae3da2e64735c9e67055915b183e1ba13b638d6b62f"
+    },
+    {
+      "path": "src/lib/github-repository-contract.ts",
+      "sha256": null,
+      "lines": 40,
+      "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
+      "reviewedSha256": "c8488fdb13d75c0f4600aa03037f0f5d2c1961d638940a6fd4deab2434056116"
     },
     {
       "path": "src/lib/github-token.ts",
@@ -2318,10 +2479,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 431,
+      "lines": 446,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "source reviewed; bilingual project recovery, unavailability and classification copy checked; final release pending",
-      "reviewedSha256": "cf31ea2e776e884b8eed04f72c9abac480694b0a893eda096bff8bbff31c4a84"
+      "status": "source reviewed; bilingual project form/conflict, note recovery, unavailability and classification copy checked; final release pending",
+      "reviewedSha256": "706d41520b9a7d0bab3acc175b20c82cd0eed5e81c1ec6ab300ad0ce85c4a7f2"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",
@@ -2395,6 +2556,13 @@
       "sha256": "385f7cc9d42ec5d107625185ea37d8b8717e3f813e7ab69fd47e778b6d709d51",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "385f7cc9d42ec5d107625185ea37d8b8717e3f813e7ab69fd47e778b6d709d51"
+    },
+    {
+      "path": "src/lib/integration-status.ts",
+      "sha256": null,
+      "lines": 23,
+      "reviewedSha256": "8a778f39cf882f9b604370283b9f55a5f480d5e7628da7d4ad7f43dad689ed01",
+      "status": "source reviewed; integration metadata targeted checks pass; final app-wide release pending"
     },
     {
       "path": "src/lib/invoice-import.ts",
@@ -3420,11 +3588,53 @@
       "reviewedSha256": "8d345659f6e33d5cf302171d9a8966ee9144a71fbbbe66d5542c332ad19cec45"
     },
     {
+      "path": "src/lib/navigation-preferences.ts",
+      "sha256": null,
+      "lines": 13,
+      "status": "source reviewed; pure canonical navigation normalizer tested through shared contract; final release pending",
+      "reviewedSha256": "a71aee22f8f2547576fb7b9cc7d14facd7adea230325e66d5cb048fe0388d943"
+    },
+    {
+      "path": "src/lib/needed-batch-client.ts",
+      "sha256": null,
+      "lines": 34,
+      "reviewedSha256": "a61e2e200a7300fd1f1c5bead566dd68a89a2b87daef335f399f3e283c9830ff",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-batch-contract.ts",
+      "sha256": null,
+      "lines": 16,
+      "reviewedSha256": "5f7f1bd9b8e610e4cc1420839673c89fe03c5a726868033f245ce48b51b2d671",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-batch-server.ts",
+      "sha256": null,
+      "lines": 36,
+      "reviewedSha256": "b8f2d1c772e65ec905ff6612451ead6e1b7db79112a8914eb548bfc82c57f1e6",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-paths.ts",
+      "sha256": null,
+      "lines": 3,
+      "reviewedSha256": "6ae44662ac720b75157fc231f1e4f3167e6ee0039450213a1cf931a3e695140a",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
       "path": "src/lib/needed-sync.ts",
       "lines": 298,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
       "status": "source reviewed; targeted cleanup/import tests pass; final app-wide release checks pending",
       "reviewedSha256": "429f7d0d3080fbb2013da8a8d895ed3db7b252a3e8d1f99fe8380d12fef6da94"
+    },
+    {
+      "path": "src/lib/needed-task-store.ts",
+      "sha256": null,
+      "lines": 38,
+      "reviewedSha256": "a4ebcbf8ac02e9f1f3fe119f7cfe03570d60b63465d271c5066fe87ab5d31603",
+      "status": "source reviewed; task synchronization checks pass; final release checks pending"
     },
     {
       "path": "src/lib/needed.ts",
@@ -3452,6 +3662,27 @@
       "sha256": "b2bbdabb7331e45b467be4604d79a58962a29c43d3b810c3e3080a1c18b93305",
       "status": "partial; bounded same-origin local links, credential/control guards and visibility cases checked; consumer clock/lifecycle review pending",
       "reviewedSha256": "e055b32308bbae77a76361b1b6008ec105b93f1767425c2fac4962c67b8a6312"
+    },
+    {
+      "path": "src/lib/oauth-access-token.ts",
+      "sha256": null,
+      "lines": 67,
+      "reviewedSha256": "5ca931bac88cce7ec15d36b0dcded2b8f35feb865ecd2a7e56bec9740d58314f",
+      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/oauth-grant-verification.ts",
+      "sha256": null,
+      "lines": 63,
+      "reviewedSha256": "7da99788f277073d7031c8d91a041970b778e5676ab2fb05999854e22b70042b",
+      "status": "source reviewed; provider identity/audience/scope/TTL checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/oauth-revocation.ts",
+      "sha256": null,
+      "lines": 55,
+      "reviewedSha256": "e6bdbf4695c1851c5a78de2acf73a897986749ea5d251cb56c78d64ebf5a345d",
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
     },
     {
       "path": "src/lib/on-demand-load.ts",
@@ -3509,11 +3740,25 @@
       "reviewedSha256": "3da302cb40c9ee4bd0f2a3e22926b499e8af546e12368ff47a9b8a9ce41314b2"
     },
     {
+      "path": "src/lib/preference-storage.ts",
+      "sha256": null,
+      "lines": 25,
+      "reviewedSha256": "1b211baef63460e55f79d45c163ded73bf7ff9cc02107cc49d7591aaca684a48",
+      "status": "source reviewed; cross-tab preference tests pass; final app-wide release checks pending"
+    },
+    {
       "path": "src/lib/project-cron-seeds.ts",
       "lines": 51,
       "sha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1",
       "status": "source reviewed; weekday seed checked against the pinned actual sentinel and slug/history tests; consumer sync and final release pending",
       "reviewedSha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1"
+    },
+    {
+      "path": "src/lib/project-details.ts",
+      "sha256": null,
+      "lines": 85,
+      "status": "source reviewed; manual metadata input/history/version receipts, parent abort and conditional cache tests pass; final release pending",
+      "reviewedSha256": "781fc73d77142b6bbe46c53da5c96f7b2afe8626807e7dc584f0dd3eaa6d5821"
     },
     {
       "path": "src/lib/project-health.ts",
@@ -3535,6 +3780,28 @@
       "sha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9",
       "status": "partially reviewed; task ID/name priority and canonical grouped index pass client/database/browser checks; automatic sync lifecycle remains in review.md",
       "reviewedSha256": "567625fa8fdc2987178ada8e2f83b9cea18ff8560ad29083878a1e43beac2482"
+    },
+    {
+      "path": "src/lib/project-notes.ts",
+      "sha256": null,
+      "lines": 66,
+      "status": "source reviewed; hash/receipt, conflicts, bounds/deadline and conditional snapshot cache checks pass; final release pending",
+      "reviewedSha256": "a9befb1b61ec1b22c204c228bb74e9ad3a37f9f5e2fcbd43bc0e506738c43bb3"
+    },
+    {
+      "path": "src/lib/project-order.ts",
+      "lines": 47,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; atomic owner/version/receipt and conditional cache checks pass; final optimized release pending",
+      "reviewedSha256": "ac846d74b3aa579d50ee1e20a8b04bc86548c4199b3af0f10d5c63158f1ef6dc"
+    },
+    {
+      "path": "src/lib/project-preferences.ts",
+      "sha256": null,
+      "lines": 49,
+      "status": "source reviewed; bounded owner/field receipts, shared microsecond versions, no-op/conflict and cache checks pass; final release pending",
+      "reviewedSha256": "876c3b5c0342ecb7e5aa4a690a13be49b18763459371db936ff50f4b02e90060"
     },
     {
       "path": "src/lib/project-workspace-tabs.ts",
@@ -3572,6 +3839,13 @@
       "reviewedSha256": "496e16ffe16e3be18d4d2f410078b469b861a494032b412dee6c5f74dd82c372"
     },
     {
+      "path": "src/lib/provider-auth-fetch.ts",
+      "sha256": null,
+      "lines": 58,
+      "reviewedSha256": "0100e018102c0ea15e0d0c6dd0677d4b9bd83620ef1c3c3afc1b51880a113cc7",
+      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
       "path": "src/lib/queries/entities.ts",
       "lines": 80,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
@@ -3598,6 +3872,55 @@
       "sha256": "dcf0c56a4a3c77004e7345580455264cdd5b6a61da308a85b91372ec0bc1fe99",
       "status": "partial source review; all lines read; memory cleanup, configuration identity and remote deadline remain",
       "reviewedSha256": "dcf0c56a4a3c77004e7345580455264cdd5b6a61da308a85b91372ec0bc1fe99"
+    },
+    {
+      "path": "src/lib/renewal-email.ts",
+      "sha256": null,
+      "lines": 39,
+      "reviewedSha256": "26a4ae4afcbce9244dddfb546b87c1334945ee32c900325d9777b7839b40096e",
+      "status": "source reviewed; owner-only, DST, consent, provider/local receipt and cancellation tests pass; final app-wide release checks pending"
+    },
+    {
+      "path": "src/lib/repository-filter-save.ts",
+      "sha256": null,
+      "lines": 15,
+      "status": "source reviewed; confirmed device/server outcomes and late-intent reconciliation tested; rendered checks pass; full cross-device ordering separately pending",
+      "reviewedSha256": "f681b51a6709a6807a6bb4676e394597f5a253b780c8de5b1b8699355dba03d2"
+    },
+    {
+      "path": "src/lib/repository-filter.ts",
+      "sha256": null,
+      "lines": 65,
+      "status": "source reviewed; validated/subscribed repository selection availability and persistence tested; rendered checks pass; final release pending",
+      "reviewedSha256": "c0c42d0d043ef88bdf03ae363d6d93f045a440c20c6aabdc49198339e108d40c"
+    },
+    {
+      "path": "src/lib/repository-links.ts",
+      "sha256": null,
+      "lines": 71,
+      "status": "source reviewed; bounded versioned link mutation receipts/cache reconciliation tested, including migrated RLS; rendered checks pass; final release pending",
+      "reviewedSha256": "36475277c2ca2901b03593169d610aea9cab8ec8cfe97e6ceac4f23a34fa97a4"
+    },
+    {
+      "path": "src/lib/repository-records.ts",
+      "sha256": null,
+      "lines": 63,
+      "reviewedSha256": "97cf4b7d0b816f7268089bf04a56cb2da587c121d9da9082c4c48217b5e9ebf2",
+      "status": "source reviewed; repository receipt checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/sentry-privacy.ts",
+      "sha256": null,
+      "lines": 47,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "ba06d488d21d95515101a314a5f8b2c30ef1d2d5a9c15c1c90a2af16918c5aca"
+    },
+    {
+      "path": "src/lib/sentry-server.ts",
+      "sha256": null,
+      "lines": 10,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "6dbb283ebb82116e70184737ba6b8bf9bea56ecc2286fccb1f08d3d41f6dd979"
     },
     {
       "path": "src/lib/stack-detection-server.ts",
@@ -3688,6 +4011,13 @@
       "status": "pending"
     },
     {
+      "path": "src/lib/telemetry-url.ts",
+      "sha256": null,
+      "lines": 20,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "f4cab5d36384cf83c85aa22fd4d08341f90351ad383ee61bf7715c36812b43dc"
+    },
+    {
       "path": "src/lib/tip-export.ts",
       "lines": 120,
       "sha256": "c4075ec598edea82a86b850ea3ce5942674e1cd2816e37d09565713ab09dd6bc",
@@ -3738,6 +4068,13 @@
       "status": "pending"
     },
     {
+      "path": "src/lib/ui-preferences-contract.ts",
+      "sha256": null,
+      "lines": 45,
+      "status": "source reviewed; bounded preference field/read contract tested; final release pending",
+      "reviewedSha256": "9bb71cfe4a095ad5203efc8ad5f9231ac724df6799975d609d2690bc0ba8a4b9"
+    },
+    {
       "path": "src/lib/use-dashboard-layout.ts",
       "lines": 66,
       "sha256": "2a83f698129a2a0ab9a2308692fea63345b4e1d6b64ce59e58af59ce9c284f95",
@@ -3764,6 +4101,13 @@
       "sha256": "bd55b6e440b592e8bbcaac04032e0be074252f80064d202bf3b4c692fb0c5d47",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "bd55b6e440b592e8bbcaac04032e0be074252f80064d202bf3b4c692fb0c5d47"
+    },
+    {
+      "path": "src/lib/use-sign-out.ts",
+      "sha256": null,
+      "lines": 27,
+      "reviewedSha256": "af04b8fd6d57de954e58a13f29ee373a2ccdef94d9fa8e17779a7640d884d1da",
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
     },
     {
       "path": "src/lib/use-spend-categories.ts",
@@ -3799,6 +4143,13 @@
       "status": "pending"
     },
     {
+      "path": "src/lib/web-url.ts",
+      "sha256": null,
+      "lines": 10,
+      "status": "source reviewed; browser URL boundary tested; final release pending",
+      "reviewedSha256": "0eb1c591b21e54130efa409e6938e0187ed4663583f4234d1bff53efb03b5c66"
+    },
+    {
       "path": "src/lib/weekly-planning.ts",
       "lines": 476,
       "sha256": "74407b98155ff9bc9ec5afcb677d12f990a53359517ee5978e356e36758dc99f",
@@ -3812,118 +4163,6 @@
       "reviewedSha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9"
     },
     {
-      "path": "instrumentation-client.ts",
-      "sha256": null,
-      "lines": 16,
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "195e97bae8ec64573ccf15822e6eb7941150c25f847cd5343a0f4a58c68b0358"
-    },
-    {
-      "path": "src/lib/sentry-privacy.ts",
-      "sha256": null,
-      "lines": 47,
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "ba06d488d21d95515101a314a5f8b2c30ef1d2d5a9c15c1c90a2af16918c5aca"
-    },
-    {
-      "path": "src/lib/sentry-server.ts",
-      "sha256": null,
-      "lines": 10,
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "6dbb283ebb82116e70184737ba6b8bf9bea56ecc2286fccb1f08d3d41f6dd979"
-    },
-    {
-      "path": "src/lib/telemetry-url.ts",
-      "sha256": null,
-      "lines": 20,
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "f4cab5d36384cf83c85aa22fd4d08341f90351ad383ee61bf7715c36812b43dc"
-    },
-    {
-      "path": "src/lib/integration-status.ts",
-      "sha256": null,
-      "lines": 23,
-      "reviewedSha256": "8a778f39cf882f9b604370283b9f55a5f480d5e7628da7d4ad7f43dad689ed01",
-      "status": "source reviewed; integration metadata targeted checks pass; final app-wide release pending"
-    },
-    {
-      "path": "src/lib/oauth-access-token.ts",
-      "sha256": null,
-      "lines": 67,
-      "reviewedSha256": "5ca931bac88cce7ec15d36b0dcded2b8f35feb865ecd2a7e56bec9740d58314f",
-      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending"
-    },
-    {
-      "path": "src/lib/provider-auth-fetch.ts",
-      "sha256": null,
-      "lines": 58,
-      "reviewedSha256": "0100e018102c0ea15e0d0c6dd0677d4b9bd83620ef1c3c3afc1b51880a113cc7",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/oauth-grant-verification.ts",
-      "sha256": null,
-      "lines": 63,
-      "reviewedSha256": "7da99788f277073d7031c8d91a041970b778e5676ab2fb05999854e22b70042b",
-      "status": "source reviewed; provider identity/audience/scope/TTL checks pass; final app-wide release pending"
-    },
-    {
-      "path": "src/lib/oauth-revocation.ts",
-      "sha256": null,
-      "lines": 55,
-      "reviewedSha256": "e6bdbf4695c1851c5a78de2acf73a897986749ea5d251cb56c78d64ebf5a345d",
-      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
-    },
-    {
-      "path": "src/lib/auth-actions.ts",
-      "sha256": null,
-      "lines": 17,
-      "reviewedSha256": "7e328d2a3e0b13fad6557d02f3919cb1d50d79c4f6215b6a98d85a1e8f05743b",
-      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
-    },
-    {
-      "path": "src/lib/use-sign-out.ts",
-      "sha256": null,
-      "lines": 27,
-      "reviewedSha256": "af04b8fd6d57de954e58a13f29ee373a2ccdef94d9fa8e17779a7640d884d1da",
-      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
-    },
-    {
-      "path": "src/lib/github-file-contract.ts",
-      "sha256": null,
-      "lines": 28,
-      "reviewedSha256": "e6ff0739e5d0abc3abdde1484a9188b271479a17093614a5500f30ac49f2d1aa",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/github-file-server.ts",
-      "sha256": null,
-      "lines": 39,
-      "reviewedSha256": "11c018671077222f09c01ebe85e0c5a59abfe21c8fa7a428d3ee47b221d00d9e",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/github-path.ts",
-      "sha256": null,
-      "lines": 8,
-      "reviewedSha256": "e70f09e68df9a031967c3d245bcc84bb3e0dd2485f4b8e1e9f6c2d015b4a3b5c",
-      "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending"
-    },
-    {
-      "path": "src/lib/repository-records.ts",
-      "sha256": null,
-      "lines": 63,
-      "reviewedSha256": "97cf4b7d0b816f7268089bf04a56cb2da587c121d9da9082c4c48217b5e9ebf2",
-      "status": "source reviewed; repository receipt checks pass; final release checks pending"
-    },
-    {
-      "path": "src/components/github/use-repository-note-autosave.ts",
-      "sha256": null,
-      "lines": 76,
-      "reviewedSha256": "5900b0821add141e7a78d522d6e7eb399303db20e5813ad554240500f769b105",
-      "status": "source reviewed; repository receipt checks pass; final release checks pending"
-    },
-    {
       "path": "supabase/migrations/20261024034239_repository_record_receipts.sql",
       "sha256": null,
       "lines": 103,
@@ -3931,243 +4170,11 @@
       "status": "source reviewed; repository receipt checks pass; final release checks pending"
     },
     {
-      "path": "src/lib/needed-task-store.ts",
-      "sha256": null,
-      "lines": 38,
-      "reviewedSha256": "a4ebcbf8ac02e9f1f3fe119f7cfe03570d60b63465d271c5066fe87ab5d31603",
-      "status": "source reviewed; task synchronization checks pass; final release checks pending"
-    },
-    {
       "path": "supabase/migrations/20261024041457_repository_task_sync.sql",
       "sha256": null,
       "lines": 88,
       "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
-    },
-    {
-      "path": "src/app/api/github/needed/route.ts",
-      "sha256": null,
-      "lines": 30,
-      "reviewedSha256": "15a98b5e84c7eff68fbc90a5b944cca19e2b49a296ce3c56fc88375445926e26",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/needed-batch-client.ts",
-      "sha256": null,
-      "lines": 34,
-      "reviewedSha256": "a61e2e200a7300fd1f1c5bead566dd68a89a2b87daef335f399f3e283c9830ff",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/needed-batch-contract.ts",
-      "sha256": null,
-      "lines": 16,
-      "reviewedSha256": "5f7f1bd9b8e610e4cc1420839673c89fe03c5a726868033f245ce48b51b2d671",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/needed-batch-server.ts",
-      "sha256": null,
-      "lines": 36,
-      "reviewedSha256": "b8f2d1c772e65ec905ff6612451ead6e1b7db79112a8914eb548bfc82c57f1e6",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/needed-paths.ts",
-      "sha256": null,
-      "lines": 3,
-      "reviewedSha256": "6ae44662ac720b75157fc231f1e4f3167e6ee0039450213a1cf931a3e695140a",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/cron-runs.ts",
-      "sha256": null,
-      "lines": 25,
-      "reviewedSha256": "a5b42f52aed174d9f65ca6145cfa79ebce82872092de92f55f539f1f773ea8a5",
-      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending"
-    },
-    {
-      "path": "src/lib/cron-log-contract.ts",
-      "sha256": null,
-      "lines": 8,
-      "reviewedSha256": "ec70741c3e0ec4661533cd05e774782c168ab9e28be33293c9f7e57f6f9899a3",
-      "status": "source reviewed; ownership, bounded logging and monitoring tests pass; final app-wide release checks pending"
-    },
-    {
-      "path": "src/lib/renewal-email.ts",
-      "sha256": null,
-      "lines": 39,
-      "reviewedSha256": "26a4ae4afcbce9244dddfb546b87c1334945ee32c900325d9777b7839b40096e",
-      "status": "source reviewed; owner-only, DST, consent, provider/local receipt and cancellation tests pass; final app-wide release checks pending"
-    },
-    {
-      "path": "src/lib/preference-storage.ts",
-      "sha256": null,
-      "lines": 25,
-      "reviewedSha256": "1b211baef63460e55f79d45c163ded73bf7ff9cc02107cc49d7591aaca684a48",
-      "status": "source reviewed; cross-tab preference tests pass; final app-wide release checks pending"
-    },
-    {
-      "path": "src/lib/navigation-preferences.ts",
-      "sha256": null,
-      "lines": 13,
-      "status": "source reviewed; pure canonical navigation normalizer tested through shared contract; final release pending",
-      "reviewedSha256": "a71aee22f8f2547576fb7b9cc7d14facd7adea230325e66d5cb048fe0388d943"
-    },
-    {
-      "path": "src/lib/ui-preferences-contract.ts",
-      "sha256": null,
-      "lines": 45,
-      "status": "source reviewed; bounded preference field/read contract tested; final release pending",
-      "reviewedSha256": "9bb71cfe4a095ad5203efc8ad5f9231ac724df6799975d609d2690bc0ba8a4b9"
-    },
-    {
-      "path": "src/lib/web-url.ts",
-      "sha256": null,
-      "lines": 10,
-      "status": "source reviewed; browser URL boundary tested; final release pending",
-      "reviewedSha256": "0eb1c591b21e54130efa409e6938e0187ed4663583f4234d1bff53efb03b5c66"
-    },
-    {
-      "path": "src/lib/calendar-client.ts",
-      "sha256": null,
-      "lines": 27,
-      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "526d22c5ad3ce7308f7a985b38d538fbd786326ddd35c18366f1ac409f7b14ce"
-    },
-    {
-      "path": "src/lib/calendar-google-read.ts",
-      "sha256": null,
-      "lines": 40,
-      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "33bf70d2a6587f8333d52c0738a8a454d6cee5dee85fe913150c38f371275853"
-    },
-    {
-      "path": "src/lib/calendar-response.ts",
-      "sha256": null,
-      "lines": 37,
-      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "4a798b1dbb89a3559bf4861fae20630ad9b9f86c4c762139b6a80d75d7b2304c"
-    },
-    {
-      "path": "src/lib/repository-links.ts",
-      "sha256": null,
-      "lines": 71,
-      "status": "source reviewed; bounded versioned link mutation receipts/cache reconciliation tested, including migrated RLS; rendered checks pass; final release pending",
-      "reviewedSha256": "36475277c2ca2901b03593169d610aea9cab8ec8cfe97e6ceac4f23a34fa97a4"
-    },
-    {
-      "path": "src/components/github/repository-link-control.tsx",
-      "sha256": null,
-      "lines": 122,
-      "status": "source reviewed; retained link drafts, pending/conflict/navigation/URL/a11y states tested; rendered checks pass; final release pending",
-      "reviewedSha256": "4179366ee9fda2d881141c27cd524e27d61df21b6438c87d7f0cd635ceaffa31"
-    },
-    {
-      "path": "src/lib/repository-filter.ts",
-      "sha256": null,
-      "lines": 65,
-      "status": "source reviewed; validated/subscribed repository selection availability and persistence tested; rendered checks pass; final release pending",
-      "reviewedSha256": "c0c42d0d043ef88bdf03ae363d6d93f045a440c20c6aabdc49198339e108d40c"
-    },
-    {
-      "path": "src/lib/repository-filter-save.ts",
-      "sha256": null,
-      "lines": 15,
-      "status": "source reviewed; confirmed device/server outcomes and late-intent reconciliation tested; rendered checks pass; full cross-device ordering separately pending",
-      "reviewedSha256": "f681b51a6709a6807a6bb4676e394597f5a253b780c8de5b1b8699355dba03d2"
-    },
-    {
-      "path": "src/components/github/repository-filter-dialog.tsx",
-      "sha256": null,
-      "lines": 174,
-      "status": "source reviewed; pending/navigation/conflict/off-page selection states tested; rendered six-width/a11y checks pass; final release pending",
-      "reviewedSha256": "0c1db3f3d619b77501bfb4e10b0c052782795eb224e9bc7fe509652b1aec0bdb"
-    },
-    {
-      "path": "src/components/github/use-repository-filter-save.ts",
-      "sha256": null,
-      "lines": 30,
-      "status": "source reviewed; serialized guarded filter submission and honest confirmation copy tested; rendered checks pass; final release pending",
-      "reviewedSha256": "39a81490724e9171ff9c551f60e939c4b79dd9aca24fe42db8d6881af8f3c53d"
-    },
-    {
-      "path": "src/lib/github-repository-contract.ts",
-      "sha256": null,
-      "lines": 40,
-      "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
-      "reviewedSha256": "c8488fdb13d75c0f4600aa03037f0f5d2c1961d638940a6fd4deab2434056116"
-    },
-    {
-      "path": "src/lib/github-activity-contract.ts",
-      "sha256": null,
-      "lines": 59,
-      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
-      "reviewedSha256": "8a87de204cc350dbfa2b6db63d2165b2611215d0a9547d014bdf7dc85ec41ded"
-    },
-    {
-      "path": "src/lib/github-activity-server.ts",
-      "sha256": null,
-      "lines": 39,
-      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
-      "reviewedSha256": "7a2e940012c24d1b255daa95f836f886df8afcd2c9765c18945570b2ea3974e4"
-    },
-    {
-      "path": "src/components/github/history-read-notice.tsx",
-      "sha256": null,
-      "lines": 12,
-      "status": "source reviewed; bilingual shared history failure/retry browser checks pass; final optimized release pending",
-      "reviewedSha256": "f0d8a3fd94d9cb369369f2c4418bd307d3ed066ff5e09590808d7388162ebb53"
-    },
-    {
-      "path": "src/lib/project-order.ts",
-      "lines": 47,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; atomic owner/version/receipt and conditional cache checks pass; final optimized release pending",
-      "reviewedSha256": "ac846d74b3aa579d50ee1e20a8b04bc86548c4199b3af0f10d5c63158f1ef6dc"
-    },
-    {
-      "path": "src/lib/project-notes.ts",
-      "sha256": null,
-      "lines": 66,
-      "status": "source reviewed; hash/receipt, conflicts, bounds/deadline and conditional snapshot cache checks pass; final release pending",
-      "reviewedSha256": "a9befb1b61ec1b22c204c228bb74e9ad3a37f9f5e2fcbd43bc0e506738c43bb3"
-    },
-    {
-      "path": "src/components/projects/use-project-notes-autosave.ts",
-      "sha256": null,
-      "lines": 113,
-      "status": "source reviewed; ordered saves, ambiguity/conflict, immediate guard, reload/discard, availability and late-callback tests pass; rendered retention checked; final release pending",
-      "reviewedSha256": "a2f05ebc134e7a4feb2bd264aed2dd20119e0ab63ce7cde836654920a437f786"
-    },
-    {
-      "path": "src/lib/project-preferences.ts",
-      "sha256": null,
-      "lines": 49,
-      "status": "source reviewed; bounded owner/field receipts, shared microsecond versions, no-op/conflict and cache checks pass; final release pending",
-      "reviewedSha256": "876c3b5c0342ecb7e5aa4a690a13be49b18763459371db936ff50f4b02e90060"
-    },
-    {
-      "path": "src/components/projects/use-project-preferences-save.ts",
-      "sha256": null,
-      "lines": 34,
-      "status": "source reviewed; pending guards, same-event deduplication, confirmed-only cache writes and ambiguity/conflict reconciliation checked; EN/CS rendered controls pass; final optimized release pending",
-      "reviewedSha256": "9020a8acc7243adb270cc9a008426267b153d7a8b030e058121704bb85d522c2"
-    },
-    {
-      "path": "src/lib/database-version.ts",
-      "sha256": null,
-      "lines": 12,
-      "status": "source reviewed; bounded PostgreSQL microsecond parsing, timezone equivalence, negative epoch and invalid-date tests pass; final release pending",
-      "reviewedSha256": "6647575d10ae821afbd81759df8c0fb06e1247e879fa89d122cb080b231ce5c5"
-    },
-    {
-      "path": "src/lib/project-details.ts",
-      "sha256": null,
-      "lines": 85,
-      "status": "source reviewed; manual metadata input/history/version receipts and conditional cache tests pass; form integration and final release pending",
-      "reviewedSha256": "b30303f4cbe8f76066cfe6d4fd44bfd2aa40a35f42125840ab3213e4ae343b46"
     }
   ],
   "baselineFileCount": 561

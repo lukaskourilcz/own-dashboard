@@ -206,7 +206,7 @@ The migrations, in the order they run:
 108. `20261024113157_daily_focus_repository_identity.sql` — prepared, unapplied; Daily Focus prefers explicit project and known repository IDs before legacy names, preserving existing generations.
 109. `20261024120023_confirmed_project_notes.sql` — prepared, unapplied; field-scoped project-note compare-and-save with compact hash/version receipts; the operations editor uses the guarded autosave contract.
 110. `20261024130626_confirmed_project_preferences.sql` — prepared, unapplied; active/engagement compare-and-save with compact versioned receipts, conflicts and no-op retries; Settings and Projects wait for confirmation.
-111. `20261024134706_confirmed_project_details.sql` — prepared, unapplied; manual detail/version receipts retain slug and verified repository history without returning notes; form integration is pending.
+111. `20261024134706_confirmed_project_details.sql` — prepared, unapplied; manual detail/version receipts retain slug and verified repository history without returning notes; manual edits use the contract with guarded conflict recovery. Creation and synchronization remain under review.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-five audit migrations 87–111 remain unapplied; apply them in filename order before deploying the implementation branch.

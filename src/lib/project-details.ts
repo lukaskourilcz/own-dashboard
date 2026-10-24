@@ -48,11 +48,11 @@ export function currentProjectDetails(project: Project): ProjectDetailsValues {
 
 /** Manual details only. A captured source version prevents a stale form from
  * silently replacing another edit; identical retries need no second write. */
-export async function saveProjectDetails(client: SupabaseClient, expected: Project, values: ProjectDetailsValues): Promise<ProjectDetailsReceipt> {
+export async function saveProjectDetails(client: SupabaseClient, expected: Project, values: ProjectDetailsValues, parent?: AbortSignal): Promise<ProjectDetailsReceipt> {
   const source = sourceSchema.parse(expected), desired = projectDetailsValues.parse(values);
   const history = projectDetailsHistory(source, desired);
   if (new TextEncoder().encode(JSON.stringify(desired)).byteLength > 16384) throw Error("Invalid project details");
-  const signal = AbortSignal.timeout(15_000);
+  const deadline = AbortSignal.timeout(15_000), signal = parent ? AbortSignal.any([parent, deadline]) : deadline;
   const { data, error } = await awaitWithSignal(client.rpc("save_project_details", { p_id: source.id, p_expected_updated_at: source.updated_at, p_values: desired }).retry(false).abortSignal(signal), signal);
   if (error) throw Error("Project details save unconfirmed");
   if (new TextEncoder().encode(JSON.stringify(data)).byteLength > 1048576) throw Error("Project details save unconfirmed");

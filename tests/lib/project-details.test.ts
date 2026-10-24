@@ -57,6 +57,11 @@ it("honors an abort even if its transport never settles", async () => {
   const api = backend(); api.request.abortSignal.mockReturnValue(new Promise(() => {}));
   const pending = saveProjectDetails(api.client, source, values); controller.abort(); await expect(pending).rejects.toThrow();
 });
+it("combines the form's cancellation signal with the request deadline", async () => {
+  const controller = new AbortController(), api = backend(); api.request.abortSignal.mockReturnValue(new Promise(() => {}));
+  const pending = saveProjectDetails(api.client, source, values, controller.signal); controller.abort(); await expect(pending).rejects.toThrow();
+  expect(api.request.abortSignal.mock.calls[0][0].aborted).toBe(true);
+});
 it("plans history without changing source arrays, retains same-id renames and clears an unrelated binding", () => {
   expect(projectDetailsHistory(source, values)).toEqual({ previous_slugs: ["earlier", "original"], previous_repo_full_names: ["owner/earlier", "owner/current"] });
   expect(source.previous_slugs).toEqual(["earlier"]); expect(source.previous_repo_full_names).toEqual(["owner/earlier"]);

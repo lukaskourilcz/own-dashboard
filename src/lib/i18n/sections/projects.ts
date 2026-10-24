@@ -36,6 +36,11 @@ type ProjectsStrings = {
   preferenceSaveFailed: string;
   preferenceConflict: string;
   projectUnavailable: string;
+  detailsInvalid: string;
+  detailsConflict: string;
+  detailsRepositoryUnavailable: string;
+  reloadDetails: string;
+  detailsUnavailable: string;
 
   // Project card.
   active: string;
@@ -181,6 +186,11 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     preferenceSaveFailed: "The project change was not confirmed. Review its current state before trying again.",
     preferenceConflict: "This project changed elsewhere. Review its current state and try again.",
     projectUnavailable: "This project is no longer available. Your open note is still here for you to select and copy before leaving. Changes cannot be saved.",
+    detailsInvalid: "Check the name, URL slug, repository name and HTTP(S) URLs before saving.",
+    detailsConflict: "This project changed elsewhere. Your edits are still here. Reload its saved details before editing again.",
+    detailsRepositoryUnavailable: "The repository could not be verified. Check its owner/name and connection, or clear the repository field.",
+    reloadDetails: "Reload saved details",
+    detailsUnavailable: "This project is no longer available. Refresh the project list to continue. Changes cannot be saved.",
 
     active: "active",
     inactive: "inactive",
@@ -323,6 +333,11 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     preferenceSaveFailed: "Změna projektu nebyla potvrzena. Před dalším pokusem zkontrolujte jeho aktuální stav.",
     preferenceConflict: "Projekt byl mezitím změněn jinde. Zkontrolujte jeho aktuální stav a zkuste to znovu.",
     projectUnavailable: "Projekt už není dostupný. Otevřená poznámka tu zůstává, abyste ji před odchodem mohli označit a zkopírovat. Změny nelze uložit.",
+    detailsInvalid: "Před uložením zkontrolujte název, identifikátor v URL, název repozitáře a HTTP(S) odkazy.",
+    detailsConflict: "Projekt byl mezitím změněn jinde. Vaše úpravy tu zůstávají. Před další úpravou načtěte uložené údaje.",
+    detailsRepositoryUnavailable: "Repozitář se nepodařilo ověřit. Zkontrolujte vlastníka/název a připojení, nebo pole repozitáře vymažte.",
+    reloadDetails: "Načíst uložené údaje",
+    detailsUnavailable: "Projekt už není dostupný. Pro pokračování obnovte seznam projektů. Změny nelze uložit.",
 
     active: "aktivní",
     inactive: "neaktivní",

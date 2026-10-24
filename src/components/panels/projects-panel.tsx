@@ -65,6 +65,7 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { GithubIcon } from "@/components/icons/github";
 import { useProjectNotesAutosave } from "@/components/projects/use-project-notes-autosave";
 import { useProjectPreferencesSave } from "@/components/projects/use-project-preferences-save";
+import { useProjectDetailsForm, automaticProjectSlug, projectSlug as slugify } from "@/components/projects/use-project-details-form";
 import type { NoteEditorHandle } from "@/components/notes/note-editor";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
@@ -128,7 +129,6 @@ import type {
   Project,
   ProjectCommunication,
   ProjectCost,
-  ProjectEngagement,
   ProjectLink,
   Prompt,
   PromptLink,
@@ -146,35 +146,6 @@ const CategoryDonut = dynamic(
     import("@/components/charts/category-donut").then((m) => m.CategoryDonut),
   { ssr: false, loading: () => <Skeleton className="h-full w-full" /> },
 );
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-type ProjectForm = {
-  id?: string;
-  name: string;
-  slug: string;
-  repo_full_name: string;
-  url: string;
-  dev_url: string;
-  engagement: ProjectEngagement;
-  organization_id: string;
-};
-
-const emptyProjectForm: ProjectForm = {
-  name: "",
-  slug: "",
-  repo_full_name: "",
-  url: "",
-  dev_url: "",
-  engagement: "own",
-  organization_id: "",
-};
 
 type ProjectsPanelProps = {
   taskIndex?: ProjectTaskIndex;
@@ -299,15 +270,13 @@ function ProjectsListPanel({
   const { lang } = useLang();
   const toast = useToast();
   const confirm = useConfirmation();
-  const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
-  const [formOpen, setFormOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const orderingRef = useRef(false);
   const [ordering, setOrdering] = useState(false);
   useUnsavedDraft({ dirty: false, pending: ordering, canSave: false, save: async () => false });
   const requestNavigation = useGuardedNavigation();
   const [managedProject, setManagedProject] = useState<Project | null>(null);
+  const details = useProjectDetailsForm(projects, setProjects, () => setManagedProject(null));
+  const { form, setForm, formOpen, saving, reloading, error, formConflict, valid, submitProject, openNewProject, startEditProject, reloadProjectDetails, closeForm } = details;
   const currentManagedProject = projects.find(project => project.id === managedProject?.id && project.user_id === managedProject.user_id);
   // Retain the latest confirmed snapshot when an external removal arrives.
   // Keeping the same keyed operations/editor instance preserves its draft.
@@ -726,62 +695,6 @@ function ProjectsListPanel({
   );
   const grandYearly = grandMonthly * 12;
 
-  async function submitProject(e: React.FormEvent) {
-    e.preventDefault();
-    if (saving) return;
-    setError(null);
-    if (!form.name.trim()) return setError(t.projects.nameRequired);
-    const slug = slugify(form.slug || form.name);
-    if (!slug) return setError(t.projects.slugRequired);
-    const payload = {
-      name: form.name.trim(),
-      slug,
-      repo_full_name: form.repo_full_name.trim() || null,
-      url: form.url.trim() || null,
-      dev_url: form.dev_url.trim() || null,
-      engagement: form.engagement,
-      organization_id: form.organization_id || null,
-    };
-    setSaving(true);
-    try {
-      if (form.id) {
-        const { data, error } = await supabase
-          .from("projects")
-          .update({ ...payload, updated_at: new Date().toISOString() })
-          .eq("id", form.id)
-          .select()
-          .single();
-        if (error) throw error;
-        setProjects((prev) =>
-          prev.map((p) => (p.id === form.id ? (data as Project) : p)),
-        );
-      } else {
-        const userId = await currentUserId(supabase);
-        if (!userId) throw new Error(t.common.signInFirst);
-        const { data, error } = await supabase
-          .from("projects")
-          .insert({ ...payload, user_id: userId, sort_order: projects.length })
-          .select()
-          .single();
-        if (error) throw error;
-        setProjects((prev) => [...prev, data as Project]);
-      }
-      setForm(emptyProjectForm);
-      setFormOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.projects });
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function openNewProject() {
-    setForm(emptyProjectForm);
-    setError(null);
-    setFormOpen(true);
-  }
-
   async function toggleProjectActive(p: Project) {
     const result = await projectPreferences.save(p, { is_active: !p.is_active });
     if (result === "conflict") toast.err(t.projects.preferenceConflict);
@@ -808,24 +721,10 @@ function ProjectsListPanel({
     for (const queryKey of [qk.todos, qk.notes, qk.invoices, qk.transactions, qk.opportunities, qk.importantDates, qk.projectCommunications, qk.projectCosts, qk.crons, qk.subscriptionAllocations, qk.competitors, qk.subscriptions]) {
       void qc.invalidateQueries({ queryKey });
     }
-    if (form.id === p.id) setForm(emptyProjectForm);
+    details.forgetDeleted(p.id);
     void qc.invalidateQueries({ queryKey: qk.projects });
   }
 
-  function startEditProject(p: Project) {
-    setForm({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      repo_full_name: p.repo_full_name ?? "",
-      url: p.url ?? "",
-      dev_url: p.dev_url ?? "",
-      engagement: projectEngagement(p),
-      organization_id: p.organization_id ?? "",
-    });
-    setError(null);
-    setFormOpen(true);
-  }
 
   return (
     <div>
@@ -935,18 +834,20 @@ function ProjectsListPanel({
       )}
 
       {/* Add / edit project — dialog keeps the page free for the projects. */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}>
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md" aria-busy={saving}>
           <DialogHeader>
             <DialogTitle>
               {form.id ? t.projects.editProject : t.projects.addProject}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submitProject} className="space-y-3">
+            <fieldset disabled={saving} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="proj-name">{t.projects.name}</Label>
               <Input
                 id="proj-name"
+                maxLength={200}
                 autoFocus
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -957,10 +858,11 @@ function ProjectsListPanel({
               <Label htmlFor="proj-slug">{t.projects.slug}</Label>
               <Input
                 id="proj-slug"
+                maxLength={100}
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: e.target.value })}
                 placeholder={
-                  form.name ? slugify(form.name) : t.projects.slugPlaceholder
+                  form.name ? automaticProjectSlug(form.name) : t.projects.slugPlaceholder
                 }
               />
               <p className="text-[11px] text-foreground-subtle">
@@ -971,6 +873,7 @@ function ProjectsListPanel({
               <Label htmlFor="proj-repo">{t.projects.repo}</Label>
               <Input
                 id="proj-repo"
+                maxLength={201}
                 value={form.repo_full_name}
                 onChange={(e) =>
                   setForm({ ...form, repo_full_name: e.target.value })
@@ -982,6 +885,7 @@ function ProjectsListPanel({
               <Label htmlFor="proj-url">{t.projects.url}</Label>
               <Input
                 id="proj-url"
+                maxLength={2000}
                 type="url"
                 pattern="https?://.*"
                 value={form.url}
@@ -1021,6 +925,7 @@ function ProjectsListPanel({
               <Label htmlFor="proj-dev-url">{t.projects.devUrl}</Label>
               <Input
                 id="proj-dev-url"
+                maxLength={2000}
                 type="url"
                 pattern="https?://.*"
                 value={form.dev_url}
@@ -1028,19 +933,21 @@ function ProjectsListPanel({
                 placeholder={t.projects.devUrlPlaceholder}
               />
             </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {(error || form.name.trim() && !valid) && <p role="alert" className="text-xs text-destructive">{error ?? t.projects.detailsInvalid}</p>}
+            {formConflict && <Button type="button" size="sm" variant="outline" disabled={reloading} aria-busy={reloading} onClick={() => { void reloadProjectDetails(); }}>{t.projects.reloadDetails}</Button>}
             <div className="flex justify-end gap-2 pt-1">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setFormOpen(false)}
+                onClick={closeForm}
               >
                 {t.common.cancel}
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving || formConflict || !valid}>
                 {form.id ? t.common.save : t.common.add}
               </Button>
             </div>
+            </fieldset>
           </form>
         </DialogContent>
       </Dialog>
