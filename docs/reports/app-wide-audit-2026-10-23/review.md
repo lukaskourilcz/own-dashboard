@@ -527,3 +527,10 @@ At application source commit `6e2300c`, 4,545 unit/component/database cases pass
 ## Visual evidence refresh after finding 169 — 25 October 2026
 
 The HTML plan now contains sixteen authentic desktop/mobile component pairs at source snapshot `924d7b8`, adding the weekly review's retained, selected conflict draft and aligned action row. Its status keeps the remaining aggregate review explicit. Both modes, every image, controls, mobile image bounds, six-width reflow, axe and page errors pass. Desktop/mobile artifact captures were inspected. This evidence refresh does not promote remaining source review, migrations or main merge to complete.
+
+
+## Full validation checkpoint 68 — 25 October 2026
+
+At application source commit `ef83d38`, 4,604 unit/component/database cases pass with one intentional skip (439 passed files, one skipped file), in 174.44 seconds with two workers on Node 22.23.4. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight real render traces and post-build TypeScript pass. A separate optimized fixture build passes all 26 selected browser cases in 40.3 seconds, including guarded weekly saves/conflicts, whole-card and equal-action bounds, native keyboard selection, focus-history recovery, install handling and Calendar/Date/Goal timezone behavior. Inputs stayed frozen through both builds and checks. Both builds use public fixture configuration; their local artifacts must not be deployed. This is a selected optimized recheck, not the final complete browser matrix.
+
+Read-only review covered the full stylesheet, deterministic Career helpers, export and fixture-render boundaries. The ledger now has 644 entries (219 pending, 75 partial). The July control-document layout summary was reconciled with the owner's 16 October design-system revision and actual tokens; no UI geometry changed. Focus contrast, editor font consistency and export completeness/cost are recorded follow-ups. Twenty-nine audit migrations remain prepared/unapplied (115 local files). Remaining source/interaction review, migrations, current-document reconciliation and main merge remain unfinished.

@@ -632,7 +632,7 @@
       "path": "src/app/globals.css",
       "lines": 776,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "pending",
+      "status": "partial; complete CSS source inspected; low-contrast/forced-color focus, editor font consistency and final shared/print verification pending",
       "reviewedSha256": "58d13bc36a16084e1674ef792659c5ff2cb49275c5f836b62ffa782e66b5b5ed"
     },
     {
