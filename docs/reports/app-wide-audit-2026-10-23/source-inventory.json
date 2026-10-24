@@ -3979,7 +3979,7 @@
       "path": "src/lib/preference-storage.ts",
       "sha256": null,
       "lines": 25,
-      "reviewedSha256": "c77f6759940e446eea94e11836047d494d55d877457d2f9f541b48559823d0a9",
+      "reviewedSha256": "1b211baef63460e55f79d45c163ded73bf7ff9cc02107cc49d7591aaca684a48",
       "status": "source reviewed; cross-tab preference tests pass; final app-wide release checks pending"
     }
   ],

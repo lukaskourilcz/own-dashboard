@@ -14,12 +14,26 @@ const cleanups: (() => void)[] = [];
 afterEach(() => { act(() => root?.unmount()); host?.remove(); cleanups.splice(0).forEach(cleanup => cleanup()); vi.unstubAllGlobals(); document.documentElement.lang = "cs"; document.documentElement.classList.remove("dark"); });
 function external(key: string | null) { window.dispatchEvent(new StorageEvent("storage", { key })); }
 it("shares one observer, ignores unrelated/session events and removes it after the last subscriber", () => {
+  vi.stubGlobal("localStorage", new Storage());
   const listeners = new Set<() => void>(), first = vi.fn(), second = vi.fn(), changed = vi.fn();
   const stopFirst = subscribeStoredPreference("synthetic-pref", listeners, first, changed), stopSecond = subscribeStoredPreference("synthetic-pref", listeners, second, changed); cleanups.push(stopFirst, stopSecond);
   external("other"); window.dispatchEvent(new StorageEvent("storage", { key: "synthetic-pref", storageArea: window.sessionStorage })); expect(changed).not.toHaveBeenCalled();
   external("synthetic-pref"); expect(changed).toHaveBeenCalledOnce(); expect(first).toHaveBeenCalledOnce(); expect(second).toHaveBeenCalledOnce();
   stopFirst(); external(null); expect(first).toHaveBeenCalledOnce(); expect(second).toHaveBeenCalledTimes(2);
   stopSecond(); external("synthetic-pref"); expect(changed).toHaveBeenCalledTimes(2);
+});
+it("reconciles a defined value written before subscription and changes made while unmounted", () => {
+  const storage = new Storage(); vi.stubGlobal("localStorage", storage); const listeners = new Set<() => void>(), notify = vi.fn(); let snapshot = "light";
+  const reconcile = () => { snapshot = storage.getItem("synthetic-theme") ?? "light"; };
+  storage.setItem("synthetic-theme", "dark"); const stop = subscribeStoredPreference("synthetic-theme", listeners, notify, reconcile); cleanups.push(stop);
+  expect(snapshot).toBe("dark"); stop(); storage.setItem("synthetic-theme", "light");
+  cleanups.push(subscribeStoredPreference("synthetic-theme", listeners, notify, reconcile)); expect(snapshot).toBe("light");
+});
+it("preserves an in-memory change after unmount when storage did not change", () => {
+  const storage = new Storage(); vi.stubGlobal("localStorage", storage); storage.setItem("synthetic-pref", "persisted");
+  const listeners = new Set<() => void>(); let value = "persisted"; const reconcile = () => { value = storage.getItem("synthetic-pref")!; };
+  const stop = subscribeStoredPreference("synthetic-pref", listeners, () => {}, reconcile); cleanups.push(stop); value = "local write unavailable"; stop();
+  cleanups.push(subscribeStoredPreference("synthetic-pref", listeners, () => {}, reconcile)); expect(value).toBe("local write unavailable");
 });
 function Probe() {
   const { theme } = useTheme(), { lang } = useLang(), { currency } = useDisplayCurrency(), { count } = useTasksPerCategory(), { hidden } = useNavVisibility(), { cs } = useCvLinks(), { layout } = useDashboardLayout();
