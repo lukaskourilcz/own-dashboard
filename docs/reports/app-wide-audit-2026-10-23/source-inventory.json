@@ -1875,10 +1875,10 @@
     },
     {
       "path": "src/components/work/weekly-planning.tsx",
-      "lines": 745,
+      "lines": 739,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; findings 164/166 classification and complete focus recovery checked; captured save receipts, owner/week rollover, draft/pending guards and remaining UX still pending",
-      "reviewedSha256": "89f1f3ed6320857ddd82a3dec0d930c18a42d4c932eb9d8cbd181422dda324e9"
+      "status": "partial; findings 164/166–168 classification, complete focus, captured confirmed saves, owner/week/exit recovery checked; remaining aggregate/legacy inputs and summary/action layout review pending",
+      "reviewedSha256": "827d3e64f5e8f4acbc5930e20a8ba33624edac248b072b8bd7aabe0bcd11564c"
     },
     {
       "path": "src/lib/abortable.ts",
@@ -2531,10 +2531,10 @@
     },
     {
       "path": "src/lib/i18n/sections/professional.ts",
-      "lines": 613,
+      "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "partial; findings 164/166 EN/CS weekly recovery copy checked; remaining destination copy review pending",
-      "reviewedSha256": "5ca3221ea365cd0b5841cc2b3cd629076626e808d9691819f6c06de5cfcdd830"
+      "status": "partial; findings 164/166/168 EN/CS weekly history/save/owner-week recovery copy checked; remaining destination copy review pending",
+      "reviewedSha256": "0a8d6c7b720c432667b01e91f07eb9dbb5b521c702607451535b3aa33940dc41"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
@@ -4270,9 +4270,9 @@
     {
       "path": "src/lib/weekly-review-save.ts",
       "sha256": null,
-      "lines": 80,
-      "status": "source reviewed; finding 167 captured owner/week/version save receipts, SDK cancellation and guarded cache checks pass; caller integration and final release pending",
-      "reviewedSha256": "56298594bb7eb294c82762e30a963c99b9ffaef464ff3ec0e074a2ea36caa891"
+      "lines": 94,
+      "status": "source reviewed; findings 167–168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
+      "reviewedSha256": "db5f9b9d933fb90741a1518bbe5aa33b0c96dac40b15856b843aaa36a0e2f227"
     },
     {
       "path": "src/proxy.ts",

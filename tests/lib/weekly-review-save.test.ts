@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { afterEach,expect,it,vi } from 'vitest';
-import { applyWeeklyReviewReceipt,saveWeeklyReview,type WeeklyReviewSave,type WeeklyReviewReceipt } from '@/lib/weekly-review-save';
+import { applyWeeklyReviewReceipt,loadWeeklyReview,saveWeeklyReview,type WeeklyReviewSave,type WeeklyReviewReceipt } from '@/lib/weekly-review-save';
 import type { WeeklyReview } from '@/lib/types';
 const owner='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222',id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', week='2026-10-19';
 const source=():WeeklyReview=>({id,user_id:owner,week_start:week,status:'draft',summary:'Existing summary',items:{step:'time',futureKey:{retained:true},facts:['Keep fact']},completed_at:null,created_at:'2026-10-19T09:00:00.123456Z',updated_at:'2026-10-24T09:00:00.123456Z'});
@@ -61,3 +61,13 @@ it('applies only to the captured source and never resurrects or rolls back newer
  expect(applyWeeklyReviewReceipt([foreign],null,saved)).toEqual({rows:[saved.review,foreign],reconcile:false});
  expect(applyWeeklyReviewReceipt([newer],null,saved)).toEqual({rows:[newer],reconcile:true});
 });
+
+it('reloads one exact owned week, validates identity and distinguishes confirmed absence from failure',async()=>{
+ const fetcher=vi.fn<typeof fetch>(async url=>{const target=new URL(String(url));expect(target.pathname).toBe('/rest/v1/weekly_reviews');expect(target.searchParams.get('user_id')).toBe(`eq.${owner}`);expect(target.searchParams.get('week_start')).toBe(`eq.${week}`);return Response.json([source()]);});
+ expect(await loadWeeklyReview(client(fetcher),owner,week)).toEqual(source());expect(fetcher).toHaveBeenCalledTimes(1);
+ expect(await loadWeeklyReview(client(async()=>Response.json([])),owner,week)).toBeNull();
+ for(const value of [[{...source(),user_id:other}],[{...source(),week_start:'2026-10-12'}],[source(),source()],[{...source(),items:{privateBody:'x'.repeat(524288)}}]])await expect(loadWeeklyReview(client(async()=>Response.json(value)),owner,week)).rejects.toThrow(/^Weekly review unavailable$/);
+});
+it('does not retry or expose private failed reloads',async()=>{const fetcher=vi.fn<typeof fetch>(async()=>Response.json({message:'Private database refusal'},{status:503}));await expect(loadWeeklyReview(client(fetcher),owner,week)).rejects.toThrow(/^Weekly review unavailable$/);expect(fetcher).toHaveBeenCalledTimes(1);});
+it('prevents a cancelled reload or invalid identity from making any request',async()=>{const fetcher=vi.fn<typeof fetch>(),controller=new AbortController();controller.abort(Error('Private reason'));await expect(loadWeeklyReview(client(fetcher),owner,week,controller.signal)).rejects.toMatchObject({name:'AbortError',message:'Request aborted'});await expect(loadWeeklyReview(client(fetcher),'bad-owner',week)).rejects.toThrow(/^Weekly review unavailable$/);expect(fetcher).not.toHaveBeenCalled();});
+it('cancels noncooperative reloads within the caller budget',async()=>{const controller=new AbortController(),fetcher=vi.fn<typeof fetch>(async()=>new Promise<Response>(()=>{}));const pending=loadWeeklyReview(client(fetcher),owner,week,controller.signal);await vi.waitFor(()=>expect(fetcher).toHaveBeenCalledTimes(1));controller.abort();await expect(pending).rejects.toMatchObject({name:'AbortError',message:'Request aborted'});});

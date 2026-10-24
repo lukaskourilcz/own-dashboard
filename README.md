@@ -218,7 +218,7 @@ The migrations, in the order they run:
 
 114. `20261024220621_weekly_focus_snapshot.sql` — prepared, unapplied; one invoker/RLS snapshot of the latest generation for each of seven days, at most 49 focus items, bounded text/response and explicit owner/week identity. Weekly planning refuses unavailable history instead of an empty recap.
 
-115. `20261024223552_confirmed_weekly_review.sql` — prepared, unapplied; owner/week/version-bound weekly review saves, stable creation identities, preserved legacy keys and persisted no-op/conflict receipts. Database/client contract checked; editor integration remains in progress.
+115. `20261024223552_confirmed_weekly_review.sql` — prepared, unapplied; owner/week/version-bound weekly review saves, stable creation identities, preserved legacy keys and persisted no-op/conflict receipts. The guarded editor uses this contract; final release checks remain pending.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-nine audit migrations 87–115 remain unapplied; apply them in filename order before deploying the implementation branch.

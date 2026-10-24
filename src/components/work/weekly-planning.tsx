@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ import { useDict } from "@/lib/i18n";
 import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
+import { useNow } from "@/lib/use-now";
+import { useUnsavedDraft } from "@/components/navigation-guard";
+import { applyWeeklyReviewReceipt, loadWeeklyReview, saveWeeklyReview, weeklyReviewPatchSchema, type WeeklyReviewPatch } from "@/lib/weekly-review-save";
 import {
   LEGACY_REVIEW_KEYS,
   WEEKLY_PLANNING_STEPS,
@@ -34,7 +36,6 @@ import {
   readStringList,
   summarizeFocusWeek,
   summarizeTimeByChannel,
-  writeReviewItems,
   type CarryForwardCandidate,
   type FocusRecap,
   type LegacyReviewKey,
@@ -105,13 +106,15 @@ export function WeeklyPlanningFlow({
   reviewsStatus?: EntityStatus;
   lastWeekCalendarStatus?: EntityStatus;
 }) {
+  const now = useNow();
   const calendarSettled = lastWeekCalendarStatus.ready || lastWeekCalendarStatus.failed;
-  if (!reviewsStatus.ready || !calendarSettled) {
+  if (!now || !reviewsStatus.ready || !calendarSettled) {
     return <PlanningPending failed={reviewsStatus.failed} />;
   }
   return (
     <PlanningSteps
       {...props}
+      reference={now}
       // A calendar read that gave up is shown as unreadable, never as an
       // empty week whose zero minutes would then be saved.
       lastWeekCalendar={lastWeekCalendarStatus.ready ? lastWeekCalendar : CALENDAR_UNREADABLE}
@@ -163,40 +166,51 @@ function PlanningSteps({
   todos,
   lastWeekCalendar,
   isPreview = false,
-}: PlanningProps) {
+  reference,
+}: PlanningProps & { reference: Date }) {
   const t = useDict();
   const p = t.professional;
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
 
-  const reference = new Date();
-  const weekStart = mondayKey(reference);
-  const previousWeek = previousMondayKey(reference);
-  const current = reviews.find((review) => review.week_start === weekStart);
-  const previous = reviews.find((review) => review.week_start === previousWeek);
-  const storedItems = current?.items ?? {};
-  // What the owner changed since the steps mounted. A save writes only these
-  // fields and carries every other one over from the stored review as it is
-  // at save time, so a list nobody touched is never replaced.
+  const [identity] = useState(() => ({ ownerId, weekStart: mondayKey(reference) }));
+  const weekStart = identity.weekStart;
+  const previousWeek = previousMondayKey(new Date(`${weekStart}T12:00:00`));
+  const contextCurrent = ownerId === identity.ownerId && mondayKey(reference) === weekStart;
+  const current = reviews.find(review => review.user_id === identity.ownerId && review.week_start === weekStart);
+  const previous = reviews.find(review => review.user_id === identity.ownerId && review.week_start === previousWeek);
+  const base = useRef<WeeklyReview | null>(current ?? null);
+  const recordId = useRef<string | null>(current?.id ?? null);
+  const objectiveId = useRef<string | null>(null);
+  if (recordId.current === null) recordId.current = crypto.randomUUID();
+  if (objectiveId.current === null) objectiveId.current = crypto.randomUUID();
   const edited = useRef(new Set<EditedField>());
-  const markEdited = (field: EditedField) => edited.current.add(field);
-
-  const [step, setStep] = useState<WeeklyPlanningStep>(() => readStep(storedItems));
-  const [objectives, setObjectives] = useState<WeeklyObjective[]>(() =>
-    readObjectives(storedItems),
-  );
-  const [draftObjective, setDraftObjective] = useState("");
+  const pendingRef = useRef(false), dirtyRef = useRef(false), mounted = useRef(false);
+  const activeContext = useRef(contextCurrent), actor = useRef(ownerId), controller = useRef<AbortController | null>(null);
+  const [pending, setPending] = useState(false), [, setDirty] = useState(false);
+  const [error, setError] = useState<'failed' | 'conflict' | 'invalid' | null>(null);
+  const [step, setStep] = useState<WeeklyPlanningStep>(() => readStep(current?.items));
+  const [objectives, setObjectives] = useState<WeeklyObjective[]>(() => readObjectives(current?.items));
+  const [draftObjective, setDraftObjective] = useState('');
   const [dropped, setDropped] = useState<Set<string>>(() => new Set());
-  const [summary, setSummary] = useState(current?.summary ?? "");
-  const [legacy, setLegacy] = useState<Record<LegacyReviewKey, string>>(() =>
-    Object.fromEntries(
-      LEGACY_REVIEW_KEYS.map((key) => [
-        key,
-        readStringList(storedItems[key]).join("\n"),
-      ]),
-    ) as Record<LegacyReviewKey, string>,
-  );
+  const [summary, setSummary] = useState(current?.summary ?? '');
+  const [legacy, setLegacy] = useState<Record<LegacyReviewKey,string>>(() => Object.fromEntries(LEGACY_REVIEW_KEYS.map(key => [key,readStringList(current?.items[key]).join('\n')])) as Record<LegacyReviewKey,string>);
+  const reset = useCallback((review: WeeklyReview | null) => {
+    base.current = review; recordId.current = review?.id ?? crypto.randomUUID(); objectiveId.current = crypto.randomUUID();
+    edited.current.clear(); dirtyRef.current = false; setDirty(false); setError(null);
+    setStep(readStep(review?.items)); setObjectives(readObjectives(review?.items)); setSummary(review?.summary ?? ''); setDraftObjective(''); setDropped(new Set());
+    setLegacy(Object.fromEntries(LEGACY_REVIEW_KEYS.map(key => [key,readStringList(review?.items[key]).join('\n')])) as Record<LegacyReviewKey,string>);
+  },[]);
+  const markEdited = (field?: EditedField) => {
+    if (pendingRef.current || !activeContext.current) return false;
+    if (isPreview) return true;
+    if (field) edited.current.add(field);
+    dirtyRef.current = true; setDirty(true); setError(null); return true;
+  };
+  useLayoutEffect(() => { activeContext.current = contextCurrent; actor.current = ownerId; if (!contextCurrent) controller.current?.abort(); },[contextCurrent,ownerId]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; controller.current?.abort(); }; },[]);
+  useEffect(() => { if (current && !dirtyRef.current && !pendingRef.current && contextCurrent) reset(current); },[current,contextCurrent,reset]);
 
   const range = useMemo(() => weekRange(previousWeek), [previousWeek]);
   const time: TimeByChannel = useMemo(
@@ -213,9 +227,9 @@ function PlanningSteps({
   // The database selects the newest generation before returning at most
   // seven days / 49 items. A failed read is unavailable, never an empty recap.
   const focusQuery = useQuery({
-    queryKey: [...qk.weeklyFocusRecap, ownerId, previousWeek],
-    enabled: !isPreview, retry: false, staleTime: 30_000,
-    queryFn: ({ signal }) => loadWeeklyFocusSnapshot(supabase, ownerId, previousWeek, signal),
+    queryKey: [...qk.weeklyFocusRecap, identity.ownerId, previousWeek],
+    enabled: !isPreview && contextCurrent, retry: false, staleTime: 30_000,
+    queryFn: ({ signal }) => loadWeeklyFocusSnapshot(supabase, identity.ownerId, previousWeek, signal),
   });
   const focusReady = !isPreview && focusQuery.isSuccess;
   const focusMissing = !isPreview && !focusQuery.data;
@@ -259,105 +273,71 @@ function PlanningSteps({
 
   type SaveMode = "auto" | "draft" | "complete";
 
-  const save = useMutation({
-    mutationFn: async ({
-      mode,
-      atStep,
-      nextObjectives,
-    }: {
-      mode: SaveMode;
-      atStep: WeeklyPlanningStep;
-      nextObjectives: WeeklyObjective[];
-    }) => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("Not authenticated");
-      const now = new Date().toISOString();
-      // Moving between steps records where the owner is without changing what
-      // the week is: an automatic save must never quietly re-open a week that
-      // was already completed.
-      const status =
-        mode === "complete" ? "completed" : mode === "draft" ? "draft" : current?.status ?? "draft";
-      const completedAt =
-        mode === "complete" ? now : mode === "draft" ? null : current?.completed_at ?? null;
-      const changed = edited.current;
-      const { data, error } = await supabase
-        .from("weekly_reviews")
-        .upsert(
-          {
-            user_id: userId,
-            week_start: weekStart,
-            summary: changed.has("summary") ? summary.trim() : current?.summary ?? "",
-            items: writeReviewItems(storedItems, {
-              ...Object.fromEntries(
-                LEGACY_REVIEW_KEYS.filter((key) => changed.has(key)).map((key) => [
-                  key,
-                  legacy[key].split("\n").map((line) => line.trim()).filter(Boolean),
-                ]),
-              ),
-              ...(changed.has("objectives") ? { objectives: nextObjectives } : {}),
-              timeByChannel: {
-                minutes: time.minutes,
-                unmatchedEvents: time.unmatchedEvents,
-                source: lastWeekCalendar.ok ? "google" : "unavailable",
-              },
-              // A recap is only as good as the read behind it.
-              ...(focusQuery.isSuccess ? { focusRecap: recap } : {}),
-              step: atStep,
-            }),
-            status,
-            completed_at: completedAt,
-            updated_at: now,
-          },
-          { onConflict: "user_id,week_start" },
-        )
-        .select()
-        .single();
-      if (error) throw error;
-      return data as WeeklyReview;
-    },
-    onSuccess: (review, variables) => {
-      setReviews((old) => [
-        review,
-        ...old.filter(
-          (item) => item.id !== review.id && item.week_start !== review.week_start,
-        ),
-      ]);
-      void qc.invalidateQueries({ queryKey: qk.weeklyReviews });
-      // Stepping through the flow saves quietly; only a deliberate save says so.
-      if (variables.mode !== "auto") toast.ok(p.saved);
-    },
-    onError: () => toast.err(p.couldNotSave),
-  });
-
-  const persist = (mode: SaveMode, atStep: WeeklyPlanningStep, next = objectives) => {
-    if (isPreview) return;
-    save.mutate({ mode, atStep, nextObjectives: next });
-  };
-
+  const blocked = pending || !contextCurrent || error === 'conflict';
+  async function persist(mode: SaveMode, atStep: WeeklyPlanningStep, next = objectives): Promise<boolean> {
+    if (isPreview || pendingRef.current || !activeContext.current || actor.current !== identity.ownerId || mondayKey() !== weekStart || error === 'conflict') return false;
+    if (mode === 'complete' && !focusReady) return false;
+    const changed = new Set(edited.current), source = base.current;
+    let nextObjectives = step === 'carry' && focusReady ? mergeCarriedObjectives(next.filter(objective => !objective.carriedFrom || !dropped.has(objective.carriedFrom)),kept) : next;
+    if (nextObjectives !== objectives) changed.add('objectives');
+    const addedText = draftObjective.trim();
+    if (addedText) { nextObjectives = [...nextObjectives,{ id: objectiveId.current!,text: addedText,done: false }]; changed.add('objectives'); }
+    const patch: WeeklyReviewPatch = { ...(changed.has('summary') ? { summary: summary.trim() } : {}), items: {
+      ...Object.fromEntries(LEGACY_REVIEW_KEYS.filter(key => changed.has(key)).map(key => [key,legacy[key].split('\n').map(line => line.trim()).filter(Boolean)])),
+      ...(changed.has('objectives') ? { objectives: nextObjectives } : {}),
+      timeByChannel: { minutes: { ...time.minutes },unmatchedEvents: time.unmatchedEvents,source: lastWeekCalendar.ok ? 'google' : 'unavailable' },
+      ...(focusReady ? { focusRecap: { ...recap } } : {}), step: atStep,
+    } };
+    if (!weeklyReviewPatchSchema.safeParse(patch).success) { setError('invalid'); return false; }
+    pendingRef.current = true; setPending(true); dirtyRef.current = true; setDirty(true); setError(null);
+    const cancellation = new AbortController(); controller.current = cancellation;
+    try {
+      const result = await saveWeeklyReview(supabase,{ ownerId: identity.ownerId,id: recordId.current!,weekStart,expected: source,mode,patch },cancellation.signal);
+      if (!mounted.current || !activeContext.current || cancellation.signal.aborted) return false;
+      if (result.kind === 'conflict') { setError('conflict'); void qc.invalidateQueries({ queryKey: qk.weeklyReviews,exact: true }); return false; }
+      await qc.cancelQueries({ queryKey: qk.weeklyReviews,exact: true });
+      if (!mounted.current || !activeContext.current || cancellation.signal.aborted) return false;
+      const cached = qc.getQueryData<WeeklyReview[]>(qk.weeklyReviews) ?? reviews;
+      const reconcile = applyWeeklyReviewReceipt(cached,source,result).reconcile;
+      setReviews(rows => applyWeeklyReviewReceipt(rows,source,result).rows);
+      if (reconcile) void qc.invalidateQueries({ queryKey: qk.weeklyReviews,exact: true });
+      reset(result.review);
+      if (mode !== 'auto') toast.ok(p.saved);
+      return true;
+    } catch {
+      if (mounted.current && activeContext.current) { setError('failed'); void qc.invalidateQueries({ queryKey: qk.weeklyReviews,exact: true }); }
+      return false;
+    } finally { if (controller.current === cancellation) { controller.current = null; pendingRef.current = false; if (mounted.current) setPending(false); } }
+  }
+  async function reloadSaved() {
+    if (pendingRef.current || isPreview) return;
+    // A new account/week needs the shell's matching Calendar window and owner
+    // data too. Explicit discard uses a full server reload for that boundary.
+    if (!contextCurrent) { reset(null); window.location.reload(); return; }
+    const expectedOwner = ownerId, expectedWeek = mondayKey();
+    pendingRef.current = true; setPending(true);
+    const cancellation = new AbortController(); controller.current = cancellation;
+    try {
+      const review = await loadWeeklyReview(supabase,expectedOwner,expectedWeek,cancellation.signal);
+      if (!mounted.current || actor.current !== expectedOwner || mondayKey() !== expectedWeek || cancellation.signal.aborted) return;
+      await qc.cancelQueries({ queryKey: qk.weeklyReviews,exact: true });
+      if (!mounted.current || actor.current !== expectedOwner || mondayKey() !== expectedWeek || cancellation.signal.aborted) return;
+      setReviews(rows => [...(review ? [review] : []),...rows.filter(row => row.user_id !== expectedOwner || row.week_start !== expectedWeek)]);
+      reset(review);
+    } catch { if (mounted.current) setError('failed'); }
+    finally { if (controller.current === cancellation) { controller.current = null; pendingRef.current = false; if (mounted.current) setPending(false); } }
+  }
+  useUnsavedDraft({ get dirty() { return !isPreview && dirtyRef.current; },get pending() { return pendingRef.current; },canSave: !isPreview && contextCurrent && error !== 'conflict',save: () => persist('draft',step),discard: () => reset(current ?? null) });
   const goNext = () => {
-    // Leaving the carry step is what turns the kept items into objectives, so
-    // stepping back and forward again never duplicates them.
-    const merged = step === "carry" ? mergeCarriedObjectives(objectives, kept) : objectives;
-    if (merged !== objectives) {
-      markEdited("objectives");
-      setObjectives(merged);
-    }
-    const target = nextStep(step);
-    setStep(target);
-    persist("auto", target, merged);
+    if (pendingRef.current || !contextCurrent || (!isPreview && (step === 'done' || step === 'carry') && !focusReady)) return;
+    if (isPreview) { setStep(nextStep(step)); return; }
+    void persist('auto',nextStep(step));
   };
-
-  const goBack = () => setStep(previousStep(step));
-
+  const goBack = () => { if (!pendingRef.current && contextCurrent) setStep(previousStep(step)); };
   const addObjective = () => {
     const text = draftObjective.trim();
-    if (!text) return;
-    markEdited("objectives");
-    setObjectives((old) => [
-      ...old,
-      { id: `objective-${Date.now()}-${old.length}`, text, done: false },
-    ]);
-    setDraftObjective("");
+    if (!text || text.length > 2000 || objectives.length >= 100 || !markEdited('objectives')) return;
+    setObjectives(old => [...old,{ id: objectiveId.current!,text,done: false }]); objectiveId.current = crypto.randomUUID(); setDraftObjective('');
   };
 
   return (
@@ -371,8 +351,7 @@ function PlanningSteps({
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between gap-3">
             <SectionLabel>
-              {p.planningStep} {stepIndex + 1}/{WEEKLY_PLANNING_STEPS.length} ·{" "}
-              {stepTitles[step]}
+              {p.planningStep} {stepIndex + 1}/{WEEKLY_PLANNING_STEPS.length}
             </SectionLabel>
             {current?.status === "completed" && (
               <span className="text-[11px] text-success">{p.weekCompleted}</span>
@@ -384,6 +363,9 @@ function PlanningSteps({
           />
         </div>
 
+        {!contextCurrent && <div role="alert" className="space-y-2"><p className="text-sm text-foreground-muted">{p.planningContextChanged}</p><Button variant="outline" disabled={pending} onClick={() => void reloadSaved()}>{p.planningReload}</Button></div>}
+        {error && <div role="alert" className="space-y-2"><p className="text-sm text-risk">{error === 'conflict' ? p.planningConflict : error === 'invalid' ? p.planningInvalid : p.planningSaveFailed}</p>{error === 'conflict' && <Button variant="outline" disabled={pending} onClick={() => void reloadSaved()}>{p.planningReload}</Button>}</div>}
+        <fieldset disabled={pending || !contextCurrent} hidden={ownerId !== identity.ownerId} className="min-w-0 space-y-4" aria-busy={pending}>
         <section aria-labelledby={`weekly-planning-${step}`} className="space-y-3">
           <h3
             id={`weekly-planning-${step}`}
@@ -448,14 +430,15 @@ function PlanningSteps({
                           ? p.carryFromObjective
                           : p.carryFromFocus
                       }
-                      onChange={(checked) =>
+                      disabled={blocked || (!isPreview && !focusReady)}
+                      onChange={(checked) => { if (!markEdited()) return;
                         setDropped((old) => {
                           const next = new Set(old);
                           if (checked) next.delete(candidate.id);
                           else next.add(candidate.id);
                           return next;
-                        })
-                      }
+                        });
+                      }}
                     />
                   ))}
                 </ul>
@@ -474,9 +457,10 @@ function PlanningSteps({
                     <li key={objective.id} className="flex items-center gap-3 py-2">
                       <Checkbox
                         checked={objective.done}
+                        disabled={blocked}
                         aria-label={`${p.objectiveDone}: ${objective.text}`}
                         onCheckedChange={(checked) => {
-                          markEdited("objectives");
+                          if (!markEdited("objectives")) return;
                           setObjectives((old) =>
                             old.map((entry) =>
                               entry.id === objective.id
@@ -486,7 +470,7 @@ function PlanningSteps({
                           );
                         }}
                       />
-                      <span className="min-w-0 flex-1 text-sm">
+                      <span className="min-w-0 flex-1 break-words text-sm">
                         {objective.text}
                         {objective.carriedFrom && (
                           <span className="ml-2 text-[11px] text-foreground-muted">
@@ -498,8 +482,9 @@ function PlanningSteps({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`${p.removeObjective}: ${objective.text}`}
+                        disabled={blocked}
                         onClick={() => {
-                          markEdited("objectives");
+                          if (!markEdited("objectives")) return;
                           setObjectives((old) =>
                             old.filter((entry) => entry.id !== objective.id),
                           );
@@ -518,16 +503,18 @@ function PlanningSteps({
                 <Input
                   id="weekly-planning-new-objective"
                   value={draftObjective}
+                  readOnly={error === 'conflict'}
                   placeholder={p.objectivePlaceholder}
-                  onChange={(event) => setDraftObjective(event.target.value)}
+                  maxLength={2000}
+                  onChange={(event) => { if (markEdited()) setDraftObjective(event.target.value); }}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") {
+                    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                       event.preventDefault();
                       addObjective();
                     }
                   }}
                 />
-                <Button variant="outline" onClick={addObjective}>
+                <Button variant="outline" disabled={blocked} onClick={addObjective}>
                   <Plus />
                   {p.addObjective}
                 </Button>
@@ -542,10 +529,12 @@ function PlanningSteps({
                 <SectionLabel>{p.planningStepSummary}</SectionLabel>
                 <Textarea
                   value={summary}
+                  readOnly={error === 'conflict'}
+                  maxLength={20000}
                   rows={4}
                   placeholder={p.summaryPlaceholder}
                   onChange={(event) => {
-                    markEdited("summary");
+                    if (!markEdited("summary")) return;
                     setSummary(event.target.value);
                   }}
                 />
@@ -569,10 +558,11 @@ function PlanningSteps({
                       <SectionLabel>{label}</SectionLabel>
                       <Textarea
                         value={legacy[key]}
+                        readOnly={error === 'conflict'}
                         rows={3}
                         className="min-h-20"
                         onChange={(event) => {
-                          markEdited(key);
+                          if (!markEdited(key)) return;
                           setLegacy((old) => ({ ...old, [key]: event.target.value }));
                         }}
                       />
@@ -584,30 +574,31 @@ function PlanningSteps({
           )}
         </section>
 
+        </fieldset>
         {step !== "done" && step !== "carry" && focusNotice}
 
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <Button variant="outline" onClick={goBack} disabled={stepIndex === 0}>
+          <Button variant="outline" onClick={goBack} disabled={blocked || stepIndex === 0}>
             {p.planningBack}
           </Button>
           <Button
             variant="outline"
             onClick={goNext}
-            disabled={stepIndex === WEEKLY_PLANNING_STEPS.length - 1 || (!isPreview && (step === "done" || step === "carry") && !focusReady)}
+            disabled={blocked || stepIndex === WEEKLY_PLANNING_STEPS.length - 1 || (!isPreview && (step === "done" || step === "carry") && !focusReady)}
           >
             {p.planningNext}
           </Button>
           <span className="flex-1" />
           <Button
             variant="outline"
-            onClick={() => persist("draft", step)}
-            disabled={isPreview || save.isPending}
+            onClick={() => void persist("draft", step)}
+            disabled={isPreview || blocked}
           >
-            {p.saveDraft}
+            {pending ? p.planningSaving : p.saveDraft}
           </Button>
           <Button
-            onClick={() => persist("complete", step)}
-            disabled={isPreview || save.isPending || !focusReady}
+            onClick={() => void persist("complete", step)}
+            disabled={isPreview || blocked || !focusReady}
           >
             {p.completeWeek}
           </Button>
@@ -725,21 +716,24 @@ function CarryRow({
   checked,
   originLabel,
   onChange,
+  disabled,
 }: {
+  disabled?: boolean;
   candidate: CarryForwardCandidate;
   checked: boolean;
   originLabel: string;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <li className="flex items-center gap-3 py-2">
+    <li className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 py-2">
       <Checkbox
         checked={checked}
+        disabled={disabled}
         aria-label={candidate.text}
         onCheckedChange={(next) => onChange(next === true)}
       />
-      <span className="min-w-0 flex-1 text-sm">{candidate.text}</span>
-      <span className="shrink-0 text-[11px] text-foreground-muted">{originLabel}</span>
+      <span className="min-w-0 flex-1 break-words text-sm">{candidate.text}</span>
+      <span className="min-w-0 max-w-full break-words text-[11px] text-foreground-muted sm:max-w-[40%]">{originLabel}</span>
     </li>
   );
 }

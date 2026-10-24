@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WeeklyReview } from "@/lib/types";
 
-// The flow's two network edges: the daily-focus read and the review upsert.
+// The flow's two network edges: bounded focus read and confirmed review RPC.
 // Everything else is the real component.
 const upserts: Record<string, unknown>[] = [];
 
@@ -21,21 +21,20 @@ function chain(result: unknown) {
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
-    rpc: () => chain({ data: { ownerId: "11111111-1111-4111-8111-111111111111", weekStart: previousMondayKey(), sets: [] }, error: null }),
-    from: (table: string) => {
-      if (table === "weekly_reviews") {
-        return {
-          upsert: (payload: Record<string, unknown>) => {
-            upserts.push(payload);
-            return chain({ data: { id: "review-1", ...payload }, error: null });
-          },
-        };
-      }
-      return chain({ data: [], error: null });
+    rpc: (name: string,args: Record<string,unknown>) => {
+      if (name === 'weekly_focus_snapshot') return chain({ data: { ownerId: "11111111-1111-4111-8111-111111111111", weekStart: previousMondayKey(), sets: [] }, error: null });
+      if (name !== 'save_weekly_review') throw Error('Unexpected RPC');
+      const patch = args.p_patch as {summary?:string;items:Record<string,unknown>};
+      expect(patch.summary).toBeUndefined();
+      expect(patch.items.facts).toBeUndefined();
+      const review = { ...stored,id: args.p_id,user_id: args.p_owner,week_start: args.p_week_start,summary: patch.summary ?? stored.summary,
+        items: { ...stored.items,...patch.items },updated_at: new Date().toISOString() };
+      upserts.push(review);
+      return chain({ data: { kind: 'saved',ownerId: args.p_owner,weekStart: args.p_week_start,sourceUpdatedAt: stored.updated_at,review },error: null });
     },
+    from: () => { throw Error('Direct weekly writes are retired'); },
   }),
 }));
-vi.mock("@/lib/supabase/user", () => ({ currentUserId: async () => "owner-1" }));
 
 import { WeeklyPlanningFlow } from "@/components/work/weekly-planning";
 import { mondayKey, previousMondayKey } from "@/lib/date-keys";
@@ -47,8 +46,8 @@ const READY = { ready: true, failed: false };
 
 // Monday's plan, as the database holds it.
 const stored: WeeklyReview = {
-  id: "review-1",
-  user_id: "owner-1",
+  id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  user_id: "11111111-1111-4111-8111-111111111111",
   week_start: mondayKey(),
   summary: "Ship the invoice fixes, then the release notes.",
   items: {
@@ -148,7 +147,7 @@ describe("WeeklyPlanningFlow on a Work tab reached client-side", () => {
 
   it("keeps what the owner did not touch when the review arrives after the steps mounted", async () => {
     // Mounted over an empty list, then the stored review shows up (a refetch
-    // after another device saved it). The steps still hold their empty seed.
+    // after another device saved it). The untouched editor adopts the confirmed incoming review.
     render([], READY);
     render([stored], READY);
     await clickNextAndSettle();

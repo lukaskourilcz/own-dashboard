@@ -69,6 +69,20 @@ export async function saveWeeklyReview(client: SupabaseClient, input: WeeklyRevi
   } catch { if (parent?.aborted) throw new DOMException('Request aborted','AbortError'); throw Error('Weekly review save unconfirmed'); }
 }
 
+/** Unique owner/week reload for explicit conflict recovery; an outage is never absence. */
+export async function loadWeeklyReview(client: SupabaseClient,ownerId: string,weekStart: string,parent?: AbortSignal): Promise<WeeklyReview | null> {
+  const signal = parent ? AbortSignal.any([parent,AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000);
+  try {
+    z.uuid().parse(ownerId); week.parse(weekStart); signal.throwIfAborted();
+    const { data,error } = await awaitWithSignal(client.from('weekly_reviews').select('*').eq('user_id',ownerId).eq('week_start',weekStart).retry(false).abortSignal(signal).maybeSingle(),signal);
+    if (error || byteLength(data)>524288) throw Error();
+    if (data === null) return null;
+    const row = rowSchema.parse(data);
+    if (row.user_id !== ownerId || row.week_start !== weekStart) throw Error();
+    return row;
+  } catch { if (parent?.aborted) throw new DOMException('Request aborted','AbortError'); throw Error('Weekly review unavailable'); }
+}
+
 /** Apply only to the captured row. A late save never replaces newer edits or a missing source. */
 export function applyWeeklyReviewReceipt(rows: WeeklyReview[], source: WeeklyReview | null, receipt: WeeklyReviewReceipt): { rows: WeeklyReview[]; reconcile: boolean } {
   if (receipt.kind !== 'saved') return { rows,reconcile: true };
