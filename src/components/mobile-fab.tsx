@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Download, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useDict } from "@/lib/i18n";
 
 type BeforeInstallPromptEvent = Event & {
@@ -14,28 +15,24 @@ const INSTALL_DISMISSED_KEY = "dashboard.installDismissed";
 
 export function MobileFab() {
   const t = useDict();
-  const [installEvent, setInstallEvent] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const installEvent = useRef<BeforeInstallPromptEvent | null>(null);
+  const dismissed = useRef(false);
+  const installed = useRef(false);
+  const prompting = useRef(false);
   const [showInstall, setShowInstall] = useState(false);
 
   // Capture Chrome/Edge install prompt. iOS doesn't fire this — the iOS sheet
   // is the user's responsibility (Safari > Share > Add to Home Screen).
   useEffect(() => {
-    const dismissed =
-      typeof window !== "undefined" &&
-      window.localStorage.getItem(INSTALL_DISMISSED_KEY) === "1";
-
-    // Already running as an installed app — never offer to install again.
-    const installed =
-      typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        // iOS Safari exposes standalone here instead of via matchMedia.
-        (window.navigator as { standalone?: boolean }).standalone === true);
+    try { dismissed.current = window.localStorage.getItem(INSTALL_DISMISSED_KEY) === "1"; }
+    catch { /* Session-local dismissal still works when storage is blocked. */ }
+    installed.current = window.matchMedia("(display-mode: standalone)").matches
+      || (window.navigator as { standalone?: boolean }).standalone === true;
 
     function onBefore(e: Event) {
       e.preventDefault();
-      if (dismissed || installed) return;
-      setInstallEvent(e as BeforeInstallPromptEvent);
+      if (dismissed.current || installed.current || prompting.current) return;
+      installEvent.current = e as BeforeInstallPromptEvent;
       setShowInstall(true);
     }
 
@@ -43,8 +40,9 @@ export function MobileFab() {
     // prompt hands the app to its own window (the browser reparents this tab —
     // expected behaviour); this just keeps our UI in sync.
     function onInstalled() {
+      installed.current = true;
       setShowInstall(false);
-      setInstallEvent(null);
+      installEvent.current = null;
       try {
         window.localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
       } catch {
@@ -57,28 +55,31 @@ export function MobileFab() {
     return () => {
       window.removeEventListener("beforeinstallprompt", onBefore);
       window.removeEventListener("appinstalled", onInstalled);
+      installEvent.current = null;
     };
   }, []);
 
   async function doInstall() {
-    if (!installEvent) return;
-    // Hide our banner first so only the browser's native dialog remains.
+    const event = installEvent.current;
+    if (!event || prompting.current) return;
+    // Consume the single-use event before React commits or the browser waits.
+    installEvent.current = null;
+    prompting.current = true;
     setShowInstall(false);
     try {
-      await installEvent.prompt();
-      await installEvent.userChoice;
+      await event.prompt();
+      await event.userChoice;
     } catch {
-      // The event can only be used once; ignore replays / gesture errors.
+      // Native refusal leaves this event consumed. A fresh event can offer again.
     } finally {
-      // A prompt is single-use — drop it either way. `appinstalled` handles the
-      // accepted case; a dismissal simply leaves the FAB with no banner.
-      setInstallEvent(null);
+      prompting.current = false;
     }
   }
 
   function dismissInstall() {
+    dismissed.current = true;
     setShowInstall(false);
-    setInstallEvent(null);
+    installEvent.current = null;
     try {
       window.localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
     } catch {
@@ -92,6 +93,7 @@ export function MobileFab() {
       <AnimatePresence>
         {showInstall && (
           <motion.div
+            role="region" aria-label={t.app.installTitle}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
@@ -100,38 +102,38 @@ export function MobileFab() {
           >
             <div className="flex items-start gap-3">
               <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                <Download className="h-3.5 w-3.5" />
+                <Download aria-hidden className="h-3.5 w-3.5" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">{t.app.installTitle}</p>
                 <p className="text-xs text-foreground-muted mt-0.5">
                   {t.app.installBody}
                 </p>
-                <div className="flex gap-2 mt-2">
-                  <button
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
                     type="button"
                     onClick={doInstall}
-                    className="text-xs font-medium text-foreground underline-offset-2 hover:underline"
                   >
                     {t.app.install}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={dismissInstall}
-                    className="text-xs text-foreground-subtle hover:text-foreground"
                   >
                     {t.app.notNow}
-                  </button>
+                  </Button>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost" size="icon"
                 type="button"
                 onClick={dismissInstall}
                 aria-label={t.app.dismiss}
-                className="text-foreground-subtle hover:text-foreground"
+                className="shrink-0"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
+                <X aria-hidden className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </motion.div>
         )}

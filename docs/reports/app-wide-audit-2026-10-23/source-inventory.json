@@ -1231,17 +1231,17 @@
     },
     {
       "path": "src/components/mobile-fab.tsx",
-      "lines": 141,
+      "lines": 143,
       "sha256": "b6e36b8b1a3fdcaee92441c7bad3b83fc77b0e680b7330061d2aaa0a35a686b7",
-      "status": "partial; source inspected; storage refusal, current install lifecycle and shared action targets pending; see remaining-review.md",
-      "reviewedSha256": "b6e36b8b1a3fdcaee92441c7bad3b83fc77b0e680b7330061d2aaa0a35a686b7"
+      "status": "source reviewed; storage/native install lifecycle and EN/CS eight-width target/keyboard/axe checks pass in finding 165; final app-wide release checks pending",
+      "reviewedSha256": "b018be7f538ac79693be68d371ad19f2e9d92f9b978e39a8460b7355bfa23469"
     },
     {
       "path": "src/components/nav/app-toolbar.tsx",
       "lines": 76,
       "sha256": "cb1c2f235c1b1a3e00293c9551a70df277a1396b9b130f5f86d7b9d80307fd41",
-      "status": "partial; source inspected; shared target sizes across mobile and desktop breakpoints pending; see remaining-review.md",
-      "reviewedSha256": "cb1c2f235c1b1a3e00293c9551a70df277a1396b9b130f5f86d7b9d80307fd41"
+      "status": "source reviewed; storage/native install lifecycle and EN/CS eight-width target/keyboard/axe checks pass in finding 165; final app-wide release checks pending",
+      "reviewedSha256": "4519e0108c3fa37cfbb48c8c58f58e89c03347e9d33d0bb3c92c6aadd1c32606"
     },
     {
       "path": "src/components/nav/sidebar.tsx",
