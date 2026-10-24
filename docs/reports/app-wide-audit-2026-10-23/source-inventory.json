@@ -373,7 +373,8 @@
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
       "lines": 82,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "partial; source inspected; whole request/auth/body/provider bounds and confirmed toggle/complete read behavior remain pending"
+      "status": "partial: HTTP/auth/body/Storage/probe cancellation and fixed refusals checked; complete result/signing/trend contracts and toggle receipts pending",
+      "reviewedSha256": "70b0e70ae51dc9f9cbcee5be12101e58f02c37d1900103be094055c52d44e48a"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -447,7 +448,7 @@
       "lines": 104,
       "sha256": "0ccbf56d1282c6c88931b2ed4a1e006bd6943b6c4387cc1922d514a78320eecc",
       "status": "source reviewed; complete read-only GET and captured owned POST, whole-request/auth/project/body/database bounds and receipt checks pass (findings 146/151); rendered editor/release checks pending",
-      "reviewedSha256": "13b1237d46fb0b47ffd0be5f67f5b824d84b2234818c46dd0f776812e4bffebf"
+      "reviewedSha256": "614ed8654a7ca8b2936b2896a667cad54f2f1a7dd651dda834974cfd41764770"
     },
     {
       "path": "src/app/api/marketing/dneskai/sources/route.ts",
@@ -2898,8 +2899,8 @@
       "path": "src/lib/marketing/dneskai-audio.ts",
       "lines": 219,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial; captured/idempotent creation preserves objects (154), bounded cancellable local audio probing and native metadata/format/process checks pass (155); complete list validation, request/storage/database budgets, cleanup lifecycle and release remain pending",
-      "reviewedSha256": "cad46a03ee6483b3dbef78ecb0573fdbe87b12b5c7f32c2a649d21c0520dd997"
+      "status": "partial: captured idempotent creation, retained files, bounded native decoding and cancellation/retry regressions checked; complete list/signing/rotation, captured toggles and orphan retention pending",
+      "reviewedSha256": "37e9730dc3ae214fce88000087362b12a6e726e47ce7dc31cfab2a6fd78d473f"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",

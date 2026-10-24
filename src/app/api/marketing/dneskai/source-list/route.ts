@@ -42,7 +42,10 @@ async function sourceStates(db: Db, owner: string, project: string, ids: string[
 async function owner(signal: AbortSignal) {
   const db = await awaitWithSignal(createClient(signal), signal);
   const { data: { user }, error } = await awaitWithSignal(db.auth.getUser(), signal);
-  if (error && ![400, 401, 403].includes(error.status ?? 0)) throw new Error('sources-unavailable');
+  if (error) {
+    if (![400, 401, 403].includes(error.status ?? 0)) throw new Error('sources-unavailable');
+    return { db, user: null };
+  }
   return { db, user };
 }
 const requestBudget = (request: Request) => AbortSignal.any([request.signal, AbortSignal.timeout(18_000)]);

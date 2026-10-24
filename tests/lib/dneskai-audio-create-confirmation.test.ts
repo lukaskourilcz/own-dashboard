@@ -9,6 +9,7 @@ const owner = '11111111-1111-4111-8111-111111111111', uploadId = '33333333-3333-
 const name = `${owner}/${uploadId}.mp3`;
 const intent = () => DneskaiAudioCreateSchema.parse({ action: 'create', uploadId, contentType: 'audio/mpeg', title: 'Fixture track', artist: 'Fixture artist', source: 'original', licenceNote: 'Own fixture recording', sourceUrl: 'https://example.test/recording', mood: ['calm', 'calm'] });
 let loseInsertAck = false, insertRequests = 0, downloadRequests = 0;
+let abortAfterInsert: AbortController | null = null;
 let database: Awaited<ReturnType<typeof createMigratedDatabase>>, client: ReturnType<typeof createClient>;
 beforeAll(async () => {
   database = await createMigratedDatabase({ owner, instant: '2026-10-24T19:00:00Z' });
@@ -16,19 +17,43 @@ beforeAll(async () => {
   client = createClient(origin, 'TEST-ONLY-service-role', { global: { fetch: async (url, init) => {
     if (/^\/storage\/v1\/object\/(?:authenticated\/)?marketing-audio\//.test(new URL(String(url)).pathname) && (init?.method ?? 'GET') === 'GET') downloadRequests++;
     const response = await emulator.fetch(url, init);
-    if (new URL(String(url)).pathname === '/rest/v1/marketing_audio_tracks' && init?.method === 'POST') { insertRequests++; if (loseInsertAck) return Response.json({ message: 'Synthetic lost acknowledgement' }, { status: 503 }); }
+    if (new URL(String(url)).pathname === '/rest/v1/marketing_audio_tracks' && init?.method === 'POST') { insertRequests++; abortAfterInsert?.abort('synthetic private reason'); if (loseInsertAck) return Response.json({ message: 'Synthetic lost acknowledgement' }, { status: 503 }); }
     return response;
   } }, auth: { persistSession: false, autoRefreshToken: false } });
 }, 120_000);
 afterAll(async () => database?.close());
 beforeEach(async () => {
-  loseInsertAck = false; insertRequests = 0; downloadRequests = 0;
+  loseInsertAck = false; insertRequests = 0; downloadRequests = 0; abortAfterInsert = null;
   await database.exec('drop trigger if exists audio_create_test on public.marketing_audio_tracks; delete from public.marketing_audio_tracks; delete from storage.objects;');
   const result = await client.storage.from('marketing-audio').upload(name, new Uint8Array([1, 2, 3]), { contentType: 'audio/mpeg', upsert: false }); expect(result.error).toBeNull();
 });
 async function objectExists() { return (await database.query('select 1 from storage.objects where bucket_id=$1 and name=$2', ['marketing-audio', name])).rows.length === 1; }
 
 describe('audio creation preserves its uploaded object and confirms captured metadata', () => {
+  it('does no read, file download or probe for an already cancelled create', async () => {
+    const controller = new AbortController(), probe = vi.fn(async () => 60_000); controller.abort('synthetic private reason');
+    await expect(createDneskaiAudioTrack(client, owner, intent(), { probe, signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError', message: 'Request aborted' });
+    expect(downloadRequests).toBe(0); expect(insertRequests).toBe(0); expect(probe).not.toHaveBeenCalled(); expect(await objectExists()).toBe(true);
+  });
+  it('passes cancellation to the probe and never inserts after an ignored late probe result', async () => {
+    const controller = new AbortController(); let ready!: () => void, finish!: () => void;
+    const started = new Promise<void>(resolve => { ready = resolve; }), barrier = new Promise<void>(resolve => { finish = resolve; });
+    const probe = vi.fn(async (_bytes: Buffer, options: { signal?: AbortSignal } = {}) => { expect(options.signal).toBe(controller.signal); ready(); await barrier; return 60_000; });
+    const pending = createDneskaiAudioTrack(client, owner, intent(), { probe, signal: controller.signal });
+    await started; controller.abort('synthetic private reason');
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError', message: 'Request aborted' });
+    finish(); await new Promise(resolve => setTimeout(resolve, 0));
+    expect(insertRequests).toBe(0); expect(await objectExists()).toBe(true);
+    expect((await database.query<{n:number}>('select count(*)::int n from public.marketing_audio_tracks')).rows[0]!.n).toBe(0);
+  });
+  it('preserves a commit cancelled before acknowledgement and reconciles its retry without another upload', async () => {
+    const controller = new AbortController(); abortAfterInsert = controller; const probe = vi.fn(async () => 60_000);
+    await expect(createDneskaiAudioTrack(client, owner, intent(), { probe, signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError', message: 'Request aborted' });
+    expect(await objectExists()).toBe(true); abortAfterInsert = null;
+    const track = await createDneskaiAudioTrack(client, owner, intent(), { probe });
+    expect(track.id).toBe(uploadId); expect(insertRequests).toBe(1); expect(downloadRequests).toBe(1); expect(probe).toHaveBeenCalledOnce(); expect(await objectExists()).toBe(true);
+  });
+
   it('returns the same stored track on retry without downloading or probing again, preserving a later disable', async () => {
     const probe = vi.fn(async () => 60_000); const first = await createDneskaiAudioTrack(client, owner, intent(), { probe });
     await database.query('update public.marketing_audio_tracks set enabled=false where id=$1', [uploadId]);

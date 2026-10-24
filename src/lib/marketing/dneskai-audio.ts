@@ -5,6 +5,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { z } from "zod";
+import { awaitWithSignal } from "@/lib/abortable";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import {
   DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema,
@@ -60,12 +61,12 @@ export async function listDneskaiAudioTracks(db: Database, owner: string, trackI
   return signAudioRows(db, owner, data ? [data as TrackRow] : []);
 }
 
-async function signAudioRows(db: Database, owner: string, rows: TrackRow[]): Promise<DneskaiAudioTrack[]> {
+async function signAudioRows(db: Database, owner: string, rows: TrackRow[], signal?: AbortSignal): Promise<DneskaiAudioTrack[]> {
   const names = rows.map((row) => objectFromPath(owner, row.storage_path));
   const wanted = names.filter((name): name is string => !!name);
   const signed = new Map<string, string>();
   if (wanted.length) {
-    const { data: urls } = await db.storage.from(DNESKAI_AUDIO_BUCKET).createSignedUrls(wanted, PREVIEW_URL_SECONDS);
+    const { data: urls } = await awaitWithSignal(db.storage.from(DNESKAI_AUDIO_BUCKET).createSignedUrls(wanted, PREVIEW_URL_SECONDS), signal);
     for (const entry of urls ?? []) if (entry.path && entry.signedUrl && !entry.error) signed.set(entry.path, entry.signedUrl);
   }
   return rows.flatMap((row, index) => {
@@ -131,8 +132,8 @@ export async function probeDneskaiAudioDuration(bytes: Buffer, options: { ffmpeg
 }
 
 /** An existing upload identity may only confirm its exact captured metadata. */
-async function confirmedAudioCreation(db: Database, owner: string, input: DneskaiAudioCreate): Promise<DneskaiAudioTrack | null> {
-  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner).eq("id", input.uploadId).maybeSingle();
+async function confirmedAudioCreation(db: Database, owner: string, input: DneskaiAudioCreate, signal?: AbortSignal): Promise<DneskaiAudioTrack | null> {
+  const { data, error } = await awaitWithSignal(db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner).eq("id", input.uploadId).maybeSingle(), signal);
   if (error) throw new DneskaiAudioError("audio-library-unavailable");
   if (!data) return null;
   const row = data as TrackRow, wantedMood = [...new Set(input.mood)];
@@ -140,7 +141,7 @@ async function confirmedAudioCreation(db: Database, owner: string, input: Dneska
     || row.licence_note !== input.licenceNote || row.source_url !== input.sourceUrl
     || row.storage_path !== `${DNESKAI_AUDIO_BUCKET}/${objectName(owner, input.uploadId, input.contentType)}`
     || !Array.isArray(row.mood) || row.mood.length !== wantedMood.length || row.mood.some((tag, index) => tag !== wantedMood[index])) throw new DneskaiAudioError("audio-track-write-failed");
-  const track = (await signAudioRows(db, owner, [row]))[0];
+  const track = (await signAudioRows(db, owner, [row], signal))[0];
   if (!track) throw new DneskaiAudioError("audio-track-write-failed");
   return track;
 }
@@ -150,29 +151,37 @@ async function confirmedAudioCreation(db: Database, owner: string, input: Dneska
  * Identical retries preserve the stored track, including a later disable.
  * Failed requests never delete the object: another request may have committed it.
  */
-export async function createDneskaiAudioTrack(db: Database, owner: string, value: DneskaiAudioCreate, options: { probe?: typeof probeDneskaiAudioDuration } = {}): Promise<DneskaiAudioTrack> {
+export async function createDneskaiAudioTrack(db: Database, owner: string, value: DneskaiAudioCreate, options: { probe?: typeof probeDneskaiAudioDuration; signal?: AbortSignal } = {}): Promise<DneskaiAudioTrack> {
   z.uuid().parse(owner);
+  const signal = options.signal;
+  const check = () => { if (signal?.aborted) throw new DOMException("Request aborted", "AbortError"); };
+  check();
   const input = DneskaiAudioCreateSchema.parse(value);
-  const existing = await confirmedAudioCreation(db, owner, input);
+  const existing = await confirmedAudioCreation(db, owner, input, signal);
+  check();
   if (existing) return existing;
   const files = db.storage.from(DNESKAI_AUDIO_BUCKET), name = objectName(owner, input.uploadId, input.contentType);
-  const downloaded = await files.download(name);
+  const downloaded = await awaitWithSignal(files.download(name), signal);
+  check();
   if (downloaded.error || !downloaded.data) throw new DneskaiAudioError("audio-upload-missing");
   if (!downloaded.data.size || downloaded.data.size > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
-  const bytes = Buffer.from(await downloaded.data.arrayBuffer());
+  const bytes = Buffer.from(await awaitWithSignal(downloaded.data.arrayBuffer(), signal));
+  check();
   if (!bytes.length || bytes.length > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
-  const durationMs = await (options.probe ?? probeDneskaiAudioDuration)(bytes).catch(error => {
+  const durationMs = await awaitWithSignal((options.probe ?? probeDneskaiAudioDuration)(bytes, { signal }), signal).catch(error => {
     if (error instanceof DneskaiAudioError || (error instanceof DOMException && error.name === "AbortError")) throw error;
     throw new DneskaiAudioError("audio-library-unavailable");
   });
+  check();
   if (durationMs === null || !Number.isSafeInteger(durationMs) || durationMs < 1000 || durationMs > 900000) throw new DneskaiAudioError("audio-upload-invalid");
   // A duplicate or ambiguous insert can already be the winning request. Read
   // its persisted metadata; never clean up an object on a write error.
-  await db.from("marketing_audio_tracks").insert({
+  await awaitWithSignal(db.from("marketing_audio_tracks").insert({
     id: input.uploadId, user_id: owner, title: input.title, artist: input.artist, source: input.source, licence_note: input.licenceNote,
     source_url: input.sourceUrl, storage_path: `${DNESKAI_AUDIO_BUCKET}/${name}`, duration_ms: durationMs, mood: [...new Set(input.mood)], enabled: true,
-  });
-  const track = await confirmedAudioCreation(db, owner, input);
+  }), signal);
+  check();
+  const track = await confirmedAudioCreation(db, owner, input, signal);
   if (!track || track.durationMs !== durationMs) throw new DneskaiAudioError("audio-track-write-failed");
   return track;
 }

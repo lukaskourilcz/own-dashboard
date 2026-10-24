@@ -69,3 +69,10 @@ it('the actual project helper separates read failures from successful absence an
  expect(filters).toContainEqual(['user_id',owner]);expect(filters).toContainEqual(['id',project]);expect(retry).toHaveBeenCalledWith(false);expect(abort).toHaveBeenCalledWith(controller.signal);
  read.mockClear();controller.abort();await expect(requireDneskaiProject(db as never,owner,project,controller.signal)).rejects.toMatchObject({name:'AbortError'});expect(read).not.toHaveBeenCalled();
 });
+it.each([400,401,403])('never trusts a user returned alongside auth refusal %s',async status=>{
+ m.user.mockResolvedValue({data:{user:{id:owner}},error:{status,message:'synthetic private detail'}});
+ for(const response of [await POST(request(action)),await GET(new Request(`https://fixture.invalid/api/marketing/dneskai/source-list?projectId=${project}`))]){
+  expect(response.status).toBe(401);expect(await response.json()).toEqual({error:'unauthorized'});
+ }
+ expect(m.project).not.toHaveBeenCalled();expect(m.rpc).not.toHaveBeenCalled();
+});
