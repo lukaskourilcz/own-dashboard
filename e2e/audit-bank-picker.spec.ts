@@ -10,6 +10,26 @@ const providers: Parameters<typeof integrationStatusFixture>[0] = [
 ];
 for (const lang of ["en", "cs"] as const) {
   const copy = finances[lang].bank;
+  test(`${lang}: retrying credential status never submits the typed token`, async ({ page }) => {
+    await gotoPreview(page, { lang }); await signInFixtureUser(page);
+    await page.route("**/api/integrations/status", route => route.fulfill({ json: integrationStatusFixture(providers) }));
+    let reads = 0, stores = 0, syncs = 0, recovered = false;
+    await page.route("**/api/bank/credentials", route => {
+      if (route.request().method() !== "GET") { stores++; return route.fulfill({ status: 503, json: {} }); }
+      reads++; return !recovered ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { stored: { fio: false } } });
+    });
+    await page.route("**/api/bank/sync", route => { syncs++; return route.fulfill({ status: 503, json: {} }); });
+    await page.goto("/dev-preview?tab=accounts");
+    await page.getByTestId("bank-sync").getByRole("button", { name: copy.connect, exact: true }).click();
+    await page.getByRole("button", { name: "Fio banka", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Fio banka", exact: true }), input = dialog.getByLabel(copy.fioTitle, { exact: true });
+    await expect(dialog.getByRole("alert")).toContainText(copy.credentialsLoadErr);
+    await input.fill("synthetic-test-value-not-a-credential");
+    const previousReads = reads; recovered = true;
+    await dialog.getByRole("button", { name: common[lang].retry, exact: true }).click();
+    await expect.poll(() => reads).toBeGreaterThan(previousReads); await expect(dialog.getByRole("alert")).toHaveCount(0);
+    await expect(input).toHaveValue("synthetic-test-value-not-a-credential"); expect(stores).toBe(0); expect(syncs).toBe(0);
+  });
   test(`${lang}: bank picker recovers from failures and prevents navigation during connection`, async ({ page }) => {
     await gotoPreview(page, { lang }); await signInFixtureUser(page);
     await page.route("**/api/integrations/status", route => route.fulfill({ json: integrationStatusFixture(providers) }));

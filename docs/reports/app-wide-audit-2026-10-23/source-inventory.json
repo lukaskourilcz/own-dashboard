@@ -772,7 +772,7 @@
       "lines": 781,
       "sha256": "3d49d9772902f162da30753d81c98c759f7457b0e5c496d9ed064e966562275f",
       "status": "source reviewed; shared integration status, CSV and bank controls have targeted checks; final app-wide release pending",
-      "reviewedSha256": "edf9a3350a98dab37929f0182c16f71641072af280f0ddbc235b7ea52cd76d2f"
+      "reviewedSha256": "6ff027c5bee788efb13826c7fdc3e3b4cbcbefd7a9686783fa4d142e46756027"
     },
     {
       "path": "src/components/finances/payment-matches.tsx",
@@ -1682,10 +1682,10 @@
     },
     {
       "path": "src/components/ui/progress.tsx",
-      "lines": 32,
+      "lines": 38,
       "sha256": "3f400304f56a600eb6ccacc489d5c5660ba6fe3e8366021ebff0f8ea52264fd0",
-      "status": "partially reviewed; shared control follow-ups pending",
-      "reviewedSha256": "3f400304f56a600eb6ccacc489d5c5660ba6fe3e8366021ebff0f8ea52264fd0"
+      "status": "source reviewed; numeric/indeterminate accessibility cases pass; final release checks pending",
+      "reviewedSha256": "8e5b0b71194e82053bb87afa473ca819147f66c39aeac87dd3a32fc8fb2c9874"
     },
     {
       "path": "src/components/ui/select.tsx",

@@ -769,7 +769,7 @@ function FioTokenForm({ onSaved, onBusyChange }: { onSaved: (synced: boolean) =>
         <p className="text-[11px] text-foreground-subtle">{t.finances.bank.serverSideOnly}</p>
         {(storedQuery.data === true || savedConnectionId) && <p role="status" className="text-xs text-foreground-muted">{t.finances.bank.fioStored}</p>}
         {storedQuery.isError && <div role="alert" className="space-y-1 text-xs text-destructive">
-          <p>{t.finances.bank.credentialsLoadErr}</p><Button size="sm" variant="outline" disabled={saving || storedQuery.isFetching} onClick={() => void storedQuery.refetch()}>{t.common.retry}</Button>
+          <p>{t.finances.bank.credentialsLoadErr}</p><Button type="button" size="sm" variant="outline" disabled={saving || storedQuery.isFetching} onClick={() => void storedQuery.refetch()}>{t.common.retry}</Button>
         </div>}
       </div>
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
