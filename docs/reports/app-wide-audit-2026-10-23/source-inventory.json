@@ -1478,7 +1478,7 @@
       "lines": 1973,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
       "status": "partially reviewed; complete reads, ordering, retained notes, manual edit/deletion recovery, operations layout and confirmed active controls checked; creation/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "90a05c215f97dd1e4163fbaa4b0bd04e605efe7ebd656213acee10a623129c5c"
+      "reviewedSha256": "e716d284047f1990d9bcb4b01c367c057ce4f37255336cc2e2f2b6eae5f90847"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -3652,9 +3652,10 @@
     },
     {
       "path": "src/lib/new-project-guide.ts",
-      "lines": 49,
+      "lines": 97,
       "sha256": "8f86562202cd0cd6ae7090eae8b570418e217431985979d150700a83cbe9e753",
-      "status": "pending"
+      "status": "source reviewed; authorization rules, root English mirror and Czech guide verified in actual six-width preview; final release pending",
+      "reviewedSha256": "b4447a23f41c07495930727ea57c8ec0f60b4530a76c57f64355f725f5ee1286"
     },
     {
       "path": "src/lib/notes-text.ts",

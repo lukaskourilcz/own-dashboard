@@ -1,7 +1,8 @@
 /**
  * The standards a new project (and the agent building it) should follow so it
  * plugs into OwnDashboard immediately. Rendered in the Projects panel and
- * mirrored to `newProject.md` at the repo root. Keep the two in sync.
+ * English is mirrored to `newProject.md` at the repo root; keep it in sync.
+ * Czech is the equivalent in-app guidance, with the same authorization rules.
  */
 export const NEW_PROJECT_GUIDE = `# New project guide — wiring a repo into OwnDashboard
 
@@ -43,7 +44,54 @@ Mirror the common tooling the other repos share where it fits: a design-system s
 
 ## Git workflow (every session)
 
-- **Commit frequently** in small, coherent steps — never batch a whole session into one commit.
-- **At the end of every session, push and merge to \`main\`**. Projects whose Vercel Git integration deploys \`main\` redeploy immediately; boardlessAI does not (its \`site/vercel.json\` sets \`git.deploymentEnabled: false\`).
-- **Delete the merged / old branch** (local and remote) after merging, to keep the repo clean. Never leave stale branches behind.
+- **Read the destination repository's instructions first.** Its authorization and release rules govern that repository.
+- **Commit frequently** in small, meaningful steps, with relevant validation and current documentation.
+- **Push and merge only when the owner has authorized it.** Existing authorization remains valid; do not ask again for work already approved. Complete required migrations and release checks before merging. A merge can deploy production when its Git integration is enabled.
+- **Clean up branches only within the authorized scope.** Preserve unrelated work and branches; follow the repository's retention policy.
+`;
+
+export const NEW_PROJECT_GUIDE_CS = `# Průvodce novým projektem — propojení s OwnDashboard
+
+Pokyny pro nový projekt i agenta, který ho vyvíjí. Díky nim OwnDashboard načte úkoly, dokumentaci v kartách Znalosti / Škálování / Monetizace a stávající zdroje návštěvnosti. Následující soubory patří do **kořene repozitáře**.
+
+## Čtyři hlavní soubory Markdown
+
+Vytvořte všechny čtyři. OwnDashboard je načítá a zobrazuje.
+
+### \`about-project.md\` — účel a technologie
+Jeden odstavec se shrnutím, pak nadpisy \`## Tech stack\` a \`## Third-party libraries\` s odrážkami ve formátu \`Název — účel\`. Přehled technologií udržujte pouze tady. Přibližně 25 řádků.
+
+### \`NEEDED.md\` — úkoly pro vlastníka a agenta
+Seznam úkolů Markdown, jeden úkol na řádek, ve společném formátu:
+
+\`- [ ] **Název** — popis. [imp:1-5] [owner:me|ai] [time:30m] [kind:K]\`
+
+- \`[imp:N]\`: důležitost 1–5 (5 je nejvyšší). \`[owner:me|ai]\`: řešitel (ai znamená, že agent zvládne celý úkol). \`[time:…]\`: odhad (30m / 2h). \`[kind:K]\`: jedna z hodnot \`setup\`, \`deploy\`, \`legal\`, \`content\`, \`decision\`.
+- Zaškrtnuté položky (\`- [x]\`) jsou dokončené. OwnDashboard tento seznam importuje jako úkoly.
+
+### \`scaling.md\` — náklady a škálování
+Pouze náklady a škálování; technologie patří do \`about-project.md\`. Přibližně 20 řádků: krátký úvod, přehled nákladů, 2–3 podmínky pro škálování a jeden řádek k úsporám. U cen uvádějte datum a ověřené údaje.
+
+### \`monetization.md\` — možnosti příjmu
+Krátký úvod, tabulka možností pro daný projekt (\`Možnost | Pravděpodobnost příjmu | Možný výdělek | Výhody | Nevýhody\`) a jednořádkové doporučení. Například GitHub Sponsors, reklama, předplatné, dobrovolné příspěvky, jednorázový prodej nebo získávání klientů. Nevhodné možnosti výslovně označte.
+
+## Propojení s OwnDashboard
+
+- **Nasaďte na Vercel** z větve \`main\` s propojeným repozitářem.
+- V OwnDashboard přidejte projekt a nastavte **repozitář** (\`owner/name\`). Podle něj se přiřazují úkoly, dokumentace a návštěvnost.
+
+## Dovednosti v každém repozitáři (\`.claude/skills/\`)
+
+- **\`session-start\`**: projděte \`NEEDED.md\` a upozorněte na proveditelné úkoly s \`[owner:ai]\`.
+- **\`session-end\`**: aktualizujte \`NEEDED.md\` (dokončené úkoly a nové kroky vlastníka) a dodržte níže uvedená pravidla Gitu.
+- **\`markdown-checkup\`**: projděte soubory Markdown, odstraňte zastaralé informace a ostatní aktualizujte nebo ověřte.
+
+Podle potřeby převezměte společné nástroje ostatních repozitářů: návrhový systém, kontrolu vzhledu a přístupnosti, ověření vydání, kontext produktu a \`preview-video\`.
+
+## Pravidla Gitu pro každou relaci
+
+- **Nejdřív přečtěte pokyny cílového repozitáře.** Práci v něm řídí jeho pravidla oprávnění a vydávání.
+- **Průběžně commitujte** malé, smysluplné změny s odpovídajícím ověřením a aktuální dokumentací.
+- **Push a sloučení provádějte jen s oprávněním vlastníka.** Dřívější oprávnění platí dál; již schválenou práci znovu nepotvrzujte. Před sloučením dokončete potřebné migrace a kontroly vydání. Sloučení může při zapnuté Git integraci spustit produkční nasazení.
+- **Větve uklízejte pouze v povoleném rozsahu.** Zachovejte nesouvisející práci a větve; dodržte pravidla repozitáře pro jejich uchovávání.
 `;

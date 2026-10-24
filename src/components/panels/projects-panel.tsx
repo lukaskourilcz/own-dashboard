@@ -74,7 +74,7 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
-import { NEW_PROJECT_GUIDE } from "@/lib/new-project-guide";
+import { NEW_PROJECT_GUIDE, NEW_PROJECT_GUIDE_CS } from "@/lib/new-project-guide";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
@@ -752,7 +752,7 @@ function ProjectsListPanel({
           {t.projects.newProjectGuide}
         </summary>
         <div className="border-t border-border px-4 py-3">
-          <Markdown source={NEW_PROJECT_GUIDE} className="max-w-3xl" />
+          <Markdown source={lang === "cs" ? NEW_PROJECT_GUIDE_CS : NEW_PROJECT_GUIDE} className="max-w-3xl" />
         </div>
       </details>
 
