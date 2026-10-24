@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useSyncExternalStore } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useGuardedNavigation } from "@/components/navigation-guard";
 import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
@@ -235,6 +235,25 @@ export function ProjectWorkspace(props: Props) {
   const tabs = dneskai ? [...dneskaiStrip, ...(openSection ? [openSection] : [])] : projectTabs;
   // A tab hidden in Settings, or one this project does not have, opens the first tab instead.
   const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : (tabs[0]?.id ?? "overview");
+
+  const visibleTabIds = tabs.map(item => item.id).join(",");
+  useLayoutEffect(() => {
+    const list = tablist.current;
+    if (!list) return;
+    const reveal = () => {
+      const selected = list.querySelector<HTMLElement>('[aria-selected="true"]');
+      if (!selected) return;
+      const viewport = list.getBoundingClientRect(), item = selected.getBoundingClientRect();
+      // Only move this horizontal strip. scrollIntoView would also move the
+      // document or workspace, and focusing would steal keyboard position.
+      if (item.left < viewport.left || item.width > viewport.width) list.scrollLeft += item.left - viewport.left;
+      else if (item.right > viewport.right) list.scrollLeft += item.right - viewport.right;
+    };
+    reveal();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(reveal); observer.observe(list);
+    return () => observer.disconnect();
+  }, [tab, lang, project.id, visibleTabIds]);
 
   const healthLabel = !health ? t.common.loading : health.health === "healthy" ? p.healthy : health?.health === "attention" ? p.attentionStatus : p.atRisk;
 

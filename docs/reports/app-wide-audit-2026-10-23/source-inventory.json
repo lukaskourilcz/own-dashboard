@@ -1628,10 +1628,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 299,
+      "lines": 318,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "partial: tab hydration, repository flows, task identity, bilingual health and local-day memo changes checked; remaining tabs/business flow pending",
-      "reviewedSha256": "86fe1f18f05a01cef59708137009a45abb5984318fd319874d07cef48e66f62b"
+      "status": "partially reviewed; keyboard tabs, selected-tab visibility, note/communication core and related routes checked; financial projections, links and remaining workspace source/release review pending",
+      "reviewedSha256": "4c59866dea404b8602647184e05b050d42c10b10c39d995c08f03d7c72757892"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
