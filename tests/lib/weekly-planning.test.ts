@@ -165,8 +165,15 @@ describe("channel classification", () => {
     });
   });
 
-  it("treats a project owned by an organization as client work", () => {
-    expect(classifyEvent(timed("e", "Portal handover", "", ""), REFS).channel).toBe("client");
+  it.each(["own", undefined] as const)("preserves canonical own classification with an organization link (%s)", engagement => {
+    const linked = { ...RETAINED_PROJECT, engagement };
+    expect(classifyEvent(timed("e", "Portal handover", "", ""), { ...REFS, projects: [linked] }))
+      .toEqual({ channel: "project", matched: "Portal" });
+  });
+
+  it("keeps an explicitly named client organization ahead of an own-project match", () => {
+    expect(classifyEvent(timed("e", "Portal review with Acme", "", ""), REFS))
+      .toEqual({ channel: "client", matched: "Acme s.r.o." });
   });
 
   it("does not read an employer as a client", () => {
@@ -221,6 +228,17 @@ describe("time by channel", () => {
     expect(summary.matchedEvents).toBe(2);
     expect(summary.unmatchedEvents).toBe(1);
     expect(summary.skippedAllDay).toBe(0);
+  });
+
+  it("applies the same canonical split to mixed timed blocks without retaining calendar text", () => {
+    const summary = summarizeTimeByChannel([
+      timed("own", "Portal handover", "2026-09-08T08:00:00", "2026-09-08T09:00:00"),
+      timed("client", "Portal review with Acme", "2026-09-08T09:00:00", "2026-09-08T09:30:00"),
+      timed("admin", "Release bookkeeping", "2026-09-08T10:00:00", "2026-09-08T10:15:00"),
+    ], REFS, RANGE);
+    expect(summary).toEqual({ minutes: { client: 30, project: 60, admin: 15 }, totalMinutes: 105,
+      matchedEvents: 2, unmatchedEvents: 1, skippedAllDay: 0 });
+    expect(JSON.stringify(summary)).not.toMatch(/Portal|Acme|bookkeeping/);
   });
 
   it("clamps an event to the window on both edges", () => {
