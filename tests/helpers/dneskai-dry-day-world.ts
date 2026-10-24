@@ -25,8 +25,19 @@ export class FakeInternet {
     this.calls.push({ method: request.method, url: request.url, host: url.hostname, at: this.clock().toISOString(), ...(body !== undefined && body.length < 20000 ? { body } : {}) });
     const handler = this.hosts.get(url.hostname);
     if (!handler) { this.unknown.push(request.url); throw new TypeError(`fetch failed: no fake host ${url.hostname}`); }
-    if (request.signal.aborted) throw request.signal.reason ?? new DOMException('aborted', 'AbortError');
-    return handler(request, url);
+    // Keep and observe the caller's signal for the whole fake fetch, just as
+    // native fetch does. A Request's dependent signal alone must not leave a
+    // hanging handler waiting forever after its original deadline is released.
+    const signal = init?.signal ?? request.signal;
+    signal.throwIfAborted();
+    let aborted: (() => void) | undefined;
+    try {
+      return await new Promise<Response>((resolve, reject) => {
+        aborted = () => reject(signal.reason ?? new DOMException('aborted', 'AbortError'));
+        signal.addEventListener('abort', aborted, { once: true });
+        Promise.resolve().then(() => handler(request, url)).then(resolve, reject);
+      });
+    } finally { if (aborted) signal.removeEventListener('abort', aborted); }
   };
   count(predicate: (call: Call) => boolean) { return this.calls.filter(predicate).length; }
 }
@@ -364,6 +375,7 @@ export class FakeGraph {
       if (this.hangNextPublish) {
         this.hangNextPublish = false; this.hangOnPublish.add(container.id);
         // Published remotely, but the answer never arrives: the caller's own deadline ends the request.
+        request.signal.throwIfAborted();
         await new Promise<never>((_, reject) => request.signal.addEventListener('abort', () => reject(request.signal.reason ?? new DOMException('aborted', 'AbortError')), { once: true }));
       }
       return json({ id: mediaId });
