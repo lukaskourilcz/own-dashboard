@@ -8,7 +8,7 @@ jsou pod ⋯ → **Obnova témat**, účet pod ⋯ → **Účet Instagram**.
 ## Zdroje jako seznam (#174, 23. října 2026)
 
 Zdroje mají dva seznamy, **Instagram profily** a **Weby**. Řádek ukazuje účet nebo
-doménu, druh (Zprávy / Vzdělávání), úroveň (Původní / Redakce / Agregátor), dny
+doménu, téma (Zprávy / Vzdělávání), úroveň (Původní / Redakce / Agregátor), dny
 čtení, kdy se zdroj naposledy četl a kolik položek přinesl (z
 `marketing_dneskai_source_states`), poslední chybu a přepínač.
 
@@ -23,9 +23,19 @@ samostatnou operací, ne součástí načtení stránky. Profily @aimanie a
 [#185](https://github.com/lukaskourilcz/own-dashboard/issues/185).
 Od té chvíle vlastník přidává zdroj zadáním @účtu, profilu na instagram.com nebo
 adresy (adresa s `rss`, `atom`, `feed` nebo `.xml` se čte jako feed, jiná jako
-stránka; Atom čte stejný adaptér jako RSS), upravuje název, druh, úroveň, dny a
+stránka; Atom čte stejný adaptér jako RSS), upravuje název, téma, úroveň, dny a
 počet položek a zdroj odebírá po potvrzení. Adresa zdroje se nemění: nová adresa
 je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy). Doména bez protokolu (například `example.com`) znamená web. Instagramový účet s tečkou zadávejte jako `@meta.ai` nebo úplnou profilovou adresou. Odkaz na konkrétní Reel, příspěvek či přihlašovací stránku není profil. Vstup odmítá přihlašovací údaje v adrese, řídicí znaky, neočekávané porty a příliš dlouhé hodnoty; vlastní stažení dál podléhá serverovým kontrolám URL a DNS.
+
+Aktualizovaný editor před nasazením potřebuje také připravenou migraci
+`20261024174247_confirmed_dneskai_sources.sql`. Uložení i odebrání posílá zachycené
+nastavení a úspěch potvrzuje až odpověď uloženého řádku. Souběžná změna se nepřepíše.
+Neúspěšné přidání ponechá adresu, neplatný počet se nezaokrouhlí a otevřený koncept
+přežije obnovu i výpadek seznamu. Aktuální hodnoty se do něj převezmou jen tlačítkem
+**Zahodit koncept a obnovit**; při neúspěšném obnovení koncept zůstane. Odchod s
+rozepsanými údaji je hlídaný, během zápisu nejde spustit opakovaný zápis ani zahodit
+čekající požadavek. Potvrzená změna upraví mezipaměť bez dalšího načtení celého seznamu;
+nejistá odpověď vyvolá ověření seznamu.
 
 Sběr i scouting čtou zdroje přes jeden katalog (`dneskai-source-catalog.ts`):
 řádky vlastníka se zapnutým přepínačem, soubor pouze s vypnutým. Chyba,

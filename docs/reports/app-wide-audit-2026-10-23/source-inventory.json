@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -982,11 +982,18 @@
       "status": "pending"
     },
     {
+      "path": "src/components/marketing/dneskai-source-forms.tsx",
+      "sha256": null,
+      "lines": 133,
+      "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
+      "reviewedSha256": "1b12faf4dec5ca5c85e558fc03dd3ac2529a95256337c1ea5791d3a7ed9712f0"
+    },
+    {
       "path": "src/components/marketing/dneskai-source-list.tsx",
-      "lines": 169,
+      "lines": 100,
       "sha256": "27c3bc4923b8c87bc02970a0f76b54c36f14ced9e9342be7279c240d8bf4c98d",
-      "status": "partial; captured row inputs and confirmed client acknowledgements integrated (finding 151); retained drafts, immediate repeat/pending navigation, lifecycle and conflict reload remain pending",
-      "reviewedSha256": "9899fa256a557539fba1708649a7ce096344248c65ae837a61551636b4113ed2"
+      "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
+      "reviewedSha256": "1efdca5dd24d8d5bfb6afb4779a67f0fc7b6abba8970242d062bc364b2ad3a66"
     },
     {
       "path": "src/components/marketing/dneskai-sources.tsx",
@@ -1131,8 +1138,8 @@
       "path": "src/components/marketing/dneskai/source-settings.tsx",
       "lines": 56,
       "sha256": "e88e012d8384fcfcc52f98f06705d0f65077430ba41a4760d1225574d9118dcb",
-      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
-      "reviewedSha256": "17520473371ff3898741e982736334781fcd7901c2cac51a75da5a10be1f3267"
+      "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
+      "reviewedSha256": "015747a5583d4c2ce80e16e4bdbd1d3890d78e545c338efc24be581f448669e0"
     },
     {
       "path": "src/components/marketing/dneskai/state-chip.tsx",
@@ -1188,6 +1195,13 @@
       "sha256": "1296d690d0966379c3716d7dc47f32ed1072c5215dfac5e3f8c3e85d1151ebb5",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "79f08f487c6721d4ef7efcfa1d21cb692f17f357c0d9a7b394b07f0befdc849c"
+    },
+    {
+      "path": "src/components/marketing/use-source-actions.ts",
+      "sha256": null,
+      "lines": 87,
+      "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
+      "reviewedSha256": "fcc99826d3a9f039ba2386de8925c8fa12da0973c72af1d27ebec57bd61dfbea"
     },
     {
       "path": "src/components/marketing/weekly-calendar.tsx",
@@ -2389,8 +2403,8 @@
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
       "lines": 64,
       "sha256": "faa07a8ec8c91c1248815b5a26cf54ef8adcc4c7d42a57fd7821eeb866340259",
-      "status": "partial; address/refusal guidance is bilingual and owned error keys are guarded (findings 149/151); editor conflict/reload and legacy notice copy remain pending",
-      "reviewedSha256": "28416c21fcff01eb8fc681b39d274e0ece8b0b5d7f7261583c0de36021b09c98"
+      "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
+      "reviewedSha256": "063f8207de7fa8582cd36d485ad3add4b8266ccd309e0d425e9028f513a5c737"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-sources.ts",
@@ -3209,8 +3223,8 @@
       "path": "src/lib/marketing/dneskai-source-list.ts",
       "lines": 164,
       "sha256": "f08ae40c2053cf6f1ba203d57907f2b58c9eedff27f3c30e3e40281fbe172c43",
-      "status": "partial; captured action/receipt confirmation and bounded source schemas checked (findings 146/149/150/151); source detection edge cases and final editor integration remain under review",
-      "reviewedSha256": "6ed9744b4077b1de56b4e7381d1e0eaef952b940fb385773a993ae649748cf71"
+      "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
+      "reviewedSha256": "3f8f6dfa006adbe2d7bb30a333f21732151b49dde29c23628c918d8856756818"
     },
     {
       "path": "src/lib/marketing/dneskai-store.ts",

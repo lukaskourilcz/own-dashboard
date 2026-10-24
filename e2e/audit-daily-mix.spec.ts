@@ -5,6 +5,7 @@ import { projects as fixtures } from '../src/lib/demo/fixtures';
 import { dneskaiDailyMix } from '../src/lib/i18n/sections/dneskai-daily-mix';
 import { dneskaiSourceList } from '../src/lib/i18n/sections/dneskai-source-list';
 import { dneskaiAudio } from '../src/lib/i18n/sections/dneskai-audio';
+import { dneskaiRegistrySourceList } from '../src/lib/marketing/dneskai-source-list';
 import { common } from '../src/lib/i18n/sections/common';
 const id='22222222-2222-4222-8222-222222222222',owner='11111111-1111-4111-8111-111111111111';
 async function fixture(page: Page,lang:'en'|'cs') {
@@ -13,6 +14,7 @@ async function fixture(page: Page,lang:'en'|'cs') {
  let read={mix:{newsPerDay:1,educationPerDay:1,slots:['08:00','17:00']},stored:true,version:'2026-10-24T17:10:00.123456Z'};
  let calls=0,fail=false,hold=false,release:(()=>void)|undefined;
  await page.route('**/rest/v1/rpc/read_owned_collection',route=>route.fulfill({json:route.request().postDataJSON().p_entity==='projects'?[project]:[]}));
+ await page.route('**/api/marketing/dneskai/source-list?**',route=>route.fulfill({json:dneskaiRegistrySourceList()}));
  await page.route('**/api/marketing/dneskai/daily-mix?**',async route=>{
   if(route.request().method()==='GET')return route.fulfill({json:read});
   calls++;const input=route.request().postDataJSON();expect(Object.keys(input).sort()).toEqual(['expectedVersion','mix']);

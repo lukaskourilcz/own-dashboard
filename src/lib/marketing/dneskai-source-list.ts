@@ -125,7 +125,7 @@ export function dneskaiDetectSource(input: string): { kind: 'instagram'; handle:
     const profile = instagramHandle(url.href);
     return profile ? { kind: 'instagram', handle: profile } : null;
   }
-  const feed = /(rss|atom|feed)|\.xml$/i.test(url.pathname + url.search);
+  const feed = /(rss|atom|feed)/i.test(url.pathname + url.search) || /\.xml$/i.test(url.pathname);
   return { kind: feed ? 'rss' : 'html', url: url.href, host: url.hostname.replace(/^www\./, '') };
 }
 

@@ -8,6 +8,7 @@ import { dneskaiNativeSourceConfig } from '@/lib/marketing/dneskai-native-feed';
 describe('Zdroje source rows (#174)', () => {
   it('distinguishes bare websites from explicit dotted Instagram handles', () => {
     expect(dneskaiDetectSource('example.com')).toEqual({kind:'html',url:'https://example.com/',host:'example.com'});
+    expect(dneskaiDetectSource('https://example.com/articles.xml?lang=cs')).toMatchObject({kind:'rss'});
     expect(dneskaiDetectSource('@meta.ai')).toEqual({kind:'instagram',handle:'meta.ai'});
     expect(dneskaiDetectSource('instagram.com/meta.ai/')).toEqual({kind:'instagram',handle:'meta.ai'});
     expect(dneskaiDetectSource('https://EXAMPLE.COM/feed.xml#section')).toEqual({kind:'rss',url:'https://example.com/feed.xml',host:'example.com'});
