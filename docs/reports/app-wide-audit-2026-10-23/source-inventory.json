@@ -3104,10 +3104,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-publishers.ts",
-      "lines": 18,
+      "lines": 19,
       "sha256": "7f7960227414085cca9e055773707036c6be953e6584cdb2983113228de5956c",
-      "status": "partial; publisher resolution traced as internal model evidence; stale source-line/credit comments still need reconciliation",
-      "reviewedSha256": "7f7960227414085cca9e055773707036c6be953e6584cdb2983113228de5956c"
+      "status": "source reviewed; internal publisher labels and actor-attribution callsites traced, stale source-line/credit comments reconciled (finding 148); generation execution review remains separate",
+      "reviewedSha256": "4779e90d2f543247137be27d1ffbfae219d86e6d92947a8cc539ac095d9f08c5"
     },
     {
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
@@ -3514,10 +3514,10 @@
     },
     {
       "path": "src/lib/marketing/pilot.ts",
-      "lines": 28,
+      "lines": 30,
       "sha256": "272bc806b1a7a559b011de90f524c1512a85eebd0076af2bd5f73677448ee04b",
-      "status": "partial; configuration/date/owner guards read; a direct invalid Date can bypass an active Preview window and needs a finite-clock guard",
-      "reviewedSha256": "272bc806b1a7a559b011de90f524c1512a85eebd0076af2bd5f73677448ee04b"
+      "status": "source reviewed; direct non-finite clocks refuse active Preview pilot admission (finding 148), with date/owner/window/retirement regressions; final release pending",
+      "reviewedSha256": "ee3f418db94978598635ef7251e8eb1bb8bacd8ff9576e94ed22c2221cabe097"
     },
     {
       "path": "src/lib/marketing/preview-pilot.ts",

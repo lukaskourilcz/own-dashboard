@@ -262,7 +262,7 @@ export type GenerationDependencies = {
   onUsage?(usage: GeneratedMarketingDraft["usage"]): void;
   /** Brief generation (#116): the stored source media (#114). Required for a brief; nothing is invoked without it. */
   loadDneskaiMedia?: LoadDneskaiMediaBytes;
-  /** Brief generation: the publisher names of the source lines. Defaults to the Instagram account or the host. */
+  /** Internal evidence labels for actor attribution, never post source lines/credits; defaults to account or host. */
   evidencePublishers?: DneskaiEvidencePublishers;
   /** Brief generation: the studio's deck gate. Defaults to `validateDneskaiDeck` from dneskai-render.ts. */
   validateDneskaiDeck?: (deck: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal) => Promise<DneskaiSlideRenderProblem[]>;

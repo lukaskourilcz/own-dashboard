@@ -198,8 +198,9 @@ export function czechDate(value: string): string | null {
 const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "web"; } };
 
 /**
- * The publisher a source line names when no registry is at hand: the Instagram account of an `instagram:<profile>`
- * source, otherwise the page's host. The worker passes the registry's names (`dneskai-publishers.ts`) instead.
+ * The publisher label for internal model evidence when no registry is at hand:
+ * an Instagram account or page host. The worker supplies registry names instead.
+ * These labels do not create source lines or credits in the post.
  */
 export function dneskaiFallbackPublisher(item: Pick<DneskaiBrief["evidence"][number], "sourceId" | "url">): string {
   const profile = /^instagram:([A-Za-z0-9._]{1,30})$/.exec(item.sourceId)?.[1];

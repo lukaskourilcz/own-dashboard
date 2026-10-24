@@ -32,6 +32,12 @@ async function enqueue(who: string, tuple: unknown = undefined, key: string = ra
   return result.rows[0].value;
 }
 describe("fixed pilot configuration", () => {
+  it("refuses a non-finite clock while an active Preview pilot is configured", () => {
+    expect(() => marketingPilotConfiguration(owner, env, new Date(NaN))).toThrow("pilot-clock-invalid");
+    // The retired/absent family remains ordinary admission, not a pilot.
+    expect(marketingPilotConfiguration(owner, {}, new Date(NaN))).toBeNull();
+    expect(marketingPilotConfiguration(owner, { ...env, VERCEL_ENV: "production" }, new Date(NaN))).toBeNull();
+  });
   it("leaves absent pilot configuration unchanged and accepts the exact active owner tuple", () => {
     expect(marketingPilotConfiguration(owner, {}, now)).toBeNull();
     expect(marketingPilotConfiguration(owner, env, now)).toEqual(pilot);
