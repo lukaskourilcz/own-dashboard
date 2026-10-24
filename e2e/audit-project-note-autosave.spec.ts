@@ -8,10 +8,10 @@ import { notes } from "../src/lib/i18n/sections/notes";
 const owner = "11111111-1111-4111-8111-111111111111", id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", hash = (text: string) => createHash("sha256").update(text).digest("hex");
 async function fixture(page: Page, lang: "en" | "cs", name = "Notes fixture") {
   await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" });
-  let sequence = 0, calls = 0, saved = 0, fail = false, active = 0, maxActive = 0, directWrites = 0;
+  let sequence = 0, calls = 0, saved = 0, fail = false, active = 0, maxActive = 0, directWrites = 0, removed = false;
   const stamp = () => new Date(Date.UTC(2026, 9, 24, 12, 0, sequence++)).toISOString();
   let row = { id, user_id: owner, name, slug: "notes-fixture", notes: "Original project note", repo_full_name: null, sort_order: 0, is_active: true, engagement: "own", parent_id: null, url: null, dev_url: null, color: null, created_at: stamp(), updated_at: stamp() };
-  await page.route("**/rest/v1/rpc/read_owned_collection", route => route.fulfill({ json: route.request().postDataJSON().p_entity === "projects" ? [row] : [] }));
+  await page.route("**/rest/v1/rpc/read_owned_collection", route => route.fulfill({ json: route.request().postDataJSON().p_entity === "projects" && !removed ? [row] : [] }));
   await page.route("**/rest/v1/projects?**", route => { if (route.request().method() !== "GET") directWrites++; return route.fulfill({ json: [] }); });
   await page.route("**/rest/v1/rpc/save_project_notes", async route => {
     calls++; maxActive = Math.max(maxActive, ++active);
@@ -28,10 +28,31 @@ async function fixture(page: Page, lang: "en" | "cs", name = "Notes fixture") {
   await page.getByRole("table", { name: projects[lang].title, exact: true }).getByRole("button", { name: projects[lang].manage, exact: true }).click();
   const dialog = page.getByRole("dialog", { name: projects[lang].manage, exact: true });
   const editor = dialog.getByRole("textbox", { name: notes[lang].editorLabel, exact: true }); await expect(editor).toBeVisible();
-  return { dialog, editor, fail: (value: boolean) => { fail = value; }, external: (text: string) => { row = { ...row, notes: text, updated_at: stamp() }; },
+  return { dialog, editor, fail: (value: boolean) => { fail = value; }, remove: () => { removed = true; }, external: (text: string) => { row = { ...row, notes: text, updated_at: stamp() }; },
     state: () => ({ calls, saved, maxActive, directWrites, row }) };
 }
 for (const lang of ["en", "cs"] as const) {
+  test(`${lang}: a project removed during reconciliation retains its readable draft and guarded exit`, async ({ page }) => {
+    const errors = watchConsole(page), t = projects[lang], c = common[lang], f = await fixture(page, lang);
+    f.fail(true); await f.editor.fill("Retained draft after external project removal"); await expect(f.dialog.getByText(t.notesSaveFailed, { exact: true })).toBeVisible();
+    f.remove(); await f.dialog.getByRole("button", { name: c.retry, exact: true }).click();
+    await expect(f.dialog.getByText(t.projectUnavailable, { exact: true })).toBeVisible();
+    await expect(f.editor).toHaveText("Retained draft after external project removal"); await expect(f.editor).toHaveAttribute("contenteditable", "false");
+    await expect(f.dialog.getByRole("button", { name: t.addCost, exact: true })).toBeDisabled();
+    await expect(f.dialog.getByRole("button", { name: t.addCron, exact: true })).toBeDisabled();
+    await expect(f.dialog.getByRole("button", { name: c.retry, exact: true })).toBeDisabled();
+    const writes = f.state().calls; await expect(f.editor).toHaveAttribute("aria-readonly", "true");
+    await f.editor.focus(); await expect(f.editor).toBeFocused(); await page.keyboard.press("ControlOrMeta+a");
+    expect((await page.evaluate(() => getSelection()?.toString()))?.trim()).toBe("Retained draft after external project removal");
+    await f.dialog.getByRole("button", { name: lang === "cs" ? "Zavřít" : "Close", exact: true }).click();
+    const guard = page.getByRole("dialog", { name: c.unsaved.title, exact: true }); await expect(guard).toBeVisible();
+    await expect(guard.getByRole("button", { name: c.unsaved.save, exact: true })).toBeDisabled();
+    await guard.getByRole("button", { name: c.unsaved.stay, exact: true }).click(); await expect(f.editor).toHaveText("Retained draft after external project removal");
+    expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).include('[role="dialog"]').withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+    await f.dialog.getByRole("button", { name: lang === "cs" ? "Zavřít" : "Close", exact: true }).click();
+    await guard.getByRole("button", { name: c.unsaved.discard, exact: true }).click(); await expect(f.dialog).toHaveCount(0);
+    expect(f.state().calls).toBe(writes); expect(errors.filter(error => !(error.includes("503") && error.includes("/rpc/save_project_notes")))).toEqual([]);
+  });
   test(`${lang}: project-note drafts survive failed save and an immediate dialog exit`, async ({ page }) => {
     const errors = watchConsole(page), t = projects[lang], c = common[lang], f = await fixture(page, lang);
     f.fail(true); await f.editor.fill("Immediate project draft"); await f.dialog.getByRole("button", { name: lang === "cs" ? "Zavřít" : "Close", exact: true }).click();

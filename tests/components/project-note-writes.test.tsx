@@ -10,7 +10,7 @@ import { common } from "@/lib/i18n/sections/common";
 import { qk } from "@/lib/queries/keys";
 import type { Project } from "@/lib/types";
 import { ProjectNotesSizeError, type ProjectNotesReceipt } from "@/lib/project-notes";
-const state = vi.hoisted(() => ({ write: vi.fn(), read: vi.fn(), text: "", exit: vi.fn() }));
+const state = vi.hoisted(() => ({ write: vi.fn(), read: vi.fn(), text: "", exit: vi.fn(), available: true }));
 vi.mock("@/lib/project-notes", async original => ({ ...await original<typeof import("@/lib/project-notes")>(), saveProjectNotes: state.write }));
 vi.mock("@/lib/queries/fetchers", () => ({ fetchProjects: state.read }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
@@ -25,13 +25,13 @@ function confirmed(source: Project, body: string): ProjectNotesReceipt {
 function View() {
   const data = useQuery({ queryKey: qk.projects, initialData: [project], queryFn: state.read }).data as Project[];
   const editor = useRef({ toMarkdown: async () => state.text } as NoteEditorHandle);
-  const autosave = useProjectNotesAutosave(data[0], next => client.setQueryData(qk.projects, next), editor);
+  const autosave = useProjectNotesAutosave(data[0], next => client.setQueryData(qk.projects, next), editor, state.available);
   useLayoutEffect(() => { api = autosave; });
   const navigate = useGuardedNavigation();
   return <button onClick={() => navigate(state.exit)}>Exit fixture</button>;
 }
 beforeEach(async () => {
-  vi.resetAllMocks(); rows = [project]; tick = 0; state.text = project.notes;
+  vi.resetAllMocks(); rows = [project]; tick = 0; state.text = project.notes; state.available = true;
   state.read.mockImplementation(async () => rows); state.write.mockImplementation(async (_client, source, text) => confirmed(source, text));
   host = document.createElement("div"); document.body.append(host); root = createRoot(host); client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await act(async () => root.render(<QueryClientProvider client={client}><NavigationGuardProvider><View /></NavigationGuardProvider></QueryClientProvider>));
@@ -145,4 +145,22 @@ it("suppresses an old editor debounce while an explicit saved-note reload is pen
   await act(async () => { expect(await api.save("Earlier debounced draft")).toBe(false); });
   expect(state.write).not.toHaveBeenCalled();
   await act(async () => { release([project]); expect(await reload).toBe(true); }); expect(api.dirty).toBe(false); expect(api.seed).toBe(project.notes);
+});
+it("retains a missing project's dirty draft and blocks both new and previously captured save callbacks", async () => {
+  state.text = "Retained missing-project draft"; const obsolete = api.save;
+  await act(async () => { api.markDirty(); }); state.available = false;
+  await act(async () => root.render(<QueryClientProvider client={client}><NavigationGuardProvider><View /></NavigationGuardProvider></QueryClientProvider>));
+  await act(async () => { expect(await obsolete(state.text)).toBe(false); expect(await api.flush()).toBe(false); expect(await api.reloadSaved()).toBe(false); click("Exit fixture"); });
+  expect(api.dirty).toBe(true); expect(state.write).not.toHaveBeenCalled(); expect(state.exit).not.toHaveBeenCalled();
+  const save = [...document.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === common.en.unsaved.save)!;
+  expect(save.disabled).toBe(true);
+});
+it("stops a queued note write when its project disappears during the earlier request", async () => {
+  let release!: (value: ProjectNotesReceipt) => void; state.write.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  let first!: Promise<boolean>, second!: Promise<boolean>;
+  await act(async () => { first = api.save("Earlier"); second = api.save("Latest missing-project draft"); });
+  state.available = false;
+  await act(async () => root.render(<QueryClientProvider client={client}><NavigationGuardProvider><View /></NavigationGuardProvider></QueryClientProvider>));
+  await act(async () => { release(confirmed(project, "Earlier")); await first; expect(await second).toBe(false); });
+  expect(state.write).toHaveBeenCalledTimes(1); expect(api.dirty).toBe(true); expect(api.pending).toBe(false);
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUnsavedDraft } from "@/components/navigation-guard";
 import type { NoteEditorHandle } from "@/components/notes/note-editor";
@@ -13,12 +13,14 @@ import type { Project, Updater } from "@/lib/types";
 /** Drafts remain in memory until a confirmed note-only receipt. The rich
  * editor marks dirty immediately and serializes on debounce or an exit flush.
  * Failed/ambiguous writes stop the queue; replacing a conflict is explicit. */
-export function useProjectNotesAutosave(project: Project, setProjects: Updater<Project[]>, editor: RefObject<NoteEditorHandle | null>) {
+export function useProjectNotesAutosave(project: Project, setProjects: Updater<Project[]>, editor: RefObject<NoteEditorHandle | null>, available = true) {
   const qc = useQueryClient();
   const latest = useRef(project), base = useRef(project), body = useRef<string | null>(null), lastAttempt = useRef<string | null>(null);
   const revision = useRef(0), epoch = useRef(0), dirtyRef = useRef(false), chain = useRef<Promise<boolean> | null>(null);
   const queued = useRef<{ body: string; epoch: number; promise: Promise<boolean> } | null>(null);
   const replacementPending = useRef(false), reloading = useRef(false);
+  const availableRef = useRef(available);
+  useLayoutEffect(() => { availableRef.current = available; }, [available]);
   const conflictRef = useRef<ProjectNotesReceipt | null>(null), timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dirty, setDirty] = useState(false), [pending, setPending] = useState(false), [failed, setFailed] = useState(false), [saved, setSaved] = useState(false);
   const [tooLarge, setTooLarge] = useState(false);
@@ -52,6 +54,7 @@ export function useProjectNotesAutosave(project: Project, setProjects: Updater<P
     if (reloading.current) { body.current = text; return Promise.resolve(false); }
     body.current = text; revision.current++; const version = revision.current, pass = epoch.current;
     dirtyRef.current = true; setDirty(true); setSaved(false);
+    if (!availableRef.current) return Promise.resolve(false);
     if (conflictRef.current && !replacement && !replacementPending.current) return Promise.resolve(false);
     const previous = chain.current;
     if (queued.current?.body === text && queued.current.epoch === pass && !replacement) return queued.current.promise.then(ok => {
@@ -64,7 +67,7 @@ export function useProjectNotesAutosave(project: Project, setProjects: Updater<P
     if (replacement) replacementPending.current = true;
     const work = async () => {
       if (previous && !await previous) return false;
-      if (pass !== epoch.current) return false;
+      if (pass !== epoch.current || !availableRef.current) return false;
       const expected = base.current; lastAttempt.current = text;
       try {
         const result = await saveProjectNotes(createClient(), expected, text, replacement);
@@ -88,13 +91,13 @@ export function useProjectNotesAutosave(project: Project, setProjects: Updater<P
     chain.current = promise; queued.current = { body: text, epoch: pass, promise }; return promise;
   }
   async function flush(replace = false) {
-    if (capturedEpoch !== epoch.current || (conflictRef.current && !replace)) return false;
+    if (capturedEpoch !== epoch.current || !availableRef.current || (conflictRef.current && !replace)) return false;
     const text = editor.current ? await editor.current.toMarkdown() : body.current;
     if (text === null || capturedEpoch !== epoch.current) return false;
     return await save(text, replace ? conflictRef.current ?? undefined : undefined) && !dirtyRef.current;
   }
   async function reloadSaved() {
-    if (chain.current || reloading.current || capturedEpoch !== epoch.current) return false;
+    if (chain.current || reloading.current || capturedEpoch !== epoch.current || !availableRef.current) return false;
     const version = revision.current, pass = epoch.current;
     reloading.current = true; setPending(true);
     try {
@@ -105,6 +108,6 @@ export function useProjectNotesAutosave(project: Project, setProjects: Updater<P
       discard(source); return true;
     } catch { setFailed(true); return false; } finally { reloading.current = false; setPending(false); }
   }
-  useUnsavedDraft({ get dirty() { return dirtyRef.current; }, pending, canSave: !conflict && !tooLarge, save: () => flush(), discard: () => discard() });
+  useUnsavedDraft({ get dirty() { return dirtyRef.current; }, pending, canSave: available && !conflict && !tooLarge, save: () => flush(), discard: () => discard() });
   return { dirty, pending, failed, saved, conflict, tooLarge, generation, seed, markDirty, save, flush, reloadSaved };
 }

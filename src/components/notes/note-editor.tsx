@@ -55,6 +55,7 @@ type Props = {
   /** Cheap immediate notification; persistence still uses the debounce. */
   onDirtyChange?: () => void;
   handleRef?: React.RefObject<NoteEditorHandle | null>;
+  editable?: boolean;
   /** Called when the user picks the "Link to note" slash menu item. The
    * parent is expected to open a notes picker and then call
    * `handle.insertNoteLink(id, title)` once a note is chosen. */
@@ -83,6 +84,7 @@ export function NoteEditor({
   onMarkdownChange,
   onDirtyChange,
   handleRef,
+  editable = true,
   onRequestNoteLink,
   onNavigateToNote,
 }: Props) {
@@ -123,16 +125,19 @@ export function NoteEditor({
     const host = hostRef.current;
     if (!host) return;
     const applyLabel = () => {
-      const editable = host.querySelector<HTMLElement>(".tiptap");
-      if (editable?.getAttribute("aria-label") !== t.notes.editorLabel) {
-        editable?.setAttribute("aria-label", t.notes.editorLabel);
+      const input = host.querySelector<HTMLElement>(".tiptap");
+      if (input?.getAttribute("aria-label") !== t.notes.editorLabel) {
+        input?.setAttribute("aria-label", t.notes.editorLabel);
       }
+      input?.setAttribute("aria-readonly", String(!editable));
+      if (input && !editable) input.tabIndex = 0;
+      input?.classList.toggle("focus-ring", !editable);
     };
     applyLabel();
     const observer = new MutationObserver(applyLabel);
     observer.observe(host, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [editor, t.notes.editorLabel]);
+  }, [editor, editable, t.notes.editorLabel]);
 
   useImperativeHandle(
     handleRef ?? { current: null },
@@ -225,8 +230,15 @@ export function NoteEditor({
   }
 
   return (
-    <div ref={hostRef} className="bn-host" onClickCapture={onClickCapture}>
+    <div ref={hostRef} className="bn-host" onClickCapture={onClickCapture} onKeyDownCapture={event => {
+      if (editable || !(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== "a") return;
+      const input = hostRef.current?.querySelector<HTMLElement>(".tiptap");
+      if (!input || !input.contains(event.target as Node)) return;
+      const selection = input.ownerDocument.getSelection();
+      if (selection) { event.preventDefault(); selection.selectAllChildren(input); }
+    }}>
       <BlockNoteView
+        editable={editable}
         editor={editor}
         theme={theme === "dark" ? "dark" : "light"}
         slashMenu={false}

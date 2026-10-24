@@ -1169,10 +1169,10 @@
     },
     {
       "path": "src/components/notes/note-editor.tsx",
-      "lines": 238,
+      "lines": 268,
       "sha256": "99ed93a4c5cd1e1363e6945dbbeaf27c19fb30519feb32d282b662012558f662",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "4d0150ee4701c4da8301ca7a70ebe28a1ce7559513153d24c40f6c6cfae478b8"
+      "status": "source reviewed; mounted rich-editor lifecycle and keyboard-selectable read-only state checked; final optimized app-wide release pending",
+      "reviewedSha256": "0c51335c8af5d3b859f156a2584e80eb968aa85c6a3afeee9f2132b6f2e06f4b"
     },
     {
       "path": "src/components/notes/parse-markdown.ts",
@@ -1422,10 +1422,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2053,
+      "lines": 2069,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, ordering, guarded notes, operations layout and confirmed active controls checked; metadata/cost/cron/sync writes and external-deletion draft retention pending in review.md",
-      "reviewedSha256": "40764919f2107b34f02f4d062b5fce4796e67be2310fa425eeb6473011bc363a"
+      "status": "partially reviewed; complete reads, ordering, guarded/retained notes, operations layout and confirmed active controls checked; metadata/cost/cron/sync writes pending in review.md",
+      "reviewedSha256": "74902bf9e24ecb2e0eea04b333647e8be4b60714a3dcf45a9aea98a54f5fdd03"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/projects/project-notes-editor.tsx",
-      "lines": 76,
+      "lines": 79,
       "sha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78",
-      "status": "source reviewed; rich-editor refs, reset/flush and immediate draft notifications checked; shared parser review and final release pending",
-      "reviewedSha256": "22807a11fcee3855c685d46e0cc554a3806b1077592092bee1a65b4f39c4cfa9"
+      "status": "source reviewed; rich-editor refs, read-only retention, reset/flush and immediate draft notifications checked; shared parser review and final release pending",
+      "reviewedSha256": "05aa8f892deb1ebe52c2e5ee4e9ae3c71bf461d176a45622d99d2f71da00e2c1"
     },
     {
       "path": "src/components/projects/project-prompts-card.tsx",
@@ -2310,10 +2310,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 428,
+      "lines": 431,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "source reviewed; bilingual project recovery and classification copy checked; final release pending",
-      "reviewedSha256": "378ab669efa8be1a5671c045767e3cbaaff1008a43c5c80b179cfe02b7f77284"
+      "status": "source reviewed; bilingual project recovery, unavailability and classification copy checked; final release pending",
+      "reviewedSha256": "cf31ea2e776e884b8eed04f72c9abac480694b0a893eda096bff8bbff31c4a84"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",
@@ -4125,9 +4125,9 @@
     {
       "path": "src/components/projects/use-project-notes-autosave.ts",
       "sha256": null,
-      "lines": 110,
-      "status": "source reviewed; ordered note saves, ambiguity/conflict, immediate guard, reload/discard and late-callback tests pass; rendered checks pass; final release pending",
-      "reviewedSha256": "d3330477164042dc6d976e9a45ead322366f1fb29cc4b277ef20e90a4e3b8f41"
+      "lines": 113,
+      "status": "source reviewed; ordered saves, ambiguity/conflict, immediate guard, reload/discard, availability and late-callback tests pass; rendered retention checked; final release pending",
+      "reviewedSha256": "a2f05ebc134e7a4feb2bd264aed2dd20119e0ab63ce7cde836654920a437f786"
     },
     {
       "path": "src/lib/project-preferences.ts",

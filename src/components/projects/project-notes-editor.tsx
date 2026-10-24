@@ -26,12 +26,14 @@ export function ProjectNotesEditor({
   onSaveMarkdown,
   onDirtyChange,
   editorRef,
+  editable = true,
 }: {
   projectId: string;
   initialMarkdown: string;
   onSaveMarkdown: (markdown: string) => void;
   onDirtyChange?: () => void;
   editorRef?: RefObject<NoteEditorHandle | null>;
+  editable?: boolean;
 }) {
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [parseFailed, setParseFailed] = useState(false);
@@ -68,6 +70,7 @@ export function ProjectNotesEditor({
       noteId={projectId}
       initialContent={blocks}
       handleRef={editorRef}
+      editable={editable}
       onDirtyChange={onDirtyChange}
       onChange={() => undefined}
       onMarkdownChange={(markdown) => onSaveRef.current(markdown)}

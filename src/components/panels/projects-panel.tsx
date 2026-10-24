@@ -307,7 +307,11 @@ function ProjectsListPanel({
   const [ordering, setOrdering] = useState(false);
   useUnsavedDraft({ dirty: false, pending: ordering, canSave: false, save: async () => false });
   const requestNavigation = useGuardedNavigation();
-  const [manageProjectId, setManageProjectId] = useState<string | null>(null);
+  const [managedProject, setManagedProject] = useState<Project | null>(null);
+  const currentManagedProject = projects.find(project => project.id === managedProject?.id && project.user_id === managedProject.user_id);
+  // Retain the latest confirmed snapshot when an external removal arrives.
+  // Keeping the same keyed operations/editor instance preserves its draft.
+  if (currentManagedProject && currentManagedProject !== managedProject) setManagedProject(currentManagedProject);
   const now = useNow();
   const costDay = now ? todayKey(now) : null;
   const projectTasks = useMemo(() => taskIndex ?? buildProjectTaskIndex(projects, todos), [taskIndex, projects, todos]);
@@ -795,6 +799,7 @@ function ProjectsListPanel({
     const { error } = await supabase.from("projects").delete().eq("id", p.id);
     if (error) return toast.err(error.message);
     setProjects((prev) => prev.filter((x) => x.id !== p.id));
+    setManagedProject(current => current?.id === p.id ? null : current);
     // Costs and crons cascade-delete in the DB; drop them from the cache too.
     setCosts((prev) => prev.filter((c) => c.project_id !== p.id));
     setCrons((prev) => prev.filter((c) => c.project_id !== p.id));
@@ -1109,7 +1114,7 @@ function ProjectsListPanel({
                   onEdit={() => startEditProject(p)}
                   onToggleActive={() => toggleProjectActive(p)}
                   onDelete={() => deleteProject(p)}
-                  onManage={() => setManageProjectId(p.id)}
+                  onManage={() => setManagedProject(p)}
                   onOpen={() => onOpenProject(p)}
                   health={now ? assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], now).health : null}
                   openTaskCount={projectTodos.filter((item) => !item.done).length}
@@ -1126,13 +1131,13 @@ function ProjectsListPanel({
         </DndContext>
       )}
 
-      <Dialog open={manageProjectId !== null} onOpenChange={(open) => !open && requestNavigation(() => setManageProjectId(null))}>
+      <Dialog open={managedProject !== null} onOpenChange={(open) => !open && requestNavigation(() => setManagedProject(null))}>
         <DialogContent aria-describedby={undefined} className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader><DialogTitle>{t.projects.manage}</DialogTitle></DialogHeader>
-          {ordered.find((project) => project.id === manageProjectId) && (() => {
-            const project = ordered.find((item) => item.id === manageProjectId)!;
+          {managedProject && (() => {
+            const project = currentManagedProject ?? managedProject;
             const projectTodos = projectTasks.byProject.get(project.id) ?? [];
-            return <ProjectOperations key={project.id} preferencePending={projectPreferences.pending.has(project.id)} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => requestNavigation(() => { void deleteProject(project); })} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
+            return <ProjectOperations key={project.id} available={!!currentManagedProject} preferencePending={projectPreferences.pending.has(project.id)} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => requestNavigation(() => { void deleteProject(project); })} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1157,6 +1162,7 @@ type ProjectOperationsProps = {
   /** True when this project mirrors a currently-active Repository. */
   synced: boolean;
   preferencePending: boolean;
+  available: boolean;
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
@@ -1260,6 +1266,7 @@ function ProjectOperations({
   displayCurrency,
   synced,
   preferencePending,
+  available,
   onEdit,
   onToggleActive,
   onDelete,
@@ -1323,7 +1330,7 @@ function ProjectOperations({
                     {t.projects.open}
                   </a>
                 )}
-                <Link
+                {available && <Link
                   href={`/projects/${encodeURIComponent(project.slug)}`}
                   prefetch={false}
                   onNavigate={(event) => {
@@ -1334,7 +1341,7 @@ function ProjectOperations({
                 >
                   <FolderKanban className="h-3 w-3" />
                   {t.professional.projectWorkspace}
-                </Link>
+                </Link>}
             </div>
           </div>
         </div>
@@ -1352,7 +1359,7 @@ function ProjectOperations({
           </div>
           <div className="flex gap-0.5">
             <Tooltip content={t.common.edit}>
-              <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
+              <Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={!available} aria-label={t.common.edit}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </Tooltip>
@@ -1363,7 +1370,7 @@ function ProjectOperations({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onToggleActive}
-                disabled={preferencePending}
+                disabled={!available || preferencePending}
                 aria-busy={preferencePending}
                 aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}
               >
@@ -1380,6 +1387,7 @@ function ProjectOperations({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onDelete}
+                disabled={!available}
                 aria-label={t.projects.deleteProject}
               >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -1389,19 +1397,24 @@ function ProjectOperations({
         </div>
       </CardHeader>
       <CardContent className="space-y-5 px-0 pb-0 sm:px-0 sm:pb-0">
+          {!available && <p role="alert" className="text-sm text-risk">{t.projects.projectUnavailable}</p>}
+          <fieldset disabled={!available} aria-label={t.projects.costs}>
           <CostsSection
             project={project}
             costs={costs}
             setCosts={setCosts}
             displayCurrency={displayCurrency}
           />
-          <NotesSection project={project} setProjects={setProjects} />
+          </fieldset>
+          <NotesSection project={project} setProjects={setProjects} available={available} />
+          <fieldset disabled={!available} aria-label={t.projects.crons}>
           <CronsSection
             project={project}
             crons={crons}
             setCrons={setCrons}
             displayCurrency={displayCurrency}
           />
+          </fieldset>
       </CardContent>
     </section>
   );
@@ -1569,13 +1582,15 @@ function CostsSection({
 function NotesSection({
   project,
   setProjects,
+  available,
 }: {
   project: Project;
   setProjects: Updater<Project[]>;
+  available: boolean;
 }) {
   const t = useDict();
   const editorRef = useRef<NoteEditorHandle | null>(null);
-  const autosave = useProjectNotesAutosave(project, setProjects, editorRef);
+  const autosave = useProjectNotesAutosave(project, setProjects, editorRef, available);
 
   return (
     <div>
@@ -1590,6 +1605,7 @@ function NotesSection({
           key={autosave.generation}
           projectId={project.id}
           editorRef={editorRef}
+          editable={available}
           initialMarkdown={autosave.seed}
           onDirtyChange={autosave.markDirty}
           onSaveMarkdown={autosave.save}
@@ -1598,8 +1614,8 @@ function NotesSection({
       {autosave.failed && <div role="alert" className="mt-2 space-y-2 text-xs text-risk">
         <p>{autosave.tooLarge ? t.projects.notesTooLarge : autosave.conflict ? t.projects.notesConflict : t.projects.notesSaveFailed}</p>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" disabled={autosave.pending || autosave.tooLarge} onClick={() => { void autosave.flush(!!autosave.conflict); }}>{autosave.conflict ? t.projects.replaceSavedNotes : t.common.retry}</Button>
-          <Button size="sm" variant="ghost" disabled={autosave.pending} onClick={() => { void autosave.reloadSaved(); }}>{t.projects.useSavedNotes}</Button>
+          <Button size="sm" variant="outline" disabled={!available || autosave.pending || autosave.tooLarge} onClick={() => { void autosave.flush(!!autosave.conflict); }}>{autosave.conflict ? t.projects.replaceSavedNotes : t.common.retry}</Button>
+          <Button size="sm" variant="ghost" disabled={!available || autosave.pending} onClick={() => { void autosave.reloadSaved(); }}>{t.projects.useSavedNotes}</Button>
         </div>
       </div>}
     </div>

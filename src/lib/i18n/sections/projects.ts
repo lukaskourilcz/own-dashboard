@@ -35,6 +35,7 @@ type ProjectsStrings = {
   slugRequired: string;
   preferenceSaveFailed: string;
   preferenceConflict: string;
+  projectUnavailable: string;
 
   // Project card.
   active: string;
@@ -179,6 +180,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     slugRequired: "Slug is required.",
     preferenceSaveFailed: "The project change was not confirmed. Review its current state before trying again.",
     preferenceConflict: "This project changed elsewhere. Review its current state and try again.",
+    projectUnavailable: "This project is no longer available. Your open note is still here for you to select and copy before leaving. Changes cannot be saved.",
 
     active: "active",
     inactive: "inactive",
@@ -320,6 +322,7 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     slugRequired: "Identifikátor je povinný.",
     preferenceSaveFailed: "Změna projektu nebyla potvrzena. Před dalším pokusem zkontrolujte jeho aktuální stav.",
     preferenceConflict: "Projekt byl mezitím změněn jinde. Zkontrolujte jeho aktuální stav a zkuste to znovu.",
+    projectUnavailable: "Projekt už není dostupný. Otevřená poznámka tu zůstává, abyste ji před odchodem mohli označit a zkopírovat. Změny nelze uložit.",
 
     active: "aktivní",
     inactive: "neaktivní",
