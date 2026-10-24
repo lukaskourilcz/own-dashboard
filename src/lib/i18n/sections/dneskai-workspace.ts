@@ -25,13 +25,14 @@ const en = {
   card: {
     slideCount: (count: number) => count === 1 ? '1 slide' : `${count} slides`,
     notRendered: 'The slides are not rendered yet.',
-    renderProblems: 'Render problems', advisory: 'Note', blocking: 'Blocks approval',
+    renderProblems: 'Render problems', allProblems: (count: number) => `Show all ${count} problems`, fewerProblems: 'Show fewer problems', advisory: 'Note', blocking: 'Blocks approval',
     problemSlide: (index: number) => `Slide ${index}`, deckLevel: 'Whole post',
     whatHappened: 'What happened', whatNext: 'What happens next',
   },
   fields: { headline: 'Headline', body: 'Text', kicker: 'Label above the headline', credit: 'Picture credit', alt: 'Alt text', sources: 'Source lines', caption: 'Caption', slides: 'Slides', scheduledAt: 'Planned time', images: 'Pictures' },
   counter: (count: number, max: number) => `${count} / ${max}`, over: (by: number) => `${by} over the limit`,
   editor: {
+    captionCountHelp: 'The count includes the keyword line saved with this post.',
     altHelp: 'Read aloud by screen readers; describe what the slide shows.',
     place: (slot: string) => `Picture ${slot.replace('image-', '')}`,
     focal: 'Focal point', focalHelp: 'Click or tap the picture, or use the arrow keys (2 % per press, Home centres it).', focalValue: (x: number, y: number) => `Focal point: ${x} % across, ${y} % down`,
@@ -42,7 +43,7 @@ const en = {
     notFitting: 'Too small for this place; the render will refuse it.',
   },
   draftProblems: {
-    'text-too-long': 'is longer than the slide holds', 'text-missing': 'is empty', 'alt-missing': 'is empty', 'caption-too-long': 'is longer than 2,200 characters',
+    'text-too-long': 'is longer than the slide holds', 'text-missing': 'is empty', 'alt-missing': 'is empty', 'alt-too-long': 'is longer than 1,000 characters', 'caption-too-long': 'is longer than 2,200 characters',
     'caption-missing': 'is empty', 'deck-edit-slide-count': 'A carousel needs 2 to 10 slides; a single post exactly one.', 'schedule-invalid': 'is not a valid time in Prague (for example inside the clock change).', 'schedule-outside-asset-window': 'must be in the future and at most six days ahead.', 'caption-hashtags-over-limit': 'carries more than 10 hashtags.',
     'text-clipped': 'would be cut on the slide; shorten it', 'text-unfit': 'has text the slide cannot print as written',
     'engagement-keyword-invalid': 'must be one word of Latin letters or digits, at most 24', 'engagement-message-missing': 'is empty',
@@ -118,13 +119,14 @@ const cs: typeof en = {
   card: {
     slideCount: (count: number) => count === 1 ? '1 slide' : count < 5 ? `${count} slidy` : `${count} slidů`,
     notRendered: 'Slidy ještě nejsou vykreslené.',
-    renderProblems: 'Problémy vykreslení', advisory: 'Poznámka', blocking: 'Brání schválení',
+    renderProblems: 'Problémy vykreslení', allProblems: (count: number) => `Zobrazit všechny problémy (${count})`, fewerProblems: 'Zobrazit méně problémů', advisory: 'Poznámka', blocking: 'Brání schválení',
     problemSlide: (index: number) => `Slide ${index}`, deckLevel: 'Celý příspěvek',
     whatHappened: 'Co se stalo', whatNext: 'Co bude dál',
   },
   fields: { headline: 'Titulek', body: 'Text', kicker: 'Štítek nad titulkem', credit: 'Autor obrázku', alt: 'Alternativní text', sources: 'Řádky zdrojů', caption: 'Popisek', slides: 'Slidy', scheduledAt: 'Plánovaný čas', images: 'Obrázky' },
   counter: (count: number, max: number) => `${count} / ${max}`, over: (by: number) => `o ${by} znaků víc, než se vejde`,
   editor: {
+    captionCountHelp: 'Počet zahrnuje řádek s klíčovým slovem uložený s příspěvkem.',
     altHelp: 'Čtečky obrazovky ho čtou nahlas; popište, co slide ukazuje.',
     place: (slot: string) => `Obrázek ${slot.replace('image-', '')}`,
     focal: 'Ohnisko', focalHelp: 'Klikněte nebo ťukněte do obrázku, nebo použijte šipky (2 % na stisk, Home vycentruje).', focalValue: (x: number, y: number) => `Ohnisko: ${x} % zleva, ${y} % shora`,
@@ -135,7 +137,7 @@ const cs: typeof en = {
     notFitting: 'Na toto místo je příliš malý; vykreslení ho odmítne.',
   },
   draftProblems: {
-    'text-too-long': 'je delší, než se na slide vejde', 'text-missing': 'je prázdný', 'alt-missing': 'je prázdný', 'caption-too-long': 'je delší než 2 200 znaků',
+    'text-too-long': 'je delší, než se na slide vejde', 'text-missing': 'je prázdný', 'alt-missing': 'je prázdný', 'alt-too-long': 'přesahuje 1 000 znaků', 'caption-too-long': 'je delší než 2 200 znaků',
     'caption-missing': 'je prázdný', 'deck-edit-slide-count': 'Carousel potřebuje 2 až 10 slidů, samostatný příspěvek právě jeden.', 'schedule-invalid': 'není platný pražský čas (například během změny času).', 'schedule-outside-asset-window': 'musí být v budoucnu a nejvýše šest dní dopředu.', 'caption-hashtags-over-limit': 'má víc než 10 hashtagů.',
     'text-clipped': 'by se na slidu ořízl; zkraťte ho', 'text-unfit': 'obsahuje text, který slide nevytiskne tak, jak je napsaný',
     'engagement-keyword-invalid': 'musí být jedno slovo z latinských písmen nebo číslic, nejvýš 24', 'engagement-message-missing': 'je prázdná',

@@ -44,16 +44,16 @@ export function DneskaiEngagementEditor({ id, draft, onDraft: setDraft, handle, 
         <p id={`${id}-keyword-help`} className="text-xs text-foreground-muted">{t.keywordHelp}</p>
         {keywordWrong && <p id={`${id}-keyword-error`} className="text-xs font-medium text-risk">{t.keywordInvalid}</p>}
       </div>
-      <CountedField id={`${id}-message`} label={t.message} value={engagement.replyMessage} max={ENGAGEMENT_REPLY_MESSAGE_MAX} multiline rows={6} help={t.messageHelp} lang={lang} onChange={(replyMessage) => set({ replyMessage })} />
+      <CountedField id={`${id}-message`} label={t.message} value={engagement.replyMessage} max={ENGAGEMENT_REPLY_MESSAGE_MAX} count={value => value.trim().length} multiline rows={6} help={t.messageHelp} lang={lang} onChange={(replyMessage) => set({ replyMessage })} />
       <figure className="min-w-0 space-y-1" aria-labelledby={`${id}-preview`} data-testid="dneskai-engagement-preview">
         <figcaption id={`${id}-preview`} className="text-xs font-medium text-foreground-muted">{t.preview}</figcaption>
         <div className="rounded-md border border-border bg-surface-inset p-3">
           <p className="mb-2 text-[11px] text-foreground-muted">@{handle}</p>
-          <p className={cn('max-h-64 max-w-[85%] overflow-y-auto whitespace-pre-wrap break-words rounded-2xl rounded-bl-sm bg-surface px-3 py-2 text-sm shadow-sm', !engagement.replyMessage.trim() && 'text-foreground-muted')}>
+          <p role="region" tabIndex={0} aria-labelledby={`${id}-preview`} className={cn('focus-ring max-h-64 max-w-[85%] overflow-y-auto whitespace-pre-wrap break-words rounded-2xl rounded-bl-sm bg-surface px-3 py-2 text-sm shadow-sm', !engagement.replyMessage.trim() && 'text-foreground-muted')}>
             {engagement.replyMessage.trim() || t.previewEmpty}</p>
         </div>
       </figure>
-      <CountedField id={`${id}-reply`} label={t.publicReply} value={engagement.publicReply} max={ENGAGEMENT_PUBLIC_REPLY_MAX} help={t.publicReplyHelp} lang={lang} onChange={(publicReply) => set({ publicReply })} />
+      <CountedField id={`${id}-reply`} label={t.publicReply} value={engagement.publicReply} max={ENGAGEMENT_PUBLIC_REPLY_MAX} count={value => value.trim().length} help={t.publicReplyHelp} lang={lang} onChange={(publicReply) => set({ publicReply })} />
       <p className="text-xs text-foreground-muted">{t.notLive}</p>
       <Button type="button" variant="ghost" size="sm" data-testid="dneskai-engagement-remove" onClick={() => onDraft({ ...draft, engagement: null })}>{t.remove}</Button>
     </>}

@@ -1,3 +1,4 @@
+import { dneskaiCaptionWithKeyword } from './dneskai-caption';
 import { dneskaiAudioChoiceKey } from './dneskai-audio-contracts';
 import { ENGAGEMENT_KEYWORD_PATTERN, ENGAGEMENT_PUBLIC_REPLY_MAX, ENGAGEMENT_REPLY_MESSAGE_MAX, type ContentEngagement } from './contracts';
 import type { DneskaiBriefMedia } from './dneskai-brief';
@@ -51,6 +52,10 @@ export function dneskaiDraftEngagement(draft: EngagementDraft | null): ContentEn
   if (!draft) return null;
   const publicReply = draft.publicReply.trim();
   return { keyword: dneskaiEngagementKeyword(draft.keyword), replyMessage: draft.replyMessage.trim(), ...(publicReply ? { publicReply } : {}) };
+}
+/** The caption the edit server validates, including its code-owned keyword line. */
+export function dneskaiDraftCaption(draft: Pick<DeckDraft, 'caption' | 'engagement'>): string {
+  return dneskaiCaptionWithKeyword(draft.caption, dneskaiDraftEngagement(draft.engagement)?.keyword ?? null);
 }
 const engagementKey = (value: ContentEngagement | null | undefined) =>
   value ? JSON.stringify([value.keyword, value.replyMessage, value.publicReply ?? null]) : 'null';
@@ -267,7 +272,7 @@ export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
 /** Characters as the owner counts them (code points of the composed text). */
 export const characterCount = (value: string) => [...value.normalize('NFC')].length;
 
-export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'caption-too-long' | 'caption-missing' | 'caption-hashtags-over-limit' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit'
+export type DraftProblem = { slide: number | null; field: string; code: 'text-too-long' | 'text-missing' | 'alt-missing' | 'alt-too-long' | 'caption-too-long' | 'caption-missing' | 'caption-hashtags-over-limit' | 'deck-edit-slide-count' | 'schedule-invalid' | 'schedule-outside-asset-window' | 'text-clipped' | 'text-unfit'
   | 'engagement-keyword-invalid' | 'engagement-message-missing' | 'engagement-message-too-long' | 'engagement-reply-too-long' };
 /**
  * What the editor itself can see is wrong before sending; the server and the renderer check the rest. With the fit
@@ -283,6 +288,7 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
     }
     if (slide.type !== 'sources' && !slide.headline.trim()) problems.push({ slide: index, field: 'headline', code: 'text-missing' });
     if (!slide.alt.trim()) problems.push({ slide: index, field: 'alt', code: 'alt-missing' });
+    else if (slide.alt.length > 1000) problems.push({ slide: index, field: 'alt', code: 'alt-too-long' });
     const fitted = fit?.slides.length === draft.slides.length ? fit.slides[index] : undefined;
     if (fitted && !fitted.fits) {
       for (const field of fitted.fields) {
@@ -295,7 +301,7 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
   if (post.deck?.format === 'carousel' && (draft.slides.length < 2 || draft.slides.length > 10)) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
   if (post.deck?.format === 'single-image' && draft.slides.length !== 1) problems.push({ slide: null, field: 'slides', code: 'deck-edit-slide-count' });
   if (!draft.caption.trim()) problems.push({ slide: null, field: 'caption', code: 'caption-missing' });
-  else if (characterCount(draft.caption) > DNESKAI_CAPTION_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-too-long' });
+  else if (dneskaiDraftCaption(draft).length > DNESKAI_CAPTION_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-too-long' });
   else if (dneskaiCaptionHashtags(draft.caption) > DNESKAI_CAPTION_HASHTAG_MAX) problems.push({ slide: null, field: 'caption', code: 'caption-hashtags-over-limit' });
   const scheduled = scheduledIso(draft.scheduledLocal);
   if (scheduled === null) problems.push({ slide: null, field: 'scheduledAt', code: 'schedule-invalid' });

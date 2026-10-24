@@ -26,7 +26,7 @@ Finding 163 closes native preview policy, startup/cancellation/disposal and reco
 
 - The complete scheduler inspection confirms audio trends has no daily lease. Tick UUID deduplication does not serialize independent daily calls. Keep daily admission inside the existing TikTok budget lock rather than treating an upsert as a paid-start guard.
 - Scheduler cancellation is checked before prechecks but not again after every precheck/lease acquisition. Several control RPCs lack a deadline; the eager timeout wrapper receives work already started. The route does not forward request cancellation. Repair these boundaries without releasing a lease while uncooperative work can still write or losing the durable uncertain-refresh marker. Review oldest-five blocked-job and newest-fifty renewable-revision starvation against complete eligibility evidence before changing order.
-- The render-problem field-label lookup reads inherited `constructor` as if it were a translation. Unknown schema-valid fields need an own-property check. The first twenty displayed problems also need an honest remainder cue; keep blocking counts and the complete stored report intact.
+- Finding 173 closes inherited diagnostic-field lookup and the hidden first-twenty remainder. It also aligns caption/message/alt counters with existing server limits, counts the restored keyword line, and preserves native keyboard scrolling instead of stealing preview arrow keys. Remaining editor/read/provider lifecycles are separate.
 
 ## Account preferences and project traffic
 

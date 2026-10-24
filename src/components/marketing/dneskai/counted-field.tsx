@@ -7,11 +7,11 @@ import { characterCount } from '@/lib/marketing/dneskai-deck-editor';
 import { cn } from '@/lib/utils';
 
 /** A labelled text field with a character counter tied to it; past the limit the counter says by how much. */
-export function CountedField({ id, label, value, max, multiline, rows = 3, help, lang, onChange }: {
-  id: string; label: string; value: string; max: number; multiline?: boolean; rows?: number; help?: string; lang: 'en' | 'cs'; onChange: (value: string) => void;
+export function CountedField({ id, label, value, max, multiline, rows = 3, help, lang, count: countValue = value => characterCount(value.trim()), onChange }: {
+  id: string; label: string; value: string; max: number; multiline?: boolean; rows?: number; help?: string; lang: 'en' | 'cs'; count?: (value: string) => number; onChange: (value: string) => void;
 }) {
   const t = dneskaiWorkspace[lang];
-  const count = characterCount(value.trim());
+  const count = countValue(value);
   const over = count - max;
   const described = [`${id}-count`, help ? `${id}-help` : ''].filter(Boolean).join(' ');
   const props = { id, value, 'aria-describedby': described, 'aria-invalid': over > 0 || undefined, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(event.target.value),

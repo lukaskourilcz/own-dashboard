@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { createDeckDraft, setDraftKit, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX } from '@/lib/marketing/dneskai-deck-editor';
+import { dneskaiDraftCaption, createDeckDraft, setDraftKit, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -122,7 +122,7 @@ export function DneskaiLabTab(props: Props) {
 }
 
 /** Draft problems that make the edit itself invalid, so no preview can be drawn until the owner fixes them. */
-const PREVIEW_BLOCKERS = new Set(['text-missing', 'alt-missing', 'deck-edit-slide-count']);
+const PREVIEW_BLOCKERS = new Set(['text-missing', 'alt-missing', 'alt-too-long', 'deck-edit-slide-count']);
 
 function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch, onSaved, order, now, ...props }: Props & { lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; onDirty: (dirty: boolean) => void; onChoose: (id: string) => void; onBatch: () => void; onSaved: (id: string, notice?: string) => void; order: DneskaiLabPost[]; now: number }) {
   const t = copy[props.lang];
@@ -210,7 +210,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     if (kit !== draft.kit) { setDraft(setDraftKit(draft, kit)); setFit({ status: 'checking', result: null }); }
   }
   function shortcut(event: React.KeyboardEvent) {
-    if (busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true],[role=dialog]')) return;
+    if (event.defaultPrevented || busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,button,a,summary,[contenteditable=true],[role=dialog],[role=region],[role=slider],[role=tab],[role=radio]')) return;
     const key = event.key.toLowerCase();
     if (props.guest && ['a','d','e','r','s','1','2','3','4','5','6'].includes(key)) return;
     const position = order.findIndex((item) => item.post.id === post.id);
@@ -244,7 +244,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         <fieldset disabled={props.guest || busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
           <legend className="sr-only">{t.post.title}</legend>
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
-          <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
+          <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} count={caption => dneskaiDraftCaption({ ...draft, caption }).length} help={draft.engagement ? dneskaiWorkspace[props.lang].editor.captionCountHelp : undefined} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview} lang={props.lang} />}
           {props.read.capabilities?.engagement && <DneskaiEngagementEditor id={`${id}-engagement`} draft={draft} onDraft={setDraft} handle={post.account.handle} lang={props.lang} />}
           {draft.format === 'reel' && <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />}

@@ -1048,8 +1048,8 @@
       "path": "src/components/marketing/dneskai/counted-field.tsx",
       "lines": 27,
       "sha256": "48cd39646ca8556f18c06c406b160c3ce6dfc82269946c762bb650b312e66844",
-      "status": "source reviewed; associated labels/counters/help, shared fields, NFC trimmed slide counting and advisory invalid state inspected; caller-specific limits and final rendered matrix remain separate",
-      "reviewedSha256": "48cd39646ca8556f18c06c406b160c3ce6dfc82269946c762bb650b312e66844"
+      "status": "source reviewed; counter strategies match their field contracts in finding 173, preserving default trimmed NFC slide counting; final app-wide validation pending",
+      "reviewedSha256": "7923878d915d4e34e66c819b70475a7469f267430bcd0b18b1244b288d8cc58f"
     },
     {
       "path": "src/components/marketing/dneskai/engagement-receipt.tsx",
@@ -1074,7 +1074,8 @@
       "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
       "lines": 61,
       "sha256": "ab3c45604258fe5690fa1cdf2adef4a160d604c91cbecc8e87fec452baa1c4c1",
-      "status": "pending"
+      "status": "source reviewed; normalized UTF-16 message counters and keyboard-scrollable named preview checked in finding 173; parent save lifecycle and final app-wide checks remain separate",
+      "reviewedSha256": "acd79fe2e337c112508dd034cb8c98cfa74eb306d68dd27af4408f739e5c38b7"
     },
     {
       "path": "src/components/marketing/dneskai/lab/format-switch.tsx",
@@ -1093,14 +1094,15 @@
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
       "lines": 379,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "pending",
-      "reviewedSha256": "3378c26d6e5ece9b55ac6b53aa6de74457147f3cd25e0f5a7312291239403c37"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending",
+      "reviewedSha256": "4996ce5792b2abe8bb780c2e9bb15a0b5fb1ab859591effbf09e30c6e154b73b"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
       "lines": 194,
       "sha256": "c22588bb0890535b34178107e1f2d21b6d78861be2d2a25234c8e58a65664541",
-      "status": "pending"
+      "status": "source reviewed; complete field/fit/shape/picture/insertion component inspected; raw alt limit counter checked in finding 173; media transport and parent draft lifecycle are separate",
+      "reviewedSha256": "bf01dc7d7e33bfec3f0e71b615245b9eb981b27e6f07d70df5c99cdf0f2b87c4"
     },
     {
       "path": "src/components/marketing/dneskai/lab/stage.tsx",
@@ -1155,8 +1157,8 @@
       "path": "src/components/marketing/dneskai/render-problems.tsx",
       "lines": 39,
       "sha256": "f6fa9492693c33f4ddc664dfb325a5ffc5061bcc1fdf0abd73bb1f706d313901",
-      "status": "partial; complete source inspected; field-label lookup can inherit constructor rather than an own translation; first-20 display also lacks an explicit remainder count; repair and rendered recovery pending",
-      "reviewedSha256": "f6fa9492693c33f4ddc664dfb325a5ffc5061bcc1fdf0abd73bb1f706d313901"
+      "status": "source reviewed; own translation lookup and complete expandable blocking-first diagnostic list checked in finding 173; final app-wide validation pending",
+      "reviewedSha256": "e301296f8010c96c1dee06342fd5c6b93d6c6da409072d5e2dfdc6dcc5643b7f"
     },
     {
       "path": "src/components/marketing/dneskai/source-settings.tsx",
@@ -2448,7 +2450,8 @@
       "path": "src/lib/i18n/sections/dneskai-workspace.ts",
       "lines": 192,
       "sha256": "7e281eca192bf5c908eef8abbfccfbd9efb323b6a862bd33f1bb87defa1cb07f",
-      "status": "pending"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending",
+      "reviewedSha256": "4214fb9996d213bbf428ec1d2555cc02205c5719cd814b32f9c6c52d314cc520"
     },
     {
       "path": "src/lib/i18n/sections/finances.ts",
@@ -3029,7 +3032,8 @@
       "path": "src/lib/marketing/dneskai-deck-editor.ts",
       "lines": 408,
       "sha256": "fe65f8bbb8983a192accf3cf8987226f28243d07d9750dc60f67791e7bfc359f",
-      "status": "pending"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending",
+      "reviewedSha256": "9062a29bd26d20b8d8362fc436abb1786e2312783cc2ab1877678730fbf63b1c"
     },
     {
       "path": "src/lib/marketing/dneskai-engagement-ports.ts",

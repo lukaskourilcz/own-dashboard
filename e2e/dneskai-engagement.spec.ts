@@ -1,6 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
+import { dneskaiKeywordLine } from '../src/lib/marketing/dneskai-caption';
+import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
 
 /** #159: the comment keyword, DM message and public reply in the Design Lab, on the `/dev-preview` fixtures. */
@@ -63,4 +65,37 @@ for (const width of [1280, 360]) test(`the engagement block passes axe and fits 
   // A news post has no keyword and offers to add one.
   await page.getByTestId('dneskai-lab-queue-post').filter({ hasText: 'Benchmark není žebříček' }).first().click();
   await expect(page.getByTestId('dneskai-engagement-add')).toBeVisible();
+});
+
+for (const lang of ['en', 'cs'] as const) test(`${lang}: caption and message counters match their save limits`, async ({ page }) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang];
+  const block = await openEducationPost(page, lang);
+  const message = block.getByRole('textbox', { name: t.engagement.message, exact: true });
+  await message.fill('😀'.repeat(501));
+  await expect(message).toHaveAttribute('aria-invalid', 'true');
+  await expect(block.getByText('1002 / 1000', { exact: false })).toBeVisible();
+  const reply = block.getByRole('textbox', { name: t.engagement.publicReply, exact: true });
+  await reply.fill('😀'.repeat(101));
+  await expect(reply).toHaveAttribute('aria-invalid', 'true');
+  await expect(block.getByText('202 / 200', { exact: false })).toBeVisible();
+  const caption = page.getByTestId('dneskai-lab-session').getByRole('textbox', { name: t.post.caption, exact: true });
+  await caption.fill('a'.repeat(2200) + ' ');
+  await expect(caption).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByText(`${2201 + 2 + dneskaiKeywordLine('KONTEXT').length} / 2200`, { exact: false })).toBeVisible();
+  await caption.fill('😀'.repeat(1101));
+  await expect(caption).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByText(`${2202 + 2 + dneskaiKeywordLine('KONTEXT').length} / 2200`, { exact: false })).toBeVisible();
+  const inspector = page.getByTestId('dneskai-slide-inspector');
+  await inspector.locator('summary').filter({ hasText: dneskaiWorkspace[lang].fields.alt }).click();
+  const alt = inspector.getByRole('textbox', { name: dneskaiWorkspace[lang].fields.alt, exact: true });
+  await alt.fill('😀'.repeat(501));
+  await expect(alt).toHaveAttribute('aria-invalid', 'true');
+  await expect(inspector.getByText('1002 / 1000', { exact: false })).toBeVisible();
+  const preview = block.getByRole('region', { name: t.engagement.preview, exact: true });
+  await preview.focus();
+  await preview.press('ArrowDown');
+  await expect.poll(() => preview.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  expect((await axe(page)).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  expect(errors).toEqual([]);
 });
