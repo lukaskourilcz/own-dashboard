@@ -75,11 +75,22 @@ describe("createDneskaiAudioTrack", () => {
     expect(inserted[0]).toMatchObject({ id: uploadId, user_id: owner, storage_path: `marketing-audio/${owner}/${uploadId}.mp3`, duration_ms: 61_000, mood: ["calm", "tech"], enabled: true });
     expect(track).toMatchObject({ id: uploadId, durationMs: 61_000, previewUrl: `https://test-only.supabase.co/${owner}/${uploadId}.mp3?token=t` });
   });
-  it("removes a file that is not audio and records nothing", async () => {
+  it("retains an invalid unrecorded upload instead of risking a concurrent committed object", async () => {
     const { db, files, inserted } = storage(Buffer.from("text"));
     await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => null })).rejects.toMatchObject({ code: "audio-upload-invalid" });
-    expect(files.remove).toHaveBeenCalledWith([`${owner}/${uploadId}.mp3`]);
+    expect(files.remove).not.toHaveBeenCalled();
     expect(inserted).toEqual([]);
+  });
+  it('refuses an oversized Blob before duplicating its bytes', async () => {
+    const { db, files, inserted } = storage(Buffer.from('fixture')); const copy = vi.fn();
+    files.download.mockResolvedValue({ data: { size: 20 * 1024 * 1024 + 1, arrayBuffer: copy } as unknown as Blob, error: null });
+    await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => 5000 })).rejects.toMatchObject({ code: 'audio-upload-invalid' });
+    expect(copy).not.toHaveBeenCalled(); expect(files.remove).not.toHaveBeenCalled(); expect(inserted).toEqual([]);
+  });
+  it.each([NaN, Infinity, 1.5])('refuses an invalid measured duration before a write (%s)', async duration => {
+    const { db, files, inserted } = storage(Buffer.from('fixture'));
+    await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => duration })).rejects.toMatchObject({ code: 'audio-upload-invalid' });
+    expect(files.remove).not.toHaveBeenCalled(); expect(inserted).toEqual([]);
   });
   it("reports a missing upload", async () => {
     const { db } = storage(null);

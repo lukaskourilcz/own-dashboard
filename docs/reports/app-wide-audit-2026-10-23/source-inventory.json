@@ -373,7 +373,7 @@
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
       "lines": 82,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "pending"
+      "status": "partial; source inspected; whole request/auth/body/provider bounds and confirmed toggle/complete read behavior remain pending"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -966,7 +966,7 @@
       "path": "src/components/marketing/dneskai-audio-library.tsx",
       "lines": 147,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "pending"
+      "status": "partial; source inspected; retained upload drafts, immediate pending/exit guards, conflict/receipt/cache behavior and safe localized errors remain pending"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -2864,13 +2864,13 @@
       "path": "src/lib/marketing/dneskai-audio-client.ts",
       "lines": 94,
       "sha256": "64ecb5d35f16a6099ec814f15024050a876a00a8f60073af1de94b36b4fc5fc2",
-      "status": "pending"
+      "status": "partial; source inspected; body/time bounds, known refusal codes, intent/receipt correlation and stable upload retry lifecycle remain pending"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
       "lines": 114,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "pending"
+      "status": "partial; source inspected; stored/request URL safety, complete pagination identity and scalar bounds remain pending"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",
@@ -2892,9 +2892,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
-      "lines": 184,
+      "lines": 203,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "pending"
+      "status": "partial; captured/idempotent creation preserves objects and confirms actual owner/file/metadata, real SDK/migrated Storage and retry/download-count checks pass (finding 154); list validation, budgets, probes, cleanup lifecycle and release remain pending",
+      "reviewedSha256": "8e0d7c6fa6475974ec2618b3345fe7b16a1879ba9b0ee5e3f3b34a14304a18c2"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",

@@ -7,7 +7,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import {
-  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioTrackSchema,
+  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema,
   type DneskaiAudioCreate, type DneskaiAudioPrepared, type DneskaiAudioTrack, type DneskaiAudioType,
 } from "./dneskai-audio-contracts";
 import { dneskaiFfmpegPath } from "./dneskai-reel-render";
@@ -117,28 +117,47 @@ export async function probeDneskaiAudioDuration(bytes: Buffer, options: { ffmpeg
   }
 }
 
+/** An existing upload identity may only confirm its exact captured metadata. */
+async function confirmedAudioCreation(db: Database, owner: string, input: DneskaiAudioCreate): Promise<DneskaiAudioTrack | null> {
+  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner).eq("id", input.uploadId).maybeSingle();
+  if (error) throw new DneskaiAudioError("audio-library-unavailable");
+  if (!data) return null;
+  const row = data as TrackRow, wantedMood = [...new Set(input.mood)];
+  if (row.id !== input.uploadId || row.title !== input.title || row.artist !== input.artist || row.source !== input.source
+    || row.licence_note !== input.licenceNote || row.source_url !== input.sourceUrl
+    || row.storage_path !== `${DNESKAI_AUDIO_BUCKET}/${objectName(owner, input.uploadId, input.contentType)}`
+    || !Array.isArray(row.mood) || row.mood.length !== wantedMood.length || row.mood.some((tag, index) => tag !== wantedMood[index])) throw new DneskaiAudioError("audio-track-write-failed");
+  const track = (await signAudioRows(db, owner, [row]))[0];
+  if (!track) throw new DneskaiAudioError("audio-track-write-failed");
+  return track;
+}
+
 /**
- * Records an uploaded track: the object the signed URL wrote must exist, fit the size cap and decode as audio of
- * 1 s to 15 min. A file that fails is removed, so the bucket keeps only recorded tracks.
+ * Records a decodable 1 s–15 min upload and confirms its captured metadata.
+ * Identical retries preserve the stored track, including a later disable.
+ * Failed requests never delete the object: another request may have committed it.
  */
-export async function createDneskaiAudioTrack(db: Database, owner: string, input: DneskaiAudioCreate, options: { probe?: typeof probeDneskaiAudioDuration } = {}): Promise<DneskaiAudioTrack> {
+export async function createDneskaiAudioTrack(db: Database, owner: string, value: DneskaiAudioCreate, options: { probe?: typeof probeDneskaiAudioDuration } = {}): Promise<DneskaiAudioTrack> {
   z.uuid().parse(owner);
-  const files = db.storage.from(DNESKAI_AUDIO_BUCKET);
-  const name = objectName(owner, input.uploadId, input.contentType);
+  const input = DneskaiAudioCreateSchema.parse(value);
+  const existing = await confirmedAudioCreation(db, owner, input);
+  if (existing) return existing;
+  const files = db.storage.from(DNESKAI_AUDIO_BUCKET), name = objectName(owner, input.uploadId, input.contentType);
   const downloaded = await files.download(name);
   if (downloaded.error || !downloaded.data) throw new DneskaiAudioError("audio-upload-missing");
+  if (!downloaded.data.size || downloaded.data.size > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
   const bytes = Buffer.from(await downloaded.data.arrayBuffer());
-  const discard = async (code: DneskaiAudioErrorCode): Promise<never> => { await files.remove([name]).catch(() => undefined); throw new DneskaiAudioError(code); };
-  if (!bytes.length || bytes.length > DNESKAI_AUDIO_MAX_BYTES) return discard("audio-upload-invalid");
+  if (!bytes.length || bytes.length > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
   const durationMs = await (options.probe ?? probeDneskaiAudioDuration)(bytes).catch(() => null);
-  if (durationMs === null || durationMs < 1000 || durationMs > 900000) return discard("audio-upload-invalid");
-  const { error } = await db.from("marketing_audio_tracks").insert({
+  if (durationMs === null || !Number.isSafeInteger(durationMs) || durationMs < 1000 || durationMs > 900000) throw new DneskaiAudioError("audio-upload-invalid");
+  // A duplicate or ambiguous insert can already be the winning request. Read
+  // its persisted metadata; never clean up an object on a write error.
+  await db.from("marketing_audio_tracks").insert({
     id: input.uploadId, user_id: owner, title: input.title, artist: input.artist, source: input.source, licence_note: input.licenceNote,
     source_url: input.sourceUrl, storage_path: `${DNESKAI_AUDIO_BUCKET}/${name}`, duration_ms: durationMs, mood: [...new Set(input.mood)], enabled: true,
   });
-  if (error) return discard("audio-track-write-failed");
-  const track = (await listDneskaiAudioTracks(db, owner, input.uploadId)).find((item) => item.id === input.uploadId);
-  if (!track) throw new DneskaiAudioError("audio-track-write-failed");
+  const track = await confirmedAudioCreation(db, owner, input);
+  if (!track || track.durationMs !== durationMs) throw new DneskaiAudioError("audio-track-write-failed");
   return track;
 }
 
