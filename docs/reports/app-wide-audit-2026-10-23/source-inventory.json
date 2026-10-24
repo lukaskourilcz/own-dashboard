@@ -966,7 +966,8 @@
       "path": "src/components/marketing/dneskai-audio-library.tsx",
       "lines": 147,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "partial; source inspected; retained upload drafts, immediate pending/exit guards, conflict/receipt/cache behavior and safe localized errors remain pending"
+      "status": "partial; guarded error dictionary and accurate ambiguous/rotation messages checked (156); retained upload drafts, immediate pending/exit guards, conflict/receipt/cache behavior remain pending",
+      "reviewedSha256": "fe73012766a8515b91031c166947a0d2e6a59dfe42ca243625254ec6e6d1c5c2"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -2382,9 +2383,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
-      "lines": 146,
+      "lines": 148,
       "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
-      "status": "pending"
+      "status": "partial; bilingual recovery and successful-create wording checked (156); upcoming captured toggle/upload lifecycle copy and final release checks pending",
+      "reviewedSha256": "8f0b0228f1a26b6c5c0fc98e30c1ff6f325e820619f00be42333d2912062d839"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",
@@ -2862,15 +2864,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-client.ts",
-      "lines": 94,
+      "lines": 133,
       "sha256": "64ecb5d35f16a6099ec814f15024050a876a00a8f60073af1de94b36b4fc5fc2",
-      "status": "partial; source inspected; body/time bounds, known refusal codes, intent/receipt correlation and stable upload retry lifecycle remain pending"
+      "status": "partial; bounded/cancellable known-code requests, prepared/created intent correlation, page shape and selected identity checks pass (156); server toggle receipts, infinite-page merge and stable upload retry lifecycle remain pending",
+      "reviewedSha256": "84d49fd332110b69a56e47cd2d41e1cd758d094d164f7cf887b3a451b59cd66e"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
-      "lines": 114,
+      "lines": 115,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "partial; source inspected; stored/request URL safety, complete pagination identity and scalar bounds remain pending"
+      "status": "partial; HTTPS credentials/control/path safety and timestamp/text bounds checked (156); captured toggle/version schema and full pagination contract remain pending",
+      "reviewedSha256": "b04fde899e600c13ba67224be3eb76c5ca1a785754b152a6523c2f1d8bf563bb"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",
@@ -4037,10 +4041,10 @@
     },
     {
       "path": "src/lib/supabase/client.ts",
-      "lines": 10,
+      "lines": 26,
       "sha256": "661aa32384926007f70f75fd3b96e9752ca09926d60be1717d7ddc3452770796",
-      "status": "source read; guest fetch boundary retained; auth/cache transition verification pending",
-      "reviewedSha256": "f46dbaa1d653b6d8b1915dea262bcdf3f01a5c025337d740cd94630283d46e03"
+      "status": "source reviewed; shared owner transport preserved and isolated cancellable Storage-only SDK has no Auth session/listener/cookie writes; guest/native/request checks pass (156); final release checks pending",
+      "reviewedSha256": "4e8389837abd3df8d46dcc2ecaf18a3380429d02484c887cf302d1b5f7c1ff02"
     },
     {
       "path": "src/lib/supabase/middleware.ts",

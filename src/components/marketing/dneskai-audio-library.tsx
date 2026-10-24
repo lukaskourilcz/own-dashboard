@@ -46,7 +46,7 @@ function TrackList({ tracks, lang, preview, player }: { tracks: DneskaiAudioTrac
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => setDneskaiAudioTrackEnabled(id, enabled),
     onMutate: () => setError(null),
-    onError: (failure) => setError(failure instanceof DneskaiAudioRequestError ? t.errors[failure.code] ?? t.failed : t.failed),
+    onError: (failure) => setError(failure instanceof DneskaiAudioRequestError && Object.hasOwn(t.errors, failure.code) ? t.errors[failure.code]! : t.failed),
     onSettled: () => client.invalidateQueries({ queryKey: qk.dneskaiAudio }),
   });
   if (!tracks.length) return <p className="border-t border-border pt-3 text-sm text-foreground-muted">{t.empty}</p>;
@@ -92,7 +92,7 @@ function UploadForm({ lang, embedded = false }: { lang: Lang; embedded?: boolean
       setFile(null); setFields({ ...fields, title: '', artist: '', sourceUrl: '', mood: '' });
       if (fileRef.current) fileRef.current.value = '';
     },
-    onError: (failure) => setMessage({ tone: 'risk', text: failure instanceof DneskaiAudioRequestError ? t.errors[failure.code] ?? t.failed : t.errors['invalid-request']! }),
+    onError: (failure) => setMessage({ tone: 'risk', text: failure instanceof DneskaiAudioRequestError && Object.hasOwn(t.errors, failure.code) ? t.errors[failure.code]! : t.failed }),
     onSettled: () => client.invalidateQueries({ queryKey: qk.dneskaiAudio }),
   });
   const submit = (event: FormEvent) => {

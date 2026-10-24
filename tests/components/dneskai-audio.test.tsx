@@ -144,7 +144,7 @@ describe('niche sounds (#167)', () => {
 
 
 it('loads a second music page only when requested and keeps the first page visible', async () => {
-  const fetcher = vi.fn(async (url: string) => Response.json(url.includes('offset=200') ? { tracks: [track({ id: '22222222-2222-4222-8222-222222222222', title: 'Later track' })], nextOffset: null } : { tracks: [track({ title: 'First track' })], nextOffset: 200 }));
+  const fetcher = vi.fn(async (url: string) => Response.json(url.includes('offset=1') ? { tracks: [track({ id: '22222222-2222-4222-8222-222222222222', title: 'Later track' })], nextOffset: null } : { tracks: [track({ title: 'First track' })], nextOffset: 1 }));
   vi.stubGlobal('fetch', fetcher);
   render(<DneskaiAudioLibrary lang="en" />); await settle();
   expect(fetcher).toHaveBeenCalledTimes(1);
@@ -158,7 +158,7 @@ it('loads a second music page only when requested and keeps the first page visib
 
 it('resolves a saved disabled selection outside the first page without replacing it with rotation', async () => {
   const selected = '22222222-2222-4222-8222-222222222222';
-  vi.stubGlobal('fetch', vi.fn(async (url: string) => Response.json(url.includes('trackId=') ? { tracks: [track({ id: selected, title: 'Saved inactive', enabled: false })] } : { tracks: [track({ title: 'First page' })], nextOffset: 200 })));
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => Response.json(url.includes('trackId=') ? { tracks: [track({ id: selected, title: 'Saved inactive', enabled: false })] } : { tracks: [track({ title: 'First page' })], nextOffset: 1 })));
   const onChange = vi.fn();
   render(<DneskaiAudioPicker value={selected} onChange={onChange} preview={false} lang="en" />); await settle();
   expect(container.querySelector('select')?.value).toBe(selected);

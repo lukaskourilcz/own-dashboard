@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeWebUrl } from '@/lib/web-url';
 
 /**
  * The DNESKAi audio library (#164) as the browser sees it: Zdroje → Hudba and the Lab's audio picker. Browser-safe.
@@ -20,7 +21,7 @@ export const DNESKAI_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 export const DNESKAI_AUDIO_PREVIEW_SECONDS = 10;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
-const httpsUrl = z.url({ protocol: /^https$/ }).max(2048);
+const httpsUrl = z.string().min(1).max(2048).refine(value => /^https:\/\/\S+$/i.test(value) && !value.includes('\\') && !!safeWebUrl(value, 2048));
 const mood = z.array(z.string().trim().toLowerCase().min(1).max(30).regex(/^[\p{L}\p{N} -]+$/u)).max(5);
 
 export const DneskaiAudioTrackSchema = z.strictObject({
@@ -33,7 +34,7 @@ export const DneskaiAudioTrackSchema = z.strictObject({
   durationMs: z.number().int().min(1000).max(900000),
   mood,
   enabled: z.boolean(),
-  createdAt: z.iso.datetime({ offset: true }),
+  createdAt: z.iso.datetime({ offset: true }).max(64),
   /** A signed URL valid for an hour, for the preview player; null for an Instagram library track. */
   previewUrl: httpsUrl.nullable(),
 });
@@ -45,7 +46,7 @@ export const DneskaiAudioTrendSchema = z.strictObject({
   artist: z.string().max(300).nullable(),
   type: z.enum(['music', 'original_sound']),
   durationMs: z.number().int().min(0).max(3_600_000).nullable(),
-  coverUrl: z.url({ protocol: /^https$/ }).max(2048).nullable(),
+  coverUrl: httpsUrl.nullable(),
   /** 0 for a sound known only from the niche ranking. */
   daysSeen: z.number().int().min(0),
   /** Distinct reels of the tracked education profiles that used it in the last seven days (#167). */
