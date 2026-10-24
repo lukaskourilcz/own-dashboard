@@ -1090,7 +1090,7 @@
       "path": "src/components/marketing/dneskai/lab/topics-list.tsx",
       "lines": 201,
       "sha256": "f5a12f3b3ec53f5e23a45b661f3de5878b1e931749d1e3585d5676baf4594760",
-      "status": "pending"
+      "status": "partial; shared target/selection alignment and relevant mounted/native checks pass (finding 153); complete workflow/source review and release checks pending"
     },
     {
       "path": "src/components/marketing/dneskai/lab/use-draft-preview.ts",
@@ -1732,10 +1732,10 @@
     },
     {
       "path": "src/components/ui/checkbox.tsx",
-      "lines": 29,
+      "lines": 30,
       "sha256": "152b123ffffdc9589e5213e7a6c129e44b92d195960f06d94a8ff4aa5383841a",
-      "status": "partially reviewed; shared control follow-ups pending",
-      "reviewedSha256": "152b123ffffdc9589e5213e7a6c129e44b92d195960f06d94a8ff4aa5383841a"
+      "status": "source reviewed; native form/disabled/mixed behavior and EN/CS 44px mobile / 32px desktop target, keyboard, edge-click and reflow checks pass (finding 153); final release checks pending",
+      "reviewedSha256": "f1127a21515364d2bd86bfb5f30b2a4170224b9fa346f0145fef716bde6784b6"
     },
     {
       "path": "src/components/ui/confirmation-dialog.tsx",
@@ -1825,8 +1825,8 @@
       "path": "src/components/ui/switch.tsx",
       "lines": 31,
       "sha256": "44a0f64a55454c2347cbfda277a376b652ff624aef6ec143a5da5d485f9ae825",
-      "status": "partially reviewed; shared control follow-ups pending",
-      "reviewedSha256": "44a0f64a55454c2347cbfda277a376b652ff624aef6ec143a5da5d485f9ae825"
+      "status": "source reviewed; native form/disabled/mixed behavior and EN/CS 44px mobile / 32px desktop target, keyboard, edge-click and reflow checks pass (finding 153); final release checks pending",
+      "reviewedSha256": "8e9e2f3f8aa9dc930e2e2292bc81d6f2ee5b02ebc3750f8e15ee146965841718"
     },
     {
       "path": "src/components/ui/textarea.tsx",

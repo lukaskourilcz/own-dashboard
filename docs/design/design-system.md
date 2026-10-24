@@ -37,7 +37,7 @@ Home and login may breathe. Work, Projects, Opportunities, Career, Money, and In
 - The shell toolbar owns the single visible page title. `PageHeader` renders its title when standalone; inside `ShellTitleProvider` it retains only descriptions, eyebrows and actions. Do not hide heading containers through positional breakpoint selectors.
 - `PageHeader` supports regular and compact density plus an optional contextual eyebrow.
 - `Card` is a compact white contained module with a hairline border, 14 px radius, 16–18 px padding, and one restrained surface shadow.
-- `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations.
+- `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations. Shared checkbox/switch buttons provide actual 44 px mobile and 32 px desktop targets while their inner marks stay compact; preserve Radix labels, hidden form inputs and keyboard behavior.
 - `ConfirmationProvider` and `useConfirmation` are the only destructive-confirmation surface. Deletions use the branded Radix dialog with a named consequence and explicit destructive action; browser-native confirmation dialogs are reserved for non-destructive consent until migrated.
 - `StatusBadge` is the canonical label/marker/tone presentation for shared project, opportunity, organization, inbox, invoice, and health states.
 - `EntityBadge` shows relationships without pretending they are statuses.

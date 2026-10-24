@@ -166,8 +166,8 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
   return <li data-topic-row={topic.id} tabIndex={tabStop ? 0 : -1} onFocus={(event) => { if (event.target === event.currentTarget) onFocus(); }} aria-labelledby={titleId}
     className="flex flex-col gap-2 py-2 focus-ring rounded-sm sm:flex-row sm:items-start">
     <div className="flex min-w-0 flex-1 items-start gap-2">
-      {proposed ? <Checkbox className="mt-0.5" checked={selected} onCheckedChange={(value) => onSelect(value === true)} aria-label={t.select(topic.title)} disabled={busy} />
-        : <span className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />}
+      {proposed ? <Checkbox checked={selected} onCheckedChange={(value) => onSelect(value === true)} aria-label={t.select(topic.title)} disabled={busy} />
+        : <span className="size-11 shrink-0 md:size-8" aria-hidden />}
       <div className="min-w-0 flex-1 space-y-1">
         <p id={titleId} className="break-words text-sm font-medium">{topic.title}</p>
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-foreground-muted">

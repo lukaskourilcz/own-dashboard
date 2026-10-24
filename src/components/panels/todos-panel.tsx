@@ -805,7 +805,6 @@ function TaskSubcard({
         checked={td.done}
         onCheckedChange={() => onToggle(td)}
         aria-label={td.title}
-        className="mt-0.5"
       />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-3 break-words text-sm leading-5 text-foreground">

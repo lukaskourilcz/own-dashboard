@@ -243,7 +243,6 @@ export function DailyFocusPanel({
                         {item.position}
                       </span>
                       <Checkbox
-                        className="mt-0.5"
                         checked={isDone}
                         disabled={isPreview || !item.todo_id || toggle.isPending}
                         onCheckedChange={() =>
