@@ -4,6 +4,7 @@ import { rejectCrossOrigin } from '@/lib/csrf';
 import { requireDneskaiProject } from '@/lib/marketing/dneskai-store';
 import { dneskaiSourcesTableEnabled } from '@/lib/marketing/dneskai-evidence-rollout';
 import { readDneskaiSourceRows } from '@/lib/marketing/dneskai-source-catalog';
+import { awaitWithSignal } from '@/lib/abortable';
 import {
   DNESKAI_SOURCE_LIST_VERSION, DneskaiSourceActionSchema, DneskaiSourceListSchema, dneskaiRegistrySourceList, dneskaiSourceSeedRows,
 } from '@/lib/marketing/dneskai-source-list';
@@ -13,7 +14,7 @@ export const runtime = 'nodejs';
  * GET /api/marketing/dneskai/source-list?projectId= and POST (#174): the sources Zdroje lists, and the owner's save
  * and remove. Everything runs through the owner's session: RLS decides what is read and the security-definer functions
  * of 20261023110000 check ownership. While DNESKAI_SOURCES_TABLE_ENABLED is off, GET answers the registry file
- * read-only and POST answers 404. The first GET with the switch on seeds the owner's rows from the file, once.
+ * read-only and POST answers 404. GET never writes or restores sources removed by the owner.
  */
 const headers = { 'Cache-Control': 'private, no-store' };
 const REFUSALS: Array<[RegExp, string, number]> = [
@@ -25,8 +26,11 @@ const REFUSALS: Array<[RegExp, string, number]> = [
 
 type Db = Awaited<ReturnType<typeof createClient>>;
 /** When each source was last read, its item count and last error, from the collection's source states. */
-async function sourceStates(db: Db, owner: string, project: string) {
-  const { data } = await db.from('marketing_dneskai_source_states').select('source_id,last_success_at,last_attempt_at,item_count,error_code,status').eq('user_id', owner).eq('project_id', project);
+async function sourceStates(db: Db, owner: string, project: string, ids: string[]) {
+  if (!ids.length) return new Map();
+  const signal = AbortSignal.timeout(15_000);
+  const { data, error, count } = await awaitWithSignal(db.from('marketing_dneskai_source_states').select('source_id,last_success_at,last_attempt_at,item_count,error_code,status', { count: 'exact' }).eq('user_id', owner).eq('project_id', project).in('source_id', ids).retry(false).abortSignal(signal).limit(ids.length + 1), signal);
+  if (error || !Array.isArray(data) || count !== data.length || data.length > ids.length || new Set(data.map(row => row.source_id)).size !== data.length || data.some(row => !ids.includes(row.source_id))) throw new Error('source-history-unavailable');
   return new Map((data ?? []).map((row) => [String(row.source_id), {
     lastReadAt: (row.last_success_at ?? row.last_attempt_at ?? null) as string | null,
     lastItems: typeof row.item_count === 'number' ? row.item_count : null,
@@ -45,20 +49,15 @@ export async function GET(request: Request) {
   const projectId = new URL(request.url).searchParams.get('projectId');
   if (!z.uuid().safeParse(projectId).success) return Response.json({ error: 'invalid-project' }, { status: 400 });
   try { await requireDneskaiProject(db, user.id, projectId!); } catch { return Response.json({ error: 'project-unavailable' }, { status: 404 }); }
-  const states = await sourceStates(db, user.id, projectId!).catch(() => new Map());
-  if (!dneskaiSourcesTableEnabled()) return Response.json(DneskaiSourceListSchema.parse(dneskaiRegistrySourceList(states)), { headers });
   try {
-    let rows = await readDneskaiSourceRows(db as never, user.id, projectId!);
-    if (!rows.length) {
-      const { error } = await db.rpc('marketing_dneskai_sources_seed', { p_project: projectId, p_rows: dneskaiSourceSeedRows() });
-      if (error) throw error;
-      rows = await readDneskaiSourceRows(db as never, user.id, projectId!);
-    }
+    const enabled = dneskaiSourcesTableEnabled();
+    const rows = enabled ? await readDneskaiSourceRows(db as never, user.id, projectId!) : dneskaiSourceSeedRows();
+    const states = await sourceStates(db, user.id, projectId!, rows.map(row => row.sourceId));
+    if (!enabled) return Response.json(DneskaiSourceListSchema.parse(dneskaiRegistrySourceList(states)), { headers });
     return Response.json(DneskaiSourceListSchema.parse({ schemaVersion: DNESKAI_SOURCE_LIST_VERSION, editable: true, notice: null,
       items: rows.map((row) => ({ row, ...(states.get(row.sourceId) ?? { lastReadAt: null, lastItems: null, lastErrorCode: null }) })) }), { headers });
   } catch {
-    // The switch is on but the migration is not applied (or the read failed): the file, read-only, says so.
-    return Response.json(DneskaiSourceListSchema.parse(dneskaiRegistrySourceList(states, 'sources-table-unavailable')), { headers });
+    return Response.json({ error: 'sources-unavailable' }, { status: 503, headers });
   }
 }
 

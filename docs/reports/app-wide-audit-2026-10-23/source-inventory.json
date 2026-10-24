@@ -444,9 +444,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/source-list/route.ts",
-      "lines": 82,
+      "lines": 81,
       "sha256": "0ccbf56d1282c6c88931b2ed4a1e006bd6943b6c4387cc1922d514a78320eecc",
-      "status": "pending"
+      "status": "partial; GET is read-only, complete and history-scoped with unavailable recovery checks (finding 146); POST persistence/receipt bounds remain under review",
+      "reviewedSha256": "6ae4d81edf4225a4c98b5e5fdc76efe435442c7fba3bd9194347993767510962"
     },
     {
       "path": "src/app/api/marketing/dneskai/sources/route.ts",
@@ -2915,9 +2916,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-collection.ts",
-      "lines": 160,
+      "lines": 162,
       "sha256": "3fb4640f98e3392083fddf48f5c102288785b9f1bd9291c9a02afebaaff2843f",
-      "status": "pending"
+      "status": "partial; empty/unavailable catalog admission and removed-source checks pass (finding 146); remaining stage/provider/settlement source review pending",
+      "reviewedSha256": "e9b506df917cc52c4232df0b33f573bb69634f2a39bdad71f29c625135262e5a"
     },
     {
       "path": "src/lib/marketing/dneskai-contracts.ts",
@@ -3183,9 +3185,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-source-catalog.ts",
-      "lines": 82,
+      "lines": 87,
       "sha256": "58162b53aa0f5077d60d53342fd1d5f7f6314c0e1138ac7374c4bdaff6f4927b",
-      "status": "pending"
+      "status": "source reviewed; complete exact-count catalogs, no registry fallback, removed/disabled source refusal and empty admission checks pass (finding 146); final release checks pending",
+      "reviewedSha256": "221fd0f45c0c528a1f545a66786897675e621b7f89ca2e68edc4c33c860cd745"
     },
     {
       "path": "src/lib/marketing/dneskai-source-list-client.ts",
@@ -3195,9 +3198,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-source-list.ts",
-      "lines": 122,
+      "lines": 123,
       "sha256": "f08ae40c2053cf6f1ba203d57907f2b58c9eedff27f3c30e3e40281fbe172c43",
-      "status": "pending"
+      "status": "partial; list/read schema and exact bounds reviewed (finding 146); address detection and source mutation contracts remain under review",
+      "reviewedSha256": "602be9c2a1c0bb937ce41ea3d0f3f246c6b3772e82df5dc4b49600d123f5096d"
     },
     {
       "path": "src/lib/marketing/dneskai-store.ts",

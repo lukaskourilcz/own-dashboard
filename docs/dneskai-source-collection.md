@@ -14,10 +14,13 @@ doménu, druh (Zprávy / Vzdělávání), úroveň (Původní / Redakce / Agreg�
 
 Dokud `DNESKAI_SOURCES_TABLE_ENABLED` není `true`, seznam ukazuje soubor
 `dneskai-registry.ts` jen pro čtení a sběr i scouting čtou soubor. Po nasazení
-migrace `20261023110000_dneskai_sources_table.sql` a zapnutí přepínače první
-otevření Zdrojů zapíše soubor jako první řádky `marketing_dneskai_sources`
-(jednou; odebraný zdroj se už nevrátí). Profily @aimanie a @digitalnihumanista
-jsou vypnuté, dokud je neprověří Astra ([#185](https://github.com/lukaskourilcz/own-dashboard/issues/185)).
+migrace `20261023110000_dneskai_sources_table.sql` a zapnutí přepínače seznam
+čte pouze uložené řádky `marketing_dneskai_sources`. Otevření nic nezapisuje.
+Prázdný seznam zůstává prázdný; odebrané zdroje se automaticky neobnoví. Starší
+výslovná inicializace souboru přes `marketing_dneskai_sources_seed` zůstává
+samostatnou operací, ne součástí načtení stránky. Profily @aimanie a
+@digitalnihumanista jsou v původním souboru vypnuté; stav ověření účtů je v
+[#185](https://github.com/lukaskourilcz/own-dashboard/issues/185).
 Od té chvíle vlastník přidává zdroj zadáním @účtu, profilu na instagram.com nebo
 adresy (adresa s `rss`, `atom`, `feed` nebo `.xml` se čte jako feed, jiná jako
 stránka; Atom čte stejný adaptér jako RSS), upravuje název, druh, úroveň, dny a
@@ -25,9 +28,12 @@ počet položek a zdroj odebírá po potvrzení. Adresa zdroje se nemění: nov�
 je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy).
 
 Sběr i scouting čtou zdroje přes jeden katalog (`dneskai-source-catalog.ts`):
-řádky vlastníka, jsou-li přepínač zapnutý a řádky existují, jinak soubor. Chyba
-čtení tabulky vrátí soubor, takže chybějící tabulka noc nezastaví. Zdroj odebraný
-během běžící noci skončí jako `collection-source-removed` bez čtení. Přidané weby
+řádky vlastníka se zapnutým přepínačem, soubor pouze s vypnutým. Chyba,
+neúplná odpověď nebo neplatný řádek zastaví nové načítání; nic se nenahrazuje
+souborem. Bez aktivních zdrojů se nový běh ani neposílá k přijetí. Odebraný či
+vypnutý zdroj během běžící noci skončí jako `collection-source-removed` bez
+čtení. Přehled historie načítá jen aktuálně zobrazené zdroje a chybu neoznačí
+jako „dosud nečteno“. Přidané weby
 mají ID `web-<doména>-<6 hex>` a čte je jen nativní poskytovatel feedů
 (`MARKETING_DNESKAI_FEED_PROVIDER=native`); kontroly URL a adres adaptérů platí dál.
 Instagram profil se čte přes Apify jako ostatní, jen se zapnutým

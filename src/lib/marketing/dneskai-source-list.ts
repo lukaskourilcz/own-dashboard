@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DneskaiSourceSchema, type DneskaiSource } from './dneskai-contracts';
 import { dneskaiRegistrySeed } from './dneskai-registry';
+import { databaseTimestamp } from '@/lib/database-version';
 
 /**
  * Zdroje as an editable list (#174). Browser-safe: the row shape of marketing_dneskai_sources, the seed taken from the
@@ -30,16 +31,16 @@ export type DneskaiSourceRow = z.infer<typeof DneskaiSourceRowSchema>;
 /** One row as Zdroje shows it: the stored source and what the last nights read from it. */
 export const DneskaiSourceListItemSchema = z.strictObject({
   row: DneskaiSourceRowSchema,
-  lastReadAt: z.string().nullable(), lastItems: z.number().int().min(0).nullable(), lastErrorCode: z.string().max(100).nullable(),
+  lastReadAt: databaseTimestamp.nullable(), lastItems: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(), lastErrorCode: z.string().max(100).nullable(),
 });
 export const DneskaiSourceListSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_SOURCE_LIST_VERSION),
   /** False while DNESKAI_SOURCES_TABLE_ENABLED is off (or in the preview): the list is the registry file, read-only. */
   editable: z.boolean(),
-  /** Why an owner with the switch on still sees the read-only file: the table is not there yet. */
+  /** Legacy read-only notice. Current unavailable table/history reads return 503 instead of a fallback. */
   notice: z.enum(['sources-table-unavailable']).nullable(),
-  items: z.array(DneskaiSourceListItemSchema).max(DNESKAI_SOURCE_LIMIT + 10),
-});
+  items: z.array(DneskaiSourceListItemSchema).max(DNESKAI_SOURCE_LIMIT),
+}).refine(list => new Set(list.items.map(item => item.row.sourceId)).size === list.items.length);
 export type DneskaiSourceList = z.infer<typeof DneskaiSourceListSchema>;
 
 export const DneskaiSourceActionSchema = z.discriminatedUnion('action', [
@@ -114,7 +115,7 @@ export function dneskaiSourceLabel(row: Pick<DneskaiSourceRow, 'kind' | 'handleO
   try { return new URL(row.handleOrUrl).hostname.replace(/^www\./, ''); } catch { return row.handleOrUrl; }
 }
 
-/** The list built from the registry file (switch off, preview, or table missing), with what the source states say. */
+/** Registry display for the switch-off/preview paths; an optional legacy notice remains readable. */
 export function dneskaiRegistrySourceList(states: ReadonlyMap<string, { lastReadAt: string | null; lastItems: number | null; lastErrorCode: string | null }> = new Map(),
   notice: DneskaiSourceList['notice'] = null): DneskaiSourceList {
   return { schemaVersion: DNESKAI_SOURCE_LIST_VERSION, editable: false, notice,
