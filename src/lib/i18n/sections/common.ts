@@ -12,6 +12,8 @@ type CommonStrings = {
   redirecting: string;
   none: string;
   optional: string;
+  notifications: string;
+  closeNotification: string;
   deletePermanentlyConfirm: string;
   signInFirst: string;
 };
@@ -31,6 +33,8 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     redirecting: "Redirecting…",
     none: "None",
     optional: "Optional",
+    notifications: "Notifications",
+    closeNotification: "Dismiss notification",
     deletePermanentlyConfirm: "This item will be permanently deleted.",
     signInFirst: "Sign in first.",
   },
@@ -48,6 +52,8 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     redirecting: "Přesměrování…",
     none: "Žádné",
     optional: "Volitelné",
+    notifications: "Oznámení",
+    closeNotification: "Zavřít oznámení",
     deletePermanentlyConfirm: "Tato položka bude nenávratně smazána.",
     signInFirst: "Nejprve se přihlaste.",
   },

@@ -441,15 +441,16 @@ export function MobileNav({
               key={it.value}
               type="button"
               onClick={() => setTab(it.value)}
+              aria-label={t.nav.sections[it.value]}
               className={cn(
-                "inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[10px] font-medium transition-colors focus-ring",
+                "inline-flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[10px] font-medium transition-colors focus-ring",
                 active
                   ? "bg-surface-selected text-accent-foreground"
                   : "text-foreground-muted hover:text-foreground",
               )}
             >
               <it.icon className="h-4 w-4" />
-              {t.nav.short[it.value] ?? t.nav.sections[it.value]}
+              <span className="max-w-full truncate whitespace-nowrap">{t.nav.short[it.value] ?? t.nav.sections[it.value]}</span>
             </button>
           );
         })}

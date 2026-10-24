@@ -11,8 +11,12 @@ import {
   PointerSensor,
   closestCenter,
   useSensor,
+  useDndContext,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
+  type DragOverEvent,
+  type DragCancelEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -56,6 +60,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { useUnsavedDraft } from "@/components/navigation-guard";
+import { applyProjectOrder, reorderOwnedProjects } from "@/lib/project-order";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { GithubIcon } from "@/components/icons/github";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
@@ -289,6 +295,9 @@ function ProjectsListPanel({
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const orderingRef = useRef(false);
+  const [ordering, setOrdering] = useState(false);
+  useUnsavedDraft({ dirty: false, pending: ordering, canSave: false, save: async () => false });
   const [manageProjectId, setManageProjectId] = useState<string | null>(null);
   const now = useNow();
   const costDay = now ? todayKey(now) : null;
@@ -610,7 +619,7 @@ function ProjectsListPanel({
       [...projects].sort(
         (a, b) =>
           a.sort_order - b.sort_order ||
-          a.created_at.localeCompare(b.created_at),
+          a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
       ),
     [projects],
   );
@@ -636,9 +645,9 @@ function ProjectsListPanel({
     [projectGroups],
   );
 
-  // Drag-to-reorder. sort_order is an integer column, so we resequence the
-  // whole list to 0..n-1 on drop (no fractional indexing) and persist the rows
-  // that actually moved. Optimistic, with a snapshot rollback on failure.
+  // A group reorders in one captured-version transaction. Keep confirmed
+  // rows visible until its complete receipt arrives; never roll back a list
+  // snapshot over unrelated writes after a partial/ambiguous response.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
@@ -646,8 +655,22 @@ function ProjectsListPanel({
     }),
   );
 
+  const dragAccessibility = useMemo(() => {
+    const names = new Map(projects.map(project => [project.id, project.name]));
+    const name = (id: string | number) => names.get(String(id)) ?? t.projects.tableProject;
+    return {
+      screenReaderInstructions: { draggable: t.projects.dragInstructions },
+      announcements: {
+        onDragStart: ({ active }: DragStartEvent) => t.projects.dragPicked(name(active.id)),
+        onDragOver: ({ active, over }: DragOverEvent) => over ? t.projects.dragOver(name(active.id), name(over.id)) : undefined,
+        onDragEnd: ({ active, over }: DragEndEvent) => over && active.id !== over.id ? t.projects.dragDropped(name(active.id), name(over.id)) : t.projects.dragCanceled(name(active.id)),
+        onDragCancel: ({ active }: DragCancelEvent) => t.projects.dragCanceled(name(active.id)),
+      },
+    };
+  }, [projects, t.projects]);
+
   async function handleDragEnd(e: DragEndEvent) {
-    if (!e.over || e.active.id === e.over.id) return;
+    if (orderingRef.current || !e.over || e.active.id === e.over.id) return;
     // Reordering works within a group; own and client projects never swap.
     const activeProject = visibleProjects.find((p) => p.id === e.active.id);
     const overProject = visibleProjects.find((p) => p.id === e.over!.id);
@@ -660,36 +683,17 @@ function ProjectsListPanel({
     if (oldIndex < 0 || newIndex < 0) return;
 
     const moved = arrayMove(groupItems, oldIndex, newIndex);
-    const resequenced =
-      group === "own"
-        ? [...moved, ...projectGroups.client]
-        : [...projectGroups.own, ...moved];
-    const orderById = new Map(resequenced.map((p, i) => [p.id, i]));
-    const changed = resequenced.filter((p, i) => p.sort_order !== i);
-    if (changed.length === 0) return;
-
-    const snapshot = projects;
-    setProjects((prev) =>
-      prev.map((p) =>
-        orderById.has(p.id) ? { ...p, sort_order: orderById.get(p.id)! } : p,
-      ),
-    );
+    orderingRef.current = true; setOrdering(true);
     try {
-      const now = new Date().toISOString();
-      const results = await Promise.all(
-        changed.map((p) =>
-          supabase
-            .from("projects")
-            .update({ sort_order: orderById.get(p.id)!, updated_at: now })
-            .eq("id", p.id),
-        ),
-      );
-      const failed = results.find((r) => r.error);
-      if (failed?.error) throw failed.error;
+      const receipt = await reorderOwnedProjects(supabase, groupItems, moved.map(project => project.id));
+      await qc.cancelQueries({ queryKey: qk.projects });
+      setProjects(current => applyProjectOrder(current, groupItems, receipt));
+    } catch {
+      toast.err(t.projects.orderFailed);
+    } finally {
+      orderingRef.current = false; setOrdering(false);
+      // Also reconcile an ambiguous receipt; the transaction may have committed.
       void qc.invalidateQueries({ queryKey: qk.projects });
-    } catch (err) {
-      setProjects(snapshot);
-      toast.err((err as Error).message);
     }
   }
 
@@ -843,6 +847,7 @@ function ProjectsListPanel({
         description={t.projects.description}
         action={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {ordering && <span role="status" className="text-xs text-foreground-muted">{t.projects.orderSaving}</span>}
             {syncRepositories && <Button variant="outline" size="sm" disabled={reposData?.kind !== "ok"} onClick={() => setRepoFilterOpen(true)}><ListFilter />{t.github.filter}</Button>}
             {setDisplayCurrency && (
               <>
@@ -1076,6 +1081,7 @@ function ProjectsListPanel({
       ) : (
         <DndContext
           id={dragContextId}
+          accessibility={dragAccessibility}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -1083,8 +1089,9 @@ function ProjectsListPanel({
             <Card className="mt-4 overflow-hidden p-0">
               {/* relative: contains the sr-only header labels, which are
                   absolutely positioned and would otherwise widen the page. */}
-              <div className="relative overflow-x-auto" role="region" aria-label={t.projects.title} tabIndex={0}>
+              <div className="relative overflow-x-auto" role="region" aria-label={t.projects.title} aria-busy={ordering} tabIndex={0}>
                 <table className="w-full min-w-[900px] text-left">
+                  <caption className="sr-only">{t.projects.title}</caption>
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   {(["own", "client"] as const).map((group) => projectGroups[group].length === 0 ? null : (
                   <SortableContext
@@ -1111,6 +1118,7 @@ function ProjectsListPanel({
                   key={p.id}
                   project={p}
                   subsection={!!p.parent_id && projectIds.has(p.parent_id)}
+                  ordering={ordering}
                   summary={projectSummary(p, lang, { preview: isPreview })}
                   monthlyCost={monthlyOf(p)}
                   displayCurrency={displayCurrency}
@@ -1182,6 +1190,7 @@ type ProjectCardProps = {
 function SortableProjectRow({
   project,
   subsection = false,
+  ordering = false,
   summary,
   monthlyCost,
   displayCurrency,
@@ -1199,6 +1208,7 @@ function SortableProjectRow({
   project: Project;
   /** A venture subsection rendered under its parent; it has no drag handle. */
   subsection?: boolean;
+  ordering?: boolean;
   summary?: string;
   monthlyCost: number;
   displayCurrency: string;
@@ -1214,6 +1224,10 @@ function SortableProjectRow({
   onOpen: () => void;
 }) {
   const t = useDict();
+  const { active } = useDndContext();
+  const group = projectEngagement(project);
+  const sortableData = useMemo(() => ({ projectGroup: group }), [group]);
+  const outsideGroup = !!active && active.data.current?.projectGroup !== group;
   const {
     attributes,
     listeners,
@@ -1222,7 +1236,7 @@ function SortableProjectRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: project.id });
+  } = useSortable({ id: project.id, data: sortableData, attributes: { roleDescription: t.projects.dragRole }, disabled: { draggable: subsection || ordering, droppable: subsection || ordering || outsideGroup } });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -1233,7 +1247,7 @@ function SortableProjectRow({
       style={style}
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
-      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-11 w-11 md:h-8 md:w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
+      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={`${t.projects.dragHandle}: ${project.name}`} className="aria-disabled:opacity-50 inline-flex h-11 w-11 md:h-8 md:w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
       <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5">{health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}</td>

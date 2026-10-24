@@ -39,10 +39,18 @@ type ProjectsStrings = {
   inactive: string;
   synced: string;
   syncFailed: string;
+  orderSaving: string;
+  orderFailed: string;
   syncedHint: string;
   collapse: string;
   expand: string;
   dragHandle: string;
+  dragRole: string;
+  dragInstructions: string;
+  dragPicked: (name: string) => string;
+  dragOver: (name: string, target: string) => string;
+  dragDropped: (name: string, target: string) => string;
+  dragCanceled: (name: string) => string;
   markActive: string;
   markInactive: string;
   monthly: string;
@@ -165,11 +173,19 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     active: "active",
     inactive: "inactive",
     synced: "Repository",
+    orderSaving: "Saving project order…",
+    orderFailed: "Project order could not be confirmed. The latest records will reload; try again after reviewing them.",
     syncFailed: "Project synchronization could not finish. Check Projects before retrying.",
     syncedHint: "Synced automatically from its linked GitHub repository.",
     collapse: "Collapse",
     expand: "Expand",
     dragHandle: "Drag to reorder",
+    dragRole: "sortable project",
+    dragInstructions: "Press Space to pick up a project. Use the arrow keys to move it within its group, Space to drop it, or Escape to cancel.",
+    dragPicked: name => `Picked up ${name}.`,
+    dragOver: (name, target) => `${name} is over ${target}.`,
+    dragDropped: (name, target) => `Dropped ${name} at ${target}. Saving the order.`,
+    dragCanceled: name => `Canceled moving ${name}.`,
     markActive: "Mark active",
     markInactive: "Mark inactive",
     monthly: "Monthly",
@@ -290,12 +306,20 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     active: "aktivní",
     inactive: "neaktivní",
     synced: "Repozitář",
+    orderSaving: "Ukládání pořadí projektů…",
+    orderFailed: "Pořadí projektů se nepodařilo potvrdit. Načtou se aktuální záznamy; po jejich kontrole to zkuste znovu.",
     syncFailed: "Synchronizace projektů se nedokončila. Před dalším pokusem zkontrolujte Projekty.",
     syncedHint:
       "Automaticky synchronizováno z propojeného GitHub repozitáře.",
     collapse: "Sbalit",
     expand: "Rozbalit",
     dragHandle: "Přetáhni pro změnu pořadí",
+    dragRole: "řaditelný projekt",
+    dragInstructions: "Mezerníkem uchopte projekt. Šipkami jej přesuňte v rámci skupiny, mezerníkem pusťte nebo klávesou Escape pohyb zrušte.",
+    dragPicked: name => `Uchopen projekt ${name}.`,
+    dragOver: (name, target) => `${name} je nad projektem ${target}.`,
+    dragDropped: (name, target) => `Projekt ${name} byl puštěn na místo projektu ${target}. Ukládání pořadí.`,
+    dragCanceled: name => `Přesun projektu ${name} byl zrušen.`,
     markActive: "Označit jako aktivní",
     markInactive: "Označit jako neaktivní",
     monthly: "Měsíčně",

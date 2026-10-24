@@ -591,10 +591,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 45,
+      "lines": 51,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
       "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "9cb06d15725cd584d51a54e6f4f24387e4ae872887612b2cb158a0b7dd76feed"
+      "reviewedSha256": "e10a5ee723691d219368f2c5e1758e4b3df98d5d1bfa129f3300bf1bbb639302"
     },
     {
       "path": "src/app/globals.css",
@@ -762,17 +762,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 488,
+      "lines": 493,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "partial: route loading, initial project-tab forwarding, repository flows and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "c1896374598f1fb8d724927a35ffdabdc57f596e3494e2162c25d4bdf4604ac2"
+      "reviewedSha256": "766117fecd2d5197e003639f5ab9c9f6ca7c93ded69f28918dfebe342d4d8ebe"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 127,
+      "lines": 150,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
       "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "742b9256eee8cf979a5d8f934fc34951254600772dde99c72bf179b5f0584e9c"
+      "reviewedSha256": "28c2bbf812ffef5df10615188c92b2b50e903ff550cfb2393c498d97891de8d2"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1155,17 +1155,17 @@
     },
     {
       "path": "src/components/nav/sidebar.tsx",
-      "lines": 493,
+      "lines": 494,
       "sha256": "ceb1990b1be23aa546036c076264823fb4c4b883511bd14e9b27fc0d1208b535",
       "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains",
-      "reviewedSha256": "3f8d0436b27f370c806b693b0f8389741ba529f97c428a7de91ccdf825526a68"
+      "reviewedSha256": "9b5a169c5ae440c25f025740d617b05dbc483edf2a401e658d51aa4ac143d134"
     },
     {
       "path": "src/components/navigation-guard.tsx",
-      "lines": 151,
+      "lines": 158,
       "sha256": "07b05612aacc4f043f23a39f9a4d29ae13b1c5ad8205e9d0659cdcae9a255de4",
       "status": "source reviewed; pending actions, dirty navigation and shell history checks pass; final optimized app-wide checks pending",
-      "reviewedSha256": "6614b4799b682e753068efe76a9652c5fd8c4163b92723659eb589ec7b24b897"
+      "reviewedSha256": "6cb019c3ee03aaaa956aea75344f5ab7fc5475486e2927f2aae51afc2e4f39df"
     },
     {
       "path": "src/components/notes/note-editor.tsx",
@@ -1422,10 +1422,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2069,
+      "lines": 2141,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partial: financial grouping, repository selection, stale catalog guard and initial tab seeding checked; project writes/auto-sync lifecycle and other tabs pending",
-      "reviewedSha256": "d8a341b9f2d0f731aecaf97f5005ec2fe7a3d846263834e849f6e3be5c0ac784"
+      "status": "partially reviewed; complete reads and atomic ordering checked; metadata/notes/cost/cron/sync writes and remaining layout in review.md",
+      "reviewedSha256": "0c23251d7b15ba840dd87a0ec57d5e07a03777b411f97418c8a3ce96c5c1368a"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1734,10 +1734,10 @@
     },
     {
       "path": "src/components/ui/toast.tsx",
-      "lines": 46,
+      "lines": 56,
       "sha256": "b86abdb6a19d5d6ffacba3406581e4db6d818fbd63c764a109e11698787c7e03",
-      "status": "source reviewed; final app-wide rendered/release checks pending",
-      "reviewedSha256": "b86abdb6a19d5d6ffacba3406581e4db6d818fbd63c764a109e11698787c7e03"
+      "status": "source reviewed; localized notices, mobile clearance and close targets checked; final optimized app-wide release pending",
+      "reviewedSha256": "19beed1c4fb2cd6ee1e5ac29072616da90efcca0435573f152326e2bc38eb80c"
     },
     {
       "path": "src/components/ui/tooltip.tsx",
@@ -2144,10 +2144,10 @@
     },
     {
       "path": "src/lib/i18n/sections/common.ts",
-      "lines": 54,
+      "lines": 60,
       "sha256": "77dadc248e367806b1c1ce79e6ecbbc00cb4e06f0e81fcaf600ac15cf1ff9cd8",
       "status": "source reviewed; shared error and pending/draft copy has EN/CS parity; targeted render checks pass; final release pending",
-      "reviewedSha256": "e85e7ba079d1d615a248dcbc0f927caa4e8b5ccf2c7afe959d723865f02fa60b"
+      "reviewedSha256": "fad2022f051809236b897987216d88038e264312035e688bf4a738247989ccc4"
     },
     {
       "path": "src/lib/i18n/sections/costs.ts",
@@ -2273,7 +2273,7 @@
       "lines": 130,
       "sha256": "29ce7d996337cf4d3535f98473fd8f8a021685ebb5bea1f2195eae043c7be5f1",
       "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
-      "reviewedSha256": "63128b7e974b0b9adfdca95353dc78a6051dfa411ac0301a19fb8e1a7220a1d1"
+      "reviewedSha256": "5098256cf9988f76870691b178015ac063db29df8ab8e191a94e74b47a09bffa"
     },
     {
       "path": "src/lib/i18n/sections/notes.ts",
@@ -2310,9 +2310,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 374,
+      "lines": 404,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "pending"
+      "status": "partially reviewed; project order/mobile feedback changes checked; remaining source/release review pending",
+      "reviewedSha256": "4b1daea1a6c3a05d0422a53f25135b046a107db34163653d4f9dffea429cade3"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",
@@ -2903,7 +2904,7 @@
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "6e6884b2d2677221a9b36357e5ef40ba743c44c0bf7a964e4ffcbaebf390a072"
+      "reviewedSha256": "8d83246d27903e409aaaf009e345e81407adf42854592780b336b0931b4ba827"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3501,7 +3502,8 @@
       "path": "src/lib/project-cron-seeds.ts",
       "lines": 51,
       "sha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1",
-      "status": "pending"
+      "status": "source reviewed; weekday seed checked against the pinned actual sentinel and slug/history tests; consumer sync and final release pending",
+      "reviewedSha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1"
     },
     {
       "path": "src/lib/project-health.ts",
@@ -4102,6 +4104,14 @@
       "lines": 12,
       "status": "source reviewed; bilingual shared history failure/retry browser checks pass; final optimized release pending",
       "reviewedSha256": "f0d8a3fd94d9cb369369f2c4418bd307d3ed066ff5e09590808d7388162ebb53"
+    },
+    {
+      "path": "src/lib/project-order.ts",
+      "lines": 47,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; atomic owner/version/receipt and conditional cache checks pass; final optimized release pending",
+      "reviewedSha256": "ac846d74b3aa579d50ee1e20a8b04bc86548c4199b3af0f10d5c63158f1ef6dc"
     }
   ],
   "baselineFileCount": 561

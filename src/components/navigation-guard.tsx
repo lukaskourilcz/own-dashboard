@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDict } from '@/lib/i18n';
@@ -32,10 +32,12 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
   const [failed, setFailed] = useState(false);
   const [canSave, setCanSave] = useState(false);
   const [actionPending, setActionPending] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const register = useCallback<Guard['register']>((key, draft) => {
     drafts.current.set(key, draft);
     const update = () => {
       const active = [...drafts.current.values()].filter(protectsNavigation);
+      setHasDraft(active.length > 0);
       setActionPending(active.some(item => item.pending));
       setCanSave(active.length > 0 && active.every(item => item.canSave && !item.pending));
     };
@@ -55,7 +57,7 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     setPending(null);
     setFailed(false);
   };
-  const proceed = (discard = false) => {
+  const proceed = useCallback((discard = false) => {
     if (discard && (savingRef.current || [...drafts.current.values()].some(draft => draft.pending))) return;
     const action = pendingRef.current;
     if (discard) for (const draft of drafts.current.values()) if (draft.dirty) draft.discard?.();
@@ -64,7 +66,7 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     drafts.current.clear();
     bypass.current = true;
     try { action?.(); } finally { bypass.current = false; }
-  };
+  }, []);
   const save = async () => {
     if (savingRef.current) return;
     const dirty = [...drafts.current.values()].filter(protectsNavigation);
@@ -76,6 +78,11 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     } catch { setFailed(true); }
     finally { savingRef.current = false; setSaving(false); }
   };
+  // A confirmed external save can clear the last draft while the exit dialog
+  // is open. Resume the requested exit instead of showing an invalid empty form.
+  useEffect(() => {
+    if (pending && !saving && !hasDraft && ![...drafts.current.values()].some(protectsNavigation)) proceed();
+  }, [pending, saving, hasDraft, proceed]);
   // Install before the shell’s passive history listeners can unmount a dirty editor.
   useLayoutEffect(() => {
     let currentIndex = Number(window.history.state?.[HISTORY_INDEX] ?? 0);

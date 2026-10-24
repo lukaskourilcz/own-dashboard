@@ -25,6 +25,7 @@ export function DemoDashboard({
   language = "cs",
   liveMarketingCalendars = false,
   liveRepositories = false,
+  liveProjectRecords = false,
   liveMonitoring = false,
   livePreferences = false,
   liveCalendar = false,
@@ -44,6 +45,8 @@ export function DemoDashboard({
   liveMarketingCalendars?: boolean;
   /** Dev/E2E-only mocked repository interactions; disabled in the public tour. */
   liveRepositories?: boolean;
+  /** Dev/E2E-only mocked project collection/write boundaries. */
+  liveProjectRecords?: boolean;
   /** Dev/E2E-only mocked history reads; disabled in the public tour. */
   liveMonitoring?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
@@ -56,12 +59,14 @@ export function DemoDashboard({
   const project = projectRef ? resolveProjectRef(f.projects, projectRef) : undefined;
   // The isolated live-repository harness reads its mocked owned records,
   // rather than marking the tour's empty note/link fixtures as confirmed.
-  const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => !liveRepositories || (key !== "repoNotes" && key !== "repoLinks"));
+  const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => (!liveRepositories || (key !== "repoNotes" && key !== "repoLinks"))
+    && (!liveProjectRecords || !["projects", "projectCosts", "crons"].includes(key)));
 
   return (
     <DashboardShell
       isPreview
       previewRepositoryIntegration={liveRepositories}
+      previewProjectIntegration={liveProjectRecords}
       previewMonitoringIntegration={liveMonitoring}
       previewPreferencesIntegration={livePreferences}
       previewCalendarIntegration={liveCalendar}

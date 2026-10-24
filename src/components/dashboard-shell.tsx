@@ -126,6 +126,7 @@ type Props = {
   isPreview?: boolean;
   /** Only the isolated dev/E2E harness enables mocked repository endpoints. */
   previewRepositoryIntegration?: boolean;
+  previewProjectIntegration?: boolean;
   previewMonitoringIntegration?: boolean;
   previewPreferencesIntegration?: boolean;
   previewCalendarIntegration?: boolean;
@@ -217,9 +218,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: (!props.isPreview || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: (!props.isPreview || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration]);
+  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration]);
   const setTab = useCallback((next: NavTab) => {
     if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {

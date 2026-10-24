@@ -25,7 +25,7 @@ function Harness({ save, ready = true, discard, pending = false }: { pending?: b
   return <NavigationGuardProvider>{editing ? <Form save={save} ready={ready} discard={discard} pending={pending} leave={() => setEditing(false)} /> : <h1>Other destination</h1>}</NavigationGuardProvider>;
 }
 const show = async (save = vi.fn(async () => true), ready = true, discard?: () => void, pending = false) => { await act(async () => root.render(<Harness save={save} ready={ready} discard={discard} pending={pending} />)); return save; };
-const edit = async () => { const input = document.querySelector('input')!; await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'Keep this draft'); input.dispatchEvent(new Event('input', { bubbles: true })); }); };
+const edit = async (value = 'Keep this draft') => { const input = document.querySelector('input')!; await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value); input.dispatchEvent(new Event('input', { bubbles: true })); }); };
 beforeEach(() => { window.history.replaceState({ ownDashboardIndex: 0 }, '', 'http://localhost:3000/start'); container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); });
 
@@ -119,4 +119,17 @@ describe('pending external actions', () => {
     expect(save).toHaveBeenCalledOnce(); expect(container.querySelector('h1')).toBeNull(); expect(document.querySelector('input')?.value).toBe('Keep this draft');
     expect(document.querySelector('[role=alert]')?.textContent).toBe(t.failed);
   });
+});
+
+
+it('resumes an already requested exit when a clean external action finishes', async () => {
+  const discard = vi.fn(), save = vi.fn(async () => true); await show(save, false, discard, true); await click('Leave');
+  expect(document.querySelector('[role=dialog]')?.textContent).toContain(t.pendingTitle);
+  await show(save, false, discard, false); expect(container.textContent).toContain('Other destination');
+  expect(save).not.toHaveBeenCalled(); expect(discard).not.toHaveBeenCalled();
+});
+it('waits for the last unsaved draft after an external action finishes', async () => {
+  const save = vi.fn(async () => true); await show(save, false, undefined, true); await edit(); await click('Leave');
+  await show(save, false, undefined, false); expect(container.querySelector('h1')).toBeNull();
+  await edit(''); expect(container.textContent).toContain('Other destination'); expect(save).not.toHaveBeenCalled();
 });
