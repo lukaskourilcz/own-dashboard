@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
 import { saveUserPreferences } from "@/lib/preference-client";
+import { useDict } from "@/lib/i18n";
 
 export function ThemeToggle({
   syncPreferences = true,
@@ -10,6 +11,7 @@ export function ThemeToggle({
   syncPreferences?: boolean;
 }) {
   const { theme, setTheme } = useTheme();
+  const t = useDict();
   const toggle = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
@@ -20,8 +22,8 @@ export function ThemeToggle({
     <button
       type="button"
       onClick={toggle}
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted,var(--foreground-muted))] transition-colors hover:bg-[var(--sidebar-hover,var(--surface-hover))] hover:text-[var(--sidebar-foreground,var(--foreground))] focus-ring"
+      aria-label={theme === "dark" ? t.settings.switchToLight : t.settings.switchToDark}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--sidebar-muted,var(--foreground-muted))] transition-colors hover:bg-[var(--sidebar-hover,var(--surface-hover))] hover:text-[var(--sidebar-foreground,var(--foreground))] focus-ring md:h-7 md:w-7"
     >
       {theme === "dark" ? (
         <Sun className="h-3.5 w-3.5" />

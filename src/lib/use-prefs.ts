@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
+import { subscribeStoredPreference } from "@/lib/preference-storage";
 import {
   LEGACY_ROUTE_ALIASES,
   NAV_TABS,
@@ -28,12 +30,13 @@ const DEFAULT_DISPLAY_CURRENCY = "CZK";
 const CURRENCY_KEY = "displayCurrency";
 const currencyListeners = new Set<() => void>();
 let currencyCache: string | null = null;
+const normalizeCurrency = (value: string | null) => SUPPORTED_CURRENCIES.includes(value as typeof SUPPORTED_CURRENCIES[number]) ? value! : DEFAULT_DISPLAY_CURRENCY;
 
 function readCurrency(): string {
   if (currencyCache != null) return currencyCache;
   if (typeof window === "undefined") return DEFAULT_DISPLAY_CURRENCY;
   try {
-    currencyCache = localStorage.getItem(CURRENCY_KEY) || DEFAULT_DISPLAY_CURRENCY;
+    currencyCache = normalizeCurrency(localStorage.getItem(CURRENCY_KEY));
   } catch {
     currencyCache = DEFAULT_DISPLAY_CURRENCY;
   }
@@ -41,10 +44,7 @@ function readCurrency(): string {
 }
 
 function subscribeCurrency(cb: () => void): () => void {
-  currencyListeners.add(cb);
-  return () => {
-    currencyListeners.delete(cb);
-  };
+  return subscribeStoredPreference(CURRENCY_KEY, currencyListeners, cb, () => { currencyCache = null; });
 }
 
 const getServerCurrency = (): string => DEFAULT_DISPLAY_CURRENCY;
@@ -59,9 +59,9 @@ export function useDisplayCurrency(): {
     getServerCurrency,
   );
   const setCurrency = (next: string): void => {
-    currencyCache = next;
+    currencyCache = normalizeCurrency(next);
     try {
-      localStorage.setItem(CURRENCY_KEY, next);
+      localStorage.setItem(CURRENCY_KEY, currencyCache);
     } catch {
       // ignore
     }
@@ -119,10 +119,7 @@ function readHidden(): readonly string[] {
 }
 
 function subscribeHidden(cb: () => void): () => void {
-  navListeners.add(cb);
-  return () => {
-    navListeners.delete(cb);
-  };
+  return subscribeStoredPreference(HIDDEN_NAV_KEY, navListeners, cb, () => { hiddenCache = null; });
 }
 
 const getServerHidden = (): readonly string[] => EMPTY_HIDDEN;
@@ -140,9 +137,9 @@ export function useNavVisibility(): {
     getServerHidden,
   );
   const setHidden = (next: string[]): void => {
-    hiddenCache = Object.freeze([...next]);
+    hiddenCache = Object.freeze(normalizeNavPreferenceIds(next));
     try {
-      localStorage.setItem(HIDDEN_NAV_KEY, JSON.stringify(next));
+      localStorage.setItem(HIDDEN_NAV_KEY, JSON.stringify(hiddenCache));
     } catch {
       // ignore
     }
@@ -187,10 +184,7 @@ function readNavOrder(): readonly string[] {
 }
 
 function subscribeNavOrder(cb: () => void): () => void {
-  navOrderListeners.add(cb);
-  return () => {
-    navOrderListeners.delete(cb);
-  };
+  return subscribeStoredPreference(NAV_ORDER_KEY, navOrderListeners, cb, () => { navOrderCache = null; });
 }
 
 const getServerNavOrder = (): readonly string[] => EMPTY_ORDER;
@@ -206,9 +200,9 @@ export function useNavOrder(): {
     getServerNavOrder,
   );
   const setOrder = (next: string[]): void => {
-    navOrderCache = Object.freeze([...next]);
+    navOrderCache = Object.freeze(normalizeNavPreferenceIds(next));
     try {
-      localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(next));
+      localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(navOrderCache));
     } catch {
       // ignore — quota or privacy mode.
     }
@@ -258,8 +252,7 @@ function readHiddenProjectTabs(): readonly ProjectTabId[] {
 }
 
 function subscribeProjectTabs(cb: () => void): () => void {
-  projectTabListeners.add(cb);
-  return () => projectTabListeners.delete(cb);
+  return subscribeStoredPreference(HIDDEN_PROJECT_TABS_KEY, projectTabListeners, cb, () => { hiddenProjectTabsCache = null; });
 }
 
 export function useProjectTabVisibility(): {
@@ -313,10 +306,7 @@ function readCollapsed(): boolean {
 }
 
 function subscribeCollapsed(cb: () => void): () => void {
-  collapsedListeners.add(cb);
-  return () => {
-    collapsedListeners.delete(cb);
-  };
+  return subscribeStoredPreference(COLLAPSED_KEY, collapsedListeners, cb, () => { collapsedCache = null; });
 }
 
 const getServerCollapsed = (): boolean => false;
@@ -361,8 +351,8 @@ function readTasksPerCategory(): number {
   if (typeof window === "undefined") return DEFAULT_TASKS_PER_CATEGORY;
   try {
     const raw = localStorage.getItem(TASKS_PER_CATEGORY_KEY);
-    const n = raw == null ? NaN : Number(raw);
-    tasksPerCategoryCache = Number.isFinite(n) && n >= 0 ? n : DEFAULT_TASKS_PER_CATEGORY;
+    const n = raw?.trim() ? Number(raw) : NaN;
+    tasksPerCategoryCache = TASKS_PER_CATEGORY_OPTIONS.includes(n as typeof TASKS_PER_CATEGORY_OPTIONS[number]) ? n : DEFAULT_TASKS_PER_CATEGORY;
   } catch {
     tasksPerCategoryCache = DEFAULT_TASKS_PER_CATEGORY;
   }
@@ -370,10 +360,7 @@ function readTasksPerCategory(): number {
 }
 
 function subscribeTasksPerCategory(cb: () => void): () => void {
-  tasksPerCategoryListeners.add(cb);
-  return () => {
-    tasksPerCategoryListeners.delete(cb);
-  };
+  return subscribeStoredPreference(TASKS_PER_CATEGORY_KEY, tasksPerCategoryListeners, cb, () => { tasksPerCategoryCache = null; });
 }
 
 const getServerTasksPerCategory = (): number => DEFAULT_TASKS_PER_CATEGORY;
@@ -388,9 +375,9 @@ export function useTasksPerCategory(): {
     getServerTasksPerCategory,
   );
   const setCount = (next: number): void => {
-    tasksPerCategoryCache = next;
+    tasksPerCategoryCache = TASKS_PER_CATEGORY_OPTIONS.includes(next as typeof TASKS_PER_CATEGORY_OPTIONS[number]) ? next : DEFAULT_TASKS_PER_CATEGORY;
     try {
-      localStorage.setItem(TASKS_PER_CATEGORY_KEY, String(next));
+      localStorage.setItem(TASKS_PER_CATEGORY_KEY, String(tasksPerCategoryCache));
     } catch {
       // ignore
     }
@@ -422,10 +409,7 @@ function makeStringPref(key: string) {
       return cache;
     },
     subscribe(cb: () => void): () => void {
-      listeners.add(cb);
-      return () => {
-        listeners.delete(cb);
-      };
+      return subscribeStoredPreference(key, listeners, cb, () => { cache = null; });
     },
     set(next: string): void {
       cache = next;

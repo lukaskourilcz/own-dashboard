@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { subscribeStoredPreference } from "@/lib/preference-storage";
 
 export type Lang = "cs" | "en";
 
@@ -19,10 +20,9 @@ function readLang(): Lang {
 }
 
 function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => {
-    listeners.delete(cb);
-  };
+  return subscribeStoredPreference("lang", listeners, cb, () => {
+    try { document.documentElement.lang = localStorage.getItem("lang") === "en" ? "en" : "cs"; } catch { /* Optional device cache. */ }
+  });
 }
 
 const getSnapshot = (): Lang => readLang();

@@ -8,6 +8,8 @@ type SettingsStrings = {
   appearance: string;
   light: string;
   dark: string;
+  switchToLight: string;
+  switchToDark: string;
   navigation: string;
   navigationDesc: string;
   alwaysVisible: string;
@@ -89,9 +91,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     appearance: "Appearance",
     light: "Light",
     dark: "Dark",
+    switchToLight: "Switch to light mode",
+    switchToDark: "Switch to dark mode",
     navigation: "Navigation sections",
     navigationDesc:
-      "Toggle which sections appear in navigation and drag to reorder within each group. Home and Inbox stay pinned.",
+      "Choose navigation sections and drag to reorder within each group. Home and Settings remain available.",
     alwaysVisible: "Always visible",
     reorder: "Drag to reorder",
     tasks: "Tasks",
@@ -176,9 +180,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     appearance: "Vzhled",
     light: "Světlý",
     dark: "Tmavý",
+    switchToLight: "Přepnout do světlého režimu",
+    switchToDark: "Přepnout do tmavého režimu",
     navigation: "Sekce navigace",
     navigationDesc:
-      "Zapněte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Inbox zůstávají připnuté.",
+      "Vyberte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Nastavení zůstávají dostupné.",
     alwaysVisible: "Vždy viditelné",
     reorder: "Přetáhni pro změnu pořadí",
     tasks: "Úkoly",
