@@ -58,15 +58,15 @@ function storage(bytes: Buffer | null) {
   const files = {
     download: vi.fn(async () => bytes ? { data: new Blob([new Uint8Array(bytes)]), error: null } : { data: null, error: { message: "missing" } }),
     remove: vi.fn(async () => ({ data: [], error: null })),
-    createSignedUrls: vi.fn(async (names: string[]) => ({ data: names.map((path) => ({ path, signedUrl: `https://test-only.supabase.co/${path}?token=t`, error: null })), error: null })),
+    createSignedUrls: vi.fn(async (names: string[]) => ({ data: names.map((path) => ({ path, signedUrl: `https://test-only.supabase.co/storage/v1/object/sign/marketing-audio/${path}?token=t`, error: null })), error: null })),
     createSignedUploadUrl: vi.fn(async (path: string) => ({ data: { path, token: "upload-token", signedUrl: "https://test-only.supabase.co/upload" }, error: null })),
   };
   const inserted: unknown[] = [];
   const rows: Record<string, unknown>[] = [];
   const query = {
-    select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), range: vi.fn(async () => ({ data: rows, error: null })), limit: vi.fn(async () => ({ data: rows, error: null })),
+    select: vi.fn(() => query), retry: vi.fn(() => query), abortSignal: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), range: vi.fn(() => query), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: rows, error: null, count: rows.length }).then(resolve), limit: vi.fn(async () => ({ data: rows, error: null })),
     maybeSingle: vi.fn(async () => ({ data: rows[0] ?? null, error: null })),
-    insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, created_at: "2026-10-23T08:00:00Z" }); return { error: null }; }),
+    insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, instagram_audio_id: null, created_at: "2026-10-23T08:00:00Z" }); return { error: null }; }),
   };
   return { db: { from: vi.fn(() => query), storage: { from: vi.fn(() => files) } }, files, inserted, rows };
 }
@@ -76,7 +76,7 @@ describe("createDneskaiAudioTrack", () => {
     const { db, inserted } = storage(Buffer.from("mp3-bytes"));
     const track = await createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => 61_000 });
     expect(inserted[0]).toMatchObject({ id: uploadId, user_id: owner, storage_path: `marketing-audio/${owner}/${uploadId}.mp3`, duration_ms: 61_000, mood: ["calm", "tech"], enabled: true });
-    expect(track).toMatchObject({ id: uploadId, durationMs: 61_000, previewUrl: `https://test-only.supabase.co/${owner}/${uploadId}.mp3?token=t` });
+    expect(track).toMatchObject({ id: uploadId, durationMs: 61_000, previewUrl: `https://test-only.supabase.co/storage/v1/object/sign/marketing-audio/${owner}/${uploadId}.mp3?token=t` });
   });
   it("retains an invalid unrecorded upload instead of risking a concurrent committed object", async () => {
     const { db, files, inserted } = storage(Buffer.from("text"));

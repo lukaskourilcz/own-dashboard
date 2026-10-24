@@ -373,8 +373,8 @@
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
       "lines": 82,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "partial: HTTP/auth/body/Storage/probe cancellation and fixed refusals checked; complete result/signing/trend contracts and toggle receipts pending",
-      "reviewedSha256": "70b0e70ae51dc9f9cbcee5be12101e58f02c37d1900103be094055c52d44e48a"
+      "status": "partial: bounded HTTP/auth/body and complete management-page/selected/signing behavior checked; trend contracts and captured toggle receipts pending",
+      "reviewedSha256": "08252e3c2da5f85a22c334eadbc70e67ac68469bc011a6abb646b052da6ebe24"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -2899,8 +2899,8 @@
       "path": "src/lib/marketing/dneskai-audio.ts",
       "lines": 219,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial: captured idempotent creation, retained files, bounded native decoding and cancellation/retry regressions checked; complete list/signing/rotation, captured toggles and orphan retention pending",
-      "reviewedSha256": "37e9730dc3ae214fce88000087362b12a6e726e47ce7dc31cfab2a6fd78d473f"
+      "status": "partial: captured cancellable creation, retained files, bounded native decode and complete validated management pages/signing checked; rotation/renderer budgets, captured toggles and orphan retention pending",
+      "reviewedSha256": "61d6f026e901c345652e61a0cb508ad2cd748b8e5aed9b943cbdcc79f6fcf214"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",

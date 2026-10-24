@@ -57,8 +57,8 @@ export async function GET(request?: Request) {
     if ([...params.keys()].some(key => !['trackId', 'offset'].includes(key) || params.getAll(key).length !== 1) || !/^\d{1,7}$/.test(offset) || Number(offset) > 1_000_000 || (selected !== null && (!z.uuid().safeParse(selected).success || params.has('offset')))) return Response.json({ error: 'invalid-request' }, { status: 400, headers });
     signal.throwIfAborted();
     const db = createAdminClient(signal);
-    if (selected) return Response.json({ tracks: await awaitWithSignal(listDneskaiAudioTracks(db, user, selected), signal), nextOffset: null }, { headers });
-    const page = await awaitWithSignal(listDneskaiAudioPage(db, user, Number(offset)), signal);
+    if (selected) return Response.json({ tracks: await awaitWithSignal(listDneskaiAudioTracks(db, user, selected, signal), signal), nextOffset: null }, { headers });
+    const page = await awaitWithSignal(listDneskaiAudioPage(db, user, Number(offset), signal), signal);
     // #167: today's trending sounds, only while their switch is on.
     // #167: Meta's list joined with the niche ranking of the tracked education profiles (both $0, read from storage).
     const trends = Number(offset) === 0 && dneskaiAudioTrendsEnabled() ? await awaitWithSignal((async () => {

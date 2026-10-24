@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { z } from "zod";
 import { awaitWithSignal } from "@/lib/abortable";
+import { databaseTimestamp, databaseVersion } from "@/lib/database-version";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import {
   DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema,
@@ -32,51 +33,93 @@ export class DneskaiAudioError extends Error {
 
 const objectName = (owner: string, id: string, contentType: DneskaiAudioType) => `${owner}/${id}.${DNESKAI_AUDIO_TYPES[contentType]}`;
 
-type TrackRow = {
-  id: string; title: string; artist: string; source: string; licence_note: string; source_url: string | null; storage_path: string | null;
-  duration_ms: number; mood: string[] | null; enabled: boolean; created_at: string;
-};
-const TRACK_COLUMNS = "id,title,artist,source,licence_note,source_url,storage_path,duration_ms,mood,enabled,created_at";
+const TrackRowSchema = z.strictObject({
+  id: z.uuid(), user_id: z.uuid(), title: DneskaiAudioTrackSchema.shape.title, artist: DneskaiAudioTrackSchema.shape.artist,
+  source: DneskaiAudioTrackSchema.shape.source, licence_note: DneskaiAudioTrackSchema.shape.licenceNote,
+  source_url: DneskaiAudioTrackSchema.shape.sourceUrl, storage_path: z.string().max(300).nullable(),
+  instagram_audio_id: z.string().regex(/^\d{1,40}$/).nullable(), duration_ms: DneskaiAudioTrackSchema.shape.durationMs,
+  mood: DneskaiAudioTrackSchema.shape.mood, enabled: z.boolean(), created_at: databaseTimestamp,
+});
+type TrackRow = z.infer<typeof TrackRowSchema>;
+const TRACK_COLUMNS = "id,user_id,title,artist,source,licence_note,source_url,storage_path,instagram_audio_id,duration_ms,mood,enabled,created_at";
+const readBudget = (parent?: AbortSignal) => AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
+const unavailable = () => new DneskaiAudioError("audio-library-unavailable");
 
-function objectFromPath(owner: string, storagePath: string | null): string | null {
-  const prefix = `${DNESKAI_AUDIO_BUCKET}/${owner}/`;
-  return storagePath?.startsWith(prefix) ? storagePath.slice(DNESKAI_AUDIO_BUCKET.length + 1) : null;
+function objectFromPath(owner: string, storagePath: string | null, id?: string): string | null {
+  if (!storagePath || !id) return null;
+  const prefix = `${DNESKAI_AUDIO_BUCKET}/${owner}/${id}.`;
+  return storagePath.startsWith(prefix) && /^(?:mp3|m4a|aac|wav|ogg)$/.test(storagePath.slice(prefix.length))
+    ? storagePath.slice(DNESKAI_AUDIO_BUCKET.length + 1) : null;
 }
-
-/** Owner-only stable pages. New uploads append; tracks are never deleted by this interface. */
-export async function listDneskaiAudioPage(db: Database, owner: string, offset = 0): Promise<{ tracks: DneskaiAudioTrack[]; nextOffset: number | null }> {
-  z.uuid().parse(owner); z.number().int().min(0).max(1_000_000).parse(offset);
-  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner)
-    .order("created_at", { ascending: true }).order("id", { ascending: true }).range(offset, offset + 200);
-  if (error || !data) throw new DneskaiAudioError("audio-library-unavailable");
-  return { tracks: await signAudioRows(db, owner, (data as TrackRow[]).slice(0, 200)), nextOffset: data.length > 200 ? offset + 200 : null };
+function readAudioRow(owner: string, value: unknown): TrackRow {
+  const parsed = TrackRowSchema.safeParse(value);
+  if (!parsed.success) throw unavailable();
+  const row = parsed.data;
+  if (row.user_id !== owner || (row.source === "instagram-library" ? row.storage_path !== null || row.instagram_audio_id === null
+    : row.source_url === null || !objectFromPath(owner, row.storage_path, row.id))) throw unavailable();
+  return row;
 }
-
-/** First management page, or one chosen track regardless of its age or enabled state. */
-export async function listDneskaiAudioTracks(db: Database, owner: string, trackId?: string): Promise<DneskaiAudioTrack[]> {
-  if (!trackId) return (await listDneskaiAudioPage(db, owner)).tracks;
-  z.uuid().parse(owner); z.uuid().parse(trackId);
-  const { data, error } = await db.from("marketing_audio_tracks").select(TRACK_COLUMNS).eq("user_id", owner).eq("id", trackId).maybeSingle();
-  if (error) throw new DneskaiAudioError("audio-library-unavailable");
-  return signAudioRows(db, owner, data ? [data as TrackRow] : []);
-}
-
-async function signAudioRows(db: Database, owner: string, rows: TrackRow[], signal?: AbortSignal): Promise<DneskaiAudioTrack[]> {
-  const names = rows.map((row) => objectFromPath(owner, row.storage_path));
-  const wanted = names.filter((name): name is string => !!name);
-  const signed = new Map<string, string>();
-  if (wanted.length) {
-    const { data: urls } = await awaitWithSignal(db.storage.from(DNESKAI_AUDIO_BUCKET).createSignedUrls(wanted, PREVIEW_URL_SECONDS), signal);
-    for (const entry of urls ?? []) if (entry.path && entry.signedUrl && !entry.error) signed.set(entry.path, entry.signedUrl);
+function readAudioRows(owner: string, data: unknown[]): TrackRow[] {
+  const rows = data.map(value => readAudioRow(owner, value));
+  for (let at = 1; at < rows.length; at++) {
+    const before = rows[at - 1]!, row = rows[at]!;
+    const previousVersion = databaseVersion(before.created_at)!, version = databaseVersion(row.created_at)!;
+    if (version < previousVersion || (version === previousVersion && row.id <= before.id)) throw unavailable();
   }
-  return rows.flatMap((row, index) => {
-    const parsed = DneskaiAudioTrackSchema.safeParse({
-      id: row.id, title: row.title, artist: row.artist, source: row.source, licenceNote: row.licence_note, sourceUrl: row.source_url,
-      durationMs: row.duration_ms, mood: row.mood ?? [], enabled: row.enabled, createdAt: new Date(row.created_at).toISOString(),
-      previewUrl: names[index] ? signed.get(names[index]!) ?? null : null,
-    });
-    return parsed.success ? [parsed.data] : [];
-  });
+  if (new Set(rows.map(row => row.id)).size !== rows.length) throw unavailable();
+  return rows;
+}
+
+/** One complete, validated owner page plus a sentinel; never infer exhaustion from a truncated REST page. */
+export async function listDneskaiAudioPage(db: Database, owner: string, offset = 0, parent?: AbortSignal): Promise<{ tracks: DneskaiAudioTrack[]; nextOffset: number | null }> {
+  z.uuid().parse(owner); z.number().int().min(0).max(1_000_000).parse(offset);
+  const signal = readBudget(parent); if (signal.aborted) throw new DOMException("Request aborted", "AbortError");
+  const { data, error, count } = await awaitWithSignal(db.from("marketing_audio_tracks").select(TRACK_COLUMNS, { count: "exact" }).eq("user_id", owner)
+    .order("created_at", { ascending: true }).order("id", { ascending: true }).range(offset, offset + 200).retry(false).abortSignal(signal), signal);
+  if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count === null || count < 0 || data.length !== Math.min(201, Math.max(0, count - offset))) throw unavailable();
+  const rows = readAudioRows(owner, data), nextOffset = rows.length > 200 ? offset + 200 : null;
+  if (nextOffset !== null && nextOffset > 1_000_000) throw unavailable();
+  return { tracks: await signAudioRows(db, owner, rows.slice(0, 200), signal), nextOffset };
+}
+
+/** One owned chosen track, even off-page or disabled; confirmed absence stays distinct from a failed read. */
+export async function listDneskaiAudioTracks(db: Database, owner: string, trackId?: string, parent?: AbortSignal): Promise<DneskaiAudioTrack[]> {
+  if (trackId === undefined) return (await listDneskaiAudioPage(db, owner, 0, parent)).tracks;
+  z.uuid().parse(owner); z.uuid().parse(trackId);
+  const signal = readBudget(parent); if (signal.aborted) throw new DOMException("Request aborted", "AbortError");
+  const { data, error, count } = await awaitWithSignal(db.from("marketing_audio_tracks").select(TRACK_COLUMNS, { count: "exact" }).eq("user_id", owner).eq("id", trackId).retry(false).abortSignal(signal).maybeSingle(), signal);
+  if (error || count !== (data ? 1 : 0)) throw unavailable();
+  const rows = data ? readAudioRows(owner, [data]) : [];
+  if (rows.some(row => row.id !== trackId)) throw unavailable();
+  return signAudioRows(db, owner, rows, signal);
+}
+
+async function signAudioRows(db: Database, owner: string, values: unknown[], signal?: AbortSignal): Promise<DneskaiAudioTrack[]> {
+  const rows = readAudioRows(owner, values);
+  const names = rows.map(row => objectFromPath(owner, row.storage_path, row.id));
+  const wanted = names.filter((name): name is string => name !== null), signed = new Map<string, string | null>();
+  if (wanted.length) {
+    const { data: urls, error } = await awaitWithSignal(db.storage.from(DNESKAI_AUDIO_BUCKET).createSignedUrls(wanted, PREVIEW_URL_SECONDS), signal);
+    if (error || !Array.isArray(urls) || urls.length !== wanted.length) throw unavailable();
+    const expected = new Set(wanted);
+    for (const entry of urls) {
+      if (!entry || typeof entry.path !== "string" || !expected.has(entry.path) || signed.has(entry.path)) throw unavailable();
+      if (typeof entry.error === "string" && entry.error.length > 0) {
+        // Preserve the management row when this individual preview is unavailable.
+        signed.set(entry.path, null);
+      } else {
+        if (entry.error != null || typeof entry.signedUrl !== "string" || !DneskaiAudioTrackSchema.shape.previewUrl.safeParse(entry.signedUrl).success) throw unavailable();
+        const url = new URL(entry.signedUrl);
+        if (!url.pathname.endsWith(`/object/sign/${DNESKAI_AUDIO_BUCKET}/${entry.path}`) || !url.searchParams.get("token")) throw unavailable();
+        signed.set(entry.path, entry.signedUrl);
+      }
+    }
+  }
+  return rows.map((row, index) => DneskaiAudioTrackSchema.parse({
+    id: row.id, title: row.title, artist: row.artist, source: row.source, licenceNote: row.licence_note, sourceUrl: row.source_url,
+    durationMs: row.duration_ms, mood: row.mood, enabled: row.enabled, createdAt: row.created_at,
+    previewUrl: names[index] ? signed.get(names[index]!) ?? null : null,
+  }));
 }
 
 /** A signed upload URL for exactly one new object. Nothing is recorded until `createDneskaiAudioTrack` checks the file. */
@@ -198,7 +241,7 @@ export async function loadDneskaiAudioTrack(db: Database, owner: string, trackId
   z.uuid().parse(owner);
   if (!z.uuid().safeParse(trackId).success) throw new DneskaiAudioError("audio-track-unavailable");
   const { data, error } = await db.from("marketing_audio_tracks").select("id,storage_path").eq("user_id", owner).eq("id", trackId).maybeSingle();
-  const name = objectFromPath(owner, (data as { storage_path: string | null } | null)?.storage_path ?? null);
+  const name = objectFromPath(owner, (data as { storage_path: string | null } | null)?.storage_path ?? null, trackId);
   if (error || !data || !name) throw new DneskaiAudioError("audio-track-unavailable");
   const downloaded = await db.storage.from(DNESKAI_AUDIO_BUCKET).download(name);
   if (downloaded.error || !downloaded.data) throw new DneskaiAudioError("audio-track-unavailable");
