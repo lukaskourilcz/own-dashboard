@@ -3493,10 +3493,10 @@
     },
     {
       "path": "src/lib/supabase/middleware.ts",
-      "lines": 75,
+      "lines": 89,
       "sha256": "29c9d9ee5238e5ef8f037b765cd4827b609afcd862c21d03ebcab15a9e458914",
-      "status": "source read; refreshed-cookie redirects and exact public boundaries need follow-up",
-      "reviewedSha256": "29c9d9ee5238e5ef8f037b765cd4827b609afcd862c21d03ebcab15a9e458914"
+      "status": "source reviewed; refresh/deletion cookie and cache-header redirect checks passed; final release checks pending",
+      "reviewedSha256": "85e4bb5fa8f7c2f87b50c38c6c1d9bf43313a097c5b12428988211afce55a3fa"
     },
     {
       "path": "src/lib/supabase/server.ts",
