@@ -47,6 +47,7 @@ import { useTasksPerCategory } from "@/lib/use-prefs";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
+import { consumeRepositoryRecords } from "@/lib/repository-records";
 import { useReposQuery } from "@/lib/github-queries";
 import { commitFile } from "@/lib/github";
 import { findProjectForTask } from "@/lib/project-match";
@@ -308,14 +309,16 @@ export function TodosPanel({
           }),
       );
 
-      if (idsToDelete.length) {
-        const { error } = await supabase
-          .from("todos")
-          .delete()
-          .in("id", idsToDelete);
-        if (error) throw error;
+      const eligible = new Set(idsToDelete);
+      const captured = todos.filter(todo => eligible.has(todo.id));
+      try {
+        const { deleted } = await consumeRepositoryRecords(supabase, "todos", captured);
+        return { removed: deleted.size, missing };
+      } finally {
+        void qc.invalidateQueries({ queryKey: qk.todos });
+        void qc.invalidateQueries({ queryKey: qk.dailyFocus });
+        void qc.invalidateQueries({ queryKey: ["github", "file"] });
       }
-      return { removed: idsToDelete.length, missing };
     },
     onSuccess: ({ removed, missing }) => {
       toast.ok(

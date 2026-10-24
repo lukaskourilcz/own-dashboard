@@ -92,13 +92,8 @@ export function fetchLastWeekCalendar(): Promise<EventsResult> {
  */
 
 export async function fetchTodos(): Promise<Todo[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("todos")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Todo[];
+  const { data } = await readOwnedCollection(createClient(), "todos");
+  return data;
 }
 
 export async function fetchSubscriptions(): Promise<Subscription[]> {
@@ -288,21 +283,13 @@ export async function fetchPromptLinks(): Promise<PromptLink[]> {
 }
 
 export async function fetchRepoNotes(): Promise<RepoNote[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("repo_notes")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as RepoNote[];
+  const { data } = await readOwnedCollection(createClient(), "repo_notes");
+  return data;
 }
 
 export async function fetchRepoLinks(): Promise<RepoLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("repo_links").select("*");
-  if (error) throw error;
-  return (data ?? []) as RepoLink[];
+  const { data } = await readOwnedCollection(createClient(), "repo_links");
+  return data;
 }
 
 export async function fetchProjects(): Promise<Project[]> {

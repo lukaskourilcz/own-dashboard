@@ -321,3 +321,8 @@ Twelve local development-browser cases pass (eight duplicate-project skips), inc
 
 
 Public optimized transfer checkpoint: with absent analytics configuration, cold 1440×900 anonymous contexts load 509,424 encoded JavaScript body bytes on `/guest` (previous build 579,278, −12.1%) and 310,066 on `/login` (previous 423,048, −26.7%). The PostHog SDK marker is absent from downloaded scripts after the fix. These measurements share Next.js 16.4.3, Chromium, EN/light/reduced motion and blocked nonlocal requests; raw resources and build IDs are committed with the [app-wide audit](../reports/app-wide-audit-2026-10-23/review.md). Full unit/lint/type/ordinary-build/render-trace checks pass at `6292d4e`; the complete optimized application interaction suite is pending.
+
+
+## Repository notes, 24 October 2026
+
+Four EN/CS desktop/mobile cases pass on the actual dev-preview repository components with mocked owner/API data. Checks cover retained failed text, keyboard Done/retry, a record changed during publication, 360/430/768/1024/1440/1728 px reflow, light/dark contexts and axe in the main region. The embedded card is centered and capped at the shared three-column content width; note edit/delete controls use 44 px mobile targets. Czech screenshots are in the [audit assets](../reports/app-wide-audit-2026-10-23/assets/). The mobile toolbar uses a concise NEEDED label and wraps if needed; control bounds are checked because document overflow alone missed a clipped toolbar in the intermediate version. Only the nonexistent-backend dev/E2E harness enables repository endpoints; the public tour stays isolated. This targeted evidence does not complete the remaining app-wide optimized interaction matrix.

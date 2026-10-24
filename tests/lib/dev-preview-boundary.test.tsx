@@ -19,3 +19,9 @@ it("retains the ordinary production 404 even with a fixture backend", async () =
   vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("NEXT_E2E", undefined); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
   await expect(PreviewPage({ searchParams: Promise.resolve({}) })).rejects.toThrow("404");
 });
+it("enables repository interaction fixtures only against the nonexistent backend", async () => {
+  vi.stubEnv("NODE_ENV", "test"); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ repositories: "live" }) })).props.liveRepositories).toBe(true);
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ repositories: "live" }) })).props.children.props.liveRepositories).toBe(false);
+});

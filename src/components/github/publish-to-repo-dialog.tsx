@@ -19,6 +19,7 @@ import { useDict } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { awaitWithSignal } from "@/lib/abortable";
 import { connectGitHub } from "@/lib/github-auth";
+import { useGuardedNavigation } from "@/components/navigation-guard";
 import {
   commitFile,
   normalizeRepoPath,
@@ -55,6 +56,7 @@ export function PublishToRepoDialog({
   const { data, isPending } = useReposQuery();
   const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
 
+  const guardNavigation = useGuardedNavigation();
   const [selected, setSelected] = useState("");
   const selectedFullName = selected || repos[0]?.full_name || "";
   const [path, setPath] = useState(`notes/${defaultFileName || "note"}.md`);
@@ -64,7 +66,9 @@ export function PublishToRepoDialog({
   const [connecting, setConnecting] = useState(false);
   const [result, setResult] = useState<GithubCommitResult | null>(null);
 
-  async function onConnect() {
+  function onConnect() { guardNavigation(() => { void startConnecting(); }); }
+
+  async function startConnecting() {
     if (connecting) return;
     setConnecting(true);
     try { if ((await connectGitHub()).error) throw Error(); }

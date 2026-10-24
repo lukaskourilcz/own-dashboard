@@ -44,6 +44,7 @@ import { saveUserPreferences } from "@/lib/preference-client";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
+import { useGuardedNavigation } from "@/components/navigation-guard";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { readRepoFilter, writeRepoFilter } from "@/lib/use-prefs";
@@ -64,6 +65,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { NeededChecklist } from "@/components/panels/needed-checklist";
 import type { RepoLink, RepoNote, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useRepositoryNoteAutosave } from "@/components/github/use-repository-note-autosave";
+import { consumeRepositoryRecords, createRepositoryNote, repositoryNoteSchema, type NewRepositoryNote } from "@/lib/repository-records";
+import { readOwnedCollection } from "@/lib/owned-records";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
 
@@ -136,6 +140,8 @@ export function ReposPanel({
   const confirm = useConfirmation();
   const qc = useQueryClient();
   const { data, isPending, isFetching, refetch } = useReposQuery();
+  const guardNavigation = useGuardedNavigation();
+  const autosave = useRepositoryNoteAutosave(setRepoNotes, () => toast.err(t.github.noteSaveErr), () => { void qc.invalidateQueries({ queryKey: qk.repoNotes }); });
   const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [writeTarget, setWriteTarget] = useState<GithubRepo | null>(null);
@@ -186,7 +192,9 @@ export function ReposPanel({
     return map;
   }, [repoLinks]);
 
-  async function onConnect() {
+  function onConnect() { guardNavigation(() => { void startConnecting(); }); }
+
+  async function startConnecting() {
     if (connecting) return;
     setConnecting(true);
     try { if ((await connectGitHub()).error) throw Error(); }
@@ -271,13 +279,14 @@ export function ReposPanel({
   }, [scoped, query]);
 
   return (
-    <div>
+    <div className={repoFullName ? "mx-auto max-w-3xl" : undefined}>
       <PageHeader
         title={repoFullName ?? t.github.title}
-        description={repoFullName ? t.professional.projectRepository : t.github.subtitle}
+        description={repoFullName ? undefined : t.github.subtitle}
+        density={repoFullName ? "compact" : "regular"}
         action={
           status === "connected" ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
               <Tooltip content={t.github.refresh}>
                 <Button
                   variant="ghost"
@@ -296,9 +305,10 @@ export function ReposPanel({
                   variant={showNeeded ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowNeeded((v) => !v)}
+                  aria-label={t.github.needed.button}
                 >
                   <ListChecks className="h-3.5 w-3.5" />
-                  {t.github.needed.button}
+                  NEEDED
                 </Button>
               )}
               {repos.length > 0 && !repoFullName && (
@@ -424,10 +434,11 @@ export function ReposPanel({
               }
             />
           ) : (
-            <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={cn("grid items-start gap-3", !repoFullName && "sm:grid-cols-2 lg:grid-cols-3")}>
               {filtered.map((repo) => (
                 <RepoNotesCard
                   key={repo.id}
+                  autosave={autosave}
                   repo={repo}
                   notes={entriesByRepo.get(String(repo.id)) ?? EMPTY_NOTES}
                   link={linksByRepo.get(String(repo.id))}
@@ -466,6 +477,7 @@ export function ReposPanel({
 /* ---------------------------------------------------------------------- */
 
 function RepoNotesCard({
+  autosave,
   repo,
   notes,
   link,
@@ -473,6 +485,7 @@ function RepoNotesCard({
   setRepoLinks,
   onWrite,
 }: {
+  autosave: ReturnType<typeof useRepositoryNoteAutosave>;
   repo: GithubRepo;
   notes: RepoNote[];
   link: RepoLink | undefined;
@@ -495,68 +508,35 @@ function RepoNotesCard({
     ? formatDistanceToNow(new Date(repo.pushed_at), { addSuffix: true, locale })
     : t.github.never;
 
-  // UPDATE a single entry's body. Called from each entry on debounce/blur.
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, body }: { id: string; body: string }) => {
-      const { error } = await supabase
-        .from("repo_notes")
-        .update({ body, updated_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onError: () => toast.err(t.github.noteSaveErr),
-  });
-
-  // Optimistic cache write + debounced DB write. Updating the cache here (not
-  // on every keystroke) keeps the shared store current for Save / remount
-  // without re-rendering the whole panel as you type.
-  function persistEntry(id: string, body: string) {
-    setRepoNotes((prev) => prev.map((n) => (n.id === id ? { ...n, body } : n)));
-    updateMutation.mutate({ id, body });
-  }
-
+  const newNote = useRef<NewRepositoryNote | null>(null);
   const addMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const sortOrder = Math.max(0, ...notes.map((n) => n.sort_order)) + 1;
-      const { data, error } = await supabase
-        .from("repo_notes")
-        .insert({
-          user_id: userId,
-          repo_id: repoId,
-          repo_full_name: repo.full_name,
-          body: "",
-          sort_order: sortOrder,
-        })
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as RepoNote;
+      if (!newNote.current) {
+        const userId = await currentUserId(supabase);
+        if (!userId) throw new Error("no-user");
+        newNote.current = { id: crypto.randomUUID(), user_id: userId, repo_id: repoId,
+          repo_full_name: repo.full_name, sort_order: Math.max(0, ...notes.map(note => note.sort_order)) + 1 };
+      }
+      return createRepositoryNote(supabase, newNote.current);
     },
     onSuccess: (row) => {
-      setRepoNotes((prev) => [...prev, row]);
+      newNote.current = null;
+      setRepoNotes(current => current.some(note => note.id === row.id) ? current : [...current, row]);
       setAutoFocusId(row.id);
     },
     onError: () => toast.err(t.github.noteSaveErr),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("repo_notes").delete().eq("id", id);
-      if (error) throw error;
+    mutationFn: async (note: RepoNote) => {
+      if (autosave.drafts[note.id] !== undefined || autosave.pending.has(note.id)) throw Error("Unsaved repository note");
+      const { deleted } = await consumeRepositoryRecords(supabase, "repo_notes", [note]);
+      if (!deleted.has(note.id)) throw Error("Repository note changed");
+      return note.id;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.repoNotes });
-      const prev = qc.getQueryData<RepoNote[]>(qk.repoNotes);
-      setRepoNotes((old) => old.filter((n) => n.id !== id));
-      return { prev };
-    },
-    onSuccess: () => toast.ok(t.github.noteDeleted),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setRepoNotes(ctx.prev);
-      toast.err(t.github.noteDeleteErr);
-    },
+    onSuccess: (id) => { setRepoNotes(current => current.filter(note => note.id !== id)); toast.ok(t.github.noteDeleted); },
+    onError: () => toast.err(t.github.noteDeleteErr),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.repoNotes }); },
   });
 
   async function deleteEntry(note: RepoNote) {
@@ -566,29 +546,20 @@ function RepoNotesCard({
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-    })) deleteMutation.mutate(note.id);
+    })) deleteMutation.mutate(note);
   }
 
   async function saveToGithub() {
-    // Read the freshest entries straight from the cache (entries flush to it on
-    // blur, which fires when the Save button takes focus).
-    const all = qc.getQueryData<RepoNote[]>(qk.repoNotes) ?? notes;
-    const text = all
-      .filter((n) => n.repo_id === repoId)
-      .sort(
-        (a, b) =>
-          a.sort_order - b.sort_order ||
-          a.created_at.localeCompare(b.created_at),
-      )
-      .map((n) => n.body.trim())
-      .filter(Boolean)
-      .join("\n\n---\n\n");
-    if (!text) {
-      toast.err(t.github.notesNothing);
-      return;
-    }
+    if (pushing) return;
     setPushing(true);
     try {
+      if (!await autosave.saveAll()) return;
+      // A fresh complete statement snapshot, rather than a potentially capped
+      // or stale card cache, defines exactly what the publication contains.
+      const { data } = await readOwnedCollection(supabase, "repo_notes", undefined, AbortSignal.timeout(15_000));
+      const snapshot = data.map(row => repositoryNoteSchema.parse(row)).filter(row => row.repo_id === repoId && row.body.trim());
+      const text = snapshot.map(row => row.body.trim()).join("\n\n---\n\n");
+      if (!text) { toast.err(t.github.notesNothing); return; }
       const outcome = await commitFile({
         intent: "replace",
         owner: repo.owner,
@@ -609,26 +580,20 @@ function RepoNotesCard({
       // Reflect the push, but keep the board order stable — don't bump this
       // repo to the top just because notes were saved.
       if (!outcome.result.unchanged) touchRepoInCache(qc, repo.id);
-      // The notes now live in the committed file, so clear them from the
-      // dashboard. If the delete fails the push still succeeded, so fall back
-      // to the plain "saved" confirmation and leave the notes in place.
-      const { error: clearErr } = await supabase
-        .from("repo_notes")
-        .delete()
-        .eq("repo_id", repoId);
-      if (clearErr) {
-        toast.ok(t.github.notesSavedFile(outcome.result.path));
-      } else {
-        setRepoNotes((prev) => prev.filter((n) => n.repo_id !== repoId));
-        void qc.invalidateQueries({ queryKey: qk.repoNotes });
-        toast.ok(t.github.notesSavedCleared(outcome.result.path));
-      }
+      // Consume only the captured unchanged versions. New/edited notes stay.
+      try {
+        const { deleted, retained } = await consumeRepositoryRecords(supabase, "repo_notes", snapshot);
+        setRepoNotes(current => current.filter(note => !deleted.has(note.id)));
+        toast.ok(retained.size ? t.github.notesSavedFile(outcome.result.path) : t.github.notesSavedCleared(outcome.result.path));
+      } catch { toast.ok(t.github.notesSavedFile(outcome.result.path)); }
+    } catch { toast.err(t.github.notesPushErr);
     } finally {
       setPushing(false);
+      void qc.invalidateQueries({ queryKey: qk.repoNotes });
     }
   }
 
-  const saving = updateMutation.isPending || addMutation.isPending;
+  const saving = notes.some(note => autosave.pending.has(note.id)) || addMutation.isPending;
 
   return (
     <Card className="flex flex-col p-0">
@@ -712,10 +677,15 @@ function RepoNotesCard({
           <div className="space-y-2">
             {notes.map((n) => (
               <RepoNoteEntry
-                key={n.id}
+                key={`${n.id}:${autosave.generation}`}
                 note={n}
+                body={autosave.drafts[n.id] ?? n.body}
+                failed={autosave.errors.has(n.id)}
+                pending={autosave.pending.has(n.id) || deleteMutation.isPending}
+                onChange={(body) => autosave.change(n, body)}
                 autoFocus={n.id === autoFocusId}
-                onPersist={persistEntry}
+                onSave={() => autosave.save(n.id)}
+                onDiscard={() => autosave.discard(n.id)}
                 onDelete={() => deleteEntry(n)}
               />
             ))}
@@ -751,68 +721,24 @@ function RepoNotesCard({
   );
 }
 
-/** A single note entry. A saved note renders as a compact card (truncated to a
- * max height) with edit + delete actions — so it reads as "saved", not a live
- * input. Clicking edit (or a freshly added empty note) opens the autosaving
- * textarea; keystrokes stay local and the debounce/blur/unmount flush hands the
- * latest body up to the card, which writes it to the cache + DB. */
-function RepoNoteEntry({
-  note,
-  autoFocus,
-  onPersist,
-  onDelete,
-}: {
-  note: RepoNote;
-  autoFocus: boolean;
-  onPersist: (id: string, body: string) => void;
-  onDelete: () => void;
+/** Confirmed rows stay compact; failed drafts remain editable and visible. */
+function RepoNoteEntry({ note, body, failed, pending, autoFocus, onChange, onSave, onDiscard, onDelete }: {
+  note: RepoNote; body: string; failed: boolean; pending: boolean; autoFocus: boolean;
+  onChange: (body: string) => void; onSave: () => Promise<boolean>; onDiscard: () => boolean; onDelete: () => void;
 }) {
   const t = useDict();
-  const [body, setBody] = useState(note.body);
-  // Brand-new / empty notes open straight into edit mode; saved ones show the
-  // card. (autoFocus is set by the parent for the entry it just created.)
   const [editing, setEditing] = useState(autoFocus || note.body.trim() === "");
   const ref = useRef<HTMLTextAreaElement | null>(null);
-  const timer = useRef<number | null>(null);
-
-  function clearTimer() {
-    if (timer.current) {
-      window.clearTimeout(timer.current);
-      timer.current = null;
-    }
-  }
-
-  // Debounce the write; each keystroke reschedules with its own value, so the
-  // pending save always carries the latest text (no stale-closure refs needed).
-  function handleChange(v: string) {
-    setBody(v);
-    clearTimer();
-    timer.current = window.setTimeout(() => {
-      timer.current = null;
-      onPersist(note.id, v);
-    }, 700);
-  }
-
-  // Flush any pending edit and collapse back to the card. Blur fires when the
-  // textarea loses focus (including a tab switch that unmounts the panel) and
-  // when the Done button is pressed.
-  function handleBlur() {
-    clearTimer();
-    onPersist(note.id, body);
-    setEditing(false);
-  }
-
+  async function finish() { if (await onSave()) setEditing(false); }
   // Focus the textarea whenever we enter edit mode (initial autofocus included).
   useEffect(() => {
     if (editing) ref.current?.focus();
   }, [editing]);
 
-  useEffect(() => () => clearTimer(), []);
-
   if (!editing) {
     const isEmpty = body.trim() === "";
     return (
-      <div className="group/entry relative rounded-md border border-border bg-surface-muted/40 px-2.5 py-2 pr-14">
+      <div className="group/entry relative min-h-14 rounded-md border border-border bg-surface-muted/40 px-2.5 py-2 pr-24 md:min-h-0 md:pr-14">
         <p
           className={cn(
             "whitespace-pre-wrap break-words text-xs leading-relaxed line-clamp-6",
@@ -827,7 +753,8 @@ function RepoNoteEntry({
               type="button"
               onClick={() => setEditing(true)}
               aria-label={t.github.editNote}
-              className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+              disabled={pending}
+              className="inline-flex size-11 md:size-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -837,7 +764,8 @@ function RepoNoteEntry({
               type="button"
               onClick={onDelete}
               aria-label={t.github.deleteNote}
-              className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+              disabled={pending}
+              className="inline-flex size-11 md:size-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -850,26 +778,27 @@ function RepoNoteEntry({
   return (
     <div className="group/entry relative">
       <Textarea
+        aria-label={t.github.editNote}
+        aria-invalid={failed || undefined}
         ref={ref}
         value={body}
-        onChange={(e) => handleChange(e.target.value)}
-        onBlur={handleBlur}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={(event) => { if (!event.currentTarget.parentElement?.contains(event.relatedTarget)) void onSave(); }}
         placeholder={t.github.notePlaceholder}
         className="min-h-[64px] resize-y pr-8 text-xs leading-relaxed"
       />
-      <div className="mt-1.5 flex items-center justify-end gap-1.5">
-        <Button type="button" variant="ghost" size="sm" onClick={onDelete}>
+      {failed && <p role="alert" className="mt-1 text-xs text-risk">{t.github.noteSaveErr}</p>}
+      <div className="mt-1.5 flex flex-wrap items-center justify-end gap-1.5">
+        {failed && <Button variant="ghost" size="sm" disabled={pending} onClick={() => { if (onDiscard()) setEditing(false); }}>{t.common.unsaved.discard}</Button>}
+        <Button type="button" variant="ghost" size="sm" disabled={pending || body !== note.body} onClick={onDelete}>
           <Trash2 className="h-3.5 w-3.5" />
           {t.github.deleteNote}
         </Button>
         <Button
           type="button"
           size="sm"
-          // onMouseDown so it fires before the textarea's blur collapses us.
-          onMouseDown={(e) => {
-            e.preventDefault();
-            handleBlur();
-          }}
+          disabled={pending}
+          onClick={() => { void finish(); }}
         >
           <Check className="h-3.5 w-3.5" />
           {t.github.doneEditing}

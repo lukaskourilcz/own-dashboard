@@ -1,8 +1,12 @@
+import { awaitWithSignal } from "@/lib/abortable";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AiCategory, AiLink, Invoice, InvoiceItem, ProjectLink, Prompt, PromptLink, Transaction } from "@/lib/types";
+import type { AiCategory, AiLink, Invoice, InvoiceItem, ProjectLink, Prompt, PromptLink, Transaction, RepoNote, RepoLink, Todo } from "@/lib/types";
 
 type Collections = {
   transactions: Transaction;
+  repo_notes: RepoNote;
+  repo_links: RepoLink;
+  todos: Todo;
   invoices: Invoice;
   invoice_items: InvoiceItem;
   prompts: Prompt;
@@ -17,9 +21,10 @@ type Collections = {
  * its verified owner id as an additional response-ownership assertion.
  */
 export async function readOwnedCollection<K extends keyof Collections>(
-  client: SupabaseClient, entity: K, ownerId?: string,
+  client: SupabaseClient, entity: K, ownerId?: string, signal?: AbortSignal,
 ): Promise<{ data: Collections[K][]; error: null }> {
-  const { data, error } = await client.rpc("read_owned_collection", { p_entity: entity });
+  const query = client.rpc("read_owned_collection", { p_entity: entity });
+  const { data, error } = await awaitWithSignal(signal ? query.abortSignal(signal) : query, signal);
   if (error) throw error;
   if (!Array.isArray(data) || data.length > 50_000) throw new Error("Owned collection unavailable");
   const ids = new Set<string>();

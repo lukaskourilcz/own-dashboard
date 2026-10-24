@@ -206,7 +206,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     savingNotes: "Saving…",
     notesNothing: "Write a note before saving.",
     notesCommitMessage: "Update project notes",
-    notesSavedFile: (path) => `Saved to ${path} on GitHub.`,
+    notesSavedFile: (path) => `Saved to ${path} on GitHub. Notes remain in this dashboard.`,
     notesSavedCleared: (path) =>
       `${path} created on GitHub — notes cleared from the project workspace.`,
     notesPushErr: "Could not save notes to GitHub.",
@@ -330,7 +330,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     savingNotes: "Ukládání…",
     notesNothing: "Před uložením napiš poznámku.",
     notesCommitMessage: "Aktualizace poznámek projektu",
-    notesSavedFile: (path) => `Uloženo do ${path} na GitHubu.`,
+    notesSavedFile: (path) => `Uloženo do ${path} na GitHubu. Poznámky zůstávají v dashboardu.`,
     notesSavedCleared: (path) =>
       `${path} vytvořen na GitHubu — poznámky z prostoru projektu smazány.`,
     notesPushErr: "Poznámky se nepodařilo uložit na GitHub.",

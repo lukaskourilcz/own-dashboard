@@ -42,7 +42,7 @@ it("locks fields and dismissal while exporting, then restores them with the same
 it("retains the dialog after an expired connection", async () => {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 401 })));
   await render(async () => "Reviewed fixture"); await act(async () => { button(github.en.commit).click(); await new Promise(resolve => setTimeout(resolve, 30)); });
-  expect(state.err).toHaveBeenCalledWith(github.en.reconnect); expect(close).not.toHaveBeenCalled();
+  await act(async () => { await vi.waitFor(() => expect(state.err).toHaveBeenCalledWith(github.en.reconnect)); }); expect(close).not.toHaveBeenCalled();
   expect(document.querySelector<HTMLInputElement>("input")?.value).toBe("notes/fixture.md");
 });
 it("shows an existing file without claiming a new commit or changing repository activity", async () => {

@@ -45,10 +45,10 @@
     },
     {
       "path": "src/app/[[...slug]]/page.tsx",
-      "lines": 175,
+      "lines": 196,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "3c57d1f7b198fc6149e473fa0bcff94b8af9641746c91c6ed46e914964c4908e"
+      "reviewedSha256": "675cc19a53c61cb2a39da07c0e1baff6bf6adce52c0fe063e5d82e80fc42d57f"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -586,10 +586,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 38,
+      "lines": 45,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "94e6b18387f4c83f061596a140df59444b6fb75483519cbc7ee33cbbaa5849cb"
+      "status": "source reviewed; repository receipt checks pass; final release checks pending",
+      "reviewedSha256": "0f6d12ca2324da9f86b34929449a495941e5c225b7be3612b5aeb7c536457245"
     },
     {
       "path": "src/app/globals.css",
@@ -752,16 +752,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 428,
+      "lines": 488,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "996497e007bb4c2df53f4f95fa706fa43967dbec6185ed377a315e6e94fccd66"
+      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
+      "reviewedSha256": "3856b54cf1eea70b61559212160c641dd8afa8fede7a072ac22170a2294fb2ac"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 122,
+      "lines": 127,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "pending"
+      "status": "source reviewed; repository receipt checks pass; final release checks pending",
+      "reviewedSha256": "311ce44323149b1c03510d8a5439f0195e8df30aa310d4867b79108f88f70c15"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -786,10 +787,10 @@
     },
     {
       "path": "src/components/github/publish-to-repo-dialog.tsx",
-      "lines": 264,
+      "lines": 268,
       "sha256": "89bbb25011eaa992115362094882107fb1fa7de7d13ada19339bde9a38cf7915",
       "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending",
-      "reviewedSha256": "fbda46633a11a79354722ff6702b87112da2fa509dea626af2731a817191e75b"
+      "reviewedSha256": "ecf093a710b9187b3a45fb206c7fa2ee5d8348cd6eeb22044862ff3a085eb3b5"
     },
     {
       "path": "src/components/guest-banner.tsx",
@@ -1419,10 +1420,10 @@
     },
     {
       "path": "src/components/panels/repos-panel.tsx",
-      "lines": 1391,
+      "lines": 1320,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partially reviewed; file integrity checks pass; remaining repository/task concerns in review.md",
-      "reviewedSha256": "8882c4e487475fb8c09cb83787edb8ebf017d1179dd7bb2c4b5203534270f59e"
+      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
+      "reviewedSha256": "c62a4f02a1cf81d5ec0ddf211f297313ca466a35bc9f32025078672d1159bcf6"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -1454,10 +1455,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1489,
+      "lines": 1492,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; file integrity checks pass; remaining repository/task concerns in review.md",
-      "reviewedSha256": "48c733a664f9d0719c4e4efbee1891614e4fa5f5f5ba190eb75ad54426e5b114"
+      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
+      "reviewedSha256": "e91d9251c03f069d07eadaedd63142ba3690f57e793e3d3c403565b1b3bc32ac"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -3402,11 +3403,11 @@
     },
     {
       "path": "src/lib/owned-records.ts",
-      "lines": 32,
+      "lines": 37,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "97015ca5ca148fbbc919375ef01fed8b20ad47bd933b69e097fa0f9c66a00d62"
+      "status": "source reviewed; repository receipt checks pass; final release checks pending",
+      "reviewedSha256": "dee3a1f5ef9711e46246fc9ee84dc238c3eeff224c3a12d0496323090cf472a9"
     },
     {
       "path": "src/lib/payment-matching-server.ts",
@@ -3516,10 +3517,10 @@
     },
     {
       "path": "src/lib/queries/fetchers.ts",
-      "lines": 542,
+      "lines": 483,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "39f1c1da5e6e8b921686ba1380fe6073cebf215289ad929b5b4baf1ab4e76895"
+      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
+      "reviewedSha256": "9ba3be5594a9b21a00a3a29da2541e8108829381aa716200631390ccba29f6d6"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -3839,6 +3840,27 @@
       "lines": 8,
       "reviewedSha256": "e70f09e68df9a031967c3d245bcc84bb3e0dd2485f4b8e1e9f6c2d015b4a3b5c",
       "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending"
+    },
+    {
+      "path": "src/lib/repository-records.ts",
+      "sha256": null,
+      "lines": 63,
+      "reviewedSha256": "97cf4b7d0b816f7268089bf04a56cb2da587c121d9da9082c4c48217b5e9ebf2",
+      "status": "source reviewed; repository receipt checks pass; final release checks pending"
+    },
+    {
+      "path": "src/components/github/use-repository-note-autosave.ts",
+      "sha256": null,
+      "lines": 76,
+      "reviewedSha256": "d3805cbd26bfdaf55d9228d093d6d8f355935fe0b76695bf2481cd394947c8e5",
+      "status": "source reviewed; repository receipt checks pass; final release checks pending"
+    },
+    {
+      "path": "supabase/migrations/20261024034239_repository_record_receipts.sql",
+      "sha256": null,
+      "lines": 103,
+      "reviewedSha256": "476996c094aa9adcad944382c9ef8a7a235be551307dd329ae4cfb7669b3e77d",
+      "status": "source reviewed; repository receipt checks pass; final release checks pending"
     }
   ],
   "baselineFileCount": 561
