@@ -210,8 +210,10 @@ The migrations, in the order they run:
 
 112. `20261024170208_confirmed_dneskai_daily_mix.sql` — prepared, unapplied; captured-version daily volume saves, own-only persisted receipts and no-op retries. Unreadable enabled configuration stops scheduling instead of restoring defaults.
 
+113. `20261024174247_confirmed_dneskai_sources.sql` — prepared, unapplied; captured source-setting save/removal receipts and no-op retries; compatible legacy writers share the project-first lock and 120-source limit. New UI/API caller integration remains in progress.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-six audit migrations 87–112 remain unapplied; apply them in filename order before deploying the implementation branch.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-seven audit migrations 87–113 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 

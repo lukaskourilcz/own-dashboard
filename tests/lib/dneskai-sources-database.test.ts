@@ -65,8 +65,8 @@ describe('marketing_dneskai_sources (20261023110000)', () => {
     const [row] = await sql<{ weekdays: number[] }>("select weekdays from public.marketing_dneskai_sources where source_id='instagram:newprofile'");
     expect(row!.weekdays).toEqual([1, 2]);
     await save({ ...added, weekdays: [0, 1, 2, 3, 4, 5, 6] });
-    await expect(save({ ...added, sourceId: 'instagram:BadCase', handleOrUrl: 'BadCase' })).rejects.toThrow(/check constraint/);
-    await expect(save({ ...added, sourceId: 'web-plain-000000', kind: 'rss', handleOrUrl: 'http://plain.example/feed' })).rejects.toThrow(/check constraint/);
+    await expect(save({ ...added, sourceId: 'instagram:BadCase', handleOrUrl: 'BadCase' })).rejects.toThrow(/source invalid/);
+    await expect(save({ ...added, sourceId: 'web-plain-000000', kind: 'rss', handleOrUrl: 'http://plain.example/feed' })).rejects.toThrow(/source invalid/);
     await expect(save({ ...added, kind: 'rss', handleOrUrl: 'https://example.com/feed' })).rejects.toThrow(/source address changed/);
     await expect(save(added, OTHER)).rejects.toThrow(/source unavailable/);
     // Reads are own-only, and the owner cannot write the table directly.

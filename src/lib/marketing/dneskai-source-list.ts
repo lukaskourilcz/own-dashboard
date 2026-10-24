@@ -34,6 +34,12 @@ export const DneskaiSourceRowSchema = z.strictObject({
   if (new Set(row.weekdays).size !== row.weekdays.length) context.addIssue({ code: 'custom', message: 'source-days-invalid', path: ['weekdays'] });
 });
 export type DneskaiSourceRow = z.infer<typeof DneskaiSourceRowSchema>;
+export const DneskaiSourceReceiptSchema = z.strictObject({
+  kind: z.enum(['saved', 'removed', 'conflict']), ownerId: z.uuid(), projectId: z.uuid(), sourceId: z.string().regex(SOURCE_ID),
+  source: DneskaiSourceRowSchema.nullable(),
+}).refine(receipt => (!receipt.source || receipt.source.sourceId === receipt.sourceId)
+  && (receipt.kind !== 'saved' || receipt.source !== null) && (receipt.kind !== 'removed' || receipt.source === null));
+export type DneskaiSourceReceipt = z.infer<typeof DneskaiSourceReceiptSchema>;
 
 /** One row as Zdroje shows it: the stored source and what the last nights read from it. */
 export const DneskaiSourceListItemSchema = z.strictObject({

@@ -3114,8 +3114,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 112 migrations; final release pending",
-      "reviewedSha256": "1b40b32177197e5adeb67c26bc31ea62f057858bfd45142cfe2392768024a651"
+      "status": "source reviewed; generated offline from all 113 migrations; final release pending",
+      "reviewedSha256": "9a4e017618a0f2fa766f88e592f474ba4f2d53cf2e06c3b6a30f5f4557f0a8d7"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3205,10 +3205,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-source-list.ts",
-      "lines": 139,
+      "lines": 145,
       "sha256": "f08ae40c2053cf6f1ba203d57907f2b58c9eedff27f3c30e3e40281fbe172c43",
-      "status": "partial; complete source/read bounds and address/day/name validation reviewed (findings 146/149); captured source mutation contracts remain under review",
-      "reviewedSha256": "40be33f1da5f4535dae634c02575c090f0cf97882785e0d08c6fe5d9721ce65e"
+      "status": "partial; source/read/address schemas and captured receipt shape prepared (findings 146/149/150); API/client/editor source mutations remain under review",
+      "reviewedSha256": "c739634d45a3a8e211faf59170f80999abd262502cf5e2274da94bada9bc4471"
     },
     {
       "path": "src/lib/marketing/dneskai-store.ts",
