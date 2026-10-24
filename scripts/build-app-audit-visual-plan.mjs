@@ -16,6 +16,9 @@ const pending = inventory.files.filter(file => file.status === "pending").length
 const partial = inventory.files.filter(file => file.status?.startsWith("partial")).length;
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const components = [
+  { id: "task-density", title: "Tasks: reduce nested cards and scattered metadata", file: "src/components/panels/todos-panel.tsx", desktop: "task-density-cs-1440.png", mobile: "task-density-cs-360.png", language: "Czech · actual Task page after target sizing", status: "Touch targets fixed · density review pending", captureWidth: 1400,
+    notes: ["Checkbox targets now match the shared mobile and desktop sizes; the visible mark remains compact.", "Next: replace the card around every task with grouped rows and shared dividers. Preserve project grouping, names, due dates and assignees.", "Bring related metadata onto one compact desktop line where it fits, and wrap only when needed on mobile. Manual/repository mutations and completed-task behavior still need their full source review."],
+    marks: [{ x: 19.2, y: 25.5, w: 37.6, h: 9.5, n: 1 }, { x: 59.8, y: 25.4, w: 37.4, h: 40.1, n: 2 }] },
   { id: "source-edit", title: "Source settings and retained drafts", file: "src/components/marketing/dneskai-source-forms.tsx", desktop: "source-edit-conflict-cs-1440.png", mobile: "source-edit-conflict-cs-360.png", language: "Czech · actual source conflict dialog crops", captureWidth: 448,
     notes: ["The dialog shows one source identity, aligned fields and matching action sizes. Mobile keeps complete labels and touch targets.", "A changed source keeps the local name and item count until an explicit successful reload. Failed reloads preserve the draft too.", "Confirmed changes update the unchanged list without another whole-list request. Pending work protects exits; raw invalid numbers stay available for correction."],
     marks: [{ x: 4, y: 14, w: 91, h: 14, n: 1 }, { x: 4, y: 29, w: 91, h: 60, n: 2 }] },
@@ -55,7 +58,7 @@ for (const component of components) {
   for (const file of [component.desktop, component.mobile]) readFileSync(`${folder}assets/${file}`);
 }
 const cards = components.map(component => `<article id="${component.id}" class="component">
-<div class="component-heading"><h2>${escape(component.title)}</h2><span class="status">Implemented · final release pending</span></div>
+<div class="component-heading"><h2>${escape(component.title)}</h2><span class="status">${escape(component.status ?? "Implemented · final release pending")}</span></div>
 <p class="source">${escape(component.file)} · ${escape(component.language)}</p>
 <div class="screen-scroll" style="--capture-width:${component.captureWidth ?? 1440}px" role="region" aria-label="${escape(component.title)} screenshot" tabindex="0"><figure class="screen" data-desktop="assets/${component.desktop}" data-mobile="assets/${component.mobile}"><img src="assets/${component.desktop}" alt="Actual dev-preview capture of ${escape(component.title)}" loading="lazy" width="1440">
 <div class="marks" aria-hidden="true">${component.marks.map(mark => `<span class="mark" style="left:${mark.x}%;top:${mark.y}%;width:${mark.w}%;height:${mark.h}%"><b>${mark.n}</b></span>`).join("")}</div></figure></div>
