@@ -778,10 +778,10 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 489,
+      "lines": 499,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partial: route loading, pending navigation, Work link callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "1f270d9f288f35ba97d586fee3153a809f85a1916e9d6c9b1c15996ac1b57a4e"
+      "status": "partially reviewed; route loading, hydrated initial controls, pending navigation, Work callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
+      "reviewedSha256": "c43a9392e0d7cfe876c74ad6d9eb327a9c2d678ed25151608cf30de1ea0cf989"
     },
     {
       "path": "src/components/demo-dashboard.tsx",

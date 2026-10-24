@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
 import { DashboardDestinationBoundary } from "@/components/dashboard-destination-state";
 import { MotionConfig } from "motion/react";
@@ -200,11 +200,16 @@ const TAB_CHORDS: Record<string, NavTab> = {
   g: "goals", d: "dates", n: "notes", k: "tools",
 };
 
+const subscribeHydration = () => () => {};
+const clientHydrated = () => true;
+const serverHydrated = () => false;
+
 export function DashboardShell(props: Props) {
   return <NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider>;
 }
 
 function DashboardShellContent(props: Props) {
+  const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const requestNavigation = useGuardedNavigation();
   const { user } = props;
   const t = useDict();
@@ -425,7 +430,10 @@ function DashboardShellContent(props: Props) {
   );
   const financePanel = <FinancesPanel view={tab === "accounts" || tab === "transactions" || tab === "categories" ? tab : "overview"} accounts={accounts} setAccounts={setAccounts} transactions={transactions} setTransactions={setTransactions} subscriptions={subscriptions} projects={activeProjects} projectCosts={projectCosts} crons={crons} invoices={invoices} invoiceItems={invoiceItems} displayCurrency={displayCurrency} />;
 
-  return <MotionConfig reducedMotion="user"><TooltipProvider><ToastProvider><ConfirmationProvider>
+  return <>
+    {!hydrated && <p role="status" className="fixed right-4 top-4 z-50 rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground">{t.common.loading}</p>}
+    <div data-dashboard-ready={hydrated} inert={!hydrated} aria-busy={!hydrated} className={hydrated ? undefined : "cursor-progress opacity-60"}>
+    <MotionConfig reducedMotion="user"><TooltipProvider><ToastProvider><ConfirmationProvider>
     {!props.isPreview && (
       <PreferenceHydrator preferences={props.initialPreferences} />
     )}
@@ -485,5 +493,7 @@ function DashboardShellContent(props: Props) {
       </div></main>
       </div>
     </div>
-  </ConfirmationProvider></ToastProvider></TooltipProvider></MotionConfig>;
+  </ConfirmationProvider></ToastProvider></TooltipProvider></MotionConfig>
+    </div>
+  </>;
 }
