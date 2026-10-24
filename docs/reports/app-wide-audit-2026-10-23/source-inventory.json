@@ -855,18 +855,18 @@
     },
     {
       "path": "src/components/guest-banner.tsx",
-      "lines": 57,
+      "lines": 58,
       "sha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631"
+      "status": "source reviewed; pointer clearance, eight-width mobile/desktop targets, complete copy, dismiss and prefetch-free sign-in checked; final release pending",
+      "reviewedSha256": "9c1fd18d5156b3fd7aaed5d925b687a0d2d11071ef961dd27f2a9ef38504f8e7"
     },
     {
       "path": "src/components/guest-boundary.tsx",
-      "lines": 52,
+      "lines": 53,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "22b95961e2b8fdbb82fb8b2c04a1d4cb80ee47f50b748f7d1969587008d1012a"
+      "status": "source reviewed; query/network and personal preference tour isolation checked with no live requests; final release pending",
+      "reviewedSha256": "bd880c9750d49eaa92935289f6c817b8375e006a76d145baceb33335774d8301"
     },
     {
       "path": "src/components/guest-locale.tsx",
@@ -1447,10 +1447,10 @@
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
-      "lines": 306,
+      "lines": 307,
       "sha256": "c30f26827554b028c442a8acb6c8f763d2363af90f52ec914728a6d1810807f8",
-      "status": "partial; complete source read; captured-source writes, guards, validated/refreshed metrics, conversion deduplication, availability and list indexing pending in review.md",
-      "reviewedSha256": "8b49fa1f86af949f311426888a1d2b2a38b29678a9722f8878ab10a3414e390d"
+      "status": "partially reviewed; profile/proposal core and scoped load metadata checked; confirmed mutations/conversion, availability, metrics and form lifecycle pending",
+      "reviewedSha256": "5870937e764cf0dc24a4024fcf23ce6b2b0c3312e6ece2ac13bf45bdbd87c6a7"
     },
     {
       "path": "src/components/panels/opportunity-detail.tsx",
@@ -2265,6 +2265,13 @@
       "sha256": "e3eaa94b2c73e80b0f54d7bdf464d464eec41502da3147366e6ad281ce029c29",
       "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
       "reviewedSha256": "b13ad649987d670b064b628c33817949d3035d86fef3fdb6d59e5cc8d048e3bf"
+    },
+    {
+      "path": "src/lib/guest-preferences.tsx",
+      "sha256": null,
+      "lines": 21,
+      "status": "source reviewed; first-render tour-only CV/Career memory scope, shared consumers, SSR and disposal tests pass; final release pending",
+      "reviewedSha256": "f1e0487b73f4b6870a4bf871be752f49f048f956dc4b98c97554e72d40124c12"
     },
     {
       "path": "src/lib/guest-requests.ts",
@@ -3695,9 +3702,10 @@
     },
     {
       "path": "src/lib/on-demand-load.ts",
-      "lines": 56,
+      "lines": 53,
       "sha256": "3f2d188ee7b0eeec78885e4f26e303ef56ce0dfe078f28e85af848de5fbac3ae",
-      "status": "pending"
+      "status": "source reviewed; owner/preview session namespaces, bounded canonical metadata and resumed/blocked storage tests pass; final release pending",
+      "reviewedSha256": "7bf2309e5e33a274d19737f8df40c630d4401f0da9a44b7912d09c9899c553a8"
     },
     {
       "path": "src/lib/owned-records.ts",
@@ -4106,10 +4114,10 @@
     },
     {
       "path": "src/lib/use-prefs.ts",
-      "lines": 502,
+      "lines": 437,
       "sha256": "eceeeb07c83f5ff9fee096ccf750da6350dae2b060b51d3c9372c4a5a26065df",
-      "status": "partial: cross-tab storage/normalization and bilingual controls checked; server persistence, hydration and remaining shared lifecycle review pending",
-      "reviewedSha256": "24002c1e286f5b4f5680d39355ade8be4a3af412a848d6f61513b53eb24abff9"
+      "status": "partially reviewed; validated shared stores, cross-tab reconciliation and tour personal-field isolation checked; authenticated account/hydration lifecycle and remaining controls pending",
+      "reviewedSha256": "265bdceb1117e180726a3f34bc5da38fe9a29abe4e50c9eb399856cbb0879cbd"
     },
     {
       "path": "src/lib/use-return-focus.ts",
