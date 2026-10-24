@@ -290,35 +290,18 @@ export async function fetchRepoLinks(): Promise<RepoLink[]> {
 }
 
 export async function fetchProjects(): Promise<Project[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Project[];
+  const { data } = await readOwnedCollection(createClient(), "projects");
+  return data;
 }
 
 export async function fetchProjectCosts(): Promise<ProjectCost[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("project_costs")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as ProjectCost[];
+  const { data } = await readOwnedCollection(createClient(), "project_costs");
+  return data;
 }
 
 export async function fetchCrons(): Promise<Cron[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("crons")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Cron[];
+  const { data } = await readOwnedCollection(createClient(), "crons");
+  return data;
 }
 
 export async function fetchSubscriptionAllocations(): Promise<SubscriptionAllocation[]> {

@@ -20,7 +20,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -45,10 +45,10 @@
     },
     {
       "path": "src/app/[[...slug]]/page.tsx",
-      "lines": 196,
+      "lines": 199,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "62fbbd9ddcb2949ccd443731a9b6f0d87dbf54b6c4be4944fc4b4d46779c4c35"
+      "status": "source reviewed; complete project snapshot and dashboard boundary checks pass; final release checks pending",
+      "reviewedSha256": "6700f59967b384cdcc6e2b51526246dc273a206bb971e8a338d1b4268dddcfa2"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -1918,7 +1918,8 @@
       "path": "src/lib/chart-colors.ts",
       "lines": 7,
       "sha256": "c7f9dfe55ca41ae5fbd757ea09a23c84bed7f81e62a66157d59ac3e5a3d4d484",
-      "status": "pending"
+      "status": "source reviewed; five immutable semantic chart token references; rendered coverage belongs to consumers; final release checks pending",
+      "reviewedSha256": "c7f9dfe55ca41ae5fbd757ea09a23c84bed7f81e62a66157d59ac3e5a3d4d484"
     },
     {
       "path": "src/lib/competition.ts",
@@ -3447,11 +3448,11 @@
     },
     {
       "path": "src/lib/owned-records.ts",
-      "lines": 37,
+      "lines": 42,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "dee3a1f5ef9711e46246fc9ee84dc238c3eeff224c3a12d0496323090cf472a9"
+      "status": "source reviewed; complete collection and cancellation checks pass; final release checks pending",
+      "reviewedSha256": "b7aec7f1f25944a3fe91e7cdcaece9bad6237398c8951d9767f5a1d82ff6dfd8"
     },
     {
       "path": "src/lib/payment-matching-server.ts",
@@ -3563,10 +3564,10 @@
     },
     {
       "path": "src/lib/queries/fetchers.ts",
-      "lines": 483,
+      "lines": 463,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
-      "reviewedSha256": "9ba3be5594a9b21a00a3a29da2541e8108829381aa716200631390ccba29f6d6"
+      "status": "partially reviewed; complete project/repository/task/financial reads checked; remaining shared/entity concerns in review.md",
+      "reviewedSha256": "1e3cefac917a5a96dc07a0e3a4a1ba74a610abcdbfdcfc66c836ceac6b8a2d5d"
     },
     {
       "path": "src/lib/queries/keys.ts",

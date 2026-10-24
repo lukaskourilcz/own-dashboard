@@ -16,9 +16,14 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
   rpc: (_name: string, args: { p_entity: string }) => {
     const table = args.p_entity;
     state.reads.push(table);
-    return state.rejected.has(table) ? Promise.reject(new Error("network")) : Promise.resolve({
-      data: [], error: state.failures.has(table) ? { message: "database unavailable" } : null,
-    });
+    const query = {
+      retry: () => query, abortSignal: () => query,
+      then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
+        (state.rejected.has(table) ? Promise.reject(new Error("network")) : Promise.resolve({
+          data: table === "projects" ? state.projects.map(project => ({ user_id: "owner", ...project })) : [], error: state.failures.has(table) ? { message: "database unavailable" } : null,
+        })).then(resolve, reject),
+    };
+    return query;
   },
   from: (table: string) => {
     state.reads.push(table);
