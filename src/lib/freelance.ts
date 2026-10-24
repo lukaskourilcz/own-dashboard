@@ -1,4 +1,5 @@
 import type { ClientOpportunity } from "@/lib/types";
+import { safeWebUrl } from "@/lib/web-url";
 
 export type FreelancePlatform = {
   id: string; user_id: string; name: string; url: string; search_url: string;
@@ -11,18 +12,21 @@ export type FreelancePlatform = {
 };
 
 export function httpsUrl(value: string | null | undefined): string | undefined {
-  if (!value) return undefined;
-  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password ? url.href : undefined; }
-  catch { return undefined; }
+  const url = safeWebUrl(value);
+  return url?.startsWith("https://") ? url : undefined;
 }
 
 export function opportunityMetrics(rows: ClientOpportunity[], platformId = "all") {
-  const cohort = rows.filter(row => platformId === "all" || row.platform_id === platformId);
-  const submitted = cohort.filter(row => Boolean(row.submitted_on));
-  const replies = submitted.filter(row => Boolean(row.responded_on));
-  return { saved: cohort.length, submitted: submitted.length, replies: replies.length,
-    won: submitted.filter(row => row.status === "won").length,
-    responseRate: submitted.length ? Math.round(replies.length / submitted.length * 100) : null };
+  let saved = 0, submitted = 0, replies = 0, won = 0;
+  for (const row of rows) {
+    if (platformId !== "all" && row.platform_id !== platformId) continue;
+    saved++;
+    if (!row.submitted_on) continue;
+    submitted++;
+    if (row.responded_on) replies++;
+    if (row.status === "won") won++;
+  }
+  return { saved, submitted, replies, won, responseRate: submitted ? Math.round(replies / submitted * 100) : null };
 }
 
 /** Public deterministic data only; never seed private account profiles into preview. */

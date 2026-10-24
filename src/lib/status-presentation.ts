@@ -32,7 +32,9 @@ const labels = {
 } as const;
 
 export function statusLabel(value: string, lang: Lang): string {
-  return (labels[lang] as Record<string, string>)[value] ?? value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
+  const dictionary = labels[lang];
+  return Object.hasOwn(dictionary, value) ? dictionary[value as keyof typeof dictionary]
+    : value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 }
 
 export function statusTone(value: string): StatusTone {

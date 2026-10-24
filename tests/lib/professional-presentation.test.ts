@@ -9,6 +9,12 @@ describe("professional status presentation", () => {
     expect(statusLabel("prospective_client", "cs")).toBe("Potenciální klient");
     expect(statusLabel("planned", "en")).toBe("Planned");
   });
+  it("never returns inherited functions or objects as unknown status labels", () => {
+    for (const lang of ["en", "cs"] as const) for (const value of ["constructor", "toString", "valueOf", "__proto__", "hasOwnProperty", "new_status"]) {
+      expect(typeof statusLabel(value, lang)).toBe("string"); expect(statusTone(value)).toBe("neutral");
+    }
+    expect(statusLabel("new_status", "en")).toBe("New status"); expect(statusLabel("constructor", "cs")).toBe("Constructor");
+  });
 
   it("labels the VAT verification states in both locales", () => {
     expect(statusLabel("vat_valid", "en")).toBe("VAT valid");

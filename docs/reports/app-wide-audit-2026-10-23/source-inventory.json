@@ -662,7 +662,8 @@
       "path": "src/components/brand-mark.tsx",
       "lines": 22,
       "sha256": "c0679f9833460adb994c09923887567d3bd84732f486e4c5c954596c7196960a",
-      "status": "pending"
+      "status": "source reviewed; deterministic decorative/named icon semantics and existing semantic styling checked; final rendered release pending",
+      "reviewedSha256": "c0679f9833460adb994c09923887567d3bd84732f486e4c5c954596c7196960a"
     },
     {
       "path": "src/components/calendar/calendar-picker.tsx",
@@ -675,7 +676,8 @@
       "path": "src/components/calendar/relink-cta.tsx",
       "lines": 43,
       "sha256": "ee834e27196704753ae54cce1df5f86110ecfac392865a372f9c5820915a1195",
-      "status": "pending"
+      "status": "partial; pending/error flow read; synchronous repeat guard, rejected/hung OAuth recovery and announced safe errors need fixing in review.md",
+      "reviewedSha256": "ee834e27196704753ae54cce1df5f86110ecfac392865a372f9c5820915a1195"
     },
     {
       "path": "src/components/calendar/week-view.tsx",
@@ -828,7 +830,8 @@
       "path": "src/components/icons/github.tsx",
       "lines": 28,
       "sha256": "18cd6cefd36b8290c44a58814733263ba5e6de4875153cd0209511b18838f06a",
-      "status": "pending"
+      "status": "source reviewed; static SVG, ref/prop forwarding and decorative semantics checked; final rendered release pending",
+      "reviewedSha256": "18cd6cefd36b8290c44a58814733263ba5e6de4875153cd0209511b18838f06a"
     },
     {
       "path": "src/components/invoices/invoice-detail.tsx",
@@ -856,7 +859,8 @@
       "path": "src/components/invoices/status-badge.tsx",
       "lines": 16,
       "sha256": "9ac6b8f50bf0fa0337984fccb79b140c294d54d245f30b25b8a7972cfe964041",
-      "status": "pending"
+      "status": "source reviewed; shared semantic badge and complete bilingual invoice labels checked; final release pending",
+      "reviewedSha256": "9ac6b8f50bf0fa0337984fccb79b140c294d54d245f30b25b8a7972cfe964041"
     },
     {
       "path": "src/components/invoices/supplier-settings.tsx",
@@ -1591,7 +1595,8 @@
       "path": "src/components/subscriptions/subscription-icon.tsx",
       "lines": 60,
       "sha256": "c30fdfb3c8ba14bd2e12320a4b513097e29c90a1b253d9ef6a4762b5d159d6ce",
-      "status": "pending"
+      "status": "source reviewed; deterministic local brand/monogram tiles and decorative semantics checked; final rendered release pending",
+      "reviewedSha256": "c30fdfb3c8ba14bd2e12320a4b513097e29c90a1b253d9ef6a4762b5d159d6ce"
     },
     {
       "path": "src/components/tasks/task-tags.tsx",
@@ -1769,7 +1774,8 @@
       "path": "src/lib/about-project.ts",
       "lines": 1,
       "sha256": "21364de6565d420a0a6eeaca1f1e2e5be789c67920ece8d896fcfa08c98af873",
-      "status": "pending"
+      "status": "source reviewed; canonical about-project.md filename matches the documented repository contract",
+      "reviewedSha256": "21364de6565d420a0a6eeaca1f1e2e5be789c67920ece8d896fcfa08c98af873"
     },
     {
       "path": "src/lib/bank-csv.ts",
@@ -1925,9 +1931,10 @@
     },
     {
       "path": "src/lib/competition.ts",
-      "lines": 53,
+      "lines": 55,
       "sha256": "c0b1df04bca4cbc2ba6118511a1e2a978e31d2cabc01e84d09deb9974d0c6969",
-      "status": "pending"
+      "status": "source reviewed; strict Gregorian freshness, local calendar boundary, stale counts and sort checks pass; final release pending",
+      "reviewedSha256": "4f06451e861b32ad4ac11a432584e1c86b9f2358baae56ece4b12f634820a0dd"
     },
     {
       "path": "src/lib/cron-auth.ts",
@@ -2030,9 +2037,10 @@
     },
     {
       "path": "src/lib/freelance.ts",
-      "lines": 35,
+      "lines": 39,
       "sha256": "7a646fb301007daa4e7f063eb65b0f58b8d6ec20d804661b27dbb7301a7e6c29",
-      "status": "pending"
+      "status": "source reviewed; bounded HTTPS links and single-pass submission/reply/win cohorts checked; final release pending",
+      "reviewedSha256": "ed3093f92de1c814c5b062b2dfa20be6a494e49398c9ef09679564fa8078c9be"
     },
     {
       "path": "src/lib/fx.ts",
@@ -3440,9 +3448,10 @@
     },
     {
       "path": "src/lib/notifications.ts",
-      "lines": 22,
+      "lines": 25,
       "sha256": "b2bbdabb7331e45b467be4604d79a58962a29c43d3b810c3e3080a1c18b93305",
-      "status": "pending"
+      "status": "partial; bounded same-origin local links, credential/control guards and visibility cases checked; consumer clock/lifecycle review pending",
+      "reviewedSha256": "e055b32308bbae77a76361b1b6008ec105b93f1767425c2fac4962c67b8a6312"
     },
     {
       "path": "src/lib/on-demand-load.ts",
@@ -3606,9 +3615,10 @@
     },
     {
       "path": "src/lib/status-presentation.ts",
-      "lines": 45,
+      "lines": 47,
       "sha256": "3f1e4168aa5056d8c6b01a262ba399a5c92c9f6600e3b5b0500a86a2fbfee2e7",
-      "status": "pending"
+      "status": "source reviewed; bilingual labels, semantic tones and inherited-property fallback checked; final release pending",
+      "reviewedSha256": "5c717864bd9d088fcaa1c8982635d73bc32d963cac37a587824f8ead418cf11c"
     },
     {
       "path": "src/lib/subscription-brands.ts",
@@ -3662,7 +3672,8 @@
       "path": "src/lib/tag-colors.ts",
       "lines": 33,
       "sha256": "c6546f238515efe3f43493a4d7f6cc9829a1a5223038901598ba706b7de7e319",
-      "status": "pending"
+      "status": "source reviewed; deterministic hash, semantic surface/foreground mixtures and no I/O checked; final contrast/release matrix pending",
+      "reviewedSha256": "c6546f238515efe3f43493a4d7f6cc9829a1a5223038901598ba706b7de7e319"
     },
     {
       "path": "src/lib/task-meta.ts",

@@ -66,6 +66,11 @@ describe("competitor review freshness", () => {
     // A review dated in the future (a planned re-check) is never stale.
     expect(competitorReviewState("2026-12-01", now)).toBe("fresh");
   });
+  it("rejects impossible Gregorian dates instead of normalizing them into a fresh review", () => {
+    for (const date of ["2026-02-29", "2026-02-31", "2026-04-31", "1900-02-29", "2026-00-12", "2026-13-01", "2026-01-00", "2026-01-32", "2026-2-01", "2026-02-01T00:00:00Z"]) expect(competitorReviewState(date, now)).toBe("never");
+    expect(competitorReviewState("2000-02-29", new Date("2000-03-01T00:01:00"))).toBe("fresh");
+    expect(competitorReviewState("2024-02-29", now)).toBe("stale");
+  });
 
   it("counts the rows a refresh filter would show", () => {
     const list = [

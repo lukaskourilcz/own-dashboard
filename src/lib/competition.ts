@@ -1,4 +1,4 @@
-import { daysUntilDate } from "@/lib/date-keys";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { Competitor } from "@/lib/types";
 
 /**
@@ -19,14 +19,16 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
  * Freshness of one `reviewed_at` value against a clock the caller owns.
  *
  * `reviewed_at` is a Postgres `date`, so it is compared through
- * `daysUntilDate`, which parses it in local time. Parsing it with `new Date()`
+ * strict local-calendar parsing. Parsing it with `new Date()`
  * would read it as UTC midnight and drift the verdict by a day either side of
  * the boundary. A missing or malformed value is "never" rather than stale, so
  * the reader can tell "nobody has checked" from "checked, long ago".
  */
 export function competitorReviewState(reviewedAt: string | null | undefined, now: Date): CompetitorReviewState {
   if (!reviewedAt || !DATE_ONLY.test(reviewedAt)) return "never";
-  const days = daysUntilDate(reviewedAt, now);
+  // parseISO rejects impossible days instead of normalizing February 31 into
+  // March. It retains local midnight and the calendar-day/DST comparison.
+  const days = differenceInCalendarDays(parseISO(reviewedAt), now);
   if (Number.isNaN(days)) return "never";
   return -days >= COMPETITOR_REVIEW_STALE_DAYS ? "stale" : "fresh";
 }
