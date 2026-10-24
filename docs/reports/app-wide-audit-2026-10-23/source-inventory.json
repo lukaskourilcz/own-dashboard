@@ -1524,10 +1524,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1478,
+      "lines": 1484,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partial: source imports, stable group keys and shared task identity checked; manual task CRUD/version receipts remain",
-      "reviewedSha256": "72ef810f5808c7eb88210fb4a1245e4dfa70303f6377e1e8b5d026001ab6b103"
+      "status": "partially reviewed; task identity/grouping, time bounds and named core controls checked; confirmed manual mutations, draft/pending lifecycle, lists and remaining source/release review pending",
+      "reviewedSha256": "a193d3d0bbcfb2f0d25b4eef31ad2cc4f5c4f2493ac86d92c1dfe89eaf0ac09a"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -2019,7 +2019,8 @@
       "path": "src/lib/category-rules.ts",
       "lines": 62,
       "sha256": "6c8200a4c59ba8ff1f6a70d4caad43703a0e6cc82afff977d59f0d2e25cb94ac",
-      "status": "pending"
+      "status": "source reviewed; unchanged legacy keyword precedence/bridge behavior covered; canonical financial engine remains separate; final release pending",
+      "reviewedSha256": "6c8200a4c59ba8ff1f6a70d4caad43703a0e6cc82afff977d59f0d2e25cb94ac"
     },
     {
       "path": "src/lib/changelog.ts",
@@ -2101,7 +2102,8 @@
       "path": "src/lib/dashboard-layout.ts",
       "lines": 116,
       "sha256": "7160e60c6d92153246cd517c1955dc63f4fff53006452b555cbb0249a7674693",
-      "status": "pending"
+      "status": "source reviewed; known widget/layout normalization, immutable add/remove/move and finite integer index cases checked; final release pending",
+      "reviewedSha256": "a3a8349567372be164e9b8aebcf6bf4c2410e5e46af5c60a42a489065b7c8180"
     },
     {
       "path": "src/lib/database-version.ts",
@@ -2698,9 +2700,10 @@
     },
     {
       "path": "src/lib/jobs/pipeline.ts",
-      "lines": 38,
+      "lines": 45,
       "sha256": "ff9e8b89df099a9d53f10dd7256f225005f29b03279657553b9b70cfb59897c6",
-      "status": "pending"
+      "status": "source reviewed; bounded canonical letter links, explicit text-draft readiness and owned response-label keys checked; final release pending",
+      "reviewedSha256": "335465dbf08088d2b66e17c0687114689c1aec946810c670eaaa1210c68b8c07"
     },
     {
       "path": "src/lib/jobs/prune.ts",
@@ -4024,9 +4027,10 @@
     },
     {
       "path": "src/lib/task-meta.ts",
-      "lines": 64,
+      "lines": 68,
       "sha256": "422879b4f96468956e39053d738eac118e9985c98b821f80a1bf19a406d7ecf0",
-      "status": "pending"
+      "status": "source reviewed; task vocabularies, database-aligned whole-minute bounds, bounded marker parsing/formatting and retained source import cases checked; final release pending",
+      "reviewedSha256": "b60a984881214eb0b07d9e1bbc6f4415f7a69fa7910b5168c008edf3ae5cd6bc"
     },
     {
       "path": "src/lib/tax-registry.ts",

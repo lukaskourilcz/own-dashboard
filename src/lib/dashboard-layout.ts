@@ -99,7 +99,7 @@ export function withoutWidget(
 }
 
 /**
- * Move the widget at index `from` to index `to` (both clamped into range).
+ * Move between finite integer indices, clamping the target into range.
  * Returns a fresh array; a no-op move returns an equivalent copy.
  */
 export function moveWidget(
@@ -108,7 +108,7 @@ export function moveWidget(
   to: number,
 ): WidgetId[] {
   const next = [...layout];
-  if (from < 0 || from >= next.length) return next;
+  if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from >= next.length) return next;
   const target = Math.max(0, Math.min(to, next.length - 1));
   const [moved] = next.splice(from, 1);
   next.splice(target, 0, moved);

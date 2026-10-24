@@ -136,6 +136,12 @@ describe("moveWidget", () => {
     expect(out).not.toBe(base);
   });
 
+  it("does not reinterpret non-finite or fractional indices as another widget", () => {
+    for (const [from,to] of [[NaN,2],[0,NaN],[Infinity,1],[1,-Infinity],[.5,2],[2,1.5]]) {
+      const result=moveWidget(base,from,to); expect(result).toEqual(base); expect(result).not.toBe(base);
+    }
+  });
+
   it("does not mutate the input", () => {
     moveWidget(base, 0, 2);
     expect(base).toEqual(["kpi", "todos", "work-attention", "calendar"]);

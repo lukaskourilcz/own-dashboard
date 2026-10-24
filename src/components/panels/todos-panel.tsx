@@ -61,6 +61,8 @@ import {
 } from "@/lib/needed-sync";
 import { TaskTags } from "@/components/tasks/task-tags";
 import {
+  MAX_TASK_MINUTES,
+  isTaskMinutes,
   TASK_KINDS,
   TIME_BUCKETS,
   type TaskKind,
@@ -122,6 +124,8 @@ export function TodosPanel({
 
   const addMutation = useMutation({
     mutationFn: async () => {
+      const minutes = newMinutes.trim() ? Number(newMinutes) : null;
+      if (minutes !== null && !isTaskMinutes(minutes)) throw Error("Invalid task estimate");
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
@@ -130,7 +134,7 @@ export function TodosPanel({
           title: title.trim(),
           due_date: dueDate || null,
           importance: newImportance ? Number(newImportance) : null,
-          estimated_minutes: newMinutes ? Number(newMinutes) : null,
+          estimated_minutes: minutes,
           task_kind: newKind || null,
           is_global: isGlobal,
           project_id: isGlobal ? null : projectId || null,
@@ -1301,6 +1305,8 @@ function AddTaskDialog({
                     id="todo-add-time"
                     type="number"
                     min={1}
+                    max={MAX_TASK_MINUTES}
+                    step={1}
                     inputMode="numeric"
                     placeholder="30"
                     value={newMinutes}

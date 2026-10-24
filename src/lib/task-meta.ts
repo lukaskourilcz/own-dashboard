@@ -37,9 +37,13 @@ export const TIME_BUCKETS = [
 
 export type TimeBucketId = (typeof TIME_BUCKETS)[number]["id"];
 
+/** Matches the existing todos.estimated_minutes database constraint. */
+export const MAX_TASK_MINUTES = 100_000;
+export const isTaskMinutes = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value <= MAX_TASK_MINUTES;
+
 /** Compact human duration: 45 → "45m", 120 → "2h", 90 → "1h 30m". */
 export function formatMinutes(minutes: number): string {
-  if (!Number.isFinite(minutes) || minutes <= 0) return "";
+  if (!isTaskMinutes(minutes)) return "";
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
@@ -52,13 +56,13 @@ export function formatMinutes(minutes: number): string {
  */
 export function parseTimeToMinutes(raw: string): number | null {
   const value = raw.trim().toLowerCase();
-  if (!value) return null;
+  if (!value || value.length > 64) return null;
   if (/^\d+$/.test(value)) {
     const n = Number(value);
-    return n > 0 ? n : null;
+    return isTaskMinutes(n) ? n : null;
   }
   const match = value.match(/^(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?$/);
   if (!match || (!match[1] && !match[2])) return null;
   const total = (Number(match[1] ?? 0) * 60) + Number(match[2] ?? 0);
-  return total > 0 ? total : null;
+  return isTaskMinutes(total) ? total : null;
 }
