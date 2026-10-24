@@ -35,7 +35,7 @@ it.each(["consent", "throw"])("marks %s failure in the response and log, without
   else state.sync.mockRejectedValue(new Error("Synthetic private upstream detail"));
   const response = await GET(request()); expect(response.status).toBe(502);
   expect(await response.json()).toMatchObject({ ok: false, failed: 1 });
-  expect(state.log).toHaveBeenCalledWith(expect.objectContaining({ status: "failure" })); expect(state.ping).not.toHaveBeenCalled();
+  expect(state.log).toHaveBeenCalledWith(expect.objectContaining({ status: "failure" }), expect.any(AbortSignal)); expect(state.ping).not.toHaveBeenCalled();
   expect(JSON.stringify(state.log.mock.calls)).not.toContain("private");
 });
 it("confirms successful pulls and preserves the configured-provider skip boundary", async () => {
@@ -50,5 +50,5 @@ it("counts the timed-out and remaining connections as failed and sends no succes
   state.sync.mockResolvedValueOnce({ status: "linked", inserted: 2 }).mockImplementationOnce(() => new Promise(() => undefined));
   const pending = GET(request()); await vi.waitFor(() => expect(state.sync).toHaveBeenCalledTimes(2)); state.controller!.abort();
   const response = await pending; expect(response.status).toBe(502); expect(await response.json()).toMatchObject({ banks: 1, inserted: 2, failed: 2, ok: false });
-  expect(state.sync).toHaveBeenCalledTimes(2); expect(state.ping).not.toHaveBeenCalled(); expect(state.log).toHaveBeenCalledWith(expect.objectContaining({ status: "failure" }));
+  expect(state.sync).toHaveBeenCalledTimes(2); expect(state.ping).not.toHaveBeenCalled(); expect(state.log).toHaveBeenCalledWith(expect.objectContaining({ status: "failure" }), expect.any(AbortSignal));
 });

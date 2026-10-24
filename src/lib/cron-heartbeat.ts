@@ -48,19 +48,20 @@ export function expectedIntervalMs(
   if (fields.length !== 5) return fallback;
 
   const [minute, hour, dayOfMonth, month, dayOfWeek] = fields;
+  const everyDate = dayOfMonth === "*" && month === "*" && dayOfWeek === "*";
 
   // A step in the minute field, e.g. */15 * * * * — every 15 minutes.
   const minuteStep = stepOf(minute);
-  if (minuteStep !== null && hour === "*") return minuteStep * MINUTE;
-  if (minute === "*" && hour === "*") return MINUTE;
+  if (everyDate && minuteStep !== null && minuteStep <= 59 && hour === "*") return minuteStep * MINUTE;
+  if (everyDate && minute === "*" && hour === "*") return MINUTE;
 
   // A step in the hour field, e.g. 0 */4 * * * — every 4 hours.
   const hourStep = stepOf(hour);
-  if (isFixed(minute) && hourStep !== null) return hourStep * HOUR;
-  if (isFixed(minute) && hour === "*") return HOUR;
+  if (everyDate && isFixed(minute) && hourStep !== null && hourStep <= 23) return hourStep * HOUR;
+  if (everyDate && isFixed(minute) && hour === "*") return HOUR;
 
   // From here the time of day is fixed, so the date fields set the period.
-  if (!isFixed(minute) || !isFixed(hour)) return fallback;
+  if (!isFixed(minute) || !isFixed(hour, 0, 23)) return fallback;
   if (month !== "*") return fallback;
 
   // Daily: 0 6 * * *
@@ -71,7 +72,7 @@ export function expectedIntervalMs(
     return days > 0 ? (7 * DAY) / days : fallback;
   }
   // Monthly: 0 7 1 * *
-  if (dayOfWeek === "*" && isFixed(dayOfMonth)) return MONTH;
+  if (dayOfWeek === "*" && isFixed(dayOfMonth, 1, 31)) return MONTH;
 
   return fallback;
 }
@@ -188,8 +189,8 @@ export function parseUptimeKumaEvent(
 
 /* ---- field helpers ------------------------------------------------------- */
 
-function isFixed(field: string): boolean {
-  return /^\d+$/.test(field);
+function isFixed(field: string, min = 0, max = 59): boolean {
+  return /^\d+$/.test(field) && Number(field) >= min && Number(field) <= max;
 }
 
 /** The N of a star-slash-N step field, or null when the field is not one. */
@@ -202,18 +203,18 @@ function stepOf(field: string): number | null {
 
 /** How many weekdays `0`, `1-5` or `1,3,5` selects; 0 when unreadable. */
 function countDayOfWeek(field: string): number {
-  let total = 0;
+  const days = new Set<number>();
   for (const part of field.split(",")) {
     const range = /^(\d+)-(\d+)$/.exec(part);
     if (range) {
       const from = Number(range[1]);
       const to = Number(range[2]);
-      if (to < from) return 0;
-      total += to - from + 1;
+      if (to < from || from < 0 || to > 7) return 0;
+      for (let day = from; day <= to; day++) days.add(day % 7);
       continue;
     }
-    if (!isFixed(part)) return 0;
-    total += 1;
+    if (!isFixed(part, 0, 7)) return 0;
+    days.add(Number(part) % 7);
   }
-  return total;
+  return days.size;
 }

@@ -60,6 +60,13 @@ describe("expectedIntervalMs", () => {
       30 * DAY,
     );
   });
+  it.each(["*/15 * * * 1", "0 */4 * JAN *", "0 * 1 * *", "90 6 * * *", "0 25 * * *", "0 7 0 * *", "0 7 * * 8", "0 7 * * 0-8"])("uses the owner's coarse interval for restricted or invalid %s", schedule => {
+    expect(expectedIntervalMs(cron({ schedule, runs_per_month: 15 }))).toBe(2 * DAY);
+  });
+  it("counts each selected weekday once, with both Sunday aliases", () => {
+    expect(expectedIntervalMs(cron({ schedule: "0 7 * * 0,7" }))).toBe(7 * DAY);
+    expect(expectedIntervalMs(cron({ schedule: "0 7 * * 1-5,5" }))).toBe(7 * DAY / 5);
+  });
 });
 
 describe("cronHeartbeatState", () => {

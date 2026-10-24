@@ -84,13 +84,14 @@ export async function GET(request: Request) {
     if (failed === 0) {
       await pingHeartbeat(heartbeatUrlForJob("bank-sync"));
     }
+    const logSignal = AbortSignal.timeout(5_000);
     await awaitWithSignal(logCronRun({
       name: "Bank sync",
       endpoint: "/api/cron/bank-sync",
       source: "vercel",
       status: failed > 0 ? "failure" : "success",
       detail: `inserted ${inserted}, failed ${failed}, skipped ${skipped}, expired ${lapsed}`,
-    }), AbortSignal.timeout(5_000)).catch(() => undefined);
+    }, logSignal), logSignal).catch(() => undefined);
     return NextResponse.json({
       ok: failed === 0,
       banks,

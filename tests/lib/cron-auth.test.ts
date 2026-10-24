@@ -188,15 +188,15 @@ describe("/api/crons registry and log", () => {
     expect((await log("Bearer registry-token")).status).toBe(503);
   });
 
-  it("log refuses a wrong token and accepts the right one", async () => {
+  it("log refuses a wrong token and does not acknowledge unavailable recording", async () => {
     process.env.CRON_REGISTRY_TOKEN = "registry-token";
     process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
     expect((await log()).status).toBe(403);
     expect((await log("Bearer wrong")).status).toBe(403);
     expect((await log("registry-token")).status).toBe(403);
     const res = await log("Bearer registry-token");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "Run recording unconfirmed." });
   });
 });
 
