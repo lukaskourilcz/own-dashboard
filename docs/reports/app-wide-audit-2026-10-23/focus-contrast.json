@@ -1,0 +1,1810 @@
+{
+  "scope": "Native fixture controls only; CSS color composition, not a production-wide accessibility certification. Ratios use unrounded calculations from browser color values; the canvas resolves colors at 8-bit precision. No owner content, provider or credential is read.",
+  "before": {
+    "commit": "c058c9c",
+    "cssSha256": "58d13bc36a16084e1674ef792659c5ff2cb49275c5f836b62ffa782e66b5b5ed",
+    "samples": [
+      {
+        "control": "button",
+        "width": 360,
+        "focusVisible": true,
+        "shadow": "rgba(0, 122, 255, 0.28) 0px 0px 0px 3px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          243,
+          244,
+          246,
+          1
+        ],
+        "ratio": 1.4225220847521691,
+        "hasRing": true
+      },
+      {
+        "control": "button",
+        "width": 430,
+        "focusVisible": true,
+        "shadow": "rgba(0, 122, 255, 0.28) 0px 0px 0px 3px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          243,
+          244,
+          246,
+          1
+        ],
+        "ratio": 1.4225220847521691,
+        "hasRing": true
+      },
+      {
+        "control": "button",
+        "width": 768,
+        "focusVisible": true,
+        "shadow": "rgba(0, 122, 255, 0.28) 0px 0px 0px 3px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          243,
+          244,
+          246,
+          1
+        ],
+        "ratio": 1.4225220847521691,
+        "hasRing": true
+      },
+      {
+        "control": "button",
+        "width": 1024,
+        "focusVisible": true,
+        "shadow": "rgba(0, 122, 255, 0.28) 0px 0px 0px 3px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          243,
+          244,
+          246,
+          1
+        ],
+        "ratio": 1.4225220847521691,
+        "hasRing": true
+      },
+      {
+        "control": "button",
+        "width": 1440,
+        "focusVisible": true,
+        "shadow": "rgba(0, 122, 255, 0.28) 0px 0px 0px 3px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          243,
+          244,
+          246,
+          1
+        ],
+        "ratio": 1.4225220847521691,
+        "hasRing": true
+      },
+      {
+        "control": "button",
+        "width": 1728,
+        "focusVisible": true,
+        "shadow": "rgba(0, 122, 255, 0.28) 0px 0px 0px 3px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          243,
+          244,
+          246,
+          1
+        ],
+        "ratio": 1.4225220847521691,
+        "hasRing": true
+      },
+      {
+        "control": "input",
+        "width": 1728,
+        "focusVisible": true,
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 122, 255, 0.28) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "ratio": 1.4475394304860336,
+        "hasRing": true
+      },
+      {
+        "control": "textarea",
+        "width": 1728,
+        "focusVisible": true,
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 122, 255, 0.28) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "ratio": 1.4475394304860336,
+        "hasRing": true
+      },
+      {
+        "control": "select",
+        "width": 1728,
+        "focusVisible": true,
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 122, 255, 0.28) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+        "ring": [
+          0,
+          122,
+          255,
+          0.2784313725490196
+        ],
+        "background": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "ratio": 1.4475394304860336,
+        "hasRing": true
+      }
+    ]
+  },
+  "after": {
+    "cssSha256": "8fe5e6987d9fa269e3fc0c34c6b22ae118c5939f321316f08b180f1865a15b0a",
+    "samples": {
+      "app-audit-focus-light-en-desktop": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            249.86666666666667,
+            249.86666666666667,
+            249.86666666666667,
+            1
+          ],
+          "ratio": 5.805515636804823,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-light-en-mobile": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            249.86666666666667,
+            249.86666666666667,
+            249.86666666666667,
+            1
+          ],
+          "ratio": 5.805515636804823,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-light-cs-desktop": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            249.86666666666667,
+            249.86666666666667,
+            249.86666666666667,
+            1
+          ],
+          "ratio": 5.805515636804823,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-light-cs-mobile": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            243,
+            244,
+            246,
+            1
+          ],
+          "ratio": 5.512491898563234,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 95, 199) 0px 0px 0px 2px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            255,
+            255,
+            255,
+            1
+          ],
+          "ratio": 6.066580125878209,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(0, 95, 199) 0px 0px 0px 3px",
+          "ring": [
+            0,
+            95,
+            199,
+            1
+          ],
+          "background": [
+            249.86666666666667,
+            249.86666666666667,
+            249.86666666666667,
+            1
+          ],
+          "ratio": 5.805515636804823,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-dark-en-desktop": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            24.623529411764707,
+            27.6235294117647,
+            30.92549019607843,
+            1
+          ],
+          "ratio": 8.00926078262305,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-dark-en-mobile": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            24.623529411764707,
+            27.6235294117647,
+            30.92549019607843,
+            1
+          ],
+          "ratio": 8.00926078262305,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-dark-cs-desktop": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            24.623529411764707,
+            27.6235294117647,
+            30.92549019607843,
+            1
+          ],
+          "ratio": 8.00926078262305,
+          "hasRing": true
+        }
+      ],
+      "app-audit-focus-dark-cs-mobile": [
+        {
+          "control": "button",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 430,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 768,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1024,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1440,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "button",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            16,
+            18,
+            20,
+            1
+          ],
+          "ratio": 8.753789012502079,
+          "hasRing": true
+        },
+        {
+          "control": "input",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "textarea",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "select",
+          "width": 1728,
+          "focusVisible": true,
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(141, 180, 229) 0px 0px 0px 2px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            28,
+            32,
+            36,
+            1
+          ],
+          "ratio": 7.6416854068517654,
+          "hasRing": true
+        },
+        {
+          "control": "checkbox",
+          "width": 360,
+          "focusVisible": true,
+          "shadow": "rgb(141, 180, 229) 0px 0px 0px 3px",
+          "ring": [
+            141,
+            180,
+            229,
+            1
+          ],
+          "background": [
+            24.623529411764707,
+            27.6235294117647,
+            30.92549019607843,
+            1
+          ],
+          "ratio": 8.00926078262305,
+          "hasRing": true
+        }
+      ]
+    }
+  }
+}

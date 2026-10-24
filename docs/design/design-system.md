@@ -72,7 +72,7 @@ Unequal Library groups use masonry-style CSS columns with `break-inside: avoid`;
 
 ## Accessibility
 
-Target WCAG 2.2 AA. Preserve visible focus, logical focus order, Radix focus traps, Escape behavior, labels/error associations, semantic headings/landmarks/tables, reduced motion, zoom/reflow, touch targets, and non-color statuses. Loading and generation need names or live status. Decorative media uses empty alt/hidden semantics; explanatory media needs localized alternatives. Never put essential copy in an image.
+Target WCAG 2.2 AA. Preserve visible focus, logical focus order, Radix focus traps, Escape behavior, labels/error associations, semantic headings/landmarks/tables, reduced motion, zoom/reflow, touch targets, and non-color statuses. The shared focus token uses the opaque semantic information color; do not lower its opacity below 3:1 against adjacent surfaces. Forced colors must retain a system-color outline because shadows can disappear. Loading and generation need names or live status. Decorative media uses empty alt/hidden semantics; explanatory media needs localized alternatives. Never put essential copy in an image.
 
 ## UX writing and states
 

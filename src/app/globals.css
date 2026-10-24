@@ -67,7 +67,7 @@
   --chart-4: #34c759;
   --chart-5: #af52de;
 
-  --ring: rgba(0, 122, 255, 0.28);
+  --ring: var(--information);
 
   /* macOS semantic accents */
   --mac-blue: #007aff;
@@ -175,7 +175,7 @@
   --chart-4: #70bf8f;
   --chart-5: #d69d8c;
 
-  --ring: rgba(141, 180, 229, 0.4);
+  --ring: var(--information);
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -450,6 +450,15 @@ textarea {
   outline: none;
   &:focus-visible {
     box-shadow: 0 0 0 3px var(--ring);
+  }
+}
+
+/* Forced colors suppress box shadows. Keep keyboard focus visible using the
+   owner's system palette, including controls with custom outline resets. */
+@media (forced-colors: active) {
+  :is(.focus-ring, button, a, input, select, textarea, [tabindex], summary):focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
   }
 }
 

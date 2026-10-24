@@ -630,10 +630,10 @@
     },
     {
       "path": "src/app/globals.css",
-      "lines": 776,
+      "lines": 785,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; low-contrast/forced-color focus, editor font consistency and final shared/print verification pending",
-      "reviewedSha256": "58d13bc36a16084e1674ef792659c5ff2cb49275c5f836b62ffa782e66b5b5ed"
+      "status": "partial; complete CSS source inspected; finding 171 focus contrast/forced colors checked; native color scheme, editor font consistency and final shared/print verification pending",
+      "reviewedSha256": "8fe5e6987d9fa269e3fc0c34c6b22ae118c5939f321316f08b180f1865a15b0a"
     },
     {
       "path": "src/app/guest/page.tsx",

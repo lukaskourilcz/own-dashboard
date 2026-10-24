@@ -46,7 +46,8 @@ Finding 163 closes native preview policy, startup/cancellation/disposal and reco
 
 ## Shared styles and focus
 
-- The complete 776-line stylesheet is inspected. Its translucent focus token composites to about 1.45:1 on a white surface and 2.39:1 on the dark surface. Verify actual native button/field focus against the current W3C 3:1 guidance and preserve a visible outline when forced colors suppress shadows. This is distinct from ordinary axe text checks.
+- Finding 171 closes the translucent focus token and missing forced-color outline. Native button/field/checkbox samples now exceed 5.51:1, and forced colors retain a system outline. Remaining whole-app focus geometry, font consistency and print verification are separate from these measured states.
+- The dark Calendar screenshots expose black native date/time picker glyphs. The app does not declare its selected `color-scheme`; verify native controls against opposite OS theme preferences before changing it, preserving fixed invoice paper.
 - The July CLAUDE layout summary had old 224/52 px dimensions and 20/30 px insets. Git history confirms the owner's 16 October design-system update adopted the implemented 232/56 px dimensions and 16/20 px insets; the control summary now matches that approved contract. No layout or padding changed during this reconciliation.
 - BlockNote explicitly prefers Geist before the native UI stack, while normal body copy uses the native stack. Review the editor/font-sans callers together before changing inherited metrics; invoice print/A4 and existing diagram/media fonts need their separate checks. The operational-grid treatment is used on Home, Login and not-found, so it is not dead CSS.
 
