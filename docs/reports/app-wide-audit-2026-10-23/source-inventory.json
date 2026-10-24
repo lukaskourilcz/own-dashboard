@@ -5,37 +5,36 @@
     {
       "path": "instrumentation.ts",
       "sha256": "69357a59e8ac36530a66866d6fd73e12b5b97e1df6b40719844ccabfc2b8350c",
-      "lines": 10,
-      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
-      "reviewedSha256": "69357a59e8ac36530a66866d6fd73e12b5b97e1df6b40719844ccabfc2b8350c"
+      "lines": 15,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "2e21dd330fa5e75b9f817b1a530666d8641d056a45661068de3e85efa51de662"
     },
     {
       "path": "next.config.ts",
       "sha256": "a1fcd8a78a6e709b0d8b0c1cf7203acc660db6150e4f4a5a6b754af9f7a772b1",
       "lines": 125,
-      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
-      "reviewedSha256": "a91045c76066aca1d6f297e79d481148e78dfb3d98f5194ca0f049e4006ed3ea"
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "0d264630461ccff022bc19d4b8deb0d2e87ce50cea200b7cdc4cb27de2aac2a7"
     },
     {
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
-      "reviewedSha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
     },
     {
       "path": "sentry.edge.config.ts",
       "sha256": "f3f54b40ffe4b871f1cfdea83b9073dcc8dbd9209c89425080750eab2a00b660",
-      "lines": 10,
-      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
-      "reviewedSha256": "f3f54b40ffe4b871f1cfdea83b9073dcc8dbd9209c89425080750eab2a00b660"
+      "lines": 4,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "76f355bb3c8dc08e177611f103a057f8068142b25b5b65b2fbcb0e8a6d27936e"
     },
     {
       "path": "sentry.server.config.ts",
       "sha256": "60a155218886da109a524e944a5a1e1f97ab2e8bb8dad202f42c67c7561df48e",
-      "lines": 11,
-      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
-      "reviewedSha256": "60a155218886da109a524e944a5a1e1f97ab2e8bb8dad202f42c67c7561df48e"
+      "lines": 4,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "76f355bb3c8dc08e177611f103a057f8068142b25b5b65b2fbcb0e8a6d27936e"
     },
     {
       "path": "src/app/[[...slug]]/loading.tsx",
@@ -108,10 +107,10 @@
     },
     {
       "path": "src/app/api/calendar/event/route.ts",
-      "lines": 197,
+      "lines": 112,
       "sha256": "8309195d5ce5c7c235600af9ca72fed3769c1bc3fb959e9b2b9d3c0b8fefb488",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "2d8497a5ed0f63f98cdcffb45befb4ca867caff64496774177d01a6f6656e1d0"
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "97244f15116530b4b56e0103309c2bdc650e87bc00208fed4b258b817689acf6"
     },
     {
       "path": "src/app/api/calendar/events/route.ts",
@@ -1463,10 +1462,10 @@
     },
     {
       "path": "src/components/posthog-provider.tsx",
-      "lines": 37,
+      "lines": 50,
       "sha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481",
-      "status": "source reviewed; conditional SDK/failure tests and optimized anonymous transfer measurements passed; final app-wide release pending",
-      "reviewedSha256": "7a608b5c7cd63b26a277e06e5225aeb666a29929a857d7bc1bfca090385674b2"
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "9f11a8d4a4e380905fa09a8e9e335ca861728e055f6b4fd13cc10f34af16ac5f"
     },
     {
       "path": "src/components/preference-hydrator.tsx",
@@ -3714,6 +3713,34 @@
       "sha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9",
       "status": "source read; public metadata and authentication matcher verification pending",
       "reviewedSha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9"
+    },
+    {
+      "path": "instrumentation-client.ts",
+      "sha256": null,
+      "lines": 16,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "195e97bae8ec64573ccf15822e6eb7941150c25f847cd5343a0f4a58c68b0358"
+    },
+    {
+      "path": "src/lib/sentry-privacy.ts",
+      "sha256": null,
+      "lines": 47,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "ba06d488d21d95515101a314a5f8b2c30ef1d2d5a9c15c1c90a2af16918c5aca"
+    },
+    {
+      "path": "src/lib/sentry-server.ts",
+      "sha256": null,
+      "lines": 10,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "6dbb283ebb82116e70184737ba6b8bf9bea56ecc2286fccb1f08d3d41f6dd979"
+    },
+    {
+      "path": "src/lib/telemetry-url.ts",
+      "sha256": null,
+      "lines": 20,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
+      "reviewedSha256": "f4cab5d36384cf83c85aa22fd4d08341f90351ad383ee61bf7715c36812b43dc"
     }
   ],
   "baselineFileCount": 561

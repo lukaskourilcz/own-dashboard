@@ -27,7 +27,13 @@ Outside Marketing, provider configuration is limited to the optional `JINA_API_K
 
 ## Optional browser analytics
 
-When `NEXT_PUBLIC_POSTHOG_KEY` is unset, the root provider does not import or initialize PostHog. When configured, the existing setup captures page views, page leaves and interactions, uses localStorage persistence and identified-only person profiles, and allows session replay with all inputs and text masked. The default ingestion host is EU. Analytics settings are distinct from the model-call boundary above; localStorage and masking alone do not establish consent or legal compliance. SDK loading/initialization failure does not block the application. See the provider’s [collection controls](https://posthog.com/docs/privacy/data-collection).
+When `NEXT_PUBLIC_POSTHOG_KEY` is unset, the root provider does not import or initialize PostHog. When configured, it captures page views and page leaves through an allowlist of technical properties. URL credentials, queries, fragments, project slugs and UUIDs are redacted. Automatic click capture, person profiles, session replay and remote feature-flag configuration are disabled. It uses localStorage persistence; the default ingestion host is EU. This configuration alone does not establish consent or legal compliance. SDK loading/initialization failure does not block the application. See the provider’s [collection controls](https://posthog.com/docs/privacy/data-collection).
+
+## Optional error monitoring
+
+Without a Sentry DSN, runtime instrumentation does not import or initialize the SDK. Configured installations retain technical errors and sample traces at 10%; replay is disabled. Explicit SDK collection controls disable user information, cookies, HTTP headers/bodies, query parameters, database query data, GraphQL documents/variables, model inputs/outputs, local variables and source-context lines. Export filters remove arbitrary error extras, console/click breadcrumbs and sensitive span attributes, and sanitize URLs including Fio’s credential-bearing paths. Calendar rejection diagnostics contain only a fixed operation code and HTTP status.
+
+Sentry sends directly to its ingestion host; there is no application tunnel. Browser blockers may prevent delivery. Diagnostic loading or capture failure must not replace the application response. These controls reduce collection but cannot prove arbitrary application error text contains no private data; keep errors technical and inspect configured events before broad use. See Sentry’s [collection categories](https://docs.sentry.io/platforms/javascript/guides/nextjs/data-management/data-collected/).
 
 ## Marketing-only exception (2026-10-13)
 

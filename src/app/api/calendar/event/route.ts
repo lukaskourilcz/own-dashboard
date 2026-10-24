@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
+import { captureCalendarRejection } from "@/lib/sentry-server";
 import { createClient } from "@/lib/supabase/server";
 import { fetchWithGoogleAuth } from "@/lib/google-token";
 import { rejectCrossOrigin } from "@/lib/csrf";
@@ -47,10 +47,7 @@ export async function POST(request: Request) {
 
   if (!res.ok) {
     // Keep upstream bodies out of telemetry: they can echo private event text.
-    Sentry.captureMessage("calendar.event.POST upstream rejected", {
-      level: "error",
-      extra: { status: res.status },
-    });
+    await captureCalendarRejection("POST", res.status);
     return NextResponse.json(
       { error: "Google Calendar API rejected the event.", ...(res.status >= 500 ? { reason: "unconfirmed" } : {}) },
       { status: res.status },
@@ -107,10 +104,7 @@ export async function DELETE(request: Request) {
     );
   }
 
-  Sentry.captureMessage("calendar.event.DELETE upstream rejected", {
-    level: "error",
-    extra: { status: res.status },
-  });
+  await captureCalendarRejection("DELETE", res.status);
   return NextResponse.json(
     { error: "Could not delete event." },
     { status: res.status },

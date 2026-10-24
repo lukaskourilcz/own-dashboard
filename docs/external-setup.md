@@ -81,11 +81,11 @@ The existing cron routes remain guarded by their server secrets. Do not enable n
 
 ## 8. Analytics and monitoring
 
-PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, and configure a billing limit. No code reads a PostHog feature flag, and there is no Tugedr feature-flag kill-switch in this repository.
+PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, and configure a billing limit. Only sanitized page views/leaves are enabled; replay, automatic clicks, person profiles and remote flag configuration are disabled. No code reads a PostHog feature flag, and there is no Tugedr feature-flag kill-switch in this repository.
 
 Vercel Web Analytics on a project's Overview needs a server-only `VERCEL_API_TOKEN`, plus `VERCEL_TEAM_ID` when the Vercel projects belong to a team, and Web Analytics enabled on each Vercel project. The card finds a Vercel project by its linked repository and says when the token is missing.
 
-Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and a build-time `SENTRY_AUTH_TOKEN` when source-map upload is desired. Keep `sendDefaultPii` disabled and inspect real events for private record content before broad use.
+Sentry is optional. Configure `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and a build-time `SENTRY_AUTH_TOKEN` when source-map upload is desired. The runtime uses explicit collection limits and URL/payload filters rather than the SDK’s deprecated `sendDefaultPii` switch. Replay is disabled; trace sampling is 10%. Direct ingestion avoids an application relay, but browser blockers may suppress delivery. Inspect configured events for private record content before broad use; see [AI and privacy](ai-and-privacy.md#optional-error-monitoring).
 
 ## 9. Post-deploy smoke test
 

@@ -3,7 +3,7 @@ const state = vi.hoisted(() => ({ user: true, google: vi.fn(), capture: vi.fn() 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user ? { id: "owner" } : null } }) } }) }));
 vi.mock("@/lib/google-token", () => ({ fetchWithGoogleAuth: state.google }));
-vi.mock("@sentry/nextjs", () => ({ captureMessage: state.capture }));
+vi.mock("@/lib/sentry-server", () => ({ captureCalendarRejection: state.capture }));
 import { POST, DELETE } from "@/app/api/calendar/event/route";
 import { eventEnd, eventStart } from "@/lib/calendar";
 
@@ -53,7 +53,7 @@ describe("calendar event write boundary", () => {
     const response = await POST(request(input));
     expect(response.status).toBe(500);
     expect(await response.json()).toMatchObject({ reason: "unconfirmed" });
-    expect(state.capture.mock.calls[0][1]).toEqual({ level: "error", extra: { status: 500 } });
+    expect(state.capture).toHaveBeenCalledWith("POST", 500);
   });
   it("does not report success without a confirmed event id", async () => {
     state.google.mockResolvedValue(Response.json({}));

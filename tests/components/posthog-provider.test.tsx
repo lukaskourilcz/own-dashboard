@@ -26,6 +26,7 @@ const render = async (key: string) => {
   await build({ entryPoints: ["src/components/posthog-provider.tsx"], outfile, bundle: true, format: "esm", platform: "node", jsx: "automatic",
     external: ["react", "react/jsx-runtime"], define: { "process.env.NEXT_PUBLIC_POSTHOG_KEY": JSON.stringify(key), "process.env.NEXT_PUBLIC_POSTHOG_HOST": "undefined" },
     plugins: [{ name: "isolated-analytics", setup(builder) {
+      builder.onResolve({ filter: /^@\// }, args => ({ path: join(process.cwd(), "src", args.path.slice(2) + ".ts") }));
       builder.onResolve({ filter: /^posthog-js$/ }, () => ({ path: "sdk", namespace: "isolated-sdk" }));
       builder.onLoad({ filter: /.*/, namespace: "isolated-sdk" }, () => ({ contents: "globalThis.__auditPostHog.imports++; export default globalThis.__auditPostHog.sdk;" }));
     } }],
@@ -41,12 +42,19 @@ it("loads configured analytics once under Strict Mode without delaying the app",
   await render("synthetic-public-analytics-project");
   expect(state.imports).toBe(1); expect(sdk.init).toHaveBeenCalledTimes(1);
   expect(sdk.init).toHaveBeenCalledWith("synthetic-public-analytics-project", expect.objectContaining({
-    api_host: "https://eu.i.posthog.com", persistence: "localStorage", person_profiles: "identified_only",
-    capture_pageview: true, capture_pageleave: true, autocapture: true, disable_session_recording: false,
-    session_recording: { maskAllInputs: true, maskTextSelector: "*" },
+    api_host: "https://eu.i.posthog.com", persistence: "localStorage", person_profiles: "never",
+    capture_pageview: true, capture_pageleave: true, autocapture: false, disable_session_recording: true, advanced_disable_flags: true,
   }));
 });
 it("keeps the app available after optional analytics initialization fails", async () => {
   sdk.init.mockImplementation(() => { throw new Error("Synthetic SDK failure"); });
   await render("synthetic-public-analytics-project"); expect(sdk.init).toHaveBeenCalledTimes(1);
+});
+it("allows sanitized page counts and excludes arbitrary record, identity and click properties", async () => {
+  await render("synthetic-public-analytics-project");
+  const beforeSend = sdk.init.mock.calls[0][1].before_send;
+  const event = { event: "$pageview", properties: { token: "synthetic-public-config", distinct_id: "synthetic-random-id", "$current_url": "https://app.example/projects/private-name?token=synthetic-private-query", "$pathname": "/projects/private-name", "$title": "synthetic-private-title", note: "synthetic-private-note", "$set": { email: "synthetic-private-email" } } };
+  expect(beforeSend(event).properties).toEqual({ token: "synthetic-public-config", distinct_id: "synthetic-random-id", "$current_url": "https://app.example/projects/[project]", "$pathname": "/projects/[project]" });
+  expect(beforeSend({ ...event, event: "$autocapture" })).toBeNull(); expect(beforeSend({ ...event, event: "$snapshot" })).toBeNull(); expect(beforeSend(null)).toBeNull();
+  expect(event.properties.note).toBe("synthetic-private-note");
 });
