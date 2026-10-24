@@ -23,6 +23,9 @@ const components = [
   { id: "history", title: "Repository activity", file: "src/components/projects/project-github-activity.tsx", desktop: "github-history-cs-1440.png", mobile: "github-history-cs-360.png", language: "Czech · actual card crop", captureWidth: 768,
     notes: ["The centered activity card keeps its heading, refresh and code-volume window together.", "Long author labels stay bounded while the date remains visible; counts follow the selected language. Failed refreshes retain confirmed history with Retry."],
     marks: [{ x: 1, y: 1, w: 98, h: 44, n: 1 }, { x: 1, y: 46, w: 98, h: 52, n: 2 }] },
+  { id: "feedback", title: "Notifications and mobile navigation", file: "src/components/ui/toast.tsx", desktop: "toast-feedback-cs-1440.png", mobile: "toast-feedback-cs-360.png", language: "Czech · actual notice / mobile footer crops", captureWidth: 356,
+    notes: ["Error notices clear the bottom navigation at narrow and tablet widths, including the gap between the library and app breakpoints.", "Short visible labels keep the bar steady; screen readers retain the full destination names. Close controls match the app's mobile and desktop targets."],
+    marks: [{ x: 0.5, y: 0.5, w: 99, h: 98, n: 1 }] },
   { id: "finance", title: "Money overview", file: "src/components/panels/dev-finance-panel.tsx", desktop: "dev-finance-cs-1440.png", mobile: "dev-finance-cs-360.png", language: "Czech",
     notes: ["The summary separates recurring costs, recorded payments and invoice-unconfirmed amounts.", "The monthly chart labels its current-price estimate. Detail tables have distinct headings and keyboard scrolling.", "Allocation indexes reuse calculations. Future expenses and unrelated subscription payments stay outside paid totals."],
     marks: [{ x: 18.2, y: 12.6, w: 80, h: 15.8, n: 1 }, { x: 18.2, y: 30.1, w: 80, h: 35.4, n: 2 }] },
@@ -37,7 +40,7 @@ for (const component of components) {
 const cards = components.map(component => `<article id="${component.id}" class="component">
 <div class="component-heading"><h2>${escape(component.title)}</h2><span class="status">Implemented · final release pending</span></div>
 <p class="source">${escape(component.file)} · ${escape(component.language)}</p>
-<div class="screen-scroll" role="region" aria-label="${escape(component.title)} screenshot" tabindex="0"><figure class="screen" style="max-width:${component.captureWidth ?? 1440}px;margin-inline:auto" data-desktop="assets/${component.desktop}" data-mobile="assets/${component.mobile}"><img src="assets/${component.desktop}" alt="Actual dev-preview capture of ${escape(component.title)}" loading="lazy" width="1440">
+<div class="screen-scroll" style="max-width:${component.captureWidth ?? 1440}px;margin-inline:auto" role="region" aria-label="${escape(component.title)} screenshot" tabindex="0"><figure class="screen" style="max-width:${component.captureWidth ?? 1440}px;margin-inline:auto" data-desktop="assets/${component.desktop}" data-mobile="assets/${component.mobile}"><img src="assets/${component.desktop}" alt="Actual dev-preview capture of ${escape(component.title)}" loading="lazy" width="1440">
 <div class="marks" aria-hidden="true">${component.marks.map(mark => `<span class="mark" style="left:${mark.x}%;top:${mark.y}%;width:${mark.w}%;height:${mark.h}%"><b>${mark.n}</b></span>`).join("")}</div></figure></div>
 <ol>${component.notes.map(note => `<li>${escape(note)}</li>`).join("")}</ol></article>`).join("\n");
 const rows = areas.map(area => `<tr><th scope="row">${escape(area.area)}</th><td>${escape(area.pages)}</td><td>${escape(area.state)}</td></tr>`).join("\n");
