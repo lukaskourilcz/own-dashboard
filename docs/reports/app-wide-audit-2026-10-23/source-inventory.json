@@ -832,10 +832,10 @@
     },
     {
       "path": "src/components/invoices/invoice-detail.tsx",
-      "lines": 468,
+      "lines": 481,
       "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
-      "status": "source reviewed; pending/print/reflow checks passed; legacy QR input validation follow-up pending",
-      "reviewedSha256": "a55348d6a314439e8ef0e1c4e779a788bde1822978a8c4368db336a074f77be1"
+      "status": "partial; print/document layout, payment busy/error recovery checked; QR symbols, source-loss navigation and final optimized release pending",
+      "reviewedSha256": "54802ecc5542ca7827a2e925632257f86b9088afdb1e0170233bb3cd7afad6db"
     },
     {
       "path": "src/components/invoices/invoice-editor.tsx",
@@ -1338,10 +1338,10 @@
     },
     {
       "path": "src/components/panels/invoices-panel.tsx",
-      "lines": 594,
+      "lines": 612,
       "sha256": "6ff11c70c73fff51b7bb92f61adedc34bb127dff47c1c033f82b384751e30f36",
-      "status": "source reviewed; atomic payment/deletion recovery checked; invoice draft navigation/QR follow-up and final release pending",
-      "reviewedSha256": "dba8ec1b234908a2373e4c4729cf7cab702d360d58863bfe78068ddf6ce0cab3"
+      "status": "partial; invoice totals/payment transaction, guarded busy actions and persistent payment errors checked; full receipt/cache concurrency and remaining manual workflows pending",
+      "reviewedSha256": "a9bd573f54cdbe9e6117020416fb7fe80199846810111e4a807da377a249d73d"
     },
     {
       "path": "src/components/panels/job-sources.tsx",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -96,6 +96,7 @@ export function InvoicesPanel({
   const parsingRef = useRef(false);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const paymentErrorId = useId();
 
   // Drag a PDF onto the list → extract text → parse → open the form prefilled.
   async function handleFile(file: File | undefined) {
@@ -210,9 +211,8 @@ export function InvoicesPanel({
       );
       return { prev };
     },
-    onError: (error, { inv }, ctx) => {
+    onError: (_error, { inv }, ctx) => {
       if (ctx?.prev) setInvoices((current) => current.map(item => item.id === inv.id ? { ...item, status: ctx.prev.status, paid_on: ctx.prev.paid_on } : item));
-      toast.err(error instanceof InvoicePaymentChangeError && error.conflict ? t.invoices.paymentConflict : t.invoices.paymentChangeErr);
     },
     onSuccess: ({ invoice: saved, unlinkedIds }, { paid }) => {
       setInvoices(current => current.map(item => item.id === saved.id ? saved : item));
@@ -227,6 +227,9 @@ export function InvoicesPanel({
   function setPaid(inv: Invoice, paid: boolean) {
     if (!parsingRef.current && !setPaidMutation.isPending && !removeMutation.isPending) setPaidMutation.mutate({ inv, paid, ownerId: userId, paidOn: paid ? todayKey() : null });
   }
+  const paymentError = setPaidMutation.isError
+    ? setPaidMutation.error instanceof InvoicePaymentChangeError && setPaidMutation.error.conflict ? t.invoices.paymentConflict : t.invoices.paymentChangeErr
+    : null;
 
   // Optimistic delete: drop the invoice and its items from the cache before the
   // await; the DB cascade removes the items server-side.
@@ -338,6 +341,7 @@ export function InvoicesPanel({
       <InvoiceDetail
         invoice={detailInvoice}
         busy={setPaidMutation.isPending || removeMutation.isPending}
+        paymentError={setPaidMutation.variables?.inv.id === detailInvoice.id ? paymentError : null}
         items={items.filter((i) => i.invoice_id === detailInvoice.id)}
         logo={settings?.logo ?? null}
         onBack={() => setView({ mode: "list" })}
@@ -467,6 +471,7 @@ export function InvoicesPanel({
                 const eff = now ? effectiveStatus(inv, now) : inv.status;
                 const own = totalsById.get(inv.id)?.own ?? 0;
                 const payment = paymentByInvoice.get(inv.id);
+                const rowPaymentError = setPaidMutation.variables?.inv.id === inv.id ? paymentError : null;
                 return (
                   <li
                     key={inv.id}
@@ -529,6 +534,7 @@ export function InvoicesPanel({
                               variant="ghost"
                               onClick={() => setPaid(inv, false)}
                               aria-label={`${t.invoices.markUnpaid}: ${inv.number}`}
+                              aria-describedby={rowPaymentError ? paymentErrorId : undefined}
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
                             </Button>
@@ -541,6 +547,7 @@ export function InvoicesPanel({
                               variant="ghost"
                               onClick={() => setPaid(inv, true)}
                               aria-label={`${t.invoices.markPaid}: ${inv.number}`}
+                              aria-describedby={rowPaymentError ? paymentErrorId : undefined}
                             >
                               <Check className="h-3.5 w-3.5 text-success" />
                             </Button>
@@ -559,6 +566,7 @@ export function InvoicesPanel({
                         </Tooltip>
                       </div>
                     </div>
+                    {rowPaymentError && <p id={paymentErrorId} role="alert" className="basis-full text-xs text-risk">{rowPaymentError}</p>}
                   </li>
                 );
               })}

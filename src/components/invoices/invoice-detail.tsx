@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { format, parseISO } from "date-fns";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -42,6 +43,7 @@ export function InvoiceDetail({
   onMarkUnpaid,
   onDelete,
   busy = false,
+  paymentError,
 }: {
   invoice: Invoice;
   items: InvoiceItem[];
@@ -53,8 +55,10 @@ export function InvoiceDetail({
   onMarkUnpaid: () => void;
   onDelete: () => void;
   busy?: boolean;
+  paymentError?: string | null;
 }) {
   const t = useDict();
+  const paymentErrorId = useId();
   const now = useNow();
   const isVatPayer = invoice.supplier_is_vat_payer;
   const sorted = [...items].sort((a, b) => a.position - b.position);
@@ -101,11 +105,11 @@ export function InvoiceDetail({
             <Copy className="h-3.5 w-3.5" /> {t.invoices.duplicate}
           </Button>
           {invoice.status === "paid" ? (
-            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkUnpaid}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkUnpaid} aria-describedby={paymentError ? paymentErrorId : undefined}>
               <RotateCcw className="h-3.5 w-3.5" /> {t.invoices.markUnpaid}
             </Button>
           ) : (
-            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkPaid}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkPaid} aria-describedby={paymentError ? paymentErrorId : undefined}>
               <Check className="h-3.5 w-3.5" /> {t.invoices.markPaid}
             </Button>
           )}
@@ -124,6 +128,7 @@ export function InvoiceDetail({
         </div>
       </div>
 
+      {paymentError && <p id={paymentErrorId} role="alert" className="no-print mb-4 text-sm text-risk">{paymentError}</p>}
       {!spayd && (
         <p className="no-print -mt-2 mb-4 text-xs text-foreground-subtle">
           {t.invoices.qrMissing}
