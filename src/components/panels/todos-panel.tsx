@@ -50,7 +50,7 @@ import { qk } from "@/lib/queries/keys";
 import { consumeRepositoryRecords } from "@/lib/repository-records";
 import { readOwnedCollection } from "@/lib/owned-records";
 import { syncNeededTasks } from "@/lib/needed-task-store";
-import { useReposQuery } from "@/lib/github-queries";
+import { setReposDisconnected, useReposQuery } from "@/lib/github-queries";
 import { commitFile } from "@/lib/github";
 import { findProjectForTask } from "@/lib/project-match";
 import { assigneeForTodo, type Assignee } from "@/lib/needed";
@@ -70,6 +70,10 @@ import type { Locale } from "date-fns";
 import type { Organization, Project, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useNow } from "@/lib/use-now";
+
+function repoNamesPreview(names: string[]) {
+  return names.slice(0, 3).join(", ") + (names.length > 3 ? ` +${names.length - 3}` : "");
+}
 
 export function TodosPanel({
   todos,
@@ -244,16 +248,13 @@ export function TodosPanel({
       };
     },
     onSuccess: async ({ added, removed, retained, missing, unavailable, dailyFocusUpdated }) => {
-      toast.ok(
-        added === 0 && removed === 0
-          ? t.todos.refreshNothing
-          : t.todos.refreshDone(added, removed),
-      );
+      if (added || removed) toast.ok(t.todos.refreshDone(added, removed));
+      else if (!retained && !missing.length && !unavailable.length) toast.ok(t.todos.refreshNothing);
       if (retained) toast.info(t.todos.refreshRetained(retained));
-      if (unavailable.length) toast.info(t.todos.refreshUnavailable(unavailable.join(", ")));
+      if (unavailable.length) toast.info(t.todos.refreshUnavailable(repoNamesPreview(unavailable)));
       // A repository that lost its NEEDED.md keeps its tasks; say which, so
       // the rows that stay are explained.
-      if (missing.length > 0) toast.info(t.todos.refreshMissing(missing.join(", ")));
+      if (missing.length > 0) toast.info(t.todos.refreshMissing(repoNamesPreview(missing)));
       await qc.invalidateQueries({ queryKey: qk.todos });
       await qc.invalidateQueries({ queryKey: qk.dailyFocus });
       if (!dailyFocusUpdated) toast.err(t.todos.dailyFocusRefreshErr);
@@ -279,9 +280,9 @@ export function TodosPanel({
   // edit, so its finished rows are cleared and it is named in a notice.
   const clearFinished = useMutation({
     mutationFn: async () => {
-      const { cleared: idsToDelete, missing } = await removeFinishedFromNeeded(
+      const { cleared: idsToDelete, missing, kept, disconnected } = await removeFinishedFromNeeded(
         todos,
-        ({ owner, repo, path, content, count, expectedSha }) =>
+        ({ owner, repo, path, content, count, expectedSha }, signal) =>
           commitFile({
             intent: "edit", expectedSha,
             owner,
@@ -289,31 +290,26 @@ export function TodosPanel({
             path,
             content,
             message: t.todos.finishedCommitMessage(count),
-          }),
+          }, signal),
       );
 
       const eligible = new Set(idsToDelete);
       const captured = todos.filter(todo => eligible.has(todo.id));
       try {
-        const { deleted } = await consumeRepositoryRecords(supabase, "todos", captured);
-        return { removed: deleted.size, missing };
+        const { deleted, retained } = await consumeRepositoryRecords(supabase, "todos", captured);
+        return { removed: deleted.size, missing, kept: kept + retained.size, disconnected };
       } finally {
         void qc.invalidateQueries({ queryKey: qk.todos });
         void qc.invalidateQueries({ queryKey: qk.dailyFocus });
         void qc.invalidateQueries({ queryKey: ["github", "file"] });
       }
     },
-    onSuccess: ({ removed, missing }) => {
-      toast.ok(
-        removed === 0
-          ? t.todos.clearFromNeededNone
-          : t.todos.clearFromNeededDone(removed),
-      );
-      if (missing.length > 0) toast.info(t.todos.clearFromNeededMissing(missing.join(", ")));
-      void qc.invalidateQueries({ queryKey: qk.todos });
-      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
-      // Drop cached NEEDED file contents so the Repos checklist reflects it.
-      void qc.invalidateQueries({ queryKey: ["github", "file"] });
+    onSuccess: async ({ removed, missing, kept, disconnected }) => {
+      if (removed) toast.ok(t.todos.clearFromNeededDone(removed));
+      else if (!kept) toast.info(t.todos.clearFromNeededNone);
+      if (disconnected) { await setReposDisconnected(qc); toast.err(t.todos.refreshDisconnected); }
+      else if (kept) toast.err(t.todos.clearFromNeededIncomplete(kept));
+      if (missing.length) toast.info(t.todos.clearFromNeededMissing(repoNamesPreview(missing)));
     },
     onError: (e) => {
       toast.err(

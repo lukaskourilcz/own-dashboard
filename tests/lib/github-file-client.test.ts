@@ -41,3 +41,19 @@ it("requires a file version before exposing editable content", async () => {
   vi.stubGlobal("fetch", vi.fn(async () => Response.json({ content: "" })));
   expect(await loadRepoFile("owner", "repo", input.path)).toEqual({ kind: "error" });
 });
+it("does not send a file write after caller cancellation", async () => {
+  const controller = new AbortController(); controller.abort(); const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+  expect(await commitFile(input, controller.signal)).toMatchObject({ ok: false, status: 0 }); expect(fetcher).not.toHaveBeenCalled();
+});
+it("settles an unresponsive commit without accepting its late receipt", async () => {
+  const controller = new AbortController(); let release!: (reply: Response) => void;
+  const fetcher = vi.fn(() => new Promise<Response>(resolve => { release = resolve; })); vi.stubGlobal("fetch", fetcher);
+  const pending = commitFile(input, controller.signal); await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce()); controller.abort();
+  expect(await pending).toEqual({ ok: false, status: 0, error: "commit-unconfirmed" });
+  expect(fetcher.mock.calls[0]).toBeDefined(); release(Response.json(result));
+});
+it("settles a stalled file body when its caller aborts", async () => {
+  const controller = new AbortController(); vi.stubGlobal("fetch", vi.fn(async () => new Response(new ReadableStream({ start() {} }))));
+  const pending = loadRepoFile("owner", "repo", input.path, controller.signal); controller.abort();
+  expect(await pending).toEqual({ kind: "error" });
+});

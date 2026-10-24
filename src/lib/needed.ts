@@ -39,10 +39,13 @@ export async function loadNeededFile(
     owner: string,
     repo: string,
     path: string,
+    signal?: AbortSignal,
   ) => Promise<RepoFileResult> = loadRepoFile,
+  signal?: AbortSignal,
 ): Promise<NeededFileResult> {
   for (const path of NEEDED_FILE_PATHS) {
-    const res = await load(owner, repo, path);
+    if (signal?.aborted) return { kind: "error" };
+    const res = signal ? await load(owner, repo, path, signal) : await load(owner, repo, path);
     if (res.kind === "ok") {
       return { kind: "ok", path, content: res.content, htmlUrl: res.htmlUrl, sha: res.sha };
     }
@@ -288,15 +291,27 @@ export function neededTodoItems(
   return chosen.map((it) => ({ ...it, text: cleanNeededText(it.text) })).filter(item => item.text.length > 0);
 }
 
-/** Remove the first line exactly equal to `raw` from `content`. Returns the new
- * content plus whether a line was removed (false = it was already gone). */
-export function removeNeededLine(
-  content: string,
-  raw: string,
-): { next: string; removed: boolean } {
+/** Remove captured source lines in one pass, retaining untouched line endings.
+ * Fenced examples are never targets. Repeated requests remove at most that
+ * many identical actionable lines. */
+export function removeNeededLines(content: string, rawLines: readonly string[]): { next: string; removed: number } {
+  const requested = new Map<string, number>();
+  for (const raw of rawLines) if (raw.trim()) requested.set(raw, (requested.get(raw) ?? 0) + 1);
+  if (!requested.size) return { next: content, removed: 0 };
   const { lines, excluded } = neededLines(content);
-  const idx = lines.findIndex((line, index) => line === raw && !excluded.has(index));
-  if (idx === -1) return { next: content, removed: false };
-  lines.splice(idx, 1);
-  return { next: lines.join("\n"), removed: true };
+  const retained: string[] = []; let start = 0, removed = 0;
+  for (let index = 0; index < lines.length; index++) {
+    const newline = content.indexOf("\n", start), end = newline < 0 ? content.length : newline + 1;
+    const remaining = requested.get(lines[index]) ?? 0;
+    if (remaining && !excluded.has(index)) { requested.set(lines[index], remaining - 1); removed++; }
+    else retained.push(content.slice(start, end));
+    start = end;
+  }
+  return { next: removed ? retained.join("") : content, removed };
+}
+
+/** Remove the first matching actionable line, preserving other bytes. */
+export function removeNeededLine(content: string, raw: string): { next: string; removed: boolean } {
+  const result = removeNeededLines(content, [raw]);
+  return { next: result.next, removed: result.removed > 0 };
 }

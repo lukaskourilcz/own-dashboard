@@ -5,6 +5,7 @@
 
 import { MAX_GITHUB_FILE_BYTES, normalizeRepoPath } from "@/lib/github-path";
 import { readTextPrefix } from "@/lib/bounded-text";
+import { awaitWithSignal } from "@/lib/abortable";
 export { normalizeRepoPath };
 export type { CommitInput, GithubCommitResult } from "@/lib/github-file-contract";
 import type { CommitInput, GithubCommitResult } from "@/lib/github-file-contract";
@@ -80,17 +81,19 @@ export type CommitOutcome =
 
 /** POST a single-file commit to /api/github/commit and normalize the result.
  * `status === 401` signals GitHub disconnected — callers surface a reconnect. */
-export async function commitFile(input: CommitInput): Promise<CommitOutcome> {
+export async function commitFile(input: CommitInput, parent?: AbortSignal): Promise<CommitOutcome> {
+  const signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
   try {
-    const { githubCommitInput, githubCommitResult } = await import("@/lib/github-file-contract");
+    const { githubCommitInput, githubCommitResult } = await awaitWithSignal(import("@/lib/github-file-contract"), signal);
     const parsed = githubCommitInput.safeParse(input);
     if (!parsed.success) return { ok: false, status: 400, error: "invalid-input" };
     if (new TextEncoder().encode(parsed.data.content).byteLength > MAX_GITHUB_FILE_BYTES) return { ok: false, status: 413, error: "too-large" };
-    const response = await fetch("/api/github/commit", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data), signal: AbortSignal.timeout(30_000),
-    });
+    signal.throwIfAborted();
+    const response = await awaitWithSignal(fetch("/api/github/commit", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data), signal,
+    }), signal);
     if (!response.ok) return { ok: false, status: response.status, error: "commit-unconfirmed" };
-    const prefix = await readTextPrefix(response, 32_768);
+    const prefix = await awaitWithSignal(readTextPrefix(response, 32_768), signal);
     if (prefix.truncated) return { ok: false, status: 502, error: "commit-unconfirmed" };
     const result = githubCommitResult.safeParse(JSON.parse(prefix.text));
     if (!result.success || result.data.path !== parsed.data.path) return { ok: false, status: 502, error: "commit-unconfirmed" };
@@ -111,16 +114,19 @@ export async function loadRepoFile(
   owner: string,
   repo: string,
   path: string,
+  parent?: AbortSignal,
 ): Promise<RepoFileResult> {
   try {
     const qs = new URLSearchParams({ owner, repo, path });
-    const res = await fetch(`/api/github/file?${qs.toString()}`, { signal: AbortSignal.timeout(30_000) });
+    const signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
+    signal.throwIfAborted();
+    const res = await awaitWithSignal(fetch(`/api/github/file?${qs.toString()}`, { signal }), signal);
     if (res.status === 401) return { kind: "disconnected" };
     if (res.status === 404) return { kind: "not-found" };
     if (!res.ok) return { kind: "error" };
-    const prefix = await readTextPrefix(res, 2_100_000);
+    const prefix = await awaitWithSignal(readTextPrefix(res, 2_100_000), signal);
     if (prefix.truncated) return { kind: "error" };
-    const { githubFileResponse } = await import("@/lib/github-file-contract");
+    const { githubFileResponse } = await awaitWithSignal(import("@/lib/github-file-contract"), signal);
     const json = githubFileResponse.parse(JSON.parse(prefix.text));
     return { kind: "ok", content: json.content, htmlUrl: json.html_url, sha: json.sha };
   } catch {

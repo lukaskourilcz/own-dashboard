@@ -1,10 +1,11 @@
+import { awaitWithSignal } from "@/lib/abortable";
 import { addDays, format } from "date-fns";
 import { loadNeededBatch } from "@/lib/needed-batch-client";
 import type { CommitOutcome, GithubRepo } from "./github";
 import {
   loadNeededFile,
   neededTodoItems,
-  removeNeededLine,
+  removeNeededLines,
   type NeededFileResult,
   type NeededFilePath,
 } from "./needed";
@@ -215,7 +216,7 @@ export type NeededCommit = (input: {
   expectedSha: string;
   content: string;
   count: number;
-}) => Promise<CommitOutcome>;
+}, signal?: AbortSignal) => Promise<CommitOutcome>;
 
 /** What "Delete from NEEDED.md" did. */
 export type FinishedRemoval = {
@@ -225,6 +226,9 @@ export type FinishedRemoval = {
    *  are in `cleared` too: the lines left with the file, so nothing was
    *  committed there. */
   missing: string[];
+  /** Eligible finished tasks whose cleanup could not be confirmed. */
+  kept: number;
+  disconnected: boolean;
 };
 
 /**
@@ -235,19 +239,21 @@ export type FinishedRemoval = {
  * no line survives in a file the dashboard still tracks. A repository with no
  * file at any known path has nothing left to edit: its finished rows are
  * cleared and it is named in `missing`, so the owner learns why no commit
- * happened. A disconnected token aborts with Error("disconnected").
+ * happened. Work is bounded to 100 source groups and 60 seconds. Confirmed
+ * source changes and an unavailable/disconnected remainder are separate outcomes.
  */
 export async function removeFinishedFromNeeded(
   todos: Todo[],
   commit: NeededCommit,
-  load: NeededFileLoader = loadNeededFile,
+  load?: NeededFileLoader,
+  options: { signal?: AbortSignal } = {},
 ): Promise<FinishedRemoval> {
   const byRepo = new Map<string, Todo[]>();
   for (const td of todos) {
     if (
       !td.done ||
       td.source !== "github" ||
-      !td.needed_raw ||
+      !td.needed_raw?.trim() ||
       !td.repo_owner ||
       !td.repo_name
     ) {
@@ -259,40 +265,41 @@ export async function removeFinishedFromNeeded(
     else byRepo.set(key, [td]);
   }
 
-  const cleared: string[] = [];
-  const missing: string[] = [];
-  for (const tasks of byRepo.values()) {
-    const owner = tasks[0].repo_owner!;
-    const name = tasks[0].repo_name!;
-    const res = await load(owner, name);
-    if (res.kind === "disconnected") throw new Error("disconnected");
-    if (res.kind === "not-found") {
-      missing.push(`${owner}/${name}`);
-      cleared.push(...tasks.map((td) => td.id));
-      continue;
-    }
-    if (res.kind !== "ok") continue;
-
-    let content = res.content;
-    for (const td of tasks) {
-      const { next, removed } = removeNeededLine(content, td.needed_raw!);
-      if (removed) content = next;
-    }
-    if (content !== res.content) {
-      const outcome = await commit({
-        owner,
-        repo: name,
-        path: res.path,
-        expectedSha: res.sha,
-        content,
-        count: tasks.length,
-      });
-      if (!outcome.ok) {
-        if (outcome.status === 401) throw new Error("disconnected");
-        continue;
-      }
-    }
-    cleared.push(...tasks.map((td) => td.id));
+  const groups = [...byRepo.values()], selected = groups.slice(0, 100);
+  const eligibleCount = groups.reduce((count, tasks) => count + tasks.length, 0);
+  const cleared: string[] = [], missing: string[] = [];
+  const signal = AbortSignal.any([AbortSignal.timeout(60_000), ...(options.signal ? [options.signal] : [])]);
+  let disconnected = false;
+  const finish = (): FinishedRemoval => ({ cleared, missing, kept: eligibleCount - cleared.length, disconnected });
+  if (!eligibleCount || signal.aborted) return finish();
+  const batchRepos = selected.flatMap(tasks => {
+    const task = tasks[0], id = Number(task.repo_id);
+    return Number.isSafeInteger(id) && id > 0 ? [{ id, owner: task.repo_owner!, name: task.repo_name! }] : [];
+  });
+  let files = new Map<string, NeededFileResult>();
+  if (!load) {
+    try {
+      const batch = await awaitWithSignal(loadNeededBatch(batchRepos, signal), signal);
+      if (batch.kind === "disconnected") { disconnected = true; return finish(); }
+      files = new Map(batch.files.map(file => [file.repoId, file.result]));
+    } catch { return finish(); }
   }
-  return { cleared, missing };
+  for (const tasks of selected) {
+    if (signal.aborted) break;
+    const owner = tasks[0].repo_owner!, name = tasks[0].repo_name!;
+    try {
+      const cached = files.get(String(Number(tasks[0].repo_id)));
+      const res = await awaitWithSignal(load ? load(owner, name) : cached ? Promise.resolve(cached) : loadNeededFile(owner, name, undefined, signal), signal);
+      if (res.kind === "disconnected") { disconnected = true; break; }
+      if (res.kind === "not-found") { missing.push(`${owner}/${name}`); cleared.push(...tasks.map(task => task.id)); continue; }
+      if (res.kind !== "ok") continue;
+      const { next: content, removed } = removeNeededLines(res.content, tasks.map(task => task.needed_raw!));
+      if (content !== res.content) {
+        const outcome = await awaitWithSignal(commit({ owner, repo: name, path: res.path, expectedSha: res.sha, content, count: removed }, signal), signal);
+        if (!outcome.ok) { if (outcome.status === 401) { disconnected = true; break; } continue; }
+      }
+      cleared.push(...tasks.map(task => task.id));
+    } catch { if (signal.aborted) break; }
+  }
+  return finish();
 }

@@ -287,7 +287,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     // Open tasks are never cleared, and an unreadable file keeps its rows. A
     // file found at no path took its lines with it: those rows are cleared
     // without a commit and the repository is reported.
-    expect(cleared).toEqual({ cleared: ["q-done", "gone-done"], missing: ["me/archived-notes"] });
+    expect(cleared).toEqual({ cleared: ["q-done", "gone-done"], missing: ["me/archived-notes"], kept: 1, disconnected: false });
   });
 
   it("keeps the rows when the commit fails", async () => {
@@ -296,7 +296,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
       async () => ({ ok: false, status: 409, error: "conflict" }),
       load,
     );
-    expect(cleared).toEqual({ cleared: [], missing: [] });
+    expect(cleared).toEqual({ cleared: [], missing: [], kept: 1, disconnected: false });
   });
 
   it("clears rows whose line is already gone without committing", async () => {
@@ -308,7 +308,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
       commit,
       load,
     );
-    expect(cleared).toEqual({ cleared: ["r-old"], missing: [] });
+    expect(cleared).toEqual({ cleared: ["r-old"], missing: [], kept: 0, disconnected: false });
   });
 
   it("clears the finished rows of a repository whose NEEDED.md is gone and names it", async () => {
@@ -321,7 +321,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
       imported(goneRepo, "gone-open", "- [ ] Still open"),
     ];
     const removal = await removeFinishedFromNeeded(tasks, commit, load);
-    expect(removal).toEqual({ cleared: ["gone-1", "gone-2"], missing: ["me/archived-notes"] });
+    expect(removal).toEqual({ cleared: ["gone-1", "gone-2"], missing: ["me/archived-notes"], kept: 0, disconnected: false });
   });
 });
 

@@ -20,7 +20,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -1463,8 +1463,8 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1475,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; task synchronization checks pass; scan/CRUD follow-ups pending",
-      "reviewedSha256": "550cd320b4a227a9e520a8236c8edd32c18ea5ced97006a801c90004d73385e4"
+      "status": "partial: source cleanup/import reviewed and targeted tests pass; manual task CRUD/version receipts remain under review",
+      "reviewedSha256": "f84d6350c10aecec12ed712c6a506d72906063cf4b5dfd838d01df6b9b5f9d59"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -2052,8 +2052,8 @@
       "path": "src/lib/github.ts",
       "lines": 227,
       "sha256": "8d7cb9d4f7415804d30bb88b18e393ff3939b041c0ac309e28cf3c56c18b3500",
-      "status": "partially reviewed; file integrity checks pass; remaining repository/task concerns in review.md",
-      "reviewedSha256": "793238336acecf944faa708d9936296ec025d823a411fc1fa9ce7b35e5c9aa6c"
+      "status": "partial: file read/write integrity and cancellation reviewed; other provider read contracts remain under review",
+      "reviewedSha256": "e5c5da6fa0cc2be80067bcb9cc729a6fec95e29c6113c021fed5ec8467f22295"
     },
     {
       "path": "src/lib/gocardless.ts",
@@ -2338,7 +2338,8 @@
       "path": "src/lib/i18n/sections/todos.ts",
       "lines": 387,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "pending"
+      "status": "source reviewed; targeted cleanup/import tests pass; final app-wide release checks pending",
+      "reviewedSha256": "4c9be91137cd113fe1dee229a547866118fe908d19ee48d06617a51d9b6bcb6f"
     },
     {
       "path": "src/lib/i18n/sections/tools.ts",
@@ -3394,15 +3395,15 @@
       "path": "src/lib/needed-sync.ts",
       "lines": 298,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
-      "status": "partially reviewed; scan/import checks pass; finished-removal budget pending",
-      "reviewedSha256": "b5df34f527d95ee0acc9bd0540cf7fbb06b72882ea18eca5bf22aa65d83c88c6"
+      "status": "source reviewed; targeted cleanup/import tests pass; final app-wide release checks pending",
+      "reviewedSha256": "429f7d0d3080fbb2013da8a8d895ed3db7b252a3e8d1f99fe8380d12fef6da94"
     },
     {
       "path": "src/lib/needed.ts",
       "lines": 302,
       "sha256": "7de312c49f3b1a80aec62b25360687b4aa3229c44c255c634b2abec841c8f160",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending",
-      "reviewedSha256": "d29e2ceb9ebe422f0b27cd15f2d651634a95ef43d3b51fbc5a85ae4c8a22ccb7"
+      "status": "source reviewed; targeted cleanup/import tests pass; final app-wide release checks pending",
+      "reviewedSha256": "0167e1c70dbb8eb939d37faf8ce361c097f456f54d461a8500aa64345bb991f2"
     },
     {
       "path": "src/lib/new-project-guide.ts",

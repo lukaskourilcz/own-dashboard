@@ -60,6 +60,7 @@ type TodosStrings = {
   clearFromNeededDone: (n: number) => string;
   clearFromNeededNone: string;
   clearFromNeededErr: string;
+  clearFromNeededIncomplete: (count: number) => string;
   clearFromNeededMissing: (repos: string) => string;
   clearingFromNeeded: string;
   finishedCommitMessage: (n: number) => string;
@@ -177,7 +178,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     clearFromNeededDone: (n) =>
       `Removed ${n} finished task${n === 1 ? "" : "s"} from NEEDED.md.`,
     clearFromNeededNone: "No finished NEEDED tasks to remove.",
-    clearFromNeededErr: "Couldn't update NEEDED.md. Please try again.",
+    clearFromNeededErr: "Couldn't confirm cleanup. Check the source files and task list before retrying.",
+    clearFromNeededIncomplete: (count) => `Couldn't confirm cleanup of ${count} ${count === 1 ? "task" : "tasks"}. Refresh the list before retrying.`,
     clearFromNeededMissing: (repos) =>
       `No NEEDED.md at the root or in docs/ of ${repos}. Their finished tasks were cleared without a commit.`,
     clearingFromNeeded: "Removing…",
@@ -322,7 +324,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       return `Odebráno ${n} hotových úkolů z NEEDED.md.`;
     },
     clearFromNeededNone: "Žádné hotové NEEDED úkoly k odebrání.",
-    clearFromNeededErr: "NEEDED.md se nepodařilo aktualizovat. Zkus to znovu.",
+    clearFromNeededErr: "Odebrání se nepodařilo potvrdit. Před dalším pokusem zkontrolujte zdrojové soubory a seznam úkolů.",
+    clearFromNeededIncomplete: (count) => `Nepodařilo se potvrdit odebrání úkolů: ${count}. Obnovte seznam a zkuste to znovu.`,
     clearFromNeededMissing: (repos) =>
       `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich hotové úkoly se vyčistily bez commitu.`,
     clearingFromNeeded: "Odebírám…",
