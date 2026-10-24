@@ -69,3 +69,11 @@ it("propagates its deadline signal to end an unresponsive save without retrying"
     controller.abort(new DOMException("Fixture deadline reached", "TimeoutError")); await failure; expect(rpc).toHaveBeenCalledTimes(1);
   } finally { timeout.mockRestore(); }
 });
+
+it("uses a validated conflict fingerprint only for an explicit replacement", async () => {
+  const conflict: ProjectNotesReceipt = { ...receipt, kind: "conflict", notes_hash: hash("Elsewhere"), source_notes_hash: hash("Elsewhere"), source_updated_at: next, updated_at: next };
+  const saved = { ...receipt, source_notes_hash: hash("Elsewhere"), source_updated_at: next, updated_at: "2026-10-24T12:00:02+00:00" };
+  const b = backend(saved); expect((await saveProjectNotes(b.client, expected, "Saved notes", conflict)).kind).toBe("saved");
+  expect(b.rpc).toHaveBeenCalledWith("save_project_notes", expect.objectContaining({ p_expected_hash: hash("Elsewhere") }));
+  for (const bad of [{ ...conflict, id: other }, { ...conflict, user_id: other }, { ...conflict, kind: "saved" as const }, { ...conflict, notes_hash: hash("Other") }]) await expect(saveProjectNotes(backend(saved).client, expected, "Saved notes", bad)).rejects.toThrow();
+});

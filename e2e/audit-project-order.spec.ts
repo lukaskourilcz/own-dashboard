@@ -30,6 +30,8 @@ for (const lang of ["en", "cs"] as const) {
     const moveA = async (name: string) => {
       const handle = table.getByRole("button", { name: `${t.dragHandle}: ${name}`, exact: true }); await handle.focus(); await expect(handle).toBeFocused(); await page.keyboard.press("Space");
       await expect(handle).toHaveAttribute("aria-roledescription", t.dragRole); await expect(handle).toHaveAttribute("aria-pressed", "true"); await expect(page.getByText(t.dragOver(name, name), { exact: true })).toHaveCount(1);
+      // Sortable targets are measured after the keyboard pickup frame.
+      await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       await page.keyboard.press("ArrowDown"); await expect(page.getByText(t.dragOver(name, "B"), { exact: true })).toHaveCount(1); await page.keyboard.press("Space");
     };
     await moveA("A"); await expect.poll(() => writes).toBe(1); await expect(page.getByText(t.orderSaving, { exact: true })).toBeVisible();

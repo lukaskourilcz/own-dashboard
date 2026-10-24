@@ -29,7 +29,6 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   AlertTriangle,
   Check,
-  ChevronDown,
   CircleDashed,
   Clock,
   ExternalLink,
@@ -60,10 +59,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
-import { useUnsavedDraft } from "@/components/navigation-guard";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
 import { applyProjectOrder, reorderOwnedProjects } from "@/lib/project-order";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { GithubIcon } from "@/components/icons/github";
+import { useProjectNotesAutosave } from "@/components/projects/use-project-notes-autosave";
+import type { NoteEditorHandle } from "@/components/notes/note-editor";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { createClient } from "@/lib/supabase/client";
@@ -303,6 +304,7 @@ function ProjectsListPanel({
   const orderingRef = useRef(false);
   const [ordering, setOrdering] = useState(false);
   useUnsavedDraft({ dirty: false, pending: ordering, canSave: false, save: async () => false });
+  const requestNavigation = useGuardedNavigation();
   const [manageProjectId, setManageProjectId] = useState<string | null>(null);
   const now = useNow();
   const costDay = now ? todayKey(now) : null;
@@ -1132,13 +1134,13 @@ function ProjectsListPanel({
         </DndContext>
       )}
 
-      <Dialog open={manageProjectId !== null} onOpenChange={(open) => !open && setManageProjectId(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+      <Dialog open={manageProjectId !== null} onOpenChange={(open) => !open && requestNavigation(() => setManageProjectId(null))}>
+        <DialogContent aria-describedby={undefined} className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader><DialogTitle>{t.projects.manage}</DialogTitle></DialogHeader>
           {ordered.find((project) => project.id === manageProjectId) && (() => {
             const project = ordered.find((item) => item.id === manageProjectId)!;
             const projectTodos = projectTasks.byProject.get(project.id) ?? [];
-            return <ProjectCard key={project.id} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
+            return <ProjectOperations key={project.id} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => requestNavigation(() => { void deleteProject(project); })} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1147,10 +1149,10 @@ function ProjectsListPanel({
 }
 
 // ---------------------------------------------------------------------------
-// Project card: totals, cost lines, notes, crons.
+// Project operations: totals, cost lines, notes, crons.
 // ---------------------------------------------------------------------------
 
-type ProjectCardProps = {
+type ProjectOperationsProps = {
   project: Project;
   costs: ProjectCost[];
   crons: Cron[];
@@ -1160,12 +1162,8 @@ type ProjectCardProps = {
   setCrons: Updater<Cron[]>;
   setProjects: Updater<Project[]>;
   displayCurrency: string;
-  editing: boolean;
   /** True when this project mirrors a currently-active Repository. */
   synced: boolean;
-  collapsed: boolean;
-  collapsible?: boolean;
-  onToggleCollapsed: () => void;
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
@@ -1237,7 +1235,7 @@ function SortableProjectRow({
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
       <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={`${t.projects.dragHandle}: ${project.name}`} className="aria-disabled:opacity-50 inline-flex h-11 w-11 md:h-8 md:w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
-      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
+      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5">{health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}</td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
@@ -1246,7 +1244,7 @@ function SortableProjectRow({
       <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{nextDate ?? "—"}</td>
       <td className="px-3 py-2.5"><div className="flex justify-end gap-1">
         {project.dev_url && <Tooltip content={t.projects.development}><Button asChild size="icon-sm" variant="ghost"><a href={project.dev_url} target="_blank" rel="noreferrer" aria-label={t.projects.development}><ExternalLink /></a></Button></Tooltip>}
-        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
+        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
         <Tooltip content={t.projects.manage}><Button size="icon-sm" variant="ghost" onClick={onManage} aria-label={t.projects.manage}><Cpu /></Button></Tooltip>
         <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
         <Tooltip content={project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
@@ -1256,7 +1254,7 @@ function SortableProjectRow({
   );
 }
 
-function ProjectCard({
+function ProjectOperations({
   project,
   costs,
   crons,
@@ -1265,11 +1263,7 @@ function ProjectCard({
   setCrons,
   setProjects,
   displayCurrency,
-  editing,
   synced,
-  collapsed,
-  collapsible = true,
-  onToggleCollapsed,
   onEdit,
   onToggleActive,
   onDelete,
@@ -1278,38 +1272,21 @@ function ProjectCard({
   openTaskCount,
   organizationName,
   nextDate,
-  isDragging,
-  dragHandleProps,
-}: ProjectCardProps & {
-  isDragging?: boolean;
-  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
-}) {
+}: ProjectOperationsProps) {
   const t = useDict();
   const monthly = projectMonthlyIn(costs, crons, displayCurrency) + subscriptionMonthly;
   const yearly = monthly * 12;
 
   return (
-    <Card
-      className={cn(
-        editing && "ring-1 ring-ring",
-        !project.is_active && "opacity-70",
-        isDragging && "shadow-elevated ring-1 ring-border-strong",
-      )}
-    >
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div className="flex min-w-0 items-start gap-1.5">
-          <button
-            type="button"
-            aria-label={t.projects.dragHandle}
-            className="mt-0.5 shrink-0 cursor-grab touch-none rounded text-foreground-subtle transition-colors hover:text-foreground focus-ring active:cursor-grabbing"
-            {...dragHandleProps}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
+    <section aria-label={project.name} className="min-w-0">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 px-0 pt-0 sm:px-0 sm:pt-0">
+        <div className="min-w-0 flex-1 basis-64">
           <div className="min-w-0">
-            <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-              <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
-              <span className="truncate">{project.name}</span>
+            <CardTitle role="heading" aria-level={3} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-base">
+              <span className="inline-flex min-w-0 max-w-full items-start gap-2">
+                <FolderKanban className="mt-0.5 h-4 w-4 shrink-0 text-foreground-subtle" aria-hidden />
+                <span className="min-w-0 [overflow-wrap:anywhere]">{project.name}</span>
+              </span>
               <StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />
               {health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}
               {!project.is_active && (
@@ -1324,8 +1301,7 @@ function ProjectCard({
                 </Tooltip>
               )}
             </CardTitle>
-            {!collapsed && (
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
                 {organizationName && <EntityBadge>{organizationName}</EntityBadge>}
                 <span className="tabular">{t.professional.openTasks}: {openTaskCount}</span>
                 {nextDate && <span className="tabular">{t.nav.sections.dates}: {nextDate}</span>}
@@ -1334,7 +1310,7 @@ function ProjectCard({
                     href={`https://github.com/${project.repo_full_name}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                    className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded focus-ring hover:text-foreground [overflow-wrap:anywhere] md:min-h-0"
                   >
                     <GithubIcon className="h-3 w-3" />
                     {project.repo_full_name}
@@ -1345,7 +1321,7 @@ function ProjectCard({
                     href={project.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                    className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded focus-ring hover:text-foreground [overflow-wrap:anywhere] md:min-h-0"
                   >
                     <ExternalLink className="h-3 w-3" />
                     {t.projects.open}
@@ -1354,22 +1330,21 @@ function ProjectCard({
                 <Link
                   href={`/projects/${encodeURIComponent(project.slug)}`}
                   prefetch={false}
-                  onClick={(event) => {
+                  onNavigate={(event) => {
                     event.preventDefault();
                     onOpen();
                   }}
-                  className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                  className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded focus-ring hover:text-foreground [overflow-wrap:anywhere] md:min-h-0"
                 >
                   <FolderKanban className="h-3 w-3" />
                   {t.professional.projectWorkspace}
                 </Link>
-              </div>
-            )}
+            </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="text-right">
-            <p className="text-lg font-semibold tabular leading-none">
+        <div className="flex min-w-0 max-w-full flex-auto flex-wrap items-center justify-between gap-3 sm:flex-none sm:justify-end">
+          <div className="min-w-0 text-left sm:text-right">
+            <p className="break-words text-lg font-semibold tabular leading-none">
               {formatCurrency(monthly, displayCurrency)}
               <span className="text-xs font-normal text-foreground-subtle">
                 {t.projects.perMo}
@@ -1380,22 +1355,6 @@ function ProjectCard({
             </p>
           </div>
           <div className="flex gap-0.5">
-            {collapsible && <Tooltip content={collapsed ? t.projects.expand : t.projects.collapse}>
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                onClick={onToggleCollapsed}
-                aria-label={collapsed ? t.projects.expand : t.projects.collapse}
-                aria-expanded={!collapsed}
-              >
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    collapsed && "-rotate-90",
-                  )}
-                />
-              </Button>
-            </Tooltip>}
             <Tooltip content={t.common.edit}>
               <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
                 <Pencil className="h-3.5 w-3.5" />
@@ -1431,8 +1390,7 @@ function ProjectCard({
           </div>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="space-y-5">
+      <CardContent className="space-y-5 px-0 pb-0 sm:px-0 sm:pb-0">
           <CostsSection
             project={project}
             costs={costs}
@@ -1446,9 +1404,8 @@ function ProjectCard({
             setCrons={setCrons}
             displayCurrency={displayCurrency}
           />
-        </CardContent>
-      )}
-    </Card>
+      </CardContent>
+    </section>
   );
 }
 
@@ -1567,12 +1524,12 @@ function CostsSection({
           ))}
         </ul>
       )}
-      <form onSubmit={addCost} className="mt-2 flex flex-wrap items-end gap-2">
+      <form onSubmit={addCost} className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[minmax(8rem,1fr)_6rem_auto] md:grid-cols-[minmax(6rem,1fr)_6rem_6rem_minmax(8rem,1fr)_auto]">
         <Input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder={t.projects.costLabelPlaceholder}
-          className="h-8 w-32 text-sm"
+          className="col-span-2 min-w-0 w-full text-sm sm:col-span-1"
           aria-label={t.projects.costLabel}
         />
         <Input
@@ -1581,24 +1538,24 @@ function CostsSection({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
-          className="h-8 w-24 text-sm"
+          className="min-w-0 w-full text-sm"
           aria-label={t.projects.amount}
         />
         <SimpleSelect
           value={currency}
           onValueChange={setCurrency}
           aria-label={t.projects.currency}
-          className="h-11 w-20 text-xs md:h-8"
+          className="h-11 min-w-0 w-full text-xs md:h-8"
           options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
         />
         <Input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={t.projects.costNotePlaceholder}
-          className="h-8 min-w-0 flex-1 text-sm"
+          className="min-w-0 w-full text-sm sm:col-span-2 md:col-span-1"
           aria-label={t.projects.costNotePlaceholder}
         />
-        <Button type="submit" size="sm" variant="outline" disabled={busy}>
+        <Button type="submit" size="sm" variant="outline" className="justify-self-end" disabled={busy}>
           <Plus className="h-3.5 w-3.5" />
           {t.projects.addCost}
         </Button>
@@ -1618,67 +1575,35 @@ function NotesSection({
   project: Project;
   setProjects: Updater<Project[]>;
 }) {
-  const supabase = createClient();
   const t = useDict();
-  const toast = useToast();
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
-  // Last value we persisted, so a lossy markdown round-trip on mount doesn't
-  // trigger a spurious write.
-  const lastSavedRef = useRef(project.notes ?? "");
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const saveQueue = useRef<Promise<void>>(Promise.resolve());
-  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current); }, []);
-
-  // Realtime autosave — the editor debounces, this persists. No save button.
-  async function persistMarkdown(next: string) {
-    if (next === (lastSavedRef.current ?? "").trim()) return;
-    setStatus("saving");
-    const { error } = await supabase
-      .from("projects")
-      .update({ notes: next, updated_at: new Date().toISOString() })
-      .eq("id", project.id);
-    if (error) {
-      setStatus("idle");
-      toast.err(error.message);
-      return;
-    }
-    lastSavedRef.current = next;
-    setProjects((prev) =>
-      prev.map((p) => (p.id === project.id ? { ...p, notes: next } : p)),
-    );
-    setStatus("saved");
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-    savedTimer.current = setTimeout(() => setStatus("idle"), 1500);
-  }
-
-  function saveMarkdown(md: string) {
-    // Serialize writes: a slow earlier response must never overwrite newer notes.
-    saveQueue.current = saveQueue.current.then(() => persistMarkdown(md.trim())).catch(() => {
-      setStatus("idle");
-      toast.err(t.professional.couldNotSave);
-    });
-    return saveQueue.current;
-  }
+  const editorRef = useRef<NoteEditorHandle | null>(null);
+  const autosave = useProjectNotesAutosave(project, setProjects, editorRef);
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <SectionLabel>{t.projects.notes}</SectionLabel>
         <span className="text-[11px] text-foreground-subtle">
-          {status === "saving"
-            ? t.projects.saving
-            : status === "saved"
-              ? t.projects.notesSaved
-              : ""}
+          {autosave.pending ? t.projects.saving : autosave.saved ? t.projects.notesSaved : autosave.dirty ? t.projects.notesUnsaved : ""}
         </span>
       </div>
       <div className="project-notes mt-2 min-h-[96px] rounded-md border border-border bg-surface py-1">
         <ProjectNotesEditor
+          key={autosave.generation}
           projectId={project.id}
-          initialMarkdown={project.notes ?? ""}
-          onSaveMarkdown={saveMarkdown}
+          editorRef={editorRef}
+          initialMarkdown={autosave.seed}
+          onDirtyChange={autosave.markDirty}
+          onSaveMarkdown={autosave.save}
         />
       </div>
+      {autosave.failed && <div role="alert" className="mt-2 space-y-2 text-xs text-risk">
+        <p>{autosave.tooLarge ? t.projects.notesTooLarge : autosave.conflict ? t.projects.notesConflict : t.projects.notesSaveFailed}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={autosave.pending || autosave.tooLarge} onClick={() => { void autosave.flush(!!autosave.conflict); }}>{autosave.conflict ? t.projects.replaceSavedNotes : t.common.retry}</Button>
+          <Button size="sm" variant="ghost" disabled={autosave.pending} onClick={() => { void autosave.reloadSaved(); }}>{t.projects.useSavedNotes}</Button>
+        </div>
+      </div>}
     </div>
   );
 }

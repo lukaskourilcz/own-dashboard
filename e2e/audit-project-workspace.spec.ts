@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview, watchConsole, signInFixtureUser } from "./helpers";
+import { gotoPreview, watchConsole } from "./helpers";
 
 test.use({ timezoneId: "America/Los_Angeles" });
 test("workspace tabs support keyboard navigation and communication uses local time", async ({page}) => {
@@ -50,17 +50,16 @@ test("project cron forms expose named controls and reject malformed project URLs
 });
 
 
-test("closing project operations flushes a note edit before its debounce expires",async ({page}) => {
- await gotoPreview(page);await signInFixtureUser(page);await page.goto("/dev-preview?tab=projects");
- const writes:Array<{notes?:string}>=[];
- await page.route("**/rest/v1/projects**",async route => {
-   if(route.request().method()==="PATCH"){writes.push(route.request().postDataJSON());await route.fulfill({status:204,body:""});}
-   else await route.fulfill({status:200,contentType:"application/json",body:"[]"});
- });
+test("untouched project operations close without a note write or draft prompt",async ({page}) => {
+ await gotoPreview(page); let writes=0;
+ page.on("request",request => {if(request.url().includes("/rest/v1/rpc/save_project_notes"))writes++;});
+ await page.goto("/dev-preview?tab=projects");
  await page.locator("#main-content").getByRole("button",{name:"Manage operations",exact:true}).first().click();
- const editor=page.getByRole("dialog").locator('.tiptap[contenteditable="true"]');
- await editor.fill("Quick edit retained after closing");
- await page.keyboard.press("Escape");
- await expect(page.getByRole("dialog")).toBeHidden();
- await expect.poll(()=>writes.some(row => row.notes?.includes("Quick edit retained after closing"))).toBe(true);
+ await expect(page.getByRole("dialog").locator('.tiptap[contenteditable="true"]')).toBeVisible();
+ // Cross the real editor debounce; mounting must not create a draft/write.
+ await page.waitForTimeout(700);
+ // Move off hover tooltips so Escape targets the dialog itself.
+ await page.getByRole("dialog").focus(); await page.mouse.move(4,4);
+ await expect(page.getByRole("tooltip")).toHaveCount(0); await page.keyboard.press("Escape");
+ await expect(page.getByRole("dialog")).toBeHidden(); expect(writes).toBe(0);
 });

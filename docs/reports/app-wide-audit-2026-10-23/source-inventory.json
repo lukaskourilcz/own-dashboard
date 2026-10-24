@@ -1422,10 +1422,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2130,
+      "lines": 2055,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, atomic ordering and shared task/record indexing checked; metadata/notes/cost/cron/sync writes and remaining layout in review.md",
-      "reviewedSha256": "05b62efe2499d9593b53ac20016af0a21e52bb4080d4402483582c7218fb10a9"
+      "status": "partially reviewed; complete reads, atomic ordering, guarded project notes and operations layout checked; metadata/cost/cron/sync writes and external-deletion draft retention pending in review.md",
+      "reviewedSha256": "804db958c3e72b4314785297e3d531b17eea7f1bed36357b7683d3642b82cf37"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/projects/project-notes-editor.tsx",
-      "lines": 73,
+      "lines": 76,
       "sha256": "cf4b3e69b7ee43e52330b265ac87cde3ca0cd6905451e748ba46634ad0ea5e78",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0742a51547717c27b15915d32a535c363cbe5695f773db72d2ab6604ea1e81cb"
+      "status": "source reviewed; rich-editor refs, reset/flush and immediate draft notifications checked; shared parser review and final release pending",
+      "reviewedSha256": "22807a11fcee3855c685d46e0cc554a3806b1077592092bee1a65b4f39c4cfa9"
     },
     {
       "path": "src/components/projects/project-prompts-card.tsx",
@@ -2146,8 +2146,8 @@
       "path": "src/lib/i18n/sections/common.ts",
       "lines": 60,
       "sha256": "77dadc248e367806b1c1ce79e6ecbbc00cb4e06f0e81fcaf600ac15cf1ff9cd8",
-      "status": "source reviewed; shared error and pending/draft copy has EN/CS parity; targeted render checks pass; final release pending",
-      "reviewedSha256": "fad2022f051809236b897987216d88038e264312035e688bf4a738247989ccc4"
+      "status": "source reviewed; shared pending/draft/review copy has EN/CS parity; targeted render checks pass; final release pending",
+      "reviewedSha256": "bddfcda556174aff927f9ba57a525b3a54ec19fe1ee25287b2f93607d98cb6ff"
     },
     {
       "path": "src/lib/i18n/sections/costs.ts",
@@ -2310,10 +2310,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 404,
+      "lines": 422,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "partially reviewed; project order/mobile feedback changes checked; remaining source/release review pending",
-      "reviewedSha256": "4b1daea1a6c3a05d0422a53f25135b046a107db34163653d4f9dffea429cade3"
+      "status": "partially reviewed; project order, guarded note recovery and operations copy checked; remaining source/release review pending",
+      "reviewedSha256": "9c816f6a33dedf54175257985c8df80c264d060d1a7245e3adeb579303920a1a"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",
@@ -4118,9 +4118,16 @@
     {
       "path": "src/lib/project-notes.ts",
       "sha256": null,
-      "lines": 53,
-      "status": "source reviewed; compact note hash/receipt, deadline and cache-race checks pass; editor integration and final release pending",
-      "reviewedSha256": "db3e700dbf497fbe6f2f22b738950d2986230898fa006c8fe321a2db60c9d39f"
+      "lines": 65,
+      "status": "source reviewed; hash/receipt, explicit conflict replacement, size/deadline and cache-race checks pass; guarded rendered editor checked; final release pending",
+      "reviewedSha256": "b83d4f7167c18e93bd61a98e1ed86d3d32693fbc3e9695c35f326c04d407c98d"
+    },
+    {
+      "path": "src/components/projects/use-project-notes-autosave.ts",
+      "sha256": null,
+      "lines": 110,
+      "status": "source reviewed; ordered note saves, ambiguity/conflict, immediate guard, reload/discard and late-callback tests pass; rendered checks pass; final release pending",
+      "reviewedSha256": "d3330477164042dc6d976e9a45ead322366f1fb29cc4b277ef20e90a4e3b8f41"
     }
   ],
   "baselineFileCount": 561

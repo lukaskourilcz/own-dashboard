@@ -87,6 +87,12 @@ type ProjectsStrings = {
   saveNotes: string;
   notesLoadFailed: string;
   notesSaved: string;
+  notesUnsaved: string;
+  notesTooLarge: string;
+  notesSaveFailed: string;
+  notesConflict: string;
+  useSavedNotes: string;
+  replaceSavedNotes: string;
   saving: string;
 
   // Crons.
@@ -221,6 +227,12 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     saveNotes: "Save notes",
     notesLoadFailed: "Project notes could not be opened. Close and reopen this panel to retry; saved notes are unchanged.",
     notesSaved: "Saved",
+    notesUnsaved: "Unsaved",
+    notesTooLarge: "This note exceeds the 1 MiB limit. Shorten it before saving; your draft is still here.",
+    notesSaveFailed: "Notes could not be saved. Your draft is still here. Try again or load the saved note to discard this draft.",
+    notesConflict: "The saved note changed elsewhere. Your draft is still here. Replace the saved note with this draft, or load it and discard the draft.",
+    useSavedNotes: "Use saved note",
+    replaceSavedNotes: "Replace saved note",
     saving: "Saving…",
 
     crons: "Crons",
@@ -355,6 +367,12 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     saveNotes: "Uložit poznámky",
     notesLoadFailed: "Poznámky projektu se nepodařilo otevřít. Zavřete a znovu otevřete panel; uložené poznámky zůstávají beze změny.",
     notesSaved: "Uloženo",
+    notesUnsaved: "Neuloženo",
+    notesTooLarge: "Poznámka překračuje limit 1 MiB. Před uložením ji zkraťte; návrh tu zůstává.",
+    notesSaveFailed: "Poznámky se nepodařilo uložit. Návrh tu zůstává. Zkuste to znovu, nebo načtěte uloženou poznámku a návrh zahoďte.",
+    notesConflict: "Uložená poznámka se mezitím změnila. Návrh tu zůstává. Nahraďte jím uloženou poznámku, nebo ji načtěte a návrh zahoďte.",
+    useSavedNotes: "Použít uloženou poznámku",
+    replaceSavedNotes: "Nahradit uloženou poznámku",
     saving: "Ukládám…",
 
     crons: "Crony",

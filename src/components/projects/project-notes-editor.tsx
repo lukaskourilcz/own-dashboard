@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import dynamic from "next/dynamic";
+import type { NoteEditorHandle } from "@/components/notes/note-editor";
 import type { Block } from "@blocknote/core";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDict } from "@/lib/i18n";
@@ -23,10 +24,14 @@ export function ProjectNotesEditor({
   projectId,
   initialMarkdown,
   onSaveMarkdown,
+  onDirtyChange,
+  editorRef,
 }: {
   projectId: string;
   initialMarkdown: string;
   onSaveMarkdown: (markdown: string) => void;
+  onDirtyChange?: () => void;
+  editorRef?: RefObject<NoteEditorHandle | null>;
 }) {
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [parseFailed, setParseFailed] = useState(false);
@@ -62,6 +67,8 @@ export function ProjectNotesEditor({
       key={projectId}
       noteId={projectId}
       initialContent={blocks}
+      handleRef={editorRef}
+      onDirtyChange={onDirtyChange}
       onChange={() => undefined}
       onMarkdownChange={(markdown) => onSaveRef.current(markdown)}
     />
