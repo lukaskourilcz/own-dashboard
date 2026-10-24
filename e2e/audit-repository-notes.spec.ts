@@ -85,8 +85,11 @@ for (const lang of ["en", "cs"] as const) {
       const refresh = page.getByRole("button", { name: t.refresh, exact: true });
       const disconnect = page.getByRole("button", { name: t.disconnect, exact: true });
       const editNote = page.getByRole("button", { name: t.editNote, exact: true });
-      if (width < 768) expect((await editNote.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-      for (const control of [refresh, disconnect, editNote]) { const box = (await control.boundingBox())!; expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width); }
+      if (width < 768) await expect.poll(async () => (await editNote.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+      for (const control of [refresh, disconnect, editNote]) {
+        await expect.poll(async () => (await control.boundingBox())?.x ?? -1).toBeGreaterThanOrEqual(0);
+        await expect.poll(async () => { const box = await control.boundingBox(); return box ? box.x + box.width : Infinity; }).toBeLessThanOrEqual(width);
+      }
       if (lang === "cs" && (width === 360 || width === 1440)) await page.locator('[role="tabpanel"]').screenshot({ path: `/tmp/app-audit-repository-notes-cs-${width}.png` });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     }

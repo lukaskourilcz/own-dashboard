@@ -149,8 +149,8 @@
       "path": "src/app/api/cron/renewal-warnings/route.ts",
       "lines": 172,
       "sha256": "a813f9b4a050fc6dc77681321c544db636d9414ce2225f429a43ac6819ec82d4",
-      "status": "source reviewed; owner-only, DST, consent, provider/local receipt and cancellation tests pass; final app-wide release checks pending",
-      "reviewedSha256": "fc4dd8b2cad6b2dca9526b1c01358ebb8f12cae3caf270d04e40b1a01e1c52a5"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "55cd03b9c869c5540b44355ac7f56ac6718b17e7ce4f9661f9f05c9a4db1efc2"
     },
     {
       "path": "src/app/api/crons/log/route.ts",
@@ -692,25 +692,29 @@
       "path": "src/components/charts/category-donut.tsx",
       "lines": 45,
       "sha256": "0d5d7b2e39a378a6757e2c315146fdeaedc04cdf1eba72e7841b7a1932965286",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "30386f91ff1cb34d48240bd85c451bc05da4f291f05c9dae130cd5a7d4f231f7"
     },
     {
       "path": "src/components/charts/months-bar-chart.tsx",
       "lines": 69,
       "sha256": "7954b567c7ebd30e6371cebc38d05e84fd008df398bc89ffc35b910df41fe730",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "0271e875b4b684e0a088172b479e807985c97282d3a2653a7554c85c8c30c18c"
     },
     {
       "path": "src/components/charts/shared.ts",
       "lines": 11,
       "sha256": "7ba844d3a4ad8dde43ceefb6a64716c3c5961f31d45525f6a799211b5941a53b",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "7ba844d3a4ad8dde43ceefb6a64716c3c5961f31d45525f6a799211b5941a53b"
     },
     {
       "path": "src/components/charts/spend-bar-chart.tsx",
       "lines": 39,
       "sha256": "f96a1921faddd6065b61d14493daee28929a52225317ca7ba9c72993bfab95e3",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "e7bcd773c2e38716e2f88ead63b83f72dab05cf9ee7844b745091849a6ee4f93"
     },
     {
       "path": "src/components/command-palette.tsx",
@@ -758,8 +762,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 488,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
-      "reviewedSha256": "3856b54cf1eea70b61559212160c641dd8afa8fede7a072ac22170a2294fb2ac"
+      "status": "partial: shared loading, repository flows and local-day cost memo changes checked; remaining page/shared source completion and final matrix pending",
+      "reviewedSha256": "9ed0317e7acb01e55f01dfc7b52563546a7e4cd71251b1aa2cdcee30648af2c6"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1290,7 +1294,8 @@
       "path": "src/components/panels/dev-finance-panel.tsx",
       "lines": 293,
       "sha256": "57ed645015f03bd4d541300556e8006000bc7d28decdc750ddb6a93b733a6832",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "d71c06635497e50472a2a1746ba66778dff7ce73a8fecdd56fb13bc1bb3cfd2c"
     },
     {
       "path": "src/components/panels/finances-panel.tsx",
@@ -1415,8 +1420,8 @@
       "path": "src/components/panels/projects-panel.tsx",
       "lines": 2069,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "8124cb0d95a742e628455779d43e15f7ef4ad31bbaa434c61f76c410d547c790"
+      "status": "partial: shared loading, repository flows and local-day cost memo changes checked; remaining page/shared source completion and final matrix pending",
+      "reviewedSha256": "a775a2b5b9c66c704974126a4efa6863835276d5f12c0d26db864b2b7c5ab1bd"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1568,8 +1573,8 @@
       "path": "src/components/projects/project-workspace.tsx",
       "lines": 279,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "d307b7f3795e8ace3ac965456d65c1106d0a27fc97f1c17cdd621689af3ff274"
+      "status": "partial: shared loading, repository flows and local-day cost memo changes checked; remaining page/shared source completion and final matrix pending",
+      "reviewedSha256": "0c22e4d72a76f2c739a311c2efb394395b6f2e0bb1537d9c1cfae43967eb431c"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -2007,7 +2012,8 @@
       "path": "src/lib/dev-finance.ts",
       "lines": 357,
       "sha256": "d5c95d1d2584c03398decd5cb790cc81523aedbd124e4bfa3dc1271f6d6386d3",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "67899f333af19504fc27810e8d520feda669de5fff2e470e74677d5cb1fcc535"
     },
     {
       "path": "src/lib/finances.ts",
@@ -2284,7 +2290,8 @@
       "path": "src/lib/i18n/sections/portfolio.ts",
       "lines": 337,
       "sha256": "aaa1c95cd731b3f7418a9dad19217dd5053db7b4218aa5bb82cb2ecb3c2a9029",
-      "status": "pending"
+      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
+      "reviewedSha256": "96b7affd91a5d0b1bb34b8a34ebc8597cab69c012e6f921e281eb112b26bd10e"
     },
     {
       "path": "src/lib/i18n/sections/professional.ts",

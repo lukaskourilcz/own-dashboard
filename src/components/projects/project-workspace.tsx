@@ -144,6 +144,7 @@ export function ProjectWorkspace(props: Props) {
   const { lang } = useLang();
   const p = t.professional;
   const now = useNow();
+  const costDay = now ? todayKey(now) : null;
   const tabId = useId();
   const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => '');
   const setTab = (tab: ProjectTabId) => requestNavigation(() => {
@@ -174,7 +175,7 @@ export function ProjectWorkspace(props: Props) {
   // through an allocation share; the Finance tab shows the share it carries.
   // Only running development subscriptions count, by the same rule as the
   // Money overview and the Projects list.
-  const projectSubscriptions = useMemo(() => projectSubscriptionShares(props.subscriptions, props.subscriptionAllocations, displayCurrency).get(project.id) ?? [], [props.subscriptions, props.subscriptionAllocations, displayCurrency, project.id]);
+  const projectSubscriptions = useMemo(() => projectSubscriptionShares(props.subscriptions, props.subscriptionAllocations, displayCurrency, costDay ? new Date(`${costDay}T12:00:00`) : undefined).get(project.id) ?? [], [props.subscriptions, props.subscriptionAllocations, displayCurrency, project.id, costDay]);
   const allocatedMonthly = sharesMonthly(projectSubscriptions);
   const subsections = childProjects(props.allProjects, project.id);
   const projectTransactions = props.transactions.filter((transaction) => transaction.project_id === project.id);

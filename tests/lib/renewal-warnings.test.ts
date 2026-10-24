@@ -15,7 +15,8 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from: (tabl
     const error = state.mode === `${table}-error` || (payload && state.mode === "save-error") ? { message: "Synthetic private database failure" } : null;
     const data = table === "user_preferences" ? { user_id: state.mode === "foreign-preferences" ? "foreign" : state.owner, notifications_renewals: state.enabled, language: state.language, timezone: "Europe/Prague" }
       : table === "profiles" ? { id: state.owner, email: "owner@example.test" }
-      : table === "subscriptions" ? Array.from({ length: state.subs }, (_, i) => ({ id: `22222222-2222-4222-8222-${String(i).padStart(12, "0")}`, user_id: state.mode === "foreign-subscription" ? "foreign" : state.owner, name: `Synthetic subscription ${i}`, amount: "25.50", currency: "EUR", next_billing_date: state.date, is_active: true, amount_confirmed_on: null }))
+      : table === "subscriptions" ? Array.from({ length: state.subs }, (_, i) => ({ id: `22222222-2222-4222-8222-${String(i).padStart(12, "0")}`, user_id: state.mode === "foreign-subscription" ? "foreign" : state.owner, name: `Synthetic subscription ${i}`, amount: "25.50", currency: "EUR", next_billing_date: state.date, is_active: true, amount_confirmed_on: null,
+        started_on: state.mode === "not-started" ? "2026-10-26" : null, ended_on: state.mode === "ended-subscription" ? "2026-10-24" : null }))
       : payload ? state.mode === "suppressed-save" ? null : { ...payload, ...(state.mode === "altered-save" ? { ref_id: "foreign" } : {}) } : state.prior;
     return Promise.resolve({ data, error, count: table === "subscriptions" ? state.mode === "partial-subscriptions" ? state.subs + 1 : state.subs : table === "notification_log" ? state.mode === "partial-history" ? state.prior.length + 1 : state.prior.length : null }).then(resolve);
   }; return builder;
@@ -39,6 +40,9 @@ it("keeps the three-day reminder on a date key across the DST change", async () 
 it("sends nothing after an explicit opt-out or missing configuration", async () => {
   state.enabled = false; expect((await GET(request())).status).toBe(200); expect(state.send).not.toHaveBeenCalled(); expect(state.calls.some(call => call.table === "subscriptions")).toBe(false);
   vi.stubEnv("RESEND_API_KEY", ""); expect((await GET(request())).status).toBe(200); expect(state.send).not.toHaveBeenCalled();
+});
+it.each(["not-started", "ended-subscription"])("skips %s even if its active switch remains on", async mode => {
+  state.mode = mode; expect(await (await GET(request())).json()).toMatchObject({ sent: 0, skipped: 1, failed: 0 }); expect(state.send).not.toHaveBeenCalled();
 });
 it.each(["user_preferences-error", "foreign-preferences", "subscriptions-error", "foreign-subscription", "partial-subscriptions", "profiles-error", "notification_log-error", "partial-history"])("sends nothing for an unknown %s context", async mode => {
   state.mode = mode; const reply = await GET(request()); expect(reply.status).toBe(503); expect(await reply.text()).not.toContain("private database"); expect(state.send).not.toHaveBeenCalled(); expect(state.ping).not.toHaveBeenCalled();

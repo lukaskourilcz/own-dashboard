@@ -93,13 +93,15 @@ Overview lists the links a project really uses, each with a role and a note, and
 ## Development finance
 
 The Money overview shows development spend only. A subscription counts when its
-group is Development or when it has at least one project allocation. A transaction
-counts when it settles a subscription (`transactions.subscription_id`), is linked to a
-project, or carries a development category. Personal spend never enters the figures.
+group is Development, it has a project allocation, or it retains a legacy project link.
+An expense counts when it settles a development subscription, is explicitly linked to a
+project, or carries a development category. Future-dated expenses and unrelated
+subscription payments stay outside paid totals. No stored classification is changed.
 
 `subscription_allocations` splits a shared subscription across projects by share; the
 remainder is reported as unallocated instead of being guessed onto a project. A paid
-invoice linked to a subscription inherits that subscription's split. Subscriptions also
+transaction uses its explicit project first; otherwise a linked subscription supplies
+its currently recorded split. This is not a historical allocation ledger. Subscriptions also
 record `started_on`, `ended_on`, `plan`, `vendor_url` and `notes`; `quarterly` joined the
 billing cycles for Mobbin. The summary is computed in `src/lib/dev-finance.ts`:
 recurring monthly and yearly totals, the split between own projects, client projects
@@ -149,3 +151,17 @@ check includes the Competition tab.
 ## Subscription save recovery — 23 October 2026
 
 A saved subscription is retained if its separate project-allocation write fails. The form stays open with the confirmed subscription id and an explicit warning, so retry updates that record rather than creating another subscription. Allocation reads reconcile after a partial failure. Pending writes disable conflicting controls, and failed toggles or deletions report their outcome. Renewal windows follow the shared browser clock without advancing or inferring any stored renewal date. No vendor connection or owner billing record was changed by this audit.
+
+
+## Finance read and rendering audit — 24 October 2026
+
+Running figures respect entered start/end dates. Money waits for the local day before
+rendering those figures and refreshes them at a day change; project cost memos use the
+same day. The monthly committed chart estimates previous periods using today’s
+subscription prices and recorded activity dates, excluding manual project cost lines.
+Paid amounts include transactions dated through today. Current-share and price caveats
+are visible in both languages. Detail tables have named keyboard scroll regions,
+heading/caption semantics and mobile project-link targets; charts honor reduced motion.
+The allocation/payment calculation uses shared indexes, with a reproducible local
+[CPU comparison](reports/app-wide-audit-2026-10-23/dev-finance-cpu.json). This audit changes
+no stored amount, renewal date, classification or allocation.

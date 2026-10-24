@@ -16,12 +16,14 @@ import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
 import { SubscriptionIcon } from "@/components/subscriptions/subscription-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import { CHART_COLORS } from "@/lib/chart-colors";
-import { isAmountConfirmed, summarizeDevFinance, subscriptionShares } from "@/lib/dev-finance";
+import { indexSubscriptionShares, isAmountConfirmed, isRunningSubscription, summarizeDevFinance } from "@/lib/dev-finance";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { useDateLocale, useDict } from "@/lib/i18n";
 import { projectEngagement } from "@/lib/projects";
 import { isActive, toMonthlyIn } from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
+import { todayKey } from "@/lib/date-keys";
 import type { Cron, Project, ProjectCost, Subscription, SubscriptionAllocation, Transaction } from "@/lib/types";
 
 const chartFallback = () => <Skeleton className="h-full w-full" />;
@@ -64,22 +66,27 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
   const t = useDict();
   const f = t.portfolio.finance;
   const locale = useDateLocale();
+  const now = useNow(), day = now ? todayKey(now) : null;
+  const referenceDate = useMemo(() => day ? new Date(`${day}T12:00:00`) : null, [day]);
   const summary = useMemo(
-    () => summarizeDevFinance({ subscriptions, allocations, transactions, projects, projectCosts, crons, currency: displayCurrency, months: MONTHS }),
-    [subscriptions, allocations, transactions, projects, projectCosts, crons, displayCurrency],
+    () => referenceDate ? summarizeDevFinance({ subscriptions, allocations, transactions, projects, projectCosts, crons, currency: displayCurrency, months: MONTHS, now: referenceDate }) : null,
+    [subscriptions, allocations, transactions, projects, projectCosts, crons, displayCurrency, referenceDate],
   );
   const timeline = useMemo(
-    () => summary.timeline.map((point) => ({ ...point, label: format(parseISO(`${point.month}-01`), t.finances.monthFormat, { locale }) })),
-    [summary.timeline, t.finances.monthFormat, locale],
+    () => summary?.timeline.map((point) => ({ ...point, label: format(parseISO(`${point.month}-01`), t.finances.monthFormat, { locale }) })) ?? [],
+    [summary, t.finances.monthFormat, locale],
   );
   const projectSlices = useMemo(() => {
+    if (!summary) return [];
     const rows = summary.byProject.filter((row) => row.recurringMonthly > 0).map((row) => ({ name: row.project.name, value: Number(row.recurringMonthly.toFixed(2)) }));
     if (summary.unallocatedMonthly > 0) rows.push({ name: f.unallocatedShort, value: Number(summary.unallocatedMonthly.toFixed(2)) });
     return rows;
   }, [summary, f.unallocatedShort]);
-  const vendorSlices = useMemo(() => summary.byVendor.map((row) => ({ name: row.name, value: Number(row.value.toFixed(2)) })), [summary.byVendor]);
+  const vendorSlices = useMemo(() => summary?.byVendor.map((row) => ({ name: row.name, value: Number(row.value.toFixed(2)) })) ?? [], [summary]);
   const projectById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
   const subscriptionById = useMemo(() => new Map(subscriptions.map((sub) => [sub.id, sub])), [subscriptions]);
+  const sharesBySubscription = useMemo(() => indexSubscriptionShares(subscriptions, allocations), [subscriptions, allocations]);
+  if (!summary || !referenceDate) return <Card aria-busy="true" aria-label={t.common.loading}><CardContent className="space-y-3 p-5"><Skeleton className="h-16 w-full"/><Skeleton className="h-56 w-full"/></CardContent></Card>;
   const hasSpend = summary.recurringMonthly > 0 || summary.paidLastMonths > 0;
   const shareOf = (value: number) => summary.recurringMonthly > 0 ? `${Math.round((value / summary.recurringMonthly) * 100)}%` : "—";
   const cycleLabel = (sub: Subscription) => t.subscriptions.cycle[sub.billing_cycle] ?? sub.billing_cycle;
@@ -127,13 +134,13 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
           </section>
 
           <Card>
-            <CardHeader><CardTitle>{f.timelineTitle}</CardTitle><p className="text-xs text-foreground-muted">{f.timelineHint}</p></CardHeader>
+            <CardHeader><CardTitle role="heading" aria-level={2}>{f.timelineTitle}</CardTitle><p className="text-xs text-foreground-muted">{f.timelineHint}</p></CardHeader>
             <CardContent><div className="h-56 sm:h-64"><SpendBarChart data={timeline} currency={displayCurrency} committedLabel={f.committed} paidLabel={f.paid} /></div></CardContent>
           </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader><CardTitle>{f.byProjectTitle}</CardTitle></CardHeader>
+              <CardHeader><CardTitle role="heading" aria-level={2}>{f.byProjectTitle}</CardTitle></CardHeader>
               <CardContent>
                 {projectSlices.length === 0 ? <p className="text-sm text-foreground-muted">{f.noDevSpend}</p> : (
                   <div className="grid items-center gap-6 sm:grid-cols-2">
@@ -144,7 +151,7 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>{f.byVendorTitle}</CardTitle></CardHeader>
+              <CardHeader><CardTitle role="heading" aria-level={2}>{f.byVendorTitle}</CardTitle></CardHeader>
               <CardContent>
                 {vendorSlices.length === 0 ? <p className="text-sm text-foreground-muted">{f.noDevSpend}</p> : (
                   <div className="grid items-center gap-6 sm:grid-cols-2">
@@ -157,9 +164,10 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
           </div>
 
           <Card className="overflow-hidden p-0">
-            <CardHeader className="border-b border-border"><CardTitle>{f.byProjectTitle}</CardTitle><p className="text-xs text-foreground-muted">{f.allocationsHint}</p></CardHeader>
-            <div className="overflow-x-auto">
+            <CardHeader className="border-b border-border"><CardTitle role="heading" aria-level={2}>{f.projectDetails}</CardTitle><p className="text-xs text-foreground-muted">{f.allocationsHint}</p></CardHeader>
+            <div className="overflow-x-auto focus-ring" role="region" aria-label={f.projectDetails} tabIndex={0}>
               <table className="w-full min-w-[720px] text-left">
+                <caption className="sr-only">{f.projectDetails}</caption>
                 <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted">
                   <tr>
                     <th scope="col" className="px-3 py-2.5 font-medium">{f.projectColumn}</th>
@@ -172,13 +180,13 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {summary.byProject.filter((row) => row.recurringMonthly > 0 || row.paidTotal > 0).map((row) => {
+                  {summary.byProject.map((row) => {
                     const engagement = projectEngagement(row.project);
                     const parent = row.project.parent_id ? projectById.get(row.project.parent_id) : undefined;
                     return (
                       <tr key={row.project.id} className="hover:bg-surface-hover">
                         <td className="px-3 py-2.5">
-                          <button type="button" onClick={() => onOpenProject(row.project)} className="focus-ring rounded text-sm font-medium text-foreground hover:underline">{row.project.name}</button>
+                          <button type="button" onClick={() => onOpenProject(row.project)} className="focus-ring inline-flex min-h-11 min-w-11 items-center rounded text-left text-sm font-medium text-foreground hover:underline md:min-h-0 md:min-w-0">{row.project.name}</button>
                           {parent && <span className="ml-2 text-xs text-foreground-subtle">{t.portfolio.subsectionOf(parent.name)}</span>}
                         </td>
                         <td className="px-3 py-2.5"><StatusBadge value={engagement} label={engagement === "client" ? t.projects.engagementClient : t.projects.engagementOwn} tone={engagement === "client" ? "information" : "neutral"} /></td>
@@ -206,11 +214,12 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
 
           <Card className="overflow-hidden p-0">
             <CardHeader className="border-b border-border">
-              <CardTitle>{f.byVendorTitle}</CardTitle>
+              <CardTitle role="heading" aria-level={2}>{f.subscriptionDetails}</CardTitle>
               {summary.unconfirmedCount > 0 && <p className="max-w-prose text-xs text-foreground-muted">{f.unconfirmedAmountsHint}</p>}
             </CardHeader>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto focus-ring" role="region" aria-label={f.subscriptionDetails} tabIndex={0}>
               <table className="w-full min-w-[900px] text-left">
+                <caption className="sr-only">{f.subscriptionDetails}</caption>
                 <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted">
                   <tr>
                     <th scope="col" className="px-3 py-2.5 font-medium">{f.vendorColumn}</th>
@@ -225,9 +234,10 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
                 </thead>
                 <tbody className="divide-y divide-border">
                   {[...summary.developmentSubscriptions].sort((a, b) => Number(isActive(b)) - Number(isActive(a)) || toMonthlyIn(b, displayCurrency) - toMonthlyIn(a, displayCurrency)).map((sub) => {
-                    const active = isActive(sub);
+                    const active = isRunningSubscription(sub, referenceDate);
+                    const upcoming = isActive(sub) && Boolean(sub.started_on && sub.started_on > day!);
                     const confirmed = isAmountConfirmed(sub);
-                    const shares = subscriptionShares(sub, allocations).filter((slice) => slice.projectId && projectById.has(slice.projectId));
+                    const shares = (sharesBySubscription.get(sub.id) ?? []).filter((slice) => slice.projectId && projectById.has(slice.projectId));
                     return (
                       <tr key={sub.id} className={active ? "hover:bg-surface-hover" : "opacity-60 hover:bg-surface-hover"}>
                         <td className="px-3 py-2.5">
@@ -249,13 +259,13 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
                         </td>
                         <td className="px-3 py-2.5 text-right tabular">{formatCurrency(toMonthlyIn(sub, displayCurrency), displayCurrency)}</td>
                         <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{sub.started_on ?? "—"}{sub.ended_on ? ` – ${sub.ended_on}` : ""}</td>
-                        <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{active ? sub.next_billing_date ?? "—" : sub.ended_on ?? "—"}</td>
+                        <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{active || upcoming ? sub.next_billing_date ?? "—" : sub.ended_on ?? "—"}</td>
                         <td className="px-3 py-2.5">
                           <div className="flex flex-wrap gap-1">
                             {shares.length === 0 ? <span className="text-xs text-foreground-subtle">{f.unallocatedShort}</span> : shares.map((slice) => <EntityBadge key={slice.projectId}>{projectById.get(slice.projectId!)!.name} · {Math.round(slice.share * 100)}%</EntityBadge>)}
                           </div>
                         </td>
-                        <td className="px-3 py-2.5"><StatusBadge value={active ? "active" : "inactive"} label={active ? f.running : f.ended} /></td>
+                        <td className="px-3 py-2.5"><StatusBadge value={active ? "active" : upcoming ? "pending" : "inactive"} label={active ? f.running : upcoming ? f.notStarted : f.ended} /></td>
                       </tr>
                     );
                   })}
@@ -266,7 +276,7 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
           </Card>
 
           <Card className="overflow-hidden p-0">
-            <CardHeader className="border-b border-border"><CardTitle><Receipt className="h-4 w-4" />{f.recentTransactions}</CardTitle></CardHeader>
+            <CardHeader className="border-b border-border"><CardTitle role="heading" aria-level={2}><Receipt className="h-4 w-4" />{f.recentTransactions}</CardTitle></CardHeader>
             {summary.developmentTransactions.length === 0 ? <CardContent className="pt-4"><p className="text-sm text-foreground-muted">{f.noRecentTransactions}</p></CardContent> : (
               <ul className="divide-y divide-border">
                 {summary.developmentTransactions.slice(0, 40).map((tx) => {

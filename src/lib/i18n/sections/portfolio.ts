@@ -58,6 +58,9 @@ type PortfolioStrings = {
     paid: string;
     byProjectTitle: string;
     byVendorTitle: string;
+    projectDetails: string;
+    subscriptionDetails: string;
+    notStarted: string;
     projectColumn: string;
     monthlyColumn: string;
     yearlyColumn: string;
@@ -166,11 +169,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       unallocated: "Unallocated",
       unallocatedHint: "Shared subscriptions without a project split. Allocate them in Subscriptions to move this amount onto projects.",
       timelineTitle: "Monthly development spend",
-      timelineHint: "Committed = subscriptions active in that month, normalized to monthly. Paid = invoices and one-off purchases recorded as transactions.",
+      timelineHint: "Committed estimates past months using today's subscription prices and recorded activity dates; manual project costs are excluded. Paid includes transactions dated through today.",
       committed: "Committed",
       paid: "Paid",
       byProjectTitle: "By project",
       byVendorTitle: "By vendor",
+      projectDetails: "Project allocations",
+      subscriptionDetails: "Subscription details",
+      notStarted: "Not started",
       projectColumn: "Project",
       monthlyColumn: "Monthly",
       yearlyColumn: "Yearly",
@@ -191,7 +197,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       ended: "Ended",
       manageSubscriptions: "Manage subscriptions",
       settles: (name) => `Settles ${name}`,
-      allocationsHint: "Allocated shares follow the subscription; paid invoices inherit the same split.",
+      allocationsHint: "An explicit transaction project takes precedence. Other subscription payments use the current shares, not a historical allocation ledger.",
       unallocatedShort: "Unallocated",
       manualCosts: "Manual cost lines and automations",
       amountConfirmed: (date) => `Amount confirmed ${date}`,
@@ -279,11 +285,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       unallocated: "Nepřiřazeno",
       unallocatedHint: "Sdílená předplatná bez rozdělení na projekty. Rozdělte je v Předplatných, aby se částka přesunula na projekty.",
       timelineTitle: "Měsíční výdaje na vývoj",
-      timelineHint: "Závazky = předplatná aktivní v daném měsíci přepočtená na měsíc. Zaplaceno = faktury a jednorázové nákupy zaznamenané jako transakce.",
+      timelineHint: "Závazky odhadují minulá období z dnešních cen předplatných a zadaných dat aktivity; ruční náklady projektů nezahrnují. Zaplaceno zahrnuje transakce s datem nejpozději dnes.",
       committed: "Závazky",
       paid: "Zaplaceno",
       byProjectTitle: "Podle projektu",
       byVendorTitle: "Podle dodavatele",
+      projectDetails: "Přiřazení k projektům",
+      subscriptionDetails: "Podrobnosti předplatných",
+      notStarted: "Ještě nezačalo",
       projectColumn: "Projekt",
       monthlyColumn: "Měsíčně",
       yearlyColumn: "Ročně",
@@ -304,7 +313,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       ended: "Ukončeno",
       manageSubscriptions: "Spravovat předplatná",
       settles: (name) => `Hradí ${name}`,
-      allocationsHint: "Přiřazené podíly se řídí předplatným; zaplacené faktury dědí stejné rozdělení.",
+      allocationsHint: "Výslovné přiřazení transakce k projektu má přednost. Ostatní platby předplatných používají aktuální podíly, nikoli historickou evidenci přiřazení.",
       unallocatedShort: "Nepřiřazeno",
       manualCosts: "Ruční nákladové položky a automatizace",
       amountConfirmed: (date) => `Částka ověřena ${date}`,

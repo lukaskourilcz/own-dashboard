@@ -16,8 +16,8 @@ import type {
  * Development finance: what building and running the projects costs.
  *
  * Scope rule — a subscription belongs to development when its category group
- * is `development` or when at least one project allocation exists. A
- * transaction belongs to development when it settles a subscription, is linked
+ * is `development` or when a project allocation/legacy project link exists. A
+ * transaction belongs to development when it settles a development subscription, is linked
  * to a project, or carries a development category. Personal spend (rent,
  * streaming, insurance) never enters these figures.
  *
@@ -34,13 +34,13 @@ import type {
 export const DEVELOPMENT_CATEGORIES = new Set(["development", "dev", "vývoj", "vyvoj", "software", "hosting", "ai tools", "ai"]);
 
 export function isDevelopmentSubscription(sub: Subscription, allocations: SubscriptionAllocation[]): boolean {
-  if (sub.category_group === "development") return true;
+  if (sub.category_group === "development" || sub.project_id) return true;
   return allocations.some((allocation) => allocation.subscription_id === sub.id);
 }
 
-export function isDevelopmentTransaction(tx: Transaction): boolean {
+export function isDevelopmentTransaction(tx: Transaction, developmentSubscriptions?: ReadonlySet<string>): boolean {
   if (tx.kind !== "expense") return false;
-  if (tx.subscription_id || tx.project_id) return true;
+  if (tx.project_id || (tx.subscription_id && developmentSubscriptions?.has(tx.subscription_id))) return true;
   return DEVELOPMENT_CATEGORIES.has((tx.category ?? "").trim().toLowerCase());
 }
 
@@ -103,6 +103,17 @@ export function subscriptionShares(sub: Subscription, allocations: SubscriptionA
   return slices;
 }
 
+/** Index allocations once per calculation, instead of rescanning all rows for
+ * every subscription and every historical payment. No stored share changes. */
+export function indexSubscriptionShares(subscriptions: Subscription[], allocations: SubscriptionAllocation[]): Map<string, ShareSlice[]> {
+  const bySubscription = new Map<string, SubscriptionAllocation[]>();
+  for (const allocation of allocations) {
+    const rows = bySubscription.get(allocation.subscription_id);
+    if (rows) rows.push(allocation); else bySubscription.set(allocation.subscription_id, [allocation]);
+  }
+  return new Map(subscriptions.map(sub => [sub.id, subscriptionShares(sub, bySubscription.get(sub.id) ?? [])]));
+}
+
 /**
  * Which stored allocation rows an edit removed: the rows the form opened with
  * whose project is no longer in it. The form's starting rows are the only
@@ -118,14 +129,15 @@ export function staleAllocationIds(
 }
 
 /**
- * Whether a subscription is still being billed: switched on, and its end date,
- * if it has one, not yet passed. A row switched off, or one whose `ended_on`
- * lies before today, is cancelled and costs nothing any more.
+ * Whether a subscription is being billed today: switched on, its entered start
+ * date reached and its entered end date not yet passed. No dates are inferred.
  */
 export function isRunningSubscription(sub: Subscription, now: Date = new Date()): boolean {
   if (!isActive(sub)) return false;
+  const today = todayKey(now), started = sub.started_on ?? "";
+  if (DATE_ONLY.test(started) && started > today) return false;
   const ended = sub.ended_on ?? "";
-  return !DATE_ONLY.test(ended) || ended >= todayKey(now);
+  return !DATE_ONLY.test(ended) || ended >= today;
 }
 
 /** One running development subscription's part of one project. */
@@ -150,11 +162,13 @@ export function projectSubscriptionShares(
   now: Date = new Date(),
 ): Map<string, ProjectSubscriptionShare[]> {
   const byProject = new Map<string, ProjectSubscriptionShare[]>();
+  const allocated = new Set(allocations.map(row => row.subscription_id));
+  const shares = indexSubscriptionShares(subscriptions, allocations);
   for (const subscription of subscriptions) {
-    if (!isDevelopmentSubscription(subscription, allocations)) continue;
+    if (subscription.category_group !== "development" && !subscription.project_id && !allocated.has(subscription.id)) continue;
     if (!isRunningSubscription(subscription, now)) continue;
     const monthly = toMonthlyIn(subscription, currency);
-    for (const slice of subscriptionShares(subscription, allocations)) {
+    for (const slice of shares.get(subscription.id) ?? []) {
       if (!slice.projectId) continue;
       const entry = { subscription, share: slice.share, monthly: monthly * slice.share };
       const list = byProject.get(slice.projectId);
@@ -252,15 +266,18 @@ export function summarizeDevFinance({
   now?: Date;
   months?: number;
 }): DevFinanceSummary {
-  const devSubs = subscriptions.filter((sub) => isDevelopmentSubscription(sub, allocations));
+  const allocated = new Set(allocations.map(row => row.subscription_id));
+  const devSubs = subscriptions.filter(sub => sub.category_group === "development" || sub.project_id || allocated.has(sub.id));
+  const shares = indexSubscriptionShares(subscriptions, allocations);
+  const monthlyById = new Map(devSubs.map(sub => [sub.id, toMonthlyIn(sub, currency)]));
   const activeDevSubs = devSubs.filter((sub) => isRunningSubscription(sub, now));
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const recurringByProject = new Map<string, number>();
   let unallocated = 0;
 
   for (const sub of activeDevSubs) {
-    const monthly = toMonthlyIn(sub, currency);
-    for (const slice of subscriptionShares(sub, allocations)) {
+    const monthly = monthlyById.get(sub.id)!;
+    for (const slice of shares.get(sub.id) ?? []) {
       const amount = monthly * slice.share;
       if (slice.projectId && projectById.has(slice.projectId)) {
         recurringByProject.set(slice.projectId, (recurringByProject.get(slice.projectId) ?? 0) + amount);
@@ -272,33 +289,47 @@ export function summarizeDevFinance({
 
   const keys = monthKeys(months, now);
   const firstKey = keys[0] ?? "";
-  const devTx = transactions.filter(isDevelopmentTransaction);
+  const today = todayKey(now);
+  const developmentIds = new Set(devSubs.map(sub => sub.id));
+  const devTx = transactions.filter(tx => isDevelopmentTransaction(tx, developmentIds) && tx.occurred_on <= today);
   const windowTx = devTx.filter((tx) => monthKeyOf(tx.occurred_on) >= firstKey);
   const subById = new Map(subscriptions.map((sub) => [sub.id, sub]));
   const paidByProject = new Map<string, number>();
   const oneOffByProject = new Map<string, number>();
   let paidTotal = 0;
+  const paidByMonth = new Map<string, number>();
 
   for (const tx of windowTx) {
     const amount = convert(tx.amount, tx.currency, currency);
     paidTotal += amount;
+    const month = monthKeyOf(tx.occurred_on);
+    paidByMonth.set(month, (paidByMonth.get(month) ?? 0) + amount);
     const sub = tx.subscription_id ? subById.get(tx.subscription_id) : undefined;
-    if (sub) {
-      for (const slice of subscriptionShares(sub, allocations)) {
+    // A transaction's explicit project is more specific than the current
+    // subscription split; subscription payments remain outside one-off totals.
+    if (tx.project_id) {
+      paidByProject.set(tx.project_id, (paidByProject.get(tx.project_id) ?? 0) + amount);
+      if (!sub) oneOffByProject.set(tx.project_id, (oneOffByProject.get(tx.project_id) ?? 0) + amount);
+    } else if (sub) {
+      for (const slice of shares.get(sub.id) ?? []) {
         if (!slice.projectId) continue;
         paidByProject.set(slice.projectId, (paidByProject.get(slice.projectId) ?? 0) + amount * slice.share);
       }
-    } else if (tx.project_id) {
-      paidByProject.set(tx.project_id, (paidByProject.get(tx.project_id) ?? 0) + amount);
-      oneOffByProject.set(tx.project_id, (oneOffByProject.get(tx.project_id) ?? 0) + amount);
     }
   }
 
+  const costsByProject = new Map<string, ProjectCost[]>(), cronsByProject = new Map<string, Cron[]>();
+  for (const cost of projectCosts) {
+    const rows = costsByProject.get(cost.project_id); if (rows) rows.push(cost); else costsByProject.set(cost.project_id, [cost]);
+  }
+  for (const cron of crons) {
+    const rows = cronsByProject.get(cron.project_id); if (rows) rows.push(cron); else cronsByProject.set(cron.project_id, [cron]);
+  }
   const byProject: ProjectSpend[] = projects
     .map((project) => {
       const costLinesMonthly = projectMonthlyIn(
-        projectCosts.filter((cost) => cost.project_id === project.id),
-        crons.filter((cron) => cron.project_id === project.id),
+        costsByProject.get(project.id) ?? [],
+        cronsByProject.get(project.id) ?? [],
         currency,
       );
       return {
@@ -317,21 +348,19 @@ export function summarizeDevFinance({
   const engagementMonthly = (engagement: "own" | "client") =>
     byProject.filter((row) => projectEngagement(row.project) === engagement).reduce((sum, row) => sum + row.recurringMonthly, 0);
 
-  const recurringMonthly = activeDevSubs.reduce((sum, sub) => sum + toMonthlyIn(sub, currency), 0)
+  const recurringMonthly = activeDevSubs.reduce((sum, sub) => sum + monthlyById.get(sub.id)!, 0)
     + byProject.reduce((sum, row) => sum + row.costLinesMonthly, 0);
 
   const timeline: TimelinePoint[] = keys.map((month) => ({
     month,
     committed: devSubs
       .filter((sub) => subscriptionActiveInMonth(sub, month))
-      .reduce((sum, sub) => sum + toMonthlyIn(sub, currency), 0),
-    paid: windowTx
-      .filter((tx) => monthKeyOf(tx.occurred_on) === month)
-      .reduce((sum, tx) => sum + convert(tx.amount, tx.currency, currency), 0),
+      .reduce((sum, sub) => sum + monthlyById.get(sub.id)!, 0),
+    paid: paidByMonth.get(month) ?? 0,
   }));
 
   const byVendor = activeDevSubs
-    .map((sub) => ({ name: sub.name, value: toMonthlyIn(sub, currency), subscription: sub }))
+    .map((sub) => ({ name: sub.name, value: monthlyById.get(sub.id)!, subscription: sub }))
     .filter((row) => row.value > 0)
     .sort((a, b) => b.value - a.value);
 
@@ -343,7 +372,7 @@ export function summarizeDevFinance({
     recurringMonthly,
     recurringYearly: recurringMonthly * 12,
     unallocatedMonthly: unallocated,
-    unconfirmedMonthly: unconfirmed.reduce((sum, sub) => sum + toMonthlyIn(sub, currency), 0),
+    unconfirmedMonthly: unconfirmed.reduce((sum, sub) => sum + monthlyById.get(sub.id)!, 0),
     unconfirmedCount: unconfirmed.length,
     ownMonthly: engagementMonthly("own"),
     clientMonthly: engagementMonthly("client"),

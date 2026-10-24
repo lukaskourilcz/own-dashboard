@@ -283,6 +283,7 @@ function ProjectsListPanel({
   const [saving, setSaving] = useState(false);
   const [manageProjectId, setManageProjectId] = useState<string | null>(null);
   const now = useNow();
+  const costDay = now ? todayKey(now) : null;
 
   // --- Sync active Repositories → Projects -------------------------------
   // The active repos are the shared Repositories allow-list applied to the live
@@ -688,9 +689,9 @@ function ProjectsListPanel({
   // running development subscriptions, by the rule the Money overview and the
   // project workspace use, so all three show the same figure.
   const subscriptionMonthly = useMemo(() => {
-    const shares = projectSubscriptionShares(subscriptions, subscriptionAllocations, displayCurrency);
+    const shares = projectSubscriptionShares(subscriptions, subscriptionAllocations, displayCurrency, costDay ? new Date(`${costDay}T12:00:00`) : undefined);
     return new Map([...shares].map(([projectId, list]) => [projectId, sharesMonthly(list)]));
-  }, [subscriptions, subscriptionAllocations, displayCurrency]);
+  }, [subscriptions, subscriptionAllocations, displayCurrency, costDay]);
   const monthlyOf = useCallback(
     (project: Project) =>
       projectMonthlyIn(

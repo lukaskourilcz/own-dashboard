@@ -18,7 +18,7 @@ const subscription = z.object({
   id: z.uuid(), user_id: z.uuid(), name: z.string().min(1).max(200),
   amount: z.union([z.number(), z.string().regex(/^\d+(?:\.\d+)?$/)]).transform(Number).pipe(z.number().finite().nonnegative()),
   currency: z.enum(SUPPORTED_CURRENCIES), next_billing_date: z.iso.date(), is_active: z.literal(true),
-  amount_confirmed_on: z.iso.date().nullable(),
+  amount_confirmed_on: z.iso.date().nullable(), started_on: z.iso.date().nullable(), ended_on: z.iso.date().nullable(),
 });
 
 export async function GET(request: Request) {
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     const today = focusDayKey(new Date(), timeZone);
     const inThreeDays = new Date(Date.parse(`${today}T12:00:00Z`) + 3 * 86400000).toISOString().slice(0, 10);
     const result = await awaitWithSignal(admin.from("subscriptions")
-      .select("id,user_id,name,amount,currency,next_billing_date,is_active,amount_confirmed_on", { count: "exact" })
+      .select("id,user_id,name,amount,currency,next_billing_date,is_active,amount_confirmed_on,started_on,ended_on", { count: "exact" })
       .eq("user_id", owner!).in("next_billing_date", [today, inThreeDays]).eq("is_active", true).limit(101).abortSignal(signal), signal);
     const rows = z.array(subscription).max(100).parse(result.data);
     if (result.error || result.count !== rows.length || new Set(rows.map(row => row.id)).size !== rows.length
@@ -59,6 +59,7 @@ export async function GET(request: Request) {
       for (let index = 0; index < rows.length; index++) {
         if (signal.aborted) { failed += rows.length - index; break; }
         const row = rows[index], dueToday = row.next_billing_date === today;
+        if ((row.started_on && row.started_on > today) || (row.ended_on && row.ended_on < today)) { skipped++; continue; }
         const kind = dueToday ? "subscription_renewal_0d" : "subscription_renewal_3d";
         if (alreadySent.has(`${kind}|${row.id}`)) { skipped++; continue; }
         const identity = renewalEventIdentity(owner!, row.id, kind, row.next_billing_date);

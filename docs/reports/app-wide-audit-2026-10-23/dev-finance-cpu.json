@@ -1,0 +1,26 @@
+{
+  "scope": "Local synthetic aggregate CPU only; not deployed latency, throughput or money savings.",
+  "baselineRef": "33b5369",
+  "currentSourceSha256": "67899f333af19504fc27810e8d520feda669de5fff2e470e74677d5cb1fcc535",
+  "node": "v26.8.2",
+  "subscriptions": 1000,
+  "allocations": 2000,
+  "transactions": 10000,
+  "projects": 200,
+  "projectCosts": 1000,
+  "outputsIdentical": true,
+  "samples": [
+    {
+      "beforeMs": 182.0795,
+      "afterMs": 10.07454100000001
+    },
+    {
+      "beforeMs": 80.16529099999997,
+      "afterMs": 6.30295799999999
+    },
+    {
+      "beforeMs": 60.50599999999997,
+      "afterMs": 6.023166999999944
+    }
+  ]
+}
