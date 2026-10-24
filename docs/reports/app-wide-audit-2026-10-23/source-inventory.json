@@ -1875,10 +1875,10 @@
     },
     {
       "path": "src/components/work/weekly-planning.tsx",
-      "lines": 739,
+      "lines": 745,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; findings 164/166–168 classification, complete focus, captured confirmed saves, owner/week/exit recovery checked; remaining aggregate/legacy inputs and summary/action layout review pending",
-      "reviewedSha256": "827d3e64f5e8f4acbc5930e20a8ba33624edac248b072b8bd7aabe0bcd11564c"
+      "status": "partial; findings 164/166–169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
+      "reviewedSha256": "b59dc5381857cbb8394603de3434d306b73a638465c04e63f8555e0e5f47be9c"
     },
     {
       "path": "src/lib/abortable.ts",
@@ -2533,8 +2533,8 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "partial; findings 164/166/168 EN/CS weekly history/save/owner-week recovery copy checked; remaining destination copy review pending",
-      "reviewedSha256": "0a8d6c7b720c432667b01e91f07eb9dbb5b521c702607451535b3aa33940dc41"
+      "status": "partial; findings 164/166/168–169 EN/CS weekly recovery and compact action copy checked; remaining destination copy review pending",
+      "reviewedSha256": "491e521249f00b5bdcf0291e94b5b4eff3a6ac00f5c089c824e3e21943d42f30"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",

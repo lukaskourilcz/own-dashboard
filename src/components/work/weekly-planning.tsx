@@ -526,7 +526,7 @@ function PlanningSteps({
             <div className="space-y-3">
               <p className="text-xs text-foreground-muted">{p.weekSummaryDescription}</p>
               <label className="block space-y-1.5">
-                <SectionLabel>{p.planningStepSummary}</SectionLabel>
+                <span className="sr-only">{p.planningStepSummary}</span>
                 <Textarea
                   value={summary}
                   readOnly={error === 'conflict'}
@@ -577,19 +577,23 @@ function PlanningSteps({
         </fieldset>
         {step !== "done" && step !== "carry" && focusNotice}
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <Button variant="outline" onClick={goBack} disabled={blocked || stepIndex === 0}>
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex items-center gap-2">
+          <Button className="w-20" variant="outline" onClick={goBack} disabled={blocked || stepIndex === 0}>
             {p.planningBack}
           </Button>
           <Button
             variant="outline"
+            className="w-20"
             onClick={goNext}
             disabled={blocked || stepIndex === WEEKLY_PLANNING_STEPS.length - 1 || (!isPreview && (step === "done" || step === "carry") && !focusReady)}
           >
             {p.planningNext}
           </Button>
-          <span className="flex-1" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
           <Button
+            className="h-auto min-h-11 min-w-0 whitespace-normal py-2 md:h-auto md:min-h-8 md:py-1"
             variant="outline"
             onClick={() => void persist("draft", step)}
             disabled={isPreview || blocked}
@@ -597,11 +601,13 @@ function PlanningSteps({
             {pending ? p.planningSaving : p.saveDraft}
           </Button>
           <Button
+            className="h-auto min-h-11 min-w-0 whitespace-normal py-2 md:h-auto md:min-h-8 md:py-1"
             onClick={() => void persist("complete", step)}
             disabled={isPreview || blocked || !focusReady}
           >
             {p.completeWeek}
           </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
