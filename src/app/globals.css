@@ -9,6 +9,7 @@
    are expressed exclusively through semantic tokens. */
 
 :root {
+  color-scheme: light;
   /* surfaces */
   --background: #f3f4f6;
   --surface: #ffffff;
@@ -121,6 +122,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --primary-button: #dbe8fb;
   --background: #101214;
   --surface: #15181b;
@@ -603,6 +605,7 @@ textarea {
     margin: 0;
   }
   body {
+    color-scheme: light;
     background: #fff;
   }
   body * {

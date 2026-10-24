@@ -21,7 +21,8 @@ async function focusContrast(control:Locator){
  return read();
 }
 for(const lang of ['en','cs'] as const)for(const theme of ['light','dark'] as const)test(`${lang} ${theme}: native focus indicators contrast on shared buttons and fields`,async({page},info)=>{
- const errors=watchConsole(page),t=calendar[lang],samples=[];await gotoPreview(page,{lang,theme});await page.goto('/dev-preview?tab=calendar');
+ const errors=watchConsole(page),t=calendar[lang],samples=[];await gotoPreview(page,{lang,theme});await page.emulateMedia({colorScheme:theme==='dark'?'light':'dark',reducedMotion:'reduce'});await page.goto('/dev-preview?tab=calendar');
+ expect(await page.locator('html').evaluate(element=>getComputedStyle(element).colorScheme)).toBe(theme);
  const opener=page.getByRole('button',{name:t.newEvent,exact:true});await page.keyboard.press('Tab');
  for(const width of [360,430,768,1024,1440,1728]){await page.setViewportSize({width,height:1000});const sample=await focusContrast(opener);expect(sample.focusVisible).toBe(true);expect(sample.hasRing).toBe(true);samples.push({control:'button',width,...sample});}
  await opener.click();const dialog=page.getByRole('dialog',{name:t.newEvent,exact:true});
@@ -39,4 +40,8 @@ test('forced colors retain a native visible focus outline when shadows are remov
  const verify=async(control:Locator)=>{await control.focus();await expect(control).toBeFocused();await expect.poll(async()=>(await readOutline(control)).width).toBeGreaterThanOrEqual(2);const outline=await readOutline(control);expect(outline.visible).toBe(true);expect(outline.style).toBe('solid');expect(outline.width).toBeGreaterThanOrEqual(2);};
  await verify(opener);await opener.click();const dialog=page.getByRole('dialog',{name:calendar.en.newEvent,exact:true});
  for(const control of [dialog.getByLabel(calendar.en.title,{exact:true}),dialog.getByLabel(calendar.en.description,{exact:true}),dialog.getByRole('combobox',{name:calendar.en.repeats,exact:true})])await verify(control);
+});
+
+test('print keeps native paper controls light independently of the dark app theme',async({page})=>{
+ await gotoPreview(page,{theme:'dark'});await page.emulateMedia({media:'print',colorScheme:'dark',reducedMotion:'reduce'});const paper=await page.locator('body').evaluate(element=>{const style=getComputedStyle(element);return{colorScheme:style.colorScheme,background:style.backgroundColor};});expect(paper).toEqual({colorScheme:'light',background:'rgb(255, 255, 255)'});
 });
