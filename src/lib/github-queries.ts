@@ -105,8 +105,13 @@ export function useProjectCommitsQuery(
   enabled = true,
 ) {
   return useQuery({
-    queryKey: ["github", "commits", repoFullName ?? ""] as const,
-    queryFn: () => loadProjectCommits(repoFullName as string),
+    queryKey: [...qk.githubCommits, repoFullName?.toLowerCase() ?? ""],
+    queryFn: async ({ signal }) => {
+      const result = await loadProjectCommits(repoFullName as string, signal);
+      if (result.kind === "error") throw Error("Commit history unavailable");
+      return result;
+    },
+    retry: false,
     staleTime: 60_000,
     enabled: enabled && !!repoFullName,
   });
@@ -116,8 +121,13 @@ export function useProjectCommitsQuery(
  * Work overview), cached briefly so it doesn't refetch on every visit. */
 export function useCrossProjectActivityQuery(enabled = true) {
   return useQuery({
-    queryKey: ["github", "activity"] as const,
-    queryFn: loadCrossProjectActivity,
+    queryKey: qk.githubActivity,
+    queryFn: async ({ signal }) => {
+      const result = await loadCrossProjectActivity(signal);
+      if (result.kind === "error") throw Error("Project activity unavailable");
+      return result;
+    },
+    retry: false,
     staleTime: 60_000,
     enabled,
   });

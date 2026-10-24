@@ -198,7 +198,14 @@ const professionalEn = {
       "Transactions come from Finances — assign this project to a transaction there.",
     recentActivity: "Recent activity",
     githubActivity: "Recent changes",
-    codeVolumeLabel: "Code changed · last 4 weeks",
+    codeVolumeLabel: (weeks: number) => `Code changed · ${weeks} ${weeks === 1 ? "week" : "weeks"}`,
+    githubAdditions: "Added lines", githubDeletions: "Removed lines",
+    githubRefresh: "Refresh commit history",
+    githubCachedReadFailed: "History could not be refreshed. The last confirmed result is shown.",
+    githubRepositoryUnavailable: "This repository is missing or is no longer accessible.",
+    githubPreview: "Live commit history is not loaded in the preview.",
+    githubScope: (projects: number, total: number, repos: number) => `Recent ${projects} of ${total} linked projects · ${repos} repositories.`,
+    githubPartial: (count: number) => `${count} ${count === 1 ? "repository could" : "repositories could"} not be read. Showing available history.`,
     githubLoading: "Loading recent commits…",
     githubEmpty: "No recent commits.",
     githubError: "Could not load commit history.",
@@ -290,7 +297,9 @@ const professionalEn = {
 };
 
 type ProfessionalStrings = {
-  [Key in keyof typeof professionalEn]: (typeof professionalEn)[Key] extends Record<string, string>
+  [Key in keyof typeof professionalEn]: (typeof professionalEn)[Key] extends (...args: infer Args) => string
+    ? (...args: Args) => string
+    : (typeof professionalEn)[Key] extends Record<string, string>
     ? Record<keyof (typeof professionalEn)[Key], string>
     : string;
 };
@@ -497,7 +506,14 @@ export const professional: { en: ProfessionalStrings; cs: ProfessionalStrings } 
       "Transakce pocházejí z Financí — přiřaď u transakce tento projekt.",
     recentActivity: "Nedávná aktivita",
     githubActivity: "Nedávné změny",
-    codeVolumeLabel: "Změny kódu · poslední 4 týdny",
+    codeVolumeLabel: (weeks: number) => `Změny kódu · ${weeks} ${weeks === 1 ? "týden" : "týdny"}`,
+    githubAdditions: "Přidané řádky", githubDeletions: "Odstraněné řádky",
+    githubRefresh: "Obnovit historii commitů",
+    githubCachedReadFailed: "Historii se nepodařilo obnovit. Zobrazuje se poslední ověřený výsledek.",
+    githubRepositoryUnavailable: "Repozitář chybí nebo už není přístupný.",
+    githubPreview: "V náhledu se živá historie commitů nenačítá.",
+    githubScope: (projects: number, total: number, repos: number) => `Posledních ${projects} z ${total} propojených projektů · ${repos} repozitářů.`,
+    githubPartial: (count: number) => `${count === 1 ? "Jeden repozitář" : `${count} ${count < 5 ? "repozitáře" : "repozitářů"}`} se nepodařilo načíst. Zobrazuje se dostupná historie.`,
     githubLoading: "Načítám poslední commity…",
     githubEmpty: "Žádné nedávné commity.",
     githubError: "Nepodařilo se načíst historii commitů.",

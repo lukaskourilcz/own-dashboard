@@ -2,7 +2,9 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { AlertTriangle, BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
+import { AlertTriangle, BriefcaseBusiness, CircleDollarSign, FolderKanban, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { HistoryReadNotice } from "@/components/github/history-read-notice";
 import { GithubIcon } from "@/components/icons/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -41,6 +43,7 @@ export function WorkOverviewPanel({
   lastWeekCalendar,
   lastWeekCalendarStatus,
   isPreview,
+  repositoryIntegrationEnabled,
   previewMarketingCalendars,
 }: {
   projects: Project[];
@@ -58,6 +61,7 @@ export function WorkOverviewPanel({
   lastWeekCalendar: EventsResult;
   lastWeekCalendarStatus?: EntityStatus;
   isPreview?: boolean;
+  repositoryIntegrationEnabled?: boolean;
   /** Fixture calendars for the preview; the live overview reads GitHub. */
   previewMarketingCalendars?: MarketingCalendarsResponse;
 }) {
@@ -89,7 +93,8 @@ export function WorkOverviewPanel({
     .filter((x) => x.is_active && x.status !== "archived" && x.repo_full_name)
     .slice(0, 12);
 
-  const activityQuery = useCrossProjectActivityQuery();
+  const readHistory = repositoryIntegrationEnabled ?? !isPreview;
+  const activityQuery = useCrossProjectActivityQuery(readHistory);
   const activity = activityQuery.data;
 
   const metrics = [
@@ -203,7 +208,7 @@ export function WorkOverviewPanel({
                 <li key={project.id}>
                   <Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 hover:border-border-strong focus-ring">
                     <span className="truncate text-sm font-medium">{project.name}</span>
-                    <span className="shrink-0 font-mono text-[11px] text-foreground-muted">{project.repo_full_name}</span>
+                    <span className="min-w-0 truncate font-mono text-[11px] text-foreground-muted" title={project.repo_full_name ?? undefined}>{project.repo_full_name}</span>
                   </Link>
                 </li>
               ))}
@@ -212,29 +217,32 @@ export function WorkOverviewPanel({
         </CardContent>
       </Card>
       <Card className="mt-4">
-        <CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.crossProjectActivity}</CardTitle></CardHeader>
+        <CardHeader className="flex-row items-center justify-between"><CardTitle role="heading" aria-level={2}><GithubIcon className="h-4 w-4" />{p.crossProjectActivity}</CardTitle>{readHistory && activity?.kind === "ok" && !activityQuery.isError && <Button variant="ghost" size="icon-sm" aria-label={p.githubRefresh} disabled={activityQuery.isFetching} onClick={() => void activityQuery.refetch()}><RefreshCw className="h-3.5 w-3.5" aria-hidden /></Button>}</CardHeader>
         <CardContent>
           <p className="mb-3 text-xs text-foreground-muted">{p.crossProjectActivityDescription}</p>
-          {activity?.kind === "disconnected" ? (
+          {!readHistory ? <p className="text-sm text-foreground-muted">{p.githubPreview}</p> : activity?.kind === "disconnected" ? (
             <p className="text-sm text-foreground-muted">{p.githubDisconnected}</p>
           ) : activityQuery.isPending ? (
             <p className="text-sm text-foreground-muted">{p.githubLoading}</p>
           ) : activity?.kind !== "ok" ? (
-            <p className="text-sm text-foreground-muted">{p.githubError}</p>
-          ) : activity.items.length === 0 ? (
-            <p className="text-sm text-foreground-muted">{p.githubEmpty}</p>
-          ) : (
-            <ul className="divide-y divide-border">
+            <HistoryReadNotice busy={activityQuery.isFetching} onRetry={() => void activityQuery.refetch()} />
+          ) : (<>
+            {activityQuery.isError && <HistoryReadNotice cached busy={activityQuery.isFetching} onRetry={() => void activityQuery.refetch()} />}
+            {activity.scope.projects < activity.scope.totalProjects && <p role="status" className="mt-3 text-xs text-foreground-muted">{p.githubScope(activity.scope.projects, activity.scope.totalProjects, activity.scope.repositories)}</p>}
+            {activity.scope.unavailableRepositories > 0 && <p role="status" className="mt-3 text-xs text-foreground-muted">{p.githubPartial(activity.scope.unavailableRepositories)}</p>}
+            {activity.items.length === 0 ? <p className="mt-3 text-sm text-foreground-muted">{activity.scope.repositories === 0 ? p.noRelatedRecords : p.githubEmpty}</p> : <ul className="divide-y divide-border">
               {activity.items.map((c) => (
-                <li key={`${c.projectId}-${c.sha}`} className="py-2">
-                  <a href={c.url} target="_blank" rel="noreferrer" className="block truncate text-sm text-foreground hover:underline focus-ring" title={c.message}>{c.message}</a>
-                  <p className="mt-0.5 font-mono text-[11px] text-foreground-muted">
-                    <Link href={`/projects/${encodeURIComponent(c.projectSlug)}`} prefetch={false} className="hover:underline">{c.projectName}</Link>
-                    {` · ${c.shortSha}`}{c.author ? ` · ${c.author}` : ""}{c.date ? ` · ${c.date.slice(0, 10)}` : ""}
-                  </p>
+                <li key={`${c.projectId}-${c.sha}`} className="grid gap-x-4 gap-y-1 py-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+                  <a href={c.url} target="_blank" rel="noreferrer" className="flex min-h-11 items-center break-words text-sm text-foreground hover:underline focus-ring md:min-h-0" title={c.message}>{c.message || c.shortSha}</a>
+                  <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-foreground-muted">
+                    <Link href={`/projects/${encodeURIComponent(c.projectSlug)}`} prefetch={false} title={c.projectName} className="inline-flex min-h-11 max-w-full items-center focus-ring hover:underline md:min-h-0"><span className="truncate">{c.projectName}</span></Link>
+                    <code>{c.shortSha}</code>
+                    {c.author && <span className="min-w-0 max-w-full truncate sm:max-w-xs" title={c.author}>{c.author}</span>}
+                    {c.date && <time dateTime={c.date}>{c.date.slice(0, 10)}</time>}
+                  </div>
                 </li>
               ))}
-            </ul>
+            </ul>}</>
           )}
         </CardContent>
       </Card>

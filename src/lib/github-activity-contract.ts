@@ -33,15 +33,18 @@ export const githubCommitsResponse = z.object({ commits: z.array(githubHistoryCo
   .refine(result => new Set(result.commits.map(commit => commit.sha)).size === result.commits.length);
 
 const projectFields = { projectId: z.uuid(), projectName: z.string().min(1).max(500), projectSlug: z.string().min(1).max(500), repo: githubRepositoryFullName };
-const activityCommit = z.object({ ...githubHistoryCommit.shape, ...projectFields }).refine(commit => githubHistoryCommit.safeParse(commit).success);
+export const githubActivityCommit = z.object({ ...githubHistoryCommit.shape, ...projectFields }).refine(commit => githubHistoryCommit.safeParse(commit).success);
 export const githubActivityScope = z.object({
   projects: z.number().int().min(0).max(10), totalProjects: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   repositories: z.number().int().min(0).max(10), unavailableRepositories: z.number().int().min(0).max(10),
 }).refine(scope => scope.projects <= scope.totalProjects && scope.repositories <= scope.projects && scope.unavailableRepositories <= scope.repositories);
 export const githubActivityResponse = z.discriminatedUnion("connected", [
-  z.object({ connected: z.literal(true), items: z.array(activityCommit).max(30), scope: githubActivityScope }).refine(result =>
-    new Set(result.items.map(item => `${item.repo.toLowerCase()}:${item.sha}`)).size === result.items.length),
-  z.object({ connected: z.literal(false), items: z.array(activityCommit).max(0) }),
+  z.object({ connected: z.literal(true), items: z.array(githubActivityCommit).max(30), scope: githubActivityScope }).refine(result =>
+    new Set(result.items.map(item => `${item.repo.toLowerCase()}:${item.sha}`)).size === result.items.length
+    && (result.scope.repositories === 0 || result.scope.unavailableRepositories < result.scope.repositories)
+    && result.items.length <= Math.min(30, (result.scope.repositories - result.scope.unavailableRepositories) * 5)
+    && new Set(result.items.map(item => item.repo.toLowerCase())).size <= result.scope.repositories - result.scope.unavailableRepositories),
+  z.object({ connected: z.literal(false), items: z.array(githubActivityCommit).max(0) }),
 ]);
 export const githubActivityProject = z.object({
   id: projectFields.projectId, name: projectFields.projectName, slug: projectFields.projectSlug, repo_full_name: githubRepositoryFullName,
@@ -57,3 +60,6 @@ export function summarizeGithubCodeVolume(value: unknown) {
   const recent = weeks.sort((a, b) => a[0] - b[0]).slice(-4);
   return githubCodeVolume.parse({ additions: recent.reduce((sum, row) => sum + row[1], 0), deletions: -recent.reduce((sum, row) => sum + row[2], 0), weeks: recent.length });
 }
+
+export type GithubActivityCommit = z.infer<typeof githubActivityCommit>;
+export type GithubActivityScope = z.infer<typeof githubActivityScope>;

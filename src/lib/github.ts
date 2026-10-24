@@ -176,79 +176,31 @@ export async function loadDetectedTools(): Promise<DetectedToolsResult> {
   }
 }
 
-/** A single commit surfaced by GET /api/github/commits. */
-type GithubCommit = {
-  sha: string;
-  shortSha: string;
-  message: string;
-  author: string;
-  date: string;
-  url: string;
-};
-
-/** Additions/deletions over a recent window (best-effort; may be null while
- * GitHub is still computing repository statistics). */
-type GithubCodeVolume = {
-  additions: number;
-  deletions: number;
-  weeks: number;
-};
-
+/** Read-only history uses the same bounded/cancellable transport as metadata. */
 export type ProjectCommitsResult =
-  | { kind: "ok"; commits: GithubCommit[]; codeVolume: GithubCodeVolume | null }
-  | { kind: "disconnected" }
-  | { kind: "error" };
-
-/** Load a project repo's recent commits + recent code volume as a plain
- * result, so callers can render change-history without holding a token. */
-export async function loadProjectCommits(
-  repoFullName: string,
-): Promise<ProjectCommitsResult> {
+  | { kind: "ok"; commits: import("@/lib/github-activity-contract").GithubHistoryCommit[]; codeVolume: { additions: number; deletions: number; weeks: number } | null }
+  | { kind: "disconnected" | "not-found" | "error" };
+export async function loadProjectCommits(repoFullName: string, parent?: AbortSignal): Promise<ProjectCommitsResult> {
+  const signal = repositoryReadSignal(parent);
   try {
-    const res = await fetch(
-      `/api/github/commits?repo=${encodeURIComponent(repoFullName)}`,
-    );
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as {
-      commits: GithubCommit[];
-      codeVolume: GithubCodeVolume | null;
-    };
-    return { kind: "ok", commits: json.commits, codeVolume: json.codeVolume };
-  } catch {
-    return { kind: "error" };
-  }
+    const { githubRepositoryFullName } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
+    const name = githubRepositoryFullName.parse(repoFullName);
+    const response = await awaitWithSignal(fetch(`/api/github/commits?repo=${encodeURIComponent(name)}`, { cache: "no-store", signal }), signal);
+    if (!response.ok) { cancelRepositoryBody(response); return { kind: response.status === 401 ? "disconnected" : response.status === 404 ? "not-found" : "error" }; }
+    const { githubCommitsResponse } = await awaitWithSignal(import("@/lib/github-activity-contract"), signal);
+    return { kind: "ok", ...githubCommitsResponse.parse(await repositoryJson(response, signal, 131_072)) };
+  } catch { return { kind: "error" }; }
 }
-
-/** One commit in the cross-project feed (GET /api/github/activity). */
-type CrossProjectCommit = {
-  projectId: string;
-  projectName: string;
-  projectSlug: string;
-  repo: string;
-  sha: string;
-  shortSha: string;
-  message: string;
-  author: string;
-  date: string;
-  url: string;
-};
-
 export type CrossProjectActivityResult =
-  | { kind: "ok"; items: CrossProjectCommit[] }
-  | { kind: "disconnected" }
-  | { kind: "error" };
-
-/** Load a merged recent-commit feed across the owner's active project repos. */
-export async function loadCrossProjectActivity(): Promise<CrossProjectActivityResult> {
+  | { kind: "ok"; items: import("@/lib/github-activity-contract").GithubActivityCommit[]; scope: import("@/lib/github-activity-contract").GithubActivityScope }
+  | { kind: "disconnected" | "error" };
+export async function loadCrossProjectActivity(parent?: AbortSignal): Promise<CrossProjectActivityResult> {
+  const signal = repositoryReadSignal(parent);
   try {
-    const res = await fetch("/api/github/activity");
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as { items: CrossProjectCommit[]; connected: boolean };
-    if (!json.connected) return { kind: "disconnected" };
-    return { kind: "ok", items: json.items };
-  } catch {
-    return { kind: "error" };
-  }
+    const response = await awaitWithSignal(fetch("/api/github/activity", { cache: "no-store", signal }), signal);
+    if (!response.ok) { cancelRepositoryBody(response); return { kind: response.status === 401 ? "disconnected" : "error" }; }
+    const { githubActivityResponse } = await awaitWithSignal(import("@/lib/github-activity-contract"), signal);
+    const result = githubActivityResponse.parse(await repositoryJson(response, signal, 262_144));
+    return result.connected ? { kind: "ok", items: result.items, scope: result.scope } : { kind: "disconnected" };
+  } catch { return { kind: "error" }; }
 }

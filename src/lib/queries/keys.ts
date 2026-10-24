@@ -59,6 +59,8 @@ export const qk = {
   // Network-backed.
   repos: ["github", "repos"] as const,
   githubRepo: ["github", "repo"] as const,
+  githubCommits: ["github", "commits"] as const,
+  githubActivity: ["github", "activity"] as const,
   detectedTools: ["github", "detected-tools"] as const,
   marketingState: ["marketing", "state"] as const,
   dneskaiSources: ["marketing", "dneskai-sources"] as const,

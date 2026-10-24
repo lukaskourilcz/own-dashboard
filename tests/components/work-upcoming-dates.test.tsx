@@ -6,7 +6,7 @@ import { WorkOverviewPanel } from '@/components/panels/work-overview-panel';
 import { professional } from '@/lib/i18n/sections/professional';
 import type { ImportantDate } from '@/lib/types';
 vi.mock('@/lib/i18n', () => ({ useDict: () => ({ professional: professional.en }) }));
-vi.mock('@/lib/github-queries', () => ({ useCrossProjectActivityQuery: () => ({ data: { kind: 'ok', items: [] } }) }));
+vi.mock('@/lib/github-queries', () => ({ useCrossProjectActivityQuery: () => ({ data: { kind: 'ok', items: [], scope: { projects: 0, totalProjects: 0, repositories: 0, unavailableRepositories: 0 } } }) }));
 vi.mock('@/components/work/weekly-planning', () => ({ WeeklyPlanningFlow: () => null }));
 vi.mock('@/components/work/marketing-week', () => ({ MarketingWeekCard: () => null }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

@@ -765,7 +765,7 @@
       "lines": 488,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "partial: route loading, initial project-tab forwarding, repository flows and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "eafbbcc312c04035ae6303c91cfbda989a8075374cfcbcd58a6468160c8f61e6"
+      "reviewedSha256": "c1896374598f1fb8d724927a35ffdabdc57f596e3494e2162c25d4bdf4604ac2"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1485,8 +1485,8 @@
       "path": "src/components/panels/work-overview-panel.tsx",
       "lines": 242,
       "sha256": "4fce3b1e3a5829aba19a3fb533cbb3c7b47164596f60180be192291afcfa1276",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "c79016ad8a2d9e38ef418e0d896e4ecfec7cdca821ff7f0c65f0028a46b13c39"
+      "status": "partial: recurrence/history/preview and responsive rows reviewed/tested; health clock/indexing, remaining planning and final source checks pending",
+      "reviewedSha256": "c0ec53a975e302ff799343442f5a4d86a6aed772335b68b510132b3a631d5931"
     },
     {
       "path": "src/components/panels/workflows-panel.tsx",
@@ -1533,8 +1533,8 @@
       "path": "src/components/projects/project-github-activity.tsx",
       "lines": 88,
       "sha256": "aab7bb7a288c857558733be12a4bfb97e1667cb975467aad63d22066e4b7373a",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "aab7bb7a288c857558733be12a4bfb97e1667cb975467aad63d22066e4b7373a"
+      "status": "source reviewed; history recovery, mobile/long-author/count/axe checks pass; final optimized release pending",
+      "reviewedSha256": "8a0af23344dd8e1d01d0aeda37d277a3c2e5acf34d9a6d0ad9152336e0c91386"
     },
     {
       "path": "src/components/projects/project-knowledge-panel.tsx",
@@ -1576,7 +1576,7 @@
       "lines": 279,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partial: initial tab URL hydration, shared loading, repository flows and local-day memo changes checked; remaining tabs/business flow pending",
-      "reviewedSha256": "ae6f455ba4c5d414124f6ef03119efd9fe4ff4ce0938270050468352cbb15c84"
+      "reviewedSha256": "0f43ea3194cb39c5e910e918a7e9e54d3613ea763e1de88d65c0fe20dce10f75"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -2049,8 +2049,8 @@
       "path": "src/lib/github-queries.ts",
       "lines": 93,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
-      "status": "partial: scoped metadata, provider receipt clocks, retained errors and disconnects reviewed/tested; commit/activity hooks remain",
-      "reviewedSha256": "11dd97b0f34215aa2b5110d9f2fedcbd7739b686a9ea954a923005f069ac60c2"
+      "status": "source reviewed; metadata/history cancellation, retained errors, scoped identity and disconnect cache tests pass; final optimized release pending",
+      "reviewedSha256": "6c0cd6b220d64596a2bf1d6f2c65ea68209b41f374464553fe7290cf1a3a6401"
     },
     {
       "path": "src/lib/github-token.ts",
@@ -2063,8 +2063,8 @@
       "path": "src/lib/github.ts",
       "lines": 227,
       "sha256": "8d7cb9d4f7415804d30bb88b18e393ff3939b041c0ac309e28cf3c56c18b3500",
-      "status": "partial: validated bounded metadata/file clients reviewed; commit/activity contracts remain",
-      "reviewedSha256": "9c530313cacf673ba902b83a47a308f65c1dd74fac76c27942733d568977254c"
+      "status": "partial: bounded metadata/file/history clients reviewed/tested; detected-tools response/cancellation remains",
+      "reviewedSha256": "77b0d2c9ff72da597b338eee42f08283e5316ca4d4116c879eda0ce83c6db184"
     },
     {
       "path": "src/lib/gocardless.ts",
@@ -2301,7 +2301,8 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 589,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "pending"
+      "status": "partial: history copy/types and EN/CS scope/count parity reviewed; remaining domain copy reviewed with its pages",
+      "reviewedSha256": "611f47f18585e0feebeda09673028eb77f14388b3ccbc6e9bd94c3f441201705"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
@@ -3572,7 +3573,7 @@
       "lines": 83,
       "sha256": "1f107c462a090179e138065bda8467b163bccb7a06f542f8808cef005bc04b6b",
       "status": "source reviewed; integration metadata targeted checks pass; final app-wide release pending",
-      "reviewedSha256": "f494e56a7d08319aab824882a2d6ef38461afc5a4671a01b7982f6fb5072484a"
+      "reviewedSha256": "4ffac9607fa04c013d725b53f695f2f0e589fec00d24eea28b5b85cf98c7f8f0"
     },
     {
       "path": "src/lib/rate-limit.ts",
@@ -4082,7 +4083,7 @@
       "sha256": null,
       "lines": 59,
       "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
-      "reviewedSha256": "a735e0b6260ba6e098470055a14a0ac7b6c3b37b7ec47402a72abbd9821a742b"
+      "reviewedSha256": "8a87de204cc350dbfa2b6db63d2165b2611215d0a9547d014bdf7dc85ec41ded"
     },
     {
       "path": "src/lib/github-activity-server.ts",
@@ -4090,6 +4091,13 @@
       "lines": 39,
       "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
       "reviewedSha256": "7a2e940012c24d1b255daa95f836f886df8afcd2c9765c18945570b2ea3974e4"
+    },
+    {
+      "path": "src/components/github/history-read-notice.tsx",
+      "sha256": null,
+      "lines": 12,
+      "status": "source reviewed; bilingual shared history failure/retry browser checks pass; final optimized release pending",
+      "reviewedSha256": "f0d8a3fd94d9cb369369f2c4418bd307d3ed066ff5e09590808d7388162ebb53"
     }
   ],
   "baselineFileCount": 561
