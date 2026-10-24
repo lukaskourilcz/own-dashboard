@@ -17,15 +17,21 @@ test.describe("system surfaces", () => {
     });
     expect(manifest.icons).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ src: "/icon", purpose: "any" }),
-        expect.objectContaining({ src: "/icon", purpose: "maskable" }),
+        expect.objectContaining({ src: "/icon-192", sizes: "192x192", purpose: "any" }),
+        expect.objectContaining({ src: "/icon-192", sizes: "192x192", purpose: "maskable" }),
       ]),
     );
 
-    const iconResponse = await request.get("/icon");
-    expect(iconResponse.ok()).toBe(true);
-    expect(iconResponse.headers()["content-type"]).toContain("image/png");
-    expect((await iconResponse.body()).byteLength).toBeGreaterThan(1_000);
+    expect(manifest).not.toHaveProperty("orientation");
+    for (const icon of manifest.icons) {
+      const iconResponse = await request.get(icon.src);
+      expect(iconResponse.ok()).toBe(true);
+      expect(iconResponse.headers()["content-type"]).toContain("image/png");
+      const png = await iconResponse.body();
+      expect(png.subarray(1, 4).toString()).toBe("PNG");
+      expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`).toBe(icon.sizes);
+    }
+
   });
 
   test("keeps the Czech invoice isolated on one A4 page in dark mode", async ({ page }, testInfo) => {

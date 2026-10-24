@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion, MotionConfig } from "motion/react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { createClient } from "@/lib/supabase/client";
@@ -19,34 +18,32 @@ export default function LoginPage() {
   async function signInWithGoogle() {
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes:
-          "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
-          include_granted_scopes: "true",
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes:
+            "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+            include_granted_scopes: "true",
+          },
         },
-      },
-    });
-    if (error) {
-      setError(error.message);
+      });
+      if (error) throw error;
+    } catch {
+      setError(t.login.signInError);
       setLoading(false);
     }
   }
 
   return (
-    <MotionConfig reducedMotion="user">
     <main className="relative min-h-screen overflow-hidden bg-background">
       <div aria-hidden className="operational-grid pointer-events-none absolute inset-0 opacity-70" />
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      <div
         className="relative mx-auto grid min-h-screen w-full max-w-6xl items-stretch lg:grid-cols-[1.15fr_0.85fr]"
       >
         <section data-brand-media-slot="login-hero" className="flex flex-col justify-between border-b border-border px-6 py-8 sm:px-10 sm:py-10 lg:border-b-0 lg:border-r lg:px-14 lg:py-14">
@@ -54,7 +51,7 @@ export default function LoginPage() {
             <BrandMark className="h-9 w-9" />
             <div><p className="text-sm font-semibold">{brandConfig.name}</p><p className="text-[11px] text-foreground-subtle">{t.login.privateSystem}</p></div>
           </div>
-          <div className="max-w-xl py-16 lg:py-24">
+          <div className="max-w-xl py-6 sm:py-8 lg:py-24">
             <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-brand">{t.login.welcomeBack}</p>
             <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">{t.login.tagline}</h1>
             <p className="mt-5 max-w-lg text-sm leading-6 text-foreground-muted">{t.login.connectedAreas}</p>
@@ -64,7 +61,7 @@ export default function LoginPage() {
 
         <section className="flex items-center px-6 py-10 sm:px-10 lg:px-14">
         <div className="w-full rounded-lg border border-border bg-surface p-5 shadow-soft sm:p-6">
-          <div className="mb-5"><div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-inset text-brand"><LockKeyhole className="h-4 w-4" /></div><h2 className="text-lg font-semibold tracking-tight">{t.login.signInTitle}</h2><p className="mt-1 text-xs text-foreground-muted">{t.login.privateSystem}</p></div>
+          <div className="mb-5"><div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-inset text-brand"><LockKeyhole className="h-4 w-4" /></div><h2 className="text-lg font-semibold tracking-tight">{t.login.signInTitle}</h2></div>
           <Button
             onClick={signInWithGoogle}
             disabled={loading}
@@ -89,9 +86,8 @@ export default function LoginPage() {
           </p>
         </div>
         </section>
-      </motion.div>
+      </div>
     </main>
-    </MotionConfig>
   );
 }
 

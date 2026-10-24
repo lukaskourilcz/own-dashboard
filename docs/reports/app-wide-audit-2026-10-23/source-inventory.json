@@ -558,32 +558,39 @@
       "reviewedSha256": "30ff56e6c321413be6bc9d3d0d3d8a7f628e66d2bada79f082f0d6dfbafa3b4c"
     },
     {
+      "path": "src/app/icon-192/route.ts",
+      "sha256": null,
+      "lines": 7,
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "86db5de6c46dcb733a088d204cc93cd09141b1b29b6ad02ecbd4a69e90ac9fca"
+    },
+    {
       "path": "src/app/icon.tsx",
-      "lines": 51,
+      "lines": 8,
       "sha256": "4757561360dc2672a29864bda2c2514688dff80376ae40d00caaeb0096f07477",
-      "status": "source read; real-size metadata and install verification pending",
-      "reviewedSha256": "4757561360dc2672a29864bda2c2514688dff80376ae40d00caaeb0096f07477"
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "d43e2e63051fd8d2c02b301d9bb654e3a2957f521743e49fe23d442b2c38b037"
     },
     {
       "path": "src/app/layout.tsx",
       "lines": 71,
       "sha256": "163087149b4e9d42c6e1bf6b40f7b1fcd6498ee893f853933761a462e50f05a9",
-      "status": "source read; public metadata/theme/language verification pending",
-      "reviewedSha256": "163087149b4e9d42c6e1bf6b40f7b1fcd6498ee893f853933761a462e50f05a9"
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "e79964cefc363ad1aa4c5b925c7174c390fc75afea41c06b3716b41e215f68b6"
     },
     {
       "path": "src/app/login/page.tsx",
-      "lines": 133,
+      "lines": 129,
       "sha256": "d97a6cadc15ee63fa897f70a893a7e8754fd3f49ac299b1975e95375f20d6a08",
-      "status": "source read; rejected OAuth recovery and mobile density review pending",
-      "reviewedSha256": "d97a6cadc15ee63fa897f70a893a7e8754fd3f49ac299b1975e95375f20d6a08"
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "43062e2838aed1ec082863ad4da14638f58a580165fbd71627947619851531be"
     },
     {
       "path": "src/app/manifest.ts",
-      "lines": 34,
+      "lines": 33,
       "sha256": "166524b9de6b7cc63a78ce4f004fdf875e97cc3aaa61e264d1e4fea8c0773050",
-      "status": "source read; icon-size and orientation fixes/verification pending",
-      "reviewedSha256": "166524b9de6b7cc63a78ce4f004fdf875e97cc3aaa61e264d1e4fea8c0773050"
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "19e691f128b4e25d1fdca006d640a3a224868479d96d587103268e758fa0adbb"
     },
     {
       "path": "src/app/not-found.tsx",
@@ -1759,11 +1766,18 @@
       "reviewedSha256": "fd97ec2d21e0845c64f752df33c71f3bafd71a948f2f132376b6eb1d594b8a46"
     },
     {
+      "path": "src/lib/brand-icon.tsx",
+      "sha256": null,
+      "lines": 50,
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "1621b56c82b197c9ca54191528c3a28f15a1caa9926fb80a6608099e43d99b8f"
+    },
+    {
       "path": "src/lib/brand.ts",
-      "lines": 20,
+      "lines": 22,
       "sha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738",
-      "status": "source reviewed; centralized temporary name and professional scope retained; metadata rendering checks pending",
-      "reviewedSha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738"
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "0a2e426ec3f1f7d0e09a5679e5fd01915546654d092cd33d186d14ec737e27f9"
     },
     {
       "path": "src/lib/calendar-event.ts",
@@ -2120,9 +2134,10 @@
     },
     {
       "path": "src/lib/i18n/sections/login.ts",
-      "lines": 42,
+      "lines": 46,
       "sha256": "0af83de45d0a7de43d9ee40734f3ee8099d3da5ca84439e3988f8135ff1ec2e7",
-      "status": "pending"
+      "status": "source reviewed; public login/metadata/preference recovery checks passed; final release checks pending",
+      "reviewedSha256": "abe0d1b39b8052ebd60ac4fcedb87fb733e76db624fb00f7f0441d89651700e9"
     },
     {
       "path": "src/lib/i18n/sections/marketing-workspace.ts",

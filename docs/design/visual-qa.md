@@ -309,3 +309,10 @@ The app-wide review checked the GoCardless picker and Fio token form in EN/CS on
 ## Invoice state and recovery — 24 October 2026
 
 Eighteen EN/CS desktop/mobile invoice cases pass for versioned payment changes, pending detail/list controls, failed deletion return, supplier/PDF/draft recovery, six-width document reflow, axe and print isolation. Six payment/deletion cases pass again after the final localized error copy. Row actions name their invoice; duplicate controls retain keyboard/touch visibility. Responses and records are isolated fixtures. Database tests separately verify that reopening and deletion clear payment links/metadata without deleting imported transactions. Final whole-app release checks remain pending.
+
+
+## Public login and install metadata — 24 October 2026
+
+The app-wide audit replaces the long repeated login headline, removes the repeated private-system subtitle, reduces the mobile hero spacing and removes the whole-page entrance fade. At 360×800, the Czech sign-in button moves from y=758.5–802.5 to y=526–570 in the callback-error view. Existing semantic controls and the two-column desktop layout remain. Sign-in errors retain a retryable control with EN/CS feedback.
+
+Twelve local development-browser cases pass (eight duplicate-project skips), including 24 language/theme/width states at 360, 430, 768, 1024, 1440 and 1728 px, eight axe scans, console/reflow and mobile touch checks, preference-read failures in both system themes, verified PNG dimensions for every manifest icon, and the one-page A4 invoice in dark mode. Four sign-in recovery component cases and the separately recorded three analytics cases pass. TypeScript and targeted ESLint pass. This is fixture/development evidence; the optimized app-wide release remains pending. Screenshots are authentic app renders in the [audit assets](../reports/app-wide-audit-2026-10-23/assets/) directory.
