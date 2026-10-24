@@ -21,7 +21,7 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Backend and operations | API routes, cron/provider budgets, database ownership and query plans | Reviewing |
 | Release | Current-doc reconciliation, full validation, additive migrations, PR, main merge, deployment | Pending |
 
-The [working visual plan](visual-plan.html) annotates authentic preview screenshots of the changed login, repository notes, repository activity, notifications/mobile navigation, Money and cron-history components. It has desktop/mobile switches and keeps remaining areas explicitly pending. Rebuild it with `node scripts/build-app-audit-visual-plan.mjs` after updating this report or the inventory.
+The [working visual plan](visual-plan.html) annotates authentic preview screenshots of the changed login, repository notes, project operations, repository activity, notifications/mobile navigation, Money and cron-history components. It has desktop/mobile switches and keeps remaining areas explicitly pending. Rebuild it with `node scripts/build-app-audit-visual-plan.mjs` after updating this report or the inventory.
 
 ## Findings under review
 
@@ -328,3 +328,8 @@ The refreshed working plan at `bf69448` has six authentic desktop/mobile capture
 
 
 Remaining project/shared work: metadata, active/deletion, cost and cron CRUD still need complete captured-source receipts and form guards, including interactions with later note-cache confirmations. Keep a dirty operations view mounted if another device removes its project. Repository/registry auto-sync availability and write lifecycle remain pending. The shared Markdown parser still needs bounds and lifecycle review; no parser completion is claimed by the note-editor checks.
+
+
+At commit `b4984f7`, the full unit suite passes 4,045 cases with one intentional skip (399 passed files, one skipped file), in 185.08 seconds with two workers. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight actual render traces and post-build TypeScript pass. Public fixture configuration and `NEXT_E2E=0` are used; these build artifacts must not be deployed. Targeted browser evidence is in findings 127–128. All 109 migrations reproduce locally; twenty-three audit files remain prepared/unapplied. A fresh fetch leaves main at `d6f60c7` with no unmerged upstream commits.
+
+The working visual plan at `b4984f7` includes seven authentic desktop/mobile capture pairs and ten area rows. Its inventory has 632 entries (311 pending, 34 partial). Both modes, controls, six-width reflow, image loading, axe and page errors pass; the final screenshot was inspected. Project operations use their actual bounded dialog crop. Remaining source review, optimized interactions, migration rollout, current-doc reconciliation and the main merge are still in progress.
