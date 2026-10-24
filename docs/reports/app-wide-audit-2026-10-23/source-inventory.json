@@ -4114,6 +4114,13 @@
       "addedAfterBaseline": true,
       "status": "source reviewed; atomic owner/version/receipt and conditional cache checks pass; final optimized release pending",
       "reviewedSha256": "ac846d74b3aa579d50ee1e20a8b04bc86548c4199b3af0f10d5c63158f1ef6dc"
+    },
+    {
+      "path": "src/lib/project-notes.ts",
+      "sha256": null,
+      "lines": 53,
+      "status": "source reviewed; compact note hash/receipt, deadline and cache-race checks pass; editor integration and final release pending",
+      "reviewedSha256": "db3e700dbf497fbe6f2f22b738950d2986230898fa006c8fe321a2db60c9d39f"
     }
   ],
   "baselineFileCount": 561
