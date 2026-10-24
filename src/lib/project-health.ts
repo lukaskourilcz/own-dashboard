@@ -1,3 +1,4 @@
+import { todayKey } from "@/lib/date-keys";
 import { staleCronCount } from "@/lib/cron-heartbeat";
 import { taskBelongsToProject } from "@/lib/project-match";
 import type { Cron, Project, ProjectCost, Todo } from "@/lib/types";
@@ -18,12 +19,13 @@ export function assessProjectHealth(
   now = new Date(),
 ): ProjectHealthResult {
   const reasons: string[] = [];
+  const today = todayKey(now);
   const overdue = todos.filter(
     (todo) =>
       taskBelongsToProject(todo, project) &&
       !todo.done &&
       todo.due_date != null &&
-      new Date(`${todo.due_date}T23:59:59`).getTime() < now.getTime(),
+      todo.due_date < today,
   ).length;
   const projectCrons = crons.filter((cron) => cron.project_id === project.id);
   const disabledCrons = projectCrons.filter((cron) => !cron.enabled).length;
@@ -57,4 +59,20 @@ export function assessProjectHealth(
           : "healthy",
     reasons,
   };
+}
+
+export type ProjectHealthCopy = {
+  projectOnHold: string; costsWithoutRevenue: string; overdueTasks: string;
+  disabledAutomations: string; missedHeartbeat: string;
+};
+
+/** Both project surfaces use the same bilingual explanations. */
+export function localizeProjectHealthReason(reason: string, copy: ProjectHealthCopy): string {
+  if (reason === "Project is on hold") return copy.projectOnHold;
+  if (reason === "Running costs without recorded revenue") return copy.costsWithoutRevenue;
+  const counted = /^(\d+) (overdue tasks?|disabled automations?|automations? missed (?:its|their) heartbeat)$/.exec(reason);
+  if (!counted) return reason;
+  const label = counted[2].startsWith("overdue") ? copy.overdueTasks
+    : counted[2].startsWith("disabled") ? copy.disabledAutomations : copy.missedHeartbeat;
+  return `${label}: ${counted[1]}`;
 }

@@ -109,6 +109,7 @@ import {
   groupProjectsByEngagement,
   projectEngagement,
   projectMonthlyIn,
+  indexProjectRecords,
 } from "@/lib/projects";
 import type {
   AiCategory,
@@ -587,25 +588,8 @@ function ProjectsListPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, isPreview]);
 
-  const costsByProject = useMemo(() => {
-    const map = new Map<string, ProjectCost[]>();
-    for (const c of costs) {
-      const arr = map.get(c.project_id);
-      if (arr) arr.push(c);
-      else map.set(c.project_id, [c]);
-    }
-    return map;
-  }, [costs]);
-
-  const cronsByProject = useMemo(() => {
-    const map = new Map<string, Cron[]>();
-    for (const c of crons) {
-      const arr = map.get(c.project_id);
-      if (arr) arr.push(c);
-      else map.set(c.project_id, [c]);
-    }
-    return map;
-  }, [crons]);
+  const costsByProject = useMemo(() => indexProjectRecords(costs), [costs]);
+  const cronsByProject = useMemo(() => indexProjectRecords(crons), [crons]);
 
   const active = useMemo(() => projects.filter((p) => p.is_active), [projects]);
   const nextDateByProject = useMemo(() => {

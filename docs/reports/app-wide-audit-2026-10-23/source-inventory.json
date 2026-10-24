@@ -764,8 +764,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 489,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partial: route loading, pending navigation, task identity/index and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "ef8e18b5d8268ffdda084792123ae163e8544b4043b94236adf05a054627a02d"
+      "status": "partial: route loading, pending navigation, Work link callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
+      "reviewedSha256": "1f270d9f288f35ba97d586fee3153a809f85a1916e9d6c9b1c15996ac1b57a4e"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1422,10 +1422,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2146,
+      "lines": 2130,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, atomic ordering and shared task identity checked; metadata/notes/cost/cron/sync writes and remaining layout in review.md",
-      "reviewedSha256": "08fcd872a4c20177ae39673eed03c0d5b93cbc9cf5b57d5c98aaac892711207f"
+      "status": "partially reviewed; complete reads, atomic ordering and shared task/record indexing checked; metadata/notes/cost/cron/sync writes and remaining layout in review.md",
+      "reviewedSha256": "05b62efe2499d9593b53ac20016af0a21e52bb4080d4402483582c7218fb10a9"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1485,10 +1485,10 @@
     },
     {
       "path": "src/components/panels/work-overview-panel.tsx",
-      "lines": 255,
+      "lines": 256,
       "sha256": "4fce3b1e3a5829aba19a3fb533cbb3c7b47164596f60180be192291afcfa1276",
-      "status": "partial: recurrence/history/preview, shared task identity and responsive rows checked; health clock/cost indexing, planning and final source checks pending",
-      "reviewedSha256": "cb4999534a6d00674370706779c4676309d5dcd2fae6fb944909b672cfbba181"
+      "status": "partial: shared task/cost/cron indexing, clock health, EN/CS heartbeat, shell navigation and history/preview checked; remaining planning and final source checks pending",
+      "reviewedSha256": "ebacffdbb0da5eccb324cbe4208897bee22d759df40f1003b9ace0cf5633ffe4"
     },
     {
       "path": "src/components/panels/workflows-panel.tsx",
@@ -1575,10 +1575,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 306,
+      "lines": 299,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "partial: tab hydration, repository flows, shared task identity and local-day memo changes checked; remaining tabs/business flow pending",
-      "reviewedSha256": "19e2346b04c0fda984e02c3b8424bfe0693f83ba9c2ecffca84c483b46bbc41c"
+      "status": "partial: tab hydration, repository flows, task identity, bilingual health and local-day memo changes checked; remaining tabs/business flow pending",
+      "reviewedSha256": "86fe1f18f05a01cef59708137009a45abb5984318fd319874d07cef48e66f62b"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -3508,10 +3508,10 @@
     },
     {
       "path": "src/lib/project-health.ts",
-      "lines": 59,
+      "lines": 78,
       "sha256": "11cfd5b6d912c10b0644330e0d5d0087d572e4e7cfa9a7014ee0dc1fa85d788f",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "21cb1c9db1d226192e670356222e8229c2ab9faea404ff840d6bb897fcdc65dd"
+      "status": "source reviewed; known task identity, local-day boundary, heartbeat and shared EN/CS explanations checked; final release pending",
+      "reviewedSha256": "9df047263ca99de9025f583f64254ef332b39649fe2bff020c60f05c0fb22b00"
     },
     {
       "path": "src/lib/project-links.ts",
@@ -3536,9 +3536,10 @@
     },
     {
       "path": "src/lib/projects.ts",
-      "lines": 78,
+      "lines": 88,
       "sha256": "bde36efad03360f148d2149342728a8fd2a19ac6b81e2fc3f321046766c8f774",
-      "status": "pending"
+      "status": "source reviewed; static FX, engagement/slug resolution and immutable shared record indexing checked; final release checks pending",
+      "reviewedSha256": "13ec6e016dffff197c567243a0be23ee6c97f57a036805f1c4cc311f38a0cb3c"
     },
     {
       "path": "src/lib/prompt-composer.ts",

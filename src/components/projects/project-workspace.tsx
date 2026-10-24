@@ -35,7 +35,7 @@ import { convert } from "@/lib/fx";
 import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
 import { childProjects, projectSummary } from "@/lib/portfolio";
 import { computeTotals } from "@/lib/invoices";
-import { assessProjectHealth } from "@/lib/project-health";
+import { assessProjectHealth, localizeProjectHealthReason } from "@/lib/project-health";
 import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
@@ -237,14 +237,7 @@ export function ProjectWorkspace(props: Props) {
   const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : (tabs[0]?.id ?? "overview");
 
   const healthLabel = !health ? t.common.loading : health.health === "healthy" ? p.healthy : health?.health === "attention" ? p.attentionStatus : p.atRisk;
-  const localHealthReason = (reason: string) => {
-    if (reason === "Project is on hold") return p.projectOnHold;
-    if (reason === "Running costs without recorded revenue") return p.costsWithoutRevenue;
-    if (reason.includes("overdue task")) return `${p.overdueTasks}: ${reason.match(/^\d+/)?.[0] ?? ""}`;
-    if (reason.includes("disabled automation")) return `${p.disabledAutomations}: ${reason.match(/^\d+/)?.[0] ?? ""}`;
-    if (reason.includes("missed their heartbeat") || reason.includes("missed its heartbeat")) return `${p.missedHeartbeat}: ${reason.match(/^\d+/)?.[0] ?? 0}`;
-    return reason;
-  };
+
 
   return <div>
     <div className="mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
@@ -273,7 +266,7 @@ export function ProjectWorkspace(props: Props) {
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p>{(project.dev_url || project.url) && <div className="flex flex-wrap gap-2">{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}<div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.map((date) => <li key={date.date.id} className="flex justify-between gap-3 py-1.5"><span>{date.date.title}</span><span className="tabular text-foreground-muted">{todayKey(date.next)}</span></li>)}</ul></div>}</CardContent></Card>
-        <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{!health ? <p className="text-sm text-foreground-muted">{t.common.loading}</p> : health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{!health ? <p className="text-sm text-foreground-muted">{t.common.loading}</p> : health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localizeProjectHealthReason(reason, p)}</li>)}</ul>}</CardContent></Card>
         {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} />}
         {subsections.length > 0 && <Card><CardHeader><CardTitle>{t.portfolio.subsection}</CardTitle></CardHeader><CardContent><ul className="divide-y divide-border">{subsections.map((child) => <li key={child.id} className="flex items-center justify-between gap-3 py-2"><button type="button" onClick={() => props.onOpenProject(child)} className="focus-ring rounded text-sm font-medium hover:underline">{child.name}</button><span className="text-xs text-foreground-muted">{projectSummary(child, lang, { preview: props.isPreview })}</span></li>)}</ul></CardContent></Card>}
       </div>

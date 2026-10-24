@@ -76,3 +76,13 @@ export function resolveProjectRef<
     projects.find((project) => project.previous_slugs?.includes(ref))
   );
 }
+
+/** Build once for repeated project-scoped reads; keep source references and order. */
+export function indexProjectRecords<T extends { project_id: string }>(rows: readonly T[]): ReadonlyMap<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const group = groups.get(row.project_id);
+    if (group) group.push(row); else groups.set(row.project_id, [row]);
+  }
+  return groups;
+}

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   groupProjectsByEngagement,
+  indexProjectRecords,
   orderProjectsByEngagement,
   projectEngagement,
   resolveProjectRef,
@@ -74,4 +75,11 @@ describe("engagement and rename migration", () => {
     expect(sql).toMatch(/array_append\(project\.previous_slugs, renamed\.old_slug\)/);
     expect(sql).not.toMatch(/repo_full_name\s*=/i);
   });
+});
+
+it("indexes owned project records without changing or copying the source records", () => {
+  const first = Object.freeze({ id: "a", project_id: "p1" }), second = Object.freeze({ id: "b", project_id: "p2" }), third = Object.freeze({ id: "c", project_id: "p1" });
+  const rows = Object.freeze([first, second, third]), groups = indexProjectRecords(rows);
+  expect(groups.get("p1")).toEqual([first, third]); expect(groups.get("p2")).toEqual([second]);
+  expect(groups.get("p1")![0]).toBe(first); expect(groups.get("missing")).toBeUndefined(); expect(rows).toEqual([first, second, third]);
 });
