@@ -1,4 +1,4 @@
-# Remaining source-review leads — 24 October 2026
+# Remaining source-review leads — 25 October 2026
 
 These are follow-ups from source inspection, not completed repairs or release evidence. The file inventory and audit report remain authoritative for coverage. Validate each reachable failure before changing behavior. No lead authorizes a real provider call, owner-record mutation or publication during verification.
 
@@ -6,7 +6,7 @@ These are follow-ups from source inspection, not completed repairs or release ev
 
 - Finding 164 fixes canonical project classification and repeated weekly reference normalization, with exact-parity CPU evidence. Calendar overlap semantics stay unchanged and only aggregate minutes/counts are saved. The editor and remaining legacy aggregate-input checks below are still unfinished. Finding 166 closes the complete focus reader.
 - Findings 167–168 close captured weekly saves: stable owner/week/id/version, confirmed Next advancement, retained failed/conflicting drafts, immediate pending/exit guards, bounded exact reload, source-safe cache application and no extra read on confirmed cache success. Account/Monday rollover freezes the old draft until explicit discard/full server reload, keeping Calendar context consistent. Finding 169 removes the duplicated summary label and aligns paired action sizes, with six-width native evidence. Remaining aggregate/legacy-input checks still need review.
-- Finding 166 closes the weekly focus read: one bounded latest-per-day snapshot, owner/week/runtime confirmation, cancellation and explicit unavailable/stale recovery. Long rows and the entire card fit six viewport widths. Home history semantics remain unchanged; the weekly save lifecycle is still unfinished.
+- Finding 166 closes the weekly focus read: one bounded latest-per-day snapshot, owner/week/runtime confirmation, cancellation and explicit unavailable/stale recovery. Long rows and the entire card fit six viewport widths. Home history semantics remain unchanged; findings 167–169 close the separate weekly save lifecycle.
 - Tasks creation lacks stable retry identity and can close/clear newer input after a late response. Toggle/delete can report success for zero rows; whole-list rollback can erase another successful change. Add captured receipts and scoped reconciliation, preserving GLOBAL priority/project rules and foreign ownership.
 - Completed-task repository cleanup carries namespace/path/SHA but not a stable repository id through the final commit boundary. Verify identity before any write; retain ambiguous legacy records. Existing captured repository-read/consume contracts must remain.
 - Tasks still needs the recorded density change: grouped rows/dividers, related metadata on one line where it fits, wrap-safe names and consistent targets/disclosures. Do not force equal heights for unequal content. Profile before changing default-five rendering or the existing thirty-second shared clock.
@@ -21,6 +21,12 @@ Finding 163 closes native preview policy, startup/cancellation/disposal and reco
 - Meta daily trend upserts have a prior-read race, no monotonic-day guard and no persisted receipt. TikTok matching ignores a later update result and lacks dated freshness. Bound provider bodies/deadlines and validate captured inputs before changing persistence.
 - Infinite Music pages are flattened without cross-page duplicate/reconciliation checks. Cached failed refreshes and failed selected-track reads need explicit recovery; a saved selection must remain intact. The format radio buttons need complete keyboard behavior. MusicHint uses a separate first-page query and reads outside its due window; reuse the shared query only when needed.
 - Track toggles still use the legacy acknowledgement rather than a captured-version owner receipt. Upload fields/exits remain active while pending, and retries do not retain the prepare/upload/create session. Do not persist signed tokens or delete any object whose commit may have succeeded. Rotation/renderer metadata, file/read bounds and orphan retention still need review.
+
+## Scheduler and workspace diagnostics
+
+- The complete scheduler inspection confirms audio trends has no daily lease. Tick UUID deduplication does not serialize independent daily calls. Keep daily admission inside the existing TikTok budget lock rather than treating an upsert as a paid-start guard.
+- Scheduler cancellation is checked before prechecks but not again after every precheck/lease acquisition. Several control RPCs lack a deadline; the eager timeout wrapper receives work already started. The route does not forward request cancellation. Repair these boundaries without releasing a lease while uncooperative work can still write or losing the durable uncertain-refresh marker. Review oldest-five blocked-job and newest-fifty renewable-revision starvation against complete eligibility evidence before changing order.
+- The render-problem field-label lookup reads inherited `constructor` as if it were a translation. Unknown schema-valid fields need an own-property check. The first twenty displayed problems also need an honest remainder cue; keep blocking counts and the complete stored report intact.
 
 ## Account preferences and project traffic
 

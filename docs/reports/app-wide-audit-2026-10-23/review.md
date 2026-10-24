@@ -549,3 +549,9 @@ Read-only review covered the full stylesheet, deterministic Career helpers, expo
 ## Visual evidence refresh after finding 172 — 25 October 2026
 
 The HTML plan now has seventeen authentic desktop/mobile pairs at source snapshot `4f64b1b`, including shared focus and corrected dark native picker glyphs. Weekly conflict captures also show the stronger focus indicator. Both modes, all images, mobile widths, controls, six-width reflow, axe and page errors pass; the builder passes lint and desktop/mobile artifact captures were inspected. The focus color dataset is linked separately from CPU measurements. Remaining source/interaction review, migration rollout and main merge remain unfinished.
+
+## Read-only source checkpoint during validation 69 — 25 October 2026
+
+Complete inspection of sixteen previously pending marketing files covers the pure weekly planning/comparison helpers, shared tab/field/status/diagnostic components, audio trends/niche/TikTok/spend helpers, provider-error classification and the scheduler/tick boundary. Seven have no repair identified in this source pass; nine remain partial with concrete leads. The source ledger now has 644 entries (203 pending, 84 partial). This is source coverage, not new passing runtime evidence.
+
+The paid TikTok path has no outer daily lease, and its existing reservation lock enforces only an amount; a twenty-hour check cannot prove one Prague calendar day. Scheduler cancellation after asynchronous prechecks/acquisition, incomplete trend ranking and inherited diagnostic-field lookup also need repair. `remaining-review.md` records these boundaries without treating them as completed. Application and test files remain frozen for the running complete validation checkpoint.
