@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -3792,7 +3792,8 @@
       "path": "src/lib/plan-recurrence.ts",
       "lines": 133,
       "sha256": "7ad1ebe4643297dc06398e70b700c46f64af2ddda0ef2b7a7b1ae9de3648f902",
-      "status": "pending"
+      "status": "source reviewed; anchored DST-safe periods, completion/reset and five-timezone full-year regressions pass; Goals rendered/release checks pending",
+      "reviewedSha256": "e5b8cc1ebd7d2518b867eef8515b91ba3e7a2d0bd5b9e160b934893e69c9857e"
     },
     {
       "path": "src/lib/portfolio.ts",

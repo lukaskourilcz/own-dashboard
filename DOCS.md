@@ -71,6 +71,8 @@ The server-rendered shell is visibly busy and inert until its client handlers hy
 
 Home shows the daily operating context: calendar, deadlines, opportunity follow-ups, recurring spend, active projects, and configurable widgets. Its task surface transactionally snapshots up to seven open tasks each day, ordered by priority and randomized within priority bands. GLOBAL tasks are database-enforced priority 6. Completing all seven marks that professional workday in a 49-day GitHub-style completion garden; this is task execution history, not the retired lifestyle streak feature.
 
+Recurring goals use local calendar periods. Biweekly windows share the Monday 1 January 2024 anchor and remain stable across daylight-saving changes; the next period starts at its exclusive local-midnight end.
+
 ### Inbox
 
 Inbox and References are hidden from every navigation surface (`HIDDEN_NAV_TABS` in `src/lib/nav-tabs.ts`): the sidebar, the mobile bar and More sheet, the command palette, the `g` chords, Settings and Home widgets. Their routes still render at `/inbox` and `/references` with a short note, and their tables, RPCs and exports are unchanged. Notifications load only on the Inbox route; there is no sidebar bell.
