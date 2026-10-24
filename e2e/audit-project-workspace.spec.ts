@@ -38,9 +38,10 @@ test("project cron forms expose named controls and reject malformed project URLs
  await page.getByRole("button",{name:"Add project",exact:true}).click();
  await page.getByLabel("Name",{exact:true}).fill("Audit fixture");
  const url=page.locator("#proj-url");await url.fill("javascript:alert(1)");
- await page.getByRole("dialog").getByRole("button",{name:"Add",exact:true}).click();
+ await expect(page.getByRole("dialog").getByRole("button",{name:"Add",exact:true})).toBeDisabled();
  expect(await url.evaluate(node => (node as HTMLInputElement).validity.valid)).toBe(false);
  await page.keyboard.press("Escape");
+ await page.getByRole("dialog",{name:"Save your changes?",exact:true}).getByRole("button",{name:"Discard and leave",exact:true}).click();
  await page.locator("#main-content").getByRole("button",{name:"Manage operations",exact:true}).first().click();
  await page.getByRole("button",{name:"Add cron",exact:true}).click();
  await expect(page.getByRole("textbox",{name:"Name",exact:true})).toBeVisible();

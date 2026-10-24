@@ -752,7 +752,7 @@ function ProjectsListPanel({
           {t.projects.newProjectGuide}
         </summary>
         <div className="border-t border-border px-4 py-3">
-          <Markdown source={lang === "cs" ? NEW_PROJECT_GUIDE_CS : NEW_PROJECT_GUIDE} className="max-w-3xl" />
+          <Markdown tableLabel={t.common.documentTable} codeLabel={t.common.documentCode} source={lang === "cs" ? NEW_PROJECT_GUIDE_CS : NEW_PROJECT_GUIDE} className="max-w-3xl" />
         </div>
       </details>
 

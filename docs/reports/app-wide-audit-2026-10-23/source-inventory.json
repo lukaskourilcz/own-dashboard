@@ -1478,7 +1478,7 @@
       "lines": 1973,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
       "status": "partially reviewed; complete reads, ordering, retained notes, manual edit/deletion recovery, operations layout and confirmed active controls checked; creation/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "e716d284047f1990d9bcb4b01c367c057ce4f37255336cc2e2f2b6eae5f90847"
+      "reviewedSha256": "8de3cc579fb8aa1169016371fa34504ab84bd3aa8fe2a8fa2be2f527ff523f72"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1579,10 +1579,10 @@
     },
     {
       "path": "src/components/projects/project-doc-panel.tsx",
-      "lines": 125,
+      "lines": 126,
       "sha256": "7604b994516b54dd7f9bc54041d3d4f2471c76ee5b7019ed2432cb4b07d5553f",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "b5302ad64853eae254acd46283d3c61e25698ec72303f0c41ce1abcf1128f4e6"
+      "status": "source reviewed; complete bounded file contract, query cancellation/legacy fallback, centered responsive reading column and document accessibility checked; final release pending",
+      "reviewedSha256": "8eaf8e497290502b990fd00c0d004bdbe2c01dee5f9c80e6d36aecf5c67d7fa8"
     },
     {
       "path": "src/components/projects/project-github-activity.tsx",
@@ -1593,10 +1593,10 @@
     },
     {
       "path": "src/components/projects/project-knowledge-panel.tsx",
-      "lines": 108,
+      "lines": 109,
       "sha256": "ddacde8ff9992b74c2251d5ad3d8c30e2ad18ddc9e461d19f44c175bae8e9884",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "76cc599500a80b0885d0ca7d8ca5ee8cb244449cea6b88cfe7436b7ef5e61a0a"
+      "status": "source reviewed; bounded file contract, query cancellation, centered responsive reading column and document accessibility checked; final release pending",
+      "reviewedSha256": "158b0c9913fc31ebb330d24c7f08fd7619e3511676fcfad754b0a60d09418c02"
     },
     {
       "path": "src/components/projects/project-links-section.tsx",
@@ -1753,10 +1753,10 @@
     },
     {
       "path": "src/components/ui/markdown.tsx",
-      "lines": 270,
+      "lines": 283,
       "sha256": "8303e35641d7ca40867b789dcaabf6575e38d8afbcb1b6716927a399fe2c7b5d",
-      "status": "partially reviewed; shared control follow-ups pending",
-      "reviewedSha256": "8303e35641d7ca40867b789dcaabf6575e38d8afbcb1b6716927a399fe2c7b5d"
+      "status": "source reviewed; bounded safe links, malformed delimiter parsing, headings, keyboard tables/code and long-content rendering tested; final release pending",
+      "reviewedSha256": "eba52aeab64ad2ab620a976f1a7fc4402c877afec9a0c34a7a873d00fcde4233"
     },
     {
       "path": "src/components/ui/metric.tsx",
@@ -2320,10 +2320,10 @@
     },
     {
       "path": "src/lib/i18n/sections/common.ts",
-      "lines": 60,
+      "lines": 66,
       "sha256": "77dadc248e367806b1c1ce79e6ecbbc00cb4e06f0e81fcaf600ac15cf1ff9cd8",
-      "status": "source reviewed; shared pending/draft/review copy has EN/CS parity; targeted render checks pass; final release pending",
-      "reviewedSha256": "bddfcda556174aff927f9ba57a525b3a54ec19fe1ee25287b2f93607d98cb6ff"
+      "status": "source reviewed; bilingual shared action/draft/recovery and document region names checked; final release pending",
+      "reviewedSha256": "b643bf6787062042936eea3c6b5d1bb1c25d0e624015ab5e48bece0859072300"
     },
     {
       "path": "src/lib/i18n/sections/costs.ts",

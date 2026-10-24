@@ -1,10 +1,11 @@
 import * as React from "react";
+import { safeWebUrl } from "@/lib/web-url";
 import { cn } from "@/lib/utils";
 
 /**
  * Minimal, dependency-free markdown renderer for trusted content (a file the
  * user authored in their own repo). It builds React elements — it never injects
- * raw HTML — so there is no XSS surface. Handles headings, ordered/unordered
+ * raw HTML — and accepts only validated HTTP(S) links. Handles headings, ordered/unordered
  * lists, fenced code blocks, GFM tables, paragraphs, and inline bold / code /
  * links.
  */
@@ -12,7 +13,10 @@ import { cn } from "@/lib/utils";
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   // One pass over **bold**, `code`, and [label](url).
-  const re = /(\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\))/g;
+  // A label cannot cross another opening bracket and a URL cannot cross
+  // another opening parenthesis. Unclosed delimiter runs stay linear instead
+  // of retrying the rest of a long document at every opening marker.
+  const re = /(\*\*([^*]+)\*\*|`([^`]+)`|\[([^\[\]]+)\]\(([^()\s]+)\))/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
@@ -35,10 +39,9 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
         </code>,
       );
     } else if (m[4] != null && m[5] != null) {
-      const href = m[5];
-      const safe = /^https?:\/\//i.test(href);
+      const href = safeWebUrl(m[5]);
       nodes.push(
-        safe ? (
+        href ? (
           <a
             key={key}
             href={href}
@@ -87,9 +90,15 @@ function alignClass(sep: string): string {
 export function Markdown({
   source,
   className,
+  tableLabel,
+  codeLabel,
+  headingStart = 2,
 }: {
   source: string;
   className?: string;
+  tableLabel: string;
+  codeLabel: string;
+  headingStart?: 2 | 3;
 }) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   const blocks: React.ReactNode[] = [];
@@ -111,7 +120,8 @@ export function Markdown({
       blocks.push(
         <pre
           key={key++}
-          className="overflow-x-auto rounded-md bg-surface-muted p-2.5 text-[11px] leading-relaxed"
+          role="region" tabIndex={0} aria-label={codeLabel}
+          className="focus-ring overflow-x-auto rounded-md bg-surface-muted p-2.5 text-[11px] leading-relaxed"
         >
           <code className="font-mono">{code.join("\n")}</code>
         </pre>,
@@ -129,10 +139,11 @@ export function Markdown({
           : level === 2
             ? "mt-3 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted"
             : "mt-2 text-[13px] font-semibold text-foreground";
+      const Heading = `h${Math.min(6, headingStart + level - 1)}` as "h2" | "h3" | "h4" | "h5" | "h6";
       blocks.push(
-        <p key={key++} className={cls}>
+        <Heading key={key++} className={cls}>
           {renderInline(h[2].trim(), `h${key}`)}
-        </p>,
+        </Heading>,
       );
       i++;
       continue;
@@ -198,13 +209,15 @@ export function Markdown({
       }
       const tk = key++;
       blocks.push(
-        <div key={tk} className="overflow-x-auto">
+        <div key={tk} role="region" tabIndex={0} aria-label={tableLabel} className="focus-ring overflow-x-auto">
           <table className="w-full border-collapse text-xs">
+            <caption className="sr-only">{tableLabel}</caption>
             <thead>
               <tr>
                 {header.map((cell, ci) => (
                   <th
                     key={ci}
+                    scope="col"
                     className={cn(
                       "border-b border-border px-2 py-1.5 font-semibold text-foreground",
                       aligns[ci] ?? "text-left",
@@ -265,6 +278,6 @@ export function Markdown({
   }
 
   return (
-    <div className={cn("space-y-2 text-xs", className)}>{blocks}</div>
+    <div className={cn("space-y-2 text-xs [overflow-wrap:anywhere]", className)}>{blocks}</div>
   );
 }

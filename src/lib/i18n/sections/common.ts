@@ -1,4 +1,6 @@
 type CommonStrings = {
+  documentTable: string;
+  documentCode: string;
   dataUnavailable: string;
   dataUnavailableDescription: string;
   retry: string;
@@ -20,6 +22,8 @@ type CommonStrings = {
 
 export const common: { en: CommonStrings; cs: CommonStrings } = {
   en: {
+    documentTable: "Document table",
+    documentCode: "Code block",
     dataUnavailable: "Could not load this page",
     dataUnavailableDescription: "Check your connection and try again. Your saved records have not changed.",
     retry: "Try again",
@@ -39,6 +43,8 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     signInFirst: "Sign in first.",
   },
   cs: {
+    documentTable: "Tabulka v dokumentu",
+    documentCode: "Blok kódu",
     dataUnavailable: "Stránku se nepodařilo načíst",
     dataUnavailableDescription: "Zkontrolujte připojení a zkuste to znovu. Uložené záznamy se nezměnily.",
     retry: "Zkusit znovu",
