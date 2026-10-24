@@ -1571,7 +1571,7 @@
       "path": "src/components/panels/workflows-panel.tsx",
       "lines": 63,
       "sha256": "34313af52479ae766a8b30d423e7ba8c40be6e9d89aa41ec675681dc7bf87771",
-      "status": "source reviewed; final release checks pending",
+      "status": "source reviewed; current guide gates and EN/CS six-width navigation/axe checks pass in finding 162; final app-wide release checks pending",
       "reviewedSha256": "34313af52479ae766a8b30d423e7ba8c40be6e9d89aa41ec675681dc7bf87771"
     },
     {
@@ -2585,7 +2585,8 @@
       "path": "src/lib/i18n/sections/workflows.ts",
       "lines": 86,
       "sha256": "2b28e144fb3ba8205b5b9ac9fe8924a25242881f1843faa8687281ae4016608b",
-      "status": "pending"
+      "status": "source reviewed; current guide gates and EN/CS six-width navigation/axe checks pass in finding 162; final app-wide release checks pending",
+      "reviewedSha256": "f17b767273e39f90f212e0ab4bcaf795670c73187e537f43982cf6cddd0da12a"
     },
     {
       "path": "src/lib/ig-tips.ts",

@@ -1,34 +1,44 @@
-import { test, expect, type Page, type Route } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, signInFixtureUser } from "./helpers";
-import { projects } from "../src/lib/demo/fixtures";
+import { projects as demoProjects } from "../src/lib/demo/fixtures";
+import { projects as projectCopy } from "../src/lib/i18n/sections/projects";
 
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]["page"];
 
-/**
- * A PostgREST stand-in for `projects`: GET answers the fixture rows as they
- * stand, PATCH applies the change and records its body, like the database the
- * owner's session writes to.
- */
+const owner = "11111111-1111-4111-8111-111111111111";
+const recipeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+
+/** Exercise the current captured-version RPC and the shared complete read,
+ * with invented UUID rows. Direct table writes are never accepted. */
 async function projectsStub(page: Page, { failWrites = false } = {}) {
-  const rows = projects.map((row) => ({ ...row }));
-  const patches: { id: string; body: Record<string, unknown> }[] = [];
-  await page.route(/example\.supabase\.co\/rest\/v1\/projects(\?|$)/, async (route: Route) => {
-    const request = route.request();
-    const id = new URL(request.url()).searchParams.get("id")?.replace(/^eq\./, "");
-    if (request.method() === "PATCH" && id) {
-      if (failWrites) {
-        return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "boom" }) });
-      }
-      const body = request.postDataJSON() as Record<string, unknown>;
-      patches.push({ id, body });
-      const index = rows.findIndex((row) => row.id === id);
-      if (index >= 0) rows[index] = { ...rows[index], ...body };
-      return route.fulfill({ status: 204, body: "" });
-    }
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
+  let tick = 0, directWrites = 0;
+  const stamp = () => new Date(Date.UTC(2026, 9, 24, 13, 0, tick++)).toISOString();
+  const rows = demoProjects.map((row, index) => ({ ...row,
+    id: row.id === "proj-recipe-box" ? recipeId : `aaaaaaaa-aaaa-4aaa-8aaa-${String(index + 1).padStart(12, "0")}`,
+    user_id: owner, updated_at: stamp(),
+  }));
+  const writes: { id: string; patch: Record<string, unknown> }[] = [];
+  await page.route("**/rest/v1/rpc/read_owned_collection", route => route.fulfill({
+    json: route.request().postDataJSON().p_entity === "projects" ? rows : [],
+  }));
+  await page.route("**/rest/v1/projects?**", route => {
+    if (route.request().method() !== "GET") directWrites++;
+    return route.fulfill({ status: 405, json: {} });
   });
-  return patches;
+  await page.route("**/rest/v1/rpc/set_project_preferences", route => {
+    const input = route.request().postDataJSON();
+    expect(Object.keys(input).sort()).toEqual(["p_expected_updated_at", "p_id", "p_patch"]);
+    const row = rows.find(row => row.id === input.p_id);
+    expect(row).toBeDefined(); expect(input.p_expected_updated_at).toBe(row!.updated_at);
+    writes.push({ id: input.p_id, patch: input.p_patch });
+    if (failWrites) return route.fulfill({ status: 503, json: { message: "Private fixture failure" } });
+    const previous = { engagement: row!.engagement }, before = row!.updated_at;
+    Object.assign(row!, input.p_patch, { updated_at: stamp() });
+    return route.fulfill({ json: { kind: "saved", id: row!.id, user_id: owner,
+      values: input.p_patch, previous_values: previous, source_updated_at: before, updated_at: row!.updated_at } });
+  });
+  return { writes, directWrites: () => directWrites };
 }
 
 async function openSettings(page: Page, mobile: boolean) {
@@ -44,8 +54,8 @@ test("Settings moves a project into Freelance and back without a reload", async 
   const mobile = testInfo.project.name === "mobile";
   await gotoPreview(page);
   await signInFixtureUser(page);
-  const patches = await projectsStub(page);
-  await page.reload();
+  const backend = await projectsStub(page);
+  await page.goto("/dev-preview?projectRecords=live");
   await openSettings(page, mobile);
 
   const control = page.getByRole("group", { name: "Own or Freelance: Recipe box app" });
@@ -67,8 +77,8 @@ test("Settings moves a project into Freelance and back without a reload", async 
 
   await freelance.click();
   await expect(freelance).toHaveAttribute("aria-pressed", "true");
-  await expect.poll(() => patches.at(-1)?.body.engagement).toBe("client");
-  expect(patches.at(-1)?.id).toBe("proj-recipe-box");
+  await expect.poll(() => backend.writes.at(-1)?.patch.engagement).toBe("client");
+  expect(backend.writes.at(-1)?.id).toBe(recipeId);
   await expect(page.getByText("Recipe box app is now listed under Freelance.")).toBeVisible();
   if (!mobile) {
     await expect(freelanceList.getByRole("link", { name: "Recipe box app", exact: true })).toBeVisible();
@@ -76,8 +86,8 @@ test("Settings moves a project into Freelance and back without a reload", async 
 
   await own.click();
   await expect(own).toHaveAttribute("aria-pressed", "true");
-  await expect.poll(() => patches.at(-1)?.body.engagement).toBe("own");
-  expect(patches).toHaveLength(2);
+  await expect.poll(() => backend.writes.at(-1)?.patch.engagement).toBe("own");
+  expect(backend.writes).toHaveLength(2); expect(backend.directWrites()).toBe(0);
   if (!mobile) {
     await expect(freelanceList.getByRole("link", { name: "Recipe box app", exact: true })).toHaveCount(0);
     await expect(page.locator("aside").getByRole("link", { name: "Recipe box app", exact: true })).toBeVisible();
@@ -103,14 +113,15 @@ test("a failed write keeps the project where it was and says so", async ({ page 
   test.skip(testInfo.project.name === "mobile", "covered once on desktop");
   await gotoPreview(page);
   await signInFixtureUser(page);
-  await projectsStub(page, { failWrites: true });
-  await page.reload();
+  const backend = await projectsStub(page, { failWrites: true });
+  await page.goto("/dev-preview?projectRecords=live");
   await openSettings(page, false);
 
   const control = page.getByRole("group", { name: "Own or Freelance: Recipe box app" });
   await control.getByRole("button", { name: "Freelance", exact: true }).click();
-  await expect(page.getByText("Could not move Recipe box app. It stays where it was.")).toBeVisible();
+  await expect(page.getByText(projectCopy.en.preferenceSaveFailed, { exact: true })).toBeVisible();
   await expect(control.getByRole("button", { name: "Own", exact: true })).toHaveAttribute("aria-pressed", "true");
+  expect(backend.writes).toHaveLength(1); expect(backend.directWrites()).toBe(0);
   await expect(
     page.locator('aside ul[aria-labelledby="sidebar-freelance-projects"]').getByRole("link", { name: "Recipe box app", exact: true }),
   ).toHaveCount(0);

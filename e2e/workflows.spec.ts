@@ -16,16 +16,20 @@ for (const lang of ['en', 'cs'] as const) {
     await expect(page.getByRole('heading', { name: 'Workflows', exact: true }).first()).toBeVisible();
     await expect(panel.getByText(workflows[lang].marketingHold)).toBeVisible();
     await expect(panel.locator('figure')).toHaveCount(7);
+    // An already-active destination is intentionally a no-op. Enter through
+    // another destination so Back tests an actual canonical history entry.
     if (info.project.name === 'mobile') {
+      await page.getByTestId('mobile-nav').getByRole('button', { name: nav[lang].sections.home, exact: true }).click();
+      await expect(page).toHaveURL(/\/$/);
       await page.getByRole('button', { name: nav[lang].more, exact: true }).click();
-      await expect(page.getByRole('dialog').getByRole('button', { name: 'Workflows', exact: true })).toBeVisible();
       await page.getByRole('dialog').getByRole('button', { name: 'Workflows', exact: true }).click();
     } else {
-      const item = page.getByRole('button', { name: 'Workflows', exact: true });
-      await expect(item).toHaveAttribute('aria-current', 'page');
-      // Enter the canonical route before testing History; /dev-preview is a fixture URL.
-      await item.click();
+      await page.locator('aside').getByRole('button', { name: nav[lang].sections.home, exact: true }).click();
+      await expect(page).toHaveURL(/\/$/);
+      await page.locator('aside').getByRole('button', { name: 'Workflows', exact: true }).click();
     }
+    await expect(page).toHaveURL(/\/workflows$/);
+    await expect(panel).toBeVisible();
     for (const width of info.project.name === 'mobile' ? [360, 430, 768] : [1024, 1440, 1728]) {
       await page.setViewportSize({ width, height: 900 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
