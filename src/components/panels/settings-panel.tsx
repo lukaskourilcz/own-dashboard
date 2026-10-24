@@ -36,7 +36,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +68,7 @@ import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
+import { fetchIntegrationStatus } from "@/lib/integration-status";
 import { saveUserPreferences } from "@/lib/preference-client";
 import {
   DNESKAI_WORKSPACE_TAB_ORDER,
@@ -164,7 +165,11 @@ export function SettingsPanel({
   // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
   // so the card isn't a wall of switches for projects that will never be active.
   const [showInactive, setShowInactive] = useState(false);
-  const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null; providers?: { id: string; label: string; configured: boolean; connected: boolean }[] }>>(null);
+  const integrationsQuery = useQuery({
+    queryKey: qk.integrationStatus, queryFn: fetchIntegrationStatus,
+    enabled: syncPreferences, retry: false, staleTime: 60_000,
+  });
+  const integrations = syncPreferences ? integrationsQuery.data : undefined;
   const saveErrorShown = useRef(false);
   const savePreferences = (patch: Record<string, unknown>) => {
     if (!syncPreferences) return;
@@ -184,12 +189,7 @@ export function SettingsPanel({
         }
       });
   }, [syncPreferences]);
-  useEffect(() => {
-    if (!syncPreferences) return;
-    void fetch("/api/integrations/status", { cache: "no-store" })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data) setIntegrations(data); });
-  }, [syncPreferences]);
+
   const patchRenewalNotifications = (notifications_renewals: boolean) => {
     setRenewalNotifications(notifications_renewals);
     if (syncPreferences) {
@@ -721,17 +721,33 @@ export function SettingsPanel({
 
         <Card id="settings-integrations" className="scroll-mt-4">
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Plug className="h-3 w-3" />{t.settings.integrations}</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].filter(([label, raw]) => label === "Google" || label === "GitHub" || (raw as { configured?: boolean; connected?: boolean } | undefined)?.configured || (raw as { connected?: boolean } | undefined)?.connected).map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; const value = !state ? "pending" : state.connected === true ? "connected" : state.connected === false ? "not_connected" : state.configured ? "configured" : "not_configured"; const status = !state ? "…" : state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><StatusBadge value={value} label={status} /></div>; })}
-            {/* Bank sync is the one integration with several providers behind it, so it names each one and its own state. Booleans only — the endpoint carries no token or secret. */}
-            {(integrations?.bank?.providers ?? []).filter(provider => provider.configured || provider.connected).map((provider) => (
-              <div key={provider.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
-                <p className="text-sm font-medium">{t.settings.bankSync}: {provider.label}</p>
-                <StatusBadge
-                  value={provider.connected ? "connected" : provider.configured ? "configured" : "not_configured"}
-                  label={provider.connected ? t.settings.connected : provider.configured ? t.settings.configured : t.settings.notConfigured}
-                />
+          <CardContent className="space-y-3">
+            <p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>
+            {syncPreferences && integrationsQuery.isError && (
+              <div className="space-y-2">
+                <p role="alert" className="text-sm text-destructive">{t.settings.integrationsLoadFailed}</p>
+                <Button variant="outline" size="sm" disabled={integrationsQuery.isFetching} onClick={() => void integrationsQuery.refetch()}>{t.common.retry}</Button>
               </div>
-            ))}</CardContent>
+            )}
+            {!integrations && !integrationsQuery.isError && <p role="status" className="text-xs text-foreground-muted">{syncPreferences ? t.settings.integrationsLoading : t.settings.integrationsPreview}</p>}
+            {integrations && [
+              { label: "Google", state: integrations.google },
+              { label: "GitHub", state: integrations.github },
+              ...(integrations.email.configured ? [{ label: t.settings.emailDelivery, state: integrations.email }] : []),
+            ].map(({ label, state }) => {
+              const connected = "connected" in state ? state.connected : undefined;
+              const value = connected === true ? "connected" : connected === false ? "not_connected" : state.configured ? "configured" : "not_configured";
+              const status = connected === true ? t.settings.connected : connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured;
+              return <div key={label} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><p className="text-sm font-medium">{label}</p><StatusBadge value={value} label={status} /></div>;
+            })}
+            {(integrations?.bank.providers ?? []).filter(provider => provider.configured || provider.connected).map(provider => (
+              <div key={provider.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+                <p className="min-w-0 text-sm font-medium">{t.settings.bankSync}: {provider.label}</p>
+                <StatusBadge value={provider.connected ? "connected" : "configured"} label={provider.connected ? t.settings.connected : t.settings.configured} />
+              </div>
+            ))}
+            {integrations?.bank.last_synced_at && <p className="text-xs text-foreground-subtle">{t.settings.lastSync}: {integrations.bank.last_synced_at.slice(0, 10)}</p>}
+          </CardContent>
         </Card>
 
         <Card id="settings-export" className="scroll-mt-4">

@@ -51,6 +51,7 @@ export const qk = {
   jobApplicationEvents: ["jobApplicationEvents"] as const,
   coverLetterTemplates: ["coverLetterTemplates"] as const,
   jobLastRun: ["jobLastRun"] as const,
+  integrationStatus: ["integrations", "status"] as const,
   bankConnections: ["bankConnections"] as const,
   categoryRules: ["categoryRules"] as const,
   transactionRules: ["transactionRules"] as const,

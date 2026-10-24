@@ -40,6 +40,9 @@ type SettingsStrings = {
   exportTransactionsCsv: string;
   integrations: string;
   integrationsDesc: string;
+  integrationsLoading: string;
+  integrationsLoadFailed: string;
+  integrationsPreview: string;
   bankProviderNote: string;
   connected: string;
   notConnected: string;
@@ -119,6 +122,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     exportCareer: "Career",
     exportTransactionsCsv: "Transactions CSV",
     integrations: "Integrations",
+    integrationsLoading: "Loading connection status…",
+    integrationsLoadFailed: "Could not refresh connection status. Previously loaded values may be out of date.",
+    integrationsPreview: "Connection status is available after signing in.",
     integrationsDesc: "Connection state only. Credentials and provider tokens are never exposed here.",
     bankProviderNote: "Bank sync can use more than one provider. A provider token you supply is stored server-side and read only while a sync runs.",
     connected: "Connected",
@@ -203,6 +209,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     exportCareer: "Kariéra",
     exportTransactionsCsv: "Transakce CSV",
     integrations: "Integrace",
+    integrationsLoading: "Načítání stavu připojení…",
+    integrationsLoadFailed: "Stav připojení se nepodařilo obnovit. Dříve načtené údaje mohou být zastaralé.",
+    integrationsPreview: "Stav připojení je dostupný po přihlášení.",
     integrationsDesc: "Zobrazuje se pouze stav připojení. Přihlašovací údaje ani tokeny poskytovatelů se zde nikdy neodhalují.",
     bankProviderNote: "Napojení banky může používat víc poskytovatelů. Token, který zadáš, se ukládá na serveru a čte se jen během synchronizace.",
     connected: "Připojeno",

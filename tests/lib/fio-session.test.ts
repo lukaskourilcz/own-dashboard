@@ -1,16 +1,16 @@
 import { beforeEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-const state = vi.hoisted(() => ({ reads: 0 }));
+const state = vi.hoisted(() => ({ reads: 0, statusFailure: false }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
 vi.mock("@/lib/bank/credentials", () => ({
   readProviderSecret: async () => { state.reads++; return "synthetic-inert-bank-fixture"; },
-  hasProviderSecret: async () => true, deleteProviderSecret: async () => {},
+  hasProviderSecret: async () => { if (state.statusFailure) throw Error("status unavailable"); return true; }, deleteProviderSecret: async () => {},
 }));
 import { createFioProvider } from "@/lib/bank/fio-adapter";
 import type { BankConnection } from "@/lib/types";
 const conn = { id: "connection", user_id: "owner", provider: "fio", sync_cursor: null } as BankConnection;
 const response = { accountStatement: { info: { accountId: "1", currency: "CZK", closingBalance: 5 }, transactionList: null } };
-beforeEach(() => { state.reads = 0; vi.restoreAllMocks(); });
+beforeEach(() => { state.reads = 0; state.statusFailure = false; vi.restoreAllMocks(); });
 it("shares one read inside a sync, while a separate request rechecks its credential", async () => {
   const fetcher = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json(response));
   const provider = createFioProvider();
@@ -34,4 +34,9 @@ it("aborts the actual statement request when the enclosing processing budget end
   const pending = createFioProvider(controller.signal).getConsent(conn);
   await vi.waitFor(() => expect(signal).toBeDefined()); controller.abort();
   expect((await pending).status).toBe("error"); expect(signal.aborted).toBe(true);
+});
+
+it("does not turn credential-status failure into confirmed absence", async () => {
+  state.statusFailure = true;
+  await expect(createFioProvider().isConfigured("owner")).rejects.toThrow("status unavailable");
 });

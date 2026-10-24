@@ -79,6 +79,8 @@ For an existing Fio connection, a missing displayed expiry does not mean its tok
 
 The existing cron routes remain guarded by their server secrets. Do not enable new scheduled integrations to satisfy old checklist entries. Heartbeat URLs are optional references for installations that already use monitoring.
 
+Integration status reports unavailable when a provider or private metadata read fails; it must not be interpreted as a disconnected account. Settings retains confirmed cached values with a refresh warning and retry. No status response includes credentials.
+
 ## 8. Analytics and monitoring
 
 PostHog is disabled when `NEXT_PUBLIC_POSTHOG_KEY` is absent. If enabled, set the host for the correct region, verify sensitive values are not captured, and configure a billing limit. Only sanitized page views/leaves are enabled; replay, automatic clicks, person profiles and remote flag configuration are disabled. No code reads a PostHog feature flag, and there is no Tugedr feature-flag kill-switch in this repository.

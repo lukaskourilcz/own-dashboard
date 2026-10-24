@@ -1,3 +1,4 @@
+import type { BankProviderState } from "../src/lib/bank/flow";
 import type { Page } from "@playwright/test";
 
 /** console.error / pageerror text we never want to fail a test. */
@@ -26,6 +27,12 @@ export function watchConsole(page: Page): string[] {
   return errors;
 }
 
+/** Complete invented status contract; never reads a signed-in account. */
+export function integrationStatusFixture(providers: BankProviderState[] = []) {
+  return { google: { configured: false, connected: false }, github: { configured: false, connected: false },
+    bank: { configured: providers.some(provider => provider.configured), connected: providers.some(provider => provider.connected), last_synced_at: null, providers }, email: { configured: false } };
+}
+
 /**
  * Any stray Supabase REST/auth/realtime request resolves to benign data so the
  * fixture harness never surfaces a network error.
@@ -40,7 +47,7 @@ export async function stubBackend(page: Page): Promise<void> {
   }));
   await page.route("**/api/integrations/status", route => route.fulfill({
     status: 200, contentType: "application/json",
-    body: JSON.stringify({ google: { configured: false }, github: { configured: false }, bank: { configured: false, providers: [] }, email: { configured: false } }),
+    body: JSON.stringify(integrationStatusFixture()),
   }));
   await page.route("**/api/github/repos", (route) => route.fulfill({
     status: 200,

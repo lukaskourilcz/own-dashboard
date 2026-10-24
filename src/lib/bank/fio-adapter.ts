@@ -96,13 +96,7 @@ export function createFioProvider(signal?: AbortSignal): BankProvider {
 
     async isConfigured(userId?: string): Promise<boolean> {
       if (!userId) return false;
-      try {
-        return await hasProviderSecret(createAdminClient(signal), userId, "fio", signal);
-      } catch {
-        // No service-role key in this environment: report unconfigured rather
-        // than pretending the provider is usable.
-        return false;
-      }
+      return hasProviderSecret(createAdminClient(signal), userId, "fio", signal);
     },
 
     async getConsent(conn: BankConnection): Promise<ProviderConsent> {

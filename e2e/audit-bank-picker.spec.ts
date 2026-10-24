@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview, signInFixtureUser } from "./helpers";
+import { gotoPreview, signInFixtureUser, integrationStatusFixture } from "./helpers";
 import { finances } from "../src/lib/i18n/sections/finances";
 import { common } from "../src/lib/i18n/sections/common";
 
-const providers = [
+const providers: Parameters<typeof integrationStatusFixture>[0] = [
   { id: "gocardless", label: "GoCardless", configured: true, connected: false, supportsInstitutionPicker: true },
   { id: "fio", label: "Fio banka", configured: true, connected: true, supportsInstitutionPicker: false },
 ];
@@ -12,7 +12,7 @@ for (const lang of ["en", "cs"] as const) {
   const copy = finances[lang].bank;
   test(`${lang}: bank picker recovers from failures and prevents navigation during connection`, async ({ page }) => {
     await gotoPreview(page, { lang }); await signInFixtureUser(page);
-    await page.route("**/api/integrations/status", route => route.fulfill({ json: { bank: { providers } } }));
+    await page.route("**/api/integrations/status", route => route.fulfill({ json: integrationStatusFixture(providers) }));
     let lists = 0;
     await page.route("**/api/bank/institutions?**", route => ++lists === 1 ? route.fulfill({ status: 502, json: {} }) : route.fulfill({ json: { institutions: [{ id: "SYNTHETIC_BANK", name: "Synthetic bank", bic: null, logo: null }] } }));
     let release!: () => void, connects = 0;
@@ -48,7 +48,7 @@ for (const lang of ["en", "cs"] as const) {
 
   test(`${lang}: token storage and a failed first sync have separate receipts and retry`, async ({ page }) => {
     await gotoPreview(page, { lang, theme: "dark" }); await signInFixtureUser(page);
-    await page.route("**/api/integrations/status", route => route.fulfill({ json: { bank: { providers } } }));
+    await page.route("**/api/integrations/status", route => route.fulfill({ json: integrationStatusFixture(providers) }));
     let stores = 0, syncs = 0, release!: () => void;
     await page.route("**/api/bank/credentials", async route => {
       if (route.request().method() === "GET") return route.fulfill({ json: { stored: { fio: false } } });

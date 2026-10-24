@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { bankConsentUrl, bankInstitutionsResponse, bankProvidersResponse, type BankInstitution as Institution, type BankProviderState as ProviderState } from "@/lib/bank/flow";
+import { bankConsentUrl, bankInstitutionsResponse, type BankInstitution as Institution, type BankProviderState as ProviderState } from "@/lib/bank/flow";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -31,23 +31,13 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { importTransactionBatch } from "@/lib/transaction-import";
 import { useDict } from "@/lib/i18n";
+import { fetchIntegrationStatus } from "@/lib/integration-status";
 import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
 import { prepareBankCsv, csvRowsToImport, CsvLegacyConflict, MAX_CSV_BYTES, type ParseResult } from "@/lib/bank-csv";
 import { assertRuleEvaluationBounds, createRuleEvaluator, RuleEvaluationLimitError, usableRules } from "@/lib/transaction-rules";
 import type { BankConnection, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-/** Which providers this server can actually use. Comes from the same
- *  authenticated status endpoint Settings reads, which reports booleans only —
- *  no token or secret value is ever part of this shape. */
-async function fetchBankProviders({ signal }: { signal: AbortSignal }): Promise<ProviderState[]> {
-  const res = await fetch("/api/integrations/status", { cache: "no-store", signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) });
-  if (!res.ok) throw new Error(String(res.status));
-  const providers = bankProvidersResponse.parse(await res.json()).bank.providers;
-  if (new Set(providers.map(provider => provider.id)).size !== providers.length) throw new Error("Invalid provider list");
-  return providers;
-}
 
 class BankNotConfigured extends Error {}
 
@@ -70,8 +60,10 @@ export function BankSync({
   });
   const connections = connectionsQuery.data ?? [];
   const providersQuery = useQuery({
-    queryKey: ["bank", "providers"],
-    queryFn: fetchBankProviders,
+    queryKey: qk.integrationStatus,
+    queryFn: fetchIntegrationStatus,
+    select: data => data.bank.providers,
+    staleTime: 60_000,
     retry: false,
   });
   const canConnect = (providersQuery.data ?? []).some(provider => provider.configured || provider.connected);
@@ -100,7 +92,7 @@ export function BankSync({
     onError: () => setActionError(t.finances.bank.syncErr),
     onSettled: () => Promise.all([
       qc.invalidateQueries({ queryKey: qk.transactions }), qc.invalidateQueries({ queryKey: qk.accounts }),
-      qc.invalidateQueries({ queryKey: qk.bankConnections }),
+      qc.invalidateQueries({ queryKey: qk.bankConnections }), qc.invalidateQueries({ queryKey: qk.integrationStatus }),
     ]),
   });
 
@@ -117,7 +109,7 @@ export function BankSync({
     onMutate: () => setActionError(null),
     onSuccess: result => { if (!result.upstreamRevoked) setActionError(t.finances.bank.revokeUnconfirmed); },
     onError: () => setActionError(t.finances.bank.disconnectErr),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.bankConnections }),
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: qk.bankConnections }), qc.invalidateQueries({ queryKey: qk.integrationStatus })]),
   });
   const busy = syncMutation.isPending || disconnectMutation.isPending;
   async function disconnect(id: string) {
@@ -480,9 +472,11 @@ function BankPickerDialog({
   const busy = connectingId !== null || tokenBusy;
 
   const providersQuery = useQuery({
-    queryKey: ["bank", "providers"],
+    queryKey: qk.integrationStatus,
     enabled: open,
-    queryFn: fetchBankProviders,
+    queryFn: fetchIntegrationStatus,
+    select: data => data.bank.providers,
+    staleTime: 60_000,
     retry: false,
   });
 

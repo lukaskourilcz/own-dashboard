@@ -35,38 +35,23 @@ export function listProviders(signal?: AbortSignal): BankProvider[] {
   return BANK_PROVIDER_IDS.map(id => getProvider(id, signal));
 }
 
-/** Which providers this owner could sync with right now. Never throws: one
- *  provider whose configuration check fails must not hide the others. */
-export async function configuredProviders(
-  userId: string, signal?: AbortSignal,
-): Promise<BankProviderId[]> {
-  const checks = await Promise.all(
-    listProviders(signal).map(async (provider) => {
-      try {
-        return (await provider.isConfigured(userId)) ? provider.id : null;
-      } catch {
-        return null;
-      }
-    }),
-  );
-  return checks.filter((id): id is BankProviderId => id !== null);
+/** A failed configuration read is unavailable, never evidence that a provider
+ * is unconfigured. Callers must surface/retry that failure. */
+export async function configuredProviders(userId: string, signal?: AbortSignal): Promise<BankProviderId[]> {
+  return (await providerAvailability(userId, signal)).filter(provider => provider.configured).map(provider => provider.id);
 }
 
-/** Configuration state per provider, for Settings and the connect dialog. No
- *  secret or token value may ever be added to this shape. */
-export async function providerAvailability(userId: string): Promise<
-  {
-    id: BankProviderId;
-    label: string;
-    configured: boolean;
-    supportsInstitutionPicker: boolean;
-  }[]
-> {
-  const configured = new Set(await configuredProviders(userId));
-  return listProviders().map((provider) => ({
+/** Configuration state only. No credential values enter this response. */
+export async function providerAvailability(userId: string, signal?: AbortSignal): Promise<{
+  id: BankProviderId;
+  label: string;
+  configured: boolean;
+  supportsInstitutionPicker: boolean;
+}[]> {
+  return Promise.all(listProviders(signal).map(async provider => ({
     id: provider.id,
     label: provider.label,
-    configured: configured.has(provider.id),
+    configured: await provider.isConfigured(userId),
     supportsInstitutionPicker: provider.supportsInstitutionPicker,
-  }));
+  })));
 }

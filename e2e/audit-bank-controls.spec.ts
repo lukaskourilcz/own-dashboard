@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview, signInFixtureUser } from "./helpers";
+import { integrationStatusFixture, gotoPreview, signInFixtureUser } from "./helpers";
 import { finances } from "../src/lib/i18n/sections/finances";
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]["page"];
 
@@ -12,7 +12,7 @@ for (const lang of ["en", "cs"] as const) {
     let rows = names.map((name, index) => ({ id: `11111111-0000-4000-8000-${String(index).padStart(12, "0")}`, user_id: "u1", institution_name: name,
       provider: "gocardless", status: "linked", last_error: index === 1 ? "Synthetic private legacy detail" : null, last_synced_at: null, consent_expires_at: null }));
     await page.route("**/rest/v1/bank_connections**", route => route.fulfill({ json: rows, headers: { "access-control-expose-headers": "content-range", "content-range": rows.length ? `0-${rows.length - 1}/${rows.length}` : "*/0" } }));
-    await page.route("**/api/integrations/status", route => route.fulfill({ json: { bank: { providers: [{ id: "gocardless", label: "GoCardless", configured: true, connected: true, supportsInstitutionPicker: true }] } } }));
+    await page.route("**/api/integrations/status", route => route.fulfill({ json: integrationStatusFixture([{ id: "gocardless", label: "GoCardless", configured: true, connected: true, supportsInstitutionPicker: true }]) }));
     let release!: () => void, syncs = 0, disconnects = 0;
     await page.route("**/api/bank/sync", async route => {
       if (++syncs === 1) { await new Promise<void>(resolve => { release = resolve; }); return route.fulfill({ status: 502, json: { error: "Synthetic failed pull" } }); }
