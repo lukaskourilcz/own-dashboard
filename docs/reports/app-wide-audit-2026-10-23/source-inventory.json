@@ -1316,7 +1316,7 @@
       "path": "src/components/panels/freelance-platforms.tsx",
       "lines": 80,
       "sha256": "7b59f61b898c86a01ebf2f13aced72aeb6f2d46407f4d91e42ca070a8ab503b4",
-      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "status": "partial; complete source read; bounded/complete directory reads, captured-source profile writes, dirty guards and safe empty links pending in review.md",
       "reviewedSha256": "7b59f61b898c86a01ebf2f13aced72aeb6f2d46407f4d91e42ca070a8ab503b4"
     },
     {
@@ -1400,14 +1400,14 @@
       "path": "src/components/panels/opportunities-panel.tsx",
       "lines": 306,
       "sha256": "c30f26827554b028c442a8acb6c8f763d2363af90f52ec914728a6d1810807f8",
-      "status": "partial source review; all lines read; form validation, mutation receipts/pending protection, conversion recovery and metrics completeness require checks",
+      "status": "partial; complete source read; captured-source writes, guards, validated/refreshed metrics, conversion deduplication, availability and list indexing pending in review.md",
       "reviewedSha256": "8b49fa1f86af949f311426888a1d2b2a38b29678a9722f8878ab10a3414e390d"
     },
     {
       "path": "src/components/panels/opportunity-detail.tsx",
       "lines": 83,
       "sha256": "2fe9608a95012a2a1bb3706da8fadb5839a74412e60a7d805eae0b976f4fd92f",
-      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "status": "partial; complete source read; captured-source save, dirty/pending guard, finite/date bounds, owner-day clock and follow-up timezone pending in review.md",
       "reviewedSha256": "2fe9608a95012a2a1bb3706da8fadb5839a74412e60a7d805eae0b976f4fd92f"
     },
     {
