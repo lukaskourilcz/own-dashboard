@@ -55,7 +55,7 @@ import type { Project, Subscription, Transaction } from "@/lib/types";
  * Two match counts on purpose. The inline one is computed over the transaction
  * window the dashboard already loaded and says so in its label, so it costs
  * nothing and never pretends to be the whole ledger. "Check all transactions"
- * asks /api/money/rules/apply, which pages through everything the owner has.
+ * asks /api/money/rules/apply, which reads a complete bounded snapshot of the owner’s ledger.
  */
 
 /* ------------------------------ editor state ------------------------------ */
@@ -258,11 +258,11 @@ export function TransactionRules({
   });
 
   const applyMutation = useMutation({
-    mutationFn: async (ruleId: string | null) => {
+    mutationFn: async ({ ruleId, expectedRulesVersion }: { ruleId: string | null; expectedRulesVersion: string }) => {
       const res = await fetch("/api/money/rules/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "apply", ...(ruleId ? { ruleId } : {}) }),
+        body: JSON.stringify({ mode: "apply", expectedRulesVersion, ...(ruleId ? { ruleId } : {}) }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const result = await res.json();
@@ -273,23 +273,23 @@ export function TransactionRules({
       toast.ok(
         updated > 0 ? t.finances.rules.applyDone(updated) : t.finances.rules.applyNothing,
       );
-      if (updated > 0) void qc.invalidateQueries({ queryKey: qk.transactions });
     },
-    onError: () => toast.err(t.finances.rules.applyErr),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.transactions }),
+    onError: (error) => toast.err(error.message === "409" ? t.finances.rules.applyConflict : t.finances.rules.applyErr),
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: qk.transactions }), qc.invalidateQueries({ queryKey: qk.transactionRules })]),
   });
   const writeBusy = deleteMutation.isPending || toggleMutation.isPending || applyMutation.isPending;
   const writable = rulesQuery.isSuccess && dropped === 0 && !writeBusy;
 
   async function requestApply(ruleId: string | null) {
-    if (!writable) return;
+    const expectedRulesVersion = rulesQuery.data?.rulesVersion;
+    if (!writable || !expectedRulesVersion) return;
     const ok = await confirm({
       title: t.finances.rules.applyConfirmTitle,
       description: t.finances.rules.applyConfirmBody,
       confirmLabel: t.finances.rules.applyConfirmLabel,
       cancelLabel: t.common.cancel,
     });
-    if (ok && writable) applyMutation.mutate(ruleId);
+    if (ok && writable) applyMutation.mutate({ ruleId, expectedRulesVersion });
   }
 
   async function requestDelete(rule: TransactionRule) {

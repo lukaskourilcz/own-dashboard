@@ -20,7 +20,7 @@ for (const lang of ["en", "cs"] as const) {
       if (writes === 1) { await new Promise<void>(resolve => { release = resolve; }); return route.fulfill({ status: 500, json: { message: "Synthetic conflict" } }); }
       return route.fulfill({ json: { id: row.id } });
     });
-    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: [row], project_ids: [], subscription_ids: [] } }));
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: [row], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] } }));
     await page.goto("/dev-preview?tab=categories");
     await page.getByRole("button", { name: `${lang === "cs" ? "Upravit" : "Edit"}: Audit rule`, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: copy.editRule });
@@ -66,7 +66,7 @@ for (const lang of ["en", "cs"] as const) {
       }
       return route.fulfill({ json: url.searchParams.has("id") ? created : created ? [created] : [] });
     });
-    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: created ? [created] : [], project_ids: [], subscription_ids: [] } }));
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: created ? [created] : [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] } }));
     await page.goto("/dev-preview?tab=categories"); await page.getByRole("button", { name: copy.newRule, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: copy.newRule });
     await dialog.getByRole("textbox", { name: `${copy.value} 1`, exact: true }).fill("merchant");
@@ -75,5 +75,39 @@ for (const lang of ["en", "cs"] as const) {
     await dialog.getByRole("button", { name: save, exact: true }).click(); await expect(dialog).toHaveCount(0);
     expect(ids).toHaveLength(2); expect(new Set(ids).size).toBe(1);
     expect(created).toMatchObject({ actions: { note: null } });
+  });
+}
+
+for (const lang of ["en", "cs"] as const) {
+  test(`${lang}: applying rules captures the reviewed version and recovers after a conflict`, async ({ page }) => {
+    const copy = finances[lang].rules;
+    await gotoPreview(page, { lang }); await signInFixtureUser(page);
+    const first = "0123456789abcdef0123456789abcdef", second = "a".repeat(32);
+    let current = first, writes = 0, release!: () => void;
+    const versions: unknown[] = [];
+    const row = { id: "11111111-1111-4111-8111-111111111111", user_id: "u1", name: "Audit apply rule", stage: "default", enabled: true,
+      conditions: [{ field: "note", op: "contains", value: "merchant" }], actions: { category: "Work" }, sort_order: 0,
+      created_at: "2026-10-24T00:43:00Z", updated_at: "2026-10-24T00:43:00Z" };
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: [row], rules_version: current, project_ids: [], subscription_ids: [] } }));
+    await page.route("**/api/money/rules/apply", async route => {
+      versions.push(route.request().postDataJSON().expectedRulesVersion); writes++;
+      if (writes === 1) {
+        await new Promise<void>(resolve => { release = resolve; }); current = second;
+        return route.fulfill({ status: 409, json: { error: "Rules changed" } });
+      }
+      return route.fulfill({ json: { scanned: 1201, matched: 1201, changed: 1201, updated: 1201, truncated: false } });
+    });
+    await page.goto("/dev-preview?tab=categories");
+    const apply = page.getByRole("button", { name: copy.apply, exact: true });
+    await apply.click();
+    await page.getByRole("dialog", { name: copy.applyConfirmTitle }).getByRole("button", { name: copy.applyConfirmLabel, exact: true }).click();
+    await expect.poll(() => !!release).toBe(true);
+    await expect(page.getByRole("button", { name: copy.applying, exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: copy.newRule, exact: true })).toBeDisabled();
+    release(); await expect(page.getByText(copy.applyConflict, { exact: true })).toBeVisible();
+    await expect(apply).toBeEnabled(); await apply.click();
+    await page.getByRole("dialog", { name: copy.applyConfirmTitle }).getByRole("button", { name: copy.applyConfirmLabel, exact: true }).click();
+    await expect(page.getByText(copy.applyDone(1201), { exact: true })).toBeVisible();
+    expect(versions).toEqual([first, second]);
   });
 }

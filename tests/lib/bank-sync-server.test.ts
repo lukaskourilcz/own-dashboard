@@ -42,7 +42,7 @@ beforeEach(() => {
   });
   rpc = vi.fn(async (name: string, args: { p_user_id: string; p_rows: Record<string, unknown>[] }) => {
     expect(args.p_user_id).toBe(owner);
-    if (name === "transaction_rule_context") return { data: { owner_id: owner, rules: [], project_ids: [], subscription_ids: [] }, error: null };
+    if (name === "transaction_rule_context") return { data: { owner_id: owner, rules: [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] }, error: null };
     expect(name).toBe("import_transaction_batch");
     if (++batches === failBatch) return { data: null, error: {} };
     const ids: string[] = [];

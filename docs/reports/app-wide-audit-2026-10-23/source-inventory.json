@@ -475,9 +475,10 @@
     },
     {
       "path": "src/app/api/money/rules/apply/route.ts",
-      "lines": 225,
+      "lines": 66,
       "sha256": "b22fbfdd3f89b27e140b7315a1c457a7235239efd4c34078bf87669cf2f31c1d",
-      "status": "pending"
+      "status": "source reviewed; complete atomic rule application and failure checks passed; final release checks pending",
+      "reviewedSha256": "86a4b312a8e2ec1b22cc2b3f627066212727bb7006936fecb174fd2cdcb727df"
     },
     {
       "path": "src/app/api/registry/ares/route.ts",
@@ -679,6 +680,22 @@
       "reviewedSha256": "e12fcaef2adce9ad3da219176941669f0058d11fb2da34d5a31617d8b033ef1b"
     },
     {
+      "path": "src/components/dashboard-data-unavailable.tsx",
+      "lines": 22,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "7856870ebc79b070f11a424d0eb024bb8bdba7599da16fe284090daf653c862d"
+    },
+    {
+      "path": "src/components/dashboard-destination-state.tsx",
+      "lines": 18,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "092bd4441f577ac4b54d267f4ccdf7f95b074c73b81810f9af1d2a765e36ebc8"
+    },
+    {
       "path": "src/components/dashboard-shell.tsx",
       "lines": 428,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
@@ -707,10 +724,10 @@
     },
     {
       "path": "src/components/finances/transaction-rules.tsx",
-      "lines": 943,
+      "lines": 1013,
       "sha256": "9ae72e1d8fcf0804396d01ee35883e09e1d92eb94c4c227edde5664fe9ea9945",
-      "status": "source reviewed; targeted browser checks passed; final release checks pending",
-      "reviewedSha256": "3383c68ce649b9a4af8f2580232e5074354729d0b9f88478e5f16d80d3d85dfe"
+      "status": "source reviewed; versioned writes, retained drafts and apply conflict recovery passed EN/CS desktop/mobile; final release checks pending",
+      "reviewedSha256": "36ebc57e8483fabe3d08a22598102e6a01afe94849a062c8a996609fe869c387"
     },
     {
       "path": "src/components/github/publish-to-repo-dialog.tsx",
@@ -724,6 +741,14 @@
       "sha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "bca54597e5201619714176023b7ba48c70b06a3620007fb24ff3aa900c88a631"
+    },
+    {
+      "path": "src/components/guest-boundary.tsx",
+      "lines": 52,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "22b95961e2b8fdbb82fb8b2c04a1d4cb80ee47f50b748f7d1969587008d1012a"
     },
     {
       "path": "src/components/guest-locale.tsx",
@@ -744,6 +769,14 @@
       "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
       "status": "source reviewed; pending/print/reflow checks passed; legacy QR input validation follow-up pending",
       "reviewedSha256": "a55348d6a314439e8ef0e1c4e779a788bde1822978a8c4368db336a074f77be1"
+    },
+    {
+      "path": "src/components/invoices/invoice-editor.tsx",
+      "lines": 23,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "9669bacf59e61ac686c7c8aceb25b0d031ba3412436ccc3289550c507aa9e6d9"
     },
     {
       "path": "src/components/invoices/invoice-form.tsx",
@@ -802,6 +835,36 @@
       "path": "src/components/marketing/calendar-source-notes.tsx",
       "lines": 43,
       "sha256": "2e4ad565ce379edfa632bf08ea6078cf05348a2e090ad9a121508aa283697eb5",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-audio-library.tsx",
+      "lines": 147,
+      "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-daily-mix.tsx",
+      "lines": 75,
+      "sha256": "c43f2b4e0174da99cce3c393099b18aa4077520a26e951a0d458b9f040b05b43",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-instagram-account.tsx",
+      "lines": 133,
+      "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-source-list.tsx",
+      "lines": 164,
+      "sha256": "27c3bc4923b8c87bc02970a0f76b54c36f14ced9e9342be7279c240d8bf4c98d",
+      "status": "pending"
+    },
+    {
+      "path": "src/components/marketing/dneskai-sources.tsx",
+      "lines": 180,
+      "sha256": "703f8068fc6a58d3741f0e491d5e19e9b59a0919e9dee549f61f8dbecca68e50",
       "status": "pending"
     },
     {
@@ -961,36 +1024,6 @@
       "status": "pending"
     },
     {
-      "path": "src/components/marketing/dneskai-audio-library.tsx",
-      "lines": 147,
-      "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "pending"
-    },
-    {
-      "path": "src/components/marketing/dneskai-daily-mix.tsx",
-      "lines": 75,
-      "sha256": "c43f2b4e0174da99cce3c393099b18aa4077520a26e951a0d458b9f040b05b43",
-      "status": "pending"
-    },
-    {
-      "path": "src/components/marketing/dneskai-instagram-account.tsx",
-      "lines": 133,
-      "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
-      "status": "pending"
-    },
-    {
-      "path": "src/components/marketing/dneskai-source-list.tsx",
-      "lines": 164,
-      "sha256": "27c3bc4923b8c87bc02970a0f76b54c36f14ced9e9342be7279c240d8bf4c98d",
-      "status": "pending"
-    },
-    {
-      "path": "src/components/marketing/dneskai-sources.tsx",
-      "lines": 180,
-      "sha256": "703f8068fc6a58d3741f0e491d5e19e9b59a0919e9dee549f61f8dbecca68e50",
-      "status": "pending"
-    },
-    {
       "path": "src/components/marketing/job-health.tsx",
       "lines": 44,
       "sha256": "f15ce8da7c282ffdbf1dca03c4e0f8d8e2d9253cc0b9162e358a22e0985b8b89",
@@ -1077,6 +1110,14 @@
       "sha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "15b0bee8e6a9fbd9a51bd196d15c2554875eb9b0a4851973928bb2fe3b118ccf"
+    },
+    {
+      "path": "src/components/notes/use-note-autosave.ts",
+      "lines": 130,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "03e6ca650f30717d23b475879e6711a4849258d40e02d6a20665155d831d7f31"
     },
     {
       "path": "src/components/overview/cron-monitor.tsx",
@@ -1628,6 +1669,20 @@
       "status": "pending"
     },
     {
+      "path": "src/lib/bank-csv.ts",
+      "lines": 253,
+      "sha256": "1825cbcce2a56bcc9f649619daff18635b015fdfc08a77e0b4f597279c16a12e",
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "c50aae8129b4e5a5601f1842baa2a0b9374d0358e3ec1e2b0db08742e1514669"
+    },
+    {
+      "path": "src/lib/bank-sync-server.ts",
+      "lines": 249,
+      "sha256": "e5f413436cd693c468a524b382d0afa7e730fc9053935a848707c1f552bf2ca2",
+      "status": "source reviewed; targeted sync checks passed; final release checks pending",
+      "reviewedSha256": "ccf8b87353d6eeb09bc05d51e985914296048757bc57562571e8840392c0ad61"
+    },
+    {
       "path": "src/lib/bank/credentials.ts",
       "lines": 77,
       "sha256": "80fa920eac55cb875b9bbcbf0eebaa6a7d000f8962899ea84cb9ccb762c4f6ab",
@@ -1661,6 +1716,13 @@
       "reviewedSha256": "087febd7ca8fc33aa0d43f75ea20a8ee12a5ec329f53605a762c6fae4e1a1ef7"
     },
     {
+      "path": "src/lib/bank/flow.ts",
+      "lines": 30,
+      "sha256": null,
+      "status": "source reviewed; provider contract and redirect boundaries checked; final release checks pending",
+      "reviewedSha256": "a08b29336faeab92da03579100ec233e01c01e479e457ee5fd507f820819fbce"
+    },
+    {
       "path": "src/lib/bank/gocardless-adapter.ts",
       "lines": 148,
       "sha256": "297e4839266ed924a9624a50b79ef3db00283a2704776fd7b05fcbaa50685158",
@@ -1689,18 +1751,12 @@
       "reviewedSha256": "56ab66f0bbe2df7c86c4bafaa7b2d53b030ca0f811c5b01f95cae62edd9f6ddb"
     },
     {
-      "path": "src/lib/bank-csv.ts",
-      "lines": 253,
-      "sha256": "1825cbcce2a56bcc9f649619daff18635b015fdfc08a77e0b4f597279c16a12e",
+      "path": "src/lib/bounded-text.ts",
+      "lines": 26,
+      "sha256": null,
+      "addedAfterBaseline": true,
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "c50aae8129b4e5a5601f1842baa2a0b9374d0358e3ec1e2b0db08742e1514669"
-    },
-    {
-      "path": "src/lib/bank-sync-server.ts",
-      "lines": 249,
-      "sha256": "e5f413436cd693c468a524b382d0afa7e730fc9053935a848707c1f552bf2ca2",
-      "status": "source reviewed; targeted sync checks passed; final release checks pending",
-      "reviewedSha256": "ccf8b87353d6eeb09bc05d51e985914296048757bc57562571e8840392c0ad61"
+      "reviewedSha256": "fd97ec2d21e0845c64f752df33c71f3bafd71a948f2f132376b6eb1d594b8a46"
     },
     {
       "path": "src/lib/brand.ts",
@@ -1708,6 +1764,14 @@
       "sha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738",
       "status": "source reviewed; centralized temporary name and professional scope retained; metadata rendering checks pending",
       "reviewedSha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738"
+    },
+    {
+      "path": "src/lib/calendar-event.ts",
+      "lines": 39,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "0ded942234d4f8d11112ed169b0d5adad9ad02e9c0820630ee3e8465a1ebcffb"
     },
     {
       "path": "src/lib/calendar-server.ts",
@@ -1899,6 +1963,14 @@
       "lines": 229,
       "sha256": "e3eaa94b2c73e80b0f54d7bdf464d464eec41502da3147366e6ad281ce029c29",
       "status": "pending"
+    },
+    {
+      "path": "src/lib/guest-requests.ts",
+      "lines": 28,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "9e2f9893a11c0bc5ba73245ba5e27d21fc3e93887ea575a637ee05e41c7cc79d"
     },
     {
       "path": "src/lib/heartbeat.ts",
@@ -2179,11 +2251,26 @@
       "reviewedSha256": "385f7cc9d42ec5d107625185ea37d8b8717e3f813e7ab69fd47e778b6d709d51"
     },
     {
+      "path": "src/lib/invoice-import.ts",
+      "lines": 22,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "fdf8089454ef636a5271259fdc914d75f26d79dfd838bdeb983fef7836780b3d"
+    },
+    {
       "path": "src/lib/invoice-parser.ts",
       "lines": 220,
       "sha256": "e1f8af46b11e4edba99935713dea75c2bf9c144b4fbff921742537965d3ff6a7",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "ecfd458ddc61b09d45a05c7d6f3dc8b1caac617d9e559aaff6a1dd5efbc51bcc"
+    },
+    {
+      "path": "src/lib/invoice-payment-state.ts",
+      "lines": 26,
+      "sha256": null,
+      "status": "source reviewed; real database/receipt failure checks passed; final release checks pending",
+      "reviewedSha256": "0823193427680a81c21daadc4adacf0f5ba8589398f134dbf711bcac70436302"
     },
     {
       "path": "src/lib/invoices.ts",
@@ -2336,6 +2423,19 @@
       "sha256": "a397b351ff05783a49901b5681b570392930336f8ee6f542f788ab0815f45e4c",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "a397b351ff05783a49901b5681b570392930336f8ee6f542f788ab0815f45e4c"
+    },
+    {
+      "path": "src/lib/marketing-calendars-server.ts",
+      "lines": 59,
+      "sha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d",
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d"
+    },
+    {
+      "path": "src/lib/marketing-calendars.ts",
+      "lines": 409,
+      "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
+      "status": "pending"
     },
     {
       "path": "src/lib/marketing/accounts-client.ts",
@@ -3167,19 +3267,6 @@
       "status": "pending"
     },
     {
-      "path": "src/lib/marketing-calendars-server.ts",
-      "lines": 59,
-      "sha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d"
-    },
-    {
-      "path": "src/lib/marketing-calendars.ts",
-      "lines": 409,
-      "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
-      "status": "pending"
-    },
-    {
       "path": "src/lib/nav-tabs.ts",
       "lines": 105,
       "sha256": "8d345659f6e33d5cf302171d9a8966ee9144a71fbbbe66d5542c332ad19cec45",
@@ -3223,6 +3310,14 @@
       "lines": 56,
       "sha256": "3f2d188ee7b0eeec78885e4f26e303ef56ce0dfe078f28e85af848de5fbac3ae",
       "status": "pending"
+    },
+    {
+      "path": "src/lib/owned-records.ts",
+      "lines": 32,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; final release checks pending",
+      "reviewedSha256": "97015ca5ca148fbbc919375ef01fed8b20ad47bd933b69e097fa0f9c66a00d62"
     },
     {
       "path": "src/lib/payment-matching-server.ts",
@@ -3450,6 +3545,29 @@
       "reviewedSha256": "c69de44564b5b8002e3d790b23073406c6dae2316da26098097aec21b5e4db54"
     },
     {
+      "path": "src/lib/transaction-import.ts",
+      "lines": 25,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; targeted import checks passed; final release checks pending",
+      "reviewedSha256": "0407532d019bb9dbef061dcf79dea900f13067cb00de990e175f2930e9e7d2a1"
+    },
+    {
+      "path": "src/lib/transaction-rule-application.ts",
+      "sha256": null,
+      "lines": 52,
+      "status": "source reviewed; complete snapshot, work bounds and confirmed receipts tested; final release checks pending",
+      "reviewedSha256": "ad76472b68d266358fad1177178b9bddce5ec673991c8e3c86d618448dda07e8"
+    },
+    {
+      "path": "src/lib/transaction-rule-data.ts",
+      "lines": 29,
+      "sha256": null,
+      "addedAfterBaseline": true,
+      "status": "source reviewed; complete versioned context tested; final release checks pending",
+      "reviewedSha256": "98a215cf7368862e508620b1233d3fbf9a4a0d0b01e10c2a096cfd0b09fedec2"
+    },
+    {
       "path": "src/lib/transaction-rules.ts",
       "lines": 568,
       "sha256": "28552e186b285c368ed191729d2852883bf9a49261e62c97ad67695b7605e060",
@@ -3532,116 +3650,6 @@
       "sha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9",
       "status": "source read; public metadata and authentication matcher verification pending",
       "reviewedSha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9"
-    },
-    {
-      "path": "src/components/dashboard-data-unavailable.tsx",
-      "lines": 22,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "7856870ebc79b070f11a424d0eb024bb8bdba7599da16fe284090daf653c862d"
-    },
-    {
-      "path": "src/components/dashboard-destination-state.tsx",
-      "lines": 18,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "092bd4441f577ac4b54d267f4ccdf7f95b074c73b81810f9af1d2a765e36ebc8"
-    },
-    {
-      "path": "src/components/guest-boundary.tsx",
-      "lines": 52,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "22b95961e2b8fdbb82fb8b2c04a1d4cb80ee47f50b748f7d1969587008d1012a"
-    },
-    {
-      "path": "src/components/invoices/invoice-editor.tsx",
-      "lines": 23,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "9669bacf59e61ac686c7c8aceb25b0d031ba3412436ccc3289550c507aa9e6d9"
-    },
-    {
-      "path": "src/components/notes/use-note-autosave.ts",
-      "lines": 130,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "03e6ca650f30717d23b475879e6711a4849258d40e02d6a20665155d831d7f31"
-    },
-    {
-      "path": "src/lib/calendar-event.ts",
-      "lines": 39,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0ded942234d4f8d11112ed169b0d5adad9ad02e9c0820630ee3e8465a1ebcffb"
-    },
-    {
-      "path": "src/lib/guest-requests.ts",
-      "lines": 28,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "9e2f9893a11c0bc5ba73245ba5e27d21fc3e93887ea575a637ee05e41c7cc79d"
-    },
-    {
-      "path": "src/lib/invoice-import.ts",
-      "lines": 22,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "fdf8089454ef636a5271259fdc914d75f26d79dfd838bdeb983fef7836780b3d"
-    },
-    {
-      "path": "src/lib/owned-records.ts",
-      "lines": 32,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "97015ca5ca148fbbc919375ef01fed8b20ad47bd933b69e097fa0f9c66a00d62"
-    },
-    {
-      "path": "src/lib/bounded-text.ts",
-      "lines": 26,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "fd97ec2d21e0845c64f752df33c71f3bafd71a948f2f132376b6eb1d594b8a46"
-    },
-    {
-      "path": "src/lib/transaction-rule-data.ts",
-      "lines": 29,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; targeted context checks passed; final release checks pending",
-      "reviewedSha256": "f72c5ebd5b99bf12bc557ee2e5faa01fa9b3f5e0e8b76a7b4b13a55888ccdb7f"
-    },
-    {
-      "path": "src/lib/transaction-import.ts",
-      "lines": 25,
-      "sha256": null,
-      "addedAfterBaseline": true,
-      "status": "source reviewed; targeted import checks passed; final release checks pending",
-      "reviewedSha256": "0407532d019bb9dbef061dcf79dea900f13067cb00de990e175f2930e9e7d2a1"
-    },
-    {
-      "path": "src/lib/bank/flow.ts",
-      "lines": 30,
-      "sha256": null,
-      "status": "source reviewed; provider contract and redirect boundaries checked; final release checks pending",
-      "reviewedSha256": "a08b29336faeab92da03579100ec233e01c01e479e457ee5fd507f820819fbce"
-    },
-    {
-      "path": "src/lib/invoice-payment-state.ts",
-      "lines": 26,
-      "sha256": null,
-      "status": "source reviewed; real database/receipt failure checks passed; final release checks pending",
-      "reviewedSha256": "0823193427680a81c21daadc4adacf0f5ba8589398f134dbf711bcac70436302"
     }
   ],
   "baselineFileCount": 561

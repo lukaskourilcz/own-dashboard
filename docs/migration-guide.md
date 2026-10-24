@@ -728,12 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Seven prepared audit files follow: `20261023135551_dneskai_engagement_receipts.sql`, `20261023164118_app_wide_rls_initplans.sql`, `20261023170010_project_parent_rls_lookup.sql`, `20261023175801_daily_focus_garden_summary.sql`, `20261023183345_career_owner_day.sql`, `20261023190841_invoice_document_transaction.sql` and `20261023200938_atomic_knowledge_documents.sql`. Check the linked project and apply this chain before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Fourteen prepared audit files follow, numbered 87–100 in the [current migration list](../README.md). The latest is `20261024004341_atomic_transaction_rule_application.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect the seven audit files listed above
+npx supabase db push --linked --dry-run   # expect all fourteen audit files (87–100)
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -979,13 +979,13 @@ The response refuses more than 1,000 rules, 10,000 project ids, 20,000 subscript
 
 `20261023222504_confirmed_transaction_import.sql` adds `import_transaction_batch(jsonb,uuid default null)`. It keeps the existing `transactions_user_external_uq` partial unique index and uses its non-null predicate in `ON CONFLICT`; the unqualified PostgREST conflict target fails with `42P10` against the real migrated schema. Production index metadata confirms the same predicate. No index is added or removed.
 
-Each invoker transaction accepts at most 250 rows/1 MiB, binds the authenticated or explicit service owner, permits only the eleven ingestion fields, validates amounts/dates/currencies and related ownership, and returns only inserted UUIDs. Existing rows are never overwritten. A later insert failure rolls back the whole batch. Bank sync advances its cursor only after confirmed batches, account writes and connection completion. An ambiguous/partial pass can be replayed by external id. Apply this eleventh audit migration before deployment; the audit now has thirteen unapplied migrations. Current local generated read types reproduce from 99 migrations.
+Each invoker transaction accepts at most 250 rows/1 MiB, binds the authenticated or explicit service owner, permits only the eleven ingestion fields, validates amounts/dates/currencies and related ownership, and returns only inserted UUIDs. Existing rows are never overwritten. A later insert failure rolls back the whole batch. Bank sync advances its cursor only after confirmed batches, account writes and connection completion. An ambiguous/partial pass can be replayed by external id. Apply this eleventh audit migration before deployment; the audit now has fourteen unapplied migrations. Current local generated read types reproduce from 100 migrations.
 
 ## Atomic bank credentials — prepared, unapplied (24 October 2026)
 
 `20261023233432_atomic_bank_credentials.sql` adds two invoker, service-only RPCs to the existing Fio storage boundary. `store_bank_token` validates an explicit owner/provider, serializes changes for that owner in the same transaction, creates or resets one connection and stores its credential atomically. Its response is a connection UUID. Repeated saves retain that UUID; ambiguous pre-existing connections are refused without cleanup. `forget_bank_token` removes that owner's Fio connection and credential together and returns a boolean. Imported financial records and other providers remain unchanged. No function returns credential contents, and anonymous/authenticated execution is explicitly revoked. Applying the migration creates no connection or credential.
 
-The API still authenticates the owner and checks same-origin requests; request bounds, rate limits and receipt validation precede success. Failed presence reads report unavailable rather than inventing an absent token. Six real migrated-database cases and nine route cases pass, including rollback after a storage/removal failure, repeatable identity, owner/provider isolation, invalid input, privacy and role grants. The initial test setup omitted its required fixture clock and was corrected; it is not counted as a passing run. This was prepared as the twelfth audit migration; thirteen files are now unapplied (99 total). Apply all prepared files in order before merging the caller.
+The API still authenticates the owner and checks same-origin requests; request bounds, rate limits and receipt validation precede success. Failed presence reads report unavailable rather than inventing an absent token. Six real migrated-database cases and nine route cases pass, including rollback after a storage/removal failure, repeatable identity, owner/provider isolation, invalid input, privacy and role grants. The initial test setup omitted its required fixture clock and was corrected; it is not counted as a passing run. This was prepared as the twelfth audit migration; fourteen files are now unapplied (100 total). Apply all prepared files in order before merging the caller.
 
 ## Invoice payment state — prepared, unapplied (24 October 2026)
 
@@ -994,3 +994,14 @@ The API still authenticates the owner and checks same-origin requests; request b
 A separate invoker trigger clears `matched_at` and `match_source` whenever an existing invoice link becomes null, including the foreign key's unlink during an explicit invoice deletion. Applying the migration changes no existing record. The UI protects pending controls, requires versioned deletion receipts, restores failed detail deletion and reconciles invoice/transaction caches.
 
 Seven real migrated-database cases cover atomic rollback, stale refusal, complete releases, repeat confirmation, deletion metadata, the link bound and grants. Forty-nine targeted invoice/matching/receipt cases pass; 18 desktop/mobile invoice browser cases and a six-case EN/CS final copy recheck pass. The initial database assertion sorted a text alias rather than the numeric amount; the initial browser assertion compared the app process's fixture clock with the test worker's clock. Corrected fixtures keep the behavioral checks. Read types reproduce from all 99 migrations. This thirteenth audit migration remains unapplied and must precede deployment.
+
+
+## Atomic transaction-rule application — prepared, unapplied (24 October 2026)
+
+`20261024004341_atomic_transaction_rule_application.sql` extends the complete rule context with a canonical rule version, adds the authenticated-only `transaction_rule_snapshot` and `apply_transaction_rule_plan` RPCs, and serializes direct rule writes with a per-owner transaction advisory lock. All functions use invoker rights and an empty search path; the trigger function has no direct browser/service execution grant. Existing records, rules, amounts and payment state are unchanged by the migration.
+
+One consistent read returns at most 20,000 transactions and the complete context within 10 MiB. Apply accepts at most 20,000 metadata changes/4 MiB, locks owned parents and ledger rows in deterministic order, and checks the captured rule and row versions. Missing/stale targets, changed parents, suppressed writes or altered receipts roll back the whole plan. Only category, note, project and subscription metadata may change. The API also bounds request bytes, evaluation work and request duration; it returns no shortened count or partial success. The editor captures the rule version before confirmation and refreshes after conflicts.
+
+Fifty-seven targeted cases, including eleven real migrated-database cases, and sixteen EN/CS desktop/mobile rule-editor/CSV browser cases pass. Coverage includes a complete 1,201-row ledger, rollback, stale rule insert/update/delete, stale manual edits, ownership/grants, bounds, confirmed identities and conflict recovery. TypeScript and targeted ESLint pass. Read types reproduce from all 100 migrations. Apply all fourteen prepared audit files in order before deploying the callers.
+
+The implementation follows the current [Supabase database-function security model](https://supabase.com/docs/guides/database/functions) and [PostgreSQL transaction advisory-lock behavior](https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS); it does not hold a database lock across HTTP requests.

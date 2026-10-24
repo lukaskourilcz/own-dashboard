@@ -212,6 +212,7 @@ type RulesStrings = {
   applyDone: (n: number) => string;
   applyNothing: string;
   applyErr: string;
+  applyConflict: string;
   applyConfirmTitle: string;
   applyConfirmBody: string;
   applyConfirmLabel: string;
@@ -414,6 +415,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
         n === 1 ? "Updated 1 transaction." : `Updated ${n} transactions.`,
       applyNothing: "Nothing to change.",
       applyErr: "Couldn't apply the rules. Please try again.",
+      applyConflict: "Rules or transactions changed. Review the refreshed data and try again.",
       applyConfirmTitle: "Apply to existing transactions?",
       applyConfirmBody:
         "Every matching transaction is rewritten with this rule's actions. Previous values are not kept.",
@@ -663,6 +665,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       },
       applyNothing: "Nebylo co změnit.",
       applyErr: "Pravidla se nepodařilo použít. Zkus to znovu.",
+      applyConflict: "Pravidla nebo transakce se změnily. Zkontroluj obnovená data a zkus to znovu.",
       applyConfirmTitle: "Použít na existující transakce?",
       applyConfirmBody:
         "Každá odpovídající transakce se přepíše akcemi tohoto pravidla. Původní hodnoty se neuchovávají.",
