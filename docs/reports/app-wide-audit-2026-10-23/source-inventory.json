@@ -3,6 +3,41 @@
   "meaning": "Baseline source inventory plus files added during review (sha256 null for additions). Source review and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
   "files": [
     {
+      "path": "instrumentation.ts",
+      "sha256": "69357a59e8ac36530a66866d6fd73e12b5b97e1df6b40719844ccabfc2b8350c",
+      "lines": 10,
+      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
+      "reviewedSha256": "69357a59e8ac36530a66866d6fd73e12b5b97e1df6b40719844ccabfc2b8350c"
+    },
+    {
+      "path": "next.config.ts",
+      "sha256": "a1fcd8a78a6e709b0d8b0c1cf7203acc660db6150e4f4a5a6b754af9f7a772b1",
+      "lines": 125,
+      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
+      "reviewedSha256": "a91045c76066aca1d6f297e79d481148e78dfb3d98f5194ca0f049e4006ed3ea"
+    },
+    {
+      "path": "sentry.client.config.ts",
+      "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
+      "lines": 24,
+      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
+      "reviewedSha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968"
+    },
+    {
+      "path": "sentry.edge.config.ts",
+      "sha256": "f3f54b40ffe4b871f1cfdea83b9073dcc8dbd9209c89425080750eab2a00b660",
+      "lines": 10,
+      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
+      "reviewedSha256": "f3f54b40ffe4b871f1cfdea83b9073dcc8dbd9209c89425080750eab2a00b660"
+    },
+    {
+      "path": "sentry.server.config.ts",
+      "sha256": "60a155218886da109a524e944a5a1e1f97ab2e8bb8dad202f42c67c7561df48e",
+      "lines": 11,
+      "status": "partial source review; optional monitoring loading, data collection and provider CSP behavior remain under review",
+      "reviewedSha256": "60a155218886da109a524e944a5a1e1f97ab2e8bb8dad202f42c67c7561df48e"
+    },
+    {
       "path": "src/app/[[...slug]]/loading.tsx",
       "lines": 88,
       "sha256": "f31603ba24d3f9a5afe9d7b0c109da9885348b6d0b626c17d8efefdd752a3520",
@@ -1430,7 +1465,7 @@
       "path": "src/components/posthog-provider.tsx",
       "lines": 37,
       "sha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481",
-      "status": "source reviewed; optional lazy SDK and failure boundaries tested; optimized browser measurement pending",
+      "status": "source reviewed; conditional SDK/failure tests and optimized anonymous transfer measurements passed; final app-wide release pending",
       "reviewedSha256": "7a608b5c7cd63b26a277e06e5225aeb666a29929a857d7bc1bfca090385674b2"
     },
     {
