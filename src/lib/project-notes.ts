@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { awaitWithSignal } from "@/lib/abortable";
 import type { Project } from "@/lib/types";
+import { sameProjectSnapshot } from "@/lib/projects";
 
 const hash = z.string().regex(/^[0-9a-f]{64}$/);
 const receiptSchema = z.object({ kind: z.enum(["saved", "conflict"]), id: z.uuid(), user_id: z.uuid(), notes_hash: hash, source_notes_hash: hash,
@@ -57,7 +58,7 @@ export function applyProjectNotesReceipt(current: Project[], expected: Project, 
     if (row.id !== expected.id || row.user_id !== expected.user_id) return row;
     found = true;
     if (row.notes === notes && Date.parse(row.updated_at) >= Date.parse(receipt.updated_at)) return row;
-    const same = Object.keys(row).length === Object.keys(expected).length && Object.entries(row).every(([key, value]) => JSON.stringify(value) === JSON.stringify(expected[key as keyof Project]));
+    const same = sameProjectSnapshot(row, expected);
     if (!same || row.updated_at !== receipt.source_updated_at) { reconcile = true; return row; }
     return { ...row, notes, updated_at: receipt.updated_at };
   });

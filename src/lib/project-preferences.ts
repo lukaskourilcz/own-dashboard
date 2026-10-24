@@ -1,11 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { awaitWithSignal } from "@/lib/abortable";
+import { databaseTimestamp as timestamp, databaseVersion as version } from "@/lib/database-version";
 import type { Project } from "@/lib/types";
 
 const patchSchema = z.object({ is_active: z.boolean().optional(), engagement: z.enum(["own", "client"]).optional() }).strict()
   .refine(patch => Object.keys(patch).length > 0 && Object.values(patch).every(value => value !== undefined));
-const timestamp = z.iso.datetime({ offset: true }).max(40).refine(value => (value.match(/\.(\d+)/)?.[1].length ?? 0) <= 6);
 const sourceSchema = z.object({ id: z.uuid(), user_id: z.uuid(), updated_at: timestamp });
 const receiptSchema = z.object({ kind: z.enum(["saved", "conflict"]), id: z.uuid(), user_id: z.uuid(), values: patchSchema,
   previous_values: patchSchema, source_updated_at: timestamp, updated_at: timestamp }).strict();
@@ -13,13 +13,6 @@ export type ProjectPreferencesPatch = z.infer<typeof patchSchema>;
 export type ProjectPreferencesReceipt = z.infer<typeof receiptSchema>;
 const same = (a: ProjectPreferencesPatch, b: ProjectPreferencesPatch) => Object.keys(a).length === Object.keys(b).length
   && Object.entries(a).every(([key, value]) => b[key as keyof ProjectPreferencesPatch] === value);
-// PostgreSQL versions include microseconds; Date.parse alone collapses two
-// distinct versions inside one millisecond. Preserve their final three digits.
-function version(value: string): bigint | null {
-  if (!timestamp.safeParse(value).success) return null;
-  const fraction = (value.match(/\.(\d+)/)?.[1] ?? "").padEnd(6, "0");
-  return BigInt(Date.parse(value)) * BigInt(1000) + BigInt(fraction.slice(3));
-}
 
 /** Small, confirmed classification writes. No optimistic move, automatic retry,
  * private note response or whole-record cache replacement. */

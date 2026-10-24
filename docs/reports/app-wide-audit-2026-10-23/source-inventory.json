@@ -2911,8 +2911,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 110 migrations; final optimized release pending",
-      "reviewedSha256": "b998697260d8bb1e4ff67eea87f2142ea6f3d8cb1d2dac7359628494500447ee"
+      "status": "source reviewed; generated offline from all 111 migrations; final release pending",
+      "reviewedSha256": "eedfc2027ccea5e07849bea9cb210a2d5c1ca935adfb05c7ea63ed8854882187"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3545,10 +3545,10 @@
     },
     {
       "path": "src/lib/projects.ts",
-      "lines": 88,
+      "lines": 100,
       "sha256": "bde36efad03360f148d2149342728a8fd2a19ac6b81e2fc3f321046766c8f774",
-      "status": "source reviewed; static FX, engagement/slug resolution and immutable shared record indexing checked; final release checks pending",
-      "reviewedSha256": "13ec6e016dffff197c567243a0be23ee6c97f57a036805f1c4cc311f38a0cb3c"
+      "status": "source reviewed; static costs/grouping, indexed reads, routing and note-free primitive/array snapshot comparisons checked; final release pending",
+      "reviewedSha256": "797d181fa6db9f9dccc259e337dc046b386c7f9720af19b64b8c11a4ab376369"
     },
     {
       "path": "src/lib/prompt-composer.ts",
@@ -4130,9 +4130,9 @@
     {
       "path": "src/lib/project-notes.ts",
       "sha256": null,
-      "lines": 65,
-      "status": "source reviewed; hash/receipt, explicit conflict replacement, size/deadline and cache-race checks pass; guarded rendered editor checked; final release pending",
-      "reviewedSha256": "b83d4f7167c18e93bd61a98e1ed86d3d32693fbc3e9695c35f326c04d407c98d"
+      "lines": 66,
+      "status": "source reviewed; hash/receipt, conflicts, bounds/deadline and conditional snapshot cache checks pass; final release pending",
+      "reviewedSha256": "a9befb1b61ec1b22c204c228bb74e9ad3a37f9f5e2fcbd43bc0e506738c43bb3"
     },
     {
       "path": "src/components/projects/use-project-notes-autosave.ts",
@@ -4144,9 +4144,9 @@
     {
       "path": "src/lib/project-preferences.ts",
       "sha256": null,
-      "lines": 56,
-      "status": "source reviewed; bounded owner/version receipts, microsecond precision, no-op/conflict and conditional cache checks pass; final optimized release pending",
-      "reviewedSha256": "f97c82e247aa58dd884489798f1cc53f2ef124a31026f31c1160e7697afd94a4"
+      "lines": 49,
+      "status": "source reviewed; bounded owner/field receipts, shared microsecond versions, no-op/conflict and cache checks pass; final release pending",
+      "reviewedSha256": "876c3b5c0342ecb7e5aa4a690a13be49b18763459371db936ff50f4b02e90060"
     },
     {
       "path": "src/components/projects/use-project-preferences-save.ts",
@@ -4154,6 +4154,20 @@
       "lines": 34,
       "status": "source reviewed; pending guards, same-event deduplication, confirmed-only cache writes and ambiguity/conflict reconciliation checked; EN/CS rendered controls pass; final optimized release pending",
       "reviewedSha256": "9020a8acc7243adb270cc9a008426267b153d7a8b030e058121704bb85d522c2"
+    },
+    {
+      "path": "src/lib/database-version.ts",
+      "sha256": null,
+      "lines": 12,
+      "status": "source reviewed; bounded PostgreSQL microsecond parsing, timezone equivalence, negative epoch and invalid-date tests pass; final release pending",
+      "reviewedSha256": "6647575d10ae821afbd81759df8c0fb06e1247e879fa89d122cb080b231ce5c5"
+    },
+    {
+      "path": "src/lib/project-details.ts",
+      "sha256": null,
+      "lines": 85,
+      "status": "source reviewed; manual metadata input/history/version receipts and conditional cache tests pass; form integration and final release pending",
+      "reviewedSha256": "b30303f4cbe8f76066cfe6d4fd44bfd2aa40a35f42125840ab3213e4ae343b46"
     }
   ],
   "baselineFileCount": 561
