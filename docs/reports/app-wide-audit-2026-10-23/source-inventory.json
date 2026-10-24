@@ -162,15 +162,15 @@
       "path": "src/app/api/crons/registry/route.ts",
       "lines": 118,
       "sha256": "d486eb00146ca9cb39da756d6ff95ce4e6d5ed5ebbe9020b88ec27e5af7762a8",
-      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
-      "reviewedSha256": "d486eb00146ca9cb39da756d6ff95ce4e6d5ed5ebbe9020b88ec27e5af7762a8"
+      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending",
+      "reviewedSha256": "318bb8800b66571c3474c103b4903e4ac2043aa14fbffe97a3c7ea853da7a3e9"
     },
     {
       "path": "src/app/api/crons/runs/route.ts",
       "lines": 49,
       "sha256": "2c0990fcc450f0ec0a64de4c64da8733d9589869cfb5ae2b5f5c8b3a95f0daa3",
-      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
-      "reviewedSha256": "2c0990fcc450f0ec0a64de4c64da8733d9589869cfb5ae2b5f5c8b3a95f0daa3"
+      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending",
+      "reviewedSha256": "bb53a8741492af68346bc4f51176d4808299e832c17f8a655e767aca5ddadd68"
     },
     {
       "path": "src/app/api/daily-focus/route.ts",
@@ -1184,8 +1184,8 @@
       "path": "src/components/overview/cron-monitor.tsx",
       "lines": 216,
       "sha256": "ed8c3630dcf277ad2e0a93abc3ee19d99e797592fef1792c2b124d031a9c2fd9",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "ed8c3630dcf277ad2e0a93abc3ee19d99e797592fef1792c2b124d031a9c2fd9"
+      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending",
+      "reviewedSha256": "6cf156ef68b3dcaa2f131c446f978ecd2e2c21f9fe36daf08695d72533f682a7"
     },
     {
       "path": "src/components/overview/customizable-overview.tsx",
@@ -2143,7 +2143,8 @@
       "path": "src/lib/i18n/sections/dashboard.ts",
       "lines": 134,
       "sha256": "a7bc1aa8713b551535398db4b630f3764dad4ebcd19c013e4003bf495ea24486",
-      "status": "pending"
+      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending",
+      "reviewedSha256": "2908479512df724f40530851345da0d63b9b2af6e71bd29aaba970e5f98e07ae"
     },
     {
       "path": "src/lib/i18n/sections/dates.ts",
@@ -3942,6 +3943,13 @@
       "lines": 3,
       "reviewedSha256": "6ae44662ac720b75157fc231f1e4f3167e6ee0039450213a1cf931a3e695140a",
       "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/cron-runs.ts",
+      "sha256": null,
+      "lines": 25,
+      "reviewedSha256": "a5b42f52aed174d9f65ca6145cfa79ebce82872092de92f55f539f1f773ea8a5",
+      "status": "source reviewed; bounded monitoring reads and bilingual rendered checks pass; final app-wide release checks pending"
     }
   ],
   "baselineFileCount": 561

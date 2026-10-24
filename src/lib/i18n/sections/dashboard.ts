@@ -29,6 +29,10 @@ type DashboardStrings = {
     statusFailure: string;
     statusRunning: string;
     unavailable: string;
+    partial: string;
+    partialEmpty: string;
+    cachedWarning: string;
+    showMore: (remaining: number) => string;
     summary: (ok: number, fail: number) => string;
   };
 };
@@ -81,6 +85,10 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       statusFailure: "Failed",
       statusRunning: "Running",
       unavailable: "Cron history is unavailable.",
+      partial: "Showing the latest 1,000 runs. Earlier days may be incomplete.",
+      partialEmpty: "No runs for this day in the loaded history.",
+      cachedWarning: "Couldn't refresh the history. Showing the last loaded runs.",
+      showMore: (remaining) => `Show more (${remaining} remaining)`,
       summary: (ok, fail) => `${ok} ok · ${fail} failed`,
     },
   },
@@ -131,6 +139,10 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       statusFailure: "Selhalo",
       statusRunning: "Běží",
       unavailable: "Historie cronů není dostupná.",
+      partial: "Zobrazuje se posledních 1 000 běhů. Starší dny mohou být neúplné.",
+      partialEmpty: "V načtené historii nejsou pro tento den žádné běhy.",
+      cachedWarning: "Historii se nepodařilo obnovit. Zobrazují se naposledy načtené běhy.",
+      showMore: (remaining) => `Zobrazit další (zbývá ${remaining})`,
       summary: (ok, fail) => `${ok} ok · ${fail} selhalo`,
     },
   },

@@ -126,6 +126,7 @@ type Props = {
   isPreview?: boolean;
   /** Only the isolated dev/E2E harness enables mocked repository endpoints. */
   previewRepositoryIntegration?: boolean;
+  previewMonitoringIntegration?: boolean;
   initialProjectId?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
   initialTipQuery?: string | null;
@@ -449,7 +450,7 @@ function DashboardShellContent(props: Props) {
             "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,
             kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
             todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} timeZone={props.initialTimezone ?? "Europe/Prague"} />,
-            crons: <CronMonitorPanel isPreview={props.isPreview} />,
+            crons: <CronMonitorPanel isPreview={props.isPreview && !props.previewMonitoringIntegration} />,
             "work-attention": <WorkAttention opportunities={opportunities} onOpen={() => setTab("opportunities")} />,
             subscriptions: <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} compact />,
             calendar: <CalendarPanel compact />,

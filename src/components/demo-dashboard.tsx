@@ -24,6 +24,7 @@ export function DemoDashboard({
   language = "cs",
   liveMarketingCalendars = false,
   liveRepositories = false,
+  liveMonitoring = false,
   initialTipQuery = null,
 }: {
   /** Opens a project workspace directly, by fixture id or slug. */
@@ -39,6 +40,8 @@ export function DemoDashboard({
   liveMarketingCalendars?: boolean;
   /** Dev/E2E-only mocked repository interactions; disabled in the public tour. */
   liveRepositories?: boolean;
+  /** Dev/E2E-only mocked history reads; disabled in the public tour. */
+  liveMonitoring?: boolean;
   /** The IG TIPS deep-link search, as `/ig-tips?q=` passes it. */
   initialTipQuery?: string | null;
 }) {
@@ -48,6 +51,7 @@ export function DemoDashboard({
     <DashboardShell
       isPreview
       previewRepositoryIntegration={liveRepositories}
+      previewMonitoringIntegration={liveMonitoring}
       user={f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}

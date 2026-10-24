@@ -167,17 +167,18 @@ describe("/api/crons registry and log", () => {
 
   it("registry refuses a wrong token and the old ?token= form", async () => {
     process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
     expect((await registry("?project=dneskai")).status).toBe(403);
     expect((await registry("?project=dneskai", "Bearer wrong")).status).toBe(403);
     expect((await registry("?project=dneskai&token=registry-token")).status).toBe(403);
   });
 
-  it("registry serves the right token privately", async () => {
+  it("registry reports unavailable service configuration privately", async () => {
     process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
     const res = await registry("?project=dneskai", "Bearer registry-token");
-    // The admin stand-in throws, which the route answers as an empty registry.
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ project: "dneskai", crons: [] });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "Cron registry unavailable." });
     expect(res.headers.get("cache-control")).toBe("private, no-store");
   });
 
