@@ -16,6 +16,7 @@ import { marketingPilotConfiguration, MarketingPilotError, MARKETING_PILOT_JOB_R
 import { resolveTrustedMarketingTemplate, MarketingTemplateApprovalError } from "./template-registry";
 import { createDneskaiDeckRenderer, type DneskaiSlideStorage } from "./dneskai-render";
 import type { LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
+import { boundedRequestText, MarketingRequestBodyError } from "./http";
 
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
@@ -386,14 +387,7 @@ export async function marketingJobsHttpHandler(request: Request) {
   return createMarketingWorkerHandler({ authenticate: async () => true, queue, resolveTemplate: resolveMarketingTemplate })(new Request(request.url, { method: request.method, headers: request.headers, ...(request.method === "POST" ? { body: raw } : {}) }));
 }
 export async function readBoundedMarketingJobBody(request: Request): Promise<string> {
-  const reader = request.body?.getReader();
-  if (!reader) return "";
-  const chunks: Uint8Array[] = []; let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read(); if (done) break;
-    size += value.length;
-    if (size > 200000) { await reader.cancel(); throw new MarketingWorkerRuntimeError("payload-too-large"); }
-    chunks.push(value);
-  }
-  return Buffer.concat(chunks).toString("utf8");
+  if (!request.body && !request.signal.aborted) return "";
+  try { return await boundedRequestText(request); }
+  catch (error) { throw new MarketingWorkerRuntimeError(error instanceof MarketingRequestBodyError ? error.code : "invalid-body"); }
 }

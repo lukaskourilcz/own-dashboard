@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -339,9 +339,10 @@
     },
     {
       "path": "src/app/api/marketing/automation/route.ts",
-      "lines": 32,
+      "lines": 37,
       "sha256": "4ab65b912cc46f2c93fc525fae4dab24101a94ea95dab21c3dd7aaa7d032a2ec",
-      "status": "pending"
+      "status": "source reviewed; pre-admission body refusal tests pass (finding 144); persistence dependencies and final release checks pending",
+      "reviewedSha256": "6f09e85ad5105645f97d291416eb944e95f235906e3695a654ed7cdc9eb97799"
     },
     {
       "path": "src/app/api/marketing/calendar-entries/route.ts",
@@ -469,7 +470,8 @@
       "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
       "lines": 24,
       "sha256": "9306e5914f687ba910ba46496adf410a97b75a5157fe68539c921eb08a756a7a",
-      "status": "pending"
+      "status": "source reviewed; pre-admission body refusal tests pass (finding 144); worker execution dependencies and final release checks pending",
+      "reviewedSha256": "bee1ab1f0ef5ee47fa29e6d65d839b8ab061c5aaf221740adf7998013f33eae4"
     },
     {
       "path": "src/app/api/marketing/jobs/[id]/route.ts",
@@ -479,9 +481,10 @@
     },
     {
       "path": "src/app/api/marketing/jobs/route.ts",
-      "lines": 7,
+      "lines": 10,
       "sha256": "8aac141370bb0c0f9eaae82202deb7ac0fd36cdd3ecf851048f7da812aab8280",
-      "status": "pending"
+      "status": "source reviewed; pre-admission body refusal tests pass (finding 144); worker execution dependencies and final release checks pending",
+      "reviewedSha256": "3bf4cabee47d62fe229c183e71faec4258094cf87ee737d1668a6993027df25f"
     },
     {
       "path": "src/app/api/marketing/knowledge/callback/route.ts",
@@ -3378,9 +3381,10 @@
     },
     {
       "path": "src/lib/marketing/http.ts",
-      "lines": 20,
+      "lines": 54,
       "sha256": "5757a070f59c830d4199ad5f2f93a301f7ae6811c599e721b3eae8169f71247e",
-      "status": "pending"
+      "status": "source reviewed; bounded byte/whole-upload deadline, cancellation and signed UTF-8 tests pass (finding 144); final release checks pending",
+      "reviewedSha256": "6d2b5fe5b94b1378ed12bb26d29dce1fb44ce27a2660f9ee0cf94e7fed19c0ff"
     },
     {
       "path": "src/lib/marketing/humanizer.ts",
@@ -3594,9 +3598,10 @@
     },
     {
       "path": "src/lib/marketing/worker-runtime.ts",
-      "lines": 399,
+      "lines": 393,
       "sha256": "a2121b43774eaaca2cba0dda10d58db19b293eae5055b69501bdf4bbbec209da",
-      "status": "pending"
+      "status": "partial; upload admission shares tested boundary (finding 144); provider, persistence and execution source review pending",
+      "reviewedSha256": "01af9fed8130dd3fc713454d3a2a0ae8e9c3746db5335a9c4163cb36382bcfd7"
     },
     {
       "path": "src/lib/nav-tabs.ts",
