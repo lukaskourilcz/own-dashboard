@@ -37,6 +37,16 @@ describe("fillTemplate", () => {
     );
   });
 
+  it("leaves inherited object member names as unknown placeholders", () => {
+    expect(fillTemplate("Hello {{constructor}} / {{ Constructor }}", {})).toBe("Hello {{constructor}} / {{ Constructor }}");
+  });
+
+  it("substitutes only supplied own variables, never inherited values", () => {
+    const vars = Object.create({ company: "Inherited company", position: "Inherited role" });
+    vars.source = "Jobs.cz";
+    expect(fillTemplate("{{position}} at {{company}} via {{source}}", vars)).toBe("this position at your company via Jobs.cz");
+  });
+
   it("trims substituted values", () => {
     expect(fillTemplate("{{company}}", { company: "  Acme  " })).toBe("Acme");
   });

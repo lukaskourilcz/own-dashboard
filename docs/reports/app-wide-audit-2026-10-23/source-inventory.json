@@ -193,25 +193,29 @@
       "path": "src/app/api/dev-preview/dneskai-fit/route.ts",
       "lines": 15,
       "sha256": "a1a20c6513531e14ce73a2ee6f78f057c187367775af5b797a71f816e89566f4",
-      "status": "pending"
+      "status": "partial; production/CSRF/no-owner-data guard inspected; delegated fit body/lifecycle review remains pending",
+      "reviewedSha256": "a1a20c6513531e14ce73a2ee6f78f057c187367775af5b797a71f816e89566f4"
     },
     {
       "path": "src/app/api/dev-preview/dneskai-preview/route.ts",
       "lines": 34,
       "sha256": "1b42812bc1f033d3ae5949aeb5af9390331f4d5bbe9c970204ffa887078aff8f",
-      "status": "pending"
+      "status": "partial; fixture image hash/allowlist and production/CSRF boundary inspected; bounded body/deadline review remains pending",
+      "reviewedSha256": "1b42812bc1f033d3ae5949aeb5af9390331f4d5bbe9c970204ffa887078aff8f"
     },
     {
       "path": "src/app/api/dev-preview/dneskai-render/route.ts",
       "lines": 39,
       "sha256": "5c86bd677bde380a1755d047bb8b040fe6ab5c968ef0b13c45fcbb9cb41d1ee6",
-      "status": "pending"
+      "status": "partial; fixture-only no-provider rendering and image hash/production/CSRF guards inspected; bounded request and total render lifecycle remain pending",
+      "reviewedSha256": "5c86bd677bde380a1755d047bb8b040fe6ab5c968ef0b13c45fcbb9cb41d1ee6"
     },
     {
       "path": "src/app/api/export/[scope]/route.ts",
       "lines": 107,
       "sha256": "fecbc0592e608df4820c207fdbf12a2cb723812af2f7afa8f4aee60ba1290f45",
-      "status": "pending"
+      "status": "partial; own-scope/archive mapping inspected; CSV whole-scope reads, completeness, private errors, auth/cancellation and spreadsheet text handling remain pending",
+      "reviewedSha256": "fecbc0592e608df4820c207fdbf12a2cb723812af2f7afa8f4aee60ba1290f45"
     },
     {
       "path": "src/app/api/github/activity/route.ts",
@@ -2717,7 +2721,8 @@
       "path": "src/lib/jobs/letter-helper.ts",
       "lines": 219,
       "sha256": "ef5e7283bf40f2dcc379c30dffdb9d5314346d0f09f44a90f8eafd2a178d7f9f",
-      "status": "pending"
+      "status": "source reviewed; deterministic owner-supplied evidence/application angles and draft composition, no model/provider call; existing Career workflow checks pass; parent editor and final release pending",
+      "reviewedSha256": "ef5e7283bf40f2dcc379c30dffdb9d5314346d0f09f44a90f8eafd2a178d7f9f"
     },
     {
       "path": "src/lib/jobs/match.ts",
@@ -2730,7 +2735,8 @@
       "path": "src/lib/jobs/meta.ts",
       "lines": 154,
       "sha256": "9adcfc76da63875ebcc5dc192894fb9e5d125e65b82a3db5b8d775dfa4f40775",
-      "status": "pending"
+      "status": "partial; labels/scopes and client-safe helper reviewed; current provider completeness/liveness attribution still pending",
+      "reviewedSha256": "9adcfc76da63875ebcc5dc192894fb9e5d125e65b82a3db5b8d775dfa4f40775"
     },
     {
       "path": "src/lib/jobs/oslo-companies.ts",
@@ -2782,13 +2788,15 @@
       "path": "src/lib/jobs/template.ts",
       "lines": 115,
       "sha256": "9d09e18a23792fea5317cde1eabc48f8ea3cb2c8bf4a693b05b01552ac587d52",
-      "status": "pending"
+      "status": "source reviewed; finding 170 inherited placeholder/input lookup regressions and existing template/Career workflow checks pass; fallback localization/editor integration and final release pending",
+      "reviewedSha256": "d346b72e83db8b1d8969334dc89262c0a94990c966c03ad0238797433cce420a"
     },
     {
       "path": "src/lib/jobs/types.ts",
       "lines": 47,
       "sha256": "0971cf6bc9b727edec0d167ed38c13b6e843b71dcfb1fa322d3d370c4dda7921",
-      "status": "pending"
+      "status": "source reviewed; normalized provider/run type declarations only; runtime completeness/cancellation/persistence reviewed separately in remaining-review.md",
+      "reviewedSha256": "0971cf6bc9b727edec0d167ed38c13b6e843b71dcfb1fa322d3d370c4dda7921"
     },
     {
       "path": "src/lib/link-export.ts",
