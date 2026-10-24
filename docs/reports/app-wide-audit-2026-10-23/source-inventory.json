@@ -401,9 +401,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/daily-mix/route.ts",
-      "lines": 40,
+      "lines": 46,
       "sha256": "edd8afb68e6b1957166e5a91fbde72c56e79def4d9366839f7ff39f5a0513925",
-      "status": "pending"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "0642ea106928b4aff0a33bc5dd923c6035f1b4cc177c14d04fae060f97fa3e27"
     },
     {
       "path": "src/app/api/marketing/dneskai/fit/route.ts",
@@ -784,7 +785,7 @@
       "lines": 499,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "partially reviewed; route loading, hydrated initial controls, pending navigation, Work callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "c43a9392e0d7cfe876c74ad6d9eb327a9c2d678ed25151608cf30de1ea0cf989"
+      "reviewedSha256": "de69ec0ba3c127ce22ad77911778255519203422815ffe743b01dbfae0effcb4"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -968,10 +969,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
-      "lines": 75,
+      "lines": 100,
       "sha256": "c43f2b4e0174da99cce3c393099b18aa4077520a26e951a0d458b9f040b05b43",
-      "status": "pending",
-      "reviewedSha256": "fa53d8a0b66d99e4c78723b14036f0b3e03759cf623012b6f8e9c7d9f863f0ad"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "f2664157381e80d1f9b466face57c9d3133f3ef943ae76d21444309715d23d87"
     },
     {
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
@@ -1128,7 +1129,8 @@
       "path": "src/components/marketing/dneskai/source-settings.tsx",
       "lines": 56,
       "sha256": "e88e012d8384fcfcc52f98f06705d0f65077430ba41a4760d1225574d9118dcb",
-      "status": "pending"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "17520473371ff3898741e982736334781fcd7901c2cac51a75da5a10be1f3267"
     },
     {
       "path": "src/components/marketing/dneskai/state-chip.tsx",
@@ -1478,10 +1480,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 1973,
+      "lines": 1976,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
       "status": "partially reviewed; complete reads, ordering, retained notes, manual edit/deletion recovery, operations layout and confirmed active controls checked; creation/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "8de3cc579fb8aa1169016371fa34504ab84bd3aa8fe2a8fa2be2f527ff523f72"
+      "reviewedSha256": "fcdfcb63d9571982f3141303b18c37ddc720c5cead532d3e6d5ca9c6eedac51c"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1631,10 +1633,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 318,
+      "lines": 319,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partially reviewed; keyboard tabs, selected-tab visibility, rendered note/communication routes and related routes checked; financial projections, links and remaining workspace source/release review pending",
-      "reviewedSha256": "4c59866dea404b8602647184e05b050d42c10b10c39d995c08f03d7c72757892"
+      "reviewedSha256": "d601b6698a2f8230b7b2e857125b9a4bebfe08f9527104db4e1a00090a821d1a"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -2370,9 +2372,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",
-      "lines": 32,
+      "lines": 36,
       "sha256": "0cfdafc930049a19e271e8b9c123bf9915b38847e56feccc4cddc27d67d91c53",
-      "status": "pending"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "eb9240b8b4278b24eb9f55ab6c5a787bb268d0788ba4889e18bcc8c352362be3"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
@@ -2930,21 +2933,24 @@
     },
     {
       "path": "src/lib/marketing/dneskai-daily-mix-client.ts",
-      "lines": 26,
+      "lines": 46,
       "sha256": "1a8d7965395d318f72663835db6873e8f0e10c3a2500b467513b4ee494ec9e80",
-      "status": "pending"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "ba4abfd54e31f042edc4117be105c9d62bcaf77915c0629bf8d1db34817068f8"
     },
     {
       "path": "src/lib/marketing/dneskai-daily-mix-read.ts",
-      "lines": 28,
+      "lines": 41,
       "sha256": "80b7466914cea0b607558775eb434bdd105ef54e1d9831e10fd85e2f32ef5674",
-      "status": "pending"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "84b7b47baae6fd84aeeefc1d6b08b1b476cfb4293498266c80668bdac69ed772"
     },
     {
       "path": "src/lib/marketing/dneskai-daily-mix.ts",
-      "lines": 36,
+      "lines": 46,
       "sha256": "a902313b894e94c93e512da2eba1d249e391439069b70e8170f707c103115c8e",
-      "status": "pending"
+      "status": "source reviewed; captured daily-mix settings, bounded clients, database/route/draft and EN/CS browser recovery checks pass (finding 145); final release checks pending",
+      "reviewedSha256": "49a8342f17e32f51c88495609be00ff8f4dc023bb1e8d7b0101b15bcf869946a"
     },
     {
       "path": "src/lib/marketing/dneskai-deck-edit.ts",
@@ -3100,8 +3106,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 111 migrations; final release pending",
-      "reviewedSha256": "eedfc2027ccea5e07849bea9cb210a2d5c1ca935adfb05c7ea63ed8854882187"
+      "status": "source reviewed; generated offline from all 112 migrations; final release pending",
+      "reviewedSha256": "1b40b32177197e5adeb67c26bc31ea62f057858bfd45142cfe2392768024a651"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",

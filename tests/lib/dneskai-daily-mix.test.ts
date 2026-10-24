@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ user: vi.fn(), project: vi.fn(), maybeSingle: vi.fn(), upsert: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), project: vi.fn(), maybeSingle: vi.fn(), rpc: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: () => {
-  const builder: Record<string, unknown> = {}; for (const m of ['select', 'eq']) builder[m] = () => builder; builder.maybeSingle = mocks.maybeSingle; builder.upsert = mocks.upsert; return builder;
-} }) }));
+  const builder: Record<string, unknown> = {}; for (const m of ['select', 'eq', 'maybeSingle', 'retry', 'abortSignal']) builder[m] = () => builder; builder.then = (resolve: (value: unknown) => unknown) => mocks.maybeSingle().then(resolve); return builder;
+}, rpc: (...args: unknown[]) => { const b = { retry: () => b, abortSignal: () => b, then: (resolve: (value: unknown) => unknown) => mocks.rpc(...args).then(resolve) }; return b; } }) }));
 vi.mock('@/lib/marketing/dneskai-store', () => ({ requireDneskaiProject: mocks.project }));
 import { GET, PUT } from '@/app/api/marketing/dneskai/daily-mix/route';
 import { DEFAULT_DNESKAI_DAILY_MIX, DneskaiDailyMixSchema, dneskaiActiveSlotTimes, dneskaiNewsTopicLimit } from '@/lib/marketing/dneskai-daily-mix';
@@ -15,10 +15,34 @@ import { dneskaiNewsTopicsFromRun } from '@/lib/marketing/dneskai-titling';
 const owner = '11111111-1111-4111-8111-111111111111', project = '22222222-2222-4222-8222-222222222222';
 const url = `https://own.example/api/marketing/dneskai/daily-mix?projectId=${project}`;
 beforeEach(() => { vi.clearAllMocks(); vi.stubEnv('DNESKAI_DAILY_MIX_ENABLED', 'true'); vi.stubEnv('DNESKAI_TOPICS_ENABLED', 'true');
-  mocks.user.mockResolvedValue({ data: { user: { id: owner } } }); mocks.project.mockResolvedValue({ id: project }); mocks.maybeSingle.mockResolvedValue({ data: null, error: null }); mocks.upsert.mockResolvedValue({ error: null }); });
+  mocks.user.mockResolvedValue({ data: { user: { id: owner } } }); mocks.project.mockResolvedValue({ id: project }); mocks.maybeSingle.mockResolvedValue({ data: null, error: null }); mocks.rpc.mockImplementation(async (_name: string, args: {p_mix: unknown}) => ({ data: {kind:'saved',projectId:project,ownerId:owner,sourceVersion:null,read:{mix:args.p_mix,stored:true,version:'2026-10-24T17:10:00.123456Z'}},error:null })); });
 afterEach(() => { vi.unstubAllEnvs(); });
 
 describe('daily mix (#156)', () => {
+  it('keeps a stored zero-post mix and fails closed on unreadable or malformed settings', async () => {
+    mocks.maybeSingle.mockResolvedValue({ data:{news_per_day:0,education_per_day:0,slots:['08:00'],updated_at:'2026-10-24T17:10:00.123456Z'},error:null });
+    expect(await (await GET(new Request(url))).json()).toEqual({mix:{newsPerDay:0,educationPerDay:0,slots:['08:00']},stored:true,version:'2026-10-24T17:10:00.123456Z'});
+    mocks.maybeSingle.mockResolvedValue({data:null,error:{message:'synthetic private database error'}});
+    const failed=await GET(new Request(url));expect(failed.status).toBe(503);expect(await failed.json()).toEqual({error:'daily-mix-unavailable'});
+    mocks.maybeSingle.mockResolvedValue({data:{news_per_day:0,education_per_day:0,slots:['09:00'],updated_at:'2026-10-24T17:10:00Z'},error:null});
+    expect((await GET(new Request(url))).status).toBe(503);
+  });
+  it('does not acknowledge foreign receipts, changed values or an empty RPC result', async () => {
+    const mix={newsPerDay:0,educationPerDay:0,slots:['08:00']};
+    for(const data of [null,{kind:'saved',ownerId:project,projectId:project,sourceVersion:null,read:{mix,stored:true,version:'2026-10-24T17:10:00Z'}},
+      {kind:'saved',ownerId:owner,projectId:project,sourceVersion:null,read:{mix:{...mix,newsPerDay:1},stored:true,version:'2026-10-24T17:10:00Z'}}]) {
+      mocks.rpc.mockResolvedValue({data,error:null});
+      const result=await PUT(new Request(url,{method:'PUT',headers:{Origin:'https://own.example'},body:JSON.stringify({mix,expectedVersion:null})}));
+      expect(result.status).toBe(503);expect(await result.json()).toEqual({error:'daily-mix-unavailable'});
+    }
+  });
+  it('returns a validated version conflict rather than reporting a successful save', async () => {
+    const mix={newsPerDay:0,educationPerDay:0,slots:['08:00']},version='2026-10-24T17:10:00.123456Z';
+    const receipt={kind:'conflict',ownerId:owner,projectId:project,sourceVersion:version,read:{mix:{...mix,newsPerDay:1},stored:true,version}};
+    mocks.rpc.mockResolvedValue({data:receipt,error:null});
+    const result=await PUT(new Request(url,{method:'PUT',headers:{Origin:'https://own.example'},body:JSON.stringify({mix,expectedVersion:null})}));
+    expect(result.status).toBe(409);expect(await result.json()).toEqual(receipt);
+  });
   it('validates the mix: 0 to 4 per kind, distinct known times, a time for every post', () => {
     for (const mix of [DEFAULT_DNESKAI_DAILY_MIX, { newsPerDay: 0, educationPerDay: 0, slots: ['20:00'] }, { newsPerDay: 4, educationPerDay: 0, slots: ['08:00', '12:30', '17:00', '20:00'] }, { newsPerDay: 0, educationPerDay: 4, slots: ['20:00', '08:00', '17:00', '12:30'] }]) {
       expect(DneskaiDailyMixSchema.safeParse(mix).success, JSON.stringify(mix)).toBe(true);
@@ -71,10 +95,10 @@ describe('daily mix (#156)', () => {
 
   it('serves and saves the mix only with its switch, through the owner session', async () => {
     const get = await GET(new Request(url));
-    expect(await get.json()).toEqual({ mix: DEFAULT_DNESKAI_DAILY_MIX, stored: false });
-    const put = (body: unknown, origin = 'https://own.example') => PUT(new Request(url, { method: 'PUT', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }));
+    expect(await get.json()).toEqual({ mix: DEFAULT_DNESKAI_DAILY_MIX, stored: false, version: null });
+    const put = (body: unknown, origin = 'https://own.example') => PUT(new Request(url, { method: 'PUT', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({mix:body,expectedVersion:null}) }));
     expect((await put({ newsPerDay: 1, educationPerDay: 2, slots: ['08:00', '12:30', '17:00'] })).status).toBe(200);
-    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: owner, project_id: project, news_per_day: 1, education_per_day: 2, slots: ['08:00', '12:30', '17:00'] }), { onConflict: 'user_id,project_id' });
+    expect(mocks.rpc).toHaveBeenCalledWith('save_dneskai_daily_mix', {p_project:project,p_expected_updated_at:null,p_mix:{newsPerDay:1,educationPerDay:2,slots:['08:00','12:30','17:00']}});
     expect((await put({ newsPerDay: 3, educationPerDay: 2, slots: ['08:00'] })).status).toBe(400);
     expect((await put(DEFAULT_DNESKAI_DAILY_MIX, 'https://evil.example')).status).toBe(403);
     vi.stubEnv('DNESKAI_DAILY_MIX_ENABLED', '');

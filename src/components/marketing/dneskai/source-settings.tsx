@@ -26,7 +26,7 @@ function subscribe(changed: () => void) {
 }
 
 /** Each settings destination mounts only its own reads and preserves a direct URL. */
-export function DneskaiSourceSettings({ projectId, lang, preview = false }: { projectId: string; lang: 'en' | 'cs'; preview?: boolean }) {
+export function DneskaiSourceSettings({ projectId, lang, preview = false, liveDailyMix = false }: { projectId: string; lang: 'en' | 'cs'; preview?: boolean; liveDailyMix?: boolean }) {
   const active = useSyncExternalStore(subscribe, read, () => 'sources' as Section);
   const navigate = useGuardedNavigation();
   const id = useId();
@@ -49,7 +49,7 @@ export function DneskaiSourceSettings({ projectId, lang, preview = false }: { pr
     </div>
     <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${active}`}>
       {active === 'sources' && <Sources projectId={projectId} lang={lang} preview={preview} />}
-      {active === 'mix' && <DailyMix projectId={projectId} lang={lang} preview={preview} showDisabled />}
+      {active === 'mix' && <DailyMix projectId={projectId} lang={lang} preview={preview && !liveDailyMix} showDisabled />}
       {active === 'music' && <Music lang={lang} preview={preview} showDisabled />}
     </div>
   </div>;

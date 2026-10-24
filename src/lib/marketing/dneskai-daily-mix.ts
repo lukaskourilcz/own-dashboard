@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { databaseTimestamp } from '@/lib/database-version';
 
 /**
  * The DNESKAi daily mix (#156, plan A7): the number of news and education posts the owner wants a day and the active
@@ -32,5 +33,14 @@ export function dneskaiNewsTopicLimit(mix: Pick<DneskaiDailyMix, 'newsPerDay'>):
   return mix.newsPerDay * DNESKAI_TITLES_PER_POST;
 }
 
-export const DneskaiDailyMixReadSchema = z.strictObject({ mix: DneskaiDailyMixSchema, stored: z.boolean() });
+export const DneskaiDailyMixReadSchema = z.strictObject({ mix: DneskaiDailyMixSchema, stored: z.boolean(), version: databaseTimestamp.nullable() })
+  .refine(read => read.stored === (read.version !== null));
 export type DneskaiDailyMixRead = z.infer<typeof DneskaiDailyMixReadSchema>;
+export const DneskaiDailyMixSaveSchema = z.strictObject({ mix: DneskaiDailyMixSchema, expectedVersion: databaseTimestamp.nullable() });
+export const DneskaiDailyMixReceiptSchema = z.strictObject({ kind: z.enum(['saved', 'conflict']), projectId: z.uuid(), ownerId: z.uuid(),
+  sourceVersion: databaseTimestamp.nullable(), read: DneskaiDailyMixReadSchema }).refine(receipt => receipt.read.stored);
+export type DneskaiDailyMixReceipt = z.infer<typeof DneskaiDailyMixReceiptSchema>;
+export function sameDneskaiDailyMix(a: DneskaiDailyMix, b: DneskaiDailyMix): boolean {
+  return a.newsPerDay === b.newsPerDay && a.educationPerDay === b.educationPerDay
+    && a.slots.length === b.slots.length && a.slots.every((slot, index) => slot === b.slots[index]);
+}

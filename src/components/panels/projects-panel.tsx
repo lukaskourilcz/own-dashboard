@@ -190,6 +190,8 @@ type ProjectsPanelProps = {
   competitors: Competitor[];
   setCompetitors: Updater<Competitor[]>;
   syncRepositories?: boolean;
+  /** Isolated fake-backend harness only; other marketing actions stay in preview. */
+  previewDailyMixIntegration?: boolean;
   /** Fixture previews never write; the registry sync is skipped there. */
   isPreview?: boolean;
 };
@@ -201,6 +203,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
   if (selected) {
     return <ProjectWorkspace
       initialProjectTab={props.initialProjectTab}
+      previewDailyMixIntegration={props.previewDailyMixIntegration}
       project={selected}
       allProjects={props.projects}
       costs={props.costs.filter((item) => item.project_id === selected.id)}

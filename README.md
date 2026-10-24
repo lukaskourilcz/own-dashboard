@@ -208,8 +208,10 @@ The migrations, in the order they run:
 110. `20261024130626_confirmed_project_preferences.sql` — prepared, unapplied; active/engagement compare-and-save with compact versioned receipts, conflicts and no-op retries; Settings and Projects wait for confirmation.
 111. `20261024134706_confirmed_project_details.sql` — prepared, unapplied; manual detail/version receipts retain slug and verified repository history without returning notes; manual edits use the contract with guarded conflict recovery. Creation and synchronization remain under review.
 
+112. `20261024170208_confirmed_dneskai_daily_mix.sql` — prepared, unapplied; captured-version daily volume saves, own-only persisted receipts and no-op retries. Unreadable enabled configuration stops scheduling instead of restoring defaults.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-five audit migrations 87–111 remain unapplied; apply them in filename order before deploying the implementation branch.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-six audit migrations 87–112 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 
