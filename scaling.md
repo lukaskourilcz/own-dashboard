@@ -33,3 +33,8 @@ DNESKAi daily caps (rolling 24 hours, each refused rather than exceeded):
 - The Apify research plan: $126.00 of caps over four waves, from the $150 promotional credit, off until the owner approves it.
 
 Reels render inside the existing Vercel function with `ffmpeg-static` (about 25 s for seven slides) and add Supabase Storage for MP4s up to 64 MiB each.
+
+
+## Bank processing bounds — 24 October 2026
+
+Existing bank sync shares one 40-second asynchronous processing budget per manual/cron pass inside a 60-second function limit. The signal interrupts provider calls, database reads and SDK retry waits; failed/unprocessed connections are counted and unfinished cursors do not advance. No-op balance updates are skipped. Bank, CSV and retroactive rule evaluation refuse excessive complete work before imports/updates. These are application bounds, not measured latency savings or provider spending caps. Existing plans and provider activation remain unchanged.

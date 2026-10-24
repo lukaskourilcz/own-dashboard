@@ -557,6 +557,24 @@ export function usableRules(rules: readonly TransactionRule[]): TransactionRule[
   );
 }
 
+export class RuleEvaluationLimitError extends Error {
+  constructor() { super("Rule evaluation bound exceeded"); this.name = "RuleEvaluationLimitError"; }
+}
+
+/** Refuse excessive work before a complete preview/import starts. The text
+ * bound weights conditions and list/pattern sizes; it is not a timing estimate. */
+export function assertRuleEvaluationBounds(rows: readonly RuleTarget[], rules: readonly TransactionRule[]) {
+  let conditions = 0, textWork = 0;
+  for (const rule of rules) for (const condition of rule.conditions) {
+    conditions++;
+    textWork += Array.isArray(condition.value)
+      ? condition.value.reduce<number>((sum, value) => sum + String(value).length + 1, 0)
+      : String(condition.value).length + 1;
+  }
+  const inputChars = rows.reduce((sum, row) => sum + (row.note?.length ?? 0) + (row.account_id?.length ?? 0) + 64, 0);
+  if (rows.length * conditions > 2_000_000 || inputChars * textWork > 100_000_000) throw new RuleEvaluationLimitError();
+}
+
 /** Prepare one rule order and ownership filter for an entire batch.
  * Conditions always inspect the original transaction, including when an
  * earlier rule changes the note. No credentials or global owner cache. */

@@ -48,7 +48,7 @@ describe("gocardlessProvider.fetchTransactions", () => {
       transactions: { booked: [{ id: "late", bookingDate: "2026-10-01" }], pending: [] },
     });
     const rows = await gocardlessProvider.fetchTransactions(conn, "acc-1", "2026-10-02");
-    expect(getAccountTransactions).toHaveBeenCalledWith("acc-1");
+    expect(getAccountTransactions).toHaveBeenCalledWith("acc-1", undefined, undefined);
     expect(rows.map((row) => row.external_id)).toEqual(["late"]);
   });
 

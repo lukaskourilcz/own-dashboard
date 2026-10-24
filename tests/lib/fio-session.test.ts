@@ -25,3 +25,13 @@ it("never reports linked for a malformed payload or mismatched statement account
   expect((await createFioProvider().getConsent(conn)).status).toBe("error");
   await expect(createFioProvider().fetchTransactions(conn, "fio:another", null)).rejects.toThrow("Bank account mismatch");
 });
+
+it("aborts the actual statement request when the enclosing processing budget ends", async () => {
+  const controller = new AbortController(); let signal!: AbortSignal;
+  vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+    signal = init!.signal!; signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+  }));
+  const pending = createFioProvider(controller.signal).getConsent(conn);
+  await vi.waitFor(() => expect(signal).toBeDefined()); controller.abort();
+  expect((await pending).status).toBe("error"); expect(signal.aborted).toBe(true);
+});

@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { awaitWithSignal } from "@/lib/abortable";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { readTextPrefix } from "@/lib/bounded-text";
 import type { ProviderTransaction } from "@/lib/bank/provider";
@@ -70,7 +71,8 @@ async function api(
   path: string,
   init?: RequestInit & { retryOn401?: boolean },
 ): Promise<unknown> {
-  const token = await getAccessToken();
+  init?.signal?.throwIfAborted();
+  const token = await awaitWithSignal(getAccessToken(), init?.signal ?? undefined);
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -79,7 +81,7 @@ async function api(
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
-    cache: "no-store", redirect: "error", signal: AbortSignal.timeout(12_000),
+    cache: "no-store", redirect: "error", signal: AbortSignal.any([AbortSignal.timeout(12_000), ...(init?.signal ? [init.signal] : [])]),
   });
   // A stale cached token → drop it and retry once with a fresh one.
   if (res.status === 401 && init?.retryOn401 !== false) {
@@ -142,8 +144,8 @@ const requisitionSchema = z.object({ id: z.uuid(), status: z.string().min(1).max
   accounts: z.array(z.uuid()).max(50), link: z.string().max(2048), agreement: z.string().max(256).optional(),
 });
 
-export function getRequisition(id: string): Promise<Requisition> {
-  return api(`/requisitions/${encodeURIComponent(id)}/`).then(value => requisitionSchema.parse(value));
+export function getRequisition(id: string, signal?: AbortSignal): Promise<Requisition> {
+  return api(`/requisitions/${encodeURIComponent(id)}/`, { signal }).then(value => requisitionSchema.parse(value));
 }
 
 export function deleteRequisition(id: string): Promise<void> {
@@ -166,8 +168,8 @@ export type EndUserAgreement = {
   accepted?: string | null;
 };
 
-export function getEndUserAgreement(id: string): Promise<EndUserAgreement> {
-  return api(`/agreements/enduser/${encodeURIComponent(id)}/`).then(value => z.object({
+export function getEndUserAgreement(id: string, signal?: AbortSignal): Promise<EndUserAgreement> {
+  return api(`/agreements/enduser/${encodeURIComponent(id)}/`, { signal }).then(value => z.object({
     id: z.string(), created: z.string(), institution_id: z.string(), max_historical_days: z.number().int().nonnegative().optional(),
     access_valid_for_days: z.number().int().positive().max(36500).optional(), accepted: z.string().max(64).nullable().optional(),
   }).parse(value));
@@ -185,8 +187,8 @@ export type AccountDetails = {
   };
 };
 
-export function getAccountDetails(id: string): Promise<AccountDetails> {
-  return api(`/accounts/${encodeURIComponent(id)}/details/`).then(value => z.object({ account: z.object({
+export function getAccountDetails(id: string, signal?: AbortSignal): Promise<AccountDetails> {
+  return api(`/accounts/${encodeURIComponent(id)}/details/`, { signal }).then(value => z.object({ account: z.object({
     currency: z.string().length(3).nullish().transform(value => value ?? undefined),
     name: z.string().max(256).nullish().transform(value => value ?? undefined),
     product: z.string().max(256).nullish().transform(value => value ?? undefined),
@@ -199,9 +201,9 @@ export type Balance = {
 };
 
 export function getAccountBalances(
-  id: string,
+  id: string, signal?: AbortSignal,
 ): Promise<{ balances: Balance[] }> {
-  return api(`/accounts/${encodeURIComponent(id)}/balances/`).then(value => z.object({ balances: z.array(z.object({
+  return api(`/accounts/${encodeURIComponent(id)}/balances/`, { signal }).then(value => z.object({ balances: z.array(z.object({
     balanceAmount: z.object({ amount: z.string().regex(/^[+-]?\d+(?:\.\d{1,2})?$/), currency: z.enum(SUPPORTED_CURRENCIES) }),
     balanceType: z.string().max(64).optional(),
   })).max(100) }).parse(value));
@@ -227,10 +229,10 @@ export type GcTransaction = {
 
 export function getAccountTransactions(
   id: string,
-  dateFrom?: string,
+  dateFrom?: string, signal?: AbortSignal,
 ): Promise<{ transactions: { booked: GcTransaction[]; pending: unknown[] } }> {
   const q = dateFrom ? `?date_from=${encodeURIComponent(dateFrom)}` : "";
-  return api(`/accounts/${encodeURIComponent(id)}/transactions/${q}`).then(value => z.object({ transactions: z.object({
+  return api(`/accounts/${encodeURIComponent(id)}/transactions/${q}`, { signal }).then(value => z.object({ transactions: z.object({
     booked: z.array(gcTransactionSchema).max(20_000), pending: z.array(z.unknown()).max(20_000).optional().default([]),
   }) }).parse(value));
 }

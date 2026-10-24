@@ -38,9 +38,9 @@ import type { BankConnection } from "@/lib/types";
 /** GoCardless keeps a requisition's account ids bare in `accounts.external_ref`
  *  because that is how they were first written; re-prefixing them would orphan
  *  every existing row. */
-async function consentExpiry(agreementId: string | undefined): Promise<string | null> {
+async function consentExpiry(agreementId: string | undefined, signal?: AbortSignal): Promise<string | null> {
   if (!agreementId) return null;
-  const agreement = await getEndUserAgreement(agreementId).catch(() => null);
+  const agreement = await getEndUserAgreement(agreementId, signal).catch(() => null);
   if (!agreement?.accepted || !agreement.access_valid_for_days) return null;
   const accepted = new Date(agreement.accepted);
   if (Number.isNaN(accepted.getTime())) return null;
@@ -53,13 +53,13 @@ function requisitionRef(conn: BankConnection): string {
   return conn.provider_ref ?? conn.requisition_id ?? "";
 }
 
-export function createGoCardlessProvider(): BankProvider {
+export function createGoCardlessProvider(signal?: AbortSignal): BankProvider {
   const requisitions = new Map<string, ReturnType<typeof getRequisition>>();
   function readRequisition(conn: BankConnection) {
     const ref = requisitionRef(conn), key = `${conn.user_id}:${ref}`;
     let pending = requisitions.get(key);
     if (!pending) {
-      pending = getRequisition(ref).then(result => {
+      pending = getRequisition(ref, signal).then(result => {
         if (result.id !== ref || result.reference !== conn.reference
           || (conn.institution_id && result.institution_id !== conn.institution_id)) throw new Error("bank-requisition-mismatch");
         return result;
@@ -97,7 +97,7 @@ export function createGoCardlessProvider(): BankProvider {
       return {
         providerRef: requisition.id,
         consentUrl: requisition.link,
-        consentExpiresAt: await consentExpiry(requisition.agreement),
+        consentExpiresAt: await consentExpiry(requisition.agreement, signal),
       };
     },
 
@@ -110,7 +110,7 @@ export function createGoCardlessProvider(): BankProvider {
       const status = mapRequisitionStatus(requisition.status);
       return {
         status,
-        expiresAt: await consentExpiry(requisition.agreement) ?? conn.consent_expires_at,
+        expiresAt: await consentExpiry(requisition.agreement, signal) ?? conn.consent_expires_at,
         error: status === "error" ? `requisition ${requisition.status}` : null,
       };
     },
@@ -121,7 +121,7 @@ export function createGoCardlessProvider(): BankProvider {
       const requisition = await readRequisition(conn);
       const accounts: ProviderAccount[] = [];
       for (const accountRef of requisition.accounts ?? []) {
-        const [details, balances] = await Promise.all([getAccountDetails(accountRef).catch(() => null), getAccountBalances(accountRef).catch(() => null)]);
+        const [details, balances] = await Promise.all([getAccountDetails(accountRef, signal).catch(() => null), getAccountBalances(accountRef, signal).catch(() => null)]);
         const balance = balances ? pickBalance(balances.balances, details?.account?.currency) : null;
         const currency = balance?.currency ?? details?.account?.currency;
         if (!currency) throw new Error("bank-account-currency-unavailable");
@@ -142,14 +142,14 @@ export function createGoCardlessProvider(): BankProvider {
     // Every pull reads the whole window the consent allows, as it did before
     // the provider interface: a bank can book a payment days after it happened,
     // and a `date_from` at the last sync day would skip it for good. The dedupe
-    // on `external_id` makes the repeat free, so the sync cursor is not read.
+    // on `external_id` makes the repeat safe, so the sync cursor is not read.
     // A failed pull throws: `syncConnection` then records `last_error` and
     // keeps the cursor. Returning an empty list would look like a quiet day.
     async fetchTransactions(
       _conn: BankConnection,
       accountRef: string,
     ): Promise<ProviderTransaction[]> {
-      const response = await getAccountTransactions(accountRef);
+      const response = await getAccountTransactions(accountRef, undefined, signal);
       const booked = response?.transactions?.booked;
       if (!Array.isArray(booked) || booked.length > 20_000) throw new Error("bank-transactions-unavailable");
       const ids = new Set<string>();

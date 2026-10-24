@@ -10,13 +10,15 @@ import { syncConnection, syncConnectionById } from "@/lib/bank-sync-server";
 const owner = "11111111-1111-4111-8111-111111111111", accountId = "33333333-3333-4333-8333-333333333333";
 const conn = { id: "22222222-2222-4222-8222-222222222222", user_id: owner, status: "linked", provider: "gocardless", sync_cursor: "2026-10-01" } as BankConnection;
 const writes: { table: string; patch: Record<string, unknown> }[] = [];
-let accountExists: boolean, failTable: string | null, lookupFails: boolean, failBatch: number, batches: number;
+let storedBalance: number, storedCurrency: string, accountExists: boolean, failTable: string | null, lookupFails: boolean, failBatch: number, batches: number;
 const saved = new Set<string>();
+const ready = <T,>(value: T) => { const pending = Promise.resolve(value); return Object.assign(pending, { abortSignal: () => pending }); };
 let from: ReturnType<typeof vi.fn>, rpc: ReturnType<typeof vi.fn>;
 function client(): SupabaseClient {
   return { from, rpc } as unknown as SupabaseClient;
 }
 beforeEach(() => {
+  storedBalance = 50; storedCurrency = "CZK";
   writes.length = 0; saved.clear(); accountExists = true; failTable = null; lookupFails = false; failBatch = 0; batches = 0;
   provider.getConsent.mockReset().mockResolvedValue({ status: "linked", expiresAt: null, error: null });
   provider.listAccounts.mockReset().mockResolvedValue([{ accountRef: "synthetic-account", name: "Synthetic account", currency: "CZK", balance: 100 }]);
@@ -28,11 +30,11 @@ beforeEach(() => {
     let patch: Record<string, unknown> = {}, writing = false;
     const filters = new Map<string, unknown>();
     const query = {
-      select: () => query,
+      select: () => query, abortSignal: () => query,
       eq: (key: string, value: unknown) => { filters.set(key, value); return query; },
       update: (value: Record<string, unknown>) => { writing = true; patch = value; return query; },
       insert: (value: Record<string, unknown>) => { writing = true; patch = value; return query; },
-      maybeSingle: async () => ({ data: lookupFails ? null : table === "accounts" ? accountExists ? { id: accountId } : null : filters.get("user_id") === owner ? conn : null, error: lookupFails ? {} : null }),
+      maybeSingle: async () => ({ data: lookupFails ? null : table === "accounts" ? accountExists ? { id: accountId, balance: storedBalance, currency: storedCurrency } : null : filters.get("user_id") === owner ? conn : null, error: lookupFails ? {} : null }),
       single: async () => {
         if (!writing || table === failTable) return { data: null, error: {} };
         writes.push({ table, patch }); return { data: { id: table === "accounts" ? accountId : conn.id }, error: null };
@@ -40,18 +42,18 @@ beforeEach(() => {
     };
     return query;
   });
-  rpc = vi.fn(async (name: string, args: { p_user_id: string; p_rows: Record<string, unknown>[] }) => {
+  rpc = vi.fn((name: string, args: { p_user_id: string; p_rows: Record<string, unknown>[] }) => {
     expect(args.p_user_id).toBe(owner);
-    if (name === "transaction_rule_context") return { data: { owner_id: owner, rules: [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] }, error: null };
+    if (name === "transaction_rule_context") return ready({ data: { owner_id: owner, rules: [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] }, error: null });
     expect(name).toBe("import_bank_transaction_batch");
-    if (++batches === failBatch) return { data: null, error: {} };
+    if (++batches === failBatch) return ready({ data: null, error: {} });
     const ids: string[] = [];
     for (const row of args.p_rows) {
       expect(row.account_id).toBe(accountId); expect(row).not.toHaveProperty("user_id"); expect(row).not.toHaveProperty("invoice_id");
       if (saved.has(String(row.external_id))) continue;
       saved.add(String(row.external_id)); ids.push(`44444444-4444-4444-8444-${String(saved.size).padStart(12, "0")}`);
     }
-    return { data: ids, error: null };
+    return ready({ data: ids, error: null });
   });
 });
 
@@ -67,7 +69,7 @@ it("retains the cursor after a later batch fails, then safely replays confirmed 
 it("preserves an existing balance when the provider does not report one", async () => {
   provider.listAccounts.mockResolvedValue([{ accountRef: "synthetic-account", name: "Synthetic account", currency: "CZK", balance: null }]);
   await syncConnection(client(), conn);
-  expect(writes.find(write => write.table === "accounts")!.patch).not.toHaveProperty("balance");
+  expect(writes.some(write => write.table === "accounts")).toBe(false);
 });
 it("refuses to invent a starting balance for a new account", async () => {
   accountExists = false;
@@ -95,4 +97,49 @@ it("stores only fixed error codes and reports transient consent failures honestl
   expect(await syncConnection(client(), conn)).toMatchObject({ status: "error", inserted: 0 });
   expect(writes[0].patch).toMatchObject({ status: "linked", last_error: "bank-sync-failed" });
   expect(provider.fetchTransactions).not.toHaveBeenCalled();
+});
+
+it("skips an unchanged account write and refuses a currency change without a new balance", async () => {
+  storedBalance = 100; await syncConnection(client(), conn); expect(writes.some(write => write.table === "accounts")).toBe(false);
+  writes.length = 0; storedCurrency = "EUR";
+  provider.listAccounts.mockResolvedValue([{ accountRef: "synthetic-account", name: "Synthetic account", currency: "CZK", balance: null }]);
+  await expect(syncConnection(client(), conn)).rejects.toThrow("bank-balance-unavailable"); expect(writes.some(write => write.table === "accounts")).toBe(false);
+});
+it("rejects repeated provider account identities before writing balances", async () => {
+  const account = { accountRef: "synthetic-account", name: "Synthetic account", currency: "CZK", balance: 100 };
+  provider.listAccounts.mockResolvedValue([account, account]);
+  await expect(syncConnection(client(), conn)).rejects.toThrow("bank-data-unavailable"); expect(writes.some(write => write.table === "accounts")).toBe(false);
+});
+it("stops an uncooperative provider at the deadline and never starts later writes", async () => {
+  const controller = new AbortController(); let release!: (value: unknown) => void;
+  provider.getConsent.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  const pending = syncConnection(client(), conn, controller.signal); const refused = expect(pending).rejects.toThrow("bank-sync-timed-out");
+  controller.abort(new Error("Synthetic private abort reason")); await refused;
+  release({ status: "linked", expiresAt: null, error: null }); await Promise.resolve();
+  expect(writes).toEqual([]); expect(provider.listAccounts).not.toHaveBeenCalled();
+});
+
+it("keeps the cursor after a timed-out later batch and cannot continue after its late receipt", async () => {
+  const controller = new AbortController(), original = rpc.getMockImplementation()! as (...args: unknown[]) => unknown;
+  let bankCalls = 0, release!: (value: unknown) => void;
+  rpc.mockImplementation((name: string, args: unknown) => {
+    if (name === "import_bank_transaction_batch" && ++bankCalls === 2) {
+      const pending = new Promise(resolve => { release = resolve; }); return Object.assign(pending, { abortSignal: () => pending });
+    }
+    return original(name, args);
+  });
+  const pending = syncConnection(client(), conn, controller.signal), refused = expect(pending).rejects.toThrow("bank-sync-timed-out");
+  await vi.waitFor(() => expect(bankCalls).toBe(2)); controller.abort(); await refused;
+  expect(saved.size).toBe(250); expect(writes.some(write => "sync_cursor" in write.patch)).toBe(false);
+  release({ data: [], error: null }); await Promise.resolve(); await Promise.resolve();
+  expect(bankCalls).toBe(2); expect(writes.some(write => "sync_cursor" in write.patch)).toBe(false);
+});
+
+it("refuses excessive rule work before importing any transaction", async () => {
+  const original = rpc.getMockImplementation()! as (...args: unknown[]) => unknown;
+  rpc.mockImplementation((name: string, args: unknown) => name === "transaction_rule_context" ? ready({ data: {
+    owner_id: owner, rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [],
+    rules: [{ id: "rule", user_id: owner, stage: "default", enabled: true, conditions: [{ field: "note", op: "contains", value: "x".repeat(5000) }], actions: { category: "Work" } }],
+  }, error: null }) : original(name, args));
+  await expect(syncConnection(client(), conn)).rejects.toThrow("bank-rules-unavailable"); expect(saved.size).toBe(0); expect(writes.some(write => "sync_cursor" in write.patch)).toBe(false);
 });

@@ -27,3 +27,22 @@ for(const lang of ["en","cs"] as const){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
  });
 }
+
+for (const lang of ["en", "cs"] as const) {
+  test(`${lang}: excessive rule work retains the CSV and performs no partial import`, async ({ page }) => {
+    await gotoPreview(page, { lang }); await signInFixtureUser(page);
+    const version = "0123456789abcdef0123456789abcdef";
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: {
+      owner_id: "u1", rules_version: version, project_ids: [], subscription_ids: [],
+      rules: [{ id: "rule", user_id: "u1", stage: "default", enabled: true, conditions: [{ field: "note", op: "contains", value: "x".repeat(5000) }], actions: { category: "Work" } }],
+    } }));
+    let imports = 0; await page.route("**/rpc/import_transaction_batch", route => { imports++; return route.fulfill({ json: [] }); });
+    await page.goto("/dev-preview?tab=transactions"); await page.getByText(finances[lang].importAndMatch, { exact: true }).click();
+    const csv = "Date;Amount;Currency;Description\n" + Array.from({ length: 501 }, (_, n) => `2026-10-24;1;CZK;Synthetic row ${n}`).join("\n");
+    await page.locator("#bank-csv-input").setInputFiles({ name: "bounded-rules.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+    const button = page.getByRole("button", { name: finances[lang].bank.import, exact: true });
+    await expect(button).toBeEnabled(); await button.click();
+    await expect(page.getByRole("alert").filter({ hasText: finances[lang].bank.csvRuleLimit })).toBeVisible();
+    await expect(page.getByText("bounded-rules.csv", { exact: true })).toBeVisible(); await expect(button).toBeEnabled(); expect(imports).toBe(0);
+  });
+}

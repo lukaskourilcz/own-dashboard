@@ -18,14 +18,14 @@ const TABLE = "bank_provider_credentials";
 export async function readProviderSecret(
   admin: SupabaseClient,
   userId: string,
-  provider: BankProviderId,
+  provider: BankProviderId, signal?: AbortSignal,
 ): Promise<string | null> {
-  const { data, error } = await admin
+  const query = admin
     .from(TABLE)
     .select("secret")
     .eq("user_id", userId)
-    .eq("provider", provider)
-    .maybeSingle();
+    .eq("provider", provider);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
   if (error) throw new Error("Bank credential read failed");
   if (!data) return null;
   const secret = (data as { secret: string | null }).secret;
@@ -35,14 +35,14 @@ export async function readProviderSecret(
 export async function hasProviderSecret(
   admin: SupabaseClient,
   userId: string,
-  provider: BankProviderId,
+  provider: BankProviderId, signal?: AbortSignal,
 ): Promise<boolean> {
-  const { data, error } = await admin
+  const query = admin
     .from(TABLE)
     .select("user_id")
     .eq("user_id", userId)
-    .eq("provider", provider)
-    .maybeSingle();
+    .eq("provider", provider);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
   if (error) throw new Error("Bank credential status unavailable");
   return Boolean(data);
 }

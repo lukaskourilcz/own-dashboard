@@ -66,10 +66,10 @@
     },
     {
       "path": "src/app/api/bank/sync/route.ts",
-      "lines": 88,
+      "lines": 66,
       "sha256": "01c47cdd3ea8dab76bdebf9325e91877ca74f6237a28c6d5b1a3b91214232a86",
-      "status": "source reviewed; targeted route checks passed; final release checks pending",
-      "reviewedSha256": "adb42bb9fef390c80f84e114fb9ab95eef3d8067e82b9070df97cb005ea88b33"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "b398f2033a2130dbe5d3b4c21f7ba52ecbcb4102d8d0eab5d2b6a6f78313a59f"
     },
     {
       "path": "src/app/api/calendar/event/route.ts",
@@ -92,10 +92,10 @@
     },
     {
       "path": "src/app/api/cron/bank-sync/route.ts",
-      "lines": 96,
+      "lines": 105,
       "sha256": "f376f8b7743712ec2c82f1fa308ee8907a2abe8f2260198f64646acac550eec4",
-      "status": "source reviewed; targeted route checks passed; final release checks pending",
-      "reviewedSha256": "f10efa1e80f82bd9bd0f765bc2c918f973ddb81dbbcaa1a1f4676d020258914e"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "177759097d3201d43da123ab20cc12e98eef434c59431395f268a4b0567af404"
     },
     {
       "path": "src/app/api/cron/jobs-scrape/route.ts",
@@ -717,10 +717,10 @@
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
-      "lines": 804,
+      "lines": 787,
       "sha256": "3d49d9772902f162da30753d81c98c759f7457b0e5c496d9ed064e966562275f",
-      "status": "source reviewed; provider/dialog recovery checks passed; final release checks pending",
-      "reviewedSha256": "63b18a4fc82b22b95eaafe2a2b16cb952d287c17470a1d75d0910a7d791c96c7"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "fa9e6164ff9b4babf390b2f3e81ca9fb9504d4e110c36c4a65b456399d48430a"
     },
     {
       "path": "src/components/finances/payment-matches.tsx",
@@ -1670,6 +1670,13 @@
       "status": "pending"
     },
     {
+      "path": "src/lib/abortable.ts",
+      "sha256": null,
+      "lines": 30,
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "b50e4bd9d32f15916b5d907c6b38c17795062bd0d7f3fcdf15419cb36b274a16"
+    },
+    {
       "path": "src/lib/about-project.ts",
       "lines": 1,
       "sha256": "21364de6565d420a0a6eeaca1f1e2e5be789c67920ece8d896fcfa08c98af873",
@@ -1684,17 +1691,17 @@
     },
     {
       "path": "src/lib/bank-sync-server.ts",
-      "lines": 176,
+      "lines": 194,
       "sha256": "e5f413436cd693c468a524b382d0afa7e730fc9053935a848707c1f552bf2ca2",
-      "status": "partial source review; scoped bank identity and write receipts tested; total request deadline still under review",
-      "reviewedSha256": "fa3a8d5683480954faef5d31cbf5e7b03206f65695be469e6d40e3c1b1771ce3"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "98919e2b9e86bdd185ad2036d3b8a36a11d82cf7ca0b21e4df7f0b81f2cbcc66"
     },
     {
       "path": "src/lib/bank/credentials.ts",
-      "lines": 77,
+      "lines": 61,
       "sha256": "80fa920eac55cb875b9bbcbf0eebaa6a7d000f8962899ea84cb9ccb762c4f6ab",
-      "status": "source reviewed; presence failure and role/privacy boundaries checked; provider session review remains",
-      "reviewedSha256": "49fb4b2a80b970090d8f571414c7b5f6e22fbcb7cfb0b27bd23fa4fd2ce546ef"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "e35379263b240e751069f5128fdab07efdb0fed98a1dcd10699c76f623cc96db"
     },
     {
       "path": "src/lib/bank/enable-banking-adapter.ts",
@@ -1710,10 +1717,10 @@
     },
     {
       "path": "src/lib/bank/fio-adapter.ts",
-      "lines": 158,
+      "lines": 155,
       "sha256": "89aaf289644cf894305ece77dc8fd97754e06050645f84318693e134f183abb4",
-      "status": "source reviewed; request-local freshness and malformed-response checks passed; final release checks pending",
-      "reviewedSha256": "6b0bd1019d6a12b3b38705e6ef8a3680759eea7e39748d4234f8b9d34edd514d"
+      "status": "partial source review; request-local session/deadline verified; configuration-read failure semantics remain under review",
+      "reviewedSha256": "73a5e682d962aafef06014e86ffb706368ca2a9821c8ba5ea2556280d1b7010b"
     },
     {
       "path": "src/lib/bank/fio-statement.ts",
@@ -1731,10 +1738,10 @@
     },
     {
       "path": "src/lib/bank/gocardless-adapter.ts",
-      "lines": 148,
+      "lines": 170,
       "sha256": "297e4839266ed924a9624a50b79ef3db00283a2704776fd7b05fcbaa50685158",
-      "status": "source reviewed; request-local ownership/metadata cases passed; overall sync deadline follow-up pending",
-      "reviewedSha256": "d5b7c7b59a891fd96ac2210a7472f49060cec65ae57e777f11a682f28e678f58"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "8d9039706dbf998a949ccccaaef81ea1c812979f1cdfe332489b293404e6beb2"
     },
     {
       "path": "src/lib/bank/gocardless-mapping.ts",
@@ -1754,8 +1761,15 @@
       "path": "src/lib/bank/registry.ts",
       "lines": 72,
       "sha256": "aeadfe55428c8e5f59c4d2b11bae0f9a1dbb6e8f527e62a42fab2d28d7897866",
-      "status": "source reviewed; request-local provider construction checked; aggregate availability failure semantics remain under review",
-      "reviewedSha256": "56ab66f0bbe2df7c86c4bafaa7b2d53b030ca0f811c5b01f95cae62edd9f6ddb"
+      "status": "partial source review; request-local session/deadline verified; configuration-read failure semantics remain under review",
+      "reviewedSha256": "6f191ab5f2227a23a0f0393a55bdec96c0f423e8eacfd116d47c929244ca38d1"
+    },
+    {
+      "path": "src/lib/bank/sync-budget.ts",
+      "sha256": null,
+      "lines": 6,
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "645f1986e546e1f1e44efccfeb019b51631fb902d7072d80bb328ff0fc142fdb"
     },
     {
       "path": "src/lib/bounded-text.ts",
@@ -1960,10 +1974,10 @@
     },
     {
       "path": "src/lib/gocardless.ts",
-      "lines": 291,
+      "lines": 310,
       "sha256": "29863eaef046bd09f5e2e4644fb24cbf8b4bf9e1b951fca3728ccb84fbfdf31f",
-      "status": "source reviewed; HTTP/schema/identity cases passed; overall sync deadline and cross-account identity follow-up pending",
-      "reviewedSha256": "23f217fbf79d2617f1755f429973df51c93e6600428fed05f8ae07d4a1a0c0c7"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "82d5f3a9f4c79e64769e8b26f21a2aa8a6e92e5d25ba5864a76d46f6f0f7eb45"
     },
     {
       "path": "src/lib/google-auth.ts",
@@ -3494,10 +3508,10 @@
     },
     {
       "path": "src/lib/supabase/admin.ts",
-      "lines": 28,
+      "lines": 32,
       "sha256": "8601dc6498a8eae6ab5a8d6bd3ee68cc77fe58972cb669f6a877018757a1a250",
-      "status": "source reviewed; server-only cached service client boundary retained; final auth review pending",
-      "reviewedSha256": "8601dc6498a8eae6ab5a8d6bd3ee68cc77fe58972cb669f6a877018757a1a250"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "bca593b3a5effb5f721e9769e9fd22bafda5bd0756d984e9895a80497127dee5"
     },
     {
       "path": "src/lib/supabase/client.ts",
@@ -3564,30 +3578,30 @@
       "lines": 36,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; confirmed CSV and scoped bank ports tested; final release checks pending",
-      "reviewedSha256": "239ed6dec99e9810921e14e88b7333083ef0bd9ede7b326063e27290fd65fae0"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "82452b216b8f2df407f77865f9d577c241c2df0bdf402447deb90a3cdcf1375c"
     },
     {
       "path": "src/lib/transaction-rule-application.ts",
       "sha256": null,
-      "lines": 52,
-      "status": "source reviewed; complete snapshot, work bounds and confirmed receipts tested; final release checks pending",
-      "reviewedSha256": "ad76472b68d266358fad1177178b9bddce5ec673991c8e3c86d618448dda07e8"
+      "lines": 44,
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "e8d3d9b2476d26af2b6f5dd50639679b1ff865da697fa6281ba3835c1f9ce7f2"
     },
     {
       "path": "src/lib/transaction-rule-data.ts",
-      "lines": 29,
+      "lines": 30,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; complete versioned context tested; final release checks pending",
-      "reviewedSha256": "98a215cf7368862e508620b1233d3fbf9a4a0d0b01e10c2a096cfd0b09fedec2"
+      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
+      "reviewedSha256": "322c4a0fffaefddb8ab60c1d5043ba64f5c379d1e80d8f47e28fea487518de28"
     },
     {
       "path": "src/lib/transaction-rules.ts",
-      "lines": 568,
+      "lines": 619,
       "sha256": "28552e186b285c368ed191729d2852883bf9a49261e62c97ad67695b7605e060",
-      "status": "source reviewed; targeted rule checks passed; final release checks pending",
-      "reviewedSha256": "498ba03929abe59cef7251d45354b7f750e553479b3e8088ae802b8600831ba0"
+      "status": "partial source review; whole-rule parsing, bounded regex and shared work limits verified; action limits against ingestion constraints remain under review",
+      "reviewedSha256": "d24ceeafec55e4e28bce460d92df2210e0111468968e7cd224aefafba209aca5"
     },
     {
       "path": "src/lib/types.ts",

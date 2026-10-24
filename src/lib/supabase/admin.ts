@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { fetchWithSignal } from "@/lib/abortable";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cached: SupabaseClient<any> | null = null;
@@ -7,11 +8,12 @@ let cached: SupabaseClient<any> | null = null;
 /**
  * Service-role Supabase client. Bypasses RLS. NEVER expose this to the browser,
  * NEVER import from a client component. Only use from route handlers / server
- * components / server-only modules.
+ * components / server-only modules. A supplied deadline creates a new client;
+ * request cancellation must never enter the shared stateless service client.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createAdminClient(): SupabaseClient<any> {
-  if (cached) return cached;
+export function createAdminClient(signal?: AbortSignal): SupabaseClient<any> {
+  if (!signal && cached) return cached;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -20,9 +22,11 @@ export function createAdminClient(): SupabaseClient<any> {
         "Set both in your environment to enable server-side Supabase access.",
     );
   }
-  cached = createClient(url, key, {
+  const client = createClient(url, key, {
+    ...(signal ? { global: { fetch: fetchWithSignal(signal) } } : {}),
     auth: { persistSession: false, autoRefreshToken: false },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as SupabaseClient<any>;
-  return cached;
+  if (!signal) cached = client;
+  return client;
 }

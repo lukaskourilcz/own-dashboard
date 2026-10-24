@@ -123,6 +123,7 @@ type BankStrings = {
   csvReading: string;
   csvRulesLoading: string;
   csvLegacyConflict: string;
+  csvRuleLimit: string;
   csvIssue: Record<CsvIssueCode, string>;
   csvRowIssue: (row: number, message: string) => string;
   nothingToImport: string;
@@ -317,6 +318,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
         `Imported ${added}${dup ? `, skipped ${dup} duplicate${dup === 1 ? "" : "s"}` : ""}.`,
       importErr: "Could not confirm the complete import. Try this file again; confirmed rows will not be inserted twice.",
       csvParseErr: "Couldn't read that file.",
+      csvRuleLimit: "These rules exceed the import processing limit. Simplify the rules or use a smaller file.",
       csvReading: "Reading statement…",
       csvRulesLoading: "Loading classification rules…",
       csvLegacyConflict: "An older import has different payment fields. Review that record before importing this file.",
@@ -564,6 +566,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
         `Naimportováno ${added}${dup ? `, přeskočeno ${dup} duplicit` : ""}.`,
       importErr: "Celý import se nepodařilo potvrdit. Zkuste soubor znovu; potvrzené řádky se nevloží dvakrát.",
       csvParseErr: "Soubor se nepodařilo přečíst.",
+      csvRuleLimit: "Pravidla překračují limit zpracování importu. Zjednodušte pravidla nebo použijte menší soubor.",
       csvReading: "Čtu výpis…",
       csvRulesLoading: "Načítám pravidla pro zařazení…",
       csvLegacyConflict: "Starší import má jiné platební údaje. Před importem tohoto souboru zkontrolujte původní záznam.",

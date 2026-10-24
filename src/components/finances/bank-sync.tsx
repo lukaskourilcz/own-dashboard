@@ -34,7 +34,7 @@ import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { fetchBankConnections, fetchTransactionRules } from "@/lib/queries/fetchers";
 import { prepareBankCsv, csvRowsToImport, CsvLegacyConflict, MAX_CSV_BYTES, type ParseResult } from "@/lib/bank-csv";
-import { createRuleEvaluator, usableRules } from "@/lib/transaction-rules";
+import { assertRuleEvaluationBounds, createRuleEvaluator, RuleEvaluationLimitError, usableRules } from "@/lib/transaction-rules";
 import type { BankConnection, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -353,6 +353,7 @@ function CsvImport({
         projectIds: new Set(rulesQuery.data.projectIds),
         subscriptionIds: new Set(rulesQuery.data.subscriptionIds),
       };
+      assertRuleEvaluationBounds(fresh, rules);
       const evaluator = createRuleEvaluator(rules, owned);
       const payload = fresh.map((r) =>
         evaluator.applyToRow(
@@ -390,7 +391,7 @@ function CsvImport({
       setFileName(null);
       if (inputRef.current) inputRef.current.value = "";
     },
-    onError: error => setImportError(error instanceof CsvLegacyConflict ? t.finances.bank.csvRowIssue(error.row, t.finances.bank.csvLegacyConflict) : t.finances.bank.importErr),
+    onError: error => setImportError(error instanceof RuleEvaluationLimitError ? t.finances.bank.csvRuleLimit : error instanceof CsvLegacyConflict ? t.finances.bank.csvRowIssue(error.row, t.finances.bank.csvLegacyConflict) : t.finances.bank.importErr),
     onSettled: () => { void qc.invalidateQueries({ queryKey: qk.transactions }); },
   });
 

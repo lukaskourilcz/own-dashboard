@@ -22,8 +22,9 @@ export function parseTransactionRuleContext(raw: unknown, ownerId?: string): Tra
   return { ...parsed, projectIds: context.project_ids, subscriptionIds: context.subscription_ids, rulesVersion: context.rules_version };
 }
 
-export async function readTransactionRuleContext(client: SupabaseClient, ownerId?: string): Promise<TransactionRuleContext> {
-  const { data, error } = await client.rpc("transaction_rule_context", { p_user_id: ownerId ?? null });
+export async function readTransactionRuleContext(client: SupabaseClient, ownerId?: string, signal?: AbortSignal): Promise<TransactionRuleContext> {
+  const query = client.rpc("transaction_rule_context", { p_user_id: ownerId ?? null });
+  const { data, error } = await (signal ? query.abortSignal(signal) : query);
   if (error) throw new Error("Rule context unavailable");
   return parseTransactionRuleContext(data, ownerId);
 }

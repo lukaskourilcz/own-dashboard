@@ -39,3 +39,20 @@ it("accepts absent optional metadata without losing the evidenced currency or in
   expect((await gc.getAccountDetails("account")).account?.currency).toBe("CZK");
   expect(gc.mapTransaction((await gc.getAccountTransactions("account")).transactions.booked[0])?.external_id).toBe("synthetic-internal");
 });
+it("ends one caller's token wait without cancelling the shared app-token request", async () => {
+  const controller = new AbortController(); let release!: () => void;
+  const fetcher = vi.spyOn(globalThis, "fetch").mockImplementation(async url => String(url).endsWith("/token/new/")
+    ? new Promise(resolve => { release = () => resolve(token()); }) : Response.json({ transactions: { booked: [tx], pending: [] } }));
+  const cancelled = gc.getAccountTransactions("cancelled-account", undefined, controller.signal), refused = expect(cancelled).rejects.toMatchObject({ name: "AbortError" });
+  const active = gc.getAccountTransactions("active-account"); controller.abort(); await refused;
+  release(); expect((await active).transactions.booked).toHaveLength(1);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith("/token/new/"))).toHaveLength(1);
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes("cancelled-account"))).toBe(false);
+});
+it("passes the enclosing processing deadline to the provider HTTP request", async () => {
+  const controller = new AbortController(); let requested!: AbortSignal;
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => String(url).endsWith("/token/new/") ? token()
+    : new Promise((_resolve, reject) => { requested = init!.signal!; requested.addEventListener("abort", () => reject(requested.reason), { once: true }); }));
+  const pending = gc.getAccountTransactions("account", undefined, controller.signal), refused = expect(pending).rejects.toThrow();
+  await vi.waitFor(() => expect(requested).toBeDefined()); controller.abort(); await refused; expect(requested.aborted).toBe(true);
+});

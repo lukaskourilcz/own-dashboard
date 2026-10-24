@@ -1,3 +1,5 @@
+import { awaitWithSignal } from "@/lib/abortable";
+import { bankSyncSignal } from "@/lib/bank/sync-budget";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +10,8 @@ import { readTextPrefix } from "@/lib/bounded-text";
 import { configuredProviders } from "@/lib/bank/registry";
 import { syncConnection, syncConnectionById } from "@/lib/bank-sync-server";
 import type { BankConnection } from "@/lib/types";
+
+export const maxDuration = 60;
 
 const inputSchema = z.object({ connectionId: z.string().trim().pipe(z.uuid()).optional() }).strict();
 
@@ -29,22 +33,28 @@ export async function POST(request: Request) {
   } catch { return NextResponse.json({ error: "Invalid body." }, { status: 400 }); }
   const limited = await rateLimit(user.id, { key: "bank-sync", limit: 5, windowSec: 60 });
   if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
+  const signal = bankSyncSignal(request);
   try {
-    if ((await configuredProviders(user.id)).length === 0) return NextResponse.json({ error: "not-configured" }, { status: 503 });
-    const admin = createAdminClient();
+    const providers = await awaitWithSignal(configuredProviders(user.id, signal), signal);
+    signal.throwIfAborted();
+    if (providers.length === 0) return NextResponse.json({ error: "not-configured" }, { status: 503 });
+    const admin = createAdminClient(signal);
     if (body.connectionId) {
-      const result = await syncConnectionById(admin, user.id, body.connectionId);
+      const result = await awaitWithSignal(syncConnectionById(admin, user.id, body.connectionId, signal), signal);
       if (!result) return NextResponse.json({ error: "Not found." }, { status: 404 });
       if (result.status !== "linked") return NextResponse.json({ error: "bank-sync-incomplete" }, { status: result.status === "error" ? 502 : 409 });
       return NextResponse.json({ inserted: result.inserted, banks: 1, accounts: result.accountsLinked });
     }
-    const { data, count, error } = await admin.from("bank_connections").select("*", { count: "exact" }).eq("user_id", user.id).limit(51);
+    const query = admin.from("bank_connections").select("*", { count: "exact" }).eq("user_id", user.id).limit(51).abortSignal(signal);
+    const { data, count, error } = await awaitWithSignal(query, signal);
     if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count !== data.length || data.length > 50
       || data.some(conn => conn.user_id !== user.id)) throw new Error("Connections unavailable");
     let inserted = 0, accounts = 0, banks = 0, failed = 0;
-    for (const conn of data as BankConnection[]) {
+    const connections = data as BankConnection[];
+    for (let index = 0; index < connections.length; index++) {
+      if (signal.aborted) { failed += connections.length - index; break; }
       try {
-        const result = await syncConnection(admin, conn);
+        const result = await awaitWithSignal(syncConnection(admin, connections[index], signal), signal);
         if (result.status !== "linked") { failed++; continue; }
         inserted += result.inserted; accounts += result.accountsLinked; banks++;
       } catch { failed++; }

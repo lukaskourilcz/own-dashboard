@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseTransactionRuleContext } from "@/lib/transaction-rule-data";
-import { createRuleEvaluator, type TransactionRule } from "@/lib/transaction-rules";
+import { assertRuleEvaluationBounds, createRuleEvaluator, type TransactionRule } from "@/lib/transaction-rules";
 
 const version = z.string().regex(/^[0-9a-f]{32}$/);
 const nullableText = z.string().nullable();
@@ -22,15 +22,7 @@ export function parseRuleApplicationSnapshot(raw: unknown, ownerId: string) {
 /** Explicit work bounds refuse the whole request before evaluation or writes.
  * No shortened count or plan is returned when a ledger is too expensive. */
 export function evaluateRuleApplication(snapshot: ReturnType<typeof parseRuleApplicationSnapshot>, rules: TransactionRule[]) {
-  let conditions = 0, textWork = 0;
-  for (const rule of rules) for (const condition of rule.conditions) {
-    conditions++;
-    textWork += Array.isArray(condition.value)
-      ? condition.value.reduce<number>((sum, value) => sum + String(value).length + 1, 0)
-      : String(condition.value).length + 1;
-  }
-  const inputChars = snapshot.transactions.reduce((sum, row) => sum + (row.note?.length ?? 0) + (row.account_id?.length ?? 0) + 64, 0);
-  if (snapshot.transactions.length * conditions > 2_000_000 || inputChars * textWork > 100_000_000) throw new Error("Rule evaluation bound exceeded");
+  assertRuleEvaluationBounds(snapshot.transactions, rules);
   const evaluator = createRuleEvaluator(rules, { projectIds: new Set(snapshot.context.projectIds), subscriptionIds: new Set(snapshot.context.subscriptionIds) });
   const plan = [];
   let matched = 0;

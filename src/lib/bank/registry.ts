@@ -17,7 +17,7 @@ import {
  * dark for every other provider too.
  */
 
-const PROVIDERS: Record<BankProviderId, () => BankProvider> = {
+const PROVIDERS: Record<BankProviderId, (signal?: AbortSignal) => BankProvider> = {
   gocardless: createGoCardlessProvider,
   fio: createFioProvider,
   "enable-banking": () => enableBankingProvider,
@@ -26,22 +26,22 @@ const PROVIDERS: Record<BankProviderId, () => BankProvider> = {
 /** Resolve a stored `bank_connections.provider` value. Throws for anything
  *  unregistered, so a hand-edited row fails closed rather than quietly syncing
  *  against the wrong bank. */
-export function getProvider(id: string): BankProvider {
+export function getProvider(id: string, signal?: AbortSignal): BankProvider {
   if (!isBankProviderId(id)) throw new UnknownBankProviderError(id);
-  return PROVIDERS[id]();
+  return PROVIDERS[id](signal);
 }
 
-export function listProviders(): BankProvider[] {
-  return BANK_PROVIDER_IDS.map(id => getProvider(id));
+export function listProviders(signal?: AbortSignal): BankProvider[] {
+  return BANK_PROVIDER_IDS.map(id => getProvider(id, signal));
 }
 
 /** Which providers this owner could sync with right now. Never throws: one
  *  provider whose configuration check fails must not hide the others. */
 export async function configuredProviders(
-  userId: string,
+  userId: string, signal?: AbortSignal,
 ): Promise<BankProviderId[]> {
   const checks = await Promise.all(
-    listProviders().map(async (provider) => {
+    listProviders(signal).map(async (provider) => {
       try {
         return (await provider.isConfigured(userId)) ? provider.id : null;
       } catch {

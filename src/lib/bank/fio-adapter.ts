@@ -50,14 +50,14 @@ export class FioApiError extends Error {
 async function requestStatement(
   token: string,
   from: string,
-  to: string,
+  to: string, signal?: AbortSignal,
 ): Promise<FioStatement> {
   const url = `${BASE}/periods/${encodeURIComponent(token)}/${from}/${to}/transactions.json`;
   const response = await fetch(url, {
     headers: { accept: "application/json" },
     cache: "no-store",
     redirect: "error",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.any([AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...(signal ? [signal] : [])]),
   });
   if (!response.ok) throw new FioApiError(response.status);
   const prefix = await readTextPrefix(response, 16 * 1024 * 1024);
@@ -72,7 +72,7 @@ async function requestStatement(
  * but another request always rechecks the stored credential and upstream data.
  * No statement or credential survives in the registry between requests.
  */
-export function createFioProvider(): BankProvider {
+export function createFioProvider(signal?: AbortSignal): BankProvider {
   const requestedAt = new Date();
   const statements = new Map<string, Promise<FioStatement>>();
   async function statementFor(conn: BankConnection, cursor: string | null): Promise<FioStatement> {
@@ -81,9 +81,9 @@ export function createFioProvider(): BankProvider {
     let pending = statements.get(key);
     if (!pending) {
       pending = (async () => {
-        const token = await readProviderSecret(createAdminClient(), conn.user_id, "fio");
+        const token = await readProviderSecret(createAdminClient(signal), conn.user_id, "fio", signal);
         if (!token) throw new BankProviderNotConfiguredError("fio");
-        return requestStatement(token, window.from, window.to);
+        return requestStatement(token, window.from, window.to, signal);
       })();
       statements.set(key, pending);
     }
@@ -97,7 +97,7 @@ export function createFioProvider(): BankProvider {
     async isConfigured(userId?: string): Promise<boolean> {
       if (!userId) return false;
       try {
-        return await hasProviderSecret(createAdminClient(), userId, "fio");
+        return await hasProviderSecret(createAdminClient(signal), userId, "fio", signal);
       } catch {
         // No service-role key in this environment: report unconfigured rather
         // than pretending the provider is usable.
