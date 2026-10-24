@@ -21,13 +21,13 @@ import { qk } from "@/lib/queries/keys";
 import { commitFile, type GithubRepo } from "@/lib/github";
 import {
   loadNeededFile,
-  parseNeeded,
+  neededTodoItems,
   removeNeededLine,
   type NeededFileResult,
   type NeededItem,
 } from "@/lib/needed";
-import { buildNeededRows, neededKey } from "@/lib/needed-sync";
-import type { Todo } from "@/lib/types";
+import { buildNeededRows } from "@/lib/needed-sync";
+import { syncNeededTasks } from "@/lib/needed-task-store";
 
 // Under ["github", "file"] so the Tasks panel's clear-finished invalidation
 // reaches it. The file may live at NEEDED.md or docs/NEEDED.md.
@@ -55,12 +55,15 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
     (r) => r.data?.kind === "disconnected",
   );
 
+  const unavailable = repos.filter((_repo, index) => results[index]?.isError || (results[index]?.data && results[index].data.kind !== "ok" && results[index].data.kind !== "disconnected"));
+  const retryUnavailable = () => { void Promise.allSettled(results.filter((_result, index) => unavailable.includes(repos[index])).map(result => result.refetch())); };
+
   const groups = useMemo(() => {
     return repos
       .map((repo, i) => {
         const res = results[i]?.data;
         if (!res || res.kind !== "ok") return null;
-        const items = parseNeeded(res.content, repo, res.htmlUrl);
+        const items = neededTodoItems(res.content, repo, res.htmlUrl);
         if (items.length === 0) return null;
         return { repo, items, htmlUrl: res.htmlUrl };
       })
@@ -69,15 +72,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
 
   const totalItems = groups.reduce((n, g) => n + g.items.length, 0);
 
-  // Items to import as todos — prefers each file's task checkboxes, markdown
-  // stripped. Kept separate from the on-screen `groups` (which shows everything).
-  const importCount = useMemo(() => {
-    return repos.reduce((n, repo, i) => {
-      const res = results[i]?.data;
-      if (!res || res.kind !== "ok") return n;
-      return n + parseNeeded(res.content, repo, res.htmlUrl).length;
-    }, 0);
-  }, [repos, results]);
+  const importCount = totalItems;
 
   // Create categorized todos from every repo's NEEDED.md. Each task's category
   // is the repo name; existing tasks (same category + title) are skipped so
@@ -95,31 +90,8 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
       });
       if (candidates.length === 0) return { inserted: 0, repos: 0 };
 
-      const { data: existing } = await supabase
-        .from("todos")
-        .select("title, category, repo_id, needed_raw")
-        .eq("user_id", userId);
-      const seen = new Set(
-        (existing ?? []).map((e) =>
-          neededKey(
-            (e as Partial<Todo>).repo_id ?? null,
-            (e as Partial<Todo>).needed_raw ?? null,
-            e.title ?? "",
-          ),
-        ),
-      );
-
-      const rows = candidates.filter((c) => {
-        const k = neededKey(c.repo_id, c.needed_raw, c.title);
-        if (seen.has(k)) return false; // already imported
-        seen.add(k);
-        return true;
-      });
-      if (rows.length === 0) return { inserted: 0, repos: 0 };
-
-      const { error } = await supabase.from("todos").insert(rows);
-      if (error) throw error;
-      return { inserted: rows.length, repos: new Set(rows.map((r) => r.category)).size };
+      const result = await syncNeededTasks(supabase, candidates);
+      return { inserted: result.added, repos: result.repos };
     },
     onSuccess: (res) => {
       toast.ok(
@@ -130,6 +102,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
       void qc.invalidateQueries({ queryKey: qk.todos });
     },
     onError: (e) => {
+      void qc.invalidateQueries({ queryKey: qk.todos });
       toast.err(
         (e as Error).message === "no-user"
           ? t.github.needed.reconnect
@@ -159,13 +132,12 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
     },
     onSuccess: ({ item, path }) => {
       toast.ok(t.github.needed.removedFrom(item.repo, path));
-      void qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) });
     },
     onSettled: (_data, _error, item) => qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) }),
     onError: (e) => {
       const status = (e as { status?: number }).status;
       toast.err(
-        status === 401 ? t.github.needed.reconnect : t.github.needed.updateErr,
+        status === 401 ? t.github.needed.reconnect : status === 409 ? t.github.fileChanged : t.github.needed.updateErr,
       );
     },
   });
@@ -175,9 +147,9 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
 
   return (
     <Card className="mb-4 overflow-hidden p-0">
-      <div className="flex items-start gap-2.5 border-b border-border bg-surface-muted/40 px-4 py-3">
+      <div className="flex flex-wrap items-start gap-2.5 border-b border-border bg-surface-muted/40 px-4 py-3">
         <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-foreground-muted" />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-40">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">
               {t.github.needed.title}
@@ -199,7 +171,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
               variant="outline"
               onClick={() => importTodos.mutate()}
               disabled={importTodos.isPending}
-              className="shrink-0"
+              className="ml-auto shrink-0"
             >
               {importTodos.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -212,6 +184,10 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
         )}
       </div>
 
+      {!loading && !disconnected && unavailable.length > 0 && <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <p className="min-w-0 flex-1 break-words text-xs text-foreground-muted">{t.github.needed.unavailable(unavailable.map(repo => repo.full_name).join(", "))}</p>
+        <Button size="sm" variant="outline" onClick={retryUnavailable}>{t.common.retry}</Button>
+      </div>}
       {loading ? (
         <div className="space-y-2 p-4">
           <p className="text-xs text-foreground-subtle">
@@ -225,7 +201,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
         <p className="px-4 py-6 text-center text-sm text-foreground-muted">
           {t.github.needed.reconnect}
         </p>
-      ) : totalItems === 0 ? (
+      ) : totalItems === 0 && unavailable.length > 0 ? null : totalItems === 0 ? (
         <div className="flex flex-col items-center px-4 py-8 text-center">
           <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted text-foreground-subtle">
             <Check className="h-4 w-4" />
@@ -246,10 +222,10 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
                   href={g.htmlUrl ?? g.repo.html_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted hover:text-foreground"
+                  className="inline-flex min-w-0 max-w-full items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted hover:text-foreground"
                   title={g.repo.full_name}
                 >
-                  {g.repo.name}
+                  <span className="min-w-0 truncate">{g.repo.name}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 <span className="text-[10px] tabular text-foreground-subtle">
@@ -267,7 +243,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
                           onClick={() => checkOff.mutate(item)}
                           disabled={checkOff.isPending}
                           aria-label={t.github.needed.checkOff + ": " + item.text}
-                          className="group flex w-full items-start gap-2.5 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface-hover focus-ring disabled:opacity-60"
+                          className="group flex min-h-11 w-full items-start md:min-h-0 gap-2.5 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface-hover focus-ring disabled:opacity-60"
                         >
                           <span
                             aria-hidden

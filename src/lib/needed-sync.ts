@@ -52,6 +52,7 @@ export type NeededTodoRow = {
   repo_name: string;
   repo_url: string;
   needed_raw: string;
+  needed_assignee: "me" | "ai" | null;
   generated_at: string;
   due_date: string;
   /** Importance 1–5 (5 = highest) from the task's `[imp:N]` marker, else null. */
@@ -105,6 +106,7 @@ export function buildNeededRows(
     repo_name: repo.name,
     repo_url: htmlUrl ?? repo.html_url,
     needed_raw: it.raw,
+    needed_assignee: it.assignee,
     generated_at: nowIso,
     due_date: dueDate,
     importance: it.importance,
@@ -164,6 +166,8 @@ export type NeededScan = {
   freshRows: NeededTodoRow[];
   /** Repositories with no NEEDED.md at any known path. Their tasks are kept. */
   missing: string[];
+  /** Repositories that failed to read; their existing tasks are retained. */
+  unavailable: string[];
 };
 
 /**
@@ -183,6 +187,7 @@ export async function scanNeededRepos(
   const scanned = new Set<string>();
   const freshRows: NeededTodoRow[] = [];
   const missing: string[] = [];
+  const unavailable: string[] = [];
   for (const repo of repos) {
     const res = await load(repo.owner, repo.name);
     if (res.kind === "disconnected") throw new Error("disconnected");
@@ -193,9 +198,9 @@ export async function scanNeededRepos(
       );
     } else if (res.kind === "not-found") {
       missing.push(repo.full_name);
-    }
+    } else { unavailable.push(repo.full_name); }
   }
-  return { scanned, freshRows, missing };
+  return { scanned, freshRows, missing, unavailable };
 }
 
 /** Commits new NEEDED.md content; `commitFile` in the app. */

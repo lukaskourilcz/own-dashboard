@@ -109,6 +109,7 @@ type GithubStrings = {
     scanning: string;
     allClear: string;
     allClearDesc: string;
+    unavailable: (repos: string) => string;
     reconnect: string;
     checkOff: string;
     itemsCount: (n: number) => string;
@@ -233,6 +234,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       scanning: "Scanning repositories…",
       allClear: "All clear",
       allClearDesc: "No open NEEDED items across your repositories.",
+      unavailable: (repos) => `Lists unavailable: ${repos}. Only readable lists can be imported.`,
       reconnect: "Reconnect GitHub to sync NEEDED files.",
       checkOff: "Check off & remove from NEEDED.md",
       itemsCount: (n) => (n === 1 ? "1 item" : `${n} items`),
@@ -357,6 +359,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       scanning: "Prohledávám repozitáře…",
       allClear: "Hotovo",
       allClearDesc: "Žádné otevřené NEEDED položky v repozitářích.",
+      unavailable: (repos) => `Nedostupné seznamy: ${repos}. Importovat lze jen načtené seznamy.`,
       reconnect: "Připoj znovu GitHub pro synchronizaci NEEDED souborů.",
       checkOff: "Odškrtnout a odebrat z NEEDED.md",
       itemsCount: (n) => {

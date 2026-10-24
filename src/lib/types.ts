@@ -100,6 +100,8 @@ export type Todo = {
   // The exact NEEDED.md source line — lets Refresh detect the item is still
   // present and lets "delete finished" remove precisely from the file.
   needed_raw: string | null;
+  /** Source metadata may put the owner on an indented continuation line. */
+  needed_assignee?: "me" | "ai" | null;
   // When the task was generated. due_date is set to generated_at + 7 days so
   // the dashboard can show a time-to-finish countdown.
   generated_at: string | null;

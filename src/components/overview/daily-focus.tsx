@@ -276,7 +276,7 @@ export function DailyFocusPanel({
                           }
                           kind={td?.task_kind ?? null}
                           minutes={td?.estimated_minutes ?? null}
-                          assignee={td ? assigneeForTodo(td.needed_raw) : null}
+                          assignee={td ? assigneeForTodo(td.needed_raw, td.needed_assignee) : null}
                           className="mt-1"
                         />
                       </div>

@@ -1370,10 +1370,10 @@
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
-      "lines": 297,
+      "lines": 273,
       "sha256": "32b2e115fea7de7e1dea9ec7b13a857e810ab44db90818d4891622341c5ad4a1",
-      "status": "partially reviewed; file integrity checks pass; remaining repository/task concerns in review.md",
-      "reviewedSha256": "4c9d564fbf9d09c1d3b10c387fc2fb31a8d65044e5f3ba46462e6ee0488383a1"
+      "status": "partially reviewed; task synchronization checks pass; scan/CRUD follow-ups pending",
+      "reviewedSha256": "1ee1a1475f045cff1551244dbe669047857865e844c334adc0849ab1ba0a4aab"
     },
     {
       "path": "src/components/panels/notes-panel.tsx",
@@ -1461,10 +1461,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1492,
+      "lines": 1475,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
-      "reviewedSha256": "e91d9251c03f069d07eadaedd63142ba3690f57e793e3d3c403565b1b3bc32ac"
+      "status": "partially reviewed; task synchronization checks pass; scan/CRUD follow-ups pending",
+      "reviewedSha256": "550cd320b4a227a9e520a8236c8edd32c18ea5ced97006a801c90004d73385e4"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -3392,16 +3392,17 @@
     },
     {
       "path": "src/lib/needed-sync.ts",
-      "lines": 289,
+      "lines": 294,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
-      "status": "partially reviewed; file integrity checks pass; remaining repository/task concerns in review.md",
-      "reviewedSha256": "8be7c99bccc33bd336385194c5c04117ef47783960360c070f28ff77322c9c34"
+      "status": "partially reviewed; task synchronization checks pass; scan/CRUD follow-ups pending",
+      "reviewedSha256": "d9291b18e40289572eed44d9d5fb63d63fb6cad09b15bbf7ba4a37ec6b90d65d"
     },
     {
       "path": "src/lib/needed.ts",
-      "lines": 285,
+      "lines": 307,
       "sha256": "7de312c49f3b1a80aec62b25360687b4aa3229c44c255c634b2abec841c8f160",
-      "status": "pending"
+      "status": "source reviewed; task synchronization checks pass; final release checks pending",
+      "reviewedSha256": "fc73f6392218c72177eef0061c8235cff8b9af42638cc5a3604d79ed46a751ce"
     },
     {
       "path": "src/lib/new-project-guide.ts",
@@ -3891,6 +3892,20 @@
       "lines": 103,
       "reviewedSha256": "476996c094aa9adcad944382c9ef8a7a235be551307dd329ae4cfb7669b3e77d",
       "status": "source reviewed; repository receipt checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/needed-task-store.ts",
+      "sha256": null,
+      "lines": 38,
+      "reviewedSha256": "a4ebcbf8ac02e9f1f3fe119f7cfe03570d60b63465d271c5066fe87ab5d31603",
+      "status": "source reviewed; task synchronization checks pass; final release checks pending"
+    },
+    {
+      "path": "supabase/migrations/20261024041457_repository_task_sync.sql",
+      "sha256": null,
+      "lines": 88,
+      "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
+      "status": "source reviewed; task synchronization checks pass; final release checks pending"
     }
   ],
   "baselineFileCount": 561

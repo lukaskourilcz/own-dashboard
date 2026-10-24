@@ -48,6 +48,8 @@ import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
 import { qk } from "@/lib/queries/keys";
 import { consumeRepositoryRecords } from "@/lib/repository-records";
+import { readOwnedCollection } from "@/lib/owned-records";
+import { syncNeededTasks } from "@/lib/needed-task-store";
 import { useReposQuery } from "@/lib/github-queries";
 import { commitFile } from "@/lib/github";
 import { findProjectForTask } from "@/lib/project-match";
@@ -55,7 +57,6 @@ import { assigneeForTodo, type Assignee } from "@/lib/needed";
 import {
   diffNeededTodos,
   removeFinishedFromNeeded,
-  readNeededTodoSnapshot,
   scanNeededRepos,
 } from "@/lib/needed-sync";
 import { TaskTags } from "@/components/tasks/task-tags";
@@ -220,54 +221,36 @@ export function TodosPanel({
       const userId = await currentUserId(supabase);
       if (!userId) throw new Error("disconnected");
 
+      // Capture task versions before waiting for any repository reads.
+      const { data: existing } = await readOwnedCollection(supabase, "todos", userId, AbortSignal.timeout(15_000));
       const nowIso = new Date().toISOString();
-      const { scanned, freshRows, missing } = await scanNeededRepos(
+      const { scanned, freshRows, missing, unavailable } = await scanNeededRepos(
         userId,
         reposData.repos,
         nowIso,
       );
 
-      const existing = await readNeededTodoSnapshot((from, to) => supabase
-        .from("todos")
-        .select("id, source, repo_id, needed_raw, title, done")
-        .eq("user_id", userId)
-        .eq("source", "github")
-        .order("id")
-        .range(from, to));
-      const { toInsert, toDeleteIds } = diffNeededTodos(
-        scanned,
-        freshRows,
-        existing,
-      );
-
-      if (toDeleteIds.length) {
-        const { error } = await supabase
-          .from("todos")
-          .delete()
-          .in("id", toDeleteIds);
-        if (error) throw error;
-      }
-      if (toInsert.length) {
-        const { error } = await supabase.from("todos").insert(toInsert);
-        if (error) throw error;
-      }
+      const { toDeleteIds } = diffNeededTodos(scanned, freshRows, existing);
+      const obsolete = new Set(toDeleteIds);
+      const { added, removed, retained } = await syncNeededTasks(supabase, freshRows, existing.filter(row => obsolete.has(row.id)), scanned);
       const focusResponse = await fetch("/api/daily-focus", {
         method: "POST",
         signal: AbortSignal.timeout(20000),
       }).catch(() => null);
       return {
-        added: toInsert.length,
-        removed: toDeleteIds.length,
-        missing,
+        added, removed, retained,
+        missing, unavailable,
         dailyFocusUpdated: focusResponse?.ok === true,
       };
     },
-    onSuccess: async ({ added, removed, missing, dailyFocusUpdated }) => {
+    onSuccess: async ({ added, removed, retained, missing, unavailable, dailyFocusUpdated }) => {
       toast.ok(
         added === 0 && removed === 0
           ? t.todos.refreshNothing
           : t.todos.refreshDone(added, removed),
       );
+      if (retained) toast.info(t.todos.refreshRetained(retained));
+      if (unavailable.length) toast.info(t.todos.refreshUnavailable(unavailable.join(", ")));
       // A repository that lost its NEEDED.md keeps its tasks; say which, so
       // the rows that stay are explained.
       if (missing.length > 0) toast.info(t.todos.refreshMissing(missing.join(", ")));
@@ -412,7 +395,7 @@ export function TodosPanel({
   // Hand-added tasks (no source line) count as "me" — they're the user's own.
   const passesAssignee = (td: Todo) => {
     if (assigneeFilter === "all") return true;
-    return assigneeForTodo(td.needed_raw) === assigneeFilter;
+    return assigneeForTodo(td.needed_raw, td.needed_assignee) === assigneeFilter;
   };
   // Time: keep tasks whose estimate fits within the chosen ceiling. Unestimated
   // tasks are hidden while a time filter is active (like unscored + importance).
@@ -826,7 +809,7 @@ function TaskSubcard({
           importance={td.importance}
           kind={td.task_kind}
           minutes={td.estimated_minutes}
-          assignee={assigneeForTodo(td.needed_raw)}
+          assignee={assigneeForTodo(td.needed_raw, td.needed_assignee)}
           className="mt-1.5"
         />
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
@@ -953,7 +936,7 @@ function FinishedSection({
                   importance={td.importance}
                   kind={td.task_kind}
                   minutes={td.estimated_minutes}
-                  assignee={assigneeForTodo(td.needed_raw)}
+                  assignee={assigneeForTodo(td.needed_raw, td.needed_assignee)}
                   className="mt-1"
                 />
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-foreground-subtle">

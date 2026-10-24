@@ -124,10 +124,28 @@ function extractAssignee(text: string | null | undefined): Assignee | null {
  * Returns null for a GitHub task whose line carries no owner marker. */
 export function assigneeForTodo(
   neededRaw: string | null | undefined,
+  captured?: Assignee | null,
 ): Assignee | null {
+  if (captured === "me" || captured === "ai") return captured;
   const who = extractAssignee(neededRaw);
   if (who) return who;
   return neededRaw ? null : "me";
+}
+
+/** Examples in fenced code blocks are not actionable Markdown list items. */
+function neededLines(content: string) {
+  const lines = content.split(/\r?\n/), excluded = new Set<number>();
+  let fence: { character: string; length: number } | null = null;
+  for (let index = 0; index < lines.length; index++) {
+    const marker = /^[ \t]*(`{3,}|~{3,})(.*)$/.exec(lines[index]);
+    if (fence) {
+      excluded.add(index);
+      if (marker && marker[1][0] === fence.character && marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+    } else if (marker && (marker[1][0] !== "`" || !marker[2].includes("`"))) {
+      excluded.add(index); fence = { character: marker[1][0], length: marker[1].length };
+    }
+  }
+  return { lines, excluded };
 }
 
 /** Pull the `[time:…]` marker out of a task line, returning whole minutes (or
@@ -159,8 +177,9 @@ export function parseNeeded(
 ): NeededItem[] {
   const items: NeededItem[] = [];
   const seen = new Set<string>();
-  const lines = content.split(/\r?\n/);
+  const { lines, excluded } = neededLines(content);
   for (let i = 0; i < lines.length; i++) {
+    if (excluded.has(i)) continue;
     const raw = lines[i];
     const m = ITEM_RE.exec(raw);
     if (!m) continue;
@@ -190,6 +209,7 @@ export function parseNeeded(
       kind === null
     ) {
       for (let j = i + 1; j < lines.length; j++) {
+        if (excluded.has(j)) break;
         const cont = lines[j];
         if (cont.trim() === "") break; // blank line ends the item
         if (ITEM_RE.test(cont)) break; // the next list item
@@ -265,11 +285,12 @@ export function neededTodoItems(
 ): NeededItem[] {
   const all = parseNeeded(content, repo, htmlUrl);
   const CHECKBOX_RE = /^\s*(?:[-*+]|\d+\.)\s+\[[ xX]?\]/;
-  const usesCheckboxes = all.some((it) => CHECKBOX_RE.test(it.raw));
+  const { lines, excluded } = neededLines(content);
+  const usesCheckboxes = lines.some((line, index) => !excluded.has(index) && CHECKBOX_RE.test(line));
   const chosen = usesCheckboxes
     ? all.filter((it) => CHECKBOX_RE.test(it.raw))
     : all;
-  return chosen.map((it) => ({ ...it, text: cleanNeededText(it.text) }));
+  return chosen.map((it) => ({ ...it, text: cleanNeededText(it.text) })).filter(item => item.text.length > 0);
 }
 
 /** Remove the first line exactly equal to `raw` from `content`. Returns the new
@@ -278,8 +299,8 @@ export function removeNeededLine(
   content: string,
   raw: string,
 ): { next: string; removed: boolean } {
-  const lines = content.split(/\r?\n/);
-  const idx = lines.findIndex((l) => l === raw);
+  const { lines, excluded } = neededLines(content);
+  const idx = lines.findIndex((line, index) => line === raw && !excluded.has(index));
   if (idx === -1) return { next: content, removed: false };
   lines.splice(idx, 1);
   return { next: lines.join("\n"), removed: true };

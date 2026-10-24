@@ -37,6 +37,8 @@ type TodosStrings = {
   saveErr: string;
   // Repositories with no NEEDED.md at the root or in docs/, joined by commas.
   refreshMissing: (repos: string) => string;
+  refreshRetained: (count: number) => string;
+  refreshUnavailable: (repos: string) => string;
   showAllCount: (n: number) => string;
   showLess: string;
   collapseGroup: string;
@@ -143,6 +145,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshNoRepos: "Connect GitHub to sync tasks from NEEDED.md.",
     refreshErr: "Couldn't refresh tasks. Please try again.",
     saveErr: "Could not save the task change. Check the list before trying again.",
+    refreshUnavailable: (repos) => `Could not read ${repos}. Their tasks were kept.`,
+    refreshRetained: (count) => `Kept ${count} changed or legacy tasks.`,
     refreshMissing: (repos) =>
       `No NEEDED.md at the root or in docs/ of ${repos}. Their tasks were kept.`,
     showAllCount: (n) => `Show all ${n}`,
@@ -276,6 +280,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshNoRepos: "Připoj GitHub pro synchronizaci úkolů z NEEDED.md.",
     refreshErr: "Úkoly se nepodařilo obnovit. Zkus to znovu.",
     saveErr: "Změnu úkolu se nepodařilo uložit. Před dalším pokusem zkontrolujte seznam.",
+    refreshUnavailable: (repos) => `Nelze načíst ${repos}. Jejich úkoly zůstaly zachovány.`,
+    refreshRetained: (count) => `Zachováno ${count} změněných nebo starších úkolů.`,
     refreshMissing: (repos) =>
       `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich úkoly zůstaly.`,
     showAllCount: (n) => `Zobrazit vše (${n})`,

@@ -326,3 +326,8 @@ Public optimized transfer checkpoint: with absent analytics configuration, cold 
 ## Repository notes, 24 October 2026
 
 Four EN/CS desktop/mobile cases pass on the actual dev-preview repository components with mocked owner/API data. Checks cover retained failed text, keyboard Done/retry, a record changed during publication, 360/430/768/1024/1440/1728 px reflow, light/dark contexts and axe in the main region. The embedded card is centered and capped at the shared three-column content width; note edit/delete controls use 44 px mobile targets. Czech screenshots are in the [audit assets](../reports/app-wide-audit-2026-10-23/assets/). The mobile toolbar uses a concise NEEDED label and wraps if needed; control bounds are checked because document overflow alone missed a clipped toolbar in the intermediate version. Only the nonexistent-backend dev/E2E harness enables repository endpoints; the public tour stays isolated. This targeted evidence does not complete the remaining app-wide optimized interaction matrix.
+
+
+## Repository task lists, 24 October 2026
+
+Eight EN/CS desktop/mobile repository cases pass after atomic task import, including four note regressions. Unavailable source files show a retry message and no All clear; only actionable tasks appear in checkbox-based files. Failed imports preserve the list and a stale file version refreshes once. Checks cover 360/430/768/1024/1440/1728 px, long-name wrapping, keyboard note recovery and main-region axe. All data/providers are fixtures. This does not complete cold project-tab selection or the final optimized app-wide interaction matrix.

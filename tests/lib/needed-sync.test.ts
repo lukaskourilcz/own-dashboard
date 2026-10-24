@@ -223,6 +223,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     );
     expect([...scan.scanned].sort()).toEqual(["1", "2"]);
     expect(scan.missing).toEqual(["me/archived-notes"]);
+    expect(scan.unavailable).toEqual([flakyRepo.full_name]);
     expect(scan.freshRows.map((r) => r.needed_raw)).toEqual([
       "- [ ] Root task `[imp:3]`",
       "- [ ] Kept quorum task",
