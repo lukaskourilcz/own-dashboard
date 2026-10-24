@@ -2792,7 +2792,8 @@
       "path": "src/lib/marketing/automation-auth.ts",
       "lines": 34,
       "sha256": "df48f7ebe72ebd2782b5880449af55e48eecb2bdeca4a15c511c4c39bf061f57",
-      "status": "pending"
+      "status": "source reviewed; signed owner/role/brand, tampering, timestamps and pilot admission covered by checkpoint 61; execution routes remain separate",
+      "reviewedSha256": "df48f7ebe72ebd2782b5880449af55e48eecb2bdeca4a15c511c4c39bf061f57"
     },
     {
       "path": "src/lib/marketing/calendar-source.ts",
@@ -2822,7 +2823,8 @@
       "path": "src/lib/marketing/clock.ts",
       "lines": 14,
       "sha256": "39da66b52da340c2004ab8d3596ff3e53613847b905fd47b8cf67a8b92e1d420",
-      "status": "pending"
+      "status": "partial; strict Prague wall-time/DST resolution read; formatter reuse and client error recovery remain under review",
+      "reviewedSha256": "39da66b52da340c2004ab8d3596ff3e53613847b905fd47b8cf67a8b92e1d420"
     },
     {
       "path": "src/lib/marketing/contracts.ts",
@@ -2982,7 +2984,8 @@
       "path": "src/lib/marketing/dneskai-engagement.ts",
       "lines": 26,
       "sha256": "bed2681c5cac8174907a5e98330a7d41e592d64c7df32518dc3029a6c7df3ea7",
-      "status": "pending"
+      "status": "source reviewed; strict editor/watcher flags and login-specific signing-secret choice covered by checkpoint 61; webhook/reply execution remains separate",
+      "reviewedSha256": "bed2681c5cac8174907a5e98330a7d41e592d64c7df32518dc3029a6c7df3ea7"
     },
     {
       "path": "src/lib/marketing/dneskai-evaluation.ts",
@@ -3078,7 +3081,8 @@
       "path": "src/lib/marketing/dneskai-paid-switches.ts",
       "lines": 12,
       "sha256": "f348c394e205e2ef365ef0a3b5f2ed97ba216c1da1b46d5b3ba4484973605342",
-      "status": "pending"
+      "status": "source reviewed; strict consent and regenerate capability guards covered by checkpoint 61; paid execution review remains separate",
+      "reviewedSha256": "f348c394e205e2ef365ef0a3b5f2ed97ba216c1da1b46d5b3ba4484973605342"
     },
     {
       "path": "src/lib/marketing/dneskai-ports.ts",
@@ -3102,7 +3106,8 @@
       "path": "src/lib/marketing/dneskai-publishers.ts",
       "lines": 18,
       "sha256": "7f7960227414085cca9e055773707036c6be953e6584cdb2983113228de5956c",
-      "status": "pending"
+      "status": "partial; publisher resolution traced as internal model evidence; stale source-line/credit comments still need reconciliation",
+      "reviewedSha256": "7f7960227414085cca9e055773707036c6be953e6584cdb2983113228de5956c"
     },
     {
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
@@ -3127,7 +3132,8 @@
       "path": "src/lib/marketing/dneskai-reel-format.ts",
       "lines": 12,
       "sha256": "1fd32d6aa80e3155a8a47bb720fffe9be87ed8ad8460d9ce4b110395b368a7ee",
-      "status": "pending"
+      "status": "source reviewed; education/news format and feature flag regressions covered by checkpoint 61; renderer/publisher execution remains separate",
+      "reviewedSha256": "1fd32d6aa80e3155a8a47bb720fffe9be87ed8ad8460d9ce4b110395b368a7ee"
     },
     {
       "path": "src/lib/marketing/dneskai-reel-render.ts",
@@ -3387,7 +3393,8 @@
       "path": "src/lib/marketing/hashes.ts",
       "lines": 28,
       "sha256": "fbe0c961337784f761ff25d5b9d1a213cdec27e8898b81285fb3bf26fa87a878",
-      "status": "pending"
+      "status": "source reviewed; canonical revision identity retains every field except delivery URLs, covered by checkpoint 61; caller input/admission review remains separate",
+      "reviewedSha256": "fbe0c961337784f761ff25d5b9d1a213cdec27e8898b81285fb3bf26fa87a878"
     },
     {
       "path": "src/lib/marketing/http.ts",
@@ -3509,13 +3516,15 @@
       "path": "src/lib/marketing/pilot.ts",
       "lines": 28,
       "sha256": "272bc806b1a7a559b011de90f524c1512a85eebd0076af2bd5f73677448ee04b",
-      "status": "pending"
+      "status": "partial; configuration/date/owner guards read; a direct invalid Date can bypass an active Preview window and needs a finite-clock guard",
+      "reviewedSha256": "272bc806b1a7a559b011de90f524c1512a85eebd0076af2bd5f73677448ee04b"
     },
     {
       "path": "src/lib/marketing/preview-pilot.ts",
       "lines": 30,
       "sha256": "e46773ca615febfc88a09873fe71fb67ea98d650f824e59acd4d4e2cd6594426",
-      "status": "pending"
+      "status": "source reviewed; retired Preview-only configuration and name-only diagnostics covered by checkpoint 61; final release pending",
+      "reviewedSha256": "e46773ca615febfc88a09873fe71fb67ea98d650f824e59acd4d4e2cd6594426"
     },
     {
       "path": "src/lib/marketing/provider-errors.ts",
@@ -3551,7 +3560,8 @@
       "path": "src/lib/marketing/retired-route.ts",
       "lines": 11,
       "sha256": "ff289d0838ebe2978df629a0cd89dbd1dd3aa036fce746bc1094dde992ee71bd",
-      "status": "pending"
+      "status": "source reviewed; retired entry points return 410 without downstream work in checkpoint 61; final release pending",
+      "reviewedSha256": "ff289d0838ebe2978df629a0cd89dbd1dd3aa036fce746bc1094dde992ee71bd"
     },
     {
       "path": "src/lib/marketing/scheduler-ports.ts",
