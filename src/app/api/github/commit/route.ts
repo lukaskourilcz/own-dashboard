@@ -2,159 +2,64 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createGitHubFetcher } from "@/lib/github-token";
 import { rejectCrossOrigin } from "@/lib/csrf";
-import { normalizeRepoPath, type GithubCommitResult } from "@/lib/github";
+import { rateLimit } from "@/lib/rate-limit";
+import { awaitWithSignal } from "@/lib/abortable";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { githubCommitInput, githubCommitResult, MAX_GITHUB_FILE_BYTES } from "@/lib/github-file-contract";
+import { gitBlobSha, githubFileMetadata, readGithubJson } from "@/lib/github-file-server";
+import { z } from "zod";
 
-const NAME_RE = /^[A-Za-z0-9._-]+$/;
-const MAX_CONTENT_BYTES = 1_000_000; // 1 MB — well under GitHub's contents API ceiling.
+export const maxDuration = 30;
+const headers = { "cache-control": "private, no-store" };
+const failure = (status: number, error = "Commit could not be confirmed. Check the repository before retrying.") => NextResponse.json({ error }, { status, headers });
 
-/**
- * Create or update a single text file in a repo via the GitHub Contents API.
- * Each call is one commit. Used by the Repos panel to push markdown.
- *
- * Body: { owner, repo, path, content, message, branch? }
- */
+/** A reviewed edit compares the file's blob version twice: this read and
+ * GitHub's atomic PUT precondition. Full replacement requires explicit intent. */
 export async function POST(request: Request) {
-  const csrf = rejectCrossOrigin(request);
-  if (csrf) return csrf;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
-
-  let body: Record<string, unknown>;
+  const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(25_000)]);
   try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
-  }
-
-  const owner = typeof body.owner === "string" ? body.owner.trim() : "";
-  const repo = typeof body.repo === "string" ? body.repo.trim() : "";
-  const rawPath = typeof body.path === "string" ? body.path : "";
-  const content = typeof body.content === "string" ? body.content : null;
-  const message =
-    typeof body.message === "string" && body.message.trim()
-      ? body.message.trim()
-      : "";
-  const branch =
-    typeof body.branch === "string" && body.branch.trim()
-      ? body.branch.trim()
-      : undefined;
-
-  if (!NAME_RE.test(owner) || !NAME_RE.test(repo)) {
-    return NextResponse.json(
-      { error: "Invalid owner or repository." },
-      { status: 400 },
-    );
-  }
-  const path = normalizeRepoPath(rawPath);
-  if (!path) {
-    return NextResponse.json({ error: "Invalid file path." }, { status: 400 });
-  }
-  if (content == null) {
-    return NextResponse.json({ error: "Missing content." }, { status: 400 });
-  }
-  if (Buffer.byteLength(content, "utf8") > MAX_CONTENT_BYTES) {
-    return NextResponse.json(
-      { error: "File is too large (1 MB max)." },
-      { status: 413 },
-    );
-  }
-  if (!message) {
-    return NextResponse.json(
-      { error: "A commit message is required." },
-      { status: 400 },
-    );
-  }
-
-  const base = `/repos/${owner}/${repo}/contents/${path
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/")}`;
-  const refQuery = branch ? `?ref=${encodeURIComponent(branch)}` : "";
-
-  // Look up the current blob sha so an existing file is updated rather than
-  // rejected. 404 => new file (no sha).
-  let sha: string | undefined;
-  const head = await fetchWithGitHubAuth(`${base}${refQuery}`);
-  if (head.status === 401) {
-    return NextResponse.json(
-      { error: "GitHub is not connected.", reason: "no-token" },
-      { status: 401 },
-    );
-  }
-  if (head.ok) {
-    const existing = (await head.json()) as unknown;
-    if (Array.isArray(existing)) {
-      return NextResponse.json(
-        { error: "That path is a directory, not a file." },
-        { status: 422 },
-      );
+    const supabase = await createClient(signal);
+    const { data: { user } } = await awaitWithSignal(supabase.auth.getUser(), signal);
+    if (!user) return failure(401, "Not authenticated.");
+    let input: z.output<typeof githubCommitInput>;
+    try {
+      const body = await awaitWithSignal(readTextPrefix(new Response(request.body), 2_100_000), signal);
+      if (body.truncated) return failure(413, "Request too large.");
+      const parsed = githubCommitInput.safeParse(JSON.parse(body.text));
+      if (!parsed.success) return failure(400, "Invalid commit request.");
+      input = parsed.data;
+      if (Buffer.byteLength(input.content, "utf8") > MAX_GITHUB_FILE_BYTES) return failure(413, "File too large.");
+    } catch { return failure(signal.aborted ? 503 : 400, "Invalid or unavailable commit request."); }
+    const limited = await awaitWithSignal(rateLimit(user.id, { key: "github-commit", limit: 10, windowSec: 60 }), signal);
+    if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { ...headers, "Retry-After": String(limited.retryAfter) } });
+    const fetcher = createGitHubFetcher(user.id, signal);
+    const base = `/repos/${input.owner}/${input.repo}/contents/${input.path.split("/").map(encodeURIComponent).join("/")}`;
+    const head = await fetcher(`${base}${input.branch ? `?ref=${encodeURIComponent(input.branch)}` : ""}`);
+    if (head.status === 401) return failure(401, "GitHub is not connected.");
+    if (!head.ok && head.status !== 404) return failure(head.status === 403 ? 403 : 502);
+    let existing: z.output<typeof githubFileMetadata> | null = null;
+    if (head.ok) {
+      const raw = await readGithubJson(head, 1_500_000, signal);
+      if (Array.isArray(raw)) return failure(422, "That path is a directory.");
+      existing = githubFileMetadata.parse(raw);
+      if (existing.path !== input.path) return failure(502);
     }
-    sha = (existing as { sha?: string }).sha;
-  } else if (head.status !== 404) {
-    return NextResponse.json(
-      { error: "Could not read the target path." },
-      { status: head.status },
-    );
-  }
-
-  // The read may have resolved a repository rename. Use that canonical API
-  // path rather than replaying a redirected write. The fetcher validates origins.
-  const writePath = head.url ? new URL(head.url).pathname : base;
-  const put = await fetchWithGitHubAuth(writePath, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message,
-      content: Buffer.from(content, "utf8").toString("base64"),
-      ...(sha ? { sha } : {}),
-      ...(branch ? { branch } : {}),
-    }),
-  });
-
-  if (put.status === 401) {
-    return NextResponse.json(
-      { error: "GitHub is not connected.", reason: "no-token" },
-      { status: 401 },
-    );
-  }
-  if (put.status === 409) {
-    return NextResponse.json(
-      { error: "The file changed on GitHub — reload and retry." },
-      { status: 409 },
-    );
-  }
-  if (put.status === 403 || put.status === 404) {
-    return NextResponse.json(
-      { error: "No write access to that repository." },
-      { status: put.status },
-    );
-  }
-  if (!put.ok) {
-    const detail = (await put.json().catch(() => null)) as {
-      message?: string;
-    } | null;
-    return NextResponse.json(
-      { error: detail?.message ?? "Could not write the file." },
-      { status: put.status },
-    );
-  }
-
-  const json = (await put.json()) as {
-    commit: { sha: string; html_url: string };
-    content: { html_url: string };
-  };
-  const result: GithubCommitResult = {
-    path,
-    updated: Boolean(sha),
-    commit: { sha: json.commit.sha, html_url: json.commit.html_url },
-    content: { html_url: json.content.html_url },
-  };
-  return NextResponse.json(result);
+    if (input.intent === "edit" && existing?.sha !== input.expectedSha) return failure(409, "File changed. Reload it before editing.");
+    if (existing && existing.sha === gitBlobSha(input.content, existing.sha.length)) {
+      return NextResponse.json(githubCommitResult.parse({ path: input.path, updated: true, unchanged: true, commit: null,
+        content: { sha: existing.sha, html_url: existing.html_url } }), { headers });
+    }
+    // A read can resolve a repository rename. Never replay a redirected write.
+    const writePath = head.url ? new URL(head.url).pathname : base;
+    const put = await fetcher(writePath, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      message: input.message, content: Buffer.from(input.content, "utf8").toString("base64"),
+      ...(existing ? { sha: existing.sha } : {}), ...(input.branch ? { branch: input.branch } : {}),
+    }) });
+    if (!put.ok) return failure([401, 403, 404, 409, 422].includes(put.status) ? put.status : 502);
+    const raw = z.object({ content: githubFileMetadata, commit: z.object({ sha: z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/), html_url: z.string() }) }).parse(await readGithubJson(put, 65_536, signal));
+    if (raw.content.path !== input.path || raw.content.size !== Buffer.byteLength(input.content, "utf8") || raw.content.sha !== gitBlobSha(input.content, raw.content.sha.length)) return failure(502);
+    return NextResponse.json(githubCommitResult.parse({ path: input.path, updated: Boolean(existing), unchanged: false,
+      commit: raw.commit, content: { sha: raw.content.sha, html_url: raw.content.html_url } }), { headers });
+  } catch { return failure(502); }
 }

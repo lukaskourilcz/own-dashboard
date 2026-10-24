@@ -203,6 +203,7 @@ export type NeededCommit = (input: {
   owner: string;
   repo: string;
   path: NeededFilePath;
+  expectedSha: string;
   content: string;
   count: number;
 }) => Promise<CommitOutcome>;
@@ -273,6 +274,7 @@ export async function removeFinishedFromNeeded(
         owner,
         repo: name,
         path: res.path,
+        expectedSha: res.sha,
         content,
         count: tasks.length,
       });

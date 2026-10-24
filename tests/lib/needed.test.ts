@@ -198,6 +198,7 @@ describe("loadNeededFile", () => {
   const ok = (content: string): RepoFileResult => ({
     kind: "ok",
     content,
+    sha: "a".repeat(40),
     htmlUrl: `https://github.com/me/r/blob/main/${content}`,
   });
 

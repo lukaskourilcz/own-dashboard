@@ -3,6 +3,11 @@
  * No secrets, no server-only imports — safe to pull into client components.
  */
 
+import { MAX_GITHUB_FILE_BYTES, normalizeRepoPath } from "@/lib/github-path";
+import { readTextPrefix } from "@/lib/bounded-text";
+export { normalizeRepoPath };
+export type { CommitInput, GithubCommitResult } from "@/lib/github-file-contract";
+import type { CommitInput, GithubCommitResult } from "@/lib/github-file-contract";
 import type { DetectedToolsResponse } from "@/lib/stack-detection";
 
 /** Trimmed repository shape returned by GET /api/github/repos. */
@@ -24,31 +29,6 @@ export type GithubRepo = {
   /** Last metadata change (description, settings, stars…). */
   updated_at: string | null;
 };
-
-/** Result of a successful commit via POST /api/github/commit. */
-export type GithubCommitResult = {
-  /** Path the file was written to. */
-  path: string;
-  /** Whether the file already existed (update) or was newly created. */
-  updated: boolean;
-  commit: { sha: string; html_url: string };
-  content: { html_url: string };
-};
-
-/**
- * Guard a user-supplied repo path: relative, no traversal, no leading slash,
- * non-empty segments. Returns a normalized path or null if it's unsafe.
- * Shared so the panel can validate before sending and the route can re-check.
- */
-export function normalizeRepoPath(raw: string): string | null {
-  const trimmed = raw.trim().replace(/^\/+/, "");
-  if (!trimmed) return null;
-  const segments = trimmed.split("/");
-  for (const seg of segments) {
-    if (seg === "" || seg === "." || seg === "..") return null;
-  }
-  return segments.join("/");
-}
 
 // ---------------------------------------------------------------------------
 // Client-side data helpers. Plain fetch wrappers around our own API routes,
@@ -94,15 +74,6 @@ export async function lookupRepoIdentity(
   }
 }
 
-export type CommitInput = {
-  owner: string;
-  repo: string;
-  path: string;
-  content: string;
-  message: string;
-  branch?: string;
-};
-
 export type CommitOutcome =
   | { ok: true; result: GithubCommitResult }
   | { ok: false; status: number; error: string };
@@ -111,27 +82,24 @@ export type CommitOutcome =
  * `status === 401` signals GitHub disconnected — callers surface a reconnect. */
 export async function commitFile(input: CommitInput): Promise<CommitOutcome> {
   try {
-    const res = await fetch("/api/github/commit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+    const { githubCommitInput, githubCommitResult } = await import("@/lib/github-file-contract");
+    const parsed = githubCommitInput.safeParse(input);
+    if (!parsed.success) return { ok: false, status: 400, error: "invalid-input" };
+    if (new TextEncoder().encode(parsed.data.content).byteLength > MAX_GITHUB_FILE_BYTES) return { ok: false, status: 413, error: "too-large" };
+    const response = await fetch("/api/github/commit", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data), signal: AbortSignal.timeout(30_000),
     });
-    const json = (await res.json().catch(() => null)) as
-      | (GithubCommitResult & { error?: string })
-      | null;
-    if (res.ok && json) return { ok: true, result: json as GithubCommitResult };
-    return {
-      ok: false,
-      status: res.status,
-      error: (json as { error?: string } | null)?.error ?? "commit failed",
-    };
-  } catch {
-    return { ok: false, status: 0, error: "network" };
-  }
+    if (!response.ok) return { ok: false, status: response.status, error: "commit-unconfirmed" };
+    const prefix = await readTextPrefix(response, 32_768);
+    if (prefix.truncated) return { ok: false, status: 502, error: "commit-unconfirmed" };
+    const result = githubCommitResult.safeParse(JSON.parse(prefix.text));
+    if (!result.success || result.data.path !== parsed.data.path) return { ok: false, status: 502, error: "commit-unconfirmed" };
+    return { ok: true, result: result.data };
+  } catch { return { ok: false, status: 0, error: "commit-unconfirmed" }; }
 }
 
 export type RepoFileResult =
-  | { kind: "ok"; content: string; htmlUrl: string | null }
+  | { kind: "ok"; content: string; htmlUrl: string | null; sha: string }
   | { kind: "not-found" }
   | { kind: "disconnected" }
   | { kind: "error" };
@@ -146,15 +114,15 @@ export async function loadRepoFile(
 ): Promise<RepoFileResult> {
   try {
     const qs = new URLSearchParams({ owner, repo, path });
-    const res = await fetch(`/api/github/file?${qs.toString()}`);
+    const res = await fetch(`/api/github/file?${qs.toString()}`, { signal: AbortSignal.timeout(30_000) });
     if (res.status === 401) return { kind: "disconnected" };
     if (res.status === 404) return { kind: "not-found" };
     if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as {
-      content: string;
-      html_url: string | null;
-    };
-    return { kind: "ok", content: json.content, htmlUrl: json.html_url };
+    const prefix = await readTextPrefix(res, 2_100_000);
+    if (prefix.truncated) return { kind: "error" };
+    const { githubFileResponse } = await import("@/lib/github-file-contract");
+    const json = githubFileResponse.parse(JSON.parse(prefix.text));
+    return { kind: "ok", content: json.content, htmlUrl: json.html_url, sha: json.sha };
   } catch {
     return { kind: "error" };
   }

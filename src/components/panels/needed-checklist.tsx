@@ -147,6 +147,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
       const { next, removed } = removeNeededLine(cached.content, item.raw);
       if (!removed) throw new Error("gone"); // already removed elsewhere
       const outcome = await commitFile({
+        intent: "edit", expectedSha: cached.sha,
         owner: item.owner,
         repo: item.repo,
         path: cached.path,
@@ -160,6 +161,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
       toast.ok(t.github.needed.removedFrom(item.repo, path));
       void qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) });
     },
+    onSettled: (_data, _error, item) => qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) }),
     onError: (e) => {
       const status = (e as { status?: number }).status;
       toast.err(

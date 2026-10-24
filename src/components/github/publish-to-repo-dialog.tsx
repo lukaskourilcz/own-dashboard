@@ -17,6 +17,7 @@ import { SimpleSelect } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
+import { awaitWithSignal } from "@/lib/abortable";
 import { connectGitHub } from "@/lib/github-auth";
 import {
   commitFile,
@@ -60,11 +61,14 @@ export function PublishToRepoDialog({
   const [branch, setBranch] = useState("");
   const [message, setMessage] = useState(defaultMessage);
   const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [result, setResult] = useState<GithubCommitResult | null>(null);
 
   async function onConnect() {
-    const { error } = await connectGitHub();
-    if (error) toast.err(error);
+    if (connecting) return;
+    setConnecting(true);
+    try { if ((await connectGitHub()).error) throw Error(); }
+    catch { toast.err(t.github.connectErr); setConnecting(false); }
   }
 
   async function submit() {
@@ -77,12 +81,13 @@ export function PublishToRepoDialog({
     }
     setBusy(true);
     try {
-      const markdown = await getMarkdown();
+      const markdown = await awaitWithSignal(getMarkdown(), AbortSignal.timeout(15_000));
       if (!markdown.trim()) {
         toast.err(t.github.needContent);
         return;
       }
       const outcome = await commitFile({
+        intent: "replace",
         owner: repo.owner,
         repo: repo.name,
         path: normalized,
@@ -91,24 +96,24 @@ export function PublishToRepoDialog({
         branch: branch.trim() || undefined,
       });
       if (!outcome.ok) {
-        toast.err(outcome.status === 401 ? t.github.reconnect : outcome.error);
+        toast.err(outcome.status === 401 ? t.github.reconnect : outcome.status === 409 ? t.github.fileChanged : t.github.commitUnconfirmed);
         return;
       }
       setResult(outcome.result);
-      bumpRepoInCache(qc, repo.id);
+      if (!outcome.result.unchanged) bumpRepoInCache(qc, repo.id);
       toast.ok(
-        outcome.result.updated
+        outcome.result.unchanged ? t.github.alreadySaved : outcome.result.updated
           ? t.github.committedUpdate
           : t.github.committedNew,
       );
-    } finally {
+    } catch { toast.err(t.github.notesPushErr); } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+    <Dialog open onOpenChange={(open) => { if (!open && !busy && !connecting) onClose(); }}>
+      <DialogContent className="max-w-lg" aria-busy={busy || connecting} showClose={!busy && !connecting}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-1.5">
               <GithubIcon className="h-4 w-4" />
@@ -134,7 +139,7 @@ export function PublishToRepoDialog({
                     : t.github.loadErr}
                 </p>
                 {data.kind === "disconnected" && (
-                  <Button size="sm" onClick={onConnect}>
+                  <Button size="sm" onClick={onConnect} disabled={connecting}>
                     <GithubIcon className="h-4 w-4" />
                     {t.github.connect}
                   </Button>
@@ -146,7 +151,7 @@ export function PublishToRepoDialog({
             (result ? (
               <div className="mt-4 space-y-3">
                 <p className="text-sm font-medium">
-                  {result.updated
+                  {result.unchanged ? t.github.alreadySaved : result.updated
                     ? t.github.committedUpdate
                     : t.github.committedNew}
                 </p>
@@ -156,12 +161,12 @@ export function PublishToRepoDialog({
                 <div className="flex items-center gap-2">
                   <Button asChild variant="outline" size="sm">
                     <a
-                      href={result.commit.html_url}
+                      href={result.commit?.html_url ?? result.content.html_url}
                       target="_blank"
                       rel="noreferrer"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                      {t.github.viewCommit}
+                      {result.unchanged ? t.github.open : t.github.viewCommit}
                     </a>
                   </Button>
                   <DialogClose asChild>
@@ -175,6 +180,8 @@ export function PublishToRepoDialog({
               <div className="mt-4 space-y-3">
                 <PublishField label={t.github.repository}>
                   <SimpleSelect
+                    disabled={busy}
+                    aria-label={t.github.repository}
                     value={selectedFullName}
                     onValueChange={setSelected}
                     options={repos.map((r) => ({
@@ -190,6 +197,7 @@ export function PublishToRepoDialog({
                 </PublishField>
                 <PublishField label={t.github.pathLabel}>
                   <Input
+                    disabled={busy}
                     value={path}
                     onChange={(e) => setPath(e.target.value)}
                     placeholder={t.github.pathPlaceholder}
@@ -197,6 +205,7 @@ export function PublishToRepoDialog({
                 </PublishField>
                 <PublishField label={t.github.branchLabel}>
                   <Input
+                    disabled={busy}
                     value={branch}
                     onChange={(e) => setBranch(e.target.value)}
                     placeholder={t.github.branchPlaceholder}
@@ -204,6 +213,7 @@ export function PublishToRepoDialog({
                 </PublishField>
                 <PublishField label={t.github.messageLabel}>
                   <Input
+                    disabled={busy}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={t.github.messagePlaceholder}
@@ -211,7 +221,7 @@ export function PublishToRepoDialog({
                 </PublishField>
                 <div className="flex justify-end gap-2 pt-1">
                   <DialogClose asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" disabled={busy}>
                       {t.github.cancel}
                     </Button>
                   </DialogClose>

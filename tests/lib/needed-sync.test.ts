@@ -185,12 +185,14 @@ describe("Tasks refresh across NEEDED.md locations", () => {
   const files: Record<string, NeededFileResult> = {
     "react-express-app": {
       kind: "ok",
+      sha: "a".repeat(40),
       path: "NEEDED.md",
       content: "- [ ] Root task `[imp:3]`",
       htmlUrl: null,
     },
     quorum: {
       kind: "ok",
+      sha: "a".repeat(40),
       path: "docs/NEEDED.md",
       content: "- [ ] Kept quorum task\n- [ ] New quorum task `[owner:ai]`",
       htmlUrl: null,
@@ -276,6 +278,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
         owner: "me",
         repo: "quorum",
         path: "docs/NEEDED.md",
+        expectedSha: "a".repeat(40),
         content: "- [ ] New quorum task `[owner:ai]`",
         count: 1,
       },

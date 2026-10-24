@@ -5,6 +5,7 @@ type GithubStrings = {
   connectTitle: string;
   connectBody: string;
   connect: string;
+  connectErr: string;
   reconnect: string;
   // List
   search: string;
@@ -61,6 +62,9 @@ type GithubStrings = {
   committing: string;
   committedNew: string;
   committedUpdate: string;
+  alreadySaved: string;
+  fileChanged: string;
+  commitUnconfirmed: string;
   viewCommit: string;
   needPath: string;
   needContent: string;
@@ -127,6 +131,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     connectBody:
       "Link your GitHub account to manage a project's repository and publish markdown files from its workspace.",
     connect: "Connect GitHub",
+    connectErr: "Could not start the GitHub connection. Try again.",
     reconnect: "Reconnect GitHub",
     search: "Filter repos…",
     empty: "No repositories found.",
@@ -179,6 +184,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     commit: "Commit",
     committing: "Committing…",
     committedNew: "File created.",
+    alreadySaved: "The file already contains these contents.",
+    fileChanged: "The file changed on GitHub. Reload it before editing.",
+    commitUnconfirmed: "The save could not be confirmed. Check the repository before trying again.",
     committedUpdate: "File updated.",
     viewCommit: "View commit",
     needPath: "Enter a valid file path.",
@@ -247,6 +255,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     connectBody:
       "Propoj GitHub účet a spravuj repozitář projektu i publikování markdown souborů přímo z jeho pracovního prostoru.",
     connect: "Připojit GitHub",
+    connectErr: "Připojení ke GitHubu se nepodařilo zahájit. Zkuste to znovu.",
     reconnect: "Znovu připojit GitHub",
     search: "Filtrovat repozitáře…",
     empty: "Žádné repozitáře.",
@@ -299,6 +308,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     commit: "Commitnout",
     committing: "Commituji…",
     committedNew: "Soubor vytvořen.",
+    alreadySaved: "Soubor už obsahuje tento obsah.",
+    fileChanged: "Soubor se na GitHubu změnil. Před úpravou ho načtěte znovu.",
+    commitUnconfirmed: "Uložení se nepodařilo potvrdit. Před dalším pokusem zkontrolujte repozitář.",
     committedUpdate: "Soubor aktualizován.",
     viewCommit: "Zobrazit commit",
     needPath: "Zadej platnou cestu k souboru.",

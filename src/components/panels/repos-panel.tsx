@@ -187,13 +187,10 @@ export function ReposPanel({
   }, [repoLinks]);
 
   async function onConnect() {
+    if (connecting) return;
     setConnecting(true);
-    const { error } = await connectGitHub();
-    if (error) {
-      toast.err(error);
-      setConnecting(false);
-    }
-    // On success the browser navigates to GitHub, so no further work here.
+    try { if ((await connectGitHub()).error) throw Error(); }
+    catch { toast.err(t.github.connectErr); setConnecting(false); }
   }
 
   const disconnectMutation = useMutation({
@@ -593,6 +590,7 @@ function RepoNotesCard({
     setPushing(true);
     try {
       const outcome = await commitFile({
+        intent: "replace",
         owner: repo.owner,
         repo: repo.name,
         path: NOTES_PATH,
@@ -604,13 +602,13 @@ function RepoNotesCard({
           setReposDisconnected(qc);
           toast.err(t.github.reconnect);
         } else {
-          toast.err(outcome.error || t.github.notesPushErr);
+          toast.err(outcome.status === 409 ? t.github.fileChanged : t.github.commitUnconfirmed);
         }
         return;
       }
       // Reflect the push, but keep the board order stable — don't bump this
       // repo to the top just because notes were saved.
-      touchRepoInCache(qc, repo.id);
+      if (!outcome.result.unchanged) touchRepoInCache(qc, repo.id);
       // The notes now live in the committed file, so clear them from the
       // dashboard. If the delete fails the push still succeeded, so fall back
       // to the plain "saved" confirmation and leave the notes in place.
@@ -1237,6 +1235,7 @@ function WriteFileDialog({
     setBusy(true);
     try {
       const outcome = await commitFile({
+        intent: "replace",
         owner: repo.owner,
         repo: repo.name,
         path: normalized,
@@ -1247,17 +1246,16 @@ function WriteFileDialog({
       if (!outcome.ok) {
         if (outcome.status === 401) {
           onAuthLost();
-          onClose();
           toast.err(t.github.reconnect);
         } else {
-          toast.err(outcome.error || t.github.networkErr);
+          toast.err(outcome.status === 409 ? t.github.fileChanged : t.github.commitUnconfirmed);
         }
         return;
       }
       setResult(outcome.result);
-      onCommitted(repo.id);
+      if (!outcome.result.unchanged) onCommitted(repo.id);
       toast.ok(
-        outcome.result.updated
+        outcome.result.unchanged ? t.github.alreadySaved : outcome.result.updated
           ? t.github.committedUpdate
           : t.github.committedNew,
       );
@@ -1267,8 +1265,8 @@ function WriteFileDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+    <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
+      <DialogContent className="max-w-lg" aria-busy={busy} showClose={!busy}>
         <DialogHeader>
           <DialogTitle className="truncate">
             {t.github.writeTitle} {repo.full_name}
@@ -1279,7 +1277,7 @@ function WriteFileDialog({
           {result ? (
             <div className="mt-4 space-y-3">
               <p className="text-sm font-medium">
-                {result.updated
+                {result.unchanged ? t.github.alreadySaved : result.updated
                   ? t.github.committedUpdate
                   : t.github.committedNew}
               </p>
@@ -1289,12 +1287,12 @@ function WriteFileDialog({
               <div className="flex items-center gap-2">
                 <Button asChild variant="outline" size="sm">
                   <a
-                    href={result.commit.html_url}
+                    href={result.commit?.html_url ?? result.content.html_url}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    {t.github.viewCommit}
+                    {result.unchanged ? t.github.open : t.github.viewCommit}
                   </a>
                 </Button>
                 <Button
@@ -1316,6 +1314,7 @@ function WriteFileDialog({
             <div className="mt-4 space-y-3">
               <FormRow label={t.github.pathLabel}>
                 <Input
+                  disabled={busy}
                   value={path}
                   onChange={(e) => setPath(e.target.value)}
                   placeholder={t.github.pathPlaceholder}
@@ -1324,6 +1323,7 @@ function WriteFileDialog({
               </FormRow>
               <FormRow label={t.github.branchLabel}>
                 <Input
+                  disabled={busy}
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder={repo.default_branch || t.github.branchPlaceholder}
@@ -1331,6 +1331,7 @@ function WriteFileDialog({
               </FormRow>
               <FormRow label={t.github.messageLabel}>
                 <Input
+                  disabled={busy}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={t.github.messagePlaceholder}
@@ -1338,6 +1339,7 @@ function WriteFileDialog({
               </FormRow>
               <FormRow label={t.github.contentLabel}>
                 <Textarea
+                  disabled={busy}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={t.github.contentPlaceholder}
@@ -1346,7 +1348,7 @@ function WriteFileDialog({
               </FormRow>
               <div className="flex justify-end gap-2 pt-1">
                 <DialogClose asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" disabled={busy}>
                     {t.github.cancel}
                   </Button>
                 </DialogClose>

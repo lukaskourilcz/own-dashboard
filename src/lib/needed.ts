@@ -24,6 +24,7 @@ export type NeededFileResult =
       kind: "ok";
       path: NeededFilePath;
       content: string;
+      sha: string;
       htmlUrl: string | null;
     }
   | { kind: "not-found" }
@@ -48,7 +49,7 @@ export async function loadNeededFile(
   for (const path of NEEDED_FILE_PATHS) {
     const res = await load(owner, repo, path);
     if (res.kind === "ok") {
-      return { kind: "ok", path, content: res.content, htmlUrl: res.htmlUrl };
+      return { kind: "ok", path, content: res.content, htmlUrl: res.htmlUrl, sha: res.sha };
     }
     if (res.kind !== "not-found") return res;
   }
