@@ -742,8 +742,8 @@
       "path": "src/components/invoices/invoice-detail.tsx",
       "lines": 468,
       "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "fca47a9254a3726ab233aa0fbe91428b63250a78908cbdc037501d4f833514e0"
+      "status": "source reviewed; pending/print/reflow checks passed; legacy QR input validation follow-up pending",
+      "reviewedSha256": "a55348d6a314439e8ef0e1c4e779a788bde1822978a8c4368db336a074f77be1"
     },
     {
       "path": "src/components/invoices/invoice-form.tsx",
@@ -1227,8 +1227,8 @@
       "path": "src/components/panels/invoices-panel.tsx",
       "lines": 594,
       "sha256": "6ff11c70c73fff51b7bb92f61adedc34bb127dff47c1c033f82b384751e30f36",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "d7652e13b0a87ed24e03e7ebcb167e67bac019dd4d2c0c41aa262e1181b0bf6c"
+      "status": "source reviewed; atomic payment/deletion recovery checked; invoice draft navigation/QR follow-up and final release pending",
+      "reviewedSha256": "dba8ec1b234908a2373e4c4729cf7cab702d360d58863bfe78068ddf6ce0cab3"
     },
     {
       "path": "src/components/panels/job-sources.tsx",
@@ -2031,7 +2031,8 @@
       "path": "src/lib/i18n/sections/invoices.ts",
       "lines": 515,
       "sha256": "35a6c4949ddf4149946c223acc8226390cf3d9d45a86ea93dd38e7778768cb0c",
-      "status": "pending"
+      "status": "source reviewed; EN/CS invoice recovery checked; final localization sweep pending",
+      "reviewedSha256": "e5d380a3e8506af2ddbff8e392e51b6f6aca1f5b3ea4ae34ec189d161e775dcf"
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
@@ -3634,6 +3635,13 @@
       "sha256": null,
       "status": "source reviewed; provider contract and redirect boundaries checked; final release checks pending",
       "reviewedSha256": "a08b29336faeab92da03579100ec233e01c01e479e457ee5fd507f820819fbce"
+    },
+    {
+      "path": "src/lib/invoice-payment-state.ts",
+      "lines": 26,
+      "sha256": null,
+      "status": "source reviewed; real database/receipt failure checks passed; final release checks pending",
+      "reviewedSha256": "0823193427680a81c21daadc4adacf0f5ba8589398f134dbf711bcac70436302"
     }
   ],
   "baselineFileCount": 561

@@ -78,9 +78,9 @@ test("invoice list actions and document reflow remain accessible with print isol
   await gotoPreview(page);
   await page.goto("/dev-preview?tab=invoices");
   const errors = watchConsole(page);
-  await page.getByRole("button", { name: t.duplicate, exact: true }).focus();
-  await expect(page.getByRole("button", { name: t.duplicate, exact: true })).toBeVisible();
-  expect(await page.getByRole("button", { name: t.duplicate, exact: true }).evaluate(el => Number(getComputedStyle(el.parentElement!.parentElement!).opacity))).toBe(1);
+  await page.getByRole("button", { name: `${t.duplicate}: 2026001`, exact: true }).focus();
+  await expect(page.getByRole("button", { name: `${t.duplicate}: 2026001`, exact: true })).toBeVisible();
+  expect(await page.getByRole("button", { name: `${t.duplicate}: 2026001`, exact: true }).evaluate(el => Number(getComputedStyle(el.parentElement!.parentElement!).opacity))).toBe(1);
   await page.getByRole("button", { name: /2026001.*Acme/ }).click();
   for (const width of [360, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });

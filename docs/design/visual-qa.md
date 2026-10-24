@@ -305,3 +305,7 @@ Sixteen EN/CS desktop/mobile browser cases pass across bank failure/retry, pendi
 ## Bank connection dialogs — 24 October 2026
 
 The app-wide review checked the GoCardless picker and Fio token form in EN/CS on desktop/mobile. Sixteen bank cases pass; eight picker cases pass again after the final mobile-size/503 changes. Checks cover failed-list retry, pending Back/Escape, unsafe-link refusal, configured-state failure, cleared credential input after confirmed storage, id-only sync retry and dialog axe scans. The picker reflows at 360, 430, 768, 1024, 1440 and 1728 px; picker checks use light and token recovery checks use dark. Every request uses isolated fixtures; no bank connection or credential was created. Final app-wide rendered release checks remain pending.
+
+## Invoice state and recovery — 24 October 2026
+
+Eighteen EN/CS desktop/mobile invoice cases pass for versioned payment changes, pending detail/list controls, failed deletion return, supplier/PDF/draft recovery, six-width document reflow, axe and print isolation. Six payment/deletion cases pass again after the final localized error copy. Row actions name their invoice; duplicate controls retain keyboard/touch visibility. Responses and records are isolated fixtures. Database tests separately verify that reopening and deletion clear payment links/metadata without deleting imported transactions. Final whole-app release checks remain pending.

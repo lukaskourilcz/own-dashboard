@@ -27,6 +27,7 @@ import { InvoiceDetail } from "@/components/invoices/invoice-detail";
 import { SupplierSettings } from "@/components/invoices/supplier-settings";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
+import { setInvoicePaymentState, InvoicePaymentChangeError, type InvoicePaymentChange } from "@/lib/invoice-payment-state";
 import { todayKey } from "@/lib/date-keys";
 import { convert } from "@/lib/fx";
 import { computeTotals, effectiveStatus } from "@/lib/invoices";
@@ -98,7 +99,7 @@ export function InvoicesPanel({
 
   // Drag a PDF onto the list → extract text → parse → open the form prefilled.
   async function handleFile(file: File | undefined) {
-    if (!file || parsingRef.current) return;
+    if (!file || parsingRef.current || setPaidMutation.isPending || removeMutation.isPending) return;
     if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
       toast.err(t.invoices.notPdf);
       return;
@@ -125,6 +126,7 @@ export function InvoicesPanel({
   }
   function onDragOver(e: React.DragEvent) {
     e.preventDefault();
+    if (setPaidMutation.isPending || removeMutation.isPending) return;
     if (!dragging) setDragging(true);
   }
   function onDragLeave(e: React.DragEvent) {
@@ -196,22 +198,12 @@ export function InvoicesPanel({
   // Optimistic: flip status in the cache before the await, roll back on error,
   // reconcile via invalidate once settled.
   const setPaidMutation = useMutation({
-    mutationFn: async ({ inv, paid }: { inv: Invoice; paid: boolean }) => {
-      const patch = paid
-        ? { status: "paid" as const, paid_on: todayKey() }
-        : { status: "issued" as const, paid_on: null };
-      const { data, error } = await supabase
-        .from("invoices")
-        .update({ ...patch, updated_at: new Date().toISOString() })
-        .eq("id", inv.id).select().single();
-      if (error || !data) throw new Error(t.invoices.errorToast);
-      return data as Invoice;
-    },
-    onMutate: async ({ inv, paid }) => {
+    mutationFn: (change: InvoicePaymentChange) => setInvoicePaymentState(supabase, change),
+    onMutate: async ({ inv, paid, paidOn }) => {
       await qc.cancelQueries({ queryKey: qk.invoices });
       const prev = qc.getQueryData<Invoice[]>(qk.invoices)?.find((item) => item.id === inv.id) ?? inv;
       const patch = paid
-        ? { status: "paid" as const, paid_on: todayKey() }
+        ? { status: "paid" as const, paid_on: paidOn }
         : { status: "issued" as const, paid_on: null };
       setInvoices((old) =>
         old.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)),
@@ -219,29 +211,29 @@ export function InvoicesPanel({
       return { prev };
     },
     onError: (error, { inv }, ctx) => {
-      if (ctx?.prev) setInvoices((current) => current.map((item) => item.id === inv.id ? ctx.prev : item));
-      toast.err((error as Error).message);
+      if (ctx?.prev) setInvoices((current) => current.map(item => item.id === inv.id ? { ...item, status: ctx.prev.status, paid_on: ctx.prev.paid_on } : item));
+      toast.err(error instanceof InvoicePaymentChangeError && error.conflict ? t.invoices.paymentConflict : t.invoices.paymentChangeErr);
     },
-    onSuccess: (saved, { paid }) => {
-      setInvoices((current) => current.map((item) => item.id === saved.id ? saved : item));
+    onSuccess: ({ invoice: saved, unlinkedIds }, { paid }) => {
+      setInvoices(current => current.map(item => item.id === saved.id ? saved : item));
+      const released = new Set(unlinkedIds);
+      if (released.size) qc.setQueryData<Transaction[]>(qk.transactions, current => current?.map(tx => released.has(tx.id)
+        ? { ...tx, invoice_id: null, matched_at: null, match_source: null } : tx));
       toast.ok(paid ? t.invoices.markedPaidToast : t.invoices.markedUnpaidToast);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.invoices }),
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: qk.invoices }), qc.invalidateQueries({ queryKey: qk.transactions })]),
   });
 
   function setPaid(inv: Invoice, paid: boolean) {
-    if (!setPaidMutation.isPending && !removeMutation.isPending) setPaidMutation.mutate({ inv, paid });
+    if (!parsingRef.current && !setPaidMutation.isPending && !removeMutation.isPending) setPaidMutation.mutate({ inv, paid, ownerId: userId, paidOn: paid ? todayKey() : null });
   }
 
   // Optimistic delete: drop the invoice and its items from the cache before the
   // await; the DB cascade removes the items server-side.
   const removeMutation = useMutation({
     mutationFn: async (inv: Invoice) => {
-      const { error } = await supabase
-        .from("invoices")
-        .delete()
-        .eq("id", inv.id);
-      if (error) throw error;
+      const { data, error } = await supabase.from("invoices").delete().eq("id", inv.id).eq("updated_at", inv.updated_at).select("id").single();
+      if (error || data?.id !== inv.id) throw new Error("Invoice deletion unconfirmed");
     },
     onMutate: async (inv) => {
       await qc.cancelQueries({ queryKey: qk.invoices });
@@ -251,12 +243,13 @@ export function InvoicesPanel({
       setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
       setItems((prev) => prev.filter((i) => i.invoice_id !== inv.id));
       setView({ mode: "list" });
-      return { prevInvoice, prevItems };
+      return { prevInvoice, prevItems, prevView: view };
     },
-    onError: (error, inv, ctx) => {
+    onError: (_error, inv, ctx) => {
       if (ctx?.prevInvoice) setInvoices((current) => current.some((item) => item.id === inv.id) ? current : [ctx.prevInvoice, ...current]);
       if (ctx?.prevItems) setItems((current) => [...current.filter((item) => item.invoice_id !== inv.id), ...ctx.prevItems]);
-      toast.err((error as Error).message);
+      if (ctx?.prevView) setView(current => current.mode === "list" ? ctx.prevView : current);
+      toast.err(t.invoices.deleteErr);
     },
     onSuccess: () => toast.ok(t.invoices.deletedToast),
     onSettled: () => {
@@ -273,7 +266,7 @@ export function InvoicesPanel({
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-    }) && !setPaidMutation.isPending && !removeMutation.isPending) removeMutation.mutate(inv);
+    }) && !parsingRef.current && !setPaidMutation.isPending && !removeMutation.isPending) removeMutation.mutate(inv);
   }
 
   // ── Sub-views ────────────────────────────────────────────────────────────
@@ -344,6 +337,7 @@ export function InvoicesPanel({
     return (
       <InvoiceDetail
         invoice={detailInvoice}
+        busy={setPaidMutation.isPending || removeMutation.isPending}
         items={items.filter((i) => i.invoice_id === detailInvoice.id)}
         logo={settings?.logo ?? null}
         onBack={() => setView({ mode: "list" })}
@@ -360,7 +354,7 @@ export function InvoicesPanel({
 
   return (
     <fieldset
-      disabled={parsing}
+      disabled={parsing || setPaidMutation.isPending || removeMutation.isPending}
       aria-label={t.invoices.title}
       className="relative min-w-0"
       onDragOver={onDragOver}
@@ -408,7 +402,7 @@ export function InvoicesPanel({
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
-        disabled={parsing}
+        disabled={parsing || setPaidMutation.isPending || removeMutation.isPending}
         className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed border-border-strong bg-surface-muted/40 px-4 py-3 text-sm transition-colors hover:border-foreground/30 focus-ring disabled:opacity-60"
       >
         {parsing ? (
@@ -480,6 +474,7 @@ export function InvoicesPanel({
                   >
                     <button
                       type="button"
+                      disabled={setPaidMutation.isPending || removeMutation.isPending}
                       onClick={() => setView({ mode: "detail", id: inv.id })}
                       className="flex min-w-0 basis-full items-center gap-3 text-left focus-ring rounded-md sm:flex-1 sm:basis-auto"
                     >
@@ -521,7 +516,7 @@ export function InvoicesPanel({
                             onClick={() =>
                               setView({ mode: "duplicate", id: inv.id })
                             }
-                            aria-label={t.invoices.duplicate}
+                            aria-label={`${t.invoices.duplicate}: ${inv.number}`}
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
@@ -533,7 +528,7 @@ export function InvoicesPanel({
                             size="icon-sm"
                               variant="ghost"
                               onClick={() => setPaid(inv, false)}
-                              aria-label={t.invoices.markUnpaid}
+                              aria-label={`${t.invoices.markUnpaid}: ${inv.number}`}
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
                             </Button>
@@ -545,7 +540,7 @@ export function InvoicesPanel({
                             size="icon-sm"
                               variant="ghost"
                               onClick={() => setPaid(inv, true)}
-                              aria-label={t.invoices.markPaid}
+                              aria-label={`${t.invoices.markPaid}: ${inv.number}`}
                             >
                               <Check className="h-3.5 w-3.5 text-success" />
                             </Button>
@@ -557,7 +552,7 @@ export function InvoicesPanel({
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => remove(inv)}
-                            aria-label={t.invoices.delete}
+                            aria-label={`${t.invoices.delete}: ${inv.number}`}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>

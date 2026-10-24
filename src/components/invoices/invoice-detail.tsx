@@ -41,6 +41,7 @@ export function InvoiceDetail({
   onMarkPaid,
   onMarkUnpaid,
   onDelete,
+  busy = false,
 }: {
   invoice: Invoice;
   items: InvoiceItem[];
@@ -51,6 +52,7 @@ export function InvoiceDetail({
   onMarkPaid: () => void;
   onMarkUnpaid: () => void;
   onDelete: () => void;
+  busy?: boolean;
 }) {
   const t = useDict();
   const now = useNow();
@@ -86,32 +88,33 @@ export function InvoiceDetail({
   return (
     <div>
       {/* Toolbar — not printed */}
-      <div className="no-print flex flex-wrap items-center gap-2 mb-4">
-        <Button size="sm" variant="outline" onClick={onBack}>
+      <div className="no-print flex flex-wrap items-center gap-2 mb-4" aria-busy={busy}>
+        <Button size="sm" variant="outline" disabled={busy} onClick={onBack}>
           <ArrowLeft className="h-3.5 w-3.5" /> {t.invoices.back}
         </Button>
         <StatusBadge status={eff} />
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={onEdit}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" /> {t.invoices.edit}
           </Button>
-          <Button size="sm" variant="outline" onClick={onDuplicate}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={onDuplicate}>
             <Copy className="h-3.5 w-3.5" /> {t.invoices.duplicate}
           </Button>
           {invoice.status === "paid" ? (
-            <Button size="sm" variant="outline" onClick={onMarkUnpaid}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkUnpaid}>
               <RotateCcw className="h-3.5 w-3.5" /> {t.invoices.markUnpaid}
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={onMarkPaid}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkPaid}>
               <Check className="h-3.5 w-3.5" /> {t.invoices.markPaid}
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => window.print()}>
             <Printer className="h-3.5 w-3.5" /> {t.invoices.print}
           </Button>
           <Button
             size="sm"
+            disabled={busy}
             variant="ghost"
             onClick={onDelete}
             aria-label={t.invoices.delete}
