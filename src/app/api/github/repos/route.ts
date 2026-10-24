@@ -1,81 +1,30 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createGitHubFetcher } from "@/lib/github-token";
-import type { GithubRepo } from "@/lib/github";
+import { awaitWithSignal } from "@/lib/abortable";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { githubHasNextPage, githubRawRepositoryPage } from "@/lib/github-repository-contract";
 
-/** Raw subset of the GitHub repo object we care about. */
-type RawRepo = {
-  id: number;
-  name: string;
-  full_name: string;
-  owner: { login: string };
-  description: string | null;
-  private: boolean;
-  fork: boolean;
-  archived: boolean;
-  html_url: string;
-  default_branch: string;
-  language: string | null;
-  stargazers_count: number;
-  pushed_at: string | null;
-  updated_at: string | null;
-};
-
-/**
- * Returns the authenticated user's repositories, most-recently-pushed first.
- * `sort=pushed` orders by pushed_at — the timestamp we surface as "updated" —
- * and one page of 100 is plenty for an "active repos" dashboard view.
- */
-export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-  const fetchWithGitHubAuth = createGitHubFetcher(user.id);
-
-  const res = await fetchWithGitHubAuth(
-    "/user/repos?sort=pushed&per_page=100&affiliation=owner,collaborator,organization_member",
-  );
-
-  if (res.status === 401 && res.statusText === "no-token") {
-    return NextResponse.json(
-      { error: "GitHub is not connected.", reason: "no-token" },
-      { status: 401 },
-    );
-  }
-  if (res.status === 401) {
-    return NextResponse.json(
-      { error: "GitHub rejected the token.", reason: "expired" },
-      { status: 401 },
-    );
-  }
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "Could not fetch repositories." },
-      { status: res.status },
-    );
-  }
-
-  const raw = (await res.json()) as RawRepo[];
-  const repos: GithubRepo[] = raw.map((r) => ({
-    id: r.id,
-    name: r.name,
-    full_name: r.full_name,
-    owner: r.owner?.login ?? r.full_name.split("/")[0],
-    description: r.description,
-    private: r.private,
-    fork: r.fork,
-    archived: r.archived,
-    html_url: r.html_url,
-    default_branch: r.default_branch,
-    language: r.language,
-    stargazers_count: r.stargazers_count,
-    pushed_at: r.pushed_at,
-    updated_at: r.updated_at,
-  }));
-
-  return NextResponse.json({ repos });
+export const maxDuration = 30;
+const headers = { "cache-control": "private, no-store" };
+/** One bounded recent page; a continuation is explicit, never called a full
+ * catalog. Project workspaces can resolve their own repository directly. */
+export async function GET(request: Request) {
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]);
+  try {
+    const supabase = await awaitWithSignal(createClient(signal), signal);
+    const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
+    if (auth.error) throw Error("Authentication unavailable");
+    if (!auth.data.user) return NextResponse.json({ error: "Not authenticated." }, { status: 401, headers });
+    const response = await awaitWithSignal(createGitHubFetcher(auth.data.user.id, signal)("/user/repos?sort=pushed&per_page=100&affiliation=owner,collaborator,organization_member", { signal }), signal);
+    if (!response.ok) {
+      if (response.body) void response.body.cancel().catch(() => undefined);
+      if (response.status === 401) return NextResponse.json({ error: "GitHub access unavailable.", reason: response.statusText === "no-token" ? "no-token" : "expired" }, { status: 401, headers });
+      throw Error("Repositories unavailable");
+    }
+    const prefix = await awaitWithSignal(readTextPrefix(response, 2_097_152, signal), signal);
+    if (prefix.truncated) throw Error("Repositories unavailable");
+    const repos = githubRawRepositoryPage.parse(JSON.parse(prefix.text));
+    return NextResponse.json({ repos, hasMore: githubHasNextPage(response.headers.get("link")) }, { headers });
+  } catch { return NextResponse.json({ error: "Could not load repositories." }, { status: 503, headers }); }
 }

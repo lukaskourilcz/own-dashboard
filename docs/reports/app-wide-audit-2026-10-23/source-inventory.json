@@ -244,15 +244,15 @@
       "path": "src/app/api/github/repos/lookup/route.ts",
       "lines": 58,
       "sha256": "cd4e8019a6b013b0d9f131e8ed75a9272d82011fa3469f92c3abcb2091884e18",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "33a4e3e52ca840478af740963994231cdc654ad0f7b03b9cb84f727677786c98"
+      "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
+      "reviewedSha256": "4c815d10f81c085d5b07cf128d6d4448a118cde9fc557d4c3bac646ffbaa2822"
     },
     {
       "path": "src/app/api/github/repos/route.ts",
       "lines": 81,
       "sha256": "af1d5ffe51d9fc2e95cd771ea5828bed77443c5803f8559075093868d0abb921",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "b482b1b765ffc4789041f6fabf87a0b14c86773e83ac016a7e9b4eadf2e985e8"
+      "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
+      "reviewedSha256": "9117878273ce6e0a94e2e4540c57aac68712ece2f11956c590095d4030713233"
     },
     {
       "path": "src/app/api/google/disconnect/route.ts",
@@ -4068,6 +4068,13 @@
       "lines": 30,
       "status": "source reviewed; serialized guarded filter submission and honest confirmation copy tested; rendered checks pass; final release pending",
       "reviewedSha256": "39a81490724e9171ff9c551f60e939c4b79dd9aca24fe42db8d6881af8f3c53d"
+    },
+    {
+      "path": "src/lib/github-repository-contract.ts",
+      "sha256": null,
+      "lines": 40,
+      "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
+      "reviewedSha256": "c8488fdb13d75c0f4600aa03037f0f5d2c1961d638940a6fd4deab2434056116"
     }
   ],
   "baselineFileCount": 561
