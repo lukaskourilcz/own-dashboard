@@ -24,6 +24,13 @@ type GithubStrings = {
   saving: string;
   filterSaved: string;
   filterErr: string;
+  filterLocalOnly: string;
+  filterServerOnly: string;
+  filterUnavailable: string;
+  filterUnlisted: (count: number) => string;
+  filterLimit: string;
+  filterChanged: string;
+  filterReload: string;
   pickAtLeastOne: string;
   filterHidesAll: string;
   showingCount: (shown: number, total: number) => string;
@@ -129,6 +136,13 @@ type GithubStrings = {
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
   en: {
+    filterChanged: "Repository selection changed elsewhere. Your open selection has been kept; load the current selection before saving again.",
+    filterReload: "Load current selection",
+    filterLocalOnly: "Filter saved on this device. Cross-device sync was not confirmed.",
+    filterServerOnly: "Filter synchronized. Its offline copy could not be confirmed.",
+    filterUnavailable: "Repository selection is unavailable. Automatic project sync is paused; existing projects remain available.",
+    filterUnlisted: count => `${count} saved selections are outside this result page and will be kept.`,
+    filterLimit: "Choose up to 500 repositories.",
     linkLabel: "Repository website",
     linkChanged: "The saved link changed. Review its current value before saving your retained draft.",
     linkReviewCurrent: "Review current value",
@@ -146,16 +160,16 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     loadErr: "Could not load repositories.",
     refresh: "Refresh",
     filter: "Choose repos",
-    filterTitle: "Choose repositories to show",
+    filterTitle: "Repositories for project sync",
     filterDesc:
-      "Only selected repositories are materialized as project workspaces. New repositories stay hidden until selected.",
+      "Choose repositories for automatic project sync. Existing project records stay available. Show all also includes newly found repositories.",
     filterSearch: "Search repositories…",
     selectAll: "Select all",
     showAll: "Show all",
     save: "Save",
     saving: "Saving…",
     filterSaved: "Repository filter saved.",
-    filterErr: "Could not save the filter.",
+    filterErr: "Could not confirm the filter. Your selection is still open.",
     pickAtLeastOne: "Select at least one repository, or choose Show all.",
     filterHidesAll: "Your filter hides every repository.",
     showingCount: (shown, total) => `Showing ${shown} of ${total}`,
@@ -257,6 +271,13 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     },
   },
   cs: {
+    filterChanged: "Výběr repozitářů se změnil jinde. Otevřený výběr zůstává zachován; před dalším uložením načtěte aktuální výběr.",
+    filterReload: "Načíst aktuální výběr",
+    filterLocalOnly: "Filtr je uložen v tomto zařízení. Synchronizaci mezi zařízeními se nepodařilo potvrdit.",
+    filterServerOnly: "Filtr je synchronizován. Kopii pro práci offline se nepodařilo potvrdit.",
+    filterUnavailable: "Výběr repozitářů není dostupný. Automatická synchronizace projektů je pozastavena; stávající projekty zůstávají dostupné.",
+    filterUnlisted: count => `${count} uložených výběrů není na této stránce výsledků a zůstane zachováno.`,
+    filterLimit: "Vyberte nejvýše 500 repozitářů.",
     linkLabel: "Web repozitáře",
     linkChanged: "Uložený odkaz se změnil. Před uložením zachovaného návrhu zkontrolujte jeho aktuální hodnotu.",
     linkReviewCurrent: "Zkontrolovat aktuální hodnotu",
@@ -274,16 +295,16 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     loadErr: "Nepodařilo se načíst repozitáře.",
     refresh: "Obnovit",
     filter: "Vybrat repozitáře",
-    filterTitle: "Vyber repozitáře k zobrazení",
+    filterTitle: "Repozitáře pro synchronizaci projektů",
     filterDesc:
-      "Jen vybrané repozitáře se převedou na pracovní prostory projektů. Nové zůstanou skryté, dokud je nevybereš.",
+      "Vyberte repozitáře pro automatickou synchronizaci projektů. Stávající záznamy projektů zůstávají dostupné. Zobrazit vše zahrne i nově nalezené repozitáře.",
     filterSearch: "Hledat repozitáře…",
     selectAll: "Vybrat vše",
     showAll: "Zobrazit vše",
     save: "Uložit",
     saving: "Ukládám…",
     filterSaved: "Filtr repozitářů uložen.",
-    filterErr: "Nepodařilo se uložit filtr.",
+    filterErr: "Uložení filtru se nepodařilo potvrdit. Výběr zůstává otevřený.",
     pickAtLeastOne: "Vyber aspoň jeden repozitář, nebo zvol Zobrazit vše.",
     filterHidesAll: "Tvůj filtr skrývá všechny repozitáře.",
     showingCount: (shown, total) => `Zobrazeno ${shown} z ${total}`,

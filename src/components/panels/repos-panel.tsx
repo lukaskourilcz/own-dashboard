@@ -39,14 +39,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { saveUserPreferences } from "@/lib/preference-client";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
 import { useGuardedNavigation } from "@/components/navigation-guard";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
-import { readRepoFilter, writeRepoFilter } from "@/lib/use-prefs";
+import { useRepositoryFilter } from "@/lib/use-prefs";
 import { qk } from "@/lib/queries/keys";
 import {
   commitFile,
@@ -69,6 +68,8 @@ import { consumeRepositoryRecords, createRepositoryNote, repositoryNoteSchema, t
 import { readOwnedCollection } from "@/lib/owned-records";
 import { RepositoryLinkControl } from "@/components/github/repository-link-control";
 import { safeWebUrl } from "@/lib/web-url";
+import { RepositoryFilterDialog } from "@/components/github/repository-filter-dialog";
+import { useRepositoryFilterSave } from "@/components/github/use-repository-filter-save";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
 
@@ -132,9 +133,7 @@ export function ReposPanel({
   const [showNeeded, setShowNeeded] = useState(false);
   // Prefer the device-local copy (survives reloads even if the server prefs
   // round-trip isn't available); fall back to the server-provided value.
-  const [visibleIds, setVisibleIds] = useState<string[]>(
-    () => readRepoFilter() ?? initialVisibleIds,
-  );
+  const { ids: visibleIds } = useRepositoryFilter(initialVisibleIds);
   const [filterOpen, setFilterOpen] = useState(false);
 
   const allRepos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
@@ -217,27 +216,7 @@ export function ReposPanel({
     })) disconnectMutation.mutate();
   }
 
-  // Persist the chosen repo allow-list. An empty array clears the filter.
-  // The device-local copy is the source of truth that makes the selection
-  // stick across reloads; the server PATCH is a best-effort cross-device sync
-  // whose failure must not block the save (the server prefs row may not exist).
-  const filterMutation = useMutation({
-    mutationFn: async (ids: string[]) => {
-      writeRepoFilter(ids);
-      try {
-        await saveUserPreferences({ visible_repo_ids: ids });
-      } catch {
-        // Offline or server prefs unavailable — the local copy is saved.
-      }
-      return ids;
-    },
-    onSuccess: (ids) => {
-      setVisibleIds(ids);
-      setFilterOpen(false);
-      toast.ok(t.github.filterSaved);
-    },
-    onError: () => toast.err(t.github.filterErr),
-  });
+  const filterMutation = useRepositoryFilterSave(() => setFilterOpen(false));
 
   // Saved allow-list applied to the live repo list. Empty list = no filter, so
   // everything the API returned is shown (the default, backward-compatible).
@@ -381,7 +360,7 @@ export function ReposPanel({
                   <span>{t.github.showingCount(scoped.length, repos.length)}</span>
                   <button
                     type="button"
-                    onClick={() => filterMutation.mutate([])}
+                    onClick={() => void filterMutation.save([])}
                     disabled={filterMutation.isPending}
                     className="inline-flex items-center gap-1 font-medium text-foreground-muted hover:text-foreground transition-colors disabled:opacity-50 focus-ring rounded"
                   >
@@ -408,7 +387,7 @@ export function ReposPanel({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => filterMutation.mutate([])}
+                    onClick={() => void filterMutation.save([])}
                     disabled={filterMutation.isPending}
                   >
                     <Eye className="h-3.5 w-3.5" />
@@ -446,11 +425,11 @@ export function ReposPanel({
       />
 
       {filterOpen && !repoFullName && (
-        <RepoFilterDialog
+        <RepositoryFilterDialog
           repos={repos}
           initialVisibleIds={visibleIds}
           saving={filterMutation.isPending}
-          onSave={(ids) => filterMutation.mutate(ids)}
+          onSave={filterMutation.save}
           onClose={() => setFilterOpen(false)}
         />
       )}
@@ -790,150 +769,6 @@ function RepoNoteEntry({ note, body, failed, pending, autoFocus, onChange, onSav
         </Button>
       </div>
     </div>
-  );
-}
-
-function RepoFilterDialog({
-  repos,
-  initialVisibleIds,
-  saving,
-  onSave,
-  onClose,
-}: {
-  repos: GithubRepo[];
-  initialVisibleIds: string[];
-  saving: boolean;
-  onSave: (ids: string[]) => void;
-  onClose: () => void;
-}) {
-  const t = useDict();
-  const allIds = useMemo(() => repos.map((r) => String(r.id)), [repos]);
-  // No saved filter yet means every repo is currently visible, so start with
-  // all of them checked; otherwise restore the saved selection.
-  const [selected, setSelected] = useState<Set<string>>(() =>
-    initialVisibleIds.length > 0 ? new Set(initialVisibleIds) : new Set(allIds),
-  );
-  const [query, setQuery] = useState("");
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return repos;
-    return repos.filter((r) => r.full_name.toLowerCase().includes(q));
-  }, [repos, query]);
-
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  // Save only ids that still exist, in list order — drops any stale entries.
-  const chosen = useMemo(
-    () => allIds.filter((id) => selected.has(id)),
-    [allIds, selected],
-  );
-  const canSave = chosen.length > 0 && !saving;
-
-  return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-w-lg flex-col">
-        <DialogHeader>
-          <DialogTitle>{t.github.filterTitle}</DialogTitle>
-          <DialogDescription>{t.github.filterDesc}</DialogDescription>
-        </DialogHeader>
-
-          <div className="mt-4 flex items-center gap-2">
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t.github.filterSearch}
-              autoFocus
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0"
-              onClick={() => setSelected(new Set(allIds))}
-            >
-              {t.github.selectAll}
-            </Button>
-          </div>
-
-          <div className="mt-3 -mx-1 flex-1 overflow-y-auto px-1">
-            {shown.length === 0 ? (
-              <p className="px-2 py-6 text-center text-xs text-foreground-subtle">
-                {t.github.emptyHint}
-              </p>
-            ) : (
-              <ul className="space-y-0.5">
-                {shown.map((repo) => {
-                  const id = String(repo.id);
-                  const on = selected.has(id);
-                  return (
-                    <li key={repo.id}>
-                      <button
-                        type="button"
-                        onClick={() => toggle(id)}
-                        aria-pressed={on}
-                        className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-surface-hover focus-ring"
-                      >
-                        <span
-                          className={
-                            "grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors " +
-                            (on
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border-strong")
-                          }
-                        >
-                          {on && <Check className="h-3 w-3" />}
-                        </span>
-                        <span className="flex-1 truncate text-foreground">
-                          {repo.full_name}
-                        </span>
-                        {repo.private ? (
-                          <Lock className="h-3 w-3 shrink-0 text-foreground-subtle" />
-                        ) : (
-                          <Globe className="h-3 w-3 shrink-0 text-foreground-subtle" />
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onSave([])}
-              disabled={saving}
-            >
-              <Eye className="h-3.5 w-3.5" />
-              {t.github.showAll}
-            </Button>
-            <div className="flex items-center gap-2">
-              {chosen.length === 0 && (
-                <span className="text-[11px] text-foreground-subtle">
-                  {t.github.pickAtLeastOne}
-                </span>
-              )}
-              <DialogClose asChild>
-                <Button variant="ghost" size="sm">
-                  {t.github.cancel}
-                </Button>
-              </DialogClose>
-              <Button size="sm" onClick={() => onSave(chosen)} disabled={!canSave}>
-                {saving ? t.github.saving : t.github.save}
-              </Button>
-            </div>
-          </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 

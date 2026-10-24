@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -110,6 +110,7 @@ export function CareerBoard({
   onPrepare: (position: SavedJobPosition) => void;
 }) {
   const t = useDict();
+  const dragContextId = useId();
   const cs = useLang().lang === "cs";
   const groups = useMemo(
     () => groupApplicationsByColumn(applications, savedPositions),
@@ -146,7 +147,7 @@ export function CareerBoard({
   return (
     <div>
       <p className="mb-3 text-sm text-foreground-muted">{t.jobs.boardHint}</p>
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext id={dragContextId} sensors={sensors} onDragEnd={handleDragEnd}>
         <div
           // The board is the only horizontal scroller on the page, so the
           // document itself never overflows. It is focusable and labelled

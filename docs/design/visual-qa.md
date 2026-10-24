@@ -342,3 +342,6 @@ Preference saves: four final EN/CS desktop/mobile cases pass with unknown/retry/
 
 
 Repository link follow-up, 24 October: twelve EN/CS desktop/mobile cases pass across link, note and task recovery. Link checks cover unsafe inputs, retained failed text, pending Escape/edit prevention, concurrent saved-value review, confirmed removals and popover/main-region axe. Existing note/task cases retain their six-width and keyboard checks. All records/providers are fixtures. This does not complete repository-filter or the remaining optimized app-wide review.
+
+
+Repository selection follow-up, 24 October: four final EN/CS desktop/mobile cases pass with 360/430/768/1024/1440/1728 px, visible footer bounds, named scroll region/axe, pending Escape/edit prevention, preserved off-page ids, device/server/both-unconfirmed saves and real cross-tab change/reload behavior. Five Home/Career regressions pass with one intentional mobile duplicate skip before the last selector-only edge-case fix. The first Czech run exposed DndContext accessibility ids changing between server and browser; Projects, Home and Career now provide stable ids and the corrected run has no hydration warnings. All data/providers are fixtures. Full optimized app-wide verification remains pending.

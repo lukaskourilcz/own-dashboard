@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -94,6 +94,7 @@ export function CustomizableOverview({
   syncPreferences = true,
 }: Props) {
   const t = useDict();
+  const dragContextId = useId();
   const { layout, setLayout } = useDashboardLayout();
   const { isHidden } = useNavVisibility();
   const [editing, setEditing] = useState(false);
@@ -203,6 +204,7 @@ export function CustomizableOverview({
         />
       ) : (
         <DndContext
+          id={dragContextId}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}

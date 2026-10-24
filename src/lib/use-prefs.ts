@@ -413,34 +413,13 @@ export function useCvLinks(): {
 // Repository filter — which repo ids stay pinned on the Repositories panel.
 // Persisted device-locally so the saved selection survives reloads even when
 // the server-synced copy (user_preferences.visible_repo_ids) isn't available.
-// `null` means "never set on this device" — callers fall back to the
-// server-provided value in that case. An empty array is meaningful: it means
-// the filter was explicitly cleared ("show all repos").
+// A missing, invalid or blocked device copy uses a confirmed server fallback.
+// The subscribed store exposes availability separately: an unknown selection
+// must not become "show all" for automatic project sync. An explicit empty
+// array still means the owner cleared the filter.
 // ---------------------------------------------------------------------------
 
-const REPO_FILTER_KEY = "visibleRepoIds";
-
-export function readRepoFilter(): string[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(REPO_FILTER_KEY);
-    if (raw == null) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return null;
-    return parsed.filter((x): x is string => typeof x === "string");
-  } catch {
-    return null;
-  }
-}
-
-export function writeRepoFilter(ids: string[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(REPO_FILTER_KEY, JSON.stringify(ids));
-  } catch {
-    // ignore — quota or privacy mode; the server sync is the fallback.
-  }
-}
+export { readRepoFilter, writeRepoFilter, useRepositoryFilter } from "@/lib/repository-filter";
 
 // The Oslo search is the default. This opt-in restores Czech career sources
 // and records without deleting the owner's earlier search history.

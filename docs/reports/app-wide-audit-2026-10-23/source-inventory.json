@@ -1199,7 +1199,7 @@
       "lines": 394,
       "sha256": "66be5218aa3814e003564e455164342d492baf24c5238c795f786a4076997bb8",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "901c784e3edf3d60a67df2bd949ad466994224a95c9d4f948e343f1500e08308"
+      "reviewedSha256": "2037c777d1c99118340004be10d22ba480bd44362d42ee0fb43e8a028b260912"
     },
     {
       "path": "src/components/overview/daily-focus.tsx",
@@ -1254,8 +1254,8 @@
       "path": "src/components/panels/career-board.tsx",
       "lines": 411,
       "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf"
+      "status": "partial; stable drag context id and existing board browser regressions pass; full stage/read/mutation review pending",
+      "reviewedSha256": "bb9da398bad64a9e2d5335f98c3e8f4bdbd8d24a88a9489b8aac1a3d45bff4a7"
     },
     {
       "path": "src/components/panels/career-companies.tsx",
@@ -1422,8 +1422,8 @@
       "path": "src/components/panels/projects-panel.tsx",
       "lines": 2069,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partial: shared loading, repository flows and local-day cost memo changes checked; remaining page/shared source completion and final matrix pending",
-      "reviewedSha256": "a775a2b5b9c66c704974126a4efa6863835276d5f12c0d26db864b2b7c5ab1bd"
+      "status": "partial; financial grouping, repository selection availability, stable drag ids and table region reviewed; project writes/auto-sync lifecycle and other tabs pending",
+      "reviewedSha256": "9208784a36ce8fd144bd4f2d04ec4c9fe18ca10e7c168ed4481eb5beb789731d"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1436,8 +1436,8 @@
       "path": "src/components/panels/repos-panel.tsx",
       "lines": 1320,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partial; repository notes/tasks/link mutations reviewed with targeted/rendered checks; filter/provider-list state pending",
-      "reviewedSha256": "72a40c63631b139aa0eaf1eceb95d535a65fe35f0724ef2dfadffbbb89a7067f"
+      "status": "partial; notes/tasks/link/selection mutations reviewed with targeted/rendered checks; provider-list/identity availability and bounds pending",
+      "reviewedSha256": "5c726895920f7e110fb7ae1886e50212be2e7bc9c828328244cc78639592cfc9"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -3735,7 +3735,7 @@
       "lines": 502,
       "sha256": "eceeeb07c83f5ff9fee096ccf750da6350dae2b060b51d3c9372c4a5a26065df",
       "status": "partial: cross-tab storage/normalization and bilingual controls checked; server persistence, hydration and remaining shared lifecycle review pending",
-      "reviewedSha256": "1d1128e66ab16099e3c91c11c4640fafdbc7782a4e8468f9303b7644778f4c0a"
+      "reviewedSha256": "24002c1e286f5b4f5680d39355ade8be4a3af412a848d6f61513b53eb24abff9"
     },
     {
       "path": "src/lib/use-return-focus.ts",
@@ -4040,6 +4040,34 @@
       "lines": 121,
       "status": "source reviewed; retained link drafts, pending/conflict/navigation/URL/a11y states tested; rendered checks pass; final release pending",
       "reviewedSha256": "5212361f4395f5075e7ea0f131e699bd53ea3507765dfe0ad0326b2fe4f44df0"
+    },
+    {
+      "path": "src/lib/repository-filter.ts",
+      "sha256": null,
+      "lines": 65,
+      "status": "source reviewed; validated/subscribed repository selection availability and persistence tested; rendered checks pass; final release pending",
+      "reviewedSha256": "c0c42d0d043ef88bdf03ae363d6d93f045a440c20c6aabdc49198339e108d40c"
+    },
+    {
+      "path": "src/lib/repository-filter-save.ts",
+      "sha256": null,
+      "lines": 15,
+      "status": "source reviewed; confirmed device/server outcomes and late-intent reconciliation tested; rendered checks pass; full cross-device ordering separately pending",
+      "reviewedSha256": "f681b51a6709a6807a6bb4676e394597f5a253b780c8de5b1b8699355dba03d2"
+    },
+    {
+      "path": "src/components/github/repository-filter-dialog.tsx",
+      "sha256": null,
+      "lines": 173,
+      "status": "source reviewed; pending/navigation/conflict/off-page selection states tested; rendered six-width/a11y checks pass; final release pending",
+      "reviewedSha256": "afab6e28bfbe883d199a0f7c1dc4cee1ee99d4a250be8081d8ab092fcd2f34ed"
+    },
+    {
+      "path": "src/components/github/use-repository-filter-save.ts",
+      "sha256": null,
+      "lines": 30,
+      "status": "source reviewed; serialized guarded filter submission and honest confirmation copy tested; rendered checks pass; final release pending",
+      "reviewedSha256": "39a81490724e9171ff9c551f60e939c4b79dd9aca24fe42db8d6881af8f3c53d"
     }
   ],
   "baselineFileCount": 561

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -31,6 +31,7 @@ import {
   ExternalLink,
   FolderKanban,
   GripVertical,
+  ListFilter,
   Pencil,
   Plus,
   Power,
@@ -72,8 +73,10 @@ import { useNow } from "@/lib/use-now";
 import { buildOccurrences } from "@/lib/important-dates";
 import { todayKey } from "@/lib/date-keys";
 import { useReposQuery } from "@/lib/github-queries";
+import { RepositoryFilterDialog } from "@/components/github/repository-filter-dialog";
+import { useRepositoryFilterSave } from "@/components/github/use-repository-filter-save";
 import {
-  readRepoFilter,
+  useRepositoryFilter,
 } from "@/lib/use-prefs";
 import { cronSeedsForProject } from "@/lib/project-cron-seeds";
 import {
@@ -173,6 +176,7 @@ type ProjectsPanelProps = {
   displayCurrency: string;
   setDisplayCurrency?: (next: string) => void;
   initialVisibleIds?: string[];
+  repositoryPreferencesAvailable?: boolean;
   selectedProjectId?: string;
   onOpenProject: (project: Project) => void;
   todos: Todo[];
@@ -260,7 +264,8 @@ function ProjectsListPanel({
   setCrons,
   displayCurrency,
   setDisplayCurrency,
-  initialVisibleIds = [],
+  initialVisibleIds,
+  repositoryPreferencesAvailable = true,
   syncRepositories = true,
   isPreview = false,
   todos,
@@ -274,6 +279,7 @@ function ProjectsListPanel({
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
+  const dragContextId = useId();
   const { lang } = useLang();
   const toast = useToast();
   const confirm = useConfirmation();
@@ -286,21 +292,21 @@ function ProjectsListPanel({
   const costDay = now ? todayKey(now) : null;
 
   // --- Sync active Repositories → Projects -------------------------------
-  // The active repos are the shared Repositories allow-list applied to the live
-  // repo list (empty allow-list = all repos) — the same set the Repositories
-  // and Costs sections show. Every active repo automatically gets a project so
-  // it can carry costs, crons and notes. Removing a repo from the allow-list
-  // leaves its project (and data) in place — we only ever add, never delete.
+  // A known repository selection controls automatic linkage/materialization.
+  // An explicit empty selection includes all returned repos. This is separate
+  // from each project's active flag and financial history. Changing the
+  // selection preserves every existing project and its related records.
   const { data: reposData } = useReposQuery(syncRepositories);
-  const [visibleIds] = useState<string[]>(
-    () => readRepoFilter() ?? initialVisibleIds,
-  );
+  const [repoFilterOpen, setRepoFilterOpen] = useState(false);
+  const repoFilterMutation = useRepositoryFilterSave(() => setRepoFilterOpen(false));
+  const { ids: visibleIds, available: filterAvailable } = useRepositoryFilter(initialVisibleIds, repositoryPreferencesAvailable);
   const activeRepos = useMemo<GithubRepo[]>(() => {
+    if (!filterAvailable) return [];
     const repos = reposData?.kind === "ok" ? reposData.repos : [];
     if (visibleIds.length === 0) return repos;
     const set = new Set(visibleIds);
     return repos.filter((r) => set.has(String(r.id)));
-  }, [reposData, visibleIds]);
+  }, [reposData, visibleIds, filterAvailable]);
 
   // Full names of the currently-active repos, so a card can show it is synced
   // from GitHub (rather than being a manually added project).
@@ -326,7 +332,7 @@ function ProjectsListPanel({
   const lookedUpProjects = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (isPreview || !syncRepositories) return;
+    if (isPreview || !syncRepositories || !filterAvailable) return;
     // Plan only against loaded projects: an unfetched placeholder list would
     // make every repository look missing.
     if (!qc.getQueryState(qk.projects)?.dataUpdatedAt) return;
@@ -486,7 +492,7 @@ function ProjectsListPanel({
     // Re-run when the active repo set or the loaded projects change. Writes
     // already in flight are skipped by the guards above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRepos, projects]);
+  }, [activeRepos, projects, filterAvailable]);
 
   // --- Registry → Projects ------------------------------------------------
   // The code-level registry (src/lib/portfolio.ts) materializes the daily
@@ -834,7 +840,8 @@ function ProjectsListPanel({
         title={t.projects.title}
         description={t.projects.description}
         action={
-          <div className="inline-flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {syncRepositories && <Button variant="outline" size="sm" disabled={reposData?.kind !== "ok"} onClick={() => setRepoFilterOpen(true)}><ListFilter />{t.github.filter}</Button>}
             {setDisplayCurrency && (
               <>
                 <Label className="hidden text-foreground-subtle sm:inline">
@@ -870,6 +877,10 @@ function ProjectsListPanel({
           <Markdown source={NEW_PROJECT_GUIDE} className="max-w-3xl" />
         </div>
       </details>
+
+      {syncRepositories && !filterAvailable && <p role="status" className="mb-4 text-sm text-foreground-muted">{t.github.filterUnavailable}</p>}
+
+      {repoFilterOpen && reposData?.kind === "ok" && <RepositoryFilterDialog repos={reposData.repos} initialVisibleIds={visibleIds} saving={repoFilterMutation.isPending} onSave={repoFilterMutation.save} onClose={() => setRepoFilterOpen(false)} />}
 
       {/* Totals + chart (full width — the form now lives in a dialog) */}
       {chartData.length > 0 && (
@@ -1060,6 +1071,7 @@ function ProjectsListPanel({
         </div>
       ) : (
         <DndContext
+          id={dragContextId}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -1067,7 +1079,7 @@ function ProjectsListPanel({
             <Card className="mt-4 overflow-hidden p-0">
               {/* relative: contains the sr-only header labels, which are
                   absolutely positioned and would otherwise widen the page. */}
-              <div className="relative overflow-x-auto">
+              <div className="relative overflow-x-auto" role="region" aria-label={t.projects.title} tabIndex={0}>
                 <table className="w-full min-w-[900px] text-left">
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   {(["own", "client"] as const).map((group) => projectGroups[group].length === 0 ? null : (
@@ -1217,7 +1229,7 @@ function SortableProjectRow({
       style={style}
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
-      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
+      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-11 w-11 md:h-8 md:w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
       <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5">{health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}</td>
