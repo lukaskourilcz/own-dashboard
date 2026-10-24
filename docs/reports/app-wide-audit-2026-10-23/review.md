@@ -21,6 +21,8 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Backend and operations | API routes, cron/provider budgets, database ownership and query plans | Reviewing |
 | Release | Current-doc reconciliation, full validation, additive migrations, PR, main merge, deployment | Pending |
 
+The [working visual plan](visual-plan.html) annotates authentic preview screenshots of the changed login, repository, Money and cron-history components. It has desktop/mobile switches and keeps remaining areas explicitly pending. Rebuild it with `node scripts/build-app-audit-visual-plan.mjs` after updating this report or the inventory.
+
 ## Findings under review
 
 1. Fixed: failed server reads now render a bilingual retry state before mounting the shell. A successful missing-project read still returns 404; an outage does not. In-shell navigation also waits for all required entity stores before mounting writable panels. Verified cached records remain available during background failures.
@@ -246,3 +248,6 @@ At commit `e05be7f`, the full suite passes 3,549 cases and one intentional skip 
 
 
 At commit `78a6111`, the full suite passes 3,676 cases with one intentional skip (375 passed files, one skipped file), in 143.26 seconds with two workers. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight actual render traces and post-build TypeScript pass. The build uses public fixture configuration and `NEXT_E2E=0`; its artifacts must not be deployed. The monitoring browser evidence is recorded in finding 98. Main remains at `d6f60c7` with no unmerged upstream commits after the latest fetch. Nineteen audit migrations remain unapplied (105 local files). The remaining source review, optimized app-wide interactions, docs reconciliation and main merge are still in progress.
+
+
+At commit `71a2292`, the full suite passes 3,692 cases with one intentional skip (378 passed files, one skipped file), in 155.74 seconds with two workers. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight actual render traces and post-build TypeScript pass. Public fixture configuration and `NEXT_E2E=0` are used; build artifacts must not be deployed. The separate HTML working plan loads all four authentic captures in desktop/mobile modes, verifies its controls and ten area rows, has no page errors or six-width overflow and passes axe. Its initial verification setup and focusable-scroll-region failures were corrected and are excluded from passing evidence; the final screenshot was inspected. Nineteen audit migrations remain prepared/unapplied (105 local files). Remaining source/interaction review, current-document reconciliation and main merge remain in progress.
