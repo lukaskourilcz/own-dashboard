@@ -1630,7 +1630,7 @@
       "path": "src/components/projects/project-workspace.tsx",
       "lines": 318,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "partially reviewed; keyboard tabs, selected-tab visibility, note/communication core and related routes checked; financial projections, links and remaining workspace source/release review pending",
+      "status": "partially reviewed; keyboard tabs, selected-tab visibility, rendered note/communication routes and related routes checked; financial projections, links and remaining workspace source/release review pending",
       "reviewedSha256": "4c59866dea404b8602647184e05b050d42c10b10c39d995c08f03d7c72757892"
     },
     {
