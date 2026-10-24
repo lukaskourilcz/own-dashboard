@@ -21,7 +21,7 @@ const NEXT = {
   reload: { en: 'Reload the review and check the current version before you approve.', cs: 'Načtěte kontrolu znovu a před schválením zkontrolujte aktuální verzi.' },
   retry: { en: 'Try again. If it keeps failing, it needs investigation.', cs: 'Zkuste to znovu. Pokud chyba trvá, je potřeba ji prošetřit.' },
   config: { en: 'Check the server configuration. Until then this step does not run.', cs: 'Zkontrolujte nastavení serveru. Do té doby se tento krok nespustí.' },
-  account: { en: 'Verify the @dneskai account in Sources. Publishing waits until then.', cs: 'Ověřte účet @dneskai v záložce Zdroje. Publikování do té doby čeká.' },
+  account: { en: 'Open the Instagram account from the project menu and verify it. Publishing waits until then.', cs: 'V nabídce projektu otevřete účet Instagram a ověřte ho. Publikování do té doby čeká.' },
   token: { en: 'Generate a new long-lived Instagram token, install it on the server and verify the account again.', cs: 'Vygenerujte nový dlouhodobý instagramový token, uložte ho na server a účet znovu ověřte.' },
   budget: { en: 'Generation resumes when the spend of the last 24 hours falls below the daily limit.', cs: 'Generování pokračuje, až útrata za posledních 24 hodin klesne pod denní limit.' },
   verify: { en: 'Check the post on Instagram. The next check compares the result; nothing is published twice.', cs: 'Zkontrolujte příspěvek na Instagramu. Další kontrola výsledek porovná; nic se nepublikuje dvakrát.' },
@@ -31,6 +31,7 @@ const NEXT = {
   media: { en: 'The picture stays out of the media pool; the other pictures can still be used.', cs: 'Obrázek v zásobníku chybí; ostatní obrázky lze použít dál.' },
   topicLink: { en: 'Add the topic again with a link the post can cite.', cs: 'Přidejte námět znovu s odkazem, ze kterého příspěvek může čerpat.' },
   topicReader: { en: 'The next run reads it again, three times in all. After that, add the topic again with another link.', cs: 'Další běh ho přečte znovu, celkem třikrát. Potom přidejte námět znovu s jiným odkazem.' },
+  sourceSettings: { en: 'To resume collection, add or enable a source in Sources.', cs: 'Chcete-li sběr obnovit, přidejte nebo zapněte zdroj v záložce Zdroje.' },
 } satisfies Record<string, Text>;
 type Next = keyof typeof NEXT;
 type Entry = readonly [Next, string, string];
@@ -46,7 +47,9 @@ const CODES = {
   'account-unverified': ['account', 'The Instagram account is not verified.', 'Instagramový účet není ověřený.'],
   'campaign-inactive': ['investigate', 'The plan this post belongs to is not active, so it will not publish.', 'Plán, do kterého příspěvek patří, není aktivní, proto se nepublikuje.'],
   'sources-unavailable': ['retry', 'The source list could not be read or changed.', 'Seznam zdrojů nešlo načíst ani změnit.'],
-  'collection-source-removed': ['none', 'The source was removed after the night started, so it was not read.', 'Zdroj byl odebrán po začátku noci, proto se nečetl.'],
+  'collection-source-removed': ['none', 'The source was removed or switched off after the night started, so it was not read.', 'Zdroj byl po začátku noci odebrán nebo vypnut, proto se nečetl.'],
+  'collection-no-enabled-sources': ['sourceSettings', 'No enabled sources are due, so collection did not start.', 'Ke čtení nejsou žádné aktivní zdroje, proto sběr nezačal.'],
+  'source-history-unavailable': ['retry', 'Source history could not be read completely.', 'Historii zdrojů se nepodařilo načíst celou.'],
   'approval-unavailable': ['reload', 'The approval was not recorded.', 'Schválení se nezaznamenalo.'],
   'decision-unavailable': ['reload', 'The decision was not recorded; the post may have changed meanwhile.', 'Rozhodnutí se nezaznamenalo; příspěvek se mezitím mohl změnit.'],
   'decision-failed': ['retry', 'The request did not reach the server or was refused.', 'Požadavek se nedostal na server nebo byl odmítnut.'],
@@ -251,6 +254,10 @@ const CODES = {
   'marketing-account-unavailable': ['account', 'No enabled, verified account for this post.', 'Pro tento příspěvek není zapnutý ověřený účet.'],
   'marketing-consent-required': ['config', 'The owner’s marketing consent is not recorded.', 'Souhlas vlastníka s marketingem není zaznamenaný.'],
   'payload-too-large': ['investigate', 'The request was too large.', 'Požadavek byl příliš velký.'],
+  'missing-body': ['investigate', 'The request had no body, so no work was admitted.', 'Požadavek neměl tělo, proto se žádná práce nepřijala.'],
+  'invalid-body': ['investigate', 'The request body could not be read as valid text.', 'Tělo požadavku se nepodařilo načíst jako platný text.'],
+  'request-body-timeout': ['retry', 'The upload did not finish within its time limit; no work was admitted.', 'Nahrání se nedokončilo v časovém limitu; žádná práce se nepřijala.'],
+  'request-body-aborted': ['retry', 'The request disconnected before its body was read; no work was admitted.', 'Požadavek se odpojil před načtením těla; žádná práce se nepřijala.'],
   'private-asset-bucket-required': ['config', 'The image storage is not private.', 'Úložiště obrázků není soukromé.'],
   'calendar-entry-changed': ['source', 'The calendar slot changed after the job was queued.', 'Slot v kalendáři se po zařazení úlohy změnil.'],
   'calendar-entry-rebound': ['source', 'The calendar slot was given another source.', 'Slot v kalendáři dostal jiný zdroj.'],
@@ -592,6 +599,8 @@ const CODES = {
   'topic-source-unsupported': ['investigate', 'This kind of source cannot become a post yet.', 'Z tohoto druhu zdroje zatím příspěvek nevznikne.'],
   'topic-expiry-failed': ['auto', 'Old news topics could not be moved to expired.', 'Staré zpravodajské náměty se nepodařilo přesunout mezi propadlé.'],
   'daily-mix-unavailable': ['retry', 'The daily mix could not be read or saved.', 'Denní mix se nepodařilo načíst ani uložit.'],
+  'daily-mix-save-unconfirmed': ['retry', 'The daily mix save could not be confirmed; the draft remains available.', 'Uložení denního mixu se nepodařilo potvrdit; návrh zůstává k dispozici.'],
+  'daily-mix-conflict': ['retry', 'The saved daily mix changed. Review the latest settings before saving again.', 'Uložený denní mix se změnil. Před dalším uložením zkontrolujte aktuální nastavení.'],
   'invalid-daily-mix': ['none', 'The mix needs a time for every post.', 'Mix potřebuje pro každý příspěvek vlastní čas.'],
 } as const satisfies Record<string, Entry>;
 
@@ -627,8 +636,9 @@ export type MarketingCodeDescription = { code: string | null; known: boolean; ha
 
 /** Collection and event codes already have owner text in the Sources tab's dictionary; reuse it instead of a second copy. */
 function sourcesEntry(code: string): Entry | null {
-  const en = dneskaiSources.en.blockers[code] ?? dneskaiSources.en.eventReasons[code];
-  const cs = dneskaiSources.cs.blockers[code] ?? dneskaiSources.cs.eventReasons[code];
+  const ownText = (dictionary: Record<string, string>) => Object.hasOwn(dictionary, code) ? dictionary[code] : undefined;
+  const en = ownText(dneskaiSources.en.blockers) ?? ownText(dneskaiSources.en.eventReasons);
+  const cs = ownText(dneskaiSources.cs.blockers) ?? ownText(dneskaiSources.cs.eventReasons);
   return en && cs ? [code.startsWith('brief-') ? 'source' : 'auto', en, cs] : null;
 }
 

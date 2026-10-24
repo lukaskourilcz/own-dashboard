@@ -93,4 +93,14 @@ describe('marketing code texts (#119)', () => {
     const [row] = safeMarketingJobs([{ id: '00000000-0000-4000-8000-000000000001', status: 'failed', error_code: 'brief-deck-invalid', brand: 'dneskai', created_at: '2026-10-20T12:00:00Z' }]);
     expect(row?.errorCode).toBe('brief-deck-invalid');
   });
+  it('does not treat inherited dictionary properties as localized code text', () => {
+    for (const code of ['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty']) {
+      expect(marketingCodeKnown(code)).toBe(false);
+      for (const lang of ['en', 'cs'] as const) {
+        const description = describeMarketingCode(code, lang);
+        expect(description.known).toBe(false); expect(typeof description.happened).toBe('string');
+        expect(description.happened).toBe(lang === 'cs' ? 'Něco neproběhlo podle očekávání.' : 'Something did not finish as expected.');
+      }
+    }
+  });
 });
