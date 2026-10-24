@@ -216,8 +216,9 @@ export function TodosPanel({
   // missing file is unavailable, not an empty list.
   const refresh = useMutation({
     mutationFn: async () => {
-      const reposData = reposQuery.data;
-      if (!reposData || reposData.kind !== "ok") {
+      const refreshed = await reposQuery.refetch();
+      const reposData = refreshed.data;
+      if (refreshed.isError || !reposData || reposData.kind !== "ok") {
         throw new Error(
           reposData?.kind === "disconnected" ? "disconnected" : "no-repos",
         );
@@ -245,11 +246,13 @@ export function TodosPanel({
         added, removed, retained,
         missing, unavailable,
         dailyFocusUpdated: focusResponse?.ok === true,
+        listIncomplete: reposData.hasMore === true, listedCount: reposData.repos.length,
       };
     },
-    onSuccess: async ({ added, removed, retained, missing, unavailable, dailyFocusUpdated }) => {
+    onSuccess: async ({ added, removed, retained, missing, unavailable, dailyFocusUpdated, listIncomplete, listedCount }) => {
       if (added || removed) toast.ok(t.todos.refreshDone(added, removed));
-      else if (!retained && !missing.length && !unavailable.length) toast.ok(t.todos.refreshNothing);
+      else if (!retained && !missing.length && !unavailable.length && !listIncomplete) toast.ok(t.todos.refreshNothing);
+      if (listIncomplete) toast.info(t.todos.refreshRepoLimit(listedCount));
       if (retained) toast.info(t.todos.refreshRetained(retained));
       if (unavailable.length) toast.info(t.todos.refreshUnavailable(repoNamesPreview(unavailable)));
       // A repository that lost its NEEDED.md keeps its tasks; say which, so

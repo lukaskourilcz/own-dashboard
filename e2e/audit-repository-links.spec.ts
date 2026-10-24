@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { gotoPreview, signInFixtureUser, watchConsole } from "./helpers";
+import { gotoPreview, signInFixtureUser, stubGithubRepositories, watchConsole } from "./helpers";
 import { github } from "../src/lib/i18n/sections/github";
 const owner = "11111111-1111-4111-8111-111111111111", id = "33333333-3333-4333-8333-333333333333";
 const repo = { id: 123, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
@@ -8,7 +8,7 @@ for (const lang of ["en", "cs"] as const) test(`${lang}: repository links retain
   const t = github[lang], errors = watchConsole(page);
   await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" }); await signInFixtureUser(page);
   await page.route("**/auth/v1/user", route => route.fulfill({ json: { id: owner, aud: "authenticated", role: "authenticated", email: "fixture@example.test", user_metadata: {} } }));
-  await page.route("**/api/github/repos", route => route.fulfill({ json: { repos: [repo] } }));
+  await stubGithubRepositories(page, [repo]);
   await page.route("**/api/vercel/analytics**", route => route.fulfill({ json: { kind: "unconfigured" } }));
   let rows: Record<string, unknown>[] = [], creations = 0, updates = 0, deletions = 0, release!: () => void;
   await page.route("**/rest/v1/rpc/**", route => route.fulfill({ json: route.request().postDataJSON().p_entity === "repo_links" ? rows : [] }));

@@ -1,3 +1,4 @@
+import { projectTabFromQuery } from "@/lib/project-workspace-tabs";
 import type { Metadata } from "next";
 import { DemoDashboard } from "@/components/demo-dashboard";
 import { GuestBanner } from "@/components/guest-banner";
@@ -39,15 +40,15 @@ function toLang(value: string | undefined): Lang {
 export default async function GuestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string; lang?: string }>;
+  searchParams: Promise<{ project?: string; projectTab?: string | string[]; lang?: string }>;
 }) {
-  const { project, lang } = await searchParams;
+  const { project, projectTab, lang } = await searchParams;
   const language = toLang(lang);
 
   return (
     <GuestBoundary>
       <GuestLocale lang={language} />
-      <DemoDashboard projectRef={project} language={language} />
+      <DemoDashboard initialProjectTab={projectTabFromQuery(projectTab)} projectRef={project} language={language} />
       <GuestBanner />
     </GuestBoundary>
   );

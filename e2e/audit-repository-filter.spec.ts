@@ -6,7 +6,7 @@ const base = { name: "own-dashboard", owner: "owner", description: null, private
 for (const lang of ["en", "cs"] as const) test(`${lang}: Projects keeps unlisted repositories and distinguishes device/server saves`, async ({ page, context }) => {
   const t = github[lang], errors = watchConsole(page); await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" });
   await page.evaluate(() => localStorage.setItem("visibleRepoIds", '["123","999"]'));
-  const repos = [{ ...base, id: 123, full_name: "owner/own-dashboard" }, { ...base, id: 456, full_name: "owner/second-project" }, ...Array.from({ length: 40 }, (_, i) => ({ ...base, id: 1000 + i, full_name: `owner/long-repository-name-for-project-${i}` }))];
+  const repos = [{ ...base, id: 123, full_name: "owner/own-dashboard" }, { ...base, id: 456, name: "second-project", html_url: "https://github.com/owner/second-project", full_name: "owner/second-project" }, ...Array.from({ length: 40 }, (_, i) => ({ ...base, id: 1000 + i, name: `long-repository-name-for-project-${i}`, html_url: `https://github.com/owner/long-repository-name-for-project-${i}`, full_name: `owner/long-repository-name-for-project-${i}` }))];
   await page.route("**/api/github/repos", route => route.fulfill({ json: { repos } }));
   let attempts = 0, release!: () => void;
   await page.route("**/api/user/preferences", async route => {

@@ -12,6 +12,10 @@ type GithubStrings = {
   empty: string;
   emptyHint: string;
   loadErr: string;
+  cachedReadFailed: string;
+  repositoryUnavailable: string;
+  recentPageLimit: (count: number) => string;
+  archivedReadOnly: string;
   refresh: string;
   // Repo visibility filter (saved allow-list)
   filter: string;
@@ -136,6 +140,10 @@ type GithubStrings = {
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
   en: {
+    archivedReadOnly: "This repository is archived and read-only on GitHub.",
+    cachedReadFailed: "Could not refresh GitHub data. Previously loaded values may be out of date.",
+    repositoryUnavailable: "This repository is not visible to the connected GitHub account.",
+    recentPageLimit: count => `Showing the ${count} most recently pushed repositories. Other saved selections are kept; open a project to load its repository directly.`,
     filterChanged: "Repository selection changed elsewhere. Your open selection has been kept; load the current selection before saving again.",
     filterReload: "Load current selection",
     filterLocalOnly: "Filter saved on this device. Cross-device sync was not confirmed.",
@@ -271,6 +279,10 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     },
   },
   cs: {
+    archivedReadOnly: "Tento repozitář je na GitHubu archivovaný a je pouze pro čtení.",
+    cachedReadFailed: "Data z GitHubu se nepodařilo obnovit. Dříve načtené hodnoty mohou být zastaralé.",
+    repositoryUnavailable: "Tento repozitář není dostupný připojenému účtu GitHub.",
+    recentPageLimit: count => `Zobrazuje se ${count} naposledy aktualizovaných repozitářů. Ostatní uložené výběry zůstávají zachovány; repozitář načtete přímo otevřením projektu.`,
     filterChanged: "Výběr repozitářů se změnil jinde. Otevřený výběr zůstává zachován; před dalším uložením načtěte aktuální výběr.",
     filterReload: "Načíst aktuální výběr",
     filterLocalOnly: "Filtr je uložen v tomto zařízení. Synchronizaci mezi zařízeními se nepodařilo potvrdit.",

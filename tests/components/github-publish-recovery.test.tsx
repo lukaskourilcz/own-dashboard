@@ -20,10 +20,10 @@ let root: Root | undefined, host: HTMLDivElement, client: QueryClient;
 const repo: GithubRepo = { id: 123, name: "fixture", full_name: "owner/fixture", owner: "owner", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/owner/fixture", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
 const close = vi.fn();
 afterEach(() => { act(() => root?.unmount()); host?.remove(); client?.clear(); vi.unstubAllGlobals(); vi.clearAllMocks(); document.documentElement.lang = "cs"; });
-async function render(getMarkdown: () => Promise<string>, connected = true) {
+async function render(getMarkdown: () => Promise<string>, connected = true, repository = repo) {
   vi.stubGlobal("localStorage", new Storage()); document.documentElement.lang = "en";
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }); client.setQueryData(qk.repos, connected ? { kind: "ok", repos: [repo] } : { kind: "disconnected" });
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }); client.setQueryData(qk.repos, connected ? { kind: "ok", repos: [repository] } : { kind: "disconnected" });
   await act(async () => root!.render(<QueryClientProvider client={client}><PublishToRepoDialog getMarkdown={getMarkdown} defaultFileName="fixture" defaultMessage="Save fixture" onClose={close}/></QueryClientProvider>));
 }
 const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.trim() === text)!;
@@ -73,4 +73,35 @@ it("keeps a typed file draft when GitHub disconnects during the write", async ()
   await act(async () => { button(github.en.commit).click(); await new Promise(resolve => setTimeout(resolve, 30)); });
   expect(state.err).toHaveBeenCalledWith(github.en.reconnect); expect(client.getQueryData(qk.repos)).toEqual({ kind: "disconnected" });
   expect(document.querySelector('[role="dialog"]')).toBe(dialog); expect(path.value).toBe("notes/recovery.md"); expect(content.value).toBe("Keep my reviewed draft"); expect(content.disabled).toBe(false);
+});
+
+it("keeps an archived repository read-only without exporting a draft", async () => {
+  const exportDraft = vi.fn().mockResolvedValue("Keep this local note");
+  await render(exportDraft, true, { ...repo, archived: true });
+  expect(button(github.en.commit).disabled).toBe(true); expect(document.body.textContent).toContain(github.en.archivedReadOnly);
+  act(() => button(github.en.commit).click()); expect(exportDraft).not.toHaveBeenCalled();
+});
+it("retains a confirmed commit receipt when repository metadata later disconnects", async () => {
+  const sha = "b".repeat(40);
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => Response.json({ path: "notes/fixture.md", updated: false, unchanged: false,
+    commit: { sha, html_url: `https://github.com/owner/fixture/commit/${sha}` }, content: { sha: "a".repeat(40), html_url: "https://github.com/owner/fixture/blob/main/notes/fixture.md" } })));
+  await render(async () => "Fixture note"); act(() => button(github.en.commit).click());
+  await vi.waitFor(async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, 5)); }); expect(document.body.textContent).toContain(github.en.committedNew); });
+  act(() => client.setQueryData(qk.repos, { kind: "disconnected" }));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+  expect(document.body.textContent).toContain(github.en.committedNew); expect(document.querySelector(`a[href="https://github.com/owner/fixture/commit/${sha}"]`)).not.toBeNull();
+});
+
+it("blocks reauthorization while an export is still pending and preserves its draft after failure", async () => {
+  let reject!: (error: Error) => void;
+  await render(() => new Promise((_resolve, failure) => { reject = failure; }));
+  await act(async () => { button(github.en.commit).click(); await new Promise(resolve => setTimeout(resolve, 10)); });
+  act(() => client.setQueryData(qk.repos, { kind: "disconnected" }));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+  expect(button(github.en.connect).disabled).toBe(true);
+  await act(async () => reject(Error("invented fixture")));
+  expect(button(github.en.connect).disabled).toBe(false); expect(close).not.toHaveBeenCalled();
+  act(() => client.setQueryData(qk.repos, { kind: "ok", repos: [repo] }));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+  expect(document.querySelector<HTMLInputElement>("input")?.value).toBe("notes/fixture.md");
 });

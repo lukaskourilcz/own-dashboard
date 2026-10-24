@@ -167,6 +167,7 @@ const emptyProjectForm: ProjectForm = {
 };
 
 type ProjectsPanelProps = {
+  initialProjectTab?: string;
   projects: Project[];
   setProjects: Updater<Project[]>;
   costs: ProjectCost[];
@@ -216,6 +217,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     : null;
   if (selected) {
     return <ProjectWorkspace
+      initialProjectTab={props.initialProjectTab}
       project={selected}
       allProjects={props.projects}
       costs={props.costs.filter((item) => item.project_id === selected.id)}
@@ -296,7 +298,7 @@ function ProjectsListPanel({
   // An explicit empty selection includes all returned repos. This is separate
   // from each project's active flag and financial history. Changing the
   // selection preserves every existing project and its related records.
-  const { data: reposData } = useReposQuery(syncRepositories);
+  const { data: reposData, isError: reposFailed, isFetching: reposFetching, refetch: refetchRepos } = useReposQuery(syncRepositories);
   const [repoFilterOpen, setRepoFilterOpen] = useState(false);
   const repoFilterMutation = useRepositoryFilterSave(() => setRepoFilterOpen(false));
   const { ids: visibleIds, available: filterAvailable } = useRepositoryFilter(initialVisibleIds, repositoryPreferencesAvailable);
@@ -332,7 +334,7 @@ function ProjectsListPanel({
   const lookedUpProjects = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (isPreview || !syncRepositories || !filterAvailable) return;
+    if (isPreview || !syncRepositories || !filterAvailable || reposFailed) return;
     // Plan only against loaded projects: an unfetched placeholder list would
     // make every repository look missing.
     if (!qc.getQueryState(qk.projects)?.dataUpdatedAt) return;
@@ -492,7 +494,7 @@ function ProjectsListPanel({
     // Re-run when the active repo set or the loaded projects change. Writes
     // already in flight are skipped by the guards above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRepos, projects, filterAvailable]);
+  }, [activeRepos, projects, filterAvailable, reposFailed]);
 
   // --- Registry → Projects ------------------------------------------------
   // The code-level registry (src/lib/portfolio.ts) materializes the daily
@@ -878,6 +880,8 @@ function ProjectsListPanel({
         </div>
       </details>
 
+      {syncRepositories && reposFailed && <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-foreground-muted"><p>{reposData?.kind === "ok" ? t.github.cachedReadFailed : t.github.loadErr}</p><Button variant="outline" size="sm" disabled={reposFetching} onClick={() => void refetchRepos()}>{t.github.refresh}</Button></div>}
+      {syncRepositories && reposData?.kind === "ok" && reposData.hasMore && <p role="status" className="mb-4 text-xs text-foreground-muted">{t.github.recentPageLimit(reposData.repos.length)}</p>}
       {syncRepositories && !filterAvailable && <p role="status" className="mb-4 text-sm text-foreground-muted">{t.github.filterUnavailable}</p>}
 
       {repoFilterOpen && reposData?.kind === "ok" && <RepositoryFilterDialog repos={reposData.repos} initialVisibleIds={visibleIds} saving={repoFilterMutation.isPending} onSave={repoFilterMutation.save} onClose={() => setRepoFilterOpen(false)} />}

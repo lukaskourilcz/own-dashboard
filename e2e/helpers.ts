@@ -1,5 +1,16 @@
 import type { BankProviderState } from "../src/lib/bank/flow";
 import type { Page } from "@playwright/test";
+import type { GithubRepo } from "../src/lib/github";
+
+/** The same validated metadata serves recent lists and direct project reads. */
+export async function stubGithubRepositories(page: Page, repos: GithubRepo[], hasMore = false) {
+  await page.route("**/api/github/repos", route => route.fulfill({ json: { repos, hasMore } }));
+  await page.route("**/api/github/repos/lookup?**", route => {
+    const name = new URL(route.request().url()).searchParams.get("repo")?.toLowerCase();
+    const repo = repos.find(row => row.full_name.toLowerCase() === name);
+    return route.fulfill(repo ? { json: { id: repo.id, full_name: repo.full_name, repo } } : { status: 404, json: { error: "Fixture repository not visible" } });
+  });
+}
 
 /** console.error / pageerror text we never want to fail a test. */
 const BENIGN = [
@@ -52,8 +63,9 @@ export async function stubBackend(page: Page): Promise<void> {
   await page.route("**/api/github/repos", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ repos: [] }),
+    body: JSON.stringify({ repos: [], hasMore: false }),
   }));
+  await page.route("**/api/github/repos/lookup?**", route => route.fulfill({ status: 401, json: { reason: "no-token" } }));
   await page.route("**/api/github/needed", route => route.fulfill({ json: { kind: "ok", files: (route.request().postDataJSON().repos as { id: number }[]).map(repo => ({ repoId: String(repo.id), result: { kind: "not-found" } })) } }));
   await page.route("**/api/github/activity**", (route) => route.fulfill({
     status: 200,

@@ -58,6 +58,7 @@ export const qk = {
   transactionRules: ["transactionRules"] as const,
   // Network-backed.
   repos: ["github", "repos"] as const,
+  githubRepo: ["github", "repo"] as const,
   detectedTools: ["github", "detected-tools"] as const,
   marketingState: ["marketing", "state"] as const,
   dneskaiSources: ["marketing", "dneskai-sources"] as const,

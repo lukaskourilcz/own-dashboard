@@ -37,42 +37,63 @@ export type GithubRepo = {
 // same protocol (and handle the not-connected case identically).
 // ---------------------------------------------------------------------------
 
-export type LoadReposResult =
-  | { kind: "ok"; repos: GithubRepo[] }
+export type LoadReposResult = (
+  | { kind: "ok"; repos: GithubRepo[]; hasMore?: boolean }
   | { kind: "disconnected" }
-  | { kind: "error" };
+  | { kind: "error" }) & { checkedAt?: number };
 
-/** Fetch repos as a plain result (no React state) so callers can apply it
- * inside a deferred callback — keeps setState out of effect bodies. */
-export async function loadReposResult(): Promise<LoadReposResult> {
-  try {
-    const res = await fetch("/api/github/repos");
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as { repos: GithubRepo[] };
-    return { kind: "ok", repos: json.repos };
-  } catch {
-    return { kind: "error" };
-  }
+export type RepositoryLookupResult = (
+  | { kind: "ok"; repo: GithubRepo }
+  | { kind: "not-found" }
+  | { kind: "disconnected" }
+  | { kind: "error" }) & { checkedAt?: number };
+
+function repositoryReadSignal(parent?: AbortSignal) {
+  return AbortSignal.any([AbortSignal.timeout(25_000), ...(parent ? [parent] : [])]);
+}
+async function repositoryJson(response: Response, signal: AbortSignal, bound: number): Promise<unknown> {
+  const prefix = await awaitWithSignal(readTextPrefix(response, bound, signal), signal);
+  if (prefix.truncated) throw Error("Repository result unavailable");
+  return JSON.parse(prefix.text);
+}
+function cancelRepositoryBody(response: Response) {
+  if (response.body) void response.body.cancel().catch(() => undefined);
 }
 
-/** Resolve an owner/name (current or pre-rename) to the repository's id and
- * current full name. Null when GitHub is disconnected or the name is unknown. */
-export async function lookupRepoIdentity(
-  fullName: string,
-): Promise<{ id: number; full_name: string } | null> {
+/** Plain typed results remain useful outside React. Query wrappers throw on
+ * unavailable results so a failed refresh cannot replace confirmed data. */
+export async function loadReposResult(context?: { signal: AbortSignal }): Promise<LoadReposResult> {
+  const signal = repositoryReadSignal(context?.signal);
   try {
-    const res = await fetch(
-      `/api/github/repos/lookup?repo=${encodeURIComponent(fullName)}`,
-    );
-    if (!res.ok) return null;
-    const json = (await res.json()) as { id?: unknown; full_name?: unknown };
-    return typeof json.id === "number" && typeof json.full_name === "string"
-      ? { id: json.id, full_name: json.full_name }
-      : null;
-  } catch {
-    return null;
-  }
+    const response = await awaitWithSignal(fetch("/api/github/repos", { cache: "no-store", signal }), signal);
+    if (!response.ok) { cancelRepositoryBody(response); return { kind: response.status === 401 ? "disconnected" : "error", checkedAt: Date.now() }; }
+    const body = await repositoryJson(response, signal, 1_048_576);
+    const { githubRepositoriesResponse } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
+    const result = githubRepositoriesResponse.parse(body);
+    return { kind: "ok", ...result, checkedAt: Date.now() };
+  } catch { return { kind: "error" }; }
+}
+
+export async function loadRepositoryResult(fullName: string, parent?: AbortSignal): Promise<RepositoryLookupResult> {
+  const signal = repositoryReadSignal(parent);
+  try {
+    const { githubRepositoryFullName, githubRepositoryLookupResponse } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
+    const name = githubRepositoryFullName.parse(fullName);
+    const response = await awaitWithSignal(fetch(`/api/github/repos/lookup?repo=${encodeURIComponent(name)}`, { cache: "no-store", signal }), signal);
+    if (!response.ok) {
+      cancelRepositoryBody(response);
+      return { kind: response.status === 401 ? "disconnected" : response.status === 404 ? "not-found" : "error", checkedAt: Date.now() };
+    }
+    const result = githubRepositoryLookupResponse.parse(await repositoryJson(response, signal, 65_536));
+    return { kind: "ok", repo: result.repo, checkedAt: Date.now() };
+  } catch { return { kind: "error" }; }
+}
+
+/** Legacy narrow caller; availability-aware synchronization uses the complete
+ * result instead of treating an error as proof that a repository is missing. */
+export async function lookupRepoIdentity(fullName: string): Promise<{ id: number; full_name: string } | null> {
+  const result = await loadRepositoryResult(fullName);
+  return result.kind === "ok" ? { id: result.repo.id, full_name: result.repo.full_name } : null;
 }
 
 export type CommitOutcome =

@@ -1,7 +1,8 @@
 import { qk } from "@/lib/queries/keys";
 import type { MarketingCalendarsResult } from "@/lib/marketing-calendars";
 import { useQuery, type QueryClient } from "@tanstack/react-query";
-import { loadReposResult, loadProjectCommits, loadCrossProjectActivity, type LoadReposResult } from "@/lib/github";
+import { useMemo } from "react";
+import { loadReposResult, loadRepositoryResult, loadProjectCommits, loadCrossProjectActivity, type LoadReposResult, type RepositoryLookupResult } from "@/lib/github";
 
 /** Single cache key for the repo list — the Repositories panel and the
  * "Publish to repo" dialog share it, so opening the dialog reuses the panel's
@@ -11,7 +12,12 @@ export const reposQueryKey = qk.repos;
 export function useReposQuery(enabled = true) {
   return useQuery({
     queryKey: reposQueryKey,
-    queryFn: loadReposResult,
+    queryFn: async ({ signal }) => {
+      const result = await loadReposResult({ signal });
+      if (result.kind === "error") throw Error("Repositories unavailable");
+      return result;
+    },
+    retry: false,
     // Repos don't change second-to-second; serve cached for a minute.
     staleTime: 60_000,
     // Off in contexts that only need repos on demand (e.g. the compact Tasks
@@ -20,35 +26,60 @@ export function useReposQuery(enabled = true) {
   });
 }
 
-/** Optimistically bump a repo's pushed_at in the cached list and re-sort, so a
- * repo just committed to jumps to the top across every consumer — no refetch. */
-export function bumpRepoInCache(qc: QueryClient, repoId: number): void {
-  qc.setQueryData<LoadReposResult>(reposQueryKey, (prev) => {
-    if (!prev || prev.kind !== "ok") return prev;
-    const repos = prev.repos
-      .map((r) =>
-        r.id === repoId ? { ...r, pushed_at: new Date().toISOString() } : r,
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.pushed_at ?? 0).getTime() -
-          new Date(a.pushed_at ?? 0).getTime(),
-      );
-    return { kind: "ok", repos };
+/** Reuse a known list entry, otherwise resolve only the workspace's repository.
+ * Cold project visits do not download the recent 100-repository catalog. */
+export function useWorkspaceRepositories(fullName?: string) {
+  const list = useReposQuery(!fullName);
+  const cached = list.data?.kind === "ok" && fullName
+    ? list.data.repos.find(repo => repo.full_name.toLowerCase() === fullName.toLowerCase()) : undefined;
+  const scoped = useQuery({
+    queryKey: [...qk.githubRepo, fullName?.toLowerCase() ?? ""],
+    queryFn: async ({ signal }) => {
+      const result = await loadRepositoryResult(fullName!, signal);
+      if (result.kind === "error") throw Error("Repository unavailable");
+      return result;
+    },
+    enabled: () => !!fullName && list.data?.kind !== "disconnected" && (!cached || (list.data?.checkedAt ?? 0) < Date.now() - 60_000),
+    staleTime: 60_000, retry: false,
   });
+  // Cache-only push-time updates do not refresh this provider receipt clock.
+  const preferListEntry = !!cached && (!scoped.data || (list.data?.checkedAt ?? 0) > (scoped.data.checkedAt ?? 0));
+  const data = useMemo(() => {
+    if (!fullName) return list.data;
+    if (list.data?.kind === "disconnected") return list.data;
+    if (preferListEntry && cached) return { kind: "ok" as const, repos: [cached], hasMore: false };
+    if (scoped.data?.kind === "ok") return { kind: "ok" as const, repos: [scoped.data.repo], hasMore: false };
+    if (scoped.data) return scoped.data;
+    return undefined;
+  }, [fullName, list.data, scoped.data, cached, preferListEntry]);
+  return {
+    data,
+    isPending: fullName ? !data && scoped.isPending : list.isPending,
+    isFetching: fullName ? scoped.isFetching : list.isFetching,
+    isError: fullName ? scoped.isError || (preferListEntry && list.isError) : list.isError,
+    refetch: fullName ? scoped.refetch : list.refetch,
+  };
 }
 
-/** Refresh a repo's pushed_at in the cached list *without re-sorting*, so the
- * board order stays put after an action that shouldn't reshuffle it (e.g.
- * saving per-repo notes). The repo shows as just-updated but doesn't jump. */
-export function touchRepoInCache(qc: QueryClient, repoId: number): void {
-  qc.setQueryData<LoadReposResult>(reposQueryKey, (prev) => {
-    if (!prev || prev.kind !== "ok") return prev;
-    const repos = prev.repos.map((r) =>
-      r.id === repoId ? { ...r, pushed_at: new Date().toISOString() } : r,
-    );
-    return { kind: "ok", repos };
+function updateRepositoryPushTime(qc: QueryClient, repoId: number, resort: boolean) {
+  const pushed_at = new Date().toISOString();
+  qc.setQueryData<LoadReposResult>(reposQueryKey, previous => {
+    if (previous?.kind !== "ok") return previous;
+    const repos = previous.repos.map(repo => repo.id === repoId ? { ...repo, pushed_at } : repo);
+    if (resort) repos.sort((a, b) => Date.parse(b.pushed_at ?? "1970-01-01") - Date.parse(a.pushed_at ?? "1970-01-01"));
+    return { ...previous, repos };
   });
+  qc.setQueriesData<RepositoryLookupResult>({ queryKey: qk.githubRepo }, previous =>
+    previous?.kind === "ok" && previous.repo.id === repoId ? { ...previous, repo: { ...previous.repo, pushed_at } } : previous);
+}
+
+/** Publication refreshes the matching scoped metadata too, without an extra
+ * provider read. Only the catalog's explicit bump changes its row order. */
+export function bumpRepoInCache(qc: QueryClient, repoId: number): void {
+  updateRepositoryPushTime(qc, repoId, true);
+}
+export function touchRepoInCache(qc: QueryClient, repoId: number): void {
+  updateRepositoryPushTime(qc, repoId, false);
 }
 
 /** Cancel late reads before marking every remote GitHub projection offline.
@@ -56,7 +87,7 @@ export function touchRepoInCache(qc: QueryClient, repoId: number): void {
 export async function setReposDisconnected(qc: QueryClient): Promise<void> {
   await qc.cancelQueries({ queryKey: ["github"] });
   qc.setQueryData<LoadReposResult>(reposQueryKey, { kind: "disconnected" });
-  for (const projection of ["commits", "activity", "detected-tools", "file", "about-project", "project-doc"]) {
+  for (const projection of ["repo", "commits", "activity", "detected-tools", "file", "about-project", "project-doc"]) {
     qc.setQueriesData({ queryKey: ["github", projection] }, { kind: "disconnected" });
   }
   qc.setQueryData<MarketingCalendarsResult>(qk.marketingCalendars, previous => {

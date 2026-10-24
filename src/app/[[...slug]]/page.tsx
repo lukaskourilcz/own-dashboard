@@ -1,3 +1,4 @@
+import { projectTabFromQuery } from "@/lib/project-workspace-tabs";
 import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardDataUnavailable } from "@/components/dashboard-data-unavailable";
@@ -15,7 +16,7 @@ export default async function DashboardPage({
   searchParams,
 }: {
   params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<{ q?: string | string[] }>;
+  searchParams: Promise<{ q?: string | string[]; projectTab?: string | string[] }>;
 }) {
   const { slug } = await params;
   if (!isDashboardSlug(slug)) notFound();
@@ -125,13 +126,15 @@ export default async function DashboardPage({
 
   // `/ig-tips?q=<title>` (linked from the marketing calendars) opens IG TIPS
   // searching for that tip, with its card expanded.
-  const initialTipQuery = initialTab === "ig-tips" ? tipDeepLinkQuery((await searchParams).q) : null;
+  const query = await searchParams;
+  const initialTipQuery = initialTab === "ig-tips" ? tipDeepLinkQuery(query.q) : null;
 
   return <DashboardShell
     initialTab={initialTab}
     initialTimezone={prefs.timezone}
     initialTipQuery={initialTipQuery}
     initialProjectId={requestedProject?.id}
+    initialProjectTab={projectTabFromQuery(query.projectTab)}
     initialDataKeys={[...requiredData]}
     user={{ id: user.id, email: user.email ?? "", name: (user.user_metadata?.full_name as string | undefined) ?? null, avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null }}
     initialSubscriptions={subscriptionsRes?.data ?? []}

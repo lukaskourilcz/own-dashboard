@@ -31,6 +31,7 @@ type TodosStrings = {
   refreshing: string;
   refreshDone: (added: number, removed: number) => string;
   refreshNothing: string;
+  refreshRepoLimit: (count: number) => string;
   refreshDisconnected: string;
   refreshNoRepos: string;
   refreshErr: string;
@@ -113,6 +114,7 @@ type TodosStrings = {
 
 export const todos: { en: TodosStrings; cs: TodosStrings } = {
   en: {
+    refreshRepoLimit: count => `Checked the ${count} listed repositories. Additional repositories were not scanned; their saved tasks were kept.`,
     filters: 'Filters', clearFilters: 'Clear filters', results: (count) => `${count} tasks`,
     title: "Tasks",
     description: "What you're working on and what's coming up.",
@@ -243,6 +245,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     deleteTaskConfirm: "This task will be permanently deleted.",
   },
   cs: {
+    refreshRepoLimit: count => `Zkontrolováno ${count} zobrazených repozitářů. Další repozitáře nebyly prohledány; jejich uložené úkoly zůstaly zachovány.`,
     filters: 'Filtry', clearFilters: 'Zrušit filtry', results: (count) => `${count} úkolů`,
     title: "Úkoly",
     description: "Na čem pracuješ a co tě čeká.",

@@ -20,6 +20,7 @@ import { resolveProjectRef } from "@/lib/projects";
  */
 export function DemoDashboard({
   projectRef,
+  initialProjectTab,
   initialTab,
   language = "cs",
   liveMarketingCalendars = false,
@@ -31,6 +32,7 @@ export function DemoDashboard({
 }: {
   /** Opens a project workspace directly, by fixture id or slug. */
   projectRef?: string;
+  initialProjectTab?: string;
   /** Opens a destination directly, as its URL would. */
   initialTab?: NavTab;
   language?: Lang;
@@ -63,6 +65,7 @@ export function DemoDashboard({
       user={f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
+      initialProjectTab={initialProjectTab}
       initialTipQuery={initialTipQuery}
       initialDataKeys={[...DASHBOARD_DATA_KEYS]}
       initialSubscriptions={f.subscriptions}

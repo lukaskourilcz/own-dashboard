@@ -47,6 +47,7 @@ import {
   DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
   isDneskaiProjectTab,
+  projectTabFromQuery,
   type DneskaiProjectTab,
   type ProjectTabId,
   type ProjectWorkspaceTab,
@@ -89,6 +90,7 @@ const DneskaiWorkspaceTab = dynamic(() => import('@/components/marketing/dneskai
 });
 
 type Props = {
+  initialProjectTab?: string;
   project: Project;
   allProjects: Project[];
   costs: ProjectCost[];
@@ -146,7 +148,7 @@ export function ProjectWorkspace(props: Props) {
   const now = useNow();
   const costDay = now ? todayKey(now) : null;
   const tabId = useId();
-  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => '');
+  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => projectTabFromQuery(props.initialProjectTab));
   const setTab = (tab: ProjectTabId) => requestNavigation(() => {
     const url = new URL(window.location.href); url.searchParams.set('projectTab', tab);
     window.history.replaceState(window.history.state, '', url); window.dispatchEvent(new Event('project-tab'));
@@ -297,7 +299,7 @@ function RecordCard({ title, icon: Icon, empty, items, info }: { title: string; 
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}{info && <Tooltip content={info}><span className="ml-0.5 inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip>}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
 }
 
-function readProjectTab(): string { return new URLSearchParams(window.location.search).get('projectTab') ?? ''; }
+function readProjectTab(): string { const values = new URLSearchParams(window.location.search).getAll('projectTab'); return values.length === 1 ? projectTabFromQuery(values[0]) : ''; }
 function subscribeProjectTab(onChange: () => void) {
   window.addEventListener('popstate', onChange); window.addEventListener('project-tab', onChange);
   return () => { window.removeEventListener('popstate', onChange); window.removeEventListener('project-tab', onChange); };

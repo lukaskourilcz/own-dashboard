@@ -57,7 +57,7 @@ import {
   bumpRepoInCache,
   setReposDisconnected,
   touchRepoInCache,
-  useReposQuery,
+  useWorkspaceRepositories,
 } from "@/lib/github-queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { NeededChecklist } from "@/components/panels/needed-checklist";
@@ -71,7 +71,7 @@ import { safeWebUrl } from "@/lib/web-url";
 import { RepositoryFilterDialog } from "@/components/github/repository-filter-dialog";
 import { useRepositoryFilterSave } from "@/components/github/use-repository-filter-save";
 
-type Status = "loading" | "connected" | "disconnected" | "error";
+type Status = "loading" | "connected" | "disconnected" | "not-found" | "error";
 
 // Stable empty references so the per-repo lookups never hand a card a fresh
 // array each render.
@@ -124,7 +124,7 @@ export function ReposPanel({
   const toast = useToast();
   const confirm = useConfirmation();
   const qc = useQueryClient();
-  const { data, isPending, isFetching, refetch } = useReposQuery();
+  const { data, isPending, isFetching, isError, refetch } = useWorkspaceRepositories(repoFullName);
   const guardNavigation = useGuardedNavigation();
   const autosave = useRepositoryNoteAutosave(setRepoNotes, () => toast.err(t.github.noteSaveErr), () => { void qc.invalidateQueries({ queryKey: qk.repoNotes }); });
   const [query, setQuery] = useState("");
@@ -136,13 +136,7 @@ export function ReposPanel({
   const { ids: visibleIds } = useRepositoryFilter(initialVisibleIds);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const allRepos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
-  const repos = useMemo(
-    () => repoFullName
-      ? allRepos.filter((repo) => repo.full_name.toLowerCase() === repoFullName.toLowerCase())
-      : allRepos,
-    [allRepos, repoFullName],
-  );
+  const repos = data?.kind === "ok" ? data.repos : EMPTY_REPOS;
   const status: Status = isPending
     ? "loading"
     : data
@@ -244,7 +238,7 @@ export function ReposPanel({
   return (
     <div className={repoFullName ? "mx-auto max-w-3xl" : undefined}>
       <PageHeader
-        title={repoFullName ?? t.github.title}
+        title={repoFullName ? repos[0]?.full_name ?? repoFullName : t.github.title}
         description={repoFullName ? undefined : t.github.subtitle}
         density={repoFullName ? "compact" : "regular"}
         action={
@@ -327,6 +321,10 @@ export function ReposPanel({
           }
         />
       )}
+
+      {status === "not-found" && <EmptyState icon={GithubIcon} title={t.github.repositoryUnavailable} action={<Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>{t.github.refresh}</Button>} />}
+      {status === "connected" && isError && <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning/30 p-3 text-sm text-foreground-muted"><p>{t.github.cachedReadFailed}</p><Button size="sm" variant="outline" onClick={() => void refetch()} disabled={isFetching}>{t.github.refresh}</Button></div>}
+      {status === "connected" && data?.kind === "ok" && data.hasMore && <p role="status" className="mb-3 text-xs text-foreground-muted">{t.github.recentPageLimit(data.repos.length)}</p>}
 
       {status === "disconnected" && (
         <EmptyState
@@ -514,6 +512,7 @@ function RepoNotesCard({
   }
 
   async function saveToGithub() {
+    if (repo.archived) { toast.err(t.github.archivedReadOnly); return; }
     if (pushing) return;
     setPushing(true);
     try {
@@ -617,6 +616,7 @@ function RepoNotesCard({
               variant="ghost"
               size="icon-sm"
               onClick={onWrite}
+              disabled={repo.archived}
               aria-label={t.github.writeFile}
             >
               <Upload className="h-3.5 w-3.5" />
@@ -670,7 +670,7 @@ function RepoNotesCard({
             {t.github.addNote}
           </Button>
           <Tooltip content={t.github.saveNotesHint}>
-            <Button size="sm" onClick={saveToGithub} disabled={pushing}>
+            <Button size="sm" onClick={saveToGithub} disabled={pushing || repo.archived}>
               {pushing ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -680,6 +680,7 @@ function RepoNotesCard({
             </Button>
           </Tooltip>
         </div>
+        {repo.archived && <p className="text-xs text-foreground-muted">{t.github.archivedReadOnly}</p>}
       </div>
     </Card>
   );
