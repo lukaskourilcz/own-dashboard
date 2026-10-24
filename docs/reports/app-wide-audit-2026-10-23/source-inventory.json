@@ -2036,10 +2036,10 @@
     },
     {
       "path": "src/lib/fx.ts",
-      "lines": 22,
+      "lines": 21,
       "sha256": "bb4ceb161db39d4c1126b6649baa2a5a613c082eca1466cc54557b3556df7070",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "b097b68c0ac93cf3755dd9252cac6331501b67a03637c90f3afd4fdd381c2b5b"
+      "status": "source reviewed; bounded formatter reuse, currency fallback, output parity and static FX guards checked; final release pending",
+      "reviewedSha256": "d3b484a3ec02a1630a37d3baee1fc40b88adee5e325b4c6b5370867f35749adc"
     },
     {
       "path": "src/lib/github-auth.ts",
@@ -3776,9 +3776,10 @@
     },
     {
       "path": "src/lib/utils.ts",
-      "lines": 28,
+      "lines": 38,
       "sha256": "cb945ce4d4ca64547fe4b83ef2864d3a6498d1ed7fb5b310969909620aeb037b",
-      "status": "pending"
+      "status": "source reviewed; bounded formatter reuse, currency fallback, output parity and static FX guards checked; final release pending",
+      "reviewedSha256": "d580f7bb5b1354e4aeca38be15b7bca1985a4fb3afe03465f44bf4e475ec8b91"
     },
     {
       "path": "src/lib/vercel.ts",

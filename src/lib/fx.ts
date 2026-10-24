@@ -14,8 +14,8 @@ export const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "CZK", "CAD"] as const
 /** Convert with the shared static rate table; unsupported pairs retain their amount. */
 export function convert(amount: number, from: string, to: string): number {
   if (from === to) return amount;
-  const fromRate = RATES_IN_USD[from];
-  const toRate = RATES_IN_USD[to];
+  const fromRate = Object.hasOwn(RATES_IN_USD, from) ? RATES_IN_USD[from] : undefined;
+  const toRate = Object.hasOwn(RATES_IN_USD, to) ? RATES_IN_USD[to] : undefined;
   if (!fromRate || !toRate) return amount;
   return (amount * fromRate) / toRate;
 }

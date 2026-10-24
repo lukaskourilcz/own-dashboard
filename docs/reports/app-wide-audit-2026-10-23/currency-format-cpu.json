@@ -1,0 +1,29 @@
+{
+  "scope": "Local synthetic formatter CPU only; not deployed latency, throughput or money savings.",
+  "baselineRef": "319b972",
+  "currentSourceSha256": "d580f7bb5b1354e4aeca38be15b7bca1985a4fb3afe03465f44bf4e475ec8b91",
+  "node": "v26.8.2",
+  "values": 10000,
+  "currencies": [
+    "USD",
+    "EUR",
+    "GBP",
+    "CZK",
+    "CAD"
+  ],
+  "outputsIdentical": true,
+  "samples": [
+    {
+      "beforeMs": 237.76266700000002,
+      "afterMs": 7.3156660000000215
+    },
+    {
+      "beforeMs": 305.007459,
+      "afterMs": 6.6534580000000005
+    },
+    {
+      "beforeMs": 229.14920800000004,
+      "afterMs": 5.378500000000031
+    }
+  ]
+}
