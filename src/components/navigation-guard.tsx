@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useDict } from '@/lib/i18n';
 
 const HISTORY_INDEX = 'ownDashboardIndex';
-type Draft = { dirty: boolean; canSave: boolean; save: () => Promise<boolean>; discard?: () => void };
+type Draft = { dirty: boolean; pending?: boolean; canSave: boolean; save: () => Promise<boolean>; discard?: () => void };
+const protectsNavigation = (draft: Draft) => draft.dirty || draft.pending === true;
 type Navigation = () => void;
 type Guard = { request: (action: Navigation) => void; register: (key: symbol, draft: Draft) => () => void };
 const unguarded: Guard = { request: action => action(), register: () => () => {} };
@@ -30,14 +31,19 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
   const savingRef = useRef(false);
   const [failed, setFailed] = useState(false);
   const [canSave, setCanSave] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
   const register = useCallback<Guard['register']>((key, draft) => {
     drafts.current.set(key, draft);
-    const update = () => { const dirty = [...drafts.current.values()].filter(item => item.dirty); setCanSave(dirty.length > 0 && dirty.every(item => item.canSave)); };
+    const update = () => {
+      const active = [...drafts.current.values()].filter(protectsNavigation);
+      setActionPending(active.some(item => item.pending));
+      setCanSave(active.length > 0 && active.every(item => item.canSave && !item.pending));
+    };
     update();
     return () => { drafts.current.delete(key); update(); };
   }, []);
   const request = useCallback((action: Navigation) => {
-    if (bypass.current || ![...drafts.current.values()].some(draft => draft.dirty)) { action(); return; }
+    if (bypass.current || ![...drafts.current.values()].some(protectsNavigation)) { action(); return; }
     if (pendingRef.current) return;
     pendingRef.current = action;
     setFailed(false);
@@ -50,6 +56,7 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     setFailed(false);
   };
   const proceed = (discard = false) => {
+    if (discard && (savingRef.current || [...drafts.current.values()].some(draft => draft.pending))) return;
     const action = pendingRef.current;
     if (discard) for (const draft of drafts.current.values()) if (draft.dirty) draft.discard?.();
     pendingRef.current = null;
@@ -60,8 +67,8 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
   };
   const save = async () => {
     if (savingRef.current) return;
-    const dirty = [...drafts.current.values()].filter(draft => draft.dirty);
-    if (!dirty.length || dirty.some(draft => !draft.canSave)) return;
+    const dirty = [...drafts.current.values()].filter(protectsNavigation);
+    if (!dirty.length || dirty.some(draft => !draft.canSave || draft.pending)) return;
     savingRef.current = true; setSaving(true); setFailed(false);
     try {
       for (const draft of dirty) { if (!await draft.save()) { setFailed(true); return; } }
@@ -87,7 +94,7 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
       const targetIndex = event.state?.[HISTORY_INDEX];
       if (typeof targetIndex !== 'number') return; // Cross-document exits also have the native beforeunload guard.
       const delta = targetIndex - currentIndex;
-      if (delta && [...drafts.current.values()].some(draft => draft.dirty)) {
+      if (delta && [...drafts.current.values()].some(protectsNavigation)) {
         event.stopImmediatePropagation();
         restoring = true;
         window.history.go(-delta);
@@ -101,12 +108,12 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
       if (bypass.current || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
       if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download') || anchor.getAttribute('href')?.startsWith('#') || anchor.href === window.location.href) return;
-      if (![...drafts.current.values()].some(draft => draft.dirty)) return;
+      if (![...drafts.current.values()].some(protectsNavigation)) return;
       event.preventDefault(); event.stopPropagation();
       request(() => anchor.click());
     };
     const onUnload = (event: BeforeUnloadEvent) => {
-      if (!bypass.current && [...drafts.current.values()].some(draft => draft.dirty)) event.preventDefault();
+      if (!bypass.current && [...drafts.current.values()].some(protectsNavigation)) event.preventDefault();
     };
     window.addEventListener('own-dashboard-navigation', onPush);
     window.addEventListener('popstate', onPop, true);
@@ -122,14 +129,14 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({ request, register }), [request, register]);
   return <NavigationContext.Provider value={value}>{children}
     <Dialog open={pending !== null} onOpenChange={open => { if (!open) stay(); }}>
-      <DialogContent className="max-w-md" onEscapeKeyDown={event => { if (saving) event.preventDefault(); }} onPointerDownOutside={event => { if (saving) event.preventDefault(); }}>
-        <DialogHeader><DialogTitle>{t.title}</DialogTitle><DialogDescription>{t.description}</DialogDescription></DialogHeader>
+      <DialogContent className="max-w-md" aria-busy={saving || actionPending} showClose={!saving} onEscapeKeyDown={event => { if (saving) event.preventDefault(); }} onPointerDownOutside={event => { if (saving) event.preventDefault(); }}>
+        <DialogHeader><DialogTitle>{actionPending || saving ? t.pendingTitle : t.title}</DialogTitle><DialogDescription>{actionPending || saving ? t.pendingDescription : t.description}</DialogDescription></DialogHeader>
         {failed && <p role="alert" className="text-sm text-risk">{t.failed}</p>}
-        {!canSave && !saving && <p className="text-sm text-foreground-muted">{t.invalid}</p>}
+        {!canSave && !saving && !actionPending && <p className="text-sm text-foreground-muted">{t.invalid}</p>}
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <Button variant="outline" disabled={saving} onClick={stay}>{t.stay}</Button>
-          <Button variant="ghost" disabled={saving} onClick={() => proceed(true)}>{t.discard}</Button>
-          <Button disabled={!canSave || saving} aria-busy={saving} onClick={() => void save()}>{saving ? t.saving : t.save}</Button>
+          <Button variant="ghost" disabled={saving || actionPending} onClick={() => proceed(true)}>{t.discard}</Button>
+          <Button disabled={!canSave || saving || actionPending} aria-busy={saving} onClick={() => void save()}>{saving ? t.saving : t.save}</Button>
         </div>
       </DialogContent>
     </Dialog>

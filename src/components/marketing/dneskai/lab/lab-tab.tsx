@@ -202,7 +202,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       return false;
     } finally { setBusyAction(null); }
   }
-  useUnsavedDraft({ dirty, canSave: !busy && !!request && draftProblems(post, draft, fit.status === 'ready' ? fit.result : null).length === 0, save: () => perform('save') });
+  useUnsavedDraft({ pending: busy, dirty, canSave: !busy && !!request && draftProblems(post, draft, fit.status === 'ready' ? fit.result : null).length === 0, save: () => perform('save') });
   // A kit switch is a draft edit: every slide shows as a render-only preview in the new kit until it is saved.
   function chooseKit(kit: DneskaiKit) {
     if (props.guest || busy || !editable) return;

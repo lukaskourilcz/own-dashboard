@@ -61,6 +61,7 @@ export function RepositoryLinkControl({ repo, link, setRepoLinks }: { repo: Pick
     }
   }
   useUnsavedDraft({
+    pending: action !== null,
     dirty: action !== null || (open && value !== (captured?.url ?? "")),
     canSave: !action && !changed && !!normalizeRepositoryUrl(value),
     save: () => persist(),

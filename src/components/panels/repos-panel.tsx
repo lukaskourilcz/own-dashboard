@@ -42,7 +42,7 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { GithubIcon } from "@/components/icons/github";
 import { connectGitHub } from "@/lib/github-auth";
-import { useGuardedNavigation } from "@/components/navigation-guard";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import { useRepositoryFilter } from "@/lib/use-prefs";
@@ -824,24 +824,34 @@ function WriteFileDialog({
   const [branch, setBranch] = useState("");
   // Prefilled commit message; the parent remounts this component per repo
   // (via `key`), so the initializer runs fresh each time the dialog opens.
-  const [message, setMessage] = useState(() => t.github.messagePlaceholder);
+  const [initialMessage] = useState(() => t.github.messagePlaceholder);
+  const [message, setMessage] = useState(initialMessage);
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<GithubCommitResult | null>(null);
+  const pending = useRef(false);
+  useUnsavedDraft({
+    dirty: !!repo && !result && (!!path || !!branch || !!content || message !== initialMessage),
+    pending: busy,
+    canSave: !!repo && !repo.archived && !busy && !!normalizeRepoPath(path) && !!content.trim(),
+    save: submit,
+    discard: onClose,
+  });
 
   if (!repo) return null;
 
-  async function submit() {
-    if (!repo) return;
+  async function submit(): Promise<boolean> {
+    if (!repo || repo.archived || pending.current) return false;
     const normalized = normalizeRepoPath(path);
     if (!normalized) {
       toast.err(t.github.needPath);
-      return;
+      return false;
     }
     if (!content.trim()) {
       toast.err(t.github.needContent);
-      return;
+      return false;
     }
+    pending.current = true;
     setBusy(true);
     try {
       const outcome = await commitFile({
@@ -860,7 +870,7 @@ function WriteFileDialog({
         } else {
           toast.err(outcome.status === 409 ? t.github.fileChanged : t.github.commitUnconfirmed);
         }
-        return;
+        return false;
       }
       setResult(outcome.result);
       if (!outcome.result.unchanged) onCommitted(repo.id);
@@ -869,7 +879,12 @@ function WriteFileDialog({
           ? t.github.committedUpdate
           : t.github.committedNew,
       );
+      return true;
+    } catch {
+      toast.err(t.github.commitUnconfirmed);
+      return false;
     } finally {
+      pending.current = false;
       setBusy(false);
     }
   }

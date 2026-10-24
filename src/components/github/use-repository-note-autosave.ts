@@ -69,7 +69,7 @@ export function useRepositoryNoteAutosave(setNotes: Updater<RepoNote[]>, reportF
     for (const timer of timers.current.values()) clearTimeout(timer);
     timers.current.clear(); documents.current.clear(); failed.current.clear(); setDrafts({}); setErrors(new Set());
   }
-  useUnsavedDraft({ dirty: Object.keys(drafts).length > 0 || pending.size > 0, canSave: true, save: saveAll, discard: discardAll });
+  useUnsavedDraft({ pending: pending.size > 0, dirty: Object.keys(drafts).length > 0 || pending.size > 0, canSave: true, save: saveAll, discard: discardAll });
   useEffect(() => { const active = timers.current; return () => { for (const timer of active.values()) clearTimeout(timer); active.clear(); }; }, []);
   function discard(id: string) { if (chains.current.has(id)) return false; clearDraft(id); return true; }
   return { drafts, errors, pending, generation, change, save: async (id: string) => await save(id) && !documents.current.has(id), saveAll, discard, discardAll };

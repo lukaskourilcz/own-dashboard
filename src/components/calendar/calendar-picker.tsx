@@ -63,6 +63,7 @@ export function CalendarPicker({
     try { await saveMutation.mutateAsync([...selected]); return true; } catch { return false; }
   }
   useUnsavedDraft({
+    pending: saveMutation.isPending,
     dirty: saveMutation.isPending || (open && (selected.size !== confirmed.length || confirmed.some(id => !selected.has(id)))),
     canSave: !saveMutation.isPending && !!calendars && !isError,
     save: saveSelection,

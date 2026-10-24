@@ -64,7 +64,7 @@ export function CalendarPanel({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Submission | null>(null);
   const [baseline, setBaseline] = useState(() => JSON.stringify(form));
-  useUnsavedDraft({ dirty: submitting || JSON.stringify(form) !== baseline, canSave: !submitting && !!form.title.trim() && !!form.date && (form.allDay || (!!form.startTime && form.endTime > form.startTime)), save: saveEvent });
+  useUnsavedDraft({ pending: submitting, dirty: submitting || JSON.stringify(form) !== baseline, canSave: !submitting && !!form.title.trim() && !!form.date && (form.allDay || (!!form.startTime && form.endTime > form.startTime)), save: saveEvent });
 
   async function saveEvent(): Promise<boolean> {
     if (pending.current) return false;

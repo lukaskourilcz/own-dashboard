@@ -521,6 +521,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   });
 
   useUnsavedDraft({
+    pending: autosave.pending.size > 0 || deleteMutation.isPending,
     dirty: autosave.dirty.size > 0,
     canSave: !deleteMutation.isPending,
     discard: autosave.discardAll,

@@ -2,7 +2,7 @@ type CommonStrings = {
   dataUnavailable: string;
   dataUnavailableDescription: string;
   retry: string;
-  unsaved: { title: string; description: string; stay: string; discard: string; save: string; saving: string; failed: string; invalid: string };
+  unsaved: { pendingTitle: string; pendingDescription: string; title: string; description: string; stay: string; discard: string; save: string; saving: string; failed: string; invalid: string };
   add: string;
   save: string;
   cancel: string;
@@ -21,7 +21,7 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     dataUnavailable: "Could not load this page",
     dataUnavailableDescription: "Check your connection and try again. Your saved records have not changed.",
     retry: "Try again",
-    unsaved: { title: "Save your changes?", description: "This draft has unsaved changes. Save it before leaving, or discard the changes.", stay: "Stay here", discard: "Discard and leave", save: "Save and leave", saving: "Saving…", failed: "Could not save. Your changes are still here. Try again or stay to review them.", invalid: "Stay here and correct the fields before saving." },
+    unsaved: { pendingTitle: "Action in progress", pendingDescription: "Wait for it to finish before leaving. You can return to the page while it runs.", title: "Save your changes?", description: "This draft has unsaved changes. Save it before leaving, or discard the changes.", stay: "Stay here", discard: "Discard and leave", save: "Save and leave", saving: "Saving…", failed: "Could not save. Your changes are still here. Try again or stay to review them.", invalid: "Stay here and correct the fields before saving." },
     add: "Add",
     save: "Save",
     cancel: "Cancel",
@@ -38,7 +38,7 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     dataUnavailable: "Stránku se nepodařilo načíst",
     dataUnavailableDescription: "Zkontrolujte připojení a zkuste to znovu. Uložené záznamy se nezměnily.",
     retry: "Zkusit znovu",
-    unsaved: { title: "Uložit změny?", description: "Návrh obsahuje neuložené změny. Před odchodem je uložte, nebo zahoďte.", stay: "Zůstat zde", discard: "Zahodit a odejít", save: "Uložit a odejít", saving: "Ukládání…", failed: "Uložení se nezdařilo. Změny tu zůstávají. Zkuste to znovu, nebo se vraťte k úpravám.", invalid: "Před uložením se vraťte a opravte pole." },
+    unsaved: { pendingTitle: "Akce probíhá", pendingDescription: "Před odchodem počkejte na dokončení. Mezitím se můžete vrátit na stránku.", title: "Uložit změny?", description: "Návrh obsahuje neuložené změny. Před odchodem je uložte, nebo zahoďte.", stay: "Zůstat zde", discard: "Zahodit a odejít", save: "Uložit a odejít", saving: "Ukládání…", failed: "Uložení se nezdařilo. Změny tu zůstávají. Zkuste to znovu, nebo se vraťte k úpravám.", invalid: "Před uložením se vraťte a opravte pole." },
     add: "Přidat",
     save: "Uložit",
     cancel: "Zrušit",

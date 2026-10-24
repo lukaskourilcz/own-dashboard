@@ -58,6 +58,7 @@ export function RepositoryFilterDialog({
   );
   const canSave = chosen.length > 0 && chosen.length <= 500 && !saving && !changed;
   useUnsavedDraft({
+    pending: saving,
     dirty: saving || chosen.length !== initialDraft.length || chosen.some(id => !initialDraft.includes(id)),
     canSave,
     save: () => onSave(chosen),

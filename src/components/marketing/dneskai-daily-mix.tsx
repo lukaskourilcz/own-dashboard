@@ -34,7 +34,7 @@ export function DneskaiDailyMixPanel({ projectId, lang, preview = false, showDis
   const titleId = useId(), newsId = useId(), educationId = useId(), problemId = useId();
   const posts = draft ? draft.newsPerDay + draft.educationPerDay : 0;
   const tooFew = !!draft && posts > draft.slots.length;
-  useUnsavedDraft({ dirty: !preview && !!draft && !!query.data && JSON.stringify(draft) !== JSON.stringify(query.data.mix), canSave: !save.isPending && !tooFew,
+  useUnsavedDraft({ pending: save.isPending, dirty: !preview && !!draft && !!query.data && JSON.stringify(draft) !== JSON.stringify(query.data.mix), canSave: !save.isPending && !tooFew,
     save: async () => { if (!draft || tooFew || preview) return false; try { await save.mutateAsync(draft); return true; } catch { return false; } } });
   if (query.data === null) return showDisabled ? <p role="status" className="text-sm text-foreground-muted">{t.disabled}</p> : null;
   if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;

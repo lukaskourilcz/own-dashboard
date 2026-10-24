@@ -354,3 +354,10 @@ GitHub history, 24 October: the combined metadata/link/history run passes 24 EN/
 
 
 Saved repository records, 24 October: 28 EN/CS desktop/mobile cases pass with two intentional duplicate-width skips. Following the final action-deadline guards, all sixteen local-record/task/note recovery cases pass again. A cold disconnected workspace shows only its own saved records, permits a captured-version edit and retains that edit after a verified reload/reconnection; provider metadata and publication controls remain unavailable until verified. Reused names with a different repository id cannot select publication controls. Six widths and main-region axe pass. Mounted tests also retain the same draft textarea through a disconnect/reconnect and release stalled authentication/disconnect controls. All values and endpoints are fixtures. Full optimized release and remaining file-dialog/shared-navigation checks remain pending.
+
+
+## Pending actions and file drafts, 24 October 2026
+
+Four final EN/CS desktop/mobile development browser cases pass for repository file drafts and the persistent navigation guard. Back restores the actual shell history entry; Stay retains text, unavailable writes keep drafts, and a confirmed save resumes the chosen exit. Pending actions block discard/duplicate save; guard-initiated saves also block dismissal and hide their inactive close control. External pending actions still allow Stay. Checks cover six widths, keyboard/Escape, light/dark contexts, dialog axe and busy semantics. Czech mobile/desktop captures were inspected. The initial fixture incorrectly assumed workspace tabs add history entries; the passing case uses Projects-to-workspace shell navigation.
+
+Before the final close-control/busy-semantics adjustment, 86 Calendar, Notes, repository-link/selection and DNESKAi Lab browser regressions pass with four intentional duplicate-width skips. After that adjustment, all four new navigation cases and 63 targeted unit/component cases pass again. All provider/data writes are fixtures; no owner operation or real publication ran. The optimized app-wide release remains pending.

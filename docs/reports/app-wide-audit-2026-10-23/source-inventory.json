@@ -666,10 +666,10 @@
     },
     {
       "path": "src/components/calendar/calendar-picker.tsx",
-      "lines": 166,
+      "lines": 185,
       "sha256": "0159c097b49c354ce0f707bfd3d4c40dde2bc5c56baab15b138451aaac512dbc",
       "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "94915b25bfde8088493fec9a227002f55cf4522d52dadf149c159545aa3f1e4e"
+      "reviewedSha256": "a5b1a4059fe9aa804b15d5263083e089bd7d92bf1942711ae651ce354224c88d"
     },
     {
       "path": "src/components/calendar/relink-cta.tsx",
@@ -914,7 +914,8 @@
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
       "lines": 75,
       "sha256": "c43f2b4e0174da99cce3c393099b18aa4077520a26e951a0d458b9f040b05b43",
-      "status": "pending"
+      "status": "pending",
+      "reviewedSha256": "fa53d8a0b66d99e4c78723b14036f0b3e03759cf623012b6f8e9c7d9f863f0ad"
     },
     {
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
@@ -1004,7 +1005,8 @@
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
       "lines": 379,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "pending"
+      "status": "pending",
+      "reviewedSha256": "3378c26d6e5ece9b55ac6b53aa6de74457147f3cd25e0f5a7312291239403c37"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
@@ -1160,10 +1162,10 @@
     },
     {
       "path": "src/components/navigation-guard.tsx",
-      "lines": 143,
+      "lines": 151,
       "sha256": "07b05612aacc4f043f23a39f9a4d29ae13b1c5ad8205e9d0659cdcae9a255de4",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "d4f6ea1668f4154d87d0cb1c0b43286e0c2de8c572eca87b11a26786dd7b7c97"
+      "status": "source reviewed; pending actions, dirty navigation and shell history checks pass; final optimized app-wide checks pending",
+      "reviewedSha256": "6614b4799b682e753068efe76a9652c5fd8c4163b92723659eb589ec7b24b897"
     },
     {
       "path": "src/components/notes/note-editor.tsx",
@@ -1245,10 +1247,10 @@
     },
     {
       "path": "src/components/panels/calendar-panel.tsx",
-      "lines": 240,
+      "lines": 285,
       "sha256": "dd1c25a55059a0c3ddef32671b87a5ebf6e302cbfa074cbd25501958c81c2d6a",
       "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "41a6aa0ca17301d7a2589d6148159760047586acf757f594612695b685df4dbb"
+      "reviewedSha256": "2ff927949da3bdfdaab8b9bf927e016e1066130ca81811ccb235b8fddd9afc24"
     },
     {
       "path": "src/components/panels/career-board.tsx",
@@ -1385,10 +1387,10 @@
     },
     {
       "path": "src/components/panels/notes-panel.tsx",
-      "lines": 1367,
+      "lines": 1325,
       "sha256": "af7850a690d55f1ff78cb048e62265aec7d4da2da8874e56fa6d8df235ff9cd2",
       "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "8aa5313ef9e3860c6e4b54dc9f370b9997b60fc0d02223423e5a8fb0fe1985d6"
+      "reviewedSha256": "4d0910d90139a100bca7e921528cb6639203808d77c510a05c46ec89df5c1c2c"
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
@@ -1434,10 +1436,10 @@
     },
     {
       "path": "src/components/panels/repos-panel.tsx",
-      "lines": 1320,
+      "lines": 1016,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partial: owned cards/id matching/receipt/deadline controls reviewed/tested; file-dialog dirty navigation and stable write-target binding remain",
-      "reviewedSha256": "5cd48fbba8e25c0f94ad15ece0f4e9e6ad89dd385aa3c3611f1fcb18d0e815d4"
+      "status": "partially reviewed; owned records and file draft/pending navigation checked; atomic file repository binding and remaining integrations in review.md",
+      "reviewedSha256": "4704a37f6deb7722ababa7c4e54d10688ecd30752d97e9cda2677d3cd0b878a2"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -2142,9 +2144,10 @@
     },
     {
       "path": "src/lib/i18n/sections/common.ts",
-      "lines": 45,
+      "lines": 54,
       "sha256": "77dadc248e367806b1c1ce79e6ecbbc00cb4e06f0e81fcaf600ac15cf1ff9cd8",
-      "status": "pending"
+      "status": "source reviewed; shared error and pending/draft copy has EN/CS parity; targeted render checks pass; final release pending",
+      "reviewedSha256": "e85e7ba079d1d615a248dcbc0f927caa4e8b5ccf2c7afe959d723865f02fa60b"
     },
     {
       "path": "src/lib/i18n/sections/costs.ts",
@@ -3901,7 +3904,7 @@
       "path": "src/components/github/use-repository-note-autosave.ts",
       "sha256": null,
       "lines": 76,
-      "reviewedSha256": "d3805cbd26bfdaf55d9228d093d6d8f355935fe0b76695bf2481cd394947c8e5",
+      "reviewedSha256": "5900b0821add141e7a78d522d6e7eb399303db20e5813ad554240500f769b105",
       "status": "source reviewed; repository receipt checks pass; final release checks pending"
     },
     {
@@ -4040,9 +4043,9 @@
     {
       "path": "src/components/github/repository-link-control.tsx",
       "sha256": null,
-      "lines": 121,
+      "lines": 122,
       "status": "source reviewed; retained link drafts, pending/conflict/navigation/URL/a11y states tested; rendered checks pass; final release pending",
-      "reviewedSha256": "e3bd446a2cc5731b10402c367ab6312d1e133bdeaff46151716e203e9ef37e44"
+      "reviewedSha256": "4179366ee9fda2d881141c27cd524e27d61df21b6438c87d7f0cd635ceaffa31"
     },
     {
       "path": "src/lib/repository-filter.ts",
@@ -4061,9 +4064,9 @@
     {
       "path": "src/components/github/repository-filter-dialog.tsx",
       "sha256": null,
-      "lines": 173,
+      "lines": 174,
       "status": "source reviewed; pending/navigation/conflict/off-page selection states tested; rendered six-width/a11y checks pass; final release pending",
-      "reviewedSha256": "afab6e28bfbe883d199a0f7c1dc4cee1ee99d4a250be8081d8ab092fcd2f34ed"
+      "reviewedSha256": "0c1db3f3d619b77501bfb4e10b0c052782795eb224e9bc7fe509652b1aec0bdb"
     },
     {
       "path": "src/components/github/use-repository-filter-save.ts",
