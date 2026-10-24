@@ -17,8 +17,8 @@ export async function POST(request: Request) {
       // Revoke Google grant + delete stored refresh token. Best-effort:
       // failures here shouldn't block sign-out.
       await revokeGoogleAccess(user.id);
-    } catch (err) {
-      console.error("[auth/signout] revokeGoogleAccess failed:", err);
+    } catch {
+      console.error("[auth/signout] google-revocation-unconfirmed");
     }
   }
 

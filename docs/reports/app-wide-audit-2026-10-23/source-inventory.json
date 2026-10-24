@@ -526,13 +526,15 @@
       "path": "src/app/auth/callback/route.ts",
       "lines": 129,
       "sha256": "d78015c1ab24138ab94a5ce28a9e28fb090b34ee41ec34481bc3a2762741411c",
-      "status": "pending"
+      "status": "source reviewed; normalized redirect/privacy checks passed; provider-grant binding/expiry follow-up pending",
+      "reviewedSha256": "dd32a90168524434580fa313978e98b571a60fd3e8c6629fea3cc8606ef606d5"
     },
     {
       "path": "src/app/auth/signout/route.ts",
       "lines": 27,
       "sha256": "5bb8e3dca064023d40a688f64026b7714105fbd9058f4ebb30f1548191f38b3e",
-      "status": "pending"
+      "status": "source reviewed; fixed privacy logging checked; sign-out failure and revocation semantics remain under review",
+      "reviewedSha256": "1483ecf7dc5cf78eeb8a4ec28e0ab84efc2dac62266fe07ad02fab1d8626929d"
     },
     {
       "path": "src/app/dev-preview/page.tsx",
@@ -558,37 +560,43 @@
       "path": "src/app/icon.tsx",
       "lines": 51,
       "sha256": "4757561360dc2672a29864bda2c2514688dff80376ae40d00caaeb0096f07477",
-      "status": "pending"
+      "status": "source read; real-size metadata and install verification pending",
+      "reviewedSha256": "4757561360dc2672a29864bda2c2514688dff80376ae40d00caaeb0096f07477"
     },
     {
       "path": "src/app/layout.tsx",
       "lines": 71,
       "sha256": "163087149b4e9d42c6e1bf6b40f7b1fcd6498ee893f853933761a462e50f05a9",
-      "status": "pending"
+      "status": "source read; public metadata/theme/language verification pending",
+      "reviewedSha256": "163087149b4e9d42c6e1bf6b40f7b1fcd6498ee893f853933761a462e50f05a9"
     },
     {
       "path": "src/app/login/page.tsx",
       "lines": 133,
       "sha256": "d97a6cadc15ee63fa897f70a893a7e8754fd3f49ac299b1975e95375f20d6a08",
-      "status": "pending"
+      "status": "source read; rejected OAuth recovery and mobile density review pending",
+      "reviewedSha256": "d97a6cadc15ee63fa897f70a893a7e8754fd3f49ac299b1975e95375f20d6a08"
     },
     {
       "path": "src/app/manifest.ts",
       "lines": 34,
       "sha256": "166524b9de6b7cc63a78ce4f004fdf875e97cc3aaa61e264d1e4fea8c0773050",
-      "status": "pending"
+      "status": "source read; icon-size and orientation fixes/verification pending",
+      "reviewedSha256": "166524b9de6b7cc63a78ce4f004fdf875e97cc3aaa61e264d1e4fea8c0773050"
     },
     {
       "path": "src/app/not-found.tsx",
       "lines": 52,
       "sha256": "f3059910613de6e1d7175f779d98540dc6d97c5c6a2a45f83a65f0700544d846",
-      "status": "pending"
+      "status": "source read; final public rendered/a11y checks pending",
+      "reviewedSha256": "f3059910613de6e1d7175f779d98540dc6d97c5c6a2a45f83a65f0700544d846"
     },
     {
       "path": "src/app/providers.tsx",
       "lines": 27,
       "sha256": "c7aa144540c6399c0aeaa0e7b74ff38c7e1086a40bb1ee1f95df71ffaeab38c7",
-      "status": "pending"
+      "status": "source read; auth cache transitions and optional analytics follow-up pending",
+      "reviewedSha256": "c7aa144540c6399c0aeaa0e7b74ff38c7e1086a40bb1ee1f95df71ffaeab38c7"
     },
     {
       "path": "src/components/brand-mark.tsx",
@@ -1374,7 +1382,8 @@
       "path": "src/components/posthog-provider.tsx",
       "lines": 41,
       "sha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481",
-      "status": "pending"
+      "status": "source read; optional SDK import and analytics privacy follow-up pending",
+      "reviewedSha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481"
     },
     {
       "path": "src/components/preference-hydrator.tsx",
@@ -1697,7 +1706,8 @@
       "path": "src/lib/brand.ts",
       "lines": 20,
       "sha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738",
-      "status": "pending"
+      "status": "source reviewed; centralized temporary name and professional scope retained; metadata rendering checks pending",
+      "reviewedSha256": "929e087b49f26e0c3abff56ab9b79a6c1ceb1c6b139a0a6bd02b164943f50738"
     },
     {
       "path": "src/lib/calendar-server.ts",
@@ -3382,20 +3392,22 @@
       "path": "src/lib/supabase/client.ts",
       "lines": 10,
       "sha256": "661aa32384926007f70f75fd3b96e9752ca09926d60be1717d7ddc3452770796",
-      "status": "source reviewed; final release checks pending",
+      "status": "source read; guest fetch boundary retained; auth/cache transition verification pending",
       "reviewedSha256": "f46dbaa1d653b6d8b1915dea262bcdf3f01a5c025337d740cd94630283d46e03"
     },
     {
       "path": "src/lib/supabase/middleware.ts",
       "lines": 75,
       "sha256": "29c9d9ee5238e5ef8f037b765cd4827b609afcd862c21d03ebcab15a9e458914",
-      "status": "pending"
+      "status": "source read; refreshed-cookie redirects and exact public boundaries need follow-up",
+      "reviewedSha256": "29c9d9ee5238e5ef8f037b765cd4827b609afcd862c21d03ebcab15a9e458914"
     },
     {
       "path": "src/lib/supabase/server.ts",
       "lines": 27,
       "sha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446",
-      "status": "pending"
+      "status": "source read; request-local cookie handling retained; session refresh review pending",
+      "reviewedSha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446"
     },
     {
       "path": "src/lib/supabase/user.ts",
@@ -3517,7 +3529,8 @@
       "path": "src/proxy.ts",
       "lines": 17,
       "sha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9",
-      "status": "pending"
+      "status": "source read; public metadata and authentication matcher verification pending",
+      "reviewedSha256": "c10a9ee2f9bcffa034062508344e7c0d4c60893c68354d63219ab22e853796c9"
     },
     {
       "path": "src/components/dashboard-data-unavailable.tsx",

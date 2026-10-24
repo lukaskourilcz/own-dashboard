@@ -10,14 +10,16 @@ import { storeGitHubTokens } from "@/lib/github-token";
  * redirector — the user signs in successfully and lands on the attacker's
  * page with a freshly minted Supabase session in their cookie jar.
  */
-function safeNext(raw: string | null): string {
-  if (!raw) return "/";
-  // Must start with single slash, must NOT start with // (protocol-relative)
-  // or with /\ (Windows-style protocol-relative bypass).
-  if (!raw.startsWith("/")) return "/";
-  if (raw.startsWith("//")) return "/";
-  if (raw.startsWith("/\\")) return "/";
-  return raw;
+function safeNext(raw: string | null, origin: string): URL {
+  const fallback = new URL("/", origin);
+  if (!raw || raw.length > 2048 || !raw.startsWith("/") || raw.startsWith("//")) return fallback;
+  try {
+    const target = new URL(raw, origin);
+    // URL parsing removes tabs/newlines and normalizes backslashes. Check the
+    // parsed origin, and keep this URL object: reparsing its normalized path
+    // could turn a same-origin //path into a protocol-relative destination.
+    return target.origin === origin && !target.username && !target.password ? target : fallback;
+  } catch { return fallback; }
 }
 
 type SessionLike = {
@@ -71,8 +73,8 @@ async function captureGitHub(session: SessionLike, user: User): Promise<void> {
       githubLogin: login,
       githubId,
     });
-  } catch (err) {
-    console.error("[auth/callback] storeGitHubTokens failed:", err);
+  } catch {
+    console.error("[auth/callback] github-token-storage-unconfirmed");
     // Non-fatal — the user stays logged in; first GitHub call shows a CTA.
   }
 }
@@ -98,8 +100,8 @@ async function captureGoogle(session: SessionLike, user: User): Promise<void> {
       scopes: parseScopes(session),
       googleSub: typeof googleSub === "string" ? googleSub : null,
     });
-  } catch (err) {
-    console.error("[auth/callback] storeGoogleTokens failed:", err);
+  } catch {
+    console.error("[auth/callback] google-token-storage-unconfirmed");
     // Fall through — the user is still logged in; first Google call will
     // surface a "reconnect" CTA.
   }
@@ -108,7 +110,7 @@ async function captureGoogle(session: SessionLike, user: User): Promise<void> {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = safeNext(url.searchParams.get("next"));
+  const next = safeNext(url.searchParams.get("next"), url.origin);
   const link = url.searchParams.get("link");
 
   if (code) {
@@ -121,7 +123,7 @@ export async function GET(request: Request) {
       } else {
         await captureGoogle(session, data.user);
       }
-      return NextResponse.redirect(new URL(next, url.origin));
+      return NextResponse.redirect(next);
     }
   }
 
