@@ -618,9 +618,10 @@
     },
     {
       "path": "src/app/globals.css",
-      "lines": 769,
+      "lines": 776,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "pending"
+      "status": "pending",
+      "reviewedSha256": "58d13bc36a16084e1674ef792659c5ff2cb49275c5f836b62ffa782e66b5b5ed"
     },
     {
       "path": "src/app/guest/page.tsx",
@@ -787,7 +788,7 @@
       "lines": 499,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "partially reviewed; route loading, hydrated initial controls, pending navigation, Work callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "de69ec0ba3c127ce22ad77911778255519203422815ffe743b01dbfae0effcb4"
+      "reviewedSha256": "c4d1a33f177531a29e36a56be471e47f73f9e535bd75dd7b9ddaebecc9c14671"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -905,10 +906,10 @@
     },
     {
       "path": "src/components/invoices/invoice-form.tsx",
-      "lines": 1129,
+      "lines": 1090,
       "sha256": "496a6634a8f8bff539f914f134d3ca4ba5271246709a6a2d1f2ef5ba994bf7f6",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "ed5dfd94a89ee587f3bd313f3ad7e309469980f66f2102c653217606ff7cbe7f"
+      "status": "partial; save error/retry recovery and six-width EN/CS target/axe checks pass in finding 161; complete captured receipt/draft/navigation and final release review pending",
+      "reviewedSha256": "a961c9d7d7a3da7f43247d7c74d0c60fb2c1d88eb7fb02e17d3a7121447bbb48"
     },
     {
       "path": "src/components/invoices/status-badge.tsx",
@@ -2443,10 +2444,10 @@
     },
     {
       "path": "src/lib/i18n/sections/invoices.ts",
-      "lines": 515,
+      "lines": 536,
       "sha256": "35a6c4949ddf4149946c223acc8226390cf3d9d45a86ea93dd38e7778768cb0c",
       "status": "source reviewed; EN/CS invoice recovery checked; final localization sweep pending",
-      "reviewedSha256": "e5d380a3e8506af2ddbff8e392e51b6f6aca1f5b3ea4ae34ec189d161e775dcf"
+      "reviewedSha256": "af8f6f15b81897aec3e0eaf08716bc95935ff14651f69afc7c7e91e76345ce02"
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",

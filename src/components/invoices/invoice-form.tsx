@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -50,6 +50,11 @@ import type {
 
 export type FormMode = "create" | "edit" | "duplicate" | "import";
 export type InvoiceSource = { invoice: Invoice; items: InvoiceItem[] };
+
+type SubmissionErrorCode = "numberTaken" | "saveConflict" | "saveUnconfirmed" | "buyerNameRequired" | "numberRequired" | "itemRequired" | "invalidAmount";
+class InvoiceSaveError extends Error {
+  constructor(readonly code: SubmissionErrorCode) { super(code); }
+}
 
 // Module-level counter for keys of items added at runtime — avoids
 // Date.now()/crypto in the render path (React 19 no-impure-calls).
@@ -347,6 +352,10 @@ export function InvoiceForm({
 }) {
   const formId = useId();
   const formRef = useRef<HTMLFormElement>(null);
+  const submissionErrorRef = useRef<HTMLParagraphElement>(null);
+  const submissionErrorId = useId();
+  const submitting = useRef(false);
+  const [validationError, setValidationError] = useState<SubmissionErrorCode | null>(null);
   const requestId = useRef<string | null>(null);
   const [editSnapshot] = useState(() => mode === "edit" && source ? {
     id: source.invoice.id,
@@ -455,12 +464,12 @@ export function InvoiceForm({
         p_expected_updated_at: editing ? editing.updatedAt : null,
         p_expected_item_ids: editing ? editing.itemIds : null,
       });
-      if (error) throw new Error(error.code === "23505" ? t.invoices.numberTaken
-        : error.code === "40001" || error.code === "P0002" ? t.invoices.saveConflict
-        : t.invoices.errorToast);
+      if (error) throw new InvoiceSaveError(error.code === "23505" ? "numberTaken"
+        : error.code === "40001" || error.code === "P0002" ? "saveConflict"
+        : "saveUnconfirmed");
       const result = data as { invoice: Invoice; items: InvoiceItem[] } | null;
       if (!result?.invoice?.id || !Array.isArray(result.items) || result.items.length !== lines.length) {
-        throw new Error(t.invoices.errorToast);
+        throw new InvoiceSaveError("saveUnconfirmed");
       }
       return result;
     },
@@ -472,27 +481,36 @@ export function InvoiceForm({
       toast.ok(mode === "edit" ? t.invoices.updatedToast(invoice.number) : t.invoices.createdToast(invoice.number));
       onDone(invoice.id);
     },
-    onError: (error) => {
-      toast.err(error.message);
+    onError: () => {
       void qc.invalidateQueries({ queryKey: qk.invoices });
       void qc.invalidateQueries({ queryKey: qk.invoiceItems });
     },
+    onSettled: () => { submitting.current = false; },
   });
   const saving = saveMutation.isPending;
+  const submissionError = validationError ?? (saveMutation.isError
+    ? saveMutation.error instanceof InvoiceSaveError ? saveMutation.error.code : "saveUnconfirmed"
+    : null);
+  useEffect(() => {
+    if (submissionError) submissionErrorRef.current?.focus();
+  }, [submissionError, saveMutation.isError]);
 
   function submit(intent: "draft" | "issued" | "keep") {
-    if (saving || !formRef.current?.reportValidity()) return;
+    if (submitting.current || saving) return;
+    setValidationError(null);
+    saveMutation.reset();
+    if (!formRef.current?.reportValidity()) return;
     const kept = items.filter((it) => it.description.trim() !== "");
     if (!buyer.buyer_name.trim()) {
-      toast.err(t.invoices.buyerNameRequired);
+      setValidationError("buyerNameRequired");
       return;
     }
     if (!number.trim()) {
-      toast.err(t.invoices.numberRequired);
+      setValidationError("numberRequired");
       return;
     }
     if (kept.length === 0) {
-      toast.err(t.invoices.itemRequired);
+      setValidationError("itemRequired");
       return;
     }
 
@@ -528,9 +546,10 @@ export function InvoiceForm({
     }));
     if (lines.some((it) => !Number.isFinite(it.quantity) || !Number.isFinite(it.unit_price)
       || !Number.isFinite(it.vat_rate))) {
-      toast.err(t.invoices.invalidAmount);
+      setValidationError("invalidAmount");
       return;
     }
+    submitting.current = true;
     if (mode === "edit" && source) {
       saveMutation.mutate({ header: { ...detailFields, ...buyerFields }, lines });
       return;
@@ -1026,12 +1045,15 @@ export function InvoiceForm({
         </Card>
 
         {/* Actions */}
-        <div className="lg:col-span-2 flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+        <div className="lg:col-span-2 flex min-w-0 flex-wrap items-center justify-end gap-3" data-testid="invoice-form-actions">
+          {submissionError && <p ref={submissionErrorRef} id={submissionErrorId} role="alert" tabIndex={-1}
+            className="focus-ring min-w-0 flex-1 basis-full rounded-sm text-sm text-risk sm:min-w-48 sm:basis-auto">{t.invoices[submissionError]}</p>}
+          <div className="flex w-full max-w-full flex-wrap justify-end gap-2 sm:w-auto">
+          <Button type="button" variant="outline" className="min-w-max flex-1 sm:flex-none" onClick={onCancel} disabled={saving}>
             {t.invoices.cancel}
           </Button>
           {mode === "edit" ? (
-            <Button type="button" onClick={() => submit("keep")} disabled={saving}>
+            <Button type="button" className="min-w-max flex-1 sm:flex-none" onClick={() => submit("keep")} disabled={saving} aria-describedby={submissionError ? submissionErrorId : undefined}>
               <Save className="h-3.5 w-3.5" /> {t.invoices.saveChanges}
             </Button>
           ) : (
@@ -1039,16 +1061,19 @@ export function InvoiceForm({
               <Button
                 type="button"
                 variant="outline"
+                className="min-w-max flex-1 sm:flex-none"
                 onClick={() => submit("draft")}
                 disabled={saving}
+                aria-describedby={submissionError ? submissionErrorId : undefined}
               >
                 {t.invoices.saveDraft}
               </Button>
-              <Button type="button" onClick={() => submit("issued")} disabled={saving}>
+              <Button type="button" className="min-w-max flex-1 sm:flex-none" onClick={() => submit("issued")} disabled={saving} aria-describedby={submissionError ? submissionErrorId : undefined}>
                 <FileText className="h-3.5 w-3.5" /> {t.invoices.issue}
               </Button>
             </>
           )}
+          </div>
         </div>
       </fieldset>
     </form>

@@ -443,7 +443,7 @@ function DashboardShellContent(props: Props) {
     <div className="mac-desktop">
       <div className="mac-window">
       <Sidebar tab={tab} setTab={setTab} projects={activeNavigationProjects} onOpenProject={openProject} user={{ name: user.name, email: user.email, avatar_url: user.avatar_url }} syncPreferences={!props.isPreview} />
-      <main id="main-content" data-section={tab} className={cn("min-w-0 overflow-x-clip pb-20 transition-[padding] duration-200 ease-out motion-reduce:transition-none md:h-full md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}>
+      <main id="main-content" data-section={tab} className={cn("min-w-0 overflow-x-clip pb-[var(--mobile-navigation-clearance)] transition-[padding] duration-200 ease-out motion-reduce:transition-none md:h-full md:pb-0", navCollapsed ? "md:pl-[var(--rail-width)]" : "md:pl-[var(--sidebar-width)]")}>
         <AppToolbar
           tab={tab}
           projectName={selectedProjectName}

@@ -164,6 +164,7 @@ type InvoicesStrings = {
   saveConflict: string;
   invalidAmount: string;
   errorToast: string;
+  saveUnconfirmed: string;
   paymentConflict: string;
   paymentChangeErr: string;
   deleteErr: string;
@@ -342,6 +343,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     saveConflict: "This invoice changed or its lines were not fully loaded. Your changes are kept here; reopen the invoice before trying again.",
     invalidAmount: "Enter valid quantities and prices before saving.",
     errorToast: "Something went wrong.",
+    saveUnconfirmed: "The invoice save could not be confirmed. Your draft is kept.",
     paymentConflict: "Invoice changed. Review it and try again.",
     paymentChangeErr: "The payment change could not be confirmed. Refresh before retrying.",
     deleteErr: "Deletion could not be confirmed. Refresh before retrying.",
@@ -518,6 +520,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     saveConflict: "Faktura se změnila nebo se nenačetly všechny položky. Vaše změny zůstaly zde; před dalším pokusem fakturu znovu otevřete.",
     invalidAmount: "Před uložením zadejte platná množství a ceny.",
     errorToast: "Něco se pokazilo.",
+    saveUnconfirmed: "Uložení faktury se nepodařilo potvrdit. Koncept zůstává zachovaný.",
     paymentConflict: "Faktura se změnila. Zkontroluj ji a zkus to znovu.",
     paymentChangeErr: "Změna úhrady nebyla potvrzena. Před dalším pokusem obnov stránku.",
     deleteErr: "Smazání nebylo potvrzeno. Před dalším pokusem obnov stránku.",

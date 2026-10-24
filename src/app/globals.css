@@ -98,6 +98,7 @@
   --toolbar-height: 3.5rem;
   --desktop-padding-block: 1rem;
   --desktop-padding-inline: 1.25rem;
+  --mobile-navigation-clearance: calc(5rem + env(safe-area-inset-bottom, 0px));
   --row-dense: 2.375rem;
   --row-regular: 2.875rem;
   --dialog-width: 32rem;
@@ -238,6 +239,12 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "ss01", "ss03", "cv11";
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-bottom: var(--mobile-navigation-clearance);
+  }
 }
 
 body {
