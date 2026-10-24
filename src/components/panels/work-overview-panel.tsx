@@ -17,6 +17,7 @@ import { CHANGELOG, entriesSince, previousCompletedReviewDate } from "@/lib/chan
 import { mondayKey, todayKey } from "@/lib/date-keys";
 import { buildOccurrences } from "@/lib/important-dates";
 import { useNow } from "@/lib/use-now";
+import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { assessProjectHealth } from "@/lib/project-health";
 import { useCrossProjectActivityQuery } from "@/lib/github-queries";
 import { dueFollowUps } from "@/lib/jobs/board";
@@ -28,6 +29,7 @@ import type { ClientOpportunity, Cron, ImportantDate, Invoice, JobApplication, O
 const CLOSED = new Set(["won", "lost", "expired", "archived"]);
 
 export function WorkOverviewPanel({
+  taskIndex,
   projects,
   opportunities,
   organizations,
@@ -46,6 +48,7 @@ export function WorkOverviewPanel({
   repositoryIntegrationEnabled,
   previewMarketingCalendars,
 }: {
+  taskIndex?: ProjectTaskIndex;
   projects: Project[];
   opportunities: ClientOpportunity[];
   organizations: Organization[];
@@ -68,6 +71,7 @@ export function WorkOverviewPanel({
   const t = useDict();
   const p = t.professional;
   const now = useNow();
+  const taskGroups = useMemo(() => taskIndex ?? buildProjectTaskIndex(projects, todos), [taskIndex, projects, todos]);
   const weekStart = mondayKey(now ?? undefined);
   // The window the "shipped" block covers: everything published after the last
   // review that was actually completed. Null means there is none to measure
@@ -78,9 +82,9 @@ export function WorkOverviewPanel({
   const attention = useMemo(
     () => projects
       .filter((project) => project.is_active && project.status !== "archived")
-      .map((project) => ({ project, result: assessProjectHealth(project, todos, costs, crons) }))
+      .map((project) => ({ project, result: assessProjectHealth(project, taskGroups.byProject.get(project.id) ?? [], costs, crons) }))
       .filter(({ result }) => result.health !== "healthy"),
-    [projects, todos, costs, crons],
+    [projects, taskGroups, costs, crons],
   );
   const dueOpportunityFollowUps = opportunities.filter((item) =>
     now && !CLOSED.has(item.status) && item.next_follow_up_at && new Date(item.next_follow_up_at) <= now,

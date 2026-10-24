@@ -762,17 +762,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 493,
+      "lines": 489,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partial: route loading, initial project-tab forwarding, repository flows and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "766117fecd2d5197e003639f5ab9c9f6ca7c93ded69f28918dfebe342d4d8ebe"
+      "status": "partial: route loading, pending navigation, task identity/index and local-day costs checked; remaining shared/source review pending",
+      "reviewedSha256": "ef8e18b5d8268ffdda084792123ae163e8544b4043b94236adf05a054627a02d"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 150,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "28c2bbf812ffef5df10615188c92b2b50e903ff550cfb2393c498d97891de8d2"
+      "status": "source reviewed; isolated project/task collection harness and repository receipt checks pass; final release checks pending",
+      "reviewedSha256": "95933e055ff6c85de81341bc2cd065d16435a436077e3d9da9f13cf4d923d84e"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1422,10 +1422,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2141,
+      "lines": 2146,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads and atomic ordering checked; metadata/notes/cost/cron/sync writes and remaining layout in review.md",
-      "reviewedSha256": "0c23251d7b15ba840dd87a0ec57d5e07a03777b411f97418c8a3ce96c5c1368a"
+      "status": "partially reviewed; complete reads, atomic ordering and shared task identity checked; metadata/notes/cost/cron/sync writes and remaining layout in review.md",
+      "reviewedSha256": "08fcd872a4c20177ae39673eed03c0d5b93cbc9cf5b57d5c98aaac892711207f"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1471,10 +1471,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1475,
+      "lines": 1478,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partial: source cleanup/import and current catalog/page scope reviewed/tested; manual task CRUD/version receipts remain",
-      "reviewedSha256": "bfd671f3e897f8d67bf8a22a545a91ce8a452d427042f8f9d79c3b6104bf5e9e"
+      "status": "partial: source imports, stable group keys and shared task identity checked; manual task CRUD/version receipts remain",
+      "reviewedSha256": "72ef810f5808c7eb88210fb4a1245e4dfa70303f6377e1e8b5d026001ab6b103"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -1485,10 +1485,10 @@
     },
     {
       "path": "src/components/panels/work-overview-panel.tsx",
-      "lines": 242,
+      "lines": 255,
       "sha256": "4fce3b1e3a5829aba19a3fb533cbb3c7b47164596f60180be192291afcfa1276",
-      "status": "partial: recurrence/history/preview and responsive rows reviewed/tested; health clock/indexing, remaining planning and final source checks pending",
-      "reviewedSha256": "c0ec53a975e302ff799343442f5a4d86a6aed772335b68b510132b3a631d5931"
+      "status": "partial: recurrence/history/preview, shared task identity and responsive rows checked; health clock/cost indexing, planning and final source checks pending",
+      "reviewedSha256": "cb4999534a6d00674370706779c4676309d5dcd2fae6fb944909b672cfbba181"
     },
     {
       "path": "src/components/panels/workflows-panel.tsx",
@@ -1575,10 +1575,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 279,
+      "lines": 306,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "partial: initial tab URL hydration, shared loading, repository flows and local-day memo changes checked; remaining tabs/business flow pending",
-      "reviewedSha256": "3c3b3cbb110f8fff7f026ccd4f603b1bf5424a777ce073c561303cbf9223af6f"
+      "status": "partial: tab hydration, repository flows, shared task identity and local-day memo changes checked; remaining tabs/business flow pending",
+      "reviewedSha256": "19e2346b04c0fda984e02c3b8424bfe0693f83ba9c2ecffca84c483b46bbc41c"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -3522,10 +3522,10 @@
     },
     {
       "path": "src/lib/project-match.ts",
-      "lines": 183,
+      "lines": 218,
       "sha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9",
-      "status": "partially reviewed; repository identity plans checked; conflicting known task ids need client/SQL alignment and remaining consumer lifecycle in review.md",
-      "reviewedSha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9"
+      "status": "partially reviewed; task ID/name priority and canonical grouped index pass client/database/browser checks; automatic sync lifecycle remains in review.md",
+      "reviewedSha256": "567625fa8fdc2987178ada8e2f83b9cea18ff8560ad29083878a1e43beac2482"
     },
     {
       "path": "src/lib/project-workspace-tabs.ts",

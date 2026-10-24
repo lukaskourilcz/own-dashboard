@@ -88,7 +88,8 @@ import { cronSeedsForProject } from "@/lib/project-cron-seeds";
 import {
   planRepositorySync,
   repositoryIdentityUpdate,
-  taskBelongsToProject,
+  buildProjectTaskIndex,
+  type ProjectTaskIndex,
   unresolvedRepositoryProjects,
   type ProjectRepoUpdate,
 } from "@/lib/project-match";
@@ -173,6 +174,7 @@ const emptyProjectForm: ProjectForm = {
 };
 
 type ProjectsPanelProps = {
+  taskIndex?: ProjectTaskIndex;
   initialProjectTab?: string;
   projects: Project[];
   setProjects: Updater<Project[]>;
@@ -229,6 +231,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       costs={props.costs.filter((item) => item.project_id === selected.id)}
       crons={props.crons.filter((item) => item.project_id === selected.id)}
       todos={props.todos}
+      taskIndex={props.taskIndex}
       notes={props.notes}
       setNotes={props.setNotes}
       invoices={props.invoices}
@@ -264,6 +267,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
 }
 
 function ProjectsListPanel({
+  taskIndex,
   projects,
   setProjects,
   costs,
@@ -301,6 +305,7 @@ function ProjectsListPanel({
   const [manageProjectId, setManageProjectId] = useState<string | null>(null);
   const now = useNow();
   const costDay = now ? todayKey(now) : null;
+  const projectTasks = useMemo(() => taskIndex ?? buildProjectTaskIndex(projects, todos), [taskIndex, projects, todos]);
 
   // --- Sync active Repositories → Projects -------------------------------
   // A known repository selection controls automatic linkage/materialization.
@@ -1112,7 +1117,7 @@ function ProjectsListPanel({
                 </tr>
               )}
               {projectGroups[group].flatMap((top) => [top, ...childProjects(projects, top.id).filter((child) => child.is_active)]).map((p) => {
-                const projectTodos = todos.filter((item) => taskBelongsToProject(item, p));
+                const projectTodos = projectTasks.byProject.get(p.id) ?? [];
                 const organization = organizations.find((item) => item.id === p.organization_id);
                 return <SortableProjectRow
                   key={p.id}
@@ -1148,7 +1153,7 @@ function ProjectsListPanel({
           <DialogHeader><DialogTitle>{t.projects.manage}</DialogTitle></DialogHeader>
           {ordered.find((project) => project.id === manageProjectId) && (() => {
             const project = ordered.find((item) => item.id === manageProjectId)!;
-            const projectTodos = todos.filter((item) => taskBelongsToProject(item, project));
+            const projectTodos = projectTasks.byProject.get(project.id) ?? [];
             return <ProjectCard key={project.id} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>

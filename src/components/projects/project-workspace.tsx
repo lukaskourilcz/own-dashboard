@@ -36,7 +36,7 @@ import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
 import { childProjects, projectSummary } from "@/lib/portfolio";
 import { computeTotals } from "@/lib/invoices";
 import { assessProjectHealth } from "@/lib/project-health";
-import { taskBelongsToProject } from "@/lib/project-match";
+import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -96,6 +96,7 @@ type Props = {
   costs: ProjectCost[];
   crons: Cron[];
   todos: Todo[];
+  taskIndex?: ProjectTaskIndex;
   notes: Note[];
   setNotes: Updater<Note[]>;
   invoices: Invoice[];
@@ -160,9 +161,8 @@ export function ProjectWorkspace(props: Props) {
 
   // Repo-sourced tasks (from NEEDED.md) resolve through the shared matcher:
   // repository id first, then the current or any previous repository name.
-  const projectTodos = props.todos.filter((todo) =>
-    taskBelongsToProject(todo, project),
-  );
+  const taskGroups = useMemo(() => props.taskIndex ?? buildProjectTaskIndex(props.allProjects, props.todos), [props.taskIndex, props.allProjects, props.todos]);
+  const projectTodos = taskGroups.byProject.get(project.id) ?? [];
   const projectNotes = props.notes.filter((note) => note.project_id === project.id);
   const projectInvoices = props.invoices.filter((invoice) => invoice.project_id === project.id);
   const invoiceTotals = useMemo(() => {

@@ -60,7 +60,7 @@ export function DemoDashboard({
   // The isolated live-repository harness reads its mocked owned records,
   // rather than marking the tour's empty note/link fixtures as confirmed.
   const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => (!liveRepositories || (key !== "repoNotes" && key !== "repoLinks"))
-    && (!liveProjectRecords || !["projects", "projectCosts", "crons"].includes(key)));
+    && (!liveProjectRecords || !["projects", "projectCosts", "crons", "todos"].includes(key)));
 
   return (
     <DashboardShell

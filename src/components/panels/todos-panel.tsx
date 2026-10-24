@@ -52,7 +52,7 @@ import { readOwnedCollection } from "@/lib/owned-records";
 import { syncNeededTasks } from "@/lib/needed-task-store";
 import { setReposDisconnected, useReposQuery } from "@/lib/github-queries";
 import { commitFile } from "@/lib/github";
-import { findProjectForTask } from "@/lib/project-match";
+import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { assigneeForTodo, type Assignee } from "@/lib/needed";
 import {
   diffNeededTodos,
@@ -76,12 +76,14 @@ function repoNamesPreview(names: string[]) {
 }
 
 export function TodosPanel({
+  taskIndex,
   todos,
   projects = [],
   organizations = [],
   compact = false,
 }: {
   todos: Todo[];
+  taskIndex?: ProjectTaskIndex;
   projects?: Project[];
   organizations?: Organization[];
   compact?: boolean;
@@ -116,7 +118,7 @@ export function TodosPanel({
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
   // query off in the compact dashboard widget.
   const reposQuery = useReposQuery(!compact);
-  const projectByTodo = useMemo(() => new Map(todos.map(todo => [todo.id, findProjectForTask(todo, projects)])), [todos, projects]);
+  const projectByTodo = useMemo(() => (taskIndex ?? buildProjectTaskIndex(projects, todos)).byTodo, [taskIndex, todos, projects]);
 
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -426,6 +428,7 @@ export function TodosPanel({
   const taskGroupMap = new Map<
     string,
     {
+      id: string;
       name: string;
       fullName: string | null;
       url: string | null;
@@ -443,6 +446,7 @@ export function TodosPanel({
     if (g) g.items.push(td);
     else
       taskGroupMap.set(key, {
+        id: key,
         name: project?.name ?? td.repo_name ?? td.category ?? key,
         fullName: project?.repo_full_name ?? td.repo_full_name,
         url:
@@ -563,7 +567,7 @@ export function TodosPanel({
               )}
               {taskGroups.map((g) => (
                 <TaskGroupCard
-                  key={g.fullName ?? g.name}
+                  key={g.id}
                   t={t}
                   locale={locale}
                   items={g.items}
