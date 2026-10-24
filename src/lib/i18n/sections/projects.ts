@@ -66,6 +66,8 @@ type ProjectsStrings = {
   open: string;
   deleteProject: string;
   deleteProjectConfirm: string;
+  deleteConflict: string;
+  deleteFailed: string;
   tableProject: string;
   tableClient: string;
   tableHealth: string;
@@ -214,6 +216,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     yearly: "Yearly",
     open: "Open",
     deleteProject: "Delete project",
+    deleteConflict: "This project changed or was removed. Review the refreshed list before deleting it.",
+    deleteFailed: "Deletion was not confirmed. The list is refreshing; review it before trying again.",
     deleteProjectConfirm:
       "Delete this project? Its costs and crons are removed too.",
     tableProject: "Project",
@@ -362,6 +366,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     yearly: "Ročně",
     open: "Otevřít",
     deleteProject: "Smazat projekt",
+    deleteConflict: "Projekt se změnil nebo byl odstraněn. Před smazáním zkontrolujte obnovený seznam.",
+    deleteFailed: "Smazání nebylo potvrzeno. Seznam se obnovuje; před dalším pokusem ho zkontrolujte.",
     deleteProjectConfirm:
       "Smazat tento projekt? Odstraní se i jeho náklady a crony.",
     tableProject: "Projekt",

@@ -61,10 +61,11 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
 import { applyProjectOrder, reorderOwnedProjects } from "@/lib/project-order";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { GithubIcon } from "@/components/icons/github";
 import { useProjectNotesAutosave } from "@/components/projects/use-project-notes-autosave";
 import { useProjectPreferencesSave } from "@/components/projects/use-project-preferences-save";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { useProjectDeletion } from "@/components/projects/use-project-deletion";
 import { useProjectDetailsForm, automaticProjectSlug, projectSlug as slugify } from "@/components/projects/use-project-details-form";
 import type { NoteEditorHandle } from "@/components/notes/note-editor";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
@@ -269,7 +270,6 @@ function ProjectsListPanel({
   const dragContextId = useId();
   const { lang } = useLang();
   const toast = useToast();
-  const confirm = useConfirmation();
   const orderingRef = useRef(false);
   const [ordering, setOrdering] = useState(false);
   useUnsavedDraft({ dirty: false, pending: ordering, canSave: false, save: async () => false });
@@ -701,29 +701,14 @@ function ProjectsListPanel({
     else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   }
 
-  async function deleteProject(p: Project) {
-    if (!await confirm({
-      title: t.projects.deleteProject,
-      description: t.projects.deleteProjectConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) return;
-    const { error } = await supabase.from("projects").delete().eq("id", p.id);
-    if (error) return toast.err(error.message);
-    setProjects((prev) => prev.filter((x) => x.id !== p.id));
-    setManagedProject(current => current?.id === p.id ? null : current);
-    // Costs and crons cascade-delete in the DB; drop them from the cache too.
-    setCosts((prev) => prev.filter((c) => c.project_id !== p.id));
-    setCrons((prev) => prev.filter((c) => c.project_id !== p.id));
-    setProjectLinks((prev) => prev.filter((relation) => relation.project_id !== p.id));
-    void qc.invalidateQueries({ queryKey: qk.projectLinks });
-    for (const queryKey of [qk.todos, qk.notes, qk.invoices, qk.transactions, qk.opportunities, qk.importantDates, qk.projectCommunications, qk.projectCosts, qk.crons, qk.subscriptionAllocations, qk.competitors, qk.subscriptions]) {
-      void qc.invalidateQueries({ queryKey });
-    }
-    details.forgetDeleted(p.id);
-    void qc.invalidateQueries({ queryKey: qk.projects });
-  }
+  const deletion = useProjectDeletion(source => {
+    setProjects(prev => prev.filter(row => row.id !== source.id || row.user_id !== source.user_id));
+    setManagedProject(current => current?.id === source.id ? null : current);
+    setCosts(prev => prev.filter(row => row.project_id !== source.id));
+    setCrons(prev => prev.filter(row => row.project_id !== source.id));
+    setProjectLinks(prev => prev.filter(row => row.project_id !== source.id));
+    details.forgetDeleted(source.id);
+  });
 
 
   return (
@@ -1012,7 +997,9 @@ function ProjectsListPanel({
                   key={p.id}
                   project={p}
                   subsection={!!p.parent_id && projectIds.has(p.parent_id)}
-                  ordering={ordering}
+                  ordering={ordering || deletion.pendingId !== null}
+                  deleting={deletion.pendingId === p.id}
+                  deleteError={deletion.failure?.id === p.id ? deletion.failure.message : null}
                   preferencePending={projectPreferences.pending.has(p.id)}
                   summary={projectSummary(p, lang, { preview: isPreview })}
                   monthlyCost={monthlyOf(p)}
@@ -1020,7 +1007,7 @@ function ProjectsListPanel({
                   synced={isSynced(p)}
                   onEdit={() => startEditProject(p)}
                   onToggleActive={() => toggleProjectActive(p)}
-                  onDelete={() => deleteProject(p)}
+                  onDelete={() => deletion.remove(p)}
                   onManage={() => setManagedProject(p)}
                   onOpen={() => onOpenProject(p)}
                   health={now ? assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], now).health : null}
@@ -1044,7 +1031,7 @@ function ProjectsListPanel({
           {managedProject && (() => {
             const project = currentManagedProject ?? managedProject;
             const projectTodos = projectTasks.byProject.get(project.id) ?? [];
-            return <ProjectOperations key={project.id} available={!!currentManagedProject} preferencePending={projectPreferences.pending.has(project.id)} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => requestNavigation(() => { void deleteProject(project); })} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
+            return <ProjectOperations deleting={deletion.pendingId === project.id} deleteError={deletion.failure?.id === project.id ? deletion.failure.message : null} key={project.id} available={!!currentManagedProject} preferencePending={projectPreferences.pending.has(project.id)} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deletion.remove(project)} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1058,6 +1045,8 @@ function ProjectsListPanel({
 
 type ProjectOperationsProps = {
   project: Project;
+  deleting: boolean;
+  deleteError: string | null;
   costs: ProjectCost[];
   crons: Cron[];
   /** The project's share of running development subscriptions, per month. */
@@ -1082,6 +1071,8 @@ type ProjectOperationsProps = {
 
 function SortableProjectRow({
   project,
+  deleting,
+  deleteError,
   subsection = false,
   ordering = false,
   preferencePending = false,
@@ -1100,6 +1091,8 @@ function SortableProjectRow({
   onOpen,
 }: {
   project: Project;
+  deleting: boolean;
+  deleteError: string | null;
   /** A venture subsection rendered under its parent; it has no drag handle. */
   subsection?: boolean;
   ordering?: boolean;
@@ -1143,7 +1136,7 @@ function SortableProjectRow({
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
       <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={`${t.projects.dragHandle}: ${project.name}`} className="aria-disabled:opacity-50 inline-flex h-11 w-11 md:h-8 md:w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
-      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
+      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}{deleteError && <p role="alert" className="mb-1 max-w-sm text-xs text-risk">{deleteError}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
       <td className="px-3 py-2.5">{health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}</td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
@@ -1154,9 +1147,9 @@ function SortableProjectRow({
         {project.dev_url && <Tooltip content={t.projects.development}><Button asChild size="icon-sm" variant="ghost"><a href={project.dev_url} target="_blank" rel="noreferrer" aria-label={t.projects.development}><ExternalLink /></a></Button></Tooltip>}
         <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
         <Tooltip content={t.projects.manage}><Button size="icon-sm" variant="ghost" onClick={onManage} aria-label={t.projects.manage}><Cpu /></Button></Tooltip>
-        <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
-        <Tooltip content={preferencePending ? t.projects.saving : project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" disabled={preferencePending} aria-busy={preferencePending} onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
-        <Tooltip content={t.projects.deleteProject}><Button size="icon-sm" variant="ghost" onClick={onDelete} aria-label={t.projects.deleteProject}><Trash2 className="text-destructive" /></Button></Tooltip>
+        <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={deleting} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
+        <Tooltip content={preferencePending ? t.projects.saving : project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" disabled={preferencePending || deleting} aria-busy={preferencePending} onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
+        <Tooltip content={t.projects.deleteProject}><Button size="icon-sm" variant="ghost" onClick={onDelete} disabled={deleting || preferencePending} aria-busy={deleting} aria-label={t.projects.deleteProject}><Trash2 className="text-destructive" /></Button></Tooltip>
       </div></td>
     </tr>
   );
@@ -1164,6 +1157,8 @@ function SortableProjectRow({
 
 function ProjectOperations({
   project,
+  deleting,
+  deleteError,
   costs,
   crons,
   subscriptionMonthly = 0,
@@ -1266,7 +1261,7 @@ function ProjectOperations({
           </div>
           <div className="flex gap-0.5">
             <Tooltip content={t.common.edit}>
-              <Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={!available} aria-label={t.common.edit}>
+              <Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={!available || deleting} aria-label={t.common.edit}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </Tooltip>
@@ -1277,7 +1272,7 @@ function ProjectOperations({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onToggleActive}
-                disabled={!available || preferencePending}
+                disabled={!available || preferencePending || deleting}
                 aria-busy={preferencePending}
                 aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}
               >
@@ -1294,7 +1289,8 @@ function ProjectOperations({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onDelete}
-                disabled={!available}
+                aria-busy={deleting}
+                disabled={!available || deleting || preferencePending}
                 aria-label={t.projects.deleteProject}
               >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -1304,8 +1300,9 @@ function ProjectOperations({
         </div>
       </CardHeader>
       <CardContent className="space-y-5 px-0 pb-0 sm:px-0 sm:pb-0">
+          {deleteError && <p role="alert" className="text-sm text-risk">{deleteError}</p>}
           {!available && <p role="alert" className="text-sm text-risk">{t.projects.projectUnavailable}</p>}
-          <fieldset disabled={!available} aria-label={t.projects.costs}>
+          <fieldset disabled={!available || deleting} aria-label={t.projects.costs}>
           <CostsSection
             project={project}
             costs={costs}
@@ -1314,7 +1311,7 @@ function ProjectOperations({
           />
           </fieldset>
           <NotesSection project={project} setProjects={setProjects} available={available} />
-          <fieldset disabled={!available} aria-label={t.projects.crons}>
+          <fieldset disabled={!available || deleting} aria-label={t.projects.crons}>
           <CronsSection
             project={project}
             crons={crons}

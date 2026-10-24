@@ -1475,10 +1475,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 1976,
+      "lines": 1973,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, ordering, retained notes, manual edit recovery, operations layout and confirmed active controls checked; creation/delete/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "b8dc095afad020beba3172261005b37332dafc4c8e7489db7d60fa75b75ee424"
+      "status": "partially reviewed; complete reads, ordering, retained notes, manual edit/deletion recovery, operations layout and confirmed active controls checked; creation/cost/cron/sync writes pending in review.md",
+      "reviewedSha256": "90a05c215f97dd1e4163fbaa4b0bd04e605efe7ebd656213acee10a623129c5c"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1632,6 +1632,13 @@
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partial: tab hydration, repository flows, task identity, bilingual health and local-day memo changes checked; remaining tabs/business flow pending",
       "reviewedSha256": "86fe1f18f05a01cef59708137009a45abb5984318fd319874d07cef48e66f62b"
+    },
+    {
+      "path": "src/components/projects/use-project-deletion.ts",
+      "sha256": null,
+      "lines": 56,
+      "status": "source reviewed; guarded confirmation, duplicate suppression, captured-source deletion and unmount/reconciliation tests pass; final release pending",
+      "reviewedSha256": "ef66a6b64a761150cbf4dfccb13fbb5d3d2df5fa8c3f44359252e8bcac449117"
     },
     {
       "path": "src/components/projects/use-project-details-form.ts",
@@ -2479,10 +2486,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 446,
+      "lines": 452,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "source reviewed; bilingual project form/conflict, note recovery, unavailability and classification copy checked; final release pending",
-      "reviewedSha256": "706d41520b9a7d0bab3acc175b20c82cd0eed5e81c1ec6ab300ad0ce85c4a7f2"
+      "status": "source reviewed; bilingual project form/deletion/conflict, note recovery, unavailability and classification copy checked; final release pending",
+      "reviewedSha256": "d1446034cded0eb661fd5ac5d994ed092729decc1f81db5a0577f321d61bbb7a"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",
@@ -3752,6 +3759,13 @@
       "sha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1",
       "status": "source reviewed; weekday seed checked against the pinned actual sentinel and slug/history tests; consumer sync and final release pending",
       "reviewedSha256": "db345338866c4f40a053d8b716d291f6df84507e9c7c7164a25878fae8acf6f1"
+    },
+    {
+      "path": "src/lib/project-deletion.ts",
+      "sha256": null,
+      "lines": 22,
+      "status": "source reviewed; own/version delete filters, narrow acknowledgement and deadline tests pass; final release pending",
+      "reviewedSha256": "f7f4f13d50bc5414094a6750b30da24276a3b18abcf5b48571bdfc00b79a080f"
     },
     {
       "path": "src/lib/project-details.ts",
