@@ -9,16 +9,16 @@ test("new calendar forms refresh the default day and preserve a chosen day", asy
   await gotoPreview(page);
   const open = () => page.getByRole("button", { name: "New calendar event", exact: true }).click();
   await open();
-  await expect(page.locator("#cal-date")).toHaveValue("2026-10-23");
+  await expect(page.getByLabel("Date", { exact: true })).toHaveValue("2026-10-23");
   await page.keyboard.press("Escape");
   await page.clock.setFixedTime(new Date("2026-10-24T12:00:00Z"));
   await open();
-  await expect(page.locator("#cal-date")).toHaveValue("2026-10-24");
-  await page.locator("#cal-date").fill("2026-10-30");
+  await expect(page.getByLabel("Date", { exact: true })).toHaveValue("2026-10-24");
+  await page.getByLabel("Date", { exact: true }).fill("2026-10-30");
   await page.keyboard.press("Escape");
   await page.clock.setFixedTime(new Date("2026-10-25T12:00:00Z"));
   await open();
-  await expect(page.locator("#cal-date")).toHaveValue("2026-10-30");
+  await expect(page.getByLabel("Date", { exact: true })).toHaveValue("2026-10-30");
   expect(errors).toEqual([]);
 });
 

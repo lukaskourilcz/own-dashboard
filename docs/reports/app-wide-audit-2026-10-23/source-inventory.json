@@ -109,21 +109,22 @@
       "path": "src/app/api/calendar/event/route.ts",
       "lines": 114,
       "sha256": "8309195d5ce5c7c235600af9ca72fed3769c1bc3fb959e9b2b9d3c0b8fefb488",
-      "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending",
-      "reviewedSha256": "c8a0dfff94b833e3967003dd5f602de021ea158f63b10f536f4e063a7b17d578"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "bc9f14c524292ae514a5fd9e3a9c603e74df9b40492ec60451de351195d4c151"
     },
     {
       "path": "src/app/api/calendar/events/route.ts",
       "lines": 38,
       "sha256": "aa18394215997901eca7c931b51cd18047fee7888d1b2267b3c90d56395b391d",
-      "status": "pending"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "394e846a7c8f1f8b62df3c15a44c320c3e43f1e55bc35eb6a38a1759b370b68b"
     },
     {
       "path": "src/app/api/calendar/list/route.ts",
       "lines": 53,
       "sha256": "bfcc5f6ff0b026510c5478e3b373b4a0a7280c75c283bfec1af2fed053c43a2d",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "6dbbaeacf874dce1751597a1bde700e048a645145b96a320f4848cd5f126f7b0"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "4613b2ed611094c3b9a37bb63ca3bc42a61bbd4175465506297a45beeacf629e"
     },
     {
       "path": "src/app/api/cron/bank-sync/route.ts",
@@ -667,7 +668,8 @@
       "path": "src/components/calendar/calendar-picker.tsx",
       "lines": 166,
       "sha256": "0159c097b49c354ce0f707bfd3d4c40dde2bc5c56baab15b138451aaac512dbc",
-      "status": "pending"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "94915b25bfde8088493fec9a227002f55cf4522d52dadf149c159545aa3f1e4e"
     },
     {
       "path": "src/components/calendar/relink-cta.tsx",
@@ -679,8 +681,8 @@
       "path": "src/components/calendar/week-view.tsx",
       "lines": 168,
       "sha256": "af6e551df41b335251d2e929fe36bd0f69d0671144af79995a8b8f7adbc4ca9d",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "f3b4720470d76f0dcc3920391894c3157a678a1c00cfe0a34c187a059e545074"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "d21399f0122dbb5bbd86385a8d67531eebf0354eaecb3a61bc4cfaf33a225e40"
     },
     {
       "path": "src/components/category-select.tsx",
@@ -1245,8 +1247,8 @@
       "path": "src/components/panels/calendar-panel.tsx",
       "lines": 240,
       "sha256": "dd1c25a55059a0c3ddef32671b87a5ebf6e302cbfa074cbd25501958c81c2d6a",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "366dda83e523001a2206317b41236e863ec23c536efdba06aadb1ffa3b0634b5"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "41a6aa0ca17301d7a2589d6148159760047586acf757f594612695b685df4dbb"
     },
     {
       "path": "src/components/panels/career-board.tsx",
@@ -1890,14 +1892,15 @@
       "path": "src/lib/calendar-server.ts",
       "lines": 137,
       "sha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac",
-      "status": "partial; refuses unavailable preference selection; pagination/budgets/partial availability pending",
-      "reviewedSha256": "4fe37fd9fda1d2d2726ac1be1e93ead27efb50ad0d37b9dee443ab2f9ee99a3a"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "7f0efecad1c7dcd4c23382afc4be403d98a2bc2d7a9b6e78c47ff24979e34c34"
     },
     {
       "path": "src/lib/calendar.ts",
       "lines": 70,
       "sha256": "5341c56ad0b78c970f851dfb66c1d8214a495e9abc03606569ca312c2c946f1a",
-      "status": "pending"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "9529460a54ef4a675655b3d95c280c2930f942e84f93d7272f5fb5554e024a23"
     },
     {
       "path": "src/lib/category-rules.ts",
@@ -4002,6 +4005,27 @@
       "lines": 10,
       "status": "source reviewed; browser URL boundary tested; final release pending",
       "reviewedSha256": "0eb1c591b21e54130efa409e6938e0187ed4663583f4234d1bff53efb03b5c66"
+    },
+    {
+      "path": "src/lib/calendar-client.ts",
+      "sha256": null,
+      "lines": 27,
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "526d22c5ad3ce7308f7a985b38d538fbd786326ddd35c18366f1ac409f7b14ce"
+    },
+    {
+      "path": "src/lib/calendar-google-read.ts",
+      "sha256": null,
+      "lines": 40,
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "33bf70d2a6587f8333d52c0738a8a454d6cee5dee85fe913150c38f371275853"
+    },
+    {
+      "path": "src/lib/calendar-response.ts",
+      "sha256": null,
+      "lines": 37,
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "4a798b1dbb89a3559bf4861fae20630ad9b9f86c4c762139b6a80d75d7b2304c"
     }
   ],
   "baselineFileCount": 561

@@ -94,8 +94,8 @@ export default async function DashboardPage({
     loadWhen("jobApplicationEvents", () => supabase.from("job_application_events").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000)),
     loadWhen("coverLetterTemplates", () => supabase.from("cover_letter_templates").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
     loadWhen("jobLastRun", () => supabase.from("job_scrape_runs").select("*").order("started_at", { ascending: false }).limit(1).maybeSingle()),
-    loadWhen("todayCalendar", fetchTodayWindowEvents),
-    loadWhen("weekCalendar", fetchUpcomingWeekEvents),
+    loadWhen("todayCalendar", () => fetchTodayWindowEvents({ userId: user.id })),
+    loadWhen("weekCalendar", () => fetchUpcomingWeekEvents({ userId: user.id })),
     loadUserPreferences(user.id),
     // The full project read already supplies the lightweight navigation data.
     requiredData.has("projects") ? null : supabase

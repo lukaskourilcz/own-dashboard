@@ -48,10 +48,18 @@ type CalendarStrings = {
   cancel: string;
   saving: string;
   save: string;
+  retry: string;
+  selectionLimit: string;
+  showMore: string;
+  showingEvents: (shown: number, total: number) => string;
 };
 
 export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
   en: {
+    showMore: "Show more",
+    showingEvents: (shown, total) => `${shown} of ${total} events`,
+    retry: "Retry",
+    selectionLimit: "Choose up to 20 calendars.",
     resultUnconfirmed: "The calendar result was not confirmed. Check Google Calendar before creating another event.",
     endAfterStart: "End time must be after start time.",
     newEvent: "New calendar event",
@@ -90,7 +98,7 @@ export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
     repeats: "repeats",
     openInGoogleCalendar: "Open in Google Calendar",
     couldNotLoadCalendars: "Could not load calendars.",
-    selectionSaved: "Calendar selection saved. Reload to see changes.",
+    selectionSaved: "Calendar selection saved.",
     couldNotSaveSelection: "Could not save selection.",
     calendarsToShow: "Calendars to show",
     loading: "Loading…",
@@ -103,6 +111,10 @@ export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
     save: "Save",
   },
   cs: {
+    showMore: "Zobrazit další",
+    showingEvents: (shown, total) => `${shown} z ${total} událostí`,
+    retry: "Zkusit znovu",
+    selectionLimit: "Vyberte nejvýše 20 kalendářů.",
     resultUnconfirmed: "Výsledek nebyl potvrzen. Než vytvoříte další událost, zkontrolujte Kalendář Google.",
     endAfterStart: "Konec musí být po začátku.",
     newEvent: "Nová událost v kalendáři",
@@ -142,7 +154,7 @@ export const calendar: { en: CalendarStrings; cs: CalendarStrings } = {
     repeats: "opakuje se",
     openInGoogleCalendar: "Otevřít v Kalendáři Google",
     couldNotLoadCalendars: "Kalendáře se nepodařilo načíst.",
-    selectionSaved: "Výběr kalendářů uložen. Pro zobrazení změn obnovte stránku.",
+    selectionSaved: "Výběr kalendářů uložen.",
     couldNotSaveSelection: "Výběr se nepodařilo uložit.",
     calendarsToShow: "Kalendáře k zobrazení",
     loading: "Načítání…",

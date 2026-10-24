@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/queries/keys";
 import { CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
@@ -13,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { todayKey } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
+import { awaitWithSignal } from "@/lib/abortable";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { safeWebUrl } from "@/lib/web-url";
+import { useUnsavedDraft } from "@/components/navigation-guard";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
@@ -49,6 +53,9 @@ export function CalendarPanel({
   initialTitle?: string;
 }) {
   const t = useDict();
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const pending = useRef(false);
   const qc = useQueryClient();
   const [defaultDate, setDefaultDate] = useState(todayKey);
   const [form, setForm] = useState<FormState>(() =>
@@ -56,28 +63,31 @@ export function CalendarPanel({
   );
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Submission | null>(null);
+  const [baseline, setBaseline] = useState(() => JSON.stringify(form));
+  useUnsavedDraft({ dirty: submitting || JSON.stringify(form) !== baseline, canSave: !submitting && !!form.title.trim() && !!form.date && (form.allDay || (!!form.startTime && form.endTime > form.startTime)), save: saveEvent });
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (submitting) return;
+  async function saveEvent(): Promise<boolean> {
+    if (pending.current) return false;
     setResult(null);
     if (!form.title.trim() || !form.date) {
       setResult({ kind: "error", message: t.calendar.titleAndDateRequired });
-      return;
+      return false;
     }
     if (!form.allDay && (!form.startTime || !form.endTime)) {
       setResult({ kind: "error", message: t.calendar.startAndEndRequired });
-      return;
+      return false;
     }
     if (!form.allDay && form.endTime <= form.startTime) {
       setResult({ kind: "error", message: t.calendar.endAfterStart });
-      return;
+      return false;
     }
+    pending.current = true;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/calendar/event", {
+      const signal = AbortSignal.timeout(25_000);
+      const res = await awaitWithSignal(fetch("/api/calendar/event", {
         method: "POST",
-        signal: AbortSignal.timeout(20_000),
+        signal,
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           title: form.title.trim(),
@@ -89,49 +99,60 @@ export function CalendarPanel({
           recurrence: form.recurrence,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
-      });
-      const json = await res.json();
+      }), signal);
+      const prefix = await awaitWithSignal(readTextPrefix(res, 65_536, signal), signal);
+      if (prefix.truncated) throw Error("Unconfirmed calendar result");
+      const json = JSON.parse(prefix.text);
       if (res.status === 401 && json.reason) {
         setResult({ kind: "expired" });
-        return;
+        return false;
       }
       if (!res.ok) {
         setResult({
           kind: "error",
           message: json.reason === "unconfirmed" ? t.calendar.resultUnconfirmed : json.error === t.guest.readOnlyAction ? json.error : t.calendar.couldNotCreateEvent,
         });
-        return;
+        return false;
       }
-      if (typeof json.id !== "string" || !json.id) {
+      if (typeof json.id !== "string" || !json.id || json.id.length > 1024 || /\p{Cc}/u.test(json.id)) {
         setResult({ kind: "error", message: t.calendar.resultUnconfirmed });
-        return;
+        return false;
       }
-      setResult({ kind: "ok", link: json.htmlLink });
-      setForm({ ...empty, date: form.date });
+      setResult({ kind: "ok", link: safeWebUrl(json.htmlLink) ?? undefined });
+      const next = { ...empty, date: form.date };
+      setBaseline(JSON.stringify(next));
+      setForm(next);
+      return true;
     } catch {
       setResult({ kind: "error", message: t.calendar.resultUnconfirmed });
+      return false;
     } finally {
+      pending.current = false;
       setSubmitting(false);
       for (const queryKey of [qk.calendarToday, qk.calendarWeek, qk.calendarLastWeek]) void qc.invalidateQueries({ queryKey });
     }
   }
 
   return (
-    <Dialog onOpenChange={open => {
-      if (!open) return;
+    <Dialog open={open} onOpenChange={next => {
+      if (pending.current) return;
+      setOpen(next);
+      if (!next) return;
       const date = todayKey();
+      if (JSON.stringify(form) === baseline && form.date === defaultDate) setBaseline(JSON.stringify({ ...form, date }));
       setForm(previous => ({ ...previous, date: previous.date === defaultDate ? date : previous.date }));
       setDefaultDate(date);
-    }}><DialogTrigger asChild><Button variant="outline"><CalendarPlus />{t.calendar.newEvent}</Button></DialogTrigger><DialogContent aria-describedby={undefined}><DialogHeader>
+    }}><DialogTrigger asChild><Button variant="outline"><CalendarPlus />{t.calendar.newEvent}</Button></DialogTrigger><DialogContent aria-describedby={undefined} showClose={!submitting} onEscapeKeyDown={event => { if (pending.current) event.preventDefault(); }} onPointerDownOutside={event => { if (pending.current) event.preventDefault(); }}><DialogHeader>
         <DialogTitle className="inline-flex items-center gap-1.5">
           <CalendarPlus className="h-3 w-3" /> {t.calendar.newEvent}
         </DialogTitle>
       </DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={event => { event.preventDefault(); void saveEvent(); }} className="space-y-3">
+          <fieldset disabled={submitting} className="min-w-0 space-y-3 border-0 p-0" aria-busy={submitting}>
           <div className="space-y-1.5">
-            <Label htmlFor="cal-title">{t.calendar.title}</Label>
+            <Label htmlFor={`${id}-title`}>{t.calendar.title}</Label>
             <Input
-              id="cal-title"
+              id={`${id}-title`}
               maxLength={500}
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -145,9 +166,9 @@ export function CalendarPanel({
             }
           >
             <div className="space-y-1.5">
-              <Label htmlFor="cal-date">{t.calendar.date}</Label>
+              <Label htmlFor={`${id}-date`}>{t.calendar.date}</Label>
               <Input
-                id="cal-date"
+                id={`${id}-date`}
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -156,9 +177,9 @@ export function CalendarPanel({
             {!form.allDay && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cal-start">{t.calendar.start}</Label>
+                  <Label htmlFor={`${id}-start`}>{t.calendar.start}</Label>
                   <Input
-                    id="cal-start"
+                    id={`${id}-start`}
                     type="time"
                     value={form.startTime}
                     onChange={(e) =>
@@ -167,9 +188,9 @@ export function CalendarPanel({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cal-end">{t.calendar.end}</Label>
+                  <Label htmlFor={`${id}-end`}>{t.calendar.end}</Label>
                   <Input
-                    id="cal-end"
+                    id={`${id}-end`}
                     type="time"
                     value={form.endTime}
                     onChange={(e) =>
@@ -181,7 +202,7 @@ export function CalendarPanel({
             )}
           </div>
           <div className="flex flex-wrap gap-4 items-end">
-            <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
+            <label className="inline-flex min-h-11 md:min-h-8 items-center gap-2 text-xs text-foreground-muted">
               <input
                 type="checkbox"
                 className="h-3.5 w-3.5 rounded border-border-strong"
@@ -202,7 +223,7 @@ export function CalendarPanel({
                     recurrence: v as Recurrence,
                   })
                 }
-                className="h-7 w-32 text-xs"
+                className="h-11 md:h-7 w-32 text-xs"
                 options={[
                   { value: "none", label: t.calendar.recurrence.none },
                   { value: "daily", label: t.calendar.recurrence.daily },
@@ -214,9 +235,9 @@ export function CalendarPanel({
           </div>
           {!compact && (
             <div className="space-y-1.5">
-              <Label htmlFor="cal-desc">{t.calendar.description}</Label>
+              <Label htmlFor={`${id}-desc`}>{t.calendar.description}</Label>
               <Textarea
-                id="cal-desc"
+                id={`${id}-desc`}
                 maxLength={10_000}
                 value={form.description}
                 onChange={(e) =>
@@ -257,6 +278,7 @@ export function CalendarPanel({
           <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? t.calendar.adding : t.calendar.addToGoogleCalendar}
           </Button>
+          </fieldset>
         </form>
     </DialogContent></Dialog>
   );

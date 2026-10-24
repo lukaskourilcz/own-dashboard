@@ -4,111 +4,61 @@ import { createClient } from "@/lib/supabase/server";
 import { createGoogleFetcher } from "@/lib/google-token";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { calendarDeleteInput, calendarEventInput, googleCalendarEvent } from "@/lib/calendar-event";
+import { awaitWithSignal } from "@/lib/abortable";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { safeWebUrl } from "@/lib/web-url";
 
-export async function POST(request: Request) {
-  const csrf = rejectCrossOrigin(request);
-  if (csrf) return csrf;
+export const maxDuration = 30;
+const headers = { "cache-control": "private, no-store" };
+const reply = (body: object, status = 200) => NextResponse.json(body, { status, headers });
+const unconfirmed = () => reply({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, 502);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-  const fetchWithGoogleAuth = createGoogleFetcher(user.id);
-
-  const parsed = calendarEventInput.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid calendar event." }, { status: 400 });
-  const event = googleCalendarEvent(parsed.data);
-
-  const res = await fetchWithGoogleAuth(
-    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-    {
-      method: "POST",
-      signal: AbortSignal.timeout(15_000),
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(event),
-    },
-  ).catch(() => null);
-  if (!res) return NextResponse.json({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, { status: 502 });
-
-  if (res.status === 401 && res.statusText === "no-token") {
-    return NextResponse.json(
-      { error: "Google Calendar access has lapsed.", reason: "no-token" },
-      { status: 401 },
-    );
-  }
-  if (res.status === 401) {
-    return NextResponse.json(
-      { error: "Google rejected the calendar token.", reason: "expired" },
-      { status: 401 },
-    );
-  }
-
-  if (!res.ok) {
-    // Keep upstream bodies out of telemetry: they can echo private event text.
-    await captureCalendarRejection("POST", res.status);
-    return NextResponse.json(
-      { error: "Google Calendar API rejected the event.", ...(res.status >= 500 ? { reason: "unconfirmed" } : {}) },
-      { status: res.status },
-    );
-  }
-
-  const created = await res.json().catch(() => null);
-  if (!created || typeof created.id !== "string" || !created.id) {
-    return NextResponse.json({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, { status: 502 });
-  }
-  return NextResponse.json({ id: created.id, htmlLink: typeof created.htmlLink === "string" ? created.htmlLink : undefined });
+async function write(request: Request, method: "POST" | "DELETE") {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) { rejected.headers.set("cache-control", "private, no-store"); return rejected; }
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]);
+  try {
+    const supabase = await awaitWithSignal(createClient(signal), signal);
+    const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
+    if (auth.error) return reply({ error: "Authentication unavailable." }, 503);
+    if (!auth.data.user) return reply({ error: "Not authenticated." }, 401);
+    const prefix = await awaitWithSignal(readTextPrefix(new Response(request.body), 65_536, signal), signal);
+    if (prefix.truncated) return reply({ error: "Calendar request too large." }, 413);
+    let body: unknown;
+    try { body = JSON.parse(prefix.text); } catch { return reply({ error: "Invalid calendar request." }, 400); }
+    const fetcher = createGoogleFetcher(auth.data.user.id, signal);
+    let url = "https://www.googleapis.com/calendar/v3/calendars/primary/events", payload: string | undefined;
+    if (method === "POST") {
+      const parsed = calendarEventInput.safeParse(body);
+      if (!parsed.success) return reply({ error: "Invalid calendar event." }, 400);
+      payload = JSON.stringify(googleCalendarEvent(parsed.data));
+    } else {
+      const parsed = calendarDeleteInput.safeParse(body);
+      if (!parsed.success) return reply({ error: "Invalid event id." }, 400);
+      url += `/${encodeURIComponent(parsed.data.id)}?sendUpdates=none`;
+    }
+    // Never retry an ambiguous write. The owner must inspect Google Calendar
+    // before sending another creation when its result cannot be confirmed.
+    const res = await awaitWithSignal(fetcher(url, { method, signal, ...(payload ? { headers: { "Content-Type": "application/json" }, body: payload } : {}) }), signal);
+    if (method === "DELETE" && (res.status === 404 || res.status === 410 || res.ok)) {
+      if (res.body) void res.body.cancel().catch(() => undefined);
+      return reply({ ok: true });
+    }
+    if (!res.ok) {
+      if (res.body) void res.body.cancel().catch(() => undefined);
+      if (res.status === 401) return reply({ error: "Google Calendar access has lapsed.", reason: res.statusText === "no-token" ? "no-token" : "expired" }, 401);
+      // Fixed method/status only: upstream bodies can echo private event text.
+      await awaitWithSignal(captureCalendarRejection(method, res.status), signal);
+      return reply({ error: "Google Calendar rejected the request.", ...(res.status >= 500 ? { reason: "unconfirmed" } : {}) }, res.status);
+    }
+    const created = await awaitWithSignal(readTextPrefix(res, 65_536, signal), signal);
+    if (created.truncated) return unconfirmed();
+    const receipt = JSON.parse(created.text);
+    if (typeof receipt?.id !== "string" || !receipt.id || receipt.id.length > 1024 || /\p{Cc}/u.test(receipt.id)) return unconfirmed();
+    return reply({ id: receipt.id, htmlLink: safeWebUrl(receipt.htmlLink) ?? undefined });
+  } catch { return unconfirmed(); }
 }
 
-/**
- * Delete an event from the user's primary calendar. Body: { id: string }.
- * Used to keep linked_calendar_event_id in sync when a plan is deleted.
- */
-export async function DELETE(request: Request) {
-  const csrf = rejectCrossOrigin(request);
-  if (csrf) return csrf;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-  const fetchWithGoogleAuth = createGoogleFetcher(user.id);
-
-  const parsed = calendarDeleteInput.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
-
-  const res = await fetchWithGoogleAuth(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(parsed.data.id)}?sendUpdates=none`,
-    { method: "DELETE", signal: AbortSignal.timeout(15_000) },
-  ).catch(() => null);
-  if (!res) return NextResponse.json({ error: "Calendar result was not confirmed.", reason: "unconfirmed" }, { status: 502 });
-
-  // 404 / 410 — event already gone. Treat as success so plan deletion proceeds.
-  if (res.status === 404 || res.status === 410 || res.ok) {
-    return NextResponse.json({ ok: true });
-  }
-
-  if (res.status === 401 && res.statusText === "no-token") {
-    return NextResponse.json(
-      { error: "Google Calendar access has lapsed.", reason: "no-token" },
-      { status: 401 },
-    );
-  }
-  if (res.status === 401) {
-    return NextResponse.json(
-      { error: "Google rejected the calendar token.", reason: "expired" },
-      { status: 401 },
-    );
-  }
-
-  await captureCalendarRejection("DELETE", res.status);
-  return NextResponse.json(
-    { error: "Could not delete event." },
-    { status: res.status },
-  );
-}
+export function POST(request: Request) { return write(request, "POST"); }
+/** Already absent events (404/410) remain a confirmed, idempotent cleanup. */
+export function DELETE(request: Request) { return write(request, "DELETE"); }

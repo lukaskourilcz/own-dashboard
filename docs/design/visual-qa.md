@@ -334,3 +334,8 @@ Eight EN/CS desktop/mobile repository cases pass after atomic task import, inclu
 
 
 Repository scan follow-up: eight EN/CS desktop/mobile repository cases pass again after sharing the bounded scan. Initial load and retry use the shared request; a source-file conflict refreshes only that file, with no extra batch request. Existing note recovery, six-width reflow and main-region axe checks pass in the same run. Cache-order and late-disconnect behavior have separate component/client tests. No production provider ran.
+
+
+## Preferences and Calendar, 24 October 2026
+
+Preference saves: four final EN/CS desktop/mobile cases pass with unknown/retry/pending/confirmed renewal settings, keyboard and axe. Six earlier Settings/cross-tab cases pass against that source; two redundant mobile reflow cases are skipped. Calendar: 22 final cases pass with four intentional duplicate mobile skips. Checks include EN/CS light/dark, 360/430/768/1024/1440/1728 px reflow, incremental event lists, selection cancel/retry/confirmation and immediate cache refresh, pending form protection, failed-write draft retention, guarded navigation, keyboard, axe, browser-local dates and timezone writes. All backend/provider values are fixtures on the deliberately nonexistent-backend harness. Initial failed setup, locator, lint and cancellation-timing attempts are excluded. This is targeted development evidence; the full optimized app-wide release remains pending.

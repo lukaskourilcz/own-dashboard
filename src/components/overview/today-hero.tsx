@@ -20,6 +20,7 @@ import { dueFollowUps } from "@/lib/jobs/board";
 import type { ClientOpportunity, ImportantDate, JobApplication, Todo } from "@/lib/types";
 import {
   eventDateKey,
+  calendarDescriptionSnippet,
   eventEnd,
   eventStart,
   eventTimeLabel,
@@ -243,9 +244,9 @@ export function TodayHero({
           {calendar.ok && (
             <ul className="space-y-1.5">
               {todayEvents.slice(0, 4).map((ev) => {
-                const isOngoing = ongoing?.id === ev.id;
+                const isOngoing = ongoing?.id === ev.id && ongoing?.sourceCalendarId === ev.sourceCalendarId;
                 return (
-                  <li key={ev.id} className="flex items-start gap-2 text-sm">
+                  <li key={`${ev.sourceCalendarId ?? "primary"}:${ev.id}`} className="flex items-start gap-2 text-sm">
                     <span
                       className={cn(
                         "tabular text-xs w-12 shrink-0 pt-0.5",
@@ -267,7 +268,7 @@ export function TodayHero({
                       </span>
                       {ev.description && (
                         <span className="block truncate text-[10px] text-foreground-subtle">
-                          {ev.description.replace(/<[^>]*>/g, "").slice(0, 80)}
+                          {calendarDescriptionSnippet(ev.description, 80)}
                         </span>
                       )}
                     </span>
@@ -276,7 +277,7 @@ export function TodayHero({
                         href={ev.htmlLink}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring"
+                        className="inline-flex min-h-11 min-w-11 md:min-h-6 md:min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring"
                         aria-label={t.overview.openInGoogleCalendar}
                       >
                         <ExternalLink className="h-3 w-3" />

@@ -18,10 +18,10 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function PreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string; tab?: string; calendars?: string; repositories?: string; monitoring?: string; preferences?: string; q?: string | string[] }>;
+  searchParams: Promise<{ project?: string; tab?: string; calendars?: string; repositories?: string; monitoring?: string; preferences?: string; calendar?: string; q?: string | string[] }>;
 }) {
   if (process.env.NODE_ENV === "production" && process.env.NEXT_E2E !== "1") notFound();
-  const { project, tab, calendars, repositories, monitoring, preferences, q } = await searchParams;
+  const { project, tab, calendars, repositories, monitoring, preferences, calendar, q } = await searchParams;
 
   // `?tab=` opens a destination directly, the fixture equivalent of visiting
   // its URL — used for sections hidden from navigation (Inbox, References).
@@ -36,6 +36,7 @@ export default async function PreviewPage({
       liveRepositories={repositories === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveMonitoring={monitoring === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       livePreferences={preferences === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
+      liveCalendar={calendar === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       initialTipQuery={tab === "ig-tips" ? tipDeepLinkQuery(q) : null}
     />
   );

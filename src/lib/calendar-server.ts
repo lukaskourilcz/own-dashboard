@@ -1,138 +1,74 @@
 import "server-only";
 import { createGoogleFetcher } from "@/lib/google-token";
-import { createClient as createUserClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
-import type { EventsResult, GcalEvent } from "@/lib/calendar";
+import { awaitWithSignal } from "@/lib/abortable";
+import { CalendarReadError, readGooglePages, type CalendarReadBudget } from "@/lib/calendar-google-read";
+import { calendarEventPage } from "@/lib/calendar-response";
+import { eventStart, type EventsResult, type GcalEvent } from "@/lib/calendar";
 
-type RawEvent = GcalEvent & { _calendarId?: string };
+type ReadContext = { userId: string; signal?: AbortSignal };
+const EVENT_FIELDS = "nextPageToken,items(id,status,summary,description,start,end,htmlLink,location,recurrence,recurringEventId)";
 
-async function fetchOne(
-  fetchWithGoogleAuth: ReturnType<typeof createGoogleFetcher>,
-  calendarId: string,
-  timeMin: Date,
-  timeMax: Date,
-  maxResults: number,
-): Promise<{
-  ok: boolean;
-  status?: number;
-  reason?: "no-token" | "unauthorized" | "error";
-  events?: RawEvent[];
-  message?: string;
-}> {
-  const url = new URL(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-      calendarId,
-    )}/events`,
-  );
-  url.searchParams.set("timeMin", timeMin.toISOString());
-  url.searchParams.set("timeMax", timeMax.toISOString());
-  url.searchParams.set("singleEvents", "true");
-  url.searchParams.set("orderBy", "startTime");
-  url.searchParams.set("maxResults", String(maxResults));
-
+async function fetchWindow(timeMin: Date, timeMax: Date, context?: ReadContext): Promise<EventsResult> {
+  const stop = new AbortController();
+  const signal = AbortSignal.any([stop.signal, AbortSignal.timeout(20_000), ...(context?.signal ? [context.signal] : [])]);
   try {
-    const res = await fetchWithGoogleAuth(url.toString());
-
-    if (res.status === 401 && res.statusText === "no-token") {
-      return { ok: false, status: 401, reason: "no-token" };
+    let userId = context?.userId;
+    if (!userId) {
+      const supabase = await awaitWithSignal(createClient(signal), signal);
+      const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
+      if (auth.error) throw new CalendarReadError();
+      if (!auth.data.user) return { ok: false, reason: "no-token" };
+      userId = auth.data.user.id;
     }
-    if (res.status === 401) {
-      return { ok: false, status: 401, reason: "unauthorized" };
-    }
-    if (!res.ok) {
-      return {
-        ok: false,
-        status: res.status,
-        reason: "error",
-        message: `Calendar API ${res.status}`,
-      };
-    }
-    const json = (await res.json()) as { items?: GcalEvent[] };
-    const tagged: RawEvent[] = (json.items ?? []).map((e) => ({
-      ...e,
-      _calendarId: calendarId,
+    const prefs = await loadUserPreferences(userId, signal);
+    if (!prefs.sync_available) throw new CalendarReadError();
+    const ids = [...new Set(prefs.selected_calendar_ids.length ? prefs.selected_calendar_ids : ["primary"])];
+    const fetcher = createGoogleFetcher(userId, signal);
+    const budget: CalendarReadBudget = { pages: 40, items: 2000, characters: 8_388_608 };
+    const merged: GcalEvent[] = [];
+    let cursor = 0, failure: unknown;
+    await Promise.all(Array.from({ length: Math.min(4, ids.length) }, async () => {
+      while (cursor < ids.length && !failure) {
+        const calendarId = ids[cursor++];
+        try {
+          const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`);
+          for (const [key, value] of Object.entries({ timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250", fields: EVENT_FIELDS })) url.searchParams.set(key, value);
+          const events = await readGooglePages(fetcher, url, value => calendarEventPage.parse(value), signal, budget);
+          const seen = new Set<string>();
+          for (const event of events) {
+            if ("status" in event) continue;
+            if (seen.has(event.id)) throw new CalendarReadError();
+            seen.add(event.id); merged.push({ ...event, sourceCalendarId: calendarId });
+          }
+        } catch (error) { if (!failure) { failure = error; stop.abort(); } }
+      }
     }));
-    return { ok: true, events: tagged };
-  } catch (err) {
-    return { ok: false, reason: "error", message: (err as Error).message };
+    if (failure) throw failure;
+    signal.throwIfAborted();
+    merged.sort((a, b) => eventStart(a)!.getTime() - eventStart(b)!.getTime() || (a.sourceCalendarId ?? "").localeCompare(b.sourceCalendarId ?? "") || a.id.localeCompare(b.id));
+    return { ok: true, events: merged };
+  } catch (error) {
+    return { ok: false, reason: error instanceof CalendarReadError ? error.reason : "error" };
   }
 }
 
-async function fetchWindow(
-  timeMin: Date,
-  timeMax: Date,
-  maxResults: number,
-): Promise<EventsResult> {
-  const supabase = await createUserClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, reason: "no-token" };
-
-  const fetcher = createGoogleFetcher(user.id);
-  const prefs = await loadUserPreferences(user.id);
-  if (!prefs.sync_available) return { ok: false, reason: "error", message: "Calendar preferences unavailable" };
-  const calendarIds =
-    prefs.selected_calendar_ids.length > 0
-      ? prefs.selected_calendar_ids
-      : ["primary"];
-
-  const results = await Promise.all(
-    calendarIds.map((id) => fetchOne(fetcher, id, timeMin, timeMax, maxResults)),
-  );
-
-  // If every single fetch failed with no-token / unauthorized, surface that
-  // single reason to the UI. If at least one calendar returned events, render
-  // those and silently drop the rest (a broken secondary calendar shouldn't
-  // hide the working primary one).
-  const successes = results.filter((r) => r.ok);
-  if (successes.length === 0) {
-    const first = results[0];
-    return {
-      ok: false,
-      reason: first?.reason ?? "error",
-      message: first?.message,
-    };
-  }
-
-  const merged = successes.flatMap((r) => r.events ?? []);
-  merged.sort((a, b) => {
-    const at =
-      a.start.dateTime ?? `${a.start.date ?? ""}T00:00:00`;
-    const bt =
-      b.start.dateTime ?? `${b.start.date ?? ""}T00:00:00`;
-    return at.localeCompare(bt);
-  });
-
-  return { ok: true, events: merged };
+export function fetchTodayWindowEvents(context?: ReadContext): Promise<EventsResult> {
+  // A 72-hour UTC window includes the browser's today at every UTC offset.
+  const now = new Date(), start = new Date(now), end = new Date(now);
+  start.setUTCHours(0, 0, 0, 0); start.setUTCDate(start.getUTCDate() - 1);
+  end.setUTCHours(0, 0, 0, 0); end.setUTCDate(end.getUTCDate() + 2);
+  return fetchWindow(start, end, context);
 }
 
-export async function fetchTodayWindowEvents(): Promise<EventsResult> {
-  // Server timezone may not match the user's, so fetch a 72h window centered on
-  // server-local today and let the client filter to its own "today".
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
-  return fetchWindow(start, end, 50);
+export function fetchUpcomingWeekEvents(context?: ReadContext): Promise<EventsResult> {
+  const start = new Date();
+  return fetchWindow(start, new Date(start.getTime() + 7 * 86_400_000), context);
 }
 
-export async function fetchUpcomingWeekEvents(): Promise<EventsResult> {
-  const now = new Date();
-  const end = new Date(now);
-  end.setDate(end.getDate() + 7);
-  return fetchWindow(now, end, 100);
-}
-
-/**
- * The finished week that the weekly planning flow reviews, for the window the
- * browser sent (see `parseLastWeekWindow` in `calendar.ts`). It reuses the same window fetcher
- * as the forward-looking reads, so calendar selection, tolerance of a single
- * broken calendar and the `no-token` / `unauthorized` reasons behave exactly
- * as they do everywhere else.
- */
-export async function fetchLastWeekEvents(range: {
-  start: Date;
-  endExclusive: Date;
-}): Promise<EventsResult> {
-  return fetchWindow(range.start, range.endExclusive, 250);
+/** A complete selected-calendar week, or unavailable; partial totals must not
+ * become a measured planning record. The browser supplies its DST-aware week. */
+export function fetchLastWeekEvents(range: { start: Date; endExclusive: Date }, context?: ReadContext): Promise<EventsResult> {
+  return fetchWindow(range.start, range.endExclusive, context);
 }

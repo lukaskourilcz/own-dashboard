@@ -48,26 +48,23 @@ import type {
   Transaction,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
+import { fetchCalendarEvents } from "@/lib/calendar-client";
 
 async function fetchCalendarWindow(
   window: "today" | "week" | "last-week",
   extra?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<EventsResult> {
   const query = new URLSearchParams({ window, ...extra });
-  const response = await fetch(`/api/calendar/events?${query}`, {
-    signal: AbortSignal.timeout(15_000),
-  });
-  const data = (await response.json().catch(() => null)) as EventsResult | null;
-  if (!response.ok || !data) throw new Error("Could not load calendar events.");
-  return data;
+  return fetchCalendarEvents(query, signal);
 }
 
-export function fetchTodayCalendar(): Promise<EventsResult> {
-  return fetchCalendarWindow("today");
+export function fetchTodayCalendar(context?: { signal: AbortSignal }): Promise<EventsResult> {
+  return fetchCalendarWindow("today", undefined, context?.signal);
 }
 
-export function fetchWeekCalendar(): Promise<EventsResult> {
-  return fetchCalendarWindow("week");
+export function fetchWeekCalendar(context?: { signal: AbortSignal }): Promise<EventsResult> {
+  return fetchCalendarWindow("week", undefined, context?.signal);
 }
 
 /**
@@ -75,12 +72,12 @@ export function fetchWeekCalendar(): Promise<EventsResult> {
  * two instants of Monday 00:00 in this browser's timezone. The flow clips
  * events to the same `weekRange`, so the fetched and the summed week agree.
  */
-export function fetchLastWeekCalendar(): Promise<EventsResult> {
+export function fetchLastWeekCalendar(context?: { signal: AbortSignal }): Promise<EventsResult> {
   const { start, endExclusive } = weekRange(previousMondayKey());
   return fetchCalendarWindow("last-week", {
     start: start.toISOString(),
     end: endExclusive.toISOString(),
-  });
+  }, context?.signal);
 }
 
 /**

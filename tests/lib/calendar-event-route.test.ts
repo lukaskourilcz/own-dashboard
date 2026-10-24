@@ -59,6 +59,25 @@ describe("calendar event write boundary", () => {
     state.google.mockResolvedValue(Response.json({}));
     expect((await POST(request(input))).status).toBe(502);
   });
+  it("bounds input before sending and preserves private headers", async () => {
+    const response = await POST(request({ ...input, description: "x".repeat(70_000) }));
+    expect(response.status).toBe(413); expect(response.headers.get("cache-control")).toBe("private, no-store"); expect(state.google).not.toHaveBeenCalled();
+  });
+  it("rejects oversized/malformed receipts without exposing provider text", async () => {
+    state.google.mockResolvedValue(new Response("private".repeat(12_000)));
+    const response = await POST(request(input)); expect(response.status).toBe(502); expect(await response.json()).toMatchObject({ reason: "unconfirmed" }); expect(state.google).toHaveBeenCalledOnce();
+  });
+  it("omits an unsafe created-event link", async () => {
+    state.google.mockResolvedValue(Response.json({ id: "created", htmlLink: "javascript:alert(1)" }));
+    expect(await (await POST(request(input))).json()).toEqual({ id: "created" });
+  });
+  it("bounds a stalled provider response body and never resends an ambiguous creation", async () => {
+    const stop = new AbortController(); vi.spyOn(AbortSignal, "timeout").mockReturnValue(stop.signal);
+    const cancel = vi.fn(); state.google.mockResolvedValue(new Response(new ReadableStream({ cancel })));
+    const pending = POST(request(input)); await vi.waitFor(() => expect(state.google).toHaveBeenCalledOnce()); stop.abort("private");
+    const response = await pending; expect(response.status).toBe(502); expect(await response.json()).toMatchObject({ reason: "unconfirmed" }); expect(state.google).toHaveBeenCalledOnce();
+    vi.restoreAllMocks();
+  });
   it.each([404, 410])("keeps delete idempotent for an already missing event (%s)", async status => {
     state.google.mockResolvedValue(new Response(null, { status }));
     expect((await DELETE(request({ id: "event-owner" }, "DELETE"))).status).toBe(200);

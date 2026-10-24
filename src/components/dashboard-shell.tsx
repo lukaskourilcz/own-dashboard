@@ -128,6 +128,7 @@ type Props = {
   previewRepositoryIntegration?: boolean;
   previewMonitoringIntegration?: boolean;
   previewPreferencesIntegration?: boolean;
+  previewCalendarIntegration?: boolean;
   initialProjectId?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
   initialTipQuery?: string | null;
@@ -215,9 +216,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: !props.isPreview && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: (!props.isPreview || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs, props.isPreview]);
+  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration]);
   const setTab = useCallback((next: NavTab) => {
     if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {
