@@ -6,6 +6,7 @@ import {
   isPortfolioProject,
   planPortfolioSync,
   portfolioEntryFor,
+  projectSummary,
 } from "@/lib/portfolio";
 import type { Project } from "@/lib/types";
 
@@ -138,4 +139,65 @@ describe("portfolio registry", () => {
     expect(isPortfolioProject(rows[0])).toBe(false);
     expect(isPortfolioProject(rows[3])).toBe(true);
   });
+});
+
+
+describe("registry identity conflicts", () => {
+  const updates = (rows: Project[]) => planPortfolioSync(rows).filter(step => step.kind === "update");
+  const inserts = (rows: Project[]) => planPortfolioSync(rows).filter(step => step.kind === "insert");
+  it("resolves a current identity before an earlier alias regardless of registry order", () => {
+    const row = project({ id: "legacy", repo_full_name: "lukaskourilcz/quorum", previous_repo_full_names: ["lukaskourilcz/own-dashboard"] });
+    expect(updates([row])).toEqual([{ kind: "update", project: row, patch: { portfolio_key: "quorum" } }]);
+    expect(inserts([row]).some(step => step.entry.key === "own-dashboard")).toBe(false);
+    const saved = { ...row, portfolio_key: "quorum" };
+    expect(updates([saved])).toEqual([]); expect(inserts([saved]).some(step => step.entry.key === "own-dashboard")).toBe(false);
+  });
+  it("preserves an explicit known or future key when another registry name reuses its repository name", () => {
+    for (const key of ["own-dashboard", "future-product"]) {
+      const row = project({ id: "bound", portfolio_key: key, repo_full_name: "lukaskourilcz/quorum" });
+      expect(updates([row])).toEqual([]);
+      expect(inserts([row]).some(step => step.entry.key === "quorum" || step.entry.parentKey === "quorum")).toBe(false);
+      expect(row.portfolio_key).toBe(key);
+    }
+  });
+  it("refuses duplicate current identities instead of choosing a row or creating another", () => {
+    const rows = [project({ id: "first", slug: "first", repo_full_name: "lukaskourilcz/aifirst" }), project({ id: "second", slug: "second", repo_full_name: "LUKASKOURILCZ/AIFIRST" })];
+    expect(updates(rows)).toEqual([]); expect(inserts(rows).some(step => step.entry.key === "aifirst")).toBe(false);
+  });
+  it("refuses ambiguous historical rows and one row claiming several historical identities", () => {
+    const cases = [
+      [project({ id: "first", slug: "first", previous_repo_full_names: ["lukaskourilcz/aifirst"] }), project({ id: "second", slug: "second", previous_repo_full_names: ["lukaskourilcz/aifirst"] })],
+      [project({ id: "many", previous_repo_full_names: ["lukaskourilcz/aifirst", "lukaskourilcz/own-dashboard"] })],
+    ];
+    for (const rows of cases) {
+      expect(updates(rows)).toEqual([]); expect(inserts(rows).some(step => step.entry.key === "aifirst")).toBe(false);
+    }
+    expect(inserts(cases[1]).some(step => step.entry.key === "own-dashboard")).toBe(false);
+  });
+  it("keeps current-name priority over a competing historical row and normalizes legacy whitespace", () => {
+    const current = project({ id: "current", repo_full_name: " LUKASKOURILCZ/AIFIRST " });
+    const old = project({ id: "old", previous_repo_full_names: ["lukaskourilcz/aifirst"] });
+    expect(updates([old, current])).toEqual([{ kind: "update", project: current, patch: { portfolio_key: "aifirst" } }]);
+    expect(portfolioEntryFor(current)?.key).toBe("aifirst");
+    const history = project({ id: "history", previous_repo_full_names: [" LUKASKOURILCZ/AIFIRST ", "lukaskourilcz/aifirst"] });
+    expect(updates([history])).toEqual([{ kind: "update", project: history, patch: { portfolio_key: "aifirst" } }]);
+  });
+  it("does not mutate owner rows or their history while resolving a plan", () => {
+    const row = project({ id: "frozen", name: "Owner name", slug: "owner-slug", engagement: "client", repo_full_name: "lukaskourilcz/quorum", previous_repo_full_names: ["lukaskourilcz/own-dashboard"] });
+    Object.freeze(row.previous_repo_full_names); Object.freeze(row);
+    expect(() => planPortfolioSync([row])).not.toThrow(); expect(row).toMatchObject({ name: "Owner name", slug: "owner-slug", engagement: "client" }); expect(row.portfolio_key).toBeUndefined();
+  });
+});
+
+
+it("does not invent registry descriptions or categories for conflicting history or an unknown explicit key", () => {
+  for (const row of [
+    project({ portfolio_key: "future-product", repo_full_name: "lukaskourilcz/quorum" }),
+    project({ previous_repo_full_names: ["lukaskourilcz/aifirst", "lukaskourilcz/own-dashboard"] }),
+  ]) {
+    expect(portfolioEntryFor(row)).toBeUndefined(); expect(projectSummary(row, "en")).toBeUndefined();
+    expect(groupPortfolio([row])[0].category).toBe("other"); expect(projectSummary({ ...row, summary: "Owner description" }, "cs")).toBe("Owner description");
+  }
+  const current = project({ repo_full_name: "lukaskourilcz/quorum", previous_repo_full_names: ["lukaskourilcz/own-dashboard"] });
+  expect(portfolioEntryFor(current)?.key).toBe("quorum"); expect(projectSummary(current, "en", { preview: true })).toBeUndefined();
 });

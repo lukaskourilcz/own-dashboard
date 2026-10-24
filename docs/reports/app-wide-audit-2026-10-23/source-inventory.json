@@ -3487,9 +3487,10 @@
     },
     {
       "path": "src/lib/portfolio.ts",
-      "lines": 254,
+      "lines": 298,
       "sha256": "fc7d20121de9c45c7b82ae4a24611f271795b42a70de68b15d550bee95da455f",
-      "status": "pending"
+      "status": "source reviewed; registry identity, owner/preview fallback and grouping checks pass; local CPU parity measured; consumer writes and final release pending",
+      "reviewedSha256": "7869e399fded3738d729b8a13397f798fcd5a67fc1f4ed893f62ae49061aad05"
     },
     {
       "path": "src/lib/preference-client.ts",
@@ -3523,7 +3524,7 @@
       "path": "src/lib/project-match.ts",
       "lines": 183,
       "sha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9",
-      "status": "source reviewed; final release checks pending",
+      "status": "partially reviewed; repository identity plans checked; conflicting known task ids need client/SQL alignment and remaining consumer lifecycle in review.md",
       "reviewedSha256": "918466bdcd120f538e02e31ae2c10231c4b92587077938c933658c1e03d2a3a9"
     },
     {
