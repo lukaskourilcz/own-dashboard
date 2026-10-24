@@ -44,8 +44,10 @@ export function saveUserPreferences(
       if (prefix.truncated) throw Error("Preference save unconfirmed");
       const receipt = JSON.parse(prefix.text);
       if (receipt?.ok !== true) throw Error("Preference save unconfirmed");
-      const saved = preferencePatchSchema.parse(receipt.saved), keys = Object.keys(requested);
-      if (keys.length !== Object.keys(saved).length || keys.some(key => JSON.stringify(saved[key as keyof typeof saved]) !== JSON.stringify(requested[key as keyof typeof requested]))) throw Error("Preference save unconfirmed");
+      const saved = preferencePatchSchema.parse(receipt.saved), keys = Object.keys(requested).filter(key => requested[key as keyof typeof requested] !== undefined);
+      // Validation may normalize arrays/URLs. Compare the original receipt too
+      // so normalization cannot conceal a different persisted value.
+      if (keys.length !== Object.keys(saved).length || keys.some(key => JSON.stringify(receipt.saved[key]) !== JSON.stringify(requested[key as keyof typeof requested]))) throw Error("Preference save unconfirmed");
     } catch { throw Error("Could not save preferences."); }
   };
   const pending = saveQueue.catch(() => undefined).then(run);

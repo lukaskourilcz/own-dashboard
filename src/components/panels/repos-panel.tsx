@@ -9,7 +9,6 @@ import {
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
-import * as Popover from "@radix-ui/react-popover";
 import { formatDistanceToNow } from "date-fns";
 import {
   Archive,
@@ -68,6 +67,8 @@ import { cn } from "@/lib/utils";
 import { useRepositoryNoteAutosave } from "@/components/github/use-repository-note-autosave";
 import { consumeRepositoryRecords, createRepositoryNote, repositoryNoteSchema, type NewRepositoryNote } from "@/lib/repository-records";
 import { readOwnedCollection } from "@/lib/owned-records";
+import { RepositoryLinkControl } from "@/components/github/repository-link-control";
+import { safeWebUrl } from "@/lib/web-url";
 
 type Status = "loading" | "connected" | "disconnected" | "error";
 
@@ -83,23 +84,6 @@ const NOTES_PATH = "dashboard-notes.md";
 /** Wrap a repo's notes in a titled markdown document. */
 function compileMarkdown(fullName: string, body: string): string {
   return `# Notes — ${fullName}\n\n${body.trim()}\n`;
-}
-
-/** Add https:// when no scheme is present, then validate. Returns the
- * canonical href or null when it isn't a valid http(s) URL. */
-function normalizeUrl(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-  try {
-    const u = new URL(withScheme);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
-    return u.href;
-  } catch {
-    return null;
-  }
 }
 
 /** Strip the scheme and a leading "www." for display:
@@ -500,6 +484,7 @@ function RepoNotesCard({
   const qc = useQueryClient();
   const supabase = createClient();
   const repoId = String(repo.id);
+  const customUrl = safeWebUrl(link?.url);
 
   const [pushing, setPushing] = useState(false);
   const [autoFocusId, setAutoFocusId] = useState<string | null>(null);
@@ -616,16 +601,16 @@ function RepoNotesCard({
             {repo.fork && <Badge icon={GitFork} label={t.github.fork} />}
             {repo.archived && <Badge icon={Archive} label={t.github.archived} />}
           </div>
-          {link && (
+          {customUrl && (
             <a
-              href={link.url}
+              href={customUrl}
               target="_blank"
               rel="noreferrer"
-              title={link.url}
+              title={customUrl}
               className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[11px] font-medium text-foreground hover:underline"
             >
               <Link2 className="h-3 w-3 shrink-0" />
-              <span className="truncate">{displayUrl(link.url)}</span>
+              <span className="truncate">{displayUrl(customUrl)}</span>
             </a>
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
@@ -647,7 +632,7 @@ function RepoNotesCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
-          <RepoLinkControl repo={repo} link={link} setRepoLinks={setRepoLinks} />
+          <RepositoryLinkControl repo={repo} link={link} setRepoLinks={setRepoLinks} />
           <Tooltip content={t.github.writeFileHint}>
             <Button
               variant="ghost"
@@ -805,165 +790,6 @@ function RepoNoteEntry({ note, body, failed, pending, autoFocus, onChange, onSav
         </Button>
       </div>
     </div>
-  );
-}
-
-/** The Link icon + popover editor for a repo's custom URL. */
-function RepoLinkControl({
-  repo,
-  link,
-  setRepoLinks,
-}: {
-  repo: GithubRepo;
-  link: RepoLink | undefined;
-  setRepoLinks: Updater<RepoLink[]>;
-}) {
-  const t = useDict();
-  const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
-  const repoId = String(repo.id);
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(link?.url ?? "");
-  const [error, setError] = useState<string | null>(null);
-  const hasLink = Boolean(link);
-
-  const saveMutation = useMutation({
-    mutationFn: async (url: string) => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const { data, error } = await supabase
-        .from("repo_links")
-        .upsert(
-          {
-            user_id: userId,
-            repo_id: repoId,
-            repo_full_name: repo.full_name,
-            url,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,repo_id" },
-        )
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as RepoLink;
-    },
-    onSuccess: (row) => {
-      setRepoLinks((prev) => {
-        const idx = prev.findIndex((l) => l.repo_id === repoId);
-        if (idx === -1) return [row, ...prev];
-        const next = prev.slice();
-        next[idx] = row;
-        return next;
-      });
-      toast.ok(t.github.linkSavedToast);
-      setOpen(false);
-    },
-    onError: () => toast.err(t.github.linkErr),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("repo_links")
-        .delete()
-        .eq("repo_id", repoId);
-      if (error) throw error;
-    },
-    onMutate: async () => {
-      await qc.cancelQueries({ queryKey: qk.repoLinks });
-      const prev = qc.getQueryData<RepoLink[]>(qk.repoLinks);
-      setRepoLinks((old) => old.filter((l) => l.repo_id !== repoId));
-      return { prev };
-    },
-    onSuccess: () => toast.ok(t.github.linkRemovedToast),
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) setRepoLinks(ctx.prev);
-      toast.err(t.github.linkErr);
-    },
-    onSettled: () => setOpen(false),
-  });
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const url = normalizeUrl(value);
-    if (!url) {
-      setError(t.github.linkInvalid);
-      return;
-    }
-    saveMutation.mutate(url);
-  }
-
-  return (
-    <Popover.Root
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) {
-          setValue(link?.url ?? "");
-          setError(null);
-        }
-      }}
-    >
-      <Popover.Trigger asChild>
-        <button
-          type="button"
-          aria-label={hasLink ? t.github.linkEdit : t.github.linkAdd}
-          title={hasLink ? t.github.linkEdit : t.github.linkAdd}
-          className={cn(
-            "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
-            hasLink
-              ? "text-foreground hover:bg-surface-hover"
-              : "text-foreground-muted hover:bg-surface-hover hover:text-foreground",
-          )}
-        >
-          <Link2 className="h-3.5 w-3.5" />
-        </button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          align="end"
-          sideOffset={6}
-          className="anim-pop z-40 w-64 rounded-lg border border-border bg-surface p-2 shadow-elevated"
-        >
-          <form onSubmit={submit} className="space-y-1.5">
-            <Input
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder={t.github.linkPlaceholder}
-              className="h-8 text-xs"
-              inputMode="url"
-            />
-            {error && <p className="text-[11px] text-destructive">{error}</p>}
-            <div className="flex items-center justify-between gap-2">
-              {hasLink ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeMutation.mutate()}
-                  disabled={removeMutation.isPending}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {t.github.linkRemove}
-                </Button>
-              ) : (
-                <span />
-              )}
-              <Button
-                type="submit"
-                size="sm"
-                disabled={saveMutation.isPending || !value.trim()}
-              >
-                {t.github.save}
-              </Button>
-            </div>
-          </form>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
   );
 }
 

@@ -31,6 +31,16 @@ it("invalid values never reach the network", async () => {
   const { saveUserPreferences } = await import("@/lib/preference-client");
   await expect(saveUserPreferences({ language: "de" })).rejects.toThrow("Could not save preferences."); expect(fetcher).not.toHaveBeenCalled();
 });
+it("does not normalize an altered write receipt into a false match", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(receipt({ visible_repo_ids: ["42", "42"] })));
+  const { saveUserPreferences } = await import("@/lib/preference-client");
+  await expect(saveUserPreferences({ visible_repo_ids: ["42"] })).rejects.toThrow("Could not save preferences.");
+});
+it("omits undefined optional fields consistently with the JSON request", async () => {
+  const fetcher = vi.fn().mockResolvedValue(receipt({ theme: "dark" })); vi.stubGlobal("fetch", fetcher);
+  const { saveUserPreferences } = await import("@/lib/preference-client");
+  await saveUserPreferences({ theme: "dark", timezone: undefined }); expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ theme: "dark" });
+});
 it("expires a stalled request, releases the queue and cancels the signal", async () => {
   const requestBudgets: AbortController[] = [];
   vi.spyOn(AbortSignal, "timeout").mockImplementation(ms => { const controller = new AbortController(); if (ms === 20_000) requestBudgets.push(controller); return controller.signal; });

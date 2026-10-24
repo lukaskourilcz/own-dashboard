@@ -1436,8 +1436,8 @@
       "path": "src/components/panels/repos-panel.tsx",
       "lines": 1320,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partially reviewed; remaining repository/task/shared concerns in review.md",
-      "reviewedSha256": "c62a4f02a1cf81d5ec0ddf211f297313ca466a35bc9f32025078672d1159bcf6"
+      "status": "partial; repository notes/tasks/link mutations reviewed with targeted/rendered checks; filter/provider-list state pending",
+      "reviewedSha256": "72a40c63631b139aa0eaf1eceb95d535a65fe35f0724ef2dfadffbbb89a7067f"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -3489,8 +3489,8 @@
       "path": "src/lib/preference-client.ts",
       "lines": 24,
       "sha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3",
-      "status": "source reviewed; captured/bounded preference queue and complete receipts tested; final release pending",
-      "reviewedSha256": "c01cf5e835e4ed65e89c3c033a3c3dbe21ef532c62f07d5fcb55bada94fdd0fb"
+      "status": "source reviewed; bounded/captured preference queue and original complete receipts tested; targeted/rendered checks pass; final release pending",
+      "reviewedSha256": "3da302cb40c9ee4bd0f2a3e22926b499e8af546e12368ff47a9b8a9ce41314b2"
     },
     {
       "path": "src/lib/project-cron-seeds.ts",
@@ -4026,6 +4026,20 @@
       "lines": 37,
       "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
       "reviewedSha256": "4a798b1dbb89a3559bf4861fae20630ad9b9f86c4c762139b6a80d75d7b2304c"
+    },
+    {
+      "path": "src/lib/repository-links.ts",
+      "sha256": null,
+      "lines": 71,
+      "status": "source reviewed; bounded versioned link mutation receipts/cache reconciliation tested, including migrated RLS; rendered checks pass; final release pending",
+      "reviewedSha256": "36475277c2ca2901b03593169d610aea9cab8ec8cfe97e6ceac4f23a34fa97a4"
+    },
+    {
+      "path": "src/components/github/repository-link-control.tsx",
+      "sha256": null,
+      "lines": 121,
+      "status": "source reviewed; retained link drafts, pending/conflict/navigation/URL/a11y states tested; rendered checks pass; final release pending",
+      "reviewedSha256": "5212361f4395f5075e7ea0f131e699bd53ea3507765dfe0ad0326b2fe4f44df0"
     }
   ],
   "baselineFileCount": 561

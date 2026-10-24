@@ -101,6 +101,9 @@ type GithubStrings = {
   linkSavedToast: string;
   linkRemovedToast: string;
   linkErr: string;
+  linkLabel: string;
+  linkChanged: string;
+  linkReviewCurrent: string;
   // "Check NEEDED" — combined to-do built from every repo's NEEDED.md
   needed: {
     button: string;
@@ -126,6 +129,9 @@ type GithubStrings = {
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
   en: {
+    linkLabel: "Repository website",
+    linkChanged: "The saved link changed. Review its current value before saving your retained draft.",
+    linkReviewCurrent: "Review current value",
     title: "Repositories",
     subtitle: "Your active GitHub repositories.",
     connectTitle: "Connect GitHub",
@@ -251,6 +257,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     },
   },
   cs: {
+    linkLabel: "Web repozitáře",
+    linkChanged: "Uložený odkaz se změnil. Před uložením zachovaného návrhu zkontrolujte jeho aktuální hodnotu.",
+    linkReviewCurrent: "Zkontrolovat aktuální hodnotu",
     title: "Repozitáře",
     subtitle: "Tvoje aktivní GitHub repozitáře.",
     connectTitle: "Připojit GitHub",

@@ -13,6 +13,18 @@ beforeAll(async () => {
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]); await db.exec("set role authenticated");
 }, 120000);
 afterAll(async () => db?.close());
+it("confirms versioned repository links without replacing a competing creation or a newer edit", async () => {
+  const inserted = (await db.query<{ row: Record<string, unknown> }>("insert into repo_links(user_id,repo_id,repo_full_name,url) values($1,'98765','owner/fixture','https://example.test/') returning to_jsonb(repo_links) as row", [owner])).rows[0].row;
+  expect((await db.query("insert into repo_links(user_id,repo_id,repo_full_name,url) values($1,'98765','owner/fixture','https://competing.test/') on conflict(user_id,repo_id) do nothing returning id", [owner])).rows).toEqual([]);
+  const version = "2026-10-24T05:00:00Z";
+  const updated = await db.query("update repo_links set url='https://confirmed.test/',updated_at=$1 where id=$2 and user_id=$3 and repo_id='98765' and updated_at=$4 returning url", [version, inserted.id, owner, inserted.updated_at]); expect(updated.rows).toEqual([{ url: "https://confirmed.test/" }]);
+  expect((await db.query("delete from repo_links where id=$1 and user_id=$2 and updated_at=$3 returning id", [inserted.id, owner, inserted.updated_at])).rows).toEqual([]);
+  expect((await db.query("update repo_links set url='https://stale.test/' where id=$1 and user_id=$2 and updated_at=$3 returning id", [inserted.id, owner, inserted.updated_at])).rows).toEqual([]);
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [other]);
+  expect((await db.query("update repo_links set url='https://foreign.test/' where id=$1 and user_id=$2 and updated_at=$3 returning id", [inserted.id, owner, version])).rows).toEqual([]);
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]);
+  expect((await db.query("delete from repo_links where id=$1 and user_id=$2 and updated_at=$3 returning url", [inserted.id, owner, version])).rows).toEqual([{ url: "https://confirmed.test/" }]);
+});
 it("keeps changed and newly added notes when clearing a captured publication", async () => {
   const unchanged = await note(), changed = await note(), added = await note();
   await db.query("update repo_notes set body='Edited during publication' where id=$1", [changed.id]);
