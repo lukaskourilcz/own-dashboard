@@ -1,5 +1,6 @@
 "use client";
 
+import { useGuestPreferences } from "@/lib/guest-preferences";
 import { useSyncExternalStore } from "react";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { subscribeStoredPreference } from "@/lib/preference-storage";
@@ -404,9 +405,10 @@ export function useCvLinks(): {
   setCs: (v: string) => void;
   setEn: (v: string) => void;
 } {
-  const cs = useSyncExternalStore(cvCsPref.subscribe, cvCsPref.read, getServerCv);
-  const en = useSyncExternalStore(cvEnPref.subscribe, cvEnPref.read, getServerCv);
-  return { cs, en, setCs: cvCsPref.set, setEn: cvEnPref.set };
+  const guest = useGuestPreferences(), csPref = guest?.cvCs ?? cvCsPref, enPref = guest?.cvEn ?? cvEnPref;
+  const cs = useSyncExternalStore(csPref.subscribe, csPref.read, getServerCv);
+  const en = useSyncExternalStore(enPref.subscribe, enPref.read, getServerCv);
+  return { cs, en, setCs: csPref.set, setEn: enPref.set };
 }
 
 // ---------------------------------------------------------------------------
@@ -424,13 +426,12 @@ export { readRepoFilter, writeRepoFilter, useRepositoryFilter } from "@/lib/repo
 // The Oslo search is the default. This opt-in restores Czech career sources
 // and records without deleting the owner's earlier search history.
 const czechCareerPref = makeStringPref("showCzechCareer");
-const readCzechCareer = () => czechCareerPref.read() === "1";
 const serverCzechCareer = () => false;
-const setCzechCareer = (value: boolean) => czechCareerPref.set(value ? "1" : "0");
 
 export function useCzechCareerVisibility() {
+  const pref = useGuestPreferences()?.czechCareer ?? czechCareerPref;
   const showCzechCareer = useSyncExternalStore(
-    czechCareerPref.subscribe, readCzechCareer, serverCzechCareer,
+    pref.subscribe, () => pref.read() === "1", serverCzechCareer,
   );
-  return { showCzechCareer, setShowCzechCareer: setCzechCareer };
+  return { showCzechCareer, setShowCzechCareer: (value: boolean) => pref.set(value ? "1" : "0") };
 }

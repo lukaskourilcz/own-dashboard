@@ -24,22 +24,23 @@ export function GuestBanner({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "fixed inset-x-0 bottom-3 z-50 flex justify-center px-3",
+        "pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-3",
         "md:bottom-[calc(var(--desktop-padding-block)+0.75rem)]",
         className,
       )}
     >
       <div
         role="status"
-        className="pointer-events-auto flex max-w-[min(100%,34rem)] items-center gap-2 rounded-full border border-border bg-surface/95 py-1.5 pl-3 pr-1.5 text-[12px] shadow-elevated backdrop-blur-md"
+        className="pointer-events-auto flex max-w-[min(100%,34rem)] items-center gap-2 rounded-lg border border-border bg-surface/95 py-2 pl-3 pr-1.5 text-[12px] shadow-elevated backdrop-blur-md"
       >
-        <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground">
-          {t.guest.label}
-        </span>
-        <span className="min-w-0 truncate text-muted-foreground">{t.guest.description}</span>
+        <div className="min-w-0 flex-1">
+          <span className="inline-flex max-w-full rounded-md bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground">{t.guest.label}</span>
+          <p className="mt-0.5 text-foreground-muted">{t.guest.description}</p>
+        </div>
         <Link
           href="/login"
-          className="focus-ring shrink-0 rounded-full px-2 py-1 font-medium text-foreground underline-offset-2 hover:underline"
+          prefetch={false}
+          className="focus-ring inline-flex min-h-11 shrink-0 items-center rounded-md px-2 py-1 font-medium md:min-h-8 text-foreground underline-offset-2 hover:underline"
         >
           {t.guest.signIn}
         </Link>
@@ -47,7 +48,7 @@ export function GuestBanner({ className }: { className?: string }) {
           type="button"
           onClick={() => setHidden(true)}
           aria-label={t.guest.dismiss}
-          className="focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-md text-foreground-muted hover:bg-surface-hover md:h-8 md:w-8 hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" aria-hidden />
         </button>

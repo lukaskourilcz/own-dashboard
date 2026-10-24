@@ -202,7 +202,8 @@ export function OpportunitiesPanel({
   });
 
   const locale = useDateLocale();
-  const lastLoad = useLastLoad("opportunities");
+  const loadScope = isPreview ? "preview:opportunities" : `owner:${userId}:opportunities`;
+  const lastLoad = useLastLoad(loadScope);
   const [checking, setChecking] = useState(false);
   // The only way Opportunities fetches: the pipeline, the platform directory
   // and the metrics, on each press. Nothing refetches on focus or a timer.
@@ -214,7 +215,7 @@ export function OpportunitiesPanel({
         ? PREVIEW_PLATFORMS
         : await qc.fetchQuery({ queryKey: [...qk.freelancePlatforms, userId], queryFn: () => fetchFreelancePlatforms(userId), staleTime: 0 });
       await qc.invalidateQueries({ queryKey: qk.opportunityMetrics });
-      recordLastLoad("opportunities", {
+      recordLastLoad(loadScope, {
         opportunities: (qc.getQueryData<ClientOpportunity[]>(qk.opportunities) ?? opportunities).length,
         platforms: platformRows.length,
       });
