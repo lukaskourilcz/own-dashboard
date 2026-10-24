@@ -69,11 +69,15 @@ Removed personal destinations such as `/streaks`, `/books`, and `/couple` return
 
 ## Local setup
 
-1. Install dependencies:
+1. Use the security-patched Node 22 LTS version in `.nvmrc`, then install dependencies:
 
 ```bash
+nvm install
+nvm use
 npm ci
 ```
+
+CI reads the same runtime pin. Vercel uses the latest supported Node 22 patch through `engines.node`; verify the deployed patch during release. Update `.nvmrc` when adopting a newer Node 22 security release.
 
 2. Copy `.env.example` to `.env.local`. The minimum browser-safe variables are:
 

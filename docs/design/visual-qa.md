@@ -390,3 +390,8 @@ Twenty final project browser cases pass with two intentional mobile/duplicate sk
 ## 24 October 2026 — shared checkbox and switch targets
 
 Shared controls keep their compact visible marks inside real 44px mobile and 32px desktop targets. Fifty focused mounted cases across eight files, TypeScript and targeted ESLint pass. Twenty-eight final EN/CS desktop/mobile browser cases cover Settings, Tasks, finance rules and library exports; target-edge clicks, keyboard activation, six widths, reflow, native control semantics and axe pass. A separate 24 source/mix/preview cases pass after the shared change. Czech desktop/mobile Settings and Task captures were inspected. Earlier measurement-argument and immediate-count diagnostics are excluded. The Task page still needs its nested-card density review; this entry does not claim full app or release completion. Exact limitations are in app-wide finding 153.
+
+
+### App-wide audit runtime verification — 24 October 2026
+
+After the Node 22 LTS/security-dependency update, eight ordinary optimized-build browser cases pass: desktop/mobile login, OAuth-error copy and EN/CS guest preference/loading-history isolation. Guest checks include eight widths, axe, usable notice/navigation controls and no live API/database reads or eager login requests. The ordinary build keeps `/dev-preview` at 404. This runtime pass adds no UI change or new screenshot; the twelve-pair checkpoint-63 visual plan remains the current component artifact. The complete page/interaction release matrix remains unfinished.

@@ -2,6 +2,9 @@
   "name": "own-dashboard",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -75,7 +78,7 @@
     "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
-    "happy-dom": "^20.14.5",
+    "happy-dom": "21.0.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.6"

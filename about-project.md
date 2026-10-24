@@ -8,6 +8,7 @@ weekly reviews. The owner-authorized Marketing workspace alone can use Claude th
 
 ## Tech stack
 
+- **Node.js 22 LTS** — local/CI security patch pinned in `.nvmrc`; Vercel receives managed Node 22 patch updates
 - **Next.js 16.4.3 (App Router), React 19.2.4 and TypeScript** — the authenticated shell and API routes
 - **Tailwind CSS 4, Radix primitives, Recharts, BlockNote, dnd-kit** — UI, charts, notes editor, drag handles
 - **Supabase and TanStack Query** — Postgres, Auth, owner-only RLS, route-scoped loading; signed file transfers use a separate cancellable Storage transport
