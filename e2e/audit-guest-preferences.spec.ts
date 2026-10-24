@@ -15,7 +15,8 @@ async function open(page: Page, lang: "en" | "cs", destination: "settings" | "op
 }
 for (const lang of ["en", "cs"] as const) {
   test(`${lang}: guest preferences and load metadata stay separate while the notice leaves navigation usable`, async ({ page }) => {
-    const errors = watchConsole(page), live: string[] = [];
+    const errors = watchConsole(page), live: string[] = [], loginRequests: string[] = [];
+    page.on("request", request => { if (new URL(request.url()).pathname === "/login") loginRequests.push(request.url()); });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.addInitScript(({ lang, csUrl, enUrl }) => {
       localStorage.setItem("lang",lang); localStorage.setItem("theme",lang === "cs" ? "dark" : "light");
@@ -29,6 +30,7 @@ for (const lang of ["en", "cs"] as const) {
     await page.goto(`/guest?lang=${lang}`,{waitUntil:"domcontentloaded"});
     await expect.poll(()=>page.evaluate(()=>document.documentElement.dataset.guestTour)).toBe("true");
     const notice = page.getByRole("status").filter({hasText:guest[lang].description}); await expect(notice).toBeVisible();
+    await notice.getByRole("link",{name:guest[lang].signIn,exact:true}).hover();
     await open(page,lang,"settings"); await expect(page.locator("#cv-cs")).toBeVisible(); await expect(page.locator("#cv-cs")).toHaveValue(""); await expect(page.locator("#cv-en")).toHaveValue("");
     const tourUrl = "https://docs.google.com/document/d/synthetic-tour/edit"; await page.locator("#cv-cs").fill(tourUrl); await page.locator("#cv-en").focus();
     expect(await page.evaluate(()=>[localStorage.getItem("cvUrlCs"),localStorage.getItem("cvUrlEn"),localStorage.getItem("showCzechCareer")])).toEqual([csUrl,enUrl,"1"]);
@@ -46,7 +48,7 @@ for (const lang of ["en", "cs"] as const) {
     }
     expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"]}).include('[role="status"]').withTags(["wcag2a","wcag2aa","wcag21aa","wcag22aa"]).analyze()).violations).toEqual([]);
     await notice.getByRole("button",{name:guest[lang].dismiss,exact:true}).click();await expect(notice).toHaveCount(0);
-    expect(live).toEqual([]);expect(errors).toEqual([]);
+    expect(live).toEqual([]);expect(loginRequests).toEqual([]);expect(errors).toEqual([]);
     // A new document/tour discards the previous memory without touching the
     // stored owner values or carrying the tour URL into another instance.
     await page.goto(`/guest?lang=${lang}`);await expect.poll(()=>page.evaluate(()=>document.documentElement.dataset.guestTour)).toBe("true");await open(page,lang,"settings");await expect(page.locator("#cv-cs")).toHaveValue("");
