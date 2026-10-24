@@ -688,10 +688,10 @@
     },
     {
       "path": "src/components/calendar/relink-cta.tsx",
-      "lines": 43,
+      "lines": 53,
       "sha256": "ee834e27196704753ae54cce1df5f86110ecfac392865a372f9c5820915a1195",
-      "status": "partial; pending/error flow read; synchronous repeat guard, rejected/hung OAuth recovery and announced safe errors need fixing in review.md",
-      "reviewedSha256": "ee834e27196704753ae54cce1df5f86110ecfac392865a372f9c5820915a1195"
+      "status": "source reviewed; guarded Google reconnect, duplicate/error/retry and unmount recovery checked in unit and browser cases; final release pending",
+      "reviewedSha256": "95133c38aa20655d7e4e472e7ad2984b7e53d790ace0c2c11f9c8e04aab3645d"
     },
     {
       "path": "src/components/calendar/week-view.tsx",
@@ -2254,10 +2254,10 @@
     },
     {
       "path": "src/lib/google-auth.ts",
-      "lines": 30,
+      "lines": 41,
       "sha256": "612c3ad762c65e21cef8c63064e569ec747e48578b0b175794eed2cbb8fde329",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "836b528e46b8a183f7d2606b2c924aabab178fd240b5c59799c95bbad1afe712"
+      "status": "source reviewed; bounded manual PKCE redirect, cancellation, configured endpoint/provider/callback validation and guest refusal checked; final release pending",
+      "reviewedSha256": "bd1ddecc41517cb5353fcde8a348353bd7436d90afa7ddbfb82e982ae3b4f3a8"
     },
     {
       "path": "src/lib/google-token.ts",
@@ -2500,9 +2500,10 @@
     },
     {
       "path": "src/lib/i18n/sections/relink.ts",
-      "lines": 15,
+      "lines": 18,
       "sha256": "ec10378679e4c518460c9bba33e432a22c51010eba9f5d06997ccf2f33b8b023",
-      "status": "pending"
+      "status": "source reviewed; bilingual accessible Google authorization recovery copy checked; final release pending",
+      "reviewedSha256": "258d573b1986534b13343c79d9c6aad690cd395bbdb955cb39a49aa70b0175d7"
     },
     {
       "path": "src/lib/i18n/sections/settings.ts",
