@@ -2388,7 +2388,8 @@
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
       "lines": 60,
       "sha256": "faa07a8ec8c91c1248815b5a26cf54ef8adcc4c7d42a57fd7821eeb866340259",
-      "status": "pending"
+      "status": "partial; EN/CS address guidance checked (finding 149); mutation recovery/error lookup and legacy notice copy remain under review",
+      "reviewedSha256": "adfffe68403ef4ba3edf332e501079e1ddae568917dcb493b62e557314cfc358"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-sources.ts",
@@ -3204,10 +3205,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-source-list.ts",
-      "lines": 123,
+      "lines": 139,
       "sha256": "f08ae40c2053cf6f1ba203d57907f2b58c9eedff27f3c30e3e40281fbe172c43",
-      "status": "partial; list/read schema and exact bounds reviewed (finding 146); address detection and source mutation contracts remain under review",
-      "reviewedSha256": "602be9c2a1c0bb937ce41ea3d0f3f246c6b3772e82df5dc4b49600d123f5096d"
+      "status": "partial; complete source/read bounds and address/day/name validation reviewed (findings 146/149); captured source mutation contracts remain under review",
+      "reviewedSha256": "40be33f1da5f4535dae634c02575c090f0cf97882785e0d08c6fe5d9721ce65e"
     },
     {
       "path": "src/lib/marketing/dneskai-store.ts",

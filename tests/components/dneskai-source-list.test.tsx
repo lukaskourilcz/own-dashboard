@@ -22,6 +22,15 @@ function type(field: HTMLInputElement, value: string) {
 }
 
 describe('Zdroje source list (#174)', () => {
+  it.each(['en','cs'] as const)('explains a bare website and an explicit dotted handle before saving (%s)',async(lang)=>{
+    const list={...dneskaiRegistrySourceList(),editable:true},fetcher=vi.fn().mockResolvedValue(Response.json(list));vi.stubGlobal('fetch',fetcher);
+    render(lang,false);await vi.waitFor(async()=>{await wait(0);expect(container.querySelector('form')).not.toBeNull();});
+    const form=container.querySelector('form')!,field=form.querySelector('input')!,t=dneskaiSourceList[lang].add;
+    type(field,'example.com');expect(form.textContent).toContain(t.detected.html('example.com'));
+    type(field,'@meta.ai');expect(form.textContent).toContain(t.detected.instagram('meta.ai'));
+    type(field,'https://instagram.com/profile/reels/');expect(form.textContent).not.toContain(t.detected.instagram('profile'));
+    expect(fetcher.mock.calls.every(([,init])=>!init?.method||init.method==='GET')).toBe(true);
+  });
   it.each(['en', 'cs'] as const)('lists Instagram profiles and websites read-only in the preview (%s)', async (lang) => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
     render(lang, true); await wait();

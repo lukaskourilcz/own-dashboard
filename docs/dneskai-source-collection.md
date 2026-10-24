@@ -25,7 +25,7 @@ Od té chvíle vlastník přidává zdroj zadáním @účtu, profilu na instagra
 adresy (adresa s `rss`, `atom`, `feed` nebo `.xml` se čte jako feed, jiná jako
 stránka; Atom čte stejný adaptér jako RSS), upravuje název, druh, úroveň, dny a
 počet položek a zdroj odebírá po potvrzení. Adresa zdroje se nemění: nová adresa
-je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy).
+je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy). Doména bez protokolu (například `example.com`) znamená web. Instagramový účet s tečkou zadávejte jako `@meta.ai` nebo úplnou profilovou adresou. Odkaz na konkrétní Reel, příspěvek či přihlašovací stránku není profil. Vstup odmítá přihlašovací údaje v adrese, řídicí znaky, neočekávané porty a příliš dlouhé hodnoty; vlastní stažení dál podléhá serverovým kontrolám URL a DNS.
 
 Sběr i scouting čtou zdroje přes jeden katalog (`dneskai-source-catalog.ts`):
 řádky vlastníka se zapnutým přepínačem, soubor pouze s vypnutým. Chyba,
