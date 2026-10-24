@@ -3157,8 +3157,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 114 migrations, nine read tables; rollout and final release pending",
-      "reviewedSha256": "d971ceac68e894bcfec84fe6ab09e981f884e124ee7844a60c2cb38234d8f166"
+      "status": "source reviewed; generated offline from all 115 migrations, nine read tables; rollout and final release pending",
+      "reviewedSha256": "73fc31447db262103df4e4c75fb65ef7fa1bbc873e07215c51189af987b85241"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4266,6 +4266,13 @@
       "sha256": "74407b98155ff9bc9ec5afcb677d12f990a53359517ee5978e356e36758dc99f",
       "status": "partial; canonical channel classification and prepared reference matching checked/measured in finding 164; remaining legacy aggregate-input checks and weekly editor integration/release review pending",
       "reviewedSha256": "b58bc8cfad2dbe913f66e8f26236d978be349750ce219ad541fd87a05859baa9"
+    },
+    {
+      "path": "src/lib/weekly-review-save.ts",
+      "sha256": null,
+      "lines": 80,
+      "status": "source reviewed; finding 167 captured owner/week/version save receipts, SDK cancellation and guarded cache checks pass; caller integration and final release pending",
+      "reviewedSha256": "56298594bb7eb294c82762e30a963c99b9ffaef464ff3ec0e074a2ea36caa891"
     },
     {
       "path": "src/proxy.ts",

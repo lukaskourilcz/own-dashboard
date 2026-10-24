@@ -728,12 +728,12 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Twenty-eight prepared audit files follow, numbered 87–114 in the [current migration list](../README.md). The latest is `20261024220621_weekly_focus_snapshot.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Twenty-nine prepared audit files follow, numbered 87–115 in the [current migration list](../README.md). The latest is `20261024223552_confirmed_weekly_review.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx supabase link --project-ref gcctapykhrdyxikieemn
 npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect all twenty-eight audit files (87–114)
+npx supabase db push --linked --dry-run   # expect all twenty-nine audit files (87–115)
 npx supabase db push --linked
 npx supabase migration list --linked      # both columns agree
 ```
@@ -1139,3 +1139,12 @@ Eight isolated database cases cover persisted receipts, no-op retries, stale sav
 Selected legacy text over 16,000 UTF-8 bytes is refused before JSON aggregation, and the complete result is capped at 512 KiB. The client additionally validates text lengths, owner/week/set/item identity, unique item ids, date and position order. Its single RPC uses a fifteen-second caller-cancellable budget with automatic retries disabled. Missing history stays unavailable, cached failures are marked stale, and explicit retry retains the review draft. Carry-forward navigation and completion require a confirmed history read; saving a draft stays available. Home's best-completed-generation garden is unchanged.
 
 Ninety-one targeted library/component/database cases pass, including seven isolated migrated-database cases and actual SDK cancellation/failure checks. Four EN/CS desktop/mobile browser cases pass after the card-width regression, covering six widths, failure/retry, long unbroken content, complete card/content bounds, axe and no writes. TypeScript, targeted lint and offline read-type generation from all 114 files pass. Exact evidence and excluded diagnostics are in app-wide finding 166. Apply the prepared chain above before deploying the reader. Roll back its caller before dropping `weekly_focus_snapshot(date)`; no stored data needs rollback. Weekly editor save receipts and draft identity remain separate unfinished work.
+
+
+## Migration 115 — captured weekly review saves
+
+`20261024223552_confirmed_weekly_review.sql` adds `save_weekly_review(uuid,uuid,date,timestamptz,text,jsonb)` with invoker RLS, an empty search path, five-second lock waits and authenticated-only execution. It binds the expected owner, stable record id, Monday and exact source timestamp. An owner/week advisory lock protects absent-row creation before the row lock. A different source returns a nonwriting conflict; an already stored identical patch is a no-op retry. Automatic navigation preserves completion; only explicit Save Draft reopens it. Normal writes advance the version and verify the full persisted row. Suppressed/altered acknowledgements or an oversized response roll back.
+
+Only known edited summary/item fields are accepted. Untouched legacy lists and unknown stored item keys remain intact. New input is capped at 256 KiB; the complete receipt at 512 KiB. Summary is at most 20,000 characters; objectives and each legacy list allow 100 entries of at most 2,000 characters. Objective ids are unique. Calendar input is limited to finite aggregate minutes and counts; focus counts stay within seven days / 49 tasks. No event body is accepted or stored. Applying the function rewrites no existing row and adds no table or index.
+
+Forty-one client/database cases pass, including twelve isolated full-chain database checks, actual SDK one-request/no-retry/cancellation checks, precise version conflicts, retained legacy fields, ambiguous retries, completion modes, permissions, invalid and oversized input/results, suppressed/altered writes and guarded cache application. TypeScript, targeted ESLint and offline schema generation from 115 migrations pass. Initial direct test queries lost PostgreSQL microseconds in JavaScript dates; the final fixture uses PostgreSQL JSON serialization. A nested JSON subtraction needed explicit parentheses; valid fractional aggregate persistence now has its own regression. These diagnostics are excluded from passing evidence. The legacy editor caller has not yet been replaced; see app-wide finding 167. Apply the prepared chain before deploying that completed caller. Roll back callers before dropping this function; no stored review data needs rollback.
