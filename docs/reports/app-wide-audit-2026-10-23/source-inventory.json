@@ -19,9 +19,9 @@
     {
       "path": "next.config.ts",
       "sha256": "a1fcd8a78a6e709b0d8b0c1cf7203acc660db6150e4f4a5a6b754af9f7a772b1",
-      "lines": 125,
+      "lines": 126,
       "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "0d264630461ccff022bc19d4b8deb0d2e87ce50cea200b7cdc4cb27de2aac2a7"
+      "reviewedSha256": "8911784dc9a80d1cec078188166bc67401392e6b7affa744c9e9b183e9964f8b"
     },
     {
       "path": "sentry.client.config.ts",
@@ -611,10 +611,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 51,
+      "lines": 52,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
       "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "e10a5ee723691d219368f2c5e1758e4b3df98d5d1bfa129f3300bf1bbb639302"
+      "reviewedSha256": "d75041dea58275018ac7697977e5ae6458cbdbe9f92cc3efe9aa8e92c3e5f702"
     },
     {
       "path": "src/app/globals.css",
@@ -785,17 +785,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 499,
+      "lines": 500,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "partially reviewed; route loading, hydrated initial controls, pending navigation, Work callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "c4d1a33f177531a29e36a56be471e47f73f9e535bd75dd7b9ddaebecc9c14671"
+      "reviewedSha256": "0ac2444c3215146bbfebd0741f9e55e5aca78f92a95a7f8ccc35ca2386924280"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 150,
+      "lines": 154,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
       "status": "source reviewed; isolated project/task collection harness and repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "95933e055ff6c85de81341bc2cd065d16435a436077e3d9da9f13cf4d923d84e"
+      "reviewedSha256": "c7db48e9bc3d103946fb06cacac82625bd2565564ea263340f31a95dbc474a7f"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -966,10 +966,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-audio-library.tsx",
-      "lines": 147,
+      "lines": 149,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "partial; guarded error dictionary and accurate ambiguous/rotation messages checked (156); retained upload drafts, immediate pending/exit guards, conflict/receipt/cache behavior remain pending",
-      "reviewedSha256": "fe73012766a8515b91031c166947a0d2e6a59dfe42ca243625254ec6e6d1c5c2"
+      "status": "partial; preview disposal/recovery and native EN/CS browser checks pass in finding 163; page reconciliation, selection errors, toggle/upload, trend and remaining interaction review pending",
+      "reviewedSha256": "6f4adce57840b22c2385fcd520865ce5b19f07b9f93f103c25fb20f026257aed"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -1006,9 +1006,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/audio-preview.tsx",
-      "lines": 43,
+      "lines": 84,
       "sha256": "0fb560ea14c83df14e07a4df4983d7ce8bf65dca74c2594e761d8bcba5870d96",
-      "status": "pending"
+      "status": "source reviewed; cancellation, native playback, disposal and EN/CS recovery checks pass in finding 163; final release checks pending",
+      "reviewedSha256": "9607aa03fd92df11a37f7cc3df1e3cb06bf899e19870a51558e6190473284648"
     },
     {
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
@@ -1048,9 +1049,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
-      "lines": 50,
+      "lines": 52,
       "sha256": "bc010e40745ae936c191f2ff1528f43634ad6a71be0aba39eeb88d3ac3e50653",
-      "status": "pending"
+      "status": "partial; preview disposal/recovery and native EN/CS browser checks pass in finding 163; page reconciliation, selection errors, toggle/upload, trend and remaining interaction review pending",
+      "reviewedSha256": "f9b689ab0207006d4040e26ad26d48741a2aa3e997c5d8b31720454ac7c6eb26"
     },
     {
       "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
@@ -1142,7 +1144,7 @@
       "lines": 56,
       "sha256": "e88e012d8384fcfcc52f98f06705d0f65077430ba41a4760d1225574d9118dcb",
       "status": "source reviewed; retained source drafts, captured confirmations, lifecycle/cache guards and EN/CS native recovery checks pass (finding 152); final release checks pending",
-      "reviewedSha256": "015747a5583d4c2ce80e16e4bdbd1d3890d78e545c338efc24be581f448669e0"
+      "reviewedSha256": "042fa804f41f280b9093807602133a292403528beed608cfd2f3eef9af506e9c"
     },
     {
       "path": "src/components/marketing/dneskai/state-chip.tsx",
@@ -1499,10 +1501,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 1976,
+      "lines": 1978,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
       "status": "partially reviewed; complete reads, ordering, retained notes, manual edit/deletion recovery, operations layout and confirmed active controls checked; creation/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "fcdfcb63d9571982f3141303b18c37ddc720c5cead532d3e6d5ca9c6eedac51c"
+      "reviewedSha256": "8feaba1211677ea6847b0f96bec77c8d78ae2c20a8515d757991c3d5b57b68bc"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1652,10 +1654,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 319,
+      "lines": 320,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partially reviewed; keyboard tabs, selected-tab visibility, rendered note/communication routes and related routes checked; financial projections, links and remaining workspace source/release review pending",
-      "reviewedSha256": "d601b6698a2f8230b7b2e857125b9a4bebfe08f9527104db4e1a00090a821d1a"
+      "reviewedSha256": "5b6943a7381c3f5abe335ddc8abbed7d9d153192ab3622ede935b2484b29b9bb"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -2385,10 +2387,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
-      "lines": 148,
+      "lines": 156,
       "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
-      "status": "partial; bilingual recovery and successful-create wording checked (156); upcoming captured toggle/upload lifecycle copy and final release checks pending",
-      "reviewedSha256": "8f0b0228f1a26b6c5c0fc98e30c1ff6f325e820619f00be42333d2912062d839"
+      "status": "partial; preview disposal/recovery and native EN/CS browser checks pass in finding 163; page reconciliation, selection errors, toggle/upload, trend and remaining interaction review pending",
+      "reviewedSha256": "a28fbfed05ebb5e6554b6a3afa7530fced8c69a80efc8cdb56ca44e29d78a152"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",

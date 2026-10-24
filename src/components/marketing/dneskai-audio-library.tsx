@@ -30,7 +30,9 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
       : query.isError && !query.data ? <div role="alert"><p className="text-sm text-risk">{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t.retry}</Button></div>
-        : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} /><TrendList trends={query.data?.trends ?? []} lang={lang} /></>}
+        : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} /><TrendList trends={query.data?.trends ?? []} lang={lang} /></>}
+    {query.isRefetching && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
+    {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-sm text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => { player.stop(); void query.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
     {!preview && query.isSuccess && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
@@ -39,7 +41,7 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
   </section>;
 }
 
-function TrackList({ tracks, lang, preview, player }: { tracks: DneskaiAudioTrack[]; lang: Lang; preview: boolean; player: ReturnType<typeof useDneskaiAudioPreview> }) {
+function TrackList({ tracks, lang, preview, player, previewRefreshing }: { tracks: DneskaiAudioTrack[]; lang: Lang; preview: boolean; player: ReturnType<typeof useDneskaiAudioPreview>; previewRefreshing: boolean }) {
   const t = dneskaiAudio[lang];
   const client = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ function TrackList({ tracks, lang, preview, player }: { tracks: DneskaiAudioTrac
     {error && <p role="alert" className="text-sm text-risk">{error}</p>}
     <ul aria-label={t.listLabel} className="divide-y divide-border border-y border-border">
       {tracks.map((track) => <li key={track.id} className="flex min-w-0 flex-wrap items-start gap-3 py-3" data-testid="dneskai-audio-track">
-        <DneskaiAudioPlayButton track={track} playing={player.playing === track.id} onToggle={player.toggle} lang={lang} />
+        <DneskaiAudioPlayButton track={track} playing={player.playing === track.id} pending={player.starting === track.id} failed={player.error === track.id} disabled={previewRefreshing} onToggle={player.toggle} lang={lang} />
         <div className="min-w-0 flex-1 space-y-1">
           <p className="break-words text-sm font-medium">{track.title} <span className="font-normal text-foreground-muted">· {track.artist}</span></p>
           <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">

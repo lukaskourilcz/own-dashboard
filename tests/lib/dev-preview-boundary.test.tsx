@@ -25,3 +25,11 @@ it("enables repository interaction fixtures only against the nonexistent backend
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
   expect((await PreviewPage({ searchParams: Promise.resolve({ repositories: "live" }) })).props.children.props.liveRepositories).toBe(false);
 });
+
+it("enables Music fixtures separately and only against the nonexistent backend", async () => {
+  vi.stubEnv("NODE_ENV", "test"); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ music: "live" }) })).props.liveMusic).toBe(true);
+  expect((await PreviewPage({ searchParams: Promise.resolve({ projectRecords: "live" }) })).props.liveMusic).toBe(false);
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ music: "live" }) })).props.children.props.liveMusic).toBe(false);
+});

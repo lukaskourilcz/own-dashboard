@@ -26,6 +26,7 @@ export function DemoDashboard({
   liveMarketingCalendars = false,
   liveRepositories = false,
   liveProjectRecords = false,
+  liveMusic = false,
   liveMonitoring = false,
   livePreferences = false,
   liveCalendar = false,
@@ -47,6 +48,8 @@ export function DemoDashboard({
   liveRepositories?: boolean;
   /** Dev/E2E-only mocked project collection/write boundaries. */
   liveProjectRecords?: boolean;
+  /** Isolated fake-backend Music tests only; the public tour remains read-only. */
+  liveMusic?: boolean;
   /** Dev/E2E-only mocked history reads; disabled in the public tour. */
   liveMonitoring?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
@@ -67,6 +70,7 @@ export function DemoDashboard({
       isPreview
       previewRepositoryIntegration={liveRepositories}
       previewProjectIntegration={liveProjectRecords}
+      previewMusicIntegration={liveMusic}
       previewMonitoringIntegration={liveMonitoring}
       previewPreferencesIntegration={livePreferences}
       previewCalendarIntegration={liveCalendar}
