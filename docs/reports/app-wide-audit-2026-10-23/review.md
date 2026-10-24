@@ -210,3 +210,8 @@ The revocation/confirmed-logout changes also pass the ordinary Next.js 16.4.3 pr
 
 
 At commit `2f885ff`, the full unit suite passes 3,396 cases and one intentional skip (352 passed files, one skipped file), in 104.40 seconds. It includes the provider-grant binding and confirmed removal/sign-out changes and all 103 migrations. The ordinary production build, post-build types and eight render traces were checked against the same production source before that commit; the commit adds its documentation record. Main merge and the remaining source/optimized interaction review remain pending.
+
+
+At commit `548190e`, the full suite passes 3,476 cases and one intentional skip (359 passed files, one skipped file), in 157.65 seconds with two workers. Full ESLint, TypeScript, the ordinary Next.js 16.4.3 production build, all eight actual render traces and post-build types pass. The build uses public fixture configuration and `NEXT_E2E=0`; its artifacts must not be deployed. Eighteen migrations remain prepared/unapplied (104 total). The remaining source review, optimized app-wide interactions and main merge are pending.
+
+Further source findings to resolve: progress omits its numeric value from the Radix root; a bank-status Retry button inherits form-submit behavior; preference writes lack a bounded queue/confirmed receipt and theme changes lack cross-tab synchronization. The service cron registry lacks an explicit owner filter, external logging accepts invalid statuses as success, and failed log/stamp writes can still trigger a monitor ping. These newly reviewed boundaries are not counted as fixed.

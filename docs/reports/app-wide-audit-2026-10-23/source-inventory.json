@@ -155,19 +155,22 @@
       "path": "src/app/api/crons/log/route.ts",
       "lines": 71,
       "sha256": "1a58e6705b39042e88f1929ba525ba4621d7da9f990f61029ab34858771f9dcc",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "1a58e6705b39042e88f1929ba525ba4621d7da9f990f61029ab34858771f9dcc"
     },
     {
       "path": "src/app/api/crons/registry/route.ts",
       "lines": 118,
       "sha256": "d486eb00146ca9cb39da756d6ff95ce4e6d5ed5ebbe9020b88ec27e5af7762a8",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "d486eb00146ca9cb39da756d6ff95ce4e6d5ed5ebbe9020b88ec27e5af7762a8"
     },
     {
       "path": "src/app/api/crons/runs/route.ts",
       "lines": 49,
       "sha256": "2c0990fcc450f0ec0a64de4c64da8733d9589869cfb5ae2b5f5c8b3a95f0daa3",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "2c0990fcc450f0ec0a64de4c64da8733d9589869cfb5ae2b5f5c8b3a95f0daa3"
     },
     {
       "path": "src/app/api/daily-focus/route.ts",
@@ -1299,7 +1302,8 @@
       "path": "src/components/panels/freelance-platforms.tsx",
       "lines": 80,
       "sha256": "7b59f61b898c86a01ebf2f13aced72aeb6f2d46407f4d91e42ca070a8ab503b4",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "7b59f61b898c86a01ebf2f13aced72aeb6f2d46407f4d91e42ca070a8ab503b4"
     },
     {
       "path": "src/components/panels/ig-tips-panel.tsx",
@@ -1333,7 +1337,8 @@
       "path": "src/components/panels/job-sources.tsx",
       "lines": 151,
       "sha256": "d9bc47ab513e23b9f107a3dca202d103880debf004dcc86278793f00f811f1ec",
-      "status": "pending"
+      "status": "source reviewed; source error provenance and final rendered checks pending",
+      "reviewedSha256": "d9bc47ab513e23b9f107a3dca202d103880debf004dcc86278793f00f811f1ec"
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
@@ -1388,7 +1393,8 @@
       "path": "src/components/panels/opportunity-detail.tsx",
       "lines": 83,
       "sha256": "2fe9608a95012a2a1bb3706da8fadb5839a74412e60a7d805eae0b976f4fd92f",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "2fe9608a95012a2a1bb3706da8fadb5839a74412e60a7d805eae0b976f4fd92f"
     },
     {
       "path": "src/components/panels/oslo-career-workspace.tsx",
@@ -1587,7 +1593,8 @@
       "path": "src/components/theme-toggle.tsx",
       "lines": 33,
       "sha256": "38d36e363d43b6e198c00e8740d59767d0f18cae8641ea4e96042e1833c66148",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "38d36e363d43b6e198c00e8740d59767d0f18cae8641ea4e96042e1833c66148"
     },
     {
       "path": "src/components/tools/detected-tools-section.tsx",
@@ -1600,25 +1607,29 @@
       "path": "src/components/ui/button.tsx",
       "lines": 57,
       "sha256": "713fb407cbc34708a07da410243ee1984b97f0f7bdec3db8d359dc0cd542d4ba",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "713fb407cbc34708a07da410243ee1984b97f0f7bdec3db8d359dc0cd542d4ba"
     },
     {
       "path": "src/components/ui/card.tsx",
       "lines": 55,
       "sha256": "561b23ae2ab2484e323787c152e683e9914dc04f48403e395bd87ebb262e3922",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "561b23ae2ab2484e323787c152e683e9914dc04f48403e395bd87ebb262e3922"
     },
     {
       "path": "src/components/ui/checkbox.tsx",
       "lines": 29,
       "sha256": "152b123ffffdc9589e5213e7a6c129e44b92d195960f06d94a8ff4aa5383841a",
-      "status": "pending"
+      "status": "partially reviewed; shared control follow-ups pending",
+      "reviewedSha256": "152b123ffffdc9589e5213e7a6c129e44b92d195960f06d94a8ff4aa5383841a"
     },
     {
       "path": "src/components/ui/confirmation-dialog.tsx",
       "lines": 90,
       "sha256": "62a3315ba60dced8d68436ef47b6d038adb49fc1c2bfb8c42e7047afb5bce73f",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "62a3315ba60dced8d68436ef47b6d038adb49fc1c2bfb8c42e7047afb5bce73f"
     },
     {
       "path": "src/components/ui/dialog.tsx",
@@ -1631,31 +1642,36 @@
       "path": "src/components/ui/empty-state.tsx",
       "lines": 41,
       "sha256": "a778282b542065b0a8f39521a68a18fcdf5fbbe83afb7fb764c724f97b616ecc",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "a778282b542065b0a8f39521a68a18fcdf5fbbe83afb7fb764c724f97b616ecc"
     },
     {
       "path": "src/components/ui/input.tsx",
       "lines": 23,
       "sha256": "723ebe9b92f7059504a276b973adfb4498617effbb0bf2a4017ca6beb0fc6e87",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "723ebe9b92f7059504a276b973adfb4498617effbb0bf2a4017ca6beb0fc6e87"
     },
     {
       "path": "src/components/ui/label.tsx",
       "lines": 17,
       "sha256": "2a7ac026c3fd45ed2b0043e26671cea2c421300319119e991ed3344cda345774",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "2a7ac026c3fd45ed2b0043e26671cea2c421300319119e991ed3344cda345774"
     },
     {
       "path": "src/components/ui/markdown.tsx",
       "lines": 270,
       "sha256": "8303e35641d7ca40867b789dcaabf6575e38d8afbcb1b6716927a399fe2c7b5d",
-      "status": "pending"
+      "status": "partially reviewed; shared control follow-ups pending",
+      "reviewedSha256": "8303e35641d7ca40867b789dcaabf6575e38d8afbcb1b6716927a399fe2c7b5d"
     },
     {
       "path": "src/components/ui/metric.tsx",
       "lines": 28,
       "sha256": "ba5856530f946aea1556835575c7be87c61bee5775d1ce58bd7cc6b20ce499d5",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "ba5856530f946aea1556835575c7be87c61bee5775d1ce58bd7cc6b20ce499d5"
     },
     {
       "path": "src/components/ui/page-header.tsx",
@@ -1668,49 +1684,57 @@
       "path": "src/components/ui/progress.tsx",
       "lines": 32,
       "sha256": "3f400304f56a600eb6ccacc489d5c5660ba6fe3e8366021ebff0f8ea52264fd0",
-      "status": "pending"
+      "status": "partially reviewed; shared control follow-ups pending",
+      "reviewedSha256": "3f400304f56a600eb6ccacc489d5c5660ba6fe3e8366021ebff0f8ea52264fd0"
     },
     {
       "path": "src/components/ui/select.tsx",
       "lines": 206,
       "sha256": "660a5b3e1d3a51fec2cdabea14d0c51652137f0654b8a2881e668b1bd26c6a42",
-      "status": "pending"
+      "status": "partially reviewed; shared control follow-ups pending",
+      "reviewedSha256": "660a5b3e1d3a51fec2cdabea14d0c51652137f0654b8a2881e668b1bd26c6a42"
     },
     {
       "path": "src/components/ui/skeleton.tsx",
       "lines": 13,
       "sha256": "9bd544dc0021a05fdcde304fc184132559b4060ff73ef185313ec0435762f732",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "9bd544dc0021a05fdcde304fc184132559b4060ff73ef185313ec0435762f732"
     },
     {
       "path": "src/components/ui/status-badge.tsx",
       "lines": 30,
       "sha256": "218c73e857fc78674994befca153e016c0995194bab03a2bd1f3507982719003",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "218c73e857fc78674994befca153e016c0995194bab03a2bd1f3507982719003"
     },
     {
       "path": "src/components/ui/switch.tsx",
       "lines": 31,
       "sha256": "44a0f64a55454c2347cbfda277a376b652ff624aef6ec143a5da5d485f9ae825",
-      "status": "pending"
+      "status": "partially reviewed; shared control follow-ups pending",
+      "reviewedSha256": "44a0f64a55454c2347cbfda277a376b652ff624aef6ec143a5da5d485f9ae825"
     },
     {
       "path": "src/components/ui/textarea.tsx",
       "lines": 22,
       "sha256": "6e34da8749e928fa89a5ca6d7811caf85dad634c1f23f73e3e47dd732dc160f7",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "6e34da8749e928fa89a5ca6d7811caf85dad634c1f23f73e3e47dd732dc160f7"
     },
     {
       "path": "src/components/ui/toast.tsx",
       "lines": 46,
       "sha256": "b86abdb6a19d5d6ffacba3406581e4db6d818fbd63c764a109e11698787c7e03",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "b86abdb6a19d5d6ffacba3406581e4db6d818fbd63c764a109e11698787c7e03"
     },
     {
       "path": "src/components/ui/tooltip.tsx",
       "lines": 44,
       "sha256": "d0d4f8832a9126ee10bd1129836811d931b511ded6cdc478b8c405c1538f2aa0",
-      "status": "pending"
+      "status": "source reviewed; final app-wide rendered/release checks pending",
+      "reviewedSha256": "d0d4f8832a9126ee10bd1129836811d931b511ded6cdc478b8c405c1538f2aa0"
     },
     {
       "path": "src/components/work/marketing-week.tsx",
@@ -1897,7 +1921,8 @@
       "path": "src/lib/cron-auth.ts",
       "lines": 42,
       "sha256": "b84dff07e5c076975fe4ce7f1d168c7c4b5e56119ccd545370e1e892b27532fb",
-      "status": "pending"
+      "status": "source reviewed; fixed-length timing-safe bearer comparison retained; final release checks pending",
+      "reviewedSha256": "b84dff07e5c076975fe4ce7f1d168c7c4b5e56119ccd545370e1e892b27532fb"
     },
     {
       "path": "src/lib/cron-heartbeat.ts",
@@ -1909,7 +1934,8 @@
       "path": "src/lib/cron-log.ts",
       "lines": 89,
       "sha256": "5ae0145d8e190a30cafaab97ebb5b251cebb2e38ece890cfbcc268c20a19776f",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "5ae0145d8e190a30cafaab97ebb5b251cebb2e38ece890cfbcc268c20a19776f"
     },
     {
       "path": "src/lib/csrf.ts",
@@ -2062,7 +2088,8 @@
       "path": "src/lib/heartbeat.ts",
       "lines": 56,
       "sha256": "355ce53e734a912241abc342aa409e90d10f77211de4fa7e58c38b75aeff5839",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "355ce53e734a912241abc342aa409e90d10f77211de4fa7e58c38b75aeff5839"
     },
     {
       "path": "src/lib/i18n/index.ts",
@@ -3446,7 +3473,8 @@
       "path": "src/lib/preference-client.ts",
       "lines": 24,
       "sha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3"
     },
     {
       "path": "src/lib/project-cron-seeds.ts",
@@ -3690,7 +3718,8 @@
       "path": "src/lib/use-prefs.ts",
       "lines": 502,
       "sha256": "eceeeb07c83f5ff9fee096ccf750da6350dae2b060b51d3c9372c4a5a26065df",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "eceeeb07c83f5ff9fee096ccf750da6350dae2b060b51d3c9372c4a5a26065df"
     },
     {
       "path": "src/lib/use-return-focus.ts",
@@ -3709,7 +3738,8 @@
       "path": "src/lib/use-theme.ts",
       "lines": 39,
       "sha256": "e54eb25a772eaad399b040abe986227c710688392de96614920045a86a70c11d",
-      "status": "pending"
+      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
+      "reviewedSha256": "e54eb25a772eaad399b040abe986227c710688392de96614920045a86a70c11d"
     },
     {
       "path": "src/lib/user-prefs.ts",
