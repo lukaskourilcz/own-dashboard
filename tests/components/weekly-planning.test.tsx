@@ -11,7 +11,7 @@ const upserts: Record<string, unknown>[] = [];
 
 function chain(result: unknown) {
   const builder: Record<string, unknown> = {};
-  for (const method of ["select", "gte", "lt", "order", "eq"]) {
+  for (const method of ["select", "gte", "lt", "order", "eq", "retry", "abortSignal"]) {
     builder[method] = () => builder;
   }
   builder.single = () => Promise.resolve(result);
@@ -21,6 +21,7 @@ function chain(result: unknown) {
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
+    rpc: () => chain({ data: { ownerId: "11111111-1111-4111-8111-111111111111", weekStart: previousMondayKey(), sets: [] }, error: null }),
     from: (table: string) => {
       if (table === "weekly_reviews") {
         return {
@@ -37,7 +38,7 @@ vi.mock("@/lib/supabase/client", () => ({
 vi.mock("@/lib/supabase/user", () => ({ currentUserId: async () => "owner-1" }));
 
 import { WeeklyPlanningFlow } from "@/components/work/weekly-planning";
-import { mondayKey } from "@/lib/date-keys";
+import { mondayKey, previousMondayKey } from "@/lib/date-keys";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -75,6 +76,7 @@ function render(reviews: WeeklyReview[], reviewsStatus = READY) {
     root.render(
       <QueryClientProvider client={client}>
         <WeeklyPlanningFlow
+          ownerId="11111111-1111-4111-8111-111111111111"
           reviews={reviews}
           setReviews={() => undefined}
           reviewsStatus={reviewsStatus}

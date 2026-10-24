@@ -18,7 +18,7 @@ beforeEach(() => { language.value = "en"; vi.useFakeTimers(); vi.setSystemTime(n
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.useRealTimers(); });
 const date=(id:string, recurrence:boolean):ImportantDate=>({id,user_id:'owner',title:id,the_date:'2020-10-24',is_recurring:recurrence,recurrence_unit:'yearly',emoji:null,notes:null,created_at:''});
 it('shows the next recurrence of an old date rather than hiding it as expired', async () => {
-  await act(async () => root.render(<WorkOverviewPanel projects={[]} opportunities={[]} organizations={[]} invoices={[]} jobApplications={[]} importantDates={[date('Annual renewal',true),date('Past one-off',false)]} todos={[]} costs={[]} crons={[]} reviews={[]} setReviews={()=>{}} lastWeekCalendar={{ok:true,events:[]}} isPreview />));
+  await act(async () => root.render(<WorkOverviewPanel ownerId="11111111-1111-4111-8111-111111111111" projects={[]} opportunities={[]} organizations={[]} invoices={[]} jobApplications={[]} importantDates={[date('Annual renewal',true),date('Past one-off',false)]} todos={[]} costs={[]} crons={[]} reviews={[]} setReviews={()=>{}} lastWeekCalendar={{ok:true,events:[]}} isPreview />));
   expect(host.textContent).toContain('Annual renewal');expect(host.textContent).toContain('2026-10-24');
   expect(host.textContent).not.toContain('Past one-off');expect(host.textContent).not.toContain('2020-10-24');
   vi.setSystemTime(new Date(2026,9,25,0,1));
@@ -30,7 +30,7 @@ const project: Project = { id: 'p1', user_id: 'owner', name: 'Clock project', sl
 const task: Todo = { id: 't1', user_id: 'owner', title: 'Due today', done: false, due_date: '2026-10-23', category: null, created_at: '', source: 'manual', repo_id: null, repo_full_name: null, repo_owner: null, repo_name: null, repo_url: null, needed_raw: null, generated_at: null, importance: 3, project_id: project.id };
 const cron: Cron = { id: 'c1', user_id: 'owner', project_id: project.id, name: 'Hourly run', schedule: '0 * * * *', description: '', endpoint: '', is_ai_call: false, cost_per_run: 0, currency: 'USD', runs_per_month: 720, enabled: true, last_run_at: null, heartbeat_url: 'https://example.test/heartbeat', last_success_at: new Date(2026,9,23,22).toISOString(), created_at: '', updated_at: '' };
 // Keep the same arrays across clock ticks: data replacement must not be needed.
-const props = { projects: [project], opportunities: [], organizations: [], invoices: [], jobApplications: [], importantDates: [], todos: [task], costs: [], crons: [cron], reviews: [], setReviews: () => {}, lastWeekCalendar: { ok: true as const, events: [] }, isPreview: true };
+const props = { ownerId: "11111111-1111-4111-8111-111111111111", projects: [project], opportunities: [], organizations: [], invoices: [], jobApplications: [], importantDates: [], todos: [task], costs: [], crons: [cron], reviews: [], setReviews: () => {}, lastWeekCalendar: { ok: true as const, events: [] }, isPreview: true };
 for (const lang of ['en', 'cs'] as const) it(`${lang}: refreshes overdue and heartbeat warnings on the clock without changed inputs`, async () => {
   language.value = lang;
   await act(async () => root.render(<WorkOverviewPanel {...props} />));

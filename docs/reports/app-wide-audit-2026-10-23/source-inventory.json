@@ -619,10 +619,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 52,
+      "lines": 53,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "d75041dea58275018ac7697977e5ae6458cbdbe9f92cc3efe9aa8e92c3e5f702"
+      "status": "source reviewed; fake-backend-only planning/music/project harness guards checked; ordinary production boundary and final release pending",
+      "reviewedSha256": "1db907c64f6c40a98b110919d2545e56b9ff8bc5e18a47f05b3abe84c52d7b67"
     },
     {
       "path": "src/app/globals.css",
@@ -794,17 +794,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 500,
+      "lines": 501,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partially reviewed; route loading, hydrated initial controls, pending navigation, Work callbacks, task identity/index and local-day costs checked; remaining shared/source review pending",
-      "reviewedSha256": "0ac2444c3215146bbfebd0741f9e55e5aca78f92a95a7f8ccc35ca2386924280"
+      "status": "partial; route-scoped shell and fake-only planning harness checks pass; remaining shared/account lifecycle and full final matrix pending",
+      "reviewedSha256": "b93e3c024236692f474423d6688324662c7f57558bac5c56a5f24ebbe2603976"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 154,
+      "lines": 159,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; isolated project/task collection harness and repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "c7db48e9bc3d103946fb06cacac82625bd2565564ea263340f31a95dbc474a7f"
+      "status": "source reviewed; deterministic public/preview fixture and independent integration flags checked; final release pending",
+      "reviewedSha256": "3bf50ec736c3247d52bbea9b1a3f13144a849d569f55dbb9de16175ea3102935"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1575,10 +1575,10 @@
     },
     {
       "path": "src/components/panels/work-overview-panel.tsx",
-      "lines": 256,
+      "lines": 261,
       "sha256": "4fce3b1e3a5829aba19a3fb533cbb3c7b47164596f60180be192291afcfa1276",
-      "status": "partial: shared task/cost/cron indexing, clock health, EN/CS heartbeat, shell navigation and history/preview checked; remaining planning and final source checks pending",
-      "reviewedSha256": "ebacffdbb0da5eccb324cbe4208897bee22d759df40f1003b9ace0cf5633ffe4"
+      "status": "partial; finding 166 bounded responsive weekly card checked; remaining project/aggregate data flows and final matrix pending",
+      "reviewedSha256": "43dd08407808b35684658de9a9abf273198bf7a491ae66f2eab724da6e1597e5"
     },
     {
       "path": "src/components/panels/workflows-panel.tsx",
@@ -1875,10 +1875,10 @@
     },
     {
       "path": "src/components/work/weekly-planning.tsx",
-      "lines": 761,
+      "lines": 745,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; source inspected; captured save/owner-week identity, pending drafts and complete focus reads pending; see remaining-review.md",
-      "reviewedSha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615"
+      "status": "partial; findings 164/166 classification and complete focus recovery checked; captured save receipts, owner/week rollover, draft/pending guards and remaining UX still pending",
+      "reviewedSha256": "89f1f3ed6320857ddd82a3dec0d930c18a42d4c932eb9d8cbd181422dda324e9"
     },
     {
       "path": "src/lib/abortable.ts",
@@ -2531,10 +2531,10 @@
     },
     {
       "path": "src/lib/i18n/sections/professional.ts",
-      "lines": 589,
+      "lines": 613,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "partial: history copy/types and EN/CS scope/count parity reviewed; remaining domain copy reviewed with its pages",
-      "reviewedSha256": "611f47f18585e0feebeda09673028eb77f14388b3ccbc6e9bd94c3f441201705"
+      "status": "partial; findings 164/166 EN/CS weekly recovery copy checked; remaining destination copy review pending",
+      "reviewedSha256": "5ca3221ea365cd0b5841cc2b3cd629076626e808d9691819f6c06de5cfcdd830"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
@@ -3157,8 +3157,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 113 migrations; final release pending",
-      "reviewedSha256": "9a4e017618a0f2fa766f88e592f474ba4f2d53cf2e06c3b6a30f5f4557f0a8d7"
+      "status": "source reviewed; generated offline from all 114 migrations, nine read tables; rollout and final release pending",
+      "reviewedSha256": "d971ceac68e894bcfec84fe6ab09e981f884e124ee7844a60c2cb38234d8f166"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4252,6 +4252,13 @@
       "lines": 10,
       "status": "source reviewed; browser URL boundary tested; final release pending",
       "reviewedSha256": "0eb1c591b21e54130efa409e6938e0187ed4663583f4234d1bff53efb03b5c66"
+    },
+    {
+      "path": "src/lib/weekly-focus.ts",
+      "sha256": null,
+      "lines": 53,
+      "status": "source reviewed; complete owned weekly snapshot, bounded/cancellable SDK reader and targeted database/runtime checks pass; final release pending",
+      "reviewedSha256": "61c5b8595d288183198c4e006495d2a051caa1f996c93f44e4ae0dea4bcc4396"
     },
     {
       "path": "src/lib/weekly-planning.ts",

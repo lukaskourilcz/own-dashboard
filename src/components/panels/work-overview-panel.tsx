@@ -30,6 +30,8 @@ import type { ClientOpportunity, Cron, ImportantDate, Invoice, JobApplication, O
 const CLOSED = new Set(["won", "lost", "expired", "archived"]);
 
 export function WorkOverviewPanel({
+  ownerId,
+  previewPlanningIntegration,
   taskIndex,
   onOpenProject,
   onOpenTab,
@@ -51,6 +53,8 @@ export function WorkOverviewPanel({
   repositoryIntegrationEnabled,
   previewMarketingCalendars,
 }: {
+  ownerId: string;
+  previewPlanningIntegration?: boolean;
   taskIndex?: ProjectTaskIndex;
   onOpenProject?: (project: Pick<Project, "id" | "slug">) => void;
   onOpenTab?: (tab: "dates" | "career" | "opportunities") => void;
@@ -122,13 +126,13 @@ export function WorkOverviewPanel({
 
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader title={p.workTitle} description={p.workDescription} />
       <div className="surface-band -mx-4 grid grid-cols-2 gap-y-2 px-4 py-3 sm:grid-cols-3 md:-mx-6 md:px-6 xl:-mx-8 xl:grid-cols-6 xl:px-8">
         {metrics.map(({ label, value, icon }) => <Metric key={label} label={label} value={value} icon={icon} tone={label === p.followUps && value > 0 ? "attention" : "default"} />)}
       </div>
-      <div className="mt-5 grid items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,.8fr)]">
-        <div className="space-y-4">
+      <div className="mt-5 grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,.8fr)]">
+        <div className="min-w-0 space-y-4">
         <Card className="border-l-2 border-l-warning">
           <CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -167,8 +171,9 @@ export function WorkOverviewPanel({
             </CardContent>
           </Card>
         </div>
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <WeeklyPlanningFlow
+            ownerId={ownerId}
             reviews={reviews}
             setReviews={setReviews}
             reviewsStatus={reviewsStatus}
@@ -177,13 +182,13 @@ export function WorkOverviewPanel({
             todos={todos}
             lastWeekCalendar={lastWeekCalendar}
             lastWeekCalendarStatus={lastWeekCalendarStatus}
-            isPreview={isPreview}
+            isPreview={isPreview && !previewPlanningIntegration}
           />
           <MarketingWeekCard preview={previewMarketingCalendars} />
 
         </div>
       </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className={careerFollowUps.length > 0 ? "border-l-2 border-l-warning" : undefined}>
           <CardHeader><CardTitle>{p.careerFollowUps}</CardTitle></CardHeader>
           <CardContent>

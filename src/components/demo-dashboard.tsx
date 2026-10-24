@@ -27,6 +27,7 @@ export function DemoDashboard({
   liveRepositories = false,
   liveProjectRecords = false,
   liveMusic = false,
+  livePlanning = false,
   liveMonitoring = false,
   livePreferences = false,
   liveCalendar = false,
@@ -50,6 +51,8 @@ export function DemoDashboard({
   liveProjectRecords?: boolean;
   /** Isolated fake-backend Music tests only; the public tour remains read-only. */
   liveMusic?: boolean;
+  /** Isolated fake-backend weekly planning checks only. */
+  livePlanning?: boolean;
   /** Dev/E2E-only mocked history reads; disabled in the public tour. */
   liveMonitoring?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
@@ -63,7 +66,8 @@ export function DemoDashboard({
   // The isolated live-repository harness reads its mocked owned records,
   // rather than marking the tour's empty note/link fixtures as confirmed.
   const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => (!liveRepositories || (key !== "repoNotes" && key !== "repoLinks"))
-    && (!liveProjectRecords || !["projects", "projectCosts", "crons", "todos"].includes(key)));
+    && (!liveProjectRecords || !["projects", "projectCosts", "crons", "todos"].includes(key))
+    && (!livePlanning || key !== "weeklyReviews"));
 
   return (
     <DashboardShell
@@ -71,10 +75,11 @@ export function DemoDashboard({
       previewRepositoryIntegration={liveRepositories}
       previewProjectIntegration={liveProjectRecords}
       previewMusicIntegration={liveMusic}
+      previewPlanningIntegration={livePlanning}
       previewMonitoringIntegration={liveMonitoring}
       previewPreferencesIntegration={livePreferences}
       previewCalendarIntegration={liveCalendar}
-      user={f.user}
+      user={livePlanning ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
@@ -111,7 +116,7 @@ export function DemoDashboard({
       initialOpportunities={f.opportunities}
       initialInboxItems={f.inboxItems}
       initialNotifications={f.notifications}
-      initialWeeklyReviews={f.weeklyReviews}
+      initialWeeklyReviews={livePlanning ? [] : f.weeklyReviews}
       initialJobListings={f.jobListings}
       initialJobUserStates={f.jobUserStates}
       initialSavedJobPositions={f.savedJobPositions}

@@ -32,7 +32,6 @@ import {
   readObjectives,
   readStep,
   readStringList,
-  latestFocusSets,
   summarizeFocusWeek,
   summarizeTimeByChannel,
   writeReviewItems,
@@ -43,9 +42,9 @@ import {
   type WeeklyPlanningStep,
   type WorkChannel,
 } from "@/lib/weekly-planning";
+import { loadWeeklyFocusSnapshot, type WeeklyFocusSet } from "@/lib/weekly-focus";
 import type { EventsResult } from "@/lib/calendar";
 import type {
-  DailyFocusItem,
   Organization,
   Project,
   Todo,
@@ -54,12 +53,7 @@ import type {
   WeeklyReview,
 } from "@/lib/types";
 
-type FocusRow = Pick<
-  DailyFocusItem,
-  "id" | "todo_id" | "title_snapshot" | "project_name_snapshot" | "completed_at"
->;
-
-type FocusSet = { focus_date: string; generation: number; items: FocusRow[] };
+type FocusSet = WeeklyFocusSet;
 
 const EMPTY_FOCUS_SETS: FocusSet[] = [];
 const CHANNEL_COLOR: Record<WorkChannel, string> = {
@@ -69,6 +63,7 @@ const CHANNEL_COLOR: Record<WorkChannel, string> = {
 };
 
 type PlanningProps = {
+  ownerId: string;
   reviews: WeeklyReview[];
   setReviews: Updater<WeeklyReview[]>;
   projects: Project[];
@@ -129,9 +124,9 @@ function PlanningPending({ failed }: { failed: boolean }) {
   const p = t.professional;
   const qc = useQueryClient();
   return (
-    <Card>
+    <Card className="min-w-0" data-testid="weekly-planning">
       <CardHeader>
-        <CardTitle>{p.weeklyPlanning}</CardTitle>
+        <CardTitle><h2>{p.weeklyPlanning}</h2></CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-foreground-muted">{p.weeklyPlanningDescription}</p>
@@ -160,6 +155,7 @@ function PlanningPending({ failed }: { failed: boolean }) {
 }
 
 function PlanningSteps({
+  ownerId,
   reviews,
   setReviews,
   projects,
@@ -174,8 +170,9 @@ function PlanningSteps({
   const qc = useQueryClient();
   const toast = useToast();
 
-  const weekStart = mondayKey();
-  const previousWeek = previousMondayKey();
+  const reference = new Date();
+  const weekStart = mondayKey(reference);
+  const previousWeek = previousMondayKey(reference);
   const current = reviews.find((review) => review.week_start === weekStart);
   const previous = reviews.find((review) => review.week_start === previousWeek);
   const storedItems = current?.items ?? {};
@@ -213,36 +210,21 @@ function PlanningSteps({
   );
   const shares = useMemo(() => channelShares(time), [time]);
 
-  // Last week's focus rows. Own-only RLS already scopes both tables to the
-  // signed-in owner, so this reads them directly rather than adding a route
-  // whose only job would be to repeat that filter.
+  // The database selects the newest generation before returning at most
+  // seven days / 49 items. A failed read is unavailable, never an empty recap.
   const focusQuery = useQuery({
-    queryKey: [...qk.weeklyFocusRecap, previousWeek],
-    enabled: !isPreview,
-    queryFn: async (): Promise<FocusSet[]> => {
-      const { data, error } = await supabase
-        .from("daily_focus_sets")
-        .select(
-          "focus_date, generation, daily_focus_items(id, todo_id, title_snapshot, project_name_snapshot, completed_at)",
-        )
-        // Half-open on the week key itself: no timezone conversion can move a
-        // Sunday out of the week it belongs to.
-        .gte("focus_date", previousWeek)
-        .lt("focus_date", weekStart)
-        .order("focus_date", { ascending: true })
-        .order("generation", { ascending: true });
-      if (error) throw error;
-      return latestFocusSets(
-        (data ?? []).map((row) => ({
-          focus_date: String(row.focus_date),
-          generation: Number(row.generation) || 1,
-          items: (Array.isArray(row.daily_focus_items)
-            ? row.daily_focus_items
-            : []) as FocusRow[],
-        })),
-      );
-    },
+    queryKey: [...qk.weeklyFocusRecap, ownerId, previousWeek],
+    enabled: !isPreview, retry: false, staleTime: 30_000,
+    queryFn: ({ signal }) => loadWeeklyFocusSnapshot(supabase, ownerId, previousWeek, signal),
   });
+  const focusReady = !isPreview && focusQuery.isSuccess;
+  const focusMissing = !isPreview && !focusQuery.data;
+  const focusNotice = !isPreview && (focusQuery.isPending || focusQuery.isError) ? (
+    <div className="space-y-2" role={focusQuery.isError ? "alert" : "status"}>
+      <p className="text-sm text-foreground-muted">{focusQuery.isError ? focusQuery.data ? p.focusRecapStale : p.focusRecapLoadFailed : p.focusRecapLoading}</p>
+      {focusQuery.isError && <Button variant="outline" disabled={focusQuery.isFetching} onClick={() => void focusQuery.refetch()}>{p.planningRetry}</Button>}
+    </div>
+  ) : null;
 
   const focusSets = focusQuery.data ?? EMPTY_FOCUS_SETS;
   const focusItems = useMemo(() => focusSets.flatMap((set) => set.items), [focusSets]);
@@ -379,9 +361,9 @@ function PlanningSteps({
   };
 
   return (
-    <Card>
+    <Card className="min-w-0" data-testid="weekly-planning">
       <CardHeader>
-        <CardTitle>{p.weeklyPlanning}</CardTitle>
+        <CardTitle><h2>{p.weeklyPlanning}</h2></CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-foreground-muted">{p.weeklyPlanningDescription}</p>
@@ -422,23 +404,22 @@ function PlanningSteps({
           {step === "done" && (
             <div className="space-y-3">
               <p className="text-xs text-foreground-muted">{p.focusRecapDescription}</p>
-              <dl className="grid grid-cols-2 gap-3">
+              {focusQuery.data && <dl className="grid grid-cols-2 gap-3">
                 <Figure label={p.focusRecapCompleted} value={`${recap.completed}/${recap.total}`} />
                 <Figure label={p.focusRecapDays} value={String(recap.days)} />
-              </dl>
+              </dl>}
+              {focusNotice}
               {isPreview ? (
                 <p className="text-sm text-foreground-muted">{p.focusRecapUnavailable}</p>
-              ) : focusQuery.isPending ? (
-                <p className="text-sm text-foreground-muted">{t.common.loading}</p>
-              ) : finished.length === 0 ? (
+              ) : focusMissing ? null : finished.length === 0 ? (
                 <p className="text-sm text-foreground-muted">{p.focusRecapEmpty}</p>
               ) : (
                 <ul className="divide-y divide-border">
                   {finished.map((item) => (
-                    <li key={item.id} className="flex items-baseline justify-between gap-3 py-2">
-                      <span className="min-w-0 text-sm">{item.title_snapshot}</span>
+                    <li key={item.id} data-testid="weekly-focus-item" className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2">
+                      <span data-testid="weekly-focus-title" className="min-w-0 flex-1 basis-40 break-words text-sm">{item.title_snapshot}</span>
                       {item.project_name_snapshot && (
-                        <span className="shrink-0 text-xs text-foreground-muted">
+                        <span data-testid="weekly-focus-project" className="min-w-0 max-w-full break-words text-xs text-foreground-muted sm:max-w-[40%]">
                           {item.project_name_snapshot}
                         </span>
                       )}
@@ -452,7 +433,8 @@ function PlanningSteps({
           {step === "carry" && (
             <div className="space-y-3">
               <p className="text-xs text-foreground-muted">{p.carryForwardDescription}</p>
-              {candidates.length === 0 ? (
+              {focusNotice}
+              {focusMissing ? null : candidates.length === 0 ? (
                 <p className="text-sm text-foreground-muted">{p.carryForwardEmpty}</p>
               ) : (
                 <ul className="divide-y divide-border">
@@ -602,6 +584,8 @@ function PlanningSteps({
           )}
         </section>
 
+        {step !== "done" && step !== "carry" && focusNotice}
+
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
           <Button variant="outline" onClick={goBack} disabled={stepIndex === 0}>
             {p.planningBack}
@@ -609,7 +593,7 @@ function PlanningSteps({
           <Button
             variant="outline"
             onClick={goNext}
-            disabled={stepIndex === WEEKLY_PLANNING_STEPS.length - 1}
+            disabled={stepIndex === WEEKLY_PLANNING_STEPS.length - 1 || (!isPreview && (step === "done" || step === "carry") && !focusReady)}
           >
             {p.planningNext}
           </Button>
@@ -623,7 +607,7 @@ function PlanningSteps({
           </Button>
           <Button
             onClick={() => persist("complete", step)}
-            disabled={isPreview || save.isPending}
+            disabled={isPreview || save.isPending || !focusReady}
           >
             {p.completeWeek}
           </Button>

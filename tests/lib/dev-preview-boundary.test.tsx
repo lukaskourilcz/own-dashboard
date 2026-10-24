@@ -33,3 +33,11 @@ it("enables Music fixtures separately and only against the nonexistent backend",
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
   expect((await PreviewPage({ searchParams: Promise.resolve({ music: "live" }) })).props.children.props.liveMusic).toBe(false);
 });
+
+it("isolates the live weekly-planning harness from other preview scopes and real backends", async () => {
+  vi.stubEnv("NODE_ENV", "test"); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ planning: "live" }) })).props.livePlanning).toBe(true);
+  expect((await PreviewPage({ searchParams: Promise.resolve({ music: "live", projectRecords: "live" }) })).props.livePlanning).toBe(false);
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ planning: "live" }) })).props.children.props.livePlanning).toBe(false);
+});
