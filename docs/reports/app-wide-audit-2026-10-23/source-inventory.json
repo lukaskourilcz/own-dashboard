@@ -149,7 +149,8 @@
       "path": "src/app/api/cron/renewal-warnings/route.ts",
       "lines": 172,
       "sha256": "a813f9b4a050fc6dc77681321c544db636d9414ce2225f429a43ac6819ec82d4",
-      "status": "pending"
+      "status": "source reviewed; owner-only, DST, consent, provider/local receipt and cancellation tests pass; final app-wide release checks pending",
+      "reviewedSha256": "fc4dd8b2cad6b2dca9526b1c01358ebb8f12cae3caf270d04e40b1a01e1c52a5"
     },
     {
       "path": "src/app/api/crons/log/route.ts",
@@ -3958,6 +3959,13 @@
       "lines": 8,
       "reviewedSha256": "ec70741c3e0ec4661533cd05e774782c168ab9e28be33293c9f7e57f6f9899a3",
       "status": "source reviewed; ownership, bounded logging and monitoring tests pass; final app-wide release checks pending"
+    },
+    {
+      "path": "src/lib/renewal-email.ts",
+      "sha256": null,
+      "lines": 39,
+      "reviewedSha256": "26a4ae4afcbce9244dddfb546b87c1334945ee32c900325d9777b7839b40096e",
+      "status": "source reviewed; owner-only, DST, consent, provider/local receipt and cancellation tests pass; final app-wide release checks pending"
     }
   ],
   "baselineFileCount": 561
