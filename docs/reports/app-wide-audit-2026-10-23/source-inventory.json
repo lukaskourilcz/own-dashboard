@@ -3489,7 +3489,8 @@
       "path": "src/lib/marketing/knowledge-body.ts",
       "lines": 16,
       "sha256": "6412bf7a958d2c51bf30a00e66201fd7d31beac81617b5f6dbffa9db21ae8750",
-      "status": "pending"
+      "status": "source reviewed; bounded UTF-8 bytes, strict declared length, five-second deadline, request/parent cancellation and reader cleanup checked in finding 174; caller authentication/persistence and final release are separate",
+      "reviewedSha256": "19e18433186029e9b41698aba1df8f377e4184a5f33bb8fca73b942e5b8b993c"
     },
     {
       "path": "src/lib/marketing/knowledge-copy.ts",
