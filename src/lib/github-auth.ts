@@ -11,7 +11,8 @@ const SCOPES = ["repo", "read:user"].join(" ");
 /**
  * Connect GitHub to the already-signed-in (Google) account via Supabase
  * identity linking. The OAuth round-trip returns through /auth/callback with
- * `link=github`, which persists the provider token into github_tokens —
+ * `link=github` as a navigation hint; the callback independently verifies
+ * the token and its server-managed identity before choosing storage —
  * mirroring how relinkGoogle() feeds /auth/callback for Google.
  *
  * Requires "Manual linking" enabled in Supabase Auth, and the GitHub provider

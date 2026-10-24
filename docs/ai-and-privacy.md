@@ -21,6 +21,10 @@ Invoice PDF extraction is deliberately not an AI workflow. The PDF is read local
 
 Outside Marketing, provider configuration is limited to the optional `JINA_API_KEY`, which only raises Jina's anonymous rate limit. The earlier project copilot, career copilot, weekly brief, knowledge review, quick-add intent and AI search routes remain removed. The Anthropic SDK is present for the separately authorized Marketing workflows below.
 
+## Provider grant capture
+
+The OAuth callback verifies provider grants before storing them server-side. Google token introspection checks the configured client and linked subject; GitHub’s authenticated profile checks its linked provider id. Scopes come from the provider response, and provider lifetimes are separate from the dashboard session. Editable user metadata and callback URL hints cannot choose the stored identity or credential table. Introspection URLs and provider payloads must never be logged; verification errors use fixed codes. Unsupported providers require an explicit implementation. A failed check preserves sign-in but does not replace a stored grant.
+
 ## Public tour isolation
 
 `/guest` renders deterministic fixtures in a separate React Query cache. Its network boundary blocks application API requests, Supabase requests, exports, sign-out submissions and provider-linking actions even when the browser already has the owner's session. The boundary remains active during in-shell navigation and restores normal request behavior when the tour unmounts. Static assets and ordinary sign-in navigation remain available. Fixture entity stores never refetch live records. `/dev-preview` uses the same isolation with a real backend; interactions may use mocked requests only with the deliberately nonexistent E2E backend (`https://example.supabase.co`).

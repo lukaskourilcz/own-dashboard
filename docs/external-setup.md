@@ -40,7 +40,9 @@ In Supabase Auth:
 3. Add the Supabase provider callback (`https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`) to the Google OAuth client.
 4. Configure the same client ID/secret in Supabase Auth and as server variables `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
 5. Confirm the app callback URLs from the Supabase section are allowlisted.
-6. Sign in, explicitly link Google from Settings, create an event, verify agenda loading, then disconnect/relink to test refresh-token behavior.
+6. Sign in with Google, or use Calendar’s Grant Calendar access / Re-link Google action. Verify agenda loading and a deliberately created test event; sign-out currently revokes the stored Google grant, so a fresh sign-in tests capture again. Do not create an event without owner authorization.
+
+Google grant capture verifies the token’s configured client audience and linked account subject. GitHub capture checks its authenticated provider account before storage; a callback query parameter cannot choose the token table. Verification failure preserves sign-in without storing a replacement grant.
 
 The app requests profile/email plus Calendar access when Google is deliberately linked. It does not store full Calendar event bodies in Postgres.
 
@@ -50,7 +52,7 @@ The app requests profile/email plus Calendar access when Google is deliberately 
 2. Configure the provider in Supabase Auth.
 3. Add `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` if revoke/disconnect and expiring-token refresh should be supported.
 4. Grant only the repository access needed for repository discovery, Markdown reads, NEEDED.md synchronization, and confirmed file commits.
-5. Link GitHub in Settings, activate a repository as a project, inspect documents, then perform a disposable confirmed Markdown commit.
+5. Open a project’s Repository tab and choose Connect GitHub when disconnected. Inspect its documents; make a disposable Markdown commit only when the owner deliberately confirms it. Settings displays connection status.
 
 Both Google and GitHub use private database refresh reservations and owner/request-scoped token reads. Concurrent rotation reports unavailable rather than racing; transient errors preserve the grant. Apply the OAuth reservation migration before its callers. A timed-out upstream rotation may require reauthorization; no refresh design can recover a rotated token that the provider delivered only to a crashed worker.
 

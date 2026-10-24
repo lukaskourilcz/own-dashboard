@@ -1,4 +1,5 @@
 import "server-only";
+import { awaitWithSignal } from "@/lib/abortable";
 import { createOAuthFetcher } from "@/lib/provider-auth-fetch";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -30,8 +31,9 @@ export async function storeGitHubTokens(args: {
   scopes: string[];
   githubLogin: string | null;
   githubId: number | null;
-}): Promise<void> {
-  const admin = createAdminClient();
+}, parent?: AbortSignal): Promise<void> {
+  const signal = parent ?? AbortSignal.timeout(12_000);
+  const admin = createAdminClient(signal);
   const expires_at =
     args.expiresInSeconds != null
       ? new Date(
@@ -39,7 +41,7 @@ export async function storeGitHubTokens(args: {
         ).toISOString()
       : null;
 
-  const result = await admin.from("github_tokens").upsert(
+  const result = await awaitWithSignal(admin.from("github_tokens").upsert(
     {
       user_id: args.userId,
       access_token: args.accessToken,
@@ -51,8 +53,12 @@ export async function storeGitHubTokens(args: {
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },
-  ).select("user_id").single();
-  if (result.error || result.data?.user_id !== args.userId) throw new Error("OAuth grant storage unconfirmed");
+  ).select("user_id,access_token,refresh_token,expires_at,scopes,github_login,github_id").abortSignal(signal).single(), signal);
+  const saved = result.data;
+  if (result.error || saved?.user_id !== args.userId || saved.access_token !== args.accessToken
+    || saved.refresh_token !== args.refreshToken || JSON.stringify(saved.scopes) !== JSON.stringify(args.scopes)
+    || (expires_at === null ? saved.expires_at !== null : Date.parse(saved.expires_at) !== Date.parse(expires_at))
+    || saved.github_id !== args.githubId || saved.github_login !== args.githubLogin) throw new Error("OAuth grant storage unconfirmed");
 }
 
 /**

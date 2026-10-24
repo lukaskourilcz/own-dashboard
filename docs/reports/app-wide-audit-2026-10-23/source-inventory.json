@@ -570,10 +570,10 @@
     },
     {
       "path": "src/app/auth/callback/route.ts",
-      "lines": 132,
+      "lines": 53,
       "sha256": "d78015c1ab24138ab94a5ce28a9e28fb090b34ee41ec34481bc3a2762741411c",
-      "status": "partial source review; redirect, storage receipt and provider TTL checked; provider-grant binding remains",
-      "reviewedSha256": "7f5a2133d2dbf8eb1af27172eac5cd70e2bbca19360877c010e40cec1e55f1f0"
+      "status": "partial source review; redirect, provider binding, grant receipts and exchange failure recovery checked; enclosing exchange/session deadline remains",
+      "reviewedSha256": "0f6db1b47fe0e9cf5b0aa5f41c1d9c0a10ca5088778ea660ce108f264ea9fd4f"
     },
     {
       "path": "src/app/auth/signout/route.ts",
@@ -1996,10 +1996,10 @@
     },
     {
       "path": "src/lib/github-auth.ts",
-      "lines": 31,
+      "lines": 32,
       "sha256": "66d1c18f0337c9523490ea5339d63607a3558975a7fecdd25b7b9bfe7ccd266f",
-      "status": "partial source review; all lines read; provider-grant binding and thrown connect failures remain",
-      "reviewedSha256": "8b4c3e547f7f05434621949fd1300fb2a378b44d594c86b5a0505084347b8c37"
+      "status": "partial source review; provider-grant binding checked; thrown connect failure recovery remains",
+      "reviewedSha256": "2ffe41fe69d4bde5e375f284275d3ffa9b977edec054e5bc52576f3a4b5cdf09"
     },
     {
       "path": "src/lib/github-queries.ts",
@@ -2010,10 +2010,10 @@
     },
     {
       "path": "src/lib/github-token.ts",
-      "lines": 99,
+      "lines": 105,
       "sha256": "6109e58ed9dc6736b79959c37e99db940d8de72de14c6566d427a0d8be3269ee",
-      "status": "partial source review; durable refresh and request coalescing checked; grant binding and revoke receipts remain",
-      "reviewedSha256": "b756efb41c9343760c375aaa5130b7ad509da40761bcc127586a28d50b46a579"
+      "status": "partial source review; refresh reservation, request coalescing and verified grant persistence checked; revoke receipts/deadline remain",
+      "reviewedSha256": "6d9bbf59bf2ea02978872949361837bc596f7ca1d9b5758a25f6b25a1cc7131d"
     },
     {
       "path": "src/lib/github.ts",
@@ -2038,10 +2038,10 @@
     },
     {
       "path": "src/lib/google-token.ts",
-      "lines": 76,
+      "lines": 82,
       "sha256": "e3eaa94b2c73e80b0f54d7bdf464d464eec41502da3147366e6ad281ce029c29",
-      "status": "partial source review; durable refresh and request coalescing checked; grant binding and revoke receipts remain",
-      "reviewedSha256": "a3d0dc56681577bddc6c12d90d47cc8e8a4ad988ad25482c86fb56b18f8ff754"
+      "status": "partial source review; refresh reservation, request coalescing and verified grant persistence checked; revoke receipts/deadline remain",
+      "reviewedSha256": "09f9da8c55f3ba89bb8aa4ed4fc45bfcdf2812023e00a7ec499e027fc2d29ae8"
     },
     {
       "path": "src/lib/guest-requests.ts",
@@ -3782,6 +3782,13 @@
       "lines": 56,
       "reviewedSha256": "07957706d439cac677fe5fea735eb36c98c8364344af04a94e7695b429ef5dc5",
       "status": "source reviewed; OAuth reservation/fetch targeted checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/oauth-grant-verification.ts",
+      "sha256": null,
+      "lines": 63,
+      "reviewedSha256": "7da99788f277073d7031c8d91a041970b778e5676ab2fb05999854e22b70042b",
+      "status": "source reviewed; provider identity/audience/scope/TTL checks pass; final app-wide release pending"
     }
   ],
   "baselineFileCount": 561
