@@ -25,6 +25,10 @@ Outside Marketing, provider configuration is limited to the optional `JINA_API_K
 
 `/guest` renders deterministic fixtures in a separate React Query cache. Its network boundary blocks application API requests, Supabase requests, exports, sign-out submissions and provider-linking actions even when the browser already has the owner's session. The boundary remains active during in-shell navigation and restores normal request behavior when the tour unmounts. Static assets and ordinary sign-in navigation remain available. Fixture entity stores never refetch live records. `/dev-preview` uses the same isolation with a real backend; interactions may use mocked requests only with the deliberately nonexistent E2E backend (`https://example.supabase.co`).
 
+## Optional browser analytics
+
+When `NEXT_PUBLIC_POSTHOG_KEY` is unset, the root provider does not import or initialize PostHog. When configured, the existing setup captures page views, page leaves and interactions, uses localStorage persistence and identified-only person profiles, and allows session replay with all inputs and text masked. The default ingestion host is EU. Analytics settings are distinct from the model-call boundary above; localStorage and masking alone do not establish consent or legal compliance. SDK loading/initialization failure does not block the application. See the provider’s [collection controls](https://posthog.com/docs/privacy/data-collection).
+
 ## Marketing-only exception (2026-10-13)
 
 The owner also requested DNESKAi source rotation and Jev classification on this date.

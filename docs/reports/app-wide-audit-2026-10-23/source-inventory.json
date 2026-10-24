@@ -1421,10 +1421,10 @@
     },
     {
       "path": "src/components/posthog-provider.tsx",
-      "lines": 41,
+      "lines": 37,
       "sha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481",
-      "status": "source read; optional SDK import and analytics privacy follow-up pending",
-      "reviewedSha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481"
+      "status": "source reviewed; optional lazy SDK and failure boundaries tested; optimized browser measurement pending",
+      "reviewedSha256": "7a608b5c7cd63b26a277e06e5225aeb666a29929a857d7bc1bfca090385674b2"
     },
     {
       "path": "src/components/preference-hydrator.tsx",
