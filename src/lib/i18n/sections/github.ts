@@ -37,6 +37,7 @@ type GithubStrings = {
   disconnectConfirm: string;
   disconnectOk: string;
   disconnectErr: string;
+  disconnectLocalOnly: string;
   // Write-file dialog
   writeFile: string;
   writeTitle: string;
@@ -157,6 +158,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     disconnectConfirm: "Disconnect GitHub? You can reconnect any time.",
     disconnectOk: "GitHub disconnected.",
     disconnectErr: "Could not disconnect GitHub.",
+    disconnectLocalOnly: "Disconnected locally. GitHub grant revocation could not be confirmed; review it in GitHub settings.",
     writeFile: "Write file",
     writeTitle: "Write a file to",
     writeHint: "Creates a commit on the chosen branch (defaults to the repo default).",
@@ -276,6 +278,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     disconnectConfirm: "Odpojit GitHub? Můžeš ho kdykoli připojit znovu.",
     disconnectOk: "GitHub odpojen.",
     disconnectErr: "Nepodařilo se odpojit GitHub.",
+    disconnectLocalOnly: "Místní připojení bylo odebráno. Zrušení oprávnění na GitHubu se nepodařilo potvrdit; zkontrolujte ho v nastavení GitHubu.",
     writeFile: "Zapsat soubor",
     writeTitle: "Zapsat soubor do",
     writeHint: "Vytvoří commit ve zvolené větvi (výchozí je hlavní větev repozitáře).",

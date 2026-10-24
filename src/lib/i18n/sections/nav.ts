@@ -17,6 +17,7 @@ type NavStrings = {
   disconnectErr: string;
   networkErr: string;
   signOut: string;
+  signOutFailed: string;
   more: string;
   mobileNavigation: string;
   allAreas: string;
@@ -68,6 +69,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     disconnectErr: "Could not disconnect Google.",
     networkErr: "Network error.",
     signOut: "Sign out",
+    signOutFailed: "Sign-out could not be confirmed. Try again.",
     more: "More",
     mobileNavigation: "Primary navigation",
     allAreas: "All areas",
@@ -117,6 +119,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     disconnectErr: "Nepodařilo se odpojit Google.",
     networkErr: "Chyba sítě.",
     signOut: "Odhlásit se",
+    signOutFailed: "Odhlášení se nepodařilo potvrdit. Zkuste to znovu.",
     more: "Více",
     mobileNavigation: "Hlavní navigace",
     allAreas: "Všechny sekce",

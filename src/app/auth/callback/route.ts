@@ -1,3 +1,4 @@
+import { awaitWithSignal } from "@/lib/abortable";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { storeGoogleTokens } from "@/lib/google-token";
@@ -28,13 +29,13 @@ export async function GET(request: Request) {
   const next = safeNext(url.searchParams.get("next"), url.origin);
 
   if (code) {
-    const supabase = await createClient();
+    const signal = AbortSignal.timeout(20_000);
+    const supabase = await createClient(signal);
     let exchanged;
-    try { exchanged = await supabase.auth.exchangeCodeForSession(code); }
+    try { exchanged = await awaitWithSignal(supabase.auth.exchangeCodeForSession(code), signal); }
     catch { return NextResponse.redirect(new URL("/login?error=auth", url.origin)); }
     const { data, error } = exchanged;
     if (!error && data.session) {
-      const signal = AbortSignal.timeout(15_000);
       try {
         const grant = await verifyOAuthGrant(data.session, data.user, signal);
         if (grant?.provider === "github") {

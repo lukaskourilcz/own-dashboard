@@ -1,9 +1,8 @@
 import "server-only";
+import { revokeOAuthGrant } from "@/lib/oauth-revocation";
 import { awaitWithSignal } from "@/lib/abortable";
 import { createOAuthFetcher } from "@/lib/provider-auth-fetch";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 
 /**
  * Persist the refresh token captured at /auth/callback. This is the ONLY
@@ -46,33 +45,9 @@ export async function storeGoogleTokens(args: {
     || saved.google_sub !== args.googleSub) throw new Error("OAuth grant storage unconfirmed");
 }
 
-/**
- * Revoke the Google grant + delete our row. Used by /auth/signout and by an
- * explicit "Disconnect Google" button. Best-effort: a non-200 from /revoke
- * (e.g. token already revoked) is not treated as an error.
- */
-export async function revokeGoogleAccess(userId: string): Promise<void> {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("google_oauth")
-    .select("refresh_token")
-    .eq("user_id", userId)
-    .maybeSingle<{ refresh_token: string | null }>();
-
-  if (data?.refresh_token) {
-    try {
-      await fetch(GOOGLE_REVOKE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ token: data.refresh_token }),
-        cache: "no-store",
-      });
-    } catch {
-      // Network blip or already-revoked token; we still delete the row below.
-    }
-  }
-
-  await admin.from("google_oauth").delete().eq("user_id", userId);
+/** Confirm local removal separately from the provider's revoke response. */
+export function revokeGoogleAccess(userId: string, signal?: AbortSignal) {
+  return revokeOAuthGrant("google", userId, signal);
 }
 
 /** The route supplies its already verified owner. Keep this fetcher local to

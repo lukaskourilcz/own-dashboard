@@ -54,6 +54,8 @@ The app requests profile/email plus Calendar access when Google is deliberately 
 4. Grant only the repository access needed for repository discovery, Markdown reads, NEEDED.md synchronization, and confirmed file commits.
 5. Open a project’s Repository tab and choose Connect GitHub when disconnected. Inspect its documents; make a disposable Markdown commit only when the owner deliberately confirms it. Settings displays connection status.
 
+Explicit disconnect reports confirmed local removal separately from upstream revocation; a local-only result includes guidance to review the provider’s grant. Do not assume every successful local removal revoked the provider grant. Sign-out confirms the dashboard session result and provides retry feedback on failure.
+
 Both Google and GitHub use private database refresh reservations and owner/request-scoped token reads. Concurrent rotation reports unavailable rather than racing; transient errors preserve the grant. Apply the OAuth reservation migration before its callers. A timed-out upstream rotation may require reauthorization; no refresh design can recover a rotated token that the provider delivered only to a crashed worker.
 
 OwnDashboard does not read GitHub Actions. Known schedules are seeded from `src/lib/project-cron-seeds.ts` when a project is linked to its repository; the app never triggers workflows or edits workflow cron files.

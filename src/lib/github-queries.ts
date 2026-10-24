@@ -1,10 +1,12 @@
+import { qk } from "@/lib/queries/keys";
+import type { MarketingCalendarsResult } from "@/lib/marketing-calendars";
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { loadReposResult, loadProjectCommits, loadCrossProjectActivity, type LoadReposResult } from "@/lib/github";
 
 /** Single cache key for the repo list — the Repositories panel and the
  * "Publish to repo" dialog share it, so opening the dialog reuses the panel's
  * already-fetched repos instead of re-hitting GitHub. */
-export const reposQueryKey = ["github", "repos"] as const;
+export const reposQueryKey = qk.repos;
 
 export function useReposQuery(enabled = true) {
   return useQuery({
@@ -49,10 +51,20 @@ export function touchRepoInCache(qc: QueryClient, repoId: number): void {
   });
 }
 
-/** Flip the cache to "disconnected" (after an explicit disconnect or a 401)
- * so all consumers show the Connect CTA without a refetch. */
-export function setReposDisconnected(qc: QueryClient): void {
+/** Cancel late reads before marking every remote GitHub projection offline.
+ * Imported/local notes, tasks and links remain owned dashboard records. */
+export async function setReposDisconnected(qc: QueryClient): Promise<void> {
+  await qc.cancelQueries({ queryKey: ["github"] });
   qc.setQueryData<LoadReposResult>(reposQueryKey, { kind: "disconnected" });
+  for (const projection of ["commits", "activity", "detected-tools", "file", "about-project", "project-doc"]) {
+    qc.setQueriesData({ queryKey: ["github", projection] }, { kind: "disconnected" });
+  }
+  qc.setQueryData<MarketingCalendarsResult>(qk.marketingCalendars, previous => {
+    if (previous?.kind !== "ok") return previous;
+    return { kind: "ok", data: { ...previous.data, sources: previous.data.sources.map(source => ({
+      ...source, status: "disconnected", calendar: null, detail: null,
+    })) } };
+  });
 }
 
 /** Recent commits + code volume for one project repo. On demand only (the

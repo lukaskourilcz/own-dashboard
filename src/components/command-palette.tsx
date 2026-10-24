@@ -5,6 +5,7 @@ import { Languages, LogOut, Moon, Search, Settings, Sun } from "lucide-react";
 import { PRIMARY_NAV_ITEMS, NAV_GROUPS } from "@/components/nav/sidebar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useNavVisibility } from "@/lib/use-prefs";
+import { useSignOut } from "@/lib/use-sign-out";
 import { useTheme } from "@/lib/use-theme";
 import { useDict, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ export function CommandPalette({
   const { theme, toggle } = useTheme();
   const { lang, setLang } = useLang();
   const t = useDict();
+  const { run: signOut } = useSignOut();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -89,17 +91,11 @@ export function CommandPalette({
         group: "act",
         icon: LogOut,
         keywords: "logout odhlásit",
-        run: () => {
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = "/auth/signout";
-          document.body.appendChild(form);
-          form.submit();
-        },
+        run: () => { close(); void signOut(); },
       },
     ];
     return list;
-  }, [setTab, theme, toggle, lang, setLang, t, hidden]);
+  }, [setTab, theme, toggle, lang, setLang, t, hidden, signOut]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -36,6 +36,7 @@ import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useSignOut } from "@/lib/use-sign-out";
 import { useDict } from "@/lib/i18n";
 import {
   useNavCollapsed,
@@ -143,6 +144,7 @@ export function Sidebar({
   onOpenProject?: (project: SidebarProject) => void;
 }) {
   const t = useDict();
+  const signOut = useSignOut();
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
@@ -383,9 +385,11 @@ export function Sidebar({
             <span><ThemeToggle syncPreferences={syncPreferences} /></span>
           </Tooltip>
           {syncPreferences && <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
-            <form action="/auth/signout" method="post">
+            <form action="/auth/signout" method="post" onSubmit={event => { event.preventDefault(); void signOut.run(); }}>
               <button
                 type="submit"
+                disabled={signOut.pending}
+                aria-busy={signOut.pending}
                 aria-label={t.nav.signOut}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
               >

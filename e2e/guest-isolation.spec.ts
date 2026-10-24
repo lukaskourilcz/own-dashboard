@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { nav } from "../src/lib/i18n/sections/nav";
 import { guest } from "../src/lib/i18n/sections/guest";
 
 test("public tour keeps live writes, exports and authentication out of the session", async ({ page }) => {
@@ -28,4 +29,14 @@ test("public tour keeps live writes, exports and authentication out of the sessi
   expect(await page.evaluate(async () => (await fetch("/api/export/full")).status)).toBe(403);
   expect(await page.evaluate(async () => (await fetch("/api/calendar/event", { method: "POST" })).status)).toBe(403);
   expect(liveRequests).toEqual([]);
+});
+
+test("the tour's command-palette logout is blocked before a server action", async ({ page }) => {
+  const live: string[] = [];
+  await page.route("**/auth/signout", route => { live.push(route.request().url()); return route.fulfill({ json: { ok: true } }); });
+  await page.goto("/guest?lang=en"); await page.keyboard.press("Control+k");
+  const palette = page.getByRole("dialog"); await palette.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.locator('[role="status"]').filter({ hasText: guest.en.readOnlyAction })).toBeVisible();
+  await expect(page.getByText(nav.en.signOutFailed, { exact: true })).toHaveCount(0);
+  expect(live).toEqual([]); expect(new URL(page.url()).pathname).toBe("/guest");
 });

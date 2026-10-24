@@ -1,22 +1,8 @@
 import "server-only";
+import { revokeOAuthGrant } from "@/lib/oauth-revocation";
 import { awaitWithSignal } from "@/lib/abortable";
 import { createOAuthFetcher } from "@/lib/provider-auth-fetch";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const GITHUB_API = "https://api.github.com";
-
-/**
- * OAuth App client credentials. Optional: only needed to (a) refresh an
- * expiring GitHub-App token and (b) revoke the grant on disconnect. Standard
- * OAuth App tokens don't expire, so a missing pair degrades gracefully — we
- * just use the stored token and delete the row locally on disconnect.
- */
-function getGitHubCreds(): { id: string; secret: string } | null {
-  const id = process.env.GITHUB_OAUTH_CLIENT_ID;
-  const secret = process.env.GITHUB_OAUTH_CLIENT_SECRET;
-  if (!id || !secret) return null;
-  return { id, secret };
-}
 
 /**
  * Persist the token captured at /auth/callback after a GitHub identity link.
@@ -61,41 +47,9 @@ export async function storeGitHubTokens(args: {
     || saved.github_id !== args.githubId || saved.github_login !== args.githubLogin) throw new Error("OAuth grant storage unconfirmed");
 }
 
-/**
- * Revoke the OAuth grant (best-effort) and delete our row. Used by the
- * "Disconnect GitHub" button. A missing client secret or a non-2xx from
- * GitHub is not fatal — we always delete the local row.
- */
-export async function revokeGitHubAccess(userId: string): Promise<void> {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("github_tokens")
-    .select("access_token")
-    .eq("user_id", userId)
-    .maybeSingle<{ access_token: string | null }>();
-
-  const creds = getGitHubCreds();
-  if (creds && data?.access_token) {
-    try {
-      const basic = Buffer.from(`${creds.id}:${creds.secret}`).toString(
-        "base64",
-      );
-      await fetch(`${GITHUB_API}/applications/${creds.id}/grant`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Basic ${basic}`,
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        body: JSON.stringify({ access_token: data.access_token }),
-        cache: "no-store",
-      });
-    } catch {
-      // Network blip or already-revoked grant; we still delete the row below.
-    }
-  }
-
-  await admin.from("github_tokens").delete().eq("user_id", userId);
+/** Confirm local removal separately from the provider's revoke response. */
+export function revokeGitHubAccess(userId: string, signal?: AbortSignal) {
+  return revokeOAuthGrant("github", userId, signal);
 }
 
 /** The route supplies its already verified owner. Keep this fetcher local to

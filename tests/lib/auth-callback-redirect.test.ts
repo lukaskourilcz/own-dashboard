@@ -10,7 +10,7 @@ import { POST as signOut } from "@/app/auth/signout/route";
 beforeEach(() => {
   vi.restoreAllMocks(); state.session = {}; state.failed = false;
   state.google.mockReset(); state.github.mockReset(); state.verify.mockReset().mockResolvedValue(null);
-  state.revoke.mockReset().mockRejectedValue(new Error("Synthetic private provider cause")); state.signOut.mockReset().mockResolvedValue({ error: null });
+  state.revoke.mockReset().mockResolvedValue({ upstreamRevoked: true }); state.signOut.mockReset().mockResolvedValue({ error: null });
   state.exchange.mockReset().mockImplementation(async () => ({ data: { session: state.session, user: { id: "owner", user_metadata: {}, identities: [] } }, error: state.failed ? {} : null }));
 });
 const callback = (next: string, extra = "") => GET(new Request(`https://app.example/auth/callback?code=synthetic-code&next=${encodeURIComponent(next)}${extra}`));
@@ -35,6 +35,7 @@ it("logs fixed storage failure codes without private provider causes", async () 
   await callback("/", "&link=github"); expect(log).toHaveBeenLastCalledWith("[auth/callback] github-token-storage-unconfirmed");
 });
 it("a best-effort sign-out revocation logs only its fixed failure code", async () => {
+  state.revoke.mockRejectedValueOnce(new Error("Synthetic private provider cause"));
   const log = vi.spyOn(console, "error").mockImplementation(() => {});
   const result = await signOut(new Request("https://app.example/auth/signout", { method: "POST", headers: { origin: "https://app.example" } }));
   expect(result.status).toBe(303); expect(log).toHaveBeenCalledWith("[auth/signout] google-revocation-unconfirmed");
@@ -57,4 +58,27 @@ it("recovers to login when the code exchange throws without forwarding its cause
   state.exchange.mockRejectedValue(Error("Synthetic private exchange detail"));
   expect((await callback("/projects")).headers.get("location")).toBe("https://app.example/login?error=auth");
   expect(state.verify).not.toHaveBeenCalled();
+});
+
+it("does not redirect or claim a successful sign-out after an SDK error", async () => {
+  state.signOut.mockResolvedValue({ error: Error("Synthetic private logout detail") });
+  const result = await signOut(new Request("https://app.example/auth/signout", { method: "POST", headers: { origin: "https://app.example", accept: "application/json" } }));
+  expect(result.status).toBe(503); expect(result.headers.get("location")).toBeNull(); expect(await result.text()).not.toContain("private logout");
+});
+it("provides the explicit successful JSON receipt without a navigation redirect", async () => {
+  const result = await signOut(new Request("https://app.example/auth/signout", { method: "POST", headers: { origin: "https://app.example", accept: "application/json" } }));
+  expect(result.status).toBe(200); expect(await result.json()).toEqual({ ok: true }); expect(result.headers.get("cache-control")).toBe("private, no-store");
+});
+it("ends a hanging code exchange before verification or storage", async () => {
+  const controller = new AbortController(), original = AbortSignal.timeout.bind(AbortSignal);
+  vi.spyOn(AbortSignal, "timeout").mockImplementation(ms => ms === 20000 ? controller.signal : original(ms));
+  state.exchange.mockReturnValue(new Promise(() => undefined)); const pending = callback("/projects"); await vi.waitFor(() => expect(state.exchange).toHaveBeenCalled()); controller.abort();
+  expect((await pending).headers.get("location")).toBe("https://app.example/login?error=auth"); expect(state.verify).not.toHaveBeenCalled();
+});
+it("ends a hanging sign-out without an unconfirmed redirect", async () => {
+  const controller = new AbortController(), original = AbortSignal.timeout.bind(AbortSignal);
+  vi.spyOn(AbortSignal, "timeout").mockImplementation(ms => ms === 25000 ? controller.signal : original(ms));
+  state.signOut.mockReturnValue(new Promise(() => undefined));
+  const pending = signOut(new Request("https://app.example/auth/signout", { method: "POST", headers: { origin: "https://app.example" } }));
+  await vi.waitFor(() => expect(state.signOut).toHaveBeenCalled()); controller.abort(); expect((await pending).status).toBe(503);
 });

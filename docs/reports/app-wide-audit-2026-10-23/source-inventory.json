@@ -223,9 +223,10 @@
     },
     {
       "path": "src/app/api/github/disconnect/route.ts",
-      "lines": 34,
+      "lines": 35,
       "sha256": "7ecf58d6b110b5b7a468290df4b7130867bbb405245f41b4403a6be611730724",
-      "status": "pending"
+      "status": "partial source review; owner/origin/rate guards and versioned removal receipts checked; enclosing auth/rate deadline remains",
+      "reviewedSha256": "ab45819ba45eda1c62b85286fa631998d605bfe7a87c89800f4b7936b07e40b2"
     },
     {
       "path": "src/app/api/github/file/route.ts",
@@ -250,9 +251,10 @@
     },
     {
       "path": "src/app/api/google/disconnect/route.ts",
-      "lines": 34,
+      "lines": 35,
       "sha256": "1322f57bd5cc24a02d6db65630d9d5a61d863aab4f274bccde08ce18991cf5d4",
-      "status": "pending"
+      "status": "partial source review; owner/origin/rate guards and versioned removal receipts checked; enclosing auth/rate deadline remains",
+      "reviewedSha256": "dc411a24cbf1de97fc086075ea7ebeb1584f7fcd7da8682f91b3c90e12a8c088"
     },
     {
       "path": "src/app/api/integrations/status/route.ts",
@@ -570,17 +572,17 @@
     },
     {
       "path": "src/app/auth/callback/route.ts",
-      "lines": 53,
+      "lines": 54,
       "sha256": "d78015c1ab24138ab94a5ce28a9e28fb090b34ee41ec34481bc3a2762741411c",
-      "status": "partial source review; redirect, provider binding, grant receipts and exchange failure recovery checked; enclosing exchange/session deadline remains",
-      "reviewedSha256": "0f6db1b47fe0e9cf5b0aa5f41c1d9c0a10ca5088778ea660ce108f264ea9fd4f"
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
+      "reviewedSha256": "d93697b04b1fd55ad252cb18923a9ad642f6c0a6973a19a6a2d3b1eb6001e3c2"
     },
     {
       "path": "src/app/auth/signout/route.ts",
-      "lines": 27,
+      "lines": 31,
       "sha256": "5bb8e3dca064023d40a688f64026b7714105fbd9058f4ebb30f1548191f38b3e",
-      "status": "source reviewed; fixed privacy logging checked; sign-out failure and revocation semantics remain under review",
-      "reviewedSha256": "1483ecf7dc5cf78eeb8a4ec28e0ab84efc2dac62266fe07ad02fab1d8626929d"
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
+      "reviewedSha256": "60190cd3892c031f9bd2debb7e544d05f0d7fccfc9d23695deb1427fd025e6ea"
     },
     {
       "path": "src/app/dev-preview/page.tsx",
@@ -708,9 +710,10 @@
     },
     {
       "path": "src/components/command-palette.tsx",
-      "lines": 213,
+      "lines": 209,
       "sha256": "39287e1084d25bb24589c2099deddfd18c8c665eb097203e514e665ace4c4ba9",
-      "status": "pending"
+      "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains",
+      "reviewedSha256": "7c0bd3ee238ca9b0c63b46a9319ce6c785f165352832a07123d6b2659e5faf23"
     },
     {
       "path": "src/components/competition/competitor-dialog.tsx",
@@ -1138,9 +1141,10 @@
     },
     {
       "path": "src/components/nav/sidebar.tsx",
-      "lines": 489,
+      "lines": 493,
       "sha256": "ceb1990b1be23aa546036c076264823fb4c4b883511bd14e9b27fc0d1208b535",
-      "status": "pending"
+      "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains",
+      "reviewedSha256": "3f8d0436b27f370c806b693b0f8389741ba529f97c428a7de91ccdf825526a68"
     },
     {
       "path": "src/components/navigation-guard.tsx",
@@ -1413,10 +1417,10 @@
     },
     {
       "path": "src/components/panels/repos-panel.tsx",
-      "lines": 1384,
+      "lines": 1389,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partial source review; all 1384 lines read; note autosave/versioned clearing, link/write pending controls, receipt validation and labels require fixes",
-      "reviewedSha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0"
+      "status": "partial source review; disconnect receipts/cache recovery checked; note autosave/versioned clearing, write/link controls and labels require fixes",
+      "reviewedSha256": "7e11eb97e5e6b1db386b96329476b3e2d2134e6bb9ff0a2c73fbc9482843b258"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -2003,17 +2007,17 @@
     },
     {
       "path": "src/lib/github-queries.ts",
-      "lines": 81,
+      "lines": 93,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
-      "status": "partial source review; all lines read; canonical keys, retained data and shared disconnect invalidation remain",
-      "reviewedSha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba"
+      "status": "partial source review; canonical repo key and disconnect/late-query handling checked; response validation, retained refresh data and request cancellation remain",
+      "reviewedSha256": "1ec67319038629c479ed6c2d2b839a57085c31ed279e32e7d6579085d219eb47"
     },
     {
       "path": "src/lib/github-token.ts",
-      "lines": 105,
+      "lines": 59,
       "sha256": "6109e58ed9dc6736b79959c37e99db940d8de72de14c6566d427a0d8be3269ee",
-      "status": "partial source review; refresh reservation, request coalescing and verified grant persistence checked; revoke receipts/deadline remain",
-      "reviewedSha256": "6d9bbf59bf2ea02978872949361837bc596f7ca1d9b5758a25f6b25a1cc7131d"
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
+      "reviewedSha256": "ddea523ee06b0374f49c8c491473cebb03a918fcac57df2a465ec9bb11818fc8"
     },
     {
       "path": "src/lib/github.ts",
@@ -2038,10 +2042,10 @@
     },
     {
       "path": "src/lib/google-token.ts",
-      "lines": 82,
+      "lines": 57,
       "sha256": "e3eaa94b2c73e80b0f54d7bdf464d464eec41502da3147366e6ad281ce029c29",
-      "status": "partial source review; refresh reservation, request coalescing and verified grant persistence checked; revoke receipts/deadline remain",
-      "reviewedSha256": "09f9da8c55f3ba89bb8aa4ed4fc45bfcdf2812023e00a7ec499e027fc2d29ae8"
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
+      "reviewedSha256": "b13ad649987d670b064b628c33817949d3035d86fef3fdb6d59e5cc8d048e3bf"
     },
     {
       "path": "src/lib/guest-requests.ts",
@@ -2168,9 +2172,10 @@
     },
     {
       "path": "src/lib/i18n/sections/github.ts",
-      "lines": 364,
+      "lines": 367,
       "sha256": "8cfefeb5de858b420382d19bd9a07c572b55df82ef7b7ff4b750aedf0d8ae3dc",
-      "status": "pending"
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
+      "reviewedSha256": "da6ce797dbb22314f700f2fc3246a91a1e5171881665a4d5abaafe427e1a6d86"
     },
     {
       "path": "src/lib/i18n/sections/guest.ts",
@@ -2218,9 +2223,10 @@
     },
     {
       "path": "src/lib/i18n/sections/nav.ts",
-      "lines": 127,
+      "lines": 130,
       "sha256": "29ce7d996337cf4d3535f98473fd8f8a021685ebb5bea1f2195eae043c7be5f1",
-      "status": "pending"
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
+      "reviewedSha256": "63128b7e974b0b9adfdca95353dc78a6051dfa411ac0301a19fb8e1a7220a1d1"
     },
     {
       "path": "src/lib/i18n/sections/notes.ts",
@@ -3583,10 +3589,10 @@
     },
     {
       "path": "src/lib/supabase/server.ts",
-      "lines": 27,
+      "lines": 30,
       "sha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446",
-      "status": "source read; request-local cookie handling retained; session refresh review pending",
-      "reviewedSha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446"
+      "status": "partial source review; scoped auth cancellation and late cookie protection checked; SSR response-cache/header boundaries remain",
+      "reviewedSha256": "f8a13eec45186c790491a865760af1b78dda08ee756635c68615d793f4548f28"
     },
     {
       "path": "src/lib/supabase/user.ts",
@@ -3789,6 +3795,27 @@
       "lines": 63,
       "reviewedSha256": "7da99788f277073d7031c8d91a041970b778e5676ab2fb05999854e22b70042b",
       "status": "source reviewed; provider identity/audience/scope/TTL checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/oauth-revocation.ts",
+      "sha256": null,
+      "lines": 55,
+      "reviewedSha256": "e6bdbf4695c1851c5a78de2acf73a897986749ea5d251cb56c78d64ebf5a345d",
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/auth-actions.ts",
+      "sha256": null,
+      "lines": 17,
+      "reviewedSha256": "7e328d2a3e0b13fad6557d02f3919cb1d50d79c4f6215b6a98d85a1e8f05743b",
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
+    },
+    {
+      "path": "src/lib/use-sign-out.ts",
+      "sha256": null,
+      "lines": 27,
+      "reviewedSha256": "af04b8fd6d57de954e58a13f29ee373a2ccdef94d9fa8e17779a7640d884d1da",
+      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
     }
   ],
   "baselineFileCount": 561

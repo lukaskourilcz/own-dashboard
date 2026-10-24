@@ -200,11 +200,16 @@ export function ReposPanel({
     mutationFn: async () => {
       const res = await fetch("/api/github/disconnect", { method: "POST" });
       if (!res.ok) throw new Error("server");
+      const receipt = await res.json();
+      if (receipt?.ok !== true || typeof receipt.upstreamRevoked !== "boolean") throw new Error("server");
+      return receipt as { upstreamRevoked: boolean };
     },
-    onSuccess: () => {
-      toast.ok(t.github.disconnectOk);
-      setReposDisconnected(qc);
+    onSuccess: receipt => {
+      if (receipt.upstreamRevoked) toast.ok(t.github.disconnectOk);
+      else toast.info(t.github.disconnectLocalOnly);
+      return setReposDisconnected(qc);
     },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.integrationStatus }),
     onError: (e) =>
       toast.err(
         (e as Error).message === "server"
