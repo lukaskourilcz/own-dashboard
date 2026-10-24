@@ -7,7 +7,7 @@ import {
   usableRules,
 } from "@/lib/transaction-rules";
 import { readTransactionRuleContext } from "@/lib/transaction-rule-data";
-import { importTransactionBatch } from "@/lib/transaction-import";
+import { importBankTransactionBatch } from "@/lib/transaction-import";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import type { BankConnection } from "@/lib/types";
 
@@ -147,7 +147,7 @@ async function pullConnection(
     // Database conflict handling covers the complete ledger, including rows
     // outside a REST page. Each confirmed batch is safe to replay after failure.
     for (let offset = 0; offset < rows.length; offset += 250) {
-      inserted += await importTransactionBatch(admin, rows.slice(offset, offset + 250), conn.user_id);
+      inserted += await importBankTransactionBatch(admin, rows.slice(offset, offset + 250), conn.user_id);
     }
   }
 

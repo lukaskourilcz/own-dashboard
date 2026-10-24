@@ -1684,10 +1684,10 @@
     },
     {
       "path": "src/lib/bank-sync-server.ts",
-      "lines": 249,
+      "lines": 176,
       "sha256": "e5f413436cd693c468a524b382d0afa7e730fc9053935a848707c1f552bf2ca2",
-      "status": "source reviewed; targeted sync checks passed; final release checks pending",
-      "reviewedSha256": "ccf8b87353d6eeb09bc05d51e985914296048757bc57562571e8840392c0ad61"
+      "status": "partial source review; scoped bank identity and write receipts tested; total request deadline still under review",
+      "reviewedSha256": "fa3a8d5683480954faef5d31cbf5e7b03206f65695be469e6d40e3c1b1771ce3"
     },
     {
       "path": "src/lib/bank/credentials.ts",
@@ -3561,11 +3561,11 @@
     },
     {
       "path": "src/lib/transaction-import.ts",
-      "lines": 25,
+      "lines": 36,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; targeted import checks passed; final release checks pending",
-      "reviewedSha256": "0407532d019bb9dbef061dcf79dea900f13067cb00de990e175f2930e9e7d2a1"
+      "status": "source reviewed; confirmed CSV and scoped bank ports tested; final release checks pending",
+      "reviewedSha256": "239ed6dec99e9810921e14e88b7333083ef0bd9ede7b326063e27290fd65fae0"
     },
     {
       "path": "src/lib/transaction-rule-application.ts",
