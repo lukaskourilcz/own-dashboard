@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, watchConsole } from "./helpers";
 import { professional } from "../src/lib/i18n/sections/professional";
 import { github } from "../src/lib/i18n/sections/github";
-const repo = { id: 123, name: "renamed-own-dashboard", full_name: "lukaskourilcz/renamed-own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/renamed-own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
+const repo = { id: 1001, name: "renamed-own-dashboard", full_name: "lukaskourilcz/renamed-own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/renamed-own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
 for (const lang of ["en", "cs"] as const) {
   test(`${lang}: a scoped repository outside the recent catalog retries and retains confirmed metadata`, async ({ page }) => {
     const t = github[lang], errors = watchConsole(page); await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" });

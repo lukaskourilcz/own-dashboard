@@ -16,7 +16,7 @@ import { applyRemovedRepositoryLink, applySavedRepositoryLink, normalizeReposito
 import type { GithubRepo } from "@/lib/github";
 import type { RepoLink, Updater } from "@/lib/types";
 
-export function RepositoryLinkControl({ repo, link, setRepoLinks }: { repo: GithubRepo; link: RepoLink | undefined; setRepoLinks: Updater<RepoLink[]> }) {
+export function RepositoryLinkControl({ repo, link, setRepoLinks }: { repo: Pick<GithubRepo, "id" | "full_name">; link: RepoLink | undefined; setRepoLinks: Updater<RepoLink[]> }) {
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();

@@ -8,8 +8,8 @@ import { qk } from "@/lib/queries/keys";
 const repo = { id: 123, name: "fixture", full_name: "owner/fixture", owner: "owner", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/owner/fixture", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 let host: HTMLDivElement, root: Root, client: QueryClient;
-function Workspace({ name = repo.full_name }: { name?: string }) {
-  const query = useWorkspaceRepositories(name);
+function Workspace({ name = repo.full_name, expectedId }: { name?: string; expectedId?: number }) {
+  const query = useWorkspaceRepositories(name, expectedId);
   return <div data-error={query.isError} data-pending={query.isPending}><output>{JSON.stringify(query.data ?? null)}</output><button onClick={() => void query.refetch()}>Retry</button></div>;
 }
 function Catalog() {
@@ -69,4 +69,15 @@ it("does not present old scoped metadata as connected after the shared catalog l
   expect(snapshot()).toMatchObject({ kind: "ok" });
   act(() => client.setQueryData(qk.repos, { kind: "disconnected", checkedAt: Date.now() }));
   await settle(() => expect(snapshot()).toMatchObject({ kind: "disconnected" })); expect(fetcher).not.toHaveBeenCalled();
+});
+
+it("reuses a renamed catalog identity by the linked id rather than a now-stale name", async () => {
+  const renamed = { ...repo, full_name: "owner/renamed", name: "renamed", html_url: "https://github.com/owner/renamed" };
+  client.setQueryData(qk.repos, { kind: "ok", repos: [renamed], checkedAt: Date.now() }); const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+  await render(<Workspace expectedId={123} />); expect(snapshot()).toMatchObject({ kind: "ok", repos: [renamed] }); expect(fetcher).not.toHaveBeenCalled();
+});
+it("does not reuse another repository occupying the same catalog name", async () => {
+  const reused = { ...repo, id: 456 }; client.setQueryData(qk.repos, { kind: "ok", repos: [reused], checkedAt: Date.now() });
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => Response.json({ id: 456, full_name: reused.full_name, repo: reused })));
+  await render(<Workspace expectedId={123} />); await settle(() => expect(snapshot()).toMatchObject({ kind: "not-found" }));
 });

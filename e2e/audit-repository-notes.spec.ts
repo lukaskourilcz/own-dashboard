@@ -10,12 +10,12 @@ for (const lang of ["en", "cs"] as const) {
     const t = github[lang]; await gotoPreview(page, { lang }); await signInFixtureUser(page);
     await page.route("**/auth/v1/user", route => route.fulfill({ json: { id: owner, aud: "authenticated", role: "authenticated", email: "fixture@example.test", user_metadata: {} } }));
     await page.route("**/api/vercel/analytics**", route => route.fulfill({ json: { kind: "unconfigured" } }));
-    await stubGithubRepositories(page, [{ id: 123, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null }]);
+    await stubGithubRepositories(page, [{ id: 1001, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null }]);
     let available = false, reads = 0, imports = 0, batches = 0;
     const sourceContent = "```md\n- [ ] Example task\n```\n- [x] Finished task\n- [ ] Actual import task\n  [owner:ai]\n- Explanatory note";
     await page.route("**/api/github/needed", route => {
-      batches++; expect(route.request().postDataJSON().repos).toEqual([{ id: 123, owner: "lukaskourilcz", name: "own-dashboard" }]);
-      return !available ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { kind: "ok", files: [{ repoId: "123", result: { kind: "ok", path: "NEEDED.md", sha: "a".repeat(40), content: sourceContent, htmlUrl: "https://github.com/lukaskourilcz/own-dashboard/blob/main/NEEDED.md" } }] } });
+      batches++; expect(route.request().postDataJSON().repos).toEqual([{ id: 1001, owner: "lukaskourilcz", name: "own-dashboard" }]);
+      return !available ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { kind: "ok", files: [{ repoId: "1001", result: { kind: "ok", path: "NEEDED.md", sha: "a".repeat(40), content: sourceContent, htmlUrl: "https://github.com/lukaskourilcz/own-dashboard/blob/main/NEEDED.md" } }] } });
     });
     await page.route("**/api/github/file?**", route => {
       reads++; return !available ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { content: sourceContent, sha: "a".repeat(40), html_url: "https://github.com/lukaskourilcz/own-dashboard/blob/main/NEEDED.md" } });
@@ -41,7 +41,7 @@ for (const lang of ["en", "cs"] as const) {
   test(`${lang}: repository note failure, keyboard recovery and publication retain changed records`, async ({ page }) => {
     const t = github[lang]; await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" }); await signInFixtureUser(page);
     await page.route("**/auth/v1/user", route => route.fulfill({ json: { id: owner, aud: "authenticated", role: "authenticated", email: "fixture@example.test", user_metadata: {} } }));
-    const repo = { id: 123, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
+    const repo = { id: 1001, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
     await page.route("**/api/vercel/analytics**", route => route.fulfill({ json: { kind: "unconfigured" } }));
     await stubGithubRepositories(page, [repo]);
     let rows: Record<string, unknown>[] = [], saves = 0, release!: () => void;

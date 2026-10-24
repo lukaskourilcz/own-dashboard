@@ -32,3 +32,9 @@ it("cancels a stalled response body and does not expose a reason", async () => {
   const cancel = vi.fn(), stop = new AbortController(), response = new Response(new ReadableStream({ cancel })); vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
   const pending = loadReposResult({ signal: stop.signal }); await vi.waitFor(() => expect(response.body!.locked).toBe(true)); stop.abort("PRIVATE"); expect(await pending).toEqual({ kind: "error" }); expect(cancel).toHaveBeenCalledOnce();
 });
+
+it("refuses a reused name whose current repository id differs from the linked project", async () => {
+  const fetcher = vi.fn().mockImplementation(async () => Response.json({ id: repo.id, full_name: repo.full_name, repo })); vi.stubGlobal("fetch", fetcher);
+  expect(await loadRepositoryResult(repo.full_name, undefined, 456)).toMatchObject({ kind: "not-found" });
+  fetcher.mockClear(); expect(await loadRepositoryResult(repo.full_name, undefined, Number.MAX_SAFE_INTEGER + 1)).toEqual({ kind: "error" }); expect(fetcher).not.toHaveBeenCalled();
+});

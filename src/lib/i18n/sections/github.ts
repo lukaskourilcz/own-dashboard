@@ -16,6 +16,8 @@ type GithubStrings = {
   repositoryUnavailable: string;
   recentPageLimit: (count: number) => string;
   archivedReadOnly: string;
+  localRecords: string;
+  localRecordsAvailable: string;
   refresh: string;
   // Repo visibility filter (saved allow-list)
   filter: string;
@@ -140,6 +142,8 @@ type GithubStrings = {
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
   en: {
+    localRecords: "Saved records",
+    localRecordsAvailable: "Notes and links saved in OwnDashboard stay editable here.",
     archivedReadOnly: "This repository is archived and read-only on GitHub.",
     cachedReadFailed: "Could not refresh GitHub data. Previously loaded values may be out of date.",
     repositoryUnavailable: "This repository is not visible to the connected GitHub account.",
@@ -279,6 +283,8 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     },
   },
   cs: {
+    localRecords: "Uložené záznamy",
+    localRecordsAvailable: "Poznámky a odkazy uložené v OwnDashboard tu můžete dál upravovat.",
     archivedReadOnly: "Tento repozitář je na GitHubu archivovaný a je pouze pro čtení.",
     cachedReadFailed: "Data z GitHubu se nepodařilo obnovit. Dříve načtené hodnoty mohou být zastaralé.",
     repositoryUnavailable: "Tento repozitář není dostupný připojenému účtu GitHub.",

@@ -54,6 +54,9 @@ export function DemoDashboard({
   initialTipQuery?: string | null;
 }) {
   const project = projectRef ? resolveProjectRef(f.projects, projectRef) : undefined;
+  // The isolated live-repository harness reads its mocked owned records,
+  // rather than marking the tour's empty note/link fixtures as confirmed.
+  const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => !liveRepositories || (key !== "repoNotes" && key !== "repoLinks"));
 
   return (
     <DashboardShell
@@ -67,7 +70,7 @@ export function DemoDashboard({
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
       initialTipQuery={initialTipQuery}
-      initialDataKeys={[...DASHBOARD_DATA_KEYS]}
+      initialDataKeys={initialDataKeys}
       initialSubscriptions={f.subscriptions}
       initialTodos={f.todos}
       initialAccounts={f.accounts}

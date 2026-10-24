@@ -28,14 +28,14 @@ export function useReposQuery(enabled = true) {
 
 /** Reuse a known list entry, otherwise resolve only the workspace's repository.
  * Cold project visits do not download the recent 100-repository catalog. */
-export function useWorkspaceRepositories(fullName?: string) {
+export function useWorkspaceRepositories(fullName?: string, expectedId?: number) {
   const list = useReposQuery(!fullName);
   const cached = list.data?.kind === "ok" && fullName
-    ? list.data.repos.find(repo => repo.full_name.toLowerCase() === fullName.toLowerCase()) : undefined;
+    ? list.data.repos.find(repo => expectedId !== undefined ? repo.id === expectedId : repo.full_name.toLowerCase() === fullName.toLowerCase()) : undefined;
   const scoped = useQuery({
-    queryKey: [...qk.githubRepo, fullName?.toLowerCase() ?? ""],
+    queryKey: [...qk.githubRepo, fullName?.toLowerCase() ?? "", ...(expectedId === undefined ? [] : [expectedId])],
     queryFn: async ({ signal }) => {
-      const result = await loadRepositoryResult(fullName!, signal);
+      const result = await loadRepositoryResult(fullName!, signal, expectedId);
       if (result.kind === "error") throw Error("Repository unavailable");
       return result;
     },

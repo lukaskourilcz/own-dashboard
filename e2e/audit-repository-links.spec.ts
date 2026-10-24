@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, signInFixtureUser, stubGithubRepositories, watchConsole } from "./helpers";
 import { github } from "../src/lib/i18n/sections/github";
 const owner = "11111111-1111-4111-8111-111111111111", id = "33333333-3333-4333-8333-333333333333";
-const repo = { id: 123, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
+const repo = { id: 1001, name: "own-dashboard", full_name: "lukaskourilcz/own-dashboard", owner: "lukaskourilcz", description: null, private: true, fork: false, archived: false, html_url: "https://github.com/lukaskourilcz/own-dashboard", default_branch: "main", language: "TypeScript", stargazers_count: 0, pushed_at: null, updated_at: null };
 for (const lang of ["en", "cs"] as const) test(`${lang}: repository links retain failed drafts, review conflicts and confirm removals`, async ({ page }) => {
   const t = github[lang], errors = watchConsole(page);
   await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" }); await signInFixtureUser(page);

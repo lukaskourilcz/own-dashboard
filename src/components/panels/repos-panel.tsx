@@ -67,6 +67,8 @@ import { useRepositoryNoteAutosave } from "@/components/github/use-repository-no
 import { consumeRepositoryRecords, createRepositoryNote, repositoryNoteSchema, type NewRepositoryNote } from "@/lib/repository-records";
 import { readOwnedCollection } from "@/lib/owned-records";
 import { RepositoryLinkControl } from "@/components/github/repository-link-control";
+import { awaitWithSignal } from "@/lib/abortable";
+import { readTextPrefix } from "@/lib/bounded-text";
 import { safeWebUrl } from "@/lib/web-url";
 import { RepositoryFilterDialog } from "@/components/github/repository-filter-dialog";
 import { useRepositoryFilterSave } from "@/components/github/use-repository-filter-save";
@@ -77,6 +79,8 @@ type Status = "loading" | "connected" | "disconnected" | "not-found" | "error";
 // array each render.
 const EMPTY_REPOS: GithubRepo[] = [];
 const EMPTY_NOTES: RepoNote[] = [];
+const EMPTY_NAMES: string[] = [];
+type RepositoryCardSource = { id: string; fullName: string; repo: GithubRepo | null };
 
 // The single markdown file each repo's notes are written to. A stable path so
 // "the latest .md" is always the same file — re-saving updates it in place.
@@ -106,6 +110,8 @@ function displayUrl(raw: string): string {
 export function ReposPanel({
   initialVisibleIds,
   repoFullName,
+  repoId,
+  previousRepoNames = EMPTY_NAMES,
   repoNotes,
   setRepoNotes,
   repoLinks,
@@ -115,6 +121,8 @@ export function ReposPanel({
   initialVisibleIds: string[];
   /** When set, embed only this repository in its owning project workspace. */
   repoFullName?: string;
+  repoId?: number | null;
+  previousRepoNames?: string[];
   repoNotes: RepoNote[];
   setRepoNotes: Updater<RepoNote[]>;
   repoLinks: RepoLink[];
@@ -124,7 +132,7 @@ export function ReposPanel({
   const toast = useToast();
   const confirm = useConfirmation();
   const qc = useQueryClient();
-  const { data, isPending, isFetching, isError, refetch } = useWorkspaceRepositories(repoFullName);
+  const { data, isPending, isFetching, isError, refetch } = useWorkspaceRepositories(repoFullName, repoId ?? undefined);
   const guardNavigation = useGuardedNavigation();
   const autosave = useRepositoryNoteAutosave(setRepoNotes, () => toast.err(t.github.noteSaveErr), () => { void qc.invalidateQueries({ queryKey: qk.repoNotes }); });
   const [query, setQuery] = useState("");
@@ -180,9 +188,12 @@ export function ReposPanel({
 
   const disconnectMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/github/disconnect", { method: "POST" });
-      if (!res.ok) throw new Error("server");
-      const receipt = await res.json();
+      const signal = AbortSignal.timeout(20_000);
+      const res = await awaitWithSignal(fetch("/api/github/disconnect", { method: "POST", signal }), signal);
+      if (!res.ok) { void res.body?.cancel().catch(() => undefined); throw new Error("server"); }
+      const body = await awaitWithSignal(readTextPrefix(res, 4096, signal), signal);
+      if (body.truncated) throw new Error("server");
+      const receipt = JSON.parse(body.text);
       if (receipt?.ok !== true || typeof receipt.upstreamRevoked !== "boolean") throw new Error("server");
       return receipt as { upstreamRevoked: boolean };
     },
@@ -192,12 +203,7 @@ export function ReposPanel({
       return setReposDisconnected(qc);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.integrationStatus }),
-    onError: (e) =>
-      toast.err(
-        (e as Error).message === "server"
-          ? t.github.disconnectErr
-          : t.github.networkErr,
-      ),
+    onError: () => toast.err(t.github.disconnectErr),
   });
 
   async function onDisconnect() {
@@ -234,6 +240,21 @@ export function ReposPanel({
         (r.language?.toLowerCase().includes(q) ?? false),
     );
   }, [scoped, query]);
+
+  // Local records remain real owned data when provider metadata is absent.
+  // Keep one keyed card tree, so disconnect/reconnect cannot remount a draft.
+  const cards = useMemo(() => {
+    const sources = new Map<string, RepositoryCardSource>();
+    for (const repo of filtered) sources.set(String(repo.id), { id: String(repo.id), fullName: repo.full_name, repo });
+    const names = new Set([repoFullName, ...previousRepoNames].filter((name): name is string => !!name).map(name => name.trim().toLowerCase()));
+    for (const row of [...repoNotes, ...repoLinks]) {
+      if (repoFullName && (repoId != null ? row.repo_id !== String(repoId) : !names.has(row.repo_full_name.trim().toLowerCase()))) continue;
+      if (!repoFullName && filterActive && !visibleSet.has(row.repo_id)) continue;
+      if (query.trim() && !row.repo_full_name.toLowerCase().includes(query.trim().toLowerCase())) continue;
+      if (!sources.has(row.repo_id)) sources.set(row.repo_id, { id: row.repo_id, fullName: repoFullName ?? row.repo_full_name, repo: null });
+    }
+    return [...sources.values()];
+  }, [filtered, repoFullName, repoId, previousRepoNames, repoNotes, repoLinks, filterActive, visibleSet, query]);
 
   return (
     <div className={repoFullName ? "mx-auto max-w-3xl" : undefined}>
@@ -297,7 +318,7 @@ export function ReposPanel({
         }
       />
 
-      {status === "loading" &&
+      {status === "loading" && cards.length === 0 &&
         (repoFullName ? (
           // Project workspace shows a single repo card — match it.
           <Skeleton className="h-[260px] w-full" />
@@ -351,6 +372,7 @@ export function ReposPanel({
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                aria-label={t.github.search}
                 placeholder={t.github.search}
               />
               {filterActive && (
@@ -370,9 +392,9 @@ export function ReposPanel({
             </div>
           )}
 
-          {repos.length === 0 ? (
+          {repos.length === 0 && cards.length === 0 ? (
             <EmptyState icon={GithubIcon} title={t.github.empty} />
-          ) : filtered.length === 0 ? (
+          ) : cards.length === 0 ? (
             <EmptyState
               icon={GithubIcon}
               title={
@@ -394,24 +416,16 @@ export function ReposPanel({
                 ) : undefined
               }
             />
-          ) : (
-            <div className={cn("grid items-start gap-3", !repoFullName && "sm:grid-cols-2 lg:grid-cols-3")}>
-              {filtered.map((repo) => (
-                <RepoNotesCard
-                  key={repo.id}
-                  autosave={autosave}
-                  repo={repo}
-                  notes={entriesByRepo.get(String(repo.id)) ?? EMPTY_NOTES}
-                  link={linksByRepo.get(String(repo.id))}
-                  setRepoNotes={setRepoNotes}
-                  setRepoLinks={setRepoLinks}
-                  onWrite={() => setWriteTarget(repo)}
-                />
-              ))}
-            </div>
-          )}
+          ) : null}
         </>
       )}
+
+      {cards.some(source => !source.repo) && <p role="status" className="mb-3 text-xs text-foreground-muted">{t.github.localRecordsAvailable}</p>}
+      {cards.length > 0 && <div className={cn("grid items-start gap-3", !repoFullName && "sm:grid-cols-2 lg:grid-cols-3")}>
+        {cards.map(source => <RepoNotesCard key={source.id} autosave={autosave} source={source}
+          notes={entriesByRepo.get(source.id) ?? EMPTY_NOTES} link={linksByRepo.get(source.id)} setRepoNotes={setRepoNotes} setRepoLinks={setRepoLinks}
+          onWrite={() => { if (source.repo) setWriteTarget(source.repo); }} />)}
+      </div>}
 
       <WriteFileDialog
         // Remount per repo so the form resets to a clean state (no reset effect).
@@ -439,7 +453,7 @@ export function ReposPanel({
 
 function RepoNotesCard({
   autosave,
-  repo,
+  source,
   notes,
   link,
   setRepoNotes,
@@ -447,7 +461,7 @@ function RepoNotesCard({
   onWrite,
 }: {
   autosave: ReturnType<typeof useRepositoryNoteAutosave>;
-  repo: GithubRepo;
+  source: RepositoryCardSource;
   notes: RepoNote[];
   link: RepoLink | undefined;
   setRepoNotes: Updater<RepoNote[]>;
@@ -460,24 +474,28 @@ function RepoNotesCard({
   const confirm = useConfirmation();
   const qc = useQueryClient();
   const supabase = createClient();
-  const repoId = String(repo.id);
+  const { repo } = source;
+  const repoId = source.id;
+  const numericId = Number(repoId);
+  const validIdentity = Number.isSafeInteger(numericId) && numericId > 0 && String(numericId) === repoId;
   const customUrl = safeWebUrl(link?.url);
 
   const [pushing, setPushing] = useState(false);
   const [autoFocusId, setAutoFocusId] = useState<string | null>(null);
 
-  const updated = repo.pushed_at
+  const updated = repo?.pushed_at
     ? formatDistanceToNow(new Date(repo.pushed_at), { addSuffix: true, locale })
     : t.github.never;
 
   const newNote = useRef<NewRepositoryNote | null>(null);
   const addMutation = useMutation({
     mutationFn: async () => {
+      if (!validIdentity) throw Error("Repository identity unavailable");
       if (!newNote.current) {
-        const userId = await currentUserId(supabase);
+        const userId = await awaitWithSignal(currentUserId(supabase), AbortSignal.timeout(15_000));
         if (!userId) throw new Error("no-user");
         newNote.current = { id: crypto.randomUUID(), user_id: userId, repo_id: repoId,
-          repo_full_name: repo.full_name, sort_order: Math.max(0, ...notes.map(note => note.sort_order)) + 1 };
+          repo_full_name: source.fullName, sort_order: Math.max(0, ...notes.map(note => note.sort_order)) + 1 };
       }
       return createRepositoryNote(supabase, newNote.current);
     },
@@ -512,6 +530,7 @@ function RepoNotesCard({
   }
 
   async function saveToGithub() {
+    if (!repo) return;
     if (repo.archived) { toast.err(t.github.archivedReadOnly); return; }
     if (pushing) return;
     setPushing(true);
@@ -562,7 +581,7 @@ function RepoNotesCard({
     <Card className="flex flex-col p-0">
       <div className="flex items-start justify-between gap-2 border-b border-border p-3">
         <div className="min-w-0">
-          <a
+          {repo ? <a
             href={repo.html_url}
             target="_blank"
             rel="noreferrer"
@@ -570,15 +589,15 @@ function RepoNotesCard({
             title={repo.full_name}
           >
             {repo.name}
-          </a>
-          <div className="mt-1 flex flex-wrap items-center gap-1">
+          </a> : <p className="break-words text-sm font-semibold" title={source.fullName}>{source.fullName.split("/").at(-1) || source.fullName}</p>}
+          {repo ? <div className="mt-1 flex flex-wrap items-center gap-1">
             <Badge
               icon={repo.private ? Lock : Globe}
               label={repo.private ? t.github.privateLabel : t.github.publicLabel}
             />
             {repo.fork && <Badge icon={GitFork} label={t.github.fork} />}
             {repo.archived && <Badge icon={Archive} label={t.github.archived} />}
-          </div>
+          </div> : <p className="mt-1 text-xs text-foreground-muted">{t.github.localRecords}</p>}
           {customUrl && (
             <a
               href={customUrl}
@@ -591,7 +610,7 @@ function RepoNotesCard({
               <span className="truncate">{displayUrl(customUrl)}</span>
             </a>
           )}
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+          {repo && <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
             {repo.language && (
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-foreground-subtle" />
@@ -607,11 +626,11 @@ function RepoNotesCard({
             <span>
               {t.github.updatedPrefix} {updated}
             </span>
-          </div>
+          </div>}
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
-          <RepositoryLinkControl repo={repo} link={link} setRepoLinks={setRepoLinks} />
-          <Tooltip content={t.github.writeFileHint}>
+          {validIdentity && <RepositoryLinkControl repo={{ id: numericId, full_name: source.fullName }} link={link} setRepoLinks={setRepoLinks} />}
+          {repo && <><Tooltip content={t.github.writeFileHint}>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -628,7 +647,7 @@ function RepoNotesCard({
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </Button>
-          </Tooltip>
+          </Tooltip></>}
         </div>
       </div>
 
@@ -660,7 +679,7 @@ function RepoNotesCard({
             variant="outline"
             size="sm"
             onClick={() => addMutation.mutate()}
-            disabled={addMutation.isPending}
+            disabled={addMutation.isPending || !validIdentity}
           >
             {saving ? (
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -670,7 +689,7 @@ function RepoNotesCard({
             {t.github.addNote}
           </Button>
           <Tooltip content={t.github.saveNotesHint}>
-            <Button size="sm" onClick={saveToGithub} disabled={pushing || repo.archived}>
+            <Button size="sm" onClick={saveToGithub} disabled={pushing || !repo || repo.archived}>
               {pushing ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -680,7 +699,7 @@ function RepoNotesCard({
             </Button>
           </Tooltip>
         </div>
-        {repo.archived && <p className="text-xs text-foreground-muted">{t.github.archivedReadOnly}</p>}
+        {repo?.archived && <p className="text-xs text-foreground-muted">{t.github.archivedReadOnly}</p>}
       </div>
     </Card>
   );

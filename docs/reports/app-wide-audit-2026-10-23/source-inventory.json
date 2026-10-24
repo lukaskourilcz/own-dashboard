@@ -772,7 +772,7 @@
       "lines": 127,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
       "status": "source reviewed; repository receipt checks pass; final release checks pending",
-      "reviewedSha256": "26023e471fbff77f58c10f07fb1ade166d48d79ee26785af2b96acd486469a22"
+      "reviewedSha256": "742b9256eee8cf979a5d8f934fc34951254600772dde99c72bf179b5f0584e9c"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1436,8 +1436,8 @@
       "path": "src/components/panels/repos-panel.tsx",
       "lines": 1320,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partial: notes/tasks/link/selection writes and typed metadata reviewed/tested; cold disconnected local-note presentation and remaining control lifecycle pending",
-      "reviewedSha256": "53482414be5afcfc0a5e9aee7ad9f339da83c22dba117660624f7c1d37cf6abf"
+      "status": "partial: owned cards/id matching/receipt/deadline controls reviewed/tested; file-dialog dirty navigation and stable write-target binding remain",
+      "reviewedSha256": "5cd48fbba8e25c0f94ad15ece0f4e9e6ad89dd385aa3c3611f1fcb18d0e815d4"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -1576,7 +1576,7 @@
       "lines": 279,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partial: initial tab URL hydration, shared loading, repository flows and local-day memo changes checked; remaining tabs/business flow pending",
-      "reviewedSha256": "0f43ea3194cb39c5e910e918a7e9e54d3613ea763e1de88d65c0fe20dce10f75"
+      "reviewedSha256": "3c3b3cbb110f8fff7f026ccd4f603b1bf5424a777ce073c561303cbf9223af6f"
     },
     {
       "path": "src/components/prompts/prompt-copy-dialog.tsx",
@@ -2049,8 +2049,8 @@
       "path": "src/lib/github-queries.ts",
       "lines": 93,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
-      "status": "source reviewed; metadata/history cancellation, retained errors, scoped identity and disconnect cache tests pass; final optimized release pending",
-      "reviewedSha256": "6c0cd6b220d64596a2bf1d6f2c65ea68209b41f374464553fe7290cf1a3a6401"
+      "status": "source reviewed; expected-id metadata, retained history and disconnect cache tests pass; final optimized release pending",
+      "reviewedSha256": "35ea7d4a33e42bd6b50f1ae3da2e64735c9e67055915b183e1ba13b638d6b62f"
     },
     {
       "path": "src/lib/github-token.ts",
@@ -2064,7 +2064,7 @@
       "lines": 227,
       "sha256": "8d7cb9d4f7415804d30bb88b18e393ff3939b041c0ac309e28cf3c56c18b3500",
       "status": "partial: bounded metadata/file/history clients reviewed/tested; detected-tools response/cancellation remains",
-      "reviewedSha256": "77b0d2c9ff72da597b338eee42f08283e5316ca4d4116c879eda0ce83c6db184"
+      "reviewedSha256": "0922219bf647b0bdf7023a4148a94f2039ae1b1714a88cd7dca875032936ac1a"
     },
     {
       "path": "src/lib/gocardless.ts",
@@ -2218,7 +2218,7 @@
       "lines": 367,
       "sha256": "8cfefeb5de858b420382d19bd9a07c572b55df82ef7b7ff4b750aedf0d8ae3dc",
       "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
-      "reviewedSha256": "da6ce797dbb22314f700f2fc3246a91a1e5171881665a4d5abaafe427e1a6d86"
+      "reviewedSha256": "3436fd656e351f801c77616bfbd747362c7187d2ca68db75c9d7fd1f4d159849"
     },
     {
       "path": "src/lib/i18n/sections/guest.ts",
@@ -4041,7 +4041,7 @@
       "sha256": null,
       "lines": 121,
       "status": "source reviewed; retained link drafts, pending/conflict/navigation/URL/a11y states tested; rendered checks pass; final release pending",
-      "reviewedSha256": "5212361f4395f5075e7ea0f131e699bd53ea3507765dfe0ad0326b2fe4f44df0"
+      "reviewedSha256": "e3bd446a2cc5731b10402c367ab6312d1e133bdeaff46151716e203e9ef37e44"
     },
     {
       "path": "src/lib/repository-filter.ts",

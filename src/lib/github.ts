@@ -74,17 +74,19 @@ export async function loadReposResult(context?: { signal: AbortSignal }): Promis
   } catch { return { kind: "error" }; }
 }
 
-export async function loadRepositoryResult(fullName: string, parent?: AbortSignal): Promise<RepositoryLookupResult> {
+export async function loadRepositoryResult(fullName: string, parent?: AbortSignal, expectedId?: number): Promise<RepositoryLookupResult> {
   const signal = repositoryReadSignal(parent);
   try {
     const { githubRepositoryFullName, githubRepositoryLookupResponse } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
     const name = githubRepositoryFullName.parse(fullName);
+    if (expectedId !== undefined && (!Number.isSafeInteger(expectedId) || expectedId <= 0)) return { kind: "error" };
     const response = await awaitWithSignal(fetch(`/api/github/repos/lookup?repo=${encodeURIComponent(name)}`, { cache: "no-store", signal }), signal);
     if (!response.ok) {
       cancelRepositoryBody(response);
       return { kind: response.status === 401 ? "disconnected" : response.status === 404 ? "not-found" : "error", checkedAt: Date.now() };
     }
     const result = githubRepositoryLookupResponse.parse(await repositoryJson(response, signal, 65_536));
+    if (expectedId !== undefined && result.id !== expectedId) return { kind: "not-found", checkedAt: Date.now() };
     return { kind: "ok", repo: result.repo, checkedAt: Date.now() };
   } catch { return { kind: "error" }; }
 }
