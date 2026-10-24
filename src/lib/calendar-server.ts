@@ -71,6 +71,7 @@ async function fetchWindow(
 
   const fetcher = createGoogleFetcher(user.id);
   const prefs = await loadUserPreferences(user.id);
+  if (!prefs.sync_available) return { ok: false, reason: "error", message: "Calendar preferences unavailable" };
   const calendarIds =
     prefs.selected_calendar_ids.length > 0
       ? prefs.selected_calendar_ids

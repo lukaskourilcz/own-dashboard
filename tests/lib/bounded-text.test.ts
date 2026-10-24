@@ -12,3 +12,14 @@ it("keeps exact bounds and empty bodies complete",async()=>{
  expect(await readTextPrefix(new Response("abc"),3)).toEqual({text:"abc",truncated:false});
  expect(await readTextPrefix(new Response(null),3)).toEqual({text:"",truncated:false});
 });
+it("cancels a stalled body on abort without leaking the abort reason", async () => {
+ const cancel=vi.fn(),controller=new AbortController();
+ const pending=readTextPrefix(new Response(new ReadableStream({cancel})),100,controller.signal);
+ const failed=expect(pending).rejects.toMatchObject({name:"AbortError",message:"Request aborted"});
+ controller.abort("private");await failed;expect(cancel).toHaveBeenCalledOnce();
+});
+it("does not begin reading an already cancelled request", async () => {
+ const controller=new AbortController();controller.abort("private");
+ const response=new Response("unused");
+ await expect(readTextPrefix(response,10,controller.signal)).rejects.toMatchObject({name:"AbortError"});expect(response.bodyUsed).toBe(false);
+});

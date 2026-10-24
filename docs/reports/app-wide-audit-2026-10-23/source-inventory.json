@@ -20,7 +20,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -553,8 +553,8 @@
       "path": "src/app/api/user/preferences/route.ts",
       "lines": 169,
       "sha256": "c6e392390ab5721061e6b6ea139f4a288baa29c0a60c73597b3b0cc215f8d8c2",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "db9ee54e25d5a68893ee3bd5f5ba63e7377f37c63fff5baa3075d0d8d7e2c1e8"
+      "status": "source reviewed; bounded/versioned own-row preference reads/writes, targeted and rendered checks pass; final release pending",
+      "reviewedSha256": "1f27b6449e79b5ef2680f4d163761d246c9878ac948ab3f8f056b1e00e99176f"
     },
     {
       "path": "src/app/api/vercel/analytics/route.ts",
@@ -1441,8 +1441,8 @@
       "path": "src/components/panels/settings-panel.tsx",
       "lines": 843,
       "sha256": "628abb698ed4d78bb009c5d8e44c2834301a57f8ea385042d7b6a3b3c33c64df",
-      "status": "partial source review; integration retry/cache/rendering checked; preference/project-write receipts and pending protection remain",
-      "reviewedSha256": "56dc08139f1bff26a07ca9ca91a7e7f03122c0ad9823e62f78b82e74fbdcdbaf"
+      "status": "partial; preferences/integrations/layout reviewed with targeted and rendered checks; project mutation receipts pending",
+      "reviewedSha256": "4e5b832f82362d37d1778f39b08f8447bfe92c2fab2d64cf51ccabe7588fbea9"
     },
     {
       "path": "src/components/panels/shortcuts-panel.tsx",
@@ -1861,8 +1861,8 @@
       "lines": 26,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "fd97ec2d21e0845c64f752df33c71f3bafd71a948f2f132376b6eb1d594b8a46"
+      "status": "source reviewed; bounded stream and cancellation regressions pass; final release pending",
+      "reviewedSha256": "205fef5dcde62fdbb66e3834615fd7f91005a208dda5d67ac780a6fce12bda47"
     },
     {
       "path": "src/lib/brand-icon.tsx",
@@ -1890,8 +1890,8 @@
       "path": "src/lib/calendar-server.ts",
       "lines": 137,
       "sha256": "b411f2cf0385b7a9b2799cbb6967c6e91f0f7bf11ef7056de86fd0ad79129bac",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "80acaa3c5ab2a33c2caa481e59c7da1332042caf82b25fb6511ed86b7ca4da95"
+      "status": "partial; refuses unavailable preference selection; pagination/budgets/partial availability pending",
+      "reviewedSha256": "4fe37fd9fda1d2d2726ac1be1e93ead27efb50ad0d37b9dee443ab2f9ee99a3a"
     },
     {
       "path": "src/lib/calendar.ts",
@@ -3486,8 +3486,8 @@
       "path": "src/lib/preference-client.ts",
       "lines": 24,
       "sha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3",
-      "status": "partially reviewed; verified metadata/monitoring/preference follow-ups pending",
-      "reviewedSha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3"
+      "status": "source reviewed; captured/bounded preference queue and complete receipts tested; final release pending",
+      "reviewedSha256": "c01cf5e835e4ed65e89c3c033a3c3dbe21ef532c62f07d5fcb55bada94fdd0fb"
     },
     {
       "path": "src/lib/project-cron-seeds.ts",
@@ -3758,8 +3758,8 @@
       "path": "src/lib/user-prefs.ts",
       "lines": 116,
       "sha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05",
-      "status": "partial source review; all lines read; selected-calendar bounds, read cancellation and strict preference validation remain",
-      "reviewedSha256": "00efd98806ab882afc93d086768ed2f7375b33cfa497e82b7315521458d54e05"
+      "status": "source reviewed; typed own-row preference hydration and deadlines tested; final release pending",
+      "reviewedSha256": "0cdb2c7f4ba437790fa3e54248ad099d5eccea980d4575c623be73e35f28be59"
     },
     {
       "path": "src/lib/utils.ts",
@@ -3981,6 +3981,27 @@
       "lines": 25,
       "reviewedSha256": "1b211baef63460e55f79d45c163ded73bf7ff9cc02107cc49d7591aaca684a48",
       "status": "source reviewed; cross-tab preference tests pass; final app-wide release checks pending"
+    },
+    {
+      "path": "src/lib/navigation-preferences.ts",
+      "sha256": null,
+      "lines": 13,
+      "status": "source reviewed; pure canonical navigation normalizer tested through shared contract; final release pending",
+      "reviewedSha256": "a71aee22f8f2547576fb7b9cc7d14facd7adea230325e66d5cb048fe0388d943"
+    },
+    {
+      "path": "src/lib/ui-preferences-contract.ts",
+      "sha256": null,
+      "lines": 45,
+      "status": "source reviewed; bounded preference field/read contract tested; final release pending",
+      "reviewedSha256": "9bb71cfe4a095ad5203efc8ad5f9231ac724df6799975d609d2690bc0ba8a4b9"
+    },
+    {
+      "path": "src/lib/web-url.ts",
+      "sha256": null,
+      "lines": 10,
+      "status": "source reviewed; browser URL boundary tested; final release pending",
+      "reviewedSha256": "0eb1c591b21e54130efa409e6938e0187ed4663583f4234d1bff53efb03b5c66"
     }
   ],
   "baselineFileCount": 561

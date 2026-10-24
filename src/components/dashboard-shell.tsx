@@ -127,6 +127,7 @@ type Props = {
   /** Only the isolated dev/E2E harness enables mocked repository endpoints. */
   previewRepositoryIntegration?: boolean;
   previewMonitoringIntegration?: boolean;
+  previewPreferencesIntegration?: boolean;
   initialProjectId?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
   initialTipQuery?: string | null;
@@ -479,7 +480,7 @@ function DashboardShellContent(props: Props) {
           {tab === "workflows" && <WorkflowsPanel onNavigate={setTab} />}
           {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
-          {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
+          {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview || props.previewPreferencesIntegration} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
           </DashboardDestinationBoundary>
         </div></ShellTitleProvider>
       </div></main>

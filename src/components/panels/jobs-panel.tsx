@@ -85,6 +85,7 @@ import type { LetterLanguage } from "@/lib/jobs/letter-helper";
 import { useNow } from "@/lib/use-now";
 import { focusDayKey } from "@/lib/date-keys";
 import { normalizeJobUrl } from "@/lib/jobs/enrich";
+import { safeWebUrl } from "@/lib/web-url";
 
 // Fit-level → badge tone. Warmer/greener = stronger match.
 const FIT_TONE: Record<JobMatch["level"], string> = {
@@ -150,7 +151,8 @@ export function JobsPanel({
   userId,
 }: Props) {
   const t = useDict();
-  const { cs: cvCs, en: cvEn } = useCvLinks();
+  const cvLinks = useCvLinks();
+  const cvCs = safeWebUrl(cvLinks.cs), cvEn = safeWebUrl(cvLinks.en);
   const { showCzechCareer } = useCzechCareerVisibility();
   const { lang } = useLang();
   const [view, setView] = useState<

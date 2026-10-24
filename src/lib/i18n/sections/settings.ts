@@ -64,6 +64,9 @@ type SettingsStrings = {
   projectUpdateFailed: string;
   preferenceSaveFailed: string;
   preferenceSyncUnavailable: string;
+  preferenceLoading: string;
+  preferenceLoadFailed: string;
+  preferenceRetry: string;
   projectSections: string;
   projectSectionsDesc: string;
   projectSectionsDneskai: string;
@@ -82,6 +85,9 @@ type SettingsStrings = {
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
   en: {
+    preferenceLoading: "Loading preference…",
+    preferenceLoadFailed: "Could not load this preference.",
+    preferenceRetry: "Retry",
     title: "Settings",
     description: "Personalize your dashboard.",
     language: "Language",
@@ -171,6 +177,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     noProjects: "No projects yet. Add one in Projects.",
   },
   cs: {
+    preferenceLoading: "Načítání nastavení…",
+    preferenceLoadFailed: "Toto nastavení se nepodařilo načíst.",
+    preferenceRetry: "Zkusit znovu",
     title: "Nastavení",
     description: "Přizpůsobte si svůj přehled.",
     language: "Jazyk",

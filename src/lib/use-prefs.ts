@@ -3,12 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { subscribeStoredPreference } from "@/lib/preference-storage";
-import {
-  LEGACY_ROUTE_ALIASES,
-  NAV_TABS,
-  isHiddenNavTab,
-  type NavTab,
-} from "@/lib/nav-tabs";
+import { normalizeNavPreferenceIds } from "@/lib/navigation-preferences";
+export { normalizeNavPreferenceIds };
 import {
   normalizeHiddenProjectTabs,
   type ProjectTabId,
@@ -79,31 +75,6 @@ const HIDDEN_NAV_KEY = "hiddenNavSections";
 const navListeners = new Set<() => void>();
 const EMPTY_HIDDEN: readonly string[] = Object.freeze([]);
 let hiddenCache: readonly string[] | null = null;
-
-// Sections a preference may hide or reorder. Home and Settings are always
-// shown; HIDDEN_NAV_TABS never appear in navigation, so they are not options.
-const PREFERENCE_NAV_IDS = new Set<string>(
-  NAV_TABS.filter((id) => id !== "home" && id !== "settings" && !isHiddenNavTab(id)),
-);
-
-/** Map meaningful legacy ids and discard removed/unknown sections. */
-export function normalizeNavPreferenceIds(input: unknown): NavTab[] {
-  if (!Array.isArray(input)) return [];
-  const seen = new Set<NavTab>();
-  const normalized: NavTab[] = [];
-  for (const item of input) {
-    if (typeof item !== "string") continue;
-    const mapped = (
-      item in LEGACY_ROUTE_ALIASES
-        ? LEGACY_ROUTE_ALIASES[item as keyof typeof LEGACY_ROUTE_ALIASES]
-        : item
-    ) as NavTab;
-    if (!PREFERENCE_NAV_IDS.has(mapped) || seen.has(mapped)) continue;
-    seen.add(mapped);
-    normalized.push(mapped);
-  }
-  return normalized;
-}
 
 function readHidden(): readonly string[] {
   if (hiddenCache != null) return hiddenCache;

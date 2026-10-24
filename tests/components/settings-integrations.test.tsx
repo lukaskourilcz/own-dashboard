@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, expect, it, vi } from "vitest";
 import { qk } from "@/lib/queries/keys";
 import { SettingsPanel } from "@/components/panels/settings-panel";
+import { DEFAULT_UI_PREFERENCES } from "@/lib/ui-preferences-contract";
+import { settings } from "@/lib/i18n/sections/settings";
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 let root: Root | undefined, host: HTMLDivElement, client: QueryClient;
@@ -39,4 +41,26 @@ it("refuses malformed successful replies instead of rendering false states", asy
 it("keeps the public fixture free of status reads", async () => {
   const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher); await render("en", false);
   expect(fetcher).not.toHaveBeenCalled(); expect(document.querySelector("#settings-integrations")?.textContent).toContain("signing in");
+});
+it.each(["en", "cs"])("keeps renewal unknown on failure, retries and confirms the saved value (%s)", async lang => {
+  let failed = true, release: ((response: Response) => void) | undefined;
+  const fetcher = vi.fn(async (input, init) => {
+    if (String(input).includes("integrations/status")) return Response.json(status);
+    if (init?.method === "PATCH") return new Promise<Response>(resolve => { release = resolve; });
+    return failed ? new Response(null, { status: 503 }) : Response.json({ ...DEFAULT_UI_PREFERENCES, notifications_renewals: false, sync_available: true });
+  });
+  vi.stubGlobal("fetch", fetcher); await render(lang);
+  const name = settings[lang as "en" | "cs"].renewalNotifications;
+  const control = [...host.querySelectorAll<HTMLButtonElement>('[role="switch"]')].find(node => node.getAttribute("aria-label") === name);
+  expect(control).toBeDefined(); expect(control!.disabled).toBe(true);
+  failed = false;
+  await act(async () => { await client.refetchQueries({ queryKey: qk.userPreferences }); });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(control!.disabled).toBe(false); expect(control!.getAttribute("aria-checked")).toBe("false");
+  await act(async () => { control!.click(); });
+  await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+  expect(control!.disabled).toBe(true); expect(control!.getAttribute("aria-checked")).toBe("true");
+  await act(async () => { release!(Response.json({ ok: true, saved: { notifications_renewals: true } })); await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(control!.disabled).toBe(false); expect(control!.getAttribute("aria-checked")).toBe("true");
+  expect(client.getQueryData(qk.userPreferences)).toMatchObject({ notifications_renewals: true });
 });

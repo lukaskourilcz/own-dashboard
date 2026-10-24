@@ -18,7 +18,7 @@ import {
   SlidersHorizontal,
   Sun,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -69,7 +69,7 @@ import { qk } from "@/lib/queries/keys";
 import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { fetchIntegrationStatus } from "@/lib/integration-status";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { fetchUserPreferences, saveUserPreferences } from "@/lib/preference-client";
 import {
   DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
@@ -161,7 +161,13 @@ export function SettingsPanel({
   } = useNavVisibility();
   const { order, setOrder, reset: resetOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
-  const [renewalNotifications, setRenewalNotifications] = useState(true);
+  const [renewalDraft, setRenewalDraft] = useState<boolean | null>(null);
+  const renewalSaving = useRef(false);
+  const preferencesQuery = useQuery({
+    queryKey: qk.userPreferences, queryFn: fetchUserPreferences,
+    enabled: syncPreferences && renewalDraft === null, retry: false, staleTime: 30_000,
+  });
+  const renewalNotifications = renewalDraft ?? preferencesQuery.data?.notifications_renewals ?? (!syncPreferences ? true : undefined);
   // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
   // so the card isn't a wall of switches for projects that will never be active.
   const [showInactive, setShowInactive] = useState(false);
@@ -179,21 +185,21 @@ export function SettingsPanel({
       toast.err(t.settings.preferenceSaveFailed);
     });
   };
-  useEffect(() => {
+  const patchRenewalNotifications = async (notifications_renewals: boolean) => {
+    if (renewalSaving.current || renewalNotifications === undefined) return;
+    setRenewalDraft(notifications_renewals);
     if (!syncPreferences) return;
-    void fetch("/api/user/preferences", { cache: "no-store" })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (data) {
-          setRenewalNotifications(data.notifications_renewals ?? true);
-        }
-      });
-  }, [syncPreferences]);
-
-  const patchRenewalNotifications = (notifications_renewals: boolean) => {
-    setRenewalNotifications(notifications_renewals);
-    if (syncPreferences) {
-      savePreferences({ notifications_renewals });
+    renewalSaving.current = true;
+    try {
+      await qc.cancelQueries({ queryKey: qk.userPreferences });
+      await saveUserPreferences({ notifications_renewals });
+      qc.setQueryData(qk.userPreferences, (previous: Awaited<ReturnType<typeof fetchUserPreferences>> | undefined) => previous ? { ...previous, notifications_renewals } : previous);
+    } catch {
+      toast.err(t.settings.preferenceSaveFailed);
+      void qc.invalidateQueries({ queryKey: qk.userPreferences });
+    } finally {
+      renewalSaving.current = false;
+      setRenewalDraft(null);
     }
   };
   const toggleProject = async (project: Project) => {
@@ -483,11 +489,17 @@ export function SettingsPanel({
               label={t.settings.renewalNotifications}
               desc={t.settings.renewalNotificationsDesc}
             >
+              <div className="flex flex-wrap items-center justify-end gap-2">
+              {syncPreferences && preferencesQuery.isError && <Button variant="ghost" size="sm" onClick={() => void preferencesQuery.refetch()} disabled={preferencesQuery.isFetching || renewalDraft !== null}>{t.settings.preferenceRetry}</Button>}
+              {renewalNotifications === undefined && <span role="status" className="text-xs text-foreground-muted">{preferencesQuery.isError ? t.settings.preferenceLoadFailed : t.settings.preferenceLoading}</span>}
               <Switch
                 aria-label={t.settings.renewalNotifications}
-                checked={renewalNotifications}
+                checked={renewalNotifications ?? false}
+                disabled={renewalNotifications === undefined || (syncPreferences && renewalDraft !== null)}
+                aria-busy={syncPreferences && renewalDraft !== null}
                 onCheckedChange={patchRenewalNotifications}
               />
+              </div>
             </PrefRow>
           </CardContent>
         </Card>

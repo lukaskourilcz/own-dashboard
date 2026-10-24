@@ -1,116 +1,22 @@
 import "server-only";
-import { createClient as createUserClient } from "@/lib/supabase/server";
-import { DEFAULT_LAYOUT } from "@/lib/dashboard-layout";
-import { normalizeHiddenProjectTabs } from "@/lib/project-workspace-tabs";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { awaitWithSignal } from "@/lib/abortable";
+import { PREFERENCE_FIELDS, parseStoredUiPreferences, type UiPreferences } from "@/lib/ui-preferences-contract";
 
-export type UserPreferences = {
-  selected_calendar_ids: string[];
-  /** GitHub repo ids (as strings) the user pinned to the Repositories panel.
-   *  Empty means "no filter" — show every repo the API returns. */
-  visible_repo_ids: string[];
-  timezone: string | null;
-  nudge_hour: number | null;
-  notifications_renewals: boolean;
-  ai_enabled: boolean;
-  ai_sensitive_opt_in: boolean;
-  language: "cs" | "en";
-  theme: "light" | "dark";
-  display_currency: string;
-  hidden_navigation: string[];
-  navigation_order: string[];
-  navigation_collapsed: boolean;
-  dashboard_layout: string[];
-  tasks_per_category: number;
-  cv_url_cs: string;
-  cv_url_en: string;
-  hidden_project_tabs: string[];
-  show_czech_career: boolean;
-  sync_available: boolean;
-};
+export type UserPreferences = UiPreferences & { sync_available: boolean };
 
-const DEFAULT_PREFS: UserPreferences = {
-  selected_calendar_ids: ["primary"],
-  visible_repo_ids: [],
-  timezone: null,
-  nudge_hour: null,
-  notifications_renewals: true,
-  ai_enabled: true,
-  ai_sensitive_opt_in: false,
-  language: "cs",
-  theme: "light",
-  display_currency: "CZK",
-  hidden_navigation: [],
-  navigation_order: [],
-  navigation_collapsed: false,
-  dashboard_layout: [...DEFAULT_LAYOUT],
-  tasks_per_category: 5,
-  cv_url_cs: "",
-  cv_url_en: "",
-  hidden_project_tabs: [],
-  show_czech_career: false,
-  sync_available: true,
-};
-
-export async function loadUserPreferences(
-  userId: string,
-): Promise<UserPreferences> {
-  const supabase = await createUserClient();
-  const { data, error } = await supabase
-    .from("user_preferences")
-    .select(
-      "selected_calendar_ids, visible_repo_ids, timezone, nudge_hour, notifications_renewals, ai_enabled, ai_sensitive_opt_in, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs, show_czech_career",
-    )
-    .eq("user_id", userId)
-    .maybeSingle();
-  // A missing migration or Data API grant must not overwrite a valid local
-  // cache with defaults during hydration. Keep the app usable and surface the
-  // unavailable sync boundary through Settings instead.
-  if (error) return { ...DEFAULT_PREFS, sync_available: false };
-  if (!data) return DEFAULT_PREFS;
-  return {
-    selected_calendar_ids:
-      Array.isArray(data.selected_calendar_ids) &&
-      data.selected_calendar_ids.length > 0
-        ? data.selected_calendar_ids
-        : ["primary"],
-    visible_repo_ids: Array.isArray(data.visible_repo_ids)
-      ? data.visible_repo_ids.filter((s): s is string => typeof s === "string")
-      : [],
-    timezone: data.timezone ?? null,
-    nudge_hour: data.nudge_hour ?? null,
-    notifications_renewals: data.notifications_renewals ?? true,
-    ai_enabled: data.ai_enabled ?? true,
-    ai_sensitive_opt_in: data.ai_sensitive_opt_in ?? false,
-    language: data.language === "en" ? "en" : "cs",
-    theme: data.theme === "dark" ? "dark" : "light",
-    display_currency:
-      typeof data.display_currency === "string"
-        ? data.display_currency
-        : "CZK",
-    hidden_navigation: Array.isArray(data.hidden_navigation)
-      ? data.hidden_navigation.filter(
-          (value): value is string => typeof value === "string",
-        )
-      : [],
-    navigation_order: Array.isArray(data.navigation_order)
-      ? data.navigation_order.filter(
-          (value): value is string => typeof value === "string",
-        )
-      : [],
-    navigation_collapsed: data.navigation_collapsed ?? false,
-    dashboard_layout: Array.isArray(data.dashboard_layout)
-      ? data.dashboard_layout.filter(
-          (value): value is string => typeof value === "string",
-        )
-      : [...DEFAULT_LAYOUT],
-    tasks_per_category:
-      typeof data.tasks_per_category === "number"
-        ? data.tasks_per_category
-        : 5,
-    cv_url_cs: data.cv_url_cs ?? "",
-    cv_url_en: data.cv_url_en ?? "",
-    hidden_project_tabs: normalizeHiddenProjectTabs(data.hidden_project_tabs),
-    show_czech_career: data.show_czech_career === true,
-    sync_available: true,
-  };
+/** A failed read must not hydrate defaults over a working device cache. */
+export async function loadUserPreferences(userId: string, parent?: AbortSignal): Promise<UserPreferences> {
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
+  try {
+    const supabase = await awaitWithSignal(createClient(signal), signal);
+    const { data, error } = await awaitWithSignal(supabase.from("user_preferences")
+      .select(["user_id", ...PREFERENCE_FIELDS].join(",")).eq("user_id", userId).abortSignal(signal).maybeSingle(), signal);
+    const row = data === null ? null : z.record(z.string(), z.unknown()).parse(data);
+    if (error || (row && row.user_id !== userId)) throw Error("Preferences unavailable");
+    return { ...parseStoredUiPreferences(row), sync_available: true };
+  } catch {
+    return { ...parseStoredUiPreferences(null), sync_available: false };
+  }
 }
