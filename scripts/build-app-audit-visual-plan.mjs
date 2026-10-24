@@ -16,6 +16,9 @@ const pending = inventory.files.filter(file => file.status === "pending").length
 const partial = inventory.files.filter(file => file.status?.startsWith("partial")).length;
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const components = [
+  { id: "source-edit", title: "Source settings and retained drafts", file: "src/components/marketing/dneskai-source-forms.tsx", desktop: "source-edit-conflict-cs-1440.png", mobile: "source-edit-conflict-cs-360.png", language: "Czech · actual source conflict dialog crops", captureWidth: 448,
+    notes: ["The dialog shows one source identity, aligned fields and matching action sizes. Mobile keeps complete labels and touch targets.", "A changed source keeps the local name and item count until an explicit successful reload. Failed reloads preserve the draft too.", "Confirmed changes update the unchanged list without another whole-list request. Pending work protects exits; raw invalid numbers stay available for correction."],
+    marks: [{ x: 4, y: 14, w: 91, h: 14, n: 1 }, { x: 4, y: 29, w: 91, h: 60, n: 2 }] },
   { id: "daily-mix", title: "Daily publishing limits and draft recovery", file: "src/components/marketing/dneskai-daily-mix.tsx", desktop: "daily-mix-conflict-cs-1440.png", mobile: "daily-mix-conflict-cs-360.png", language: "Czech · actual conflict form crops", captureWidth: 960,
     notes: ["Desktop controls fit in one row; mobile keeps the complete field labels, active times and save action readable.", "A changed saved mix preserves the local draft and offers one explicit discard/reload action, without a repeated error message.", "Confirmed zero-post limits stay at zero. Unavailable settings cannot silently restore the default volume."],
     marks: [{ x: 0.5, y: 37, w: 78, h: 29, n: 1 }, { x: 0.5, y: 72, w: 99, h: 27, n: 2 }] },
