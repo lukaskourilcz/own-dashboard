@@ -209,8 +209,8 @@
       "path": "src/app/api/github/activity/route.ts",
       "lines": 88,
       "sha256": "ed3296d4a61a58d265ad65e27992686024345f127aeb489046b856f0abc506ad",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "ce4fe97b411c9caac526bb2d5ef87e413c9e4fd14a881f5f4c7a08233935eee5"
+      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
+      "reviewedSha256": "ef5e4a7f6e8fdc42d2a90683b266066faa8ebb6de7263ee9ebbefa0487559a33"
     },
     {
       "path": "src/app/api/github/commit/route.ts",
@@ -223,8 +223,8 @@
       "path": "src/app/api/github/commits/route.ts",
       "lines": 88,
       "sha256": "1f52d3ca392bcb89fc2311a9e2fc5f84798a2411a2d8e5e9c7d2df23ee654561",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "0f2c0797a761b81625506a1098bd4382e9c876a5c3c7d57894e00e39f4a58131"
+      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
+      "reviewedSha256": "6032ffb3379f802ba0bbb0ba45490b8cfc3b83310c47ac4332e631e1edcef6bf"
     },
     {
       "path": "src/app/api/github/disconnect/route.ts",
@@ -4076,6 +4076,20 @@
       "lines": 40,
       "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
       "reviewedSha256": "c8488fdb13d75c0f4600aa03037f0f5d2c1961d638940a6fd4deab2434056116"
+    },
+    {
+      "path": "src/lib/github-activity-contract.ts",
+      "sha256": null,
+      "lines": 59,
+      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
+      "reviewedSha256": "a735e0b6260ba6e098470055a14a0ac7b6c3b37b7ec47402a72abbd9821a742b"
+    },
+    {
+      "path": "src/lib/github-activity-server.ts",
+      "sha256": null,
+      "lines": 39,
+      "status": "source reviewed; bounded history/privacy/scope/cancellation tests pass; client consumption/rendered and final release checks pending",
+      "reviewedSha256": "7a2e940012c24d1b255daa95f836f886df8afcd2c9765c18945570b2ea3974e4"
     }
   ],
   "baselineFileCount": 561
