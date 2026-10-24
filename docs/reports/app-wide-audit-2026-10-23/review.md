@@ -23,6 +23,8 @@ Each destination needs source/data-flow review, relevant business and failure ch
 
 The [working visual plan](visual-plan.html) highlights the next Task-density work and annotates authentic preview screenshots of the changed login, repository notes, project operations, repository activity, notifications/mobile navigation, Money, cron-history, project-edit recovery, guest-notice, source-edit, daily-mix and invoice-save recovery components. It has desktop/mobile switches and keeps remaining areas explicitly pending. Rebuild it with `node scripts/build-app-audit-visual-plan.mjs` after updating this report or the inventory.
 
+Source-inspection follow-ups are tracked in [remaining-review.md](remaining-review.md). They are leads and unfinished work, not passing findings.
+
 ## Findings under review
 
 1. Fixed: failed server reads now render a bilingual retry state before mounting the shell. A successful missing-project read still returns 404; an outage does not. In-shell navigation also waits for all required entity stores before mounting writable panels. Verified cached records remain available during background failures.
@@ -480,3 +482,8 @@ At source commit `58aa3ea`, 4,470 unit/component/database cases pass with one in
 ## Visual evidence refresh after finding 161 — 24 October 2026
 
 The working HTML plan now contains thirteen authentic desktop/mobile component pairs at source snapshot `6edcbfa`, including the failed invoice-save footer. Both modes, all images, the pending Task-density label, controls, mobile image widths, six-width reflow, axe and page errors pass. Desktop and mobile artifact captures were inspected. This evidence refresh does not promote the remaining source review or release to complete.
+
+
+## Full validation checkpoint 66 — 24 October 2026
+
+At application source commit `9442b07`, 4,486 unit/component/database cases pass with one intentional skip (432 passed files, one skipped file), in 166.79 seconds with two workers. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight actual native render traces and post-build TypeScript pass on Node 22.23.4. A separate optimized fixture build then passes 38 selected browser cases with two intentional duplicate skips in 1.3 minutes: all nine checkpoint-65 failing cases are covered, together with current preference receipts, native audio, existing Lab/music and guest isolation. The actual CSP header and native Supabase-hosted silent-fixture playback pass under the optimized server. This targeted recheck is not another complete 706-case run. Both builds use public fixture configuration; their local artifacts must not be deployed. Application and test inputs stayed frozen throughout this checkpoint. Read-only review recorded further Work, Tasks, registry, shared-control, Career and monitoring leads in `remaining-review.md`; the source ledger now has 642 entries (228 pending, 71 partial). Twenty-seven audit migrations remain prepared/unapplied (113 local files). Remaining source/interaction review, full final optimized validation, migration rollout, current-document reconciliation and main merge remain unfinished.

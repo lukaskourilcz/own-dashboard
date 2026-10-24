@@ -144,7 +144,8 @@
       "path": "src/app/api/cron/jobs-scrape/route.ts",
       "lines": 51,
       "sha256": "5a0cf4052c04387e75d1decc78b0cf76e385d7d7109be92c6e48022ceb101c53",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "5a0cf4052c04387e75d1decc78b0cf76e385d7d7109be92c6e48022ceb101c53"
     },
     {
       "path": "src/app/api/cron/payment-match/route.ts",
@@ -286,7 +287,8 @@
       "path": "src/app/api/jobs/available/route.ts",
       "lines": 92,
       "sha256": "8b9c72a03a10a8b1dfd6ad668001e51df116f0028b0414cbd06e2d1752f72105",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "8b9c72a03a10a8b1dfd6ad668001e51df116f0028b0414cbd06e2d1752f72105"
     },
     {
       "path": "src/app/api/jobs/enrich/route.ts",
@@ -299,13 +301,15 @@
       "path": "src/app/api/jobs/refresh/route.ts",
       "lines": 63,
       "sha256": "6f95a5cfb69441489d4b3f960675bc21052c5543e202095198cc36adf80d62f9",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "6f95a5cfb69441489d4b3f960675bc21052c5543e202095198cc36adf80d62f9"
     },
     {
       "path": "src/app/api/jobs/research-availability/route.ts",
       "lines": 44,
       "sha256": "2f99d02801213352a5d275d2f42ac68b7a54c7cb21d164afc85d9b13847d4a2d",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "2f99d02801213352a5d275d2f42ac68b7a54c7cb21d164afc85d9b13847d4a2d"
     },
     {
       "path": "src/app/api/marketing/accounts/enable/route.ts",
@@ -555,13 +559,15 @@
       "path": "src/app/api/registry/ares/route.ts",
       "lines": 51,
       "sha256": "89ec9510dda470edd29d1ad48f880ee57d59cc0860df732cafda1f1e8d9df7d6",
-      "status": "pending"
+      "status": "partial; source inspected; typed bounded request/auth/provider identity and cancellation pending; see remaining-review.md",
+      "reviewedSha256": "89ec9510dda470edd29d1ad48f880ee57d59cc0860df732cafda1f1e8d9df7d6"
     },
     {
       "path": "src/app/api/registry/vies/route.ts",
       "lines": 58,
       "sha256": "06678aeeca2d06d42ea6441b3df5a4f7af744188be67f42d5f9144f778209dc3",
-      "status": "pending"
+      "status": "partial; source inspected; typed bounded request/auth/provider identity and cancellation pending; see remaining-review.md",
+      "reviewedSha256": "06678aeeca2d06d42ea6441b3df5a4f7af744188be67f42d5f9144f778209dc3"
     },
     {
       "path": "src/app/api/tools/detected/route.ts",
@@ -581,7 +587,8 @@
       "path": "src/app/api/vercel/analytics/route.ts",
       "lines": 37,
       "sha256": "5fb0f85d57724038962064706bfd2ad15d29f8b291eae2cb5330cf813275cc4a",
-      "status": "pending"
+      "status": "partial; source inspected; owned repository binding and validated bounded provider inputs pending; see remaining-review.md",
+      "reviewedSha256": "5fb0f85d57724038962064706bfd2ad15d29f8b291eae2cb5330cf813275cc4a"
     },
     {
       "path": "src/app/api/webhooks/instagram/route.ts",
@@ -593,7 +600,8 @@
       "path": "src/app/api/webhooks/uptime-kuma/route.ts",
       "lines": 160,
       "sha256": "9498058665090aa577e01cd33e5d4acef76659cb65b185ac18fac75e3dfea3bd",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "9498058665090aa577e01cd33e5d4acef76659cb65b185ac18fac75e3dfea3bd"
     },
     {
       "path": "src/app/auth/callback/route.ts",
@@ -711,7 +719,8 @@
       "path": "src/components/category-select.tsx",
       "lines": 163,
       "sha256": "2625987ab6aeb8002a043f34dab2ab57d09e67b9ef335b788aedb4e190af35d6",
-      "status": "pending"
+      "status": "partial; source inspected; confirmed creation, canonical option selection, failure recovery and targets pending; see remaining-review.md",
+      "reviewedSha256": "2625987ab6aeb8002a043f34dab2ab57d09e67b9ef335b788aedb4e190af35d6"
     },
     {
       "path": "src/components/charts/category-donut.tsx",
@@ -1224,13 +1233,15 @@
       "path": "src/components/mobile-fab.tsx",
       "lines": 141,
       "sha256": "b6e36b8b1a3fdcaee92441c7bad3b83fc77b0e680b7330061d2aaa0a35a686b7",
-      "status": "pending"
+      "status": "partial; source inspected; storage refusal, current install lifecycle and shared action targets pending; see remaining-review.md",
+      "reviewedSha256": "b6e36b8b1a3fdcaee92441c7bad3b83fc77b0e680b7330061d2aaa0a35a686b7"
     },
     {
       "path": "src/components/nav/app-toolbar.tsx",
       "lines": 76,
       "sha256": "cb1c2f235c1b1a3e00293c9551a70df277a1396b9b130f5f86d7b9d80307fd41",
-      "status": "pending"
+      "status": "partial; source inspected; shared target sizes across mobile and desktop breakpoints pending; see remaining-review.md",
+      "reviewedSha256": "cb1c2f235c1b1a3e00293c9551a70df277a1396b9b130f5f86d7b9d80307fd41"
     },
     {
       "path": "src/components/nav/sidebar.tsx",
@@ -1587,7 +1598,8 @@
       "path": "src/components/preference-hydrator.tsx",
       "lines": 86,
       "sha256": "04a46032d4a1de6b7e71592bd891bf78d5018e6b1e5a0f587c953e6b1ac55f99",
-      "status": "pending"
+      "status": "partial; source inspected; unavailable initialization and owner-scoped private CV preferences pending; see remaining-review.md",
+      "reviewedSha256": "04a46032d4a1de6b7e71592bd891bf78d5018e6b1e5a0f587c953e6b1ac55f99"
     },
     {
       "path": "src/components/projects/project-communication-panel.tsx",
@@ -1705,7 +1717,8 @@
       "path": "src/components/tasks/task-tags.tsx",
       "lines": 142,
       "sha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b",
-      "status": "pending"
+      "status": "partial; source inspected; long metadata, actual contrast/target and task-row integration pending; see remaining-review.md",
+      "reviewedSha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b"
     },
     {
       "path": "src/components/theme-toggle.tsx",
@@ -1864,7 +1877,8 @@
       "path": "src/components/work/weekly-planning.tsx",
       "lines": 761,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "pending"
+      "status": "partial; source inspected; captured save/owner-week identity, pending drafts and complete focus reads pending; see remaining-review.md",
+      "reviewedSha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615"
     },
     {
       "path": "src/lib/abortable.ts",
@@ -2077,9 +2091,9 @@
     },
     {
       "path": "src/lib/cron-heartbeat.ts",
-      "lines": 219,
+      "lines": 220,
       "sha256": "57ec68c2292cae58be1f086e2e313c45123371e9c67be95f24c9f147e2cf7598",
-      "status": "source reviewed; ownership, bounded logging and monitoring tests pass; final app-wide release checks pending",
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
       "reviewedSha256": "ad8e1e6d253e82b065cdd5c2873dd60ec6f34b3e03435b686b6b94180b7cb5cd"
     },
     {
@@ -2644,13 +2658,15 @@
       "path": "src/lib/jobs/apify.ts",
       "lines": 97,
       "sha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771"
     },
     {
       "path": "src/lib/jobs/availability.ts",
       "lines": 148,
       "sha256": "e383e7823ed3427ec33504c5d6f61dc8a8a9e6bfa4de2848331065f4d057f6de",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "e383e7823ed3427ec33504c5d6f61dc8a8a9e6bfa4de2848331065f4d057f6de"
     },
     {
       "path": "src/lib/jobs/board.ts",
@@ -2739,13 +2755,15 @@
       "path": "src/lib/jobs/prune.ts",
       "lines": 109,
       "sha256": "93c3719f6902f17ce9d3374c4a682753ea4f0276571a072b143246403dff99d5",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "93c3719f6902f17ce9d3374c4a682753ea4f0276571a072b143246403dff99d5"
     },
     {
       "path": "src/lib/jobs/scrape.ts",
       "lines": 261,
       "sha256": "aaa4d49ed457e40aee9e0c77d465610c989f327e86edcc1e8e19b3d49a67a49d",
-      "status": "pending"
+      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
+      "reviewedSha256": "aaa4d49ed457e40aee9e0c77d465610c989f327e86edcc1e8e19b3d49a67a49d"
     },
     {
       "path": "src/lib/jobs/sources.ts",
@@ -4091,7 +4109,8 @@
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
-      "status": "pending"
+      "status": "partial; source inspected; request/response identity and future-dated cached verdict follow-up pending; see remaining-review.md",
+      "reviewedSha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70"
     },
     {
       "path": "src/lib/telemetry-url.ts",
@@ -4196,7 +4215,8 @@
       "path": "src/lib/use-spend-categories.ts",
       "lines": 96,
       "sha256": "808490821c6c04a597786e3c8eea78df10f6e382550b3c8c766adbd9034fe632",
-      "status": "pending"
+      "status": "partial; source inspected; complete truthful reads, confirmed identity/receipts and scoped rollback pending; see remaining-review.md",
+      "reviewedSha256": "808490821c6c04a597786e3c8eea78df10f6e382550b3c8c766adbd9034fe632"
     },
     {
       "path": "src/lib/use-theme.ts",
@@ -4223,7 +4243,8 @@
       "path": "src/lib/vercel.ts",
       "lines": 155,
       "sha256": "9b5a06f1c27448276f64e44672b90ec93160215fff3102f9c6aa43a1ea9f7a39",
-      "status": "pending"
+      "status": "partial; source inspected; provider failure/response bounds, stable identity and complete/cache reads pending; see remaining-review.md",
+      "reviewedSha256": "9b5a06f1c27448276f64e44672b90ec93160215fff3102f9c6aa43a1ea9f7a39"
     },
     {
       "path": "src/lib/web-url.ts",
@@ -4236,7 +4257,8 @@
       "path": "src/lib/weekly-planning.ts",
       "lines": 476,
       "sha256": "74407b98155ff9bc9ec5afcb677d12f990a53359517ee5978e356e36758dc99f",
-      "status": "pending"
+      "status": "partial; source inspected; canonical project classification, per-event normalization and aggregate input boundaries pending; see remaining-review.md",
+      "reviewedSha256": "74407b98155ff9bc9ec5afcb677d12f990a53359517ee5978e356e36758dc99f"
     },
     {
       "path": "src/proxy.ts",
