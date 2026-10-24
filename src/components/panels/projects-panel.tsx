@@ -64,6 +64,7 @@ import { applyProjectOrder, reorderOwnedProjects } from "@/lib/project-order";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { GithubIcon } from "@/components/icons/github";
 import { useProjectNotesAutosave } from "@/components/projects/use-project-notes-autosave";
+import { useProjectPreferencesSave } from "@/components/projects/use-project-preferences-save";
 import type { NoteEditorHandle } from "@/components/notes/note-editor";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
@@ -292,6 +293,7 @@ function ProjectsListPanel({
 }: ProjectsPanelProps) {
   const supabase = createClient();
   const qc = useQueryClient();
+  const projectPreferences = useProjectPreferencesSave(setProjects);
   const t = useDict();
   const dragContextId = useId();
   const { lang } = useLang();
@@ -777,20 +779,9 @@ function ProjectsListPanel({
   }
 
   async function toggleProjectActive(p: Project) {
-    const next = !p.is_active;
-    setProjects((prev) =>
-      prev.map((x) => (x.id === p.id ? { ...x, is_active: next } : x)),
-    );
-    const { error } = await supabase
-      .from("projects")
-      .update({ is_active: next, updated_at: new Date().toISOString() })
-      .eq("id", p.id);
-    if (error) {
-      setProjects((prev) =>
-        prev.map((x) => (x.id === p.id ? { ...x, is_active: !next } : x)),
-      );
-      toast.err(error.message);
-    }
+    const result = await projectPreferences.save(p, { is_active: !p.is_active });
+    if (result === "conflict") toast.err(t.projects.preferenceConflict);
+    else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   }
 
   async function deleteProject(p: Project) {
@@ -1110,6 +1101,7 @@ function ProjectsListPanel({
                   project={p}
                   subsection={!!p.parent_id && projectIds.has(p.parent_id)}
                   ordering={ordering}
+                  preferencePending={projectPreferences.pending.has(p.id)}
                   summary={projectSummary(p, lang, { preview: isPreview })}
                   monthlyCost={monthlyOf(p)}
                   displayCurrency={displayCurrency}
@@ -1140,7 +1132,7 @@ function ProjectsListPanel({
           {ordered.find((project) => project.id === manageProjectId) && (() => {
             const project = ordered.find((item) => item.id === manageProjectId)!;
             const projectTodos = projectTasks.byProject.get(project.id) ?? [];
-            return <ProjectOperations key={project.id} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => requestNavigation(() => { void deleteProject(project); })} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
+            return <ProjectOperations key={project.id} preferencePending={projectPreferences.pending.has(project.id)} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => requestNavigation(() => { void deleteProject(project); })} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1164,6 +1156,7 @@ type ProjectOperationsProps = {
   displayCurrency: string;
   /** True when this project mirrors a currently-active Repository. */
   synced: boolean;
+  preferencePending: boolean;
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
@@ -1178,6 +1171,7 @@ function SortableProjectRow({
   project,
   subsection = false,
   ordering = false,
+  preferencePending = false,
   summary,
   monthlyCost,
   displayCurrency,
@@ -1196,6 +1190,7 @@ function SortableProjectRow({
   /** A venture subsection rendered under its parent; it has no drag handle. */
   subsection?: boolean;
   ordering?: boolean;
+  preferencePending?: boolean;
   summary?: string;
   monthlyCost: number;
   displayCurrency: string;
@@ -1247,7 +1242,7 @@ function SortableProjectRow({
         <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
         <Tooltip content={t.projects.manage}><Button size="icon-sm" variant="ghost" onClick={onManage} aria-label={t.projects.manage}><Cpu /></Button></Tooltip>
         <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
-        <Tooltip content={project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
+        <Tooltip content={preferencePending ? t.projects.saving : project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" disabled={preferencePending} aria-busy={preferencePending} onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
         <Tooltip content={t.projects.deleteProject}><Button size="icon-sm" variant="ghost" onClick={onDelete} aria-label={t.projects.deleteProject}><Trash2 className="text-destructive" /></Button></Tooltip>
       </div></td>
     </tr>
@@ -1264,6 +1259,7 @@ function ProjectOperations({
   setProjects,
   displayCurrency,
   synced,
+  preferencePending,
   onEdit,
   onToggleActive,
   onDelete,
@@ -1367,6 +1363,8 @@ function ProjectOperations({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onToggleActive}
+                disabled={preferencePending}
+                aria-busy={preferencePending}
                 aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}
               >
                 <Power

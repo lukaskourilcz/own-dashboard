@@ -1422,10 +1422,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 2055,
+      "lines": 2053,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, atomic ordering, guarded project notes and operations layout checked; metadata/cost/cron/sync writes and external-deletion draft retention pending in review.md",
-      "reviewedSha256": "804db958c3e72b4314785297e3d531b17eea7f1bed36357b7683d3642b82cf37"
+      "status": "partially reviewed; complete reads, ordering, guarded notes, operations layout and confirmed active controls checked; metadata/cost/cron/sync writes and external-deletion draft retention pending in review.md",
+      "reviewedSha256": "40764919f2107b34f02f4d062b5fce4796e67be2310fa425eeb6473011bc363a"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1443,10 +1443,10 @@
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
-      "lines": 843,
+      "lines": 814,
       "sha256": "628abb698ed4d78bb009c5d8e44c2834301a57f8ea385042d7b6a3b3c33c64df",
-      "status": "partial; preferences/integrations/layout reviewed with targeted and rendered checks; project mutation receipts pending",
-      "reviewedSha256": "4e5b832f82362d37d1778f39b08f8447bfe92c2fab2d64cf51ccabe7588fbea9"
+      "status": "partial; preferences/integrations/layout and confirmed project classification checked; CV/density/reorder lifecycle and final optimized release pending",
+      "reviewedSha256": "c641aeeb1bc89f8ec269b83ad288b1ebf216921324b41f6cedadc137ec7c6013"
     },
     {
       "path": "src/components/panels/shortcuts-panel.tsx",
@@ -2310,10 +2310,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 422,
+      "lines": 428,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "partially reviewed; project order, guarded note recovery and operations copy checked; remaining source/release review pending",
-      "reviewedSha256": "9c816f6a33dedf54175257985c8df80c264d060d1a7245e3adeb579303920a1a"
+      "status": "source reviewed; bilingual project recovery and classification copy checked; final release pending",
+      "reviewedSha256": "378ab669efa8be1a5671c045767e3cbaaff1008a43c5c80b179cfe02b7f77284"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",
@@ -2903,8 +2903,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "8d83246d27903e409aaaf009e345e81407adf42854592780b336b0931b4ba827"
+      "status": "source reviewed; generated offline from all 110 migrations; final optimized release pending",
+      "reviewedSha256": "b998697260d8bb1e4ff67eea87f2142ea6f3d8cb1d2dac7359628494500447ee"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4128,6 +4128,20 @@
       "lines": 110,
       "status": "source reviewed; ordered note saves, ambiguity/conflict, immediate guard, reload/discard and late-callback tests pass; rendered checks pass; final release pending",
       "reviewedSha256": "d3330477164042dc6d976e9a45ead322366f1fb29cc4b277ef20e90a4e3b8f41"
+    },
+    {
+      "path": "src/lib/project-preferences.ts",
+      "sha256": null,
+      "lines": 56,
+      "status": "source reviewed; bounded owner/version receipts, microsecond precision, no-op/conflict and conditional cache checks pass; final optimized release pending",
+      "reviewedSha256": "f97c82e247aa58dd884489798f1cc53f2ef124a31026f31c1160e7697afd94a4"
+    },
+    {
+      "path": "src/components/projects/use-project-preferences-save.ts",
+      "sha256": null,
+      "lines": 34,
+      "status": "source reviewed; pending guards, same-event deduplication, confirmed-only cache writes and ambiguity/conflict reconciliation checked; EN/CS rendered controls pass; final optimized release pending",
+      "reviewedSha256": "9020a8acc7243adb270cc9a008426267b153d7a8b030e058121704bb85d522c2"
     }
   ],
   "baselineFileCount": 561

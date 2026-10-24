@@ -33,6 +33,8 @@ type ProjectsStrings = {
   freelanceDivider: string;
   nameRequired: string;
   slugRequired: string;
+  preferenceSaveFailed: string;
+  preferenceConflict: string;
 
   // Project card.
   active: string;
@@ -175,6 +177,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     freelanceDivider: "Freelance",
     nameRequired: "Name is required.",
     slugRequired: "Slug is required.",
+    preferenceSaveFailed: "The project change was not confirmed. Review its current state before trying again.",
+    preferenceConflict: "This project changed elsewhere. Review its current state and try again.",
 
     active: "active",
     inactive: "inactive",
@@ -314,6 +318,8 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     freelanceDivider: "Freelance",
     nameRequired: "Název je povinný.",
     slugRequired: "Identifikátor je povinný.",
+    preferenceSaveFailed: "Změna projektu nebyla potvrzena. Před dalším pokusem zkontrolujte jeho aktuální stav.",
+    preferenceConflict: "Projekt byl mezitím změněn jinde. Zkontrolujte jeho aktuální stav a zkuste to znovu.",
 
     active: "aktivní",
     inactive: "neaktivní",

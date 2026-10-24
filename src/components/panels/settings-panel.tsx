@@ -62,7 +62,7 @@ import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { NAV_GROUPS, PRIMARY_NAV_ITEMS } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { useProjectPreferencesSave } from "@/components/projects/use-project-preferences-save";
 import { projectEngagement } from "@/lib/projects";
 import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
@@ -148,9 +148,7 @@ export function SettingsPanel({
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();
-  const supabase = createClient();
-  // Projects whose own/freelance change is still being written.
-  const [savingEngagement, setSavingEngagement] = useState<ReadonlySet<string>>(() => new Set());
+  const projectPreferences = useProjectPreferencesSave(setProjects);
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
   const {
@@ -203,57 +201,17 @@ export function SettingsPanel({
     }
   };
   const toggleProject = async (project: Project) => {
-    const next = !project.is_active;
-    setProjects((current) =>
-      current.map((item) =>
-        item.id === project.id ? { ...item, is_active: next } : item,
-      ),
-    );
-    const { error } = await supabase
-      .from("projects")
-      .update({ is_active: next, updated_at: new Date().toISOString() })
-      .eq("id", project.id);
-    if (error) {
-      setProjects((current) =>
-        current.map((item) =>
-          item.id === project.id
-            ? { ...item, is_active: project.is_active }
-            : item,
-        ),
-      );
-      toast.err(t.settings.projectUpdateFailed);
-    }
+    const result = await projectPreferences.save(project, { is_active: !project.is_active });
+    if (result === "conflict") toast.err(t.projects.preferenceConflict);
+    else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   };
-  // Own or freelance: `projects.engagement` is the one field every grouping
-  // reads (sidebar divider, Projects table, Money), so the shared projects
-  // store updates first and every surface moves the project at once. The
-  // write goes through the owner's own session; RLS checks the row.
+  // All project groupings move together after a confirmed owner-only receipt.
   const setEngagement = async (project: Project, engagement: ProjectEngagement) => {
-    const previous = projectEngagement(project);
-    if (previous === engagement || savingEngagement.has(project.id)) return;
-    setSavingEngagement((current) => new Set(current).add(project.id));
-    setProjects((current) =>
-      current.map((item) => (item.id === project.id ? { ...item, engagement } : item)),
-    );
-    const { error } = await supabase
-      .from("projects")
-      .update({ engagement, updated_at: new Date().toISOString() })
-      .eq("id", project.id);
-    setSavingEngagement((current) => {
-      const next = new Set(current);
-      next.delete(project.id);
-      return next;
-    });
-    if (error) {
-      setProjects((current) =>
-        current.map((item) => (item.id === project.id ? { ...item, engagement: previous } : item)),
-      );
-      toast.err(t.settings.engagementUpdateFailed(project.name));
-      return;
-    }
-    toast.ok(t.settings.engagementSaved(project.name, engagement));
-    // The fixture preview has no database to refetch from.
-    if (syncPreferences) void qc.invalidateQueries({ queryKey: qk.projects });
+    if (projectEngagement(project) === engagement) return;
+    const result = await projectPreferences.save(project, { engagement });
+    if (result === "saved") toast.ok(t.settings.engagementSaved(project.name, engagement));
+    else if (result === "conflict") toast.err(t.projects.preferenceConflict);
+    else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   };
 
   const sensors = useSensors(
@@ -352,7 +310,7 @@ export function SettingsPanel({
   // Active projects are the ones in the sidebar, so they carry the own or
   // freelance choice that places them above or below its divider.
   const projectRow = (project: Project) => {
-    const saving = savingEngagement.has(project.id);
+    const saving = projectPreferences.pending.has(project.id);
     return (
       <li
         key={project.id}
@@ -385,6 +343,7 @@ export function SettingsPanel({
           )}
           <Switch
             checked={project.is_active}
+            disabled={saving}
             onCheckedChange={() => void toggleProject(project)}
             aria-label={project.name}
           />
@@ -532,7 +491,7 @@ export function SettingsPanel({
             </div>
             <p role="status" className="sr-only">
               {projects
-                .filter((project) => savingEngagement.has(project.id))
+                .filter((project) => projectPreferences.pending.has(project.id))
                 .map((project) => `${project.name}: ${t.settings.engagementSaving}`)
                 .join(" ")}
             </p>
