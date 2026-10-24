@@ -52,7 +52,7 @@ describe('Zdroje source list (#174)', () => {
 
   it('adds an Instagram profile through the owner route when editing is on', async () => {
     const list = { ...dneskaiRegistrySourceList(), editable: true };
-    const fetch = vi.fn(async (url: string, init?: RequestInit) => init?.method === 'POST' ? new Response(JSON.stringify({ ok: true }), { status: 200 }) : new Response(JSON.stringify(list), { status: 200 }));
+    const fetch = vi.fn(async (url: string, init?: RequestInit) => init?.method === 'POST' ? Response.json({kind:'saved',ownerId:'11111111-1111-4111-8111-111111111111',projectId:project,sourceId:JSON.parse(String(init.body)).source.sourceId,source:JSON.parse(String(init.body)).source}) : new Response(JSON.stringify(list), { status: 200 }));
     vi.stubGlobal('fetch', fetch);
     render('cs', false);
     await vi.waitFor(async () => { await wait(0); expect(container.querySelector('form')).not.toBeNull(); });
@@ -62,7 +62,7 @@ describe('Zdroje source list (#174)', () => {
     expect(form.textContent).toContain(t.add.detected.instagram('newprofile'));
     await act(async () => { form.querySelector<HTMLButtonElement>('button[type="submit"]')!.click(); await new Promise((done) => setTimeout(done, 50)); });
     const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST')!;
-    expect(JSON.parse(String(post[1]!.body))).toEqual({ action: 'save', projectId: project,
+    expect(JSON.parse(String(post[1]!.body))).toEqual({ action: 'save', projectId: project, expected:null,
       source: { sourceId: 'instagram:newprofile', kind: 'instagram', topic: 'education', handleOrUrl: 'newprofile', name: 'newprofile', tier: 0, weekdays: [0, 1, 2, 3, 4, 5, 6], maxItems: 10, enabled: true } });
     await vi.waitFor(async () => { await wait(0); expect(container.querySelector('[aria-live="polite"] [role="status"]')?.textContent).toBe(t.saved); });
     // A source already in the list is refused before any request.

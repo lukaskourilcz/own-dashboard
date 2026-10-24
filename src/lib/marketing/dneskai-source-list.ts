@@ -57,10 +57,29 @@ export const DneskaiSourceListSchema = z.strictObject({
 export type DneskaiSourceList = z.infer<typeof DneskaiSourceListSchema>;
 
 export const DneskaiSourceActionSchema = z.discriminatedUnion('action', [
-  z.strictObject({ action: z.literal('save'), projectId: z.uuid(), source: DneskaiSourceRowSchema }),
-  z.strictObject({ action: z.literal('remove'), projectId: z.uuid(), sourceId: z.string().regex(SOURCE_ID) }),
-]);
+  z.strictObject({ action: z.literal('save'), projectId: z.uuid(), source: DneskaiSourceRowSchema, expected: DneskaiSourceRowSchema.nullable() }),
+  z.strictObject({ action: z.literal('remove'), projectId: z.uuid(), sourceId: z.string().regex(SOURCE_ID), expected: DneskaiSourceRowSchema }),
+]).refine(action => !action.expected || action.expected.sourceId === (action.action === 'save' ? action.source.sourceId : action.sourceId));
 export type DneskaiSourceAction = z.infer<typeof DneskaiSourceActionSchema>;
+
+export function sameDneskaiSourceRow(a: DneskaiSourceRow | null, b: DneskaiSourceRow | null): boolean {
+  if (!a || !b) return a === b;
+  return a.sourceId === b.sourceId && a.kind === b.kind && a.topic === b.topic && a.handleOrUrl === b.handleOrUrl
+    && a.name === b.name && a.tier === b.tier && a.maxItems === b.maxItems && a.enabled === b.enabled
+    && a.weekdays.length === b.weekdays.length && a.weekdays.every((day, index) => day === b.weekdays[index]);
+}
+/** Shared API/browser confirmation; a shaped object alone is not proof of the requested change. */
+export function confirmDneskaiSourceReceipt(value: unknown, action: DneskaiSourceAction, owner?: string): DneskaiSourceReceipt {
+  const receipt = DneskaiSourceReceiptSchema.parse(value), id = action.action === 'save' ? action.source.sourceId : action.sourceId;
+  if (receipt.projectId !== action.projectId || receipt.sourceId !== id || (owner !== undefined && receipt.ownerId !== owner)
+    || (receipt.kind === 'saved' && (action.action !== 'save' || !sameDneskaiSourceRow(receipt.source, action.source)))
+    || (receipt.kind === 'removed' && action.action !== 'remove')
+    || (receipt.kind === 'conflict' && (sameDneskaiSourceRow(receipt.source, action.expected)
+      || (action.action === 'save' ? sameDneskaiSourceRow(receipt.source, action.source) : receipt.source === null)))) throw new Error('source-save-unconfirmed');
+  return receipt;
+}
+export const DneskaiSourceRefusalSchema = z.enum(['sources-unavailable', 'source-unavailable', 'source-address-changed', 'source-limit', 'invalid-source',
+  'source-changed', 'source-save-unconfirmed', 'unauthorized', 'project-unavailable', 'not-found']);
 
 /** The registry file as the first rows of the table. */
 export function dneskaiSourceSeedRows(): DneskaiSourceRow[] {

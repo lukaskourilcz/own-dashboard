@@ -46,6 +46,11 @@ it('cancels on caller disconnect without exposing its reason', async () => {
  controller.abort('synthetic private reason'); await failed;
  expect(cancel).toHaveBeenCalledOnce(); expect(vi.getTimerCount()).toBe(0);
 });
+it('cancels a body when its enclosing request budget ends', async () => {
+ const parent=new AbortController(),cancel=vi.fn(),req=request(new ReadableStream({cancel}));
+ const failed=expect(boundedRequestText(req,100,parent.signal)).rejects.toMatchObject({code:'request-body-aborted'});
+ parent.abort('synthetic private reason');await failed;expect(cancel).toHaveBeenCalledOnce();expect(req.body?.locked).toBe(false);
+});
 
 it('refuses an already cancelled request before locking or consuming its body', async () => {
  const controller = new AbortController(); controller.abort(); const req = request(new ReadableStream(), controller.signal);

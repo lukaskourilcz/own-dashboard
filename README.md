@@ -210,7 +210,7 @@ The migrations, in the order they run:
 
 112. `20261024170208_confirmed_dneskai_daily_mix.sql` — prepared, unapplied; captured-version daily volume saves, own-only persisted receipts and no-op retries. Unreadable enabled configuration stops scheduling instead of restoring defaults.
 
-113. `20261024174247_confirmed_dneskai_sources.sql` — prepared, unapplied; captured source-setting save/removal receipts and no-op retries; compatible legacy writers share the project-first lock and 120-source limit. New UI/API caller integration remains in progress.
+113. `20261024174247_confirmed_dneskai_sources.sql` — prepared, unapplied; captured source-setting save/removal receipts and no-op retries; compatible legacy writers share the project-first lock and 120-source limit. API/browser receipt callers are integrated; editor lifecycle guards and final release checks remain in progress.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The twenty-seven audit migrations 87–113 remain unapplied; apply them in filename order before deploying the implementation branch.

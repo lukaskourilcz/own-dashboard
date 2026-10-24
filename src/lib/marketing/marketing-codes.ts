@@ -47,6 +47,7 @@ const CODES = {
   'account-unverified': ['account', 'The Instagram account is not verified.', 'Instagramový účet není ověřený.'],
   'campaign-inactive': ['investigate', 'The plan this post belongs to is not active, so it will not publish.', 'Plán, do kterého příspěvek patří, není aktivní, proto se nepublikuje.'],
   'sources-unavailable': ['retry', 'The source list could not be read or changed.', 'Seznam zdrojů nešlo načíst ani změnit.'],
+  'invalid-source': ['retry', 'Some source settings are invalid. Review the form fields.', 'Některá nastavení zdroje nejsou platná. Zkontrolujte pole formuláře.'],
   'collection-source-removed': ['none', 'The source was removed or switched off after the night started, so it was not read.', 'Zdroj byl po začátku noci odebrán nebo vypnut, proto se nečetl.'],
   'collection-no-enabled-sources': ['sourceSettings', 'No enabled sources are due, so collection did not start.', 'Ke čtení nejsou žádné aktivní zdroje, proto sběr nezačal.'],
   'source-history-unavailable': ['retry', 'Source history could not be read completely.', 'Historii zdrojů se nepodařilo načíst celou.'],

@@ -7,6 +7,7 @@ import { contentHash } from './hashes';
 import { loadDneskaiSourceCatalog,type DneskaiSourceCatalog } from './dneskai-source-catalog';
 import type { JevHistory } from './dneskai-providers';
 import { previewPilotRetired } from './preview-pilot';
+import { awaitWithSignal } from '@/lib/abortable';
 import { DNESKAI_FINISH_EVENT_LIMIT,dneskaiEventCategory,dneskaiFinishEvents,groupDneskaiEvents } from './dneskai-events';
 import { dneskaiOtherEventViews,dneskaiSelectionEligible,readDneskaiBriefs } from './dneskai-brief-read';
 import { dneskaiRecoveryCapabilities,dneskaiSelectionV2Enabled } from './dneskai-evidence-rollout';
@@ -29,10 +30,13 @@ export interface DneskaiCollectionStore{
  /** Which sources exist (#174): the owner's table rows while DNESKAI_SOURCES_TABLE_ENABLED is on, else the registry file. */
  catalog?(owner:string,project:string,env:Record<string,string|undefined>):Promise<DneskaiSourceCatalog>;
 }
-export async function requireDneskaiProject(db:DneskaiDatabase,owner:string,projectId:string){
+export async function requireDneskaiProject(db:DneskaiDatabase,owner:string,projectId:string,signal?:AbortSignal){
  z.uuid().parse(owner);z.uuid().parse(projectId);
- const {data,error}=await db.from('projects').select('id,user_id,portfolio_key,repo_full_name,previous_repo_full_names,parent_id').eq('user_id',owner).eq('id',projectId).maybeSingle();
- if(error||!data||data.user_id!==owner||data.id!==projectId||!isDneskaiProject(data))throw new Error('collection-project-unavailable');return data;
+ let query=db.from('projects').select('id,user_id,portfolio_key,repo_full_name,previous_repo_full_names,parent_id').eq('user_id',owner).eq('id',projectId);
+ if(signal){signal.throwIfAborted();query=query.retry(false).abortSignal(signal);}
+ const {data,error}=await awaitWithSignal(query.maybeSingle(),signal);
+ if(error)throw new Error('collection-project-read-unavailable');
+ if(!data||data.user_id!==owner||data.id!==projectId||!isDneskaiProject(data))throw new Error('collection-project-unavailable');return data;
 }
 export function createDneskaiCollectionStore(db:DneskaiDatabase):DneskaiCollectionStore{
  const rpc=async(name:string,args:Record<string,unknown>)=>{const {data,error}=await db.rpc(name,args);if(error)throw new Error('collection-store-unavailable');return data;};

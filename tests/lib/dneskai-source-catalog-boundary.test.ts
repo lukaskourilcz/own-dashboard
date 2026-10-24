@@ -31,6 +31,12 @@ it('does not turn a failed source read into the registry or seed it',async()=>{
  mocks.read.mockResolvedValue({data:null,error:{message:'synthetic private upstream error'}});
  const response=await GET(new Request(url));expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'sources-unavailable'});expect(mocks.rpc).not.toHaveBeenCalled();
 });
+it('ends an uncooperative GET read when the enclosing request deadline expires',async()=>{
+ const controller=new AbortController();vi.spyOn(AbortSignal,'timeout').mockImplementation(()=>controller.signal);mocks.read.mockImplementation(()=>new Promise(()=>{}));
+ const pending=GET(new Request(url));await vi.waitFor(()=>expect(mocks.read).toHaveBeenCalledOnce());controller.abort('synthetic private reason');
+ const response=await pending;expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'sources-unavailable'});expect(mocks.rpc).not.toHaveBeenCalled();
+ expect(mocks.filters.filter(([,method])=>method==='abortSignal').every(([, ,signal])=>(signal as AbortSignal).aborted)).toBe(true);
+});
 it('refuses a server-capped catalog instead of claiming the returned prefix is complete',async()=>{
  mocks.read.mockResolvedValue({data:[stored()],error:null,count:2});
  const response=await GET(new Request(url));expect(response.status).toBe(503);expect(mocks.rpc).not.toHaveBeenCalled();

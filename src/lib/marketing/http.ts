@@ -19,14 +19,14 @@ export class MarketingRequestBodyError extends Error {
  constructor(readonly code: BodyFailure) { super(code); this.name = 'MarketingRequestBodyError'; }
 }
 /** Bound the whole upload, not each chunk. A refused body never reaches authentication or work admission. */
-export async function boundedRequestText(request: Request, maximum = 200000): Promise<string> {
+export async function boundedRequestText(request: Request, maximum = 200000, parent?: AbortSignal): Promise<string> {
  if (!Number.isSafeInteger(maximum) || maximum < 1) throw new MarketingRequestBodyError('invalid-body');
- if (request.signal.aborted) throw new MarketingRequestBodyError('request-body-aborted');
+ if (request.signal.aborted || parent?.aborted) throw new MarketingRequestBodyError('request-body-aborted');
  const reader = request.body?.getReader();
  if (!reader) throw new MarketingRequestBodyError('missing-body');
  const deadline = new AbortController();
  const timeout = setTimeout(() => deadline.abort(), MARKETING_BODY_TIMEOUT_MS);
- const signal = AbortSignal.any([request.signal, deadline.signal]);
+ const signal = AbortSignal.any([request.signal, deadline.signal, ...(parent ? [parent] : [])]);
  let complete = false, size = 0;
  const chunks: Uint8Array[] = [];
  try {
@@ -42,7 +42,7 @@ export async function boundedRequestText(request: Request, maximum = 200000): Pr
   complete = true;
   return text;
  } catch (error) {
-  if (request.signal.aborted) throw new MarketingRequestBodyError('request-body-aborted');
+  if (request.signal.aborted || parent?.aborted) throw new MarketingRequestBodyError('request-body-aborted');
   if (deadline.signal.aborted) throw new MarketingRequestBodyError('request-body-timeout');
   throw error instanceof MarketingRequestBodyError ? error : new MarketingRequestBodyError('invalid-body');
  } finally {

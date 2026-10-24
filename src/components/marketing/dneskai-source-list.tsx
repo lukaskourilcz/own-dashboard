@@ -11,7 +11,7 @@ import { useConfirmation } from '@/components/ui/confirmation-dialog';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiSourceList as copy } from '@/lib/i18n/sections/dneskai-source-list';
 import { formatDneskaiDayTime } from '@/lib/marketing/dneskai-workspace';
-import { DNESKAI_SOURCE_TOPICS, dneskaiDetectSource, dneskaiSourceLabel, dneskaiWebSourceId, type DneskaiSourceList, type DneskaiSourceRow } from '@/lib/marketing/dneskai-source-list';
+import { DNESKAI_SOURCE_TOPICS, dneskaiDetectSource, dneskaiSourceLabel, dneskaiWebSourceId, type DneskaiSourceAction, type DneskaiSourceList, type DneskaiSourceRow } from '@/lib/marketing/dneskai-source-list';
 import { DneskaiSourceListError, loadDneskaiSourceList, postDneskaiSourceAction } from '@/lib/marketing/dneskai-source-list-client';
 import { cn } from '@/lib/utils';
 
@@ -36,14 +36,19 @@ export function DneskaiSourceList({ projectId, lang, preview = false }: { projec
   const [editing, setEditing] = useState<DneskaiSourceRow | null>(null);
   const confirm = useConfirmation();
   const mutation = useMutation({
-    mutationFn: postDneskaiSourceAction,
+    retry: false,
+    mutationFn: (action: DneskaiSourceAction) => postDneskaiSourceAction(action),
     onSuccess: (_result, action) => { setStatus({ text: action.action === 'remove' ? t.removed : t.saved, error: false }); setEditing(null); void client.invalidateQueries({ queryKey: key }); },
-    onError: (error) => setStatus({ text: t.errors[error instanceof DneskaiSourceListError ? error.code : 'sources-unavailable'] ?? t.errors['sources-unavailable']!, error: true }),
+    onError: (error) => {
+      const code = error instanceof DneskaiSourceListError ? error.code : 'sources-unavailable';
+      setStatus({ text: Object.hasOwn(t.errors, code) ? t.errors[code]! : t.errors['sources-unavailable']!, error: true });
+      void client.invalidateQueries({ queryKey: key });
+    },
   });
-  const save = (row: DneskaiSourceRow) => mutation.mutate({ action: 'save', projectId, source: row });
+  const save = (row: DneskaiSourceRow, expected: DneskaiSourceRow | null = null) => mutation.mutate({ action: 'save', projectId, source: row, expected });
   const remove = async (row: DneskaiSourceRow) => {
     const label = dneskaiSourceLabel(row);
-    if (await confirm({ title: t.removeTitle(label), description: t.removeDescription, confirmLabel: t.removeConfirm, cancelLabel: t.cancel, destructive: true })) mutation.mutate({ action: 'remove', projectId, sourceId: row.sourceId });
+    if (await confirm({ title: t.removeTitle(label), description: t.removeDescription, confirmLabel: t.removeConfirm, cancelLabel: t.cancel, destructive: true })) mutation.mutate({ action: 'remove', projectId, sourceId: row.sourceId, expected: row });
   };
   const data = query.data;
   const filtered = data?.items.filter(item => (kind === 'all' || (item.row.kind === 'instagram' ? 'instagram' : 'web') === kind) && `${dneskaiSourceLabel(item.row)} ${item.row.name} ${item.row.handleOrUrl}`.toLocaleLowerCase(lang).includes(search.trim().toLocaleLowerCase(lang))) ?? [];
@@ -69,11 +74,11 @@ export function DneskaiSourceList({ projectId, lang, preview = false }: { projec
               <h3 id={`dneskai-sources-${group}`} className="text-sm font-semibold">{t[group]} <span className="font-normal text-foreground-muted tabular">{items.length}</span></h3>
               {items.length === 0 ? <p className="text-sm text-foreground-muted">{t.empty}</p>
                 : <ul className="divide-y divide-border rounded-lg border border-border bg-surface">{items.map((item) => <SourceRow key={item.row.sourceId} item={item} lang={lang} editable={editable} busy={mutation.isPending}
-                  onToggle={(enabled) => save({ ...item.row, enabled })} onEdit={() => setEditing(item.row)} onRemove={() => void remove(item.row)} />)}</ul>}
+                  onToggle={(enabled) => save({ ...item.row, enabled }, item.row)} onEdit={() => setEditing(item.row)} onRemove={() => void remove(item.row)} />)}</ul>}
             </section>;
           })}
         </>}
-    {editing && <EditSource row={editing} lang={lang} busy={mutation.isPending} onClose={() => setEditing(null)} onSave={save} />}
+    {editing && <EditSource row={editing} lang={lang} busy={mutation.isPending} onClose={() => setEditing(null)} onSave={row => save(row, editing)} />}
   </section>;
 }
 

@@ -444,10 +444,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/source-list/route.ts",
-      "lines": 81,
+      "lines": 104,
       "sha256": "0ccbf56d1282c6c88931b2ed4a1e006bd6943b6c4387cc1922d514a78320eecc",
-      "status": "partial; GET is read-only, complete and history-scoped with unavailable recovery checks (finding 146); POST persistence/receipt bounds remain under review",
-      "reviewedSha256": "6ae4d81edf4225a4c98b5e5fdc76efe435442c7fba3bd9194347993767510962"
+      "status": "source reviewed; complete read-only GET and captured owned POST, whole-request/auth/project/body/database bounds and receipt checks pass (findings 146/151); rendered editor/release checks pending",
+      "reviewedSha256": "13b1237d46fb0b47ffd0be5f67f5b824d84b2234818c46dd0f776812e4bffebf"
     },
     {
       "path": "src/app/api/marketing/dneskai/sources/route.ts",
@@ -983,9 +983,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-source-list.tsx",
-      "lines": 164,
+      "lines": 169,
       "sha256": "27c3bc4923b8c87bc02970a0f76b54c36f14ced9e9342be7279c240d8bf4c98d",
-      "status": "pending"
+      "status": "partial; captured row inputs and confirmed client acknowledgements integrated (finding 151); retained drafts, immediate repeat/pending navigation, lifecycle and conflict reload remain pending",
+      "reviewedSha256": "9899fa256a557539fba1708649a7ce096344248c65ae837a61551636b4113ed2"
     },
     {
       "path": "src/components/marketing/dneskai-sources.tsx",
@@ -2386,10 +2387,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
-      "lines": 60,
+      "lines": 64,
       "sha256": "faa07a8ec8c91c1248815b5a26cf54ef8adcc4c7d42a57fd7821eeb866340259",
-      "status": "partial; EN/CS address guidance checked (finding 149); mutation recovery/error lookup and legacy notice copy remain under review",
-      "reviewedSha256": "adfffe68403ef4ba3edf332e501079e1ddae568917dcb493b62e557314cfc358"
+      "status": "partial; address/refusal guidance is bilingual and owned error keys are guarded (findings 149/151); editor conflict/reload and legacy notice copy remain pending",
+      "reviewedSha256": "28416c21fcff01eb8fc681b39d274e0ece8b0b5d7f7261583c0de36021b09c98"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-sources.ts",
@@ -3192,29 +3193,31 @@
     },
     {
       "path": "src/lib/marketing/dneskai-source-catalog.ts",
-      "lines": 87,
+      "lines": 88,
       "sha256": "58162b53aa0f5077d60d53342fd1d5f7f6314c0e1138ac7374c4bdaff6f4927b",
       "status": "source reviewed; complete exact-count catalogs, no registry fallback, removed/disabled source refusal and empty admission checks pass (finding 146); final release checks pending",
-      "reviewedSha256": "221fd0f45c0c528a1f545a66786897675e621b7f89ca2e68edc4c33c860cd745"
+      "reviewedSha256": "28c4b379cd104f113bbbfe8d3dab6cb581073563e1b48935a76a084127cceb6d"
     },
     {
       "path": "src/lib/marketing/dneskai-source-list-client.ts",
-      "lines": 24,
+      "lines": 51,
       "sha256": "7eb23f5eb8f5982f61b4c7a70103ec6c2a95bda2f96dcc07729c84f7c614ff78",
-      "status": "pending"
+      "status": "source reviewed; bounded/no-retry reads and captured writes require matching receipts, known refusals and caller cancellation (finding 151); editor lifecycle remains separate",
+      "reviewedSha256": "5a7382403785955ea63d98f9c6cac3ff2ce57da758dc755a4c204887bad5b026"
     },
     {
       "path": "src/lib/marketing/dneskai-source-list.ts",
-      "lines": 145,
+      "lines": 164,
       "sha256": "f08ae40c2053cf6f1ba203d57907f2b58c9eedff27f3c30e3e40281fbe172c43",
-      "status": "partial; source/read/address schemas and captured receipt shape prepared (findings 146/149/150); API/client/editor source mutations remain under review",
-      "reviewedSha256": "c739634d45a3a8e211faf59170f80999abd262502cf5e2274da94bada9bc4471"
+      "status": "partial; captured action/receipt confirmation and bounded source schemas checked (findings 146/149/150/151); source detection edge cases and final editor integration remain under review",
+      "reviewedSha256": "6ed9744b4077b1de56b4e7381d1e0eaef952b940fb385773a993ae649748cf71"
     },
     {
       "path": "src/lib/marketing/dneskai-store.ts",
-      "lines": 109,
+      "lines": 113,
       "sha256": "1b3c901b8cd2c8bc831d1a81a5ca71fed475b98e690393a58fe67a88c1ab8b44",
-      "status": "pending"
+      "status": "partial; owned project helper distinguishes unavailable reads and supports bounded cancellation (finding 151); collection/history/grouping persistence review pending",
+      "reviewedSha256": "db3862cf097b7e03313230905e7a59cf4248ea90c37e328d0bf6cbc76913911d"
     },
     {
       "path": "src/lib/marketing/dneskai-titling.ts",
@@ -3402,7 +3405,7 @@
       "lines": 54,
       "sha256": "5757a070f59c830d4199ad5f2f93a301f7ae6811c599e721b3eae8169f71247e",
       "status": "source reviewed; bounded byte/whole-upload deadline, cancellation and signed UTF-8 tests pass (finding 144); final release checks pending",
-      "reviewedSha256": "6d2b5fe5b94b1378ed12bb26d29dce1fb44ce27a2660f9ee0cf94e7fed19c0ff"
+      "reviewedSha256": "b4be05afe6fc43a4c0a4ac0afbc3fa320c5cd355f98a3d6f4441548db701c1ee"
     },
     {
       "path": "src/lib/marketing/humanizer.ts",
@@ -3454,10 +3457,10 @@
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
-      "lines": 670,
+      "lines": 671,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
       "status": "partial; upload/mix/source recovery copy and owned dictionary lookup checks pass (finding 147); complete code/dictionary reconciliation pending",
-      "reviewedSha256": "b0d04a2bf0dbb713a7e4399e5c7a0008a210696ff8a9e6925de6478255269d1f"
+      "reviewedSha256": "0af5068439c81660a02dc9bbc0ac8fb7308f5f5a7874154c5d2242f8e14f3ae6"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",

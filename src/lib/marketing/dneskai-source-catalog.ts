@@ -59,8 +59,9 @@ type SourceDb = { from: (table: 'marketing_dneskai_sources') => unknown };
 type Query = { select: (columns: string, options: { count: 'exact' }) => Query; eq: (column: string, value: string) => Query; order: (column: string, options: { ascending: boolean }) => Query; retry: (enabled: false) => Query; abortSignal: (signal: AbortSignal) => Query; limit: (n: number) => PromiseLike<{ data: unknown[] | null; error: unknown; count: number | null }> };
 
 /** A complete validated owner catalog. Refuse partial/malformed reads; an empty catalog stays empty. */
-export async function readDneskaiSourceRows(db: SourceDb, owner: string, project: string): Promise<DneskaiSourceRow[]> {
-  z.uuid().parse(owner); z.uuid().parse(project); const signal = AbortSignal.timeout(15_000);
+export async function readDneskaiSourceRows(db: SourceDb, owner: string, project: string, parent?: AbortSignal): Promise<DneskaiSourceRow[]> {
+  z.uuid().parse(owner); z.uuid().parse(project); const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
+  signal.throwIfAborted();
   const { data, error, count } = await awaitWithSignal((db.from('marketing_dneskai_sources') as Query)
     .select('source_id,kind,topic,handle_or_url,name,tier,weekdays,max_items,enabled', { count: 'exact' }).eq('user_id', owner).eq('project_id', project)
     .order('created_at', { ascending: true }).order('source_id', { ascending: true }).retry(false).abortSignal(signal).limit(DNESKAI_SOURCE_LIMIT + 1), signal);

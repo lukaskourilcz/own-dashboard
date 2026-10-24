@@ -25,7 +25,9 @@ const en = {
     save: 'Save', saving: 'Saving…', weekdaysMissing: 'Choose at least one day.' },
   saved: 'Saved.', removed: 'Removed.',
   errors: { 'source-unavailable': 'This source no longer exists. Refresh the list.', 'source-address-changed': 'The address of a source cannot change. Add it as a new source.',
-    'source-limit': 'The list holds at most 120 sources.', 'invalid-source': 'Check the fields and try again.', 'sources-unavailable': 'The change could not be saved. Check the connection and try again.' } as Record<string, string>,
+    'source-limit': 'The list holds at most 120 sources.', 'invalid-source': 'Check the fields and try again.', 'sources-unavailable': 'The change could not be confirmed. Refresh the list before retrying.',
+    'source-changed': 'The saved source changed. Review the latest settings before trying again.', 'source-save-unconfirmed': 'The change could not be confirmed. Refresh the list before retrying.',
+    unauthorized: 'Your session expired. Sign in again before changing sources.', 'project-unavailable': 'The project could not be verified. Reload the workspace.', 'not-found': 'Source editing is not enabled.' } as Record<string, string>,
 };
 
 const cs: typeof en = {
@@ -54,7 +56,9 @@ const cs: typeof en = {
     save: 'Uložit', saving: 'Ukládám…', weekdaysMissing: 'Vyberte aspoň jeden den.' },
   saved: 'Uloženo.', removed: 'Odebráno.',
   errors: { 'source-unavailable': 'Tento zdroj už neexistuje. Obnovte seznam.', 'source-address-changed': 'Adresa zdroje se nemění. Přidejte ho jako nový zdroj.',
-    'source-limit': 'Seznam pojme nejvýš 120 zdrojů.', 'invalid-source': 'Zkontrolujte pole a zkuste to znovu.', 'sources-unavailable': 'Změnu se nepodařilo uložit. Zkontrolujte připojení a zkuste to znovu.' },
+    'source-limit': 'Seznam pojme nejvýš 120 zdrojů.', 'invalid-source': 'Zkontrolujte pole a zkuste to znovu.', 'sources-unavailable': 'Změnu se nepodařilo potvrdit. Před dalším pokusem obnovte seznam.',
+    'source-changed': 'Uložený zdroj se změnil. Před dalším pokusem zkontrolujte aktuální nastavení.', 'source-save-unconfirmed': 'Změnu se nepodařilo potvrdit. Před dalším pokusem obnovte seznam.',
+    unauthorized: 'Přihlášení vypršelo. Před změnou zdrojů se přihlaste znovu.', 'project-unavailable': 'Projekt se nepodařilo ověřit. Načtěte projekt znovu.', 'not-found': 'Úprava zdrojů není zapnutá.' },
 };
 
 export const dneskaiSourceList = { en, cs };
