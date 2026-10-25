@@ -1594,10 +1594,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1159,
+      "lines": 1124,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; captured task creation adopted in finding 177; toggle/delete, repository cleanup and density source/rendered review remain pending",
-      "reviewedSha256": "0f364ce611f98cdd68ee269b7d900ae8a562f01b174a63b708461deb05f5e04a"
+      "status": "partially reviewed; captured creation/completion/deletion adopted in findings 177\u2013178; repository cleanup and density source/rendered review remain pending",
+      "reviewedSha256": "b3e3a5686b2c553abdb7d91c8eced4b17fe80ef2610e02b7cacd5d09e1eb32fc"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -2622,10 +2622,10 @@
     },
     {
       "path": "src/lib/i18n/sections/todos.ts",
-      "lines": 411,
+      "lines": 414,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; EN/CS creation retention/conflict/identity/limit messages checked in finding 177; final release pending",
-      "reviewedSha256": "72718dcb3fbe4b70b0ecb0e8603f02df2b3988635c30389fb09cbbcddda917ed"
+      "status": "source reviewed; EN/CS create and row mutation recovery feedback checked in findings 177\u2013178; final release pending",
+      "reviewedSha256": "7b22dfbb2496aabbd6c3e1917b0fd8ea86bedddff17234c6f4423c657d597843"
     },
     {
       "path": "src/lib/i18n/sections/tools.ts",
@@ -4376,6 +4376,13 @@
       "lines": 95,
       "status": "source reviewed; captured creation, stable retry identity, draft/pending/owner/exit guards and stale-read cancellation checked in finding 177; final release pending",
       "reviewedSha256": "e548813a89c7f0957e87ac84d3da7706cb07070abdfa96e1a800e5689fa30ba9"
+    },
+    {
+      "path": "src/components/tasks/use-task-actions.ts",
+      "sha256": null,
+      "lines": 76,
+      "status": "source reviewed; captured row completion/deletion, synchronous reservations, confirmation/owner/unmount/exit guards and strict cache ordering checked in finding 178; final release pending",
+      "reviewedSha256": "e41cf265ce6009b1e839282cb552b2d013a5b4e44a13da1e129ccbee62cd2e86"
     }
   ],
   "baselineFileCount": 561

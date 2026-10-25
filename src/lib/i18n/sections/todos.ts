@@ -37,6 +37,7 @@ type TodosStrings = {
   refreshNoRepos: string;
   refreshErr: string;
   saveErr: string;
+  taskChanged: string; taskMissing: string;
   // Repositories with no NEEDED.md at the root or in docs/, joined by commas.
   refreshMissing: (repos: string) => string;
   refreshRetained: (count: number) => string;
@@ -123,6 +124,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     openDoneCount: (open, done) => `${open} open · ${done} done`,
     allClear: "All clear",
     allClearDescription: "No open tasks. Add one above.",
+    taskChanged:"The task changed elsewhere. Reloaded tasks will show its current state; your change was not applied.",taskMissing:"The task was already removed.",
     taskAdded:"Task added.",createErr:"The task could not be confirmed. Your draft is kept; retrying will not create a second copy.",createConflict:"The saved task changed. Copy any text you need, then discard this draft before starting another task.",createAbsent:"This task was removed. Discard this draft before starting a new task.",ownerChanged:"The account changed. Copy any text you need, then reload to continue.",discardDraft:"Discard draft",reloadPage:"Discard and reload",selectedUnavailable:"Saved selection unavailable",titleLimit:"Use at most 500 characters for the task title.",
     addTask: "Add task",
     addTaskTitle: "Add task",
@@ -261,6 +263,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       )}`,
     allClear: "Hotovo",
     allClearDescription: "Žádné otevřené úkoly. Přidej nějaký výše.",
+    taskChanged:"Úkol se mezitím změnil. Po načtení uvidíte jeho aktuální stav; vaše změna se neprovedla.",taskMissing:"Úkol už byl odstraněn.",
     taskAdded:"Úkol přidán.",createErr:"Uložení úkolu se nepodařilo potvrdit. Návrh zůstává zachovaný; opakování nevytvoří druhou kopii.",createConflict:"Uložený úkol se změnil. Zkopírujte potřebný text a před vytvořením dalšího úkolu tento návrh zahoďte.",createAbsent:"Tento úkol byl odstraněn. Před vytvořením nového úkolu tento návrh zahoďte.",ownerChanged:"Účet se změnil. Zkopírujte potřebný text a pro pokračování stránku znovu načtěte.",discardDraft:"Zahodit návrh",reloadPage:"Zahodit a znovu načíst",selectedUnavailable:"Uložený výběr není dostupný",titleLimit:"Název úkolu může mít nejvýše 500 znaků.",
     addTask: "Přidat úkol",
     addTaskTitle: "Přidat úkol",

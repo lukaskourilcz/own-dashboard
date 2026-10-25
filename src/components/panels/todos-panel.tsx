@@ -55,6 +55,7 @@ import {
   removeFinishedFromNeeded,
   scanNeededRepos,
 } from "@/lib/needed-sync";
+import { useTaskActions } from "@/components/tasks/use-task-actions";
 import { TaskComposer } from "@/components/tasks/task-composer";
 import { TaskTags } from "@/components/tasks/task-tags";
 import {
@@ -111,58 +112,7 @@ export function TodosPanel({
   const reposQuery = useReposQuery(!compact);
   const projectByTodo = useMemo(() => (taskIndex ?? buildProjectTaskIndex(projects, todos)).byTodo, [taskIndex, todos, projects]);
 
-  // Optimistic toggle: flip in the cache immediately, roll back on error,
-  // reconcile with the DB via invalidate once settled.
-  const toggleMutation = useMutation({
-    mutationFn: async (td: Todo) => {
-      const { error } = await supabase
-        .from("todos")
-        .update({ done: !td.done })
-        .eq("id", td.id);
-      if (error) throw error;
-    },
-    onMutate: async (td) => {
-      await qc.cancelQueries({ queryKey: qk.todos });
-      const prev = qc.getQueryData<Todo[]>(qk.todos);
-      qc.setQueryData<Todo[]>(qk.todos, (old = []) =>
-        old.map((x) => (x.id === td.id ? { ...x, done: !td.done } : x)),
-      );
-      return { prev };
-    },
-    onError: (_e, _td, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
-      toast.err(t.todos.saveErr);
-    },
-    onSettled: () =>
-      Promise.all([
-        qc.invalidateQueries({ queryKey: qk.todos }),
-        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
-      ]),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("todos").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.todos });
-      const prev = qc.getQueryData<Todo[]>(qk.todos);
-      qc.setQueryData<Todo[]>(qk.todos, (old = []) =>
-        old.filter((td) => td.id !== id),
-      );
-      return { prev };
-    },
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
-      toast.err(t.todos.saveErr);
-    },
-    onSettled: () =>
-      Promise.all([
-        qc.invalidateQueries({ queryKey: qk.todos }),
-        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
-      ]),
-  });
+  const { toggle, remove, pendingIds } = useTaskActions(ownerId);
 
   // Refresh: re-scan every repo's NEEDED.md (root, then docs/), add newly
   // listed tasks and drop open GitHub tasks whose source line is gone. A repo
@@ -277,17 +227,6 @@ export function TodosPanel({
     },
   });
 
-  const toggle = (td: Todo) => { if (!toggleMutation.isPending) toggleMutation.mutate(td); };
-  const remove = async (id: string) => {
-    if (await confirm({
-      title: t.common.delete,
-      description: t.todos.deleteTaskConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) removeMutation.mutate(id);
-  };
-
   const open = todos.filter((td) => !td.done);
   const done = todos.filter((td) => td.done);
   const visible = compact ? open.slice(0, 5) : todos;
@@ -315,6 +254,7 @@ export function TodosPanel({
               t={t}
               locale={locale}
               items={visible}
+              pendingIds={pendingIds}
               onToggle={toggle}
               compact
             />
@@ -493,6 +433,7 @@ export function TodosPanel({
                   locale={locale}
                   items={openGlobal}
                   limit={tasksPerCategory}
+                  pendingIds={pendingIds}
                   onToggle={toggle}
                   onRemove={remove}
                   header={
@@ -510,6 +451,7 @@ export function TodosPanel({
                   locale={locale}
                   items={g.items}
                   limit={tasksPerCategory}
+                  pendingIds={pendingIds}
                   onToggle={toggle}
                   onRemove={remove}
                   header={
@@ -548,6 +490,7 @@ export function TodosPanel({
                   locale={locale}
                   items={openPersonal}
                   limit={tasksPerCategory}
+                  pendingIds={pendingIds}
                   onToggle={toggle}
                   onRemove={remove}
                   header={
@@ -568,6 +511,7 @@ export function TodosPanel({
               items={done}
               open={showFinished}
               onToggleOpen={() => setShowFinished((v) => !v)}
+              pendingIds={pendingIds}
               onReopen={toggle}
               onRemove={remove}
               canClearNeeded={finishedNeeded > 0}
@@ -613,6 +557,7 @@ function byImportanceThenDue(a: Todo, b: Todo): number {
  * body can be collapsed from the header. Tasks arrive pre-sorted by importance.
  */
 function TaskGroupCard({
+  pendingIds,
   t,
   locale,
   header,
@@ -621,13 +566,14 @@ function TaskGroupCard({
   onToggle,
   onRemove,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   header: React.ReactNode;
   items: Todo[];
   limit: number;
   onToggle: (td: Todo) => void;
-  onRemove: (id: string) => void;
+  onRemove: (td: Todo) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -667,6 +613,7 @@ function TaskGroupCard({
                   t={t}
                   locale={locale}
                   td={td}
+                  pendingIds={pendingIds}
                   onToggle={onToggle}
                   onRemove={onRemove}
                 />
@@ -690,17 +637,19 @@ function TaskGroupCard({
 
 /** One task, rendered as a bordered subcard with its generated date + timer. */
 function TaskSubcard({
+  pendingIds,
   t,
   locale,
   td,
   onToggle,
   onRemove,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   td: Todo;
   onToggle: (td: Todo) => void;
-  onRemove: (id: string) => void;
+  onRemove: (td: Todo) => void;
 }) {
   return (
     <motion.li
@@ -712,6 +661,8 @@ function TaskSubcard({
       className="group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2"
     >
       <Checkbox
+        disabled={pendingIds.has(td.id)}
+        aria-busy={pendingIds.has(td.id)}
         checked={td.done}
         onCheckedChange={() => onToggle(td)}
         aria-label={td.title}
@@ -744,7 +695,9 @@ function TaskSubcard({
       <Tooltip content={t.common.delete}>
         <button
           type="button"
-          onClick={() => onRemove(td.id)}
+          disabled={pendingIds.has(td.id)}
+          aria-busy={pendingIds.has(td.id)}
+          onClick={() => onRemove(td)}
           aria-label={t.common.delete}
           className="inline-flex min-h-6 min-w-6 items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
         >
@@ -779,6 +732,7 @@ function TimeChip({ t, due }: { t: Dict; due: string }) {
 /* ------------------------------- Finished -------------------------------- */
 
 function FinishedSection({
+  pendingIds,
   t,
   locale,
   items,
@@ -790,13 +744,14 @@ function FinishedSection({
   clearing,
   onClearNeeded,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   items: Todo[];
   open: boolean;
   onToggleOpen: () => void;
   onReopen: (td: Todo) => void;
-  onRemove: (id: string) => void;
+  onRemove: (td: Todo) => void;
   canClearNeeded: boolean;
   clearing: boolean;
   onClearNeeded: () => void;
@@ -871,6 +826,8 @@ function FinishedSection({
               <Tooltip content={t.todos.reopen}>
                 <button
                   type="button"
+                  disabled={pendingIds.has(td.id)}
+                  aria-busy={pendingIds.has(td.id)}
                   onClick={() => onReopen(td)}
                   aria-label={t.todos.reopen}
                   className="p-1 rounded text-foreground-subtle hover:text-foreground focus-ring"
@@ -881,7 +838,9 @@ function FinishedSection({
               <Tooltip content={t.common.delete}>
                 <button
                   type="button"
-                  onClick={() => onRemove(td.id)}
+                  disabled={pendingIds.has(td.id)}
+                  aria-busy={pendingIds.has(td.id)}
+                  onClick={() => onRemove(td)}
                   aria-label={t.common.delete}
                   className="p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
                 >
@@ -1088,6 +1047,7 @@ function TaskFilterBar({
 /* ------------------------------- Shared UI ------------------------------- */
 
 function TodoList({
+  pendingIds,
   t,
   locale,
   items,
@@ -1095,11 +1055,12 @@ function TodoList({
   onRemove,
   compact,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   items: Todo[];
   onToggle: (todo: Todo) => void;
-  onRemove?: (id: string) => void;
+  onRemove?: (td: Todo) => void;
   compact?: boolean;
 }) {
   return (
@@ -1116,6 +1077,8 @@ function TodoList({
             className="group flex items-center gap-3 rounded-md px-2 py-1.5 row-hover"
           >
             <Checkbox
+              disabled={pendingIds.has(td.id)}
+              aria-busy={pendingIds.has(td.id)}
               checked={td.done}
               onCheckedChange={() => onToggle(td)}
               aria-label={td.title}
@@ -1143,7 +1106,9 @@ function TodoList({
               <Tooltip content={t.common.delete}>
                 <button
                   type="button"
-                  onClick={() => onRemove(td.id)}
+                  disabled={pendingIds.has(td.id)}
+                  aria-busy={pendingIds.has(td.id)}
+                  onClick={() => onRemove(td)}
                   aria-label={t.common.delete}
                   className="inline-flex min-h-6 min-w-6 items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
                 >
