@@ -14,7 +14,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityBadge, StatusBadge } from "@/components/ui/status-badge";
-import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict, useLang } from "@/lib/i18n";
 import { statusLabel } from "@/lib/status-presentation";
@@ -55,7 +54,7 @@ function formatCheckedAt(timestamp: string): string {
   }
 }
 
-export function ClientsPanel({ organizations, setOrganizations, projects, opportunities, invoices, invoiceItems, todos, notes, importantDates, displayCurrency }: {
+export function ClientsPanel({ organizations, setOrganizations, projects, opportunities, invoices, invoiceItems, todos, notes, importantDates, displayCurrency, refreshFailed = false }: {
   organizations: Organization[];
   setOrganizations: Updater<Organization[]>;
   projects: Project[];
@@ -66,8 +65,20 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   notes: Note[];
   importantDates: ImportantDate[];
   displayCurrency: string;
+  refreshFailed?: boolean;
 }) {
   const formId = useId();
+  const newClientControl = useRef<HTMLButtonElement>(null);
+  const searchControl = useRef<HTMLInputElement>(null);
+  const deleteControls = useRef(new Map<string, HTMLButtonElement>());
+  const focusRemoval = useRef<{ id: string; nextId: string | null } | null>(null);
+  useLayoutEffect(() => {
+    const intent = focusRemoval.current;
+    if (!intent || organizations.some(row => row.id === intent.id)) return;
+    const next = intent.nextId ? deleteControls.current.get(intent.nextId) : null;
+    const control = next && !next.disabled ? next : [...deleteControls.current.values()].find(button => !button.disabled) ?? (newClientControl.current?.disabled ? searchControl.current : newClientControl.current);
+    control?.focus(); focusRemoval.current = null;
+  }, [organizations]);
   const owner = useOwnerPreferences();
   const lifetime = useRef(new AbortController());
   useLayoutEffect(() => {
@@ -82,7 +93,6 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const { lang } = useLang();
   const supabase = createClient();
   const qc = useQueryClient();
-  const toast = useToast();
   const confirm = useConfirmation();
   const navigate = useGuardedNavigation();
   const [open, setOpen] = useState(false);
@@ -99,6 +109,9 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const reservations = useRef(new Map<string, OrganizationScope>());
   const [pendingRows, setPendingRows] = useState<ReadonlySet<string>>(new Set());
   const [reloading, setReloading] = useState(false);
+  const reloadingRef = useRef(false);
+  const [reloadError, setReloadError] = useState(false);
+  const readFailed = refreshFailed || reloadError;
   const queryKey = useMemo(() => [...qk.organizations, owner?.ownerId], [owner?.ownerId]);
   const validForm = !!form.name.trim() && (!form.website.trim() || !!safeWebUrl(form.website)) && (!form.email.trim() || z.regexes.html5Email.test(form.email.trim()));
   const dirty = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM);
@@ -110,15 +123,15 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const errorKey = (error: unknown) => error instanceof OrganizationRecordError && error.reason === "changed" ? "organizationChanged" as const : "organizationActionUnconfirmed" as const;
   const invalidate = () => { void qc.invalidateQueries({ queryKey }); };
   async function reloadOrganizations() {
-    if (reloading) return;
+    if (reloadingRef.current) return;
     const captured = capture(); if (!captured || captured.signal.aborted) return;
-    setReloading(true);
+    reloadingRef.current = true; setReloading(true);
     try {
       await qc.refetchQueries({ queryKey, exact: true }, { throwOnError: true });
-      if (!captured.signal.aborted && qc.getQueryState(queryKey)?.status === "success") setRegistryNotice(null);
+      if (!captured.signal.aborted && qc.getQueryState(queryKey)?.status === "success") { setRegistryNotice(null); setReloadError(false); }
     }
-    catch { if (!captured.signal.aborted) toast.err(p.couldNotSave); }
-    finally { if (!captured.signal.aborted) setReloading(false); }
+    catch { if (!captured.signal.aborted) setReloadError(true); }
+    finally { reloadingRef.current = false; if (!captured.signal.aborted) setReloading(false); }
   }
   function reserve(organization: Organization) {
     if (reservations.current.has(organization.id)) return null;
@@ -236,6 +249,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       await removeOrganizationRecord(supabase, captured, source);
       await qc.cancelQueries({ queryKey, exact: true });
       if (captured.signal.aborted) return;
+      focusRemoval.current = { id: source.id, nextId: organizations[organizations.findIndex(row => row.id === source.id) + 1]?.id ?? null };
       setOrganizations(old => applyOrganizationReceipt(old, source, null));
       for (const key of [queryKey, qk.projects, qk.opportunities, qk.invoices, qk.todos, qk.notes, qk.importantDates]) void qc.invalidateQueries({ queryKey: key });
     } catch (error) { if (!captured.signal.aborted) setRegistryNotice({ id: source.id, key: errorKey(error), error: true }); }
@@ -266,7 +280,8 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     (!clientQuery || `${org.name} ${org.email ?? ""}`.toLocaleLowerCase().includes(clientQuery)),
   );
   return <div>
-    <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button disabled={creating} onClick={() => { cancelDraftLookup(); setOpen(x => !x); }}><Plus />{p.newClient}</Button>} />
+    <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button ref={newClientControl} disabled={creating} onClick={() => { cancelDraftLookup(); setOpen(x => !x); }}><Plus />{p.newClient}</Button>} />
+    {readFailed && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary p-3"><p className="min-w-0 flex-1 text-sm text-warning" role="alert">{p.organizationReadUnavailable}</p><Button variant="outline" disabled={reloading || pendingRows.size > 0 || creating} aria-busy={reloading} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button></div>}
     {open && <Card className="mx-auto mb-4 max-w-4xl"><CardContent className="p-4"><form aria-busy={ares.busy || creating} onSubmit={event => { event.preventDefault(); void saveDraft(); }}><fieldset disabled={creating} className="grid min-w-0 gap-3 sm:grid-cols-2">
       <div className="space-y-1.5"><Label htmlFor={`${formId}-name`}>{p.name}</Label><Input id={`${formId}-name`} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
       <div className="space-y-1.5"><Label>{p.type}</Label><SimpleSelect aria-label={p.type} value={form.type} onValueChange={(type) => setForm({ ...form, type: type as OrganizationType })} options={TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))} /></div>
@@ -279,10 +294,10 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       <div className="space-y-1.5"><Label htmlFor="org-city">{p.city}</Label><Input id="org-city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label htmlFor="org-zip">{p.zip}</Label><Input id="org-zip" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor="org-country">{p.country}</Label><Input id="org-country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div></div>
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor={`${formId}-notes`}>{p.notes}</Label><Textarea id={`${formId}-notes`} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-      {saveError && <div className="space-y-2 sm:col-span-2"><p className="text-sm text-risk" role="alert">{p[saveError]}</p>{saveError === "organizationChanged" && <Button type="button" variant="outline" disabled={reloading} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
+      {saveError && <div className="space-y-2 sm:col-span-2"><p className="text-sm text-risk" role="alert">{p[saveError]}</p>{saveError === "organizationChanged" && !readFailed && <Button type="button" variant="outline" disabled={reloading} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
       <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" onClick={() => navigate(() => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setSaveError(null); setOpen(false); })}>{t.common.cancel}</Button><Button type="submit" disabled={!validForm || creating || ares.busy || pendingRows.size > 0} aria-busy={creating}>{p.create}</Button></div>
     </fieldset></form></CardContent></Card>}
-    <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
+    <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input ref={searchControl} aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
     {visibleOrganizations.length === 0 ? <EmptyState title={organizations.length === 0 ? p.clientsEmpty : t.common.none} icon={Users} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">{visibleOrganizations.map((org) => {
       const relatedProjects = related.projects.get(org.id) ?? [];
       const relatedOpportunities = related.opportunities.get(org.id) ?? [];
@@ -293,26 +308,27 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       const counts = { projects: relatedProjects.length, opportunities: relatedOpportunities.length, invoices: relatedInvoices.length };
       const expanded = expandedId === org.id;
       const invoiceTotal = expanded ? relatedInvoices.reduce((sum, invoice) => sum + convert(computeTotals((itemsByInvoice.get(invoice.id) ?? []).map((item) => ({ quantity: Number(item.quantity), unit_price: Number(item.unit_price), vat_rate: Number(item.vat_rate) })), { roundTotal: invoice.round_total, currency: invoice.currency }).total, invoice.currency, displayCurrency), 0) : 0;
+      const website = safeWebUrl(org.website);
       const vatStatus = vatStatusOf(org);
       const vatIsFresh = vatCheckIsFresh(org, new Date());
       const canVerifyVat = isEuVatId(org.vat_id);
       const canFillFromAres = isValidIco(org.company_id);
-      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 p-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)_auto]"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-h-11 min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div>{(org.email || org.website) && <p className="mt-1 break-words text-xs text-foreground-muted">{org.email ?? org.website}</p>}</button><div className="col-start-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground-muted lg:col-start-2 lg:row-start-1">{counts.projects + counts.opportunities + counts.invoices === 0 ? <span>{p.noRelatedRecords}</span> : [[p.projects, counts.projects], [p.opportunities, counts.opportunities], [p.invoices, counts.invoices]].filter(([, count]) => Number(count) > 0).map(([label, count]) => <span key={label}><strong className="tabular text-foreground">{count}</strong> {label}</span>)}</div><div className="col-start-2 row-start-1 flex justify-end lg:col-start-3"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} disabled={pendingRows.has(org.id)} onClick={() => void removeOrganization(org)}><Trash2 /></Button></div></div>
-        {registryNotice?.id === org.id && <div className="space-y-2 px-3 pb-3"><p className={registryNotice.error ? "text-xs text-risk" : "text-xs text-foreground-muted"} role={registryNotice.error ? "alert" : "status"}>{p[registryNotice.key]}</p>{registryNotice.error && !(registryNotice.key === "aresNotFound" || registryNotice.key === "aresInvalidIco" || registryNotice.key === "vatNotEu") && <Button variant="outline" disabled={reloading || pendingRows.size > 0} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
-        {expanded && <div className="grid gap-4 border-t border-border bg-surface-inset p-4 lg:grid-cols-[minmax(14rem,.65fr)_minmax(0,1.35fr)]"><div className="space-y-2">{org.email && <a href={`mailto:${org.email}`} className="block text-sm underline">{org.email}</a>}{org.website && <a href={org.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm underline">{org.website}<ExternalLink className="h-3 w-3" /></a>}{org.notes && <p className="text-sm text-foreground-muted">{org.notes}</p>}{relatedInvoices.length > 0 && <p className="pt-2 text-xs font-medium tabular">{p.totalInvoiced}: {formatCurrency(invoiceTotal, displayCurrency)}</p>}
+      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 p-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)_auto]"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-h-11 min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div>{(org.email || org.website) && <p className="mt-1 break-words text-xs text-foreground-muted">{org.email ?? org.website}</p>}</button><div className="col-start-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground-muted lg:col-start-2 lg:row-start-1">{counts.projects + counts.opportunities + counts.invoices === 0 ? <span>{p.noRelatedRecords}</span> : [[p.projects, counts.projects], [p.opportunities, counts.opportunities], [p.invoices, counts.invoices]].filter(([, count]) => Number(count) > 0).map(([label, count]) => <span key={label}><strong className="tabular text-foreground">{count}</strong> {label}</span>)}</div><div className="col-start-2 row-start-1 flex justify-end lg:col-start-3"><Button variant="ghost" size="icon-sm" ref={control => { if (control) deleteControls.current.set(org.id, control); else deleteControls.current.delete(org.id); }} aria-label={`${p.delete}: ${org.name}`} disabled={pendingRows.has(org.id)} onClick={() => void removeOrganization(org)}><Trash2 /></Button></div></div>
+        {registryNotice?.id === org.id && <div className="space-y-2 px-3 pb-3"><p className={registryNotice.error ? "text-xs text-risk" : "text-xs text-foreground-muted"} role={registryNotice.error ? "alert" : "status"}>{p[registryNotice.key]}</p>{registryNotice.error && !readFailed && !(registryNotice.key === "aresNotFound" || registryNotice.key === "aresInvalidIco" || registryNotice.key === "vatNotEu") && <Button variant="outline" disabled={reloading || pendingRows.size > 0} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
+        {expanded && <div className="grid gap-4 border-t border-border bg-surface-inset p-4 lg:grid-cols-[minmax(14rem,.65fr)_minmax(0,1.35fr)]"><div className="min-w-0 space-y-2">{org.email && <a href={`mailto:${org.email}`} className="block break-words text-sm underline">{org.email}</a>}{org.website && (website ? <a href={website} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 text-sm underline"><span className="min-w-0 [overflow-wrap:anywhere]">{org.website}</span><ExternalLink className="h-3 w-3 shrink-0" /></a> : <p className="text-sm [overflow-wrap:anywhere]">{org.website}</p>)}{org.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted [overflow-wrap:anywhere]">{org.notes}</p>}{relatedInvoices.length > 0 && <p className="pt-2 text-xs font-medium tabular">{p.totalInvoiced}: {formatCurrency(invoiceTotal, displayCurrency)}</p>}
           <div className="space-y-2 border-t border-border pt-2">
-            {org.company_id && <p className="text-xs tabular text-foreground-muted">{p.companyId}: {org.company_id}{org.ares_verified_at ? ` · ${p.aresFilledOn} ${formatCheckedAt(org.ares_verified_at)}` : ""}</p>}
-            {org.company_id && !canFillFromAres && <p className="text-xs text-warning">{p.aresInvalidIco}</p>}
-            {org.vat_id && <div className="flex flex-wrap items-center gap-2"><span className="text-xs tabular text-foreground-muted">{p.vatId}: {org.vat_id}</span><StatusBadge value={`vat_${vatStatus}`} />{org.vat_verified_at && <span className="text-xs tabular text-foreground-muted">{p.vatVerifiedOn} {formatCheckedAt(org.vat_verified_at)}</span>}</div>}
+            {org.company_id && <p className="break-words text-xs tabular text-foreground-muted">{p.companyId}: {org.company_id}{org.ares_verified_at ? ` · ${p.aresFilledOn} ${formatCheckedAt(org.ares_verified_at)}` : ""}</p>}
+            {org.company_id && !canFillFromAres && <p className="text-xs text-foreground-muted">{p.aresUnsupported}</p>}
+            {org.vat_id && <div className="flex flex-wrap items-center gap-2"><span className="break-all text-xs tabular text-foreground-muted">{p.vatId}: {org.vat_id}</span><StatusBadge value={`vat_${vatStatus}`} />{org.vat_verified_at && <span className="text-xs tabular text-foreground-muted">{p.vatVerifiedOn} {formatCheckedAt(org.vat_verified_at)}</span>}</div>}
             {org.vat_id && !canVerifyVat && <p className="text-xs text-foreground-muted">{p.vatNotEu}</p>}
             {canVerifyVat && vatStatus === "unchecked" && <p className="text-xs text-foreground-muted">{p.vatNeverVerified}</p>}
             {(canFillFromAres || canVerifyVat) && <div className="flex flex-wrap gap-2 pt-1">
               {canFillFromAres && <Button variant="outline" size="sm" disabled={pendingRows.has(org.id)} aria-label={`${p.fillFromAres}: ${org.name}`} onClick={() => void runRegistry(org, "ares")}><Building2 />{p.fillFromAres}</Button>}
               {canVerifyVat && <Button variant={vatIsFresh ? "ghost" : "outline"} size="sm" disabled={pendingRows.has(org.id)} aria-label={`${vatIsFresh ? p.recheckVat : p.verifyVat}: ${org.name}`} onClick={() => void runRegistry(org, "vies", vatIsFresh)}><ShieldCheck />{vatIsFresh ? p.recheckVat : p.verifyVat}</Button>}
             </div>}
-            {vatNameMismatch(org.name, org.vat_verified_name) && <p className="text-xs text-warning">{p.vatRegisteredAs}: {org.vat_verified_name}</p>}
+            {vatNameMismatch(org.name, org.vat_verified_name) && <p className="break-words text-xs text-warning">{p.vatRegisteredAs}: {org.vat_verified_name}</p>}
 
-          </div></div><div><p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">{p.relatedWork}</p><ul className="mt-2 divide-y divide-border text-xs text-foreground-muted">{relatedProjects.map((item) => <li key={item.id} className="py-1.5"><Link className="font-medium text-foreground underline" href={`/projects/${encodeURIComponent(item.slug)}`} prefetch={false}>{item.name}</Link></li>)}{relatedOpportunities.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.opportunity}: {item.title}</span><StatusBadge value={item.status} /></li>)}{relatedInvoices.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.invoices}: {item.number}</span><StatusBadge value={item.status} /></li>)}{relatedTodos.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.task}: {item.title}</li>)}{relatedNotes.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.note}: {item.title}</li>)}{relatedDates.slice(0, 3).map((item) => <li key={item.id} className="py-1.5 tabular">{item.the_date}: {item.title}</li>)}</ul></div></div>}
+          </div></div><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">{p.relatedWork}</p><ul className="mt-2 divide-y divide-border text-xs text-foreground-muted">{relatedProjects.map((item) => <li key={item.id} className="break-words py-1.5"><Link className="font-medium text-foreground underline" href={`/projects/${encodeURIComponent(item.slug)}`} prefetch={false}>{item.name}</Link></li>)}{relatedOpportunities.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span className="min-w-0 break-words">{p.opportunity}: {item.title}</span><StatusBadge value={item.status} /></li>)}{relatedInvoices.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.invoices}: {item.number}</span><StatusBadge value={item.status} /></li>)}{relatedTodos.slice(0, 3).map((item) => <li key={item.id} className="break-words py-1.5">{p.task}: {item.title}</li>)}{relatedNotes.slice(0, 3).map((item) => <li key={item.id} className="break-words py-1.5">{p.note}: {item.title}</li>)}{relatedDates.slice(0, 3).map((item) => <li key={item.id} className="py-1.5 tabular">{item.the_date}: {item.title}</li>)}</ul></div></div>}
       </article>;
     })}</div>}
   </div>;

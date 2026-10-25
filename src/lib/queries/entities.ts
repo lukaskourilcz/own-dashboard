@@ -9,11 +9,12 @@ import type { Updater } from "@/lib/types";
  *
  * `ready` is false while the value is still the empty placeholder an unseeded
  * destination starts from; `failed` is true when that first fetch gave up.
+ * `refreshFailed` distinguishes a later failure while confirmed data remains.
  * Anything that writes a whole record back from what it read (a form, a flow
  * that upserts) must wait for `ready`, or it saves the placeholder over the
  * owner's data.
  */
-export type EntityStatus = { ready: boolean; failed: boolean };
+export type EntityStatus = { ready: boolean; failed: boolean; refreshFailed?: true };
 
 /**
  * React Query as a client-side store for route-scoped dashboard data.
@@ -73,7 +74,7 @@ export function useEntityStore<T>(
   // and a cache write all carry a real timestamp.
   const ready = dataUpdatedAt > 0;
   const status = useMemo<EntityStatus>(
-    () => ({ ready, failed: !ready && isError }),
+    () => ({ ready, failed: !ready && isError, ...(ready && isError ? { refreshFailed: true as const } : {}) }),
     [ready, isError],
   );
 

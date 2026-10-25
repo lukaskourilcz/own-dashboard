@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Client recovery (2026-10-25, finding 220): twenty-two final native EN/CS desktop/mobile cases pass in 53.1 seconds. Cached-read failure retains clients with one retry; long contact/details fit six widths; unsupported saved URL schemes stay inert; confirmed deletion restores keyboard focus. Axe and captured persistence/read recovery pass. These fixture checks include intentional 503 responses and do not establish production rollout or final app-wide release.
+
 > Client persistence (2026-10-25, finding 219): eighteen final native EN/CS desktop/mobile cases pass in 40.6 seconds, including failed saves with retained identity, guarded pending exits, visible closed-row conflicts, explicit reload, confirmed VAT updates, complete-read recovery, six-width reflow and axe. Synthetic 503 responses are intentional. The real client form keeps its centered maximum width and mobile targets. These isolated fixture checks do not establish production rollout or replace the final app-wide release.
 
 > Daily mix recovery (2026-10-24, app-wide finding 145): twelve final fixture browser cases pass in EN/CS on desktop/mobile, including pending/failed saves, guarded exits, version conflicts and explicit reload. Six-width geometry, native control heights, axe, console and the unchanged offline preview pass. Actual Czech conflict layouts were inspected: desktop controls share one row, mobile retains full labels and recovery copy. This is targeted evidence; the app-wide optimized matrix and production rollout remain pending.

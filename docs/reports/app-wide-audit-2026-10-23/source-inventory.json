@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "52cdc9360922c537bc8a102974dd14a3c3992050ee31869d59e1770e3a3695de"
+      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
+      "reviewedSha256": "76da9484d5fe4286e8e888ae0a8afa529d0cad324798d171dee940042cf1c12a"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1444,8 +1444,8 @@
       "path": "src/components/panels/clients-panel.tsx",
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
-      "status": "source reviewed; captured client writes, draft/exit recovery and localized notices pass mounted/native checks; final consolidated release pending",
-      "reviewedSha256": "5550c6bb9ceb4e9b489417407587325ec667063401dac529d84846a0a9b28a95"
+      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
+      "reviewedSha256": "d2c8d70171ef832683b9ad59816cd5919c7bda0dbfbbef8a9aa3ee74c4b94a16"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
@@ -2665,8 +2665,8 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "source reviewed; captured client writes, draft/exit recovery and localized notices pass mounted/native checks; final consolidated release pending",
-      "reviewedSha256": "efc6b1551c75d2336c7a6824fbf432aa3e55f1173c7b32ff44171342fd67fdb7"
+      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
+      "reviewedSha256": "625d6985d06d1e49dcfa325dc527eb6fd777ca96b66398b2d8c71b4ad736bf05"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
@@ -4236,8 +4236,8 @@
       "path": "src/lib/queries/entities.ts",
       "lines": 80,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "61f3875fdfbf12b47a7290792b16d7ece396ce4570777472cd9de973de315109"
+      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
+      "reviewedSha256": "bf42c5e772c5f5805db55a412cb0c9e8a59c6f36440f29a4170ee5533f825bf4"
     },
     {
       "path": "src/lib/queries/fetchers.ts",
