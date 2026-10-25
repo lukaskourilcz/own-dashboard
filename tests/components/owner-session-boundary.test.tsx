@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { OwnerSessionBoundary } from '@/components/owner-session-boundary';
 import { OwnerPreferencesProvider, useOwnerPreferences } from '@/lib/owner-preferences';
 import { common } from '@/lib/i18n/sections/common';
+import { requestSignOut } from '@/lib/auth-actions';
 const state = vi.hoisted(() => ({ lang: 'en' as 'en' | 'cs', callbacks: new Set<(event: string, session: unknown) => void>(), verify: vi.fn(), create: vi.fn(), captures: [] as AbortSignal[] }));
 vi.mock('@/lib/i18n', () => ({ useDict: () => ({ common: common[state.lang] }) }));
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => state.create() }));
@@ -54,4 +55,14 @@ it('restores the previous fetch after ordinary unmount without clearing a future
 });
 it('fails closed when client/subscription creation throws', () => {
  state.create.mockImplementation(() => { throw Error('PRIVATE TEST diagnostic'); }); render(); expect(container.querySelector('section')).toBeNull(); expect(container.textContent).not.toContain('PRIVATE TEST'); expect(container.querySelector('[role="alert"]')).not.toBeNull();
+});
+
+it('retires the sender workspace only after a confirmed normal HTTP sign-out', async () => {
+ render(); const field = container.querySelector('input')!; field.value = 'Retained HTTP draft';
+ network.mockResolvedValueOnce(Response.json({ ok: false }, { status: 503 })).mockResolvedValueOnce(Response.json({ ok: true }));
+ await act(async () => { await expect(requestSignOut()).rejects.toThrow('Sign-out unconfirmed'); });
+ expect(container.querySelector('input')).toBe(field); expect(field.value).toBe('Retained HTTP draft');
+ await act(async () => { await requestSignOut(); });
+ expect(container.querySelector('section')).toBeNull(); expect(client.getQueryCache().getAll()).toHaveLength(0);
+ expect(network).toHaveBeenCalledTimes(2); expect(state.verify).not.toHaveBeenCalled();
 });

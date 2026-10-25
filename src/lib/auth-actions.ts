@@ -1,4 +1,5 @@
 "use client";
+import { announceOwnerRetirement } from "@/lib/owner-retirement";
 import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
 
 let activeSignOut: Promise<void> | null = null;
@@ -10,6 +11,7 @@ export function requestSignOut(): Promise<void> {
   const pending = (async () => {
     const response = await fetch("/auth/signout", { method: "POST", headers: { accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(30_000) });
     if (!response.ok || (await response.json()).ok !== true) throw new Error("Sign-out unconfirmed");
+    announceOwnerRetirement();
   })();
   activeSignOut = pending;
   void pending.finally(() => { if (activeSignOut === pending) activeSignOut = null; }).catch(() => undefined);

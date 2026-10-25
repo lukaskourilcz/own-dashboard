@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useOwnerPreferences } from '@/lib/owner-preferences';
 import { watchOwnerSession } from '@/lib/owner-session';
+import { watchOwnerRetirement } from '@/lib/owner-retirement';
 import { fetchWithSignal } from '@/lib/abortable';
 import { guestProtectedUrl } from '@/lib/guest-requests';
 import { useDict } from '@/lib/i18n';
@@ -28,10 +29,11 @@ export function OwnerSessionBoundary({ enabled, children }: { enabled: boolean; 
    lifetime.abort(); owner?.dispose();
    void client.cancelQueries().catch(() => undefined); client.clear(); setRetired(true);
   };
+  const stopRetirement = watchOwnerRetirement(lifetime.signal, retire);
   let stop = () => {};
   if (!owner?.ownerId) retire();
   else try { stop = watchOwnerSession(createClient(), owner.ownerId, lifetime.signal, retire); } catch { retire(); }
-  return () => { stop(); lifetime.abort(); if (window.fetch === guarded) window.fetch = original; };
+  return () => { stop(); stopRetirement(); lifetime.abort(); if (window.fetch === guarded) window.fetch = original; };
  }, [client, enabled, owner]);
  if (!retired) return children;
  return <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-3 px-5 py-10">

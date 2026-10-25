@@ -1997,8 +1997,8 @@
       "path": "src/lib/auth-actions.ts",
       "sha256": null,
       "lines": 17,
-      "reviewedSha256": "7e328d2a3e0b13fad6557d02f3919cb1d50d79c4f6215b6a98d85a1e8f05743b",
-      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending"
+      "reviewedSha256": "1717065f7494e80fae9715a4ccfdbb37a07f5e91878052a2d8c76836845cbdd6",
+      "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending"
     },
     {
       "path": "src/lib/bank-csv.ts",
@@ -4721,8 +4721,8 @@
       "path": "src/components/owner-session-boundary.tsx",
       "sha256": null,
       "lines": 42,
-      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
-      "reviewedSha256": "c4c5ce543ac191903a85c7e14c8dafbdcda1bd8125dbcf8f56fadd57a5202e9e"
+      "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending",
+      "reviewedSha256": "7aff3f9378bb09c1a42587272663337d427646c6e3d0e81c002acd11bdb989db"
     },
     {
       "path": "src/lib/owner-session.ts",
@@ -4744,6 +4744,13 @@
       "lines": 6,
       "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
       "reviewedSha256": "1532007f28320c86c94c8965c08e19878274e17e10a7453544d9b099436c3ea2"
+    },
+    {
+      "path": "src/lib/owner-retirement.ts",
+      "sha256": null,
+      "lines": 50,
+      "reviewedSha256": "01a198789ef0752db004df0dd99f97e2ff6f7a72b206e679b64ecb9dc4a53e50",
+      "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending"
     }
   ],
   "baselineFileCount": 561
