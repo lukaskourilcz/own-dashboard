@@ -701,3 +701,8 @@ Read-only inventory reconciliation confirms no current `src` TypeScript, TSX or 
 ## Full validation checkpoint 73 — 25 October 2026
 
 At frozen application/test source `5b1dec1`, the complete unit/component/database suite passes 4,776 cases with one intentional skip (447 passed files, one skipped file), in 177.44 seconds with two workers on Node 22.23.4. Full ESLint, the ordinary Next.js 16.4.3 production build, all eight actual render traces and post-build TypeScript pass. The complete optimized browser matrix configures 766 cases: 669 pass, 97 intentional variants skip and none fail, in 21.5 minutes with one worker. Application and test inputs remained frozen throughout. Expected fake-provider outage diagnostics do not represent successful live connectivity. Both builds use public fixture configuration; these artifacts must not be deployed. Source leads, repairs, migration rollout, main merge and deployed verification remain unfinished. Application/test work resumes after this checkpoint.
+
+
+## Validation checkpoint 74 — in progress
+
+The complete unit/component/database suite starts at frozen application/test source `30a822d`, followed by full lint and TypeScript only if it passes. The early migrated dry-day integration reports failures after finding 189's storage classification: its real SDK receives a legacy object-info HTTP 400 with body statusCode 404, which the new guard currently refuses. That compatibility case needs an application repair, not a weakened fixture or a claim of passing release evidence. Application/test inputs remain unchanged until this run ends. The last complete passing production/browser matrix remains checkpoint 73.
