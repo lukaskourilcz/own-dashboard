@@ -1532,3 +1532,15 @@ The shared select's private empty-option sentinel contains one physical NUL byte
 Checkpoint 88 freezes application/test/SQL and validation-tool inputs at b5e5a2e after findings 243–254. It runs all unit/database cases with two workers, full ESLint, an ordinary production build, all eight render traces, post-build TypeScript and the complete optimized browser matrix sequentially. A content manifest checks that source, tests, migrations, public assets and validation inputs stay unchanged between stages. No application/test/SQL/tool edits occur during the run. A start entry is not a passing result: checkpoint 87 remains failed and checkpoint 86 is the latest consolidated full pass.
 
 The isolated development server is stopped after verifying its numeric listener/parent and checkout. Both upcoming builds use synthetic public configuration and must never be deployed. The gallery metadata is rebuilt from b5e5a2e with 682 ledger entries and thirty-three pairs, whose images retain their explicit source labels. Fresh managed production history still has 86 applied migrations through 20261023130300; all 37 prepared files (87–123) remain unapplied. Read-only preparation on the remaining Marketing/Career/invoice/action leads continues while inputs stay frozen. Canonical CLI access, PR review-form reconciliation, main merge and deployed checks remain open.
+
+
+## Full checkpoint 88 — stopped at one timestamp-test failure
+
+The frozen run exits 1 at its first stage: 5,717 unit/database cases pass, one fails and one skips across 498 passing files, one failing file and one skipped file (5,719 cases/500 files; 211.90 seconds, two workers). The source manifest confirms all 1,514 validation inputs stayed unchanged throughout the run. ESLint, ordinary build, render traces, post-build TypeScript and the optimized browser stage do not run. Checkpoint 86 remains the latest consolidated full pass. The freeze ends after the failed process exits; this result does not establish a production timestamp defect.
+
+
+## Finding 255 — deterministic scheduler signature-window evidence
+
+The failed route case signs a request 301 seconds in the future using the advancing wall clock. Signing rounds to whole seconds, leaving less than one second beyond the accepted five-minute window. A pause between signing and verification can move that request inside the valid window. The route test now freezes Date while leaving asynchronous timers real, verifies both exact 300-second accepted boundaries and both 301-second refusals, and confirms refusal happens before database access. A finally block restores Date. Production authentication and its inclusive five-minute policy do not change.
+
+All 55 focused automation-auth, pilot and tick-route cases pass across three files in 683 milliseconds. Targeted ESLint passes. The ledger stays at 682 entries. Full checkpoint 88 remains failed; a new consolidated run is required before release. Other audit leads, 37 prepared migrations, PR/main reconciliation and deployed verification remain open.

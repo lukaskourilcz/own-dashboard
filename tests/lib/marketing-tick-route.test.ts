@@ -55,9 +55,20 @@ describe('POST /api/marketing/tick', () => {
     expect(mocks.tick).not.toHaveBeenCalled();
   });
   it('refuses a timestamp more than 300 s away', async () => {
-    expect((await POST(signed(body, scheduler, Date.now() - 301_000))).status).toBe(401);
-    expect((await POST(signed(body, scheduler, Date.now() + 301_000))).status).toBe(401);
-    expect((await POST(signed(body, scheduler, Date.now() - 290_000))).status).toBe(200);
+    // Authentication, not test-runner scheduling, determines these boundaries.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-25T12:00:00.000Z'));
+    try {
+      for (const offset of [-301_000, 301_000]) {
+        expect((await POST(signed(body, scheduler, Date.now() + offset))).status).toBe(401);
+      }
+      expect(mocks.admin).not.toHaveBeenCalled();
+      for (const offset of [-300_000, 300_000, -290_000, 290_000]) {
+        expect((await POST(signed(body, scheduler, Date.now() + offset))).status).toBe(200);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('accepts no other automation role', async () => {
     const response = await POST(signed(body, worker));
