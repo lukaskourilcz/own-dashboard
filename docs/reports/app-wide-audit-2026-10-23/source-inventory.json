@@ -654,10 +654,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 54,
+      "lines": 61,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
-      "reviewedSha256": "210fbbe83bf6f29486acb4f3cb23bcb52dbf98538db12443529986c682bfc3e6"
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
+      "reviewedSha256": "24c7627b6736c8b4af15047703dd0bd10d897acb573b8556835c293a8bd0f20f"
     },
     {
       "path": "src/app/globals.css",
@@ -831,17 +831,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 502,
+      "lines": 567,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; owner cache/plan reads and finding 253 contiguous/widget-safe keyboard checks pass; other shell leads and final release pending",
-      "reviewedSha256": "59d1a8a500cd7b510c547dd4bf654110d62c84eaa2d2d12bf20aea7150d45313"
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
+      "reviewedSha256": "bb0f2da69861c9d7bfef2e774045e82ef56b5490eaa7a7126da5c558964672b7"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 164,
+      "lines": 194,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
-      "reviewedSha256": "188d1b2a3cdb85a653ba3e515ab3f353f48eb72b21f0f6ef716cfddf36b249f4"
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
+      "reviewedSha256": "6cfb2f316ee5ea3331d9093fa9fd5072527d48ec635554d9448ec60331ea0c28"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1512,10 +1512,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2826,
+      "lines": 2893,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; preference CV URLs use the shared safe-link guard; remaining Career/provider leads and final release pending",
-      "reviewedSha256": "02d7cfada37f0bf762ec326aa8d1bf3dc220a56ccc82eb51b434aac18b31e370"
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
+      "reviewedSha256": "e3ad147b8e971a4b6818a476bee9cee13610991aa88ad125013c7158f96d72a0"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2593,10 +2593,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 563,
+      "lines": 569,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "partial; complete EN/CS source inspection; stale migration instructions, exact refresh-control names, confirmed source completeness and calm localized feedback require reconciliation",
-      "reviewedSha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106"
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
+      "reviewedSha256": "ec348f14a09ba3fae7a9d575c8d6d1a579cc374c35f39c05b62e32cd2648a889"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",
@@ -4793,6 +4793,13 @@
       "lines": 27,
       "reviewedSha256": "b0dd3965d658fd1e801d85163e78b34335591c3f2e4947fc5fd241daaee6066a",
       "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending"
+    },
+    {
+      "path": "src/lib/jobs/refresh-client.ts",
+      "sha256": null,
+      "lines": 32,
+      "reviewedSha256": "0b3eb2c1ee2d1889e45ceadd858d03231e97f447862b02ef79a4b67e2a606160",
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending"
     }
   ],
   "baselineFileCount": 561

@@ -14,6 +14,8 @@ type JobsStrings = {
   checking: string;
   refreshOk: string;
   refreshErr: string;
+  refreshLoadErr: string;
+  refreshReload: string;
   refreshRateLimited: string;
   sourceErrors: string;
   // Data sources
@@ -191,7 +193,9 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     never: "never",
     checking: "Checking…",
     refreshOk: "Job boards checked.",
-    refreshErr: "Could not check the job boards. Please try again.",
+    refreshErr: "Could not confirm the job-board check. Please try again.",
+    refreshLoadErr: "Job boards were checked, but Career could not reload.",
+    refreshReload: "Reload saved Career",
     refreshRateLimited: "Too many refreshes — try again in a few minutes.",
     sourceErrors: "Some boards failed on the last check",
     sourcesTitle: "Where these offers come from",
@@ -375,7 +379,9 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     never: "nikdy",
     checking: "Kontroluji…",
     refreshOk: "Pracovní portály zkontrolovány.",
-    refreshErr: "Portály se nepodařilo zkontrolovat. Zkuste to znovu.",
+    refreshErr: "Kontrolu portálů se nepodařilo potvrdit. Zkuste to znovu.",
+    refreshLoadErr: "Portály byly zkontrolovány, ale Kariéra se nenačetla.",
+    refreshReload: "Načíst uloženou Kariéru",
     refreshRateLimited: "Příliš mnoho kontrol — zkuste to za pár minut.",
     sourceErrors: "Některé portály při poslední kontrole selhaly",
     sourcesTitle: "Odkud nabídky pocházejí",

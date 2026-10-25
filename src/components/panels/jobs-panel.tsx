@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -86,6 +86,9 @@ import { useNow } from "@/lib/use-now";
 import { focusDayKey } from "@/lib/date-keys";
 import { normalizeJobUrl } from "@/lib/jobs/enrich";
 import { safeWebUrl } from "@/lib/web-url";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { awaitWithSignal } from "@/lib/abortable";
+import { CareerRefreshError, refreshCareer } from "@/lib/jobs/refresh-client";
 
 // Fit-level → badge tone. Warmer/greener = stronger match.
 const FIT_TONE: Record<JobMatch["level"], string> = {
@@ -187,34 +190,67 @@ export function JobsPanel({
   const qc = useQueryClient();
   const toast = useToast();
   const [checking, setChecking] = useState(false);
+  const [loadingCareer, setLoadingCareer] = useState(false);
   const [activationFailed, setActivationFailed] = useState(false);
-  async function loadCareer() {
-    setActivationFailed(false);
-    try { await onActivate(); } catch { setActivationFailed(true); }
+  const [refreshFailure, setRefreshFailure] = useState<{ message: string; reload: boolean } | null>(null);
+  const ownerScope = useOwnerPreferences();
+  const lifetime = useRef(new AbortController());
+  const pending = useRef(false);
+  useLayoutEffect(() => {
+    if (lifetime.current.signal.aborted) lifetime.current = new AbortController();
+    return () => lifetime.current.abort();
+  }, []);
+  function capture() {
+    const original = ownerScope?.capture();
+    if (!isPreview && (!original || original.ownerId !== userId)) throw new CareerRefreshError();
+    const parent = AbortSignal.any([lifetime.current.signal, ...(original ? [original.signal] : [])]);
+    const signal = AbortSignal.any([parent, AbortSignal.timeout(75_000)]);
+    signal.throwIfAborted(); return { ownerId: original?.ownerId ?? userId, signal, parent };
   }
-
-  // Explicit feed refresh, separate from opening a private draft or workflow.
-  // The rate limit is unchanged; nothing refreshes on a timer or focus.
-  async function checkOffers() {
-    if (checking) return;
-    setChecking(true);
+  async function loadCareer() {
+    if (pending.current) return;
+    pending.current = true;
+    const panel = lifetime.current.signal;
+    let scope: ReturnType<typeof capture> | undefined;
     try {
-      if (!isPreview) {
-        const response = await fetch("/api/jobs/refresh", { method: "POST" }).catch(() => null);
-        if (response?.status === 429) toast.err(t.jobs.refreshRateLimited);
-        else if (!response?.ok) toast.err(t.jobs.refreshErr);
-        else toast.ok(t.jobs.refreshOk);
-      }
-      await onActivate();
-      await Promise.all([
+      scope = capture(); setActivationFailed(false); setLoadingCareer(true);
+      const signal = AbortSignal.any([scope.signal, AbortSignal.timeout(15_000)]);
+      await awaitWithSignal(onActivate(), signal); signal.throwIfAborted();
+      if (refreshFailure?.reload) await awaitWithSignal(Promise.all([
         qc.invalidateQueries({ queryKey: qk.jobLastRun }),
         qc.invalidateQueries({ queryKey: qk.jobAvailability }),
-      ]);
-    } catch {
-      setActivationFailed(true);
-      toast.err(t.jobs.refreshErr);
+      ]), signal);
+      signal.throwIfAborted(); setRefreshFailure(null);
+    } catch { if (!panel.aborted && !scope?.parent.aborted) setActivationFailed(true); }
+    finally { pending.current = false; if (!panel.aborted) setLoadingCareer(false); }
+  }
+
+  // One explicit captured refresh; no timer, focus refresh or hidden retry.
+  async function checkOffers() {
+    if (pending.current) return;
+    pending.current = true;
+    const panel = lifetime.current.signal;
+    let scope: ReturnType<typeof capture> | undefined, confirmed = false;
+    try {
+      scope = capture(); setChecking(true); setRefreshFailure(null);
+      if (!isPreview) await refreshCareer(scope);
+      scope.signal.throwIfAborted(); confirmed = true;
+      const readSignal = AbortSignal.any([scope.signal, AbortSignal.timeout(15_000)]);
+      await awaitWithSignal(onActivate(), readSignal); readSignal.throwIfAborted();
+      await awaitWithSignal(Promise.all([
+        qc.invalidateQueries({ queryKey: qk.jobLastRun }),
+        qc.invalidateQueries({ queryKey: qk.jobAvailability }),
+      ]), readSignal);
+      readSignal.throwIfAborted(); setActivationFailed(false);
+      if (!isPreview) toast.ok(t.jobs.refreshOk);
+    } catch (error) {
+      if (!panel.aborted && !scope?.parent.aborted) {
+        setRefreshFailure({ message: confirmed ? t.jobs.refreshLoadErr : error instanceof CareerRefreshError && error.reason === 'rate-limited' ? t.jobs.refreshRateLimited : t.jobs.refreshErr, reload: confirmed });
+        if (confirmed) setActivationFailed(true);
+      }
     } finally {
-      setChecking(false);
+      pending.current = false;
+      if (!panel.aborted) setChecking(false);
     }
   }
 
@@ -268,7 +304,7 @@ export function JobsPanel({
                 )}
               </div>
             )}
-            {(view !== "open" || !activated) && <Button onClick={() => { setView("open"); void checkOffers(); }} disabled={checking}><RefreshCw className={cn("size-4",checking && "animate-spin")} aria-hidden />{checking ? t.jobs.checking : t.jobs.checkOffers}</Button>}
+            {(view !== "open" || !activated) && <Button onClick={() => { setView("open"); void checkOffers(); }} disabled={checking || loadingCareer}><RefreshCw className={cn("size-4",checking && "animate-spin")} aria-hidden />{checking ? t.jobs.checking : t.jobs.checkOffers}</Button>}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
               {(["oslo", "open", "saved", "ready", "applied", "letters", "companies"] as const).map(
                 (v) => (
@@ -313,10 +349,12 @@ export function JobsPanel({
         }
       />
 
+      {refreshFailure && (activated || view === "oslo") && <div className="mb-4 flex flex-wrap items-center gap-3"><p role="alert" className="text-sm text-destructive">{refreshFailure.message}</p>{refreshFailure.reload && <Button variant="outline" size="sm" onClick={() => void loadCareer()} disabled={checking || loadingCareer}>{loadingCareer ? t.common.loading : t.jobs.refreshReload}</Button>}</div>}
+
       {view === "oslo" ? (
         <OsloCareerWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyFor(savedToListing(position)); setApplyOpen(true); }} />
       ) : !activated ? (
-        <Card className="p-5"><p role={activationFailed ? "alert" : "status"} className="mb-3 text-sm">{activationFailed ? lang === "cs" ? "Uložená Kariéra se nepodařila načíst. Zkuste to znovu." : "Could not load saved Career. Please retry." : lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…"}</p><Button variant="outline" onClick={() => void loadCareer()}>{lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
+        <Card className="p-5"><p role={activationFailed || refreshFailure ? "alert" : "status"} className="mb-3 text-sm">{refreshFailure?.message ?? (activationFailed ? lang === "cs" ? "Uložená Kariéra se nepodařila načíst. Zkuste to znovu." : "Could not load saved Career. Please retry." : lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…")}</p><Button variant="outline" disabled={checking || loadingCareer} onClick={() => void loadCareer()}>{loadingCareer ? t.common.loading : lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
       ) : view === "companies" ? (
         <CareerCompanies userId={userId} isPreview={isPreview} />
       ) : view === "letters" ? (

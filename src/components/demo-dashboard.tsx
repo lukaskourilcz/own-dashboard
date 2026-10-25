@@ -32,6 +32,7 @@ export function DemoDashboard({
   liveTasks = false,
   liveCategories = false,
   liveMonitoring = false,
+  liveCareer = false,
   livePreferences = false,
   liveExports = false,
   liveSession = false,
@@ -68,6 +69,8 @@ export function DemoDashboard({
   liveCategories?: boolean;
   /** Dev/E2E-only mocked history reads; disabled in the public tour. */
   liveMonitoring?: boolean;
+  /** Isolated fake-backend Career refresh contract only. */
+  liveCareer?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
   livePreferences?: boolean;
   /** Isolated fake-backend downloads only; no preference/provider calls. */
@@ -104,13 +107,14 @@ export function DemoDashboard({
       previewPlanningIntegration={livePlanning}
       previewTaskIntegration={liveTasks}
       previewMonitoringIntegration={liveMonitoring}
+      previewCareerIntegration={liveCareer}
       previewPreferencesIntegration={livePreferences}
       previewExportIntegration={liveExports}
       previewSessionIntegration={liveSession}
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
       previewCompetitorIntegration={liveCompetitors}
-      user={livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
