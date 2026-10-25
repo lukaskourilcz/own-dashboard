@@ -2902,7 +2902,8 @@
       "path": "src/lib/marketing/asset-urls.ts",
       "lines": 135,
       "sha256": "2844672db9ed60d6550eeeb1eda0631cd3faf98a5d1b9f23c55fe93a4bc7eaee",
-      "status": "pending"
+      "status": "partial source review: strict private object/owner/hash proof and URL-only SQL renewal retained; download total-byte/deadline enforcement and renewal cancellation remain to verify",
+      "reviewedSha256": "2844672db9ed60d6550eeeb1eda0631cd3faf98a5d1b9f23c55fe93a4bc7eaee"
     },
     {
       "path": "src/lib/marketing/automation-auth.ts",
@@ -3041,7 +3042,8 @@
       "path": "src/lib/marketing/dneskai-client.ts",
       "lines": 49,
       "sha256": "d425e7e23c3c7776b04d60f26eaebbbf9a75ed53efae808349cb21905fcc132e",
-      "status": "pending"
+      "status": "partial source review: safe external link and Prague cadence helpers retained; bounded read bodies/deadlines and confirmed cancellable recovery receipts remain unfinished",
+      "reviewedSha256": "d425e7e23c3c7776b04d60f26eaebbbf9a75ed53efae808349cb21905fcc132e"
     },
     {
       "path": "src/lib/marketing/dneskai-collection.ts",
@@ -3127,19 +3129,22 @@
       "path": "src/lib/marketing/dneskai-events.ts",
       "lines": 351,
       "sha256": "6d1f48660a3d1192294acd3fcff583a5331f1a808942364926ad70588ed94e80",
-      "status": "pending"
+      "status": "source reviewed: pure token/URL/event grouping, precomputed pair facts, number/version guards and SQL event limits retained; final release checks pending",
+      "reviewedSha256": "6d1f48660a3d1192294acd3fcff583a5331f1a808942364926ad70588ed94e80"
     },
     {
       "path": "src/lib/marketing/dneskai-evidence-rollout.ts",
       "lines": 88,
       "sha256": "ae4e471aefe82c17b035ad5f48806e28ef88d2b318ba6c75ad79466f1bc8523a",
-      "status": "pending"
+      "status": "partial source review: all paid/scouting/topic gates retained; historical bridge-not-shipped comment needs reconciliation with current topic-brief gate",
+      "reviewedSha256": "ae4e471aefe82c17b035ad5f48806e28ef88d2b318ba6c75ad79466f1bc8523a"
     },
     {
       "path": "src/lib/marketing/dneskai-fact-or-hype.ts",
       "lines": 226,
       "sha256": "adcd3b1afffc951daef1c48f02227faf8f67d91c4ac4fb27f44a154e752b68ce",
-      "status": "pending"
+      "status": "partial source review: separate reservations, no automatic ambiguous-call retry and paid caps retained; configured actor/start identity mismatch, transcript URL binding, captured evidence/status/version and confirmed write receipts need repair verification",
+      "reviewedSha256": "adcd3b1afffc951daef1c48f02227faf8f67d91c4ac4fb27f44a154e752b68ce"
     },
     {
       "path": "src/lib/marketing/dneskai-fit.ts",
@@ -3254,7 +3259,8 @@
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
       "lines": 73,
       "sha256": "30b8c0190d89199218cc3719584039a7594b45c0b2da94fb326a005a8a248917",
-      "status": "pending"
+      "status": "source reviewed: pure capability/reason rules retain SQL authority, exact lead-time and held-age windows; final rendered/release checks pending",
+      "reviewedSha256": "30b8c0190d89199218cc3719584039a7594b45c0b2da94fb326a005a8a248917"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery.ts",
@@ -3285,13 +3291,15 @@
       "path": "src/lib/marketing/dneskai-registry.ts",
       "lines": 129,
       "sha256": "935e671b4d3d254071903e1d74eee0842ecf0a8627cd3b8b8b06d09f635a00e4",
-      "status": "pending"
+      "status": "source reviewed: typed registry seed, disabled pending profiles, Prague-date validation and cheap canonical identity retained; dated external-source reachability remains operational evidence",
+      "reviewedSha256": "935e671b4d3d254071903e1d74eee0842ecf0a8627cd3b8b8b06d09f635a00e4"
     },
     {
       "path": "src/lib/marketing/dneskai-reminders.ts",
       "lines": 85,
       "sha256": "fa321f427e63213b5eca5cf1b09192a1b94a0b3c961b84797a7ccdcff43696c2",
-      "status": "pending"
+      "status": "partial source review: review-ready notification keys and local language retained; concurrent insert receipts, complete ordered project read and preference-error handling need verification",
+      "reviewedSha256": "fa321f427e63213b5eca5cf1b09192a1b94a0b3c961b84797a7ccdcff43696c2"
     },
     {
       "path": "src/lib/marketing/dneskai-render.ts",
@@ -3355,19 +3363,22 @@
       "path": "src/lib/marketing/dneskai-titling.ts",
       "lines": 172,
       "sha256": "5cf6c770f2454d5d4c5f263cae45dd50584d1290eaf7711513dae9f31fee9062",
-      "status": "pending"
+      "status": "partial source review: bounded batch and reserved model call retained; duplicate/missing answer indices, usage bounds, complete title history and captured source/version write receipts need repair verification; ignored-duplicate inserts overstate inserted count",
+      "reviewedSha256": "5cf6c770f2454d5d4c5f263cae45dd50584d1290eaf7711513dae9f31fee9062"
     },
     {
       "path": "src/lib/marketing/dneskai-topic-bridge.ts",
       "lines": 256,
       "sha256": "e0db836b1f3c267561c1ca75381b8791fe103af334c87a6aaf97a8270a75e91c",
-      "status": "pending"
+      "status": "partial source review: guarded approved-topic path and stable event ids retained; unchecked zero-row topic/candidate writes, captured evidence/version, cancellation after awaits and rank/cap completeness need repair verification",
+      "reviewedSha256": "e0db836b1f3c267561c1ca75381b8791fe103af334c87a6aaf97a8270a75e91c"
     },
     {
       "path": "src/lib/marketing/dneskai-topic-model.ts",
       "lines": 64,
       "sha256": "6ffdd376b5583ce91643e0650c0dbb70f9a6e0211d3e94edbd19b09e80e7bc43",
-      "status": "pending"
+      "status": "partial source review: current primary Anthropic docs confirm default Haiku 5.5 short-prompt rates and low-effort profile; finite usage/cost and long-context tier accounting need verification without a paid call",
+      "reviewedSha256": "6ffdd376b5583ce91643e0650c0dbb70f9a6e0211d3e94edbd19b09e80e7bc43"
     },
     {
       "path": "src/lib/marketing/dneskai-topic-source.ts",
@@ -3392,7 +3403,8 @@
       "path": "src/lib/marketing/dneskai-topics.ts",
       "lines": 86,
       "sha256": "bb04b9de7a38b044be39c3d6fb400b020b747771d59787ea379a6531a3328bff",
-      "status": "pending"
+      "status": "partial source review: bounded strict browser contracts retained; group kind/status and duplicate identities, exact action-result membership and timestamp/runtime invariants need verification",
+      "reviewedSha256": "bb04b9de7a38b044be39c3d6fb400b020b747771d59787ea379a6531a3328bff"
     },
     {
       "path": "src/lib/marketing/dneskai-wiring.ts",
@@ -3451,7 +3463,8 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/bluesky.ts",
       "lines": 62,
       "sha256": "32c7dc2e7f4b3c74284661d3f05b836fdb112c8552bfcca8fb6cbd751a3fb8c1",
-      "status": "pending"
+      "status": "partial source review: registered bounded free-source projection and upstream-cap reporting retained; unchecked provider JSON shape, bounded item fanout and malformed-item diagnostics need verification",
+      "reviewedSha256": "32c7dc2e7f4b3c74284661d3f05b836fdb112c8552bfcca8fb6cbd751a3fb8c1"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/github.ts",
@@ -3464,19 +3477,22 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/hn.ts",
       "lines": 69,
       "sha256": "ce636597f2eb290db339a70cd335113185bbea25cbd9f4ca2a9764c243da12d5",
-      "status": "pending"
+      "status": "partial source review: registered bounded free-source projection and upstream-cap reporting retained; unchecked provider JSON shape, bounded item fanout and malformed-item diagnostics need verification",
+      "reviewedSha256": "ce636597f2eb290db339a70cd335113185bbea25cbd9f4ca2a9764c243da12d5"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/hnsearch.ts",
       "lines": 56,
       "sha256": "a50e663ffb2df1eb951b4cd8b432213afab3279e125f48a301adaf78f28458f7",
-      "status": "pending"
+      "status": "partial source review: registered bounded free-source projection and upstream-cap reporting retained; unchecked provider JSON shape, bounded item fanout and malformed-item diagnostics need verification",
+      "reviewedSha256": "a50e663ffb2df1eb951b4cd8b432213afab3279e125f48a301adaf78f28458f7"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/html.ts",
       "lines": 382,
       "sha256": "e46782f11d3a29070d5058160697a59620f7dd377e8f7e709c542b709641ae3f",
-      "status": "pending"
+      "status": "partial source review: same-publisher projection, bounded article enrichment and estimated-date semantics retained; CPU on dense listings/JSON-LD, silent listing cap and fallback completeness need verification",
+      "reviewedSha256": "e46782f11d3a29070d5058160697a59620f7dd377e8f7e709c542b709641ae3f"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/index.ts",
@@ -3503,13 +3519,15 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/spaceflight.ts",
       "lines": 52,
       "sha256": "9fd24fcd24443065c9ea15fef118f5a691fbb44d46b552f6c4b2831fb98fe28c",
-      "status": "pending"
+      "status": "partial source review: registered bounded free-source projection and upstream-cap reporting retained; unchecked provider JSON shape, bounded item fanout and malformed-item diagnostics need verification",
+      "reviewedSha256": "9fd24fcd24443065c9ea15fef118f5a691fbb44d46b552f6c4b2831fb98fe28c"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/stackexchange.ts",
       "lines": 57,
       "sha256": "4def0dac53f0f551b731dc686c65108449c95b8d07ccaf70d31fc1762b193e29",
-      "status": "pending"
+      "status": "partial source review: registered bounded free-source projection and upstream-cap reporting retained; unchecked provider JSON shape, bounded item fanout and malformed-item diagnostics need verification",
+      "reviewedSha256": "4def0dac53f0f551b731dc686c65108449c95b8d07ccaf70d31fc1762b193e29"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/util.ts",
