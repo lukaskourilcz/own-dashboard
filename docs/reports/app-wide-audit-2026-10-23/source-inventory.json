@@ -1514,8 +1514,8 @@
       "path": "src/components/panels/jobs-panel.tsx",
       "lines": 2893,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
-      "reviewedSha256": "e3ad147b8e971a4b6818a476bee9cee13610991aa88ad125013c7158f96d72a0"
+      "status": "source reviewed; findings 266\u2013267 captured Career refresh, strict receipts, retained recovery and centred compact native layout pass; other read/write/provider leads and final release pending",
+      "reviewedSha256": "069f74a8d3982728ea2d8942110e96b21dbe31b22c26016b2dd84b6bd7b949ce"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",

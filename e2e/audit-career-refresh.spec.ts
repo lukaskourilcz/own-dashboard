@@ -3,7 +3,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview } from './helpers';
 import { jobs } from '../src/lib/i18n/sections/jobs';
 import { sessionOwner } from './owner-session-fixtures';
-for (const lang of ['en', 'cs'] as const) test(`${lang}: Career refresh confirms its captured owner, keeps failures and admits only an explicit retry`, async ({ page }) => {
+for (const lang of ['en', 'cs'] as const) test(`${lang}: Career refresh confirms its captured owner, keeps failures and admits only an explicit retry`, async ({ page }, info) => {
+ await page.setViewportSize({ width: info.project.name === 'mobile' ? 430 : 1440, height: 1000 });
  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
  let calls = 0, held: Route | undefined;
@@ -18,6 +19,12 @@ for (const lang of ['en', 'cs'] as const) test(`${lang}: Career refresh confirms
  const check = () => page.getByRole('button', { name: jobs[lang].checkOffers, exact: true }).first();
  await check().click(); await expect.poll(() => calls).toBe(1); await expect(page.getByRole('button', { name: jobs[lang].checking, exact: true })).toBeDisabled(); expect(calls).toBe(1);
  await held!.fulfill({ json: {} }); await expect(page.getByRole('main').getByRole('alert')).toHaveText(jobs[lang].refreshErr); await expect(check()).toBeEnabled();
+ const recovery = page.getByRole('main').getByRole('alert').locator('..'), card = await recovery.boundingBox(), frame = await recovery.locator('..').boundingBox();
+ expect(card!.width).toBeLessThanOrEqual(768); expect(Math.abs(card!.x + card!.width / 2 - frame!.x - frame!.width / 2)).toBeLessThan(2);
+ const message = await recovery.getByRole('alert').boundingBox(), reload = await recovery.getByRole('button').boundingBox();
+ if (info.project.name === 'desktop') expect(Math.abs(message!.y + message!.height / 2 - reload!.y - reload!.height / 2)).toBeLessThan(2);
+ else expect(Math.abs(reload!.width - message!.width)).toBeLessThan(2);
+
  expect(await page.getByText('PRIVATE TEST provider text').count()).toBe(0); expect(calls).toBe(1);
  await check().click(); await expect(page.getByRole('main').getByRole('alert')).toHaveText(jobs[lang].refreshRateLimited); expect(calls).toBe(2);
  await check().click(); await expect(page.getByText(jobs[lang].refreshOk, { exact: true })).toBeVisible(); await expect(page.getByText(jobs[lang].refreshRateLimited, { exact: true })).toHaveCount(0); expect(calls).toBe(3);

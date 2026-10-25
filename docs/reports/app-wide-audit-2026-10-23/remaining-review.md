@@ -164,3 +164,6 @@ Finding 265 closes the reproduced unannounced HTTP-cookie replacement gap at the
 
 
 Finding 266 bounds Career refresh and subsequent private-load waits, with no activation after an unconfirmed refresh and no repeated feed request when retrying a completed check's failed local load. Legacy private loaders still need complete captured read/abort/projection contracts; bounding their await does not cancel an opaque loader already admitted. Availability's complete candidate snapshot, captured API request and local-retry states remain separate.
+
+
+Finding 267 closes the wide Career loading/recovery card: centred 768px desktop frame, one inline message/action row, matching full-width mobile action and authentic mapped captures. Other Career views, complete reads, persistence and provider boundaries remain separate.
