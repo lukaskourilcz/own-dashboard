@@ -5,6 +5,8 @@ import { DneskaiApifyRunSchema, type DneskaiApifyRegistration } from './dneskai-
 import { reserveDneskaiTopicSpend, settleDneskaiTopicSpend } from './dneskai-topic-spend';
 import type { MetaPublisherConfig } from './publisher';
 import { pragueMarketingDate } from './weekly-planning';
+import { awaitWithSignal } from '@/lib/abortable';
+import { readTextPrefix } from '@/lib/bounded-text';
 
 /**
  * The TikTok early signal (#167, plan C5): TikTok Creative Center's Czech sound chart through Apify's
@@ -24,6 +26,22 @@ export const DNESKAI_TIKTOK_ACTOR = { id: 'sDvA9jM4WRTDX4Syr', name: 'clockworks
 export const DNESKAI_TIKTOK_RESERVATION_USD = 0.1;
 export const DNESKAI_TIKTOK_RESULTS = 25;
 export const DEFAULT_DNESKAI_TIKTOK_DAILY_USD = 0.1;
+export const DNESKAI_TIKTOK_PASS_MS = 12_000;
+export const DNESKAI_TIKTOK_RESPONSE_CHARACTERS = 262_144;
+
+async function boundedResponse(response: Response, signal: AbortSignal): Promise<unknown> {
+  const body = await awaitWithSignal(readTextPrefix(response, DNESKAI_TIKTOK_RESPONSE_CHARACTERS, signal), signal);
+  if (body.truncated) throw new Error('tiktok-response-too-large');
+  try { return JSON.parse(body.text); } catch { throw new Error('tiktok-invalid-response'); }
+}
+async function providerResponse(fetcher: typeof fetch, url: string, init: RequestInit, signal: AbortSignal): Promise<Response> {
+  active(signal);
+  // A non-cooperative fetch may resolve after our caller has already stopped waiting.
+  return awaitWithSignal(fetcher(url, { ...init, signal }).then(response => {
+    if (signal.aborted) void response.body?.cancel().catch(() => undefined);
+    return response;
+  }), signal);
+}
 
 export function dneskaiTikTokTrendsEnabled(env: Environment = process.env): boolean {
   return env.DNESKAI_TIKTOK_TRENDS_ENABLED === 'true';
@@ -63,15 +81,14 @@ export function dneskaiTikTokSounds(items: readonly unknown[]): DneskaiTikTokSou
 async function apify(path: string, init: RequestInit, env: Environment, fetcher: typeof fetch, signal: AbortSignal): Promise<unknown> {
   active(signal);
   let response: Response;
-  try { response = await fetcher(`https://api.apify.com/v2/${path}`, { ...init, headers: { Authorization: `Bearer ${env.APIFY_TOKEN}`, 'Content-Type': 'application/json' }, redirect: 'error', signal }); }
+  try { response = await providerResponse(fetcher, `https://api.apify.com/v2/${path}`, { ...init, headers: { Authorization: `Bearer ${env.APIFY_TOKEN}`, 'Content-Type': 'application/json' }, redirect: 'error', cache: 'no-store' }, signal); }
   catch { active(signal); throw new Error('tiktok-request-failed'); }
   if (signal.aborted || !response.ok) {
     void response.body?.cancel().catch(() => undefined);
     active(signal);
     throw new Error(`tiktok-http-${response.status}`);
   }
-  let body: unknown;
-  try { body = await response.json(); } catch { active(signal); throw new Error('tiktok-invalid-response'); }
+  const body = await boundedResponse(response, signal);
   active(signal);
   return body;
 }
@@ -87,7 +104,7 @@ async function instagramAudioFor(sound: DneskaiTikTokSound, config: MetaPublishe
   url.searchParams.set('audio_type', 'music'); url.searchParams.set('user_id', igUserId);
   url.searchParams.set('search_query', [sound.title, sound.artist].filter(Boolean).join(' ').slice(0, 200));
   let response: Response;
-  try { response = await fetcher(url.href, { method: 'GET', redirect: 'error', cache: 'no-store', headers: { Authorization: `Bearer ${config.accessToken}` }, signal }); }
+  try { response = await providerResponse(fetcher, url.href, { method: 'GET', redirect: 'error', cache: 'no-store', headers: { Authorization: `Bearer ${config.accessToken}` } }, signal); }
   catch { active(signal); return null; }
   if (signal.aborted || !response.ok) {
     void response.body?.cancel().catch(() => undefined);
@@ -95,7 +112,7 @@ async function instagramAudioFor(sound: DneskaiTikTokSound, config: MetaPublishe
     return null;
   }
   const body = z.object({ data: z.array(z.object({ audio_id: z.union([z.string(), z.number()]).transform(String), title: z.string().max(300), display_artist: z.string().max(300).nullish() }).loose()).max(50) })
-    .safeParse(await response.json().catch(() => null));
+    .safeParse(await boundedResponse(response, signal));
   active(signal);
   const hit = body.success ? body.data.data.find((item) => /^\d{1,40}$/.test(item.audio_id) && item.title.trim().toLowerCase() === sound.title.toLowerCase()) : undefined;
   return hit ? { audioId: hit.audio_id, title: hit.title.trim(), artist: hit.display_artist?.trim() || null } : null;
@@ -108,6 +125,17 @@ export type DneskaiTikTokOutcome = { status: 'done' | 'skipped'; code?: string; 
  * Instagram Login it does nothing and spends nothing: without Meta's audio search no chart title can become a sound.
  */
 export async function advanceDneskaiTikTokChart(db: Database, owner: string, input: { config: MetaPublisherConfig; igUserId: string; today: string; env?: Environment; fetcher?: typeof fetch; signal: AbortSignal; now?: Date }): Promise<DneskaiTikTokOutcome> {
+  const lifetime = new AbortController(), timer = setTimeout(() => lifetime.abort(), DNESKAI_TIKTOK_PASS_MS);
+  const signal = AbortSignal.any([input.signal, lifetime.signal]);
+  try {
+    return await awaitWithSignal(advanceTikTokPass(db, owner, { ...input, signal }), signal);
+  } catch (error) {
+    if (input.signal.aborted) throw new Error('tiktok-cancelled');
+    if (lifetime.signal.aborted) throw new Error('tiktok-deadline');
+    throw error;
+  } finally { clearTimeout(timer); lifetime.abort(); }
+}
+async function advanceTikTokPass(db: Database, owner: string, input: Parameters<typeof advanceDneskaiTikTokChart>[2]): Promise<DneskaiTikTokOutcome> {
   z.uuid().parse(owner);
   const originalEnv = input.env ?? process.env;
   const env: Environment = Object.fromEntries(['DNESKAI_TIKTOK_TRENDS_ENABLED', 'MARKETING_DNESKAI_APIFY_ENABLED', 'MARKETING_DNESKAI_PAID_ENABLED', 'MARKETING_AI_CONSENT', 'APIFY_TOKEN', 'MARKETING_DNESKAI_TIKTOK_DAILY_USD'].map(key => [key, originalEnv[key]]));
@@ -119,7 +147,7 @@ export async function advanceDneskaiTikTokChart(db: Database, owner: string, inp
   if (config.loginMode !== 'facebook' || config.credentialHold || !config.accessToken) return { ...outcome, status: 'skipped', code: 'audio-trends-facebook-login-required' };
   if (!Number.isFinite(now.getTime()) || !z.iso.date().safeParse(today).success || pragueMarketingDate(now) !== today || !/^\d{1,100}$/.test(igUserId) || !/^v\d+\.\d+$/.test(config.apiVersion)) return { ...outcome, status: 'skipped', code: 'tiktok-input-invalid' };
   active(signal);
-  const runs = await db.rpc('marketing_dneskai_tiktok_runs', { p_owner: owner });
+  const runs = await awaitWithSignal(db.rpc('marketing_dneskai_tiktok_runs', { p_owner: owner }).retry(false).abortSignal(signal), signal);
   active(signal);
   if (runs.error) throw new Error('tiktok-budget-unavailable');
   const parsed = z.array(z.strictObject({ id: z.uuid(), ref: z.string().min(1).max(300), reserved_at: z.iso.datetime({ offset: true }), settled: z.boolean() })).max(5).safeParse(runs.data);
@@ -142,18 +170,18 @@ export async function advanceDneskaiTikTokChart(db: Database, owner: string, inp
         const audio = await instagramAudioFor(sound, config, igUserId, fetcher, signal);
         if (!audio) continue;
         active(signal);
-        const { error } = await db.from('marketing_audio_trends').upsert({ user_id: owner, audio_id: audio.audioId, title: audio.title, display_artist: audio.artist, audio_type: 'music',
-          first_seen: today, last_seen: today, tiktok: true, updated_at: now.toISOString() }, { onConflict: 'user_id,audio_id', ignoreDuplicates: true });
+        const { error } = await awaitWithSignal(db.from('marketing_audio_trends').upsert({ user_id: owner, audio_id: audio.audioId, title: audio.title, display_artist: audio.artist, audio_type: 'music',
+          first_seen: today, last_seen: today, tiktok: true, updated_at: now.toISOString() }, { onConflict: 'user_id,audio_id', ignoreDuplicates: true }).retry(false).abortSignal(signal), signal);
         active(signal);
         if (error) throw new Error('audio-trends-store-failed');
-        await db.from('marketing_audio_trends').update({ tiktok: true }).eq('user_id', owner).eq('audio_id', audio.audioId);
+        await awaitWithSignal(db.from('marketing_audio_trends').update({ tiktok: true }).eq('user_id', owner).eq('audio_id', audio.audioId).retry(false).abortSignal(signal), signal);
         active(signal);
         outcome.matched++;
       }
     }
     // An unknown cost counts in full, as everywhere in the ledger.
     active(signal);
-    await settleDneskaiTopicSpend(db, owner, row.id, run.data.usageTotalUsd ?? DNESKAI_TIKTOK_RESERVATION_USD);
+    await settleDneskaiTopicSpend(db, owner, row.id, run.data.usageTotalUsd ?? DNESKAI_TIKTOK_RESERVATION_USD, signal);
     active(signal);
   }
 
@@ -161,7 +189,7 @@ export async function advanceDneskaiTikTokChart(db: Database, owner: string, inp
   if (rows.some((row) => pragueMarketingDate(new Date(row.reserved_at)) === today)) return outcome;
   if (!paidAllowed(env)) return { ...outcome, code: 'tiktok-paid-disabled' };
   active(signal);
-  const spendId = await reserveDneskaiTopicSpend(db, owner, 'tiktok', 'tiktok:pending', DNESKAI_TIKTOK_RESERVATION_USD, dneskaiTikTokDailyCeiling(env));
+  const spendId = await reserveDneskaiTopicSpend(db, owner, 'tiktok', 'tiktok:pending', DNESKAI_TIKTOK_RESERVATION_USD, dneskaiTikTokDailyCeiling(env), signal);
   active(signal);
   if (!spendId) return { ...outcome, code: 'tiktok-budget-exhausted' };
   const params = new URLSearchParams({ waitForFinish: '0', timeout: '300', restartOnError: 'false', maxItems: String(DNESKAI_TIKTOK_RESULTS), maxTotalChargeUsd: String(DNESKAI_TIKTOK_RESERVATION_USD) });
@@ -173,7 +201,7 @@ export async function advanceDneskaiTikTokChart(db: Database, owner: string, inp
   }
   if (run.actId !== DNESKAI_TIKTOK_ACTOR.id) return { ...outcome, code: 'tiktok-apify-binding-invalid' };
   active(signal);
-  const bound = await db.rpc('marketing_dneskai_tiktok_bind', { p_owner: owner, p_id: spendId, p_ref: `tiktok:${run.id}:${run.defaultDatasetId}` });
+  const bound = await awaitWithSignal(db.rpc('marketing_dneskai_tiktok_bind', { p_owner: owner, p_id: spendId, p_ref: `tiktok:${run.id}:${run.defaultDatasetId}` }).retry(false).abortSignal(signal), signal);
   active(signal);
   if (bound.error || bound.data !== true) return { ...outcome, code: 'tiktok-budget-unavailable' };
   return { ...outcome, started: true };

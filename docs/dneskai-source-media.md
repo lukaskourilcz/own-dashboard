@@ -361,5 +361,8 @@ Keep this optional spend disabled until migration 124 deploys, the provider is u
 The application now compares captured Prague dates for its early skip. It validates the supplied day/clock/account
 and run evidence before paid admission, retains the original account and switches across waits and checks caller
 cancellation between stages. A late accepted reservation remains charged; cancellation cannot prove that a remote
-call did not start. These checks stop later phases once cancellation is observed; bounded waits, provider-body
-limits, complete run progress and exact trend/settlement receipts remain under review.
+call did not start. A twelve-second pass deadline now bounds all waits and reaches the database/provider transports. Provider JSON
+reads refuse truncation beyond 262,144 UTF-16 characters and release unread/late bodies. This is a structured-text
+limit, not a guaranteed network-byte ceiling. Database calls in this pass disable SDK retries, including spend
+reservation/settlement; uncertain accepted work remains charged. Complete run progress, matching and exact
+trend/settlement receipts remain under review.

@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { advanceDneskaiTikTokChart, dneskaiTikTokDailyCeiling, dneskaiTikTokInput, dneskaiTikTokSounds, DNESKAI_TIKTOK_ACTOR } from '@/lib/marketing/dneskai-audio-tiktok';
+import { advanceDneskaiTikTokChart, dneskaiTikTokDailyCeiling, dneskaiTikTokInput, dneskaiTikTokSounds, DNESKAI_TIKTOK_ACTOR, DNESKAI_TIKTOK_PASS_MS, DNESKAI_TIKTOK_RESPONSE_CHARACTERS } from '@/lib/marketing/dneskai-audio-tiktok';
 import type { MetaPublisherConfig } from '@/lib/marketing/publisher';
+import { createClient } from '@supabase/supabase-js';
 
 // #167: the TikTok CZ chart against stand-ins for Apify, Meta and the spend ledger. Nothing leaves the process.
 const owner = '11111111-1111-4111-8111-111111111111';
@@ -11,6 +12,10 @@ const config = (patch: Partial<MetaPublisherConfig> = {}): MetaPublisherConfig =
 const paid = { DNESKAI_TIKTOK_TRENDS_ENABLED: 'true', MARKETING_DNESKAI_APIFY_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true', APIFY_TOKEN: 'TEST-ONLY-APIFY-TOKEN' };
 const now = new Date('2026-10-24T02:30:00Z');
 const run = (patch: Record<string, unknown> = {}) => ({ id: 'run_1', actId: DNESKAI_TIKTOK_ACTOR.id, buildNumber: '1.0.0', userId: 'user', defaultDatasetId: 'dataset_1', status: 'SUCCEEDED', finishedAt: '2026-10-23T03:00:00Z', usageTotalUsd: 0.076, ...patch });
+afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.restoreAllMocks(); });
+function rpcQuery<T>(work: Promise<T>) {
+  return { retry() { return this; }, abortSignal() { return this; }, then: work.then.bind(work) };
+}
 
 function harness(runs: Array<{ id: string; ref: string; reserved_at: string; settled: boolean }>, reserve: { admitted: boolean; id?: string } = { admitted: true, id: spendId }) {
   const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
@@ -21,7 +26,7 @@ function harness(runs: Array<{ id: string; ref: string; reserved_at: string; set
     throw new Error(name);
   });
   const writes: unknown[] = [];
-  const query = { upsert: async (row: unknown) => { writes.push(row); return { error: null }; }, update: () => query, eq: () => query, then: (resolve: (value: { error: null }) => unknown) => resolve({ error: null }) };
+  const query = { upsert: (row: unknown) => { writes.push(row); return query; }, update: () => query, eq: () => query, retry: () => query, abortSignal: () => query, then: (resolve: (value: { error: null }) => unknown) => resolve({ error: null }) };
   const calls: string[] = [];
   const fetcher = vi.fn(async (url: string, init: RequestInit) => {
     calls.push(`${init.method ?? 'GET'} ${url.replace(/\?.*$/, '')}`);
@@ -34,7 +39,7 @@ function harness(runs: Array<{ id: string; ref: string; reserved_at: string; set
     }
     throw new Error(`unexpected ${url}`);
   }) as unknown as typeof fetch;
-  return { db: { rpc, from: () => query } as never, rpc, writes, calls, fetcher };
+  return { db: { rpc: (name: string, args: Record<string, unknown>) => rpcQuery(rpc(name, args)), from: () => query } as never, rpc, writes, calls, fetcher };
 }
 
 describe('the TikTok CZ chart (#167)', () => {
@@ -105,7 +110,7 @@ describe('captured TikTok day and cancellation boundaries', () => {
   it('does not bind or settle an ambiguously started provider call after cancellation', async () => {
     const h = harness([]), abort = new AbortController();
     const fetcher = vi.fn(async () => { abort.abort(); return Response.json({ data: run({ id: 'run_2', defaultDatasetId: 'dataset_2' }) }); }) as unknown as typeof fetch;
-    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal, fetcher }))).toMatchObject({ started: false, code: 'tiktok-cancelled' });
+    await expect(advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal, fetcher }))).rejects.toThrow('tiktok-cancelled');
     expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['marketing_dneskai_tiktok_runs', 'marketing_reserve_dneskai_topic_spend']); expect(fetcher).toHaveBeenCalledOnce();
   });
   it('cannot turn a paid switch on by mutating the caller environment during a read', async () => {
@@ -127,5 +132,70 @@ describe('captured TikTok day and cancellation boundaries', () => {
     h.rpc.mockResolvedValueOnce({ data: kind === 'missing' ? null : kind === 'duplicate' ? [row, row] : [row], error: null } as never);
     await expect(advanceDneskaiTikTokChart(h.db, owner, options(h))).rejects.toThrow('tiktok-budget-unavailable');
     expect(h.fetcher).not.toHaveBeenCalled(); expect(h.rpc).toHaveBeenCalledOnce();
+  });
+});
+
+describe('one bounded TikTok pass', () => {
+  const options = (h: ReturnType<typeof harness>, fetcher = h.fetcher) => ({ config: config(), igUserId: '1', today: '2026-10-24', env: paid, fetcher, signal: new AbortController().signal, now });
+  it.each(['runs', 'reserve', 'settle', 'bind'])('bounds an uncooperative %s RPC and ignores its late receipt', async phase => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const h = harness(phase === 'settle' ? [{ id: spendId, ref: 'tiktok:run_1:dataset_1', reserved_at: '2026-10-23T02:30:00Z', settled: false }] : []);
+    const original = h.rpc.getMockImplementation()!, blocked = { runs: 'marketing_dneskai_tiktok_runs', reserve: 'marketing_reserve_dneskai_topic_spend', settle: 'marketing_settle_dneskai_topic_spend', bind: 'marketing_dneskai_tiktok_bind' }[phase]!;
+    let finish!: (value: Awaited<ReturnType<typeof original>>) => void;
+    h.rpc.mockImplementation((name, args) => name === blocked ? new Promise(resolve => { finish = resolve; }) : original(name, args));
+    const result = advanceDneskaiTikTokChart(h.db, owner, options(h)).catch(error => error);
+    await vi.waitFor(() => expect(h.rpc).toHaveBeenCalledWith(blocked, expect.anything()));
+    await vi.advanceTimersByTimeAsync(DNESKAI_TIKTOK_PASS_MS + 1);
+    expect(await result).toHaveProperty('message', 'tiktok-deadline');
+    const rpcCalls = h.rpc.mock.calls.length, providerCalls = h.calls.length, writes = h.writes.length;
+    finish({ data: phase === 'runs' ? [] : phase === 'reserve' ? { admitted: true, id: spendId } : true, error: null });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.rpc).toHaveBeenCalledTimes(rpcCalls); expect(h.calls).toHaveLength(providerCalls); expect(h.writes).toHaveLength(writes);
+  });
+  it('cancels a response that arrives after the fetch deadline without binding or retrying', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const h = harness([]), cancel = vi.fn(); let finish!: (response: Response) => void;
+    const fetcher = vi.fn(() => new Promise<Response>(resolve => { finish = resolve; })) as unknown as typeof fetch;
+    const result = advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher)).catch(error => error);
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    await vi.advanceTimersByTimeAsync(DNESKAI_TIKTOK_PASS_MS + 1); expect(await result).toHaveProperty('message', 'tiktok-deadline');
+    finish(new Response(new ReadableStream({ cancel }))); await vi.advanceTimersByTimeAsync(0);
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['marketing_dneskai_tiktok_runs', 'marketing_reserve_dneskai_topic_spend']);
+  });
+  it('bounds a stalled provider body and releases its reader', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const h = harness([]), cancel = vi.fn(), response = new Response(new ReadableStream({ cancel }));
+    const fetcher = vi.fn(async () => response) as unknown as typeof fetch;
+    const result = advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher)).catch(error => error);
+    await vi.waitFor(() => expect(response.body!.locked).toBe(true));
+    await vi.advanceTimersByTimeAsync(DNESKAI_TIKTOK_PASS_MS + 1);
+    expect(await result).toHaveProperty('message', 'tiktok-deadline'); expect(cancel).toHaveBeenCalledOnce(); expect(response.body!.locked).toBe(false); expect(fetcher).toHaveBeenCalledOnce();
+  });
+  it('refuses a truncated structured response and releases the rest without a retry', async () => {
+    const h = harness([]), cancel = vi.fn();
+    const response = new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(' '.repeat(DNESKAI_TIKTOK_RESPONSE_CHARACTERS + 1))); }, cancel }));
+    const fetcher = vi.fn(async () => response) as unknown as typeof fetch;
+    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher))).toMatchObject({ started: false, code: 'tiktok-response-too-large' });
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_dneskai_tiktok_bind');
+  });
+  it('refuses an HTTP error without reading a stalled or private error body', async () => {
+    const h = harness([]), cancel = vi.fn();
+    const fetcher = vi.fn(async () => new Response(new ReadableStream({ cancel }), { status: 503 })) as unknown as typeof fetch;
+    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher))).toMatchObject({ started: false, code: 'tiktok-http-503' });
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce();
+  });
+  it.each(['refused', 'stalled'])('uses one actual SDK request with cancellation and no retry for a %s read', async kind => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const requests: { path: string; signal: AbortSignal | null | undefined }[] = [];
+    let finish!: (response: Response) => void;
+    const database = createClient('https://offline.supabase.test', 'TEST-ONLY-public', { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: async (input, init) => {
+      requests.push({ path: new URL(String(input)).pathname, signal: init?.signal });
+      return kind === 'refused' ? Response.json({ message: 'synthetic-private-database-detail' }, { status: 503 }) : new Promise<Response>(resolve => { finish = resolve; });
+    } } });
+    const h = harness([]), result = advanceDneskaiTikTokChart(database, owner, options(h)).catch(error => error);
+    if (kind === 'stalled') { await vi.waitFor(() => expect(requests).toHaveLength(1)); await vi.advanceTimersByTimeAsync(DNESKAI_TIKTOK_PASS_MS + 1); }
+    expect(await result).toHaveProperty('message', kind === 'stalled' ? 'tiktok-deadline' : 'tiktok-budget-unavailable');
+    expect(requests).toHaveLength(1); expect(requests[0].path).toBe('/rest/v1/rpc/marketing_dneskai_tiktok_runs'); expect(requests[0].signal?.aborted).toBe(true); expect(h.fetcher).not.toHaveBeenCalled();
+    if (kind === 'stalled') { finish(Response.json([])); await vi.advanceTimersByTimeAsync(0); expect(requests).toHaveLength(1); expect(h.fetcher).not.toHaveBeenCalled(); }
   });
 });

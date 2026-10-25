@@ -3065,8 +3065,8 @@
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
       "lines": 142,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; finding 257 captures inputs, validates clocks/run evidence and stops later phases after cancellation; provider wait/body/persistence leads and release pending",
-      "reviewedSha256": "9b39c58ba5959b84bfc8f1c9b158a52b1ee3a6368bac467bf4a99d54087448ff"
+      "status": "source reviewed; finding 259 bounds TikTok lifetime/HTTP bodies and provided-signal spend transports without retries; strict persistence/progress and other caller leads remain open",
+      "reviewedSha256": "34f551e587f442609c6371dbb0ebd878664966a558bbcaf1861823e37a44d416"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
@@ -3492,8 +3492,8 @@
       "path": "src/lib/marketing/dneskai-topic-spend.ts",
       "lines": 44,
       "sha256": "ccbfdc42cae48aab280e806283c7a907f18b75c848370254847f55d22794ed05",
-      "status": "partial; full source inspected with applied ledger SQL; captured parameter/receipt validation, cancellation, monetary bounds and TikTok atomic daily admission remain pending",
-      "reviewedSha256": "ccbfdc42cae48aab280e806283c7a907f18b75c848370254847f55d22794ed05"
+      "status": "source reviewed; finding 259 bounds TikTok lifetime/HTTP bodies and provided-signal spend transports without retries; strict persistence/progress and other caller leads remain open",
+      "reviewedSha256": "96223bc632576c0293bd957086467f341ef80b1a79f2a0871269671d78f03f4e"
     },
     {
       "path": "src/lib/marketing/dneskai-topics-client.ts",
