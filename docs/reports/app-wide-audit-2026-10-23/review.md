@@ -807,3 +807,10 @@ The corrected preview expectation passes all fourteen workspace-tab cases in 10.
 ## Full release checkpoint 78 — started
 
 The complete serial release pipeline restarts at frozen application/test source `dc4cda2`: all unit/component/database cases, full lint, ordinary production build, eight render traces, post-build types and the full optimized browser matrix. Application/test/migration inputs remain unchanged until it ends. The local preview remains stopped. This start does not replace checkpoint 77's recorded failure or establish passing evidence for any phase. Thirty-two prepared migrations, final audit work and main merge remain pending.
+
+
+## Checkpoint 78 intermediate phases and isolated recovery probe
+
+At frozen application/test source `dc4cda2`, all 4,897 unit/component/database cases pass with one intentional skip (452 passed files, one skipped file), in 180.29 seconds with two workers. Full lint, the ordinary production build, all eight render traces and post-build TypeScript pass. The complete optimized browser matrix is still running; this is not a completed release checkpoint. No application/test/migration input changes during the run.
+
+An isolated bundle of the unchanged publication helper reproduces two remaining leads using synthetic GET-only responses: a caption with the same first hundred characters but a different ending reads as published, and a one-item page with a next-page marker also reads as uniquely published. An exact, complete match is the control. A temporary candidate outside the checkout requires the full normalized caption and holds any advertised continuation; both counterexamples then stay unresolved while the exact control still resolves, with two GETs and no write in each case. It is not implemented in the repository yet. Primary Meta result documentation is temporarily rate-limited, so no new pagination/provider guarantee is inferred from a third-party guide.
