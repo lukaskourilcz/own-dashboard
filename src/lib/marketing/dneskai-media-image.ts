@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
+import { decodeNumericEntity } from '@/lib/numeric-entities';
 
 /**
  * What the DNESKAi media collector (#114) learns from one downloaded source picture, without changing it:
@@ -53,8 +54,8 @@ const XMP_CREDIT_FIELDS = ['photoshop:Credit', 'photoshop:Source', 'dc:rights', 
 /** IPTC IIM record 2 datasets: By-line (80), Credit (110), Source (115), Copyright Notice (116). */
 const IPTC_CREDIT_DATASETS = new Set([80, 110, 115, 116]);
 const MAX_EMBEDDED_CREDITS = 12;
-const decodeXml = (value: string) => value.replace(/<[^>]*>/g, ' ').replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
-  .replace(/&#(\d+);/g, (_, decimal: string) => String.fromCodePoint(Number(decimal))).replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+const decodeXml = (value: string) => value.replace(/<[^>]*>/g, ' ').replace(/&#x[0-9a-f]+;/gi, decodeNumericEntity)
+  .replace(/&#\d+;/g, decodeNumericEntity).replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 const cleanCredit = (value: string) => value.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
 
 /**

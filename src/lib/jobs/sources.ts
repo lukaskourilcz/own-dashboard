@@ -1,6 +1,7 @@
 import { EMPLOYER_BOARDS, fetchEmployerBoard } from "./employer-sources";
 import { apifyTaskIds, fetchApifyTask } from "./apify";
 import { fetchCuratedJobs } from "./curated";
+import { decodeNumericEntity } from "@/lib/numeric-entities";
 import { brandConfig } from "@/lib/brand";
 import { isEuropeFriendly, isPrague, matchRole } from "./filter";
 import { jobSourceLabel } from "./meta";
@@ -52,10 +53,8 @@ async function getJson<T>(url: string, ua: string = API_UA): Promise<T> {
 /** Minimal HTML entity decode for scraped text (named + numeric forms). */
 export function unescapeHtml(s: string): string {
   return s
-    .replace(/&#(\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n: string) =>
-      String.fromCodePoint(parseInt(n, 16)),
-    )
+    .replace(/&#\d+;/g, decodeNumericEntity)
+    .replace(/&#x[0-9a-f]+;/gi, decodeNumericEntity)
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
