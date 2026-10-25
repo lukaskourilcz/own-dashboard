@@ -3435,8 +3435,8 @@
       "path": "src/lib/marketing/free-feeds/security/content.ts",
       "lines": 35,
       "sha256": "2f71549cb98f6301d6c47a447806e3f27af670d28a3744bf00db066bcce70e15",
-      "status": "partial; reproduced superlinear unmatched-tag scan before truncation; equivalent local prototypes prepared but no application fix applied yet; see remaining-review.md",
-      "reviewedSha256": "2f71549cb98f6301d6c47a447806e3f27af670d28a3744bf00db066bcce70e15"
+      "status": "source reviewed; finding 183 removes unmatched-tag quadratic CPU with exact compatibility and native projection evidence; final release checks pending",
+      "reviewedSha256": "aa4cecd50acc95bdbc02b40b5be23fce6330a0f5daa8129c16230ed851efb575"
     },
     {
       "path": "src/lib/marketing/free-feeds/security/pinned-fetch.ts",
