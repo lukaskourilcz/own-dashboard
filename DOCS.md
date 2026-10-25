@@ -216,7 +216,11 @@ Authenticated, private/no-store JSON downloads are available at:
 - `/api/export/career`
 - `/api/export/legacy`
 
-Table-level CSV is available for non-full, non-legacy scopes through `?format=csv&table=TABLE`, with the table restricted to that scope's allowlist. The legacy endpoint reads `legacy_personal_archives` after migration and falls back to live legacy tables before migration. Missing optional tables are represented as unavailable rather than causing the whole export to fail. Full export includes a safe profile/preferences subset and deliberately excludes OAuth tokens, service credentials, and provider secrets.
+Settings offers one dataset selector, Download JSON and Transactions CSV, with matched controls, progress and safe retry. `full` retains its stable endpoint name but is labelled Combined data: account, financial, professional and knowledge records. Marketing, daily focus and uploaded file bytes are outside this download. Legacy personal data is a separate archive, whose confirmed absence is null; read failures refuse the download and never query removed tables.
+
+Table-level CSV remains available for non-full, non-legacy scopes through `?format=csv&table=TABLE`, with the table restricted to that scope's allowlist. A request reads only that CSV table. JSON uses one complete captured-owner invoker/RLS snapshot with explicit reviewed columns; future database fields are excluded until reviewed. It refuses more than 10,000 rows/table or 10 MiB, including the final formatted file. Failures never become partial attachments or expose database diagnostics. The thirty-second request lifetime contains eight-second auth and fifteen-second query budgets. Every response is private/no-store and varies on Cookie. The browser captures its owner, cancels on leaving, bounds the file body and holds its Blob URL temporarily in memory. Download started means the browser received the action, not that a file was saved. Public tours issue no private export request.
+
+CSV quotes fields, uses CRLF and prefixes formula-like text with a tab inside the quoted cell, including leading whitespace/control/BOM and fullwidth prefixes. Finite numeric negatives stay numeric; JSON preserves raw values. This changes risky CSV text and is not a universal spreadsheet guarantee. OAuth/provider credential tables and future unreviewed columns are excluded; arbitrary text/JSON authored by the owner remains their content. All 36 prepared migrations, including export foundation 122, must be applied before deploying these callers.
 
 ## AI boundary
 

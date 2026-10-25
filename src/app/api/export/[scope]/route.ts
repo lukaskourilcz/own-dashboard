@@ -1,10 +1,11 @@
+import { EXPORT_MAX_BYTES } from '@/lib/data-export-limits';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { brandConfig } from '@/lib/brand';
 import { createClient } from '@/lib/supabase/server';
 import { awaitWithSignal, fetchWithSignal } from '@/lib/abortable';
 import { exportScopes, exportTables, type ExportScope } from '@/lib/data-export-scopes';
-import { exportColumns, EXPORT_MAX_BYTES, type ExportTable } from '@/lib/data-export-columns';
+import { exportColumns, type ExportTable } from '@/lib/data-export-columns';
 import { DataExportError, readExportRecords } from '@/lib/data-export-records';
 import { exportCsv } from '@/lib/data-export-csv';
 const privateHeaders = { 'cache-control': 'private, no-store, max-age=0', vary: 'Cookie', 'x-content-type-options': 'nosniff' };

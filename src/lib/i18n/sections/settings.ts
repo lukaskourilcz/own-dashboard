@@ -31,6 +31,14 @@ type SettingsStrings = {
   dataExport: string;
   dataExportDesc: string;
   exportFull: string;
+  exportDataset: string;
+  exportJson: string;
+  exportPending: string;
+  exportStarted: string;
+  exportFailed: string;
+  exportTooLarge: string;
+  exportAccountChanged: string;
+  exportPreview: string;
   exportFinancial: string;
   exportProfessional: string;
   exportKnowledge: string;
@@ -120,8 +128,16 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     renewalNotifications: "Subscription renewal warnings",
     renewalNotificationsDesc: "Allow scheduled email warnings for active subscriptions renewing today or in three days.",
     dataExport: "Data & export",
-    dataExportDesc: "Download portable JSON. Legacy personal data remains available after its source tables are removed.",
-    exportFull: "Full export",
+    dataExportDesc: "Combined data contains account, financial, professional and knowledge records. Marketing, daily focus and uploaded files are outside this download. The legacy archive is separate.",
+    exportFull: "Combined data",
+    exportDataset: "Dataset",
+    exportJson: "Download JSON",
+    exportPending: "Preparing download…",
+    exportStarted: "Download started. Check your browser’s downloads.",
+    exportFailed: "Could not prepare the download. Try again.",
+    exportTooLarge: "This download is too large. Choose a smaller dataset.",
+    exportAccountChanged: "Your account needs verification. Reload before downloading.",
+    exportPreview: "Sign in to download your own data.",
     exportFinancial: "Financial",
     exportProfessional: "Professional",
     exportKnowledge: "Knowledge",
@@ -212,8 +228,16 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     renewalNotifications: "Upozornění na obnovení předplatného",
     renewalNotificationsDesc: "Povolte plánované e-mailové upozornění pro aktivní předplatná obnovovaná dnes nebo za tři dny.",
     dataExport: "Data a export",
-    dataExportDesc: "Stáhněte přenositelný JSON. Starší osobní data zůstávají dostupná i po odstranění zdrojových tabulek.",
-    exportFull: "Úplný export",
+    dataExportDesc: "Sloučená data obsahují účet, finance, profesní a znalostní záznamy. Marketing, denní plánování a nahrané soubory jsou mimo tento export. Starší archiv se stahuje samostatně.",
+    exportFull: "Sloučená data",
+    exportDataset: "Sada dat",
+    exportJson: "Stáhnout JSON",
+    exportPending: "Připravuje se stažení…",
+    exportStarted: "Stahování zahájeno. Zkontrolujte stažené soubory v prohlížeči.",
+    exportFailed: "Stažení se nepodařilo připravit. Zkuste to znovu.",
+    exportTooLarge: "Export je příliš velký. Vyberte menší sadu dat.",
+    exportAccountChanged: "Účet vyžaduje ověření. Před stažením obnovte stránku.",
+    exportPreview: "Pro stažení vlastních dat se přihlaste.",
     exportFinancial: "Finance",
     exportProfessional: "Profesní",
     exportKnowledge: "Znalosti",

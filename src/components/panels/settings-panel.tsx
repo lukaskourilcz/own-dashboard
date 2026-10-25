@@ -3,7 +3,6 @@
 import {
   Bell,
   Coins,
-  Download,
   FileText,
   FolderKanban,
   GripVertical,
@@ -14,7 +13,6 @@ import {
   Palette,
   Plug,
   RotateCcw,
-  Shield,
   SlidersHorizontal,
   Sun,
 } from "lucide-react";
@@ -77,6 +75,7 @@ import {
   isDneskaiProjectTab,
   type ProjectTabId,
 } from "@/lib/project-workspace-tabs";
+import { SettingsDataExport } from "@/components/settings-data-export";
 import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
 
 // Settings lists the tabs only the DNESKAi project shows under their own
@@ -132,13 +131,14 @@ function Segmented<T extends string>({
   );
 }
 
-export function SettingsPanel({
+export function SettingsPanel({ exportsAvailable = true,
   projects = [],
   setProjects = () => undefined,
   projectsStatus = { ready: true, failed: false },
   syncPreferences = true,
   preferencesSyncAvailable = true,
 }: {
+  exportsAvailable?: boolean;
   projects?: Project[];
   setProjects?: Updater<Project[]>;
   /** Whether `projects` holds loaded records yet (see `useEntityStore`). */
@@ -725,10 +725,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card id="settings-export" className="scroll-mt-4">
-          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Shield className="h-3 w-3" />{t.settings.dataExport}</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.dataExportDesc}</p><div className="flex flex-wrap gap-2">{[["/api/export/full", t.settings.exportFull], ["/api/export/financial", t.settings.exportFinancial], ["/api/export/professional", t.settings.exportProfessional], ["/api/export/knowledge", t.settings.exportKnowledge], ["/api/export/projects", t.settings.exportProjects], ["/api/export/notes", t.settings.exportNotes], ["/api/export/prompts", t.settings.exportPrompts], ["/api/export/career", t.settings.exportCareer], ["/api/export/financial?format=csv&table=transactions", t.settings.exportTransactionsCsv], ["/api/export/legacy", t.settings.exportLegacy]].map(([href, label]) => <Button key={href} variant="outline" size="sm" asChild><a href={href} download><Download />{label}</a></Button>)}</div></CardContent>
-        </Card>
+        <SettingsDataExport available={exportsAvailable} />
       </div>
     </div>
   );

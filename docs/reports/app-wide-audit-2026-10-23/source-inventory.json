@@ -215,8 +215,8 @@
       "path": "src/app/api/export/[scope]/route.ts",
       "lines": 107,
       "sha256": "fecbc0592e608df4820c207fdbf12a2cb723812af2f7afa8f4aee60ba1290f45",
-      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
-      "reviewedSha256": "0413989363ac2883ca5f02913e1dfb56ef45147eb8d5c0a55d9131e37d9d324d"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "5298593bf9365ae03cbfd103bb3e769227fe44c0f8a1dca39e769f2e0c6a180c"
     },
     {
       "path": "src/app/api/github/activity/route.ts",
@@ -656,8 +656,8 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 54,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
-      "reviewedSha256": "e455afafbab7b6065322eceeb70cffff11b7f9dd558fc79c4dbedcb4042b72ef"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "177827fe717ca38a1105772ef20682c718c22673687c026b13397bfc6870bcc2"
     },
     {
       "path": "src/app/globals.css",
@@ -833,15 +833,15 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 230 removes redundant confirmed-write collection reads while preserving owner-scoped read-failure recovery and asynchronous cache focus; large-list review and final release pending",
-      "reviewedSha256": "18419b53d03b798b7a97a2529ee20b1741535189a4da2928ea6c2577f82c4086"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "43dffe3e53f04de6308fb3335dab1fd7e578c5de8f1018812519eec839b04699"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 164,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
-      "reviewedSha256": "0926f86ca8aa892753afbc0b5e0a80c45eafbbc50850134879339339137e16b6"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "941f00a443e726a7185a39690e5cc48cbf7a9a8f91270e4eab22fda3de7c211d"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1605,8 +1605,8 @@
       "path": "src/components/panels/settings-panel.tsx",
       "lines": 814,
       "sha256": "628abb698ed4d78bb009c5d8e44c2834301a57f8ea385042d7b6a3b3c33c64df",
-      "status": "partial; preferences/integrations/layout and confirmed project classification checked; CV/density/reorder lifecycle and final optimized release pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
-      "reviewedSha256": "74ba65768cd857b7b54c9124273c53403062bad7fa99d4dfef09441ac50318d4"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "eb0f50d923bb9295181e3cf1ced540851afc204711c7d2f24ab6a844780469bc"
     },
     {
       "path": "src/components/panels/shortcuts-panel.tsx",
@@ -2693,8 +2693,8 @@
       "path": "src/lib/i18n/sections/settings.ts",
       "lines": 256,
       "sha256": "2e6552acd5034b59f60dd73f8697d5ae05827e9676a1ba5cf413cfd5fc7eb42b",
-      "status": "partial: cross-tab storage/normalization and bilingual controls checked; server persistence, hydration and remaining shared lifecycle review pending",
-      "reviewedSha256": "261ca43b59ea3f577fb32b912eecd2e5d172320d9f9711786a3b2fd466d5721f"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "e3a6c92904bd3cecd2dfb2f4c7f6d208dfccab39d12e54b34d10891314b99ea6"
     },
     {
       "path": "src/lib/i18n/sections/shortcuts.ts",
@@ -4672,15 +4672,15 @@
       "path": "src/lib/data-export-columns.ts",
       "sha256": null,
       "lines": 690,
-      "status": "source reviewed; finding 235 snapshot foundation tested; route adoption and final release pending",
-      "reviewedSha256": "52dbf92b287f197271b23bf22193c3bb78485eed8236dd44513b2288dcf9e375"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "745c9769b57f2ffb0bb650457fe1d308cc25ccaea2cbfd88e1e954dfb967e42a"
     },
     {
       "path": "src/lib/data-export-records.ts",
       "sha256": null,
       "lines": 41,
-      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
-      "reviewedSha256": "ba6896c32932f7f149e2d9b28cc2d54923bb903b057d52cc76bc9f45f569c727"
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "91f995c71fc1c2988033941ba482d3d468f800021af45ea9708feb855fb60235"
     },
     {
       "path": "src/lib/data-export-scopes.ts",
@@ -4695,6 +4695,27 @@
       "lines": 11,
       "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
       "reviewedSha256": "68231ba9c7d67fe49979be3a82e52d756ade8a2efa6ad21eeb540d4f3c506679"
+    },
+    {
+      "path": "src/components/settings-data-export.tsx",
+      "sha256": null,
+      "lines": 72,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "ab037d2a223bae693866f00b08ffed257abd785d5ce42055f98910454721b59a"
+    },
+    {
+      "path": "src/lib/data-export-download.ts",
+      "sha256": null,
+      "lines": 45,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "59ebcfcdf58187d0ed60ad9ae55c22e4cf2f952e7866ff524e43ec946a633175"
+    },
+    {
+      "path": "src/lib/data-export-limits.ts",
+      "sha256": null,
+      "lines": 2,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "7d119defb9fae6a9ed56138a49f59b79e38625725dd8867cb7398c2f7a57e13d"
     }
   ],
   "baselineFileCount": 561

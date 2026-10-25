@@ -452,3 +452,8 @@ Four final EN/CS desktop/mobile cases pass in 8.9 seconds across all six widths,
 ## Complete organization read recovery — 25 October 2026, finding 217
 
 Six final EN/CS desktop/mobile cases pass in 13.5 seconds. Failed and foreign initial reads keep the editable page unavailable; explicit retry restores the confirmed existing fixture. Six-width reflow, axe and page-error checks pass; the ordinary preview makes zero private organization requests. Native development first exposes an owner-remount lifecycle error, reproduced in a mounted Strict Mode case and repaired before the final native run. These cases exercise expected synthetic 503 replies; they do not claim a clean network/console or real signed-in production verification. Cached-refresh and saved-record controls remain separate.
+
+
+## Settings export — 25 October 2026, finding 237
+
+Eight final EN/CS desktop/mobile cases pass in 26.3 seconds with exact synthetic JSON/CSV download bytes/names, captured owner and request routes, retained selection/error recovery, pending locks, keyboard selection/focus and guest zero-request isolation. Controls match width/height and stay within the existing Settings peer card at 360/430/640/767/768/1024/1440/1728px. English light and Czech dark pass axe for this card with no page errors. Expected synthetic 503 responses are exercised; this is not a clean-network assertion or a production/private export. Ninety separate focused cases validate the route, database, CSV, stream and mounted lifetimes. Current authentic crops follow separately from the committed application; final consolidated verification remains pending.

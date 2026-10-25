@@ -1,7 +1,8 @@
+import { EXPORT_MAX_BYTES, EXPORT_MAX_ROWS } from '@/lib/data-export-limits';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
-import { exportColumns, EXPORT_MAX_BYTES, EXPORT_MAX_ROWS, type ExportTable } from '@/lib/data-export-columns';
+import { exportColumns, type ExportTable } from '@/lib/data-export-columns';
 export class DataExportError extends Error { constructor(readonly reason: 'unavailable' | 'too-large' = 'unavailable') { super('Data export unavailable'); } }
 export type ExportRows = Record<string, unknown>[];
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
