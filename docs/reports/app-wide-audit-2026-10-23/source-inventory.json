@@ -466,7 +466,8 @@
       "path": "src/app/api/marketing/dneskai/review/route.ts",
       "lines": 43,
       "sha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9",
-      "status": "pending"
+      "status": "partial source review: own-only RLS/project gate, bounded date/cursor and no-store retained; cached-user auth errors, duplicate parameters and bounded complete workspace reads need verification",
+      "reviewedSha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9"
     },
     {
       "path": "src/app/api/marketing/dneskai/source-list/route.ts",
@@ -486,7 +487,8 @@
       "path": "src/app/api/marketing/dneskai/topics/route.ts",
       "lines": 74,
       "sha256": "2260a02275b60189621b37ab248bcd459357cb087168f2ba95e3f225ca33892b",
-      "status": "pending"
+      "status": "partial source review: feature/CSRF/RLS and independent bulk decisions retained; auth error, bounded body/read/work budget, exact row/action result and project/source-version binding need verification",
+      "reviewedSha256": "2260a02275b60189621b37ab248bcd459357cb087168f2ba95e3f225ca33892b"
     },
     {
       "path": "src/app/api/marketing/import/route.ts",
@@ -790,13 +792,15 @@
       "path": "src/components/competition/competitor-dialog.tsx",
       "lines": 246,
       "sha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a",
-      "status": "pending"
+      "status": "partial source review: create/update/delete lack captured owner/version, stable creation id, synchronous pending/exit guards and confirmed delete receipts; invalid URL lines are silently dropped and raw provider errors displayed",
+      "reviewedSha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a"
     },
     {
       "path": "src/components/competition/competitor-list.tsx",
       "lines": 172,
       "sha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6",
-      "status": "pending"
+      "status": "partial source review: shared clock, semantic scores and expandable rows retained; social links hidden without social text, long feature/rationale overflow, raw date and disclosure target consistency need native verification",
+      "reviewedSha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6"
     },
     {
       "path": "src/components/cost-overview.tsx",
@@ -2222,13 +2226,15 @@
       "path": "src/lib/demo/dneskai-topics-demo.ts",
       "lines": 59,
       "sha256": "9a033f95d855729dfe6092e1aa1584555f796d262428ba62895f403c7805af3b",
-      "status": "pending"
+      "status": "partial source review: in-memory bounded transition port retained; create returns an empty successful result, edit transition/order and real receipt/schema parity need verification",
+      "reviewedSha256": "9a033f95d855729dfe6092e1aa1584555f796d262428ba62895f403c7805af3b"
     },
     {
       "path": "src/lib/demo/dneskai-topics-fixtures.ts",
       "lines": 34,
       "sha256": "257e5e2f081b8c3b507d076729530ce8f83d69ab8f837d505550c30d06a67bec",
-      "status": "pending"
+      "status": "source reviewed: explicit synthetic source identities and deterministic in-memory topic groups; no owner/provider data",
+      "reviewedSha256": "257e5e2f081b8c3b507d076729530ce8f83d69ab8f837d505550c30d06a67bec"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-demo.ts",
@@ -3017,13 +3023,15 @@
       "path": "src/lib/marketing/dneskai-brief-source.ts",
       "lines": 72,
       "sha256": "dd72d330d9a1e66035a5e0d5fe33e8cdf778c77b1f68a96da03d72099bde6dd9",
-      "status": "pending"
+      "status": "partial source review: source members/hash/current eligibility checks retained; full row/previous-brief identity, finite temporal invariants and request cancellation need verification",
+      "reviewedSha256": "dd72d330d9a1e66035a5e0d5fe33e8cdf778c77b1f68a96da03d72099bde6dd9"
     },
     {
       "path": "src/lib/marketing/dneskai-brief.ts",
       "lines": 87,
       "sha256": "fa756613860b5197c36645d2fcbac21b0573494e1cb496e74d264aee13190f10",
-      "status": "pending"
+      "status": "partial source review: source media membership, distinct assets and expiry ordering retained; evidence duplicate/identity, finite instants, target-date/Prague schedule and capability consistency need verification",
+      "reviewedSha256": "fa756613860b5197c36645d2fcbac21b0573494e1cb496e74d264aee13190f10"
     },
     {
       "path": "src/lib/marketing/dneskai-briefs.ts",
@@ -3123,7 +3131,8 @@
       "path": "src/lib/marketing/dneskai-evaluation.ts",
       "lines": 60,
       "sha256": "8d6c16844207403d95f9857fd9e5a9c2d6a4f021c6a556c0462274e07ee67c95",
-      "status": "pending"
+      "status": "source reviewed: pure offline scoring binds distinct identical id sets and never implies fact verification or approval; no provider calls",
+      "reviewedSha256": "8d6c16844207403d95f9857fd9e5a9c2d6a4f021c6a556c0462274e07ee67c95"
     },
     {
       "path": "src/lib/marketing/dneskai-events.ts",
@@ -3150,7 +3159,8 @@
       "path": "src/lib/marketing/dneskai-fit.ts",
       "lines": 65,
       "sha256": "abe11e9b01b8839623459aeb034e6b4be88413251ac9663214131d50a24d1846",
-      "status": "pending"
+      "status": "partial source review: same deck/render fitting and no-media/no-model boundary retained; request body cap applies after whole text read and fit work has no total cancellation budget",
+      "reviewedSha256": "abe11e9b01b8839623459aeb034e6b4be88413251ac9663214131d50a24d1846"
     },
     {
       "path": "src/lib/marketing/dneskai-generation.ts",
@@ -3206,7 +3216,8 @@
       "path": "src/lib/marketing/dneskai-native-feed.ts",
       "lines": 90,
       "sha256": "5b0827d6e41a7727171bba55dc8689d263daa210ccaf183a45665526514e10a3",
-      "status": "pending"
+      "status": "partial source review: strict source binding, conservative partial/cursor and untrusted-instruction handling retained; upstream malformed-item diagnostics and adapter completeness leads remain",
+      "reviewedSha256": "5b0827d6e41a7727171bba55dc8689d263daa210ccaf183a45665526514e10a3"
     },
     {
       "path": "src/lib/marketing/dneskai-paid-actions.ts",
@@ -3384,7 +3395,8 @@
       "path": "src/lib/marketing/dneskai-topic-source.ts",
       "lines": 76,
       "sha256": "83d221e795a2d32fa0e3d1de93bf3791552aa419d2399e9668a5da81fcef2a6e",
-      "status": "pending"
+      "status": "partial source review: owner-authorized URL-only Jina and stable source identity retained; URL credentials/shape, bounded reader body/deadline and malformed Markdown CPU before truncation need verification",
+      "reviewedSha256": "83d221e795a2d32fa0e3d1de93bf3791552aa419d2399e9668a5da81fcef2a6e"
     },
     {
       "path": "src/lib/marketing/dneskai-topic-spend.ts",
@@ -3397,7 +3409,8 @@
       "path": "src/lib/marketing/dneskai-topics-client.ts",
       "lines": 54,
       "sha256": "2f1ef9e2e3ba899ae0b427aaeb76ba7eecdee5483f2084c63924948d4653a07f",
-      "status": "pending"
+      "status": "partial source review: explicit server-off and lazy demo port retained; bounded bodies/deadlines, captured cancellable actions and exact action-result identity/status receipts need repair verification",
+      "reviewedSha256": "2f1ef9e2e3ba899ae0b427aaeb76ba7eecdee5483f2084c63924948d4653a07f"
     },
     {
       "path": "src/lib/marketing/dneskai-topics.ts",
@@ -3646,7 +3659,8 @@
       "path": "src/lib/marketing/meta-facebook-page.ts",
       "lines": 55,
       "sha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291",
-      "status": "pending"
+      "status": "partial source review: bearer-only credentials and IG/Page binding retained; unbounded response body, missing explicit page-list completeness and fallback error semantics need verification",
+      "reviewedSha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291"
     },
     {
       "path": "src/lib/marketing/offline-import-client.ts",
@@ -3677,13 +3691,15 @@
       "path": "src/lib/marketing/owner-edits.ts",
       "lines": 142,
       "sha256": "983a5a008f5d5c72d51ec133b73d00fcee6dfa8aa465b828ec5f61c32e6d722c",
-      "status": "pending"
+      "status": "partial source review: pure bounded-deck matching and aggregate-only feedback retained; inserted-only slides can produce zero edits and an approved-as-generated score, requiring taxonomy/caller reconciliation",
+      "reviewedSha256": "983a5a008f5d5c72d51ec133b73d00fcee6dfa8aa465b828ec5f61c32e6d722c"
     },
     {
       "path": "src/lib/marketing/owner-feedback.ts",
       "lines": 68,
       "sha256": "6a283d2c9df1b4252b15246fd391f91b72f87828a6e7d42231267c4fbfe5eb4b",
-      "status": "pending"
+      "status": "partial source review: optional diagnostics never gate approval, bounded trace/hash edit chain and EU redaction retained; total database/tracer deadline and insertion-only edit classification need verification",
+      "reviewedSha256": "6a283d2c9df1b4252b15246fd391f91b72f87828a6e7d42231267c4fbfe5eb4b"
     },
     {
       "path": "src/lib/marketing/pilot.ts",
@@ -4183,7 +4199,8 @@
       "path": "src/lib/subscription-brands.ts",
       "lines": 59,
       "sha256": "671167ab78fed1202023a6fe0af0e4ab71891ca021dda0f4698c4d31e66e8746",
-      "status": "pending"
+      "status": "source reviewed: finite static glyph/keyword lookup only, no network or billing inference; current brand rights are not newly researched and no media was generated",
+      "reviewedSha256": "671167ab78fed1202023a6fe0af0e4ab71891ca021dda0f4698c4d31e66e8746"
     },
     {
       "path": "src/lib/subscriptions.ts",
