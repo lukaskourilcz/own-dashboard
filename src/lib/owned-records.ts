@@ -1,8 +1,9 @@
 import { awaitWithSignal } from "@/lib/abortable";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AiCategory, AiLink, Invoice, InvoiceItem, ProjectLink, Prompt, PromptLink, Transaction, RepoNote, RepoLink, Todo, Project, ProjectCost, Cron, Organization } from "@/lib/types";
+import type { AiCategory, AiLink, Invoice, InvoiceItem, ProjectLink, Prompt, PromptLink, Transaction, RepoNote, RepoLink, Todo, Project, ProjectCost, Cron, Organization, Competitor } from "@/lib/types";
 
 type Collections = {
+  competitors: Competitor;
   organizations: Organization;
   projects: Project;
   project_costs: ProjectCost;

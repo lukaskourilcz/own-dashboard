@@ -34,6 +34,7 @@ export function DemoDashboard({
   livePreferences = false,
   liveCalendar = false,
   liveOrganizations = false,
+  liveCompetitors = false,
   initialTipQuery = null,
 }: {
   /** Opens a project workspace directly, by fixture id or slug. */
@@ -68,6 +69,8 @@ export function DemoDashboard({
   liveCalendar?: boolean;
   /** Isolated fake-backend organization record checks only. */
   liveOrganizations?: boolean;
+  /** Isolated fake-backend Competition read checks only. */
+  liveCompetitors?: boolean;
   /** The IG TIPS deep-link search, as `/ig-tips?q=` passes it. */
   initialTipQuery?: string | null;
 }) {
@@ -78,7 +81,8 @@ export function DemoDashboard({
     && (!liveProjectRecords || !["projects", "projectCosts", "crons", "todos"].includes(key))
     && (!livePlanning || key !== "weeklyReviews")
     && (!liveTasks || key !== "todos")
-    && (!liveOrganizations || key !== "organizations"));
+    && (!liveOrganizations || key !== "organizations")
+    && (!liveCompetitors || key !== "competitors"));
 
   return (
     <DashboardShell
@@ -92,7 +96,8 @@ export function DemoDashboard({
       previewPreferencesIntegration={livePreferences}
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
-      user={livePlanning || liveTasks || liveCategories || liveOrganizations ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      previewCompetitorIntegration={liveCompetitors}
+      user={livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
@@ -124,7 +129,7 @@ export function DemoDashboard({
       initialProjectCosts={f.projectCosts}
       initialCrons={f.crons}
       initialSubscriptionAllocations={f.subscriptionAllocations}
-      initialCompetitors={f.competitors}
+      initialCompetitors={liveCompetitors ? [] : f.competitors}
       initialOrganizations={liveOrganizations ? [] : f.organizations}
       initialOpportunities={f.opportunities}
       initialInboxItems={f.inboxItems}

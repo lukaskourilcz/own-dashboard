@@ -136,6 +136,8 @@ type Props = {
   previewCalendarIntegration?: boolean;
   /** Isolated fake-backend organization read/write checks only. */
   previewOrganizationIntegration?: boolean;
+  /** Isolated fake-backend competition record checks only. */
+  previewCompetitorIntegration?: boolean;
   initialProjectId?: string;
   initialProjectTab?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
@@ -216,6 +218,12 @@ export function DashboardShell(props: Props) {
 
 function DashboardShellContent(props: Props) {
   const ownerScope = useOwnerPreferences();
+  const competitorKey = useMemo(() => [...qk.competitors, props.user.id], [props.user.id]);
+  const loadCompetitors = useCallback((context?: { signal: AbortSignal }) => {
+    if (!ownerScope || ownerScope.ownerId !== props.user.id) throw new Error("Competition unavailable");
+    const captured = ownerScope.capture();
+    return fetchCompetitors({ ownerId: captured.ownerId, signal: context ? AbortSignal.any([captured.signal, context.signal]) : captured.signal });
+  }, [ownerScope, props.user.id]);
   const organizationKey = useMemo(() => [...qk.organizations, props.user.id], [props.user.id]);
   const loadOrganizations = useCallback((context?: { signal: AbortSignal }) => {
     if (!ownerScope || ownerScope.ownerId !== props.user.id) throw new Error("Organizations unavailable");
@@ -236,9 +244,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: (!props.isPreview || (props.previewOrganizationIntegration && key === "organizations") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: (!props.isPreview || (props.previewOrganizationIntegration && key === "organizations") || (props.previewCompetitorIntegration && key === "competitors") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration]);
+  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration, props.previewCompetitorIntegration]);
   const setTab = useCallback((next: NavTab) => {
     if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {
@@ -331,7 +339,7 @@ function DashboardShellContent(props: Props) {
   const [projectCosts, setProjectCosts, projectCostsStatus] = useEntityStore(qk.projectCosts, props.initialProjectCosts, fetchProjectCosts, dataOptions("projectCosts"));
   const [crons, setCrons, cronsStatus] = useEntityStore(qk.crons, props.initialCrons, fetchCrons, dataOptions("crons"));
   const [subscriptionAllocations, setSubscriptionAllocations, subscriptionAllocationsStatus] = useEntityStore(qk.subscriptionAllocations, props.initialSubscriptionAllocations, fetchSubscriptionAllocations, dataOptions("subscriptionAllocations"));
-  const [competitors, setCompetitors, competitorsStatus] = useEntityStore(qk.competitors, props.initialCompetitors, fetchCompetitors, dataOptions("competitors"));
+  const [competitors, setCompetitors, competitorsStatus] = useEntityStore(competitorKey, props.initialCompetitors, loadCompetitors, { ...dataOptions("competitors"), retry: false });
   const [organizations, setOrganizations, organizationsStatus] = useEntityStore(organizationKey, props.initialOrganizations, loadOrganizations, { ...dataOptions("organizations"), retry: false });
   const [opportunities, setOpportunities, opportunitiesStatus] = useEntityStore(qk.opportunities, props.initialOpportunities, fetchOpportunities, dataOptions("opportunities"));
   const [inboxItems, setInboxItems, inboxItemsStatus] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));

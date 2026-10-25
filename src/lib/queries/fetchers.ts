@@ -1,6 +1,7 @@
 "use client";
 
 import { readSpendCategoryRecords, type SpendCategoryScope } from "@/lib/spend-category-records";
+import { readCompetitorRecords, type CompetitorScope } from "@/lib/competitor-records";
 import { readOrganizationRecords, type OrganizationScope } from "@/lib/organization-records";
 import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
@@ -310,15 +311,8 @@ export async function fetchSubscriptionAllocations(): Promise<SubscriptionAlloca
   return (data ?? []) as SubscriptionAllocation[];
 }
 
-export async function fetchCompetitors(): Promise<Competitor[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("competitors")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Competitor[];
+export async function fetchCompetitors(scope: CompetitorScope): Promise<Competitor[]> {
+  return (await readCompetitorRecords(createClient(), scope)).data;
 }
 
 export async function fetchAiLinks(): Promise<AiLink[]> {

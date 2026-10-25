@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -54,8 +54,8 @@
       "path": "src/app/[[...slug]]/page.tsx",
       "lines": 199,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "2079da4a62b2748e74126717dbb0af573eaaf5dbffddfddac39884c45f39d962"
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
+      "reviewedSha256": "06e1d99a74f45ece21206a1023e1514102c598c1604a01bc778eaa8392568987"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -656,14 +656,14 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 54,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "9adf5ce38784896c26708279e2830c2d1d9dda81a73da072732e7d5f7e3ab88c"
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
+      "reviewedSha256": "e455afafbab7b6065322eceeb70cffff11b7f9dd558fc79c4dbedcb4042b72ef"
     },
     {
       "path": "src/app/globals.css",
       "lines": 788,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; findings 171–172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
+      "status": "partial; complete CSS source inspected; findings 171\u2013172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
       "reviewedSha256": "1a9f4c86868901c9b8dcc6d61aadb503f33f3bf251056b02937fc8fee7b8a276"
     },
     {
@@ -833,15 +833,15 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
-      "reviewedSha256": "76da9484d5fe4286e8e888ae0a8afa529d0cad324798d171dee940042cf1c12a"
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
+      "reviewedSha256": "b0f25b3ab0f692e6e4f9891381f655bf3614b7fac5b15bb4d3d825eda633e205"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 164,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "32cad15628cb51cd873e8e159d0c598a463042ea5397b0d9a3ccacdec4a6d04c"
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
+      "reviewedSha256": "0926f86ca8aa892753afbc0b5e0a80c45eafbbc50850134879339339137e16b6"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1633,7 +1633,7 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1110,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177–185; final release pending",
+      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177\u2013185; final release pending",
       "reviewedSha256": "0648b959f84e989355020c0130c9d2133c9d8da25ec5545898273e8f0d1aa4c7"
     },
     {
@@ -1976,7 +1976,7 @@
       "path": "src/components/work/weekly-planning.tsx",
       "lines": 745,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; findings 164/166–169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
+      "status": "partial; findings 164/166\u2013169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
       "reviewedSha256": "b59dc5381857cbb8394603de3434d306b73a638465c04e63f8555e0e5f47be9c"
     },
     {
@@ -2721,7 +2721,7 @@
       "path": "src/lib/i18n/sections/todos.ts",
       "lines": 417,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177–180; final release pending",
+      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177\u2013180; final release pending",
       "reviewedSha256": "a184a3990cbeb3eb556a48282ffa1d3bb9e7f86a2a0f0d3b73ad553a960db93e"
     },
     {
@@ -4067,8 +4067,8 @@
       "lines": 42,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "47f081d9294e150339e7fd78f2d409e5c110399733fb8cfe1080083f1b6d757c"
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
+      "reviewedSha256": "4ea522214202028dabe6ed647ac90fb818ffd558496b6168ffff812e25040328"
     },
     {
       "path": "src/lib/owner-preferences.tsx",
@@ -4243,8 +4243,8 @@
       "path": "src/lib/queries/fetchers.ts",
       "lines": 463,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
-      "reviewedSha256": "7d33840c0c31a21fa7194fcb0921f281100fe2afbb00a1685af929e5c81a8186"
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
+      "reviewedSha256": "bbc31f2040c5510276aeb112d4d69da6fee019daee0f3998b973b43b388292b9"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -4397,14 +4397,14 @@
       "path": "src/lib/task-write.ts",
       "lines": 119,
       "sha256": null,
-      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176–177; remaining callers and final release separate",
+      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176\u2013177; remaining callers and final release separate",
       "reviewedSha256": "8a3ff87773dee890e2e43527285a099156e177b9b61392eba241f1203f19f9a0"
     },
     {
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
-      "status": "source reviewed; findings 212–214 nonfuture freshness, typed receipt schemas and identity-preserving VAT syntax tests pass; browser lifecycle and final release pending",
+      "status": "source reviewed; findings 212\u2013214 nonfuture freshness, typed receipt schemas and identity-preserving VAT syntax tests pass; browser lifecycle and final release pending",
       "reviewedSha256": "da9170a424d3445b75c9843ba99a714e4b8f32ae196916329facbbf1d93c9fc8"
     },
     {
@@ -4567,7 +4567,7 @@
       "path": "src/lib/weekly-review-save.ts",
       "sha256": null,
       "lines": 94,
-      "status": "source reviewed; findings 167–168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
+      "status": "source reviewed; findings 167\u2013168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
       "reviewedSha256": "db5f9b9d933fb90741a1518bbe5aa33b0c96dac40b15856b843aaa36a0e2f227"
     },
     {
@@ -4639,6 +4639,13 @@
       "lines": 40,
       "reviewedSha256": "c07c3ca978a5db0018a256374a8ca50dc85c8a496af423b526fe8b100472d9aa",
       "status": "source reviewed; complete owned reads and captured write helpers pass targeted SDK/RLS cases; client writes and consolidated release pending"
+    },
+    {
+      "path": "src/lib/competitor-records.ts",
+      "sha256": null,
+      "lines": 41,
+      "reviewedSha256": "606b9bbe19af42540fb3ef83cff08a2153274809d9c5fc61625e07214c38c314",
+      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending"
     }
   ],
   "baselineFileCount": 561

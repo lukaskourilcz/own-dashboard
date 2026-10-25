@@ -6,6 +6,7 @@ import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
+import { readCompetitorRecords } from "@/lib/competitor-records";
 import { readOrganizationRecords } from "@/lib/organization-records";
 import { readOwnedCollection } from "@/lib/owned-records";
 import { resolveProjectRef } from "@/lib/projects";
@@ -83,7 +84,7 @@ export default async function DashboardPage({
     loadWhen("projectCosts", () => readOwnedCollection(supabase, "project_costs", user.id)),
     loadWhen("crons", () => readOwnedCollection(supabase, "crons", user.id)),
     loadWhen("subscriptionAllocations", () => supabase.from("subscription_allocations").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("competitors", () => supabase.from("competitors").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(1000)),
+    loadWhen("competitors", () => readCompetitorRecords(supabase, { ownerId: user.id, signal: AbortSignal.timeout(15_000) })),
     loadWhen("organizations", () => readOrganizationRecords(supabase, { ownerId: user.id, signal: AbortSignal.timeout(15_000) })),
     loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)),
     loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
