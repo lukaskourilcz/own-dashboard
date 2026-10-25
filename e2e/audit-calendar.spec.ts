@@ -67,7 +67,7 @@ for (const lang of ["en", "cs"] as const) {
     let attempt = 0, release!: () => void;
     await page.route("**/api/calendar/event", async route => {
       attempt++; await new Promise<void>(resolve => { release = resolve; });
-      await route.fulfill({ status: attempt === 1 ? 502 : 200, json: attempt === 1 ? { reason: "unconfirmed" } : { id: "created", htmlLink: "javascript:alert(1)" } });
+      await route.fulfill({ status: attempt === 1 ? 502 : 200, json: attempt === 1 ? { reason: "unconfirmed" } : { id: "created", ownerId: route.request().headers()["x-calendar-owner"], htmlLink: "javascript:alert(1)" } });
     });
     await page.getByRole("button", { name: t.newEvent, exact: true }).click();
     const dialog = page.getByRole("dialog"), title = dialog.getByRole("textbox", { name: t.title, exact: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/queries/keys";
 import { CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
@@ -13,9 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { todayKey } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
-import { awaitWithSignal } from "@/lib/abortable";
-import { readTextPrefix } from "@/lib/bounded-text";
-import { safeWebUrl } from "@/lib/web-url";
+import { CalendarWriteError, createOwnedCalendarEvent } from "@/lib/calendar-event-client";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
 import { useUnsavedDraft } from "@/components/navigation-guard";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
@@ -52,7 +52,9 @@ export function CalendarPanel({
   compact?: boolean;
   initialTitle?: string;
 }) {
-  const t = useDict();
+  const t = useDict(), owner = useOwnerPreferences();
+  const lifetime = useRef(new AbortController());
+  useLayoutEffect(() => { if (lifetime.current.signal.aborted) lifetime.current = new AbortController(); return () => lifetime.current.abort(); }, []);
   const id = useId();
   const [open, setOpen] = useState(false);
   const pending = useRef(false);
@@ -68,6 +70,7 @@ export function CalendarPanel({
 
   async function saveEvent(): Promise<boolean> {
     if (pending.current) return false;
+    if (isGuestTour()) { guestReadOnlyError(); return false; }
     setResult(null);
     if (!form.title.trim() || !form.date) {
       setResult({ kind: "error", message: t.calendar.titleAndDateRequired });
@@ -81,55 +84,36 @@ export function CalendarPanel({
       setResult({ kind: "error", message: t.calendar.endAfterStart });
       return false;
     }
+    const original = owner?.capture();
+    if (!original) { setResult({ kind: "error", message: t.calendar.couldNotCreateEvent }); return false; }
+    const scope = { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) };
+    if (scope.signal.aborted) return false;
     pending.current = true;
     setSubmitting(true);
     try {
-      const signal = AbortSignal.timeout(25_000);
-      const res = await awaitWithSignal(fetch("/api/calendar/event", {
-        method: "POST",
-        signal,
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          date: form.date,
-          startTime: form.allDay ? undefined : form.startTime,
-          endTime: form.allDay ? undefined : form.endTime,
-          description: form.description.trim(),
-          allDay: form.allDay,
-          recurrence: form.recurrence,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
-      }), signal);
-      const prefix = await awaitWithSignal(readTextPrefix(res, 65_536, signal), signal);
-      if (prefix.truncated) throw Error("Unconfirmed calendar result");
-      const json = JSON.parse(prefix.text);
-      if (res.status === 401 && json.reason) {
-        setResult({ kind: "expired" });
-        return false;
-      }
-      if (!res.ok) {
-        setResult({
-          kind: "error",
-          message: json.reason === "unconfirmed" ? t.calendar.resultUnconfirmed : json.error === t.guest.readOnlyAction ? json.error : t.calendar.couldNotCreateEvent,
-        });
-        return false;
-      }
-      if (typeof json.id !== "string" || !json.id || json.id.length > 1024 || /\p{Cc}/u.test(json.id)) {
-        setResult({ kind: "error", message: t.calendar.resultUnconfirmed });
-        return false;
-      }
-      setResult({ kind: "ok", link: safeWebUrl(json.htmlLink) ?? undefined });
+      const receipt = await createOwnedCalendarEvent(scope, {
+        title: form.title.trim(), date: form.date,
+        startTime: form.allDay ? undefined : form.startTime,
+        endTime: form.allDay ? undefined : form.endTime,
+        description: form.description.trim(), allDay: form.allDay, recurrence: form.recurrence,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+      scope.signal.throwIfAborted();
+      setResult({ kind: "ok", link: receipt.htmlLink });
       const next = { ...empty, date: form.date };
       setBaseline(JSON.stringify(next));
       setForm(next);
       return true;
-    } catch {
-      setResult({ kind: "error", message: t.calendar.resultUnconfirmed });
+    } catch (error) {
+      if (scope.signal.aborted) return false;
+      setResult(error instanceof CalendarWriteError && error.reason === 'expired' ? { kind: "expired" } : { kind: "error", message: t.calendar.resultUnconfirmed });
       return false;
     } finally {
       pending.current = false;
-      setSubmitting(false);
-      for (const queryKey of [qk.calendarToday, qk.calendarWeek, qk.calendarLastWeek]) void qc.invalidateQueries({ queryKey });
+      if (!scope.signal.aborted) {
+        setSubmitting(false);
+        for (const queryKey of [qk.calendarToday, qk.calendarWeek, qk.calendarLastWeek]) void qc.invalidateQueries({ queryKey });
+      }
     }
   }
 

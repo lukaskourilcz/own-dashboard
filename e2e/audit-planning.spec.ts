@@ -63,7 +63,7 @@ test("calendar creation sends the browser timezone and confirms the saved event"
   let payload: Record<string, unknown> | null = null;
   await page.route("**/api/calendar/event", async route => {
     payload = route.request().postDataJSON();
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: "fixture-event", htmlLink: "https://calendar.google.com/" }) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: "fixture-event", ownerId: route.request().headers()["x-calendar-owner"], htmlLink: "https://calendar.google.com/" }) });
   });
   await page.getByRole("button", { name: "New calendar event", exact: true }).click();
   const dialog = page.getByRole("dialog");

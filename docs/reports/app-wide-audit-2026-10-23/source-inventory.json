@@ -1409,8 +1409,8 @@
       "path": "src/components/panels/calendar-panel.tsx",
       "lines": 285,
       "sha256": "dd1c25a55059a0c3ddef32671b87a5ebf6e302cbfa074cbd25501958c81c2d6a",
-      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "2ff927949da3bdfdaab8b9bf927e016e1066130ca81811ccb235b8fddd9afc24"
+      "status": "source reviewed; finding 249 captured manual Calendar, bounded owned receipts/cancellation and native/guest checks pass; optional plan adoption and final release pending",
+      "reviewedSha256": "71655220806b944c3abd51c6058a2106c198c545c38cd8e23b184862e7dd42b7"
     },
     {
       "path": "src/components/panels/career-board.tsx",
@@ -4758,6 +4758,13 @@
       "lines": 135,
       "reviewedSha256": "d12a9024de237dc6e837d0221db9a9880a1755b49bb910ac963bc77f12d2800f",
       "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending"
+    },
+    {
+      "path": "src/lib/calendar-event-client.ts",
+      "sha256": null,
+      "lines": 50,
+      "reviewedSha256": "a77f296077dcb44c90853f675bbe3a9fe90adc510ce0c58c513e86783c0f3cb5",
+      "status": "source reviewed; finding 249 captured manual Calendar, bounded owned receipts/cancellation and native/guest checks pass; optional plan adoption and final release pending"
     }
   ],
   "baselineFileCount": 561
