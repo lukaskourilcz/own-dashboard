@@ -2897,8 +2897,8 @@
       "path": "src/lib/jobs/prune.ts",
       "lines": 109,
       "sha256": "93c3719f6902f17ce9d3374c4a682753ea4f0276571a072b143246403dff99d5",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "93c3719f6902f17ce9d3374c4a682753ea4f0276571a072b143246403dff99d5"
+      "status": "source reviewed; finding 262 bounds complete liveness/probe waits, caller cancellation and HEAD/GET body release while retaining 404/410-only proof; outer scrape/persistence and release remain open",
+      "reviewedSha256": "df12ea7052f4657b776e41262ba694ee68c4d1a5c2dc673ea9c6f8ce23041044"
     },
     {
       "path": "src/lib/jobs/scrape.ts",
