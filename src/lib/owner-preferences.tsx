@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from "react";
 import { subscribeStoredPreference } from "@/lib/preference-storage";
 
 type PrivateValues = { cv_url_cs: string; cv_url_en: string; show_czech_career: boolean };
@@ -73,7 +73,8 @@ function createPrivatePreferences(ownerId: string, initial?: PrivateValues) {
 const Context = createContext<ReturnType<typeof createPrivatePreferences> | null>(null);
 function OwnerPreferencesScope({ ownerId, initial, children }: { ownerId: string; initial?: PrivateValues; children: ReactNode }) {
   const [preferences] = useState(() => createPrivatePreferences(ownerId, initial));
-  useEffect(() => { preferences.resume(); return () => preferences.dispose(); }, [preferences]);
+  // Resume before passive query subscriptions run during a Strict Mode remount.
+  useLayoutEffect(() => { preferences.resume(); return () => preferences.dispose(); }, [preferences]);
   return <Context.Provider value={preferences}>{children}</Context.Provider>;
 }
 export function OwnerPreferencesProvider(props: { ownerId: string; initial?: PrivateValues; children: ReactNode }) {

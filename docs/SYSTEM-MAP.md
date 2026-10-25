@@ -1,6 +1,6 @@
 # OwnDashboard system map
 
-This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 25 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 33 prepared migrations still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
+This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 25 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 34 prepared migrations still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
 
 ## 1. What OwnDashboard is
 

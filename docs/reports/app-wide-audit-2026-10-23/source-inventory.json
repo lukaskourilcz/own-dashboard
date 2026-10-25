@@ -54,8 +54,8 @@
       "path": "src/app/[[...slug]]/page.tsx",
       "lines": 199,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; complete project snapshot and dashboard boundary checks pass; final release checks pending",
-      "reviewedSha256": "6700f59967b384cdcc6e2b51526246dc273a206bb971e8a338d1b4268dddcfa2"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "2079da4a62b2748e74126717dbb0af573eaaf5dbffddfddac39884c45f39d962"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -656,8 +656,8 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 54,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending",
-      "reviewedSha256": "59a48a756e4b8d19b673f83c51b61082dcf91155e8148092815865e6921fc443"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "9adf5ce38784896c26708279e2830c2d1d9dda81a73da072732e7d5f7e3ab88c"
     },
     {
       "path": "src/app/globals.css",
@@ -833,15 +833,15 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partial; route-scoped fake-only Task query/owner wiring checked in finding 177; remaining shared/account lifecycle and final matrix pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
-      "reviewedSha256": "d1b3bf4b8f71d7ece1278e8593c75574983a290daf3063cadee5c9b2ace59ad5"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "52cdc9360922c537bc8a102974dd14a3c3992050ee31869d59e1770e3a3695de"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 164,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending",
-      "reviewedSha256": "689e41572d262aab58fd333044d421fd700cc721f49aa4ee9a67a23788a8615b"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "32cad15628cb51cd873e8e159d0c598a463042ea5397b0d9a3ccacdec4a6d04c"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; finding 216 read port regenerated from all 119 local migrations with unchanged table shapes; caller adoption and final release pending",
-      "reviewedSha256": "78f4b7080cad0f3b78d566207659230ecabfb4d4ad8c6cce1c668bc7c9772e6e"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "b5adc314203537407ed200db7dfe8645d6e2862e061d9255d30baa737d03b3ae"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4067,15 +4067,15 @@
       "lines": 42,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; complete collection and cancellation checks pass; final release checks pending",
-      "reviewedSha256": "b7aec7f1f25944a3fe91e7cdcaece9bad6237398c8951d9767f5a1d82ff6dfd8"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "47f081d9294e150339e7fd78f2d409e5c110399733fb8cfe1080083f1b6d757c"
     },
     {
       "path": "src/lib/owner-preferences.tsx",
       "sha256": null,
       "lines": 85,
-      "status": "source reviewed; finding 201 checks first-render owner/guest isolation, owner-keyed retained drafts, late hydration, exact dirty acknowledgements, storage events/refusal, SSR and Strict Mode cancellation; final release pending",
-      "reviewedSha256": "0d096ad79341168ad9363b4d6b890d264dfe22a495a72652a53644f35bd5c299"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "eb94d8a5cc1343a4b1d970f491c5884104737c193b2f3f347a7805378d5451dc"
     },
     {
       "path": "src/lib/payment-matching-server.ts",
@@ -4236,15 +4236,15 @@
       "path": "src/lib/queries/entities.ts",
       "lines": 80,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "61f3875fdfbf12b47a7290792b16d7ece396ce4570777472cd9de973de315109"
     },
     {
       "path": "src/lib/queries/fetchers.ts",
       "lines": 463,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending",
-      "reviewedSha256": "8282629b637da1e498a9eb7e739f78c4f74faebe7162b0cfc82bf38d5bf9346f"
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
+      "reviewedSha256": "7d33840c0c31a21fa7194fcb0921f281100fe2afbb00a1685af929e5c81a8186"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -4632,6 +4632,13 @@
       "lines": 36,
       "reviewedSha256": "02af88b22328b4fdc8fa40c2a793c82c936b22ca0889578850a587b45e1be76c",
       "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending"
+    },
+    {
+      "path": "src/lib/organization-records.ts",
+      "sha256": null,
+      "lines": 40,
+      "reviewedSha256": "6dc962ba801c68f7c3bffc7d21ad5b49d5b88be54f5b92b065463efa3809382c",
+      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending"
     }
   ],
   "baselineFileCount": 561

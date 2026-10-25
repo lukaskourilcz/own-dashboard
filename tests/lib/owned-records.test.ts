@@ -12,7 +12,7 @@ it("reads every record beyond the REST cap with one snapshot request", async () 
   const records = Array.from({ length: 1201 }, (_, index) => ({ id: `row-${index}`, user_id: "owner" }));
   const { rpc, client } = backend(records);
   expect((await readOwnedCollection(client, "transactions", "owner")).data).toEqual(records);
-  expect(rpc).toHaveBeenCalledExactlyOnceWith("read_owned_collection", { p_entity: "transactions" });
+  expect(rpc).toHaveBeenCalledExactlyOnceWith("read_owned_collection", { p_entity: "transactions", p_expected_owner: "owner" });
 });
 it("accepts a genuinely empty collection without another count request", async () => {
   const { rpc, client } = backend([]);

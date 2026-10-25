@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { OwnerPreferencesProvider } from "@/lib/owner-preferences";
+import { OwnerPreferencesProvider, useOwnerPreferences } from "@/lib/owner-preferences";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
 import { DashboardDestinationBoundary } from "@/components/dashboard-destination-state";
@@ -134,6 +134,8 @@ type Props = {
   previewMonitoringIntegration?: boolean;
   previewPreferencesIntegration?: boolean;
   previewCalendarIntegration?: boolean;
+  /** Isolated fake-backend organization read/write checks only. */
+  previewOrganizationIntegration?: boolean;
   initialProjectId?: string;
   initialProjectTab?: string;
   /** `/ig-tips?q=<title>`: the tip search to open IG TIPS with. */
@@ -213,6 +215,13 @@ export function DashboardShell(props: Props) {
 }
 
 function DashboardShellContent(props: Props) {
+  const ownerScope = useOwnerPreferences();
+  const organizationKey = useMemo(() => [...qk.organizations, props.user.id], [props.user.id]);
+  const loadOrganizations = useCallback((context?: { signal: AbortSignal }) => {
+    if (!ownerScope || ownerScope.ownerId !== props.user.id) throw new Error("Organizations unavailable");
+    const captured = ownerScope.capture();
+    return fetchOrganizations({ ownerId: captured.ownerId, signal: context ? AbortSignal.any([captured.signal, context.signal]) : captured.signal });
+  }, [ownerScope, props.user.id]);
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const requestNavigation = useGuardedNavigation();
   const { user } = props;
@@ -227,9 +236,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: (!props.isPreview || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: (!props.isPreview || (props.previewOrganizationIntegration && key === "organizations") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewTaskIntegration]);
+  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration]);
   const setTab = useCallback((next: NavTab) => {
     if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {
@@ -323,7 +332,7 @@ function DashboardShellContent(props: Props) {
   const [crons, setCrons, cronsStatus] = useEntityStore(qk.crons, props.initialCrons, fetchCrons, dataOptions("crons"));
   const [subscriptionAllocations, setSubscriptionAllocations, subscriptionAllocationsStatus] = useEntityStore(qk.subscriptionAllocations, props.initialSubscriptionAllocations, fetchSubscriptionAllocations, dataOptions("subscriptionAllocations"));
   const [competitors, setCompetitors, competitorsStatus] = useEntityStore(qk.competitors, props.initialCompetitors, fetchCompetitors, dataOptions("competitors"));
-  const [organizations, setOrganizations, organizationsStatus] = useEntityStore(qk.organizations, props.initialOrganizations, fetchOrganizations, dataOptions("organizations"));
+  const [organizations, setOrganizations, organizationsStatus] = useEntityStore(organizationKey, props.initialOrganizations, loadOrganizations, { ...dataOptions("organizations"), retry: false });
   const [opportunities, setOpportunities, opportunitiesStatus] = useEntityStore(qk.opportunities, props.initialOpportunities, fetchOpportunities, dataOptions("opportunities"));
   const [inboxItems, setInboxItems, inboxItemsStatus] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));
   const [notifications, setNotifications, notificationsStatus] = useEntityStore(qk.notifications, props.initialNotifications, fetchNotifications, dataOptions("notifications"));
@@ -354,13 +363,13 @@ function DashboardShellContent(props: Props) {
         jobApplicationEvents: [qk.jobApplicationEvents, fetchJobApplicationEvents],
         coverLetterTemplates: [qk.coverLetterTemplates, fetchCoverLetterTemplates],
         projects: [qk.projects, fetchProjects],
-        organizations: [qk.organizations, fetchOrganizations],
+        organizations: [organizationKey, loadOrganizations],
         opportunities: [qk.opportunities, fetchOpportunities],
       };
       const results = await Promise.allSettled(onDemandDataKeys(target).map((key) => {
         const loader = loaders[key];
         return loader
-          ? qc.fetchQuery({ queryKey: loader[0], queryFn: loader[1], staleTime: 0 })
+          ? qc.fetchQuery({ queryKey: loader[0], queryFn: loader[1], staleTime: 0, ...(key === "organizations" ? { retry: false } : {}) })
           : undefined;
       }));
       // Do not turn a failed private-letter load into an apparently empty
@@ -370,7 +379,7 @@ function DashboardShellContent(props: Props) {
       }
     }
     setActivatedTabs((previous) => (previous.has(target) ? previous : new Set(previous).add(target)));
-  }, [props.isPreview, qc]);
+  }, [props.isPreview, organizationKey, loadOrganizations, qc]);
 
   const entityStatuses = {
     subscriptions: subscriptionsStatus,

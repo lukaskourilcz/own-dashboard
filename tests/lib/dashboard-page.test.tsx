@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("404"); },
 vi.mock("@/lib/calendar-server", () => ({ fetchTodayWindowEvents: async () => ({ ok: true, events: [] }), fetchUpcomingWeekEvents: async () => ({ ok: true, events: [] }) }));
 vi.mock("@/lib/user-prefs", () => ({ loadUserPreferences: async () => ({ language: "cs" }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
-  auth: { getUser: async () => ({ data: { user: { id: "owner", user_metadata: {} } } }) },
+  auth: { getUser: async () => ({ data: { user: { id: "11111111-1111-4111-8111-111111111111", user_metadata: {} } } }) },
   rpc: (_name: string, args: { p_entity: string }) => {
     const table = args.p_entity;
     state.reads.push(table);
@@ -20,7 +20,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
       retry: () => query, abortSignal: () => query,
       then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
         (state.rejected.has(table) ? Promise.reject(new Error("network")) : Promise.resolve({
-          data: table === "projects" ? state.projects.map(project => ({ user_id: "owner", ...project })) : [], error: state.failures.has(table) ? { message: "database unavailable" } : null,
+          data: table === "projects" ? state.projects.map(project => ({ user_id: "11111111-1111-4111-8111-111111111111", ...project })) : [], error: state.failures.has(table) ? { message: "database unavailable" } : null,
         })).then(resolve, reject),
     };
     return query;

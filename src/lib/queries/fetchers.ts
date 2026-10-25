@@ -1,6 +1,7 @@
 "use client";
 
 import { readSpendCategoryRecords, type SpendCategoryScope } from "@/lib/spend-category-records";
+import { readOrganizationRecords, type OrganizationScope } from "@/lib/organization-records";
 import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
@@ -178,14 +179,8 @@ export async function fetchPlans(): Promise<Plan[]> {
   return (data ?? []) as Plan[];
 }
 
-export async function fetchOrganizations(): Promise<Organization[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("organizations")
-    .select("*")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Organization[];
+export async function fetchOrganizations(scope: OrganizationScope): Promise<Organization[]> {
+  return (await readOrganizationRecords(createClient(), scope)).data;
 }
 
 export async function fetchOpportunities(): Promise<ClientOpportunity[]> {

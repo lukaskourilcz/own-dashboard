@@ -728,11 +728,11 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-three prepared audit files follow, numbered 87–119 in the [current migration list](../README.md). The latest is `20261025091027_complete_organization_records.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-four prepared audit files follow, numbered 87–120 in the [current migration list](../README.md). The latest is `20261025094511_captured_collection_owner.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn
-npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–119
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–120
 npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn  # both columns agree
 ```
@@ -1188,4 +1188,9 @@ Real migration/SDK/emulator cases verify beyond-cap totals, meaningful older tic
 
 The existing authenticated-only SECURITY INVOKER `read_owned_collection` whitelist gains organizations, ordered by name/id, with a 10,000-row and existing 10MiB complete-response limit. All previous collection contracts, own-only RLS and table grants remain. The trigger function has an empty search path and direct execution revoked from public/anon/authenticated/service roles; normal permitted row updates still invoke it. The migration uses a five-second DDL lock limit and restores it afterward. No provider or service-role authority is introduced.
 
-Local tests cover unchanged-data upgrade, nonfinite-upgrade rollback, ordinary and same-clock writes, future versions, stale predicates, cross-owner refusal, more than the REST cap, row/byte refusal and function grants. Browser persistence and complete-read adoption are separate follow-up work; this foundation alone is not a confirmed client-control rollout. Generate the DNESKAi read port from all 119 files with `scripts/generate-dneskai-read-types.mjs`; do not edit its fingerprint manually. Apply all thirty-three prepared files in canonical order before the implementation branch is deployed. For rollback, revert dependent callers first, remove this trigger/constraint/function and restore the previous collection whitelist; no owner-data rollback is needed.
+Local tests cover unchanged-data upgrade, nonfinite-upgrade rollback, ordinary and same-clock writes, future versions, stale predicates, cross-owner refusal, more than the REST cap, row/byte refusal and function grants. Browser persistence and complete-read adoption are separate follow-up work; this foundation alone is not a confirmed client-control rollout. Generate the DNESKAi read port from the complete current local chain with `scripts/generate-dneskai-read-types.mjs`; do not edit its fingerprint manually. Apply the complete prepared chain in canonical order before the implementation branch is deployed. For rollback, revert dependent callers first, remove this trigger/constraint/function and restore the previous collection whitelist; no owner-data rollback is needed.
+
+
+## Migration 120 — captured collection ownership, including empty results
+
+`20261025094511_captured_collection_owner.sql` adds an authenticated-only SECURITY INVOKER overload `read_owned_collection(text,uuid)` with an empty search path. It compares the explicitly captured owner against the current authenticated session before calling the existing complete snapshot. A null/mismatched owner fails even when the other account has no rows. It changes no table, row, policy, collection whitelist or one-argument caller. Shared callers that supply an owner now send it to this overload; the organization readers also validate their complete record shape. Direct public/anonymous/service execution is revoked. Apply it after migration 119 and before these callers; rollback dependent callers before dropping this overload. No external service or production write is part of local verification.

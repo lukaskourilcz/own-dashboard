@@ -37,6 +37,8 @@ export function useEntityStore<T>(
     /** On-demand data (Career, Opportunities) never goes stale by itself:
      * only the owner's "Check for new offers" fetches it again. */
     onDemand?: boolean;
+    /** Disable hidden retries for a captured complete read. */
+    retry?: false;
   },
 ): [T, Updater<T>, EntityStatus] {
   const qc = useQueryClient();
@@ -50,6 +52,7 @@ export function useEntityStore<T>(
     // immediately while preserving server-seeded data for five minutes.
     initialDataUpdatedAt: seeded ? undefined : 0,
     enabled: options?.enabled ?? true,
+    ...(options?.retry === false ? { retry: false } : {}),
     staleTime: options?.onDemand ? Infinity : 5 * 60 * 1000,
     refetchOnWindowFocus: options?.onDemand ? false : undefined,
     gcTime: Infinity,
