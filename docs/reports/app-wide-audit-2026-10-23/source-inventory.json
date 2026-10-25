@@ -4376,8 +4376,8 @@
       "path": "src/lib/supabase/user.ts",
       "lines": 18,
       "sha256": "555b20560ab938f4cd3ac7cd9118b4bbd66f684b66a0a49ef7e4e4bf4073ef73",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "555b20560ab938f4cd3ac7cd9118b4bbd66f684b66a0a49ef7e4e4bf4073ef73"
+      "status": "source reviewed; finding 239 identity error/deadline/captured-scope helper checks pass; caller adoption and final release pending",
+      "reviewedSha256": "ebc4e0437ab146f5c7567ca12cb5af84306c4db7c8bb0d65c8b815b1ae108041"
     },
     {
       "path": "src/lib/tag-colors.ts",
