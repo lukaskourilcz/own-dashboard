@@ -14,12 +14,12 @@ import { useUnsavedDraft } from '@/components/navigation-guard';
 import { useDict } from '@/lib/i18n';
 import { createClient } from '@/lib/supabase/client';
 import { qk } from '@/lib/queries/keys';
-import { MAX_TASK_MINUTES, TASK_KINDS, type TaskKind } from '@/lib/task-meta';
+import { isTaskMinutes, MAX_TASK_MINUTES, TASK_KINDS, type TaskKind } from '@/lib/task-meta';
 import { applyTaskWriteReceipt, captureTaskWrite, taskCreateValuesSchema, writeTask } from '@/lib/task-write';
 import type { Organization, Project, Todo } from '@/lib/types';
 
-type Fields={title:string;dueDate:string;importance:string;minutes:string;kind:TaskKind|'';projectId:string;organizationId:string;global:boolean};
-const empty=():Fields=>({title:'',dueDate:'',importance:'',minutes:'',kind:'',projectId:'',organizationId:'',global:false});
+type Fields={title:string;dueDate:string;importance:string;minutes:string;minutesBadInput:boolean;kind:TaskKind|'';projectId:string;organizationId:string;global:boolean};
+const empty=():Fields=>({title:'',dueDate:'',importance:'',minutes:'',minutesBadInput:false,kind:'',projectId:'',organizationId:'',global:false});
 const values=(form:Fields)=>({title:form.title,due_date:form.dueDate||null,importance:form.global?6:form.importance?Number(form.importance):null,estimated_minutes:form.minutes.trim()?Number(form.minutes):null,task_kind:form.kind||null,is_global:form.global,project_id:form.global?null:form.projectId||null,organization_id:form.organizationId||null});
 
 /** Local form state keeps typing out of task grouping; retry identity lasts until explicit discard or confirmation. */
@@ -28,7 +28,8 @@ export function TaskComposer({ownerId,projects,organizations,open,onOpenChange,c
  const [draftOwner]=useState(ownerId),[form,setForm]=useState(empty),[pending,setPending]=useState(false),[error,setError]=useState<'save'|'conflict'|'absent'|null>(null);
  const fields=useRef(form),actor=useRef(ownerId),mounted=useRef(false),pendingRef=useRef(false),dirty=useRef(false),blocked=useRef(false),creationId=useRef<string|null>(null),controller=useRef<AbortController|null>(null);
  const current=ownerId===draftOwner,locked=!current||error==='conflict'||error==='absent';
- const valid=taskCreateValuesSchema.safeParse(values(form)).success&&(!form.projectId||projects.some(project=>project.id===form.projectId))&&(!form.organizationId||organizations.some(organization=>organization.id===form.organizationId));
+ const minutesInvalid=form.minutesBadInput||(form.minutes!==''&&!isTaskMinutes(Number(form.minutes)));
+ const valid=!minutesInvalid&&taskCreateValuesSchema.safeParse(values(form)).success&&(!form.projectId||projects.some(project=>project.id===form.projectId))&&(!form.organizationId||organizations.some(organization=>organization.id===form.organizationId));
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;controller.current?.abort();};},[]);
  useLayoutEffect(()=>{actor.current=ownerId;if(ownerId!==draftOwner)controller.current?.abort();},[ownerId,draftOwner]);
  function update(patch:Partial<Fields>){
@@ -37,7 +38,7 @@ export function TaskComposer({ownerId,projects,organizations,open,onOpenChange,c
  }
  function reset(){const next=empty();fields.current=next;dirty.current=false;blocked.current=false;creationId.current=null;setForm(next);setError(null);}
  async function save():Promise<boolean>{
-  if(pendingRef.current||blocked.current||actor.current!==draftOwner)return false;
+  if(pendingRef.current||blocked.current||actor.current!==draftOwner||fields.current.minutesBadInput)return false;
   if((fields.current.projectId&&!projects.some(project=>project.id===fields.current.projectId))||(fields.current.organizationId&&!organizations.some(organization=>organization.id===fields.current.organizationId))){setError('save');return false;}
   let command:ReturnType<typeof captureTaskWrite>;
   try{command=captureTaskWrite({ownerId:draftOwner,id:creationId.current??crypto.randomUUID(),action:'create',expected:null,values:taskCreateValuesSchema.parse(values(fields.current))});}
@@ -80,7 +81,7 @@ export function TaskComposer({ownerId,projects,organizations,open,onOpenChange,c
       <div className="space-y-1.5"><Label htmlFor={`${id}-importance`}>{t.todos.importanceLabel}</Label><SimpleSelect id={`${id}-importance`} value={form.importance} disabled={pending||locked||form.global} onValueChange={importance=>update({importance})} options={[{value:'',label:t.todos.importanceNone},...[5,4,3,2,1].map(value=>({value:String(value),label:t.todos.importanceOption(value)}))]}/></div>
      </div>
      <div className="grid gap-3 sm:grid-cols-2">
-      <div className="space-y-1.5"><Label htmlFor={`${id}-minutes`}>{t.todos.timeLabel}</Label><div className="flex items-center gap-2"><Input id={`${id}-minutes`} type="number" min={1} max={MAX_TASK_MINUTES} step={1} inputMode="numeric" placeholder="30" value={form.minutes} readOnly={locked} onChange={event=>update({minutes:event.target.value})}/><span className="shrink-0 text-xs text-foreground-subtle">{t.todos.timeMinutesUnit}</span></div></div>
+      <div className="space-y-1.5"><Label htmlFor={`${id}-minutes`}>{t.todos.timeLabel}</Label><div className="flex items-center gap-2"><Input id={`${id}-minutes`} type="number" min={1} max={MAX_TASK_MINUTES} step={1} inputMode="numeric" placeholder="30" value={form.minutes} readOnly={locked} onChange={event=>update({minutes:event.target.value,minutesBadInput:event.target.validity.badInput})} onInput={event=>{const badInput=event.currentTarget.validity.badInput;if(fields.current.minutesBadInput!==badInput)update({minutesBadInput:badInput});}} aria-invalid={minutesInvalid||undefined} aria-describedby={minutesInvalid?`${id}-minutes-limit`:undefined}/><span className="shrink-0 text-xs text-foreground-subtle">{t.todos.timeMinutesUnit}</span></div>{minutesInvalid&&<p id={`${id}-minutes-limit`} className="text-xs text-risk">{t.todos.minutesLimit}</p>}</div>
       <div className="space-y-1.5"><Label htmlFor={`${id}-kind`}>{t.todos.categoryLabel}</Label><SimpleSelect id={`${id}-kind`} value={form.kind} disabled={pending||locked} onValueChange={kind=>update({kind:kind as Fields['kind']})} options={[{value:'',label:t.todos.categoryNone},...TASK_KINDS.map(value=>({value,label:t.todos.taskKindLabel(value)}))]}/></div>
      </div>
      <div className="grid gap-3 sm:grid-cols-2">

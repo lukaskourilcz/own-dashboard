@@ -8,7 +8,7 @@ type TodosStrings = {
   openDoneCount: (open: number, done: number) => string;
   allClear: string;
   allClearDescription: string;
-  taskAdded:string; createErr:string; createConflict:string; createAbsent:string; ownerChanged:string; discardDraft:string; reloadPage:string; selectedUnavailable:string; titleLimit:string;
+  taskAdded:string; createErr:string; createConflict:string; createAbsent:string; ownerChanged:string; discardDraft:string; reloadPage:string; selectedUnavailable:string; titleLimit:string; minutesLimit:string;
   addTask: string;
   addTaskTitle: string;
   taskLabel: string;
@@ -126,7 +126,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     allClear: "All clear",
     allClearDescription: "No open tasks. Add one above.",
     taskChanged:"The task changed elsewhere. Reloaded tasks will show its current state; your change was not applied.",taskMissing:"The task was already removed.",
-    taskAdded:"Task added.",createErr:"The task could not be confirmed. Your draft is kept; retrying will not create a second copy.",createConflict:"The saved task changed. Copy any text you need, then discard this draft before starting another task.",createAbsent:"This task was removed. Discard this draft before starting a new task.",ownerChanged:"The account changed. Copy any text you need, then reload to continue.",discardDraft:"Discard draft",reloadPage:"Discard and reload",selectedUnavailable:"Saved selection unavailable",titleLimit:"Use at most 500 characters for the task title.",
+    taskAdded:"Task added.",createErr:"The task could not be confirmed. Your draft is kept; retrying will not create a second copy.",createConflict:"The saved task changed. Copy any text you need, then discard this draft before starting another task.",createAbsent:"This task was removed. Discard this draft before starting a new task.",ownerChanged:"The account changed. Copy any text you need, then reload to continue.",discardDraft:"Discard draft",reloadPage:"Discard and reload",selectedUnavailable:"Saved selection unavailable",titleLimit:"Use at most 500 characters for the task title.",minutesLimit:"Enter a whole number from 1 to 100,000 minutes, or leave this empty.",
     addTask: "Add task",
     addTaskTitle: "Add task",
     taskLabel: "Task",
@@ -266,7 +266,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     allClear: "Hotovo",
     allClearDescription: "Žádné otevřené úkoly. Přidej nějaký výše.",
     taskChanged:"Úkol se mezitím změnil. Po načtení uvidíte jeho aktuální stav; vaše změna se neprovedla.",taskMissing:"Úkol už byl odstraněn.",
-    taskAdded:"Úkol přidán.",createErr:"Uložení úkolu se nepodařilo potvrdit. Návrh zůstává zachovaný; opakování nevytvoří druhou kopii.",createConflict:"Uložený úkol se změnil. Zkopírujte potřebný text a před vytvořením dalšího úkolu tento návrh zahoďte.",createAbsent:"Tento úkol byl odstraněn. Před vytvořením nového úkolu tento návrh zahoďte.",ownerChanged:"Účet se změnil. Zkopírujte potřebný text a pro pokračování stránku znovu načtěte.",discardDraft:"Zahodit návrh",reloadPage:"Zahodit a znovu načíst",selectedUnavailable:"Uložený výběr není dostupný",titleLimit:"Název úkolu může mít nejvýše 500 znaků.",
+    taskAdded:"Úkol přidán.",createErr:"Uložení úkolu se nepodařilo potvrdit. Návrh zůstává zachovaný; opakování nevytvoří druhou kopii.",createConflict:"Uložený úkol se změnil. Zkopírujte potřebný text a před vytvořením dalšího úkolu tento návrh zahoďte.",createAbsent:"Tento úkol byl odstraněn. Před vytvořením nového úkolu tento návrh zahoďte.",ownerChanged:"Účet se změnil. Zkopírujte potřebný text a pro pokračování stránku znovu načtěte.",discardDraft:"Zahodit návrh",reloadPage:"Zahodit a znovu načíst",selectedUnavailable:"Uložený výběr není dostupný",titleLimit:"Název úkolu může mít nejvýše 500 znaků.",minutesLimit:"Zadejte celé číslo od 1 do 100 000 minut, nebo nechte pole prázdné.",
     addTask: "Přidat úkol",
     addTaskTitle: "Přidat úkol",
     taskLabel: "Úkol",

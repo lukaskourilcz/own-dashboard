@@ -2656,7 +2656,7 @@
       "lines": 417,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
       "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177\u2013180; final release pending",
-      "reviewedSha256": "8d13cb5b74faf010f9b28db6af47c3908497e6f2c89c28393a18d736616def20"
+      "reviewedSha256": "a184a3990cbeb3eb556a48282ffa1d3bb9e7f86a2a0f0d3b73ad553a960db93e"
     },
     {
       "path": "src/lib/i18n/sections/tools.ts",
@@ -4444,7 +4444,7 @@
       "sha256": null,
       "lines": 95,
       "status": "source reviewed; captured creation, stable retry identity, draft/pending/owner/exit guards and stale-read cancellation checked in finding 177; final release pending",
-      "reviewedSha256": "e548813a89c7f0957e87ac84d3da7706cb07070abdfa96e1a800e5689fa30ba9"
+      "reviewedSha256": "14e99ae61c6a87d9ff46d21c875fe62b7c85e6253cb4378ca46e44a19e2d9dd7"
     },
     {
       "path": "src/components/tasks/use-task-actions.ts",
