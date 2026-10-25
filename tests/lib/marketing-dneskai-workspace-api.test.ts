@@ -93,7 +93,9 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     // A stored legacy cover still carries a kicker and a credit, but the cover template draws only its headline.
     expect(post!.fields).toEqual([[{ field: 'headline', max: 110 }], [{ field: 'headline', max: 170 }, { field: 'body', max: 240 }], []]);
     expect(post!.renderReport?.problems[0]).toMatchObject({ field: 'image-1', blocking: false });
-    expect(dneskaiPostState(post!, dneskaiStateContext(read)).state).toBe('review');
+    // Legacy content stays visible for explicit cleanup; it must not appear ready for approval.
+    expect(post!.deck).toEqual(deck);
+    expect(dneskaiPostState(post!, dneskaiStateContext(read))).toEqual({ state: 'problem', code: 'text-unplaced', publishing: false });
     expect(read.jobs.map((job) => [job.status, job.errorCode])).toEqual([['running', null], ['failed', 'dneskai-daily-generation-budget-exhausted']]);
     expect(read.accounts).toEqual([{ id: '55555555-5555-4555-8555-555555555555', remoteId: '17841400000000000', handle: 'dneskai', verified: true, enabled: false }]);
     expect(read.slots).toEqual(['08:00', '12:30', '17:00', '20:00']);
