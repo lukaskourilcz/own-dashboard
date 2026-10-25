@@ -720,3 +720,12 @@ At frozen application/test source `30a822d`, 4,814 cases pass, one intentionally
 ## Read-only deployed advisor baseline — 25 October 2026
 
 Before the migration-117 commit, both managed advisor reads succeed against the deployed database. Security groups are nine informational no-policy tables, fifteen authenticated security-definer warnings and disabled leaked-password protection. Performance groups are seventy unindexed foreign keys, seventy-three auth/RLS init-plan warnings, thirty-six unused-index observations, one duplicate-index warning and the absolute Auth connection allocation observation. This is deployed-schema metadata only: none of the thirty-one audit migrations is installed, and these counts do not validate their prepared SQL. No row contents, credentials or settings were read or changed. Private credential tables intentionally need no client policy; an authenticated definer warning alone does not establish a missing owner check. Review query/permission evidence and the prepared changes before acting on each group; unused-index observations alone do not justify removal.
+
+
+## Visual plan refresh and validation checkpoint 75
+
+The HTML plan now shows nineteen authentic desktop/mobile pairs at source snapshot `bdd73ad`, including explicit legacy first-slide cleanup. Both screenshot modes load every image; viewport/highlight controls, 1440/390 px reflow and page-error checks pass. The new component's desktop/mobile HTML captures are inspected. Career lookup and Prague-formatting CPU datasets are linked as local measurements.
+
+A complete serial validation run starts at frozen application/test source `bdd73ad`: all unit/component/database tests, full lint, ordinary production build, eight render traces, post-build types and the full optimized browser matrix. The local dev server was stopped first. Source/test inputs remain frozen; further work during the run is documentation or read-only review. This is a started checkpoint, not a passing result. The prior full optimized pass remains checkpoint 73; checkpoint 74's corrected storage regression remains recorded as a failure.
+
+Chrome extension access is still unavailable on the new reconnect attempt, and the native app inventory times out without a result. No existing Chrome tab was opened, closed or changed. This does not restore the CLI's previously blocked Keychain access; the canonical migration push remains pending.
