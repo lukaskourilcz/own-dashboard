@@ -1,4 +1,5 @@
 import { after } from 'next/server';
+import { boundedRequestText, MarketingRequestBodyError } from '@/lib/marketing/http';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { dneskaiEngagementWatchEnabled } from '@/lib/marketing/dneskai-engagement';
 import { handleDneskaiCommentEvents } from '@/lib/marketing/dneskai-engagement-watch';
@@ -35,12 +36,25 @@ export async function GET(request: Request) {
   return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
+/** Refuse without waiting for a stalled producer's cancellation hook. */
+function discardUnreadBody(request: Request) {
+  if (request.body && !request.body.locked) void request.body.cancel().catch(() => undefined);
+}
+
 export async function POST(request: Request) {
   const settings = configured(process.env);
   if (!settings) return new Response(null, { status: 404 });
-  if (Number(request.headers.get('content-length') ?? 0) > INSTAGRAM_WEBHOOK_MAX_BYTES) return new Response(null, { status: 413 });
-  const raw = await request.text();
-  if (raw.length > INSTAGRAM_WEBHOOK_MAX_BYTES) return new Response(null, { status: 413 });
+  if (Number(request.headers.get('content-length') ?? 0) > INSTAGRAM_WEBHOOK_MAX_BYTES) {
+    discardUnreadBody(request); return new Response(null, { status: 413 });
+  }
+  let raw: string;
+  try { raw = await boundedRequestText(request, INSTAGRAM_WEBHOOK_MAX_BYTES); }
+  catch (error) {
+    discardUnreadBody(request);
+    const status = error instanceof MarketingRequestBodyError && error.code === 'payload-too-large' ? 413
+      : error instanceof MarketingRequestBodyError && error.code === 'request-body-timeout' ? 408 : 400;
+    return new Response(null, { status });
+  }
   if (!instagramWebhookSignatureValid(raw, request.headers.get('x-hub-signature-256'), settings.secret)) return new Response(null, { status: 401 });
   let body: unknown = null;
   try { body = JSON.parse(raw); } catch { body = null; }

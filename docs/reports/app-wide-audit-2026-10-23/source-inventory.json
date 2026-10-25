@@ -628,8 +628,8 @@
       "path": "src/app/api/webhooks/instagram/route.ts",
       "lines": 58,
       "sha256": "1b458e1f3bf9e1c41153c4507586f5ec9212d2f0e2c0ded7833b99c1402574a8",
-      "status": "partial; signature-before-background reply handling inspected; actual streamed byte bound, fixed failures and owner/config validation remain; see remaining-review.md",
-      "reviewedSha256": "1b458e1f3bf9e1c41153c4507586f5ec9212d2f0e2c0ded7833b99c1402574a8"
+      "status": "source reviewed; finding 209 streamed webhook byte/deadline/cancellation and signature checks pass; background engagement and final release checks pending",
+      "reviewedSha256": "437b337d064d5c74f27d31436427a813c15c7fd592e38dcedf0fa8c27a3c0736"
     },
     {
       "path": "src/app/api/webhooks/uptime-kuma/route.ts",

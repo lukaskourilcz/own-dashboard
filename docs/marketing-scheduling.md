@@ -30,6 +30,10 @@ pg_cron (Supabase)                      Vercel (OwnDashboard)
 - `src/lib/marketing/scheduler-ports.ts` connects the tick to the modules that own the work. The
   scheduler adds no logic of its own to collection, media, briefs, generation, publishing or tokens.
 
+## Instagram comment delivery
+
+`POST /api/webhooks/instagram` requires the configured engagement switch and signing settings. Its unauthenticated upload is limited to 256 KiB of actual UTF-8 bytes and five seconds total, including slow chunks. Oversize, timeout and unreadable/disconnected bodies return empty 413, 408 and 400 responses respectively, before HMAC or background work. Readers are released and cancellation hooks cannot hold the response open. Valid signed deliveries retain after-response matching and the shared polling claim; this upload limit is separate from background work budgets. This is audited source behavior on 25 October, not new deployment evidence.
+
 ## What a minute tick does
 
 Every five minutes, 288 times a day. One tick runs at most one unit of each category, one after
