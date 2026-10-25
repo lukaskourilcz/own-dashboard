@@ -190,8 +190,9 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);
-    if (post.status !== 'review' && post.status !== 'returned') throw new DneskaiWorkspaceRequestError('decision-unavailable', 409);
-    post.status = action; post.feedback = action === 'returned' ? feedback?.trim() || null : post.feedback;
+    if (!['review', 'approved', 'returned', 'failed'].includes(post.status) || ['claimed', 'published', 'reconciliation'].includes(post.publication?.status ?? '')) throw new DneskaiWorkspaceRequestError('decision-unavailable', 409);
+    post.status = action; post.approvedAt = null; post.feedback = action === 'returned' ? feedback?.trim() || null : post.feedback;
+    if (post.publication?.status === 'queued') post.publication.status = 'cancelled';
   },
   async edit(request): Promise<DneskaiEditResult> {
     await pause(900);

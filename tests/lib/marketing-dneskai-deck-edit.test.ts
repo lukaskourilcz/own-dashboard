@@ -155,7 +155,7 @@ describe('review-10 in the editor: the draft and the server agree', () => {
     expect(draftSlideMoves(value, draft, 3).map(dneskaiShapeId)).toEqual(['statement-accent', 'statement-ink']);
     const cover = setSlideShape(value, draft, 0, 'figure');
     expect(cover.dropped).toEqual([]);
-    expect(cover.draft.slides[0]!.fields.map((field) => field.field)).toEqual(['headline', 'body']);
+    expect(cover.draft.slides[0]!.fields.map((field) => field.field)).toEqual(['headline']);
     // A split's kicker goes with a move to a figure, which draws none.
     const moved = setSlideShape(value, cover.draft, 2, 'figure');
     expect(moved.dropped).toEqual(['kicker']);

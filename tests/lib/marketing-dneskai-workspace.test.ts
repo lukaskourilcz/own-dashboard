@@ -215,8 +215,8 @@ describe('preview fixtures', () => {
     const fixture = DneskaiWorkspaceReadSchema.parse(read());
     DneskaiCostsReadSchema.parse(createDneskaiCostsFixture(now));
     for (const item of fixture.posts) for (const [index, slide] of (item.deck?.slides ?? []).entries()) {
-      expect(item.fields[index], `${item.title} ${index}`).toEqual(dneskaiSlideFieldLimits(slide));
-      expect(demoFieldLimits(slide)).toEqual(dneskaiSlideFieldLimits(slide));
+      expect(item.fields[index], `${item.title} ${index}`).toEqual(dneskaiSlideFieldLimits(slide, index));
+      expect(demoFieldLimits(slide, index)).toEqual(dneskaiSlideFieldLimits(slide, index));
     }
     expect(demoFieldLimits({ type: 'single', variant: 'type', images: [] })).toEqual(dneskaiSlideFieldLimits({ type: 'single', variant: 'type', headline: 'x', images: [], alt: 'x' }));
     expect(demoFieldLimits({ type: 'split', images: [{ slot: 'image-1', assetSha256: 'a'.repeat(64) }, { slot: 'image-2', assetSha256: 'b'.repeat(64) }] }))

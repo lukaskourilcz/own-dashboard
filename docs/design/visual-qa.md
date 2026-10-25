@@ -400,3 +400,8 @@ After the Node 22 LTS/security-dependency update, eight ordinary optimized-build
 ## DNESKAi edited-picture availability, 25 October 2026
 
 Six native desktop/mobile cases pass for picture swap/reuse in EN/CS light/dark contexts and the existing type/insertion/save/approval flow. A swapped-out picture returns to the insertion choices; the replacement is excluded. Saving produces a new approvable fixture version, with no owner API calls or console errors in the new regression. This is targeted development-server interaction evidence, not a new full-app visual capture or deployed release. App-wide finding 186 records the corresponding server regressions.
+
+
+## DNESKAi legacy slide recovery, 25 October 2026
+
+Ten native EN/CS desktop/mobile cases pass for type/insertion edits, swapped-picture reuse and returning a legacy approval before explicit headline-only cleanup. Four final capture checks pass in 29.6 seconds. The new flow includes a real fixture preview, save to a newly approvable version, full Lab axe, page overflow, no owner API and clean console checks. Inspected Czech desktop/mobile cleanup crops show the warning and reachable action; the HTML plan includes this nineteenth authentic pair. This targeted evidence does not claim a new full optimized app-wide release or a production migration.

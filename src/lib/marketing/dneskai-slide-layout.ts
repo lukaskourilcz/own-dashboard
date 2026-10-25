@@ -1,5 +1,5 @@
 import type { DneskaiBriefMedia } from "./dneskai-brief";
-import type { DneskaiKitId, DneskaiSlide, DneskaiSlideType } from "./dneskai-slides";
+import type { DneskaiDeck, DneskaiKitId, DneskaiSlide, DneskaiSlideType } from "./dneskai-slides";
 
 /**
  * What each DNESKAi slide type draws and holds, browser-safe: the template a slide resolves to, the written
@@ -56,14 +56,29 @@ export function dneskaiTemplateId(slide: Pick<Shaped, "variant" | "images"> & { 
   }
 }
 
+/** Public post policy is positional: every first slide is headline-only, whatever its template type. */
+export function dneskaiPlacedFields(slide: Pick<DneskaiSlide, "type">, index?: number): readonly DneskaiTextField[] {
+  if (slide.type === "sources") return [];
+  return index === 0 ? ["headline"] : DNESKAI_PLACED_FIELDS[slide.type];
+}
+
+export function dneskaiSlideContentBlocked(slide: DneskaiSlide, index: number): boolean {
+  const placed = dneskaiPlacedFields(slide, index);
+  return slide.type === "sources" || !!slide.sources?.some(line => line.trim()) || (["headline", "body", "kicker", "credit"] as const).some(field => !!slide[field]?.trim() && !placed.includes(field));
+}
+
+/** A legacy stored deck stays intact, but cannot be approved/published until a compliant edit is reviewed. */
+export const dneskaiDeckContentBlocked = (deck: Pick<DneskaiDeck, "slides">): boolean =>
+  deck.slides.some(dneskaiSlideContentBlocked);
+
 export const DNESKAI_EDITABLE_FIELDS = ["headline", "body", "kicker", "credit"] as const;
 export type DneskaiEditableField = (typeof DNESKAI_EDITABLE_FIELDS)[number];
 const SCHEMA_LIMITS: Record<DneskaiEditableField, number> = { headline: 200, body: 700, kicker: 80, credit: 120 };
 
 /** The written fields a slide's template draws, with the most characters its layer holds. Sources lines are code-owned. */
-export function dneskaiSlideFieldLimits(slide: Shaped & { readonly [field: string]: unknown }): Array<{ field: DneskaiEditableField; max: number }> {
+export function dneskaiSlideFieldLimits(slide: Shaped & { readonly [field: string]: unknown }, index?: number): Array<{ field: DneskaiEditableField; max: number }> {
   if (slide.type === "sources") return [];
-  const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const placed = dneskaiPlacedFields(slide, index);
   const limits: Partial<Record<string, number>> = DNESKAI_TEXT_LIMITS[dneskaiTemplateId(slide as Parameters<typeof dneskaiTemplateId>[0])];
   return DNESKAI_EDITABLE_FIELDS.filter((field) => placed.includes(field)).map((field) => ({ field, max: limits[field] ?? SCHEMA_LIMITS[field] }));
 }
@@ -195,17 +210,18 @@ export function dneskaiCreditLine(credits: readonly string[], limit: number): st
  */
 export function dneskaiShownDeck<T extends { format: "carousel" | "single-image"; kit?: DneskaiKitId; slides: DneskaiSlide[] }>(deck: T): T {
   const inset = dneskaiCoverInset(deck.kit ?? "editorial");
-  const slides = deck.slides.filter((slide) => slide.type !== "sources").map((slide) => {
-    const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const slides = deck.slides.filter((slide) => slide.type !== "sources").map((slide, index) => {
+    const placed = dneskaiPlacedFields(slide, index);
     const next = { ...slide };
     delete next.credit;
+    delete next.sources;
     for (const field of ["body", "kicker"] as const) if (!placed.includes(field)) delete next[field];
     // Only a kit with a cover inset draws a second cover picture; any other kit would refuse it.
     if (slide.type === "cover-photo" && !inset) next.images = next.images.filter((image) => image.slot === "image-1");
     return next;
   });
-  // A carousel keeps at least two slides: a two-slide legacy deck whose second slide was its sources slide stays whole.
-  return deck.format === "carousel" && slides.length < 2 ? deck : { ...deck, slides };
+  // The caller checks the carousel minimum after normalization; never restore forbidden content as a fallback.
+  return { ...deck, slides };
 }
 
 /**

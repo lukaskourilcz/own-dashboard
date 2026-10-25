@@ -1,3 +1,4 @@
+import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
 import { DNESKAI_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
@@ -127,6 +128,7 @@ export function dneskaiLabApprovalBlock(post: DneskaiWorkspacePost, read: Pick<D
   const context = dneskaiStateContext(read, renderFailed);
   if (post.status !== 'review') return 'status';
   if (!post.deck) return 'deck-missing';
+  if (dneskaiDeckContentBlocked(post.deck)) return 'render-blocked';
   if (renderBlocking(post.renderReport)) return 'render-blocked';
   if (dneskaiRenderAttachFailed(post, context)) return 'render-attach-failed';
   if (!post.ready || dneskaiPostState(post, context).state === 'preparing') return 'preparing';

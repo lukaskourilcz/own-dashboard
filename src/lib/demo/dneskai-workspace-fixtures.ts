@@ -1,3 +1,4 @@
+import { dneskaiSlideFieldLimits as demoFieldLimits } from "@/lib/marketing/dneskai-slide-layout";
 import assets from './dneskai-preview-assets.json';
 import { dneskaiCaptionWithKeyword } from '@/lib/marketing/dneskai-caption';
 import { MARKETING_DECK_CONTENT_VERSION } from '@/lib/marketing/contracts';
@@ -6,7 +7,7 @@ import type { DneskaiBriefMedia } from '@/lib/marketing/dneskai-brief';
 import type { MarketingAccountStatus } from '@/lib/marketing/accounts-client';
 import { pragueScheduledAt } from '@/lib/marketing/clock';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
-import { DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, pragueDayAfter, type DneskaiCostsRead, type DneskaiFieldLimit, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 
 /**
  * Deterministic DNESKAi workspace fixtures for `/dev-preview` and the guest tour (#119). Every post, source, credit
@@ -20,17 +21,7 @@ type DeckName = keyof typeof assets.decks;
 export const demoPhotos = assets.photos;
 
 /** The written fields each template draws and their limits (`DNESKAI_PLACED_FIELDS` × `DNESKAI_TEXT_LIMITS`); a test ties them together. */
-export function demoFieldLimits(slide: Pick<DneskaiSlide, 'type' | 'variant' | 'images'>): DneskaiFieldLimit[] {
-  const table: Record<string, Array<[DneskaiFieldLimit['field'], number]>> = {
-    'cover-photo': [['headline', 110]],
-    figure: [['headline', 110], ['body', 260]],
-    split: [['headline', 110], ['body', slide.images.length > 1 ? 320 : 330], ['kicker', 28]],
-    statement: [['headline', 170], ['body', 240]],
-    single: [['headline', slide.variant === 'type' ? 120 : 110]],
-    sources: [],
-  };
-  return (table[slide.type] ?? []).map(([field, max]) => ({ field, max }));
-}
+export { dneskaiSlideFieldLimits as demoFieldLimits } from "@/lib/marketing/dneskai-slide-layout";
 
 const id = (n: number) => `d0e5ca10-0000-4000-8000-${String(n).padStart(12, '0')}`;
 /** A deterministic, varied 64-hex stand-in for a content hash (the demo never hashes real content). */

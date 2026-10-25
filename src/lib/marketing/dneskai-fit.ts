@@ -32,8 +32,8 @@ export async function fitDneskaiDeck(input: DneskaiFitRequest): Promise<DneskaiF
   const format = slides.length === 1 && slides[0]!.type === 'single' ? 'single-image' : 'carousel';
   if (!DneskaiDeckSchema.safeParse({ schemaVersion: DNESKAI_SLIDES_VERSION, format, slides }).success) throw new DneskaiFitError('fit-input-invalid');
   const fitted = await Promise.all(slides.map(async (slide, index) => {
-    const problems = slide.type === 'sources' ? [] : await dneskaiSlideTextProblems(slide, { index, count: slides.length }, input.kit);
-    const fields: DneskaiFitField[] = dneskaiSlideFieldLimits(slide).map(({ field, max }) => {
+    const problems = await dneskaiSlideTextProblems(slide, { index, count: slides.length }, input.kit);
+    const fields: DneskaiFitField[] = dneskaiSlideFieldLimits(slide, index).map(({ field, max }) => {
       const characters = characterCount((slide[field] ?? '').trim());
       const own = problems.filter((problem) => problem.field === field);
       return {

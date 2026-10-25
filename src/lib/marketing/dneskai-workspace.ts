@@ -1,3 +1,4 @@
+import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { z } from 'zod';
 import { ContentEngagementSchema, DneskaiRenderReportSchema, type DneskaiRenderReport } from './contracts';
 import { DneskaiBriefMediaSchema } from './dneskai-brief';
@@ -200,6 +201,7 @@ export function dneskaiPostState(post: StatePost, context: DneskaiStateContext):
     return { state: 'problem', code: problemCode ?? (post.status === 'reconciliation' || publication?.status === 'reconciliation' ? 'read-only-reconciliation' : 'publishing-failed'), publishing: false };
   }
   if (post.status === 'publishing' || publication?.status === 'claimed') return { state: 'scheduled', code: null, publishing: true };
+  if (post.deck && dneskaiDeckContentBlocked(post.deck) && !['skipped', 'superseded', 'returned'].includes(post.status)) return { state: 'problem', code: 'text-unplaced', publishing: false };
   if (post.status === 'approved') return publication?.status === 'queued' ? { state: 'scheduled', code: null, publishing: false } : { state: 'approved', code: null, publishing: false };
   if (post.status === 'skipped' || post.status === 'superseded') return { state: 'skipped', code: null, publishing: false };
   if (post.status === 'returned') return { state: 'returned', code: null, publishing: false };

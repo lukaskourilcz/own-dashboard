@@ -12,7 +12,7 @@ const other = "22222222-2222-4222-8222-222222222222";
 const original = "33333333-3333-4333-8333-333333333333";
 const edited = "44444444-4444-4444-8444-444444444444";
 const migrations = ["20261013193104_marketing_control_surface", "20261013193105_marketing_durable_jobs", "20261013193108_marketing_staging_pilot_guard",
-  "20261013193131_marketing_offline_import", "20261013193132_marketing_story_receipts", "20261021122551_marketing_revision_media_identity"];
+  "20261013193131_marketing_offline_import", "20261013193132_marketing_story_receipts", "20261021122551_marketing_revision_media_identity", "20261025032227_dneskai_public_slide_policy"];
 const revision = (): ContentRevision => ({ ...deckRevision(), sources: [{ sourceId: "brief:test-only", sourceRevision: "v1", contentHash: a }] });
 const unrendered = (): ContentRevision => ({ ...revision(), caption: "Upravený test-only caption.", assets: [] });
 const renewedAssets = (value = revision(), token = "renewed-test-only-token") => value.assets.map((asset, index) => ({ ...asset, url: signed(index + 1, token) }));
@@ -53,12 +53,46 @@ afterAll(async () => { await db?.close(); });
 
 describe("revision media identity in SQL (#118)", () => {
   it("keeps renewal and render attachment service-only and leaves the helpers private", async () => {
-    for (const signature of ["marketing_renew_revision_asset_urls(uuid,uuid,text,jsonb)", "marketing_attach_revision_render(uuid,uuid,text,jsonb,text,boolean,jsonb)", "marketing_private.revision_without_urls(jsonb)", "marketing_private.render_report_blocks(jsonb)"]) {
+    for (const signature of ["marketing_renew_revision_asset_urls(uuid,uuid,text,jsonb)", "marketing_attach_revision_render(uuid,uuid,text,jsonb,text,boolean,jsonb)", "marketing_private.revision_without_urls(jsonb)", "marketing_private.render_report_blocks(jsonb)", "marketing_private.dneskai_deck_content_blocks(jsonb)"]) {
       const { rows } = await db.query<{ anon: boolean; authenticated: boolean; service: boolean }>("select has_function_privilege('anon',$1,'EXECUTE') anon,has_function_privilege('authenticated',$1,'EXECUTE') authenticated,has_function_privilege('service_role',$1,'EXECUTE') service", [signature]);
       expect(rows[0], signature).toEqual({ anon: false, authenticated: false, service: true });
     }
     const { rows } = await db.query<{ anon: boolean; authenticated: boolean }>("select has_function_privilege('anon','marketing_approve_revision(uuid,text)','EXECUTE') anon,has_function_privilege('authenticated','marketing_approve_revision(uuid,text)','EXECUTE') authenticated");
     expect(rows[0]).toEqual({ anon: false, authenticated: true });
+  });
+
+  it.each(['first-body', 'first-kicker', 'later-credit', 'sources-slide'])('holds legacy %s at SQL approval without rewriting it', async (kind) => {
+    const legacy = revision();
+    if (kind === 'first-body') legacy.deck!.slides[0]!.body = 'Legacy first-slide paragraph.';
+    if (kind === 'first-kicker') legacy.deck!.slides[0]!.kicker = 'Legacy label';
+    if (kind === 'later-credit') legacy.deck!.slides[1]!.credit = 'Legacy picture credit';
+    if (kind === 'sources-slide') legacy.deck!.slides[2] = { type: 'sources', headline: '', sources: ['Legacy provenance'], images: [], alt: 'Provenance' };
+    const hash = revisionContentHash(legacy);
+    await db.query('update marketing_revisions set revision=$2,content_hash=$3 where id=$1', [original, JSON.stringify(legacy), hash]);
+    const before = await row(original);
+    await expect(approve(original, hash)).rejects.toThrow('render blocked');
+    expect(await row(original)).toEqual(before);
+    expect((await db.query('select * from marketing_publications')).rows).toEqual([]);
+  });
+  it('does not claim an unsupported legacy approval or let it starve a valid due post', async () => {
+    const at = new Date(Date.now() - 60_000).toISOString();
+    const bad = revision(); bad.scheduledAt = at; bad.deck!.slides[0]!.body = 'Legacy paragraph.';
+    const good = revision(); good.scheduledAt = at;
+    for (const [id, value] of [[original, bad], [edited, good]] as const) {
+      await db.query(`insert into marketing_revisions(id,user_id,brand,revision,content_hash,ready,status,approved_hash,approved_at)
+        values($1,$2,'dneskai',$3,$4,true,'approved',$4,now()) on conflict(id) do update set revision=excluded.revision,content_hash=excluded.content_hash,ready=true,status='approved',approved_hash=excluded.approved_hash,approved_at=now()`, [id, owner, JSON.stringify(value), revisionContentHash(value)]);
+      await db.query("insert into marketing_publications(user_id,revision_id,platform,scheduled_at) values($1,$2,'instagram',$3)", [owner,id,at]);
+    }
+    const claimed = await as('service_role', null, () => db.query<{ revision_id: string }>('select * from marketing_claim_due($1,1,$2,null)', [owner,'dneskai']));
+    expect(claimed.rows.map(row => row.revision_id)).toEqual([edited]);
+    expect((await db.query<{ status: string }>('select status from marketing_publications where revision_id=$1',[original])).rows[0]!.status).toBe('queued');
+    expect((await row(original)).revision).toEqual(bad);
+  });
+  it('matches JavaScript trim semantics for blank first-slide text', async () => {
+    const legacy = revision();
+    legacy.deck!.slides[0]!.body = '\u00a0\uFEFF\t\n';
+    const { rows } = await db.query<{ blocked: boolean }>('select marketing_private.dneskai_deck_content_blocks($1) blocked', [JSON.stringify(legacy)]);
+    expect(rows[0]!.blocked).toBe(false);
   });
 
   it("renews URLs of an approved revision in place and keeps its hash, approval and queued publication", async () => {

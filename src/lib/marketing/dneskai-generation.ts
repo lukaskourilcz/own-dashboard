@@ -3,8 +3,8 @@ import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema
 import { contentHash } from "./hashes";
 import type { DneskaiBrief, DneskaiBriefMedia } from "./dneskai-brief";
 import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
-import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
-import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
+import { DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
+import { dneskaiPlacedFields, DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
 import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
 
@@ -18,7 +18,7 @@ import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
  * given is checked here before anything is rendered, and the studio's own gate (`validateDneskaiDeck`)
  * then decides whether the words fit. This module has no I/O; `generation.ts` runs the call.
  */
-export const MARKETING_BRIEF_PROMPT_VERSION = "marketing-copy/7";
+export const MARKETING_BRIEF_PROMPT_VERSION = "marketing-copy/8";
 /** The `templateVersion` of a DNESKAi deck job and revision: the vendored studio renderer it targets. */
 export const DNESKAI_DECK_TEMPLATE_VERSION = DNESKAI_RENDERER_VERSION;
 /** A carousel carries at most this many slides, all written by the model; no sources slide is appended. */
@@ -130,6 +130,7 @@ const SYSTEM_RULES = [
   "Cover hook: the headline of the first slide (of the single slide in a single-image post) states the most concrete and surprising true fact of the story as a plain declarative sentence: a number, a date, a named actor or a precise change, exactly as strong as the evidence states it. The next slide or the caption backs it up from the evidence. Never a question, an exclamation, a teaser that withholds the subject, a superlative, \"first\" or \"breaking\" unless the evidence says so, or anything the evidence does not carry. Every other slide stays calm and plain.",
   "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. fullBleedCapable, insetCapable and singlePhotoCapable say which slides a picture and its credit fit. Use each picture at most once. Omit crop: the editor sets the focal point.",
   "Formats: a carousel has 4 to 7 slides you write and nothing else; there is no sources slide. A single-image post is exactly one slide of type single. Use only the formats the rules allow.",
+  "The first slide shows only its headline for every type, including figure, split and statement. Omit body, kicker, credit and labels there. Optional body or kicker below is for later slides only.",
   "Slide types, with character targets (the renderer refuses text that does not fit). No slide shows a picture credit or a page number; never write one.",
   `- cover-photo: the first slide of a carousel only. images: image-1, one picture with fullBleedCapable true, drawn to every edge. headline only, up to ${target(DNESKAI_TEXT_LIMITS["dneskai-cover-photo"].headline)}. No kicker, no body: the first slide carries its headline and nothing else.`,
   `- figure: images: image-1, one picture with insetCapable true, framed. headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-figure"].headline)}; optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-figure"].body)}. No kicker.`,
@@ -400,7 +401,7 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
     if (copy.format === "carousel" && index > 0 && slide.type === "cover-photo") issues.push(issue("cover-not-first", index, "type", "cover-photo is only the first slide."));
     if (slide.type === "single" && slide.variant !== offer.rules.singleVariant) issues.push(issue("single-variant", index, "variant", `rules.singleVariant is ${offer.rules.singleVariant}.`));
     const template = dneskaiTemplateId(slide);
-    const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+    const placed = dneskaiPlacedFields(slide, index);
     const limits: Partial<Record<string, number>> = DNESKAI_TEXT_LIMITS[template];
     for (const field of ["headline", "body", "kicker"] as const) {
       const value = slide[field];
@@ -504,8 +505,8 @@ export function dneskaiHashtags(proposed: readonly string[]): string[] {
  */
 export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): DneskaiDeck {
   void offer;
-  const slides: DneskaiSlide[] = copy.slides.map((slide) => {
-    const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const slides: DneskaiSlide[] = copy.slides.map((slide, index) => {
+    const placed = dneskaiPlacedFields(slide, index);
     return {
       type: slide.type,
       ...(slide.variant ? { variant: slide.variant } : {}),

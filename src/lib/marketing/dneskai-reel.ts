@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { DneskaiRenderReportSchema, parseContentRevision } from "./contracts";
 import { DNESKAI_REEL, DNESKAI_REEL_POLICY, dneskaiReelDuration, dneskaiReelKey, renderDneskaiReel, type DneskaiReelAudio } from "./dneskai-reel-render";
+import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { revisionContentHash } from "./hashes";
 import { signAutomationBody } from "./automation-auth";
 import { MARKETING_ASSET_BUCKET, MARKETING_ASSET_URL_SECONDS, dneskaiSlideObjectKey } from "./worker-runtime";
@@ -128,7 +129,7 @@ export async function dneskaiReelForRevision(db: Database, ownerId: string, revi
   if (row.content_hash !== revisionContentHash(revision)) throw new DneskaiReelError("reel-revision-unavailable");
   const report = DneskaiRenderReportSchema.safeParse(row.render_report);
   const slideCount = revision.deck.slides.length;
-  if (!report.success || report.data.status !== "rendered" || report.data.problems.some((problem) => problem.blocking)
+  if (dneskaiDeckContentBlocked(revision.deck) || !report.success || report.data.status !== "rendered" || report.data.problems.some((problem) => problem.blocking)
     || report.data.renderKeys.length !== slideCount || revision.assets.length !== slideCount || revision.assets.some(asset => asset.mimeType !== "image/jpeg")
     || report.data.renderKeys.some(key => !/^[a-f0-9]{64}$/.test(key)) || slideCount > DNESKAI_REEL.maxSlides) throw new DneskaiReelError("reel-render-required");
   const revisionHash = String(row.content_hash);

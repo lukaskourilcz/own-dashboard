@@ -247,7 +247,7 @@ export class FakeJev {
 // ------------------------------------------------------------------ Anthropic
 type OfferMedia = { assetSha256: string; evidenceIndex: number; position: number; credit: string; width: number; height: number; fullBleedCapable: boolean; insetCapable: boolean; singlePhotoCapable: boolean };
 type Offer = { brief: { title: string }; rules: { firstSlide: string }; evidence: Array<{ index: number; title: string }>; media: OfferMedia[] };
-/** marketing-copy/7 answers a careful model could give for the two briefs; pictures are chosen by capability, never by content. */
+/** marketing-copy/8 answers a careful model could give for the two briefs; pictures are chosen by capability, never by content. */
 export function fixtureCopy(offer: Offer) {
   const cover = offer.media.find((item) => item.fullBleedCapable)!;
   const inset = offer.media.filter((item) => item.insetCapable && item.assetSha256 !== cover.assetSha256);
@@ -260,8 +260,8 @@ export function fixtureCopy(offer: Offer) {
       hashtags: ['huggingface', 'rozpoznavanireci', 'otevrenemodely'],
       format: 'carousel',
       slides: [
-        { type: 'statement', headline: 'Otevřený model přepisuje porady přímo na notebooku.', body: 'Podle Hugging Face nepotřebuje grafickou kartu ani připojení ke cloudové službě.', images: [], alt: 'Úvodní textový slide o otevřeném modelu pro přepis porad.' },
-        { type: 'statement', headline: 'Umí angličtinu, němčinu a španělštinu a pozná, kdo mluví.', images: [], alt: 'Textový slide o jazycích, které model zvládá.' },
+        { type: 'statement', headline: 'Otevřený model přepisuje porady přímo na notebooku.', images: [], alt: 'Úvodní textový slide o otevřeném modelu pro přepis porad.' },
+        { type: 'statement', headline: 'Umí angličtinu, němčinu a španělštinu a pozná, kdo mluví.', body: 'Podle Hugging Face nepotřebuje grafickou kartu ani připojení ke cloudové službě.', images: [], alt: 'Textový slide o jazycích, které model zvládá.' },
         { type: 'statement', variant: 'ink', headline: 'U hlučných telefonátů dělá víc chyb než uzavřené služby.', body: 'Autoři to uvádějí sami po srovnání na veřejných testovacích sadách.', images: [], alt: 'Textový slide o slabinách modelu.' },
         { type: 'statement', headline: 'Licence nemění pravidla pro nahrávání lidí.', images: [], alt: 'Textový slide o upozornění autorů k nahrávání.' },
       ],

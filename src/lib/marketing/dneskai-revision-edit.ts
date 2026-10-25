@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, canonicalJson, parseContentRevision, renderReportBlocks, revisionReadiness, storedRenderKeys,
   storedRenderProblems, type ContentEngagement, type ContentRevision, type DneskaiRenderReport } from "./contracts";
-import { dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
+import { DneskaiDeckSchema, dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
 import { DneskaiRevisionEditError, applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, type DneskaiDeckEdit } from "./dneskai-deck-edit";
 import type { ListBriefAssetHashes, LoadDneskaiBriefPool, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { revisionContentHash } from "./hashes";
@@ -32,6 +32,7 @@ export async function editedDneskaiDeck(original: ContentRevision, edit: Dneskai
   // A type move of a picture slide or an inserted slide is checked against the pool's capability flags (review-10).
   const briefPool = edit && dneskaiDeckEditNeedsPool(original.deck, edit) ? (loadBriefPool ? await loadBriefPool(original) : fail("deck-edit-pool-unavailable")) : null;
   const deck = dneskaiShownDeck(edit ? applyDneskaiDeckEdit(original.deck, edit, briefPool) : original.deck);
+  if (!DneskaiDeckSchema.safeParse(deck).success) return fail(deck.format === "carousel" && deck.slides.length < 2 ? "deck-edit-slide-count" : "deck-edit-invalid");
   const pool = new Set(await listBriefAssetHashes(original));
   if (dneskaiDeckAssetHashes(deck).some((sha256) => !pool.has(sha256))) return fail("deck-asset-outside-brief");
   return deck;

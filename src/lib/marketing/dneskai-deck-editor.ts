@@ -6,7 +6,7 @@ import { dneskaiKitOf, type DneskaiImageCrop, type DneskaiKitId, type DneskaiSli
 import { pragueLocalInput, pragueScheduledAt } from './clock';
 import {
   dneskaiCoverInset, dneskaiCreditLine, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeFromId, dneskaiShapeId, dneskaiShapePictureCounts, dneskaiSlideFieldLimits,
-  dneskaiSlideMoves, dneskaiSlideShape, DNESKAI_PLACED_FIELDS, type DneskaiPoolPicture, type DneskaiShapeId, type DneskaiSlideShape,
+  dneskaiSlideMoves, dneskaiSlideShape, dneskaiPlacedFields, dneskaiSlideContentBlocked, type DneskaiPoolPicture, type DneskaiShapeId, type DneskaiSlideShape,
 } from './dneskai-slide-layout';
 import type { DneskaiFieldLimit, DneskaiWorkspacePost } from './dneskai-workspace';
 import type { DneskaiFitResult } from './dneskai-lab';
@@ -80,7 +80,7 @@ export function dneskaiScheduleExpired(post: Pick<DneskaiWorkspacePost, 'schedul
 /** A draft of the saved revision. A post whose time has passed starts with `dneskaiNextEditableTime` instead, so it can be saved. */
 export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | null = null, now: Date = new Date()): DeckDraft {
   return {
-    slides: (post.deck?.slides ?? []).map((slide, from) => ({ from, slide: structuredClone(slide), fields: post.fields[from] ?? [] })),
+    slides: (post.deck?.slides ?? []).map((slide, from) => ({ from, slide: structuredClone(slide), fields: dneskaiSlideFieldLimits(slide, from) })),
     caption: post.caption,
     scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
@@ -177,15 +177,28 @@ export function setDraftKit(draft: DeckDraft, kit: DneskaiKitId): DeckDraft {
     ? { ...item, slide: { ...item.slide, images: item.slide.images.filter((image) => image.slot === 'image-1') } } : item) };
 }
 
+const positionedSlides = (slides: DraftSlide[]) => slides.map((item, index) => ({ ...item, fields: dneskaiSlideFieldLimits(item.slide, index) }));
+
+/** Explicit owner cleanup of unused text on a legacy or moved slide; the saved revision is never mutated. */
+export function removeUnplacedSlideText(draft: DeckDraft, index: number): DeckDraft {
+  const item = draft.slides[index];
+  if (!item || item.slide.type === 'sources') return draft;
+  const slide = { ...item.slide };
+  const placed = dneskaiPlacedFields(slide, index);
+  for (const field of ['body', 'kicker', 'credit'] as const) if (!placed.includes(field)) delete slide[field];
+  delete slide.sources;
+  return { ...draft, slides: positionedSlides(draft.slides.map((entry, position) => position === index ? { ...item, slide } : entry)) };
+}
+
 export function removeSlide(draft: DeckDraft, index: number): DeckDraft {
-  return { ...draft, slides: draft.slides.filter((_, position) => position !== index) };
+  return { ...draft, slides: positionedSlides(draft.slides.filter((_, position) => position !== index)) };
 }
 export function moveSlide(draft: DeckDraft, from: number, to: number): DeckDraft {
   if (from === to || from < 0 || to < 0 || from >= draft.slides.length || to >= draft.slides.length) return draft;
   const slides = [...draft.slides];
   const [moved] = slides.splice(from, 1);
   slides.splice(to, 0, moved!);
-  return { ...draft, slides };
+  return { ...draft, slides: positionedSlides(slides) };
 }
 
 /** The pool the editor offers: the brief's pictures and its primary source. */
@@ -213,10 +226,10 @@ export function setSlideShape(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>
   const slide: DneskaiSlide = { ...structuredClone(item.slide), type: shape.type };
   if ('variant' in shape) slide.variant = shape.variant; else delete slide.variant;
   if (!dneskaiShapePictureCounts(shape).some((count) => count > 0)) slide.images = [];
-  const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const placed = dneskaiPlacedFields(slide, index);
   const dropped = (['body', 'kicker', 'credit'] as const).filter((field) => (slide[field] ?? '').trim() && (!placed.includes(field) || (field === 'credit' && !slide.images.length)));
   for (const field of ['body', 'kicker', 'credit'] as const) if (!placed.includes(field) || (field === 'credit' && !slide.images.length)) delete slide[field];
-  return { draft: { ...draft, slides: draft.slides.map((entry, position) => position === index ? { ...entry, slide, fields: dneskaiSlideFieldLimits(slide) } : entry) }, dropped };
+  return { draft: { ...draft, slides: draft.slides.map((entry, position) => position === index ? { ...entry, slide, fields: dneskaiSlideFieldLimits(slide, index) } : entry) }, dropped };
 }
 
 /** Pictures an inserted slide may use: unused pool pictures from a source the deck already cites, that fit the shape. */
@@ -248,11 +261,11 @@ export function insertSlide(post: Pick<DneskaiWorkspacePost, 'brief' | 'deck'>, 
   const media = needsPicture ? insertablePictures(post, draft, id).find((item) => item.assetSha256 === picture?.assetSha256) : null;
   if (needsPicture && !media) return unchanged;
   const slide: DneskaiSlide = { type: shape.type, ...('variant' in shape ? { variant: shape.variant } : {}), headline: '', images: media ? [{ slot: 'image-1', assetSha256: media.assetSha256 }] : [], alt: '' };
-  const fields = dneskaiSlideFieldLimits(slide);
   const index = insertPosition(draft, after);
+  const fields = dneskaiSlideFieldLimits(slide, index);
   const slides = [...draft.slides];
   slides.splice(index, 0, { from: null, slide, fields });
-  return { draft: { ...draft, slides }, index };
+  return { draft: { ...draft, slides: positionedSlides(slides) }, index };
 }
 
 /**
@@ -284,6 +297,7 @@ export function draftProblems(post: Pick<DneskaiWorkspacePost, 'deck'>, draft: D
       const value = slide[field] ?? '';
       if (characterCount(value.trim()) > max) problems.push({ slide: index, field, code: 'text-too-long' });
     }
+    if (dneskaiSlideContentBlocked(slide, index)) problems.push({ slide: index, field: 'slide', code: 'text-unfit' });
     if (slide.type !== 'sources' && !slide.headline.trim()) problems.push({ slide: index, field: 'headline', code: 'text-missing' });
     if (!slide.alt.trim()) problems.push({ slide: index, field: 'alt', code: 'alt-missing' });
     else if (slide.alt.length > 1000) problems.push({ slide: index, field: 'alt', code: 'alt-too-long' });
@@ -352,7 +366,7 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
     }
     const source = original[from];
     if (!source) throw new Error('deck-edit-slide-invalid');
-    if (from !== position) changed = true;
+    if (from !== position || (source.sources?.length && !slide.sources?.length)) changed = true;
     const entry: DneskaiSlideEdit = { from };
     const shape = dneskaiShapeId(dneskaiSlideShape(slide));
     if (shape !== dneskaiShapeId(dneskaiSlideShape(source))) {
@@ -364,12 +378,13 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
     const placed = new Set(fields.map((field) => field.field));
     if (placed.has('headline') && slide.headline !== source.headline) entry.headline = slide.headline;
     for (const field of ['body', 'kicker'] as const) {
-      if (!placed.has(field)) continue;
+      if (!placed.has(field)) { if (source[field] !== undefined && slide[field] === undefined) entry[field] = null; continue; }
       const next = (slide[field] ?? '').trim() ? slide[field]! : '';
       const before = source[field] ?? '';
       if (next === before) continue;
       if (next) entry[field] = next; else if (source[field] !== undefined) entry[field] = null;
     }
+    if (source.credit !== undefined && slide.credit === undefined) entry.credit = '';
     if (placed.has('credit') && !(entry.type !== undefined && slide.credit === undefined) && (slide.credit ?? '') !== (source.credit ?? '')) entry.credit = slide.credit ?? '';
     if (slide.alt !== source.alt) entry.alt = slide.alt;
     if (!sameImages(slide.images, source.images)) entry.images = slide.images.map((image) => structuredClone(image));

@@ -144,12 +144,12 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await expect(inspector.getByRole('textbox', { name: t.slide.fields.kicker, exact: true })).toHaveCount(0);
   await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
   // The cover's picture also fits a frame, so it may become a picture slide; with only a headline nothing is dropped,
-  // and the picture slide offers a body.
+  // and its first-slide position continues to allow only the headline.
   const shape = inspector.getByTestId('dneskai-slide-shape');
   await expect(shape.locator('option')).toHaveText([t.slide.shapes['cover-photo'], t.slide.shapes.figure, t.slide.shapes.split]);
   await shape.selectOption('figure');
   await expect(inspector.getByTestId('dneskai-inspector-notice')).toHaveText('');
-  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toBeVisible();
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
   await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
   await shape.selectOption('cover-photo');
   // A statement switches colour only.
@@ -205,6 +205,35 @@ for (const lang of ['en', 'cs'] as const) test(`Lab reuses a swapped-out picture
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
   expect(errors).toEqual([]);
   expect(calls).toEqual([]);
+});
+
+for (const lang of ['en', 'cs'] as const) test(`Lab returns a legacy approval and keeps only its first headline in a new version (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang];
+  const ownerCalls: string[] = [];
+  page.on('request', request => { if (request.url().includes('/api/marketing/')) ownerCalls.push(request.url()); });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labPost=d0e5ca10-0000-4000-8000-000000000005');
+  const lab = page.getByTestId('dneskai-lab'), inspector = page.getByTestId('dneskai-slide-inspector');
+  await expect(inspector.getByTestId('dneskai-unplaced-text')).toContainText(t.slide.firstSlideHelp);
+  await expect(inspector.getByRole('button', { name: t.slide.keepHeadline, exact: true })).toBeDisabled();
+  await lab.getByRole('button', { name: t.actions.return, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel(t.actions.note, { exact: true }).fill('Keep the first slide headline only.');
+  await dialog.getByRole('button', { name: t.actions.sendReturn, exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await inspector.getByTestId('dneskai-unplaced-text').screenshot({ path: info.outputPath(`legacy-cleanup-${lang}.png`) });
+  await inspector.getByRole('button', { name: t.slide.keepHeadline, exact: true }).click();
+  await expect(inspector.getByTestId('dneskai-unplaced-text')).toHaveCount(0);
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+  await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
+  const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-lab"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: info.outputPath(`legacy-headline-${lang}.png`), fullPage: true });
+  await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
+  expect(errors).toEqual([]); expect(ownerCalls).toEqual([]);
 });
 
 test('Publish now stays off while the account does not publish, and says why', async ({ page }) => {

@@ -163,6 +163,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const allLoaded = lab.slides.length > 0 && lab.slides.every((item) => item.render && loaded.get(item.render.url) === true);
   const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
   const publishable = post.status === 'review' && !!post.deck;
+  const canReturn = ['review', 'approved'].includes(post.status) && !['claimed', 'published', 'reconciliation'].includes(post.publication?.status ?? '');
   const publishBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.publishNowDirty : lab.block ? t.actions.blocked[lab.block] : !account?.enabled ? t.actions.publishNowOff : !allLoaded ? t.actions.imagesLoading : null;
   // Owner decision 6: a post in review whose slot passed moves, as exactly this version, to the next free daily slot.
   const missed = dneskaiMissedSlot(lab);
@@ -173,7 +174,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const regenerateBlock = props.guest ? t.publicTour : !props.read.capabilities?.regenerate ? t.actions.regenerateOff : dirty && !onlyTimeChanged ? t.actions.dirty : null;
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
   async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate'): Promise<boolean> {
-    if (props.guest || busy || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return false;
+    if (props.guest || busy || (action === 'return' && (!canReturn || dirty)) || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return false;
     if (action === 'save') {
       const problems = draftProblems(post, draft, fit.status === 'ready' ? fit.result : null);
       if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? problems.find((problem) => problem.field.startsWith('engagement.'))?.code ?? 'deck-edit-invalid'); return false; }
@@ -220,7 +221,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     else if (key === 'a') void perform('approve');
     else if (key === 'd') { if (!dirty) onBatch(); }
     else if (key === 'e') fieldRef.current?.focus();
-    else if (key === 'r' || key === 's') { if (!dirty && post.status === 'review') setDialog(key === 'r' ? 'return' : 'skip'); }
+    else if (key === 'r' || key === 's') { if (!dirty && (key === 'r' ? canReturn : post.status === 'review')) setDialog(key === 'r' ? 'return' : 'skip'); }
     else if (key === 'g') setView(view === 'profile' ? 'feed' : 'profile');
     else if (key === '?') setDialog('shortcuts');
     else return;
@@ -268,7 +269,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         {dirty && <Button variant="ghost" disabled={busy} onClick={() => setDraft(createDeckDraft(post, account?.id ?? null))}>{t.actions.discard}</Button>}
         <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3 sm:ml-auto">
         {publishable && <Button variant="outline" data-testid="dneskai-lab-publish-now" disabled={busy || !!publishBlock} title={publishBlock ?? undefined} onClick={() => setDialog('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNow}</Button>}
-        <Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
+        <Button variant="ghost" disabled={props.guest || busy || dirty || !canReturn} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>
         </div>
       </div>
     </div>

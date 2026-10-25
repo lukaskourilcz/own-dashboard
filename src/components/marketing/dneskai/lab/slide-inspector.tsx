@@ -1,13 +1,13 @@
 'use client';
 
-import { dneskaiCoverInset } from '@/lib/marketing/dneskai-slide-layout';
+import { dneskaiCoverInset, dneskaiSlideContentBlocked } from '@/lib/marketing/dneskai-slide-layout';
 import { useId, useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import {
-  draftSlideMoves, imageFocal, imageZoom, insertablePictures, insertSlide, mediaResolution, removeSlide, setCoverInset, setImageCrop, setSlideShape, setSlideText, swapSlideImage, type DeckDraft,
+  draftSlideMoves, imageFocal, imageZoom, insertablePictures, insertSlide, mediaResolution, removeSlide, removeUnplacedSlideText, setCoverInset, setImageCrop, setSlideShape, setSlideText, swapSlideImage, type DeckDraft,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { DNESKAI_INSERT_SHAPES, dneskaiShapeId, dneskaiSlideShape, type DneskaiShapeId } from '@/lib/marketing/dneskai-slide-layout';
 import { EntityBadge } from '@/components/ui/status-badge';
@@ -77,8 +77,12 @@ export function DneskaiSlideInspector({ post, draft, index, onDraft, fit, previe
       <p id={`${id}-shape-help`} className="text-xs text-foreground-muted">{moves.length < 2 ? t.slide.shapeLocked : t.slide.shapeHelp}</p>
     </div>}
     <p role="status" aria-live="polite" className="min-h-0 text-xs empty:hidden" data-testid="dneskai-inspector-notice">{notice}</p>
-    {item.from === null && <Button type="button" variant="outline" size="sm" className="min-h-11 md:min-h-8" data-testid="dneskai-remove-inserted"
-      onClick={() => { onDraft(removeSlide(draft, index)); onSlide?.(Math.max(0, index - 1)); onNotice?.(t.slide.insert.removed); }}>{t.slide.insert.remove}</Button>}
+    {slide.type !== 'sources' && dneskaiSlideContentBlocked(slide, index) && <div className="space-y-2" data-testid="dneskai-unplaced-text">
+      <p className="text-xs text-warning">{index === 0 ? t.slide.firstSlideHelp : t.slide.unplacedHelp}</p>
+      <Button type="button" variant="outline" size="sm" className="min-h-11 md:min-h-8" onClick={() => { onDraft(removeUnplacedSlideText(draft, index)); setNotice(t.slide.textCleaned); }}>{index === 0 ? t.slide.keepHeadline : t.slide.removeUnplaced}</Button>
+    </div>}
+    {(item.from === null || slide.type === 'sources') && <Button type="button" variant="outline" size="sm" className="min-h-11 md:min-h-8" data-testid={slide.type === 'sources' ? 'dneskai-remove-sources' : 'dneskai-remove-inserted'}
+      onClick={() => { onDraft(removeSlide(draft, index)); onSlide?.(Math.max(0, index - 1)); onNotice?.(slide.type === 'sources' ? t.slide.legacySourcesRemoved : t.slide.insert.removed); }}>{slide.type === 'sources' ? t.slide.removeLegacySources : t.slide.insert.remove}</Button>}
     {fields.length === 0 ? <p className="text-xs text-foreground-muted">{t.slide.noFields}</p> : fields.map(({ field, max }, position) => {
       const feedback = fitFieldText(fitted?.fields.find((entry) => entry.field === field), lang);
       return <div key={field} ref={position === 0 ? (element) => firstFieldRef?.(element?.querySelector('input,textarea') ?? null) : undefined}>

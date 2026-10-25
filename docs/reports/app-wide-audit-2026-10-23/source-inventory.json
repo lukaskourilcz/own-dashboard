@@ -1134,17 +1134,17 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
-      "lines": 379,
+      "lines": 380,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending",
-      "reviewedSha256": "4996ce5792b2abe8bb780c2e9bb15a0b5fb1ab859591effbf09e30c6e154b73b"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "cf2f8439f9f4a737b83b52e609fdbc40a34fcaff70266b6cbcfe459efa3522cb"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
-      "lines": 194,
+      "lines": 198,
       "sha256": "c22588bb0890535b34178107e1f2d21b6d78861be2d2a25234c8e58a65664541",
-      "status": "source reviewed; complete field/fit/shape/picture/insertion component inspected; raw alt limit counter checked in finding 173; media transport and parent draft lifecycle are separate",
-      "reviewedSha256": "bf01dc7d7e33bfec3f0e71b615245b9eb981b27e6f07d70df5c99cdf0f2b87c4"
+      "status": "source reviewed; complete field/fit/shape/picture/insertion component inspected; raw alt limit counter checked in finding 173; media transport and parent draft lifecycle are separate; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "5ad8d435b6105540abe491d04a1b0a16c997b673ca7bd5990a00d68aadf79770"
     },
     {
       "path": "src/components/marketing/dneskai/lab/stage.tsx",
@@ -2277,17 +2277,17 @@
     },
     {
       "path": "src/lib/demo/dneskai-workspace-demo.ts",
-      "lines": 241,
+      "lines": 242,
       "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
-      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained",
-      "reviewedSha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b"
+      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "b1cc3c809c5e5c739a6ffccbc74a136a27fabca782df99e77fda845a0060d1b5"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
-      "lines": 166,
+      "lines": 157,
       "sha256": "3b433e3248dcddaf97a56037bcf586c0a67b2f08f82fcb261bc41dc0b258f36b",
-      "status": "partial; complete source inspection; outdated renderer/reservation/disclosure metadata and current server fixture parity remain under review; invented data and committed authentic renders retained",
-      "reviewedSha256": "3b433e3248dcddaf97a56037bcf586c0a67b2f08f82fcb261bc41dc0b258f36b"
+      "status": "partial; complete source inspection; outdated renderer/reservation/disclosure metadata and current server fixture parity remain under review; invented data and committed authentic renders retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "ee77c9381434c4234145cd0ae772b65fc36232596b5b8542899a6eb1172f8387"
     },
     {
       "path": "src/lib/demo/fixtures.ts",
@@ -2537,10 +2537,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
-      "lines": 506,
+      "lines": 520,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation",
-      "reviewedSha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "975543cefb78040ac07cad9d1e1ca414918747b6675a0cad494d276c85eb66f1"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
@@ -3021,10 +3021,10 @@
     },
     {
       "path": "src/lib/marketing/contracts.ts",
-      "lines": 338,
+      "lines": 340,
       "sha256": "98853d6601d906d78b747c57c219b49e27f97e52747a281f797e6671d44e4171",
-      "status": "partial; complete source inspection; Story receipt/schema consistency and exact related media/time identities require boundary tests; approval hashes and explicit readiness retained",
-      "reviewedSha256": "98853d6601d906d78b747c57c219b49e27f97e52747a281f797e6671d44e4171"
+      "status": "partial; complete source inspection; Story receipt/schema consistency and exact related media/time identities require boundary tests; approval hashes and explicit readiness retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "11246643482ff0a13cbbc3c9d6a7d4266f231ba63a66242e1aa0725f569f37ad"
     },
     {
       "path": "src/lib/marketing/dneskai-apify-research-plan.ts",
@@ -3175,10 +3175,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-deck-editor.ts",
-      "lines": 412,
+      "lines": 427,
       "sha256": "fe65f8bbb8983a192accf3cf8987226f28243d07d9750dc60f67791e7bfc359f",
-      "status": "partial; findings 173 and 186 close field limits and draft/server insertion availability; remaining editor/read/provider lifecycle and position-based content policy review pending",
-      "reviewedSha256": "f6b664c643d298a82d56cee0d38062aa75023ae17a9c67105ed77424aa66abd1"
+      "status": "partial; findings 173 and 186 close field limits and draft/server insertion availability; remaining editor/read/provider lifecycle and position-based content policy review pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "1748537c54b95b3e50a68038b66bca7a7e431183ea1b5ae099bc78d3c36db002"
     },
     {
       "path": "src/lib/marketing/dneskai-engagement-ports.ts",
@@ -3233,15 +3233,15 @@
       "path": "src/lib/marketing/dneskai-fit.ts",
       "lines": 65,
       "sha256": "abe11e9b01b8839623459aeb034e6b4be88413251ac9663214131d50a24d1846",
-      "status": "partial source review: same deck/render fitting and no-media/no-model boundary retained; request body cap applies after whole text read and fit work has no total cancellation budget",
-      "reviewedSha256": "abe11e9b01b8839623459aeb034e6b4be88413251ac9663214131d50a24d1846"
+      "status": "partial source review: same deck/render fitting and no-media/no-model boundary retained; request body cap applies after whole text read and fit work has no total cancellation budget; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "54f69f019b9ee2379c35e704c4fb573aa57dca9786d27c6ff99d92ffb54a8f8d"
     },
     {
       "path": "src/lib/marketing/dneskai-generation.ts",
-      "lines": 599,
+      "lines": 601,
       "sha256": "22eeecf2f194ba34c3a898ee6f7598e61cca55f6525d8b1c4ffa1eb35b06f0d7",
-      "status": "partial; complete source inspection; headline-only first-slide parity across fallback types, deterministic prose policy and repeated evidence-number/date work remain under review",
-      "reviewedSha256": "e41d50ca3fa37995d7d11de276ffcf1867a24973e11302b89d45f1297221ae12"
+      "status": "partial; complete source inspection; headline-only first-slide parity across fallback types, deterministic prose policy and repeated evidence-number/date work remain under review; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "9e1c04fe6c3e98d1791ac8a3947132e7ba1be9b86705dd24b217af5134b3a989"
     },
     {
       "path": "src/lib/marketing/dneskai-instagram-webhook.ts",
@@ -3252,10 +3252,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-lab.ts",
-      "lines": 337,
+      "lines": 339,
       "sha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798",
-      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks",
-      "reviewedSha256": "d4e1782b05c21773f467a7ae79292c89baa547e48668146910b69abad7c509b3"
+      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "63fe05a762fe6b3c4cc447a5acd232f6afb0d8d94fe84397d278e6e0a5c414f9"
     },
     {
       "path": "src/lib/marketing/dneskai-media-contracts.ts",
@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 116 migrations, nine read tables; rollout and final release pending",
-      "reviewedSha256": "780551672951d632bbe06ce6540d4c2530ca6abbb5742864f2ae99950771d419"
+      "status": "source reviewed; generated offline from all 116 migrations, nine read tables; rollout and final release pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "5ab43f4b8646e67d28bd4807e9fbc7329104f6ad2255ab9d48d491f608cc98e0"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3378,10 +3378,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 219,
+      "lines": 220,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence; finding 190 closes physical media identity, full revision/loaded JPEG binding and legacy exact-hash reads; duplicate admission and native work bounds remain open",
-      "reviewedSha256": "a5c5703f27edc1fc00a2a25f92c67fd5c3a7cd956b1f3aa2fcfefe79dd183280"
+      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence; finding 190 closes physical media identity, full revision/loaded JPEG binding and legacy exact-hash reads; duplicate admission and native work bounds remain open; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "78cee1b56f90ba2a633b3d30ab42cd1142eaa456ec63001af549534d36dfd6ae"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -3399,17 +3399,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-render.ts",
-      "lines": 517,
+      "lines": 518,
       "sha256": "ec424d59dda7c3763bbacfa91d7c1005212c2e92b32cb5127a5c32a736e54b84",
-      "status": "partial; complete source inspection; first-slide display parity, bounded native work/media reads and cache admission remain under review; clip/glyph and immutable render-key gates retained",
-      "reviewedSha256": "ec424d59dda7c3763bbacfa91d7c1005212c2e92b32cb5127a5c32a736e54b84"
+      "status": "partial; complete source inspection; first-slide display parity, bounded native work/media reads and cache admission remain under review; clip/glyph and immutable render-key gates retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "fc5ba1daf8e825b02ee3b1daf9c89be283d4ac8928a7b663685e96641039ce6a"
     },
     {
       "path": "src/lib/marketing/dneskai-revision-edit.ts",
-      "lines": 127,
+      "lines": 128,
       "sha256": "c317f1320d4cd875ab4bb0bef24d5ed894511fb2e9ef77c437daa92314aaecbc",
-      "status": "partial source review: same preview/save deck rules, pool membership and verified unchanged-pixel reuse retained; cancellation across dependency reads and exact marketing_attach_revision_render receipt validation need verification",
-      "reviewedSha256": "c317f1320d4cd875ab4bb0bef24d5ed894511fb2e9ef77c437daa92314aaecbc"
+      "status": "partial source review: same preview/save deck rules, pool membership and verified unchanged-pixel reuse retained; cancellation across dependency reads and exact marketing_attach_revision_render receipt validation need verification; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "0a229bd8d111ef78421ab01e6164bbb5cfce68582eb1e8b2c5e662864032e81a"
     },
     {
       "path": "src/lib/marketing/dneskai-scouting.ts",
@@ -3420,10 +3420,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-slide-layout.ts",
-      "lines": 216,
+      "lines": 232,
       "sha256": "4cc114cccb37f66ec76d17815d29159ed2513c3f52c11ec03c8824f86ddb3797",
-      "status": "partial; finding 186 closes source eligibility and edited-picture availability; position-based first-slide and legacy shown-deck content policy remain under review",
-      "reviewedSha256": "3ae57fe11d69c73241dd27dfb9a76f9380eddabd7901457bdfd4f54c6434b2b4"
+      "status": "source reviewed; findings 186 and 193 close source eligibility, current-picture availability and positional public text policy with integrated/native/SQL evidence; final release pending",
+      "reviewedSha256": "1a0331bcf78193f92b04da02def7584b775199a5a299f7e7ae0a4ef261199ffc"
     },
     {
       "path": "src/lib/marketing/dneskai-slides.ts",
@@ -3532,10 +3532,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",
-      "lines": 378,
+      "lines": 380,
       "sha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157",
-      "status": "partial; complete source inspection; calendar completeness/free-slot meaning, current clocks and repeated formatter work remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks",
-      "reviewedSha256": "c4523f47ab4a8ee6da6920203d1d882ea86d234271d608519b554f8c9bcadaf2"
+      "status": "partial; complete source inspection; calendar completeness/free-slot meaning, current clocks and repeated formatter work remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
+      "reviewedSha256": "75c52fec7158a45f78d65c927efe08bc30f543465650474620f685de75a268b6"
     },
     {
       "path": "src/lib/marketing/free-feeds/security/content.ts",
