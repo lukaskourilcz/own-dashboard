@@ -47,3 +47,56 @@ it("refuses a response beyond the byte ceiling and releases its remaining stream
   const cancelled = vi.fn(); vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array(1_500_001)); }, cancel: cancelled }))));
   expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" }); expect(cancelled).toHaveBeenCalledOnce();
 });
+
+const listingUrl = "https://jobs.lever.co/example/0";
+const structuredPage = (value: unknown, text = "React Engineer Apply now") => `<script type="application/ld+json">${JSON.stringify(value)}</script>${text}`;
+it.each([
+  { "@type": "JobPosting", title: "Different role", url: listingUrl, validThrough: "2020-01-01" },
+  { "@type": "JobPosting", title: "React Engineer", url: "https://jobs.lever.co/example/other", validThrough: "2020-01-01" },
+  { "@type": "Event", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" },
+  { validThrough: "2020-01-01" },
+])("does not close the target from unrelated or unbound structured expiry (%j)", async evidence => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage(evidence))));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "open" });
+});
+it("closes only matching JobPosting title and URL expiry, including a graph", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage({ "@graph": [{ "@type": ["JobPosting"], title: "REACT  Engineer", url: listingUrl, validThrough: "2020-01-01" }] }))));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "closed" });
+});
+it("keeps conflicting matching structured expiry unknown", async () => {
+  const posting = { "@type": "JobPosting", title: "React Engineer", url: listingUrl };
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage([{ ...posting, validThrough: "2020-01-01" }, { ...posting, validThrough: "2099-01-01" }]))));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+it("a challenge page cannot establish closure from copied expired metadata", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage({ "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" }, "Verify you are human"))));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+it("keeps mixed closed/apply signals unknown and ignores arbitrary script fields", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('<script>{"validThrough":"2020-01-01"}</script>React Engineer Apply now. Related position is closed.')));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+it("does not match different query identities or a redirected different listing", async () => {
+  const job = { ...jobs(1)[0], url: listingUrl + "?position=one" };
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: listingUrl + "?position=two" } })).mockResolvedValueOnce(new Response(structuredPage({ "@type": "JobPosting", title: "React Engineer", url: listingUrl + "?position=two", validThrough: "2020-01-01" }))));
+  expect(await verifyListings([job])).toEqual({ "job-0": "open" });
+});
+it("does not let a recommendation's JobPosting type establish an otherwise unconfirmed open state", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage({ "@type": "JobPosting", title: "Other Engineer", url: listingUrl + "/other" }, "React Engineer"))));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+it.each(["2026-10-25", "2026-10-25T12:00:00", "2026-02-30", "2026-02-30T12:00:00Z", "invalid"])("does not infer an early precise closure from an ambiguous expiry (%s)", async validThrough => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-25T18:00:00Z"));
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage({ "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough }))));
+  expect((await verifyListings(jobs(1)))["job-0"]).toBe(validThrough === "2026-10-25" ? "open" : "unknown");
+});
+it("refuses incomplete structured traversal rather than taking an early expiry as complete evidence", async () => {
+  const posting = { "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" };
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(structuredPage([posting, ...Array.from({ length: 501 }, () => ({ "@type": "Thing" }))]))));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+
+it("ignores an application phrase hidden in an arbitrary script", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('<script>const label = "Apply now";</script>React Engineer')));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});

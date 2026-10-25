@@ -134,8 +134,10 @@ describe("availability boundary", () => {
     expect(
       pageAvailability(
         200,
-        '<script>{"validThrough":"2020-01-01"}</script>React Engineer Apply now',
+        '<script type="application/ld+json">{"@type":"JobPosting","title":"React Engineer","url":"https://jobs.lever.co/example/one","validThrough":"2020-01-01"}</script>React Engineer Apply now',
         "React Engineer",
+        Date.now(),
+        "https://jobs.lever.co/example/one",
       ),
     ).toBe("closed");
     expect(
