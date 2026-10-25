@@ -33,6 +33,7 @@ export function DemoDashboard({
   liveMonitoring = false,
   livePreferences = false,
   liveExports = false,
+  liveSession = false,
   liveCalendar = false,
   liveOrganizations = false,
   liveCompetitors = false,
@@ -68,6 +69,8 @@ export function DemoDashboard({
   livePreferences?: boolean;
   /** Isolated fake-backend downloads only; no preference/provider calls. */
   liveExports?: boolean;
+  /** Actual SDK session-change checks on the isolated fake backend only. */
+  liveSession?: boolean;
   /** Dev/E2E-only mocked Google Calendar reads; disabled in the public tour. */
   liveCalendar?: boolean;
   /** Isolated fake-backend organization record checks only. */
@@ -98,10 +101,11 @@ export function DemoDashboard({
       previewMonitoringIntegration={liveMonitoring}
       previewPreferencesIntegration={livePreferences}
       previewExportIntegration={liveExports}
+      previewSessionIntegration={liveSession}
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
       previewCompetitorIntegration={liveCompetitors}
-      user={livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}

@@ -457,3 +457,8 @@ Six final EN/CS desktop/mobile cases pass in 13.5 seconds. Failed and foreign in
 ## Settings export — 25 October 2026, finding 237
 
 Eight final EN/CS desktop/mobile cases pass in 26.3 seconds with exact synthetic JSON/CSV download bytes/names, captured owner and request routes, retained selection/error recovery, pending locks, keyboard selection/focus and guest zero-request isolation. Controls match width/height and stay within the existing Settings peer card at 360/430/640/767/768/1024/1440/1728px. English light and Czech dark pass axe for this card with no page errors. Expected synthetic 503 responses are exercised; this is not a clean-network assertion or a production/private export. Ninety separate focused cases validate the route, database, CSV, stream and mounted lifetimes. Four inspected Czech-dark ready/recovery card crops from committed application e07a445 now appear in the twenty-nine-pair review plan; final consolidated verification remains pending.
+
+
+## Session retirement — 25 October 2026, finding 238
+
+Eight strengthened EN/CS desktop/mobile actual-SDK cookie/broadcast cases pass in 31.3 seconds. Account replacement and sign-out remove the private workspace and dirty editor without an unsaved-change prompt. Same-owner sign-in/refresh retain the draft without extra collection reads. The recovery page fits all six documented widths and passes axe with no page errors; its button performs a full reload into the fresh synthetic workspace. Later private requests are blocked before network dispatch, and client sign-in alone cannot reopen the retired scope. All identities/endpoints are synthetic. This is not real signed-in production verification; final consolidated checks remain open.

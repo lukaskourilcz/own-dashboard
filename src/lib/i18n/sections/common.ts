@@ -18,6 +18,9 @@ type CommonStrings = {
   closeNotification: string;
   deletePermanentlyConfirm: string;
   signInFirst: string;
+  sessionChanged: string;
+  sessionChangedDescription: string;
+  sessionReload: string;
 };
 
 export const common: { en: CommonStrings; cs: CommonStrings } = {
@@ -41,6 +44,9 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     closeNotification: "Dismiss notification",
     deletePermanentlyConfirm: "This item will be permanently deleted.",
     signInFirst: "Sign in first.",
+    sessionChanged: "Session changed",
+    sessionChangedDescription: "Reload to verify your account before continuing.",
+    sessionReload: "Reload",
   },
   cs: {
     documentTable: "Tabulka v dokumentu",
@@ -62,5 +68,8 @@ export const common: { en: CommonStrings; cs: CommonStrings } = {
     closeNotification: "Zavřít oznámení",
     deletePermanentlyConfirm: "Tato položka bude nenávratně smazána.",
     signInFirst: "Nejprve se přihlaste.",
+    sessionChanged: "Relace se změnila",
+    sessionChangedDescription: "Před pokračováním obnovte stránku a ověřte svůj účet.",
+    sessionReload: "Obnovit stránku",
   },
 };

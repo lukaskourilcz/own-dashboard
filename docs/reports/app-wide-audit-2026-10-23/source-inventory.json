@@ -656,8 +656,8 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 54,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "177827fe717ca38a1105772ef20682c718c22673687c026b13397bfc6870bcc2"
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "5416398aa67513194ae1ca5668d267f8d3e48467be7a2a24da2c9454e20b8445"
     },
     {
       "path": "src/app/globals.css",
@@ -833,15 +833,15 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "43dffe3e53f04de6308fb3335dab1fd7e578c5de8f1018812519eec839b04699"
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "864caf627fafa0a02ba918c82fc2d3b4aa0c4300d5aab4337e185d4b2e0d773d"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 164,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "941f00a443e726a7185a39690e5cc48cbf7a9a8f91270e4eab22fda3de7c211d"
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "6f6f193b4b1774abdb86644169df7d2d4cdb2ecc41b1e1f076aa51e79cb11815"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -2490,8 +2490,8 @@
       "path": "src/lib/i18n/sections/common.ts",
       "lines": 66,
       "sha256": "77dadc248e367806b1c1ce79e6ecbbc00cb4e06f0e81fcaf600ac15cf1ff9cd8",
-      "status": "source reviewed; bilingual shared action/draft/recovery and document region names checked; final release pending",
-      "reviewedSha256": "b643bf6787062042936eea3c6b5d1bb1c25d0e624015ab5e48bece0859072300"
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "2c00c79cab0e420d5564cbac936521f201e06c9c88e6c711ee330342f8b9eb7f"
     },
     {
       "path": "src/lib/i18n/sections/costs.ts",
@@ -4716,6 +4716,20 @@
       "lines": 2,
       "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
       "reviewedSha256": "7d119defb9fae6a9ed56138a49f59b79e38625725dd8867cb7398c2f7a57e13d"
+    },
+    {
+      "path": "src/components/owner-session-boundary.tsx",
+      "sha256": null,
+      "lines": 42,
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "c4c5ce543ac191903a85c7e14c8dafbdcda1bd8125dbcf8f56fadd57a5202e9e"
+    },
+    {
+      "path": "src/lib/owner-session.ts",
+      "sha256": null,
+      "lines": 41,
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "a8d5ac99a0b16aacf5b72ac8679b0d045f7457e16827106ec8135a96bfff57d7"
     }
   ],
   "baselineFileCount": 561

@@ -222,6 +222,8 @@ Table-level CSV remains available for non-full, non-legacy scopes through `?form
 
 CSV quotes fields, uses CRLF and prefixes formula-like text with a tab inside the quoted cell, including leading whitespace/control/BOM and fullwidth prefixes. Finite numeric negatives stay numeric; JSON preserves raw values. This changes risky CSV text and is not a universal spreadsheet guarantee. OAuth/provider credential tables and future unreviewed columns are excluded; arbitrary text/JSON authored by the owner remains their content. All 36 prepared migrations, including export foundation 122, must be applied before deploying these callers.
 
+The authenticated shell now retires on SDK sign-out or account replacement across tabs: owned action signals and queries cancel, private UI unmounts and protected requests refuse further work until a full document reload. Client auth events cannot seed or switch owner data. Same-owner refresh retains drafts without extra reads. Null startup verification is deferred outside SDK locks and bounded to eight seconds. Per-action captured-intent/server auth review remains separate; cancellation cannot undo accepted requests.
+
 ## AI boundary
 
 External model calls are limited to the owner-authorized marketing workflow, with explicit consent, source evidence, feature switches and spend ceilings. Other product areas make no model calls. Link and job-page enrichment send only the submitted URL to Jina Reader and return metadata for review; they do not send private notes or application drafts. Direct Google Calendar writes send the event fields the owner submits. Credentials remain server-side. See the detailed provider and data boundaries in the privacy guide.

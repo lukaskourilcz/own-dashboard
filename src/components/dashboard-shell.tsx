@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { OwnerSessionBoundary } from "@/components/owner-session-boundary";
 import { OwnerPreferencesProvider, useOwnerPreferences } from "@/lib/owner-preferences";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
@@ -134,6 +135,7 @@ type Props = {
   previewMonitoringIntegration?: boolean;
   previewPreferencesIntegration?: boolean;
   previewExportIntegration?: boolean;
+  previewSessionIntegration?: boolean;
   previewCalendarIntegration?: boolean;
   /** Isolated fake-backend organization read/write checks only. */
   previewOrganizationIntegration?: boolean;
@@ -214,7 +216,7 @@ const clientHydrated = () => true;
 const serverHydrated = () => false;
 
 export function DashboardShell(props: Props) {
-  return <OwnerPreferencesProvider ownerId={props.user.id} initial={!props.isPreview && props.initialPreferences.sync_available ? { cv_url_cs: props.initialPreferences.cv_url_cs, cv_url_en: props.initialPreferences.cv_url_en, show_czech_career: props.initialPreferences.show_czech_career === true } : undefined}><NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider></OwnerPreferencesProvider>;
+  return <OwnerPreferencesProvider ownerId={props.user.id} initial={!props.isPreview && props.initialPreferences.sync_available ? { cv_url_cs: props.initialPreferences.cv_url_cs, cv_url_en: props.initialPreferences.cv_url_en, show_czech_career: props.initialPreferences.show_czech_career === true } : undefined}><OwnerSessionBoundary enabled={!props.isPreview || props.previewSessionIntegration === true}><NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider></OwnerSessionBoundary></OwnerPreferencesProvider>;
 }
 
 function DashboardShellContent(props: Props) {

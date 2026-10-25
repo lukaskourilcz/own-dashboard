@@ -19,10 +19,10 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function PreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string; projectTab?: string | string[]; tab?: string; calendars?: string; repositories?: string; projectRecords?: string; music?: string; planning?: string; tasks?: string; categories?: string; monitoring?: string; preferences?: string; calendar?: string; organizations?: string; competitors?: string; exports?: string; q?: string | string[] }>;
+  searchParams: Promise<{ project?: string; projectTab?: string | string[]; tab?: string; calendars?: string; repositories?: string; projectRecords?: string; music?: string; planning?: string; tasks?: string; categories?: string; monitoring?: string; preferences?: string; calendar?: string; organizations?: string; competitors?: string; exports?: string; session?: string; q?: string | string[] }>;
 }) {
   if (process.env.NODE_ENV === "production" && process.env.NEXT_E2E !== "1") notFound();
-  const { project, projectTab, tab, calendars, repositories, projectRecords, music, planning, tasks, categories, monitoring, preferences, calendar, organizations, competitors, exports: dataExports, q } = await searchParams;
+  const { project, projectTab, tab, calendars, repositories, projectRecords, music, planning, tasks, categories, monitoring, preferences, calendar, organizations, competitors, exports: dataExports, session, q } = await searchParams;
 
   // `?tab=` opens a destination directly, the fixture equivalent of visiting
   // its URL — used for sections hidden from navigation (Inbox, References).
@@ -45,6 +45,7 @@ export default async function PreviewPage({
       livePreferences={preferences === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveOrganizations={organizations === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveCompetitors={competitors === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
+      liveSession={session === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveExports={dataExports === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveCalendar={calendar === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       initialTipQuery={tab === "ig-tips" ? tipDeepLinkQuery(q) : null}
