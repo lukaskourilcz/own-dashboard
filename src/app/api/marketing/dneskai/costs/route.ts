@@ -22,8 +22,8 @@ function ceiling(): Pick<DneskaiCostsRead['generation'], 'ceilingUsd' | 'code'> 
  */
 export async function GET(request: Request) {
   const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
+  const { data: { user }, error: authError } = await db.auth.getUser();
+  if (authError || !user) return Response.json({ error: 'unauthorized' }, { status: 401 });
   const params = new URL(request.url).searchParams;
   const projectId = params.get('projectId');
   if (!z.uuid().safeParse(projectId).success) return Response.json({ error: 'invalid-project' }, { status: 400 });
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   const limit = ceiling();
   try {
     const read = await readDneskaiCosts(db, user.id, projectId!, new Date(), { spentUsd, ceilingUsd: limit.ceilingUsd, code: limit.code ?? spendCode }, range.data,
-      { requeueEnabled: marketingPublicationRequeueEnabled(process.env) });
+      { requeueEnabled: marketingPublicationRequeueEnabled(process.env), signal: AbortSignal.any([request.signal, AbortSignal.timeout(15_000)]) });
     return Response.json(read, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {
     return Response.json({ error: 'dneskai-costs-unavailable' }, { status: 503 });

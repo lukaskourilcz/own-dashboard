@@ -23,7 +23,7 @@ try {
     output += relations.map(relation => `    { foreignKeyName: ${JSON.stringify(relation.name)}; columns: ${JSON.stringify(relation.columns)}; isOneToOne: false; referencedRelation: ${JSON.stringify(relation.target)}; referencedColumns: ${JSON.stringify(relation.targets)} }`).join(',\n');
     output += '\n  ] };\n';
   }
-  output += `}; Views: Record<never, never>; Functions: { marketing_dneskai_engagement_receipts: { Args: { p_publication_ids: string[]; p_since: string; p_until: string }; Returns: Json } }; Enums: Record<never, never>; CompositeTypes: Record<never, never> } };\n`;
+  output += `}; Views: Record<never, never>; Functions: { marketing_dneskai_engagement_receipts: { Args: { p_publication_ids: string[]; p_since: string; p_until: string }; Returns: Json }; marketing_dneskai_cost_totals: { Args: { p_project: string; p_days: number; p_now: string }; Returns: Json } }; Enums: Record<never, never>; CompositeTypes: Record<never, never> } };\n`;
   writeFileSync('src/lib/marketing/dneskai-read-database.generated.ts', output);
   process.stdout.write(`Generated ${names.length} read tables from ${MIGRATION_FILES.length} migrations.\n`);
 } finally { await db.close(); }

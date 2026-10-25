@@ -205,6 +205,13 @@ async function attachEngagementReceipts(db: Database, owner: string, posts: Dnes
 const TickStepSchema = z.object({ category: z.string(), status: z.string(), code: z.string().optional() });
 const TickErrorSchema = z.object({ category: z.string(), code: z.string() });
 
+/** The aggregate stamps its source/window; a partial or mismatched result is unavailable, never zero. */
+const CostTotalsSchema = z.strictObject({
+  ownerId: z.uuid(), projectId: z.uuid(), dayCount: z.number().int().min(1).max(7), asOf: DneskaiCostsReadSchema.shape.generatedAt,
+  days: DneskaiCostsReadSchema.shape.days,
+  ticks: DneskaiCostsReadSchema.shape.ticks.omit({ recent: true }).extend({ meaningfulCount: z.number().int().nonnegative(), recent: z.array(z.record(z.string(), z.unknown())).max(20) }),
+});
+
 /** The cost ranges GET /api/marketing/dneskai/costs accepts: one to seven Prague days, today included. */
 export const DNESKAI_COST_RANGES = ['1d', '2d', '3d', '4d', '5d', '6d', '7d'] as const;
 export type DneskaiCostRange = (typeof DNESKAI_COST_RANGES)[number];
@@ -215,7 +222,7 @@ export type DneskaiCostRange = (typeof DNESKAI_COST_RANGES)[number];
  * spend. `range` sets how many Prague days the cost table and the job list cover (default seven).
  */
 export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation'], range: DneskaiCostRange = '7d',
-  options: { requeueEnabled?: boolean } = {}): Promise<DneskaiCostsRead> {
+  options: { requeueEnabled?: boolean; signal?: AbortSignal } = {}): Promise<DneskaiCostsRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
   // Rows are checked one at a time: a malformed run, job, publication or tick is counted, never a failed read.
   let unreadable = 0;
@@ -228,15 +235,26 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const dayCount = DNESKAI_COST_RANGES.indexOf(z.enum(DNESKAI_COST_RANGES).parse(range)) + 1;
   const today = pragueMarketingDate(now);
   const weekStart = pragueScheduledAt(pragueDayAfter(today, 1 - dayCount), '00:00');
-  const dayAgo = new Date(now.getTime() - 86_400_000).toISOString();
-  const [runResult, jobResult, publicationResult, tickResult] = await Promise.all([
-    db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14),
+  const signal = options.signal ?? AbortSignal.timeout(15_000); signal.throwIfAborted();
+  const [runResult, jobResult, publicationResult, totalsResult] = await Promise.all([
+    db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14).retry(false).abortSignal(signal),
     db.from('marketing_jobs').select('id,status,error_code,created_at,cost_usd:result->usage->>estimatedCostUsd,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,brand:request->generation->source->>brand')
-      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').gte('created_at', weekStart).order('created_at', { ascending: false }).limit(100),
+      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['failed', 'reconciliation']).gte('created_at', weekStart).lte('created_at', now.toISOString()).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(30).retry(false).abortSignal(signal),
     db.from('marketing_publications').select('id,revision_id,status,error_code,scheduled_at,last_checked_at,remote_container_id,remote_media_id,remote_url,lease_until,marketing_revisions!inner(brand,title:revision->>title)')
-      .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20),
-    db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors').eq('user_id', owner).gte('started_at', dayAgo).order('started_at', { ascending: false }).limit(1500),
+      .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20).retry(false).abortSignal(signal),
+    db.rpc('marketing_dneskai_cost_totals', { p_project: project, p_days: dayCount, p_now: now.toISOString() }).retry(false).abortSignal(signal),
   ]);
+  signal.throwIfAborted();
+  const parsedTotals = CostTotalsSchema.safeParse(totalsResult.data);
+  if (totalsResult.error || !parsedTotals.success) throw new Error('dneskai-costs-unavailable');
+  const totals = parsedTotals.data;
+  const expectedDays = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index));
+  if (totals.ownerId !== owner || totals.projectId !== project || totals.dayCount !== dayCount || iso(totals.asOf) !== now.toISOString()
+    || JSON.stringify(totals.days.map(day => day.date)) !== JSON.stringify(expectedDays)
+    || totals.ticks.withErrors > totals.ticks.total || totals.ticks.generationDeferred > totals.ticks.total
+    || totals.ticks.meaningfulCount > totals.ticks.total || totals.ticks.recent.length !== Math.min(20, totals.ticks.meaningfulCount) || (totals.ticks.total === 0) !== (totals.ticks.lastStartedAt === null)
+    || (totals.ticks.lastStartedAt !== null && (Date.parse(totals.ticks.lastStartedAt) > now.getTime() || Date.parse(totals.ticks.lastStartedAt) < now.getTime() - 86_400_000))
+    || new Set(totals.ticks.recent.map(tick => tick.id)).size !== totals.ticks.recent.length) throw new Error('dneskai-costs-unavailable');
   const runs = keep(shape.runs.element, rows(runResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => ({
     // A running run's cost column is a placeholder 0 until finish settles it: not recorded yet, never a measured zero.
     id: row.id, date: row.date, targetDate: row.target_date, status: row.status, costUsd: row.status === 'running' ? null : money(row.cost_usd), errorCode: safeCode(row.error_code), createdAt: iso(row.created_at),
@@ -246,18 +264,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     id: row.id, status: row.status, errorCode: marketingJobErrorCode(row.error_code), createdAt: iso(row.created_at), costUsd: money(row.cost_usd),
     title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt: iso(row.scheduled_at),
   })));
-  const days = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index)).map((date) => {
-    const dayRuns = runs.filter((run) => run.date === date);
-    const dayJobs = allJobs.filter((row) => typeof row.created_at === 'string' && pragueMarketingDate(new Date(row.created_at)) === date && row.status !== 'queued');
-    // Measured: a job that produced a draft recorded the provider's own usage for every call. Booked: a failed job's
-    // figure, which is its reserved maximum when a call's billing was ambiguous (cost-16).
-    const jobCosts = dayJobs.map((row) => ({ settled: row.status === 'review', cost: money(row.cost_usd) }));
-    const runCosts = dayRuns.map((run) => run.costUsd);
-    const sum = (values: ReadonlyArray<number | null>) => values.reduce<number>((total, cost) => total + (cost ?? 0), 0);
-    return { date, collectionUsd: sum(runCosts), generationUsd: sum(jobCosts.filter((job) => job.settled).map((job) => job.cost)),
-      generationBookedUsd: sum(jobCosts.filter((job) => !job.settled).map((job) => job.cost)),
-      unknown: [...runCosts, ...jobCosts.map((job) => job.cost)].filter((cost) => cost === null).length };
-  });
+  const days = totals.days;
   const text = (value: unknown) => typeof value === 'string' ? value : null;
   const publications = keep(shape.publications.element, rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').flatMap((row) => {
     const revision = (Array.isArray(row.marketing_revisions) ? row.marketing_revisions[0] : row.marketing_revisions) as { title?: unknown } | undefined;
@@ -270,7 +277,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     return [{ id: row.id, revisionId: row.revision_id, status: expired ? 'reconciliation' : row.status, errorCode: expired ? 'lease-expired' : safeCode(row.error_code), scheduledAt: iso(row.scheduled_at),
       lastCheckedAt: iso(row.last_checked_at), title: typeof revision?.title === 'string' ? revision.title.slice(0, 300) : '', ...(requeueable ? { requeueable } : {}) }];
   }));
-  const ticks = keep(shape.ticks.shape.recent.element, rows(tickResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
+  const ticks = keep(shape.ticks.shape.recent.element, totals.ticks.recent.map((row) => {
     const did = z.array(TickStepSchema).safeParse(row.did); const errors = z.array(TickErrorSchema).safeParse(row.errors);
     return {
       id: row.id, kind: row.kind, startedAt: iso(row.started_at), finishedAt: iso(row.finished_at),
@@ -284,7 +291,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const recent = ticks.filter((tick) => tick.errors.length || generationDeferred(tick) || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);
   return DneskaiCostsReadSchema.parse({
     schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(), generation, days, runs, jobs, publications, unreadable,
-    ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, generationDeferred: ticks.filter(generationDeferred).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },
+    ticks: { total: totals.ticks.total, withErrors: totals.ticks.withErrors, generationDeferred: totals.ticks.generationDeferred, lastStartedAt: totals.ticks.lastStartedAt, recent },
   });
 }
 

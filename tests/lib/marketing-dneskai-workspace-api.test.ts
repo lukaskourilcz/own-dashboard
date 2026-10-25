@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn(), readReceipts: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn(), readReceipts: vi.fn(), costRead: vi.fn(), restCap: Infinity }));
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks), rpc: mocks.readReceipts }) }));
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks), rpc: (name: string, args: CostReadArgs) => { if (name !== 'marketing_dneskai_cost_totals') return mocks.readReceipts(name, args); const query = { retry: () => query, abortSignal: () => query, then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(mocks.costRead(args)).then(resolve, reject) }; return query; } }) }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ rpc: mocks.rpc }) }));
 import { GET as review } from '@/app/api/marketing/dneskai/review/route';
 import { GET as costs } from '@/app/api/marketing/dneskai/costs/route';
-import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, dneskaiPostState, dneskaiStateContext } from '@/lib/marketing/dneskai-workspace';
+import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, dneskaiPostState, dneskaiStateContext, pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
 import { dneskaiSlideFieldLimits } from '@/lib/marketing/dneskai-workspace-read';
 import { MARKETING_DECK_CONTENT_VERSION } from '@/lib/marketing/contracts';
 import { DNESKAI_SLIDES_VERSION } from '@/lib/marketing/dneskai-slides';
@@ -23,10 +23,10 @@ function table(state: typeof mocks) {
       in: (field: string, values: unknown[]) => { rows = rows.filter((row) => !(field in row) || values.includes(row[field])); return query; },
       not: (field: string, operator: string, value: string) => { if (operator === 'in') rows = rows.filter(row => !value.slice(1, -1).split(',').includes(String(row[field]))); return query; },
       or: () => query,
-      gte: () => query, order: () => query,
+      retry: () => query, abortSignal: () => query, lte: () => query, gte: () => query, order: () => query,
       limit: (count: number) => { limit = count; return query; },
       maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
-      then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(state.fail === name ? { data: null, error: { message: 'PRIVATE database detail' } } : { data: rows.slice(0, limit), error: null }).then(resolve, reject),
+      then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(state.fail === name ? { data: null, error: { message: 'PRIVATE database detail' } } : { data: rows.slice(0, Math.min(limit, state.restCap)), error: null }).then(resolve, reject),
     };
     return query;
   };
@@ -54,8 +54,17 @@ const brief = { schemaVersion: 'dneskai-brief/1', eventId, memberHash: sha(901),
   media: [{ assetSha256: sha(1), candidateId: 'c1', position: 0, credit: 'Foto: smyšlený zdroj', width: 1600, height: 1200, originKind: 'og-image', fullBleedCapable: true, insetCapable: true }],
   suggestedFormat: 'carousel', scheduledAt, timeZone: 'Europe/Prague', observedAt: '2026-10-20T20:00:00.000Z', expiresAt: '2099-10-22T20:00:00.000Z' };
 
+type CostReadArgs = { p_project: string; p_days: number; p_now: string };
+/** Aggregate DTO stand-in only. Actual arithmetic, range and RLS run against all migrations in dneskai-cost-totals-database.test.ts. */
+function costTotalsFixture(args: CostReadArgs) {
+  const today = pragueMarketingDate(new Date(args.p_now));
+  return { ownerId: owner, projectId: args.p_project, dayCount: args.p_days, asOf: args.p_now,
+    days: Array.from({ length: args.p_days }, (_, index) => ({ date: pragueDayAfter(today, -index), collectionUsd: index === 0 ? 0.04 : 0, generationUsd: 0, generationBookedUsd: index === 0 ? 0.25 : 0, unknown: 0 })),
+    ticks: { total: 2, withErrors: 1, generationDeferred: 0, meaningfulCount: 1, lastStartedAt: args.p_now, recent: [mocks.tables.marketing_ticks![0]!] },
+  };
+}
 beforeEach(() => {
-  mocks.user.mockResolvedValue({ data: { user: { id: owner } } }); mocks.fail = null; mocks.filters = []; mocks.rpc.mockReset();
+  mocks.user.mockResolvedValue({ data: { user: { id: owner } } }); mocks.fail = null; mocks.filters = []; mocks.rpc.mockReset(); mocks.restCap = Infinity; mocks.costRead.mockReset(); mocks.costRead.mockImplementation((args: CostReadArgs) => ({ data: costTotalsFixture(args), error: null }));
   mocks.tables = {
     projects: [{ id: project, user_id: owner, portfolio_key: 'aifirst', repo_full_name: null, previous_repo_full_names: [], parent_id: null }],
     marketing_revisions: [
@@ -201,12 +210,27 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(short.days.map((day) => day.date)).toEqual(read.days.slice(0, 2).map((day) => day.date));
     for (const range of ['8d', '0d', '7', 'week']) expect((await get(costs, `projectId=${project}&range=${range}`)).status).toBe(400);
   });
+  it('keeps complete costs and tick totals beyond row limits while bounding the visible lists', async () => {
+    mocks.rpc.mockResolvedValue({ data: 0.5, error: null }); mocks.restCap = 1000;
+    const now = new Date();
+    mocks.tables.marketing_jobs = Array.from({ length: 120 }, (_, index) => ({ id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(index).padStart(12, '0')}`, user_id: owner, status: 'review', error_code: null, created_at: now.toISOString(), title: 'Offline cost row', scheduled_at: null, brand: 'dneskai', cost_usd: '0.01' }));
+    mocks.tables.marketing_ticks = Array.from({ length: 2001 }, (_, index) => ({ id: `bbbbbbbb-bbbb-4bbb-8bbb-${String(index).padStart(12, '0')}`, user_id: owner, kind: 'minute', started_at: new Date(now.getTime() - index * 40000).toISOString(), finished_at: null, did: index === 1900 ? [{ category: 'generation', status: 'deferred', code: 'tick-budget-exhausted' }] : [], errors: index === 1800 ? [{ category: 'token', code: 'token-failed' }] : [] }));
+    mocks.costRead.mockImplementation((args: CostReadArgs) => { const data = costTotalsFixture(args); data.days[0]!.generationUsd = 1.2;
+      data.ticks = { total: 2001, withErrors: 1, generationDeferred: 1, meaningfulCount: 2, lastStartedAt: args.p_now, recent: [mocks.tables.marketing_ticks![1800]!, mocks.tables.marketing_ticks![1900]!] }; return { data, error: null }; });
+    const response = await get(costs, `projectId=${project}`); expect(response.status).toBe(200);
+    const read = DneskaiCostsReadSchema.parse(await response.json());
+    expect(read.days[0]!.generationUsd).toBeCloseTo(1.2, 6);
+    expect(read.ticks).toMatchObject({ total: 2001, withErrors: 1, generationDeferred: 1 });
+    expect(read.ticks.recent.map(tick => tick.id)).toEqual([mocks.tables.marketing_ticks[1800]!.id, mocks.tables.marketing_ticks[1900]!.id]);
+    expect(read.jobs.length).toBeLessThanOrEqual(30); expect(read.ticks.recent.length).toBeLessThanOrEqual(20);
+  });
   it('keeps measured drafting cost, booked failed-job cost and unknown figures apart (cost-16)', async () => {
     mocks.rpc.mockResolvedValue({ data: 0.5, error: null });
     const now = new Date().toISOString();
     const job = (n: number, status: string, cost: string | null) => ({ id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(n).padStart(12, '0')}`, user_id: owner, status, error_code: status === 'failed' ? 'provider-unavailable' : null, created_at: now, title: `Téma ${n}`, scheduled_at: pragueScheduledAt(tomorrow, '08:00'), revision_id: null, brand: 'dneskai', cost_usd: cost });
     mocks.tables.marketing_jobs = [job(1, 'review', '0.031'), job(2, 'review', '0.044'), job(3, 'failed', '0.25'), job(4, 'reconciliation', null), job(5, 'running', null)];
     mocks.tables.marketing_dneskai_runs = [{ id: '99999999-9999-4999-8999-999999999999', user_id: owner, project_id: project, date: pragueMarketingDate(new Date()), target_date: tomorrow, status: 'running', cost_usd: '0', error_code: null, created_at: now }];
+    mocks.costRead.mockImplementation((args: CostReadArgs) => { const data = costTotalsFixture(args); Object.assign(data.days[0]!, { collectionUsd: 0, generationUsd: 0.075, generationBookedUsd: 0.25, unknown: 3 }); return { data, error: null }; });
     const read = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}`)).json());
     expect(read.days[0]!.generationUsd).toBeCloseTo(0.075, 6);
     expect(read.days[0]).toMatchObject({ collectionUsd: 0, generationBookedUsd: 0.25, unknown: 3 });
@@ -217,6 +241,7 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     mocks.rpc.mockResolvedValue({ data: 0.5, error: null });
     mocks.tables.marketing_dneskai_runs = [...mocks.tables.marketing_dneskai_runs!, { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', user_id: owner, project_id: project, date: pragueMarketingDate(new Date()), target_date: tomorrow, status: 'complete', cost_usd: '0.04', error_code: null, created_at: 'not a time' }];
     mocks.tables.marketing_ticks = [...mocks.tables.marketing_ticks!, { id: 'not-a-uuid', user_id: owner, kind: 'minute', started_at: new Date().toISOString(), finished_at: null, did: [], errors: [] }];
+    mocks.costRead.mockImplementation((args: CostReadArgs) => { const data = costTotalsFixture(args); data.ticks.recent.push(mocks.tables.marketing_ticks!.at(-1)!); data.ticks.meaningfulCount = 2; return { data, error: null }; });
     const response = await get(costs, `projectId=${project}`);
     expect(response.status).toBe(200);
     const read = DneskaiCostsReadSchema.parse(await response.json());
@@ -229,6 +254,7 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     const deferred = (id: string, code: string) => ({ id, user_id: owner, kind: 'minute', started_at: new Date().toISOString(), finished_at: new Date().toISOString(),
       did: [{ category: 'collection', status: 'noop', ms: 1 }, { category: 'generation', status: 'deferred', code, pending: true, ms: 0 }], errors: [] });
     mocks.tables.marketing_ticks = [...mocks.tables.marketing_ticks!, deferred('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'tick-budget-exhausted'), deferred('dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'yield-to-publication')];
+    mocks.costRead.mockImplementation((args: CostReadArgs) => { const data = costTotalsFixture(args); Object.assign(data.ticks, { total: 4, generationDeferred: 2, meaningfulCount: 3, recent: [mocks.tables.marketing_ticks![0]!, ...mocks.tables.marketing_ticks!.slice(-2)] }); return { data, error: null }; });
     const read = DneskaiCostsReadSchema.parse(await (await get(costs, `projectId=${project}`)).json());
     expect(read.ticks).toMatchObject({ total: 4, withErrors: 1, generationDeferred: 2 });
     expect(read.ticks.recent.map((tick) => tick.id)).toEqual(expect.arrayContaining(['cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd']));
@@ -250,6 +276,26 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
     expect(on.publications.map((publication) => [publication.title, publication.status, publication.errorCode, publication.requeueable ?? false])).toEqual([
       ['Post 1', 'reconciliation', 'container-identity-unavailable', true], ['Post 2', 'reconciliation', 'meta-request-uncertain', false], ['Post 3', 'reconciliation', 'remote-permalink-unavailable', false],
       ['Post 4', 'reconciliation', 'lease-expired', true], ['Post 6', 'failed', 'meta-http-400', false]]);
+  });
+  it.each(['owner', 'project', 'range', 'clock', 'days', 'duplicate', 'counts', 'partial', 'future', 'outage'] as const)('refuses a mismatched or unavailable aggregate instead of showing zero (%s)', async kind => {
+    mocks.rpc.mockResolvedValue({ data: 0.5, error: null });
+    mocks.costRead.mockImplementation((args: CostReadArgs) => { const data = costTotalsFixture(args);
+      if (kind === 'owner') data.ownerId = project;
+      if (kind === 'project') data.projectId = owner;
+      if (kind === 'range') data.dayCount = 1;
+      if (kind === 'clock') data.asOf = '2020-01-01T00:00:00Z';
+      if (kind === 'days') data.days.pop();
+      if (kind === 'duplicate') data.ticks.recent.push(data.ticks.recent[0]!);
+      if (kind === 'counts') data.ticks.withErrors = 3;
+      if (kind === 'partial') data.ticks.recent = [];
+      if (kind === 'future') data.ticks.lastStartedAt = '9999-01-01T00:00:00Z';
+      return { data, error: kind === 'outage' ? { message: 'PRIVATE database detail' } : null };
+    });
+    const response = await get(costs, `projectId=${project}`); expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: 'dneskai-costs-unavailable' });
+  });
+  it('refuses an authentication error even when a cached user accompanies it', async () => {
+    mocks.user.mockResolvedValueOnce({ data: { user: { id: owner } }, error: { message: 'PRIVATE auth detail' } });
+    const response = await get(costs, `projectId=${project}`); expect(response.status).toBe(401); expect(await response.json()).toEqual({ error: 'unauthorized' }); expect(mocks.costRead).not.toHaveBeenCalled(); expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('shows an unreadable spend and a malformed ceiling as codes, not as zero', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'PRIVATE' } });

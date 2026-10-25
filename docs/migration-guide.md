@@ -728,11 +728,11 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-one prepared audit files follow, numbered 87–117 in the [current migration list](../README.md). The latest is `20261025032227_dneskai_public_slide_policy.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-two prepared audit files follow, numbered 87–118 in the [current migration list](../README.md). The latest is `20261025040638_complete_dneskai_cost_reads.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn
-npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–117
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–118
 npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn  # both columns agree
 ```
@@ -1171,3 +1171,12 @@ Sixty-seven contract/database/repository cases pass across four files, including
 The existing owner-only approval function keeps its captured campaign, row lock, expected hash, source, verified-account and scheduling checks, and refuses a blocked deck before either first or repeated approval. The existing service-only due-claim function filters blocked legacy approvals before its limit and lock, so they cannot starve valid due posts. Ambiguous leases and reconciliation behavior stay unchanged. No existing revision, approval, publication, source or media object is rewritten or deleted. A legacy queued approval can be explicitly returned, cleaned in the editor, saved as a new revision and reviewed again.
 
 Twelve isolated database cases include four legacy policy failures without row changes, valid/blocked due claims, matching Unicode whitespace, private permissions and the existing media identity/renewal rules. The app and final release checks remain in progress. Apply the complete prepared chain before deploying these callers; keep both old records and their provenance.
+
+
+## Migration 118 — complete DNESKAi cost and tick aggregates
+
+`20261025040638_complete_dneskai_cost_reads.sql` adds `marketing_dneskai_cost_totals(uuid,integer,timestamptz)`, a STABLE security-invoker function with an empty search path and authenticated-only execution. It derives the owner from the session, requires an owned project and bounds input to one through seven Prague days and a finite clock. Existing RLS stays authoritative. Its daily sums cover the full eligible range; running collection placeholders and malformed/missing costs remain unknown, and queued jobs do not count as billed usage. Measured and booked figures stay separate. The complete 24-hour tick counts are independent of the twenty meaningful diagnostic rows returned. No row, setting, admission limit or publication changes.
+
+A partial owner/date/id index supports the actual DNESKAi job predicate. Local authenticated-RLS EXPLAIN selects it for 120 current jobs among 10,120 synthetic rows without disabling sequential scans. The caller replaces the capped tick query with this compact aggregate and reads only thirty failed/uncertain job details. It verifies owner, project, range, clock, daily sequence, diagnostic completeness and count consistency; an unavailable or mismatched response fails rather than becoming zero. The read requests share cancellation and a fifteen-second deadline with SDK retries disabled. Authentication errors refuse a cached user. The service-only budget ledger read remains a separate route operation.
+
+Real migration/SDK/emulator cases verify beyond-cap totals, meaningful older ticks, the twenty-row detail bound, numeric unknowns, queued exclusion, Prague midnight/DST, foreign ownership, finite windows, grants and cancellation before work. The existing migrated dry-day integration also passes. Exact counts and the raw query plan are in app-wide finding 199. This follows [Supabase's invoker/function privilege guidance](https://supabase.com/docs/guides/database/functions); [REST row limits](https://supabase.com/docs/reference/javascript/select) must not determine aggregate truth. Apply the full prepared chain before deploying the caller. To roll back, revert the caller first, then drop this function and `marketing_jobs_dneskai_recent`; no owner-data rollback is needed.

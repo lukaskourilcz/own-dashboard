@@ -418,8 +418,8 @@
       "path": "src/app/api/marketing/dneskai/costs/route.ts",
       "lines": 49,
       "sha256": "655d5d087a82742e5117483c05fc5265614ff44649daa074ba9475cec24d2ba8",
-      "status": "partial; owned project and unknown spend inspected; auth/setup deadlines and availability/404 distinction remain; see remaining-review.md",
-      "reviewedSha256": "655d5d087a82742e5117483c05fc5265614ff44649daa074ba9475cec24d2ba8"
+      "status": "partial; owned project and unknown spend inspected; auth/setup deadlines and availability/404 distinction remain; see remaining-review.md; finding 199 closes complete cost/tick aggregation and cost-read auth/cancellation; remaining workspace read/lifecycle leads open",
+      "reviewedSha256": "5c553b3103172e302e4184c9aa37c5ab68ca4d41446e6045f95b7a83e073b6c9"
     },
     {
       "path": "src/app/api/marketing/dneskai/daily-mix/route.ts",
@@ -3343,10 +3343,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
-      "lines": 177,
+      "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 116 migrations, nine read tables; rollout and final release pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "5ab43f4b8646e67d28bd4807e9fbc7329104f6ad2255ab9d48d491f608cc98e0"
+      "status": "source reviewed; generated offline from all 116 migrations, nine read tables; rollout and final release pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 199 closes complete cost/tick aggregation and cost-read auth/cancellation; remaining workspace read/lifecycle leads open",
+      "reviewedSha256": "b0e136a7a779fac365e50106465e8c00b2d8983eedd814f762ce28e75e744174"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3525,10 +3525,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",
-      "lines": 340,
+      "lines": 347,
       "sha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a",
-      "status": "partial; complete source inspection; cost/tick completeness, selected-calendar coverage, malformed optional data and query cancellation remain under review",
-      "reviewedSha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a"
+      "status": "partial; complete source inspection; cost/tick completeness, selected-calendar coverage, malformed optional data and query cancellation remain under review; finding 199 closes complete cost/tick aggregation and cost-read auth/cancellation; remaining workspace read/lifecycle leads open",
+      "reviewedSha256": "0831e83ae6e06712c85a4e77e4d691b9363f35f126d9a92c589703142c87a7a1"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",

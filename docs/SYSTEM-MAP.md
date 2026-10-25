@@ -233,7 +233,7 @@ Costs show in "Chyby a náklady" in the `⋯` menu.
 | `GET`, `POST /api/marketing/dneskai/audio` | The music library, uploads and the day's trending sounds (404 without `MARKETING_DNESKAI_REELS_ENABLED`) |
 | `POST /api/marketing/dneskai/render-reel` | Renders and stores a Reel's MP4 (404 without `MARKETING_DNESKAI_REELS_ENABLED`) |
 | `POST /api/marketing/dneskai/generate`, `briefs`, `candidates` | Generate now; retry, reslot and release a brief; re-review a held report |
-| `GET /api/marketing/dneskai/costs`, `media`, `sources`; `POST fit`, `preview` | Errors and costs, the picture tray, the recovery read, text fit and one-slide preview |
+| `GET /api/marketing/dneskai/costs`, `media`, `sources`; `POST fit`, `preview` | Errors and costs (complete owned totals through `marketing_dneskai_cost_totals`, bounded diagnostics), the picture tray, the recovery read, text fit and one-slide preview |
 | `POST /api/marketing/revisions` | Edit, approve, approve the day, approve-at, publish now, regenerate, return, skip |
 | `POST /api/marketing/accounts/verify`, `enable`, `engagement`, `webhook` | Verify the account, its publishing switch, its reply switch and the comment subscription |
 | `GET`, `POST /api/webhooks/instagram` | Meta's subscription check and signed comment deliveries (404 until configured) |
