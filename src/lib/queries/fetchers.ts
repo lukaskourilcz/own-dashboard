@@ -1,5 +1,7 @@
 "use client";
 
+import type { CareerCollection, CareerRecords, CareerScope } from "@/lib/career-records";
+
 import { readSpendCategoryRecords, type SpendCategoryScope } from "@/lib/spend-category-records";
 import { readPlanRecords, type PlanScope } from "@/lib/plan-records";
 import { readCompetitorRecords, type CompetitorScope } from "@/lib/competitor-records";
@@ -364,78 +366,19 @@ export async function fetchReferenceRows(): Promise<ReferenceRow[]> {
 
 // Listings are global rows (RLS: any signed-in user reads; only the scraper
 // writes), so there's no user filter — mirrors the server load.
-export async function fetchJobListings(): Promise<JobListing[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_listings")
-    .select("*")
-    .order("first_seen_at", { ascending: false })
-    .limit(500);
-  if (error) throw error;
-  return (data ?? []) as JobListing[];
+async function fetchCareer<K extends CareerCollection>(entity: K, scope: CareerScope): Promise<CareerRecords[K]> {
+  const captured = { ownerId: scope.ownerId, signal: scope.signal };
+  captured.signal.throwIfAborted();
+  const { readCareerRecords } = await import('@/lib/career-records');
+  captured.signal.throwIfAborted();
+  return (await readCareerRecords(createClient(),entity,captured)).data;
 }
-
-export async function fetchJobUserStates(): Promise<JobUserState[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("job_user_state").select("*");
-  if (error) throw error;
-  return (data ?? []) as JobUserState[];
-}
-
-export async function fetchSavedJobPositions(): Promise<SavedJobPosition[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("saved_job_positions")
-    .select("*")
-    .order("saved_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as SavedJobPosition[];
-}
-
-export async function fetchJobApplications(): Promise<JobApplication[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_applications")
-    .select("*")
-    .order("applied_on", { ascending: false })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as JobApplication[];
-}
-
-export async function fetchJobApplicationEvents(): Promise<
-  JobApplicationEvent[]
-> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_application_events")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  if (error) throw error;
-  return (data ?? []) as JobApplicationEvent[];
-}
-
-export async function fetchCoverLetterTemplates(): Promise<
-  CoverLetterTemplate[]
-> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("cover_letter_templates")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as CoverLetterTemplate[];
-}
-
-export async function fetchJobLastRun(): Promise<JobScrapeRun | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_scrape_runs")
-    .select("*")
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return (data ?? null) as JobScrapeRun | null;
+export const fetchJobListings = (scope: CareerScope): Promise<JobListing[]> => fetchCareer('job_listings',scope);
+export const fetchJobUserStates = (scope: CareerScope): Promise<JobUserState[]> => fetchCareer('job_user_state',scope);
+export const fetchSavedJobPositions = (scope: CareerScope): Promise<SavedJobPosition[]> => fetchCareer('saved_job_positions',scope);
+export const fetchJobApplications = (scope: CareerScope): Promise<JobApplication[]> => fetchCareer('job_applications',scope);
+export const fetchJobApplicationEvents = (scope: CareerScope): Promise<JobApplicationEvent[]> => fetchCareer('job_application_events',scope);
+export const fetchCoverLetterTemplates = (scope: CareerScope): Promise<CoverLetterTemplate[]> => fetchCareer('cover_letter_templates',scope);
+export async function fetchJobLastRun(scope: CareerScope): Promise<JobScrapeRun | null> {
+  return (await fetchCareer('job_scrape_runs',scope))[0] ?? null;
 }

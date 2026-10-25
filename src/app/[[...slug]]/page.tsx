@@ -9,6 +9,7 @@ import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
+import { readCareerRecords } from '@/lib/career-records';
 import { readPlanRecords } from "@/lib/plan-records";
 import { readCompetitorRecords } from "@/lib/competitor-records";
 import { readOrganizationRecords } from "@/lib/organization-records";
@@ -116,13 +117,13 @@ async function loadDashboardPage({ params, searchParams }: DashboardPageInput, t
     loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
     loadWhen("notifications", () => supabase.from("notifications").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)),
     loadWhen("weeklyReviews", () => supabase.from("weekly_reviews").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("week_start", { ascending: false }).limit(12)),
-    loadWhen("jobListings", () => supabase.from("job_listings").select("*").retry(false).abortSignal(readSignal).order("first_seen_at", { ascending: false }).limit(500)),
-    loadWhen("jobUserStates", () => supabase.from("job_user_state").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id)),
-    loadWhen("savedJobPositions", () => supabase.from("saved_job_positions").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("saved_at", { ascending: false })),
-    loadWhen("jobApplications", () => supabase.from("job_applications").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("applied_on", { ascending: false })),
-    loadWhen("jobApplicationEvents", () => supabase.from("job_application_events").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000)),
-    loadWhen("coverLetterTemplates", () => supabase.from("cover_letter_templates").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("jobLastRun", () => supabase.from("job_scrape_runs").select("*").retry(false).abortSignal(readSignal).order("started_at", { ascending: false }).limit(1).maybeSingle()),
+    loadWhen("jobListings", () => readCareerRecords(supabase,"job_listings",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobUserStates", () => readCareerRecords(supabase,"job_user_state",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("savedJobPositions", () => readCareerRecords(supabase,"saved_job_positions",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobApplications", () => readCareerRecords(supabase,"job_applications",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobApplicationEvents", () => readCareerRecords(supabase,"job_application_events",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("coverLetterTemplates", () => readCareerRecords(supabase,"cover_letter_templates",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobLastRun", async () => { const result = await readCareerRecords(supabase,"job_scrape_runs",{ ownerId: user.id,signal: readSignal }); return { ...result,data: result.data[0] ?? null }; }),
     loadWhen("todayCalendar", () => fetchTodayWindowEvents({ userId: user.id, signal: readSignal })),
     loadWhen("weekCalendar", () => fetchUpcomingWeekEvents({ userId: user.id, signal: readSignal })),
     awaitWithSignal(loadUserPreferences(user.id, readSignal), readSignal)

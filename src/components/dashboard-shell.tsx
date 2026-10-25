@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { OwnerQueryProvider } from "@/components/owner-query-provider";
 import { OwnerSessionBoundary } from "@/components/owner-session-boundary";
+import type { CareerScope } from '@/lib/career-records';
 import { OwnerPreferencesProvider, useOwnerPreferences } from "@/lib/owner-preferences";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
@@ -267,6 +268,16 @@ function DashboardShellContent(props: Props) {
     const captured = ownerScope.capture();
     return fetchPlans({ ownerId: captured.ownerId, signal: context ? AbortSignal.any([captured.signal, context.signal]) : captured.signal });
   }, [ownerScope, props.user.id]);
+  const careerLoaders = useMemo(() => {
+    function bind<T>(fetcher: (scope: CareerScope) => Promise<T>) {
+      return (context?: { signal: AbortSignal }) => {
+        if (!ownerScope || ownerScope.ownerId !== props.user.id) throw new Error("Career unavailable");
+        const captured = ownerScope.capture();
+        return fetcher({ ownerId: captured.ownerId, signal: context ? AbortSignal.any([captured.signal, context.signal]) : captured.signal });
+      };
+    }
+    return { jobListings: bind(fetchJobListings), jobUserStates: bind(fetchJobUserStates), savedJobPositions: bind(fetchSavedJobPositions), jobApplications: bind(fetchJobApplications), jobApplicationEvents: bind(fetchJobApplicationEvents), coverLetterTemplates: bind(fetchCoverLetterTemplates), jobLastRun: bind(fetchJobLastRun) };
+  }, [ownerScope, props.user.id]);
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const requestNavigation = useGuardedNavigation();
   const { user } = props;
@@ -382,13 +393,13 @@ function DashboardShellContent(props: Props) {
   const [inboxItems, setInboxItems, inboxItemsStatus] = useEntityStore(qk.inboxItems, props.initialInboxItems, fetchInboxItems, dataOptions("inboxItems"));
   const [notifications, setNotifications, notificationsStatus] = useEntityStore(qk.notifications, props.initialNotifications, fetchNotifications, dataOptions("notifications"));
   const [weeklyReviews, setWeeklyReviews, weeklyReviewsStatus] = useEntityStore(qk.weeklyReviews, props.initialWeeklyReviews, fetchWeeklyReviews, dataOptions("weeklyReviews"));
-  const [jobListings, , jobListingsStatus] = useEntityStore(qk.jobListings, props.initialJobListings, fetchJobListings, dataOptions("jobListings"));
-  const [jobUserStates, setJobUserStates, jobUserStatesStatus] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, fetchJobUserStates, dataOptions("jobUserStates"));
-  const [savedJobPositions, setSavedJobPositions, savedJobPositionsStatus] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
-  const [jobApplications, setJobApplications, jobApplicationsStatus] = useEntityStore(qk.jobApplications, props.initialJobApplications, fetchJobApplications, dataOptions("jobApplications"));
-  const [jobApplicationEvents, setJobApplicationEvents, jobApplicationEventsStatus] = useEntityStore(qk.jobApplicationEvents, props.initialJobApplicationEvents, fetchJobApplicationEvents, dataOptions("jobApplicationEvents"));
-  const [coverLetterTemplates, setCoverLetterTemplates, coverLetterTemplatesStatus] = useEntityStore(qk.coverLetterTemplates, props.initialCoverLetterTemplates, fetchCoverLetterTemplates, dataOptions("coverLetterTemplates"));
-  const [jobLastRun, , jobLastRunStatus] = useEntityStore<JobScrapeRun | null>(qk.jobLastRun, props.initialJobLastRun, fetchJobLastRun, dataOptions("jobLastRun"));
+  const [jobListings, , jobListingsStatus] = useEntityStore(qk.jobListings, props.initialJobListings, careerLoaders.jobListings, { ...dataOptions("jobListings"), retry: false });
+  const [jobUserStates, setJobUserStates, jobUserStatesStatus] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, careerLoaders.jobUserStates, { ...dataOptions("jobUserStates"), retry: false });
+  const [savedJobPositions, setSavedJobPositions, savedJobPositionsStatus] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, careerLoaders.savedJobPositions, { ...dataOptions("savedJobPositions"), retry: false });
+  const [jobApplications, setJobApplications, jobApplicationsStatus] = useEntityStore(qk.jobApplications, props.initialJobApplications, careerLoaders.jobApplications, { ...dataOptions("jobApplications"), retry: false });
+  const [jobApplicationEvents, setJobApplicationEvents, jobApplicationEventsStatus] = useEntityStore(qk.jobApplicationEvents, props.initialJobApplicationEvents, careerLoaders.jobApplicationEvents, { ...dataOptions("jobApplicationEvents"), retry: false });
+  const [coverLetterTemplates, setCoverLetterTemplates, coverLetterTemplatesStatus] = useEntityStore(qk.coverLetterTemplates, props.initialCoverLetterTemplates, careerLoaders.coverLetterTemplates, { ...dataOptions("coverLetterTemplates"), retry: false });
+  const [jobLastRun, , jobLastRunStatus] = useEntityStore<JobScrapeRun | null>(qk.jobLastRun, props.initialJobLastRun, careerLoaders.jobLastRun, { ...dataOptions("jobLastRun"), onDemand: true, retry: false });
   const [todayCalendar, , todayCalendarStatus] = useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
   const [weekCalendar, , weekCalendarStatus] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
   const [lastWeekCalendar, , lastWeekCalendarStatus] = useEntityStore(qk.calendarLastWeek, props.lastWeekCalendar, fetchLastWeekCalendar, dataOptions("lastWeekCalendar"));
@@ -398,15 +409,16 @@ function DashboardShellContent(props: Props) {
   // mark it active so its stores read from the fresh cache. The fixture
   // preview already holds every record, so it only flips the flag.
   const qc = useQueryClient();
-  const activateTab = useCallback(async (target: NavTab) => {
+  const activateTab = useCallback(async (target: NavTab, parent?: AbortSignal) => {
+    parent?.throwIfAborted();
     if (!props.isPreview) {
-      const loaders: Partial<Record<DashboardDataKey, [QueryKey, () => Promise<unknown>]>> = {
-        jobListings: [qk.jobListings, fetchJobListings],
-        jobUserStates: [qk.jobUserStates, fetchJobUserStates],
-        savedJobPositions: [qk.savedJobPositions, fetchSavedJobPositions],
-        jobApplications: [qk.jobApplications, fetchJobApplications],
-        jobApplicationEvents: [qk.jobApplicationEvents, fetchJobApplicationEvents],
-        coverLetterTemplates: [qk.coverLetterTemplates, fetchCoverLetterTemplates],
+      const loaders: Partial<Record<DashboardDataKey, [QueryKey, (context?: { signal: AbortSignal }) => Promise<unknown>]>> = {
+        jobListings: [qk.jobListings, careerLoaders.jobListings],
+        jobUserStates: [qk.jobUserStates, careerLoaders.jobUserStates],
+        savedJobPositions: [qk.savedJobPositions, careerLoaders.savedJobPositions],
+        jobApplications: [qk.jobApplications, careerLoaders.jobApplications],
+        jobApplicationEvents: [qk.jobApplicationEvents, careerLoaders.jobApplicationEvents],
+        coverLetterTemplates: [qk.coverLetterTemplates, careerLoaders.coverLetterTemplates],
         projects: [qk.projects, fetchProjects],
         organizations: [organizationKey, loadOrganizations],
         opportunities: [qk.opportunities, fetchOpportunities],
@@ -414,7 +426,7 @@ function DashboardShellContent(props: Props) {
       const results = await Promise.allSettled(onDemandDataKeys(target).map((key) => {
         const loader = loaders[key];
         return loader
-          ? qc.fetchQuery({ queryKey: loader[0], queryFn: loader[1], staleTime: 0, ...(key === "organizations" ? { retry: false } : {}) })
+          ? qc.fetchQuery({ queryKey: loader[0], queryFn: context => loader[1]({ signal: parent ? AbortSignal.any([context.signal,parent]) : context.signal }), staleTime: 0, ...((key === "organizations" || target === "career") ? { retry: false } : {}) })
           : undefined;
       }));
       // Do not turn a failed private-letter load into an apparently empty
@@ -423,8 +435,9 @@ function DashboardShellContent(props: Props) {
         throw new Error("Could not load destination records");
       }
     }
+    parent?.throwIfAborted();
     setActivatedTabs((previous) => (previous.has(target) ? previous : new Set(previous).add(target)));
-  }, [props.isPreview, organizationKey, loadOrganizations, qc]);
+  }, [props.isPreview, organizationKey, loadOrganizations, careerLoaders, qc]);
 
   const entityStatuses = {
     subscriptions: subscriptionsStatus,
@@ -538,7 +551,7 @@ function DashboardShellContent(props: Props) {
           {tab === "competition" && <CompetitionPanel refreshFailed={competitorsStatus.refreshFailed || competitorReadFailedFor === props.user.id} projects={projects} competitors={competitors} setCompetitors={setCompetitors} onOpenProject={openProject} />}
           {tab === "opportunities" && <OpportunitiesPanel activated={activatedTabs.has("opportunities")} onActivate={() => activateTab("opportunities")} userId={user.id} isPreview={props.isPreview} opportunities={opportunities} setOpportunities={setOpportunities} organizations={organizations} setOrganizations={setOrganizations} setProjects={setProjects} />}
           {tab === "clients" && <ClientsPanel organizations={organizations} setOrganizations={setOrganizations} refreshFailed={organizationsStatus.refreshFailed} projects={activeProjects} opportunities={opportunities} invoices={invoices} invoiceItems={invoiceItems} todos={operationalTodos} notes={notes} importantDates={importantDates} displayCurrency={displayCurrency} />}
-          {tab === "career" && <JobsPanel timeZone={props.initialTimezone ?? "Europe/Prague"} activated={activatedTabs.has("career")} onActivate={() => activateTab("career")} isPreview={props.isPreview && !props.previewCareerIntegration} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
+          {tab === "career" && <JobsPanel timeZone={props.initialTimezone ?? "Europe/Prague"} activated={activatedTabs.has("career")} onActivate={signal => activateTab("career", signal)} isPreview={props.isPreview && !props.previewCareerIntegration} listings={jobListings} userStates={jobUserStates} setUserStates={setJobUserStates} savedPositions={savedJobPositions} setSavedPositions={setSavedJobPositions} applications={jobApplications} setApplications={setJobApplications} events={jobApplicationEvents} setEvents={setJobApplicationEvents} templates={coverLetterTemplates} setTemplates={setCoverLetterTemplates} lastRun={jobLastRun} userId={user.id} />}
           {tab === "invoices" && <InvoicesPanel invoices={invoices} setInvoices={setInvoices} items={invoiceItems} setItems={setInvoiceItems} settings={invoiceSettings} setSettings={setInvoiceSettings} userId={user.id} displayCurrency={displayCurrency} organizations={organizations} projects={activeProjects} transactions={transactions} />}
           {tab === "money" && <DevFinancePanel subscriptions={subscriptions} allocations={subscriptionAllocations} transactions={transactions} projects={projects} projectCosts={projectCosts} crons={crons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} onOpenSubscriptions={() => setTab("subscriptions")} onOpenProject={openProject} />}
           {(tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}

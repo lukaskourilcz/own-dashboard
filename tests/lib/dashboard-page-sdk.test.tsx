@@ -40,6 +40,25 @@ it('loads Goals through one complete captured-owner RPC instead of a capped REST
  expect(reads.filter(read => read.path.endsWith('/read_owned_collection'))).toHaveLength(1); expect(reads.some(read => read.path.endsWith('/plans'))).toBe(false);
 });
 
+it('loads only the owner-stamped Career health record before explicit private activation', async () => {
+ wire = async path => Response.json(path.endsWith('/read_career_records') ? { ownerId: user.id, collection: 'job_scrape_runs', rows: [] } : []);
+ const result = await page(['career']);
+ expect(result.type).toBe(DashboardShell);
+ expect(result.props.initialJobLastRun).toBeNull();
+ expect(result.props.initialDataKeys).toEqual(['jobLastRun']);
+ expect(reads.map(read => read.path)).toEqual(['/rest/v1/projects', '/rest/v1/rpc/read_career_records']);
+ expect(state.api!.auth.getUser).toHaveBeenCalledOnce();
+});
+
+it.each(['foreign-owner', 'unreadable'])('refuses an uncertain Career health read without private fallbacks: %s', async kind => {
+ wire = async path => path.endsWith('/read_career_records')
+  ? kind === 'unreadable' ? Response.json({ message: 'PRIVATE TEST' }, { status: 503 }) : Response.json({ ownerId: '22222222-2222-4222-8222-222222222222', collection: 'job_scrape_runs', rows: [] })
+  : Response.json([]);
+ expect((await page(['career'])).type).toBe(DashboardDataUnavailable);
+ expect(reads.filter(read => read.path.endsWith('/read_career_records'))).toHaveLength(1);
+ expect(reads.some(read => /\/(job_listings|saved_job_positions|job_applications)$/.test(read.path))).toBe(false);
+});
+
 it.each([
  { full_name: 42, avatar_url: {} },
  { full_name: { display: 'Synthetic name' }, avatar_url: [] },

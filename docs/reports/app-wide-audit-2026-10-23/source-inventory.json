@@ -52,10 +52,10 @@
     },
     {
       "path": "src/app/[[...slug]]/page.tsx",
-      "lines": 199,
+      "lines": 232,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; findings 240/258 bound route reads and project safe display metadata after verified identity; actual SDK/route checks pass; final release pending",
-      "reviewedSha256": "e161083725f8a870733828c3e68397aac36d002fee5ace9e1a940dc06e91e91c"
+      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
+      "reviewedSha256": "fe9dfa0cfc62e66bd51c8b20a25eadc422caee9774d392f14173f3c962569b3b"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -793,6 +793,20 @@
       "reviewedSha256": "7c0bd3ee238ca9b0c63b46a9319ce6c785f165352832a07123d6b2659e5faf23"
     },
     {
+      "path": "src/components/competition/competition-pagination.tsx",
+      "sha256": null,
+      "lines": 20,
+      "reviewedSha256": "e4de020da74a2cb02bcb0041b9035a5b833842538b3e30782c5cbf8e27757d9d",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+    },
+    {
+      "path": "src/components/competition/competition-recovery.tsx",
+      "sha256": null,
+      "lines": 14,
+      "reviewedSha256": "954cb7634094c8dfcf281ee091f0c7db36667620764771d5b43dec868510fa7e",
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending"
+    },
+    {
       "path": "src/components/competition/competitor-dialog.tsx",
       "lines": 246,
       "sha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a",
@@ -805,6 +819,13 @@
       "sha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6",
       "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
       "reviewedSha256": "fcb7ad41e62ba88f7d4170752e576aab3a92aee8cf5c0a12d996b500a07eafac"
+    },
+    {
+      "path": "src/components/competition/use-competitor-actions.ts",
+      "sha256": null,
+      "lines": 85,
+      "reviewedSha256": "428272c680cf3608c721badc21d80fb5e01e9047dff1cd0b578c0c5f6f6ba818",
+      "status": "source reviewed; finding 230 removes redundant confirmed-write collection reads while preserving owner-scoped read-failure recovery and asynchronous cache focus; large-list review and final release pending"
     },
     {
       "path": "src/components/cost-overview.tsx",
@@ -831,10 +852,10 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 567,
+      "lines": 580,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
-      "reviewedSha256": "bb0f2da69861c9d7bfef2e774045e82ef56b5490eaa7a7126da5c558964672b7"
+      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
+      "reviewedSha256": "7b3407d9294eb08f9789379a12a3ae910eeaedae1e0545d50239ca2068f51ef4"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1399,6 +1420,20 @@
       "reviewedSha256": "d0bae7a805561ba1305d3533308b256cea8bfc8957ba5259994ac4b3c535ae64"
     },
     {
+      "path": "src/components/owner-query-provider.tsx",
+      "sha256": null,
+      "lines": 24,
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
+      "reviewedSha256": "ea1e365715709746ce6d1ad1bbaa4b0d0c384d2dedcc76377f3a9c097c8494d2"
+    },
+    {
+      "path": "src/components/owner-session-boundary.tsx",
+      "sha256": null,
+      "lines": 48,
+      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending",
+      "reviewedSha256": "a09f4890ec01278874eb152ae5c752f488aca60fd14bf53126f9c063afb263d5"
+    },
+    {
       "path": "src/components/panels/ai-panel.tsx",
       "lines": 1103,
       "sha256": "18263a624c7740d3beab0d22fece1ae6309723cfceba8574fc8d570c3babb438",
@@ -1514,8 +1549,8 @@
       "path": "src/components/panels/jobs-panel.tsx",
       "lines": 2893,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 266\u2013267 captured Career refresh, strict receipts, retained recovery and centred compact native layout pass; other read/write/provider leads and final release pending",
-      "reviewedSha256": "069f74a8d3982728ea2d8942110e96b21dbe31b22c26016b2dd84b6bd7b949ce"
+      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
+      "reviewedSha256": "fe178adfb1bd08a260b37de63a8016d6c6fc82e242336b83e4c0b90f5ff2b525"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -1658,6 +1693,13 @@
       "reviewedSha256": "34313af52479ae766a8b30d423e7ba8c40be6e9d89aa41ec675681dc7bf87771"
     },
     {
+      "path": "src/components/plans/use-plan-actions.ts",
+      "sha256": null,
+      "lines": 117,
+      "reviewedSha256": "ac5c5daad04fe6d5d089bafb4157d9ffc12d184fc159ea5b34481d73d90a9823",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+    },
+    {
       "path": "src/components/posthog-provider.tsx",
       "lines": 50,
       "sha256": "def0d275ecebd3d98e4a14d38b98716950d6204ddb809e3c5d8e2b3bb634e481",
@@ -1777,6 +1819,13 @@
       "reviewedSha256": "2f1ceaf5910bacd35bb6c5c29a1aed9028350eab599adc84ce4b48053a50232c"
     },
     {
+      "path": "src/components/settings-data-export.tsx",
+      "sha256": null,
+      "lines": 72,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "ab037d2a223bae693866f00b08ffed257abd785d5ce42055f98910454721b59a"
+    },
+    {
       "path": "src/components/subscriptions/subscription-icon.tsx",
       "lines": 60,
       "sha256": "c30fdfb3c8ba14bd2e12320a4b513097e29c90a1b253d9ef6a4762b5d159d6ce",
@@ -1852,6 +1901,13 @@
       "sha256": "152b123ffffdc9589e5213e7a6c129e44b92d195960f06d94a8ff4aa5383841a",
       "status": "source reviewed; native form/disabled/mixed behavior and EN/CS 44px mobile / 32px desktop target, keyboard, edge-click and reflow checks pass (finding 153); final release checks pending",
       "reviewedSha256": "f1127a21515364d2bd86bfb5f30b2a4170224b9fa346f0145fef716bde6784b6"
+    },
+    {
+      "path": "src/components/ui/collection-pagination.tsx",
+      "sha256": null,
+      "lines": 19,
+      "reviewedSha256": "c3c3e7c7549b5a6d4d27d3fd3c05579eba101a8ac16f7a921fbd3ba4db643256",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
     },
     {
       "path": "src/components/ui/confirmation-dialog.tsx",
@@ -2092,6 +2148,13 @@
       "reviewedSha256": "645f1986e546e1f1e44efccfeb019b51631fb902d7072d80bb328ff0fc142fdb"
     },
     {
+      "path": "src/lib/bounded-response.ts",
+      "sha256": null,
+      "lines": 32,
+      "reviewedSha256": "448b3a7566db1b8809d0e6b12e658580606d3ec9c806abaf1158668f384ac557",
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
+    },
+    {
       "path": "src/lib/bounded-text.ts",
       "lines": 26,
       "sha256": null,
@@ -2119,6 +2182,13 @@
       "lines": 27,
       "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
       "reviewedSha256": "526d22c5ad3ce7308f7a985b38d538fbd786326ddd35c18366f1ac409f7b14ce"
+    },
+    {
+      "path": "src/lib/calendar-event-client.ts",
+      "sha256": null,
+      "lines": 50,
+      "reviewedSha256": "a77f296077dcb44c90853f675bbe3a9fe90adc510ce0c58c513e86783c0f3cb5",
+      "status": "source reviewed; finding 249 captured manual Calendar, bounded owned receipts/cancellation and native/guest checks pass; optional plan adoption and final release pending"
     },
     {
       "path": "src/lib/calendar-event.ts",
@@ -2157,6 +2227,13 @@
       "reviewedSha256": "9529460a54ef4a675655b3d95c280c2930f942e84f93d7272f5fb5554e024a23"
     },
     {
+      "path": "src/lib/career-records.ts",
+      "sha256": null,
+      "lines": 112,
+      "reviewedSha256": "a3d24ba24fae7391252b560fae31333a4542e3fb37cbc3c8f002bd12f20f1b6d",
+      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending"
+    },
+    {
       "path": "src/lib/category-rules.ts",
       "lines": 62,
       "sha256": "6c8200a4c59ba8ff1f6a70d4caad43703a0e6cc82afff977d59f0d2e25cb94ac",
@@ -2178,11 +2255,25 @@
       "reviewedSha256": "c7f9dfe55ca41ae5fbd757ea09a23c84bed7f81e62a66157d59ac3e5a3d4d484"
     },
     {
+      "path": "src/lib/collection-page.ts",
+      "sha256": null,
+      "lines": 10,
+      "reviewedSha256": "b14c94fdc6d8c5ce312fa140355f137159ed67d632c5b6d3cdb1753687c2e419",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+    },
+    {
       "path": "src/lib/competition.ts",
       "lines": 55,
       "sha256": "c0b1df04bca4cbc2ba6118511a1e2a978e31d2cabc01e84d09deb9974d0c6969",
       "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending",
       "reviewedSha256": "f511880065aa05956d45100bdd8aa195add83e6df92048b4193fe02c0b53b1dd"
+    },
+    {
+      "path": "src/lib/competitor-records.ts",
+      "sha256": null,
+      "lines": 41,
+      "reviewedSha256": "ab88fc97d93cc626005dcf26e7da9e28cbbfd3586aed7a4e257600aa6f3edf89",
+      "status": "source reviewed; findings 226\u2013227 complete captured-owner reads and confirmed writes pass SDK/RLS tests; browser writer adoption and final release pending"
     },
     {
       "path": "src/lib/cron-auth.ts",
@@ -2246,6 +2337,48 @@
       "sha256": "7160e60c6d92153246cd517c1955dc63f4fff53006452b555cbb0249a7674693",
       "status": "source reviewed; known widget/layout normalization, immutable add/remove/move and finite integer index cases checked; final release pending",
       "reviewedSha256": "a3a8349567372be164e9b8aebcf6bf4c2410e5e46af5c60a42a489065b7c8180"
+    },
+    {
+      "path": "src/lib/data-export-columns.ts",
+      "sha256": null,
+      "lines": 690,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "745c9769b57f2ffb0bb650457fe1d308cc25ccaea2cbfd88e1e954dfb967e42a"
+    },
+    {
+      "path": "src/lib/data-export-csv.ts",
+      "sha256": null,
+      "lines": 11,
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "68231ba9c7d67fe49979be3a82e52d756ade8a2efa6ad21eeb540d4f3c506679"
+    },
+    {
+      "path": "src/lib/data-export-download.ts",
+      "sha256": null,
+      "lines": 45,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "59ebcfcdf58187d0ed60ad9ae55c22e4cf2f952e7866ff524e43ec946a633175"
+    },
+    {
+      "path": "src/lib/data-export-limits.ts",
+      "sha256": null,
+      "lines": 2,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "7d119defb9fae6a9ed56138a49f59b79e38625725dd8867cb7398c2f7a57e13d"
+    },
+    {
+      "path": "src/lib/data-export-records.ts",
+      "sha256": null,
+      "lines": 41,
+      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
+      "reviewedSha256": "91f995c71fc1c2988033941ba482d3d468f800021af45ea9708feb855fb60235"
+    },
+    {
+      "path": "src/lib/data-export-scopes.ts",
+      "sha256": null,
+      "lines": 13,
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "2722e09a035bb3f59e79fef5f944972ed1e307135bfc4d9bc2d25923bc3d8748"
     },
     {
       "path": "src/lib/database-version.ts",
@@ -2901,6 +3034,13 @@
       "reviewedSha256": "df12ea7052f4657b776e41262ba694ee68c4d1a5c2dc673ea9c6f8ce23041044"
     },
     {
+      "path": "src/lib/jobs/refresh-client.ts",
+      "sha256": null,
+      "lines": 32,
+      "reviewedSha256": "0b3eb2c1ee2d1889e45ceadd858d03231e97f447862b02ef79a4b67e2a606160",
+      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending"
+    },
+    {
       "path": "src/lib/jobs/scrape.ts",
       "lines": 126,
       "sha256": "aaa4d49ed457e40aee9e0c77d465610c989f327e86edcc1e8e19b3d49a67a49d",
@@ -3345,8 +3485,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
-      "reviewedSha256": "b6a1f5bb48da23a56b2596993e14421e288daa2027831d3bd069fa1bb94971c6"
+      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
+      "reviewedSha256": "2e0cf6b18f39bcb2169c034c57c14bb4d722ac555b6c4ce877e7ec39507d1645"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4063,6 +4203,13 @@
       "reviewedSha256": "7bf2309e5e33a274d19737f8df40c630d4401f0da9a44b7912d09c9899c553a8"
     },
     {
+      "path": "src/lib/organization-records.ts",
+      "sha256": null,
+      "lines": 40,
+      "reviewedSha256": "c07c3ca978a5db0018a256374a8ca50dc85c8a496af423b526fe8b100472d9aa",
+      "status": "source reviewed; complete owned reads and captured write helpers pass targeted SDK/RLS cases; client writes and consolidated release pending"
+    },
+    {
       "path": "src/lib/owned-records.ts",
       "lines": 42,
       "sha256": null,
@@ -4076,6 +4223,27 @@
       "lines": 85,
       "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending",
       "reviewedSha256": "eb94d8a5cc1343a4b1d970f491c5884104737c193b2f3f347a7805378d5451dc"
+    },
+    {
+      "path": "src/lib/owner-rest-identity.ts",
+      "sha256": null,
+      "lines": 27,
+      "reviewedSha256": "b0dd3965d658fd1e801d85163e78b34335591c3f2e4947fc5fd241daaee6066a",
+      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending"
+    },
+    {
+      "path": "src/lib/owner-retirement.ts",
+      "sha256": null,
+      "lines": 50,
+      "reviewedSha256": "01a198789ef0752db004df0dd99f97e2ff6f7a72b206e679b64ecb9dc4a53e50",
+      "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending"
+    },
+    {
+      "path": "src/lib/owner-session.ts",
+      "sha256": null,
+      "lines": 41,
+      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
+      "reviewedSha256": "a8d5ac99a0b16aacf5b72ac8679b0d045f7457e16827106ec8135a96bfff57d7"
     },
     {
       "path": "src/lib/payment-matching-server.ts",
@@ -4097,6 +4265,13 @@
       "sha256": "bb0949d377f664a851a588407717a3b3acba38e9fa6edcbc17e39f0909e3d623",
       "status": "source reviewed; final release checks pending",
       "reviewedSha256": "f44a3a53fc8e360d3f5d7138846ab4a093bbc4e4e26783b661dc42ac2bbec175"
+    },
+    {
+      "path": "src/lib/plan-records.ts",
+      "sha256": null,
+      "lines": 135,
+      "reviewedSha256": "d12a9024de237dc6e837d0221db9a9880a1755b49bb910ac963bc77f12d2800f",
+      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending"
     },
     {
       "path": "src/lib/plan-recurrence.ts",
@@ -4191,6 +4366,20 @@
       "reviewedSha256": "876c3b5c0342ecb7e5aa4a690a13be49b18763459371db936ff50f4b02e90060"
     },
     {
+      "path": "src/lib/project-traffic-client.ts",
+      "sha256": null,
+      "lines": 20,
+      "reviewedSha256": "42eb07fc6107bf090b9e9c88086bd5efc3c3816480251e5cabb06b30483bf029",
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
+    },
+    {
+      "path": "src/lib/project-traffic-contract.ts",
+      "sha256": null,
+      "lines": 27,
+      "reviewedSha256": "6b65571e86b59e1fb1d49868f707369110cba1ec7a840d5450d3f4e6de809c76",
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
+    },
+    {
       "path": "src/lib/project-workspace-tabs.ts",
       "lines": 69,
       "sha256": "f54a48225ab35bb03d367dd63cb457d1306fa7da239c08b7c40b2821afbff101",
@@ -4233,6 +4422,13 @@
       "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
     },
     {
+      "path": "src/lib/queries/client.ts",
+      "sha256": null,
+      "lines": 6,
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
+      "reviewedSha256": "1532007f28320c86c94c8965c08e19878274e17e10a7453544d9b099436c3ea2"
+    },
+    {
       "path": "src/lib/queries/entities.ts",
       "lines": 80,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
@@ -4241,10 +4437,10 @@
     },
     {
       "path": "src/lib/queries/fetchers.ts",
-      "lines": 463,
+      "lines": 384,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
-      "reviewedSha256": "5530837d117d12bc8b80e86dd011ba4d6955777fa9f7868e289e4e18fd6de720"
+      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
+      "reviewedSha256": "78e30b63647507007bbcf00d58b493688af99f3e1d7d34c31b2fde07336e9858"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -4308,6 +4504,13 @@
       "lines": 10,
       "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
       "reviewedSha256": "6dbb283ebb82116e70184737ba6b8bf9bea56ecc2286fccb1f08d3d41f6dd979"
+    },
+    {
+      "path": "src/lib/spend-category-records.ts",
+      "sha256": null,
+      "lines": 83,
+      "reviewedSha256": "16111487fbfba9a06f4bacf0a52a45ffa33f1ba61608c539cacd08885dabe871",
+      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending"
     },
     {
       "path": "src/lib/stack-detection-server.ts",
@@ -4399,6 +4602,20 @@
       "sha256": null,
       "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176\u2013177; remaining callers and final release separate",
       "reviewedSha256": "8a3ff87773dee890e2e43527285a099156e177b9b61392eba241f1203f19f9a0"
+    },
+    {
+      "path": "src/lib/tax-registry-client.ts",
+      "sha256": null,
+      "lines": 36,
+      "reviewedSha256": "02af88b22328b4fdc8fa40c2a793c82c936b22ca0889578850a587b45e1be76c",
+      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending"
+    },
+    {
+      "path": "src/lib/tax-registry-server.ts",
+      "sha256": null,
+      "lines": 75,
+      "reviewedSha256": "41034ed3104ac57143d0681cd781d1bbbc559024a972b8751353660f32641edb",
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
     },
     {
       "path": "src/lib/tax-registry.ts",
@@ -4590,216 +4807,6 @@
       "lines": 88,
       "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
-    },
-    {
-      "path": "src/lib/spend-category-records.ts",
-      "sha256": null,
-      "lines": 83,
-      "reviewedSha256": "16111487fbfba9a06f4bacf0a52a45ffa33f1ba61608c539cacd08885dabe871",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending"
-    },
-    {
-      "path": "src/lib/bounded-response.ts",
-      "sha256": null,
-      "lines": 32,
-      "reviewedSha256": "448b3a7566db1b8809d0e6b12e658580606d3ec9c806abaf1158668f384ac557",
-      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
-    },
-    {
-      "path": "src/lib/project-traffic-contract.ts",
-      "sha256": null,
-      "lines": 27,
-      "reviewedSha256": "6b65571e86b59e1fb1d49868f707369110cba1ec7a840d5450d3f4e6de809c76",
-      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
-    },
-    {
-      "path": "src/lib/project-traffic-client.ts",
-      "sha256": null,
-      "lines": 20,
-      "reviewedSha256": "42eb07fc6107bf090b9e9c88086bd5efc3c3816480251e5cabb06b30483bf029",
-      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
-    },
-    {
-      "path": "src/lib/tax-registry-server.ts",
-      "sha256": null,
-      "lines": 75,
-      "reviewedSha256": "41034ed3104ac57143d0681cd781d1bbbc559024a972b8751353660f32641edb",
-      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
-    },
-    {
-      "path": "src/lib/tax-registry-client.ts",
-      "sha256": null,
-      "lines": 36,
-      "reviewedSha256": "02af88b22328b4fdc8fa40c2a793c82c936b22ca0889578850a587b45e1be76c",
-      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending"
-    },
-    {
-      "path": "src/lib/organization-records.ts",
-      "sha256": null,
-      "lines": 40,
-      "reviewedSha256": "c07c3ca978a5db0018a256374a8ca50dc85c8a496af423b526fe8b100472d9aa",
-      "status": "source reviewed; complete owned reads and captured write helpers pass targeted SDK/RLS cases; client writes and consolidated release pending"
-    },
-    {
-      "path": "src/lib/competitor-records.ts",
-      "sha256": null,
-      "lines": 41,
-      "reviewedSha256": "ab88fc97d93cc626005dcf26e7da9e28cbbfd3586aed7a4e257600aa6f3edf89",
-      "status": "source reviewed; findings 226\u2013227 complete captured-owner reads and confirmed writes pass SDK/RLS tests; browser writer adoption and final release pending"
-    },
-    {
-      "path": "src/components/competition/use-competitor-actions.ts",
-      "sha256": null,
-      "lines": 85,
-      "reviewedSha256": "428272c680cf3608c721badc21d80fb5e01e9047dff1cd0b578c0c5f6f6ba818",
-      "status": "source reviewed; finding 230 removes redundant confirmed-write collection reads while preserving owner-scoped read-failure recovery and asynchronous cache focus; large-list review and final release pending"
-    },
-    {
-      "path": "src/components/competition/competition-recovery.tsx",
-      "sha256": null,
-      "lines": 14,
-      "reviewedSha256": "954cb7634094c8dfcf281ee091f0c7db36667620764771d5b43dec868510fa7e",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending"
-    },
-    {
-      "path": "src/components/competition/competition-pagination.tsx",
-      "sha256": null,
-      "lines": 20,
-      "reviewedSha256": "e4de020da74a2cb02bcb0041b9035a5b833842538b3e30782c5cbf8e27757d9d",
-      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
-    },
-    {
-      "path": "src/lib/data-export-columns.ts",
-      "sha256": null,
-      "lines": 690,
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "745c9769b57f2ffb0bb650457fe1d308cc25ccaea2cbfd88e1e954dfb967e42a"
-    },
-    {
-      "path": "src/lib/data-export-records.ts",
-      "sha256": null,
-      "lines": 41,
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "91f995c71fc1c2988033941ba482d3d468f800021af45ea9708feb855fb60235"
-    },
-    {
-      "path": "src/lib/data-export-scopes.ts",
-      "sha256": null,
-      "lines": 13,
-      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
-      "reviewedSha256": "2722e09a035bb3f59e79fef5f944972ed1e307135bfc4d9bc2d25923bc3d8748"
-    },
-    {
-      "path": "src/lib/data-export-csv.ts",
-      "sha256": null,
-      "lines": 11,
-      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
-      "reviewedSha256": "68231ba9c7d67fe49979be3a82e52d756ade8a2efa6ad21eeb540d4f3c506679"
-    },
-    {
-      "path": "src/components/settings-data-export.tsx",
-      "sha256": null,
-      "lines": 72,
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "ab037d2a223bae693866f00b08ffed257abd785d5ce42055f98910454721b59a"
-    },
-    {
-      "path": "src/lib/data-export-download.ts",
-      "sha256": null,
-      "lines": 45,
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "59ebcfcdf58187d0ed60ad9ae55c22e4cf2f952e7866ff524e43ec946a633175"
-    },
-    {
-      "path": "src/lib/data-export-limits.ts",
-      "sha256": null,
-      "lines": 2,
-      "status": "source reviewed; finding 237 owned export/guest/responsive checks pass; other source leads and final release pending",
-      "reviewedSha256": "7d119defb9fae6a9ed56138a49f59b79e38625725dd8867cb7398c2f7a57e13d"
-    },
-    {
-      "path": "src/components/owner-session-boundary.tsx",
-      "sha256": null,
-      "lines": 48,
-      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending",
-      "reviewedSha256": "a09f4890ec01278874eb152ae5c752f488aca60fd14bf53126f9c063afb263d5"
-    },
-    {
-      "path": "src/lib/owner-session.ts",
-      "sha256": null,
-      "lines": 41,
-      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
-      "reviewedSha256": "a8d5ac99a0b16aacf5b72ac8679b0d045f7457e16827106ec8135a96bfff57d7"
-    },
-    {
-      "path": "src/components/owner-query-provider.tsx",
-      "sha256": null,
-      "lines": 24,
-      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
-      "reviewedSha256": "ea1e365715709746ce6d1ad1bbaa4b0d0c384d2dedcc76377f3a9c097c8494d2"
-    },
-    {
-      "path": "src/lib/queries/client.ts",
-      "sha256": null,
-      "lines": 6,
-      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
-      "reviewedSha256": "1532007f28320c86c94c8965c08e19878274e17e10a7453544d9b099436c3ea2"
-    },
-    {
-      "path": "src/lib/owner-retirement.ts",
-      "sha256": null,
-      "lines": 50,
-      "reviewedSha256": "01a198789ef0752db004df0dd99f97e2ff6f7a72b206e679b64ecb9dc4a53e50",
-      "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending"
-    },
-    {
-      "path": "src/lib/plan-records.ts",
-      "sha256": null,
-      "lines": 135,
-      "reviewedSha256": "d12a9024de237dc6e837d0221db9a9880a1755b49bb910ac963bc77f12d2800f",
-      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending"
-    },
-    {
-      "path": "src/lib/calendar-event-client.ts",
-      "sha256": null,
-      "lines": 50,
-      "reviewedSha256": "a77f296077dcb44c90853f675bbe3a9fe90adc510ce0c58c513e86783c0f3cb5",
-      "status": "source reviewed; finding 249 captured manual Calendar, bounded owned receipts/cancellation and native/guest checks pass; optional plan adoption and final release pending"
-    },
-    {
-      "path": "src/components/plans/use-plan-actions.ts",
-      "sha256": null,
-      "lines": 117,
-      "reviewedSha256": "ac5c5daad04fe6d5d089bafb4157d9ffc12d184fc159ea5b34481d73d90a9823",
-      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
-    },
-    {
-      "path": "src/lib/collection-page.ts",
-      "sha256": null,
-      "lines": 10,
-      "reviewedSha256": "b14c94fdc6d8c5ce312fa140355f137159ed67d632c5b6d3cdb1753687c2e419",
-      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
-    },
-    {
-      "path": "src/components/ui/collection-pagination.tsx",
-      "sha256": null,
-      "lines": 19,
-      "reviewedSha256": "c3c3e7c7549b5a6d4d27d3fd3c05579eba101a8ac16f7a921fbd3ba4db643256",
-      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
-    },
-    {
-      "path": "src/lib/owner-rest-identity.ts",
-      "sha256": null,
-      "lines": 27,
-      "reviewedSha256": "b0dd3965d658fd1e801d85163e78b34335591c3f2e4947fc5fd241daaee6066a",
-      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending"
-    },
-    {
-      "path": "src/lib/jobs/refresh-client.ts",
-      "sha256": null,
-      "lines": 32,
-      "reviewedSha256": "0b3eb2c1ee2d1889e45ceadd858d03231e97f447862b02ef79a4b67e2a606160",
-      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending"
     }
   ],
   "baselineFileCount": 561

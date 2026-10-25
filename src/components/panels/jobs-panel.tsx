@@ -112,7 +112,7 @@ type Props = {
   activated: boolean;
   timeZone?: string;
   /** Fetch Career's on-demand data and mark it active. */
-  onActivate: () => Promise<void>;
+  onActivate: (signal?: AbortSignal) => Promise<void>;
   isPreview?: boolean;
   listings: JobListing[];
   userStates: JobUserState[];
@@ -215,7 +215,7 @@ export function JobsPanel({
     try {
       scope = capture(); setActivationFailed(false); setLoadingCareer(true);
       const signal = AbortSignal.any([scope.signal, AbortSignal.timeout(15_000)]);
-      await awaitWithSignal(onActivate(), signal); signal.throwIfAborted();
+      await awaitWithSignal(onActivate(signal), signal); signal.throwIfAborted();
       if (refreshFailure?.reload) await awaitWithSignal(Promise.all([
         qc.invalidateQueries({ queryKey: qk.jobLastRun }),
         qc.invalidateQueries({ queryKey: qk.jobAvailability }),
@@ -236,7 +236,7 @@ export function JobsPanel({
       if (!isPreview) await refreshCareer(scope);
       scope.signal.throwIfAborted(); confirmed = true;
       const readSignal = AbortSignal.any([scope.signal, AbortSignal.timeout(15_000)]);
-      await awaitWithSignal(onActivate(), readSignal); readSignal.throwIfAborted();
+      await awaitWithSignal(onActivate(readSignal), readSignal); readSignal.throwIfAborted();
       await awaitWithSignal(Promise.all([
         qc.invalidateQueries({ queryKey: qk.jobLastRun }),
         qc.invalidateQueries({ queryKey: qk.jobAvailability }),
