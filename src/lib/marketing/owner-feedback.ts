@@ -1,31 +1,40 @@
 import 'server-only';
 import { z } from 'zod';
-import { createMarketingTracer,LANGSMITH_EU_ENDPOINT,type OwnerFeedback } from './tracing';
+import { awaitWithSignal } from '@/lib/abortable';
+import { createMarketingTracer,LANGSMITH_EU_ENDPOINT,LANGSMITH_DIAGNOSTIC_DEADLINE_MS,type OwnerFeedback } from './tracing';
 import { parseContentRevision,type ContentRevision } from './contracts';
 import { revisionContentHash } from './hashes';
 import { ownerEditChainKinds,ownerEditKinds,ownerFeedbackScore,type OwnerEditCounts } from './owner-edits';
 import type { createAdminClient } from '@/lib/supabase/admin';
 
-export type MarketingOwnerFeedbackScope={db:ReturnType<typeof createAdminClient>;ownerId:string};
+export type MarketingOwnerFeedbackScope={db:ReturnType<typeof createAdminClient>;ownerId:string;signal?:AbortSignal};
+/** Share one diagnostic allowance across a multi-post request. It starts at
+ * first use, after the owner action, rather than while rendering/generating. */
+export function createMarketingOwnerFeedbackScope(db:MarketingOwnerFeedbackScope['db'],ownerId:string,parent?:AbortSignal):MarketingOwnerFeedbackScope{
+ let bounded:AbortSignal|undefined;
+ return {db,ownerId,get signal(){return bounded??=AbortSignal.any([AbortSignal.timeout(LANGSMITH_DIAGNOSTIC_DEADLINE_MS),...(parent?[parent]:[])]);}};
+}
 const Input=z.strictObject({traceId:z.uuid().nullable(),revisionId:z.uuid(),revisionHash:z.string().regex(/^[a-f0-9]{64}$/),decision:z.enum(['approved','returned','skipped','edited'])});
 /** Longer chains are refused rather than walked: twenty saves of one post is far past any review. */
 export const MARKETING_EDIT_CHAIN_LIMIT=20;
 type ChainEntry={id:string;hash:string;revision:ContentRevision};
-type ChainRow={id:string;content_hash:string;revision:unknown;replaces_id:string|null};
+type ChainRow={id:string;user_id:string;content_hash:string;revision:unknown;replaces_id:string|null};
 
 /**
  * The stored revisions of one generated post, from the generated revision to `reviewed`, following `replaces_id`
  * while the trace stays the same (a regenerated post starts a new trace). Every row must be the owner's and match
  * its stored hash; anything else is `null`.
  */
-async function editChain(scope:MarketingOwnerFeedbackScope,reviewed:{traceId:string;revisionId:string;revisionHash:string}):Promise<ChainEntry[]|null>{
+async function editChain(scope:MarketingOwnerFeedbackScope,reviewed:{traceId:string;revisionId:string;revisionHash:string},signal:AbortSignal):Promise<ChainEntry[]|null>{
  const owner=z.uuid().parse(scope.ownerId);
  const chain:ChainEntry[]=[];
  let id:string|null=reviewed.revisionId;
  while(id){
   if(chain.length>=MARKETING_EDIT_CHAIN_LIMIT||chain.some(entry=>entry.id===id))return null;
-  const {data,error}:{data:ChainRow|null;error:unknown}=await scope.db.from('marketing_revisions').select('id,content_hash,revision,replaces_id').eq('user_id',owner).eq('id',id).maybeSingle();
-  if(error||!data||data.id!==id)return null;
+  signal.throwIfAborted();
+  const {data,error}:{data:ChainRow|null;error:unknown}=await awaitWithSignal(scope.db.from('marketing_revisions').select('id,user_id,content_hash,revision,replaces_id').eq('user_id',owner).eq('id',id).retry(false).abortSignal(signal).maybeSingle(),signal);
+  signal.throwIfAborted();
+  if(error||!data||data.id!==id||data.user_id!==owner)return null;
   // An earlier generation ends this post's chain; it is never parsed or counted.
   if(chain.length&&(data.revision as {traceId?:unknown}|null)?.traceId!==reviewed.traceId)break;
   const revision=parseContentRevision(data.revision);
@@ -46,12 +55,15 @@ async function editChain(scope:MarketingOwnerFeedbackScope,reviewed:{traceId:str
 export async function recordMarketingOwnerFeedback(value:z.infer<typeof Input>,env:Record<string,string|undefined>=process.env,scope?:MarketingOwnerFeedbackScope):Promise<boolean>{
  if(!value.traceId||env.MARKETING_LANGSMITH_ENABLED!=='true'||!env.LANGSMITH_API_KEY||!env.LANGSMITH_PROJECT||env.LANGSMITH_ENDPOINT!==LANGSMITH_EU_ENDPOINT)return false;
  try{
+  const parent=scope?.signal;
+  const signal=AbortSignal.any([AbortSignal.timeout(LANGSMITH_DIAGNOSTIC_DEADLINE_MS),...(parent?[parent]:[])]);
+  signal.throwIfAborted();
   const input=Input.parse(value);
   const traceId=input.traceId!;
   let edits:OwnerEditCounts|undefined;
   let generated:ChainEntry|undefined;
   if(scope){
-   const chain=await editChain(scope,{traceId,revisionId:input.revisionId,revisionHash:input.revisionHash});
+   const chain=await editChain(scope,{traceId,revisionId:input.revisionId,revisionHash:input.revisionHash},signal);
    if(!chain)return false;
    generated=chain[0]!;
    edits=input.decision==='edited'
@@ -62,7 +74,10 @@ export async function recordMarketingOwnerFeedback(value:z.infer<typeof Input>,e
   const feedback:OwnerFeedback={traceId,revisionId:input.revisionId,revisionHash:input.revisionHash,decision:input.decision,
    ...(score===null?{}:{qualityScore:score}),...(edits?{editKinds:edits}:{}),
    ...(generated?{generatedRevisionId:generated.id,generatedRevisionHash:generated.hash}:{})};
-  const tracer=await createMarketingTracer({apiKey:env.LANGSMITH_API_KEY,projectName:env.LANGSMITH_PROJECT,endpoint:env.LANGSMITH_ENDPOINT});
-  return await tracer.recordOwnerFeedback(feedback);
+  signal.throwIfAborted();
+  const tracer=await awaitWithSignal(createMarketingTracer({apiKey:env.LANGSMITH_API_KEY,projectName:env.LANGSMITH_PROJECT,endpoint:env.LANGSMITH_ENDPOINT}),signal);
+  signal.throwIfAborted();
+  const recorded=await awaitWithSignal(tracer.recordOwnerFeedback(feedback),signal);
+  return !signal.aborted&&recorded;
  }catch{return false;}
 }

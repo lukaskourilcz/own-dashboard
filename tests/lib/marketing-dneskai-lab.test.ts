@@ -4,7 +4,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => mocks.client() }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }));
 vi.mock('@/lib/rate-limit', () => ({ rateLimit: mocks.limited }));
-vi.mock('@/lib/marketing/owner-feedback', () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
+vi.mock('@/lib/marketing/owner-feedback', () => ({ createMarketingOwnerFeedbackScope: (db: unknown, ownerId: string, signal: AbortSignal) => ({ db, ownerId, signal }), recordMarketingOwnerFeedback: mocks.feedback }));
 import { POST as fitRoute } from '@/app/api/marketing/dneskai/fit/route';
 import { POST as previewFitRoute } from '@/app/api/dev-preview/dneskai-fit/route';
 import { POST as revisionsRoute } from '@/app/api/marketing/revisions/route';

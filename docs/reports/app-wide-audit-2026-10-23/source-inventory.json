@@ -558,8 +558,8 @@
       "path": "src/app/api/marketing/revisions/route.ts",
       "lines": 197,
       "sha256": "3d6cfcf7621354ae3f899f52fd3a70103691095b2bbb3f332bfe77e2c6b21b04",
-      "status": "partial source review: exact-hash approvals and guarded new-revision lineage retained; auth/body/overall work limits, request cancellation, confirmed result ids, separate feedback deadline and stable retry recovery need verification; no approval/publication was performed",
-      "reviewedSha256": "3d6cfcf7621354ae3f899f52fd3a70103691095b2bbb3f332bfe77e2c6b21b04"
+      "status": "partial source review: exact-hash approvals and guarded new-revision lineage retained; auth/body/overall work limits, request cancellation, confirmed result ids, separate feedback deadline and stable retry recovery need verification; no approval/publication was performed; finding 207 bounds optional feedback chain/client work to three seconds, shares a lazy request budget and parent cancellation, verifies returned row ownership and disables SDK read retries; whole action/provider lifecycle remains separate",
+      "reviewedSha256": "4b18960b69e5f2999f67448a2f9b719937638804781aed76eb77816a202575ac"
     },
     {
       "path": "src/app/api/marketing/state/route.ts",
@@ -3303,8 +3303,8 @@
       "path": "src/lib/marketing/dneskai-paid-actions.ts",
       "lines": 177,
       "sha256": "9823218bca61cec6468ea233bfdf36e84cef8576bad2bf91abe7180ad25ff7c7",
-      "status": "partial; complete source inspection; captured exact source/job/return receipts, overall lease/work deadline and cancellation remain under review; durable reservation and no automatic ambiguous retry retained",
-      "reviewedSha256": "9823218bca61cec6468ea233bfdf36e84cef8576bad2bf91abe7180ad25ff7c7"
+      "status": "partial; complete source inspection; captured exact source/job/return receipts, overall lease/work deadline and cancellation remain under review; durable reservation and no automatic ambiguous retry retained; finding 207 bounds optional feedback chain/client work to three seconds, shares a lazy request budget and parent cancellation, verifies returned row ownership and disables SDK read retries; whole action/provider lifecycle remains separate",
+      "reviewedSha256": "a4f7e62b8e6eb1e67b646472015f56e0b5bc036736af39cd613c8f346506a623"
     },
     {
       "path": "src/lib/marketing/dneskai-paid-switches.ts",
@@ -3807,8 +3807,8 @@
       "path": "src/lib/marketing/owner-feedback.ts",
       "lines": 68,
       "sha256": "6a283d2c9df1b4252b15246fd391f91b72f87828a6e7d42231267c4fbfe5eb4b",
-      "status": "partial source review: optional diagnostics never gate approval, bounded trace/hash edit chain and EU redaction retained; total database/tracer deadline and insertion-only edit classification need verification",
-      "reviewedSha256": "6a283d2c9df1b4252b15246fd391f91b72f87828a6e7d42231267c4fbfe5eb4b"
+      "status": "partial source review: optional diagnostics never gate approval, bounded trace/hash edit chain and EU redaction retained; total database/tracer deadline and insertion-only edit classification need verification; finding 207 bounds optional feedback chain/client work to three seconds, shares a lazy request budget and parent cancellation, verifies returned row ownership and disables SDK read retries; whole action/provider lifecycle remains separate",
+      "reviewedSha256": "023603653545af4ce810a5afa5b298f811d15c4820cc3b26bd56dda05bc7a171"
     },
     {
       "path": "src/lib/marketing/pilot.ts",

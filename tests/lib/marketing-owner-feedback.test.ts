@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MARKETING_EDIT_CHAIN_LIMIT, recordMarketingOwnerFeedback } from "@/lib/marketing/owner-feedback";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MARKETING_EDIT_CHAIN_LIMIT, createMarketingOwnerFeedbackScope, recordMarketingOwnerFeedback } from "@/lib/marketing/owner-feedback";
 import { LANGSMITH_EU_ENDPOINT, derivedUuid, marketingTraceMetadata } from "@/lib/marketing/tracing";
 import { parseContentRevision, parseSourcePacket, type ContentRevision } from "@/lib/marketing/contracts";
 import { revisionHash } from "@/lib/marketing/hashes";
@@ -28,13 +28,18 @@ const row = (id: string, revision: ContentRevision, replaces: string | null = nu
 const rows = (): Row[] => [row(originalId, original), row(editedId, edited, originalId)];
 function database(records = rows()) {
   const queries: Array<Array<[string, unknown]>> = [];
-  const state = { error: false };
+  const state = { error: false, stall: false, signal: undefined as AbortSignal | undefined, returnOwner: undefined as string | undefined, retries: [] as boolean[], releases: [] as (() => void)[] };
   const db = { from(table: string) {
     expect(table).toBe("marketing_revisions");
     const filters: Array<[string, unknown]> = []; queries.push(filters);
-    const query = { select: (columns: string) => { expect(columns).toBe("id,content_hash,revision,replaces_id"); return query; },
+    const query = { select: (columns: string) => { expect(columns).toBe("id,user_id,content_hash,revision,replaces_id"); return query; },
       eq: (key: string, value: unknown) => { filters.push([key, value]); return query; },
-      maybeSingle: async () => ({ data: records.find((candidate) => filters.every(([key, value]) => candidate[key as keyof Row] === value)) ?? null, error: state.error }),
+      retry: (enabled: boolean) => { state.retries.push(enabled); return query; }, abortSignal: (signal: AbortSignal) => { state.signal = signal; return query; },
+      maybeSingle: async () => {
+        if (state.stall) await new Promise<void>(resolve => state.releases.push(resolve));
+        const found = records.find((candidate) => filters.every(([key, value]) => candidate[key as keyof Row] === value));
+        return { data: found ? { ...found, ...(state.returnOwner ? { user_id: state.returnOwner } : {}) } : null, error: state.error };
+      },
     }; return query;
   } } as unknown as ReturnType<typeof createAdminClient>;
   return { db, queries, state };
@@ -45,6 +50,7 @@ function traceOf(revisionId: string, hash: string, extra: Record<string, unknown
     status: "review", revision_hash: hash, attempts: 1, input_tokens: 100, output_tokens: 100, estimated_cost_usd: 0.001, issue_codes: [] } } };
 }
 const input = { traceId, revisionId: editedId, revisionHash: editedHash, decision: "edited" as const };
+afterEach(() => { vi.restoreAllMocks(); });
 beforeEach(() => {
   vi.resetAllMocks(); sdk.feedback.mockResolvedValue({});
   sdk.read.mockResolvedValue(traceOf(originalId, originalHash));
@@ -162,4 +168,49 @@ it("sends only a count for audio/account/engagement edits, never their private v
   expect(await recordMarketingOwnerFeedback({ traceId, revisionId: editedId, revisionHash: revisionHash(changed), decision: "approved" }, env, { db: database([row(originalId, generated), row(editedId, changed, originalId)]).db, ownerId: owner })).toBe(true);
   expect(sdk.feedback.mock.calls[0]![2]).toMatchObject({ score: 0.5, sourceInfo: { edit_kinds: { account: 1, audio: 1, engagement: 1 }, edit_count: 3 } });
   const sent = JSON.stringify(sdk.feedback.mock.calls); for (const value of [audioId, remoteAccount, "TESTWORD", "PRIVATE TEST"]) expect(sent).not.toContain(value);
+});
+
+describe("feedback work does not hold owner receipts open", () => {
+  it("expires a stalled database chain under the total diagnostic budget", async () => {
+    const controller = new AbortController(); vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    const state = database(); state.state.stall = true;
+    const pending = recordMarketingOwnerFeedback(input, env, { db: state.db, ownerId: owner });
+    await vi.waitFor(() => expect(state.queries).toHaveLength(1)); controller.abort();
+    expect(await pending).toBe(false); expect(state.state.signal?.aborted).toBe(true); expect(state.state.retries).toEqual([false]); expect(sdk.read).not.toHaveBeenCalled();
+    state.state.releases[0]!();
+  }, 500);
+  it("skips a pre-cancelled owner scope before any read or provider work", async () => {
+    const controller = new AbortController(); controller.abort(); const state = database();
+    expect(await recordMarketingOwnerFeedback(input, env, { db: state.db, ownerId: owner, signal: controller.signal })).toBe(false);
+    expect(state.queries).toEqual([]); expect(sdk.read).not.toHaveBeenCalled();
+  });
+  it("observes a late database result without continuing the chain or sending feedback", async () => {
+    const controller = new AbortController(), state = database(); state.state.stall = true;
+    const pending = recordMarketingOwnerFeedback(input, env, { db: state.db, ownerId: owner, signal: controller.signal });
+    await vi.waitFor(() => expect(state.queries).toHaveLength(1)); controller.abort(); expect(await pending).toBe(false);
+    state.state.releases[0]!(); await new Promise(resolve => setTimeout(resolve, 0)); expect(state.queries).toHaveLength(1); expect(sdk.feedback).not.toHaveBeenCalled();
+  }, 500);
+});
+
+it("starts the shared request allowance lazily and skips later feedback after it expires", async () => {
+  const controllers: AbortController[] = [];
+  const timeouts = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => { const controller = new AbortController(); controllers.push(controller); return controller.signal; });
+  const state = database(), scope = createMarketingOwnerFeedbackScope(state.db, owner);
+  expect(timeouts).not.toHaveBeenCalled();
+  expect(await recordMarketingOwnerFeedback(input, { ...env, MARKETING_LANGSMITH_ENABLED: "false" }, scope)).toBe(false); expect(timeouts).not.toHaveBeenCalled();
+  expect(await recordMarketingOwnerFeedback(input, env, scope)).toBe(true); const reads = state.queries.length;
+  controllers[0]!.abort(); expect(await recordMarketingOwnerFeedback(input, env, scope)).toBe(false);
+  expect(state.queries).toHaveLength(reads); expect(sdk.feedback).toHaveBeenCalledTimes(1);
+});
+it("returns on parent cancellation while an already-started SDK write is pending", async () => {
+  const controller = new AbortController(), state = database(); let release!: () => void;
+  sdk.feedback.mockImplementation(() => new Promise<void>(resolve => { release = resolve; }));
+  const pending = recordMarketingOwnerFeedback(input, env, { db: state.db, ownerId: owner, signal: controller.signal });
+  await vi.waitFor(() => expect(sdk.feedback).toHaveBeenCalledOnce()); controller.abort(); expect(await pending).toBe(false); release();
+  await new Promise(resolve => setTimeout(resolve, 0)); expect(sdk.feedback).toHaveBeenCalledOnce();
+}, 500);
+
+it("refuses a returned lineage row stamped with a different owner", async () => {
+  const state = database(); state.state.returnOwner = other;
+  expect(await recordMarketingOwnerFeedback(input, env, { db: state.db, ownerId: owner })).toBe(false); expect(state.queries).toHaveLength(1); expect(sdk.read).not.toHaveBeenCalled();
 });
