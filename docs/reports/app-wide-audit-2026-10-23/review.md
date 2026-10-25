@@ -11,12 +11,12 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Area | Destinations | State |
 | --- | --- | --- |
 | Shared boundaries | Authenticated catch-all, shell, navigation, query cache, initial loading | Reviewing |
-| Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Home/Tasks/Calendar targeted fixes checked; Work/planning source completion and final matrix pending |
-| Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Project/client core checks passed; repository/opportunity/competition source completion and final matrix pending |
-| Career | Board, saved roles, applications, history, letters | Core recovery/date checks passed; import/provider source completion and final matrix pending |
+| Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Home/Tasks/Calendar targeted fixes checked; Work/planning boundary closure and final matrix pending |
+| Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Project/client core checks passed; repository/opportunity/competition boundary closure and final matrix pending |
+| Career | Board, saved roles, applications, history, letters | Core recovery/date checks passed; import/provider boundary closure and final matrix pending |
 | Finance | Money, Accounts, Transactions, Categories, Subscriptions, Invoices and print | Core pages/controls checked; Bank/import/rule fixes checked; invoice draft/QR guards and final optimized checks pending |
 | Knowledge | Notes, Prompts, Tools, Links, IG TIPS, References | All six Knowledge destinations have targeted review/checks; shared integration and final release checks remain |
-| Marketing | Review, calendar, knowledge, results, Workflows, DNESKAi workspace | Daily mix/source admission and small guard helpers checked; remaining workspace/provider source review and final matrix pending |
+| Marketing | Review, calendar, knowledge, results, Workflows, DNESKAi workspace | Daily mix/source admission and small guard helpers checked; workspace/provider repairs and final matrix pending |
 | Account and public boundaries | Settings, Login, Guest, unknown routes, dev-preview guard, OAuth, PWA | Login/PWA/OAuth fixes checked; Settings preference/project writes, remaining session boundaries and final release pending |
 | Backend and operations | API routes, cron/provider budgets, database ownership and query plans | Reviewing |
 | Release | Current-doc reconciliation, full validation, additive migrations, PR, main merge, deployment | Pending |
@@ -681,3 +681,6 @@ Sixteen more complete source files cover Marketing contracts, generation/renderi
 ## First complete source-inspection pass — 25 October 2026
 
 The last thirteen previously pending files are read in full: legacy marketing calendars/recovery, DNESKAi preview state/fixtures, the shared public fixture module, Links/IG TIPS/Career/Lab dictionaries, dated Oslo employer/research data and source normalizers, and the dated changelog/window helpers. The changelog and employer directory have no new confirmed repair in this pass; eleven files retain explicit follow-ups. All 650 inventory entries now have an inspection disposition: zero pending and 236 partial. This completes the initial reading pass, not the audit. The partial entries still need reachable-defect tests, repairs or evidence closing the lead, responsive/accessibility checks and final release verification. Prepared migrations, main merge and deployed checks remain unfinished. The running checkpoint 73 continues against unchanged application/test inputs. No current live vacancy, provider price or production state is inferred from a dated fixture or historical document.
+
+
+Read-only inventory reconciliation confirms no current `src` TypeScript, TSX or CSS file is missing from the ledger. During the checkpoint-73 freeze, temporary bundled copies reproduce deck insertion/swap conflicts, first-slide/CTA policy gaps and malformed embedded-credit entity failures. Candidate work stays outside application/test sources until the matrix ends. The next repair must retain the original approved source eligibility while judging picture availability against the edited deck.
