@@ -28,6 +28,7 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import {
@@ -150,6 +151,7 @@ export function SubscriptionsPanel({
   allocationsReady?: boolean;
   compact?: boolean;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -278,7 +280,7 @@ export function SubscriptionsPanel({
 
   const createMutation = useMutation({
     mutationFn: async (vars: { payload: SubPayload; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("subscriptions")
@@ -296,7 +298,7 @@ export function SubscriptionsPanel({
 
   const updateMutation = useMutation({
     mutationFn: async (vars: { id: string; payload: SubPayload; rows: { project_id: string; share: number }[]; startedWith: FormState["loadedAllocations"] }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("subscriptions")

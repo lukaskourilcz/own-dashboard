@@ -39,6 +39,7 @@ import {
 } from "@/lib/stack-detection";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import {
   TOOL_STATUSES,
   filterToolsByProject,
@@ -111,6 +112,7 @@ export function ToolsPanel({
   onShowInLibrary,
   previewDetectedTools,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const tt = t.tools;
   const qc = useQueryClient();
@@ -217,7 +219,7 @@ export function ToolsPanel({
   async function writeTool(values: Partial<Omit<Tool, "id" | "user_id" | "created_at" | "updated_at">>, id?: string): Promise<Tool> {
     const supabase = createClient();
     try {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error(tt.signInFirst);
       const { data, error } = id
         ? await supabase.from("tools").update({ ...values, updated_at: new Date().toISOString() }).eq("id", id).select().single()

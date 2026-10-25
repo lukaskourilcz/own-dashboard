@@ -7,6 +7,7 @@ import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import type { ProjectLink, ProjectLinkRole, Updater } from "@/lib/types";
 
 export type NewProjectLink = {
@@ -28,6 +29,7 @@ const pair = (row: Pick<ProjectLink, "project_id" | "ai_link_id">) => `${row.pro
  * stale library. Update versions reject a stale editor across browser tabs.
  */
 export function useProjectLinkMutations(setProjectLinks: Updater<ProjectLink[]>, currentRows: ProjectLink[] = []) {
+  const ownerScope = useOwnerPreferences();
   const qc = useQueryClient();
   const toast = useToast();
   const t = useDict();
@@ -36,7 +38,7 @@ export function useProjectLinkMutations(setProjectLinks: Updater<ProjectLink[]>,
     mutationFn: async (operation: Operation): Promise<ProjectLink[]> => {
       const supabase = createClient();
       if (operation.kind === "upsert") {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (!userId) throw new Error("no-user");
         const wanted = new Set(operation.rows.map(pair));
         if (wanted.size !== operation.rows.length) throw new Error("Duplicate project resources");

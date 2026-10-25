@@ -33,6 +33,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,7 @@ export function AiPanel({
   focusLinkId = null,
   onFocusHandled,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -201,7 +203,7 @@ export function AiPanel({
   const createLink = useMutation({
     scope: { id: "library-writes" },
     mutationFn: async (vars: Omit<AiLink, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("ai_links")
@@ -279,7 +281,7 @@ export function AiPanel({
 
   const createCategory = useMutation({
     mutationFn: async (name: string) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const sortOrder =
         Math.max(0, ...aiCategories.map((c) => c.sort_order)) + 1;

@@ -26,6 +26,7 @@ import { statusLabel } from "@/lib/status-presentation";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import type { ClientOpportunity, OpportunitySource, OpportunityStatus, Organization, Project, Updater } from "@/lib/types";
 
 const SOURCES: OpportunitySource[] = ["tugedr", "referral", "direct", "existing_client", "inbound", "other"];
@@ -67,6 +68,7 @@ export function OpportunitiesPanel({
   setOrganizations: Updater<Organization[]>;
   setProjects: Updater<Project[]>;
 }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const p = t.professional;
   const { lang } = useLang();
@@ -106,7 +108,7 @@ export function OpportunitiesPanel({
   const createMutation = useMutation({
     mutationFn: async () => {
       if (isPreview) throw new Error("preview");
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("Not authenticated");
       const { data, error } = await supabase.from("client_opportunities").insert({
         user_id: userId,

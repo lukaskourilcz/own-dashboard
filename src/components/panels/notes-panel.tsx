@@ -61,6 +61,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import type { Note, Project, Updater } from "@/lib/types";
@@ -154,6 +155,7 @@ const subscribeWideNotes = (changed: () => void) => { const media = window.match
 const readWideNotes = () => window.matchMedia('(min-width: 1024px)').matches;
 
 export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, embedded }: Props) {
+  const ownerScope = useOwnerPreferences();
   const supabase = useMemo(() => createClient(), []);
   const qc = useQueryClient();
   const toast = useToast();
@@ -250,7 +252,7 @@ export function NotesPanel({ notes: allNotes, setNotes, projects, projectId, emb
   // select it in onSuccess, then invalidate to reconcile with the server.
   const createMutation = useMutation({
     mutationFn: async (vars: { content: unknown; title: string }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       // Place new notes above every existing one in their bucket.
       const topSortOrder = Math.max(0, ...notes.map((n) => n.sort_order ?? 0));

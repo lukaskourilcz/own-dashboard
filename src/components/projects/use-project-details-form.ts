@@ -10,6 +10,7 @@ import { awaitWithSignal } from "@/lib/abortable";
 import { fetchProjects } from "@/lib/queries/fetchers";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { projectEngagement } from "@/lib/projects";
 import { loadRepositoryResult } from "@/lib/github";
@@ -63,6 +64,7 @@ const sameProjectForm = (a: ProjectForm, b: ProjectForm) => (Object.keys(emptyPr
  * edits use confirmed receipts; the legacy creation writer remains a separate
  * idempotence/receipt follow-up. */
 export function useProjectDetailsForm(projects: Project[], setProjects: Updater<Project[]>, onEditOpen: () => void) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient(), qc = useQueryClient(), t = useDict(), toast = useToast();
   const requestNavigation = useGuardedNavigation();
   const [form, setFormState] = useState<ProjectForm>(emptyProjectForm);
@@ -126,7 +128,7 @@ export function useProjectDetailsForm(projects: Project[], setProjects: Updater<
         setProjects(current => applyProjectDetailsReceipt(current, source, receipt).projects);
       } else {
         const createSignal = AbortSignal.any([signal, AbortSignal.timeout(15_000)]);
-        const userId = await awaitWithSignal(currentUserId(supabase), createSignal);
+        const userId = await awaitWithSignal(currentUserId(supabase, ownerScope?.capture()), createSignal);
         if (!userId) throw new Error(t.common.signInFirst);
         const { data, error } = await awaitWithSignal(supabase
           .from("projects")

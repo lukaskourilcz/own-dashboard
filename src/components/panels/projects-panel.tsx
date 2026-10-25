@@ -72,6 +72,7 @@ import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
 import { NEW_PROJECT_GUIDE, NEW_PROJECT_GUIDE_CS } from "@/lib/new-project-guide";
@@ -270,6 +271,7 @@ function ProjectsListPanel({
   onOpenProject,
   setProjectLinks,
 }: ProjectsPanelProps) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const projectPreferences = useProjectPreferencesSave(setProjects);
@@ -342,7 +344,7 @@ function ProjectsListPanel({
       const seeds = cronSeedsForProject(project);
       if (seeds.length === 0 || seededProjectIds.current.has(project.id)) return;
       seededProjectIds.current.add(project.id);
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) return;
       const rows = seeds.map((s) => ({
         user_id: userId,
@@ -436,7 +438,7 @@ function ProjectsListPanel({
         (repo) => !creatingRepos.current.has(repo.id),
       );
       if (missing.length > 0) {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (userId) {
           // Allocate unique slugs against existing ones and within this batch.
           const usedSlugs = new Set(current.map((p) => p.slug));
@@ -514,7 +516,7 @@ function ProjectsListPanel({
     (async () => {
       let changed = false;
       try {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (!userId) return;
         const usedSlugs = new Set(projects.flatMap((p) => [p.slug, ...(p.previous_slugs ?? [])]));
         let sortBase = projects.length;
@@ -1346,6 +1348,7 @@ function CostsSection({
   setCosts: Updater<ProjectCost[]>;
   displayCurrency: string;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
@@ -1363,7 +1366,7 @@ function CostsSection({
     if (busy || !label.trim() || !amount) return;
     setBusy(true);
     try {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("project_costs")
@@ -1641,6 +1644,7 @@ function CronsSection({
   setCrons: Updater<Cron[]>;
   displayCurrency: string;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
@@ -1678,7 +1682,7 @@ function CronsSection({
         if (error) throw error;
         setCrons((prev) => prev.map((c) => (c.id === form.id ? (data as Cron) : c)));
       } else {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (!userId) throw new Error(t.common.signInFirst);
         const { data, error } = await supabase
           .from("crons")

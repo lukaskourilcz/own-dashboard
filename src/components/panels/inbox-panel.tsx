@@ -17,11 +17,13 @@ import { isActionableNotification, safeNotificationUrl } from "@/lib/notificatio
 import { statusLabel } from "@/lib/status-presentation";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import type { AppNotification, InboxItem, InboxStatus, Updater } from "@/lib/types";
 
 type Destination = "task" | "note" | "opportunity" | "project" | "organization" | "job_application" | "important_date" | "transaction_category";
 
 export function InboxPanel({ items, setItems, notifications, setNotifications }: { items: InboxItem[]; setItems: Updater<InboxItem[]>; notifications: AppNotification[]; setNotifications: Updater<AppNotification[]> }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
@@ -37,7 +39,7 @@ export function InboxPanel({ items, setItems, notifications, setNotifications }:
 
   const captureMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("Not authenticated");
       const { data, error } = await supabase.from("inbox_items").insert({ user_id: userId, source_type: "manual", title: capture.trim(), suggested_destination: "task" }).select().single();
       if (error) throw error;

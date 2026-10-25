@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import type {
@@ -50,6 +51,7 @@ export function ShortcutsPanel({
   referenceRows,
   setReferenceRows,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -87,7 +89,7 @@ export function ShortcutsPanel({
   const createMutation = useMutation({
     scope: { id: "shortcut-writes" },
     mutationFn: async (vars: { command: string; description: string | null }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const sortOrder =
         Math.max(0, ...shortcuts.map((s) => s.sort_order)) + 1;
@@ -457,6 +459,7 @@ function EditableTable({
   rows: ReferenceRow[];
   setReferenceRows: Updater<ReferenceRow[]>;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -477,7 +480,7 @@ function EditableTable({
   const createMut = useMutation({
     scope: { id: "reference-writes" },
     mutationFn: async (vars: { c1: string; c2: string; c3: string | null }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const sortOrder = Math.max(0, ...mine.map((r) => r.sort_order)) + 1;
       const { data, error } = await supabase

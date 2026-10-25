@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/toast";
 import { CategorySelect } from "@/components/category-select";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
 import { fetchTransactionRules } from "@/lib/queries/fetchers";
@@ -609,6 +610,7 @@ function RuleDialog({
   subscriptions: Subscription[];
   supabase: ReturnType<typeof createClient>;
 }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const nameId = useId();
   const stageId = useId();
@@ -677,7 +679,7 @@ function RuleDialog({
       if (!canSave || saveGuard.current) throw new Error("invalid-or-pending");
       saveGuard.current = true;
       try {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (!userId) throw new Error("no-user");
         const payload = { name: form.name.trim(), stage: form.stage, conditions, actions, enabled: form.enabled };
         if (form.id) {

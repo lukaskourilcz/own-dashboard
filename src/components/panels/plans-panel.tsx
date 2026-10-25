@@ -27,6 +27,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
@@ -84,6 +85,7 @@ export function PlansPanel({
   plans: Plan[];
   setPlans: Updater<Plan[]>;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -101,7 +103,7 @@ export function PlansPanel({
   // of the mutation flow and are left exactly as before.
   const addMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data: plan, error: planErr } = await supabase
         .from("plans")

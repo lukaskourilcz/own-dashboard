@@ -53,6 +53,7 @@ import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import type { AiLink, Project, ProjectLink, Updater } from "@/lib/types";
 import { useReturnFocus } from "@/lib/use-return-focus";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,7 @@ export function IgTipsPanel({
   initialQuery = null,
   onDeepLinkHandled,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const tt = t.tips;
   const m = t.marketing;
@@ -213,7 +215,7 @@ export function IgTipsPanel({
         if (error || !data) throw error ?? new Error("no-data");
         return { saved: data as AiLink, created: false };
       }
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("ai_links")

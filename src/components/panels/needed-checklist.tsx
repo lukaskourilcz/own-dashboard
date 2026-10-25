@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { commitFile, type GithubRepo } from "@/lib/github";
 import {
@@ -32,6 +33,7 @@ import { syncNeededTasks } from "@/lib/needed-task-store";
 import { loadNeededBatch, neededBatchQueryKey, type NeededBatchResult } from "@/lib/needed-batch-client";
 
 export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();
@@ -72,7 +74,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   const importTodos = useMutation({
     gcTime: 0,
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
 
       const nowIso = new Date().toISOString();

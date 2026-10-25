@@ -45,6 +45,7 @@ import { connectGitHub } from "@/lib/github-auth";
 import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { useRepositoryFilter } from "@/lib/use-prefs";
 import { qk } from "@/lib/queries/keys";
 import {
@@ -468,6 +469,7 @@ function RepoNotesCard({
   setRepoLinks: Updater<RepoLink[]>;
   onWrite: () => void;
 }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const locale = useDateLocale();
   const toast = useToast();
@@ -492,7 +494,7 @@ function RepoNotesCard({
     mutationFn: async () => {
       if (!validIdentity) throw Error("Repository identity unavailable");
       if (!newNote.current) {
-        const userId = await awaitWithSignal(currentUserId(supabase), AbortSignal.timeout(15_000));
+        const userId = await awaitWithSignal(currentUserId(supabase, ownerScope?.capture()), AbortSignal.timeout(15_000));
         if (!userId) throw new Error("no-user");
         newNote.current = { id: crypto.randomUUID(), user_id: userId, repo_id: repoId,
           repo_full_name: source.fullName, sort_order: Math.max(0, ...notes.map(note => note.sort_order)) + 1 };

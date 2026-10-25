@@ -29,6 +29,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import {
   currentMonthKey,
@@ -161,6 +162,7 @@ export function FinancesPanel({
   invoiceItems: InvoiceItem[];
   displayCurrency: string;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -215,7 +217,7 @@ export function FinancesPanel({
   // onSuccess (non-optimistic). Validation stays in the submit handler.
   const addTxMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("transactions")
@@ -271,7 +273,7 @@ export function FinancesPanel({
   // CREATE account: needs the server-generated id, so apply state in onSuccess.
   const addAccountMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("accounts")

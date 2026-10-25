@@ -15,6 +15,7 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useDict } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { useNow } from "@/lib/use-now";
 import type { ProjectCommunication, Updater } from "@/lib/types";
 
@@ -24,6 +25,7 @@ type Direction = ProjectCommunication["direction"];
 const emptyForm = () => ({ occurredAt: "", channel: "email" as Channel, direction: "outbound" as Direction, contact: "", subject: "", summary: "", nextAction: "" });
 
 export function ProjectCommunicationPanel({ projectId, communications, setCommunications }: { projectId: string; communications: ProjectCommunication[]; setCommunications: Updater<ProjectCommunication[]> }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const p = t.professional;
   const supabase = createClient();
@@ -44,7 +46,7 @@ export function ProjectCommunicationPanel({ projectId, communications, setCommun
     setSaving(true);
     setError(null);
     try {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error(t.common.signInFirst);
       const { data, error: insertError } = await supabase.from("project_communications").insert({
         user_id: userId,

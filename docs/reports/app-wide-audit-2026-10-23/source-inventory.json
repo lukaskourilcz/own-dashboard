@@ -861,8 +861,8 @@
       "path": "src/components/finances/transaction-rules.tsx",
       "lines": 1013,
       "sha256": "9ae72e1d8fcf0804396d01ee35883e09e1d92eb94c4c227edde5664fe9ea9945",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending",
-      "reviewedSha256": "97a8a1c53c4d762ba348a0249554e4b20e795c4b19bb13635688a2a98e76e3f6"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "8a983bd7a4d60e2d3f874dc2e8a2122cca6b0eafe81db1c58aae29afc9dfcea4"
     },
     {
       "path": "src/components/github/history-read-notice.tsx",
@@ -989,8 +989,8 @@
       "path": "src/components/links/use-project-links.ts",
       "lines": 131,
       "sha256": "ee1d5c05ebe44522d061eaa5db67de38c6fa267919298ad6be8c0215f436ce21",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "8e3dfe286672231d440d5ca4d9617485c820ef9b26f190fb1c1ca113f676dd78"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "96f1740db77b973fad0c26feea52d01329866064c95a0455cefcd98a3d7a13be"
     },
     {
       "path": "src/components/marketing/calendar-import.tsx",
@@ -1402,8 +1402,8 @@
       "path": "src/components/panels/ai-panel.tsx",
       "lines": 1103,
       "sha256": "18263a624c7740d3beab0d22fece1ae6309723cfceba8574fc8d570c3babb438",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "3dcf7912d5bd070ca750ac07bcb6e6d89d978c23cb5035e77e68675d2a233050"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "31e0a7ad8f1ae211866e291891c3100e71fd457250996805c43b0631f90c2b4c"
     },
     {
       "path": "src/components/panels/calendar-panel.tsx",
@@ -1465,8 +1465,8 @@
       "path": "src/components/panels/finances-panel.tsx",
       "lines": 882,
       "sha256": "2e6ea9a3677e49cc0faf0f928c361debf734543df1bf231620ecfb765b74c6ea",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending",
-      "reviewedSha256": "e5edcf30147b177faeb18c8e0d9a2c8656d24c71f85780239e06f3df82aec2e2"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "2b2884483114974e6cffed27cd8f6507d2c418be08e57f2ed23460fc512c1751"
     },
     {
       "path": "src/components/panels/freelance-platforms.tsx",
@@ -1479,8 +1479,8 @@
       "path": "src/components/panels/ig-tips-panel.tsx",
       "lines": 727,
       "sha256": "bd8825210893ec2994ed3b39fd113fbacf8374f0820e4f96b7dee99a2ff5a610",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "9f917f0fba8bdc30b457e59427031b2997e70f06cb16d02255d96df365a0e943"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "03c9460fe66fbe97c2e95b82507ced62fce75597f21cb5e9b6635e51f3902b2b"
     },
     {
       "path": "src/components/panels/important-dates-panel.tsx",
@@ -1493,8 +1493,8 @@
       "path": "src/components/panels/inbox-panel.tsx",
       "lines": 129,
       "sha256": "c52f0b0959b2d8289090148af76ba47da99e27565b37204e8392a1720a7881f9",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "a53bc179cfb6ba6e9e9ca8bc2f5d09716b59924c4a1c24ea08e8d96e39509e3a"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "d93f6fb53a84ead0bf8d0b86ff2d30a69d55ef7b1c615eefb687db68ff8bc013"
     },
     {
       "path": "src/components/panels/invoices-panel.tsx",
@@ -1542,22 +1542,22 @@
       "path": "src/components/panels/needed-checklist.tsx",
       "lines": 269,
       "sha256": "32b2e115fea7de7e1dea9ec7b13a857e810ab44db90818d4891622341c5ad4a1",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending",
-      "reviewedSha256": "3af9e61e7847f1fa0544cb2bda7847c1b623abad87b3cc54f2fd9b8c1b6efe9e"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "0a49b5072cf02985c2b6e4b42691af0173f342582af973dd8b333e737a4ae479"
     },
     {
       "path": "src/components/panels/notes-panel.tsx",
       "lines": 1325,
       "sha256": "af7850a690d55f1ff78cb048e62265aec7d4da2da8874e56fa6d8df235ff9cd2",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "4d0910d90139a100bca7e921528cb6639203808d77c510a05c46ec89df5c1c2c"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "431ff44130106685d3a974cd04855d85b73b3bef151e0bb693e14848e009ad07"
     },
     {
       "path": "src/components/panels/opportunities-panel.tsx",
       "lines": 307,
       "sha256": "c30f26827554b028c442a8acb6c8f763d2363af90f52ec914728a6d1810807f8",
-      "status": "partially reviewed; profile/proposal core and scoped load metadata checked; confirmed mutations/conversion, availability, metrics and form lifecycle pending",
-      "reviewedSha256": "5870937e764cf0dc24a4024fcf23ce6b2b0c3312e6ece2ac13bf45bdbd87c6a7"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "585927789836bf2e5987a28f084e9311757e633d5db761cbba998e8813fde0f2"
     },
     {
       "path": "src/components/panels/opportunity-detail.tsx",
@@ -1577,15 +1577,15 @@
       "path": "src/components/panels/plans-panel.tsx",
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "b3e75d7b9b99ed5f73a95623bbdfbee920ba064090b0aa4d35b746e1127c4e18"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "9458485e1755f4e59ca5bc6687fe819f972a533e3df1a767d6f9ea3f7217a7fa"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
       "lines": 1978,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
-      "reviewedSha256": "0ba13a6b7236f30cbe130d1cab39eb90e94a479188a4463ff68105bc92876332"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "2c2a327ca5cd2109f6153ce94cec1389d9293332e86dc507bb0ef33b6bd0ca6e"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1598,8 +1598,8 @@
       "path": "src/components/panels/repos-panel.tsx",
       "lines": 1016,
       "sha256": "932dbf36fac29be3ce99e2b02c51f7b18b1cabe507e61bfe62d6be7cf65e24a0",
-      "status": "partially reviewed; owned records and file draft/pending navigation checked; atomic file repository binding and remaining integrations in review.md",
-      "reviewedSha256": "4704a37f6deb7722ababa7c4e54d10688ecd30752d97e9cda2677d3cd0b878a2"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "a815dc35dc7d7677e3e8568c70fba6d9f456ab98ce70f7b6cd16c43284f8b879"
     },
     {
       "path": "src/components/panels/settings-panel.tsx",
@@ -1612,15 +1612,15 @@
       "path": "src/components/panels/shortcuts-panel.tsx",
       "lines": 760,
       "sha256": "3ab24a31b7cfe78896188e98b4b7e71e0a9b5c2317d09ec52250f21d9af24fd7",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "28d98568ba16fca4b216a7a7cf1d93945487d8e460143056f39f6dd1b374f8d2"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "1c613446810408cf873a779423b9b1396a04ff1c4f6e4cdf9d3022a621881717"
     },
     {
       "path": "src/components/panels/subscriptions-panel.tsx",
       "lines": 1108,
       "sha256": "9fb74fd45e872041f03dd81e255974d97210bcd94dacd03d91e8c529dce225d0",
-      "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending",
-      "reviewedSha256": "2ef7e8001d39e7aa3eec6eb9d17f1f8c8a3712006dad75a6b747bbd3238fa480"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "b90c81c49d98d4c9de04fcccb99703e1d483c63847e4b35fd7721fc09279ac11"
     },
     {
       "path": "src/components/panels/tip-export-dialog.tsx",
@@ -1640,8 +1640,8 @@
       "path": "src/components/panels/tools-panel.tsx",
       "lines": 566,
       "sha256": "e8a0a0fcd2f3a1384ec83dbbb98b34e0a7491e9b23d271a9c57b8ee54a7068fe",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "171cd6619ca47828f6f30ab6861ecd501ba1615255714514e47dc379ed55d386"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "fb5f82c865b4e6a8ad8883ff48a84845439f3dee8ea6d1ef02dc3cd3f0afc6ed"
     },
     {
       "path": "src/components/panels/work-overview-panel.tsx",
@@ -1675,8 +1675,8 @@
       "path": "src/components/projects/project-communication-panel.tsx",
       "lines": 99,
       "sha256": "d281f0d6f7df6df35e4a0def001f93239a6d07d2c4b82a0641450caf51e213e2",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0d930291accaa873a82756ac744a5f2352d4c64c92d29a55bca19842cfdc1a72"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "2be579dda96cb6b9b587f0deba02d9dffa862e926310a1d2eda32cd4a984cf2f"
     },
     {
       "path": "src/components/projects/project-competition.tsx",
@@ -1752,8 +1752,8 @@
       "path": "src/components/projects/use-project-details-form.ts",
       "sha256": null,
       "lines": 201,
-      "status": "partially reviewed; captured-source edits and guarded in-memory form lifecycle checked; creation confirmation/idempotence and final release pending",
-      "reviewedSha256": "52c31eab64eaa7ab988a3f5dd2c6f977c1a8c298beae8cd93899112abe255e5e"
+      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
+      "reviewedSha256": "256de9b118b6f2ba7bea22734d2f5eefb170eb168be6c7490ef20ab133218284"
     },
     {
       "path": "src/components/projects/use-project-notes-autosave.ts",
