@@ -61,9 +61,9 @@ export function normalizeEmployerJob(
     company: board.name,
     url,
     location: location || null,
-    remote:
-      row.isRemote === true ||
-      /remote/i.test(str(row.workplaceType) || location),
+    // Ashby's isRemote includes Hybrid. Both registered providers expose a
+    // workplaceType; only explicit Remote establishes fully remote work.
+    remote: str(row.workplaceType).trim().toLowerCase() === "remote",
     role,
     salary: str(obj(row.compensation).compensationTierSummary) || null,
     description,

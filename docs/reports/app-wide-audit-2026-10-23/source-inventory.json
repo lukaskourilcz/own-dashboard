@@ -2834,8 +2834,8 @@
       "path": "src/lib/jobs/employer-sources.ts",
       "lines": 119,
       "sha256": "b7663568dd2eb0ee3edfa07e0a0c25306a5e2d3e867236cfb74fc34b9275d862",
-      "status": "partial; complete source inspection; bounded provider bodies/deadlines, complete feed evidence, text cleanup CPU and normalized field validation remain under review",
-      "reviewedSha256": "b7663568dd2eb0ee3edfa07e0a0c25306a5e2d3e867236cfb74fc34b9275d862"
+      "status": "source reviewed; finding 271 explicit fully-remote workplace normalization passes; local Oslo/Prague roles retained; legacy cache evidence, provider body/shape/parser and final release pending",
+      "reviewedSha256": "185aca1938374c86f4fe563a08f03fc6ac0b5317b6fc596539c6f9c98bec31c5"
     },
     {
       "path": "src/lib/jobs/enrich.ts",
