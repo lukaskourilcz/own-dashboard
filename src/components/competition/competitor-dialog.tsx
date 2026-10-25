@@ -200,8 +200,8 @@ export function CompetitorDialog({ open, onOpenChange, form, setForm, projects, 
           </fieldset>
           {error && <p role="alert" className="text-xs text-destructive">{p[error]}</p>}
           <div className="flex flex-col-reverse gap-2 pt-1 md:flex-row md:justify-end">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => close(false)}>{t.common.cancel}</Button>
-            <Button type="submit" aria-busy={saving} disabled={saving || !valid}>{form.id ? t.common.save : t.common.add}</Button>
+            <Button type="button" variant="outline" className="w-full md:w-24" disabled={saving} onClick={() => close(false)}>{t.common.cancel}</Button>
+            <Button type="submit" className="w-full md:w-24" aria-busy={saving} disabled={saving || !valid}>{form.id ? t.common.save : t.common.add}</Button>
           </div>
         </form>
       </DialogContent>

@@ -1275,3 +1275,8 @@ All 84 focused mounted/domain/write cases pass across three files in 4.13 second
 The actual deletion-recovery capture shows edit-draft instructions even though no editor is open. List/deletion conflicts now ask for an explicit reload without mentioning a nonexistent draft. The editor retains its separate copy-before-close guidance and the local draft. Both dictionaries distinguish these contexts; persistence and conflict classification stay unchanged.
 
 All 86 focused mounted/domain/write cases pass across three files in 4.19 seconds, including EN/CS deletion guidance without a form. TypeScript and targeted ESLint pass. Twelve native EN/CS desktop/mobile draft, stale-write/deletion and cross-surface refresh cases pass in 34.3 seconds. The final visual gallery will capture this copy from the committed source separately from older images. Full app verification, production rollout and remaining source leads remain pending.
+
+
+## Finding 234 — equal Competition form actions
+
+A native English desktop regression confirms that the editor's cancel and submit actions have unequal widths. Both actions now use the same compact desktop width and full mobile width, retaining the existing shared button height and focus behavior. Four EN/CS desktop/mobile native cases pass in 12.3 seconds, including measured equal width/height, retained invalid URL input, failed creation/reused id, guarded cancel and pending locks. TypeScript and targeted ESLint pass. The 86-case logic result above predates this styling change; the next full checkpoint will cover the combined source. Updated captures follow from the committed application.
