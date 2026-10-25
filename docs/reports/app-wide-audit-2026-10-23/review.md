@@ -662,3 +662,11 @@ At frozen application/test source `235d00b`, 4,765 unit/component/database cases
 
 
 The earlier panel cleanup/refresh fixtures now use a complete owned UUID/version task and a valid captured owner, and the cache-disconnection assertion includes its current-operation guard. All 77 panel/hook/source/cache cases pass across seven files in 4.61 seconds, with targeted lint and TypeScript passing. This changes fixtures only; application source remains `235d00b`. A new complete serial run is required before release.
+
+
+## Source review during checkpoint 73
+
+Twenty more complete source files cover account connection controls/token resolution, diagnostics and sampled weekly results, Knowledge capture/contracts/extraction/runner, legacy automation, offline import, revision/slide editing and Reel storage/encoding. Three have no new confirmed source repair; seventeen retain explicit follow-ups. The ledger has 650 entries (50 pending, 191 partial). SQL inspection confirms revision replacement refuses superseded/published parents and render attachment checks owner/hash/status; those existing guarantees are retained. A cost lead is the MP4 cache key's full revision hash, which changes for caption/time edits even when its encoded inputs do not. No credential, paid model, provider, render, approval or publishing action was used for this inspection. Full checkpoint 73 starts at frozen application/test source `5b1dec1` and remains running; this is source coverage, not a passing release.
+
+
+Checkpoint 73's complete unit phase passes 4,776 cases with one intentional skip (447 passed files, one skipped file), in 177.44 seconds with two workers. The serial lint/build/render-trace/type/browser phases are still in progress. The source/test freeze remains in effect; this intermediate result is not a completed release checkpoint.

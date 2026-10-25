@@ -460,7 +460,8 @@
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
       "lines": 100,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "pending"
+      "status": "partial source review: signed scheduler/publisher scope and bounded input retained; duplicate background render admission, cancellable storage/read/record phases and exact accepted-result identity need verification; model-free encoding still consumes function CPU",
+      "reviewedSha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -529,13 +530,15 @@
       "path": "src/app/api/marketing/knowledge/route.ts",
       "lines": 99,
       "sha256": "7bae50b4428a4fe3c07284159a9fe480d7e8aa75cb3f8a9baa3349d00c317a21",
-      "status": "pending"
+      "status": "partial source review: CSRF/rate limit, capture hash and explicit consent/plan checks retained; auth errors, complete bounded/reference reads, confirmed writes and captured normalization/queue receipts need repair verification",
+      "reviewedSha256": "7bae50b4428a4fe3c07284159a9fe480d7e8aa75cb3f8a9baa3349d00c317a21"
     },
     {
       "path": "src/app/api/marketing/n8n/route.ts",
       "lines": 168,
       "sha256": "e0388eb027496cdf68b2dfd2e40f7ba747984dbe624cf6a2c887ca3e8319fb0c",
-      "status": "pending"
+      "status": "partial source review: DNESKAi legacy operations retire before writes, bounded body and explicit partial weekly sample retained; cancellation must reach lookup, queue/knowledge/reconciliation phases and last_checked write receipts",
+      "reviewedSha256": "e0388eb027496cdf68b2dfd2e40f7ba747984dbe624cf6a2c887ca3e8319fb0c"
     },
     {
       "path": "src/app/api/marketing/offline-import/route.ts",
@@ -555,7 +558,8 @@
       "path": "src/app/api/marketing/revisions/route.ts",
       "lines": 197,
       "sha256": "3d6cfcf7621354ae3f899f52fd3a70103691095b2bbb3f332bfe77e2c6b21b04",
-      "status": "pending"
+      "status": "partial source review: exact-hash approvals and guarded new-revision lineage retained; auth/body/overall work limits, request cancellation, confirmed result ids, separate feedback deadline and stable retry recovery need verification; no approval/publication was performed",
+      "reviewedSha256": "3d6cfcf7621354ae3f899f52fd3a70103691095b2bbb3f332bfe77e2c6b21b04"
     },
     {
       "path": "src/app/api/marketing/state/route.ts",
@@ -1027,7 +1031,8 @@
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
       "lines": 133,
       "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
-      "status": "pending"
+      "status": "partial source review: secret-free account metadata and gated controls retained; cached read recovery, synchronous captured mutations, duplicate publishing labels and unknown subscription status need repair verification",
+      "reviewedSha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea"
     },
     {
       "path": "src/components/marketing/dneskai-source-forms.tsx",
@@ -1241,7 +1246,8 @@
       "path": "src/components/marketing/knowledge-import.tsx",
       "lines": 89,
       "sha256": "1e1b3439f46ae1d102bca3399126390a2643627bac7189b4b5b1a9a9cc178165",
-      "status": "pending"
+      "status": "partial source review: source-proof review and paid-analysis consent UI retained; unvalidated success bodies, same-frame overlap, stable captured plans/normalization, cancellation/exits and callback-after-unmount need repair verification",
+      "reviewedSha256": "1e1b3439f46ae1d102bca3399126390a2643627bac7189b4b5b1a9a9cc178165"
     },
     {
       "path": "src/components/marketing/knowledge-library.tsx",
@@ -1254,7 +1260,8 @@
       "path": "src/components/marketing/marketing-diagnostics.tsx",
       "lines": 107,
       "sha256": "1006b98a448dcbdd0eef40f852ade23d957d49a94be4a09a12489ea6bda194ab",
-      "status": "pending"
+      "status": "partial source review: explicit partial sample, finite cost display, redacted codes and EU trace host retained; synchronous trace pending guard, bounded total reads and stale/late trace result recovery need verification",
+      "reviewedSha256": "1006b98a448dcbdd0eef40f852ade23d957d49a94be4a09a12489ea6bda194ab"
     },
     {
       "path": "src/components/marketing/offline-import.tsx",
@@ -1288,7 +1295,8 @@
       "path": "src/components/marketing/weekly-results.tsx",
       "lines": 108,
       "sha256": "469d60b0c224f82b46a9bb6687329f358947031c352bcf0ab3da41ea1cd84af6",
-      "status": "pending"
+      "status": "source reviewed: bounded explicit partial scheduled-outcome sample, duplicate/mismatched receipt exclusions and unavailable metrics retained; database publication identity is unique per revision/platform; final rendered/release checks pending",
+      "reviewedSha256": "469d60b0c224f82b46a9bb6687329f358947031c352bcf0ab3da41ea1cd84af6"
     },
     {
       "path": "src/components/mobile-fab.tsx",
@@ -3136,7 +3144,8 @@
       "path": "src/lib/marketing/dneskai-deck-edit.ts",
       "lines": 176,
       "sha256": "b4d43e39919697d49a043c9e7ce28c01a82896fa66a74c35f29fca839b7b511a",
-      "status": "pending"
+      "status": "partial source review: bounded pure edits/inserts and unplaced-field/source-pool guards retained; taken pictures derive from original kept slides rather than their edited images, requiring swap/insert and removed-picture parity regressions",
+      "reviewedSha256": "b4d43e39919697d49a043c9e7ce28c01a82896fa66a74c35f29fca839b7b511a"
     },
     {
       "path": "src/lib/marketing/dneskai-deck-editor.ts",
@@ -3327,13 +3336,15 @@
       "path": "src/lib/marketing/dneskai-reel-render.ts",
       "lines": 204,
       "sha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8",
-      "status": "pending"
+      "status": "partial source review: shell-free ffmpeg args, bounded stderr and temporary directory cleanup retained; eager parallel image CPU before abort, image/audio/output bounds and subprocess lifecycle need verification; no render or provider request performed",
+      "reviewedSha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8"
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
       "lines": 208,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "pending"
+      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys",
+      "reviewedSha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -3359,7 +3370,8 @@
       "path": "src/lib/marketing/dneskai-revision-edit.ts",
       "lines": 127,
       "sha256": "c317f1320d4cd875ab4bb0bef24d5ed894511fb2e9ef77c437daa92314aaecbc",
-      "status": "pending"
+      "status": "partial source review: same preview/save deck rules, pool membership and verified unchanged-pixel reuse retained; cancellation across dependency reads and exact marketing_attach_revision_render receipt validation need verification",
+      "reviewedSha256": "c317f1320d4cd875ab4bb0bef24d5ed894511fb2e9ef77c437daa92314aaecbc"
     },
     {
       "path": "src/lib/marketing/dneskai-scouting.ts",
@@ -3377,7 +3389,8 @@
       "path": "src/lib/marketing/dneskai-slides.ts",
       "lines": 94,
       "sha256": "077a35ae0dba21b4b53198e7a69bb437c1176c3c6bd1add9d42a94ef914f86be",
-      "status": "pending"
+      "status": "source reviewed: bounded browser-safe slide/deck/crop contracts, unique image slots and canonical kit defaults retained; rendering remains authority for shape fit and public content policy; final release pending",
+      "reviewedSha256": "077a35ae0dba21b4b53198e7a69bb437c1176c3c6bd1add9d42a94ef914f86be"
     },
     {
       "path": "src/lib/marketing/dneskai-source-catalog.ts",
@@ -3652,7 +3665,8 @@
       "path": "src/lib/marketing/knowledge-extraction.ts",
       "lines": 91,
       "sha256": "0427a487f7d8525b23dc378d1a205b759b78a2570ffafc39c31d76e93ee367f9",
-      "status": "pending"
+      "status": "partial source review: no-retry structured output, byte-based reservation and exact quote/channel evidence guards retained; diagnostics deadline/cancellation, finite budget/clock configuration and durable caller claim/source binding need final reconciliation",
+      "reviewedSha256": "0427a487f7d8525b23dc378d1a205b759b78a2570ffafc39c31d76e93ee367f9"
     },
     {
       "path": "src/lib/marketing/knowledge-providers.ts",
@@ -3665,13 +3679,15 @@
       "path": "src/lib/marketing/knowledge-runner.ts",
       "lines": 165,
       "sha256": "068b358a084f28c023fef6f2b04e14d68c921af98638c7be64260e6f09e608d7",
-      "status": "pending"
+      "status": "partial source review: durable claim, registered actor/run/dataset binding and no automatic ambiguous-call retry retained; provider byte cap after whole body, source/claim/save receipts, caller cancellation and optional diagnostics switch/deadline need verification",
+      "reviewedSha256": "068b358a084f28c023fef6f2b04e14d68c921af98638c7be64260e6f09e608d7"
     },
     {
       "path": "src/lib/marketing/knowledge.ts",
       "lines": 178,
       "sha256": "0feb522e11df69b8eb71408dacb9d077eb6abf698d1699a1fd7707aab233f36c",
-      "status": "pending"
+      "status": "partial source review: explicit source provenance/date uncertainty, exact evidence/channel checks and no automatic fact approval retained; duplicate conflict policy, complete relation normalization, repeated search normalization and bounded composed playbooks need verification",
+      "reviewedSha256": "0feb522e11df69b8eb71408dacb9d077eb6abf698d1699a1fd7707aab233f36c"
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
@@ -3684,13 +3700,15 @@
       "path": "src/lib/marketing/meta-account.ts",
       "lines": 152,
       "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
-      "status": "pending"
+      "status": "partial source review: owner/handle/scopes and stored-versus-bootstrap selection retained; bounded cancellable database/provider work, complete Facebook Page lookup and exact returned account/token metadata receipt need verification",
+      "reviewedSha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17"
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",
       "lines": 229,
       "sha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d",
-      "status": "pending"
+      "status": "partial source review: no ambiguous automatic refresh retry and refreshed_at CAS retained; total cancellation/response bounds, finite clock/metadata, precise stored receipt and owner/login-mode bindings need verification; no credential was read",
+      "reviewedSha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d"
     },
     {
       "path": "src/lib/marketing/meta-facebook-page.ts",
@@ -3710,13 +3728,15 @@
       "path": "src/lib/marketing/offline-import-validation.ts",
       "lines": 93,
       "sha256": "609c83650d2d352fca4bcd48b975aa3c121c0577a13efc7e6cc3ce7204436147",
-      "status": "pending"
+      "status": "source reviewed: strict bounded manifest/source/file/hash/path checks and authored-thread byte parity retained; uploaded SVG is hashed only, never executed; no readiness/publication grant; final release checks pending",
+      "reviewedSha256": "609c83650d2d352fca4bcd48b975aa3c121c0577a13efc7e6cc3ce7204436147"
     },
     {
       "path": "src/lib/marketing/offline-import.ts",
       "lines": 88,
       "sha256": "7fd45afe40ab5c8eea3dac2191c3f6dadd37418988159838ccebfad1e0d52bca",
-      "status": "pending"
+      "status": "partial source review: retired production pilot, stable revision identity, source rechecks and SQL scope validation retained; initial database/read/JPEG/storage total budgets, duplicate/terminal receipt identity and cancellation need verification without activating pilot",
+      "reviewedSha256": "7fd45afe40ab5c8eea3dac2191c3f6dadd37418988159838ccebfad1e0d52bca"
     },
     {
       "path": "src/lib/marketing/orchestrator.ts",
