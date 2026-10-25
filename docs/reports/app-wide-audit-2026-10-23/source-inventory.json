@@ -525,7 +525,8 @@
       "path": "src/app/api/marketing/publications/route.ts",
       "lines": 33,
       "sha256": "05d8f7ccbcb8544645b986948f9d6b5026e3194e6ab248f23d5ba7815b2c0768",
-      "status": "pending"
+      "status": "source reviewed; finding 175 checks explicit requeue receipts, fixed own-code refusals, owner/auth failure, bounded body/deadline, request cancellation and no SDK retry; publication SQL and final release remain separate",
+      "reviewedSha256": "c8761a29f759ab81b51a1e57bd3851cb0826b768dc10f7f65e6f000993519632"
     },
     {
       "path": "src/app/api/marketing/revisions/route.ts",
@@ -3608,7 +3609,8 @@
       "path": "src/lib/marketing/publication-requeue.ts",
       "lines": 40,
       "sha256": "078a9afd7927baa7dc3a62e037f520d6ddd07ba0c7bbbe6af98ac75c73c036f4",
-      "status": "pending"
+      "status": "source reviewed; finding 175 checks explicit requeue receipts, fixed own-code refusals, owner/auth failure, bounded body/deadline, request cancellation and no SDK retry; publication SQL and final release remain separate",
+      "reviewedSha256": "205eb9ebc2d5c27b2f5bb59e702b35ceb61434224430c37ef31c6be5c40e016c"
     },
     {
       "path": "src/lib/marketing/publisher.ts",

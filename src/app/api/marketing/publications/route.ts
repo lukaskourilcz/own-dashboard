@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { rejectCrossOrigin } from '@/lib/csrf';
+import { awaitWithSignal } from '@/lib/abortable';
+import { readKnowledgeBody } from '@/lib/marketing/knowledge-body';
 import { MARKETING_PUBLICATION_REQUEUE_RESULTS, MARKETING_REQUEUE_REFUSALS, marketingPublicationRequeueEnabled, marketingRequeueFunctionMissing } from '@/lib/marketing/publication-requeue';
 
 export const runtime = 'nodejs';
@@ -14,20 +16,31 @@ const Input = z.strictObject({ action: z.literal('requeue'), id: z.uuid() });
  * nothing to Meta. Off unless the server-only MARKETING_PUBLICATION_REQUEUE_ENABLED is `true`; without the
  * migration the call answers `publication-requeue-unavailable` as well.
  */
+const fail = (status: number, error: string) => Response.json({ error }, { status, headers: { 'Cache-Control': 'private, no-store' } });
+
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
-  const db = await createClient();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
-  let input: z.infer<typeof Input>;
-  try { input = Input.parse(await request.json()); } catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
-  if (!marketingPublicationRequeueEnabled(process.env)) return Response.json({ error: 'publication-requeue-unavailable' }, { status: 409 });
-  const { data, error } = await db.rpc('marketing_requeue_publication', { p_publication: input.id });
-  if (error) {
-    if (marketingRequeueFunctionMissing(error)) return Response.json({ error: 'publication-requeue-unavailable' }, { status: 409 });
-    const code = MARKETING_REQUEUE_REFUSALS[error.message] ?? 'publication-requeue-failed';
-    return Response.json({ error: code }, { status: code === 'publication-unavailable' ? 404 : 409 });
-  }
-  const result = z.enum(MARKETING_PUBLICATION_REQUEUE_RESULTS).safeParse(data);
-  return Response.json({ result: result.success ? result.data : 'queued' }, { headers: { 'Cache-Control': 'private, no-store' } });
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(15_000)]);
+  if (signal.aborted) return fail(503, 'publication-requeue-failed');
+  try {
+    const db = await awaitWithSignal(createClient(signal), signal);
+    const { data: { user }, error: authError } = await awaitWithSignal(db.auth.getUser(), signal);
+    if (authError || !user) return fail(401, 'unauthorized');
+    let input: z.infer<typeof Input>;
+    try { input = Input.parse(JSON.parse(await readKnowledgeBody(request, 4096, signal))); }
+    catch (error) {
+      const interrupted = signal.aborted || (error instanceof DOMException && error.name === 'AbortError');
+      return fail(interrupted ? 503 : 400, interrupted ? 'publication-requeue-failed' : 'invalid-request');
+    }
+    if (!marketingPublicationRequeueEnabled(process.env)) return fail(409, 'publication-requeue-unavailable');
+    const { data, error } = await awaitWithSignal(db.rpc('marketing_requeue_publication', { p_publication: input.id }).retry(false).abortSignal(signal), signal);
+    if (error) {
+      if (marketingRequeueFunctionMissing(error)) return fail(409, 'publication-requeue-unavailable');
+      const code = Object.hasOwn(MARKETING_REQUEUE_REFUSALS, error.message) ? MARKETING_REQUEUE_REFUSALS[error.message] : 'publication-requeue-failed';
+      return fail(code === 'publication-unavailable' ? 404 : 409, code);
+    }
+    const result = z.enum(MARKETING_PUBLICATION_REQUEUE_RESULTS).safeParse(data);
+    if (!result.success) return fail(409, 'publication-requeue-failed');
+    return Response.json({ result: result.data }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch { return fail(503, 'publication-requeue-failed'); }
 }

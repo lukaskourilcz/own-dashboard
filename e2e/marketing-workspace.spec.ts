@@ -89,13 +89,16 @@ test("Marketing tabs expose roving focus and Arrow/Home/End keyboard controls", 
   await expect(page.locator("#marketing-panel-review")).toHaveAttribute("aria-labelledby", "marketing-tab-review");
 });
 
-test("Marketing APIs reject unauthenticated decisions, worker jobs, invalid n8n tokens and the retired collection route without writes", async ({ request }) => {
+test("Marketing APIs reject unauthenticated decisions, worker jobs, invalid n8n tokens and the retired collection route without writes", async ({ request, baseURL }) => {
+  if (!baseURL) throw new Error("preview-base-url-required");
+  const origin = new URL(baseURL).origin;
   const results = await Promise.all([
     request.get("/api/marketing/state"),
-    request.post("/api/marketing/revisions", { headers:{Origin:"http://localhost:3939"}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
-    request.post("/api/marketing/knowledge", { headers:{Origin:"http://localhost:3939"}, data: { action: "preview" } }),
+    request.post("/api/marketing/revisions", { headers:{Origin:origin}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
+    request.post("/api/marketing/knowledge", { headers:{Origin:origin}, data: { action: "preview" } }),
     request.post("/api/marketing/jobs", { data: {} }),
-    request.post("/api/marketing/offline-import", { headers:{Origin:"http://localhost:3939"}, data: {} }),
+    request.post("/api/marketing/publications", { headers: { Origin: origin }, data: { action: "requeue", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" } }),
+    request.post("/api/marketing/offline-import", { headers:{Origin:origin}, data: {} }),
     request.post("/api/marketing/n8n", { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { operation: "publish", brand: "devshark", dryRun: false } }),
   ]);
   for (const result of results) {
