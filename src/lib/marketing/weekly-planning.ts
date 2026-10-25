@@ -3,6 +3,7 @@ import { BrandSchema, PlatformSchema, type MarketingBrand } from './contracts';
 import { pragueScheduledAt } from './clock';
 
 export const MARKETING_PLANNING_TIME_ZONE = 'Europe/Prague' as const;
+const pragueDateFormatter = new Intl.DateTimeFormat('sv-SE', { timeZone: MARKETING_PLANNING_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
 /** DNESKAi plans from briefs (#115) first; an approved article remains a valid source while the article cycle is paused. */
 export const MARKETING_PLANNING_SOURCE_KINDS = { devshark: ['question', 'coding-task'], dneskai: ['brief', 'article'] } as const;
 export const MARKETING_DAILY_QUOTAS = { devshark: { carousel: 1, thread: 2, story: 3 }, dneskai: { carousel: 4, thread: 0, story: 0 } } as const;
@@ -13,7 +14,7 @@ function calendarDay(date: string, offset: number): string {
 }
 export function pragueMarketingDate(now: Date): string {
   if (!Number.isFinite(now.getTime())) throw new Error('invalid-planning-time');
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: MARKETING_PLANNING_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  return pragueDateFormatter.format(now);
 }
 /** Seven calendar days, which may span 167/169 real hours across Prague DST. */
 export function sevenDayMarketingWindow(startDate: string): MarketingWeekWindow {

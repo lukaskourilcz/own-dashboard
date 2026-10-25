@@ -248,8 +248,9 @@ export type DneskaiCalendarEntry =
   | { kind: 'free'; at: string; time: string };
 export type DneskaiCalendarDay = { date: string; entries: DneskaiCalendarEntry[] };
 
+const pragueTimeFormatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 /** HH:MM in Europe/Prague for a stored instant. */
-export const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+export const pragueTime = (iso: string) => pragueTimeFormatter.format(new Date(iso));
 
 /**
  * The one DNESKAi day format (#173): DD/MM in Europe/Prague, the same in Czech and English. Takes a calendar date

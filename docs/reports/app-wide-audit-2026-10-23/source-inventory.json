@@ -3016,8 +3016,8 @@
       "path": "src/lib/marketing/clock.ts",
       "lines": 14,
       "sha256": "39da66b52da340c2004ab8d3596ff3e53613847b905fd47b8cf67a8b92e1d420",
-      "status": "partial; strict Prague wall-time/DST resolution read; formatter reuse and client error recovery remain under review",
-      "reviewedSha256": "39da66b52da340c2004ab8d3596ff3e53613847b905fd47b8cf67a8b92e1d420"
+      "status": "partial; strict Prague wall-time/DST resolution read; formatter reuse and client error recovery remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks",
+      "reviewedSha256": "a91a1d745be5af2053fd42750d2b9812943ed6bf0e7abadb2c1ebd61af5764b0"
     },
     {
       "path": "src/lib/marketing/contracts.ts",
@@ -3252,10 +3252,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-lab.ts",
-      "lines": 339,
+      "lines": 337,
       "sha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798",
-      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review",
-      "reviewedSha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798"
+      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks",
+      "reviewedSha256": "d4e1782b05c21773f467a7ae79292c89baa547e48668146910b69abad7c509b3"
     },
     {
       "path": "src/lib/marketing/dneskai-media-contracts.ts",
@@ -3532,10 +3532,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",
-      "lines": 377,
+      "lines": 378,
       "sha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157",
-      "status": "partial; complete source inspection; calendar completeness/free-slot meaning, current clocks and repeated formatter work remain under review",
-      "reviewedSha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157"
+      "status": "partial; complete source inspection; calendar completeness/free-slot meaning, current clocks and repeated formatter work remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks",
+      "reviewedSha256": "c4523f47ab4a8ee6da6920203d1d882ea86d234271d608519b554f8c9bcadaf2"
     },
     {
       "path": "src/lib/marketing/free-feeds/security/content.ts",
@@ -3917,10 +3917,10 @@
     },
     {
       "path": "src/lib/marketing/weekly-planning.ts",
-      "lines": 90,
+      "lines": 91,
       "sha256": "55fa1ad21a8cff8dd25a8e0990a85a5d10c4d8952d2f4d5b8f2836bf7a48b321",
-      "status": "source reviewed; bounded pure Prague calendar/cadence/backlog partition helpers and existing DST/identity/non-approval cases inspected; final app-wide validation pending",
-      "reviewedSha256": "55fa1ad21a8cff8dd25a8e0990a85a5d10c4d8952d2f4d5b8f2836bf7a48b321"
+      "status": "source reviewed; bounded pure Prague calendar/cadence/backlog partition helpers and existing DST/identity/non-approval cases inspected; final app-wide validation pending; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks",
+      "reviewedSha256": "9fee26686332f7007a2f0c11f6901de60027b5e56f91a359618bd9cac547d4f0"
     },
     {
       "path": "src/lib/marketing/weekly-source-candidates.ts",

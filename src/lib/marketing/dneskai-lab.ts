@@ -4,7 +4,7 @@ import { DNESKAI_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, Dn
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import { pragueScheduledAt } from './clock';
 import {
-  dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, renderBlocking,
+  dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, pragueTime, renderBlocking,
   type DneskaiFieldLimit, type DneskaiPostStateDetail, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
 
@@ -88,8 +88,6 @@ export type DneskaiLabDay = {
 /** A post whose slot is closer than this reads in the warning tone. */
 export const DNESKAI_LAB_URGENT_MINUTES = 30;
 export const shortHash = (hash: string) => hash.slice(0, 7);
-
-const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
 
 export function dneskaiLabDeadline(at: string, now: number): DneskaiLabDeadline {
   const minutesLeft = Math.floor((Date.parse(at) - now) / 60_000);
