@@ -22,7 +22,7 @@ let root: Root, host: HTMLDivElement, client: QueryClient;
 async function run(lang: "en" | "cs") {
   document.documentElement.lang = lang; const storage = new Storage(); storage.setItem("lang", lang); vi.stubGlobal("localStorage", storage);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host); client = new QueryClient();
-  await act(async () => { root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel todos={[task]} /></TooltipProvider></QueryClientProvider>); });
+  await act(async () => { root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel ownerId="owner" todos={[task]} /></TooltipProvider></QueryClientProvider>); });
   const button = [...host.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.trim() === copy[lang].clearFromNeeded)!;
   expect(button).toBeDefined(); await act(async () => { button.click(); });
   await vi.waitFor(() => expect(state.consume).toHaveBeenCalledOnce());

@@ -28,6 +28,7 @@ export function DemoDashboard({
   liveProjectRecords = false,
   liveMusic = false,
   livePlanning = false,
+  liveTasks = false,
   liveMonitoring = false,
   livePreferences = false,
   liveCalendar = false,
@@ -53,6 +54,8 @@ export function DemoDashboard({
   liveMusic?: boolean;
   /** Isolated fake-backend weekly planning checks only. */
   livePlanning?: boolean;
+  /** Isolated fake-backend Tasks write/read checks only. */
+  liveTasks?: boolean;
   /** Dev/E2E-only mocked history reads; disabled in the public tour. */
   liveMonitoring?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
@@ -67,7 +70,8 @@ export function DemoDashboard({
   // rather than marking the tour's empty note/link fixtures as confirmed.
   const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => (!liveRepositories || (key !== "repoNotes" && key !== "repoLinks"))
     && (!liveProjectRecords || !["projects", "projectCosts", "crons", "todos"].includes(key))
-    && (!livePlanning || key !== "weeklyReviews"));
+    && (!livePlanning || key !== "weeklyReviews")
+    && (!liveTasks || key !== "todos"));
 
   return (
     <DashboardShell
@@ -76,17 +80,18 @@ export function DemoDashboard({
       previewProjectIntegration={liveProjectRecords}
       previewMusicIntegration={liveMusic}
       previewPlanningIntegration={livePlanning}
+      previewTaskIntegration={liveTasks}
       previewMonitoringIntegration={liveMonitoring}
       previewPreferencesIntegration={livePreferences}
       previewCalendarIntegration={liveCalendar}
-      user={livePlanning ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={livePlanning || liveTasks ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
       initialTipQuery={initialTipQuery}
       initialDataKeys={initialDataKeys}
       initialSubscriptions={f.subscriptions}
-      initialTodos={f.todos}
+      initialTodos={liveTasks ? [] : f.todos}
       initialAccounts={f.accounts}
       initialTransactions={f.transactions}
       initialPlans={f.plans}

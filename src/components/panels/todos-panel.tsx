@@ -23,11 +23,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -37,7 +34,6 @@ import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
-import { Switch } from "@/components/ui/switch";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
@@ -59,10 +55,9 @@ import {
   removeFinishedFromNeeded,
   scanNeededRepos,
 } from "@/lib/needed-sync";
+import { TaskComposer } from "@/components/tasks/task-composer";
 import { TaskTags } from "@/components/tasks/task-tags";
 import {
-  MAX_TASK_MINUTES,
-  isTaskMinutes,
   TASK_KINDS,
   TIME_BUCKETS,
   type TaskKind,
@@ -80,11 +75,13 @@ function repoNamesPreview(names: string[]) {
 export function TodosPanel({
   taskIndex,
   todos,
+  ownerId,
   projects = [],
   organizations = [],
   compact = false,
 }: {
   todos: Todo[];
+  ownerId: string;
   taskIndex?: ProjectTaskIndex;
   projects?: Project[];
   organizations?: Organization[];
@@ -96,14 +93,6 @@ export function TodosPanel({
   const locale = useDateLocale();
   const toast = useToast();
   const confirm = useConfirmation();
-  const [title, setTitle] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [newImportance, setNewImportance] = useState("");
-  const [newMinutes, setNewMinutes] = useState("");
-  const [newKind, setNewKind] = useState<"" | TaskKind>("");
-  const [projectId, setProjectId] = useState("");
-  const [organizationId, setOrganizationId] = useState("");
-  const [isGlobal, setIsGlobal] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
@@ -121,47 +110,6 @@ export function TodosPanel({
   // query off in the compact dashboard widget.
   const reposQuery = useReposQuery(!compact);
   const projectByTodo = useMemo(() => (taskIndex ?? buildProjectTaskIndex(projects, todos)).byTodo, [taskIndex, todos, projects]);
-
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const minutes = newMinutes.trim() ? Number(newMinutes) : null;
-      if (minutes !== null && !isTaskMinutes(minutes)) throw Error("Invalid task estimate");
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const { data, error } = await supabase
-        .from("todos")
-        .insert({
-          title: title.trim(),
-          due_date: dueDate || null,
-          importance: newImportance ? Number(newImportance) : null,
-          estimated_minutes: minutes,
-          task_kind: newKind || null,
-          is_global: isGlobal,
-          project_id: isGlobal ? null : projectId || null,
-          organization_id: organizationId || null,
-          user_id: userId,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Todo;
-    },
-    onSuccess: (todo) => {
-      qc.setQueryData<Todo[]>(qk.todos, (prev = []) => [todo, ...prev]);
-      setTitle("");
-      setDueDate("");
-      setNewImportance("");
-      setNewMinutes("");
-      setNewKind("");
-      setProjectId("");
-      setOrganizationId("");
-      setIsGlobal(false);
-      setAddOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.todos });
-      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
-    },
-    onError: () => toast.err(t.todos.saveErr),
-  });
 
   // Optimistic toggle: flip in the cache immediately, roll back on error,
   // reconcile with the DB via invalidate once settled.
@@ -329,14 +277,6 @@ export function TodosPanel({
     },
   });
 
-  const saving = addMutation.isPending;
-
-  function addTodo(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim() || addMutation.isPending) return;
-    addMutation.mutate();
-  }
-
   const toggle = (td: Todo) => { if (!toggleMutation.isPending) toggleMutation.mutate(td); };
   const remove = async (id: string) => {
     if (await confirm({
@@ -362,13 +302,7 @@ export function TodosPanel({
           </span>
         </CardHeader>
         <CardContent>
-          <QuickAddForm
-            t={t}
-            title={title}
-            setTitle={setTitle}
-            saving={saving}
-            onSubmit={addTodo}
-          />
+          <TaskComposer ownerId={ownerId} projects={projects} organizations={organizations} compact open={false} onOpenChange={() => {}} />
           {visible.length === 0 ? (
             <EmptyState
               icon={ListTodo}
@@ -654,31 +588,7 @@ export function TodosPanel({
 
       </div>
 
-      <AddTaskDialog
-        t={t}
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        title={title}
-        setTitle={setTitle}
-        dueDate={dueDate}
-        setDueDate={setDueDate}
-        newImportance={newImportance}
-        setNewImportance={setNewImportance}
-        newMinutes={newMinutes}
-        setNewMinutes={setNewMinutes}
-        newKind={newKind}
-        setNewKind={setNewKind}
-        projectId={projectId}
-        setProjectId={setProjectId}
-        organizationId={organizationId}
-        setOrganizationId={setOrganizationId}
-        isGlobal={isGlobal}
-        setIsGlobal={setIsGlobal}
-        projects={projects}
-        organizations={organizations}
-        saving={saving}
-        onSubmit={addTodo}
-      />
+      <TaskComposer ownerId={ownerId} projects={projects} organizations={organizations} open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
@@ -1175,241 +1085,7 @@ function TaskFilterBar({
   </Dialog>;
 }
 
-/* ------------------------------ Add dialog ------------------------------- */
-
-/** Add-task form in a popup, opened by the header "+". Kept out of the page
- * body so the full width can show current tasks — this form is rarely used
- * (most tasks are generated from repos' NEEDED.md). */
-function AddTaskDialog({
-  t,
-  open,
-  onOpenChange,
-  title,
-  setTitle,
-  dueDate,
-  setDueDate,
-  newImportance,
-  setNewImportance,
-  newMinutes,
-  setNewMinutes,
-  newKind,
-  setNewKind,
-  projectId,
-  setProjectId,
-  organizationId,
-  setOrganizationId,
-  isGlobal,
-  setIsGlobal,
-  projects,
-  organizations,
-  saving,
-  onSubmit,
-}: {
-  t: Dict;
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  title: string;
-  setTitle: (v: string) => void;
-  dueDate: string;
-  setDueDate: (v: string) => void;
-  newImportance: string;
-  setNewImportance: (v: string) => void;
-  newMinutes: string;
-  setNewMinutes: (v: string) => void;
-  newKind: "" | TaskKind;
-  setNewKind: (v: "" | TaskKind) => void;
-  projectId: string;
-  setProjectId: (v: string) => void;
-  organizationId: string;
-  setOrganizationId: (v: string) => void;
-  isGlobal: boolean;
-  setIsGlobal: (v: boolean) => void;
-  projects: Project[];
-  organizations: Organization[];
-  saving: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t.todos.addTaskTitle}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="mt-3 space-y-3">
-            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface-inset px-3 py-2.5">
-              <div>
-                <Label htmlFor="todo-add-global">{t.todos.globalTask}</Label>
-                <p className="mt-0.5 text-[11px] text-foreground-subtle">
-                  {t.todos.globalGroup} · {t.todos.importanceOption(6)}
-                </p>
-              </div>
-              <Switch
-                id="todo-add-global"
-                checked={isGlobal}
-                onCheckedChange={(checked) => {
-                  setIsGlobal(checked);
-                  if (checked) {
-                    setNewImportance("6");
-                    setProjectId("");
-                  } else if (newImportance === "6") {
-                    setNewImportance("");
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="todo-add-title">{t.todos.taskLabel}</Label>
-              <Input
-                id="todo-add-title"
-                placeholder={t.todos.whatNeedsDoing}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-due">{t.todos.dueDate}</Label>
-                <Input
-                  id="todo-add-due"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-importance">
-                  {t.todos.importanceLabel}
-                </Label>
-                <SimpleSelect
-                  id="todo-add-importance"
-                  value={newImportance}
-                  onValueChange={setNewImportance}
-                  disabled={isGlobal}
-                  options={[
-                    { value: "", label: t.todos.importanceNone },
-                    ...[5, 4, 3, 2, 1].map((n) => ({
-                      value: String(n),
-                      label: t.todos.importanceOption(n),
-                    })),
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-time">{t.todos.timeLabel}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="todo-add-time"
-                    type="number"
-                    min={1}
-                    max={MAX_TASK_MINUTES}
-                    step={1}
-                    inputMode="numeric"
-                    placeholder="30"
-                    value={newMinutes}
-                    onChange={(e) => setNewMinutes(e.target.value)}
-                  />
-                  <span className="shrink-0 text-xs text-foreground-subtle">
-                    {t.todos.timeMinutesUnit}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-kind">{t.todos.categoryLabel}</Label>
-                <SimpleSelect
-                  id="todo-add-kind"
-                  value={newKind}
-                  onValueChange={(v) => setNewKind(v as "" | TaskKind)}
-                  options={[
-                    { value: "", label: t.todos.categoryNone },
-                    ...TASK_KINDS.map((k) => ({
-                      value: k,
-                      label: t.todos.taskKindLabel(k),
-                    })),
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-project">{t.todos.project}</Label>
-                <SimpleSelect
-                  id="todo-add-project"
-                  value={projectId}
-                  onValueChange={setProjectId}
-                  disabled={isGlobal}
-                  options={[
-                    { value: "", label: t.todos.noProject },
-                    ...projects.map((project) => ({ value: project.id, label: project.name })),
-                  ]}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-organization">{t.todos.organization}</Label>
-                <SimpleSelect
-                  id="todo-add-organization"
-                  value={organizationId}
-                  onValueChange={setOrganizationId}
-                  options={[
-                    { value: "", label: t.todos.noOrganization },
-                    ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  {t.common.cancel}
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={saving || !title.trim()}>
-                <Plus className="h-3.5 w-3.5" />
-                {t.todos.addTask}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-    </Dialog>
-  );
-}
-
 /* ------------------------------- Shared UI ------------------------------- */
-
-function QuickAddForm({
-  t,
-  title,
-  setTitle,
-  saving,
-  onSubmit,
-}: {
-  t: Dict;
-  title: string;
-  setTitle: (v: string) => void;
-  saving: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-}) {
-  return (
-    <form onSubmit={onSubmit} className="flex gap-2 mb-3">
-      <Input
-        aria-label={t.todos.taskLabel}
-        placeholder={t.todos.quickAddPlaceholder}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <Button
-        type="submit"
-        disabled={saving}
-        size="sm"
-        aria-label={t.todos.addTask}
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </Button>
-    </form>
-  );
-}
 
 function TodoList({
   t,

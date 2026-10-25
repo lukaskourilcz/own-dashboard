@@ -132,6 +132,9 @@ it('keeps the complete-collection ceiling atomic with imports and leaves no retr
  await db.exec("reset role; insert into todos(user_id,title) select '11111111-1111-4111-8111-111111111111','TEST_ONLY '||n from generate_series(1,20000) n; set role authenticated");
  await expect(call()).rejects.toThrow('Task limit');expect(await count()).toBe(20000);expect(await count('dashboard_private.task_create_receipts')).toBe(0);
 });
+it('preserves a 500-character Unicode title across client validation and storage',async()=>{
+ const input=taskCreateValuesSchema.parse(values({title:'😀'.repeat(500)}));const result=await call('create',null,input);expect(result.kind).toBe('saved');expect(result.task?.title).toBe(input.title);expect(result.task?.title).toHaveLength(1000);
+});
 it('keeps private retry metadata immutable for the session role and removes it with its owner account',async()=>{
  await saved();
  await expect(db.exec('update dashboard_private.task_create_receipts set request_hash=repeat(\'c\',64)')).rejects.toThrow('permission denied');

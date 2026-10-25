@@ -6,7 +6,7 @@ import { TASK_KINDS } from '@/lib/task-meta';
 import type { Todo } from '@/lib/types';
 
 export const taskCreateValuesSchema = z.strictObject({
- title:z.string().trim().min(1).max(500),due_date:z.iso.date().refine(value=>value.slice(0,4)!=='0000').nullable(),
+ title:z.string().trim().min(1).refine(value=>[...value].length<=500),due_date:z.iso.date().refine(value=>value.slice(0,4)!=='0000').nullable(),
  importance:z.number().int().min(1).max(6).nullable(),estimated_minutes:z.number().int().min(1).max(100000).nullable(),
  task_kind:z.enum(TASK_KINDS).nullable(),is_global:z.boolean(),project_id:z.uuid().nullable(),organization_id:z.uuid().nullable(),
 }).refine(value=>value.is_global ? value.importance===6 && value.project_id===null : value.importance!==6);

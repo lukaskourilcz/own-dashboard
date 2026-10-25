@@ -41,3 +41,11 @@ it("isolates the live weekly-planning harness from other preview scopes and real
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
   expect((await PreviewPage({ searchParams: Promise.resolve({ planning: "live" }) })).props.children.props.livePlanning).toBe(false);
 });
+
+it("isolates task-write fixtures from other preview scopes and real backends", async () => {
+ vi.stubEnv("NODE_ENV", "test");vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+ expect((await PreviewPage({searchParams:Promise.resolve({tasks:"live"})})).props.liveTasks).toBe(true);
+ expect((await PreviewPage({searchParams:Promise.resolve({planning:"live",projectRecords:"live"})})).props.liveTasks).toBe(false);
+ vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL","https://backend.example");
+ expect((await PreviewPage({searchParams:Promise.resolve({tasks:"live"})})).props.children.props.liveTasks).toBe(false);
+});

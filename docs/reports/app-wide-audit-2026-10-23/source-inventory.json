@@ -640,10 +640,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 53,
+      "lines": 54,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; fake-backend-only planning/music/project harness guards checked; ordinary production boundary and final release pending",
-      "reviewedSha256": "1db907c64f6c40a98b110919d2545e56b9ff8bc5e18a47f05b3abe84c52d7b67"
+      "status": "source reviewed; fake-backend-only planning/music/project/tasks harness guards checked; ordinary production boundary and final release pending",
+      "reviewedSha256": "ace8fcabc628af33bf726207d24223592053f8af34068b4f21fa97e52ccef8db"
     },
     {
       "path": "src/app/globals.css",
@@ -815,17 +815,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 501,
+      "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partial; route-scoped shell and fake-only planning harness checks pass; remaining shared/account lifecycle and full final matrix pending",
-      "reviewedSha256": "b93e3c024236692f474423d6688324662c7f57558bac5c56a5f24ebbe2603976"
+      "status": "partial; route-scoped fake-only Task query/owner wiring checked in finding 177; remaining shared/account lifecycle and final matrix pending",
+      "reviewedSha256": "0452c9ad70c99e34d36331bc83c36dddfad7e87ae4d6c7db5577c2fa36d99ef8"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 159,
+      "lines": 164,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; deterministic public/preview fixture and independent integration flags checked; final release pending",
-      "reviewedSha256": "3bf50ec736c3247d52bbea9b1a3f13144a849d569f55dbb9de16175ea3102935"
+      "status": "source reviewed; independent fake-only Tasks identity/query fixture checked in finding 177; final release pending",
+      "reviewedSha256": "ca12c53076cbc1e48836f700f116b0745ac56a25bea1b708bebb73beac4337af"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1594,10 +1594,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1484,
+      "lines": 1159,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; task identity/grouping, time bounds and named core controls checked; confirmed manual mutations, draft/pending lifecycle, lists and remaining source/release review pending",
-      "reviewedSha256": "a193d3d0bbcfb2f0d25b4eef31ad2cc4f5c4f2493ac86d92c1dfe89eaf0ac09a"
+      "status": "partially reviewed; captured task creation adopted in finding 177; toggle/delete, repository cleanup and density source/rendered review remain pending",
+      "reviewedSha256": "0f364ce611f98cdd68ee269b7d900ae8a562f01b174a63b708461deb05f5e04a"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -2622,10 +2622,10 @@
     },
     {
       "path": "src/lib/i18n/sections/todos.ts",
-      "lines": 387,
+      "lines": 411,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; targeted cleanup/import tests pass; final app-wide release checks pending",
-      "reviewedSha256": "4c9be91137cd113fe1dee229a547866118fe908d19ee48d06617a51d9b6bcb6f"
+      "status": "source reviewed; EN/CS creation retention/conflict/identity/limit messages checked in finding 177; final release pending",
+      "reviewedSha256": "72718dcb3fbe4b70b0ecb0e8603f02df2b3988635c30389fb09cbbcddda917ed"
     },
     {
       "path": "src/lib/i18n/sections/tools.ts",
@@ -4176,8 +4176,8 @@
       "path": "src/lib/task-write.ts",
       "lines": 119,
       "sha256": null,
-      "status": "source reviewed; captured owner/version task writes, strict receipts, exact recovery and source-safe cache contracts checked in finding 176; UI adoption and final release remain separate",
-      "reviewedSha256": "bb1de74edfec396c708d2460c845c835729846cae8382b81a54fb7dcfbe1b61a"
+      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176\u2013177; remaining callers and final release separate",
+      "reviewedSha256": "8a3ff87773dee890e2e43527285a099156e177b9b61392eba241f1203f19f9a0"
     },
     {
       "path": "src/lib/tax-registry.ts",
@@ -4369,6 +4369,13 @@
       "lines": 88,
       "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
+    },
+    {
+      "path": "src/components/tasks/task-composer.tsx",
+      "sha256": null,
+      "lines": 95,
+      "status": "source reviewed; captured creation, stable retry identity, draft/pending/owner/exit guards and stale-read cancellation checked in finding 177; final release pending",
+      "reviewedSha256": "e548813a89c7f0957e87ac84d3da7706cb07070abdfa96e1a800e5689fa30ba9"
     }
   ],
   "baselineFileCount": 561

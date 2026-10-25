@@ -8,6 +8,7 @@ type TodosStrings = {
   openDoneCount: (open: number, done: number) => string;
   allClear: string;
   allClearDescription: string;
+  taskAdded:string; createErr:string; createConflict:string; createAbsent:string; ownerChanged:string; discardDraft:string; reloadPage:string; selectedUnavailable:string; titleLimit:string;
   addTask: string;
   addTaskTitle: string;
   taskLabel: string;
@@ -122,6 +123,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     openDoneCount: (open, done) => `${open} open · ${done} done`,
     allClear: "All clear",
     allClearDescription: "No open tasks. Add one above.",
+    taskAdded:"Task added.",createErr:"The task could not be confirmed. Your draft is kept; retrying will not create a second copy.",createConflict:"The saved task changed. Copy any text you need, then discard this draft before starting another task.",createAbsent:"This task was removed. Discard this draft before starting a new task.",ownerChanged:"The account changed. Copy any text you need, then reload to continue.",discardDraft:"Discard draft",reloadPage:"Discard and reload",selectedUnavailable:"Saved selection unavailable",titleLimit:"Use at most 500 characters for the task title.",
     addTask: "Add task",
     addTaskTitle: "Add task",
     taskLabel: "Task",
@@ -132,7 +134,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     noProject: "No project",
     noOrganization: "No organization",
     nothingOnPlate: "Nothing on your plate",
-    nothingOnPlateDescription: "Add a task on the left to get started.",
+    nothingOnPlateDescription: "Add a task to get started.",
     quickAddPlaceholder: "Add a task…",
     due: (date) => `due ${date}`,
     dueDateFormat: "d MMM",
@@ -259,6 +261,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       )}`,
     allClear: "Hotovo",
     allClearDescription: "Žádné otevřené úkoly. Přidej nějaký výše.",
+    taskAdded:"Úkol přidán.",createErr:"Uložení úkolu se nepodařilo potvrdit. Návrh zůstává zachovaný; opakování nevytvoří druhou kopii.",createConflict:"Uložený úkol se změnil. Zkopírujte potřebný text a před vytvořením dalšího úkolu tento návrh zahoďte.",createAbsent:"Tento úkol byl odstraněn. Před vytvořením nového úkolu tento návrh zahoďte.",ownerChanged:"Účet se změnil. Zkopírujte potřebný text a pro pokračování stránku znovu načtěte.",discardDraft:"Zahodit návrh",reloadPage:"Zahodit a znovu načíst",selectedUnavailable:"Uložený výběr není dostupný",titleLimit:"Název úkolu může mít nejvýše 500 znaků.",
     addTask: "Přidat úkol",
     addTaskTitle: "Přidat úkol",
     taskLabel: "Úkol",
@@ -269,7 +272,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     noProject: "Bez projektu",
     noOrganization: "Bez organizace",
     nothingOnPlate: "Nemáš nic na práci",
-    nothingOnPlateDescription: "Přidej úkol vlevo a začni.",
+    nothingOnPlateDescription: "Začni přidáním úkolu.",
     quickAddPlaceholder: "Přidat úkol…",
     due: (date) => `termín ${date}`,
     dueDateFormat: "d. MMM",

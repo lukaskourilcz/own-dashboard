@@ -28,7 +28,7 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); client.clear(); vi.unstubAllGlobals(); document.documentElement.lang = "cs"; });
 async function refresh(lang: "en" | "cs") {
   const storage = new Storage(); storage.setItem("lang", lang); vi.stubGlobal("localStorage", storage); document.documentElement.lang = lang;
-  await act(async () => root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel todos={[]} /></TooltipProvider></QueryClientProvider>));
+  await act(async () => root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel ownerId="owner" todos={[]} /></TooltipProvider></QueryClientProvider>));
   act(() => [...host.querySelectorAll("button")].find(button => button.textContent?.trim() === todos[lang].refresh)!.click());
   await vi.waitFor(async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, 5)); }); expect(state.refetch).toHaveBeenCalledOnce(); });
 }
