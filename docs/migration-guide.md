@@ -728,11 +728,11 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-four prepared audit files follow, numbered 87–120 in the [current migration list](../README.md). The latest is `20261025094511_captured_collection_owner.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-five prepared audit files follow, numbered 87–121 in the [current migration list](../README.md). The latest is `20261025114445_complete_competitor_records.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn
-npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–120
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–121
 npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn  # both columns agree
 ```
@@ -1194,3 +1194,12 @@ Local tests cover unchanged-data upgrade, nonfinite-upgrade rollback, ordinary a
 ## Migration 120 — captured collection ownership, including empty results
 
 `20261025094511_captured_collection_owner.sql` adds an authenticated-only SECURITY INVOKER overload `read_owned_collection(text,uuid)` with an empty search path. It compares the explicitly captured owner against the current authenticated session before calling the existing complete snapshot. A null/mismatched owner fails even when the other account has no rows. It changes no table, row, policy, collection whitelist or one-argument caller. Shared callers that supply an owner now send it to this overload; the organization readers also validate their complete record shape. Direct public/anonymous/service execution is revoked. Apply it after migration 119 and before these callers; rollback dependent callers before dropping this overload. No external service or production write is part of local verification.
+
+
+## Migration 121 — complete competitor reads and maintained row versions
+
+`20261025114445_complete_competitor_records.sql` validates finite competitor versions, maintains updated_at with a monotonic invoker BEFORE UPDATE trigger and adds competitors to the complete collection whitelist. Same-clock/future versions advance by a PostgreSQL microsecond and ignore forged earlier client timestamps. Existing research, related projects, own-only policies and grants stay unchanged. A nonfinite legacy version refuses and rolls back the migration instead of inventing a repair. A read-only production preflight finds no nonfinite competitor versions.
+
+The complete snapshot orders by sort_order/created_at/id and refuses more than 10,000 rows or 10MiB returned JSON. Migration 120's captured-owner overload continues to guard it, including empty mismatched results. All earlier collection contracts remain. The new trigger has an empty search path and no direct public/anonymous/authenticated/service execution grant; normal permitted row writes still invoke it. Five-second DDL lock waits reset afterward. No index, data rewrite or provider authority is added.
+
+Local upgrade, rollback, stale-write, same-clock/future, complete-read, row/byte, RLS/related-project and privilege checks cover this foundation. Browser reader/writer adoption remains a separate step; this migration alone does not establish confirmed client controls. Generate the read port from all 121 canonical files and apply the complete prepared chain before deploying dependent callers. Revert those callers before removing this trigger/function/constraint and restoring the previous whitelist; owner records need no rollback.
