@@ -3112,10 +3112,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-caption.ts",
-      "lines": 39,
+      "lines": 50,
       "sha256": "d839e821d4807eb73f90f61878c75df2195a19d3b0e0be36c435fabc62c81a8f",
-      "status": "source reviewed; code-owned disclosure/keyword lines and stable unchanged approval text; no new confirmed source repair; final rendered/release checks pending",
-      "reviewedSha256": "d839e821d4807eb73f90f61878c75df2195a19d3b0e0be36c435fabc62c81a8f"
+      "status": "source reviewed; code-owned disclosure/keyword lines and stable unchanged approval text; no new confirmed source repair; final rendered/release checks pending; finding 195 rejects explicit model-written follow/comment calls; owner-edit policy and remaining semantic checks open",
+      "reviewedSha256": "a0fbc2cd84f04f73f904a48640c85d726a1e01f1d5e26840efd706c267f1fe6c"
     },
     {
       "path": "src/lib/marketing/dneskai-client.ts",
@@ -3238,10 +3238,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-generation.ts",
-      "lines": 601,
+      "lines": 602,
       "sha256": "22eeecf2f194ba34c3a898ee6f7598e61cca55f6525d8b1c4ffa1eb35b06f0d7",
-      "status": "partial; complete source inspection; headline-only first-slide parity across fallback types, deterministic prose policy and repeated evidence-number/date work remain under review; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "9e1c04fe6c3e98d1791ac8a3947132e7ba1be9b86705dd24b217af5134b3a989"
+      "status": "partial; complete source inspection; headline-only first-slide parity across fallback types, deterministic prose policy and repeated evidence-number/date work remain under review; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 195 rejects explicit model-written follow/comment calls; owner-edit policy and remaining semantic checks open",
+      "reviewedSha256": "6dbf8d488fbb9175e6a446d414968038c61910d7495e989a94db9b7cd30b8d85"
     },
     {
       "path": "src/lib/marketing/dneskai-instagram-webhook.ts",

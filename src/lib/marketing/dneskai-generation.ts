@@ -6,7 +6,7 @@ import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type Dnesk
 import { DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { dneskaiPlacedFields, DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
-import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
+import { DNESKAI_AI_DISCLOSURE, dneskaiHasAudienceCall, dneskaiKeywordLine } from "./dneskai-caption";
 
 /**
  * Generation v5 for DNESKAi (#116): one structured Claude call turns a research brief (#115) into the
@@ -426,6 +426,7 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
   ];
   for (const entry of prose) {
     if (UNSAFE_TEXT.test(entry.value)) issues.push(issue("unsafe-text", entry.slide, entry.field, "Remove URLs, markup, control characters and emoji."));
+    if (dneskaiHasAudienceCall(entry.value)) issues.push(issue("audience-call", entry.slide, entry.field, "Remove the call to follow or comment; code writes the approved keyword line in the caption."));
     const unsupported = dneskaiUnsupportedNumbers(entry.value, offer.corpus);
     if (unsupported.length) issues.push(issue("unsupported-number", entry.slide, entry.field, `${unsupported.length === 1 ? "A number does" : `${unsupported.length} numbers do`} not appear in the evidence; remove ${unsupported.length === 1 ? "it" : "them"} or use only numbers the evidence states.`));
   }
@@ -457,7 +458,7 @@ export function validateDneskaiReplyMessage(value: string, offer: DneskaiBriefOf
   if (dneskaiUnsupportedNumbers(prose.replace(/^[ \t]*[1-9]\.[ \t]+/gmu, ""), offer.corpus).length) issues.push(issue("unsupported-number", null, field, "A number in the replyMessage does not appear in the evidence; remove it or use only numbers the evidence states."));
   if (dneskaiTalksAboutSources(prose)) issues.push(issue("source-talk", null, field, "Remove the sentence about sources, confirmation or verification."));
   if (/(^|\s)#[\p{L}\p{N}]/u.test(prose)) issues.push(issue("caption-hashtag", null, field, "The replyMessage carries no hashtags."));
-  if (/napi(?:š|s)te\s+do\s+komentář/iu.test(prose)) issues.push(issue("reply-message-cta", null, field, "Do not ask for a comment; code writes that line in the caption."));
+  if (dneskaiHasAudienceCall(prose)) issues.push(issue("reply-message-cta", null, field, "Do not ask for a follow or comment; code writes the approved keyword line in the caption."));
   return issues;
 }
 

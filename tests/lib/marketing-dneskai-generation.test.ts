@@ -36,6 +36,24 @@ const clean = vi.fn(async (): Promise<DneskaiSlideRenderProblem[]> => []);
 const admit = vi.fn(async (input: { attempt: number; maxCostUsd: number }) => { void input; });
 beforeEach(() => { vi.clearAllMocks(); });
 
+describe("model-written audience calls", () => {
+  const calls = ['Sledujte nás pro další novinky.', 'Sleduj @dneskai.', 'Pro další tipy nás sledujte.', 'Začněte sledovat náš profil.', 'Dejte nám follow.', 'Napište SKILL do komentáře.', 'Napiš do komentářů, co si myslíš.', 'Podělte se o názor v komentářích.', 'Komentujte pod příspěvkem.', 'Leave a comment below.', 'Follow us for more.', 'Nezapomeňte nás sledovat.', 'SLEDUJTE NÁS.'];
+  it.each(calls)('refuses an explicit audience call in model copy: %s', call => {
+    const copy = validCopy(pictures); copy.caption = call;
+    const issues = validateDneskaiCopy(copy, offerFor());
+    expect(issues).toContainEqual(expect.objectContaining({ code: 'audience-call', slide: null, field: 'caption' }));
+    expect(dneskaiRetryFeedback(issues, copy, 100000)).toContain('code writes');
+  });
+  it('checks slide text and alt text as well as the caption', () => {
+    const copy = validCopy(pictures); copy.slides[0]!.headline = 'Sledujte nás'; copy.slides[1]!.body = 'Napište názor do komentářů.'; copy.slides[2]!.alt = 'Follow us.';
+    expect(validateDneskaiCopy(copy, offerFor()).filter(issue => issue.code === 'audience-call').map(issue => [issue.slide, issue.field])).toEqual([[0, 'headline'], [1, 'body'], [2, 'alt']]);
+  });
+  it.each(['Model sleduje změny v dokumentu.', 'Sledujte průběh úlohy v konzoli.', 'Napište příkaz do terminálu.', 'Otevřete panel Komentáře.', 'Follow the instructions in the editor.', 'Nástroj umožňuje sledovat náš účet.', 'Sledujte nasazené změny v konzoli.'])('keeps ordinary descriptions and product instructions: %s', text => {
+    const copy = validCopy(pictures); copy.caption = text;
+    expect(validateDneskaiCopy(copy, offerFor()).filter(issue => issue.code === 'audience-call')).toEqual([]);
+  });
+});
+
 describe("marketing-copy/8 prompt (#116, #158, owner rules of 22 October 2026)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
