@@ -434,3 +434,25 @@ for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360
   await expect(topics.getByRole('status')).toHaveText(t.done.restore(1));
   expect(errors).toEqual([]); expect(writes).toEqual([]);
 });
+
+for (const lang of ['en', 'cs'] as const) test(`Lab disclosure follows the edited caption (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang], requests: string[] = [];
+  if (info.project.name === 'mobile') await page.setViewportSize({ width: 360, height: 800 });
+  page.on('request', request => { if (request.url().includes('/api/marketing/')) requests.push(request.url()); });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const lab = page.getByTestId('dneskai-lab-session');
+  const caption = lab.getByRole('textbox', { name: t.post.caption, exact: true });
+  const saved = await caption.inputValue();
+  await expect(lab.getByText(t.post.disclosureText, { exact: true })).toBeVisible();
+  await expect(lab.getByText(t.post.disclosureMissing, { exact: true })).toHaveCount(0);
+  await caption.fill('Ukázkový popisek bez označení.');
+  await expect(lab.getByText(t.post.disclosureMissing, { exact: true })).toBeVisible();
+  await expect(lab.getByText(t.post.disclosureText, { exact: true })).toHaveCount(0);
+  await caption.fill(saved);
+  await expect(lab.getByText(t.post.disclosureText, { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.waitForTimeout(600);
+  expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-lab-session"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
+  expect(errors).toEqual([]); expect(requests).toEqual([]);
+});

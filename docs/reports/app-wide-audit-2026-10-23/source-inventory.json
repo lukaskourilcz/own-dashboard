@@ -1134,10 +1134,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
-      "lines": 380,
+      "lines": 381,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "cf2f8439f9f4a737b83b52e609fdbc40a34fcaff70266b6cbcfe459efa3522cb"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
+      "reviewedSha256": "aa9a64b4b27799b2e76d83278408f9075778d57840bb2ad7f4647005768334a0"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
@@ -2518,8 +2518,8 @@
       "path": "src/lib/i18n/sections/dneskai-account.ts",
       "lines": 120,
       "sha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5",
-      "status": "partial source review: typed EN/CS account/reply diagnostics retained; introduction assumes Instagram Login despite supported Facebook Login and misleadingly implies verification always leaves publishing off; reconcile with actual connection state",
-      "reviewedSha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5"
+      "status": "partial source review: typed EN/CS account/reply diagnostics retained; introduction assumes Instagram Login despite supported Facebook Login and misleadingly implies verification always leaves publishing off; reconcile with actual connection state; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
+      "reviewedSha256": "23b0469070368e8e5285e55ece7db07dd8b9b81ae4db362691f41397c425e7ae"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
@@ -2539,8 +2539,8 @@
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
       "lines": 520,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "975543cefb78040ac07cad9d1e1ca414918747b6675a0cad494d276c85eb66f1"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
+      "reviewedSha256": "af3c0baaffdb60854efb7a0fb715e586bb19f418876f536a1bfae6055f341401"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
@@ -2553,8 +2553,8 @@
       "path": "src/lib/i18n/sections/dneskai-sources.ts",
       "lines": 137,
       "sha256": "773072ca62dc418efd2976690c3ba1876149ab75630c71034d96d20d27bb65fa",
-      "status": "partial; complete EN/CS source inspection; capability copy incorrectly identifies an unapplied migration without evidence",
-      "reviewedSha256": "773072ca62dc418efd2976690c3ba1876149ab75630c71034d96d20d27bb65fa"
+      "status": "partial; complete EN/CS source inspection; capability copy incorrectly identifies an unapplied migration without evidence; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
+      "reviewedSha256": "7107021cac641eaa86944076cf1130ceb57b66e6bf522b41c82cd2caf7df90e1"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-workspace.ts",
