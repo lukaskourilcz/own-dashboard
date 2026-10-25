@@ -1,96 +1,65 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { useGuestPreferences } from "@/lib/guest-preferences";
 import { qk } from "@/lib/queries/keys";
 import { fetchSpendCategories } from "@/lib/queries/fetchers";
-import { useToast } from "@/components/ui/toast";
-import { useDict } from "@/lib/i18n";
+import { awaitWithSignal } from "@/lib/abortable";
+import { createSpendCategoryRecord, removeSpendCategoryRecord, orderSpendCategories, SpendCategoryError, type SpendCategoryIntent } from "@/lib/spend-category-records";
 import type { SpendCategory } from "@/lib/types";
 
-/**
- * The user-managed spend categories, backed by the `spend_categories` table and
- * shared across Subscriptions and Finances. Self-fetches (the list is tiny and
- * only needed inside the category picker), so it degrades gracefully to an
- * empty list if the table isn't there yet — the selector still works off the
- * categories already present in the data.
- */
-export function useSpendCategories(): {
-  categories: SpendCategory[];
-  addCategory: (name: string) => void;
-  removeCategory: (id: string) => void;
-} {
-  const qc = useQueryClient();
-  const supabase = createClient();
-  const toast = useToast();
-  const t = useDict();
+const EMPTY_CATEGORIES: readonly SpendCategory[] = Object.freeze([]);
 
-  const { data } = useQuery({
-    queryKey: qk.spendCategories,
-    queryFn: fetchSpendCategories,
-    staleTime: 5 * 60_000,
-    // A missing table (before the migration is run) shouldn't spam retries.
-    retry: false,
-  });
-  const categories = data ?? [];
+/** Only confirmed owned rows enter the shared picker cache. Existing entity
+ * category strings remain independent of this optional managed list. */
+export function useSpendCategories() {
+  const client = useQueryClient(), owner = useOwnerPreferences(), guest = useGuestPreferences();
+  const ownerId = owner?.ownerId ?? "unavailable";
+  const readOnly = !!guest || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId);
+  const key = useMemo(() => [...qk.spendCategories, ownerId], [ownerId]);
+  const mounted = useRef(false), actor = useRef(ownerId), requests = useRef(new Set<AbortController>());
+  const intent = useRef<SpendCategoryIntent | null>(null);
+  useEffect(() => {
+    mounted.current = true; const active = requests.current;
+    return () => { mounted.current = false; for (const request of active) request.abort(); active.clear(); };
+  }, []);
+  useLayoutEffect(() => { actor.current = ownerId; for (const request of requests.current) request.abort(); intent.current = null; }, [ownerId]);
+  const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchSpendCategories({ ownerId, signal }), enabled: !readOnly, staleTime: 5 * 60_000, retry: false });
+  const ready = !readOnly && query.isSuccess && !query.isFetching;
+  const categories = query.data ?? EMPTY_CATEGORIES;
 
-  const addMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const trimmed = name.trim();
-      if (!trimmed) return null;
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const sortOrder =
-        Math.max(0, ...categories.map((c) => c.sort_order)) + 1;
-      const { data, error } = await supabase
-        .from("spend_categories")
-        .insert({ user_id: userId, name: trimmed, sort_order: sortOrder })
-        .select()
-        .single();
-      if (error) {
-        // 23505 = unique violation → it already exists; treat as a no-op.
-        if ((error as { code?: string }).code === "23505") return null;
-        throw error;
-      }
-      return data as SpendCategory;
-    },
-    onSuccess: (row) => {
-      if (!row) return;
-      qc.setQueryData<SpendCategory[]>(qk.spendCategories, (prev) => [
-        ...(prev ?? []),
-        row,
-      ]);
-    },
-    onError: () => toast.err(t.categories.saveErr),
-  });
+  const capture = useCallback(() => {
+    if (!owner || readOnly || !mounted.current) throw new SpendCategoryError();
+    const captured = owner.capture(), controller = new AbortController(); requests.current.add(controller);
+    return { ownerId: captured.ownerId, signal: AbortSignal.any([captured.signal, controller.signal, AbortSignal.timeout(15_000)]), controller };
+  }, [owner, readOnly]);
+  const addCategory = useCallback(async (name: string) => {
+    if (!ready) throw new SpendCategoryError();
+    const captured = capture(), trimmed = name.trim();
+    if (!intent.current || intent.current.name !== trimmed) intent.current = { id: crypto.randomUUID(), name: trimmed, sortOrder: Math.min(2147483647, Math.max(0, ...categories.map(row => row.sort_order)) + 1) };
+    const command = structuredClone(intent.current);
+    try {
+      await awaitWithSignal(client.cancelQueries({ queryKey: key, exact: true }), captured.signal);
+      const row = await createSpendCategoryRecord(createClient(), captured, command);
+      if (!mounted.current || actor.current !== captured.ownerId || captured.signal.aborted) throw new SpendCategoryError();
+      client.setQueryData<SpendCategory[]>(key, previous => orderSpendCategories([...(previous ?? []).filter(item => item.id !== row.id), row]));
+      intent.current = null; return row;
+    } finally { requests.current.delete(captured.controller); }
+  }, [ready, capture, categories, client, key]);
+  const removeCategory = useCallback(async (row: SpendCategory) => {
+    if (!ready) throw new SpendCategoryError();
+    const captured = capture(), expected = structuredClone(row);
+    try {
+      await awaitWithSignal(client.cancelQueries({ queryKey: key, exact: true }), captured.signal);
+      await removeSpendCategoryRecord(createClient(), captured, expected);
+      if (!mounted.current || actor.current !== captured.ownerId || captured.signal.aborted) throw new SpendCategoryError();
+      client.setQueryData<SpendCategory[]>(key, previous => (previous ?? []).filter(item => item.id !== expected.id));
+    } finally { requests.current.delete(captured.controller); }
+  }, [ready, capture, client, key]);
 
-  const removeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("spend_categories")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-      return id;
-    },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.spendCategories });
-      const prev = qc.getQueryData<SpendCategory[]>(qk.spendCategories);
-      qc.setQueryData<SpendCategory[]>(qk.spendCategories, (old) =>
-        (old ?? []).filter((c) => c.id !== id),
-      );
-      return { prev };
-    },
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.spendCategories, ctx.prev);
-      toast.err(t.categories.saveErr);
-    },
-  });
-
-  return {
-    categories,
-    addCategory: (name: string) => addMutation.mutate(name),
-    removeCategory: (id: string) => removeMutation.mutate(id),
-  };
+  return { categories, ready, readOnly, failed: !readOnly && query.isError, loading: !readOnly && query.isPending,
+    refreshing: query.isFetching, reload: () => readOnly ? Promise.resolve(undefined) : query.refetch(), addCategory, removeCategory };
 }

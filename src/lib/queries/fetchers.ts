@@ -1,5 +1,6 @@
 "use client";
 
+import { readSpendCategoryRecords, type SpendCategoryScope } from "@/lib/spend-category-records";
 import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
@@ -351,15 +352,8 @@ export async function fetchTools(): Promise<Tool[]> {
   return (data ?? []) as Tool[];
 }
 
-export async function fetchSpendCategories(): Promise<SpendCategory[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("spend_categories")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as SpendCategory[];
+export async function fetchSpendCategories(scope: SpendCategoryScope): Promise<SpendCategory[]> {
+  return readSpendCategoryRecords(createClient(), scope);
 }
 
 export async function fetchShortcuts(): Promise<Shortcut[]> {

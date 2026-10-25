@@ -29,6 +29,7 @@ export function DemoDashboard({
   liveMusic = false,
   livePlanning = false,
   liveTasks = false,
+  liveCategories = false,
   liveMonitoring = false,
   livePreferences = false,
   liveCalendar = false,
@@ -56,6 +57,8 @@ export function DemoDashboard({
   livePlanning?: boolean;
   /** Isolated fake-backend Tasks write/read checks only. */
   liveTasks?: boolean;
+  /** Isolated fake-backend category mutation checks only. */
+  liveCategories?: boolean;
   /** Dev/E2E-only mocked history reads; disabled in the public tour. */
   liveMonitoring?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
@@ -84,7 +87,7 @@ export function DemoDashboard({
       previewMonitoringIntegration={liveMonitoring}
       previewPreferencesIntegration={livePreferences}
       previewCalendarIntegration={liveCalendar}
-      user={livePlanning || liveTasks ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={livePlanning || liveTasks || liveCategories ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}

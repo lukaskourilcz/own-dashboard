@@ -420,3 +420,8 @@ Finding 201: 38 native cases pass, six intentional variants skip (2.9 min), cove
 ### App-wide audit: native typography (25 October 2026)
 
 Finding 202: a clean development compile passes fourteen native cases with two duplicate skips (57.9 s). Editor/body computed families match at six widths in EN/CS, actual toast/body families match on desktop/mobile, and invoice reflow/PDF import/print visibility checks pass. Axe/overflow and page-error checks pass. EN desktop/light and CS mobile/dark Notes plus invoice captures were inspected. Earlier runs served stale generated CSS and are not evidence for the edited styles. Full optimized/A4/QR release validation remains separate; Czech editor placeholder/menus still need locale review.
+
+
+## Shared category management — 25 October 2026
+
+The real subscription category dialog keeps its persistent label, input and Add action in a compact centered surface. Matching 44px mobile/32px desktop controls, six-width reflow, EN/CS light/dark recovery, pending Escape, retained drafts, canonical choices, stale removal and keyboard focus pass in eight final browser cases (34.5 seconds). Guest/default-fixture management makes no private category request. Active-modal axe passes after enabled opacity settles; inspected Czech desktop/mobile captures use synthetic data. A separate combined category/subscription/rule run passes eighteen cases (43.0 seconds). This is targeted development-server evidence, not a new full-app release result. See app-wide finding 208 for exact record, retry and validation limits.

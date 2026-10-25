@@ -674,9 +674,10 @@ export function SubscriptionsPanel({
                 <Label htmlFor="sub-category">{t.subscriptions.category}</Label>
                 <CategorySelect
                   id="sub-category"
+                  contextKey={form.id ?? "new-subscription"}
                   ariaLabel={t.subscriptions.category}
                   value={form.category}
-                  onChange={(v) => setForm({ ...form, category: v })}
+                  onChange={(v) => setForm(previous => ({ ...previous, category: v }))}
                   used={subs.map((s) => s.category)}
                 />
               </div>

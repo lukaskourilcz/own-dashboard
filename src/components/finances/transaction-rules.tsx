@@ -905,6 +905,7 @@ function RuleDialog({
                 {actionLabel("category", t.finances.rules.actionCategory)}
                 {form.enabledActions.includes("category") && (
                   <CategorySelect
+                    contextKey={form.id ?? createId}
                     value={form.category}
                     onChange={(category) => setForm((prev) => ({ ...prev, category }))}
                     used={transactions.map((tx) => tx.category)}

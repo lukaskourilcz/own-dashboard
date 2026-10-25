@@ -849,7 +849,7 @@ export function FinancesPanel({
                   id="tx-category"
                   ariaLabel={t.finances.category}
                   value={txForm.category}
-                  onChange={(v) => setTxForm({ ...txForm, category: v })}
+                  onChange={(v) => setTxForm(previous => ({ ...previous, category: v }))}
                   used={transactions.map((tx) => tx.category)}
                 />
               </div>
