@@ -39,6 +39,14 @@ type PortfolioStrings = {
   searchCompetitors: string;
   competitorsCount: (n: number) => string;
   nameAndProjectRequired: string;
+  competitorPages: string;
+  competitorPageRange: (from: number, to: number, total: number) => string;
+  competitorPrevious: string;
+  competitorNext: string;
+  competitorNoMatches: string;
+  competitorNoMatchesHint: string;
+  competitorClearFilters: string;
+  competitorProjectUnavailable: string;
   competitorNameInvalid: string;
   competitorUrlInvalid: string;
   competitorSaveUnconfirmed: string;
@@ -125,7 +133,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     subsection: "Subsection",
     subsectionOf: (parent) => `Part of ${parent}`,
     competitionTitle: "Competition",
-    competitionDescription: "Who else solves the same problem for each project: their most useful features, how they show up on social media, how they charge, and what to take from it.",
+    competitionDescription: "Competitor research by project: features, pricing, social content and lessons.",
     addCompetitor: "Add competitor",
     editCompetitor: "Edit competitor",
     deleteCompetitor: "Delete competitor",
@@ -162,6 +170,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     searchCompetitors: "Search competitors…",
     competitorsCount: (n) => `${n} ${n === 1 ? "competitor" : "competitors"}`,
     nameAndProjectRequired: "A name and a project are required.",
+    competitorPages: "Competition pages",
+    competitorPrevious: "Previous",
+    competitorNext: "Next",
+    competitorNoMatches: "No matching competitors",
+    competitorNoMatchesHint: "Try a different search or clear the filters.",
+    competitorClearFilters: "Clear filters",
+    competitorProjectUnavailable: "Project unavailable",
+    competitorPageRange: (from, to, total) => `${from}–${to} of ${total}`,
     competitorNameInvalid: "Enter a name up to 120 characters.",
     competitorUrlInvalid: "Use HTTP or HTTPS addresses without sign-in details, up to 2,000 characters each.",
     competitorSaveUnconfirmed: "The save could not be confirmed. Your draft is kept. Try saving again.",
@@ -248,7 +264,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     subsection: "Podsekce",
     subsectionOf: (parent) => `Součást ${parent}`,
     competitionTitle: "Konkurence",
-    competitionDescription: "Kdo další řeší stejný problém u každého projektu: jejich nejužitečnější funkce, jak vystupují na sociálních sítích, jak účtují a co si z toho vzít.",
+    competitionDescription: "Průzkum konkurence podle projektů: funkce, ceny, obsah na sítích a poučení.",
     addCompetitor: "Přidat konkurenta",
     editCompetitor: "Upravit konkurenta",
     deleteCompetitor: "Smazat konkurenta",
@@ -285,6 +301,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     searchCompetitors: "Hledat konkurenty…",
     competitorsCount: (n) => `${n} ${n === 1 ? "konkurent" : n < 5 ? "konkurenti" : "konkurentů"}`,
     nameAndProjectRequired: "Název a projekt jsou povinné.",
+    competitorPages: "Stránky konkurence",
+    competitorPrevious: "Předchozí",
+    competitorNext: "Další",
+    competitorNoMatches: "Žádní odpovídající konkurenti",
+    competitorNoMatchesHint: "Zkuste jiné hledání nebo zrušte filtry.",
+    competitorClearFilters: "Zrušit filtry",
+    competitorProjectUnavailable: "Projekt není dostupný",
+    competitorPageRange: (from, to, total) => `${from}–${to} z ${total}`,
     competitorNameInvalid: "Zadejte název o délce nejvýše 120 znaků.",
     competitorUrlInvalid: "Použijte adresy HTTP nebo HTTPS bez přihlašovacích údajů, každou nejvýše o 2 000 znacích.",
     competitorSaveUnconfirmed: "Uložení se nepodařilo potvrdit. Koncept zůstává zachovaný. Zkuste ho uložit znovu.",

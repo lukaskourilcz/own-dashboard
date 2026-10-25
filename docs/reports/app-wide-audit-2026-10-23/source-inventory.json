@@ -1451,8 +1451,8 @@
       "path": "src/components/panels/competition-panel.tsx",
       "lines": 165,
       "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
-      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
-      "reviewedSha256": "279183b75e25a2295a9ba1387d59ca9156f1f0ab0abcd2f79f0cc31ca980c037"
+      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
+      "reviewedSha256": "5f2f0c6c34028d6aef8161b74f13076c75e65159bd839d83fa907f38229f06b8"
     },
     {
       "path": "src/components/panels/dev-finance-panel.tsx",
@@ -1682,8 +1682,8 @@
       "path": "src/components/projects/project-competition.tsx",
       "lines": 45,
       "sha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6",
-      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
-      "reviewedSha256": "e390b5a851c1bf98998273484f9db26e3e7e36750644f3969daee36a15086e18"
+      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
+      "reviewedSha256": "edf5b7b8c9add4cebd5f45788472b0dedf26242458839c34958e477c974932f8"
     },
     {
       "path": "src/components/projects/project-doc-panel.tsx",
@@ -1738,8 +1738,8 @@
       "path": "src/components/projects/project-workspace.tsx",
       "lines": 320,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
-      "reviewedSha256": "ad869267daf738c98e76bb74436fb49f710a9db29dc024f9067c83dfc200adc7"
+      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
+      "reviewedSha256": "7e0895f40805bebb0ddc01977b070c55e04923e23b7186f951c4cf988d12847b"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -2181,8 +2181,8 @@
       "path": "src/lib/competition.ts",
       "lines": 55,
       "sha256": "c0b1df04bca4cbc2ba6118511a1e2a978e31d2cabc01e84d09deb9974d0c6969",
-      "status": "source reviewed; strict Gregorian freshness, local calendar boundary, stale counts and sort checks pass; final release pending",
-      "reviewedSha256": "4f06451e861b32ad4ac11a432584e1c86b9f2358baae56ece4b12f634820a0dd"
+      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
+      "reviewedSha256": "2e9d3efbf30235af01fc06d38196e593ac8816c7f17dd4bc6d07e370789b15d8"
     },
     {
       "path": "src/lib/cron-auth.ts",
@@ -2658,8 +2658,8 @@
       "path": "src/lib/i18n/sections/portfolio.ts",
       "lines": 337,
       "sha256": "aaa1c95cd731b3f7418a9dad19217dd5053db7b4218aa5bb82cb2ecb3c2a9029",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
-      "reviewedSha256": "621632c2aae22e46f943dd68b958fb4eb1522cca228be1d2e6a25093da702082"
+      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
+      "reviewedSha256": "420ee2298514079dc3ee2778517d248e3ea4c6f9413c308566fc4f73cc69b149"
     },
     {
       "path": "src/lib/i18n/sections/professional.ts",
@@ -4660,6 +4660,13 @@
       "lines": 14,
       "reviewedSha256": "954cb7634094c8dfcf281ee091f0c7db36667620764771d5b43dec868510fa7e",
       "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending"
+    },
+    {
+      "path": "src/components/competition/competition-pagination.tsx",
+      "sha256": null,
+      "lines": 20,
+      "reviewedSha256": "ee733ab0d0ac512155303d52546809b43d619f1926fb21227dd3ec76ce7d0942",
+      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending"
     }
   ],
   "baselineFileCount": 561

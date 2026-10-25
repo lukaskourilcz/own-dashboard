@@ -127,3 +127,19 @@ it.each(['create','update','delete'] as const)('applies confirmed %s without rer
  else{handler=()=>Response.json([record()]);act(()=>action(portfolio.en.deleteCompetitor).click());act(()=>button(common.en.delete).click());await settle(()=>expect(rows()).toHaveLength(0));}
  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,25));});expect(queryReads).toBe(0);expect(qc.getQueryState([...qk.competitors,owner])?.isInvalidated).toBe(true);
 });
+it('mounts at most fifty research rows while keeping the complete collection searchable',async()=>{
+ const complete=Array.from({length:1201},(_,index)=>({...record(),id:`${index.toString(16).padStart(8,'0')}-bbbb-4bbb-8bbb-bbbbbbbbbbbb`,name:`Research ${String(index).padStart(4,'0')}`,sort_order:index}));await render('en',complete,'all');expect(host.querySelectorAll('[data-competitor]')).toHaveLength(50);change(`input[aria-label="${portfolio.en.searchCompetitors}"]`,'Research 1200');await settle(()=>expect(host.querySelectorAll('[data-competitor]')).toHaveLength(1));expect(host.textContent).toContain('Research 1200');expect(queryReads).toBe(0);
+});
+it('explains a filtered empty list instead of leaving a blank area',async()=>{
+ await render('en',[record()],'all');change(`input[aria-label="${portfolio.en.searchCompetitors}"]`,'No matching synthetic term');expect(host.textContent).toContain(portfolio.en.competitorNoMatches);expect(queryReads).toBe(0);
+});
+it('keeps research visible when its cached project details are unavailable',async()=>{
+ const orphan={...record(),project_id:'cccccccc-cccc-4ccc-8ccc-cccccccccccc'};await render('en',[orphan],'all');expect(host.textContent).toContain(orphan.name);expect(host.textContent).toContain(portfolio.en.competitorProjectUnavailable);
+});
+
+it.each(['all','project'] as const)('pages locally and clamps after a shorter refresh on the %s surface',async surface=>{
+ const complete=Array.from({length:101},(_,index)=>({...record(),id:`${index.toString(16).padStart(8,'0')}-bbbb-4bbb-8bbb-bbbbbbbbbbbb`,name:`Research ${index}`,sort_order:index}));await render('en',complete,surface);act(()=>button(portfolio.en.competitorNext).click());await settle(()=>expect(host.querySelector('[role="status"]')?.textContent).toBe(portfolio.en.competitorPageRange(51,100,101)));expect(host.querySelectorAll('[data-competitor]')).toHaveLength(50);act(()=>button(portfolio.en.competitorNext).click());await settle(()=>expect(host.querySelectorAll('[data-competitor]')).toHaveLength(1));act(()=>changeRows(complete.slice(0,100)));await settle(()=>expect(host.querySelector('[role="status"]')?.textContent).toBe(portfolio.en.competitorPageRange(51,100,100)));expect(host.querySelectorAll('[data-competitor]')).toHaveLength(50);expect(button(portfolio.en.competitorNext).disabled).toBe(true);expect(queryReads).toBe(0);
+});
+it('clears filters explicitly and returns focus to search',async()=>{
+ await render('en',[record()],'all');change(`input[aria-label="${portfolio.en.searchCompetitors}"]`,'No matching synthetic term');act(()=>button(portfolio.en.competitorClearFilters).click());expect(document.activeElement).toBe(host.querySelector(`input[aria-label="${portfolio.en.searchCompetitors}"]`));await settle(()=>expect(host.querySelectorAll('[data-competitor]')).toHaveLength(1));expect(queryReads).toBe(0);
+});
