@@ -1,6 +1,8 @@
 # DNESKAi browser setup and continuation — 22 October 2026
 
-## Current result
+> **Continuation:** later setup, Live/webhook configuration, EU tracing, publishing activation and the first Reel are recorded in [the 23 October handoff](../../astra-handoff.md). The evidence below retains its original timestamps; do not use its old open-task list as current setup instructions.
+
+## Historical setup result
 
 > **Update, 23 October 2026.** Later on 22 October the pilot published two posts (https://www.instagram.com/p/DezenXXkev_/ and https://www.instagram.com/p/Dezk8kMlv0P/), and the account switch went off again afterwards. The rows below describe the setup as of 16:17 Prague; the account panel now lives under the DNESKAi `⋯` menu → Účet Instagram.
 

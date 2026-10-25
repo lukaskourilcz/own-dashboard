@@ -1,15 +1,11 @@
 # OwnDashboard system map
 
-The current state of the app, written for a reader who has not seen the repository. Each part says what it does,
-where the code lives, which outside system it talks to and what is switched on in production. State as of
-23 October 2026, main `1568076` (own-dashboard) and `893a495` (Quorum). Details live in the linked docs;
-this page is the index to them.
+This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 25 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 32 prepared migrations still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
 
 ## 1. What OwnDashboard is
 
 A private, single-owner professional operating system for one software engineer and freelancer (Lukáš). It is
-bilingual (English and Czech, full parity) and self-hosted on Vercel with a Supabase database. Every table is
-own-only under row-level security. The product areas:
+bilingual (English and Czech, full parity) and self-hosted on Vercel with a Supabase database. Private owner records use own-only row-level security; integration credentials remain inaccessible to browser roles. The product areas:
 
 | Area | What it holds | Main code |
 |---|---|---|
@@ -32,7 +28,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
   `src/components/dashboard-shell.tsx` is the persistent client shell with History API navigation. Data loads per
   route (`dashboardDataKeysForTab`, centralized query keys).
 - **API.** Route handlers under `src/app/api/` (`marketing`, `cron`, `bank`, `calendar`, `github`, `google`, `money`,
-  `registry`, `export`, `webhooks`, `dev-preview` and more). Writes check same-origin (`src/lib/csrf.ts`).
+  `registry`, `export`, `webhooks`, `dev-preview` and more). Browser-owned writes check same-origin (`src/lib/csrf.ts`); automation and inbound webhooks use their signature boundaries.
 - **Database.** Supabase project `gcctapykhrdyxikieemn` (Postgres with pg_cron, pg_net, Vault, Storage).
   Migrations in `supabase/migrations/`; `docs/migration-guide.md` explains each one.
 - **Hosting.** Vercel project `own-dashboard` (team `lukas-kourils-projects`), production URL
@@ -40,9 +36,8 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
   07:00, bank sync 06:00, payment match 06:30 (`vercel.json`). The marketing scheduler runs from Supabase instead
   (section 4).
 - **Preview without data.** `/dev-preview` renders every screen from deterministic fixtures
-  (`src/lib/demo/`) for visual and accessibility tests. It never calls a marketing API.
-- **Gates.** `npm run lint`, `./node_modules/.bin/tsc --noEmit`, `npm run test` (vitest, about 2,750 tests, PGlite
-  for SQL), `npm run build`, `./node_modules/.bin/playwright test` (port 3939). CI (`.github/workflows/ci.yml`) runs
+  (`src/lib/demo/`) for visual and accessibility tests. Default preview readers use in-memory fixtures; explicit transport tests intercept a nonexistent backend. Ordinary production builds return 404.
+- **Gates.** `npm run lint`, `./node_modules/.bin/tsc --noEmit`, `npm run test` (Vitest and migrated PGlite; exact snapshot results in the audit report), `npm run build`, `./node_modules/.bin/playwright test` (port 3939). CI (`.github/workflows/ci.yml`) runs
   `check` and `e2e` on every push.
 
 ## 3. Outside systems and how they connect
@@ -56,14 +51,14 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 | Bank (GoCardless) | Daily transaction sync | `src/lib/gocardless.ts`, `src/lib/bank*` | As configured; no new bank work planned |
 | Jina Reader | Link enrichment: only the submitted URL is sent; DNESKAi topic briefs: only an approved link-library or manual topic's URL (#210) | `src/lib/link-library.ts`, `src/lib/marketing/dneskai-topic-source.ts` | Live; topic briefs behind `DNESKAI_TOPIC_BRIEFS_ENABLED` |
 | **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
-| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0: carousels, single images and Reels (`media_type=REELS`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
+| **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0: carousels, single images and Reels (`media_type=REELS`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account publishing switch **on** by explicit owner request on 23 October; exact-version approval still required |
 | **Facebook Login for Business** | A second credential mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE=facebook`): `graph.facebook.com` with the token of the Facebook Page linked to `@dneskai`, renewal through `fb_exchange_token` (`MARKETING_META_APP_ID`, `MARKETING_META_APP_SECRET`), private replies through `POST /<PAGE_ID>/messages` (#216) | `meta-credentials.ts`, `meta-account.ts`, `dneskai-engagement-ports.ts` | Prepared, **not set up**: no Page linked yet (Astra #181) |
 | **Meta Audio API** | `GET /ig_audio`: the trending music and original sounds `@dneskai` may use; exists only under Facebook Login (#167) | `dneskai-audio-trends.ts` | Prepared, **off** (`DNESKAI_AUDIO_TRENDS_ENABLED`) |
-| **Meta webhooks** (inbound) | Instagram sends new comments to `POST /api/webhooks/instagram` (signed with the Instagram app secret, or the Meta app secret under Facebook Login); the comment watcher answers them at once, polling stays the fallback (#161) | `src/app/api/webhooks/instagram/route.ts`, `dneskai-instagram-webhook.ts` | Prepared, **off**: needs `DNESKAI_ENGAGEMENT_ENABLED`, `MARKETING_INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, the signing secret and the Meta app callback (Astra #179) |
+| **Meta webhooks** (inbound) | Instagram sends new comments to `POST /api/webhooks/instagram` (signed with the Instagram app secret, or the Meta app secret under Facebook Login); the comment watcher answers them at once, polling stays the fallback (#161) | `src/app/api/webhooks/instagram/route.ts`, `dneskai-instagram-webhook.ts` | Configured and callback verified on 23 October (#179 closed); only comments subscribed. Real keyword/DM delivery remains unverified (#180) |
 | **Anthropic** | Claude Sonnet 5.5 writes DNESKAi slides and captions; Claude Haiku 5.5 titles topics and gives FACT or HYPE verdicts | `src/lib/marketing/generation.ts`, `dneskai-generation.ts`, `dneskai-topic-model.ts` | Key set; generation live, Haiku calls **off** (`DNESKAI_TITLING_ENABLED`, `DNESKAI_FACT_OR_HYPE_ENABLED`) |
 | **Jev** (typesafe.ai, `jev-1.13.0`) | Classifies collected stories (category, relevance, on-topic) | `src/lib/marketing/dneskai-providers.ts` | Live, about $0.002 a night |
 | Apify | Instagram profile collection (news and, with scouting, education profiles); a $126 research plan; reel transcripts for FACT or HYPE (`apify~instagram-reel-scraper`, $0.05 each, $0.50 a day); the TikTok CZ sound chart (`clockworks~tiktok-trends-scraper`, $0.10 a day) | `dneskai-collection.ts`, `dneskai-apify-research*.ts`, `dneskai-fact-or-hype.ts`, `dneskai-audio-tiktok.ts` | Token set, all **off** (`MARKETING_DNESKAI_APIFY_ENABLED=false`; research, transcripts and TikTok behind their own switches) |
-| LangSmith (EU) | Redacted traces of each generation and owner feedback | `src/lib/marketing/tracing.ts` | **Off**: no `LANGSMITH_*` in Production |
+| LangSmith (EU) | Redacted traces of each generation and owner feedback | `src/lib/marketing/tracing.ts` | Production EU configuration set; a redacted generation trace verified on 23 October (#183 closed), Base 14-day retention |
 | n8n | Formerly ran DNESKAi; those workflows are archived and the routes answer 410 | `workflows/marketing/retired/` | Retired for DNESKAi |
 
 Secrets live only in Vercel env vars and Supabase Vault, never in the repo.
