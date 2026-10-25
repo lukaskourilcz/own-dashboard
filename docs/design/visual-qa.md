@@ -425,3 +425,8 @@ Finding 202: a clean development compile passes fourteen native cases with two d
 ## Shared category management — 25 October 2026
 
 The real subscription category dialog keeps its persistent label, input and Add action in a compact centered surface. Matching 44px mobile/32px desktop controls, six-width reflow, EN/CS light/dark recovery, pending Escape, retained drafts, canonical choices, stale removal and keyboard focus pass in eight final browser cases (34.5 seconds). Guest/default-fixture management makes no private category request. Active-modal axe passes after enabled opacity settles; inspected Czech desktop/mobile captures use synthetic data. A separate combined category/subscription/rule run passes eighteen cases (43.0 seconds). This is targeted development-server evidence, not a new full-app release result. See app-wide finding 208 for exact record, retry and validation limits.
+
+
+## Invoice payment output — 25 October 2026
+
+Twelve actual invoice QR crops decode to the exact synthetic account/amount/currency/symbol/date/message payload with the native offline macOS barcode reader, across EN/CS and six supported widths. No page error or document overflow occurs. The existing one-page A4/dark-print fixture check also passes; the PDF barcode is not independently decoded. Fourteen mounted real-detail cases cover retained documents and localized missing-QR guidance after invalid inputs. No payment is sent or owner record changed. See app-wide finding 210 and its `invoice-qr-checks.json` for scope and mathematical-validation limits; the full app release remains pending.

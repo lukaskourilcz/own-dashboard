@@ -28,8 +28,9 @@ import { useDict } from "@/lib/i18n";
 import type { Invoice, InvoiceItem } from "@/lib/types";
 
 function fmtDate(key: string | null): string {
-  if (!key) return "—";
-  return format(parseISO(key), "d. M. yyyy");
+  if (typeof key !== "string" || !key) return "—";
+  const date = parseISO(key);
+  return Number.isFinite(date.getTime()) ? format(date, "d. M. yyyy") : "—";
 }
 
 export function InvoiceDetail({

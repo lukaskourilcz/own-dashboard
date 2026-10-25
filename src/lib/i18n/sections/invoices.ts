@@ -246,7 +246,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     qrTitle: "QR payment",
     qrHint: "Scan it in your banking app.",
     qrMissing:
-      "Add a bank account in invoicing settings to generate a payment QR.",
+      "Payment QR is unavailable. Check the invoice’s account, amount, currency and due date.",
 
     formNewTitle: "New invoice",
     formEditTitle: "Edit invoice",
@@ -423,7 +423,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     qrTitle: "QR platba",
     qrHint: "Naskenujte v mobilní bankovní aplikaci.",
     qrMissing:
-      "Pro QR platbu vyplňte číslo účtu v nastavení fakturace.",
+      "QR platba není k dispozici. Zkontrolujte účet, částku, měnu a datum splatnosti faktury.",
 
     formNewTitle: "Nová faktura",
     formEditTitle: "Upravit fakturu",

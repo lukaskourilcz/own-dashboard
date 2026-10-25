@@ -939,8 +939,8 @@
       "path": "src/components/invoices/invoice-detail.tsx",
       "lines": 481,
       "sha256": "0dbd93d951dd7dbd91a9b213a632b71a52aadf011466757e66e33c4148ab0d95",
-      "status": "partial; print/document layout, payment busy/error recovery checked; QR symbols, source-loss navigation and final optimized release pending",
-      "reviewedSha256": "54802ecc5542ca7827a2e925632257f86b9088afdb1e0170233bb3cd7afad6db"
+      "status": "source reviewed; finding 210 payment QR guards, EN/CS refusal, actual offline QR decoding and targeted A4 checks pass; legacy document consistency and final release checks pending",
+      "reviewedSha256": "8c93f8d27a99c6a2f44d5c236542b159e5334def58916ebed65555e84415b8f4"
     },
     {
       "path": "src/components/invoices/invoice-editor.tsx",
@@ -2588,8 +2588,8 @@
       "path": "src/lib/i18n/sections/invoices.ts",
       "lines": 536,
       "sha256": "35a6c4949ddf4149946c223acc8226390cf3d9d45a86ea93dd38e7778768cb0c",
-      "status": "source reviewed; EN/CS invoice recovery checked; final localization sweep pending",
-      "reviewedSha256": "af8f6f15b81897aec3e0eaf08716bc95935ff14651f69afc7c7e91e76345ce02"
+      "status": "source reviewed; finding 210 payment QR guards, EN/CS refusal, actual offline QR decoding and targeted A4 checks pass; legacy document consistency and final release checks pending",
+      "reviewedSha256": "68c24afb39a52aa8c55c54ab088bb8ce0d79d542bf6870de876ed19743846d90"
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
@@ -2785,8 +2785,8 @@
       "path": "src/lib/invoices.ts",
       "lines": 216,
       "sha256": "a79599ca79053c5710bde64c4b547713df74e922b4f2964f2bb4ebd3ba11b535",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "a79599ca79053c5710bde64c4b547713df74e922b4f2964f2bb4ebd3ba11b535"
+      "status": "source reviewed; finding 210 payment QR guards, EN/CS refusal, actual offline QR decoding and targeted A4 checks pass; legacy document consistency and final release checks pending",
+      "reviewedSha256": "2bf6291ae5979ebdce55833b3403595ab261c956b5c6a1c20a5d5e1d78a74804"
     },
     {
       "path": "src/lib/jobs/apify.ts",

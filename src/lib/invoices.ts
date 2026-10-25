@@ -156,27 +156,49 @@ function normalizeIban(iban: string): string {
   return iban.replace(/\s+/g, "").toUpperCase();
 }
 
+const paymentCurrencies = new Set(Intl.supportedValuesOf("currency"));
+const domesticWeights = [6, 3, 7, 9, 10, 5, 8, 4, 2, 1] as const;
+const domesticPartValid = (value: string) => [...value.padStart(10, "0")].reduce((sum, digit, index) => sum + Number(digit) * domesticWeights[index], 0) % 11 === 0;
+const domesticPartsValid = (prefix: string, number: string, bank: string) => /[1-9]/.test(number) && bank !== "0000" && domesticPartValid(prefix) && domesticPartValid(number);
+
+/** Bounded structure/checksum validation; this does not look up a bank or
+ * establish account ownership. Czech national parts retain their own checks. */
+function paymentIban(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 128 || !/^[a-z0-9\s]+$/i.test(value)) return null;
+  const iban = normalizeIban(value);
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return null;
+  if (iban.startsWith("CZ") && (!/^CZ\d{22}$/.test(iban) || !domesticPartsValid(iban.slice(8, 14), iban.slice(14), iban.slice(4, 8)))) return null;
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+  return mod97(rearranged.replace(/[A-Z]/g, character => String(character.charCodeAt(0) - 55))) === 1 ? iban : null;
+}
+
 /**
  * Convert a Czech domestic account number ("[prefix-]number/bank") to IBAN.
- * Returns null if the input doesn't look like a CZ account number.
+ * Returns null for malformed numbers or failed national checksums.
  * Example: "19-2000145399/0800" → "CZ6508000000192000145399".
  */
 export function czAccountToIban(account: string): string | null {
+  if (typeof account !== "string" || account.length > 64) return null;
   const cleaned = account.replace(/\s+/g, "");
   const m = cleaned.match(/^(?:(\d{1,6})-)?(\d{1,10})\/(\d{4})$/);
   if (!m) return null;
   const prefix = (m[1] ?? "").padStart(6, "0");
   const number = m[2].padStart(10, "0");
   const bankCode = m[3];
+  if (!domesticPartsValid(prefix, number, bankCode)) return null;
   const bban = `${bankCode}${prefix}${number}`;
   return `CZ${ibanCheckDigits("CZ", bban)}${bban}`;
 }
 
-/** Best-effort IBAN for payment QR: explicit IBAN, else derived from account. */
+/** Validate the explicit IBAN first; derive only when it is absent. An invalid
+ * explicit value must never silently select a different saved account. */
 export function resolveIban(
   source: { iban: string | null; bank_account: string | null },
 ): string | null {
-  if (source.iban && source.iban.trim()) return normalizeIban(source.iban);
+  if (source.iban !== null && source.iban !== "" && source.iban !== undefined) {
+    if (typeof source.iban !== "string") return null;
+    if (source.iban.trim()) return paymentIban(source.iban);
+  }
   if (source.bank_account) return czAccountToIban(source.bank_account);
   return null;
 }
@@ -201,10 +223,20 @@ export type SpaydInput = {
  * Czech "QR Platba". Rendered as a QR it lets the payer fill a transfer by
  * scanning. See https://qr-platba.cz / the SPAYD 1.0 spec.
  */
-export function buildSpayd(input: SpaydInput): string {
-  const fields = ["SPD", "1.0", `ACC:${normalizeIban(input.iban)}`];
-  fields.push(`AM:${input.amount.toFixed(2)}`);
-  fields.push(`CC:${(input.currency ?? "CZK").toUpperCase()}`);
+export function buildSpayd(input: SpaydInput): string | null {
+  const iban = paymentIban(input.iban), currency = input.currency === undefined ? "CZK" : input.currency;
+  if (!iban || !Number.isFinite(input.amount) || input.amount <= 0 || input.amount > 9_999_999.99
+    || typeof currency !== "string" || !/^[a-z]{3}$/i.test(currency) || !paymentCurrencies.has(currency.toUpperCase())) return null;
+  if ([input.variableSymbol, input.constantSymbol].some(value => value != null && (typeof value !== "string" || value.length > 128))
+    || (input.message != null && (typeof input.message !== "string" || input.message.length > 4096))) return null;
+  const amount = input.amount.toFixed(2);
+  if (Number(amount) <= 0 || amount.length > 10) return null;
+  if (input.dueDate !== undefined && input.dueDate !== null && input.dueDate !== "") {
+    if (typeof input.dueDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) return null;
+    const date = new Date(`${input.dueDate}T12:00:00.000Z`);
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== input.dueDate) return null;
+  }
+  const fields = ["SPD", "1.0", `ACC:${iban}`, `AM:${amount}`, `CC:${currency.toUpperCase()}`];
   const vs = digitsOnly(input.variableSymbol ?? "").slice(0, 10);
   if (vs) fields.push(`X-VS:${vs}`);
   const ks = digitsOnly(input.constantSymbol ?? "").slice(0, 10);
