@@ -77,11 +77,12 @@ it("retains own-only related-resource and project policies, rejecting owner inje
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]);
 });
 it("keeps the read/write functions invoker-only and unavailable to anonymous or service callers", async () => {
-  const rows = (await db.query("select proname,prosecdef as definer,has_function_privilege('anon',oid,'execute') as anon,has_function_privilege('service_role',oid,'execute') as service from pg_proc where proname in ('read_owned_collection','save_prompt_document','add_curated_prompts') order by proname")).rows;
+  const rows = (await db.query("select proname,pronargs as arguments,prosecdef as definer,has_function_privilege('anon',oid,'execute') as anon,has_function_privilege('service_role',oid,'execute') as service,has_function_privilege('authenticated',oid,'execute') as authenticated from pg_proc where pronamespace='public'::regnamespace and proname in ('read_owned_collection','save_prompt_document','add_curated_prompts') order by proname,pronargs")).rows;
   expect(rows).toEqual([
-    { proname: "add_curated_prompts", definer: false, anon: false, service: false },
-    { proname: "read_owned_collection", definer: false, anon: false, service: false },
-    { proname: "save_prompt_document", definer: false, anon: false, service: false },
+    { proname: "add_curated_prompts", arguments: 1, definer: false, anon: false, service: false, authenticated: true },
+    { proname: "read_owned_collection", arguments: 1, definer: false, anon: false, service: false, authenticated: true },
+    { proname: "read_owned_collection", arguments: 2, definer: false, anon: false, service: false, authenticated: true },
+    { proname: "save_prompt_document", arguments: 6, definer: false, anon: false, service: false, authenticated: true },
   ]);
 });
 it("imports curated names against the complete owner library, skipping repeats and preserving custom prompts", async () => {
