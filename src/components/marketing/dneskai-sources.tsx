@@ -12,6 +12,9 @@ import { DNESKAI_HELD_GROUPS, DNESKAI_OWNER_CODES, DNESKAI_RECOVERY_OFF, dneskai
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 import type { DneskaiCollectionState, DneskaiEventSelection, DneskaiEventView } from '@/lib/marketing/dneskai-contracts';
 
+/** Provider codes can be any string; inherited object members are never localized text. */
+const ownText = (dictionary: Record<string, string>, code: string): string | undefined => Object.hasOwn(dictionary, code) ? dictionary[code] : undefined;
+
 /** `onOpenReview` switches the project workspace to „Dnes ke schválení“, where the final review happens. */
 type Props = { projectId: string; lang: 'en' | 'cs'; onOpenReview: () => void; disabled?: boolean; now?: Date };
 export function DneskaiSources({ projectId, lang, onOpenReview, disabled = false, now = new Date() }: Props) {
@@ -50,8 +53,8 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
   // Events (#115) replace the flat topic list when the server sends them; older responses keep the candidate list.
   const events = state.events;
   const link = (member: { url: string; title: string }) => { const url = sourceExternalUrl(member.url); return url ? <a href={url} target="_blank" rel="noopener noreferrer" className="focus-ring rounded underline">{member.title || t.unnamed}</a> : member.title || t.unnamed; };
-  const reasonText = (code: string | null) => code ? t.eventReasons[code] ?? t.blockers[code] ?? t.reasonUnknown : null;
-  const briefLabel = (brief: NonNullable<DneskaiEventView['brief']>) => brief.status === 'queued' ? t.briefQueued : brief.status === 'ready' ? (brief.code ? [t.briefRetry, t.eventReasons[brief.code]].filter(Boolean).join(' · ') : t.briefReady)
+  const reasonText = (code: string | null) => code ? ownText(t.eventReasons, code) ?? ownText(t.blockers, code) ?? t.reasonUnknown : null;
+  const briefLabel = (brief: NonNullable<DneskaiEventView['brief']>) => brief.status === 'queued' ? t.briefQueued : brief.status === 'ready' ? (brief.code ? [t.briefRetry, ownText(t.eventReasons, brief.code)].filter(Boolean).join(' · ') : t.briefReady)
     : brief.status === 'pending' ? (brief.code === 'account-unavailable' ? t.briefAccount : brief.code && DNESKAI_OWNER_CODES.has(brief.code) ? r.briefOwner : t.briefMedia) : reasonText(brief.code) ?? t.reasonUnknown;
   // Owner actions on a dead-end brief: retry, reslot, release. „Generate now“ for a waiting brief lives in the Lab day column.
   const briefControls = (event: DneskaiEventView) => {
@@ -76,7 +79,7 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
   const eventTone = (status: DneskaiEventView['status']) => status === 'held' ? 'warning' as const : status === 'selected' ? 'information' as const : 'neutral' as const;
   return <>
     <div className="space-y-2 border-t border-border pt-4"><StatusBadge value={state.enabled ? 'active' : 'held'} label={state.enabled ? t.enabled : t.disabled} tone={state.enabled ? 'information' : 'warning'} />
-      {state.blockers.length > 0 && <div role="status"><h3 className="text-sm font-medium">{t.configuration}</h3><ul className="list-inside list-disc text-sm text-foreground-muted">{state.blockers.map((code, index) => <li key={`${code}-${index}`}>{t.blockers[code] ?? t.configuration}</li>)}</ul></div>}</div>
+      {state.blockers.length > 0 && <div role="status"><h3 className="text-sm font-medium">{t.configuration}</h3><ul className="list-inside list-disc text-sm text-foreground-muted">{state.blockers.map((code, index) => <li key={`${code}-${index}`}>{ownText(t.blockers, code) ?? t.configuration}</li>)}</ul></div>}</div>
     {unassociated && <p className="text-xs text-foreground-muted">{t.pendingTopics}</p>}
     <div className="grid min-w-0 gap-5 md:grid-cols-2">{topicDays.map(day => {
       const selected = state.candidates.filter(candidate => candidate.status === 'selected' && candidate.targetDate === day.date).slice(0, 4);
@@ -131,11 +134,11 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
             <div><dt className="text-foreground-muted">{t.lastImport}</dt><dd className="tabular">{at(imported?.fetchedAt ?? null)}</dd></div>
             <div><dt className="text-foreground-muted">{t.count}</dt><dd className="tabular">{value ? value.itemCount : t.noDate}</dd></div>
             <div><dt className="text-foreground-muted">{t.cost}</dt><dd className="tabular">{cost(value?.costUsd ?? null)}</dd></div>
-          </dl>{value?.errorCode && <p className={`text-xs ${INFORMATIONAL_SOURCE_CODES.has(value.errorCode) ? 'text-foreground-muted' : 'text-risk'}`}>{t.blockers[value.errorCode] ?? t.errorDetail}</p>}
+          </dl>{value?.errorCode && <p className={`text-xs ${INFORMATIONAL_SOURCE_CODES.has(value.errorCode) ? 'text-foreground-muted' : 'text-risk'}`}>{ownText(t.blockers, value.errorCode) ?? t.errorDetail}</p>}
         </li>;
       })}</ul>}</section>
     <section aria-labelledby="dneskai-runs-title" className="space-y-2"><h3 id="dneskai-runs-title" className="text-sm font-semibold">{t.runs}</h3>
-      {state.runs.length === 0 ? <p className="text-sm text-foreground-muted">{t.noRuns}</p> : <ul className="divide-y divide-border">{state.runs.map(run => <li key={run.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm"><div><p>{t.runDate}: {dateOnly(run.date)} · {t.targetDate}: {dateOnly(run.targetDate)}</p><p className="text-xs text-foreground-muted">{t.selectedCount}: {run.selectedCount} / 4 · {t.cost}: {cost(run.costUsd)}</p>{run.errorCode && <p className="text-xs text-risk">{t.blockers[run.errorCode] ?? t.errorDetail}</p>}</div>{status(run.status)}</li>)}</ul>}</section>
+      {state.runs.length === 0 ? <p className="text-sm text-foreground-muted">{t.noRuns}</p> : <ul className="divide-y divide-border">{state.runs.map(run => <li key={run.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm"><div><p>{t.runDate}: {dateOnly(run.date)} · {t.targetDate}: {dateOnly(run.targetDate)}</p><p className="text-xs text-foreground-muted">{t.selectedCount}: {run.selectedCount} / 4 · {t.cost}: {cost(run.costUsd)}</p>{run.errorCode && <p className="text-xs text-risk">{ownText(t.blockers, run.errorCode) ?? t.errorDetail}</p>}</div>{status(run.status)}</li>)}</ul>}</section>
   </>;
 }
 
@@ -169,12 +172,12 @@ function RecoveryControls({ actions, lang }: { actions: RecoveryAction[]; lang: 
   const mutation = useMutation({ mutationFn: (action: RecoveryAction) => postDneskaiRecovery(action.request), onSuccess: () => client.invalidateQueries({ queryKey: qk.dneskaiSources }) });
   if (!actions.length) return null;
   const code = mutation.error instanceof DneskaiRecoveryRequestError ? mutation.error.code : 'recovery-unavailable';
-  const message = mutation.isSuccess ? mutation.variables.done : mutation.isError ? r.reasons[code] ?? t.eventReasons[code] ?? r.reasons['recovery-unavailable'] : '';
+  const message = mutation.isSuccess ? mutation.variables.done : mutation.isError ? ownText(r.reasons, code) ?? ownText(t.eventReasons, code) ?? r.reasons['recovery-unavailable'] : '';
   return <div className="space-y-1 pt-1">
     <div className="flex flex-wrap gap-2">{actions.map(action => <Button key={action.key} type="button" variant="outline" size="sm" className="min-h-11" aria-label={action.name}
       aria-describedby={action.reason ? `${id}-${action.key}` : undefined} disabled={!action.available || mutation.isPending || mutation.isSuccess} onClick={() => mutation.mutate(action)}>
       {mutation.isPending && mutation.variables?.key === action.key ? r.working : action.label}</Button>)}</div>
-    {actions.filter(action => action.reason).map(action => <p key={action.key} id={`${id}-${action.key}`} className="text-xs text-foreground-muted">{r.reasons[action.reason!] ?? r.reasons['recovery-unavailable']}</p>)}
+    {actions.filter(action => action.reason).map(action => <p key={action.key} id={`${id}-${action.key}`} className="text-xs text-foreground-muted">{ownText(r.reasons, action.reason!) ?? r.reasons['recovery-unavailable']}</p>)}
     <p role="status" className={`text-xs ${mutation.isError ? 'text-risk' : 'text-foreground-muted'}`}>{message}</p>
   </div>;
 }

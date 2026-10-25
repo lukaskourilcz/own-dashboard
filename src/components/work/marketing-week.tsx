@@ -11,7 +11,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { parseDateOnly, todayKey } from "@/lib/date-keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { MARKETING_CALENDAR_SOURCES, marketingWeek, type MarketingCalendarsResponse, type WeekEntry } from "@/lib/marketing-calendars";
-import type { StatusTone } from "@/lib/status-presentation";
 import { useNow } from "@/lib/use-now";
 
 /**
@@ -19,7 +18,7 @@ import { useNow } from "@/lib/use-now";
  * badge tones miss 4.5:1 at this size, and a status here is information to
  * read, not an alert. Only a blocked entry stands out.
  */
-const STATUS_TONE: Record<string, StatusTone> = { blocked: "destructive" };
+const calendarTone = (status: string) => status === "blocked" ? "destructive" as const : "neutral" as const;
 
 /** Entries shown before "Show all": two busy calendars fill a week with ~70. */
 const WEEK_PAGE = 20;
@@ -44,7 +43,7 @@ export function MarketingWeekCard({ preview }: { preview?: MarketingCalendarsRes
     [view, today],
   );
   const day = (key: string) => format(parseDateOnly(key), lang === "cs" ? "EEE d. M." : "EEE d MMM", { locale });
-  const label = (map: Record<string, string>, value: string) => map[value] ?? value;
+  const label = (map: Record<string, string>, value: string) => Object.hasOwn(map, value) ? map[value] : value;
   const sources = view.kind === "ok" ? view.data.sources : [];
   const readable = sources.filter((source) => source.status === "ok");
   const checkedAt =
@@ -117,7 +116,7 @@ export function MarketingWeekCard({ preview }: { preview?: MarketingCalendarsRes
                                 </a>
                                 <span className="flex shrink-0 flex-wrap justify-end gap-1">
                                   {item.overdue && <StatusBadge value="overdue" label={m.prelaunchOverdue} tone="warning" />}
-                                  <StatusBadge value={item.status} label={label(m.status, item.status)} tone={STATUS_TONE[item.status] ?? "neutral"} />
+                                  <StatusBadge value={item.status} label={label(m.status, item.status)} tone={calendarTone(item.status)} />
                                 </span>
                               </div>
                               <p className="mt-0.5 text-xs text-foreground-muted [overflow-wrap:anywhere]">
@@ -162,7 +161,7 @@ export function MarketingWeekCard({ preview }: { preview?: MarketingCalendarsRes
                                   <StatusBadge
                                     value={entry.status}
                                     label={label(m.status, entry.status)}
-                                    tone={STATUS_TONE[entry.status] ?? "neutral"}
+                                    tone={calendarTone(entry.status)}
                                     className="shrink-0"
                                   />
                                 </div>

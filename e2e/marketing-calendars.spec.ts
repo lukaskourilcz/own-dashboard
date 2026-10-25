@@ -256,3 +256,25 @@ test("the preview shows the fixture calendars in Czech at 360 px without overflo
   await expect(usage).toContainText("Použito v");
   await expect(usage.getByRole("link")).toHaveText(["devShark ×3 (otevře se na nové kartě)", "DNESKAi ×1 (otevře se na nové kartě)"]);
 });
+
+for (const lang of ['en', 'cs'] as const) test(`Work keeps inherited calendar labels readable (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page);
+  if (info.project.name === 'mobile') await page.setViewportSize({ width: 360, height: 800 });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  const codes = ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'new-provider-kind'];
+  await stubCalendars(page, { checkedAt: new Date().toISOString(), sources: [{ ...DEVSHARK, status: 'ok', detail: null,
+    calendar: calendar({ entries: codes.map((code, index) => entry(`inherited-${index}`, 0, '12:00', `Imported entry ${index}`, [], code, code, code)),
+      prelaunch: codes.map((code, index) => ({ id: `pre-${index}`, due: day(0), title: `Imported task ${index}`, owner: code, repo: null, issue: null, status: code })) }),
+  }] });
+  await page.goto('/dev-preview?tab=work&calendars=live');
+  const card = page.locator('[data-marketing-week]');
+  await expect(card.locator('[data-marketing-entry]')).toHaveCount(5);
+  await expect(card.locator('[data-marketing-prelaunch]')).toHaveCount(5);
+  for (let index = 0; index < codes.length; index++) await expect(card.locator(`[data-marketing-entry="inherited-${index}"]`)).toContainText(codes[index]);
+  await expect(card).not.toContainText('native code');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.waitForTimeout(600);
+  expect((await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-marketing-week]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
+  await card.screenshot({ path: info.outputPath(`work-calendar-inherited-${lang}.png`) });
+  expect(errors).toEqual([]);
+});
