@@ -728,11 +728,11 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-two prepared audit files follow, numbered 87–118 in the [current migration list](../README.md). The latest is `20261025040638_complete_dneskai_cost_reads.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-three prepared audit files follow, numbered 87–119 in the [current migration list](../README.md). The latest is `20261025091027_complete_organization_records.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn
-npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–118
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–119
 npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn  # both columns agree
 ```
@@ -1180,3 +1180,12 @@ Twelve isolated database cases include four legacy policy failures without row c
 A partial owner/date/id index supports the actual DNESKAi job predicate. Local authenticated-RLS EXPLAIN selects it for 120 current jobs among 10,120 synthetic rows without disabling sequential scans. The caller replaces the capped tick query with this compact aggregate and reads only thirty failed/uncertain job details. It verifies owner, project, range, clock, daily sequence, diagnostic completeness and count consistency; an unavailable or mismatched response fails rather than becoming zero. The read requests share cancellation and a fifteen-second deadline with SDK retries disabled. Authentication errors refuse a cached user. The service-only budget ledger read remains a separate route operation.
 
 Real migration/SDK/emulator cases verify beyond-cap totals, meaningful older ticks, the twenty-row detail bound, numeric unknowns, queued exclusion, Prague midnight/DST, foreign ownership, finite windows, grants and cancellation before work. The existing migrated dry-day integration also passes. Exact counts and the raw query plan are in app-wide finding 199. This follows [Supabase's invoker/function privilege guidance](https://supabase.com/docs/guides/database/functions); [REST row limits](https://supabase.com/docs/reference/javascript/select) must not determine aggregate truth. Apply the full prepared chain before deploying the caller. To roll back, revert the caller first, then drop this function and `marketing_jobs_dneskai_recent`; no owner-data rollback is needed.
+
+
+## Migration 119 — complete organization reads and real row versions
+
+`20261025091027_complete_organization_records.sql` validates finite organization update versions and adds a server-maintained monotonic BEFORE UPDATE trigger. Every permitted writer advances the prior version by at least one PostgreSQL microsecond, including same-clock writes and future stored versions; a client cannot forge an earlier version. Existing records are not rewritten. The constraint refuses an existing nonfinite version instead of inventing a repair. A 25 October read-only production preflight finds no nonfinite organization versions; no data or configuration changes.
+
+The existing authenticated-only SECURITY INVOKER `read_owned_collection` whitelist gains organizations, ordered by name/id, with a 10,000-row and existing 10MiB complete-response limit. All previous collection contracts, own-only RLS and table grants remain. The trigger function has an empty search path and direct execution revoked from public/anon/authenticated/service roles; normal permitted row updates still invoke it. The migration uses a five-second DDL lock limit and restores it afterward. No provider or service-role authority is introduced.
+
+Local tests cover unchanged-data upgrade, nonfinite-upgrade rollback, ordinary and same-clock writes, future versions, stale predicates, cross-owner refusal, more than the REST cap, row/byte refusal and function grants. Browser persistence and complete-read adoption are separate follow-up work; this foundation alone is not a confirmed client-control rollout. Generate the DNESKAi read port from all 119 files with `scripts/generate-dneskai-read-types.mjs`; do not edit its fingerprint manually. Apply all thirty-three prepared files in canonical order before the implementation branch is deployed. For rollback, revert dependent callers first, remove this trigger/constraint/function and restore the previous collection whitelist; no owner-data rollback is needed.

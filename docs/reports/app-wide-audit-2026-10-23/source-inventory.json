@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 116 migrations, nine read tables; rollout and final release pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 199 closes complete cost/tick aggregation and cost-read auth/cancellation; remaining workspace read/lifecycle leads open",
-      "reviewedSha256": "b0e136a7a779fac365e50106465e8c00b2d8983eedd814f762ce28e75e744174"
+      "status": "source reviewed; finding 216 read port regenerated from all 119 local migrations with unchanged table shapes; caller adoption and final release pending",
+      "reviewedSha256": "78f4b7080cad0f3b78d566207659230ecabfb4d4ad8c6cce1c668bc7c9772e6e"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",

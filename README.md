@@ -226,7 +226,9 @@ The migrations, in the order they run:
 
 118. `20261025040638_complete_dneskai_cost_reads.sql` — prepared, unapplied; complete own-only cost/tick aggregates with bounded diagnostics and a narrow owner/date job index.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The thirty-two audit migrations 87–118 remain unapplied; apply them in filename order before deploying the implementation branch.
+119. `20261025091027_complete_organization_records.sql` — prepared, unapplied; finite monotonic organization versions and a complete owned organization snapshot. Existing records and own-only policies remain unchanged; captured browser mutation adoption follows separately.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The thirty-three audit migrations 87–119 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 
@@ -258,7 +260,7 @@ No generated brand media is currently shipped. The next media-production pass mu
 
 ## Deployment and owner actions
 
-The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The current owner-only rollout list is in [NEEDED.md](./NEEDED.md). Cost tiers and scaling triggers are documented in [scaling.md](./scaling.md).
+The repository cannot safely configure external account secrets, OAuth consent screens, production domains, or a linked Supabase project. The remaining rollout list is in [NEEDED.md](./NEEDED.md). Cost tiers and scaling triggers are documented in [scaling.md](./scaling.md).
 
 ## More documentation
 
