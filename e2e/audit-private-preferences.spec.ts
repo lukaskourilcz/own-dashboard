@@ -21,6 +21,7 @@ for (const lang of ["en", "cs"] as const) test(`${lang}: private drafts ignore l
   const cs = page.locator("#cv-cs"); await expect(cs).toHaveValue("");
   await cs.fill(draft); await cs.blur();
   await expect(page.getByText(settings[lang].preferenceSaveFailed, { exact: true })).toBeVisible(); await expect(cs).toHaveValue(draft);
+  expect(await page.locator("[data-sonner-toast]").first().evaluate(el => getComputedStyle(el).fontFamily)).toBe(await page.locator("body").evaluate(el => getComputedStyle(el).fontFamily));
   const state = () => page.evaluate(ownerId => JSON.parse(localStorage.getItem(`owner-preference:${encodeURIComponent(ownerId)}:cv_url_cs`)!), capturedOwner);
   await expect.poll(async () => (await state()).dirty).toBe(true);
   matches = true; await cs.focus(); await cs.blur();

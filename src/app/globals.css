@@ -232,7 +232,7 @@
   --shadow-card: var(--shadow);
   --shadow-elevated: var(--shadow-lg);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: -apple-system, BlinkMacSystemFont, var(--font-geist-sans), "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -252,7 +252,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, var(--font-sans), "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-optical-sizing: auto;
   line-height: 1.5;
@@ -657,7 +657,7 @@ textarea {
 .bn-host {
   /* Spacing matches the rest of the dashboard */
   padding: 0.5rem 0.5rem 2rem;
-  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
 }
 
 .bn-host [data-content-type] {
@@ -689,6 +689,9 @@ textarea {
 }
 
 .bn-host .bn-editor {
+  /* BlockNote sets a direct default family; the container variable alone
+     does not override that declaration. Keep native UI text consistent. */
+  font-family: var(--font-sans);
   background: transparent !important;
 }
 

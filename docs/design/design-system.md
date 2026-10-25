@@ -10,6 +10,8 @@ Never introduce a raw hex or framework color utility in a production component w
 
 ## Typography roles
 
+The shared `--font-sans` token uses `-apple-system`, BlinkMacSystemFont, Geist, Segoe UI and the sans-serif fallback in that order. Body copy, BlockNote editor text and toast controls use this same stack. Keep Geist Mono for technical values and preserve separate artwork/document font contracts.
+
 | Role | Implementation intent |
 | --- | --- |
 | Login/display | 28–40 px, compact leading, only on the private auth surface |

@@ -415,3 +415,8 @@ The full checkpoint-78 browser matrix passes 683 cases, skips 97 deliberate vari
 ### App-wide audit: private preferences (25 October 2026)
 
 Finding 201: 38 native cases pass, six intentional variants skip (2.9 min), covering EN/CS desktop/mobile Calendar/relink, renewal, repository-filter, appearance events and guest isolation. Four additional private-draft cases pass (12.8 s): mismatched owner receipt retains the edited CV, a matching retry clears its dirty state, unchanged blurs make no write, reload restores only the scoped draft and legacy values remain untouched. Axe and overflow pass. Inspected EN desktop/light and CS mobile/dark CV captures retain matching field widths and readable wrapping. These are targeted development checks, not the final optimized release matrix.
+
+
+### App-wide audit: native typography (25 October 2026)
+
+Finding 202: a clean development compile passes fourteen native cases with two duplicate skips (57.9 s). Editor/body computed families match at six widths in EN/CS, actual toast/body families match on desktop/mobile, and invoice reflow/PDF import/print visibility checks pass. Axe/overflow and page-error checks pass. EN desktop/light and CS mobile/dark Notes plus invoice captures were inspected. Earlier runs served stale generated CSS and are not evidence for the edited styles. Full optimized/A4/QR release validation remains separate; Czech editor placeholder/menus still need locale review.

@@ -663,8 +663,8 @@
       "path": "src/app/globals.css",
       "lines": 788,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; findings 171–172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending",
-      "reviewedSha256": "4189bb4f17fee18cef1faf072cd561463b837787c198c5f0c8eef4c4e0b61fd6"
+      "status": "partial; complete CSS source inspected; findings 171–172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
+      "reviewedSha256": "1a9f4c86868901c9b8dcc6d61aadb503f33f3bf251056b02937fc8fee7b8a276"
     },
     {
       "path": "src/app/guest/page.tsx",
