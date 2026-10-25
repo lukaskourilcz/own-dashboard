@@ -4644,8 +4644,8 @@
       "path": "src/lib/competitor-records.ts",
       "sha256": null,
       "lines": 41,
-      "reviewedSha256": "606b9bbe19af42540fb3ef83cff08a2153274809d9c5fc61625e07214c38c314",
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending"
+      "reviewedSha256": "ab88fc97d93cc626005dcf26e7da9e28cbbfd3586aed7a4e257600aa6f3edf89",
+      "status": "source reviewed; findings 226\u2013227 complete captured-owner reads and confirmed writes pass SDK/RLS tests; browser writer adoption and final release pending"
     }
   ],
   "baselineFileCount": 561
