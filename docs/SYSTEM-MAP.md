@@ -11,7 +11,7 @@ bilingual (English and Czech, full parity) and self-hosted on Vercel with a Supa
 |---|---|---|
 | Home | Daily focus (seven tasks), completion garden, weekly planning, cron and integration health | `src/app/api/daily-focus/route.ts`, `src/lib/weekly-planning.ts`, `src/lib/cron-heartbeat.ts` |
 | Work | Projects (workspaces at `/projects/<id-or-slug>`), tasks, notes, prompts, tools, the link library | `src/lib/projects.ts`, `src/lib/project-*`, `src/lib/link-library.ts` |
-| Opportunities | Freelance pipeline, clients and organizations (ARES and VIES checks), competition | `src/lib/freelance.ts`, `src/lib/competition.ts`, `src/lib/tax-registry.ts` |
+| Opportunities | Freelance pipeline, clients and organizations (ARES and VIES checks), competition | `src/lib/freelance.ts`, `src/lib/competition.ts`, `src/lib/tax-registry.ts`, `src/lib/organization-records.ts` |
 | Career | The Oslo job search: roles, application drafts, preferences | `src/components/panels/oslo-career-workspace.tsx`, `src/lib/jobs` |
 | Money | Czech invoices (VAT, QR, print), transactions and rules, subscriptions, static FX, bank sync, payment matching | `src/lib/invoices.ts`, `src/lib/finances.ts`, `src/lib/bank*`, `src/lib/payment-matching*` |
 | Marketing | DNESKAi Instagram pipeline (below), devShark weekly drafts, knowledge import | `src/lib/marketing/`, `services/marketing-worker/` |

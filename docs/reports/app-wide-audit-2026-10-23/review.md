@@ -1178,3 +1178,10 @@ The test now places the assertion inside its intended cached-refresh case and us
 Application and migration inputs remain `5d7da1d`; unit inputs remain the passing checkpoint 84 inputs (`b3b13e2`). A Git comparison confirms no change under src, tests or supabase. This continuation reuses the exact 5,339-pass/one-skip unit result, rather than rerunning unchanged unit cases for a browser-fixture correction. The corrected browser-test source is `8d58a21`. Full lint, ordinary build, eight render traces, post-build TypeScript and the complete optimized browser matrix will run again in sequence with these inputs frozen. This is a continuation with explicit reused evidence, not a new unit-run claim or a relabeling of failed checkpoints 83–84.
 
 Migration rollout, remaining source findings, PR reconciliation, main merge and deployed verification remain open. Synthetic local build outputs must not be deployed.
+
+
+## Documentation reconciliation during checkpoint 85
+
+The current migration-119 guide still called complete organization reads and browser persistence future work. Its caller status now reflects findings 217–220 and the dependent captured-owner overload, while preserving the unapplied production rollout. The system map links the shared organization record boundary. This changes documentation only while checkpoint 85 keeps application/test inputs frozen.
+
+A read-only production catalog check of the existing export allowlist plus profile/preferences finds no column names matching token/secret/password/credential/api-key. This checks schema names only, not stored values or the export route's remaining completeness/error-handling issues. No credential table, owner record or production setting is read or changed.
