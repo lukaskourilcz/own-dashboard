@@ -802,3 +802,8 @@ The complete serial release pipeline starts at frozen application/test source `f
 At frozen application/test source `f6fd071`, 4,896 cases pass, one intentionally skips and one preview assertion fails (451 passed files, one skipped file, one failed file; 453 total), in 183.00 seconds with two workers. The actual Costs row correctly shows measured $0.04 + $0.37 = $0.41 separately from booked $0.13. The old assertion still expects the retired $0.25 fixture amount. Only that expectation and its explanatory comment change; application behavior and the measured/booked separation remain intact. The pipeline stops before lint, build, traces, post-build types and browser phases. No later phase is passing evidence for checkpoint 77.
 
 The corrected preview expectation passes all fourteen workspace-tab cases in 10.76 seconds. It keeps the exact measured/booked/unknown assertions and changes no application behavior. A fresh complete release run is still required.
+
+
+## Full release checkpoint 78 — started
+
+The complete serial release pipeline restarts at frozen application/test source `dc4cda2`: all unit/component/database cases, full lint, ordinary production build, eight render traces, post-build types and the full optimized browser matrix. Application/test/migration inputs remain unchanged until it ends. The local preview remains stopped. This start does not replace checkpoint 77's recorded failure or establish passing evidence for any phase. Thirty-two prepared migrations, final audit work and main merge remain pending.
