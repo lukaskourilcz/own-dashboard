@@ -188,6 +188,7 @@ type ProjectsPanelProps = {
   setProjectLinks: Updater<ProjectLink[]>;
   promptLinks: PromptLink[];
   competitors: Competitor[];
+  competitorsRefreshFailed?: boolean;
   setCompetitors: Updater<Competitor[]>;
   syncRepositories?: boolean;
   /** Isolated fake-backend harness only; other marketing actions stay in preview. */
@@ -235,6 +236,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       projectLinks={props.projectLinks}
       setProjectLinks={props.setProjectLinks}
       promptLinks={props.promptLinks}
+      competitorsRefreshFailed={props.competitorsRefreshFailed}
       competitors={props.competitors}
       setCompetitors={props.setCompetitors}
       onOpenProject={props.onOpenProject}

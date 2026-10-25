@@ -15,16 +15,17 @@ import { useNow } from "@/lib/use-now";
 import type { Competitor, Project, Updater } from "@/lib/types";
 
 /** The Competition tab inside one project workspace. */
-export function ProjectCompetition({ project, competitors, setCompetitors }: {
+export function ProjectCompetition({ project, competitors, setCompetitors, refreshFailed }: {
   project: Project;
   competitors: Competitor[];
   setCompetitors: Updater<Competitor[]>;
+  refreshFailed?: boolean;
 }) {
   const t = useDict();
   const p = t.portfolio;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<CompetitorForm>(emptyCompetitorForm(project.id));
-  const actions = useCompetitorActions(setCompetitors);
+  const actions = useCompetitorActions(setCompetitors, competitors);
   // One clock for the tab, collapsed to the calendar day (see CompetitionPanel).
   const tick = useNow();
   const dayKey = tick ? todayKey(tick) : null;
@@ -38,10 +39,10 @@ export function ProjectCompetition({ project, competitors, setCompetitors }: {
           <CardTitle><Swords className="h-4 w-4" />{p.projectCompetitionTab}</CardTitle>
           <CardContent className="px-0 pb-0 text-xs text-foreground-muted">{p.competitorsCount(own.length)}{stale > 0 ? ` · ${p.staleCount(stale)}` : ""}</CardContent>
         </div>
-        <Button size="sm" disabled={actions.pending.size > 0} onClick={() => { setForm(emptyCompetitorForm(project.id)); setDialogOpen(true); }}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>
+        <Button ref={button => actions.registerNewControl(button)} size="sm" disabled={actions.pending.size > 0} onClick={() => { setForm(emptyCompetitorForm(project.id)); setDialogOpen(true); }}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>
       </CardHeader>
-      <div className="px-3"><CompetitionRecovery actions={actions} /></div>
-      <CompetitorList competitors={own} now={now} onEdit={(competitor) => { setForm(competitorToForm(competitor)); setDialogOpen(true); }} onDelete={actions.remove} pending={actions.pending} empty={p.noCompetitorsForProject} />
+      <div className="px-3"><CompetitionRecovery actions={actions} refreshFailed={refreshFailed} /></div>
+      <CompetitorList competitors={own} now={now} onEdit={(competitor) => { setForm(competitorToForm(competitor)); setDialogOpen(true); }} onDelete={actions.remove} pending={actions.pending} deleteControl={actions.deleteControl} empty={p.noCompetitorsForProject} />
       <CompetitorDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} projects={[project]} actions={actions} />
     </Card>
   );

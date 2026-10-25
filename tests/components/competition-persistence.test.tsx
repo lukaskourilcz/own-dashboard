@@ -111,3 +111,9 @@ it.each(['en', 'cs'] as const)('uses the same confirmed edit controls on the ful
 it('does not accept a foreign or partial creation receipt',async()=>{
  await render('en',[]);act(()=>button(portfolio.en.addCompetitor).click());change('#competitor-name','Owned draft');handler=call=>Response.json([{...creationReceipt(call),user_id:other}]);submit();await settle(()=>expect(document.querySelector('form [role="alert"]')?.textContent).toBe(portfolio.en.competitorSaveUnconfirmed));expect(rows()).toEqual([]);expect(updates).toHaveLength(0);
 });
+it('shows stored social profiles even when social content is empty',async()=>{
+ const source={...record(),social_content:'',social_links:['https://example.test/profile']};await render('en',[source]);act(()=>[...host.querySelectorAll('button')].find(button=>button.hasAttribute('aria-expanded'))!.click());expect([...host.querySelectorAll('a')].some(link=>link.href==='https://example.test/profile')).toBe(true);
+});
+it('restores focus to the add control after the last confirmed deletion',async()=>{
+ await render();handler=()=>Response.json([record()]);act(()=>action(portfolio.en.deleteCompetitor).click());act(()=>button(common.en.delete).click());await settle(()=>expect(rows()).toHaveLength(0));expect(document.activeElement).toBe(button(portfolio.en.addCompetitor));
+});

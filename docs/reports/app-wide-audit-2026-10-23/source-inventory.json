@@ -803,8 +803,8 @@
       "path": "src/components/competition/competitor-list.tsx",
       "lines": 172,
       "sha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
-      "reviewedSha256": "1c310278b91723e8b739ab898c1397559194b94c8b6e384d0d60f567bdad51b1"
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
+      "reviewedSha256": "fcb7ad41e62ba88f7d4170752e576aab3a92aee8cf5c0a12d996b500a07eafac"
     },
     {
       "path": "src/components/cost-overview.tsx",
@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
-      "reviewedSha256": "b0f25b3ab0f692e6e4f9891381f655bf3614b7fac5b15bb4d3d825eda633e205"
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
+      "reviewedSha256": "9dcd2f6f7a250a06e9860a798df49603054414f5fd28d183921e3d0c74b1cd15"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -1451,8 +1451,8 @@
       "path": "src/components/panels/competition-panel.tsx",
       "lines": 165,
       "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
-      "reviewedSha256": "09fede3f193e23377cc224e19a8279c24f0c2c3a693908fe4d7a795cc1a27fa7"
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
+      "reviewedSha256": "279183b75e25a2295a9ba1387d59ca9156f1f0ab0abcd2f79f0cc31ca980c037"
     },
     {
       "path": "src/components/panels/dev-finance-panel.tsx",
@@ -1584,8 +1584,8 @@
       "path": "src/components/panels/projects-panel.tsx",
       "lines": 1978,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "partially reviewed; complete reads, ordering, retained notes, manual edit/deletion recovery, operations layout and confirmed active controls checked; creation/cost/cron/sync writes pending in review.md",
-      "reviewedSha256": "8feaba1211677ea6847b0f96bec77c8d78ae2c20a8515d757991c3d5b57b68bc"
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
+      "reviewedSha256": "0ba13a6b7236f30cbe130d1cab39eb90e94a479188a4463ff68105bc92876332"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1682,8 +1682,8 @@
       "path": "src/components/projects/project-competition.tsx",
       "lines": 45,
       "sha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
-      "reviewedSha256": "186f80d4bf495de000b35de03e32796e1b2f49b6265b03fbf81646322b9d3197"
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
+      "reviewedSha256": "e390b5a851c1bf98998273484f9db26e3e7e36750644f3969daee36a15086e18"
     },
     {
       "path": "src/components/projects/project-doc-panel.tsx",
@@ -1738,8 +1738,8 @@
       "path": "src/components/projects/project-workspace.tsx",
       "lines": 320,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending",
-      "reviewedSha256": "73566d95d95e4882da0898701734988ecacd2b1028e3a24df25644cafb9830f4"
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
+      "reviewedSha256": "ad869267daf738c98e76bb74436fb49f710a9db29dc024f9067c83dfc200adc7"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -4651,8 +4651,8 @@
       "path": "src/components/competition/use-competitor-actions.ts",
       "sha256": null,
       "lines": 85,
-      "reviewedSha256": "b4d4c823af6b6d16fbecfff3ddadafd75e1e68c9f3ddc1ce32619b97d3853c40",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending"
+      "reviewedSha256": "ee8dceed9ff6dec07c73dfcc984e465fda3f5bc0353202134781439ff7a8caea",
+      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending"
     },
     {
       "path": "src/components/competition/competition-recovery.tsx",

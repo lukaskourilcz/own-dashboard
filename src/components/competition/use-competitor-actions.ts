@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useConfirmation } from '@/components/ui/confirmation-dialog';
 import { useUnsavedDraft } from '@/components/navigation-guard';
@@ -17,12 +17,25 @@ export type CompetitionNotice = 'competitorChanged' | 'competitorActionUnconfirm
 
 /** Both Competition surfaces share one owner/panel lifetime and row reservation.
  * Human confirmation does not change the version captured before opening it. */
-export function useCompetitorActions(setCompetitors: Updater<Competitor[]>) {
+export function useCompetitorActions(setCompetitors: Updater<Competitor[]>, rows: Competitor[]) {
  const owner = useOwnerPreferences(), db = createClient(), qc = useQueryClient(), confirm = useConfirmation(), t = useDict();
  const lifetime = useRef(new AbortController());
  useLayoutEffect(() => { if (lifetime.current.signal.aborted) lifetime.current = new AbortController(); return () => lifetime.current.abort(); }, []);
+ const newControl = useRef<HTMLButtonElement | null>(null), deleteControls = useRef(new Map<string, HTMLButtonElement>());
+ const focusRemoval = useRef<{ id: string; nextId?: string } | null>(null);
+ const registerNewControl = useCallback((button: HTMLButtonElement | null) => { newControl.current = button; }, []);
  const reservations = useRef(new Map<string, CompetitorScope>());
  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+ useLayoutEffect(() => {
+  const intent = focusRemoval.current;
+  if (!intent || pending.has(intent.id)) return;
+  focusRemoval.current = null;
+  if (rows.some(row => row.id === intent.id)) return;
+  const next = intent.nextId ? deleteControls.current.get(intent.nextId) : null;
+  const control = next && !next.disabled ? next : [...deleteControls.current.values()].find(button => !button.disabled) ?? newControl.current;
+  control?.focus();
+ }, [rows, pending]);
+ const deleteControl = (id: string, button: HTMLButtonElement | null) => { if (button) deleteControls.current.set(id, button); else deleteControls.current.delete(id); };
  const [notice, setNotice] = useState<CompetitionNotice | null>(null);
  const [reloading, setReloading] = useState(false), [reloadFailed, setReloadFailed] = useState(false);
  const reloadingRef = useRef(false);
@@ -64,6 +77,8 @@ export function useCompetitorActions(setCompetitors: Updater<Competitor[]>) {
    if (!await confirm({ title: t.portfolio.deleteCompetitor, description: t.portfolio.deleteCompetitorConfirm, confirmLabel: t.common.delete, cancelLabel: t.common.cancel, destructive: true })) return;
    scope.signal.throwIfAborted(); await removeCompetitorRecord(db, scope, source); scope.signal.throwIfAborted();
    await awaitWithSignal(qc.cancelQueries({ queryKey, exact: true }), scope.signal); scope.signal.throwIfAborted();
+   const order = [...deleteControls.current.keys()];
+   focusRemoval.current = { id: source.id, nextId: order[order.indexOf(source.id) + 1] };
    setCompetitors(rows => applyCompetitorReceipt(rows, source, null)); setNotice(null); void qc.invalidateQueries({ queryKey, exact: true });
   } catch (error) {
    if (!scope.signal.aborted) setNotice(error instanceof CompetitorRecordError && error.reason === 'changed' ? 'competitorChanged' : 'competitorActionUnconfirmed');
@@ -80,6 +95,6 @@ export function useCompetitorActions(setCompetitors: Updater<Competitor[]>) {
   finally { reloadingRef.current = false; if (!scope.signal.aborted) setReloading(false); }
  }
  useUnsavedDraft({ dirty: false, pending: pending.size > 0, canSave: false, save: async () => false });
- return { save, remove, pending, notice, reload, reloading, reloadFailed };
+ return { save, remove, pending, notice, reload, reloading, reloadFailed, registerNewControl, deleteControl };
 }
 export type CompetitorActions = ReturnType<typeof useCompetitorActions>;

@@ -27,10 +27,11 @@ const searchable = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g,
  * Competition — every competitor recorded for every project, grouped by the
  * portfolio registry's categories, with search, project and type filters.
  */
-export function CompetitionPanel({ projects, competitors, setCompetitors, onOpenProject }: {
+export function CompetitionPanel({ projects, competitors, setCompetitors, onOpenProject, refreshFailed }: {
   projects: Project[];
   competitors: Competitor[];
   setCompetitors: Updater<Competitor[]>;
+  refreshFailed?: boolean;
   onOpenProject: (project: Project) => void;
 }) {
   const t = useDict();
@@ -42,7 +43,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
   const [reviewFilter, setReviewFilter] = useState<"all" | "stale">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<CompetitorForm>(emptyCompetitorForm());
-  const actions = useCompetitorActions(setCompetitors);
+  const actions = useCompetitorActions(setCompetitors, competitors);
   // One clock for the whole panel: every row reads freshness from this prop
   // instead of subscribing itself. Null until hydration, so the server and the
   // first client render agree and no badge flashes in. The 30-second tick is
@@ -114,7 +115,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
       <PageHeader
         title={p.competitionTitle}
         description={p.competitionDescription}
-        action={<Button size="sm" disabled={actions.pending.size > 0} onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>}
+        action={<Button ref={button => actions.registerNewControl(button)} size="sm" disabled={actions.pending.size > 0} onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>}
       />
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -128,7 +129,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
         <span className="text-xs tabular text-foreground-subtle">{p.competitorsCount(visible.length)}{staleTotal > 0 ? ` · ${p.staleCount(staleTotal)}` : ""}</span>
       </div>
 
-      <CompetitionRecovery actions={actions} />
+      <CompetitionRecovery actions={actions} refreshFailed={refreshFailed} />
 
       {staleTotal > 0 && <p className="mb-4 text-xs text-foreground-muted">{p.reviewStaleHint}</p>}
 
@@ -156,7 +157,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
                     <Button size="sm" variant="outline" disabled={actions.pending.size > 0} onClick={() => openNew(project.id)} aria-label={`${p.addCompetitor}: ${project.name}`}><Plus className="h-3.5 w-3.5" /></Button>
                   </div>
                 </CardHeader>
-                <CompetitorList competitors={list} now={now} onEdit={openEdit} onDelete={actions.remove} pending={actions.pending} empty={p.noCompetitorsForProject} />
+                <CompetitorList competitors={list} now={now} onEdit={openEdit} onDelete={actions.remove} pending={actions.pending} deleteControl={actions.deleteControl} empty={p.noCompetitorsForProject} />
               </Card>
             );
           })}
