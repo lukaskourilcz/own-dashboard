@@ -3011,19 +3011,22 @@
       "path": "src/lib/marketing/contracts.ts",
       "lines": 338,
       "sha256": "98853d6601d906d78b747c57c219b49e27f97e52747a281f797e6671d44e4171",
-      "status": "pending"
+      "status": "partial; complete source inspection; Story receipt/schema consistency and exact related media/time identities require boundary tests; approval hashes and explicit readiness retained",
+      "reviewedSha256": "98853d6601d906d78b747c57c219b49e27f97e52747a281f797e6671d44e4171"
     },
     {
       "path": "src/lib/marketing/dneskai-apify-research-plan.ts",
       "lines": 358,
       "sha256": "1f39c19e72b5228020616038e01da1b3816532c7039a42fe8a66610172c467b9",
-      "status": "pending"
+      "status": "source reviewed; complete dated immutable research plan inspection; explicit build pins, approval fingerprint, per-run caps and separate total retained; no live research authorized by source review",
+      "reviewedSha256": "1f39c19e72b5228020616038e01da1b3816532c7039a42fe8a66610172c467b9"
     },
     {
       "path": "src/lib/marketing/dneskai-apify-research.ts",
       "lines": 200,
       "sha256": "3664047f18920633bb5d1e2e7632d108bf50c73f5a53ea2c632251b8f833b8ef",
-      "status": "pending"
+      "status": "partial; complete source inspection; parent cancellation before reservation/after awaits, bounded reader termination and exact ledger receipts remain under review; approved plan and ambiguous reservation retention retained",
+      "reviewedSha256": "3664047f18920633bb5d1e2e7632d108bf50c73f5a53ea2c632251b8f833b8ef"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-client.ts",
@@ -3092,7 +3095,8 @@
       "path": "src/lib/marketing/dneskai-briefs.ts",
       "lines": 612,
       "sha256": "ea73534cb67373dd09bf148765a4a543fb9a95dd437c5229d8c9016da16756aa",
-      "status": "pending"
+      "status": "partial; complete source inspection; complete immutable coverage/slot reads, per-target-day allocation, caller cancellation and captured prepare/skip/admit receipts remain under review",
+      "reviewedSha256": "ea73534cb67373dd09bf148765a4a543fb9a95dd437c5229d8c9016da16756aa"
     },
     {
       "path": "src/lib/marketing/dneskai-caption.ts",
@@ -3224,7 +3228,8 @@
       "path": "src/lib/marketing/dneskai-generation.ts",
       "lines": 599,
       "sha256": "22eeecf2f194ba34c3a898ee6f7598e61cca55f6525d8b1c4ffa1eb35b06f0d7",
-      "status": "pending"
+      "status": "partial; complete source inspection; headline-only first-slide parity across fallback types, deterministic prose policy and repeated evidence-number/date work remain under review",
+      "reviewedSha256": "e41d50ca3fa37995d7d11de276ffcf1867a24973e11302b89d45f1297221ae12"
     },
     {
       "path": "src/lib/marketing/dneskai-instagram-webhook.ts",
@@ -3237,7 +3242,8 @@
       "path": "src/lib/marketing/dneskai-lab.ts",
       "lines": 339,
       "sha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798",
-      "status": "pending"
+      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review",
+      "reviewedSha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798"
     },
     {
       "path": "src/lib/marketing/dneskai-media-contracts.ts",
@@ -3257,13 +3263,15 @@
       "path": "src/lib/marketing/dneskai-media-plan.ts",
       "lines": 407,
       "sha256": "d50c3d274a7afaf4373cb60aee20c2d061c5699b51147453ce8389c181a95cea",
-      "status": "pending"
+      "status": "partial; complete source inspection; inherited registry lookup, bounded dense-page projection and complete source-text extraction require offline tests; explicit publisher host policy retained",
+      "reviewedSha256": "d50c3d274a7afaf4373cb60aee20c2d061c5699b51147453ce8389c181a95cea"
     },
     {
       "path": "src/lib/marketing/dneskai-media.ts",
       "lines": 533,
       "sha256": "a8a321edbaf7446b9a3db25f96e3ab5ddec9a3e42aae03b7b154a57c8609e861",
-      "status": "pending"
+      "status": "partial; complete source inspection; captured candidate/registry identity, storage absence versus outage, byte/read/deadline bounds, exact receipts and uncertain retention failures remain under review",
+      "reviewedSha256": "a8a321edbaf7446b9a3db25f96e3ab5ddec9a3e42aae03b7b154a57c8609e861"
     },
     {
       "path": "src/lib/marketing/dneskai-move.ts",
@@ -3380,7 +3388,8 @@
       "path": "src/lib/marketing/dneskai-render.ts",
       "lines": 517,
       "sha256": "ec424d59dda7c3763bbacfa91d7c1005212c2e92b32cb5127a5c32a736e54b84",
-      "status": "pending"
+      "status": "partial; complete source inspection; first-slide display parity, bounded native work/media reads and cache admission remain under review; clip/glyph and immutable render-key gates retained",
+      "reviewedSha256": "ec424d59dda7c3763bbacfa91d7c1005212c2e92b32cb5127a5c32a736e54b84"
     },
     {
       "path": "src/lib/marketing/dneskai-revision-edit.ts",
@@ -3505,13 +3514,15 @@
       "path": "src/lib/marketing/dneskai-workspace-read.ts",
       "lines": 340,
       "sha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a",
-      "status": "pending"
+      "status": "partial; complete source inspection; cost/tick completeness, selected-calendar coverage, malformed optional data and query cancellation remain under review",
+      "reviewedSha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",
       "lines": 377,
       "sha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157",
-      "status": "pending"
+      "status": "partial; complete source inspection; calendar completeness/free-slot meaning, current clocks and repeated formatter work remain under review",
+      "reviewedSha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157"
     },
     {
       "path": "src/lib/marketing/free-feeds/security/content.ts",
@@ -3636,7 +3647,8 @@
       "path": "src/lib/marketing/generation.ts",
       "lines": 554,
       "sha256": "50280a58d5e6a68a631d2e0f58c5dcb13f8a87c65ae6bd7e9ffbb83da5267448",
-      "status": "pending"
+      "status": "partial; complete source inspection; all-phase deadline/cancellation, final paid usage and exact evidence gates remain under review; paid reservations and no ambiguous retry retained",
+      "reviewedSha256": "8149124cfb97b9d40be7e554628c3568445316b5128a5ad4da0022e3aa423f07"
     },
     {
       "path": "src/lib/marketing/hashes.ts",
@@ -3810,7 +3822,8 @@
       "path": "src/lib/marketing/publisher.ts",
       "lines": 549,
       "sha256": "b7e2b2918ed933268dda8585d026ae03365fb25d5e0ca83f4c3cac481f287087",
-      "status": "pending"
+      "status": "partial; complete source inspection; bounded Graph and media stream cleanup, complete reconciliation matching and fresh credential identity remain under review; durable publish intent and single-send fences retained",
+      "reviewedSha256": "b7e2b2918ed933268dda8585d026ae03365fb25d5e0ca83f4c3cac481f287087"
     },
     {
       "path": "src/lib/marketing/render-preflight.ts",
@@ -3823,7 +3836,8 @@
       "path": "src/lib/marketing/render.ts",
       "lines": 278,
       "sha256": "ee038a17d2e9dda93917f82bf583bfa956144402e00cef5a4a7968474c03bdb1",
-      "status": "pending"
+      "status": "partial; complete source inspection; all-phase native work cancellation and repeated immutable file/hash work remain under review; approved authored-template and font gates retained",
+      "reviewedSha256": "ee038a17d2e9dda93917f82bf583bfa956144402e00cef5a4a7968474c03bdb1"
     },
     {
       "path": "src/lib/marketing/retired-route.ts",
@@ -3836,7 +3850,8 @@
       "path": "src/lib/marketing/scheduler-ports.ts",
       "lines": 207,
       "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
-      "status": "pending"
+      "status": "partial; complete source inspection; bounded complete eligibility/lease prechecks, cancellation, renewable-read starvation and exact persisted reconciliation receipts remain under review",
+      "reviewedSha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54"
     },
     {
       "path": "src/lib/marketing/scheduler.ts",
@@ -3870,7 +3885,8 @@
       "path": "src/lib/marketing/tracing.ts",
       "lines": 311,
       "sha256": "d81618319244db9fc6e1aefd43f9ea03de5303482b03c642f326a9281bd181c9",
-      "status": "pending"
+      "status": "partial; complete source inspection; bounded optional URL/dataset diagnostics and underlying work after timeout remain under review; EU metadata-only redaction and no provider retry retained",
+      "reviewedSha256": "d81618319244db9fc6e1aefd43f9ea03de5303482b03c642f326a9281bd181c9"
     },
     {
       "path": "src/lib/marketing/weekly-analytics.ts",
