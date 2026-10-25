@@ -1558,3 +1558,10 @@ The isolated PGlite baseline at 7bc4213, using the canonical schema through appl
 The twenty-hour application guard also permits an earlier run at 02:15 Prague time and a later pass at 22:30 on the same 24 October calendar date. This is a reproduced cost-control lead, not a completed repair. The existing owner/kind/time index can support a bounded day-range admission check; the repair must capture the reservation instant after acquiring the existing lock, preserve the rolling twenty-four-hour spend budget, account for Prague daylight-saving days and keep unknown reservations charged in full. Source/test/SQL inputs stay frozen until checkpoint 89 ends.
 
 Current primary Apify pages mark the Actor under maintenance, list plan-dependent result/start prices and distinguish a charge cap from an output bound. The current source-media guide now records those dated facts and the pending admission repair instead of presenting a Starter estimate as universal. No paid call, switch or owner budget changes.
+
+
+## Inventory reconciliation during checkpoint 89
+
+A SHA-256 comparison finds six existing ledger entries with older reviewed content. Their exact committed deltas add the shared five-second cron-recording signal, stored task-assignee fallback and toggle alignment, Calendar composite ids/description helper/mobile targets, safe CV links, paired EN/CS processing/conflict copy and the generated 123-migration read-port fingerprint. Reviewing those deltas updates the six reviewed hashes/statuses without changing their original baseline evidence. The ledger remains at 682 entries. This reconciliation closes documentation drift; it does not close the separate Career/provider or final release leads.
+
+Checkpoint 89 has passed 5,718 unit/database cases with one deliberate skip across 499 passing files and one skipped file (5,719 cases/500 files; 261.40 seconds). Full ESLint, the ordinary production build, all eight render traces with 46 fonts and post-build TypeScript also pass. The complete 918-case optimized browser matrix is running; no full-pass claim is made while it remains incomplete. Application/test/SQL/tool inputs remain frozen.

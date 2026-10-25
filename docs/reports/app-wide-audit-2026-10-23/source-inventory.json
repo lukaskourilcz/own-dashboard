@@ -138,8 +138,8 @@
       "path": "src/app/api/cron/bank-sync/route.ts",
       "lines": 105,
       "sha256": "f376f8b7743712ec2c82f1fa308ee8907a2abe8f2260198f64646acac550eec4",
-      "status": "source reviewed; processing deadline/write-integrity and relevant recovery checks passed; final release checks pending",
-      "reviewedSha256": "177759097d3201d43da123ab20cc12e98eef434c59431395f268a4b0567af404"
+      "status": "source reviewed; shared five-second cron-recording signal, processing/write-integrity and recovery checks passed; final release pending",
+      "reviewedSha256": "fe16eb4dbd9beea3d5ab6501fc496e112b2c1167ec8823895d67d22f92dd524c"
     },
     {
       "path": "src/app/api/cron/jobs-scrape/route.ts",
@@ -1367,8 +1367,8 @@
       "path": "src/components/overview/daily-focus.tsx",
       "lines": 328,
       "sha256": "060e5c46529d3d494dc1dcc0a1be752a53283e19cc16a26ddc4333573b8eb100",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "800e687e3c5c1d7ea895edeac09a73d4c14750e4e3571bc27ac07c43b7b4efb8"
+      "status": "source reviewed; repository assignee metadata and shared toggle alignment retained; final release checks pending",
+      "reviewedSha256": "2197e65376a7e61a35e651eea253141787f343bb70449e546792b4659ce59849"
     },
     {
       "path": "src/components/overview/kpi-cards.tsx",
@@ -1388,8 +1388,8 @@
       "path": "src/components/overview/today-hero.tsx",
       "lines": 395,
       "sha256": "fabf66fa71ad67629fb14c17af24f1b0bde34ea1048102321f8476a3bc71d749",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "27f2e0ff44abfecafdc47a92ece95f6f77549019a24171113401685762d9467d"
+      "status": "source reviewed; Calendar composite identity, bounded description projection and responsive link targets retained; final release checks pending",
+      "reviewedSha256": "48f15706a9acbe00a4839f2cf83d3d8a651f00d3929ea09d670216e164b45dc0"
     },
     {
       "path": "src/components/overview/work-attention.tsx",
@@ -1514,8 +1514,8 @@
       "path": "src/components/panels/jobs-panel.tsx",
       "lines": 2826,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "7b2a15f02e1a91e45066ce752a7f93455541df788f4417840b547dd860e0930f"
+      "status": "source reviewed; preference CV URLs use the shared safe-link guard; remaining Career/provider leads and final release pending",
+      "reviewedSha256": "02d7cfada37f0bf762ec326aa8d1bf3dc220a56ccc82eb51b434aac18b31e370"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2567,8 +2567,8 @@
       "path": "src/lib/i18n/sections/finances.ts",
       "lines": 674,
       "sha256": "f1732b0a058708f626473d17b5202cf8a51a124a4c55c847f9b739a232c5f522",
-      "status": "source reviewed; EN/CS Finance checks passed; final localization sweep pending",
-      "reviewedSha256": "76a72a9f1e4866d46290285aed4e5ecdebcc0fa6ecefbc56ef2b4188ec645c75"
+      "status": "source reviewed; EN/CS import-limit and rule-conflict recovery copy reconciled; final localization/release sweep pending",
+      "reviewedSha256": "f0fcce85954aa2ccadcdf0b6bd1377473889188a34226ed8961cd56590e14598"
     },
     {
       "path": "src/lib/i18n/sections/github.ts",
@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; finding 235 snapshot foundation tested; route adoption and final release pending",
-      "reviewedSha256": "6bf7241a575c99cb28d9cd6eb567d2a829c0d14398ee8fbc4ee23da0b2fabeae"
+      "status": "source reviewed; generated read port fingerprint matches 123 canonical local migrations; prepared rollout and final release pending",
+      "reviewedSha256": "eb64db4575dbdebcfc4fe6a583cb197a209bc0fef58ce209980e8673bd7ff465"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
