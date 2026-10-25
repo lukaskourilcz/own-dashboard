@@ -817,3 +817,13 @@ An isolated bundle of the unchanged publication helper reproduces two remaining 
 
 
 An independent mounted probe also reproduces the private-preference lead against the unchanged hooks and hydrator. With a synthetic earlier-account CV URL in the legacy device key, an unavailable server preference copy shows that URL. Supplying a later available server copy with a different account URL still leaves the earlier URL visible because hydration was marked complete before availability. The probe makes no request, uses no real browser storage and changes no repository application/test input. Private owner-scoped fields and captured preference writes need a coordinated repair; deliberately device-local theme/language behavior and the guest provider must remain intact.
+
+
+## Full release checkpoint 78 — completed with two mobile visual differences
+
+At frozen application/test source `dc4cda2`, 4,897 unit/component/database cases pass with one intentional skip (452 passed files, one skipped file), in 180.29 seconds. Full ESLint, the ordinary production build, all eight render traces and post-build TypeScript pass. The complete optimized browser matrix configures 782 cases: 683 pass, 97 intentional variants skip and two mobile visual comparisons fail, in 22.0 minutes with one worker. Application/test/migration inputs remain frozen until completion. This is a failed release checkpoint, not a complete passing matrix.
+
+The two failed images are inspected against expected captures and difference maps. The English Lab viewport still expects the retired $0.02/$1 text; the current configured-budget/$0.13 guidance uses one fewer line and shifts the following queue. The unrendered ninth-stage capture also differs in text rasterization/position. Both remain readable; the renderer/approval refusal and stage controls are intact. Native responsive/axe and the other workflow cases pass. Baseline refresh and repeat stability checks must follow before accepting these as intended visual changes; no baseline is replaced without inspection. Source/test work resumes after this run.
+
+
+Only the two inspected mobile PNG baselines change for the intended budget guidance and its shifted text rasterization. All six visual cases then pass in 30.3 seconds against the same optimized fixture build. Two additional repetitions pass all twelve cases in 57.0 seconds, covering both languages, desktop/mobile and every fixture stage. Both changed baseline PNGs are inspected after regeneration. Dimensions stay 393×727 for the viewport and 361×773 for the stage. Application source stays unchanged during these checks. Checkpoint 78 retains its historical two baseline failures; these are separate passing refresh/stability results, not a relabeled complete run.

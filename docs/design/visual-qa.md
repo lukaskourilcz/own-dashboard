@@ -405,3 +405,8 @@ Six native desktop/mobile cases pass for picture swap/reuse in EN/CS light/dark 
 ## DNESKAi legacy slide recovery, 25 October 2026
 
 Ten native EN/CS desktop/mobile cases pass for type/insertion edits, swapped-picture reuse and returning a legacy approval before explicit headline-only cleanup. Four final capture checks pass in 29.6 seconds. The new flow includes a real fixture preview, save to a newly approvable version, full Lab axe, page overflow, no owner API and clean console checks. Inspected Czech desktop/mobile cleanup crops show the warning and reachable action; the HTML plan includes this nineteenth authentic pair. This targeted evidence does not claim a new full optimized app-wide release or a production migration.
+
+
+## 25 October 2026 — Lab budget-copy baseline review
+
+The full checkpoint-78 browser matrix passes 683 cases, skips 97 deliberate variants and reports two mobile visual differences. Expected/actual/difference images show the new configured-budget/$0.13 text taking one fewer line, plus small text-position/rasterization differences in the missing-render ninth stage. The readable refusal, controls and caption stay intact. Only these two PNGs are refreshed after inspection. Six visual cases pass against the same optimized fixture build, followed by twelve passing repeat checks in 57.0 seconds. No application source changes during verification; no real provider or owner data is used. Exact full-run and follow-up evidence remains in the app-wide report.
