@@ -355,5 +355,5 @@ approval (NEEDED.md).
 The current twenty-hour application check and spend-only database lock do not enforce one run per Prague calendar
 day. An [isolated baseline](reports/app-wide-audit-2026-10-23/tiktok-daily-before.json) admits a second same-day
 reservation after a zero-cost settlement; [two real PostgreSQL connections](reports/app-wide-audit-2026-10-23/tiktok-daily-concurrent-before.json)
-also admit two when their existing rolling budget permits both. The atomic daily-admission repair remains pending.
-Keep this optional spend disabled until that repair deploys, the provider is usable and the owner decides.
+also admit two when their existing rolling budget permits both. Prepared migration 124 (`20261025184649_tiktok_prague_daily_admission.sql`) now enforces that day boundary atomically under the existing lock, preserving the rolling spend ceiling and all reservation history. It remains unapplied.
+Keep this optional spend disabled until migration 124 deploys, the provider is usable and the owner decides.

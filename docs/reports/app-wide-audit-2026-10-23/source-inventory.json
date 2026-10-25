@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated read port fingerprint matches 123 canonical local migrations; prepared rollout and final release pending",
-      "reviewedSha256": "eb64db4575dbdebcfc4fe6a583cb197a209bc0fef58ce209980e8673bd7ff465"
+      "status": "source reviewed; generated read port fingerprint matches 124 canonical local migrations; prepared rollout and final release pending",
+      "reviewedSha256": "f1cc7bc705da7f53dcaa640d4defa29259098198e19b8a56fcef9ec2c64d4639"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
