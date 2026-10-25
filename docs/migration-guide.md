@@ -728,15 +728,16 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Twenty-nine prepared audit files follow, numbered 87–115 in the [current migration list](../README.md). The latest is `20261024223552_confirmed_weekly_review.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty prepared audit files follow, numbered 87–116 in the [current migration list](../README.md). The latest is `20261025000844_confirmed_task_writes.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
-npx supabase link --project-ref gcctapykhrdyxikieemn
-npx supabase migration list --linked      # remote includes the completed chain through 20261023130300
-npx supabase db push --linked --dry-run   # expect all twenty-nine audit files (87–115)
-npx supabase db push --linked
-npx supabase migration list --linked      # both columns agree
+npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–116
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault
+npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn  # both columns agree
 ```
+
+The pinned current CLI accepts an explicit project reference, so this isolated checkout needs no local link or copied database credential. `--skip-vault` preserves Vault configuration instead of resolving/updating its values. Authenticated CLI access currently waits on macOS Keychain; its documented no-Keychain mode confirms no fallback login. Restore that access without copying secrets to chat or files, then inspect the complete dry run before the authorized push. Local migration creation needs no hosted login.
 
 Do not apply them through the Supabase MCP `apply_migration` tool: it records the apply time as the version, which
 recreates the mismatch, and it holds the retention file's `delete` for a confirmation. `20261022141613` needs
@@ -1151,3 +1152,13 @@ Forty-one client/database cases pass, including twelve isolated full-chain datab
 
 
 Weekly caller verification (finding 168): 142 targeted cases across nine files pass, including twelve mounted save/lifecycle cases and four exact owner/week reload cases added to the SDK suite. Twelve EN/CS desktop/mobile browser cases pass with held/refused saves, guarded sidebar exits, selectable conflict text, explicit reload, six-width card bounds, axe and no direct table writes. A confirmed save applies only to its captured source, avoiding a second collection request when that cache application succeeds. Failed writes reconcile the exact parent review query without refetching focus history. An account/week change requires explicit discard and a full server reload to refresh the matching Calendar window. No live owner record or provider was used in these checks. Full release and production migration rollout remain pending.
+
+## Migration 116 — confirmed task writes
+
+`20261025000844_confirmed_task_writes.sql` adds `todos.updated_at` with a stable `now()` fast default and a monotonic microsecond update trigger. Existing text, repository context, GLOBAL priority and parent ownership stay intact. PostgreSQL's [non-volatile default behavior](https://www.postgresql.org/docs/17/sql-altertable.html) avoids a volatile-default heap rewrite; the isolated upgrade checks the catalog's missing-value marker and unchanged legacy fields. DDL and operation lock waits are bounded to five seconds.
+
+`write_task(uuid,uuid,text,jsonb,jsonb)` is authenticated-only, security-invoker, with an empty search path. It binds the actor/owner, stable task id, action, complete captured row and version. Manual creates share the repository import's owner lock and respect the 20,000-task collection limit. New metadata is validated before writes, including explicit GLOBAL importance 6/no project and related-record ownership. A toggle changes only `done` and the version. A stale source returns a nonwriting conflict; an already committed matching toggle is acknowledged without another update. A changed-and-restored source version cannot replay a stale toggle. Confirmed absence is separate from confirmed deletion. Suppressed/altered writes and post-trigger changes roll back.
+
+The new `dashboard_private.task_create_receipts` table stores only owner id, task id, canonical request hash and original creation time. Own-only RLS allows session select/insert, with no session update/delete or anonymous/service function access. The schema is not added to Data API exposure. Metadata remains after task deletion, preventing a lost-response retry from recreating a removed task; account deletion cascades it. A changed create payload cannot reuse an old receipt. The metadata insert and task insert are confirmed in the same transaction. Input values are capped at 8 KiB and captured source/response at 512 KiB. No existing task is deleted by applying this migration.
+
+Sixty-seven contract/database/repository cases pass across four files, including 22 isolated real-database cases for the new contract, an upgrade, preserved metadata, private permissions, rollback, ABA conflicts, deleted-create retries, actual client validation of database receipts and the collection ceiling. The client has one fifteen-second caller-cancellable RPC, automatic retry disabled, an exact owner/id recovery reader and captured-row-only cache application. Targeted lint, TypeScript and offline read-type generation from all 116 migrations pass. The first database fixture omitted a required project slug; it was corrected before these passing checks. The Tasks UI still uses its prior writer and needs the next integration/interaction phase. Apply the prepared chain before deploying its caller. Roll back callers before removing the function; retain the version and private retry metadata while older requests can still arrive.

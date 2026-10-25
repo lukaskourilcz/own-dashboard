@@ -89,6 +89,8 @@ export type Todo = {
   // NEEDED.md). Null = ungrouped, shown under the default "Other" section.
   category: string | null;
   created_at: string;
+  /** Monotonic database version for captured writes; legacy fixtures may omit it. */
+  updated_at?: string;
   // NEEDED.md task-card context. All null for a hand-added task.
   source: TodoSource | null;
   // GitHub numeric repo id (as text) — groups tasks into per-repo cards.

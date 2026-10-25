@@ -3208,8 +3208,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 177,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated offline from all 115 migrations, nine read tables; rollout and final release pending",
-      "reviewedSha256": "73fc31447db262103df4e4c75fb65ef7fa1bbc873e07215c51189af987b85241"
+      "status": "source reviewed; generated offline from all 116 migrations, nine read tables; rollout and final release pending",
+      "reviewedSha256": "780551672951d632bbe06ce6540d4c2530ca6abbb5742864f2ae99950771d419"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4173,6 +4173,13 @@
       "reviewedSha256": "b60a984881214eb0b07d9e1bbc6f4415f7a69fa7910b5168c008edf3ae5cd6bc"
     },
     {
+      "path": "src/lib/task-write.ts",
+      "lines": 119,
+      "sha256": null,
+      "status": "source reviewed; captured owner/version task writes, strict receipts, exact recovery and source-safe cache contracts checked in finding 176; UI adoption and final release remain separate",
+      "reviewedSha256": "bb1de74edfec396c708d2460c845c835729846cae8382b81a54fb7dcfbe1b61a"
+    },
+    {
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
@@ -4234,7 +4241,8 @@
       "path": "src/lib/types.ts",
       "lines": 1004,
       "sha256": "32cd65c41e486e78479dc9fbf3b5d7f2402e147c2bee808f8658e5bdbd3ce92e",
-      "status": "pending"
+      "status": "partial; Todo type and optional monotonic task version inspected for finding 176; remaining domain types require complete source review",
+      "reviewedSha256": "c9b7132b8174b9b16e0703c11827070fd633c347832a506a830dd8e73ca34c86"
     },
     {
       "path": "src/lib/ui-preferences-contract.ts",

@@ -27,6 +27,10 @@ The OAuth callback verifies provider grants before storing them server-side. Goo
 
 Explicit OAuth disconnect confirms a captured-version local removal separately from the provider’s revoke response. Failed reads, active reservations and stale completions cannot silently remove a newer stored grant. Sign-out keeps the existing best-effort Google revocation behavior, but confirms the dashboard logout itself before navigation. Its client action checks unsaved drafts first and preserves a retry state after failure. Timed-out server clients cannot write late auth cookies.
 
+## Prepared task retry metadata
+
+Audit migration 116 adds `dashboard_private.task_create_receipts`: the owner's id, stable task id, request hash and original creation time. It stores no second copy of task text and sends nothing to an external service. Session access is owner-only under RLS and permits only read/insert; this schema is not added to the Data API. Metadata survives task deletion so a delayed create retry cannot recreate the task, and cascades when the owner account is removed. The migration is prepared, not applied; Tasks UI adoption remains in progress.
+
 ## Public tour isolation
 
 `/guest` renders deterministic fixtures in a separate React Query cache. Its network boundary blocks application API requests, Supabase requests, exports, sign-out submissions and provider-linking actions even when the browser already has the owner's session. The boundary remains active during in-shell navigation and restores normal request behavior when the tour unmounts. Static assets and ordinary sign-in navigation remain available. Fixture entity stores never refetch live records. `/dev-preview` uses the same isolation with a real backend; interactions may use mocked requests only with the deliberately nonexistent E2E backend (`https://example.supabase.co`).
