@@ -11,6 +11,10 @@ These are follow-ups from source inspection, not completed repairs or release ev
 - Finding 179 binds repository imports/cleanup to a permanent repository id and pinned commit, then commits through a permanent branch node and expected head. Ambiguous legacy identities and reused names retain tasks. Finding 185 closes captured owner/source, synchronous pending/confirmation, cancellation and guarded cache disconnection; source commits and confirmed local consumption remain separate.
 - Finding 180 replaces task subcards with grouped rows/dividers, matching centered open/finished widths for one group, wrapping inline metadata, consistent visible targets and measured full-text disclosures. It restores focus after confirmed row removal. Default-five rendering and the shared thirty-second clock remain unchanged. Finding 185 closes repository Refresh/cleanup lifecycle; final release still needs its separate checks.
 
+## Publication recovery
+
+- Finding 200 closes prefix-only caption matching and short continued-page uniqueness. Full normalized caption identity and complete-page evidence are required; recovery remains read-only. Graph resource bounds and credential-lifecycle checks remain separate.
+
 ## Music and paid audio signals
 
 Finding 163 closes native preview policy, startup/cancellation/disposal and recovery; management page/signing boundaries are in findings 159–160. The remaining work is separate:

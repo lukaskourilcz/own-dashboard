@@ -827,3 +827,10 @@ The two failed images are inspected against expected captures and difference map
 
 
 Only the two inspected mobile PNG baselines change for the intended budget guidance and its shifted text rasterization. All six visual cases then pass in 30.3 seconds against the same optimized fixture build. Two additional repetitions pass all twelve cases in 57.0 seconds, covering both languages, desktop/mobile and every fixture stage. Both changed baseline PNGs are inspected after regeneration. Dimensions stay 393×727 for the viewport and 361×773 for the stage. Application source stays unchanged during these checks. Checkpoint 78 retains its historical two baseline failures; these are separate passing refresh/stability results, not a relabeled complete run.
+
+
+## Finding 200 — exact, complete read-only publication recovery
+
+Reconciliation could attach a receipt to another post sharing the first hundred caption characters, or call a match unique despite a short response advertising another page. It now requires equality of the full NFC/whitespace-normalized caption and treats any next-page marker as incomplete. Existing account, media-kind, time and durable publish-intent guards remain intact. It adds no pagination request or provider write; unresolved evidence stays in reconciliation. The old synthetic remote fixture now reflects the exact caption actually submitted, rather than silently appending hashtags.
+
+Four new regressions fail before repair. All 106 Meta/general/media-identity/Story/Reel publishing cases pass across five files in 3.74 seconds; targeted ESLint and TypeScript pass. Coverage includes different endings after the old prefix, an exact match beside a prefix sibling, remote appended edits, a short continued page and Unicode/whitespace equivalence. Isolated GET-only controls also confirm two reads and no write for resolved and unresolved outcomes. No real account, token, post or publication setting changes. Remaining Graph resource bounds and credential-lifecycle leads are separate.

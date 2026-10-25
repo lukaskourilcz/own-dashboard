@@ -273,7 +273,7 @@ describe('reconciliation after an ambiguous media_publish', () => {
     } });
     return state;
   };
-  const item = (patch: Record<string, unknown> = {}) => ({ id: '90001', caption: `${caption}\n\n#ai #dneskai`, timestamp: '2026-10-20T07:00:41+0000', permalink: 'https://www.instagram.com/p/offline-qa/', media_type: 'CAROUSEL_ALBUM', ...patch });
+  const item = (patch: Record<string, unknown> = {}) => ({ id: '90001', caption, timestamp: '2026-10-20T07:00:41+0000', permalink: 'https://www.instagram.com/p/offline-qa/', media_type: 'CAROUSEL_ALBUM', ...patch });
   it('moves a timed-out publish to reconciliation, then records the unique media-list match without a second POST', async () => {
     const state = ambiguous(() => Response.json({ data: [item({ id: '80000', caption: 'Jiný příspěvek', timestamp: '2026-10-20T06:58:00+0000' }), item()] }), 'PUBLISHED', true);
     const first = await publishMarketingRevision(state.input);
@@ -301,6 +301,37 @@ describe('reconciliation after an ambiguous media_publish', () => {
     const state = ambiguous(() => Response.json({ data }), status);
     const recovered = await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300', error_code: 'meta-request-uncertain' } });
     expect(recovered).toMatchObject({ status: 'reconciliation', errorCode: code, remoteMediaId: null });
+    expect(state.posts()).toHaveLength(0);
+  });
+  it('does not recover a different post with the same first hundred caption characters', async () => {
+    const approved = `${'A'.repeat(100)} Approved final sentence.`;
+    const state = ambiguous(() => Response.json({ data: [item({ caption: `${'A'.repeat(100)} Different final sentence.` })] }));
+    state.input.revisionRow.revision.caption = approved; state.reapprove();
+    expect(await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300' } })).toMatchObject({ status: 'reconciliation', errorCode: 'remote-published-media-id-required', remoteMediaId: null });
+    expect(state.posts()).toHaveLength(0);
+  });
+  it('recovers the full caption match rather than treating a prefix sibling as the same post', async () => {
+    const approved = `${'A'.repeat(100)} Approved final sentence.`;
+    const state = ambiguous(() => Response.json({ data: [item({ id: '90002', caption: `${'A'.repeat(100)} Different final sentence.` }), item({ caption: approved })] }));
+    state.input.revisionRow.revision.caption = approved; state.reapprove();
+    expect(await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300' } })).toMatchObject({ status: 'published', remoteMediaId: '90001' });
+    expect(state.posts()).toHaveLength(0);
+  });
+  it('does not accept an appended remote sentence as the approved caption', async () => {
+    const state = ambiguous(() => Response.json({ data: [item({ caption: `${caption} A remote edit.` })] }));
+    expect(await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300' } })).toMatchObject({ status: 'reconciliation', remoteMediaId: null });
+    expect(state.posts()).toHaveLength(0);
+  });
+  it('holds a short page with a continuation before declaring a match unique', async () => {
+    const state = ambiguous(() => Response.json({ data: [item()], paging: { next: 'https://graph.instagram.com/v99.0/next-page-offline' } }));
+    expect(await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300' } })).toMatchObject({ status: 'reconciliation', errorCode: 'remote-media-list-incomplete', remoteMediaId: null });
+    expect(state.posts()).toHaveLength(0); expect(state.calls).toHaveLength(2);
+  });
+  it('keeps full-caption whitespace and canonical Unicode normalization compatible', async () => {
+    const approved = 'Řádek jedna.\n\nDruhý řádek.';
+    const state = ambiguous(() => Response.json({ data: [item({ caption: 'Řádek jedna.  Druhý řádek.'.normalize('NFD') })] }));
+    state.input.revisionRow.revision.caption = approved; state.reapprove();
+    expect(await reconcileMarketingPublication({ ...state.input, publication: { ...state.input.publication, status: 'reconciliation', remote_container_id: '300' } })).toMatchObject({ status: 'published', remoteMediaId: '90001' });
     expect(state.posts()).toHaveLength(0);
   });
   it('does not accept a single match from a full page that has a next page', async () => {

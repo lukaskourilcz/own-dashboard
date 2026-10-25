@@ -368,3 +368,5 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 - `tests/lib/marketing-scheduler-ports.test.ts`: the wiring to the owning modules.
 
 A real pg_cron run, a real pg_net request and the Vault read are verified only in Supabase.
+
+Read-only reconciliation requires the complete normalized submitted caption, matching account/media kind and time, and no advertised continuation of the media page. A shared caption prefix or a short page with `paging.next` stays unresolved; recovery never retries publication.

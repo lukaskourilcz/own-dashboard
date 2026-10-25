@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -663,7 +663,7 @@
       "path": "src/app/globals.css",
       "lines": 788,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; findings 171\u2013172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending",
+      "status": "partial; complete CSS source inspected; findings 171–172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending",
       "reviewedSha256": "4189bb4f17fee18cef1faf072cd561463b837787c198c5f0c8eef4c4e0b61fd6"
     },
     {
@@ -1633,7 +1633,7 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1110,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177\u2013185; final release pending",
+      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177–185; final release pending",
       "reviewedSha256": "0648b959f84e989355020c0130c9d2133c9d8da25ec5545898273e8f0d1aa4c7"
     },
     {
@@ -1976,7 +1976,7 @@
       "path": "src/components/work/weekly-planning.tsx",
       "lines": 745,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; findings 164/166\u2013169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
+      "status": "partial; findings 164/166–169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
       "reviewedSha256": "b59dc5381857cbb8394603de3434d306b73a638465c04e63f8555e0e5f47be9c"
     },
     {
@@ -2665,7 +2665,7 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "partial; findings 164/166/168\u2013169 EN/CS weekly recovery and compact action copy checked; remaining destination copy review pending",
+      "status": "partial; findings 164/166/168–169 EN/CS weekly recovery and compact action copy checked; remaining destination copy review pending",
       "reviewedSha256": "491e521249f00b5bdcf0291e94b5b4eff3a6ac00f5c089c824e3e21943d42f30"
     },
     {
@@ -2721,7 +2721,7 @@
       "path": "src/lib/i18n/sections/todos.ts",
       "lines": 417,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177\u2013180; final release pending",
+      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177–180; final release pending",
       "reviewedSha256": "a184a3990cbeb3eb556a48282ffa1d3bb9e7f86a2a0f0d3b73ad553a960db93e"
     },
     {
@@ -3840,10 +3840,10 @@
     },
     {
       "path": "src/lib/marketing/publisher.ts",
-      "lines": 549,
-      "sha256": "b7e2b2918ed933268dda8585d026ae03365fb25d5e0ca83f4c3cac481f287087",
-      "status": "partial; complete source inspection; bounded Graph and media stream cleanup, complete reconciliation matching and fresh credential identity remain under review; durable publish intent and single-send fences retained",
-      "reviewedSha256": "b7e2b2918ed933268dda8585d026ae03365fb25d5e0ca83f4c3cac481f287087"
+      "lines": 548,
+      "sha256": "b2d81efc4d67071507e391d89ebd67858d2acbf7f16745cce18ba6264f28e352",
+      "status": "partial; finding 200 closes full normalized caption identity and complete-page uniqueness with read-only recovery regressions; bounded Graph/media stream cleanup and fresh credential identity remain under review; durable publish intent and single-send fences retained",
+      "reviewedSha256": "b2d81efc4d67071507e391d89ebd67858d2acbf7f16745cce18ba6264f28e352"
     },
     {
       "path": "src/lib/marketing/render-preflight.ts",
@@ -4390,7 +4390,7 @@
       "path": "src/lib/task-write.ts",
       "lines": 119,
       "sha256": null,
-      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176\u2013177; remaining callers and final release separate",
+      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176–177; remaining callers and final release separate",
       "reviewedSha256": "8a3ff87773dee890e2e43527285a099156e177b9b61392eba241f1203f19f9a0"
     },
     {
@@ -4560,7 +4560,7 @@
       "path": "src/lib/weekly-review-save.ts",
       "sha256": null,
       "lines": 94,
-      "status": "source reviewed; findings 167\u2013168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
+      "status": "source reviewed; findings 167–168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
       "reviewedSha256": "db5f9b9d933fb90741a1518bbe5aa33b0c96dac40b15856b843aaa36a0e2f227"
     },
     {
