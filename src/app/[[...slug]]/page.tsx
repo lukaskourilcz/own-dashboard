@@ -9,6 +9,7 @@ import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
+import { readPlanRecords } from "@/lib/plan-records";
 import { readCompetitorRecords } from "@/lib/competitor-records";
 import { readOrganizationRecords } from "@/lib/organization-records";
 import { readOwnedCollection } from "@/lib/owned-records";
@@ -85,7 +86,7 @@ async function loadDashboardPage({ params, searchParams }: DashboardPageInput, t
     loadWhen("todos", () => readOwnedCollection(supabase, "todos", user.id)),
     loadWhen("accounts", () => supabase.from("accounts").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: true })),
     loadWhen("transactions", () => readOwnedCollection(supabase, "transactions", user.id)),
-    loadWhen("plans", () => supabase.from("plans").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false })),
+    loadWhen("plans", () => readPlanRecords(supabase, { ownerId: user.id, signal: readSignal })),
     loadWhen("notes", () => supabase.from("notes").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("updated_at", { ascending: false })),
     loadWhen("prompts", () => readOwnedCollection(supabase, "prompts", user.id)),
     loadWhen("promptLinks", () => readOwnedCollection(supabase, "prompt_links", user.id)),

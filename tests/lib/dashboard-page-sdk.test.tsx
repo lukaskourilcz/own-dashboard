@@ -8,6 +8,7 @@ vi.mock('@/components/dashboard-shell', () => ({ DashboardShell: () => null }));
 vi.mock('@/components/dashboard-data-unavailable', () => ({ DashboardDataUnavailable: () => null }));
 vi.mock('next/navigation', () => ({ notFound: () => { throw Error('404'); }, redirect: () => { throw Error('redirect'); } }));
 import DashboardPage from '@/app/[[...slug]]/page';
+import { DashboardShell } from '@/components/dashboard-shell';
 import { DashboardDataUnavailable } from '@/components/dashboard-data-unavailable';
 const user: User = { id: '11111111-1111-4111-8111-111111111111', aud: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: '2026-10-25T12:00:00Z' };
 let reads: { path: string; signal: AbortSignal | undefined }[], wire: (path: string) => Promise<Response>;
@@ -30,4 +31,11 @@ it('retires an uncooperative actual SDK query at twenty seconds and observes its
  wire = async path => path.endsWith('/notes') ? new Promise(resolve => { finish = resolve; }) : Response.json([]);
  const pending = page(['notes']); await vi.advanceTimersByTimeAsync(20001); const result = await pending; expect(result.type).toBe(DashboardDataUnavailable); expect(reads.find(read => read.path.endsWith('/notes'))!.signal!.aborted).toBe(true);
  finish(Response.json([])); await Promise.resolve(); expect(reads.filter(read => read.path.endsWith('/notes'))).toHaveLength(1);
+});
+
+it('loads Goals through one complete captured-owner RPC instead of a capped REST select', async () => {
+ const rows = Array.from({ length: 1201 }, (_, index) => ({ id: `${index.toString(16).padStart(8, '0')}-bbbb-4bbb-8bbb-bbbbbbbbbbbb`, user_id: user.id, title: 'Synthetic plan', target_date: null, status: 'idea', recurrence: 'none', notes: null, last_completed_at: null, linked_calendar_event_id: null, created_at: '2026-10-25T17:00:00Z', updated_at: '2026-10-25T17:00:00Z' }));
+ wire = async path => Response.json(path.endsWith('/read_owned_collection') ? rows : []);
+ const result = await page(['goals']); expect(result.type).toBe(DashboardShell); expect(result.props.initialPlans).toHaveLength(1201);
+ expect(reads.filter(read => read.path.endsWith('/read_owned_collection'))).toHaveLength(1); expect(reads.some(read => read.path.endsWith('/plans'))).toBe(false);
 });

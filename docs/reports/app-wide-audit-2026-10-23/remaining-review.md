@@ -143,3 +143,6 @@ Finding 238 closes observed account-replacement/sign-out UI/cache retirement and
 
 
 Finding 242 closes the original-owner identity stage for all existing currentUserId callers. It does not prove the later database/API/receipt phases of every legacy mutation. Plans must recheck the original lifetime after a confirmed insert and before optional Calendar work; review this together with the current Calendar route contract. Keep acknowledged plan creation separate from an optional event failure and never resend a primary insert merely to retry linking.
+
+
+Finding 246 prepares finite maintained plan versions and complete snapshots in migration 123. Finding 247 adopts complete captured-owner reads in the server loader and browser shell, and verifies shared stable-create/versioned-write/delete contracts against actual SDK/RLS. Goals and Home controls still need adoption, pending/exit/retry/accessibility work and captured optional Calendar phases. Do not confuse these library/read checks with completed UI behavior.

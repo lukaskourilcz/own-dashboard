@@ -1,6 +1,7 @@
 "use client";
 
 import { readSpendCategoryRecords, type SpendCategoryScope } from "@/lib/spend-category-records";
+import { readPlanRecords, type PlanScope } from "@/lib/plan-records";
 import { readCompetitorRecords, type CompetitorScope } from "@/lib/competitor-records";
 import { readOrganizationRecords, type OrganizationScope } from "@/lib/organization-records";
 import { readOwnedCollection } from "@/lib/owned-records";
@@ -170,14 +171,8 @@ export async function fetchTransactionRules(): Promise<TransactionRuleContext> {
   return parseTransactionRuleContext(data);
 }
 
-export async function fetchPlans(): Promise<Plan[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("plans")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Plan[];
+export async function fetchPlans(scope: PlanScope): Promise<Plan[]> {
+  return (await readPlanRecords(createClient(), scope)).data;
 }
 
 export async function fetchOrganizations(scope: OrganizationScope): Promise<Organization[]> {

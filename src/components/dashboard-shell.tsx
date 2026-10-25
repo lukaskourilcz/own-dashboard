@@ -260,6 +260,11 @@ function DashboardShellContent(props: Props) {
     const captured = ownerScope.capture();
     return fetchOrganizations({ ownerId: captured.ownerId, signal: context ? AbortSignal.any([captured.signal, context.signal]) : captured.signal });
   }, [ownerScope, props.user.id]);
+  const loadPlans = useCallback((context?: { signal: AbortSignal }) => {
+    if (!ownerScope || ownerScope.ownerId !== props.user.id) throw new Error("Plans unavailable");
+    const captured = ownerScope.capture();
+    return fetchPlans({ ownerId: captured.ownerId, signal: context ? AbortSignal.any([captured.signal, context.signal]) : captured.signal });
+  }, [ownerScope, props.user.id]);
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const requestNavigation = useGuardedNavigation();
   const { user } = props;
@@ -291,7 +296,7 @@ function DashboardShellContent(props: Props) {
   const [todos, , todosStatus] = useEntityStore(qk.todos, props.initialTodos, fetchTodos, dataOptions("todos"));
   const [accounts, setAccounts, accountsStatus] = useEntityStore(qk.accounts, props.initialAccounts, fetchAccounts, dataOptions("accounts"));
   const [transactions, setTransactions, transactionsStatus] = useEntityStore(qk.transactions, props.initialTransactions, fetchTransactions, dataOptions("transactions"));
-  const [plans, setPlans, plansStatus] = useEntityStore(qk.plans, props.initialPlans, fetchPlans, dataOptions("plans"));
+  const [plans, setPlans, plansStatus] = useEntityStore(qk.plans, props.initialPlans, loadPlans, dataOptions("plans"));
   const [notes, setNotes, notesStatus] = useEntityStore(qk.notes, props.initialNotes, fetchNotes, dataOptions("notes"));
   const [prompts, setPrompts, promptsStatus] = useEntityStore(qk.prompts, props.initialPrompts, fetchPrompts, dataOptions("prompts"));
   const [promptLinks, setPromptLinks, promptLinksStatus] = useEntityStore(qk.promptLinks, props.initialPromptLinks, fetchPromptLinks, dataOptions("promptLinks"));

@@ -54,8 +54,8 @@
       "path": "src/app/[[...slug]]/page.tsx",
       "lines": 199,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; finding 240 bounded verified route-scoped loader/SDK checks pass; legacy collection leads and final release pending",
-      "reviewedSha256": "d89159b8e4d82d4df1718b19aaa5874f41ef05c564d4a3a00c03602c003198cf"
+      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
+      "reviewedSha256": "a81829c22f93f5efbf02ddd2118a2bfcbe8287b152f60d9706d8d83e2d680ecb"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
-      "reviewedSha256": "47dbe386d8cd904ad937b114f32baaeb0c2e98ede323df47c0d01ea09a761e37"
+      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
+      "reviewedSha256": "30b9c81fade3e3d9e737999ed94157616fa7809780e99996bd3e0c29f44a5a8c"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -4067,8 +4067,8 @@
       "lines": 42,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
-      "reviewedSha256": "4ea522214202028dabe6ed647ac90fb818ffd558496b6168ffff812e25040328"
+      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
+      "reviewedSha256": "a4898fb6d7f43193747b5bea87f644ff7a33d3b6aa8c75eb9186de5da6dae488"
     },
     {
       "path": "src/lib/owner-preferences.tsx",
@@ -4243,8 +4243,8 @@
       "path": "src/lib/queries/fetchers.ts",
       "lines": 463,
       "sha256": "e5994117c822ae12a5e78b8902905a80dbe1b83c0a63ce2d585c6264223b251f",
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
-      "reviewedSha256": "bbc31f2040c5510276aeb112d4d69da6fee019daee0f3998b973b43b388292b9"
+      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
+      "reviewedSha256": "5530837d117d12bc8b80e86dd011ba4d6955777fa9f7868e289e4e18fd6de720"
     },
     {
       "path": "src/lib/queries/keys.ts",
@@ -4751,6 +4751,13 @@
       "lines": 50,
       "reviewedSha256": "01a198789ef0752db004df0dd99f97e2ff6f7a72b206e679b64ecb9dc4a53e50",
       "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending"
+    },
+    {
+      "path": "src/lib/plan-records.ts",
+      "sha256": null,
+      "lines": 135,
+      "reviewedSha256": "d12a9024de237dc6e837d0221db9a9880a1755b49bb910ac963bc77f12d2800f",
+      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending"
     }
   ],
   "baselineFileCount": 561
