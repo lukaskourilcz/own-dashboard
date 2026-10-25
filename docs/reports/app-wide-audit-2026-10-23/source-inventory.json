@@ -1445,7 +1445,7 @@
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
       "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
-      "reviewedSha256": "d2c8d70171ef832683b9ad59816cd5919c7bda0dbfbbef8a9aa3ee74c4b94a16"
+      "reviewedSha256": "adc087728cc593e55b9052d3587e7af5863f84c3576b1bad91f1fbf9961badba"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
@@ -2666,7 +2666,7 @@
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
       "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
-      "reviewedSha256": "625d6985d06d1e49dcfa325dc527eb6fd777ca96b66398b2d8c71b4ad736bf05"
+      "reviewedSha256": "0270f1bbfbaa5ffcc2767bf83011979fd089188d8e1aafe532dc38ada2916b3b"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
