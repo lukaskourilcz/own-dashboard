@@ -4721,7 +4721,7 @@
       "path": "src/components/owner-session-boundary.tsx",
       "sha256": null,
       "lines": 48,
-      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS checks pass; native checks running, other auth/action leads and final release pending",
+      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending",
       "reviewedSha256": "a09f4890ec01278874eb152ae5c752f488aca60fd14bf53126f9c063afb263d5"
     },
     {
@@ -4792,7 +4792,7 @@
       "sha256": null,
       "lines": 27,
       "reviewedSha256": "b0dd3965d658fd1e801d85163e78b34335591c3f2e4947fc5fd241daaee6066a",
-      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS checks pass; native checks running, other auth/action leads and final release pending"
+      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS/native checks pass; other auth/action leads and final release pending"
     }
   ],
   "baselineFileCount": 561
