@@ -1549,3 +1549,12 @@ All 55 focused automation-auth, pilot and tick-route cases pass across three fil
 ## Full checkpoint 89 — started, combined inputs frozen
 
 Checkpoint 89 freezes application/test/SQL and validation-tool inputs at 7bc4213. It repeats the complete sequential unit/database, ESLint, ordinary production build, render-trace, post-build TypeScript and optimized browser pipeline, with content checks between stages. No source/test/SQL/tool edits occur while this process runs. Both builds use only synthetic public configuration and must never deploy. Read-only review of remaining source leads continues. This start entry establishes no passing result; checkpoint 88 remains failed and checkpoint 86 is the latest consolidated full pass.
+
+
+## Read-only preparation during checkpoint 89 — TikTok admission baseline
+
+The isolated PGlite baseline at 7bc4213, using the canonical schema through applied migration 86, admits two reservations on one Prague day after the first settles at zero. A separate PostgreSQL 17.11 cluster with two real connections admits both concurrent $0.10 reservations under an allowed $0.20 ceiling. Its transaction lock serializes spend checks but establishes no daily uniqueness. The cluster listens only on its private local socket and stops after the probe. Both committed JSON artifacts contain synthetic summaries only. Neither probe changes the application, migration chain or managed database.
+
+The twenty-hour application guard also permits an earlier run at 02:15 Prague time and a later pass at 22:30 on the same 24 October calendar date. This is a reproduced cost-control lead, not a completed repair. The existing owner/kind/time index can support a bounded day-range admission check; the repair must capture the reservation instant after acquiring the existing lock, preserve the rolling twenty-four-hour spend budget, account for Prague daylight-saving days and keep unknown reservations charged in full. Source/test/SQL inputs stay frozen until checkpoint 89 ends.
+
+Current primary Apify pages mark the Actor under maintenance, list plan-dependent result/start prices and distinguish a charge cap from an output bound. The current source-media guide now records those dated facts and the pending admission repair instead of presenting a Starter estimate as universal. No paid call, switch or owner budget changes.

@@ -1,0 +1,13 @@
+{
+  "source": "7bc4213",
+  "engine": "PostgreSQL 17.11",
+  "syntheticOnly": true,
+  "connections": 2,
+  "ceilingUsd": 0.2,
+  "admitted": [
+    true,
+    true
+  ],
+  "count": 2,
+  "pragueDays": 1
+}

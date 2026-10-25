@@ -1,0 +1,17 @@
+{
+  "source": "7bc4213",
+  "databaseBaselineThrough": "20261023130300",
+  "syntheticOnly": true,
+  "firstAdmitted": true,
+  "settledCostUsd": 0,
+  "secondAdmitted": true,
+  "reservations": 2,
+  "pragueDays": 1,
+  "appRecentGuard": {
+    "now": "2026-10-24T20:30:00Z",
+    "previous": "2026-10-24T00:15:00Z",
+    "samePragueDate": true,
+    "elapsedHours": 20.25,
+    "refuses": false
+  }
+}

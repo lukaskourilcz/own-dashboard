@@ -340,9 +340,20 @@ Meta's sounds show how many tracked reels used them, and the niche's own top 15 
 attach. The Lab picker offers only attachable sounds; the manual music badge (#168) suggests the niche's sounds first.
 
 **TikTok CZ chart.** With `DNESKAI_TIKTOK_TRENDS_ENABLED=true` (and the Apify, paid and consent switches) the daily step
-reserves one `clockworks/tiktok-trends-scraper` run (Czech songs, surging leaderboard, 25 results, $0.10 charge cap,
-about $0.08 at $0.003 a result) in the topic spend ledger under `MARKETING_DNESKAI_TIKTOK_DAILY_USD` (default $0.10,
-migration `20261023130300`). The next daily tick reads that chart, settles its measured cost (an unknown cost counts in
+reserves a `clockworks/tiktok-trends-scraper` run (Czech songs, surging leaderboard, 25 results, $0.10 charge cap)
+in the topic spend ledger under `MARKETING_DNESKAI_TIKTOK_DAILY_USD` (default $0.10,
+migration `20261023130300`). The [25 October primary pricing table](https://apify.com/clockworks/tiktok-trends-scraper/pricing)
+lists $3.70 per 1,000 results on Free, $3.00 on Starter, plus $0.001 per start: 25 results estimate $0.0935 or $0.076
+respectively, within the unchanged $0.10 cap. These are estimates, not measured owner charges. The
+[Actor page](https://apify.com/clockworks/tiktok-trends-scraper) currently marks it under maintenance. The
+[run API](https://docs.apify.com/api/v2/actors-runs-post) documents `maxTotalChargeUsd` as the charge cap;
+`maxItems` limits charged items for pay-per-result Actors and does not guarantee output length. The next daily tick reads that chart, settles its measured cost (an unknown cost counts in
 full), looks each title up in Meta's audio search for @dneskai and marks matching sounds "roste na TikToku CZ". Under
 Instagram Login nothing runs and nothing is spent. It has never been run live; the spend waits for the owner's
 approval (NEEDED.md).
+
+The current twenty-hour application check and spend-only database lock do not enforce one run per Prague calendar
+day. An [isolated baseline](reports/app-wide-audit-2026-10-23/tiktok-daily-before.json) admits a second same-day
+reservation after a zero-cost settlement; [two real PostgreSQL connections](reports/app-wide-audit-2026-10-23/tiktok-daily-concurrent-before.json)
+also admit two when their existing rolling budget permits both. The atomic daily-admission repair remains pending.
+Keep this optional spend disabled until that repair deploys, the provider is usable and the owner decides.
