@@ -126,6 +126,18 @@ function availabilityPage(html: string): { text: string; structured: string[] } 
 }
 
 const normalizedTitle = (value: string) => value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+/** Native feed presence is positive evidence only for the same listing.
+ * Omission from a filtered/bounded discovery feed never proves closure. */
+export function nativeListingMatches(stored: Pick<JobListing, "title" | "url">, current: Pick<JobListing, "title" | "url"> | null | undefined): boolean {
+  if (!current || typeof stored.title !== "string" || typeof current.title !== "string" || typeof stored.url !== "string" || typeof current.url !== "string"
+    || !isJobUrl(stored.url) || !isJobUrl(current.url)) return false;
+  const title = normalizedTitle(stored.title);
+  if (!title || title !== normalizedTitle(current.title)) return false;
+  const original = new URL(stored.url), observed = new URL(current.url);
+  original.hash = ""; observed.hash = "";
+  return original.href === observed.href;
+}
+
 function expiryInstant(value: unknown): number | null {
   if (typeof value !== "string" || value.length > 100) return null;
   const datePart = value.slice(0, 10), start = Date.parse(datePart);

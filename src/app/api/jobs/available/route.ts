@@ -9,7 +9,8 @@ import {
   fetchEmployerBoard,
 } from "@/lib/jobs/employer-sources";
 import type { Availability } from "@/lib/jobs/availability";
-import { verifyListings } from "@/lib/jobs/availability";
+import { nativeListingMatches, verifyListings } from "@/lib/jobs/availability";
+import type { ScrapedJob } from "@/lib/jobs/types";
 import type { JobListing } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -61,11 +62,13 @@ export async function POST(request: Request) {
       const stored = candidates.filter((j) => j.source === board.id);
       if (!stored.length) return;
       try {
-        const current = new Set(
-          (await fetchEmployerBoard(board)).map((j) => j.externalId),
-        );
-        stored.forEach((j) => {
-          states[j.id] = current.has(j.external_id) ? "open" : "closed";
+        const current = new Map<string, ScrapedJob | null>();
+        for (const job of await fetchEmployerBoard(board)) {
+          // Duplicate identities are ambiguous even if one happens to match.
+          current.set(job.externalId, current.has(job.externalId) || job.source !== board.id ? null : job);
+        }
+        stored.forEach((job) => {
+          states[job.id] = nativeListingMatches(job, current.get(job.external_id)) ? "open" : "unknown";
         });
       } catch {
         stored.forEach((j) => {

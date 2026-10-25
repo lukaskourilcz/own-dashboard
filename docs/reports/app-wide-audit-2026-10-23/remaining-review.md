@@ -167,3 +167,6 @@ Finding 266 bounds Career refresh and subsequent private-load waits, with no act
 
 
 Finding 267 closes the wide Career loading/recovery card: centred 768px desktop frame, one inline message/action row, matching full-width mobile action and authentic mapped captures. Other Career views, complete reads, persistence and provider boundaries remain separate.
+
+
+Finding 270 closes native availability's false closure/positive identity gap: filtered-feed omission stays unknown, and openness needs one matching source/id/title/registered URL. Complete candidate reads, availability auth/preferences/body/parent budgets and captured browser receipts remain open. The 25 October primary Ashby contract also says isRemote includes Hybrid; verify and repair workplace-type normalization before treating that Boolean as Norway-compatible remote work. The employer body/shape/count and non-Apify cancellation leads remain separate.

@@ -290,10 +290,10 @@
     },
     {
       "path": "src/app/api/jobs/available/route.ts",
-      "lines": 92,
+      "lines": 95,
       "sha256": "8b9c72a03a10a8b1dfd6ad668001e51df116f0028b0414cbd06e2d1752f72105",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md; finding 203 enforces exactly 100 direct probes, a shared 22-second verification budget, one 15-second redirect/body deadline and caller cancellation; structured evidence, complete route reads and other documented leads remain open",
-      "reviewedSha256": "a62ed3f807d28516a07a6afb42596a791c8168b151bac31f7198533b1619fc2f"
+      "status": "source reviewed; finding 270 native omission/ambiguous identity stays unknown with bound positive evidence; direct-check bounds/expiry checks pass; complete candidate/auth/captured browser and final release work pending",
+      "reviewedSha256": "5ac1eb4cda5cf5caf579193322c7c471f953f1f8ea165456abea445e23982b03"
     },
     {
       "path": "src/app/api/jobs/enrich/route.ts",
@@ -2797,10 +2797,10 @@
     },
     {
       "path": "src/lib/jobs/availability.ts",
-      "lines": 148,
+      "lines": 300,
       "sha256": "e383e7823ed3427ec33504c5d6f61dc8a8a9e6bfa4de2848331065f4d057f6de",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md; finding 203 enforces exactly 100 direct probes, a shared 22-second verification budget, one 15-second redirect/body deadline and caller cancellation; structured evidence, complete route reads and other documented leads remain open; finding 204 binds structured expiry/type to exact normalized title and registered URL, bounds graph traversal and keeps conflicting/blocked/mixed evidence unknown; broader HTML CPU and route/source completeness remain separate; finding 205 replaces backtracking page parsing with a bounded scan, real attribute identity and malformed/comment/Unicode controls; local worker timing recorded; broader source/route reads and final release remain separate",
-      "reviewedSha256": "beb72fedab15dfc46fd32f2d3dd7e0ed95ee0417b12e8ed3b8271d0d71071155"
+      "status": "source reviewed; finding 270 native omission/ambiguous identity stays unknown with bound positive evidence; direct-check bounds/expiry checks pass; complete candidate/auth/captured browser and final release work pending",
+      "reviewedSha256": "e03e6a364229b6b540d8f84c21e757810f9f92231a91c8963ee1eacfbc3e56be"
     },
     {
       "path": "src/lib/jobs/board.ts",
