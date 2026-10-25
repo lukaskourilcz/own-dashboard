@@ -290,10 +290,10 @@
     },
     {
       "path": "src/app/api/jobs/available/route.ts",
-      "lines": 95,
+      "lines": 126,
       "sha256": "8b9c72a03a10a8b1dfd6ad668001e51df116f0028b0414cbd06e2d1752f72105",
-      "status": "partial; finding 275 bounds native employer body/shape/count/pagination and cancellation; other feed transports and complete availability/captured browser boundaries remain; focused tests pass; final release pending",
-      "reviewedSha256": "0698e89f7e05e19b1e52e7a2bf2989310b2bd1bd7e9d025806024c1279d8e0e7"
+      "status": "source reviewed; finding 276 complete captured availability admission/counts, strict inputs/receipts and phase cancellation pass actual SDK/RLS; browser adoption and final release pending",
+      "reviewedSha256": "780977ae651ab795b62696b16b3b67c59ddc70c34f34e12ea468f626484b6b24"
     },
     {
       "path": "src/app/api/jobs/enrich/route.ts",
