@@ -1983,13 +1983,15 @@
       "path": "src/lib/bank/enable-banking-adapter.ts",
       "lines": 80,
       "sha256": "60499d497ae1be2b328ac1f2daa0ab09733ce34892b0633714af675793fb3721",
-      "status": "pending"
+      "status": "source reviewed; explicitly unconfigured/unavailable data methods; no live Bank request or new integration rollout; final release checks pending",
+      "reviewedSha256": "60499d497ae1be2b328ac1f2daa0ab09733ce34892b0633714af675793fb3721"
     },
     {
       "path": "src/lib/bank/enable-banking-jwt.ts",
       "lines": 71,
       "sha256": "9162a89e6972da1ba263f589fb626d04eb83ea4d8b0d2afc70a525b856548daf",
-      "status": "pending"
+      "status": "partial; unused-by-live-flow signing/diagnostic helpers inspected; TTL/clock/key shape bounds remain without reviving the adapter; see remaining-review.md",
+      "reviewedSha256": "9162a89e6972da1ba263f589fb626d04eb83ea4d8b0d2afc70a525b856548daf"
     },
     {
       "path": "src/lib/bank/fio-adapter.ts",
@@ -2391,7 +2393,8 @@
       "path": "src/lib/i18n/index.ts",
       "lines": 131,
       "sha256": "7a7f89767a2e57a00296ef3dd3eb11bdefc54eecec555024aab8b2a139976ea2",
-      "status": "pending"
+      "status": "partial; complete static registry and locale hooks inspected; initial dictionary payload and scoped-import migration remain; see remaining-review.md",
+      "reviewedSha256": "7a7f89767a2e57a00296ef3dd3eb11bdefc54eecec555024aab8b2a139976ea2"
     },
     {
       "path": "src/lib/i18n/lang.ts",
@@ -2410,7 +2413,8 @@
       "path": "src/lib/i18n/sections/app.ts",
       "lines": 68,
       "sha256": "7a08eaae9ec37e37f796c67608acb49e4532ea2f9973506bb943d6fe47044e5a",
-      "status": "pending"
+      "status": "partial; typed EN/CS public/action labels inspected; final prose consistency review remains; see remaining-review.md",
+      "reviewedSha256": "7a08eaae9ec37e37f796c67608acb49e4532ea2f9973506bb943d6fe47044e5a"
     },
     {
       "path": "src/lib/i18n/sections/calendar.ts",
@@ -2422,7 +2426,8 @@
       "path": "src/lib/i18n/sections/categories.ts",
       "lines": 44,
       "sha256": "07f23197c54ac6188271d7f89dfc2751a60b022b8a6d63c891375df29746afbe",
-      "status": "pending"
+      "status": "source reviewed; typed EN/CS category labels and recovery copy; final release checks pending",
+      "reviewedSha256": "07f23197c54ac6188271d7f89dfc2751a60b022b8a6d63c891375df29746afbe"
     },
     {
       "path": "src/lib/i18n/sections/common.ts",
@@ -2435,7 +2440,8 @@
       "path": "src/lib/i18n/sections/costs.ts",
       "lines": 37,
       "sha256": "7b16b6ef077f293e23ffe5c7e196345fe32ea6e0a55a3d2621b7e4d269850061",
-      "status": "pending"
+      "status": "source reviewed; typed EN/CS cost overview labels and explicit empty state; final release checks pending",
+      "reviewedSha256": "7b16b6ef077f293e23ffe5c7e196345fe32ea6e0a55a3d2621b7e4d269850061"
     },
     {
       "path": "src/lib/i18n/sections/dashboard.ts",
@@ -2575,7 +2581,8 @@
       "path": "src/lib/i18n/sections/overview.ts",
       "lines": 104,
       "sha256": "20e781a0711eecef1c13142765d643687edc763883a729928e90ea13328fc50d",
-      "status": "pending"
+      "status": "partial; typed EN/CS summary labels inspected; plural/countdown call-site and final prose review remain; see remaining-review.md",
+      "reviewedSha256": "20e781a0711eecef1c13142765d643687edc763883a729928e90ea13328fc50d"
     },
     {
       "path": "src/lib/i18n/sections/plans.ts",
@@ -2747,7 +2754,8 @@
       "path": "src/lib/jobs/companies.ts",
       "lines": 49,
       "sha256": "21955ca0117c4b0dbbbeedfb64cadbb7594fa3f70285a942dd0ea3fe2cf72e34",
-      "status": "pending"
+      "status": "source reviewed; dated official career-directory references, explicitly not current vacancy claims; broader research remains separate; final release checks pending",
+      "reviewedSha256": "21955ca0117c4b0dbbbeedfb64cadbb7594fa3f70285a942dd0ea3fe2cf72e34"
     },
     {
       "path": "src/lib/jobs/curated.ts",
@@ -3046,7 +3054,8 @@
       "path": "src/lib/marketing/dneskai-contracts.ts",
       "lines": 107,
       "sha256": "81393e49faa734e99dd92e32da8a46d7e0bca5a1995ab7983cfd04b0a70cf5bc",
-      "status": "pending"
+      "status": "partial; complete source/candidate/feed projection inspected; duplicate identities, finite numbers, URL/date and source-owned evidence bounds remain; see remaining-review.md",
+      "reviewedSha256": "81393e49faa734e99dd92e32da8a46d7e0bca5a1995ab7983cfd04b0a70cf5bc"
     },
     {
       "path": "src/lib/marketing/dneskai-crop.ts",
@@ -3211,7 +3220,8 @@
       "path": "src/lib/marketing/dneskai-ports.ts",
       "lines": 74,
       "sha256": "950e789bee9091221c9e96119ed8835c43fc114acb993b843852017016a653c6",
-      "status": "pending"
+      "status": "source reviewed; pure media/render/brief type contracts and owned pool identity; cancellation implementations reviewed separately; final release checks pending",
+      "reviewedSha256": "950e789bee9091221c9e96119ed8835c43fc114acb993b843852017016a653c6"
     },
     {
       "path": "src/lib/marketing/dneskai-preview.ts",
@@ -3388,7 +3398,8 @@
       "path": "src/lib/marketing/dneskai-wiring.ts",
       "lines": 41,
       "sha256": "129ff43ac42ee52dbf46e4434b9c70d9ee8db52c31859ba4ddd5fdea6723aba6",
-      "status": "pending"
+      "status": "source reviewed; request-local renderer/storage/media/brief composition with no configuration or credential output; implementations reviewed separately; final release checks pending",
+      "reviewedSha256": "129ff43ac42ee52dbf46e4434b9c70d9ee8db52c31859ba4ddd5fdea6723aba6"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-client.ts",
@@ -3412,19 +3423,22 @@
       "path": "src/lib/marketing/free-feeds/security/content.ts",
       "lines": 35,
       "sha256": "2f71549cb98f6301d6c47a447806e3f27af670d28a3744bf00db066bcce70e15",
-      "status": "pending"
+      "status": "partial; reproduced superlinear unmatched-tag scan before truncation; equivalent local prototypes prepared but no application fix applied yet; see remaining-review.md",
+      "reviewedSha256": "2f71549cb98f6301d6c47a447806e3f27af670d28a3744bf00db066bcce70e15"
     },
     {
       "path": "src/lib/marketing/free-feeds/security/pinned-fetch.ts",
       "lines": 43,
       "sha256": "88ca4acce4d463e5fe2003d6011574d0af097c468c25781d9dc4afec52bdb708",
-      "status": "pending"
+      "status": "partial; pinned TLS/Host and streamed decompression inspected; cancellation/resource/HEAD and accepted-encoding edge cases remain; see remaining-review.md",
+      "reviewedSha256": "88ca4acce4d463e5fe2003d6011574d0af097c468c25781d9dc4afec52bdb708"
     },
     {
       "path": "src/lib/marketing/free-feeds/security/url.ts",
       "lines": 265,
       "sha256": "36eae00f66d2de188225bb9180f1ca0fb7d74e0f583e84970d6351d1b122c4bb",
-      "status": "pending"
+      "status": "partial; allowlist/DNS/redirect/decoded-byte/deadline checks inspected; complete boundary-option and native resource verification remains; see remaining-review.md",
+      "reviewedSha256": "36eae00f66d2de188225bb9180f1ca0fb7d74e0f583e84970d6351d1b122c4bb"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/arxiv.ts",
@@ -3443,7 +3457,8 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/github.ts",
       "lines": 66,
       "sha256": "21c8342559bbd36ce5c533b176f6a5676a0ff68015d928bb3bc59e9faca53461",
-      "status": "pending"
+      "status": "partial; token-free Atom projection and explicit cap reporting inspected; repo fan-out, cancellation and source-window evidence remain; see remaining-review.md",
+      "reviewedSha256": "21c8342559bbd36ce5c533b176f6a5676a0ff68015d928bb3bc59e9faca53461"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/hn.ts",
@@ -3467,7 +3482,8 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/index.ts",
       "lines": 40,
       "sha256": "44b7b451136c55533c75c0a6f398c7ec47886c91be117a19da9254efe0923d57",
-      "status": "pending"
+      "status": "source reviewed; typed exhaustive native adapter dispatch without model/provider generation; final release checks pending",
+      "reviewedSha256": "44b7b451136c55533c75c0a6f398c7ec47886c91be117a19da9254efe0923d57"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/reader.ts",
