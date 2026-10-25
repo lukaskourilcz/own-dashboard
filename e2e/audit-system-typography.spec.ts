@@ -8,16 +8,15 @@ for (const lang of ["en", "cs"] as const) test(`${lang}: native UI typography is
   await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" });
   const errors = watchConsole(page);
   await page.goto("/dev-preview?tab=notes");
+  // Explicit selection survives the desktop-to-mobile breakpoint; do not
+  // branch on visibility while the matchMedia subscription is still settling.
+  await page.getByRole("button", { name: /^Project ideas/ }).click();
   const editor = page.locator('[contenteditable="true"]').first(); await expect(editor).toBeVisible();
   const families = await editor.evaluate(el => ({ body: getComputedStyle(document.body).fontFamily, editor: getComputedStyle(el).fontFamily }));
   expect(families.editor).toBe(families.body); expect(families.body.split(",")[0]).toBe("-apple-system");
   for (const width of [360, 430, 768, 1024, 1440, 1728]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-    if (width === 360) {
-      const firstNote = page.getByRole("button", { name: /Project ideas/ });
-      if (await firstNote.isVisible()) await firstNote.click();
-    }
     await expect(editor).toBeVisible();
     expect(await editor.evaluate(el => getComputedStyle(el).fontFamily)).toBe(families.body);
     if (width === 360 || width === 1440) {

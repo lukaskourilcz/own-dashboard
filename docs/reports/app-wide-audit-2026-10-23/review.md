@@ -979,3 +979,12 @@ The whole change is now reviewable in [draft PR #226](https://github.com/lukasko
 
 
 The offline invoice review confirms additional open payment-output guards: an invalid explicit account is accepted; a non-finite amount is encoded; and an account field delimiter can add a second amount field. The [primary QR Platba format](https://qr-platba.cz/pro-vyvojare/specifikace-formatu/) was checked for bounded fields, amount, currency and calendar-date rules. A separate synthetic nonpayer/positive-VAT legacy tuple produces a displayed base line inconsistent with its total; current form saves already zero those rates. No historical totals, issued documents or payment records are changed by these probes. Keep invalid-output refusal and legacy-document consistency as separate repairs; final QR verification must decode the actual fixture rendering offline and never submit a payment.
+
+
+## Full validation checkpoint 81 — completed with one browser failure
+
+At frozen application/test/migration snapshot `9c520e7`, all 5,029 unit/component/database cases pass with one intentional skip (458 passed files, one skipped file; 459 total) in 194.92 seconds with two workers. Full ESLint, ordinary Next.js 16.4.3 production build, all eight render traces and post-build TypeScript pass. The complete optimized fixture browser matrix finishes with 698 passes, 99 intentional skips and one failure out of 798 configured cases, in 22.7 minutes with one worker. This matrix is not a passing full release result.
+
+The English native-typography case loses its editor at 360px because it branches on immediate note-button visibility while the breakpoint subscription is settling. The case now explicitly opens the note at desktop size before resizing, preserving selection through its six widths. Application behavior is unchanged. All ten EN/CS cases then pass in 18.0 seconds with repeat-each five against the same optimized application build; targeted ESLint passes. The failure and its context remain retained separately. No snapshot baseline is changed; Design Lab comparisons and the native invoice/A4 case pass in the full matrix.
+
+The source freeze ends after the complete matrix finishes. Application/test work resumes for the remaining confirmed failures and source leads. Thirty-two prepared migrations, final consolidated verification, main merge and deployed checks remain unfinished. The existing production image is unchanged; do not deploy the local fixture build.
