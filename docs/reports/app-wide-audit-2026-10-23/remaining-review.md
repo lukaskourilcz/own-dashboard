@@ -134,7 +134,7 @@ The 25 October read-only baseline reports 70 unindexed foreign keys, 73 auth/RLS
 
 ## Export follow-up
 
-Finding 235 prepares the complete explicit-column captured-owner snapshot in migration 122. Finding 236 adopts route validation, strict complete receipts, phase deadlines, auth/error handling and CSV text protection. Finding 237 closes the Settings download flow with captured owner/cancellation, bounded streams, matching actions, accurate scope copy and native file/guest evidence. Finding 238 closes observed cross-tab session retirement; per-action intent/server verification remains separate. Preserve the supported scopes and state that combined data is not a whole-account backup. All 36 prepared migrations remain unapplied.
+Finding 235 prepares the complete explicit-column captured-owner snapshot in migration 122. Finding 236 adopts route validation, strict complete receipts, phase deadlines, auth/error handling and CSV text protection. Finding 237 closes the Settings download flow with captured owner/cancellation, bounded streams, matching actions, accurate scope copy and native file/guest evidence. Finding 238 closes observed cross-tab session retirement; per-action intent/server verification remains separate. Preserve the supported scopes and state that combined data is not a whole-account backup. All 37 prepared migrations remain unapplied.
 
 
 ## Session follow-up

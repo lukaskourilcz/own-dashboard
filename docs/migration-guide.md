@@ -728,11 +728,11 @@ statements are the same with different comments or a guard. `marketing_scheduler
 
 ### Applying the prepared migrations
 
-The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-six prepared audit files follow, numbered 87–122 in the [current migration list](../README.md). The latest is `20261025142409_complete_data_exports.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
+The 23 files from `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation (see NEEDED.md). Do not repeat that completed rollout. Thirty-seven prepared audit files follow, numbered 87–123 in the [current migration list](../README.md). The latest is `20261025170608_confirmed_plan_records.sql`. Check the linked project and apply this complete chain in filename order before deploying the implementation branch:
 
 ```bash
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn
-npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–122
+npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault --dry-run  # expect 87–123
 npx --yes supabase@2.122.0 db push --linked --project-ref gcctapykhrdyxikieemn --skip-vault
 npx --yes supabase@2.122.0 migration list --linked --project-ref gcctapykhrdyxikieemn  # both columns agree
 ```
@@ -1202,7 +1202,7 @@ Local tests cover unchanged-data upgrade, nonfinite-upgrade rollback, ordinary a
 
 The complete snapshot orders by sort_order/created_at/id and refuses more than 10,000 rows or 10MiB returned JSON. Migration 120's captured-owner overload continues to guard it, including empty mismatched results. All earlier collection contracts remain. The new trigger has an empty search path and no direct public/anonymous/authenticated/service execution grant; normal permitted row writes still invoke it. Five-second DDL lock waits reset afterward. No index, data rewrite or provider authority is added.
 
-Local upgrade, rollback, stale-write, same-clock/future, complete-read, row/byte, RLS/related-project and privilege checks cover this foundation. Finding 226 adopts the complete captured-owner reader in the route loader and owner-scoped shell cache, with strict 21-field validation, a 15-second deadline and explicit recovery. Findings 227–228 adopt strict returned receipts and captured-version editor/deletion controls on both browser surfaces. Targeted SDK/RLS, mounted and native checks pass; the consolidated release remains separate. Generate the read port from all 122 canonical files and apply the complete prepared chain before deploying dependent callers. Revert those callers before removing this trigger/function/constraint and restoring the previous whitelist; owner records need no rollback.
+Local upgrade, rollback, stale-write, same-clock/future, complete-read, row/byte, RLS/related-project and privilege checks cover this foundation. Finding 226 adopts the complete captured-owner reader in the route loader and owner-scoped shell cache, with strict 21-field validation, a 15-second deadline and explicit recovery. Findings 227–228 adopt strict returned receipts and captured-version editor/deletion controls on both browser surfaces. Targeted SDK/RLS, mounted and native checks pass; the consolidated release remains separate. Generate the read port from all 123 canonical files and apply the complete prepared chain before deploying dependent callers. Revert those callers before removing this trigger/function/constraint and restoring the previous whitelist; owner records need no rollback.
 
 
 ## Migration 122 — complete owned export snapshots
@@ -1211,4 +1211,13 @@ Local upgrade, rollback, stale-write, same-clock/future, complete-read, row/byte
 
 The function preflights at most 10,001 projected rows per table before JSON aggregation and refuses more than 10,000 rows or a total envelope above 10 MiB. This is a bounded complete download, not pagination, streaming or an unlimited account backup. Arbitrary user text/JSON remains owner content; a positive column list cannot inspect its meaning. Profiles retain the previous five exported fields; the archived personal scope remains an archive, never a query of removed source tables.
 
-Twenty isolated migrated-database checks pass for complete 1,201-row reads, exact column contracts, ownership, permissions, invalid input, future-column exclusion and row/byte refusal. Finding 236 adopts the strict API snapshot reader and bounded download route. Finding 237 adopts the rendered Settings download and guest flow with matching controls, captured owner/cancellation and bounded file streams. Apply the complete 87–122 chain before deploying callers. To roll back, restore callers that do not use this RPC first, then drop only `public.export_owned_records(text[],uuid)`. Owner records need no rollback.
+Twenty isolated migrated-database checks pass for complete 1,201-row reads, exact column contracts, ownership, permissions, invalid input, future-column exclusion and row/byte refusal. Finding 236 adopts the strict API snapshot reader and bounded download route. Finding 237 adopts the rendered Settings download and guest flow with matching controls, captured owner/cancellation and bounded file streams. Apply the complete 87–123 chain before deploying callers. To roll back, restore callers that do not use this RPC first, then drop only `public.export_owned_records(text[],uuid)`. Owner records need no rollback.
+
+
+## Migration 123 — complete plan reads and maintained versions
+
+`20261025170608_confirmed_plan_records.sql` validates finite plan updated_at values, maintains every permitted update with an invoker BEFORE UPDATE trigger and adds plans to the complete collection whitelist. Same-clock/future versions advance by a PostgreSQL microsecond; forged earlier client timestamps cannot move a version backwards. No existing title, note, recurrence, completion stamp, Calendar id, policy, grant or index is rewritten. A nonfinite legacy version refuses and rolls back the migration. The 25 October read-only production preflight finds zero nonfinite plan versions.
+
+The STABLE snapshot retains invoker RLS and migration 120's captured-owner overload, including empty results. It orders by created_at/id descending and refuses more than 10,000 rows or 10MiB returned JSON instead of truncating. Earlier collection contracts remain unchanged. The trigger has an empty search path and no direct client/service execute grant. Five-second DDL lock waits reset afterward.
+
+Eight isolated database cases pass for unchanged-data upgrade, nonfinite rollback, stale predicates, same-clock/future versions, 1,201-row completeness/order, captured/foreign owner checks, row/byte refusal and privileges. Application adoption follows separately; preparing this file does not change deployed callers. Regenerate the read port from all 123 canonical files and apply all 37 prepared files (87–123) before deploying dependent callers. For rollback, revert those callers first, drop the trigger/function/constraint and restore the prior collection whitelist. Existing owner records need no rollback.
