@@ -158,3 +158,6 @@ Finding 263 closes the checkpoint-90 TikTok diagnostic omission and covers its o
 
 
 Finding 264 closes Career refresh admission: verification errors take precedence over cached users, optional captured-owner mismatch stops before quota/preferences/service work, and failed/malformed preferences never select a source default. Route waits and scoped database transport lifetime are bounded with fixed errors. The browser still needs to send/confirm its captured owner, and the opaque scraper's complete fan-out/cancellation/receipt/concurrent-write behavior remains open; a bounded route wait alone does not prove its background work stops.
+
+
+Finding 265 closes the reproduced unannounced HTTP-cookie replacement gap at the shared REST transport: a foreign/missing bearer subject retires the already verified workspace before network admission, without an extra auth request. Matching claims never authenticate or switch the owner. Remaining relative API callers, signed-storage action lifetimes and per-action/server receipt validation are separate leads; they must still capture original intent before waiting.

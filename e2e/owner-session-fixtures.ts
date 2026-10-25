@@ -38,6 +38,11 @@ export async function ownerSessionPeer(peer: Page) {
    }, { session: syntheticSession(id), id });
    if (!verified) throw new Error('Synthetic owner verification failed');
   },
+  httpSignIn: async (id: typeof sessionOwner | typeof sessionOther) => {
+   const cookie = `sb-example-auth-token=base64-${Buffer.from(JSON.stringify(syntheticSession(id))).toString('base64url')}; Path=/; SameSite=Lax`;
+   await peer.route('**/synthetic-http-session', route => route.fulfill({ json: { ok: true }, headers: { 'set-cookie': cookie } }));
+   await peer.evaluate(async () => { if (!(await fetch('/synthetic-http-session')).ok) throw new Error('Synthetic cookie response failed'); });
+  },
   httpSignOut: () => peer.evaluate(() => window.syntheticOwnerSignOut()),
   refresh: async () => { if (!await peer.evaluate(async () => !(await window.syntheticOwnerAuth.refreshSession({ refresh_token: 'TEST-ONLY-REFRESH' })).error)) throw new Error('Synthetic refresh failed'); },
   signOut: async () => { if (!await peer.evaluate(async () => !(await window.syntheticOwnerAuth.signOut({ scope: 'local' })).error)) throw new Error('Synthetic sign-out failed'); },

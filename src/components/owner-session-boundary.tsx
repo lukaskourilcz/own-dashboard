@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useOwnerPreferences } from '@/lib/owner-preferences';
 import { watchOwnerSession } from '@/lib/owner-session';
+import { ownerRestIdentityMatches } from '@/lib/owner-rest-identity';
 import { watchOwnerRetirement } from '@/lib/owner-retirement';
 import { fetchWithSignal } from '@/lib/abortable';
 import { guestProtectedUrl } from '@/lib/guest-requests';
@@ -19,16 +20,19 @@ export function OwnerSessionBoundary({ enabled, children }: { enabled: boolean; 
   if (!enabled) return;
   const lifetime = new AbortController(), original = window.fetch;
   const bounded = fetchWithSignal(lifetime.signal, (input, init) => original.call(window, input, init));
-  const guarded: typeof fetch = (input, init) => {
-   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-   return guestProtectedUrl(url, window.location.origin, process.env.NEXT_PUBLIC_SUPABASE_URL) ? bounded(input, init) : original.call(window, input, init);
-  };
-  window.fetch = guarded;
   const retire = () => {
    if (lifetime.signal.aborted) return;
    lifetime.abort(); owner?.dispose();
    void client.cancelQueries().catch(() => undefined); client.clear(); setRetired(true);
   };
+  const guarded: typeof fetch = (input, init) => {
+   if (!ownerRestIdentityMatches(input, init, process.env.NEXT_PUBLIC_SUPABASE_URL, window.location.origin, owner?.ownerId)) {
+    retire(); return Promise.reject(new DOMException('Owner session changed', 'AbortError'));
+   }
+   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+   return guestProtectedUrl(url, window.location.origin, process.env.NEXT_PUBLIC_SUPABASE_URL) ? bounded(input, init) : original.call(window, input, init);
+  };
+  window.fetch = guarded;
   const stopRetirement = watchOwnerRetirement(lifetime.signal, retire);
   let stop = () => {};
   if (!owner?.ownerId) retire();

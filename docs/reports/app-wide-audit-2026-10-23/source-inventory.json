@@ -4720,9 +4720,9 @@
     {
       "path": "src/components/owner-session-boundary.tsx",
       "sha256": null,
-      "lines": 42,
-      "status": "source reviewed; finding 244 confirmed HTTP sign-out retirement, credential-free cross-tab fallback and native checks pass; other auth/action leads and final release pending",
-      "reviewedSha256": "7aff3f9378bb09c1a42587272663337d427646c6e3d0e81c002acd11bdb989db"
+      "lines": 48,
+      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS checks pass; native checks running, other auth/action leads and final release pending",
+      "reviewedSha256": "a09f4890ec01278874eb152ae5c752f488aca60fd14bf53126f9c063afb263d5"
     },
     {
       "path": "src/lib/owner-session.ts",
@@ -4786,6 +4786,13 @@
       "lines": 19,
       "reviewedSha256": "c3c3e7c7549b5a6d4d27d3fd3c05579eba101a8ac16f7a921fbd3ba4db643256",
       "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+    },
+    {
+      "path": "src/lib/owner-rest-identity.ts",
+      "sha256": null,
+      "lines": 27,
+      "reviewedSha256": "b0dd3965d658fd1e801d85163e78b34335591c3f2e4947fc5fd241daaee6066a",
+      "status": "source reviewed; finding 265 negative-only REST identity retirement and actual-SDK/RLS checks pass; native checks running, other auth/action leads and final release pending"
     }
   ],
   "baselineFileCount": 561
