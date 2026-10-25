@@ -356,7 +356,8 @@
       "path": "src/app/api/marketing/calendar-entries/route.ts",
       "lines": 10,
       "sha256": "bd282c84745b53c52ae355cb2846b570af9c166124c3268bf0bcc7082ae2a73e",
-      "status": "pending"
+      "status": "partial; full route and release SQL inspected; captured entry version, bounded body/deadline, error classification and mutation receipt remain pending",
+      "reviewedSha256": "bd282c84745b53c52ae355cb2846b570af9c166124c3268bf0bcc7082ae2a73e"
     },
     {
       "path": "src/app/api/marketing/calendars/route.ts",
@@ -369,13 +370,15 @@
       "path": "src/app/api/marketing/campaigns/route.ts",
       "lines": 9,
       "sha256": "45e390a471814beffc8e24d3d947532d99ca4464ecab057d5944fa10b92e90f2",
-      "status": "pending"
+      "status": "partial; full route and activation SQL inspected; unbounded JSON, auth errors, request deadlines/cancellation and persisted confirmation still need repair",
+      "reviewedSha256": "45e390a471814beffc8e24d3d947532d99ca4464ecab057d5944fa10b92e90f2"
     },
     {
       "path": "src/app/api/marketing/diagnostics/[id]/route.ts",
       "lines": 12,
       "sha256": "e0f32b9da4c0b864e4d70b40e0a0a3372afbcbe7033905f3fb47eb92854fba7d",
-      "status": "pending"
+      "status": "partial; full owner/revision and EU trace-link route inspected; auth error, malformed stored revision, outage classification and bounded/cancellable trace lookup remain pending",
+      "reviewedSha256": "e0f32b9da4c0b864e4d70b40e0a0a3372afbcbe7033905f3fb47eb92854fba7d"
     },
     {
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
@@ -388,19 +391,22 @@
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
       "lines": 29,
       "sha256": "3c86addd249d62c8938603870a52321d250a13676b8d6e4b613c32f20a78eceb",
-      "status": "pending"
+      "status": "partial; full recovery dispatch inspected; no approval/spend inference; bounded body, auth errors, request cancellation and domain receipt validation remain pending",
+      "reviewedSha256": "3c86addd249d62c8938603870a52321d250a13676b8d6e4b613c32f20a78eceb"
     },
     {
       "path": "src/app/api/marketing/dneskai/candidates/route.ts",
       "lines": 22,
       "sha256": "2851a336353420eb43157285719ef904f0d2b99dfd778744dc9eac22781caae5",
-      "status": "pending"
+      "status": "partial; full release route inspected; CSRF/fixed domain errors checked; bounded input, auth-error refusal, cancellation and recovery receipt remain pending",
+      "reviewedSha256": "2851a336353420eb43157285719ef904f0d2b99dfd778744dc9eac22781caae5"
     },
     {
       "path": "src/app/api/marketing/dneskai/collect/route.ts",
       "lines": 4,
       "sha256": "e541c6bef39b4dfab5f8ce7a25f42f750300785978f66c49beb4cbf9ca7692c7",
-      "status": "pending"
+      "status": "source reviewed; retired all-method dispatch inspected; existing retired-route checks prove no downstream work; final app-wide validation pending",
+      "reviewedSha256": "e541c6bef39b4dfab5f8ce7a25f42f750300785978f66c49beb4cbf9ca7692c7"
     },
     {
       "path": "src/app/api/marketing/dneskai/costs/route.ts",
@@ -419,25 +425,29 @@
       "path": "src/app/api/marketing/dneskai/fit/route.ts",
       "lines": 22,
       "sha256": "bb3b0fcd4df485067161ece234505b075db705e6796d483aa638f9316ffd8a2b",
-      "status": "pending"
+      "status": "partial; full fit dispatch inspected; pure-render/no-model boundary and rate limit checked; auth-error handling, bounded request and rate-limit failure boundary remain pending",
+      "reviewedSha256": "bb3b0fcd4df485067161ece234505b075db705e6796d483aa638f9316ffd8a2b"
     },
     {
       "path": "src/app/api/marketing/dneskai/generate/route.ts",
       "lines": 30,
       "sha256": "25ac5eaadf4d60d1ffceaf03e4a72cc4d2153b3e90cfcf1bf0afae426af6f20b",
-      "status": "pending"
+      "status": "partial; full owner-only paid-action dispatch inspected; explicit consent/budget semantics retained; bounded body, auth errors, request cancellation and paid-action internals remain pending",
+      "reviewedSha256": "25ac5eaadf4d60d1ffceaf03e4a72cc4d2153b3e90cfcf1bf0afae426af6f20b"
     },
     {
       "path": "src/app/api/marketing/dneskai/media/route.ts",
       "lines": 33,
       "sha256": "3ceec0b9ba0501a7bdd425d0c09b720bbfcacfd347343a8ec525596a6b9a4ea6",
-      "status": "pending"
+      "status": "partial; full owner/project/media read route inspected; auth errors, cancellation, outage versus absence, signing and collection completeness remain pending",
+      "reviewedSha256": "3ceec0b9ba0501a7bdd425d0c09b720bbfcacfd347343a8ec525596a6b9a4ea6"
     },
     {
       "path": "src/app/api/marketing/dneskai/preview/route.ts",
       "lines": 49,
       "sha256": "2c4b8b7308734b25b238d8bb1962134e82fec1937126110bd7f808030c06e216",
-      "status": "pending"
+      "status": "partial; full owner render-only route inspected; actual request byte read, auth errors, rate-limit failure, DB/media deadline and outage classification remain pending",
+      "reviewedSha256": "2c4b8b7308734b25b238d8bb1962134e82fec1937126110bd7f808030c06e216"
     },
     {
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
@@ -462,7 +472,8 @@
       "path": "src/app/api/marketing/dneskai/sources/route.ts",
       "lines": 9,
       "sha256": "a1c57221d710ea43c54452f40c2c84e7802310a4e7fcb2ea8f1a24b646f8cac0",
-      "status": "pending"
+      "status": "partial; full owner/project read route inspected; auth errors, cancellation, outage versus absence and complete collection contract remain pending",
+      "reviewedSha256": "a1c57221d710ea43c54452f40c2c84e7802310a4e7fcb2ea8f1a24b646f8cac0"
     },
     {
       "path": "src/app/api/marketing/dneskai/topics/route.ts",
@@ -488,7 +499,8 @@
       "path": "src/app/api/marketing/jobs/[id]/route.ts",
       "lines": 7,
       "sha256": "302bda7fe328d1acae2fda4b8802c3f9eea09ab6beeabf2b7ec4d9d963168c7f",
-      "status": "pending"
+      "status": "source reviewed; thin worker read dispatch and fixed error boundary inspected; worker-runtime coverage remains separate; final app-wide validation pending",
+      "reviewedSha256": "302bda7fe328d1acae2fda4b8802c3f9eea09ab6beeabf2b7ec4d9d963168c7f"
     },
     {
       "path": "src/app/api/marketing/jobs/route.ts",
@@ -501,7 +513,8 @@
       "path": "src/app/api/marketing/knowledge/callback/route.ts",
       "lines": 30,
       "sha256": "e78ab6464fd577c25817c00228da77ea4054cd1711ee1e610a2db20dba2a4473",
-      "status": "pending"
+      "status": "partial; full registered-run/HMAC binding inspected; source text rejected; body-error classification, cancellation through poll, stale concurrent polling and persistence remain pending",
+      "reviewedSha256": "e78ab6464fd577c25817c00228da77ea4054cd1711ee1e610a2db20dba2a4473"
     },
     {
       "path": "src/app/api/marketing/knowledge/route.ts",
@@ -519,7 +532,8 @@
       "path": "src/app/api/marketing/offline-import/route.ts",
       "lines": 28,
       "sha256": "ff5e267f805d896dc7724abcb402d4fe32b1072d4baf9362eff73debda737bad",
-      "status": "pending"
+      "status": "partial; full route inspected; byte cap, strict decoder and operation signal checked; initial body-read deadline/cancellation, auth errors and full import flow remain pending",
+      "reviewedSha256": "ff5e267f805d896dc7724abcb402d4fe32b1072d4baf9362eff73debda737bad"
     },
     {
       "path": "src/app/api/marketing/publications/route.ts",
@@ -538,7 +552,8 @@
       "path": "src/app/api/marketing/state/route.ts",
       "lines": 24,
       "sha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f",
-      "status": "pending"
+      "status": "partial; full nine-query owner boundary inspected; incomplete caps, last-100 event first-approval bias, runtime validation and request cancellation remain pending; accounts inspected and contain no credential columns",
+      "reviewedSha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f"
     },
     {
       "path": "src/app/api/marketing/tick/route.ts",
@@ -965,13 +980,15 @@
       "path": "src/components/marketing/calendar-import.tsx",
       "lines": 11,
       "sha256": "d3248265ca4dca971be0d498f0c34fe3a609e2a9707780cc6b5849107a51dfa4",
-      "status": "pending"
+      "status": "partial; full source inspected; hardcoded October 18 start, unchecked preview response and unstable/cancellable import lifecycle require repair",
+      "reviewedSha256": "d3248265ca4dca971be0d498f0c34fe3a609e2a9707780cc6b5849107a51dfa4"
     },
     {
       "path": "src/components/marketing/calendar-slot.tsx",
       "lines": 13,
       "sha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c",
-      "status": "pending"
+      "status": "partial; full source inspected; mount-time source clock, stale local entry fields, missing entry-version capture, pending-exit guard and confirmed mutation recovery require repair",
+      "reviewedSha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c"
     },
     {
       "path": "src/components/marketing/calendar-source-notes.tsx",
@@ -1204,7 +1221,8 @@
       "path": "src/components/marketing/knowledge-library.tsx",
       "lines": 30,
       "sha256": "f3ab0091d81598c69c25c23c2b8295c96bbaadb813c01f38c630b90a021d1a1a",
-      "status": "pending"
+      "status": "partial; full component inspected; unchecked payloads, whole-page failure on cached refresh, overlapping review mutations, source lookup cost and raw metadata/copy remain pending",
+      "reviewedSha256": "f3ab0091d81598c69c25c23c2b8295c96bbaadb813c01f38c630b90a021d1a1a"
     },
     {
       "path": "src/components/marketing/marketing-diagnostics.tsx",
@@ -2472,7 +2490,8 @@
       "path": "src/lib/i18n/sections/guest.ts",
       "lines": 21,
       "sha256": "ebd77abd5b735386af17a9fae6c728fa5abbab3cd9587070d79e80d093871177",
-      "status": "pending"
+      "status": "source reviewed; complete EN/CS guest notice/action vocabulary and parity inspected; final app-wide validation pending",
+      "reviewedSha256": "44fe4ae33a94410e13038c51989b7d286edc102218282d69e34f83de5787939a"
     },
     {
       "path": "src/lib/i18n/sections/invoices.ts",
@@ -2491,7 +2510,8 @@
       "path": "src/lib/i18n/sections/kpi.ts",
       "lines": 27,
       "sha256": "eb69f7658bf29d5e1ddd9f0469431f7bc564d559d62d34e780cf4657d2593a39",
-      "status": "pending"
+      "status": "source reviewed; complete professional KPI labels and EN/CS parity inspected; final app-wide validation pending",
+      "reviewedSha256": "eb69f7658bf29d5e1ddd9f0469431f7bc564d559d62d34e780cf4657d2593a39"
     },
     {
       "path": "src/lib/i18n/sections/login.ts",
@@ -2504,7 +2524,8 @@
       "path": "src/lib/i18n/sections/marketing-workspace.ts",
       "lines": 3,
       "sha256": "c16479b4a0808d86cbedcccd1987fc344b0b2659080879841d9d65e52d413e1a",
-      "status": "pending"
+      "status": "source reviewed; complete EN/CS workspace vocabulary and parity inspected; final app-wide validation pending",
+      "reviewedSha256": "c16479b4a0808d86cbedcccd1987fc344b0b2659080879841d9d65e52d413e1a"
     },
     {
       "path": "src/lib/i18n/sections/marketing.ts",
@@ -2695,7 +2716,8 @@
       "path": "src/lib/jobs/career-directory.ts",
       "lines": 15,
       "sha256": "c6b154bde5d4b2c36078bfe186056742cdbf16084d19ca9fc85aa6957c02982d",
-      "status": "pending"
+      "status": "partial; full directory reader inspected; explicit owner/filter/signal checked; capped result completeness/runtime shape and fixed errors remain pending",
+      "reviewedSha256": "c6b154bde5d4b2c36078bfe186056742cdbf16084d19ca9fc85aa6957c02982d"
     },
     {
       "path": "src/lib/jobs/companies.ts",
@@ -2860,7 +2882,8 @@
       "path": "src/lib/marketing/calendar-source.ts",
       "lines": 20,
       "sha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505",
-      "status": "pending"
+      "status": "partial; full source inspected; pinned commit and file-byte cap checked; commit JSON bounds, total/caller deadline and reader cleanup remain pending",
+      "reviewedSha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505"
     },
     {
       "path": "src/lib/marketing/campaign-import.ts",
@@ -2872,13 +2895,15 @@
       "path": "src/lib/marketing/claude-call-profile.ts",
       "lines": 31,
       "sha256": "ef8b478bb879bb58bc7d1f363a70937961e102fa865dc014a5b7f17c147ef702",
-      "status": "pending"
+      "status": "partial; full model profile/field mapping inspected; dated model claims and alias matching need current primary-provider verification; no model call performed",
+      "reviewedSha256": "ef8b478bb879bb58bc7d1f363a70937961e102fa865dc014a5b7f17c147ef702"
     },
     {
       "path": "src/lib/marketing/client.ts",
       "lines": 26,
       "sha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af",
-      "status": "pending"
+      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending",
+      "reviewedSha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af"
     },
     {
       "path": "src/lib/marketing/clock.ts",
@@ -3131,7 +3156,8 @@
       "path": "src/lib/marketing/dneskai-move.ts",
       "lines": 22,
       "sha256": "63c093c388f42167b29332eecd0b59ca3a143ea32af9b8828d939195b4af2c06",
-      "status": "pending"
+      "status": "partial; full source inspected; retained own slot exclusions and two-day planning checked; input/cancellation/completeness through the brief store remain pending",
+      "reviewedSha256": "63c093c388f42167b29332eecd0b59ca3a143ea32af9b8828d939195b4af2c06"
     },
     {
       "path": "src/lib/marketing/dneskai-native-feed.ts",
@@ -3162,7 +3188,8 @@
       "path": "src/lib/marketing/dneskai-preview.ts",
       "lines": 30,
       "sha256": "2a21d1a59562b97f0c4de402f00c27d47d72c5380a099e5476f747ec141aeed6",
-      "status": "pending"
+      "status": "partial; full one-slide response helper inspected; render-only/no-write boundary and supplied signal checked; complete problem bounds and rendering graph review remain pending",
+      "reviewedSha256": "2a21d1a59562b97f0c4de402f00c27d47d72c5380a099e5476f747ec141aeed6"
     },
     {
       "path": "src/lib/marketing/dneskai-providers.ts",
@@ -3374,7 +3401,8 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/arxiv.ts",
       "lines": 28,
       "sha256": "1d8a08d811a1e07495dc5e74aec2636a857b91e010fb13e095838bba62a2df6a",
-      "status": "pending"
+      "status": "source reviewed; explicit free-source request budget and upstream cap reporting inspected; shared fetch/parser/provider validation remain separate; final app-wide validation pending",
+      "reviewedSha256": "1d8a08d811a1e07495dc5e74aec2636a857b91e010fb13e095838bba62a2df6a"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/bluesky.ts",
@@ -3416,13 +3444,15 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/reader.ts",
       "lines": 24,
       "sha256": "23eae1f64540becaa0c873f9aa76c2c97ef5be70687deddb7e9e6579bd662a0e",
-      "status": "pending"
+      "status": "source reviewed; disabled reader has no provider operation; bounded-link-count deterministic markdown extraction inspected; trusted caller input bounds remain separate; final app-wide validation pending",
+      "reviewedSha256": "23eae1f64540becaa0c873f9aa76c2c97ef5be70687deddb7e9e6579bd662a0e"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/rss.ts",
       "lines": 96,
       "sha256": "a386bfb003d80dade36bf7824effc9aa915b7b0c62197cdd50f5e8631d6ee65b",
-      "status": "pending"
+      "status": "partial; full RSS parser/projection inspected; repair retry and free image extraction checked; parser/body limits, complete-window cap metadata and malformed provider fields remain pending",
+      "reviewedSha256": "a386bfb003d80dade36bf7824effc9aa915b7b0c62197cdd50f5e8631d6ee65b"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/adapters/spaceflight.ts",
@@ -3440,13 +3470,15 @@
       "path": "src/lib/marketing/free-feeds/sources/adapters/util.ts",
       "lines": 163,
       "sha256": "0c2675ba4458ee9cdc89c18e570c91480d0215478c1ca01dfb0d3fd963625215",
-      "status": "pending"
+      "status": "partial; full date/item/fetch utility inspected; upper-bound date semantics retained; external URL/identifier strictness, total bounds/cancellation and adapter graph remain pending",
+      "reviewedSha256": "0c2675ba4458ee9cdc89c18e570c91480d0215478c1ca01dfb0d3fd963625215"
     },
     {
       "path": "src/lib/marketing/free-feeds/sources/types.ts",
       "lines": 83,
       "sha256": "a9331dd6412655914afaf5d15ea8a1f5d8676f39bf12250a4160e565955c8aca",
-      "status": "pending"
+      "status": "partial; full source/config schemas inspected; external metadata bounds/URL ownership/freshness and adapter graph remain pending",
+      "reviewedSha256": "a9331dd6412655914afaf5d15ea8a1f5d8676f39bf12250a4160e565955c8aca"
     },
     {
       "path": "src/lib/marketing/generation-benchmark.ts",
@@ -3497,7 +3529,8 @@
       "path": "src/lib/marketing/knowledge-copy.ts",
       "lines": 33,
       "sha256": "38f98153adbd80636978fb03be52431a64938ef43934d59be8c50a34f7c611ed",
-      "status": "pending"
+      "status": "source reviewed; complete EN/CS source-capture/evidence/consent/budget vocabulary inspected; worker integration remains separate; final app-wide validation pending",
+      "reviewedSha256": "38f98153adbd80636978fb03be52431a64938ef43934d59be8c50a34f7c611ed"
     },
     {
       "path": "src/lib/marketing/knowledge-extraction.ts",
@@ -3552,7 +3585,8 @@
       "path": "src/lib/marketing/offline-import-client.ts",
       "lines": 29,
       "sha256": "9bc1566fa69a5fb200b30f592c1308b4b0527fd5f6982f78e10fbaac3fa4d506",
-      "status": "pending"
+      "status": "partial; full source inspected; per-file and batch bytes/count/duplicate guards checked; file-read cancellation, strict local calendar dates and lifecycle recovery remain pending",
+      "reviewedSha256": "9bc1566fa69a5fb200b30f592c1308b4b0527fd5f6982f78e10fbaac3fa4d506"
     },
     {
       "path": "src/lib/marketing/offline-import-validation.ts",
@@ -3660,7 +3694,8 @@
       "path": "src/lib/marketing/store.ts",
       "lines": 28,
       "sha256": "a33362bf8531847b157635011f4dc2dcab6ee552674df524b9ec2ca35a8c33fb",
-      "status": "pending"
+      "status": "partial; full source inspected; source hash/brand/time and revision parsing checked; RPC identity receipts, complete source references, stable retries and cancellation remain pending",
+      "reviewedSha256": "a33362bf8531847b157635011f4dc2dcab6ee552674df524b9ec2ca35a8c33fb"
     },
     {
       "path": "src/lib/marketing/template-registry.ts",
@@ -3692,7 +3727,8 @@
       "path": "src/lib/marketing/weekly-source-candidates.ts",
       "lines": 18,
       "sha256": "ff80acff5981c39f47daaf31ac7617633b98dc21a08dbc17451741cf432edf21",
-      "status": "pending"
+      "status": "source reviewed; bounded brand/source/hash/freshness candidate projection inspected; it neither approves nor publishes; final app-wide validation pending",
+      "reviewedSha256": "ff80acff5981c39f47daaf31ac7617633b98dc21a08dbc17451741cf432edf21"
     },
     {
       "path": "src/lib/marketing/worker-runtime.ts",
