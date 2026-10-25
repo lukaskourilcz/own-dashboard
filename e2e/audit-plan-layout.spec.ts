@@ -24,3 +24,20 @@ for(const lang of ['en','cs'] as const)test(`${lang}: Goals centers its compact 
  }
  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('main').withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);expect(errors).toEqual([]);
 });
+for (const lang of ['en', 'cs'] as const) test(`${lang}: Goals returns keyboard focus after every pristine editor dismissal`, async ({ page }) => {
+ const t = copy[lang], errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+ await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+ await page.goto('/dev-preview?tab=goals');
+ const opener = page.getByRole('button', { name: t.newPlan, exact: true, includeHidden: true });
+ for (const dismissal of ['escape', 'close', 'outside']) {
+  await opener.focus(); await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: t.newPlan, exact: true });
+  await expect(dialog.getByLabel(t.formTitle, { exact: true })).toBeFocused();
+  await expect(opener).toHaveAttribute('aria-expanded', 'true');
+  if (dismissal === 'escape') await page.keyboard.press('Escape');
+  else if (dismissal === 'close') await dialog.getByRole('button', { name: lang === 'cs' ? 'Zavřít' : 'Close', exact: true }).click();
+  else await page.mouse.click(4, 4);
+  await expect(dialog).toHaveCount(0); await expect(opener).toBeFocused(); await expect(opener).toHaveAttribute('aria-expanded', 'false');
+ }
+ expect(errors).toEqual([]);
+});

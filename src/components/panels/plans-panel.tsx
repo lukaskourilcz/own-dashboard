@@ -12,7 +12,7 @@ import {
   Target,
   Trash2,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { collectionPage } from "@/lib/collection-page";
 import { CollectionPagination } from "@/components/ui/collection-pagination";
@@ -142,13 +142,14 @@ export function PlansPanel({
   }, [plans]);
 
   return (
+    <Dialog open={formOpen} onOpenChange={close}>
     <div className="mx-auto w-full max-w-5xl">
       <PageHeader
         title={t.plans.title}
         description={t.plans.description}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button ref={button => actions.registerNewControl(button)} onClick={() => setFormOpen(true)}><Plus />{t.plans.newPlan}</Button>
+            <DialogTrigger asChild><Button ref={button => actions.registerNewControl(button)}><Plus />{t.plans.newPlan}</Button></DialogTrigger>
             <div className="inline-flex gap-1">
               <Button variant={view === 'board' ? 'subtle' : 'ghost'} aria-pressed={view === 'board'} onClick={() => { setPage(0); setView('board'); }}>{t.plans.board}</Button>
               <Button variant={view === 'timeline' ? 'subtle' : 'ghost'} aria-pressed={view === 'timeline'} onClick={() => { setPage(0); setView('timeline'); }}>{t.plans.timeline}</Button>
@@ -157,7 +158,7 @@ export function PlansPanel({
         }
       />
 
-      <Dialog open={formOpen} onOpenChange={close}><DialogContent className="max-w-lg" aria-describedby={undefined} aria-busy={saving} showClose={!saving} onEscapeKeyDown={event => { if (savingRef.current) event.preventDefault(); }} onPointerDownOutside={event => { if (savingRef.current) event.preventDefault(); }}><DialogHeader><DialogTitle>{t.plans.newPlan}</DialogTitle></DialogHeader><form onSubmit={event => { event.preventDefault(); void savePlan(); }} className="space-y-3"><fieldset disabled={saving} className="min-w-0 space-y-3">
+      <DialogContent className="max-w-lg" aria-describedby={undefined} aria-busy={saving} showClose={!saving} onEscapeKeyDown={event => { if (savingRef.current) event.preventDefault(); }} onPointerDownOutside={event => { if (savingRef.current) event.preventDefault(); }}><DialogHeader><DialogTitle>{t.plans.newPlan}</DialogTitle></DialogHeader><form onSubmit={event => { event.preventDefault(); void savePlan(); }} className="space-y-3"><fieldset disabled={saving} className="min-w-0 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="plan-title">{t.plans.formTitle}</Label>
                 <Input
@@ -256,7 +257,7 @@ export function PlansPanel({
                 <Plus className="h-3.5 w-3.5" />
                 {saving ? t.plans.saving : t.plans.addPlan}
               </Button>
-            </fieldset></form></DialogContent></Dialog>
+            </fieldset></form></DialogContent>
       {actions.calendarNotice && <p role="status" className="mb-3 text-sm text-warning">{t.plans[actions.calendarNotice]}</p>}
       {actions.notice && <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 text-sm text-destructive"><span>{actions.notice === 'changed' ? t.plans.planChanged : t.plans.actionUnconfirmed}</span><Button variant="outline" disabled={actions.reloading || actions.pending.size > 0} onClick={() => void actions.reload()}>{actions.reloading ? t.common.loading : t.common.retry}</Button></div>}
       <CollectionPagination page={currentPage} onPage={setPage} label={t.plans.pages} range={t.plans.pageRange} previous={t.plans.previous} next={t.plans.next} disabled={actions.pending.size > 0} />
@@ -324,6 +325,7 @@ export function PlansPanel({
             )}
       </section>
     </div>
+    </Dialog>
   );
 }
 

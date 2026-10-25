@@ -149,3 +149,6 @@ Finding 246 prepares finite maintained plan versions and complete snapshots in m
 
 
 Finding 258 closes the root display-metadata casts: actual SDK responses containing object/array/number names or unsafe avatars no longer enter Sidebar/Home props, and malformed optional email becomes an empty display fallback. Bounded trimmed names/HTTPS avatars remain display-only; metadata cannot replace the verified owner id. Other metadata writes and legacy endpoint/action phases remain separate.
+
+
+Finding 261 closes the checkpoint-89 Goals dismissal-focus failure by registering its actual New plan dialog trigger. Native EN/CS desktop/mobile checks cover keyboard opening, Escape/Close/outside return, and the existing finance/on-demand continuity cases. Captured drafts, pending writes, paging and geometry retain their focused evidence; final consolidated verification remains separate.

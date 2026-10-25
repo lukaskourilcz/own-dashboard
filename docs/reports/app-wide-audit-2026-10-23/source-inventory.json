@@ -1577,8 +1577,8 @@
       "path": "src/components/panels/plans-panel.tsx",
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
-      "status": "source reviewed; findings 250\u2013252 confirmed writes, local paging/focus and centred compact geometry pass; other leads and final release pending",
-      "reviewedSha256": "099db0e741c2023e284e9566d64b72012e75723de7ee47baf5ca28350ee01cdd"
+      "status": "source reviewed; captured plan controls, bounded rows/geometry and finding 261 native trigger focus return pass targeted checks; final release pending",
+      "reviewedSha256": "f613fd502bc454dbaa843577730159b45ada746dfc1a02551c5538586081d7d4"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
