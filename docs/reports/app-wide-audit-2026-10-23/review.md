@@ -1390,3 +1390,12 @@ All twenty-five currentUserId call sites across seventeen modules now pass their
 Fifty focused cases pass across eight files in 4.87 seconds; TypeScript, targeted ESLint and whitespace checks pass. Three real SDK/PGlite cases prove normal creation, refusal after scope replacement/late verification and refusal of a different verified actor while the original server scope stays mounted. The database remains empty in the two refused cases. Existing mocked component boundaries retain their own established scope; broader native coverage follows in the consolidated run.
 
 This closes the shared identity stage, not every later phase of each legacy operation. Multi-step writes still need captured transport lifetimes, confirmed receipts, pending/exit and retry review; optional Calendar work after a confirmed plan insert is an explicit follow-up. Direct-auth endpoints and remaining app leads remain open. The migration chain, final consolidated pass, PR/main merge and deployed checks are still pending.
+
+
+## Full checkpoint 87 — started, combined export/session inputs frozen
+
+Checkpoint 87 freezes application/test/SQL and validation-tool inputs at 4349ce5 after findings 235–242. It runs all unit/database cases with two workers, full ESLint, an ordinary production build, all eight native render traces, post-build TypeScript and the complete optimized browser matrix in sequence. No application, test, SQL or validation-tool edits occur during the pipeline. A start entry is not a passing result; checkpoint 86 remains the latest completed consolidated baseline.
+
+The visual plan is rebuilt from committed 4349ce5 with 676 ledger entries and twenty-nine authentic desktop/mobile pairs; all images/mode switches, 390px/1440px light/dark reflow and mapped highlights pass again without page errors. Its component images retain their original labelled source snapshots. Fresh managed production history is still 86 applied migrations through 20261023130300; all thirty-six prepared files (87–122) remain unapplied. The isolated development server is stopped before the ordinary build. Both local builds use synthetic public configuration and must never be deployed.
+
+Read-only preparation may continue on remaining Calendar/multi-step intent, Marketing/audio/Career/invoice and other leads while the tested source stays unchanged. Canonical CLI authentication/rollout, PR review-form reconciliation, final release/main merge and deployed verification remain unfinished. No real owner or provider operation is part of this checkpoint.
