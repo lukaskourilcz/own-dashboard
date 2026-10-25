@@ -16,6 +16,8 @@ import { DneskaiStateChip } from './state-chip';
 import { TabHeader } from './tab-header';
 
 type Lang = 'en' | 'cs';
+const usdOptions: Intl.NumberFormatOptions = { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 };
+const usdFormatters = { en: new Intl.NumberFormat('en-US', usdOptions), cs: new Intl.NumberFormat('cs-CZ', usdOptions) };
 
 /**
  * „Chyby a náklady“ (#119): the 24-hour generation spend against the daily limit, the Instagram token, cost per day,
@@ -27,7 +29,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
   read: DneskaiCostsRead; review?: DneskaiWorkspaceRead | 'loading' | 'unavailable'; renderFailed?: ReadonlySet<string>; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date;
 }) {
   const t = dneskaiWorkspace[lang];
-  const usd = (value: number) => new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  const usd = usdFormatters[lang].format;
   const { spentUsd, ceilingUsd, code } = read.generation;
   const share = spentUsd !== null && ceilingUsd ? Math.min(100, Math.round((spentUsd / ceilingUsd) * 100)) : 0;
   const tone = (status: string) => status === 'complete' ? 'success' as const : status === 'failed' ? 'risk' as const : status === 'running' ? 'information' as const : 'warning' as const;

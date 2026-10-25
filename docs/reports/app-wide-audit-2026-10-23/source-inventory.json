@@ -1080,8 +1080,8 @@
       "path": "src/components/marketing/dneskai/costs-tab.tsx",
       "lines": 183,
       "sha256": "4e3e9debe28f537db465cd5857347812b3f9203f152414c6421932233999d7ab",
-      "status": "partial; read-only costs/unknown balances inspected; cached token recovery, formatter reuse and captured requeue lifecycle remain; see remaining-review.md",
-      "reviewedSha256": "4e3e9debe28f537db465cd5857347812b3f9203f152414c6421932233999d7ab"
+      "status": "source reviewed; locale-specific cost formatters preserve rendered parity with measured local CPU reduction; read/token/requeue lifecycles and consolidated release pending",
+      "reviewedSha256": "0e1a7019a46fd0b2e1bbe0e87874fe2d4703ad3a6a0735346d2b239e3a3096ba"
     },
     {
       "path": "src/components/marketing/dneskai/counted-field.tsx",

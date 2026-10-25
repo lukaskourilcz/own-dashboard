@@ -28,6 +28,8 @@ Finding 163 closes native preview policy, startup/cancellation/disposal and reco
 
 ## Scheduler and workspace diagnostics
 
+- Finding 221 closes repeated USD formatter construction in the costs view with exact EN/CS rendered parity and local CPU evidence. It does not establish production latency or change provider spending. The costs read/token/requeue boundaries remain open below.
+
 - The complete scheduler inspection confirms audio trends has no daily lease. Tick UUID deduplication does not serialize independent daily calls. Keep daily admission inside the existing TikTok budget lock rather than treating an upsert as a paid-start guard.
 - Scheduler cancellation is checked before prechecks but not again after every precheck/lease acquisition. Several control RPCs lack a deadline; the eager timeout wrapper receives work already started. The route does not forward request cancellation. Repair these boundaries without releasing a lease while uncooperative work can still write or losing the durable uncertain-refresh marker. Review oldest-five blocked-job and newest-fifty renewable-revision starvation against complete eligibility evidence before changing order.
 - Finding 173 closes inherited diagnostic-field lookup and the hidden first-twenty remainder. It also aligns caption/message/alt counters with existing server limits, counts the restored keyword line, and preserves native keyboard scrolling instead of stealing preview arrow keys. Remaining editor/read/provider lifecycles are separate.

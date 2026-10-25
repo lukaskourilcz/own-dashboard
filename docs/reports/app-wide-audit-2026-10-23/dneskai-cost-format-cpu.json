@@ -1,0 +1,22 @@
+{
+  "source": "d9645f9 before; implemented working-tree formatter change",
+  "beforeSourceHash": "4e3e9debe28f537db465cd5857347812b3f9203f152414c6421932233999d7ab",
+  "afterSourceHash": "0e1a7019a46fd0b2e1bbe0e87874fe2d4703ad3a6a0735346d2b239e3a3096ba",
+  "exactOutputCases": 20,
+  "iterationsPerSample": 2048,
+  "beforeMs": [
+    43.852416000000005,
+    44.40954199999999,
+    40.61425,
+    44.08824999999999,
+    40.89675
+  ],
+  "meaning": "Measured implemented formatting expressions on local synthetic JavaScript CPU. Two cached locale-specific USD formatters preserve every compared output. Not a production latency, provider cost or end-to-end improvement claim.",
+  "afterMs": [
+    0.892707999999999,
+    0.8014170000000149,
+    1.0552919999999801,
+    0.6911670000000072,
+    0.6606249999999818
+  ]
+}
