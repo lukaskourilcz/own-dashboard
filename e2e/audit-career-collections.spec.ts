@@ -68,8 +68,8 @@ for (const lang of ['en','cs'] as const) test(`${lang}: availability rejects a f
 
 for (const lang of ['en','cs'] as const) test(`${lang}: saved positions and application history page complete local collections without refreshing providers`, async ({ page }) => {
  const t=jobs[lang],errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));let reads=0,refreshes=0;
- const saved=rows.map(row=>({id:row.id,user_id:sessionOwner,listing_id:null,title:row.title,company:row.company,url:row.url,source:row.source,location:'Oslo',description:row.description,cover_letter:'',notes:null,saved_at:stamp,updated_at:stamp,cover_letter_url:null,readiness:'draft'}));
- const applications=rows.map(row=>({id:row.id,user_id:sessionOwner,listing_id:null,title:row.title,company:row.company,url:row.url,source:row.source,location:'Oslo',cover_letter:'Synthetic letter',status:'applied',applied_on:'2026-10-25',notes:null,created_at:stamp,updated_at:stamp,organization_id:null,next_follow_up_at:null,cover_letter_url:null,request_id:null,responded_on:null,response_kind:null,contact_name:null,contact_email:null}));
+ const saved=rows.map(row=>({id:row.id,user_id:sessionOwner,listing_id:null,title:row.title,company:row.company,url:row.url,source:row.source,location:'Oslo',remote:false,description:row.description,cover_letter:'',notes:null,saved_at:stamp,updated_at:stamp,cover_letter_url:null,readiness:'draft'}));
+ const applications=rows.map(row=>({id:row.id,user_id:sessionOwner,listing_id:null,title:row.title,company:row.company,url:row.url,source:row.source,location:'Oslo',remote:false,cover_letter:'Synthetic letter',status:'applied',applied_on:'2026-10-25',notes:null,created_at:stamp,updated_at:stamp,organization_id:null,next_follow_up_at:null,cover_letter_url:null,request_id:null,responded_on:null,response_kind:null,contact_name:null,contact_email:null}));
  await gotoPreview(page,{lang,theme:lang==='cs'?'dark':'light'});
  await page.route('**/rest/v1/rpc/read_career_records',route=>{
   const input=route.request().postDataJSON();expect(input.p_expected_owner).toBe(sessionOwner);if(input.p_entity!=='job_scrape_runs') reads++;

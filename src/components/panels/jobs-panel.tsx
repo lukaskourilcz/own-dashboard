@@ -75,7 +75,7 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { isCareerRelevant, isOsloRelevant, isOsloSnapshot, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { isCareerRelevant, isOsloRelevant, snapshotRemote, isOsloSnapshot, isPrague, careerSeniority } from "@/lib/jobs/filter";
 import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
 import { researchForUrl, careerPositionKey } from "@/lib/jobs/oslo-research";
 import { CareerBoard } from "./career-board";
@@ -748,6 +748,7 @@ function OpenPositionsView({
             source: listing.source,
             location: listing.location,
             description: listing.description,
+            remote: listing.remote,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "user_id,url" },
@@ -1313,7 +1314,7 @@ function savedToListing(position: SavedJobPosition): JobListing {
     url: position.url,
     location: position.location,
     role: "software",
-    remote: /remote|europe|worldwide/i.test(position.location ?? ""),
+    remote: snapshotRemote(position),
     salary: null,
     tags: [],
     seniority: null,
@@ -1613,6 +1614,7 @@ function ApplyDialog({
           title: form.title.trim(), company: form.company.trim(), url: form.url.trim(),
           listing_id: savedPosition ? savedPosition.listing_id : listing?.id ?? null,
           source: listing?.source ?? "manual", location: listing?.location ?? null,
+          remote: savedPosition ? savedPosition.remote ?? null : listing?.remote ?? null,
           cover_letter: form.coverLetter,
           cover_letter_url: form.coverLetterUrl.trim() || null,
           applied_on: form.appliedOn, notes: form.notes.trim(),

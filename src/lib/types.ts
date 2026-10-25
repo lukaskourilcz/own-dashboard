@@ -732,6 +732,8 @@ export type JobUserState = {
 };
 
 export type SavedJobPosition = {
+  /** Snapshot evidence; absent/null remains unknown for legacy/manual records. */
+  remote?: boolean | null;
   cover_letter_url?: string | null;
   readiness?: "draft" | "ready" | "needs_review";
   id: string;
@@ -757,6 +759,8 @@ export type JobApplicationStatus =
   | "withdrawn";
 
 export type JobApplication = {
+  /** Snapshot evidence, independent of later source listing changes. */
+  remote?: boolean | null;
   cover_letter_url?: string | null;
   request_id?: string | null;
   responded_on?: string | null;

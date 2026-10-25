@@ -37,13 +37,13 @@ const schemas = {
   }),
   saved_job_positions: z.strictObject({
     ...own, listing_id: uuid.nullable(), title: z.string(), company: nullableText,
-    url: z.string(), source: nullableText, location: nullableText, description: nullableText,
+    url: z.string(), source: nullableText, location: nullableText, remote: z.boolean().nullable(), description: nullableText,
     cover_letter: z.string(), notes: nullableText, saved_at: stamp, updated_at: stamp,
     cover_letter_url: nullableText, readiness: z.enum(['draft', 'ready', 'needs_review']),
   }),
   job_applications: z.strictObject({
     ...own, listing_id: uuid.nullable(), title: z.string(), company: nullableText,
-    url: nullableText, source: nullableText, location: nullableText, cover_letter: z.string(),
+    url: nullableText, source: nullableText, location: nullableText, remote: z.boolean().nullable(), cover_letter: z.string(),
     status: z.enum(['applied', 'interviewing', 'offer', 'rejected', 'withdrawn']),
     applied_on: z.iso.date(), notes: nullableText, created_at: stamp, updated_at: stamp,
     organization_id: uuid.nullable(), next_follow_up_at: stamp.nullable(), cover_letter_url: nullableText,
