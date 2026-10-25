@@ -134,4 +134,4 @@ The 25 October read-only baseline reports 70 unindexed foreign keys, 73 auth/RLS
 
 ## Export follow-up
 
-Finding 235 prepares the complete explicit-column captured-owner snapshot in migration 122. Route adoption, deadlines, auth/error handling, CSV protection and the Settings download flow remain unfinished. Preserve the supported scopes and state that combined data is not a whole-account backup. All 36 prepared migrations remain unapplied.
+Finding 235 prepares the complete explicit-column captured-owner snapshot in migration 122. Finding 236 adopts route validation, strict complete receipts, phase deadlines, auth/error handling and CSV text protection. The Settings download flow remains unfinished. Preserve the supported scopes and state that combined data is not a whole-account backup. All 36 prepared migrations remain unapplied.

@@ -20,3 +20,14 @@ it("preserves existing cookie handling and tolerates read-only Server Component 
   state.set.mockImplementation(() => { throw Error("read-only cookies"); });
   expect(() => ordinary.cookies.setAll([{ name: "synthetic-cookie", value: "synthetic-value", options: {} }])).not.toThrow();
 });
+it("keeps a supplied phase fetcher and the total lifetime on each actual request", async () => {
+ const total = new AbortController(), first = new AbortController(), second = new AbortController();
+ let phase = first.signal;
+ const seen: AbortSignal[] = [], wire = vi.fn<typeof fetch>(async (_input, init) => { seen.push(init!.signal!); return new Response('synthetic'); });
+ const phaseFetch: typeof fetch = (input, init) => wire(input, { ...init, signal: AbortSignal.any([phase, init!.signal!]) });
+ await createClient(total.signal, phaseFetch); const bounded = options().global!.fetch;
+ await bounded('https://synthetic.invalid/first'); phase = second.signal; await bounded('https://synthetic.invalid/second');
+ first.abort(); expect(seen.map(signal => signal.aborted)).toEqual([true, false]);
+ total.abort(); expect(seen.map(signal => signal.aborted)).toEqual([true, true]);
+ await expect(bounded('https://synthetic.invalid/late')).rejects.toMatchObject({ name: 'AbortError' }); expect(wire).toHaveBeenCalledTimes(2);
+});

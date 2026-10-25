@@ -2,14 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { fetchWithSignal } from "@/lib/abortable";
 
-export async function createClient(signal?: AbortSignal) {
+export async function createClient(signal?: AbortSignal, fetcher?: typeof fetch) {
   const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      ...(signal ? { global: { fetch: fetchWithSignal(signal) } } : {}),
+      ...((signal || fetcher) ? { global: { fetch: signal ? fetchWithSignal(signal, fetcher) : fetcher } } : {}),
       cookies: {
         getAll() {
           return cookieStore.getAll();

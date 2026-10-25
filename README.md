@@ -231,7 +231,7 @@ The migrations, in the order they run:
 120. `20261025094511_captured_collection_owner.sql` — prepared, unapplied; authenticated captured-owner binding before complete collection reads, including empty results; existing one-argument callers and collection policies remain unchanged.
 121. `20261025114445_complete_competitor_records.sql` — prepared, unapplied; finite, monotonic competitor update versions and complete owned research snapshots; existing project/RLS ownership and stored fields remain unchanged. Complete captured-owner reads and confirmed editor/deletion controls are adopted in findings 226–228.
 
-122. `20261025142409_complete_data_exports.sql` — prepared, unapplied; complete captured-owner export snapshots with explicit table/column projections, existing invoker RLS, deterministic ordering and refused row/byte overflow. The route adopts it separately.
+122. `20261025142409_complete_data_exports.sql` — prepared, unapplied; complete captured-owner export snapshots with explicit table/column projections, existing invoker RLS, deterministic ordering and refused row/byte overflow. Finding 236 adopts its strict complete download route.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The thirty-six audit migrations 87–122 remain unapplied; apply them in filename order before deploying the implementation branch.
 

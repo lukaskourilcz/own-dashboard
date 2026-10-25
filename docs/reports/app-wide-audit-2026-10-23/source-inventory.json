@@ -215,8 +215,8 @@
       "path": "src/app/api/export/[scope]/route.ts",
       "lines": 107,
       "sha256": "fecbc0592e608df4820c207fdbf12a2cb723812af2f7afa8f4aee60ba1290f45",
-      "status": "partial; own-scope/archive mapping inspected; CSV whole-scope reads, completeness, private errors, auth/cancellation and spreadsheet text handling remain pending",
-      "reviewedSha256": "fecbc0592e608df4820c207fdbf12a2cb723812af2f7afa8f4aee60ba1290f45"
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "0413989363ac2883ca5f02913e1dfb56ef45147eb8d5c0a55d9131e37d9d324d"
     },
     {
       "path": "src/app/api/github/activity/route.ts",
@@ -4369,8 +4369,8 @@
       "path": "src/lib/supabase/server.ts",
       "lines": 30,
       "sha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446",
-      "status": "partial source review; scoped auth cancellation and late cookie protection checked; SSR response-cache/header boundaries remain",
-      "reviewedSha256": "f8a13eec45186c790491a865760af1b78dda08ee756635c68615d793f4548f28"
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "6e685650ec9adebf41c42e368be8bf2ed9eb826b5851c1661e85849083ff438c"
     },
     {
       "path": "src/lib/supabase/user.ts",
@@ -4674,6 +4674,27 @@
       "lines": 690,
       "status": "source reviewed; finding 235 snapshot foundation tested; route adoption and final release pending",
       "reviewedSha256": "52dbf92b287f197271b23bf22193c3bb78485eed8236dd44513b2288dcf9e375"
+    },
+    {
+      "path": "src/lib/data-export-records.ts",
+      "sha256": null,
+      "lines": 41,
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "ba6896c32932f7f149e2d9b28cc2d54923bb903b057d52cc76bc9f45f569c727"
+    },
+    {
+      "path": "src/lib/data-export-scopes.ts",
+      "sha256": null,
+      "lines": 13,
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "2722e09a035bb3f59e79fef5f944972ed1e307135bfc4d9bc2d25923bc3d8748"
+    },
+    {
+      "path": "src/lib/data-export-csv.ts",
+      "sha256": null,
+      "lines": 11,
+      "status": "source reviewed; finding 236 complete export/CSV/deadline checks pass; rendered Settings and final release pending",
+      "reviewedSha256": "68231ba9c7d67fe49979be3a82e52d756ade8a2efa6ad21eeb540d4f3c506679"
     }
   ],
   "baselineFileCount": 561
