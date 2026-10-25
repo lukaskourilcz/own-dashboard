@@ -767,3 +767,8 @@ Generate/regenerate copy now states the configured daily budget and $0.13 limit 
 ## Full unit checkpoint 76 — started
 
 The complete unit/component/database suite starts at frozen application/test source `f581197`, covering findings 194–197 and the corrected checkpoint-75 expectation. The verified local preview listener was stopped before the run. Application/test inputs remain unchanged until it ends; only documentation and read-only review continue. This is a started unit checkpoint, not full release evidence. Main was fetched again and has no upstream-only commits; production remains at the previously recorded schema, with thirty-one audit migrations unapplied.
+
+
+## Full unit checkpoint 76 — completed
+
+At frozen application/test source `f581197`, all 4,871 unit/component/database cases pass with one intentional skip (451 passed files, one skipped file; 452 total), in 177.56 seconds with two workers. Full ESLint and TypeScript also pass against that unchanged source. This checkpoint does not run a production build, render traces or the complete optimized browser matrix; their last complete passing evidence remains checkpoint 73. Source/test work resumes after this run. The remaining audit leads, thirty-one prepared migrations, main merge and deployed verification remain unfinished.
