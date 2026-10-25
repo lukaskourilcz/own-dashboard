@@ -3065,8 +3065,8 @@
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
       "lines": 142,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; finding 259 bounds TikTok lifetime/HTTP bodies and provided-signal spend transports without retries; strict persistence/progress and other caller leads remain open",
-      "reviewedSha256": "34f551e587f442609c6371dbb0ebd878664966a558bbcaf1861823e37a44d416"
+      "status": "source reviewed; findings 256\u2013260 bound TikTok admission/lifetime and finding 263 uses covered provider errors with EN/CS guidance; exact persistence/matching/progress remain open",
+      "reviewedSha256": "5eb7f37855978c784ff7487451fc4c3fb7948b8c797e827d45e13f0203206c14"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
@@ -3744,8 +3744,8 @@
       "path": "src/lib/marketing/marketing-codes.ts",
       "lines": 672,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
-      "status": "partial; recovery/dictionary ownership and alt-length diagnostic checks pass (findings 147/181); complete dictionary reconciliation and final release pending",
-      "reviewedSha256": "936bb113fcc88a79abb6863c3ab94ea15142bd96344abef3f6db7b49d0579d32"
+      "status": "source reviewed; finding 263 covers TikTok validation/cancellation/deadline/body/HTTP and spend uncertainty in EN/CS; generic-error boundary follow-up and final release pending",
+      "reviewedSha256": "c85f9545006ff9e2e1193bbb2300c92fd6b6843dfa2a119c200344df621fb8b4"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",

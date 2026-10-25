@@ -372,3 +372,8 @@ Recommendation reads validate the owner, real day, yesterday/today freshness, un
 The query has a stable tie-breaker, no SDK retry and a fifteen-second bound inside the request's remaining lifetime.
 Invalid or uncertain metadata does not become a successful cast. The route still needs an explicit trend-outage
 state distinct from an empty list; the uploaded-library result and this bounded recommendation list remain separate.
+
+TikTok validation, cancellation, deadlines, oversized/invalid responses and HTTP statuses have EN/CS diagnostic
+text. Day/spend refusal distinguishes an already reserved Prague day from the rolling budget, without suggesting
+a cap increase. Uncertain starts retain their reservation; the next step is to inspect the existing run and ledger.
+The adapter uses the shared provider-error class so static code-text coverage checks its machine codes.

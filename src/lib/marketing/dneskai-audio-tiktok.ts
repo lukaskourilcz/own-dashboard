@@ -1,7 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { DneskaiApifyRunSchema, type DneskaiApifyRegistration } from './dneskai-providers';
+import { DneskaiApifyRunSchema, DneskaiProviderError, type DneskaiApifyRegistration } from './dneskai-providers';
 import { reserveDneskaiTopicSpend, settleDneskaiTopicSpend } from './dneskai-topic-spend';
 import type { MetaPublisherConfig } from './publisher';
 import { pragueMarketingDate } from './weekly-planning';
@@ -31,8 +31,8 @@ export const DNESKAI_TIKTOK_RESPONSE_CHARACTERS = 262_144;
 
 async function boundedResponse(response: Response, signal: AbortSignal): Promise<unknown> {
   const body = await awaitWithSignal(readTextPrefix(response, DNESKAI_TIKTOK_RESPONSE_CHARACTERS, signal), signal);
-  if (body.truncated) throw new Error('tiktok-response-too-large');
-  try { return JSON.parse(body.text); } catch { throw new Error('tiktok-invalid-response'); }
+  if (body.truncated) throw new DneskaiProviderError('tiktok-response-too-large');
+  try { return JSON.parse(body.text); } catch { throw new DneskaiProviderError('tiktok-invalid-response'); }
 }
 async function providerResponse(fetcher: typeof fetch, url: string, init: RequestInit, signal: AbortSignal): Promise<Response> {
   active(signal);
@@ -51,7 +51,7 @@ export function dneskaiTikTokDailyCeiling(env: Environment = process.env): numbe
   const raw = env.MARKETING_DNESKAI_TIKTOK_DAILY_USD;
   if (raw === undefined || raw.trim() === '') return DEFAULT_DNESKAI_TIKTOK_DAILY_USD;
   const value = /^\d+(?:\.\d+)?$/.test(raw.trim()) ? Number(raw.trim()) : Number.NaN;
-  if (!Number.isFinite(value) || value <= 0 || value > 1) throw new Error('tiktok-budget-invalid');
+  if (!Number.isFinite(value) || value <= 0 || value > 1) throw new DneskaiProviderError('tiktok-budget-invalid');
   return value;
 }
 /** Paid starts need the collection's Apify and paid switches, the AI consent and this switch. */
@@ -82,11 +82,11 @@ async function apify(path: string, init: RequestInit, env: Environment, fetcher:
   active(signal);
   let response: Response;
   try { response = await providerResponse(fetcher, `https://api.apify.com/v2/${path}`, { ...init, headers: { Authorization: `Bearer ${env.APIFY_TOKEN}`, 'Content-Type': 'application/json' }, redirect: 'error', cache: 'no-store' }, signal); }
-  catch { active(signal); throw new Error('tiktok-request-failed'); }
+  catch { active(signal); throw new DneskaiProviderError('tiktok-request-failed'); }
   if (signal.aborted || !response.ok) {
     void response.body?.cancel().catch(() => undefined);
     active(signal);
-    throw new Error(`tiktok-http-${response.status}`);
+    throw new DneskaiProviderError(`tiktok-http-${response.status}`);
   }
   const body = await boundedResponse(response, signal);
   active(signal);
@@ -94,7 +94,7 @@ async function apify(path: string, init: RequestInit, env: Environment, fetcher:
 }
 
 function active(signal: AbortSignal) {
-  if (signal.aborted) throw new Error('tiktok-cancelled');
+  if (signal.aborted) throw new DneskaiProviderError('tiktok-cancelled');
 }
 
 /** Searches Meta's audio for a chart title; the best hit's id, or null. Facebook Login only. */
@@ -130,8 +130,8 @@ export async function advanceDneskaiTikTokChart(db: Database, owner: string, inp
   try {
     return await awaitWithSignal(advanceTikTokPass(db, owner, { ...input, signal }), signal);
   } catch (error) {
-    if (input.signal.aborted) throw new Error('tiktok-cancelled');
-    if (lifetime.signal.aborted) throw new Error('tiktok-deadline');
+    if (input.signal.aborted) throw new DneskaiProviderError('tiktok-cancelled');
+    if (lifetime.signal.aborted) throw new DneskaiProviderError('tiktok-deadline');
     throw error;
   } finally { clearTimeout(timer); lifetime.abort(); }
 }
@@ -149,9 +149,9 @@ async function advanceTikTokPass(db: Database, owner: string, input: Parameters<
   active(signal);
   const runs = await awaitWithSignal(db.rpc('marketing_dneskai_tiktok_runs', { p_owner: owner }).retry(false).abortSignal(signal), signal);
   active(signal);
-  if (runs.error) throw new Error('tiktok-budget-unavailable');
+  if (runs.error) throw new DneskaiProviderError('tiktok-budget-unavailable');
   const parsed = z.array(z.strictObject({ id: z.uuid(), ref: z.string().min(1).max(300), reserved_at: z.iso.datetime({ offset: true }), settled: z.boolean() })).max(5).safeParse(runs.data);
-  if (!parsed.success || new Set(parsed.data.map(row => row.id)).size !== parsed.data.length || parsed.data.some(row => Date.parse(row.reserved_at) > now.getTime())) throw new Error('tiktok-budget-unavailable');
+  if (!parsed.success || new Set(parsed.data.map(row => row.id)).size !== parsed.data.length || parsed.data.some(row => Date.parse(row.reserved_at) > now.getTime())) throw new DneskaiProviderError('tiktok-budget-unavailable');
   const rows = parsed.data;
 
   // 1. The previous run: read its chart once it has finished, mark the sounds, settle the measured cost.
@@ -173,7 +173,7 @@ async function advanceTikTokPass(db: Database, owner: string, input: Parameters<
         const { error } = await awaitWithSignal(db.from('marketing_audio_trends').upsert({ user_id: owner, audio_id: audio.audioId, title: audio.title, display_artist: audio.artist, audio_type: 'music',
           first_seen: today, last_seen: today, tiktok: true, updated_at: now.toISOString() }, { onConflict: 'user_id,audio_id', ignoreDuplicates: true }).retry(false).abortSignal(signal), signal);
         active(signal);
-        if (error) throw new Error('audio-trends-store-failed');
+        if (error) throw new DneskaiProviderError('audio-trends-store-failed');
         await awaitWithSignal(db.from('marketing_audio_trends').update({ tiktok: true }).eq('user_id', owner).eq('audio_id', audio.audioId).retry(false).abortSignal(signal), signal);
         active(signal);
         outcome.matched++;

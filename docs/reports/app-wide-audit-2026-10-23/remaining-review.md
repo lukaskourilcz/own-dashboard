@@ -152,3 +152,6 @@ Finding 258 closes the root display-metadata casts: actual SDK responses contain
 
 
 Finding 261 closes the checkpoint-89 Goals dismissal-focus failure by registering its actual New plan dialog trigger. Native EN/CS desktop/mobile checks cover keyboard opening, Escape/Close/outside return, and the existing finance/on-demand continuity cases. Captured drafts, pending writes, paging and geometry retain their focused evidence; final consolidated verification remains separate.
+
+
+Finding 263 closes the checkpoint-90 TikTok diagnostic omission and covers its other plain-error states through the existing provider-error class, paired EN/CS messages and conservative uncertainty/day-budget guidance. Other generic Error machine strings need their recorded-versus-wrapped paths traced before declaring them owner-visible gaps or adding copy; keep unknown/private details behind the existing fixed-code boundary.

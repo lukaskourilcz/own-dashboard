@@ -69,6 +69,7 @@ describe('marketing code texts (#119)', () => {
       'account-unavailable', 'meta-http-400', 'access-token-expired', 'remote-account-handle-mismatch',
       'source-disabled', 'reader-disabled', 'empty-source', 'collection-timeout', 'source-rate-limited', 'fetch-failed',
       'yield-to-publication', 'tick-budget-exhausted', 'publishing-failed', 'collection-failed', 'container-error', 'remote-container-in_progress'];
+    named.push('tiktok-input-invalid', 'tiktok-budget-invalid', 'tiktok-cancelled', 'tiktok-deadline', 'tiktok-response-too-large', 'tiktok-invalid-response', 'tiktok-request-failed', 'tiktok-unavailable', 'tiktok-http-503');
     expect(named.filter((code) => !marketingCodeKnown(code))).toEqual([]);
   });
 
@@ -103,4 +104,18 @@ describe('marketing code texts (#119)', () => {
       }
     }
   });
+});
+
+it.each(['en', 'cs'] as const)('keeps TikTok uncertainty and daily admission guidance specific in %s', lang => {
+ for (const code of ['tiktok-cancelled', 'tiktok-deadline', 'tiktok-response-too-large', 'tiktok-invalid-response', 'tiktok-request-failed', 'tiktok-http-503', 'topic-budget-unavailable']) {
+  const result = describeMarketingCode(code, lang);
+  expect(result.known, code).toBe(true);
+  expect(result.next, code).toMatch(lang === 'en' ? /uncertain.*reserved/ : /nejisté.*rezervované/);
+  expect(result.happened, code).not.toContain(code);
+ }
+ const budget = describeMarketingCode('tiktok-budget-exhausted', lang);
+ expect(budget.next).toMatch(lang === 'en' ? /Prague.*24 hours/ : /pražského.*24 hodin/);
+ expect(budget.next).not.toMatch(/Generation|Generování/);
+ expect(describeMarketingCode('tiktok-http-503', lang).happened).toContain('503');
+ expect(marketingCodeKnown('tiktok-http-503-extra')).toBe(false);
 });
