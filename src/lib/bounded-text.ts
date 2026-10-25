@@ -23,7 +23,8 @@ export async function readTextPrefix(response: Response, maxCharacters: number, 
       const byteBound = (maxCharacters - text.length + 1) * 4 + 4;
       text += decoder.decode(chunk.value.subarray(0, byteBound), { stream: true });
       if (text.length > maxCharacters || chunk.value.length > byteBound) {
-        await reader.cancel();
+        // Cancellation is best effort: a producer may stall or reject its hook.
+        void reader.cancel().catch(() => undefined);
         return { text: text.slice(0, maxCharacters), truncated: true };
       }
     }

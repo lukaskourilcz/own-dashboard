@@ -23,3 +23,21 @@ it("does not begin reading an already cancelled request", async () => {
  const response=new Response("unused");
  await expect(readTextPrefix(response,10,controller.signal)).rejects.toMatchObject({name:"AbortError"});expect(response.bodyUsed).toBe(false);
 });
+
+it("returns an oversized prefix without waiting for the producer's cancellation hook", async () => {
+ let release!: () => void;
+ const cancel = vi.fn(() => new Promise<void>(resolve => { release = resolve; }));
+ const response = new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('abcdefgh')); }, cancel }));
+ const pending = readTextPrefix(response, 5);
+ try {
+  const result = await Promise.race([pending, new Promise(resolve => setTimeout(() => resolve('still waiting for producer'), 20))]);
+  expect(result).toEqual({ text: 'abcde', truncated: true });
+  expect(cancel).toHaveBeenCalledOnce();
+  expect(response.body!.locked).toBe(false);
+ } finally { release?.(); await pending; }
+});
+it("keeps an oversized prefix truthful when the producer rejects cancellation", async () => {
+ const response = new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('abcdefgh')); }, cancel() { return Promise.reject(new Error('TEST_ONLY_PRIVATE')); } }));
+ await expect(readTextPrefix(response, 5)).resolves.toEqual({ text: 'abcde', truncated: true });
+ expect(response.body!.locked).toBe(false);
+});
