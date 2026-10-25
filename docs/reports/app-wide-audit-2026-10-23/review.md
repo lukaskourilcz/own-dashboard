@@ -670,3 +670,6 @@ Twenty more complete source files cover account connection controls/token resolu
 
 
 Checkpoint 73's complete unit phase passes 4,776 cases with one intentional skip (447 passed files, one skipped file), in 177.44 seconds with two workers. The serial lint/build/render-trace/type/browser phases are still in progress. The source/test freeze remains in effect; this intermediate result is not a completed release checkpoint.
+
+
+Twenty-one further complete source files cover Work marketing, Sources, four planning/finance dictionaries and Marketing copy, employer/curated Career sources, provider/brief/scouting/media contracts, slide-layout helpers, paid owner actions, workspace client, engagement ports/rules, orchestration and source refresh. Two have no new confirmed source repair; nineteen retain explicit follow-ups. The ledger has 650 entries (29 pending, 210 partial). Inspection confirms cap-only source cursor advancement is an intentional cost policy, so no cursor change follows from that observation. Remaining source checks include exact action receipts, complete provider reads and bounded work. Application/test inputs remain frozen for checkpoint 73; no live provider action or owner mutation was used for this review.
