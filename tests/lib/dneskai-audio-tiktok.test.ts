@@ -75,3 +75,57 @@ describe('the TikTok CZ chart (#167)', () => {
     expect(h.fetcher).not.toHaveBeenCalled();
   });
 });
+
+describe('captured TikTok day and cancellation boundaries', () => {
+  const options = (h: ReturnType<typeof harness>, patch: Record<string, unknown> = {}) => ({ config: config(), igUserId: '1', today: '2026-10-24', env: paid, fetcher: h.fetcher, signal: new AbortController().signal, now, ...patch });
+  it.each([
+    { now: new Date(Number.NaN) }, { today: '2026-02-30' }, { today: '2026-10-23' }, { igUserId: 'not-an-id' }, { config: config({ apiVersion: 'v99.0/path' }) },
+  ])('rejects invalid captured inputs before database/provider work (%j)', async patch => {
+    const h = harness([]);
+    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, patch))).toMatchObject({ status: 'skipped', code: 'tiktok-input-invalid', started: false });
+    expect(h.rpc).not.toHaveBeenCalled(); expect(h.fetcher).not.toHaveBeenCalled();
+  });
+  it('does no work for an already-cancelled caller and hides its abort reason', async () => {
+    const h = harness([]), abort = new AbortController(); abort.abort('synthetic-private-abort-reason');
+    await expect(advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal }))).rejects.toThrow(/^tiktok-cancelled$/);
+    expect(h.rpc).not.toHaveBeenCalled(); expect(h.fetcher).not.toHaveBeenCalled();
+  });
+  it('cannot reserve after a delayed run read returns to a cancelled caller', async () => {
+    const h = harness([]), abort = new AbortController();
+    h.rpc.mockImplementationOnce(async () => { abort.abort(); return { data: [], error: null }; });
+    await expect(advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal }))).rejects.toThrow('tiktok-cancelled');
+    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['marketing_dneskai_tiktok_runs']); expect(h.fetcher).not.toHaveBeenCalled();
+  });
+  it('keeps an accepted reservation uncertain and starts no provider work after cancellation', async () => {
+    const h = harness([]), abort = new AbortController(), original = h.rpc.getMockImplementation()!;
+    h.rpc.mockImplementation(async (name, args) => { const result = await original(name, args); if (name === 'marketing_reserve_dneskai_topic_spend') abort.abort(); return result; });
+    await expect(advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal }))).rejects.toThrow('tiktok-cancelled');
+    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['marketing_dneskai_tiktok_runs', 'marketing_reserve_dneskai_topic_spend']); expect(h.fetcher).not.toHaveBeenCalled();
+  });
+  it('does not bind or settle an ambiguously started provider call after cancellation', async () => {
+    const h = harness([]), abort = new AbortController();
+    const fetcher = vi.fn(async () => { abort.abort(); return Response.json({ data: run({ id: 'run_2', defaultDatasetId: 'dataset_2' }) }); }) as unknown as typeof fetch;
+    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal, fetcher }))).toMatchObject({ started: false, code: 'tiktok-cancelled' });
+    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['marketing_dneskai_tiktok_runs', 'marketing_reserve_dneskai_topic_spend']); expect(fetcher).toHaveBeenCalledOnce();
+  });
+  it('cannot turn a paid switch on by mutating the caller environment during a read', async () => {
+    const h = harness([]), env = { ...paid, MARKETING_DNESKAI_PAID_ENABLED: 'false' };
+    h.rpc.mockImplementationOnce(async () => { env.MARKETING_DNESKAI_PAID_ENABLED = 'true'; return { data: [], error: null }; });
+    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, { env }))).toMatchObject({ started: false, code: 'tiktok-paid-disabled' });
+    expect(h.fetcher).not.toHaveBeenCalled(); expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['marketing_dneskai_tiktok_runs']);
+  });
+  it('checks Prague calendar dates rather than twenty-hour windows', async () => {
+    const current = new Date('2026-10-24T20:30:00Z');
+    const same = harness([{ id: spendId, ref: 'tiktok:run_1:dataset_1', reserved_at: '2026-10-24T00:15:00Z', settled: true }]);
+    expect(await advanceDneskaiTikTokChart(same.db, owner, options(same, { now: current }))).toMatchObject({ started: false });
+    expect(same.fetcher).not.toHaveBeenCalled(); expect(same.rpc).toHaveBeenCalledOnce();
+    const previous = harness([{ id: spendId, ref: 'tiktok:run_1:dataset_1', reserved_at: '2026-10-24T21:50:00Z', settled: true }]);
+    expect(await advanceDneskaiTikTokChart(previous.db, owner, options(previous, { now: new Date('2026-10-24T22:10:00Z'), today: '2026-10-25' }))).toMatchObject({ started: true });
+  });
+  it.each(['missing', 'malformed', 'future', 'duplicate'])('refuses uncertain run evidence before admission (%s)', async kind => {
+    const h = harness([]), row = { id: spendId, ref: 'tiktok:pending', reserved_at: kind === 'future' ? '2026-10-25T00:00:00Z' : kind === 'malformed' ? 'invalid' : '2026-10-23T02:30:00Z', settled: false };
+    h.rpc.mockResolvedValueOnce({ data: kind === 'missing' ? null : kind === 'duplicate' ? [row, row] : [row], error: null } as never);
+    await expect(advanceDneskaiTikTokChart(h.db, owner, options(h))).rejects.toThrow('tiktok-budget-unavailable');
+    expect(h.fetcher).not.toHaveBeenCalled(); expect(h.rpc).toHaveBeenCalledOnce();
+  });
+});

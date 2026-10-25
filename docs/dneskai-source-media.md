@@ -357,3 +357,9 @@ day. An [isolated baseline](reports/app-wide-audit-2026-10-23/tiktok-daily-befor
 reservation after a zero-cost settlement; [two real PostgreSQL connections](reports/app-wide-audit-2026-10-23/tiktok-daily-concurrent-before.json)
 also admit two when their existing rolling budget permits both. Prepared migration 124 (`20261025184649_tiktok_prague_daily_admission.sql`) now enforces that day boundary atomically under the existing lock, preserving the rolling spend ceiling and all reservation history. It remains unapplied.
 Keep this optional spend disabled until migration 124 deploys, the provider is usable and the owner decides.
+
+The application now compares captured Prague dates for its early skip. It validates the supplied day/clock/account
+and run evidence before paid admission, retains the original account and switches across waits and checks caller
+cancellation between stages. A late accepted reservation remains charged; cancellation cannot prove that a remote
+call did not start. These checks stop later phases once cancellation is observed; bounded waits, provider-body
+limits, complete run progress and exact trend/settlement receipts remain under review.
