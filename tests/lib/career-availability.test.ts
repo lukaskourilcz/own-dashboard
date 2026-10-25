@@ -100,3 +100,42 @@ it("ignores an application phrase hidden in an arbitrary script", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('<script>const label = "Apply now";</script>React Engineer')));
   expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
 });
+it.each([
+  "<".repeat(100_000),
+  '<script type="application/ld+json">'.repeat(5000),
+  "<div " + "x".repeat(5000) + ">React Engineer No longer accepting applications</div>",
+  "<p>".repeat(10_001) + "React Engineer No longer accepting applications",
+  "<!-- React Engineer No longer accepting applications",
+  "x".repeat(1_500_001),
+])("refuses incomplete or excessive page markup (%#)", async html => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html)));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+it("ignores commented metadata/closure and handles quoted tag delimiters", async () => {
+  const stale = structuredPage({ "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(`<!-- ${stale} No longer accepting applications --><div title="a > b">React Engineer</div><p>Apply now</p>`)));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "open" });
+});
+it("does not confuse data-type with the JSON-LD type attribute", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(`<script data-type="application/ld+json">${JSON.stringify({ "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" })}</script>React Engineer Apply now`)));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "open" });
+});
+it("preserves Unicode offsets while ignoring mixed-case script/style markup", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('İ <SCRIPT>const text="No longer accepting applications";</SCRIPT><STYLE>.label { content: "closed"; }</STYLE>React Engineer Apply now')));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "open" });
+});
+it("does not extract a JobPosting from an excessive JSON-LD script set", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(Array.from({ length: 41 }, () => structuredPage({ "@type": "Thing" })).join("") + "React Engineer Apply now")));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "unknown" });
+});
+it.each([
+  `data-note=" type='application/ld+json'"`,
+  'type="text/javascript" type="application/ld+json"',
+])("does not let quoted values or later duplicate type attributes impersonate metadata (%s)", async attributes => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(`<script ${attributes}>${JSON.stringify({ "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" })}</script>React Engineer Apply now`)));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "open" });
+});
+it("recognizes an unquoted JSON-LD type without confusing the slash for a tag ending", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(`<script type=application/ld+json>${JSON.stringify({ "@type": "JobPosting", title: "React Engineer", url: listingUrl, validThrough: "2020-01-01" })}</script>React Engineer Apply now`)));
+  expect(await verifyListings(jobs(1))).toEqual({ "job-0": "closed" });
+});

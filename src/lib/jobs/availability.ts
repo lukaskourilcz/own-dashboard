@@ -43,6 +43,88 @@ export function isJobUrl(value: string): boolean {
   }
 }
 
+/** Attribute names/values are consumed together so a quoted data value cannot
+ * impersonate a type attribute; HTML's first duplicate attribute wins. */
+function isJsonLdScript(header: string): boolean {
+  let cursor = "script".length;
+  const whitespace = (value: string | undefined) => value !== undefined && /\s/.test(value);
+  while (cursor < header.length) {
+    while (whitespace(header[cursor]) || header[cursor] === "/") cursor++;
+    const start = cursor;
+    while (cursor < header.length && !whitespace(header[cursor]) && !"=/>".includes(header[cursor])) cursor++;
+    const name = header.slice(start, cursor);
+    if (!name) { cursor++; continue; }
+    while (whitespace(header[cursor])) cursor++;
+    let value = "";
+    if (header[cursor] === "=") {
+      cursor++; while (whitespace(header[cursor])) cursor++;
+      const quote = header[cursor];
+      if (quote === '"' || quote === "'") {
+        const end = header.indexOf(quote, cursor + 1);
+        if (end < 0) return false;
+        value = header.slice(cursor + 1, end); cursor = end + 1;
+      } else {
+        const start = cursor;
+        while (cursor < header.length && !whitespace(header[cursor])) cursor++;
+        value = header.slice(start, cursor);
+      }
+    }
+    if (name === "type") return value === "application/ld+json";
+  }
+  return false;
+}
+
+/** Scan each bounded page once. Malformed or excessive markup is unavailable,
+ * never a partial document that can establish closure. */
+function availabilityPage(html: string): { text: string; structured: string[] } | null {
+  if (html.length > 1_500_000) return null;
+  // ASCII folding keeps offsets intact (Unicode lowercasing can change length).
+  const lower = html.replace(/[A-Z]/g, letter => letter.toLowerCase());
+  const text: string[] = [], structured: string[] = [];
+  let cursor = 0, search = 0, tags = 0;
+  const endOfTag = (start: number) => {
+    let quote = "";
+    for (let index = start + 1; index < html.length && index - start <= 4096; index++) {
+      const char = html[index];
+      if (quote) { if (char === quote) quote = ""; }
+      else if (char === '"' || char === "'") quote = char;
+      else if (char === ">") return index;
+      else if (char === "<") return -1;
+    }
+    return -1;
+  };
+  for (;;) {
+    const start = html.indexOf("<", search);
+    if (start < 0) { text.push(html.slice(cursor)); break; }
+    if (!/[a-z/!?]/i.test(html[start + 1] ?? "")) { search = start + 1; continue; }
+    if (++tags > 10_000) return null;
+    text.push(html.slice(cursor, start));
+    if (lower.startsWith("<!--", start)) {
+      const end = lower.indexOf("-->", start + 4);
+      if (end < 0) return null;
+      cursor = search = end + 3; continue;
+    }
+    const end = endOfTag(start);
+    if (end < 0) return null;
+    const header = lower.slice(start + 1, end);
+    const name = /^([a-z][a-z0-9:-]*)/.exec(header)?.[1];
+    if (name === "script" || name === "style") {
+      let closing = lower.indexOf(`</${name}`, end + 1);
+      while (closing >= 0 && !/[\s>]/.test(lower[closing + name.length + 2] ?? "")) closing = lower.indexOf(`</${name}`, closing + name.length + 2);
+      if (closing < 0) return null;
+      const closingEnd = endOfTag(closing);
+      if (closingEnd < 0) return null;
+      if (name === "script" && isJsonLdScript(header)) {
+        if (structured.length >= 40) return null;
+        structured.push(html.slice(end + 1, closing));
+      }
+      cursor = search = closingEnd + 1; continue;
+    }
+    cursor = search = end + 1;
+  }
+  return { text: text.join(" ").replace(/\s+/g, " "), structured };
+}
+
 const normalizedTitle = (value: string) => value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
 function expiryInstant(value: unknown): number | null {
   if (typeof value !== "string" || value.length > 100) return null;
@@ -57,16 +139,15 @@ function expiryInstant(value: unknown): number | null {
   const instant = Date.parse(value);
   return Number.isFinite(instant) ? instant : null;
 }
-function structuredJobEvidence(html: string, title: string, listingUrl?: string) {
+function structuredJobEvidence(scripts: readonly string[], title: string, listingUrl?: string) {
   const expiries = new Set<number | null>();
-  let visited = 0, scripts = 0, malformedExpiry = false;
+  let visited = 0, malformedExpiry = false;
   const incomplete = () => ({ matched: false, ambiguous: true, expiry: null });
   if (!listingUrl || !isJobUrl(listingUrl)) return { matched: false, ambiguous: false, expiry: null };
   const registered = new URL(listingUrl); registered.hash = "";
-  for (const match of html.matchAll(/<script\b(?=[^>]*\btype\s*=\s*["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi)) {
-    if (++scripts > 40) return incomplete();
+  for (const body of scripts) {
     let parsed: unknown;
-    try { parsed = JSON.parse(match[1]); } catch { continue; }
+    try { parsed = JSON.parse(body); } catch { continue; }
     const queue: unknown[] = [parsed];
     while (queue.length) {
       if (++visited > 500) return incomplete();
@@ -102,19 +183,16 @@ export function pageAvailability(
 ): Availability {
   if (status === 404 || status === 410) return "closed";
   if (status !== 200) return "unknown";
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ");
+  const page = availabilityPage(html);
+  if (!page) return "unknown";
+  const text = page.text;
   if (!Number.isFinite(now) || /captcha|verify you are human|access denied|just a moment/i.test(text)) return "unknown";
-  const structured = structuredJobEvidence(html, title, listingUrl);
+  const structured = structuredJobEvidence(page.structured, title, listingUrl);
   if (structured.ambiguous) return "unknown";
   if (structured.expiry !== null && structured.expiry < now) return "closed";
   const words = title.toLowerCase().match(/[a-zá-ž0-9]{3,}/g) ?? [];
-  const matchesTitle =
-    words.length > 0 &&
-    words.filter((w) => text.toLowerCase().includes(w)).length / words.length >=
-      0.8;
+  const lowerText = text.toLowerCase();
+  const matchesTitle = words.length > 0 && words.filter(word => lowerText.includes(word)).length / words.length >= 0.8;
   const applicationSignal =
     /apply (?:now|for|to|here)|submit (?:your )?application|odpovědět|mám zájem|reagovat na|přihlásit se|zažádat|podat žádost|zaujala vás tato nabídka|ozvěte se(?: nám)?/i.test(
       text,
