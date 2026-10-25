@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       if (!stored.length) return;
       try {
         const current = new Map<string, ScrapedJob | null>();
-        for (const job of await fetchEmployerBoard(board)) {
+        for (const job of await fetchEmployerBoard(board, request.signal)) {
           // Duplicate identities are ambiguous even if one happens to match.
           current.set(job.externalId, current.has(job.externalId) || job.source !== board.id ? null : job);
         }

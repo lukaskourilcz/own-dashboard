@@ -716,7 +716,7 @@ function source(id: string, fetch: (signal?: AbortSignal) => Promise<ScrapedJob[
 
 export const JOB_SOURCES: JobSource[] = [
   source("curated", fetchCuratedJobs),
-  ...EMPLOYER_BOARDS.map(b => ({ id: b.id, label: b.name, fetch: () => fetchEmployerBoard(b) })),
+  ...EMPLOYER_BOARDS.map(b => ({ id: b.id, label: b.name, fetch: (signal?: AbortSignal) => fetchEmployerBoard(b, signal) })),
   ...apifyTaskIds().map(id => ({ id: `apify-${id}`, label: `Apify ${id}`, fetch: (signal?: AbortSignal) => fetchApifyTaskSnapshot(id, signal) })),
   source("startupjobs", fetchStartupJobs),
   source("jobscz", fetchJobsCz),
