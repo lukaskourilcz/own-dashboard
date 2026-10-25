@@ -11,13 +11,13 @@ Each destination needs source/data-flow review, relevant business and failure ch
 | Area | Destinations | State |
 | --- | --- | --- |
 | Shared boundaries | Authenticated catch-all, shell, navigation, query cache, initial loading | Reviewing |
-| Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Home/Tasks/Calendar targeted fixes checked; Work/planning boundary closure and final matrix pending |
-| Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Project/client core checks passed; repository/opportunity/competition boundary closure and final matrix pending |
+| Execution | Home, Work, Inbox, Tasks, Calendar, Goals, Dates | Home/Tasks/Calendar and captured weekly saves checked; aggregate/monitoring boundaries and final release pending |
+| Projects and clients | Projects list and all workspace tabs, Competition, Clients, Opportunities | Project/client captured persistence checked; Competition/opportunity/shared metadata and final release pending |
 | Career | Board, saved roles, applications, history, letters | Core recovery/date checks passed; import/provider boundary closure and final matrix pending |
-| Finance | Money, Accounts, Transactions, Categories, Subscriptions, Invoices and print | Core pages/controls checked; Bank/import/rule fixes checked; invoice draft/QR guards and final optimized checks pending |
+| Finance | Money, Accounts, Transactions, Categories, Subscriptions, Invoices and print | Core finance/bank/import/rule and invoice save/QR checks pass; legacy documents/remaining writes and final release pending |
 | Knowledge | Notes, Prompts, Tools, Links, IG TIPS, References | All six Knowledge destinations have targeted review/checks; shared integration and final release checks remain |
 | Marketing | Review, calendar, knowledge, results, Workflows, DNESKAi workspace | Daily mix/source admission and small guard helpers checked; workspace/provider repairs and final matrix pending |
-| Account and public boundaries | Settings, Login, Guest, unknown routes, dev-preview guard, OAuth, PWA | Login/PWA/OAuth fixes checked; Settings preference/project writes, remaining session boundaries and final release pending |
+| Account and public boundaries | Settings, Login, Guest, unknown routes, dev-preview guard, OAuth, PWA | Login/PWA/OAuth/private-preference checks pass; remaining integration/session boundaries and final release pending |
 | Backend and operations | API routes, cron/provider budgets, database ownership and query plans | Reviewing |
 | Release | Current-doc reconciliation, full validation, additive migrations, PR, main merge, deployment | Pending |
 
@@ -1138,3 +1138,10 @@ The [local expression probe](dneskai-cost-format-cpu.json) compares the actual p
 Actual Czech recovery captures show the long refresh paragraph squeezed beside its button. The notice now gives text the full mobile width and places one full-width action beneath it; desktop keeps the short guidance and compact action on one row. Both languages remove the repeated instruction already expressed by the action label. The confirmed list and distinct action conflict remain visible.
 
 Four final EN/CS desktop/mobile browser cases pass in 11.6 seconds, including six widths, full-width stacked message/action geometry below 768px, 44px targets, axe, retained data and explicit successful retry. Targeted ESLint passes. Actual desktop/mobile form and recovery captures use synthetic data. Mobile crops use a taller viewport so the fixed navigation does not cover a component taller than the earlier capture viewport; no navigation is hidden for the picture. The visual-plan update records these source snapshots separately from older captures. Consolidated release and production rollout remain open.
+
+
+## Visual-plan checkpoint — 24 actual desktop/mobile pairs
+
+The working HTML plan now shows twenty-four authentic desktop/mobile component pairs across ten review areas. It adds client refresh/action recovery and replaces the client form images with the captured persistence/discard implementation from application `5d7da1d`. All four new captures use Czech dark synthetic fixtures; a tall mobile viewport keeps the complete form above fixed navigation. The plan labels this source separately from the previous category/private-preference/editor and older component snapshots. Current coverage labels now reflect completed client persistence, weekly saves, private preferences and invoice QR guards while retaining the remaining source/release work.
+
+The rebuilt artifact loads all twenty-four images in each desktop/mobile mode, fits 390px/1440px in both system color schemes and retains working highlight toggles and mapped mobile/desktop coordinates. The local browser check reports no page errors; targeted builder ESLint passes. Actual form/recovery crops and rendered artifact layouts were inspected. CPU evidence links include the implemented costs-view measurement. This updates the review artifact, not production or the unreleased migration state.

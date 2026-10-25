@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Visual-plan checkpoint (2026-10-25): twenty-four actual desktop/mobile component pairs now include client refresh recovery and retained/discardable client forms from `5d7da1d`. All 48 mode/image loads, 390px/1440px light/dark reflow, highlight toggles and mapped coordinates pass with no artifact page errors. Older captures retain their own source labels. These are synthetic preview captures, not owner records or a production rollout.
+
 > Client notice refinement (2026-10-25, finding 222): four final EN/CS native desktop/mobile cases pass in 11.6 seconds. The shortened refresh message and retry stack at full width below 768px and share a compact desktop row. Six-width geometry, 44px mobile controls, axe and recovery pass. Actual captures use synthetic data and a tall mobile viewport to avoid cropping a form behind fixed navigation.
 
 > Client recovery (2026-10-25, finding 220): twenty-two final native EN/CS desktop/mobile cases pass in 53.1 seconds. Cached-read failure retains clients with one retry; long contact/details fit six widths; unsupported saved URL schemes stay inert; confirmed deletion restores keyboard focus. Axe and captured persistence/read recovery pass. These fixture checks include intentional 503 responses and do not establish production rollout or final app-wide release.
