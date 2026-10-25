@@ -914,3 +914,12 @@ An isolated offline probe of the unchanged owner-edit diagnostic applies the act
 
 
 The refreshed standalone plan loads all twenty-one images in both desktop/mobile modes. View switches, highlight toggles, 1440/390 px reflow and light/dark checks pass without page errors. The new private-preference and editor artifact captures are inspected. This is artifact QA, separate from native application or production release verification.
+
+
+## Finding 206 — inserted slides and changed publication settings were scored unchanged
+
+An offline probe uses the supported insert action to turn a three-slide deck into four, yet receives empty counts and score 1 (as generated). Separate valid revision probes reproduce the same outcome for a kit, format, audio, engagement or destination-account change. The shared taxonomy now counts unmatched inserted slides and whole-deck additions/removals, plus title, account, collaborators, format, template/kit, audio and engagement settings. Field projections avoid object-key-order changes; legacy partial diagnostic inputs remain supported. Existing slide matching/reorder behavior and schedule-instant normalization remain intact.
+
+Thirteen new cases fail before repair. All 65 owner-edit, verified-lineage feedback, tracing, dataset-script and outage cases pass across five files in 937 ms; targeted ESLint and TypeScript pass. Tests apply the actual insert helper, validate individual settings/removals and prove a successful insertion-only feedback/dataset record has score 0.5 with `insert-slide: 1`. Strict shared schemas accept the new counts in feedback and dataset uploads. Mocked transport checks prove raw inserted copy, track/account ids, keywords and reply words are absent. No real LangSmith call, dataset rewrite, owner revision, approval or publication occurs. No SQL enum or migration changes are required.
+
+Scoring remains diagnostic only and never authorizes approval or publishing. Prior stored feedback is not rewritten by this implementation. The separate feedback-chain deadline/cancellation lead remains open, as do broader semantic policy and provider/route checks.

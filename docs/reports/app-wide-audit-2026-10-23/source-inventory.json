@@ -3800,8 +3800,8 @@
       "path": "src/lib/marketing/owner-edits.ts",
       "lines": 142,
       "sha256": "983a5a008f5d5c72d51ec133b73d00fcee6dfa8aa465b828ec5f61c32e6d722c",
-      "status": "partial source review: pure bounded-deck matching and aggregate-only feedback retained; inserted-only slides can produce zero edits and an approved-as-generated score, requiring taxonomy/caller reconciliation",
-      "reviewedSha256": "983a5a008f5d5c72d51ec133b73d00fcee6dfa8aa465b828ec5f61c32e6d722c"
+      "status": "source reviewed; finding 206 counts inserted/removed decks and title/account/collaborator/format/template-kit/audio/engagement changes across feedback and dataset schemas; offline redaction/lineage/outage checks pass; separate feedback deadline and final release remain pending",
+      "reviewedSha256": "c5c17ce94138536dd8f78549a5d02d84b8d1dc5d68f0b6e77e41deedd3e83bfa"
     },
     {
       "path": "src/lib/marketing/owner-feedback.ts",

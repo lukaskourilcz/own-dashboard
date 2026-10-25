@@ -145,3 +145,21 @@ describe("DNESKAi deck edit chains", () => {
     expect(sdk.feedback).not.toHaveBeenCalled();
   });
 });
+
+it("sends only counts and an edited score for an insertion-only owned chain", async () => {
+  const generated = { ...deckRevision(), traceId };
+  const inserted = { ...generated, deck: applyDneskaiDeckEdit(generated.deck!, { slides: [{ from: 0 }, { from: 1 }, { insert: { type: "statement", variant: "accent", headline: "PRIVATE TEST inserted headline", alt: "PRIVATE TEST inserted alt", images: [] } }, { from: 2 }] }, { media: [], primaryCandidateId: null }) };
+  sdk.read.mockResolvedValue(traceOf(originalId, revisionHash(generated)));
+  expect(await recordMarketingOwnerFeedback({ traceId, revisionId: editedId, revisionHash: revisionHash(inserted), decision: "approved" }, env, { db: database([row(originalId, generated), row(editedId, inserted, originalId)]).db, ownerId: owner })).toBe(true);
+  expect(sdk.feedback.mock.calls[0]![2]).toMatchObject({ score: 0.5, sourceInfo: { edit_kinds: { "insert-slide": 1 }, edit_count: 1 } });
+  expect(JSON.stringify(sdk.feedback.mock.calls)).not.toContain("PRIVATE TEST"); expect(sdk.update).not.toHaveBeenCalled();
+});
+it("sends only a count for audio/account/engagement edits, never their private values", async () => {
+  const generated = { ...deckRevision(), traceId };
+  const audioId = "abcdef12-3456-4789-8abc-123456789abc", remoteAccount = "17841499999999999";
+  const changed = parseContentRevision({ ...generated, account: { ...generated.account, id: remoteAccount }, audio: { trackId: audioId }, engagement: { keyword: "TESTWORD", replyMessage: "PRIVATE TEST reply body" } });
+  sdk.read.mockResolvedValue(traceOf(originalId, revisionHash(generated)));
+  expect(await recordMarketingOwnerFeedback({ traceId, revisionId: editedId, revisionHash: revisionHash(changed), decision: "approved" }, env, { db: database([row(originalId, generated), row(editedId, changed, originalId)]).db, ownerId: owner })).toBe(true);
+  expect(sdk.feedback.mock.calls[0]![2]).toMatchObject({ score: 0.5, sourceInfo: { edit_kinds: { account: 1, audio: 1, engagement: 1 }, edit_count: 3 } });
+  const sent = JSON.stringify(sdk.feedback.mock.calls); for (const value of [audioId, remoteAccount, "TESTWORD", "PRIVATE TEST"]) expect(sent).not.toContain(value);
+});

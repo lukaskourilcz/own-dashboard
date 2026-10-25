@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { OWNER_EDIT_KINDS, OwnerEditCountsSchema, addOwnerEditCounts, ownerEditChainKinds, ownerEditCount, ownerEditKinds, ownerEditLengthDeltas, ownerFeedbackScore, type EditedRevision } from "@/lib/marketing/owner-edits";
 import { applyDneskaiDeckEdit } from "@/lib/marketing/dneskai-revision-edit";
 import { DNESKAI_SLIDES_VERSION, type DneskaiDeck } from "@/lib/marketing/dneskai-slides";
-import { a, b, c, deck } from "./marketing-dneskai-revision-fixture";
+import { parseContentRevision } from "@/lib/marketing/contracts";
+import { a, b, c, deck, deckRevision } from "./marketing-dneskai-revision-fixture";
 
 vi.mock("server-only", () => ({}));
 const base = (): EditedRevision => ({ caption: "Test-only caption.", scheduledAt: "2099-10-21T06:00:00Z", deck: deck() });
@@ -68,4 +69,48 @@ describe("edit kinds between two saved revisions (#122)", () => {
     const edited = withDeck({ ...base(), caption: "Test-only caption, longer." }, { slides: [{ from: 0, headline: "Krátký" }, { from: 1 }, { from: 2 }] });
     expect(ownerEditLengthDeltas(base(), edited)).toEqual({ captionLengthDelta: 8, slideTextLengthDelta: "Krátký".length - "Nový model umí číst grafy".length });
   });
+});
+
+describe("added slides and effective publication settings", () => {
+  it("counts a supported insertion and scores the saved revision as edited", () => {
+    const revision = base();
+    const edited = { ...revision, deck: applyDneskaiDeckEdit(revision.deck as DneskaiDeck, { slides: [{ from: 0 }, { from: 1 }, { insert: { type: "statement", variant: "accent", headline: "Vložená věta.", alt: "Vložený text.", images: [] } }, { from: 2 }] }, { media: [], primaryCandidateId: null }) };
+    const kinds = ownerEditKinds(revision, edited);
+    expect(kinds).toEqual({ "insert-slide": 1 }); expect(OwnerEditCountsSchema.parse(kinds)).toEqual(kinds); expect(ownerFeedbackScore("approved", kinds)).toBe(0.5);
+  });
+  it("counts duplicate inserted slides and complete deck additions/removals", () => {
+    const revision = base(), extra = revision.deck!.slides[2]!;
+    expect(ownerEditKinds(revision, { ...revision, deck: { slides: [...revision.deck!.slides, extra, structuredClone(extra)] } })).toEqual({ "insert-slide": 2 });
+    expect(ownerEditKinds({ ...revision, deck: undefined }, revision)).toEqual({ "insert-slide": 3 });
+    expect(ownerEditKinds(revision, { ...revision, deck: undefined })).toEqual({ "remove-slide": 3 });
+  });
+  it.each([
+    ["title", { title: "Changed diagnostic title" }],
+    ["account", { account: { ...deckRevision().account, id: "17841400000000001" } }],
+    ["format", { format: "reel" }],
+    ["template", { templateVersion: "dneskai-photo/2" }],
+    ["template", { deck: { ...deck(), kit: "bold" } }],
+    ["audio", { audio: { trackId: "44444444-4444-4444-8444-444444444444" } }],
+    ["audio", { audio: { instagramAudioId: "1234" } }],
+    ["engagement", { engagement: { keyword: "VZOR", replyMessage: "PRIVATE TEST educational reply" } }],
+    ["collaborators", { collaborators: ["testcollaborator"] }],
+  ] as const)("counts a %s-only edit without claiming unchanged generation", (kind, patch) => {
+    const revision = deckRevision(), edited = parseContentRevision({ ...revision, ...patch });
+    const kinds = ownerEditKinds(revision, edited); expect(kinds).toEqual({ [kind]: 1 }); expect(OwnerEditCountsSchema.parse(kinds)).toEqual(kinds); expect(ownerFeedbackScore("approved", kinds)).toBe(0.5);
+  });
+  it("compares settings by fields rather than JSON key order and keeps absent engagement equivalent", () => {
+    const revision = parseContentRevision({ ...deckRevision(), audio: { trackId: "44444444-4444-4444-8444-444444444444" }, engagement: { keyword: "VZOR", replyMessage: "PRIVATE TEST reply" } });
+    const edited = parseContentRevision({ ...revision, account: { handle: revision.account.handle, platform: revision.account.platform, id: revision.account.id }, engagement: { replyMessage: revision.engagement!.replyMessage, keyword: revision.engagement!.keyword } });
+    expect(ownerEditKinds(revision, edited)).toEqual({});
+    expect(ownerEditKinds(deckRevision(), parseContentRevision({ ...deckRevision(), engagement: undefined }))).toEqual({});
+  });
+});
+
+it.each([
+  ["audio", { audio: { trackId: "44444444-4444-4444-8444-444444444444" } }],
+  ["engagement", { engagement: { keyword: "VZOR", replyMessage: "PRIVATE TEST reply" } }],
+  ["collaborators", { collaborators: ["testcollaborator"] }],
+] as const)("counts explicit %s removal", (kind, patch) => {
+  const plain = deckRevision(), before = parseContentRevision({ ...plain, ...patch });
+  expect(ownerEditKinds(before, plain)).toEqual({ [kind]: 1 });
 });
