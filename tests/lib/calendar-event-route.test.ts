@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const state = vi.hoisted(() => ({ user: true, google: vi.fn(), capture: vi.fn() }));
+const state = vi.hoisted(() => ({ user: true, authError: false, google: vi.fn(), capture: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user ? { id: "owner" } : null } }) } }) }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user ? { id: "owner" } : null }, error: state.authError ? Error("Synthetic auth failure") : null }) } }) }));
 vi.mock("@/lib/google-token", () => ({ createGoogleFetcher: () => state.google }));
 vi.mock("@/lib/sentry-server", () => ({ captureCalendarRejection: state.capture }));
 import { POST, DELETE } from "@/app/api/calendar/event/route";
@@ -9,7 +9,7 @@ import { eventEnd, eventStart } from "@/lib/calendar";
 
 const input = { title: "Project review", date: "2026-10-23", startTime: "09:00", endTime: "10:00", timeZone: "Europe/Prague" };
 const request = (body: unknown, method = "POST", origin = "https://app.example") => new Request("https://app.example/api/calendar/event", { method, headers: { origin, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-beforeEach(() => { state.user = true; state.capture.mockReset(); state.google.mockReset().mockResolvedValue(Response.json({ id: "event-owner", htmlLink: "https://calendar.google.com/calendar/event?eid=fixture" })); });
+beforeEach(() => { state.user = true; state.authError = false; state.capture.mockReset(); state.google.mockReset().mockResolvedValue(Response.json({ id: "event-owner", htmlLink: "https://calendar.google.com/calendar/event?eid=fixture" })); });
 afterEach(() => vi.unstubAllEnvs());
 
 describe("calendar event write boundary", () => {
@@ -93,4 +93,18 @@ describe("calendar event write boundary", () => {
     expect(eventEnd(event)!.getDate()).toBe(30);
     expect(eventEnd(event)!.getTime() - eventStart(event)!.getTime()).toBe(23 * 60 * 60 * 1000);
   });
+});
+
+function capturedRequest(body: unknown, owner = 'owner', method = 'POST') { const req = request(body, method); req.headers.set('x-calendar-owner', owner); return req; }
+it.each(['POST', 'DELETE'])('refuses a changed captured owner before any %s provider request', async method => {
+ const req = capturedRequest(method === 'POST' ? input : { id: 'event-owner' }, 'other-owner', method);
+ const response = await (method === 'POST' ? POST(req) : DELETE(req)); expect(response.status).toBe(409); expect(state.google).not.toHaveBeenCalled();
+});
+it('echoes only the verified captured owner with successful creation/cleanup', async () => {
+ const created = await POST(capturedRequest(input)); expect(await created.json()).toMatchObject({ id: 'event-owner', ownerId: 'owner' });
+ state.google.mockResolvedValue(new Response(null, { status: 404 })); expect(await (await DELETE(capturedRequest({ id: 'event-owner' }, 'owner', 'DELETE'))).json()).toEqual({ ok: true, ownerId: 'owner' });
+});
+it('rejects a malformed captured header and cached auth errors without provider work', async () => {
+ expect((await POST(capturedRequest(input, 'x'.repeat(129)))).status).toBe(400); expect(state.google).not.toHaveBeenCalled();
+ state.authError = true; expect((await POST(capturedRequest(input))).status).toBe(503); expect(state.google).not.toHaveBeenCalled();
 });

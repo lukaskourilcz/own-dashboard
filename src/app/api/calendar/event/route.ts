@@ -16,12 +16,18 @@ const unconfirmed = () => reply({ error: "Calendar result was not confirmed.", r
 async function write(request: Request, method: "POST" | "DELETE") {
   const rejected = rejectCrossOrigin(request);
   if (rejected) { rejected.headers.set("cache-control", "private, no-store"); return rejected; }
+  const expectedOwner = request.headers.get("x-calendar-owner");
+  if (expectedOwner !== null && (!expectedOwner || expectedOwner.length > 128 || expectedOwner !== expectedOwner.trim())) return reply({ error: "Invalid captured account." }, 400);
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]);
   try {
     const supabase = await awaitWithSignal(createClient(signal), signal);
     const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
     if (auth.error) return reply({ error: "Authentication unavailable." }, 503);
     if (!auth.data.user) return reply({ error: "Not authenticated." }, 401);
+    if (expectedOwner !== null && expectedOwner !== auth.data.user.id) return reply({ error: "Captured account changed." }, 409);
+    // Legacy callers retain their receipt shape. Captured callers additionally
+    // confirm the same verified account before accepting a provider result.
+    const confirmed = (body: object) => reply({ ...body, ...(expectedOwner !== null ? { ownerId: auth.data.user.id } : {}) });
     const prefix = await awaitWithSignal(readTextPrefix(new Response(request.body), 65_536, signal), signal);
     if (prefix.truncated) return reply({ error: "Calendar request too large." }, 413);
     let body: unknown;
@@ -42,7 +48,7 @@ async function write(request: Request, method: "POST" | "DELETE") {
     const res = await awaitWithSignal(fetcher(url, { method, signal, ...(payload ? { headers: { "Content-Type": "application/json" }, body: payload } : {}) }), signal);
     if (method === "DELETE" && (res.status === 404 || res.status === 410 || res.ok)) {
       if (res.body) void res.body.cancel().catch(() => undefined);
-      return reply({ ok: true });
+      return confirmed({ ok: true });
     }
     if (!res.ok) {
       if (res.body) void res.body.cancel().catch(() => undefined);
@@ -55,7 +61,7 @@ async function write(request: Request, method: "POST" | "DELETE") {
     if (created.truncated) return unconfirmed();
     const receipt = JSON.parse(created.text);
     if (typeof receipt?.id !== "string" || !receipt.id || receipt.id.length > 1024 || /\p{Cc}/u.test(receipt.id)) return unconfirmed();
-    return reply({ id: receipt.id, htmlLink: safeWebUrl(receipt.htmlLink) ?? undefined });
+    return confirmed({ id: receipt.id, htmlLink: safeWebUrl(receipt.htmlLink) ?? undefined });
   } catch { return unconfirmed(); }
 }
 

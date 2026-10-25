@@ -117,8 +117,8 @@
       "path": "src/app/api/calendar/event/route.ts",
       "lines": 114,
       "sha256": "8309195d5ce5c7c235600af9ca72fed3769c1bc3fb959e9b2b9d3c0b8fefb488",
-      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "bc9f14c524292ae514a5fd9e3a9c603e74df9b40492ec60451de351195d4c151"
+      "status": "source reviewed; finding 248 captured-account create/delete refusal and receipt compatibility checks pass; browser adoption and final release pending",
+      "reviewedSha256": "28ba57a2f33531bd2f0aa33c051eb2f4c7a4d4967953abe939585876df0cddd8"
     },
     {
       "path": "src/app/api/calendar/events/route.ts",
