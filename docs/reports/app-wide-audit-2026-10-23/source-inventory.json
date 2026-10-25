@@ -654,10 +654,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 61,
+      "lines": 62,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
-      "reviewedSha256": "24c7627b6736c8b4af15047703dd0bd10d897acb573b8556835c293a8bd0f20f"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
+      "reviewedSha256": "c4f42ea002801d8ac02783a9d54ae0daecf7d12e1d9d2a89b68d14ba7b316c0f"
     },
     {
       "path": "src/app/globals.css",
@@ -852,17 +852,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 580,
+      "lines": 581,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
-      "reviewedSha256": "7b3407d9294eb08f9789379a12a3ae910eeaedae1e0545d50239ca2068f51ef4"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
+      "reviewedSha256": "7daa47147d74c1c1734f5b4e73e482440f0263084346620552dcd9e0f7b93548"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 194,
+      "lines": 199,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
-      "reviewedSha256": "6cfb2f316ee5ea3331d9093fa9fd5072527d48ec635554d9448ec60331ea0c28"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
+      "reviewedSha256": "c97d31784331f830d4f028af7bb43c8e61b9ad96e058c6b22dc08cddb273265f"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1469,6 +1469,13 @@
       "reviewedSha256": "d641db47cd512b2d249d870516721dc3a6136249f46cb18f69294f4380f41ecb"
     },
     {
+      "path": "src/components/panels/career-pagination.tsx",
+      "sha256": null,
+      "lines": 15,
+      "reviewedSha256": "dcf63f6159a0b9e41471e2dc482eaaaf369ccd7d54bc4519296ec33cee57e029",
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending"
+    },
+    {
       "path": "src/components/panels/career-progress-dialog.tsx",
       "lines": 89,
       "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
@@ -1547,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2893,
+      "lines": 2917,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 272 complete captured Career reads, native evidence cutover and lazy route tests pass; rendered activation/paging and final release pending",
-      "reviewedSha256": "fe178adfb1bd08a260b37de63a8016d6c6fc82e242336b83e4c0b90f5ff2b525"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
+      "reviewedSha256": "de0ed82df41f8a82e7cf24e707e3083d5a6e33d943d38cc095bff7af192a4c46"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2726,10 +2733,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 569,
+      "lines": 587,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; finding 266 captured Career refresh/strict receipt/one admission/retained recovery and EN-CS native checks pass; other read/write/provider leads and final release pending",
-      "reviewedSha256": "ec348f14a09ba3fae7a9d575c8d6d1a579cc374c35f39c05b62e32cd2648a889"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
+      "reviewedSha256": "7ab64551e419571513c51894fd6aff63a1d9b48ba49792e6a1ed5b309649363b"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",

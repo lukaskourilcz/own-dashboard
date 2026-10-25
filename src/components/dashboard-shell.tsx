@@ -137,6 +137,7 @@ type Props = {
   previewTaskIntegration?: boolean;
   previewMonitoringIntegration?: boolean;
   previewCareerIntegration?: boolean;
+  previewCareerRecordsIntegration?: boolean;
   previewPreferencesIntegration?: boolean;
   previewExportIntegration?: boolean;
   previewSessionIntegration?: boolean;
@@ -292,9 +293,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: (!props.isPreview || (props.previewOrganizationIntegration && key === "organizations") || (props.previewCompetitorIntegration && key === "competitors") || (props.previewPlanIntegration && key === "plans") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: (!props.isPreview || (props.previewCareerRecordsIntegration && ["jobListings", "jobUserStates", "savedJobPositions", "jobApplications", "jobApplicationEvents", "coverLetterTemplates", "jobLastRun"].includes(key)) || (props.previewOrganizationIntegration && key === "organizations") || (props.previewCompetitorIntegration && key === "competitors") || (props.previewPlanIntegration && key === "plans") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewPlanIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration, props.previewCompetitorIntegration]);
+  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewPlanIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration, props.previewCompetitorIntegration, props.previewCareerRecordsIntegration]);
   const setTab = useCallback((next: NavTab) => {
     if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {
@@ -411,7 +412,7 @@ function DashboardShellContent(props: Props) {
   const qc = useQueryClient();
   const activateTab = useCallback(async (target: NavTab, parent?: AbortSignal) => {
     parent?.throwIfAborted();
-    if (!props.isPreview) {
+    if (!props.isPreview || (props.previewCareerRecordsIntegration && target === "career")) {
       const loaders: Partial<Record<DashboardDataKey, [QueryKey, (context?: { signal: AbortSignal }) => Promise<unknown>]>> = {
         jobListings: [qk.jobListings, careerLoaders.jobListings],
         jobUserStates: [qk.jobUserStates, careerLoaders.jobUserStates],
@@ -437,7 +438,7 @@ function DashboardShellContent(props: Props) {
     }
     parent?.throwIfAborted();
     setActivatedTabs((previous) => (previous.has(target) ? previous : new Set(previous).add(target)));
-  }, [props.isPreview, organizationKey, loadOrganizations, careerLoaders, qc]);
+  }, [props.isPreview, props.previewCareerRecordsIntegration, organizationKey, loadOrganizations, careerLoaders, qc]);
 
   const entityStatuses = {
     subscriptions: subscriptionsStatus,

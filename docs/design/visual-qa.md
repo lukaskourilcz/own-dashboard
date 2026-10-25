@@ -1,5 +1,8 @@
 # OwnDashboard visual QA
 
+> Career collections (2026-10-25, finding 274): eighteen final native EN/CS desktop/mobile cases pass in 53.3 seconds. Complete 1,201-row offers, saved positions and application lists render fifty rows per page, search the final record and reset pages without more database/provider calls. Initial Career access makes no private collection read; application totals retain the full cohort. Six-width reflow, axe and existing recovery checks pass on isolated synthetic data. Board paging, remaining write/provider review and the final app-wide release stay open.
+
+
 > Client field feedback (2026-10-25, finding 224): thirty-four native EN/CS desktop/mobile cases pass in 1.2 minutes. Invalid fields have localized linked guidance after blur, empty optional fields remain valid and uppercase HTTP(S) matches native admission. All four invalid-submit timeouts from checkpoint 85 pass in this targeted run; the earlier full run remains failed (729 pass, 99 skip, four fail). Captured saves, six-width/axe recovery, long details and ordinary preview remain covered. No production data changes.
 
 > Visual-plan checkpoint (2026-10-25): twenty-four actual desktop/mobile component pairs now include client refresh recovery and retained/discardable client forms from `5d7da1d`. All 48 mode/image loads, 390px/1440px light/dark reflow, highlight toggles and mapped coordinates pass with no artifact page errors. Older captures retain their own source labels. These are synthetic preview captures, not owner records or a production rollout.

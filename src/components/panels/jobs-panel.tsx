@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CareerPagination } from "@/components/panels/career-pagination";
+import { collectionPage } from "@/lib/collection-page";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -669,6 +671,10 @@ function OpenPositionsView({
     seniority,
   ]);
 
+  const [pageIndex, setPageIndex] = useState(0);
+  const page = collectionPage(visible, pageIndex);
+  const pageDetail = page.items.find(row => row.id === detailId) ?? page.items[0];
+
   // Set / replace / clear the per-listing triage state. Non-optimistic —
   // the returned row lands in the cache, then an invalidate reconciles.
   const stateMutation = useMutation({
@@ -812,7 +818,7 @@ function OpenPositionsView({
       <div className="mb-4 flex flex-wrap gap-3">
         <SimpleSelect
           value={workplace}
-          onValueChange={setWorkplace}
+          onValueChange={value => { setWorkplace(value); setPageIndex(0); }}
           className="w-full sm:w-48"
           aria-label={cs ? "Místo práce" : "Work location"}
           options={[
@@ -823,7 +829,7 @@ function OpenPositionsView({
         />
         <SimpleSelect
           value={seniority}
-          onValueChange={setSeniority}
+          onValueChange={value => { setSeniority(value); setPageIndex(0); }}
           className="w-full sm:w-48"
           aria-label={cs ? "Seniorita" : "Seniority"}
           options={[
@@ -844,13 +850,13 @@ function OpenPositionsView({
               aria-label={t.jobs.searchPlaceholder}
               placeholder={t.jobs.searchPlaceholder}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setPageIndex(0); }}
               className="h-9 pl-8 text-sm"
             />
           </div>
           <SimpleSelect
             value={role}
-            onValueChange={(v) => setRole(v as "all" | JobRole)}
+            onValueChange={(v) => { setRole(v as "all" | JobRole); setPageIndex(0); }}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.roleAll}
             options={[
@@ -862,7 +868,7 @@ function OpenPositionsView({
           />
           <SimpleSelect
             value={source}
-            onValueChange={setSource}
+            onValueChange={value => { setSource(value); setPageIndex(0); }}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.sourceAll}
             options={[
@@ -872,7 +878,7 @@ function OpenPositionsView({
           />
           <SimpleSelect
             value={sortMode}
-            onValueChange={(v) => setSortMode(v as typeof sortMode)}
+            onValueChange={(v) => { setSortMode(v as typeof sortMode); setPageIndex(0); }}
             className="h-9 w-auto min-w-32 text-xs"
             aria-label={t.jobs.sortLabel}
             options={[
@@ -885,19 +891,19 @@ function OpenPositionsView({
           />
           <FilterToggle
             active={priorityOnly}
-            onClick={() => setPriorityOnly((v) => !v)}
+            onClick={() => { setPriorityOnly((v) => !v); setPageIndex(0); }}
             icon={Target}
             label={t.jobs.priorityOnly}
           />
           <FilterToggle
             active={strongFitOnly}
-            onClick={() => setStrongFitOnly((v) => !v)}
+            onClick={() => { setStrongFitOnly((v) => !v); setPageIndex(0); }}
             icon={Check}
             label={t.jobs.strongFitOnly}
           />
           <FilterToggle
             active={shortlistedOnly}
-            onClick={() => setShortlistedOnly((v) => !v)}
+            onClick={() => { setShortlistedOnly((v) => !v); setPageIndex(0); }}
             icon={Star}
             label={t.jobs.shortlistedOnly}
           />
@@ -1040,9 +1046,10 @@ function OpenPositionsView({
         />
       ) : (
         <>
+          <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.listingPages} />
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(280px,2fr)_minmax(360px,3fr)]">
             <div className="min-w-0 divide-y divide-border rounded-md border border-border bg-surface">
-              {visible.map((l) => (
+              {page.items.map((l) => (
                 <ListingRow
                   key={l.id}
                   listing={l}
@@ -1069,14 +1076,14 @@ function OpenPositionsView({
                     if (window.matchMedia("(max-width: 1279px)").matches)
                       setMobileDetail(true);
                   }}
-                  active={(detailId ?? visible[0]?.id) === l.id}
+                  active={pageDetail?.id === l.id}
                 />
               ))}
             </div>
             <div className="hidden min-w-0 xl:block">
               {(() => {
                 const detail =
-                  visible.find((l) => l.id === detailId) ?? visible[0];
+                  pageDetail;
                 return detail ? (
                   <CareerJobDetails
                     listing={detail}
@@ -1215,7 +1222,7 @@ function ListingRow({
 }) {
   const t = useDict();
   return (
-    <article className={cn("min-w-0 p-4", active && "bg-accent/50")}>
+    <article data-career-listing={listing.id} className={cn("min-w-0 p-4", active && "bg-accent/50")}>
       <div className="flex items-start gap-3">
         <Checkbox
           checked={selected}
@@ -1329,6 +1336,9 @@ function SavedPositionsView({
   const [showFields, setShowFields] = useState(false);
   const [search, setSearch] = useState("");
   const visible = positions.filter(row => `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  const [pageIndex, setPageIndex] = useState(0);
+  const page = collectionPage(visible, pageIndex);
+
 
   function importUrl(url: string) {
     if (enrich.isPending) return;
@@ -1440,14 +1450,15 @@ function SavedPositionsView({
           </div>
         )}
       </Card>}
-      <Input value={search} onChange={event=>setSearch(event.target.value)} aria-label={cs?"Hledat přihlášku":"Search applications"} placeholder={cs?"Firma nebo pozice":"Company or position"} className="max-w-sm"/>
+      <Input value={search} onChange={event=>{ setSearch(event.target.value); setPageIndex(0); }} aria-label={cs?"Hledat přihlášku":"Search applications"} placeholder={cs?"Firma nebo pozice":"Company or position"} className="max-w-sm"/>
 
+      <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.savedPages} />
       {visible.length === 0 ? (
         <EmptyState icon={Bookmark} title={t.jobs.noSavedPositions} description={t.jobs.noSavedPositionsDescription} className="py-16" />
       ) : (
         <div className="divide-y divide-border rounded-md border border-border bg-surface">
-          {visible.map((position) => (
-            <article key={position.id} className="flex flex-col gap-3 p-4">
+          {page.items.map((position) => (
+            <article key={position.id} data-career-position={position.id} className="flex flex-col gap-3 p-4">
               <div className="min-w-0 flex-1">
                 <a href={position.url} target="_blank" rel="noopener noreferrer" className="break-words text-base font-semibold hover:underline focus-ring rounded-sm">{position.title}</a>
                 <p className="mt-1 text-sm text-foreground-muted">{[position.company, position.location].filter(Boolean).join(" · ")}</p>
@@ -2015,6 +2026,18 @@ function AppliedView({
   const [progressFor, setProgressFor] = useState<JobApplication | null>(null);
   const cohort = useMemo(()=>applications.filter(row=>(!since || row.applied_on >= since) && `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())),[applications,since,search]);
   const visible = cohort.filter(row=>responseFilter === "all" || (responseFilter === "responded" ? !!row.responded_on : !row.responded_on));
+  const [pageIndex, setPageIndex] = useState(0);
+  const page = collectionPage(visible, pageIndex);
+  const eventsByApplication = useMemo(() => {
+    const index = new Map<string, JobApplicationEvent[]>();
+    for (const event of events) {
+      const group = index.get(event.application_id);
+      if (group) group.push(event);
+      else index.set(event.application_id, [event]);
+    }
+    return index;
+  }, [events]);
+
   // The board's "Saved" column holds positions that have no application yet, so
   // the applied-date and response filters cannot apply to them; the search box
   // still does.
@@ -2127,9 +2150,9 @@ function AppliedView({
       </div>
 
       <p className="mb-3 text-sm text-foreground-muted">{cs?"Statistiky vycházejí z vybraného období a hledání. Podíl odpovědí počítá přihlášky se zaznamenanou skutečnou odpovědí; u čerstvých přihlášek může být zatím nižší.":"Metrics use the selected period and search. Response rate counts applications with a recorded substantive response; recent applications have had less time to receive one."}</p>
-      <div className="mb-4 flex flex-wrap items-end gap-3"><Input value={search} onChange={event=>setSearch(event.target.value)} className="max-w-sm" aria-label={cs?"Hledat odeslané přihlášky":"Search sent applications"} placeholder={cs?"Firma nebo pozice":"Company or position"}/>
-      <div><Label htmlFor="applications-since">{cs?"Odesláno od":"Applied since"}</Label><Input id="applications-since" type="date" value={since} onChange={event=>setSince(event.target.value)}/></div>
-      <SimpleSelect value={responseFilter} onValueChange={setResponseFilter} aria-label={cs?"Filtrovat odpovědi":"Filter responses"} options={[{value:"all",label:cs?"Všechny přihlášky":"All applications"},{value:"responded",label:cs?"S odpovědí":"With response"},{value:"waiting",label:cs?"Bez odpovědi":"Without response"}]}/></div>
+      <div className="mb-4 flex flex-wrap items-end gap-3"><Input value={search} onChange={event=>{ setSearch(event.target.value); setPageIndex(0); }} className="max-w-sm" aria-label={cs?"Hledat odeslané přihlášky":"Search sent applications"} placeholder={cs?"Firma nebo pozice":"Company or position"}/>
+      <div><Label htmlFor="applications-since">{cs?"Odesláno od":"Applied since"}</Label><Input id="applications-since" type="date" value={since} onChange={event=>{ setSince(event.target.value); setPageIndex(0); }}/></div>
+      <SimpleSelect value={responseFilter} onValueChange={value=>{ setResponseFilter(value); setPageIndex(0); }} aria-label={cs?"Filtrovat odpovědi":"Filter responses"} options={[{value:"all",label:cs?"Všechny přihlášky":"All applications"},{value:"responded",label:cs?"S odpovědí":"With response"},{value:"waiting",label:cs?"Bez odpovědi":"Without response"}]}/></div>
       {/* toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <div role="group" aria-label={t.jobs.layoutLabel} className="flex rounded-md border border-border bg-surface p-0.5">
@@ -2158,6 +2181,7 @@ function AppliedView({
         </Button>
       </div>
 
+      {layout === "list" && <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.applicationPages} />}
       {layout === "board" ? (
         <CareerBoard
           applications={visible}
@@ -2180,11 +2204,11 @@ function AppliedView({
       ) : (
         <Card className="p-0 overflow-hidden">
           <ul className="divide-y divide-border">
-            {visible.map((app) => (
+            {page.items.map((app) => (
               <ApplicationRow
                 key={app.id}
                 app={app}
-                events={events.filter((e) => e.application_id === app.id)}
+                events={eventsByApplication.get(app.id) ?? []}
                 statusLabel={statusLabel}
                 onStatus={(status) => statusMutation.mutate({ app, status })}
                 onProgress={() => setProgressFor(app)}
@@ -2244,7 +2268,7 @@ function ApplicationRow({
     .join(" · ");
 
   return (
-    <li className="px-4 py-3">
+    <li data-career-application={app.id} className="px-4 py-3">
       <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

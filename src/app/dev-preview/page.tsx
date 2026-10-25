@@ -42,7 +42,8 @@ export default async function PreviewPage({
       livePlanRecords={planRecords === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       livePlanning={planning === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveMusic={music === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
-      liveCareer={career === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
+      liveCareer={((career === "live") || (career === "records")) && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
+      liveCareerRecords={career === "records" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveMonitoring={monitoring === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       livePreferences={preferences === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveOrganizations={organizations === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}

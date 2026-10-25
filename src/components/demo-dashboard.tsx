@@ -33,6 +33,7 @@ export function DemoDashboard({
   liveCategories = false,
   liveMonitoring = false,
   liveCareer = false,
+  liveCareerRecords = false,
   livePreferences = false,
   liveExports = false,
   liveSession = false,
@@ -71,6 +72,8 @@ export function DemoDashboard({
   liveMonitoring?: boolean;
   /** Isolated fake-backend Career refresh contract only. */
   liveCareer?: boolean;
+  /** Isolated fake-backend complete Career reads and activation. */
+  liveCareerRecords?: boolean;
   /** Dev/E2E-only mocked preference reads/writes; disabled in the public tour. */
   livePreferences?: boolean;
   /** Isolated fake-backend downloads only; no preference/provider calls. */
@@ -95,7 +98,8 @@ export function DemoDashboard({
     && (!livePlanRecords || key !== "plans")
     && (!liveTasks || key !== "todos")
     && (!liveOrganizations || key !== "organizations")
-    && (!liveCompetitors || key !== "competitors"));
+    && (!liveCompetitors || key !== "competitors")
+    && (!liveCareerRecords || !["jobListings", "jobUserStates", "savedJobPositions", "jobApplications", "jobApplicationEvents", "coverLetterTemplates", "jobLastRun"].includes(key)));
 
   return (
     <DashboardShell
@@ -108,6 +112,7 @@ export function DemoDashboard({
       previewTaskIntegration={liveTasks}
       previewMonitoringIntegration={liveMonitoring}
       previewCareerIntegration={liveCareer}
+      previewCareerRecordsIntegration={liveCareerRecords}
       previewPreferencesIntegration={livePreferences}
       previewExportIntegration={liveExports}
       previewSessionIntegration={liveSession}
@@ -152,13 +157,13 @@ export function DemoDashboard({
       initialInboxItems={f.inboxItems}
       initialNotifications={f.notifications}
       initialWeeklyReviews={livePlanning ? [] : f.weeklyReviews}
-      initialJobListings={f.jobListings}
-      initialJobUserStates={f.jobUserStates}
-      initialSavedJobPositions={f.savedJobPositions}
-      initialJobApplications={f.jobApplications}
-      initialJobApplicationEvents={f.jobApplicationEvents}
-      initialCoverLetterTemplates={f.coverLetterTemplates}
-      initialJobLastRun={f.jobLastRun}
+      initialJobListings={liveCareerRecords ? [] : f.jobListings}
+      initialJobUserStates={liveCareerRecords ? [] : f.jobUserStates}
+      initialSavedJobPositions={liveCareerRecords ? [] : f.savedJobPositions}
+      initialJobApplications={liveCareerRecords ? [] : f.jobApplications}
+      initialJobApplicationEvents={liveCareerRecords ? [] : f.jobApplicationEvents}
+      initialCoverLetterTemplates={liveCareerRecords ? [] : f.coverLetterTemplates}
+      initialJobLastRun={liveCareerRecords ? null : f.jobLastRun}
       todayCalendar={f.todayCalendar}
       weekCalendar={f.weekCalendar}
       lastWeekCalendar={f.lastWeekCalendar}

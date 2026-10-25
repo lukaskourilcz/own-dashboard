@@ -87,6 +87,12 @@ type JobsStrings = {
   noMatches: string;
   noMatchesDescription: string;
   listingsShown: string;
+  listingPages: string;
+  savedPages: string;
+  applicationPages: string;
+  previousPage: string;
+  nextPage: string;
+  pageRange: (from: number, to: number, total: number) => string;
   tableActions: string;
   // Apply dialog / application form
   applyTitle: string;
@@ -271,6 +277,12 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noMatches: "Nothing matches",
     noMatchesDescription: "Try different filters or clear the search.",
     listingsShown: "positions",
+    listingPages: "Listing pages",
+    savedPages: "Saved position pages",
+    applicationPages: "Application pages",
+    previousPage: "Previous",
+    nextPage: "Next",
+    pageRange: (from, to, total) => `${from}–${to} of ${total}`,
     tableActions: "Actions",
     applyTitle: "Prepare this application",
     logManualTitle: "Log an application",
@@ -457,6 +469,12 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noMatches: "Nic neodpovídá",
     noMatchesDescription: "Zkuste jiné filtry nebo smažte hledání.",
     listingsShown: "pozic",
+    listingPages: "Stránky nabídek",
+    savedPages: "Stránky uložených pozic",
+    applicationPages: "Stránky přihlášek",
+    previousPage: "Předchozí",
+    nextPage: "Další",
+    pageRange: (from, to, total) => `${from}–${to} z ${total}`,
     tableActions: "Akce",
     applyTitle: "Připravit žádost",
     logManualTitle: "Zaznamenat přihlášku",
