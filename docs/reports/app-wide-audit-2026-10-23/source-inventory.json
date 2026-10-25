@@ -3168,17 +3168,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-deck-edit.ts",
-      "lines": 176,
+      "lines": 183,
       "sha256": "b4d43e39919697d49a043c9e7ce28c01a82896fa66a74c35f29fca839b7b511a",
-      "status": "partial source review: bounded pure edits/inserts and unplaced-field/source-pool guards retained; taken pictures derive from original kept slides rather than their edited images, requiring swap/insert and removed-picture parity regressions",
-      "reviewedSha256": "b4d43e39919697d49a043c9e7ce28c01a82896fa66a74c35f29fca839b7b511a"
+      "status": "source reviewed; finding 186 closes edited-picture insertion parity and retains saved-source eligibility; exact regressions and native checks pass; final release pending",
+      "reviewedSha256": "624c91a7c54ca74e40d2e1a7ecade814ef9e83a2d23782fd368147f69c276092"
     },
     {
       "path": "src/lib/marketing/dneskai-deck-editor.ts",
-      "lines": 408,
+      "lines": 412,
       "sha256": "fe65f8bbb8983a192accf3cf8987226f28243d07d9750dc60f67791e7bfc359f",
-      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending",
-      "reviewedSha256": "9062a29bd26d20b8d8362fc436abb1786e2312783cc2ab1877678730fbf63b1c"
+      "status": "partial; findings 173 and 186 close field limits and draft/server insertion availability; remaining editor/read/provider lifecycle and position-based content policy review pending",
+      "reviewedSha256": "f6b664c643d298a82d56cee0d38062aa75023ae17a9c67105ed77424aa66abd1"
     },
     {
       "path": "src/lib/marketing/dneskai-engagement-ports.ts",
@@ -3422,8 +3422,8 @@
       "path": "src/lib/marketing/dneskai-slide-layout.ts",
       "lines": 216,
       "sha256": "4cc114cccb37f66ec76d17815d29159ed2513c3f52c11ec03c8824f86ddb3797",
-      "status": "partial; complete source inspection; source eligibility and edited-deck insertion parity remain under review; owner slide display rules retained",
-      "reviewedSha256": "4cc114cccb37f66ec76d17815d29159ed2513c3f52c11ec03c8824f86ddb3797"
+      "status": "partial; finding 186 closes source eligibility and edited-picture availability; position-based first-slide and legacy shown-deck content policy remain under review",
+      "reviewedSha256": "3ae57fe11d69c73241dd27dfb9a76f9380eddabd7901457bdfd4f54c6434b2b4"
     },
     {
       "path": "src/lib/marketing/dneskai-slides.ts",

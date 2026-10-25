@@ -4,6 +4,7 @@ import { gotoPreview, watchConsole } from './helpers';
 import { common } from '../src/lib/i18n/sections/common';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
+import assets from '../src/lib/demo/dneskai-preview-assets.json';
 import { describeMarketingCode } from '../src/lib/marketing/marketing-codes';
 
 test.beforeEach(async ({ page }) => {
@@ -178,6 +179,32 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await expect(page.getByTestId('dneskai-draft-badge')).toHaveCount(0);
   await page.getByTestId('dneskai-lab-approve').click();
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
+});
+
+for (const lang of ['en', 'cs'] as const) test(`Lab reuses a swapped-out picture without repeating the replacement (${lang})`, async ({ page }) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang], tw = dneskaiWorkspace[lang];
+  const calls: string[] = [];
+  page.on('request', request => { if (request.url().includes('/api/marketing/')) calls.push(request.url()); });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labSlide=1');
+  const inspector = page.getByTestId('dneskai-slide-inspector');
+  await inspector.getByRole('button', { name: tw.editor.swap, exact: true }).click();
+  await inspector.getByTestId('dneskai-media-tray').getByRole('button', { name: `${tw.editor.choose}: ${tw.editor.origin(2, 2)}`, exact: true }).click();
+  const insert = inspector.getByTestId('dneskai-insert-slide');
+  await insert.locator('summary').click();
+  const released = insert.locator(`input[type="radio"][value="${assets.photos.p3.sha256}"]`);
+  await expect(released).toHaveCount(1);
+  await expect(insert.locator(`input[type="radio"][value="${assets.photos.p6.sha256}"]`)).toHaveCount(0);
+  await released.check();
+  await insert.getByTestId('dneskai-insert-add').click();
+  await inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true }).fill('Náhradní obrázek');
+  await inspector.locator('summary', { hasText: tw.fields.alt }).click();
+  await inspector.getByRole('textbox', { name: tw.fields.alt, exact: true }).fill('Popis náhradního obrázku');
+  await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('dneskai-lab').getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
+  expect(errors).toEqual([]);
+  expect(calls).toEqual([]);
 });
 
 test('Publish now stays off while the account does not publish, and says why', async ({ page }) => {

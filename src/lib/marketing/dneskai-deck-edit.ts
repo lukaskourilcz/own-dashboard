@@ -91,13 +91,13 @@ function moved(source: DneskaiSlide, change: DneskaiSlideEditEntry, index: numbe
   return { slide: next, shape: target };
 }
 
-function inserted(entry: DneskaiSlideInsert, deck: DneskaiDeck, pool: DneskaiEditPool, taken: Set<string>): DneskaiSlide {
+function inserted(entry: DneskaiSlideInsert, deck: DneskaiDeck, pool: DneskaiEditPool, taken: Set<string>, shownDeck: DneskaiDeck): DneskaiSlide {
   if (deck.format !== "carousel") return fail("deck-edit-insert-not-allowed");
   const shape = dneskaiSlideShape({ type: entry.type, variant: entry.variant ?? (entry.type === "statement" ? "accent" : undefined) });
   if (!DNESKAI_INSERT_SHAPES.includes(dneskaiShapeId(shape))) return fail("deck-edit-insert-not-allowed");
   if (entry.variant && entry.type !== "statement") return fail("deck-edit-variant-invalid");
   if (!dneskaiShapePictureCounts(shape).includes(entry.images.length) || entry.images.some((image, position) => image.slot !== `image-${position + 1}`)) return fail("deck-edit-insert-pictures");
-  const insertable = new Map(dneskaiInsertablePictures(pool.media, deck, pool.primaryCandidateId).map((item) => [item.assetSha256, item]));
+  const insertable = new Map(dneskaiInsertablePictures(pool.media, deck, pool.primaryCandidateId, shownDeck).map((item) => [item.assetSha256, item]));
   for (const image of entry.images) {
     const media = insertable.get(image.assetSha256);
     if (!media) return fail(pool.media.some((item) => item.assetSha256 === image.assetSha256) ? "deck-edit-insert-picture-unavailable" : "deck-asset-outside-brief");
@@ -124,14 +124,12 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   if (edit.data.kit && !DNESKAI_RENDERABLE_KIT_IDS.includes(edit.data.kit)) return fail("kit-unavailable");
   if (dneskaiDeckEditNeedsPool(deck, edit.data) && !pool) return fail("deck-edit-pool-unavailable");
   const used = new Set<number>();
-  // Pictures the kept slides show: an inserted slide may not repeat one.
-  const taken = new Set(edit.data.slides.flatMap((entry) => !isInsert(entry) && deck.slides[entry.from]?.type !== "sources" ? deck.slides[entry.from]?.images.map((image) => image.assetSha256) ?? [] : []));
   let sourcesSeen = false;
   const kit = edit.data.kit ?? dneskaiKitOf(deck);
-  const slides = edit.data.slides.map((change, index) => {
+  const kept = edit.data.slides.map((change, index) => {
     if (isInsert(change)) {
       if (sourcesSeen) return fail("deck-edit-insert-after-sources");
-      return inserted(change.insert, deck, pool!, taken);
+      return null;
     }
     const source = deck.slides[change.from];
     if (!source || used.has(change.from)) return fail("deck-edit-slide-invalid");
@@ -165,6 +163,15 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
       if (unplacedFields(next).length) return fail("deck-edit-text-unplaced");
     }
     return next;
+  });
+  // Resolve kept slides before judging an insertion against their final pictures.
+  const keptDeck = { ...deck, slides: kept.filter((slide): slide is DneskaiSlide => slide !== null) };
+  const taken = new Set(keptDeck.slides.filter(slide => slide.type !== "sources").flatMap(slide => slide.images.map(image => image.assetSha256)));
+  const slides = kept.map((slide, index) => {
+    if (slide) return slide;
+    const change = edit.data.slides[index]!;
+    if (!isInsert(change)) return fail("deck-edit-invalid");
+    return inserted(change.insert, deck, pool!, taken, keptDeck);
   });
   if (deck.format === "carousel" && (slides.length < 2 || slides.length > 10)) return fail("deck-edit-slide-count");
   if (deck.format === "single-image" && slides.length !== 1) return fail("deck-edit-slide-count");

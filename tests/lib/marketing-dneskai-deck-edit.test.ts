@@ -3,7 +3,7 @@ vi.mock('server-only', () => ({}));
 import { applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, DneskaiRevisionEditError, type DneskaiDeckEdit, type DneskaiEditPool } from '@/lib/marketing/dneskai-deck-edit';
 import { prepareDneskaiRevisionEdit } from '@/lib/marketing/dneskai-revision-edit';
 import {
-  createDeckDraft, dneskaiEditRequest, dneskaiSlidePixelsKey, draftProblems, draftSlideMoves, insertablePictures, insertPosition, insertSlide, setSlideShape, setSlideText,
+  createDeckDraft, dneskaiEditRequest, dneskaiSlidePixelsKey, draftProblems, draftSlideMoves, insertablePictures, insertPosition, insertSlide, removeSlide, setSlideShape, setSlideText,
 } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiSlideFieldLimits, dneskaiSlideMoves } from '@/lib/marketing/dneskai-slide-layout';
 import { dneskaiSlideFieldLimits as serverFieldLimits } from '@/lib/marketing/dneskai-workspace-read';
@@ -113,6 +113,18 @@ describe('review-10 edit contract: inserted slides', () => {
     expect(await run([{ from: 0 }, { insert: { ...figure(b).insert, headline: ' ' } }, { from: 1 }, { from: 2 }])).toBe('deck-edit-invalid');
     expect(await code(() => applyDneskaiDeckEdit(single(), { slides: [figure(b), { from: 0 }] }, pool))).toBe('deck-edit-insert-not-allowed');
   });
+  it.each([false, true])('refuses an insertion that repeats a kept slide after its picture swap (insert first: %s)', async (insertFirst) => {
+    const swapped = { from: 1, images: [{ slot: 'image-1', assetSha256: b }] };
+    const middle = insertFirst ? [figure(b), swapped] : [swapped, figure(b)];
+    expect(await code(() => applyDneskaiDeckEdit(deckWithB(), { slides: [{ from: 0 }, ...middle, { from: 2 }] }, pool))).toBe('deck-edit-insert-picture-unavailable');
+  });
+  it('reuses a removed supporting-source picture without expanding source eligibility', async () => {
+    const original: DneskaiDeck = { ...deckWithB(), slides: [deckWithB().slides[0]!, { ...deckWithB().slides[1]!, images: [{ slot: 'image-1', assetSha256: c }] }, deckWithB().slides[2]!] };
+    const given: DneskaiEditPool = { ...pool, media: pool.media.map((item) => item.assetSha256 === c ? media(c, 'supporting', { full: false, inset: true }) : item) };
+    const next = applyDneskaiDeckEdit(original, { slides: [{ from: 0 }, figure(c), { from: 2 }] }, given);
+    expect(next.slides[1]!.images).toEqual([{ slot: 'image-1', assetSha256: c }]);
+    expect(await code(() => applyDneskaiDeckEdit(original, { slides: [{ from: 0 }, figure(d), { from: 2 }] }, given))).toBe('deck-edit-insert-picture-unavailable');
+  });
   it('loads the pool for the save only when the edit needs it', async () => {
     const list = vi.fn(async () => [a, b, c]);
     const load = vi.fn(async () => pool);
@@ -172,6 +184,19 @@ describe('review-10 in the editor: the draft and the server agree', () => {
     expect(statement.draft.slides[1]!.slide).toMatchObject({ type: 'statement', variant: 'ink', images: [] });
     expect(insertSlide(value, draft, 1, 'figure', { assetSha256: value.deck!.slides[0]!.images[0]!.assetSha256 }).index).toBe(-1);
     expect(insertSlide(post(2), createDeckDraft(post(2)), 0, 'statement-accent', null).index).toBe(-1);
+  });
+  it('offers a removed picture again and saves the replacement exactly as shown', () => {
+    const value = post(1);
+    const original = createDeckDraft(value);
+    const removedPicture = original.slides[1]!.slide.images[0]!.assetSha256;
+    expect(insertablePictures(value, original, 'figure').some((item) => item.assetSha256 === removedPicture)).toBe(false);
+    const draft = removeSlide(original, 1);
+    const picture = insertablePictures(value, draft, 'figure').find((item) => item.assetSha256 === removedPicture);
+    expect(picture).toBeDefined();
+    const replacement = insertSlide(value, draft, 0, 'figure', picture!);
+    const written = setSlideText(setSlideText(replacement.draft, replacement.index, 'headline', 'Náhradní obrázek'), replacement.index, 'alt', 'Popis náhradního obrázku');
+    expect(roundTrip(value, written).slides).toEqual(written.slides.map((item) => item.slide));
+    expect(insertablePictures(value, written, 'figure').some((item) => item.assetSha256 === removedPicture)).toBe(false);
   });
   it('turns a single photo post into a type-only post', () => {
     const value = post(2);

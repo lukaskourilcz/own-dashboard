@@ -153,14 +153,14 @@ export function dneskaiSlideMoves(slide: Pick<DneskaiSlide, "type" | "variant" |
 export const DNESKAI_INSERT_SHAPES: readonly DneskaiShapeId[] = ["figure", "split", "statement-accent", "statement-ink"];
 
 /**
- * The pictures an inserted slide may use: pictures of the brief's pool the deck does not show yet, from a source
- * the sources slide already names (the primary source, or a source the deck already takes a picture from), so the
- * deck never shows a picture whose source it does not cite. Each picture still carries its own code-set credit.
+ * Pictures available for insertion: source eligibility comes from the saved deck and primary source, while
+ * availability comes from the current edited slides. Removing or replacing a picture makes it available again;
+ * neither change admits a previously unused supporting source. Picture provenance stays in the brief pool.
  */
-export function dneskaiInsertablePictures<T extends DneskaiPoolPicture>(pool: readonly T[], deck: { slides: ReadonlyArray<Pick<DneskaiSlide, "type" | "images">> }, primaryCandidateId: string | null): T[] {
+export function dneskaiInsertablePictures<T extends DneskaiPoolPicture>(pool: readonly T[], deck: { slides: ReadonlyArray<Pick<DneskaiSlide, "type" | "images">> }, primaryCandidateId: string | null, shownDeck = deck): T[] {
   const byHash = new Map(pool.map((item) => [item.assetSha256, item]));
   const used = new Set(deck.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)));
-  const shown = new Set(deck.slides.filter((slide) => slide.type !== "sources").flatMap((slide) => slide.images.map((image) => image.assetSha256)));
+  const shown = new Set(shownDeck.slides.filter((slide) => slide.type !== "sources").flatMap((slide) => slide.images.map((image) => image.assetSha256)));
   const cited = new Set([...used].flatMap((hash) => byHash.get(hash)?.candidateId ?? []));
   if (primaryCandidateId) cited.add(primaryCandidateId);
   return pool.filter((item, index) => !shown.has(item.assetSha256) && cited.has(item.candidateId) && pool.findIndex((other) => other.assetSha256 === item.assetSha256) === index);

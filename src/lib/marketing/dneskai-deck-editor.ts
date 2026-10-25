@@ -224,10 +224,8 @@ export function insertablePictures(post: Pick<DneskaiWorkspacePost, 'brief' | 'd
   const shape = dneskaiShapeFromId(id);
   if (!post.deck || !dneskaiShapePictureCounts(shape).some((count) => count > 0)) return [];
   const pool = draftPool(post);
-  // The sources slide cites what the saved deck shows; a picture the draft already shows cannot repeat.
-  const cited = dneskaiInsertablePictures(pool.media, post.deck, pool.primaryCandidateId);
-  const shown = new Set(draft.slides.filter((item) => item.slide.type !== 'sources').flatMap((item) => item.slide.images.map((image) => image.assetSha256)));
-  return cited.filter((item) => !shown.has(item.assetSha256) && dneskaiPictureFitsShape(item, shape));
+  const available = dneskaiInsertablePictures(pool.media, post.deck, pool.primaryCandidateId, { slides: draft.slides.map((item) => item.slide) });
+  return available.filter((item) => dneskaiPictureFitsShape(item, shape));
 }
 
 /** Where a new slide goes: after slide `after`, but never after the sources slide. */

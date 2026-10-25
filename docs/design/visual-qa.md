@@ -395,3 +395,8 @@ Shared controls keep their compact visible marks inside real 44px mobile and 32p
 ### App-wide audit runtime verification — 24 October 2026
 
 After the Node 22 LTS/security-dependency update, eight ordinary optimized-build browser cases pass: desktop/mobile login, OAuth-error copy and EN/CS guest preference/loading-history isolation. Guest checks include eight widths, axe, usable notice/navigation controls and no live API/database reads or eager login requests. The ordinary build keeps `/dev-preview` at 404. This runtime pass adds no UI change or new screenshot; the twelve-pair checkpoint-63 visual plan remains the current component artifact. The complete page/interaction release matrix remains unfinished.
+
+
+## DNESKAi edited-picture availability, 25 October 2026
+
+Six native desktop/mobile cases pass for picture swap/reuse in EN/CS light/dark contexts and the existing type/insertion/save/approval flow. A swapped-out picture returns to the insertion choices; the replacement is excluded. Saving produces a new approvable fixture version, with no owner API calls or console errors in the new regression. This is targeted development-server interaction evidence, not a new full-app visual capture or deployed release. App-wide finding 186 records the corresponding server regressions.
