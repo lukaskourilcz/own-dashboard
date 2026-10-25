@@ -1280,3 +1280,10 @@ All 86 focused mounted/domain/write cases pass across three files in 4.19 second
 ## Finding 234 — equal Competition form actions
 
 A native English desktop regression confirms that the editor's cancel and submit actions have unequal widths. Both actions now use the same compact desktop width and full mobile width, retaining the existing shared button height and focus behavior. Four EN/CS desktop/mobile native cases pass in 12.3 seconds, including measured equal width/height, retained invalid URL input, failed creation/reused id, guarded cancel and pending locks. TypeScript and targeted ESLint pass. The 86-case logic result above predates this styling change; the next full checkpoint will cover the combined source. Updated captures follow from the committed application.
+
+
+## Visual-plan checkpoint — 27 actual desktop/mobile pairs
+
+The local HTML review plan now contains twenty-seven authentic desktop/mobile pairs across ten areas. Six new Czech-dark Competition images from committed application 4ead277 show the complete editor, retained failed-refresh/deletion recovery, and the first 800px of a 1,201-record paged list. The paired footer controls share their measured width/height. The plan highlights the invalid URL field, recovery action, visible range and compact row, with separate mobile coordinates. It labels this source separately from client 5d7da1d, category f3ff658, private/editor ecfb547 and older captures. No image represents a production record or a generated interface.
+
+The final artifact check decodes all twenty-seven images in each desktop/mobile mode, fits 390px/1440px in both system color schemes and preserves working highlight toggles, mapped mobile marks and desktop restoration without page errors. Builder ESLint passes. The six source crops and rendered mobile gallery were inspected; the final desktop editor capture confirms its matching controls. Current coverage copy closes Competition/client work and links the dated local Competition CPU evidence while retaining remaining app leads and release gates. This is a review artifact update; production and the prepared migration state are unchanged.
