@@ -4404,8 +4404,8 @@
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
-      "status": "partial; source inspected; request/response identity and future-dated cached verdict follow-up pending; see remaining-review.md",
-      "reviewedSha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70"
+      "status": "source reviewed; finding 212 bounded pure normalization and finite nonfuture VAT freshness tests pass; registry route/browser identity and final release pending",
+      "reviewedSha256": "8547891c20789738f52ffcb979bf370acf8db83e62dbc86a5fbd191fc3ee5c57"
     },
     {
       "path": "src/lib/telemetry-url.ts",
