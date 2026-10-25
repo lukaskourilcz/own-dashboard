@@ -222,6 +222,8 @@ Table-level CSV remains available for non-full, non-legacy scopes through `?form
 
 CSV quotes fields, uses CRLF and prefixes formula-like text with a tab inside the quoted cell, including leading whitespace/control/BOM and fullwidth prefixes. Finite numeric negatives stay numeric; JSON preserves raw values. This changes risky CSV text and is not a universal spreadsheet guarantee. OAuth/provider credential tables and future unreviewed columns are excluded; arbitrary text/JSON authored by the owner remains their content. All 36 prepared migrations, including export foundation 122, must be applied before deploying these callers.
 
+The catch-all server page has a thirty-second total lifetime, eight-second verified-auth and twenty-second data budgets. Required-read failures keep the editable shell unavailable, with no hidden SDK select retry. Calendar and preference readers inherit the data lifetime; route-scoped selection and one project read remain unchanged.
+
 The authenticated shell now retires on SDK sign-out or account replacement across tabs: owned action signals and queries cancel, private UI unmounts and protected requests refuse further work until a full document reload. Client auth events cannot seed or switch owner data. Same-owner refresh retains drafts without extra reads. Null startup verification is deferred outside SDK locks and bounded to eight seconds. Per-action captured-intent/server auth review remains separate; cancellation cannot undo accepted requests.
 
 ## AI boundary

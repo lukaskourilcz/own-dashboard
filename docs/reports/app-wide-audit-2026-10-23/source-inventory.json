@@ -54,8 +54,8 @@
       "path": "src/app/[[...slug]]/page.tsx",
       "lines": 199,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; finding 226 complete captured-owner Competition reads and targeted native recovery pass; Competition writes and final release remain pending",
-      "reviewedSha256": "06e1d99a74f45ece21206a1023e1514102c598c1604a01bc778eaa8392568987"
+      "status": "source reviewed; finding 240 bounded verified route-scoped loader/SDK checks pass; legacy collection leads and final release pending",
+      "reviewedSha256": "d89159b8e4d82d4df1718b19aaa5874f41ef05c564d4a3a00c03602c003198cf"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",
