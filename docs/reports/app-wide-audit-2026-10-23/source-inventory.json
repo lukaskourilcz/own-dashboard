@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending",
-      "reviewedSha256": "9dcd2f6f7a250a06e9860a798df49603054414f5fd28d183921e3d0c74b1cd15"
+      "status": "source reviewed; finding 230 removes redundant confirmed-write collection reads while preserving owner-scoped read-failure recovery and asynchronous cache focus; large-list review and final release pending",
+      "reviewedSha256": "18419b53d03b798b7a97a2529ee20b1741535189a4da2928ea6c2577f82c4086"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -4651,8 +4651,8 @@
       "path": "src/components/competition/use-competitor-actions.ts",
       "sha256": null,
       "lines": 85,
-      "reviewedSha256": "ee8dceed9ff6dec07c73dfcc984e465fda3f5bc0353202134781439ff7a8caea",
-      "status": "source reviewed; finding 229 checks Competition refresh recovery across both surfaces, dates/long details/mobile targets and removal focus; list performance and final release pending"
+      "reviewedSha256": "428272c680cf3608c721badc21d80fb5e01e9047dff1cd0b578c0c5f6f6ba818",
+      "status": "source reviewed; finding 230 removes redundant confirmed-write collection reads while preserving owner-scoped read-failure recovery and asynchronous cache focus; large-list review and final release pending"
     },
     {
       "path": "src/components/competition/competition-recovery.tsx",

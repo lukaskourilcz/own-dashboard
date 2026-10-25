@@ -8,12 +8,14 @@ const owner = '11111111-1111-4111-8111-111111111111';
 const project = { ...projects[0], id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: owner, name: 'Synthetic research project', slug: 'synthetic-research-project', engagement: 'client', is_active: true, parent_id: null, portfolio_key: null };
 const record = { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', user_id: owner, project_id: project.id, name: 'Synthetic competitor', url: null, summary: 'Confirmed research', category: 'direct', useful_features: [], social_content: '', pricing_model: '', lessons: '', relevance_score: 3, score_rationale: '', social_links: [], source_urls: [], reviewed_at: null, sort_order: 0, created_at: '2026-10-25T11:00:00Z', updated_at: '2026-10-25T11:00:00Z' };
 async function reads(page: Page, rows: () => unknown[]) {
- await page.route('**/rest/v1/rpc/read_owned_collection', route => { const input = route.request().postDataJSON(); if (input.p_entity !== 'projects') expect(input.p_expected_owner).toBe(owner); return route.fulfill({ json: input.p_entity === 'projects' ? [project] : rows() }); });
+ let count = 0;
+ await page.route('**/rest/v1/rpc/read_owned_collection', route => { const input = route.request().postDataJSON(); if (input.p_entity !== 'projects') { expect(input.p_expected_owner).toBe(owner); count++; } return route.fulfill({ json: input.p_entity === 'projects' ? [project] : rows() }); });
+ return () => count;
 }
 for (const lang of ['en', 'cs'] as const) {
  test(`${lang}: Competition preserves failed drafts, validates URLs and locks a pending creation`, async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message)); const p = portfolio[lang], c = common[lang];
-  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' }); let rows: unknown[] = []; await reads(page, () => rows);
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' }); let rows: unknown[] = []; const readCount = await reads(page, () => rows);
   const calls: Record<string, unknown>[] = []; let held: Route | undefined;
   await page.route('**/rest/v1/competitors?*', async route => { expect(route.request().method()).toBe('POST'); const body = route.request().postDataJSON(); calls.push(body); expect(body.user_id).toBe(owner); expect(body.id).toMatch(/^[0-9a-f-]{36}$/); if (calls.length === 1) await route.fulfill({ status: 503, json: { message: 'PRIVATE TEST' } }); else held = route; });
   await page.goto('/dev-preview?tab=competition&competitors=live&projectRecords=live');
@@ -23,7 +25,7 @@ for (const lang of ['en', 'cs'] as const) {
   await dialog.getByLabel(p.sourceUrls, { exact: true }).fill('https://example.test/good\nHTTPS://EXAMPLE.TEST/corrected'); await dialog.getByRole('button', { name: c.add, exact: true }).click(); await expect(dialog.getByRole('alert')).toHaveText(p.competitorSaveUnconfirmed); await expect(dialog.getByLabel(p.competitorName, { exact: true })).toHaveValue('Kept synthetic draft');
   await dialog.getByRole('button', { name: c.cancel, exact: true }).click(); const guard = page.getByRole('dialog', { name: c.unsaved.title, exact: true }); await expect(guard).toBeVisible(); await guard.getByRole('button', { name: c.unsaved.stay, exact: true }).click();
   dialog = page.getByRole('dialog', { name: p.addCompetitor, exact: true }); await dialog.getByRole('button', { name: c.add, exact: true }).click(); await expect.poll(() => calls.length).toBe(2); expect(calls[1]!.id).toBe(calls[0]!.id); await expect(dialog.locator('fieldset')).toHaveAttribute('disabled', ''); await expect(dialog.getByLabel(p.competitorName, { exact: true })).toBeDisabled(); await expect(dialog.getByRole('button', { name: c.cancel, exact: true })).toBeDisabled(); await page.keyboard.press('Escape'); await expect(dialog).toBeVisible();
-  rows = [{ ...record, ...calls[1] }]; await held!.fulfill({ json: rows }); await expect(dialog).toHaveCount(0); await expect(page.getByRole('button', { name: /^Kept synthetic draft/ })).toBeVisible(); expect(calls).toHaveLength(2); expect(calls[1]!.source_urls).toEqual(['https://example.test/good', 'HTTPS://EXAMPLE.TEST/corrected']); expect(errors).toEqual([]);
+  const beforeReadCount = readCount(); rows = [{ ...record, ...calls[1] }]; await held!.fulfill({ json: rows }); await expect(dialog).toHaveCount(0); await expect(page.getByRole('button', { name: /^Kept synthetic draft/ })).toBeVisible(); expect(readCount()).toBe(beforeReadCount); expect(calls).toHaveLength(2); expect(calls[1]!.source_urls).toEqual(['https://example.test/good', 'HTTPS://EXAMPLE.TEST/corrected']); expect(errors).toEqual([]);
  });
  test(`${lang}: Competition rejects stale edits and zero-row deletion, then explicitly reloads`, async ({ page }) => {
   const p = portfolio[lang], c = common[lang], errors: string[] = []; page.on('pageerror', error => errors.push(error.message));

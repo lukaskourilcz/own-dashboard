@@ -22,15 +22,21 @@ export function useCompetitorActions(setCompetitors: Updater<Competitor[]>, rows
  const lifetime = useRef(new AbortController());
  useLayoutEffect(() => { if (lifetime.current.signal.aborted) lifetime.current = new AbortController(); return () => lifetime.current.abort(); }, []);
  const newControl = useRef<HTMLButtonElement | null>(null), deleteControls = useRef(new Map<string, HTMLButtonElement>());
- const focusRemoval = useRef<{ id: string; nextId?: string } | null>(null);
+ const focusRemoval = useRef<{ source: Competitor; nextId?: string } | null>(null);
  const registerNewControl = useCallback((button: HTMLButtonElement | null) => { newControl.current = button; }, []);
  const reservations = useRef(new Map<string, CompetitorScope>());
  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
  useLayoutEffect(() => {
   const intent = focusRemoval.current;
-  if (!intent || pending.has(intent.id)) return;
+  if (!intent || pending.has(intent.source.id)) return;
+  const current = rows.find(row => row.id === intent.source.id);
+  if (current) {
+   // React Query can notify after pending state clears. Wait for the confirmed
+   // cache removal; a changed cached source cancels this focus intent instead.
+   if (applyCompetitorReceipt([current], intent.source, null).length > 0) focusRemoval.current = null;
+   return;
+  }
   focusRemoval.current = null;
-  if (rows.some(row => row.id === intent.id)) return;
   const next = intent.nextId ? deleteControls.current.get(intent.nextId) : null;
   const control = next && !next.disabled ? next : [...deleteControls.current.values()].find(button => !button.disabled) ?? newControl.current;
   control?.focus();
@@ -57,7 +63,7 @@ export function useCompetitorActions(setCompetitors: Updater<Competitor[]>, rows
  async function apply(scope: CompetitorScope, source: Competitor | null, receipt: Competitor) {
   await awaitWithSignal(qc.cancelQueries({ queryKey, exact: true }), scope.signal); scope.signal.throwIfAborted();
   setCompetitors(rows => source ? applyCompetitorReceipt(rows, source, receipt) : rows.some(row => row.id === receipt.id) ? rows : [...rows, receipt]);
-  void qc.invalidateQueries({ queryKey, exact: true });
+  void qc.invalidateQueries({ queryKey, exact: true, refetchType: 'none' });
  }
  async function save(intent: Save) {
   const id = intent.source ? intent.source.id : intent.id, scope = reserve(id);
@@ -78,8 +84,8 @@ export function useCompetitorActions(setCompetitors: Updater<Competitor[]>, rows
    scope.signal.throwIfAborted(); await removeCompetitorRecord(db, scope, source); scope.signal.throwIfAborted();
    await awaitWithSignal(qc.cancelQueries({ queryKey, exact: true }), scope.signal); scope.signal.throwIfAborted();
    const order = [...deleteControls.current.keys()];
-   focusRemoval.current = { id: source.id, nextId: order[order.indexOf(source.id) + 1] };
-   setCompetitors(rows => applyCompetitorReceipt(rows, source, null)); setNotice(null); void qc.invalidateQueries({ queryKey, exact: true });
+   focusRemoval.current = { source, nextId: order[order.indexOf(source.id) + 1] };
+   setCompetitors(rows => applyCompetitorReceipt(rows, source, null)); setNotice(null); void qc.invalidateQueries({ queryKey, exact: true, refetchType: 'none' });
   } catch (error) {
    if (!scope.signal.aborted) setNotice(error instanceof CompetitorRecordError && error.reason === 'changed' ? 'competitorChanged' : 'competitorActionUnconfirmed');
   } finally { release(source.id, scope); }

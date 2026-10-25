@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
-import { act, useLayoutEffect, useState } from 'react';
+import { act, useLayoutEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Storage } from 'happy-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { afterEach, expect, it, vi } from 'vitest';
-import { OwnerPreferencesProvider } from '@/lib/owner-preferences';
+import { useEntityStore } from '@/lib/queries/entities';
+import { qk } from '@/lib/queries/keys';
+import { OwnerPreferencesProvider, useOwnerPreferences } from '@/lib/owner-preferences';
 import { NavigationGuardProvider, useGuardedNavigation } from '@/components/navigation-guard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ConfirmationProvider } from '@/components/ui/confirmation-dialog';
@@ -23,13 +25,13 @@ const owner = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-422
 const project = { ...projects[0]!, id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: owner };
 const record = (): Competitor => ({ id, user_id: owner, project_id: project.id, name: 'Synthetic competitor', url: null, summary: 'Keep summary', category: 'direct', useful_features: ['Keep feature'], social_content: '', pricing_model: '', lessons: '', relevance_score: 3, score_rationale: '', social_links: [], source_urls: [], reviewed_at: '2099-01-01', sort_order: 7, created_at: stamp, updated_at: stamp });
 type Call = { url: URL; method: string; body: Record<string, unknown> | null; signal?: AbortSignal | null };
-let sequence = 0;
+let sequence = 0, queryReads = 0;
 let root: Root | undefined, host: HTMLDivElement, qc: QueryClient, calls: Call[], updates: unknown[], handler: (call: Call) => Promise<Response> | Response, changeRows: Updater<Competitor[]>;
 function Exit() { const request = useGuardedNavigation(); const [exited, setExited] = useState(false); return <button data-test-exit onClick={() => request(() => setExited(true))}>{exited ? 'Exited' : 'Exit'}</button>; }
-function State({ initial, surface }: { initial: Competitor[]; surface: 'all' | 'project' }) { const [rows, setRows] = useState(initial); useLayoutEffect(() => { changeRows = setRows; }, []); return <>{surface === 'project' ? <ProjectCompetition project={project} competitors={rows} setCompetitors={next => { updates.push(next); setRows(next); }} /> : <CompetitionPanel projects={[project]} competitors={rows} setCompetitors={next => { updates.push(next); setRows(next); }} onOpenProject={() => {}} />}<output data-test-rows>{JSON.stringify(rows)}</output></>; }
+function State({ initial, surface }: { initial: Competitor[]; surface: 'all' | 'project' }) { const ownerScope = useOwnerPreferences()!, key = useMemo(() => [...qk.competitors, ownerScope.ownerId], [ownerScope.ownerId]); const [rows, setRows] = useEntityStore<Competitor[]>(key, initial, () => { queryReads++; return qc.getQueryData<Competitor[]>(key) ?? []; }, { seeded: true, retry: false }); useLayoutEffect(() => { changeRows = setRows; }, [setRows]); return <>{surface === 'project' ? <ProjectCompetition project={project} competitors={rows} setCompetitors={next => { updates.push(next); setRows(next); }} /> : <CompetitionPanel projects={[project]} competitors={rows} setCompetitors={next => { updates.push(next); setRows(next); }} onOpenProject={() => {}} />}<output data-test-rows>{JSON.stringify(rows)}</output></>; }
 function View({ identity = owner, initial = [record()], surface = 'project' }: { identity?: string; initial?: Competitor[]; surface?: 'all' | 'project' }) { return <QueryClientProvider client={qc}><NavigationGuardProvider><TooltipProvider><ConfirmationProvider><OwnerPreferencesProvider ownerId={identity}><Exit /><State initial={initial} surface={surface} /></OwnerPreferencesProvider></ConfirmationProvider></TooltipProvider></NavigationGuardProvider></QueryClientProvider>; }
 async function render(lang: 'en' | 'cs' = 'en', initial = [record()], surface: 'all' | 'project' = 'project') {
- document.documentElement.lang = lang; vi.stubGlobal('localStorage', new Storage()); calls = []; updates = []; handler = () => Response.json([]);
+ document.documentElement.lang = lang; vi.stubGlobal('localStorage', new Storage()); calls = []; updates = []; queryReads = 0; handler = () => Response.json([]);
  backend.api = createClient('https://example.supabase.co', 'TEST-ONLY-public', { auth: { storageKey: `TEST-ONLY-competitors-${++sequence}`, persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: async (input, init) => { const request = new Request(input, init), body = await request.text(), call = { url: new URL(request.url), method: request.method, body: body ? JSON.parse(body) : null, signal: init?.signal ?? request.signal }; calls.push(call); return handler(call); } } });
  host = document.createElement('div'); document.body.append(host); root = createRoot(host); qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); await act(async () => root!.render(<View initial={initial} surface={surface} />));
 }
@@ -116,4 +118,12 @@ it('shows stored social profiles even when social content is empty',async()=>{
 });
 it('restores focus to the add control after the last confirmed deletion',async()=>{
  await render();handler=()=>Response.json([record()]);act(()=>action(portfolio.en.deleteCompetitor).click());act(()=>button(common.en.delete).click());await settle(()=>expect(rows()).toHaveLength(0));expect(document.activeElement).toBe(button(portfolio.en.addCompetitor));
+});
+
+it.each(['create','update','delete'] as const)('applies confirmed %s without rereading the complete collection',async kind=>{
+ await render('en',kind==='create'?[]:[record()]);
+ if(kind==='create'){act(()=>button(portfolio.en.addCompetitor).click());change('#competitor-name','Confirmed creation');handler=call=>Response.json([creationReceipt(call)]);submit();await settle(()=>expect(rows()).toHaveLength(1));}
+ else if(kind==='update'){edit();change('#competitor-name','Confirmed update');handler=call=>Response.json([{...record(),...call.body,updated_at:'2026-10-25T13:00:01Z'}]);submit();await settle(()=>expect(rows()[0]!.name).toBe('Confirmed update'));}
+ else{handler=()=>Response.json([record()]);act(()=>action(portfolio.en.deleteCompetitor).click());act(()=>button(common.en.delete).click());await settle(()=>expect(rows()).toHaveLength(0));}
+ await act(async()=>{await new Promise(resolve=>setTimeout(resolve,25));});expect(queryReads).toBe(0);expect(qc.getQueryState([...qk.competitors,owner])?.isInvalidated).toBe(true);
 });
