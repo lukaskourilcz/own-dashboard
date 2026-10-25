@@ -430,3 +430,7 @@ The real subscription category dialog keeps its persistent label, input and Add 
 ## Invoice payment output — 25 October 2026
 
 Twelve actual invoice QR crops decode to the exact synthetic account/amount/currency/symbol/date/message payload with the native offline macOS barcode reader, across EN/CS and six supported widths. No page error or document overflow occurs. The existing one-page A4/dark-print fixture check also passes; the PDF barcode is not independently decoded. Fourteen mounted real-detail cases cover retained documents and localized missing-QR guidance after invalid inputs. No payment is sent or owner record changed. See app-wide finding 210 and its `invoice-qr-checks.json` for scope and mathematical-validation limits; the full app release remains pending.
+
+## Project traffic recovery — 25 October 2026, finding 211
+
+Thirteen mounted real-component cases cover EN/CS cold-error retry, retained metrics after failed refresh, disabled/guest/invalid-owner silence, unavailable/not-found states, wrong-owner refusal, unmount cancellation and one in-flight retry. The authentic public project Overview passes four native EN/CS desktop/mobile cases in 11.9 seconds, including all six documented widths, light/dark, no overflow, axe and no page/console errors or private traffic request. This native check covers preview omission and the surrounding workspace; metric/error layouts are mounted component evidence, not a new live integration screenshot. No provider request, owner record or media operation occurs. Final full release checks remain separate.

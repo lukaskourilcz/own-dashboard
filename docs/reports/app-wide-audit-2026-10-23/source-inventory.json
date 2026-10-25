@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -621,8 +621,8 @@
       "path": "src/app/api/vercel/analytics/route.ts",
       "lines": 37,
       "sha256": "5fb0f85d57724038962064706bfd2ad15d29f8b291eae2cb5330cf813275cc4a",
-      "status": "partial; source inspected; owned repository binding and validated bounded provider inputs pending; see remaining-review.md",
-      "reviewedSha256": "5fb0f85d57724038962064706bfd2ad15d29f8b291eae2cb5330cf813275cc4a"
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending",
+      "reviewedSha256": "120f681f01b11876545f9df62e23d78d15cc165ba4bc70a341a9168d04865f8c"
     },
     {
       "path": "src/app/api/webhooks/instagram/route.ts",
@@ -663,7 +663,7 @@
       "path": "src/app/globals.css",
       "lines": 788,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; findings 171\u2013172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
+      "status": "partial; complete CSS source inspected; findings 171–172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
       "reviewedSha256": "1a9f4c86868901c9b8dcc6d61aadb503f33f3bf251056b02937fc8fee7b8a276"
     },
     {
@@ -1633,7 +1633,7 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1110,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177\u2013185; final release pending",
+      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177–185; final release pending",
       "reviewedSha256": "0648b959f84e989355020c0130c9d2133c9d8da25ec5545898273e8f0d1aa4c7"
     },
     {
@@ -1731,15 +1731,15 @@
       "path": "src/components/projects/project-traffic.tsx",
       "lines": 132,
       "sha256": "38125cb5d539acbf6fd22aba7999aed666655393d4bc1b6b34920d6a6749859b",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "38125cb5d539acbf6fd22aba7999aed666655393d4bc1b6b34920d6a6749859b"
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending",
+      "reviewedSha256": "433c7b19d9e13e9618122203f4be249d216f002d7044de0604bb346e0fb72839"
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
       "lines": 320,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "partially reviewed; keyboard tabs, selected-tab visibility, rendered note/communication routes and related routes checked; financial projections, links and remaining workspace source/release review pending",
-      "reviewedSha256": "5b6943a7381c3f5abe335ddc8abbed7d9d153192ab3622ede935b2484b29b9bb"
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending",
+      "reviewedSha256": "73566d95d95e4882da0898701734988ecacd2b1028e3a24df25644cafb9830f4"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -1976,7 +1976,7 @@
       "path": "src/components/work/weekly-planning.tsx",
       "lines": 745,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; findings 164/166\u2013169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
+      "status": "partial; findings 164/166–169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
       "reviewedSha256": "b59dc5381857cbb8394603de3434d306b73a638465c04e63f8555e0e5f47be9c"
     },
     {
@@ -2665,7 +2665,7 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "partial; findings 164/166/168\u2013169 EN/CS weekly recovery and compact action copy checked; remaining destination copy review pending",
+      "status": "partial; findings 164/166/168–169 EN/CS weekly recovery and compact action copy checked; remaining destination copy review pending",
       "reviewedSha256": "491e521249f00b5bdcf0291e94b5b4eff3a6ac00f5c089c824e3e21943d42f30"
     },
     {
@@ -2721,7 +2721,7 @@
       "path": "src/lib/i18n/sections/todos.ts",
       "lines": 417,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177\u2013180; final release pending",
+      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177–180; final release pending",
       "reviewedSha256": "a184a3990cbeb3eb556a48282ffa1d3bb9e7f86a2a0f0d3b73ad553a960db93e"
     },
     {
@@ -4250,8 +4250,8 @@
       "path": "src/lib/queries/keys.ts",
       "lines": 83,
       "sha256": "1f107c462a090179e138065bda8467b163bccb7a06f542f8808cef005bc04b6b",
-      "status": "source reviewed; integration metadata targeted checks pass; final app-wide release pending",
-      "reviewedSha256": "4ffac9607fa04c013d725b53f695f2f0e589fec00d24eea28b5b85cf98c7f8f0"
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending",
+      "reviewedSha256": "0d1ec5ee86de811e7de190f1c1a457bbe6c73a176d0ea9cac8813c61564707db"
     },
     {
       "path": "src/lib/rate-limit.ts",
@@ -4397,7 +4397,7 @@
       "path": "src/lib/task-write.ts",
       "lines": 119,
       "sha256": null,
-      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176\u2013177; remaining callers and final release separate",
+      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176–177; remaining callers and final release separate",
       "reviewedSha256": "8a3ff87773dee890e2e43527285a099156e177b9b61392eba241f1203f19f9a0"
     },
     {
@@ -4539,8 +4539,8 @@
       "path": "src/lib/vercel.ts",
       "lines": 155,
       "sha256": "9b5a06f1c27448276f64e44672b90ec93160215fff3102f9c6aa43a1ea9f7a39",
-      "status": "partial; source inspected; provider failure/response bounds, stable identity and complete/cache reads pending; see remaining-review.md",
-      "reviewedSha256": "9b5a06f1c27448276f64e44672b90ec93160215fff3102f9c6aa43a1ea9f7a39"
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending",
+      "reviewedSha256": "f923de07571d8a8ea96dbbf690d7a2cdf7b5d73a677ae8fa999ac56e22f48bef"
     },
     {
       "path": "src/lib/web-url.ts",
@@ -4567,7 +4567,7 @@
       "path": "src/lib/weekly-review-save.ts",
       "sha256": null,
       "lines": 94,
-      "status": "source reviewed; findings 167\u2013168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
+      "status": "source reviewed; findings 167–168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
       "reviewedSha256": "db5f9b9d933fb90741a1518bbe5aa33b0c96dac40b15856b843aaa36a0e2f227"
     },
     {
@@ -4597,6 +4597,27 @@
       "lines": 83,
       "reviewedSha256": "16111487fbfba9a06f4bacf0a52a45ffa33f1ba61608c539cacd08885dabe871",
       "status": "source reviewed; finding 208 confirmed category records, owner scope and native EN/CS recovery checks pass; broader page and final release checks pending"
+    },
+    {
+      "path": "src/lib/bounded-response.ts",
+      "sha256": null,
+      "lines": 32,
+      "reviewedSha256": "a38895140d484f9e02a0db332e02e34271beb5e0a3cbe550a326af10742a38c8",
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
+    },
+    {
+      "path": "src/lib/project-traffic-contract.ts",
+      "sha256": null,
+      "lines": 27,
+      "reviewedSha256": "6b65571e86b59e1fb1d49868f707369110cba1ec7a840d5450d3f4e6de809c76",
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
+    },
+    {
+      "path": "src/lib/project-traffic-client.ts",
+      "sha256": null,
+      "lines": 20,
+      "reviewedSha256": "42eb07fc6107bf090b9e9c88086bd5efc3c3816480251e5cabb06b30483bf029",
+      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
     }
   ],
   "baselineFileCount": 561

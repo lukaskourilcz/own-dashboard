@@ -35,6 +35,7 @@ export const qk = {
   aiCategories: ["aiCategories"] as const,
   projectLinks: ["projectLinks"] as const,
   tools: ["tools"] as const,
+  projectTraffic: ["vercel", "traffic"] as const,
   spendCategories: ["spendCategories"] as const,
   shortcuts: ["shortcuts"] as const,
   referenceRows: ["referenceRows"] as const,

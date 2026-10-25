@@ -281,3 +281,5 @@ Unconfigured traffic cards and Finance provider setup prompts are hidden. Existi
 
 
 References remains hidden from primary navigation at `/references`. Command and table actions stay visible to touch and keyboard users. Failed edits retain their fields, pending saves protect dismissal, and captured versions prevent stale updates. Tables contain horizontal overflow within a named keyboard region.
+
+Project Overview traffic uses an owner-stamped private API and owned project metadata before any global Vercel credential. Permanent repository identity wins over names, period visitors retain provider count semantics, and incomplete/outage responses never become zero totals. Header/body work is cancellable and byte-bounded; complete successes reuse a bounded sixty-second server cache. The card preserves confirmed metrics on failed refresh with an explicit retry; public preview hides private analytics. Configuration and evidence limits: [external setup](docs/external-setup.md).
