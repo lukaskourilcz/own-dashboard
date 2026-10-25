@@ -390,8 +390,8 @@
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
       "lines": 82,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "partial: bounded HTTP/auth/body and complete management-page/selected/signing behavior checked; trend contracts and captured toggle receipts pending",
-      "reviewedSha256": "08252e3c2da5f85a22c334eadbc70e67ac68469bc011a6abb646b052da6ebe24"
+      "status": "source reviewed; findings 159/160 bound owner/audio phases and finding 260 carries cancellation through validated recommendations; captured mutation and explicit trend-outage presentation remain open",
+      "reviewedSha256": "6acd88b37099fe1be448affef71e8f5fd56426888969e69eeb4b7756fc479288"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -3051,15 +3051,15 @@
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
       "lines": 115,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "partial; HTTPS credentials/control/path safety and timestamp/text bounds checked (156); captured toggle/version schema and full pagination contract remain pending",
-      "reviewedSha256": "b04fde899e600c13ba67224be3eb76c5ca1a785754b152a6523c2f1d8bf563bb"
+      "status": "source reviewed; strict browser audio DTOs share the 50-recommendation bound with the server; final release pending",
+      "reviewedSha256": "b16b1b612c35cc7238f9cb16205716a13637410033551e3f442634f3ed7a66c5"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",
       "lines": 52,
       "sha256": "acef8bf74369b3b5ad041a12074280d3d3c68df774acca85dd5bc82d0b9ffbc1",
-      "status": "partial; full source inspected; capped/discarded candidates can yield incomplete rankings; minimal complete ranking inputs, clock and cancellation checks pending",
-      "reviewedSha256": "acef8bf74369b3b5ad041a12074280d3d3c68df774acca85dd5bc82d0b9ffbc1"
+      "status": "source reviewed; observed music flags establish no licence/attachment permission; complete niche reads and ranking input leads remain open",
+      "reviewedSha256": "9e6de7cd07352db390c009bd1ffc11c990cf9b80e09f565daf4cff17a4b66906"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
@@ -3072,8 +3072,8 @@
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
       "lines": 118,
       "sha256": "9b935d2e36d4e6eaa35d47c7250a2c8bcd85b1ae76dd41434a2d902c8cef00a6",
-      "status": "partial; full source inspected; combined trend capacity, raw metadata parsing, monotonic-day concurrent upserts, persisted receipts, body bounds and cancellation remain pending",
-      "reviewedSha256": "9b935d2e36d4e6eaa35d47c7250a2c8bcd85b1ae76dd41434a2d902c8cef00a6"
+      "status": "source reviewed; finding 260 validates fresh owned recommendation reads, shared 50-result bound, ranking ties and cancellation; atomic ingest and remaining progress leads open",
+      "reviewedSha256": "f0fd3c7fb687b00ede1c45759fc743c09918c4a42a786ec7aa4854110254c753"
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",

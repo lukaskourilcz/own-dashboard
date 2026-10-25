@@ -12,8 +12,9 @@ const config = (patch: Partial<MetaPublisherConfig> = {}): MetaPublisherConfig =
 
 function store(known: Array<{ audio_id: string; first_seen: string; last_seen: string; days_seen: number }> = []) {
   const upserts: unknown[][] = [];
-  const query = { select: () => query, eq: () => query, in: async () => ({ data: known, error: null }), gte: () => query, order: () => query,
-    limit: async () => ({ data: [{ audio_id: '1', title: 'Song', display_artist: 'Artist', audio_type: 'music', duration_ms: 30000, cover_artwork_thumbnail_url: null, days_seen: 3, niche_count: 0, tiktok: false, last_seen: '2026-10-23' }], error: null }),
+  const query = { select: () => query, eq: () => query, in: async () => ({ data: known, error: null }), gte: () => query, lte: () => query, order: () => query,
+    limit: () => query, retry: () => query, abortSignal: () => query,
+    then: (resolve: (value: unknown) => unknown) => resolve({ data: [{ user_id: owner, audio_id: '1', title: 'Song', display_artist: 'Artist', audio_type: 'music', duration_ms: 30000, cover_artwork_thumbnail_url: null, days_seen: 3, niche_count: 0, tiktok: false, last_seen: '2026-10-23' }], error: null }),
     upsert: async (rows: unknown[]) => { upserts.push(rows); return { error: null }; } };
   return { db: { from: () => query } as never, upserts };
 }

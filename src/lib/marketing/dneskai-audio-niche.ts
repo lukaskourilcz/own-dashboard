@@ -5,10 +5,11 @@ import { DneskaiCandidateSchema, type DneskaiCandidate } from './dneskai-contrac
 import { loadDneskaiSourceCatalog } from './dneskai-source-catalog';
 
 /**
- * The niche audio ranking (#167, plan C5): which licensed sounds the tracked education profiles used on their reels in
+ * The niche audio ranking (#167, plan C5): which music sounds the tracked education profiles used on their reels in
  * the last seven days. It reads the reels the nightly collection already stored (scouting keeps each reel's
- * `musicInfo`), so it costs nothing and calls nothing. Original audio and muted sounds do not count: neither can be
- * reused. Each sound counts the distinct reels that used it, weighted by their plays.
+ * `musicInfo`), so it costs nothing and calls nothing. Original and muted audio are excluded from these hints;
+ * that filter establishes neither a licence nor attachment availability. Each sound counts distinct reels,
+ * weighted by their plays. Only the separate Meta list marks a hint attachable for the account.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
 type Database = Pick<SupabaseClient<any>, 'from'>;

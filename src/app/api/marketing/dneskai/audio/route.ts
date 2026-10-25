@@ -64,7 +64,7 @@ export async function GET(request?: Request) {
     const trends = Number(offset) === 0 && dneskaiAudioTrendsEnabled() ? await awaitWithSignal((async () => {
       const niche = await resolveDneskaiProjectId(db, user).then((project) => loadDneskaiNicheSounds(db, user, project, new Date())).catch(() => []);
       signal.throwIfAborted();
-      return listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date()), niche).catch(() => []);
+      return listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date()), niche, signal).catch(() => []);
     })(), signal) : undefined;
     return Response.json({ ...page, ...(trends ? { trends } : {}) }, { headers });
   }

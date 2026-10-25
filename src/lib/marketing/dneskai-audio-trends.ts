@@ -2,8 +2,9 @@ import "server-only";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { MetaPublisherConfig } from "./publisher";
-import type { DneskaiAudioTrend } from "./dneskai-audio-contracts";
+import { DNESKAI_AUDIO_TRENDS_MAX, DneskaiAudioTrendSchema, type DneskaiAudioTrend } from "./dneskai-audio-contracts";
 import type { DneskaiNicheSound } from "./dneskai-audio-niche";
+import { awaitWithSignal } from "@/lib/abortable";
 
 /**
  * DNESKAi trending audio (#167, plan C5). Meta's Audio API (`GET /ig_audio`) returns, without a search query, the
@@ -93,26 +94,51 @@ export async function ingestDneskaiAudioTrends(db: Database, owner: string, inpu
 /** Niche-only sounds shown next to Meta's list. */
 export const DNESKAI_NICHE_SOUNDS_SHOWN = 15;
 
+const TrendRowSchema = z.strictObject({
+  user_id: z.uuid(), audio_id: DneskaiAudioTrendSchema.shape.audioId,
+  title: DneskaiAudioTrendSchema.shape.title.trim().min(1), display_artist: DneskaiAudioTrendSchema.shape.artist,
+  audio_type: DneskaiAudioTrendSchema.shape.type, duration_ms: DneskaiAudioTrendSchema.shape.durationMs,
+  cover_artwork_thumbnail_url: DneskaiAudioTrendSchema.shape.coverUrl, days_seen: DneskaiAudioTrendSchema.shape.daysSeen.min(1),
+  niche_count: DneskaiAudioTrendSchema.shape.nicheCount, tiktok: z.boolean(), last_seen: z.iso.date(),
+});
+const NicheSchema = z.array(z.object({
+  audioId: DneskaiAudioTrendSchema.shape.audioId, title: DneskaiAudioTrendSchema.shape.title.trim().min(1).nullable(), artist: DneskaiAudioTrendSchema.shape.artist,
+  reels: z.number().int().nonnegative(), plays: z.number().nonnegative(), score: z.number().nonnegative(),
+})).max(10_000);
+const compareAudioId = (a: { audioId: string }, b: { audioId: string }) => a.audioId < b.audioId ? -1 : a.audioId > b.audioId ? 1 : 0;
+
 /**
  * The sounds seen in the last two days, most persistent first, for Zdroje → Hudba and the Lab picker, joined by audio
  * id with the niche ranking (#167): Meta's sounds get their niche count; the niche's own top sounds follow as hints
  * that Instagram may not attach.
  */
-export async function listDneskaiAudioTrends(db: Database, owner: string, today: string, niche: readonly DneskaiNicheSound[] = []): Promise<DneskaiAudioTrend[]> {
-  z.uuid().parse(owner);
-  const since = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
-  const { data, error } = await db.from("marketing_audio_trends").select("audio_id,title,display_artist,audio_type,duration_ms,cover_artwork_thumbnail_url,days_seen,niche_count,tiktok,last_seen")
-    .eq("user_id", owner).gte("last_seen", since).order("days_seen", { ascending: false }).limit(50);
-  if (error) throw new Error("audio-trends-store-failed");
-  const ranked = new Map(niche.map((sound) => [sound.audioId, sound]));
-  const meta: DneskaiAudioTrend[] = (data as Array<Record<string, unknown>> ?? []).map((row) => ({
-    audioId: String(row.audio_id), title: String(row.title), artist: (row.display_artist as string | null) ?? null, type: row.audio_type as DneskaiAudioTrend["type"],
-    durationMs: (row.duration_ms as number | null) ?? null, coverUrl: (row.cover_artwork_thumbnail_url as string | null) ?? null,
-    daysSeen: Number(row.days_seen), nicheCount: ranked.get(String(row.audio_id))?.reels ?? Number(row.niche_count), tiktok: row.tiktok === true, attachable: true,
-  }));
-  const listed = new Set(meta.map((sound) => sound.audioId));
-  const nicheOnly: DneskaiAudioTrend[] = niche.filter((sound) => !listed.has(sound.audioId) && sound.title).slice(0, DNESKAI_NICHE_SOUNDS_SHOWN).map((sound) => ({
-    audioId: sound.audioId, title: sound.title!, artist: sound.artist, type: "music", durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: sound.reels, tiktok: false, attachable: false,
-  }));
-  return [...meta.sort((a, b) => b.nicheCount - a.nicheCount || b.daysSeen - a.daysSeen), ...nicheOnly];
+export async function listDneskaiAudioTrends(db: Database, owner: string, today: string, niche: readonly DneskaiNicheSound[] = [], parent?: AbortSignal): Promise<DneskaiAudioTrend[]> {
+  try {
+    z.uuid().parse(owner); z.iso.date().parse(today);
+    const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
+    signal.throwIfAborted();
+    const hints = NicheSchema.parse(niche);
+    if (new Set(hints.map(sound => sound.audioId)).size !== hints.length) throw new Error();
+    const since = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+    const { data, error } = await awaitWithSignal(db.from("marketing_audio_trends").select("user_id,audio_id,title,display_artist,audio_type,duration_ms,cover_artwork_thumbnail_url,days_seen,niche_count,tiktok,last_seen")
+      .eq("user_id", owner).gte("last_seen", since).lte("last_seen", today).order("days_seen", { ascending: false }).order("audio_id")
+      .limit(DNESKAI_AUDIO_TRENDS_MAX).retry(false).abortSignal(signal), signal);
+    signal.throwIfAborted();
+    if (error) throw new Error();
+    const rows = z.array(TrendRowSchema).max(DNESKAI_AUDIO_TRENDS_MAX).parse(data);
+    if (new Set(rows.map(row => row.audio_id)).size !== rows.length || rows.some(row => row.user_id !== owner || row.last_seen < since || row.last_seen > today)) throw new Error();
+    const ranked = new Map(hints.map(sound => [sound.audioId, sound]));
+    const meta: DneskaiAudioTrend[] = rows.map(row => ({
+      audioId: row.audio_id, title: row.title, artist: row.display_artist, type: row.audio_type,
+      durationMs: row.duration_ms, coverUrl: row.cover_artwork_thumbnail_url,
+      daysSeen: row.days_seen, nicheCount: ranked.get(row.audio_id)?.reels ?? row.niche_count, tiktok: row.tiktok, attachable: true,
+    })).sort((a, b) => b.nicheCount - a.nicheCount || b.daysSeen - a.daysSeen || compareAudioId(a, b));
+    const listed = new Set(meta.map(sound => sound.audioId));
+    const nicheOnly: DneskaiAudioTrend[] = hints.filter(sound => !listed.has(sound.audioId) && sound.title)
+      .sort((a, b) => b.score - a.score || b.reels - a.reels || compareAudioId(a, b)).slice(0, DNESKAI_NICHE_SOUNDS_SHOWN).map(sound => ({
+        audioId: sound.audioId, title: sound.title!, artist: sound.artist, type: "music", durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: sound.reels, tiktok: false, attachable: false,
+      }));
+    // These are bounded recommendations: Meta sounds first, then hints only while slots remain.
+    return [...meta, ...nicheOnly].slice(0, DNESKAI_AUDIO_TRENDS_MAX);
+  } catch { throw new Error("audio-trends-store-failed"); }
 }

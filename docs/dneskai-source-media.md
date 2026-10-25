@@ -336,8 +336,9 @@ re-render with a library track is not built: it would publish a sound the owner 
 original or muted) and its plays on the stored report, in the same scraper run and under the same per-profile caps.
 `loadDneskaiNicheSounds` ranks the reusable sounds (not original, not muted) the education profiles used in the last
 seven days: distinct reels times the logarithm of their plays. It costs nothing and is read when Zdroje → Hudba opens:
-Meta's sounds show how many tracked reels used them, and the niche's own top 15 follow as hints that Instagram may not
-attach. The Lab picker offers only attachable sounds; the manual music badge (#168) suggests the niche's sounds first.
+Meta's sounds show how many tracked reels used them. Up to fifteen niche-only hints fill remaining recommendation
+slots after Meta's list; the combined result never exceeds fifty. Equal ranks use audio-id ordering, and a hint
+does not establish a licence or attachment availability. The Lab picker offers only attachable sounds; the manual music badge (#168) suggests the niche's sounds first.
 
 **TikTok CZ chart.** With `DNESKAI_TIKTOK_TRENDS_ENABLED=true` (and the Apify, paid and consent switches) the daily step
 reserves a `clockworks/tiktok-trends-scraper` run (Czech songs, surging leaderboard, 25 results, $0.10 charge cap)
@@ -366,3 +367,8 @@ reads refuse truncation beyond 262,144 UTF-16 characters and release unread/late
 limit, not a guaranteed network-byte ceiling. Database calls in this pass disable SDK retries, including spend
 reservation/settlement; uncertain accepted work remains charged. Complete run progress, matching and exact
 trend/settlement receipts remain under review.
+
+Recommendation reads validate the owner, real day, yesterday/today freshness, unique sound ids and bounded metadata.
+The query has a stable tie-breaker, no SDK retry and a fifteen-second bound inside the request's remaining lifetime.
+Invalid or uncertain metadata does not become a successful cast. The route still needs an explicit trend-outage
+state distinct from an empty list; the uploaded-library result and this bounded recommendation list remain separate.
