@@ -1577,8 +1577,8 @@
       "path": "src/components/panels/plans-panel.tsx",
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
-      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending",
-      "reviewedSha256": "d3d9e9a9a187d430cb339831ff988586c9b7a71e29704dddaa58fd5e163b6e07"
+      "status": "source reviewed; findings 250\u2013252 confirmed writes, local paging/focus and centred compact geometry pass; other leads and final release pending",
+      "reviewedSha256": "099db0e741c2023e284e9566d64b72012e75723de7ee47baf5ca28350ee01cdd"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",

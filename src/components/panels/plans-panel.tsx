@@ -142,7 +142,7 @@ export function PlansPanel({
   }, [plans]);
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-5xl">
       <PageHeader
         title={t.plans.title}
         description={t.plans.description}
@@ -345,7 +345,7 @@ function PlanCard({
       aria-busy={pending}
       className="rounded-md bg-surface border border-border p-2"
     >
-      <div className="flex items-start gap-1">
+      <div className="flex items-center gap-1">
         <p
           className={cn(
             "text-xs font-medium flex-1 min-w-0 break-words [overflow-wrap:anywhere]",
@@ -363,7 +363,7 @@ function PlanCard({
           aria-label={`${plan.title}: ${t.plans.changeStatus}`}
           className="inline-flex min-h-11 min-w-11 md:min-h-7 md:min-w-7 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring disabled:opacity-40 disabled:cursor-wait"
         >
-          <Pencil className="h-2.5 w-2.5" />
+          <Pencil className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
@@ -372,7 +372,7 @@ function PlanCard({
           aria-label={`${plan.title}: ${t.plans.deletePlan}`}
           className="inline-flex min-h-11 min-w-11 md:min-h-7 md:min-w-7 items-center justify-center text-foreground-subtle hover:text-destructive transition-colors focus-ring disabled:opacity-40 disabled:cursor-wait"
         >
-          <Trash2 className="h-2.5 w-2.5" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
       {(plan.target_date ||
@@ -476,10 +476,10 @@ function TimelineRow({
           <p className="text-foreground-subtle">{t.plans.noDate}</p>
         )}
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex min-w-0 flex-col gap-1 md:flex-row md:items-center md:gap-4">
         <p
           className={cn(
-            "text-sm font-medium flex flex-wrap items-center gap-1.5",
+            "min-w-0 flex-1 text-sm font-medium flex flex-wrap items-center gap-1.5",
             (plan.status === "done" || plan.status === "dropped") &&
               "line-through text-foreground-subtle",
           )}
@@ -493,7 +493,7 @@ function TimelineRow({
           )}
         </p>
         {plan.notes && (
-          <p className="break-words text-[11px] text-foreground-subtle [overflow-wrap:anywhere]">
+          <p className="min-w-0 flex-1 break-words text-[11px] text-foreground-subtle [overflow-wrap:anywhere]">
             {plan.notes}
           </p>
         )}
@@ -511,7 +511,7 @@ function TimelineRow({
       />
       <Tooltip content={t.plans.deletePlan}>
         <Button
-          size="icon-sm"
+          size="icon"
           variant="ghost"
           ref={deleteRef} disabled={pending}
           onClick={onDelete}
