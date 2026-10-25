@@ -23,14 +23,22 @@ describe("reel layout", () => {
     expect(dneskaiReelDuration(7)).toBe(21.5);
   });
 
-  it("keys a reel by the revision hash, the audio and the policy", () => {
-    const silent = dneskaiReelKey({ revisionHash: hash, audioId: null });
+  it("keys a reel by ordered JPEG bytes, exact audio bytes and encoding policy", () => {
+    const slides = [hash, 'b'.repeat(64)];
+    const silent = dneskaiReelKey({ slideSha256s: slides, audio: null });
+    const audio = { id: '11111111-1111-4111-8111-111111111111', sha256: 'c'.repeat(64) };
     expect(silent).toMatch(/^[a-f0-9]{64}$/);
-    expect(dneskaiReelKey({ revisionHash: hash, audioId: null })).toBe(silent);
-    expect(dneskaiReelKey({ revisionHash: hash, audioId: "11111111-1111-4111-8111-111111111111" })).not.toBe(silent);
-    expect(dneskaiReelKey({ revisionHash: "b".repeat(64), audioId: null })).not.toBe(silent);
-    expect(() => dneskaiReelKey({ revisionHash: "nope", audioId: null })).toThrow(DneskaiReelRenderError);
-    expect(() => dneskaiReelKey({ revisionHash: hash, audioId: "../x" })).toThrow(DneskaiReelRenderError);
+    expect(dneskaiReelKey({ slideSha256s: [...slides], audio: null })).toBe(silent);
+    expect(dneskaiReelKey({ slideSha256s: [...slides].reverse(), audio: null })).not.toBe(silent);
+    expect(dneskaiReelKey({ slideSha256s: [hash], audio: null })).not.toBe(silent);
+    const audible = dneskaiReelKey({ slideSha256s: slides, audio });
+    expect(audible).not.toBe(silent);
+    expect(dneskaiReelKey({ slideSha256s: slides, audio: { ...audio, sha256: 'd'.repeat(64) } })).not.toBe(audible);
+    expect(() => dneskaiReelKey({ slideSha256s: ['nope'], audio: null })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: [], audio: null })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: Array(11).fill(hash), audio: null })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: slides, audio: { ...audio, id: '../x' } })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: slides, audio: { ...audio, sha256: 'nope' } })).toThrow(DneskaiReelRenderError);
   });
 
   it("crossfades each slide into the next at 3 s steps and encodes to the Reels spec", () => {

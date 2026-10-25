@@ -3371,17 +3371,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel-render.ts",
-      "lines": 204,
+      "lines": 205,
       "sha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8",
-      "status": "partial source review: shell-free ffmpeg args, bounded stderr and temporary directory cleanup retained; eager parallel image CPU before abort, image/audio/output bounds and subprocess lifecycle need verification; no render or provider request performed",
-      "reviewedSha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8"
+      "status": "partial source review: shell-free ffmpeg args, bounded stderr and temporary directory cleanup retained; eager parallel image CPU before abort, image/audio/output bounds and subprocess lifecycle need verification; no render or provider request performed; finding 190 closes physical media identity, full revision/loaded JPEG binding and legacy exact-hash reads; duplicate admission and native work bounds remain open",
+      "reviewedSha256": "735ce7883771b4b6d20a7d3755cd70320bb328a5bbb04cbe4be9c57c5d3c9ea2"
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 213,
+      "lines": 219,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence",
-      "reviewedSha256": "eed2e9fd296054b8494aed6e20caff775779f9f91b654876c30921d4e655612f"
+      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence; finding 190 closes physical media identity, full revision/loaded JPEG binding and legacy exact-hash reads; duplicate admission and native work bounds remain open",
+      "reviewedSha256": "a5c5703f27edc1fc00a2a25f92c67fd5c3a7cd956b1f3aa2fcfefe79dd183280"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",

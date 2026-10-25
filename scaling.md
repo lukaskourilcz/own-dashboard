@@ -32,7 +32,7 @@ DNESKAi daily caps (rolling 24 hours, each refused rather than exceeded):
 - TikTok CZ sound chart: $0.10, `MARKETING_DNESKAI_TIKTOK_DAILY_USD`, off until the owner decides.
 - The Apify research plan: $126.00 of caps over four waves, from the $150 promotional credit, off until the owner approves it.
 
-Reels render inside the existing Vercel function with `ffmpeg-static` (about 25 s for seven slides) and add Supabase Storage for MP4s up to 64 MiB each.
+Reels render inside the existing Vercel function with `ffmpeg-static` and add Supabase Storage for MP4s up to 64 MiB each. Encoding time depends on the deck and runtime; the earlier seven-slide observation is not a latency guarantee. Physical MP4 keys include ordered slide JPEG hashes, exact track bytes and encoding policy. Caption, schedule and alt-text edits reuse an unchanged MP4 while each revision retains its own full approval hash and render event. Storage outages stop rendering instead of pretending the cache is empty. This avoids redundant encoding and copies for those edits; it does not establish measured production savings or serialize concurrent render starts.
 
 
 ## Bank processing bounds — 24 October 2026

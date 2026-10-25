@@ -74,13 +74,14 @@ export function dneskaiReelDuration(slideCount: number): number {
 const sha256 = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
 
 /**
- * The reel's identity: the approved revision's content hash and the audio track (or `silent`) under this policy.
- * A revision that changes nothing a viewer sees or hears reuses its stored MP4.
+ * Physical MP4 identity: ordered JPEG hashes, exact audio bytes (or silence) and encoding policy.
+ * Caption, schedule, alt text and approval belong to the revision record, not to the encoded media.
  */
-export function dneskaiReelKey(input: { revisionHash: string; audioId: string | null }): string {
-  if (!/^[a-f0-9]{64}$/.test(input.revisionHash)) throw new DneskaiReelRenderError("reel-input-invalid");
-  if (input.audioId !== null && !/^[A-Za-z0-9-]{1,64}$/.test(input.audioId)) throw new DneskaiReelRenderError("reel-input-invalid");
-  return sha256(canonicalJson({ schemaVersion: "dneskai-reel-key/1", policy: DNESKAI_REEL_POLICY, reel: DNESKAI_REEL, revisionHash: input.revisionHash, audio: input.audioId ?? "silent" }));
+export function dneskaiReelKey(input: { slideSha256s: readonly string[]; audio: { id: string; sha256: string } | null }): string {
+  const hash = /^[a-f0-9]{64}$/;
+  if (!input.slideSha256s.length || input.slideSha256s.length > DNESKAI_REEL.maxSlides || input.slideSha256s.some(value => !hash.test(value))
+    || (input.audio && (!/^[A-Za-z0-9-]{1,64}$/.test(input.audio.id) || !hash.test(input.audio.sha256)))) throw new DneskaiReelRenderError("reel-input-invalid");
+  return sha256(canonicalJson({ schemaVersion: "dneskai-reel-key/2", policy: DNESKAI_REEL_POLICY, reel: DNESKAI_REEL, slides: input.slideSha256s, audio: input.audio ?? "silent" }));
 }
 
 /** The ffmpeg-static executable, or `reel-ffmpeg-unavailable`. */

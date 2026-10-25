@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { DneskaiRenderReportSchema, parseContentRevision } from "./contracts";
 import { DNESKAI_REEL, DNESKAI_REEL_POLICY, dneskaiReelDuration, dneskaiReelKey, renderDneskaiReel, type DneskaiReelAudio } from "./dneskai-reel-render";
+import { revisionContentHash } from "./hashes";
 import { signAutomationBody } from "./automation-auth";
 import { MARKETING_ASSET_BUCKET, MARKETING_ASSET_URL_SECONDS, dneskaiSlideObjectKey } from "./worker-runtime";
 
@@ -124,24 +125,29 @@ export async function dneskaiReelForRevision(db: Database, ownerId: string, revi
   let revision;
   try { revision = parseContentRevision(row.revision); } catch { throw new DneskaiReelError("reel-revision-unavailable"); }
   if (!revision.deck) throw new DneskaiReelError("reel-revision-not-deck");
+  if (row.content_hash !== revisionContentHash(revision)) throw new DneskaiReelError("reel-revision-unavailable");
   const report = DneskaiRenderReportSchema.safeParse(row.render_report);
   const slideCount = revision.deck.slides.length;
   if (!report.success || report.data.status !== "rendered" || report.data.problems.some((problem) => problem.blocking)
-    || report.data.renderKeys.length !== slideCount || slideCount > DNESKAI_REEL.maxSlides) throw new DneskaiReelError("reel-render-required");
+    || report.data.renderKeys.length !== slideCount || revision.assets.length !== slideCount || revision.assets.some(asset => asset.mimeType !== "image/jpeg")
+    || report.data.renderKeys.some(key => !/^[a-f0-9]{64}$/.test(key)) || slideCount > DNESKAI_REEL.maxSlides) throw new DneskaiReelError("reel-render-required");
   const revisionHash = String(row.content_hash);
   const audio = await dependencies.loadAudio(revision);
-  const reelKey = dneskaiReelKey({ revisionHash, audioId: audio?.id ?? null });
+  if (audio && !audio.bytes.length) throw new DneskaiReelError("reel-audio-unavailable");
+  const audioIdentity = audio ? { id: audio.id, sha256: sha256(audio.bytes) } : null;
+  const reelKey = dneskaiReelKey({ slideSha256s: revision.assets.map(asset => asset.sha256), audio: audioIdentity });
   const found = await dependencies.storage.find(reelKey);
   const durationSeconds = dneskaiReelDuration(slideCount);
   if (found) return { ...found, cached: true, durationSeconds, silent: !audio, revisionHash, audioId: audio?.id ?? null };
   let slides: Buffer[];
   try { slides = await Promise.all(report.data.renderKeys.map((key) => dependencies.loadSlide(key))); }
   catch { throw new DneskaiReelError("reel-slides-unavailable"); }
+  if (slides.some((bytes, index) => sha256(bytes) !== revision.assets[index]!.sha256)) throw new DneskaiReelError("reel-slides-unavailable");
   const rendered = await (dependencies.render ?? renderDneskaiReel)({ slides, audio, signal: dependencies.signal });
   const stored = await dependencies.storage.put({
     reelKey,
     bytes: rendered.bytes,
-    metadata: { revisionId, revisionHash, audioId: audio?.id ?? "silent", policy: DNESKAI_REEL_POLICY, durationSeconds: String(rendered.durationSeconds) },
+    metadata: { audioId: audio?.id ?? "silent", audioSha256: audioIdentity?.sha256 ?? "silent", policy: DNESKAI_REEL_POLICY, durationSeconds: String(rendered.durationSeconds) },
   });
   return { ...stored, cached: false, durationSeconds: rendered.durationSeconds, silent: rendered.silent, revisionHash, audioId: audio?.id ?? null };
 }

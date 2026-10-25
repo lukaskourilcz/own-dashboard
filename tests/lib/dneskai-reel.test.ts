@@ -6,16 +6,22 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.client
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.limited }));
 import { DNESKAI_RENDER_REPORT_VERSION } from "@/lib/marketing/contracts";
+import { revisionContentHash } from "@/lib/marketing/hashes";
 import { dneskaiReelKey } from "@/lib/marketing/dneskai-reel-render";
-import { createDneskaiReelStorage, dneskaiReelForRevision, dneskaiReelObjectKey, dneskaiReelsEnabled, type DneskaiReelDependencies } from "@/lib/marketing/dneskai-reel";
+import { createDneskaiReelStorage, findDneskaiReelForRevision, dneskaiReelForRevision, dneskaiReelObjectKey, dneskaiReelsEnabled, type DneskaiReelDependencies } from "@/lib/marketing/dneskai-reel";
 import { signAutomationBody } from "@/lib/marketing/automation-auth";
 import { deckRevision } from "./marketing-dneskai-revision-fixture";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const revisionId = "33333333-3333-4333-8333-333333333333";
-const contentHash = "9".repeat(64);
+const contentHash = revisionContentHash(renderedRevision());
 const renderKeys = ["1", "2", "3"].map((n) => n.repeat(64));
 const report = (overrides: Record<string, unknown> = {}) => ({ schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: "rendered", problems: [], renderKeys, renderedAt: "2026-10-22T10:00:00Z", ...overrides });
+
+function renderedRevision() {
+  const revision = deckRevision();
+  return { ...revision, assets: revision.assets.map((asset, index) => ({ ...asset, sha256: createHash('sha256').update(Buffer.from(`slide-${index + 1}`)).digest('hex') })) };
+}
 
 function database(row: unknown) {
   const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle: vi.fn(async () => ({ data: row, error: null })) };
@@ -45,33 +51,87 @@ function dependencies(storage = memoryStorage()) {
 }
 
 describe("dneskaiReelForRevision", () => {
-  it("renders the rendered slides in order once and reuses the stored reel for the same hash", async () => {
-    const { from } = database({ revision: deckRevision(), content_hash: contentHash, render_report: report() });
+  it("renders the rendered slides in order once and reuses the stored reel for the same JPEG/audio bytes", async () => {
+    const { from } = database({ revision: renderedRevision(), content_hash: contentHash, render_report: report() });
     const storage = memoryStorage();
     const deps = dependencies(storage);
     const first = await dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps);
-    expect(first).toMatchObject({ cached: false, silent: true, durationSeconds: 9.5, revisionHash: contentHash, reelKey: dneskaiReelKey({ revisionHash: contentHash, audioId: null }) });
+    expect(first).toMatchObject({ cached: false, silent: true, durationSeconds: 9.5, revisionHash: contentHash, reelKey: dneskaiReelKey({ slideSha256s: renderedRevision().assets.map(asset => asset.sha256), audio: null }) });
     expect(deps.loadSlide.mock.calls.map(([key]) => key)).toEqual(renderKeys);
     expect(deps.render).toHaveBeenCalledWith(expect.objectContaining({ slides: [Buffer.from("slide-1"), Buffer.from("slide-2"), Buffer.from("slide-3")], audio: null }));
-    expect(storage.put.mock.calls[0]![0].metadata).toMatchObject({ revisionId, revisionHash: contentHash, audioId: "silent" });
+    expect(storage.put.mock.calls[0]![0].metadata).toMatchObject({ audioId: "silent", audioSha256: "silent" });
     const again = await dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps);
     expect(again).toMatchObject({ cached: true, url: first.url, durationSeconds: 9.5 });
     expect(deps.render).toHaveBeenCalledTimes(1);
   });
 
-  it("keys a reel with a track by the track id", async () => {
-    const { from } = database({ revision: deckRevision(), content_hash: contentHash, render_report: report() });
+  it("keys a reel with a track by its id and exact bytes", async () => {
+    const { from } = database({ revision: renderedRevision(), content_hash: contentHash, render_report: report() });
     const deps = dependencies();
     deps.loadAudio.mockResolvedValue({ id: "44444444-4444-4444-8444-444444444444", bytes: Buffer.from("audio") } as never);
     const reel = await dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps);
-    expect(reel.reelKey).toBe(dneskaiReelKey({ revisionHash: contentHash, audioId: "44444444-4444-4444-8444-444444444444" }));
+    expect(reel.reelKey).toBe(dneskaiReelKey({ slideSha256s: renderedRevision().assets.map(asset => asset.sha256), audio: { id: "44444444-4444-4444-8444-444444444444", sha256: createHash("sha256").update("audio").digest("hex") } }));
+  });
+
+  it('reuses the physical MP4 after caption/schedule/alt edits while returning the exact new revision hash', async () => {
+    const storage = memoryStorage(), deps = dependencies(storage);
+    const original = renderedRevision();
+    const revised = { ...original, caption: 'A new approved caption.', scheduledAt: '2099-10-22T06:00:00Z', assets: original.assets.map(asset => ({ ...asset, alt: 'New accessible description' })) };
+    const firstDb = database({ revision: original, content_hash: revisionContentHash(original), render_report: report() });
+    const secondDb = database({ revision: revised, content_hash: revisionContentHash(revised), render_report: report() });
+    const first = await dneskaiReelForRevision(firstDb as unknown as Db, owner, revisionId, deps);
+    const second = await dneskaiReelForRevision(secondDb as unknown as Db, owner, '55555555-5555-4555-8555-555555555555', deps);
+    expect(second).toMatchObject({ cached: true, reelKey: first.reelKey, revisionHash: revisionContentHash(revised) });
+    expect(second.revisionHash).not.toBe(first.revisionHash);
+    expect(deps.render).toHaveBeenCalledOnce();
+    expect(deps.loadSlide).toHaveBeenCalledTimes(3);
+    expect(storage.put.mock.calls[0]![0].metadata).not.toHaveProperty('revisionId');
+    expect(storage.put.mock.calls[0]![0].metadata).not.toHaveProperty('revisionHash');
+  });
+  it('does not reuse an MP4 when bytes of the same named track change', async () => {
+    const { from } = database({ revision: renderedRevision(), content_hash: contentHash, render_report: report() });
+    const deps = dependencies();
+    const audioId = '44444444-4444-4444-8444-444444444444';
+    deps.loadAudio.mockResolvedValueOnce({ id: audioId, bytes: Buffer.from('first-track-bytes') } as never);
+    const first = await dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps);
+    deps.loadAudio.mockResolvedValueOnce({ id: audioId, bytes: Buffer.from('different-track-bytes') } as never);
+    const second = await dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps);
+    expect(second.reelKey).not.toBe(first.reelKey);
+    expect(deps.render).toHaveBeenCalledTimes(2);
+  });
+  it('refuses JPEG bytes that differ from the revision before encoding or storing', async () => {
+    const { from } = database({ revision: renderedRevision(), content_hash: contentHash, render_report: report() });
+    const deps = dependencies();
+    deps.loadSlide.mockResolvedValueOnce(Buffer.from('different-pixels'));
+    await expect(dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: 'reel-slides-unavailable' });
+    expect(deps.render).not.toHaveBeenCalled();
+    expect(deps.storage.put).not.toHaveBeenCalled();
+  });
+  it('refuses an inconsistent revision hash before cache lookup', async () => {
+    const { from } = database({ revision: renderedRevision(), content_hash: 'f'.repeat(64), render_report: report() });
+    const deps = dependencies();
+    await expect(dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: 'reel-revision-unavailable' });
+    expect(deps.storage.find).not.toHaveBeenCalled();
+    expect(deps.render).not.toHaveBeenCalled();
+  });
+
+  it.each(['missing', 'not-jpeg', 'invalid-render-key'])('refuses incomplete approved media before reading the cache (%s)', async (reason) => {
+    const revision = renderedRevision();
+    if (reason === 'missing') revision.assets.pop();
+    if (reason === 'not-jpeg') revision.assets[0]!.mimeType = 'video/mp4';
+    const { from } = database({ revision, content_hash: revisionContentHash(revision), render_report: report(reason === 'invalid-render-key' ? { renderKeys: ['bad-key', ...renderKeys.slice(1)] } : {}) });
+    const deps = dependencies();
+    await expect(dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: 'reel-render-required' });
+    expect(deps.storage.find).not.toHaveBeenCalled();
+    expect(deps.loadAudio).not.toHaveBeenCalled();
+    expect(deps.render).not.toHaveBeenCalled();
   });
 
   it.each([
     ["a missing revision", null, "reel-revision-unavailable"],
-    ["a revision without a deck render", { revision: deckRevision(), content_hash: contentHash, render_report: null }, "reel-render-required"],
-    ["a refused render", { revision: deckRevision(), content_hash: contentHash, render_report: report({ status: "refused" }) }, "reel-render-required"],
-    ["render keys that do not cover every slide", { revision: deckRevision(), content_hash: contentHash, render_report: report({ renderKeys: renderKeys.slice(0, 2) }) }, "reel-render-required"],
+    ["a revision without a deck render", { revision: renderedRevision(), content_hash: contentHash, render_report: null }, "reel-render-required"],
+    ["a refused render", { revision: renderedRevision(), content_hash: contentHash, render_report: report({ status: "refused" }) }, "reel-render-required"],
+    ["render keys that do not cover every slide", { revision: renderedRevision(), content_hash: contentHash, render_report: report({ renderKeys: renderKeys.slice(0, 2) }) }, "reel-render-required"],
   ])("refuses %s", async (_name, row, code) => {
     const { from } = database(row);
     const deps = dependencies();
@@ -80,12 +140,26 @@ describe("dneskaiReelForRevision", () => {
   });
 
   it("reports an unloadable slide without rendering", async () => {
-    const { from } = database({ revision: deckRevision(), content_hash: contentHash, render_report: report() });
+    const { from } = database({ revision: renderedRevision(), content_hash: contentHash, render_report: report() });
     const deps = dependencies();
     deps.loadSlide.mockRejectedValueOnce(new Error("gone"));
     await expect(dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: "reel-slides-unavailable" });
     expect(deps.render).not.toHaveBeenCalled();
   });
+});
+
+it('reads a recorded legacy MP4 key only for its exact approved revision hash', async () => {
+  const storage = memoryStorage(), reelKey = '7'.repeat(64), digest = '8'.repeat(64);
+  const payload = { reelKey, revisionHash: contentHash, audioId: null, sha256: digest, bytes: 12 };
+  storage.stored.set(reelKey, { url: 'https://test-only.supabase.co/legacy.mp4', sha256: digest, bytes: 12 });
+  const query = { select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: [{ payload }], error: null })) };
+  const db = { from: vi.fn(() => query) } as unknown as Db;
+  expect(await findDneskaiReelForRevision(db, owner, revisionId, contentHash, storage as never)).toMatchObject({ reelKey, sha256: digest });
+  expect(query.eq).toHaveBeenCalledWith('user_id', owner);
+  expect(query.eq).toHaveBeenCalledWith('revision_id', revisionId);
+  storage.find.mockClear();
+  expect(await findDneskaiReelForRevision(db, owner, revisionId, 'f'.repeat(64), storage as never)).toBeNull();
+  expect(storage.find).not.toHaveBeenCalled();
 });
 
 describe("reel storage", () => {
@@ -131,7 +205,7 @@ describe("reel storage", () => {
     files.info.mockResolvedValueOnce({ data: null, error: { status: 503, statusCode: 'SlowDown' } } as never);
     const store = createDneskaiReelStorage(db as never, owner);
     const deps = { ...dependencies(), storage: store };
-    const query = database({ revision: deckRevision(), content_hash: contentHash, render_report: report() });
+    const query = database({ revision: renderedRevision(), content_hash: contentHash, render_report: report() });
     await expect(dneskaiReelForRevision({ ...db, ...query } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: 'reel-storage-failed' });
     expect(deps.loadSlide).not.toHaveBeenCalled();
     expect(deps.render).not.toHaveBeenCalled();
