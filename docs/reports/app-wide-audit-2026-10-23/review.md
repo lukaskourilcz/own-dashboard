@@ -772,3 +772,10 @@ The complete unit/component/database suite starts at frozen application/test sou
 ## Full unit checkpoint 76 — completed
 
 At frozen application/test source `f581197`, all 4,871 unit/component/database cases pass with one intentional skip (451 passed files, one skipped file; 452 total), in 177.56 seconds with two workers. Full ESLint and TypeScript also pass against that unchanged source. This checkpoint does not run a production build, render traces or the complete optimized browser matrix; their last complete passing evidence remains checkpoint 73. Source/test work resumes after this run. The remaining audit leads, thirty-one prepared migrations, main merge and deployed verification remain unfinished.
+
+
+## Finding 198 — preview admission used the retired draft reservation
+
+The page-lifetime preview still reserves $0.25 for a draft and displays a disconnected static budget. Its per-job maximum now comes from a two-line browser-safe module shared with production generation and the EN/CS Lab guidance. The $1 illustrative ceiling starts at $0.80, preserving the existing first-success/second-refusal recovery scenario with the current $0.13 maximum. Costs reports the in-memory reserved budget; measured usage is not increased for a preview action. Current illustrative booked cost uses $0.13 as well. Reset restores the same starting headroom. No model/provider/storage/publication call is added.
+
+A new integrated preview regression fails before repair and verifies $0.80 → $0.93, equality with the production maximum, refusal of the next action and reset. All 134 move, generation and workspace cases pass across three files in 1.14 seconds; targeted ESLint and TypeScript pass. Six existing native regeneration/admission checks pass in 29.7 seconds across desktop/mobile and both supported languages, preserving keyboard, accessibility and refusal recovery. A new import initially displaced a use-client directive; targeted lint caught it, and the directive is restored before commit/browser validation. The source ledger now has 653 entries with zero pending initial inspections; app-wide release remains unfinished.

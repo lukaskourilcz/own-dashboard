@@ -61,7 +61,7 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 
 **Generate now (9).** The read lists topics of today and tomorrow whose brief is pending or ready with no job (`waiting`). The Lab day column shows each with „Vygenerovat hned“. `POST /api/marketing/dneskai/generate` checks the brief, the run (never a pilot run), the slot (30 minutes ahead) and the ceiling, takes the scheduler's briefs lease, runs the tick's own `createBriefs` for that run, and runs the admitted job as above. A refusal (`dneskai-daily-generation-budget-exhausted`, `brief-still-waiting`, `generate-now-busy` and others) is shown in words under the list.
 
-The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and the second paid action of a page is refused by a $1 stand-in ceiling. Design Lab stays inside the review tab (decision 10).
+The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and a $1 stand-in ceiling starts at $0.80. Each job reserves the same $0.13 maximum as production, so the second paid action is refused. The Costs view reports this in-memory reservation separately from measured usage. Design Lab stays inside the review tab (decision 10).
 
 ## Comment and message (#159)
 

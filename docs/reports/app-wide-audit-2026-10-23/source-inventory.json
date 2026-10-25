@@ -2277,17 +2277,17 @@
     },
     {
       "path": "src/lib/demo/dneskai-workspace-demo.ts",
-      "lines": 242,
+      "lines": 243,
       "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
-      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "b1cc3c809c5e5c739a6ffccbc74a136a27fabca782df99e77fda845a0060d1b5"
+      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open",
+      "reviewedSha256": "9c8880c919807e0719251911a6c9a4d5bb6e7f982a79ccf33fd8e3b814978e53"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
-      "lines": 157,
+      "lines": 160,
       "sha256": "3b433e3248dcddaf97a56037bcf586c0a67b2f08f82fcb261bc41dc0b258f36b",
-      "status": "partial; complete source inspection; outdated renderer/reservation/disclosure metadata and current server fixture parity remain under review; invented data and committed authentic renders retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "ee77c9381434c4234145cd0ae772b65fc36232596b5b8542899a6eb1172f8387"
+      "status": "partial; complete source inspection; outdated renderer/reservation/disclosure metadata and current server fixture parity remain under review; invented data and committed authentic renders retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open",
+      "reviewedSha256": "3d33d3574bffd0a99a58f0af63c7ae0b5f9a8f2e0defc698fef9019b445ebc98"
     },
     {
       "path": "src/lib/demo/fixtures.ts",
@@ -2537,10 +2537,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
-      "lines": 520,
+      "lines": 522,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
-      "reviewedSha256": "af3c0baaffdb60854efb7a0fb715e586bb19f418876f536a1bfae6055f341401"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open",
+      "reviewedSha256": "11b2de616154d182aaa8dd51ab85a8d90d01fa82453b5402c87e29459e029a26"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
@@ -3657,11 +3657,18 @@
       "reviewedSha256": "e89c1503fba0ef4105fca083f4608f3f964365381e8530d7958e9a980d50e1a3"
     },
     {
+      "path": "src/lib/marketing/generation-limits.ts",
+      "sha256": null,
+      "lines": 2,
+      "status": "source reviewed; finding 198 shared browser-safe reservation with integrated production/preview parity; final release pending",
+      "reviewedSha256": "18345cab757f90c67ef425f77e692ba7bace05cd85d660c4fba4cf75f4aa839f"
+    },
+    {
       "path": "src/lib/marketing/generation.ts",
-      "lines": 554,
+      "lines": 555,
       "sha256": "50280a58d5e6a68a631d2e0f58c5dcb13f8a87c65ae6bd7e9ffbb83da5267448",
-      "status": "partial; complete source inspection; all-phase deadline/cancellation, final paid usage and exact evidence gates remain under review; paid reservations and no ambiguous retry retained",
-      "reviewedSha256": "8149124cfb97b9d40be7e554628c3568445316b5128a5ad4da0022e3aa423f07"
+      "status": "partial; complete source inspection; all-phase deadline/cancellation, final paid usage and exact evidence gates remain under review; paid reservations and no ambiguous retry retained; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open",
+      "reviewedSha256": "28cbb5edea078f7d573027cec185fb18ccd8d98d2b9cc90bf9d02b64e926ca35"
     },
     {
       "path": "src/lib/marketing/hashes.ts",

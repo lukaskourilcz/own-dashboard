@@ -1,3 +1,4 @@
+import { MARKETING_DRAFT_MAX_COST_USD } from './generation-limits';
 import { dneskaiDefaultRevisionFormat } from "./dneskai-reel-format";
 import { z } from "zod";
 import { ContentEngagementSchema, ENGAGEMENT_KEYWORD_PATTERN, MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
@@ -93,7 +94,7 @@ export const DNESKAI_INPUT_BYTES_PER_TOKEN = 2;
  * ledger reserve this amount per job; ledger rows written at $0.25 before the change keep it.
  */
 export const DEFAULT_GENERATION_BUDGET: GenerationBudget = {
-  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.13, maxLatencyMs: 60000,
+  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: MARKETING_DRAFT_MAX_COST_USD, maxLatencyMs: 60000,
 };
 /** Failures thrown by `createClaudeMarketingModel` before it sends any request. */
 const MARKETING_UNSENT_CALL_CODES: ReadonlySet<string> = new Set(["unsafe-native-tracing-enabled", "provider-sdk-setup-failed"]);

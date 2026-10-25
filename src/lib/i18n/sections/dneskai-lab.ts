@@ -1,3 +1,5 @@
+import { MARKETING_DRAFT_MAX_COST_USD } from '@/lib/marketing/generation-limits';
+
 import type { DneskaiKit, DneskaiLabApprovalBlock } from '@/lib/marketing/dneskai-lab';
 import type { DneskaiShapeId } from '@/lib/marketing/dneskai-slide-layout';
 
@@ -19,7 +21,7 @@ const en = {
     waiting: 'Waits for the scheduler',
     generateNow: 'Generate now',
     generateNowName: (title: string) => `Generate now: ${title}`,
-    generateNowHelp: 'Drafts this topic now instead of at the next scheduler run. Uses the configured daily budget, with a $0.13 limit per draft.',
+    generateNowHelp: `Drafts this topic now instead of at the next scheduler run. Uses the configured daily budget, with a $${MARKETING_DRAFT_MAX_COST_USD.toFixed(2)} limit per draft.`,
     generateNowOff: 'Generating now is switched off on this server. The scheduler drafts the topic within 5 minutes.',
     generating: 'Generating…',
     generateNowDone: 'Drafted. The new post is waiting for review.',
@@ -132,7 +134,7 @@ const en = {
     regenerate: 'Regenerate with a note',
     regenerateOff: 'Regenerating is switched off on this server. Nothing is generated and nothing is spent.',
     regenerateTitle: 'Regenerate with a note?',
-    regenerateDescription: 'The model writes a new draft from the same sources, guided by your note. It uses the configured daily budget, with a $0.13 limit per draft. The new version needs your approval.',
+    regenerateDescription: `The model writes a new draft from the same sources, guided by your note. It uses the configured daily budget, with a $${MARKETING_DRAFT_MAX_COST_USD.toFixed(2)} limit per draft. The new version needs your approval.`,
     regenerateNote: 'What should change',
     regenerateNoteHelp: 'The note goes to the model and is stored as your feedback. Tracing receives only its hash.',
     regenerateConfirm: 'Regenerate',
@@ -277,7 +279,7 @@ const cs: typeof en = {
     waiting: 'Čeká na plánovač',
     generateNow: 'Vygenerovat hned',
     generateNowName: (title: string) => `Vygenerovat hned: ${title}`,
-    generateNowHelp: 'Napíše téma hned, ne až při dalším běhu plánovače. Čerpá nastavený denní rozpočet, s limitem 0,13 $ na návrh.',
+    generateNowHelp: `Napíše téma hned, ne až při dalším běhu plánovače. Čerpá nastavený denní rozpočet, s limitem ${MARKETING_DRAFT_MAX_COST_USD.toFixed(2).replace('.', ',')} $ na návrh.`,
     generateNowOff: 'Okamžité generování je na tomto serveru vypnuté. Plánovač téma napíše do 5 minut.',
     generating: 'Generuji…',
     generateNowDone: 'Napsáno. Nový příspěvek čeká na kontrolu.',
@@ -390,7 +392,7 @@ const cs: typeof en = {
     regenerate: 'Přegenerovat s poznámkou',
     regenerateOff: 'Přegenerování je na tomto serveru vypnuté. Nic se negeneruje a nic se neutratí.',
     regenerateTitle: 'Přegenerovat s poznámkou?',
-    regenerateDescription: 'Model napíše nový návrh ze stejných zdrojů podle vaší poznámky. Čerpá nastavený denní rozpočet, s limitem 0,13 $ na návrh. Nová verze potřebuje vaše schválení.',
+    regenerateDescription: `Model napíše nový návrh ze stejných zdrojů podle vaší poznámky. Čerpá nastavený denní rozpočet, s limitem ${MARKETING_DRAFT_MAX_COST_USD.toFixed(2).replace('.', ',')} $ na návrh. Nová verze potřebuje vaše schválení.`,
     regenerateNote: 'Co se má změnit',
     regenerateNoteHelp: 'Poznámka jde modelu a uloží se jako vaše zpětná vazba. Trasování dostane jen její hash.',
     regenerateConfirm: 'Přegenerovat',
