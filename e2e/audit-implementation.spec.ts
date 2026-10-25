@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
@@ -176,7 +177,7 @@ test('Notes keeps a failed document available for an unchanged retry', async ({ 
     const doc = route.request().postDataJSON() as Record<string, unknown>;
     writes.push(doc);
     await route.fulfill(writes.length === 1 ? { status: 503, contentType: 'application/json', body: '{"message":"Synthetic transient save failure"}' }
-      : { status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'n1', user_id: 'u1', title: 'Project ideas', content: [], plain_text: '', is_pinned: true, tags: ['work', 'ideas'], created_at: '2026-10-23T10:00:00Z', updated_at: '2026-10-23T10:00:00Z', ...doc }) });
+      : { status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'n1', user_id: demoUser.id, title: 'Project ideas', content: [], plain_text: '', is_pinned: true, tags: ['work', 'ideas'], created_at: '2026-10-23T10:00:00Z', updated_at: '2026-10-23T10:00:00Z', ...doc }) });
   });
   await open(page, 'Notes');
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /Project ideas/ }).click();

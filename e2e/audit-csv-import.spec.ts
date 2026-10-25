@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, signInFixtureUser } from "./helpers";
@@ -33,8 +34,8 @@ for (const lang of ["en", "cs"] as const) {
     await gotoPreview(page, { lang }); await signInFixtureUser(page);
     const version = "0123456789abcdef0123456789abcdef";
     await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: {
-      owner_id: "u1", rules_version: version, project_ids: [], subscription_ids: [],
-      rules: [{ id: "rule", user_id: "u1", stage: "default", enabled: true, conditions: [{ field: "note", op: "contains", value: "x".repeat(5000) }], actions: { category: "Work" } }],
+      owner_id: demoUser.id, rules_version: version, project_ids: [], subscription_ids: [],
+      rules: [{ id: "rule", user_id: demoUser.id, stage: "default", enabled: true, conditions: [{ field: "note", op: "contains", value: "x".repeat(5000) }], actions: { category: "Work" } }],
     } }));
     let imports = 0; await page.route("**/rpc/import_transaction_batch", route => { imports++; return route.fulfill({ json: [] }); });
     await page.goto("/dev-preview?tab=transactions"); await page.getByText(finances[lang].importAndMatch, { exact: true }).click();

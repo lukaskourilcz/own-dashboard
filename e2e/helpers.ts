@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import type { BankProviderState } from "../src/lib/bank/flow";
 import type { Page } from "@playwright/test";
 import type { GithubRepo } from "../src/lib/github";
@@ -80,8 +81,8 @@ export async function stubBackend(page: Page): Promise<void> {
       status: 200,
       contentType: "application/json",
       ...(url.includes("/rest/v1/bank_connections") ? { headers: { "access-control-expose-headers": "content-range", "content-range": "*/0" } } : {}),
-      body: url.includes("/rpc/transaction_rule_context") ? JSON.stringify({ owner_id: "u1", rules: [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] }) : isCurrentUser
-        ? JSON.stringify({ id: "u1", aud: "authenticated", role: "authenticated", email: "jan.novak@example.com", user_metadata: {}, created_at: "2025-01-01T00:00:00Z" })
+      body: url.includes("/rpc/transaction_rule_context") ? JSON.stringify({ owner_id: demoUser.id, rules: [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] }) : isCurrentUser
+        ? JSON.stringify({ id: demoUser.id, aud: "authenticated", role: "authenticated", email: "jan.novak@example.com", user_metadata: {}, created_at: "2025-01-01T00:00:00Z" })
         : isAuth ? "{}" : "[]",
     });
   });
@@ -119,16 +120,16 @@ export async function gotoPreview(
  * writes reach the (stubbed) REST API instead of stopping at "sign in first".
  * Pair it with a page.route() that answers the specific table.
  */
-export async function signInFixtureUser(page: Page): Promise<void> {
+export async function signInFixtureUser(page: Page, ownerId = demoUser.id): Promise<void> {
   const expiresAt = Math.floor(Date.now() / 1000) + 3600;
   const token = [
     Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
-    Buffer.from(JSON.stringify({ sub: "u1", exp: expiresAt })).toString("base64url"),
+    Buffer.from(JSON.stringify({ sub: ownerId, exp: expiresAt })).toString("base64url"),
     "test",
   ].join(".");
   await page.context().addCookies([{
     name: "sb-example-auth-token",
-    value: "base64-" + Buffer.from(JSON.stringify({ access_token: token, refresh_token: "fixture-refresh", token_type: "bearer", expires_at: expiresAt, expires_in: 3600, user: { id: "u1" } })).toString("base64url"),
+    value: "base64-" + Buffer.from(JSON.stringify({ access_token: token, refresh_token: "fixture-refresh", token_type: "bearer", expires_at: expiresAt, expires_in: 3600, user: { id: ownerId } })).toString("base64url"),
     url: "http://localhost:3939",
   }]);
 }

@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { expect, test, type Page } from "@playwright/test";
 import { gotoPreview } from "./helpers";
 import { notes } from "../src/lib/i18n/sections/notes";
@@ -22,7 +23,7 @@ test("a failed pin change cannot replace a successfully saved document", async (
       await new Promise<void>(resolve => { releasePin = async () => {
         await route.fulfill({ status: 503, contentType: "application/json", body: '{"message":"Synthetic pin failure"}' }); resolve();
       }; });
-    } else await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: "n1", user_id: "u1", is_pinned: false, tags: ["work", "ideas"], sort_order: 2, created_at: "2026-10-23T10:00:00Z", updated_at: "2026-10-23T12:00:00Z", ...fields }) });
+    } else await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: "n1", user_id: demoUser.id, is_pinned: false, tags: ["work", "ideas"], sort_order: 2, created_at: "2026-10-23T10:00:00Z", updated_at: "2026-10-23T12:00:00Z", ...fields }) });
   });
   await page.getByRole("button", { name: t.unpin, exact: true }).click();
   await expect.poll(() => !!releasePin).toBe(true);

@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, signInFixtureUser } from "./helpers";
@@ -57,7 +58,7 @@ test("curated imports use the transaction endpoint and retain one copy after a r
   await page.route("**/rest/v1/rpc/add_curated_prompts", async route => {
     imports++;
     expect(route.request().postDataJSON().p_templates.map((prompt: { name: string }) => prompt.name)).toEqual(CURATED_PROMPTS.map(prompt => prompt.name));
-    const rows = imports === 1 ? added.map((prompt, index) => ({ ...prompt, id: `curated-${index}`, user_id: "u1", project_id: null,
+    const rows = imports === 1 ? added.map((prompt, index) => ({ ...prompt, id: `curated-${index}`, user_id: demoUser.id, project_id: null,
       is_public: true, created_at: "2026-10-23T12:00:00Z", updated_at: "2026-10-23T12:00:00Z" })) : [];
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
   });

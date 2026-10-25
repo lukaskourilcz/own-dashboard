@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview } from "./helpers";
@@ -27,7 +28,7 @@ test("prepared applications expose posting and Drive links and record a sent sna
   await page.route("**/rest/v1/rpc/record_job_application", async route => {
     payload = route.request().postDataJSON();
     const body = payload!.p_payload as Record<string, unknown>;
-    recorded = { ...body, id: "test-sent", user_id: "u1", request_id: payload!.p_request_id, listing_id: null, status: "applied", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    recorded = { ...body, id: "test-sent", user_id: demoUser.id, request_id: payload!.p_request_id, listing_id: null, status: "applied", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(recorded) });
   });
   await dialog.getByRole("button", { name: "Record sent application", exact: true }).click();
@@ -50,7 +51,7 @@ test("prepared applications expose posting and Drive links and record a sent sna
   await page.route("**/rest/v1/rpc/update_job_application_progress", async route => {
     responsePayload = route.request().postDataJSON();
     recorded = {
-      ...sent, id: "test-sent", user_id: "u1", status: responsePayload!.p_status,
+      ...sent, id: "test-sent", user_id: demoUser.id, status: responsePayload!.p_status,
       responded_on: responsePayload!.p_responded_on, response_kind: responsePayload!.p_response_kind,
       next_follow_up_at: responsePayload!.p_follow_up_at, notes: responsePayload!.p_notes,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),

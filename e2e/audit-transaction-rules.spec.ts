@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, signInFixtureUser } from "./helpers";
@@ -9,7 +10,7 @@ for (const lang of ["en", "cs"] as const) {
   const save = lang === "cs" ? "Uložit" : "Save";
   test(`${lang}: rule edits retain explicit clears, failed drafts and captured versions`, async ({ page }) => {
     await gotoPreview(page, { lang }); await signInFixtureUser(page);
-    const row = { id: "11111111-1111-4111-8111-111111111111", user_id: "u1", name: "Audit rule", stage: "default", enabled: true,
+    const row = { id: "11111111-1111-4111-8111-111111111111", user_id: demoUser.id, name: "Audit rule", stage: "default", enabled: true,
       conditions: [{ field: "note", op: "contains", value: "merchant" }], actions: { category: null, note: null }, sort_order: 0,
       created_at: "2026-10-23T12:00:00Z", updated_at: "2026-10-23T12:00:00Z" };
     let writes = 0; let release!: () => void; let payload: Record<string, unknown> = {};
@@ -20,7 +21,7 @@ for (const lang of ["en", "cs"] as const) {
       if (writes === 1) { await new Promise<void>(resolve => { release = resolve; }); return route.fulfill({ status: 500, json: { message: "Synthetic conflict" } }); }
       return route.fulfill({ json: { id: row.id } });
     });
-    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: [row], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] } }));
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: demoUser.id, rules: [row], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] } }));
     await page.goto("/dev-preview?tab=categories");
     await page.getByRole("button", { name: `${lang === "cs" ? "Upravit" : "Edit"}: Audit rule`, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: copy.editRule });
@@ -66,7 +67,7 @@ for (const lang of ["en", "cs"] as const) {
       }
       return route.fulfill({ json: url.searchParams.has("id") ? created : created ? [created] : [] });
     });
-    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: created ? [created] : [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] } }));
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: demoUser.id, rules: created ? [created] : [], rules_version: "0123456789abcdef0123456789abcdef", project_ids: [], subscription_ids: [] } }));
     await page.goto("/dev-preview?tab=categories"); await page.getByRole("button", { name: copy.newRule, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: copy.newRule });
     await dialog.getByRole("textbox", { name: `${copy.value} 1`, exact: true }).fill("merchant");
@@ -85,10 +86,10 @@ for (const lang of ["en", "cs"] as const) {
     const first = "0123456789abcdef0123456789abcdef", second = "a".repeat(32);
     let current = first, writes = 0, release!: () => void;
     const versions: unknown[] = [];
-    const row = { id: "11111111-1111-4111-8111-111111111111", user_id: "u1", name: "Audit apply rule", stage: "default", enabled: true,
+    const row = { id: "11111111-1111-4111-8111-111111111111", user_id: demoUser.id, name: "Audit apply rule", stage: "default", enabled: true,
       conditions: [{ field: "note", op: "contains", value: "merchant" }], actions: { category: "Work" }, sort_order: 0,
       created_at: "2026-10-24T00:43:00Z", updated_at: "2026-10-24T00:43:00Z" };
-    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: "u1", rules: [row], rules_version: current, project_ids: [], subscription_ids: [] } }));
+    await page.route("**/rpc/transaction_rule_context", route => route.fulfill({ json: { owner_id: demoUser.id, rules: [row], rules_version: current, project_ids: [], subscription_ids: [] } }));
     await page.route("**/api/money/rules/apply", async route => {
       versions.push(route.request().postDataJSON().expectedRulesVersion); writes++;
       if (writes === 1) {

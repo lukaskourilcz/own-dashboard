@@ -1,3 +1,4 @@
+import { user as demoUser } from "../src/lib/demo/fixtures";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { integrationStatusFixture, gotoPreview, signInFixtureUser } from "./helpers";
@@ -9,7 +10,7 @@ for (const lang of ["en", "cs"] as const) {
   test(`${lang}: bank actions protect pending work and retain failed connections`, async ({ page }, info) => {
     await gotoPreview(page, { lang }); await signInFixtureUser(page);
     const names = ["Synthetic Bank A", "Synthetic Bank B"];
-    let rows = names.map((name, index) => ({ id: `11111111-0000-4000-8000-${String(index).padStart(12, "0")}`, user_id: "u1", institution_name: name,
+    let rows = names.map((name, index) => ({ id: `11111111-0000-4000-8000-${String(index).padStart(12, "0")}`, user_id: demoUser.id, institution_name: name,
       provider: "gocardless", status: "linked", last_error: index === 1 ? "Synthetic private legacy detail" : null, last_synced_at: null, consent_expires_at: null }));
     await page.route("**/rest/v1/bank_connections**", route => route.fulfill({ json: rows, headers: { "access-control-expose-headers": "content-range", "content-range": rows.length ? `0-${rows.length - 1}/${rows.length}` : "*/0" } }));
     await page.route("**/api/integrations/status", route => route.fulfill({ json: integrationStatusFixture([{ id: "gocardless", label: "GoCardless", configured: true, connected: true, supportsInstitutionPicker: true }]) }));
