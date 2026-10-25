@@ -4637,8 +4637,8 @@
       "path": "src/lib/organization-records.ts",
       "sha256": null,
       "lines": 40,
-      "reviewedSha256": "6dc962ba801c68f7c3bffc7d21ad5b49d5b88be54f5b92b065463efa3809382c",
-      "status": "source reviewed; finding 217 complete captured organization reads and native/Strict Mode recovery pass; generated schema from 120 files; record writes and final release pending"
+      "reviewedSha256": "c07c3ca978a5db0018a256374a8ca50dc85c8a496af423b526fe8b100472d9aa",
+      "status": "source reviewed; complete owned reads and captured write helpers pass targeted SDK/RLS cases; client writes and consolidated release pending"
     }
   ],
   "baselineFileCount": 561
