@@ -23,14 +23,14 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async (signal: AbortSign
   } };
 } }));
 import { GET, PATCH } from "@/app/api/user/preferences/route";
-const request = (body?: unknown, origin = "https://app.example") => new Request("https://app.example/api/user/preferences", { method: "PATCH", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) });
+const request = (body?: unknown, origin = "https://app.example") => new Request("https://app.example/api/user/preferences", { method: "PATCH", headers: { origin, "x-own-dashboard-owner": "owner", "content-type": "application/json" }, body: JSON.stringify(body) });
 beforeEach(() => { Object.assign(state, { user: true, authError: false, row: null, readError: false, writeError: false, suppressed: false, alter: false, race: false, writes: [], filters: [], signal: undefined }); });
 it.each([null, [], 42, "bad", {}, { timezone: "not-a-zone" }, { timezone: 42 }, { nudge_hour: 24 }, { nudge_hour: -1 }, { nudge_hour: 1.5 }, { nudge_hour: "5" }, { display_currency: "XXX" }, { user_id: "foreign", theme: "dark" }, { language: "de" }, { notifications_renewals: "false" }, { dashboard_layout: ["unknown"] }, { selected_calendar_ids: Array(21).fill("primary") }, { visible_repo_ids: ["9007199254740992"] }, { cv_url_cs: "javascript:alert(1)" }, { cv_url_cs: "https://user:password@example.test" }])("rejects invalid patches before any write (%j)", async body => {
   const res = await PATCH(request(body)); expect(res.status).toBe(400); expect(res.headers.get("cache-control")).toBe("private, no-store"); expect(state.writes).toEqual([]);
 });
 it("confirms only normalized requested fields on creation, preserving explicit clears", async () => {
   const res = await PATCH(request({ timezone: null, nudge_hour: null, selected_calendar_ids: [], visible_repo_ids: [], dashboard_layout: ["todos", "todos"], display_currency: "CZK" }));
-  expect(res.status).toBe(200); expect(await res.json()).toEqual({ ok: true, saved: { timezone: null, nudge_hour: null, selected_calendar_ids: [], visible_repo_ids: [], dashboard_layout: ["todos"], display_currency: "CZK" } });
+  expect(res.status).toBe(200); expect(await res.json()).toEqual({ ok: true, ownerId: "owner", saved: { timezone: null, nudge_hour: null, selected_calendar_ids: [], visible_repo_ids: [], dashboard_layout: ["todos"], display_currency: "CZK" } });
   expect(state.writes[0]).toMatchObject({ user_id: "owner" });
 });
 it("uses the exact captured own-row version and advances a future clock", async () => {
@@ -51,6 +51,13 @@ it("preserves authentication/origin checks and request cancellation", async () =
   expect((await PATCH(req)).status).toBe(503); expect(state.writes).toEqual([]);
 });
 it("bounds request bodies", async () => { expect((await PATCH(request({ cv_url_cs: "x".repeat(70_000) }))).status).toBe(413); expect(state.writes).toEqual([]); });
-it("returns private, typed defaults only for a confirmed missing row", async () => { const res = await GET(new Request("https://app.example/api/user/preferences")); expect(res.status).toBe(200); expect(await res.json()).toMatchObject({ selected_calendar_ids: ["primary"], sync_available: true }); expect(state.signal).toBeInstanceOf(AbortSignal); });
-it.each([{ user_id: "foreign" }, { user_id: "owner", theme: "wrong" }, { user_id: "owner", selected_calendar_ids: [42] }])("refuses invalid or foreign stored preferences (%j)", async row => { state.row = row; expect((await GET(new Request("https://app.example/api/user/preferences"))).status).toBe(503); });
-it("normalizes retired widget/navigation values without reviving them", async () => { state.row = { user_id: "owner", dashboard_layout: ["quick-add", "todos", "todos"], hidden_navigation: ["pulse", "home", "settings"] }; const res = await GET(new Request("https://app.example/api/user/preferences")); expect(await res.json()).toMatchObject({ dashboard_layout: ["todos"], hidden_navigation: [] }); });
+it("returns private, typed defaults only for a confirmed missing row", async () => { const res = await GET(new Request("https://app.example/api/user/preferences", { headers: { "x-own-dashboard-owner": "owner" } })); expect(res.status).toBe(200); expect(await res.json()).toMatchObject({ selected_calendar_ids: ["primary"], sync_available: true }); expect(state.signal).toBeInstanceOf(AbortSignal); });
+it.each([{ user_id: "foreign" }, { user_id: "owner", theme: "wrong" }, { user_id: "owner", selected_calendar_ids: [42] }])("refuses invalid or foreign stored preferences (%j)", async row => { state.row = row; expect((await GET(new Request("https://app.example/api/user/preferences", { headers: { "x-own-dashboard-owner": "owner" } }))).status).toBe(503); });
+it("normalizes retired widget/navigation values without reviving them", async () => { state.row = { user_id: "owner", dashboard_layout: ["quick-add", "todos", "todos"], hidden_navigation: ["pulse", "home", "settings"] }; const res = await GET(new Request("https://app.example/api/user/preferences", { headers: { "x-own-dashboard-owner": "owner" } })); expect(await res.json()).toMatchObject({ dashboard_layout: ["todos"], hidden_navigation: [] }); });
+it.each([null, "earlier-owner"])("refuses a missing or changed captured actor before any preference read/write (%s)", async captured => {
+  const headers: Record<string, string> = { origin: "https://app.example" };
+  if (captured) headers["x-own-dashboard-owner"] = captured;
+  expect((await PATCH(new Request("https://app.example/api/user/preferences", { method: "PATCH", headers, body: JSON.stringify({ cv_url_cs: "https://docs.example.test/previous-owner" }) }))).status).toBe(409);
+  expect((await GET(new Request("https://app.example/api/user/preferences", { headers }))).status).toBe(409);
+  expect(state.filters).toEqual([]); expect(state.writes).toEqual([]);
+});

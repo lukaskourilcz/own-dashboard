@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { DEFAULT_LAYOUT } from "@/lib/dashboard-layout";
 const state = vi.hoisted(() => ({ save: vi.fn() }));
-vi.mock("@/lib/preference-client", () => ({ saveUserPreferences: state.save }));
+vi.mock("@/lib/preference-client", () => ({ useSaveUserPreferences: () => state.save }));
 vi.mock("@/lib/use-dashboard-layout", () => ({ useDashboardLayout: () => ({ layout: DEFAULT_LAYOUT, setLayout: vi.fn() }) }));
 vi.mock("@/lib/use-prefs", () => ({ useNavVisibility: () => ({ isHidden: () => false }) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

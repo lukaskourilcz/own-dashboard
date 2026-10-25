@@ -12,7 +12,7 @@ for (const lang of ["en", "cs"] as const) test(`${lang}: Projects keeps unlisted
   await page.route("**/api/user/preferences", async route => {
     attempts++; expect(route.request().postDataJSON()).toEqual({ visible_repo_ids: [["123", "456", "999"], ["456", "999"], ["123", "456"]][attempts - 1] });
     await new Promise<void>(resolve => { release = resolve; });
-    await route.fulfill({ status: attempts === 2 ? 200 : 503, json: attempts === 2 ? { ok: true, saved: { visible_repo_ids: ["456", "999"] } } : { error: "unavailable" } });
+    await route.fulfill({ status: attempts === 2 ? 200 : 503, json: attempts === 2 ? { ok: true, ownerId: route.request().headers()["x-own-dashboard-owner"], saved: { visible_repo_ids: ["456", "999"] } } : { error: "unavailable" } });
   });
   await page.goto("/dev-preview?tab=projects&repositories=live"); await page.getByRole("button", { name: t.filter, exact: true }).click();
   const dialog = page.getByRole("dialog", { name: t.filterTitle, exact: true }); await expect(dialog.getByText(t.filterUnlisted(1), { exact: true })).toBeVisible();

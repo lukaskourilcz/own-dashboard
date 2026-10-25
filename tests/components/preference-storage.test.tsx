@@ -50,7 +50,7 @@ it("updates subscribed preferences from current storage without persisting/repos
   storage.setItem("hiddenNavSections", JSON.stringify(["tasks"])); storage.setItem("cvUrlCs", "https://docs.example.test/synthetic"); storage.setItem("dashboardLayout", JSON.stringify(["crons"]));
   const write = vi.spyOn(storage, "setItem");
   act(() => { for (const key of ["theme", "lang", "displayCurrency", "tasksPerCategory", "hiddenNavSections", "cvUrlCs", "dashboardLayout"]) external(key); });
-  expect(snapshot()).toEqual({ theme: "dark", lang: "en", currency: "EUR", count: 10, hidden: ["tasks"], cs: "https://docs.example.test/synthetic", layout: ["crons"] });
+  expect(snapshot()).toEqual({ theme: "dark", lang: "en", currency: "EUR", count: 10, hidden: ["tasks"], cs: "", layout: ["crons"] });
   expect(document.documentElement.classList.contains("dark")).toBe(true); expect(document.documentElement.lang).toBe("en"); expect(write).not.toHaveBeenCalled(); expect(fetcher).not.toHaveBeenCalled();
 });
 it("ignores an old event value and rejects malformed financial/task preferences", async () => {

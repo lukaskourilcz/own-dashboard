@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { OwnerPreferencesProvider } from "@/lib/owner-preferences";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { NavigationGuardProvider, pushDashboardHistory, useGuardedNavigation } from "@/components/navigation-guard";
 import { DashboardDestinationBoundary } from "@/components/dashboard-destination-state";
@@ -208,7 +209,7 @@ const clientHydrated = () => true;
 const serverHydrated = () => false;
 
 export function DashboardShell(props: Props) {
-  return <NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider>;
+  return <OwnerPreferencesProvider ownerId={props.user.id} initial={!props.isPreview && props.initialPreferences.sync_available ? { cv_url_cs: props.initialPreferences.cv_url_cs, cv_url_en: props.initialPreferences.cv_url_en, show_czech_career: props.initialPreferences.show_czech_career === true } : undefined}><NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider></OwnerPreferencesProvider>;
 }
 
 function DashboardShellContent(props: Props) {

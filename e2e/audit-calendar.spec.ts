@@ -10,7 +10,7 @@ for (const lang of ["en", "cs"] as const) {
     test.skip(info.project.name === "mobile", "Six explicit widths include mobile.");
     const t = copy[lang]; await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" });
     await page.route("**/api/calendar/list", route => route.fulfill({ json: { calendars: [{ id: "primary-id", summary: "Owner calendar", primary: true }] } }));
-    await page.route("**/api/user/preferences", route => route.fulfill({ json: { ok: true, saved: { selected_calendar_ids: ["primary"] } } }));
+    await page.route("**/api/user/preferences", route => route.fulfill({ json: { ok: true, ownerId: route.request().headers()["x-own-dashboard-owner"], saved: { selected_calendar_ids: ["primary"] } } }));
     await page.route("**/api/calendar/events?**", route => route.fulfill({ json: { ok: true, events: Array.from({ length: 101 }, (_, index) => ({ id: `event-${index}`, summary: `Project review ${index + 1}`, description: "<p>Review the project</p>", start: { dateTime: "2026-10-25T09:00:00Z" }, end: { dateTime: "2026-10-25T10:00:00Z" } })) } }));
     await page.goto("/dev-preview?tab=calendar&calendar=live"); await page.getByRole("button", { name: t.primaryLabel, exact: true }).click();
     await expect(page.getByRole("button", { name: "Owner calendar", exact: false })).toBeVisible(); await page.getByRole("button", { name: t.save, exact: true }).click();
@@ -40,7 +40,7 @@ for (const lang of ["en", "cs"] as const) {
     await page.route("**/api/user/preferences", async route => {
       expect(route.request().postDataJSON()).toEqual({ selected_calendar_ids: ["primary", "shared"] });
       await new Promise<void>(resolve => { release = resolve; }); saved = true;
-      await route.fulfill({ json: { ok: true, saved: { selected_calendar_ids: ["primary", "shared"] } } });
+      await route.fulfill({ json: { ok: true, ownerId: route.request().headers()["x-own-dashboard-owner"], saved: { selected_calendar_ids: ["primary", "shared"] } } });
     });
     await page.route("**/api/calendar/events?**", route => {
       eventReads++; return route.fulfill({ json: { ok: true, events: [{ id: "refreshed", sourceCalendarId: "shared", summary: saved ? "Refreshed selected calendar" : "Before confirmation", start: { dateTime: "2026-10-25T09:00:00Z" }, end: { dateTime: "2026-10-25T10:00:00Z" } }] } });

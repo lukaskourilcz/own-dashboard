@@ -69,7 +69,8 @@ import { qk } from "@/lib/queries/keys";
 import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { fetchIntegrationStatus } from "@/lib/integration-status";
-import { fetchUserPreferences, saveUserPreferences } from "@/lib/preference-client";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { fetchUserPreferences, useSaveUserPreferences } from "@/lib/preference-client";
 import {
   DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
@@ -148,6 +149,9 @@ export function SettingsPanel({
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();
+  const ownerPreferences = useOwnerPreferences();
+  const preferenceQueryKey = [...qk.userPreferences, ownerPreferences?.ownerId ?? "unavailable"];
+  const saveUserPreferences = useSaveUserPreferences();
   const projectPreferences = useProjectPreferencesSave(setProjects);
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
@@ -162,8 +166,8 @@ export function SettingsPanel({
   const [renewalDraft, setRenewalDraft] = useState<boolean | null>(null);
   const renewalSaving = useRef(false);
   const preferencesQuery = useQuery({
-    queryKey: qk.userPreferences, queryFn: fetchUserPreferences,
-    enabled: syncPreferences && renewalDraft === null, retry: false, staleTime: 30_000,
+    queryKey: preferenceQueryKey, queryFn: ({ signal }) => fetchUserPreferences({ signal, ownerId: ownerPreferences!.ownerId }),
+    enabled: syncPreferences && !!ownerPreferences && renewalDraft === null, retry: false, staleTime: 30_000,
   });
   const renewalNotifications = renewalDraft ?? preferencesQuery.data?.notifications_renewals ?? (!syncPreferences ? true : undefined);
   // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
@@ -189,12 +193,12 @@ export function SettingsPanel({
     if (!syncPreferences) return;
     renewalSaving.current = true;
     try {
-      await qc.cancelQueries({ queryKey: qk.userPreferences });
+      await qc.cancelQueries({ queryKey: preferenceQueryKey });
       await saveUserPreferences({ notifications_renewals });
-      qc.setQueryData(qk.userPreferences, (previous: Awaited<ReturnType<typeof fetchUserPreferences>> | undefined) => previous ? { ...previous, notifications_renewals } : previous);
+      qc.setQueryData(preferenceQueryKey, (previous: Awaited<ReturnType<typeof fetchUserPreferences>> | undefined) => previous ? { ...previous, notifications_renewals } : previous);
     } catch {
       toast.err(t.settings.preferenceSaveFailed);
-      void qc.invalidateQueries({ queryKey: qk.userPreferences });
+      void qc.invalidateQueries({ queryKey: preferenceQueryKey });
     } finally {
       renewalSaving.current = false;
       setRenewalDraft(null);
@@ -609,7 +613,7 @@ export function SettingsPanel({
                   placeholder={t.settings.cvPlaceholder}
                   value={cvCs}
                   onChange={(e) => setCvCs(e.target.value.trim())}
-                  onBlur={() => savePreferences({ cv_url_cs: cvCs })}
+                  onBlur={() => { if (ownerPreferences?.cvCs.isDirty()) savePreferences({ cv_url_cs: cvCs }); }}
                 />
               </div>
               <div className="space-y-1.5">
@@ -621,7 +625,7 @@ export function SettingsPanel({
                   placeholder={t.settings.cvPlaceholder}
                   value={cvEn}
                   onChange={(e) => setCvEn(e.target.value.trim())}
-                  onBlur={() => savePreferences({ cv_url_en: cvEn })}
+                  onBlur={() => { if (ownerPreferences?.cvEn.isDirty()) savePreferences({ cv_url_en: cvEn }); }}
                 />
               </div>
             </div>

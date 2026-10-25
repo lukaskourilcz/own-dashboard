@@ -3,14 +3,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
+import { useSaveUserPreferences } from "@/lib/preference-client";
 import { saveRepositoryFilter } from "@/lib/repository-filter-save";
 import { useRef } from "react";
 
 export function useRepositoryFilterSave(onSaved: () => void) {
   const toast = useToast(), t = useDict(), qc = useQueryClient();
+  const savePreferences = useSaveUserPreferences();
   const pending = useRef(false);
   const mutation = useMutation({
-    mutationFn: saveRepositoryFilter,
+    mutationFn: (ids: readonly string[]) => saveRepositoryFilter(ids, savePreferences),
     onSuccess: ({ device, server, current }) => {
       if (server) void qc.invalidateQueries({ queryKey: qk.userPreferences });
       if (!current) { toast.info(t.github.filterChanged); return; }

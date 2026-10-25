@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/use-theme";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { useSaveUserPreferences } from "@/lib/preference-client";
 import { useDict } from "@/lib/i18n";
 
 export function ThemeToggle({
@@ -10,6 +10,7 @@ export function ThemeToggle({
 }: {
   syncPreferences?: boolean;
 }) {
+  const saveUserPreferences = useSaveUserPreferences();
   const { theme, setTheme } = useTheme();
   const t = useDict();
   const toggle = () => {

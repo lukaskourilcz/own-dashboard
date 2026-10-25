@@ -18,11 +18,12 @@ export async function GET(request: Request) {
     const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
     if (auth.error) throw Error("Authentication unavailable");
     if (!auth.data.user) return response("Not authenticated.", 401);
+    if (request.headers.get("x-own-dashboard-owner") !== auth.data.user.id) return response("Account changed; reload before continuing.", 409);
     const { data, error } = await awaitWithSignal(supabase.from("user_preferences").select(["user_id", ...PREFERENCE_FIELDS].join(","))
       .eq("user_id", auth.data.user.id).abortSignal(signal).maybeSingle(), signal);
     const row = data === null ? null : z.record(z.string(), z.unknown()).parse(data);
     if (error || (row && row.user_id !== auth.data.user.id)) throw Error("Preferences unavailable");
-    return NextResponse.json({ ...parseStoredUiPreferences(row), sync_available: true }, { headers });
+    return NextResponse.json({ ...parseStoredUiPreferences(row), sync_available: true, ownerId: auth.data.user.id }, { headers });
   } catch { return response("Could not load preferences.", 503); }
 }
 
@@ -36,6 +37,7 @@ export async function PATCH(request: Request) {
     if (auth.error) throw Error("Authentication unavailable");
     const user = auth.data.user;
     if (!user) return response("Not authenticated.", 401);
+    if (request.headers.get("x-own-dashboard-owner") !== user.id) return response("Account changed; reload before continuing.", 409);
     const prefix = await awaitWithSignal(readTextPrefix(new Response(request.body), 65_536, signal), signal);
     if (prefix.truncated) return response("Preferences request too large.", 413);
     let input: unknown;
@@ -59,6 +61,6 @@ export async function PATCH(request: Request) {
     const row = z.record(z.string(), z.unknown()).parse(saved.data);
     if (row.user_id !== user.id || Date.parse(String(row.updated_at)) !== Date.parse(updated_at)
       || fields.some(key => JSON.stringify(row[key]) !== JSON.stringify(patch[key as keyof typeof patch]))) throw Error("Preference save unconfirmed");
-    return NextResponse.json({ ok: true, saved: Object.fromEntries(fields.map(key => [key, row[key]])) }, { headers });
+    return NextResponse.json({ ok: true, ownerId: user.id, saved: Object.fromEntries(fields.map(key => [key, row[key]])) }, { headers });
   } catch { return response("Could not confirm preference save.", 503); }
 }

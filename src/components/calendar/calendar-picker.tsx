@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { useSaveUserPreferences } from "@/lib/preference-client";
 import { fetchCalendarList } from "@/lib/calendar-client";
 import { useUnsavedDraft } from "@/components/navigation-guard";
 
@@ -18,6 +18,7 @@ export function CalendarPicker({
 }: {
   initialSelected: string[];
 }) {
+  const saveUserPreferences = useSaveUserPreferences();
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();

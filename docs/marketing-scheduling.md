@@ -202,7 +202,7 @@ slot, all without a single n8n execution.
 
 ## Release prerequisite
 
-These are setup procedures, not authorization to run them. Production has every migration up to `20261021125123`, and its history matches the repository since the 22 October reconciliation. The 23 prepared migrations after it (`20261022000000` through `20261023130300`) are not applied; the owner pushes them as [migration-guide.md](migration-guide.md#applying-the-prepared-migrations) describes.
+These are setup procedures, not authorization to run them. The 23-file rollout through `20261023130300` completed on 23 October. Thirty-two audit migrations (87–118), ending with `20261025040638_complete_dneskai_cost_reads.sql`, remain prepared/unapplied; apply their complete ordered chain before deploying this audit branch, as [migration-guide.md](migration-guide.md#applying-the-prepared-migrations) describes.
 
 The prepared lapse-release migration changes future skips only: reports return to classified `new` status when a brief lapses without a job/revision or another active brief. The skipped brief stays as history. Never reset historic selections or reservations as a rollout shortcut.
 

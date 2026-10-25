@@ -410,3 +410,8 @@ Ten native EN/CS desktop/mobile cases pass for type/insertion edits, swapped-pic
 ## 25 October 2026 — Lab budget-copy baseline review
 
 The full checkpoint-78 browser matrix passes 683 cases, skips 97 deliberate variants and reports two mobile visual differences. Expected/actual/difference images show the new configured-budget/$0.13 text taking one fewer line, plus small text-position/rasterization differences in the missing-render ninth stage. The readable refusal, controls and caption stay intact. Only these two PNGs are refreshed after inspection. Six visual cases pass against the same optimized fixture build, followed by twelve passing repeat checks in 57.0 seconds. No application source changes during verification; no real provider or owner data is used. Exact full-run and follow-up evidence remains in the app-wide report.
+
+
+### App-wide audit: private preferences (25 October 2026)
+
+Finding 201: 38 native cases pass, six intentional variants skip (2.9 min), covering EN/CS desktop/mobile Calendar/relink, renewal, repository-filter, appearance events and guest isolation. Four additional private-draft cases pass (12.8 s): mismatched owner receipt retains the edited CV, a matching retry clears its dirty state, unchanged blurs make no write, reload restores only the scoped draft and legacy values remain untouched. Axe and overflow pass. Inspected EN desktop/light and CS mobile/dark CV captures retain matching field widths and readable wrapping. These are targeted development checks, not the final optimized release matrix.

@@ -614,8 +614,8 @@
       "path": "src/app/api/user/preferences/route.ts",
       "lines": 169,
       "sha256": "c6e392390ab5721061e6b6ea139f4a288baa29c0a60c73597b3b0cc215f8d8c2",
-      "status": "source reviewed; bounded/versioned own-row preference reads/writes, targeted and rendered checks pass; final release pending",
-      "reviewedSha256": "1f27b6449e79b5ef2680f4d163761d246c9878ac948ab3f8f056b1e00e99176f"
+      "status": "source reviewed; bounded/versioned own-row preference reads/writes, targeted and rendered checks pass; final release pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "23c0227f59d22c98bb0b1c4336e069e63790f044581114e2e4f7a91b00135c1c"
     },
     {
       "path": "src/app/api/vercel/analytics/route.ts",
@@ -733,8 +733,8 @@
       "path": "src/components/calendar/calendar-picker.tsx",
       "lines": 185,
       "sha256": "0159c097b49c354ce0f707bfd3d4c40dde2bc5c56baab15b138451aaac512dbc",
-      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "a5b1a4059fe9aa804b15d5263083e089bd7d92bf1942711ae651ce354224c88d"
+      "status": "source reviewed; bounded complete Calendar reads/writes and retained drafts tested; targeted/rendered checks pass; final release pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "d7f79f9fc319bb95d5ac4178c7cbbbe38c8ad6310b6e8d0decf1aa7e9a143896"
     },
     {
       "path": "src/components/calendar/relink-cta.tsx",
@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "partial; route-scoped fake-only Task query/owner wiring checked in finding 177; remaining shared/account lifecycle and final matrix pending",
-      "reviewedSha256": "0452c9ad70c99e34d36331bc83c36dddfad7e87ae4d6c7db5577c2fa36d99ef8"
+      "status": "partial; route-scoped fake-only Task query/owner wiring checked in finding 177; remaining shared/account lifecycle and final matrix pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "d1b3bf4b8f71d7ece1278e8593c75574983a290daf3063cadee5c9b2ace59ad5"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -896,8 +896,8 @@
       "path": "src/components/github/use-repository-filter-save.ts",
       "sha256": null,
       "lines": 30,
-      "status": "source reviewed; serialized guarded filter submission and honest confirmation copy tested; rendered checks pass; final release pending",
-      "reviewedSha256": "39a81490724e9171ff9c551f60e939c4b79dd9aca24fe42db8d6881af8f3c53d"
+      "status": "source reviewed; serialized guarded filter submission and honest confirmation copy tested; rendered checks pass; final release pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "02ac152a833c2b560b27dfa7bcec1af3d96372574caa42d416739a220a1bee61"
     },
     {
       "path": "src/components/github/use-repository-note-autosave.ts",
@@ -1317,8 +1317,8 @@
       "path": "src/components/nav/sidebar.tsx",
       "lines": 494,
       "sha256": "ceb1990b1be23aa546036c076264823fb4c4b883511bd14e9b27fc0d1208b535",
-      "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains",
-      "reviewedSha256": "9b5a169c5ae440c25f025740d617b05dbc483edf2a401e658d51aa4ac143d134"
+      "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "e3bb9ba1c210ade9cb1903c48aea4007f6cb21484002fa94babfc46c00be3acc"
     },
     {
       "path": "src/components/navigation-guard.tsx",
@@ -1360,8 +1360,8 @@
       "path": "src/components/overview/customizable-overview.tsx",
       "lines": 394,
       "sha256": "66be5218aa3814e003564e455164342d492baf24c5238c795f786a4076997bb8",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "2037c777d1c99118340004be10d22ba480bd44362d42ee0fb43e8a028b260912"
+      "status": "source reviewed; final release checks pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "0fc3284b55cb3f88d0af9e779b8f5a43064383e0a5f7e6a785dcd9097ab91524"
     },
     {
       "path": "src/components/overview/daily-focus.tsx",
@@ -1605,8 +1605,8 @@
       "path": "src/components/panels/settings-panel.tsx",
       "lines": 814,
       "sha256": "628abb698ed4d78bb009c5d8e44c2834301a57f8ea385042d7b6a3b3c33c64df",
-      "status": "partial; preferences/integrations/layout and confirmed project classification checked; CV/density/reorder lifecycle and final optimized release pending",
-      "reviewedSha256": "c641aeeb1bc89f8ec269b83ad288b1ebf216921324b41f6cedadc137ec7c6013"
+      "status": "partial; preferences/integrations/layout and confirmed project classification checked; CV/density/reorder lifecycle and final optimized release pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "74ba65768cd857b7b54c9124273c53403062bad7fa99d4dfef09441ac50318d4"
     },
     {
       "path": "src/components/panels/shortcuts-panel.tsx",
@@ -1668,8 +1668,8 @@
       "path": "src/components/preference-hydrator.tsx",
       "lines": 86,
       "sha256": "04a46032d4a1de6b7e71592bd891bf78d5018e6b1e5a0f587c953e6b1ac55f99",
-      "status": "partial; source inspected; unavailable initialization and owner-scoped private CV preferences pending; see remaining-review.md",
-      "reviewedSha256": "04a46032d4a1de6b7e71592bd891bf78d5018e6b1e5a0f587c953e6b1ac55f99"
+      "status": "partial; finding 201 closes unavailable initialization, owner-scoped private CV/Career drafts and late private hydration without clobbering local edits; device-local presentation ordering and final release remain separate",
+      "reviewedSha256": "8be8ae74f84ea5ecf90191796f190cf5b83ae96d727e784bc195d7503ee7d230"
     },
     {
       "path": "src/components/projects/project-communication-panel.tsx",
@@ -1822,8 +1822,8 @@
       "path": "src/components/theme-toggle.tsx",
       "lines": 33,
       "sha256": "38d36e363d43b6e198c00e8740d59767d0f18cae8641ea4e96042e1833c66148",
-      "status": "source reviewed; cross-tab preference tests pass; final app-wide release checks pending",
-      "reviewedSha256": "557328e7f28769e4ed25dd39442fc006611a4c8816c2faa5bd690fe144405a74"
+      "status": "source reviewed; cross-tab preference tests pass; final app-wide release checks pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "3cf339a5408baec8b1d2c629b2d764435aa46799652f254d2882fa6118666a78"
     },
     {
       "path": "src/components/tools/detected-tools-section.tsx",
@@ -3840,8 +3840,8 @@
     },
     {
       "path": "src/lib/marketing/publisher.ts",
-      "lines": 548,
-      "sha256": "b2d81efc4d67071507e391d89ebd67858d2acbf7f16745cce18ba6264f28e352",
+      "lines": 549,
+      "sha256": "b7e2b2918ed933268dda8585d026ae03365fb25d5e0ca83f4c3cac481f287087",
       "status": "partial; finding 200 closes full normalized caption identity and complete-page uniqueness with read-only recovery regressions; bounded Graph/media stream cleanup and fresh credential identity remain under review; durable publish intent and single-send fences retained",
       "reviewedSha256": "b2d81efc4d67071507e391d89ebd67858d2acbf7f16745cce18ba6264f28e352"
     },
@@ -4071,6 +4071,13 @@
       "reviewedSha256": "b7aec7f1f25944a3fe91e7cdcaece9bad6237398c8951d9767f5a1d82ff6dfd8"
     },
     {
+      "path": "src/lib/owner-preferences.tsx",
+      "sha256": null,
+      "lines": 85,
+      "status": "source reviewed; finding 201 checks first-render owner/guest isolation, owner-keyed retained drafts, late hydration, exact dirty acknowledgements, storage events/refusal, SSR and Strict Mode cancellation; final release pending",
+      "reviewedSha256": "0d096ad79341168ad9363b4d6b890d264dfe22a495a72652a53644f35bd5c299"
+    },
+    {
       "path": "src/lib/payment-matching-server.ts",
       "lines": 226,
       "sha256": "9f2339ec270c7f83eb8bc0563722e9925444e34acc83e8c6fc6c5986b540abf5",
@@ -4109,8 +4116,8 @@
       "path": "src/lib/preference-client.ts",
       "lines": 24,
       "sha256": "6f34aaca82b1726f651d1553596dd5d5fd13c369c35630d87e0bf9ab494f8fc3",
-      "status": "source reviewed; bounded/captured preference queue and original complete receipts tested; targeted/rendered checks pass; final release pending",
-      "reviewedSha256": "3da302cb40c9ee4bd0f2a3e22926b499e8af546e12368ff47a9b8a9ce41314b2"
+      "status": "source reviewed; bounded/captured preference queue and original complete receipts tested; targeted/rendered checks pass; final release pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "6e35eb41ec0e5d3fd6da4701621b56500e18783229d8835361e885c1b75c7527"
     },
     {
       "path": "src/lib/preference-storage.ts",
@@ -4264,8 +4271,8 @@
       "path": "src/lib/repository-filter-save.ts",
       "sha256": null,
       "lines": 15,
-      "status": "source reviewed; confirmed device/server outcomes and late-intent reconciliation tested; rendered checks pass; full cross-device ordering separately pending",
-      "reviewedSha256": "f681b51a6709a6807a6bb4676e394597f5a253b780c8de5b1b8699355dba03d2"
+      "status": "source reviewed; confirmed device/server outcomes and late-intent reconciliation tested; rendered checks pass; full cross-device ordering separately pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "88d0e0ded1be5770240632565da8ceba57e486f4a2d4075ddee64137e445ef45"
     },
     {
       "path": "src/lib/repository-filter.ts",
@@ -4483,8 +4490,8 @@
       "path": "src/lib/use-prefs.ts",
       "lines": 437,
       "sha256": "eceeeb07c83f5ff9fee096ccf750da6350dae2b060b51d3c9372c4a5a26065df",
-      "status": "partially reviewed; validated shared stores, cross-tab reconciliation and tour personal-field isolation checked; authenticated account/hydration lifecycle and remaining controls pending",
-      "reviewedSha256": "265bdceb1117e180726a3f34bc5da38fe9a29abe4e50c9eb399856cbb0879cbd"
+      "status": "partially reviewed; validated shared stores, cross-tab reconciliation and tour personal-field isolation checked; authenticated account/hydration lifecycle and remaining controls pending; finding 201 checks owner-scoped private drafts, late hydration and captured preference read/write actors; remaining domain-specific lifecycle and final release remain separate",
+      "reviewedSha256": "414504a32d25acb17a80134e668b5c8b3d42e116afef8531d58a510137d08ff6"
     },
     {
       "path": "src/lib/use-return-focus.ts",

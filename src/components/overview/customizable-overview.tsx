@@ -55,7 +55,7 @@ import {
 import { useDashboardLayout } from "@/lib/use-dashboard-layout";
 import { useNavVisibility } from "@/lib/use-prefs";
 import { cn } from "@/lib/utils";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { useSaveUserPreferences } from "@/lib/preference-client";
 
 // Widgets that mirror a hideable nav section — hidden in Settings ⇒ hidden on
 // the overview too. Overview-only widgets (today-hero, kpi) have no entry and
@@ -93,6 +93,7 @@ export function CustomizableOverview({
   nodes,
   syncPreferences = true,
 }: Props) {
+  const saveUserPreferences = useSaveUserPreferences();
   const t = useDict();
   const dragContextId = useId();
   const { layout, setLayout } = useDashboardLayout();

@@ -47,7 +47,7 @@ import {
 import { cn } from "@/lib/utils";
 import { brandConfig } from "@/lib/brand";
 import { groupProjectsByEngagement } from "@/lib/projects";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { useSaveUserPreferences } from "@/lib/preference-client";
 import { isHiddenNavTab, type NavTab } from "@/lib/nav-tabs";
 import type { Project } from "@/lib/types";
 
@@ -144,6 +144,7 @@ export function Sidebar({
   onOpenProject?: (project: SidebarProject) => void;
 }) {
   const t = useDict();
+  const saveUserPreferences = useSaveUserPreferences();
   const signOut = useSignOut();
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();

@@ -1,5 +1,6 @@
 "use client";
 
+import { useOwnerPreferences, unavailablePrivatePreference } from "@/lib/owner-preferences";
 import { useGuestPreferences } from "@/lib/guest-preferences";
 import { useSyncExternalStore } from "react";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
@@ -359,44 +360,9 @@ export function useTasksPerCategory(): {
 }
 
 // ---------------------------------------------------------------------------
-// CV links — the user's Google-Docs CV URLs (Czech + English), surfaced as
-// buttons on the Career page and edited in Settings. Device-local strings;
-// empty = not set (the button is hidden).
+// CV links — owner-scoped drafts; guest edits use their isolated memory store.
 // ---------------------------------------------------------------------------
 
-/** A minimal localStorage-backed string preference following the same
- * cache + listener + useSyncExternalStore pattern as the prefs above. */
-function makeStringPref(key: string) {
-  const listeners = new Set<() => void>();
-  let cache: string | null = null;
-  return {
-    read(): string {
-      if (cache != null) return cache;
-      if (typeof window === "undefined") return "";
-      try {
-        cache = localStorage.getItem(key) ?? "";
-      } catch {
-        cache = "";
-      }
-      return cache;
-    },
-    subscribe(cb: () => void): () => void {
-      return subscribeStoredPreference(key, listeners, cb, () => { cache = null; });
-    },
-    set(next: string): void {
-      cache = next;
-      try {
-        localStorage.setItem(key, next);
-      } catch {
-        // ignore — quota or privacy mode
-      }
-      for (const cb of listeners) cb();
-    },
-  };
-}
-
-const cvCsPref = makeStringPref("cvUrlCs");
-const cvEnPref = makeStringPref("cvUrlEn");
 const getServerCv = (): string => "";
 
 export function useCvLinks(): {
@@ -405,9 +371,10 @@ export function useCvLinks(): {
   setCs: (v: string) => void;
   setEn: (v: string) => void;
 } {
-  const guest = useGuestPreferences(), csPref = guest?.cvCs ?? cvCsPref, enPref = guest?.cvEn ?? cvEnPref;
-  const cs = useSyncExternalStore(csPref.subscribe, csPref.read, getServerCv);
-  const en = useSyncExternalStore(enPref.subscribe, enPref.read, getServerCv);
+  const guest = useGuestPreferences(), owner = useOwnerPreferences();
+  const csPref = guest?.cvCs ?? owner?.cvCs ?? unavailablePrivatePreference, enPref = guest?.cvEn ?? owner?.cvEn ?? unavailablePrivatePreference;
+  const cs = useSyncExternalStore(csPref.subscribe, csPref.read, guest ? getServerCv : owner?.cvCs.serverRead ?? getServerCv);
+  const en = useSyncExternalStore(enPref.subscribe, enPref.read, guest ? getServerCv : owner?.cvEn.serverRead ?? getServerCv);
   return { cs, en, setCs: csPref.set, setEn: enPref.set };
 }
 
@@ -425,13 +392,13 @@ export { readRepoFilter, writeRepoFilter, useRepositoryFilter } from "@/lib/repo
 
 // The Oslo search is the default. This opt-in restores Czech career sources
 // and records without deleting the owner's earlier search history.
-const czechCareerPref = makeStringPref("showCzechCareer");
 const serverCzechCareer = () => false;
 
 export function useCzechCareerVisibility() {
-  const pref = useGuestPreferences()?.czechCareer ?? czechCareerPref;
+  const guest = useGuestPreferences(), owner = useOwnerPreferences();
+  const pref = guest?.czechCareer ?? owner?.czechCareer ?? unavailablePrivatePreference;
   const showCzechCareer = useSyncExternalStore(
-    pref.subscribe, () => pref.read() === "1", serverCzechCareer,
+    pref.subscribe, () => pref.read() === "1", guest ? serverCzechCareer : () => owner?.czechCareer.serverRead() === "1",
   );
   return { showCzechCareer, setShowCzechCareer: (value: boolean) => pref.set(value ? "1" : "0") };
 }

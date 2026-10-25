@@ -9,7 +9,7 @@ async function fixture(page: Page, lang: "en" | "cs") {
   await gotoPreview(page, { lang, theme: lang === "cs" ? "dark" : "light" });
   await page.route("**/api/calendar/events?**", route => route.fulfill({ json: { ok: false, reason: "unauthorized" } }));
   await page.route("**/api/calendar/list", route => route.fulfill({ json: { calendars: [{ id: "primary-id", summary: "Fixture calendar", primary: true }] } }));
-  await page.route("**/api/user/preferences", route => route.fulfill({ json: { ok: true, saved: { selected_calendar_ids: ["primary"] } } }));
+  await page.route("**/api/user/preferences", route => route.fulfill({ json: { ok: true, ownerId: route.request().headers()["x-own-dashboard-owner"], saved: { selected_calendar_ids: ["primary"] } } }));
   await page.goto("/dev-preview?tab=calendar&calendar=live");
   // The deterministic shell starts with confirmed fixture events. Saving the
   // picker invalidates them and exercises the live, stubbed read boundary.
