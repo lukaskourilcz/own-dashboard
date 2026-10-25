@@ -52,6 +52,7 @@ type PortfolioStrings = {
   competitorSaveUnconfirmed: string;
   competitorActionUnconfirmed: string;
   competitorChanged: string;
+  competitorDraftChanged: string;
   competitorReload: string;
   competitorReadUnavailable: string;
   notScored: string;
@@ -182,7 +183,8 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     competitorUrlInvalid: "Use HTTP or HTTPS addresses without sign-in details, up to 2,000 characters each.",
     competitorSaveUnconfirmed: "The save could not be confirmed. Your draft is kept. Try saving again.",
     competitorActionUnconfirmed: "The change could not be confirmed. Reload the list before trying again.",
-    competitorChanged: "This entry changed or is no longer available. Copy any draft changes before closing and reloading the list.",
+    competitorChanged: "This entry changed or is no longer available. Reload the list before trying again.",
+    competitorDraftChanged: "This entry changed or is no longer available. Copy any draft changes before closing and reloading the list.",
     competitorReload: "Reload competition",
     competitorReadUnavailable: "Competition could not be refreshed. Last confirmed data may be out of date.",
     notScored: "Not scored",
@@ -313,7 +315,8 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     competitorUrlInvalid: "Použijte adresy HTTP nebo HTTPS bez přihlašovacích údajů, každou nejvýše o 2 000 znacích.",
     competitorSaveUnconfirmed: "Uložení se nepodařilo potvrdit. Koncept zůstává zachovaný. Zkuste ho uložit znovu.",
     competitorActionUnconfirmed: "Změnu se nepodařilo potvrdit. Před dalším pokusem znovu načtěte seznam.",
-    competitorChanged: "Záznam se změnil nebo už není dostupný. Před zavřením a novým načtením seznamu si zkopírujte změny z konceptu.",
+    competitorChanged: "Záznam se změnil nebo už není dostupný. Před dalším pokusem znovu načtěte seznam.",
+    competitorDraftChanged: "Záznam se změnil nebo už není dostupný. Před zavřením a novým načtením seznamu si zkopírujte změny z konceptu.",
     competitorReload: "Načíst konkurenci znovu",
     competitorReadUnavailable: "Konkurenci se nepodařilo obnovit. Poslední potvrzené údaje mohou být zastaralé.",
     notScored: "Bez hodnocení",

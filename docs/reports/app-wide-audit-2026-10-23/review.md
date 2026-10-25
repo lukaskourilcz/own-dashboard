@@ -1268,3 +1268,10 @@ All 82 final mounted/domain/write cases pass across three files in 4.35 seconds.
 The actual large-list capture repeats the filtered total inside its only project header. Two mounted regressions confirm that duplicate total and the project tab's repeated destination title. The full page now shows a per-project count only when multiple filtered groups need comparison. The project tab keeps its total and Add action on one compact header row, using the named tab panel for its destination identity. Its extra title/icon and nested metadata wrapper are removed. Distinct page-range and multi-project counts remain visible.
 
 All 84 focused mounted/domain/write cases pass across three files in 4.13 seconds. TypeScript and targeted ESLint pass. Four native EN/CS desktop/mobile complete-list cases pass in 22.6 seconds, covering both surfaces, local paging/search, missing-project recovery, clear-focus, centered width, eight-width reflow, axe and the absence of the repeated project-tab title. The CPU expressions and paging/read contracts from finding 231 are unchanged; its benchmark remains a dated source snapshot. Consolidated release and production rollout remain separate.
+
+
+## Finding 233 — contextual Competition conflict guidance
+
+The actual deletion-recovery capture shows edit-draft instructions even though no editor is open. List/deletion conflicts now ask for an explicit reload without mentioning a nonexistent draft. The editor retains its separate copy-before-close guidance and the local draft. Both dictionaries distinguish these contexts; persistence and conflict classification stay unchanged.
+
+All 86 focused mounted/domain/write cases pass across three files in 4.19 seconds, including EN/CS deletion guidance without a form. TypeScript and targeted ESLint pass. Twelve native EN/CS desktop/mobile draft, stale-write/deletion and cross-surface refresh cases pass in 34.3 seconds. The final visual gallery will capture this copy from the committed source separately from older images. Full app verification, production rollout and remaining source leads remain pending.

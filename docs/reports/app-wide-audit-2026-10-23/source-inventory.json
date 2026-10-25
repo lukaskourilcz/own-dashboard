@@ -796,8 +796,8 @@
       "path": "src/components/competition/competitor-dialog.tsx",
       "lines": 246,
       "sha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a",
-      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
-      "reviewedSha256": "7b5545fd26aed61cf7304a5ba7d140c7fb000b791be538a6d0e9abe71cde8580"
+      "status": "source reviewed; finding 233 separates list/deletion conflict guidance from retained editor-draft guidance in EN/CS; prior complete paging/write/recovery checks pass; consolidated release pending",
+      "reviewedSha256": "6e0e555eb010926ad0b33c6811a055835f1c253914f7dbb2516a913a03f545ea"
     },
     {
       "path": "src/components/competition/competitor-list.tsx",
@@ -2658,8 +2658,8 @@
       "path": "src/lib/i18n/sections/portfolio.ts",
       "lines": 337,
       "sha256": "aaa1c95cd731b3f7418a9dad19217dd5053db7b4218aa5bb82cb2ecb3c2a9029",
-      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
-      "reviewedSha256": "420ee2298514079dc3ee2778517d248e3ea4c6f9413c308566fc4f73cc69b149"
+      "status": "source reviewed; finding 233 separates list/deletion conflict guidance from retained editor-draft guidance in EN/CS; prior complete paging/write/recovery checks pass; consolidated release pending",
+      "reviewedSha256": "457aa9a2a1f8f390acb517e92b240fed1ab1b01c9899c75da5cecafe199a5f5a"
     },
     {
       "path": "src/lib/i18n/sections/professional.ts",

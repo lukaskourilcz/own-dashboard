@@ -82,7 +82,7 @@ it('sends only changed fields and keeps unrelated legacy URLs, whitespace and or
  const source = { ...record(), url: 'Unsupported legacy URL', social_links: ['Legacy social'], summary: '  Preserve whitespace  ' }; await render('en', [source]); edit(); change('#competitor-name', 'Changed name'); handler = call => Response.json([{ ...source, ...call.body, updated_at: '2026-10-25T13:00:00.000001Z' }]); submit(); await settle(() => expect(document.querySelector('form')).toBeNull()); expect(calls[0]!.body).toEqual({ name: 'Changed name' }); expect(rows()[0]).toMatchObject({ name: 'Changed name', url: source.url, summary: source.summary, social_links: source.social_links, sort_order: 7 });
 });
 it('retains a zero-row edit and its draft without treating it as saved', async () => {
- await render(); edit(); change('#competitor-name', 'Draft conflict'); submit(); await settle(() => expect(document.querySelector('form [role="alert"]')?.textContent).toBe(portfolio.en.competitorChanged)); expect(rows()[0]!.name).toBe('Synthetic competitor'); expect(document.querySelector<HTMLInputElement>('#competitor-name')!.value).toBe('Draft conflict'); expect(updates).toHaveLength(0);
+ await render(); edit(); change('#competitor-name', 'Draft conflict'); submit(); await settle(() => expect(document.querySelector('form [role="alert"]')?.textContent).toBe(portfolio.en.competitorDraftChanged)); expect(rows()[0]!.name).toBe('Synthetic competitor'); expect(document.querySelector<HTMLInputElement>('#competitor-name')!.value).toBe('Draft conflict'); expect(updates).toHaveLength(0);
 });
 it('keeps a newer cached row when an older edit completes', async () => {
  await render(); edit(); change('#competitor-name', 'Confirmed old edit'); let release!: (response: Response) => void; handler = () => new Promise(resolve => { release = resolve; }); submit(); await settle(() => expect(calls).toHaveLength(1)); const newer = { ...record(), summary: 'Newer cached summary', updated_at: '2026-10-25T13:00:02Z' }; act(() => changeRows([newer])); await act(async () => release(Response.json([{ ...record(), name: 'Confirmed old edit', updated_at: '2026-10-25T13:00:01Z' }]))); await settle(() => expect(document.querySelector('form')).toBeNull()); expect(rows()).toEqual([newer]);
@@ -148,4 +148,8 @@ it('shows one filtered total when only one project has matching research',async(
 });
 it('keeps the project-tab total without repeating its destination title',async()=>{
  await render('en',[record()],'project');expect([...host.querySelectorAll('[data-card-title]')].some(node=>node.textContent===portfolio.en.projectCompetitionTab)).toBe(false);expect(host.textContent).toContain(portfolio.en.competitorsCount(1));
+});
+
+it.each(['en','cs'] as const)('keeps deletion guidance separate from a retained edit draft (%s)',async lang=>{
+ await render(lang);act(()=>action(portfolio[lang].deleteCompetitor).click());act(()=>button(common[lang].delete).click());await settle(()=>expect(host.querySelector('[role="alert"]')?.textContent).toContain(portfolio[lang].competitorChanged));expect(host.querySelector('[role="alert"]')?.textContent).not.toContain(portfolio[lang].competitorDraftChanged);expect(document.querySelector('form')).toBeNull();expect(rows()).toHaveLength(1);
 });

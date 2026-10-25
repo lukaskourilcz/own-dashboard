@@ -89,7 +89,7 @@ export function CompetitorDialog({ open, onOpenChange, form, setForm, projects, 
  open: boolean; onOpenChange: (open: boolean) => void; form: CompetitorForm; setForm: (next: CompetitorForm) => void; projects: Project[]; actions: CompetitorActions;
 }) {
  const t = useDict(), p = t.portfolio, owner = useOwnerPreferences(), navigate = useGuardedNavigation();
- const [error, setError] = useState<'competitorChanged' | 'competitorSaveUnconfirmed' | null>(null), [saving, setSaving] = useState(false);
+ const [error, setError] = useState<'competitorDraftChanged' | 'competitorSaveUnconfirmed' | null>(null), [saving, setSaving] = useState(false);
  const [visited, setVisited] = useState<ReadonlySet<EditableField>>(new Set());
  const savingRef = useRef(false), creationId = useRef<string | null>(null);
  const baseline = form.source ? competitorToForm(form.source) : emptyCompetitorForm(form.project_id);
@@ -117,7 +117,7 @@ export function CompetitorDialog({ open, onOpenChange, form, setForm, projects, 
    } else { creationId.current ??= crypto.randomUUID(); await actions.save({ source: null, id: creationId.current, fields }); }
    captured.signal.throwIfAborted(); reset(); return true;
   } catch (error) {
-   if (!captured.signal.aborted) setError(error instanceof CompetitorRecordError && error.reason === 'changed' ? 'competitorChanged' : 'competitorSaveUnconfirmed'); return false;
+   if (!captured.signal.aborted) setError(error instanceof CompetitorRecordError && error.reason === 'changed' ? 'competitorDraftChanged' : 'competitorSaveUnconfirmed'); return false;
   } finally { savingRef.current = false; if (!captured.signal.aborted) setSaving(false); }
  }
  useUnsavedDraft({ dirty: open && dirty, pending: saving, canSave: valid && !saving, save, discard: reset });
