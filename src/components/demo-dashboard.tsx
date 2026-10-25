@@ -28,6 +28,7 @@ export function DemoDashboard({
   liveProjectRecords = false,
   liveMusic = false,
   livePlanning = false,
+  livePlanRecords = false,
   liveTasks = false,
   liveCategories = false,
   liveMonitoring = false,
@@ -59,6 +60,8 @@ export function DemoDashboard({
   liveMusic?: boolean;
   /** Isolated fake-backend weekly planning checks only. */
   livePlanning?: boolean;
+  /** Isolated fake-backend Goals/Home plan checks only. */
+  livePlanRecords?: boolean;
   /** Isolated fake-backend Tasks write/read checks only. */
   liveTasks?: boolean;
   /** Isolated fake-backend category mutation checks only. */
@@ -86,6 +89,7 @@ export function DemoDashboard({
   const initialDataKeys = DASHBOARD_DATA_KEYS.filter(key => (!liveRepositories || (key !== "repoNotes" && key !== "repoLinks"))
     && (!liveProjectRecords || !["projects", "projectCosts", "crons", "todos"].includes(key))
     && (!livePlanning || key !== "weeklyReviews")
+    && (!livePlanRecords || key !== "plans")
     && (!liveTasks || key !== "todos")
     && (!liveOrganizations || key !== "organizations")
     && (!liveCompetitors || key !== "competitors"));
@@ -96,6 +100,7 @@ export function DemoDashboard({
       previewRepositoryIntegration={liveRepositories}
       previewProjectIntegration={liveProjectRecords}
       previewMusicIntegration={liveMusic}
+      previewPlanIntegration={livePlanRecords}
       previewPlanningIntegration={livePlanning}
       previewTaskIntegration={liveTasks}
       previewMonitoringIntegration={liveMonitoring}
@@ -105,7 +110,7 @@ export function DemoDashboard({
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
       previewCompetitorIntegration={liveCompetitors}
-      user={livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
@@ -115,7 +120,7 @@ export function DemoDashboard({
       initialTodos={liveTasks ? [] : f.todos}
       initialAccounts={f.accounts}
       initialTransactions={f.transactions}
-      initialPlans={f.plans}
+      initialPlans={livePlanRecords ? [] : f.plans}
       initialNotes={f.notes}
       initialPrompts={f.prompts}
       initialPromptLinks={f.promptLinks}

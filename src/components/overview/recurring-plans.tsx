@@ -1,16 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
-import { useToast } from "@/components/ui/toast";
 import { Check, Repeat } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { createClient } from "@/lib/supabase/client";
 import { useDict } from "@/lib/i18n";
 import { useNow } from "@/lib/use-now";
-import { qk } from "@/lib/queries/keys";
+import { usePlanActions } from "@/components/plans/use-plan-actions";
+import { Button } from "@/components/ui/button";
 import { recurringPlanStatuses } from "@/lib/plan-recurrence";
 import type { Plan, PlanRecurrence, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -27,40 +25,7 @@ export function RecurringPlans({
   plans: Plan[];
   setPlans: Updater<Plan[]>;
 }) {
-  const t = useDict();
-  const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
-  const now = useNow();
-
-  // Optimistic toggle of a plan's completion for the current period. Marking
-  // done stamps last_completed_at = now; un-marking clears it.
-  const toggleMutation = useMutation({
-    mutationFn: async ({ plan, done }: { plan: Plan; done: boolean }) => {
-      const stamp = done ? new Date().toISOString() : null;
-      const { error } = await supabase
-        .from("plans")
-        .update({ last_completed_at: stamp, updated_at: new Date().toISOString() })
-        .eq("id", plan.id);
-      if (error) throw error;
-    },
-    onMutate: async ({ plan, done }) => {
-      await qc.cancelQueries({ queryKey: qk.plans });
-      const prev = qc.getQueryData<Plan[]>(qk.plans);
-      const stamp = done ? new Date().toISOString() : null;
-      setPlans((old) =>
-        old.map((p) =>
-          p.id === plan.id ? { ...p, last_completed_at: stamp } : p,
-        ),
-      );
-      return { prev };
-    },
-    onError: (_e, _vars, ctx) => {
-      if (ctx?.prev) setPlans(ctx.prev);
-      toast.err(t.plans.couldNotSavePlan);
-    },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.plans }),
-  });
+  const t = useDict(), actions = usePlanActions(setPlans, plans), now = useNow();
 
   const statuses = useMemo(
     () => (now ? recurringPlanStatuses(plans, now) : null),
@@ -70,7 +35,7 @@ export function RecurringPlans({
   const pending = statuses?.filter((s) => !s.done).length ?? 0;
 
   return (
-    <Card>
+    <Card role="region" aria-label={t.plans.recurringTitle}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="inline-flex items-center gap-1.5">
           <Repeat className="h-3 w-3" />
@@ -83,6 +48,7 @@ export function RecurringPlans({
         )}
       </CardHeader>
       <CardContent>
+        {actions.notice && <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 text-xs text-destructive"><span>{actions.notice === 'changed' ? t.plans.planChanged : t.plans.actionUnconfirmed}</span><Button variant="outline" disabled={actions.reloading || actions.pending.size > 0} onClick={() => void actions.reload()}>{actions.reloading ? t.common.loading : t.common.retry}</Button></div>}
         {statuses === null ? (
           // Pre-hydration placeholder — identical markup on server and client.
           <div className="min-h-[64px]" aria-hidden />
@@ -120,25 +86,27 @@ export function RecurringPlans({
                       done && "opacity-60",
                     )}
                   >
-                    <button
+                    <Button
+                      size="icon-sm" variant="ghost"
                       type="button"
-                      disabled={toggleMutation.isPending}
-                      onClick={() => toggleMutation.mutate({ plan, done: !done })}
+                      disabled={actions.pending.has(plan.id)}
+                      aria-busy={actions.pending.has(plan.id)}
+                      onClick={() => void actions.update(plan, { last_completed_at: !done ? new Date().toISOString() : null })}
                       aria-pressed={done}
-                      aria-label={done ? t.plans.markNotDone : t.plans.markDone}
+                      aria-label={`${plan.title}: ${done ? t.plans.markNotDone : t.plans.markDone}`}
                       className={cn(
-                        "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors focus-ring disabled:cursor-wait",
+                        "grid shrink-0 place-items-center rounded-full border transition-colors focus-ring disabled:cursor-wait",
                         done
                           ? "border-success bg-success text-white"
                           : "border-border-strong hover:border-success",
                       )}
                     >
                       {done && <Check className="h-3 w-3" />}
-                    </button>
+                    </Button>
                     <div className="min-w-0 flex-1">
                       <p
                         className={cn(
-                          "truncate text-xs font-medium",
+                          "break-words text-xs font-medium [overflow-wrap:anywhere]",
                           done && "line-through text-foreground-subtle",
                         )}
                       >

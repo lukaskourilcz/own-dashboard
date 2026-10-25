@@ -656,8 +656,8 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 54,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
-      "reviewedSha256": "5416398aa67513194ae1ca5668d267f8d3e48467be7a2a24da2c9454e20b8445"
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
+      "reviewedSha256": "210fbbe83bf6f29486acb4f3cb23bcb52dbf98538db12443529986c682bfc3e6"
     },
     {
       "path": "src/app/globals.css",
@@ -833,15 +833,15 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
-      "reviewedSha256": "30b9c81fade3e3d9e737999ed94157616fa7809780e99996bd3e0c29f44a5a8c"
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
+      "reviewedSha256": "d027257352183e73969d18680c15986b87bbaed9b1b56bf7c1cb12807fd15e7c"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 164,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
-      "reviewedSha256": "6f6f193b4b1774abdb86644169df7d2d4cdb2ecc41b1e1f076aa51e79cb11815"
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
+      "reviewedSha256": "188d1b2a3cdb85a653ba3e515ab3f353f48eb72b21f0f6ef716cfddf36b249f4"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1381,8 +1381,8 @@
       "path": "src/components/overview/recurring-plans.tsx",
       "lines": 175,
       "sha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "f96c07481410b1bc4985e96203f4287cabde80e6c4b5fc90aa3fd3d89b3cc13f"
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
+      "reviewedSha256": "ac8b60ab01b8611481a96a62ac98670cdd48e3c3dfe0b7b3194d1c62cfc4d23a"
     },
     {
       "path": "src/components/overview/today-hero.tsx",
@@ -1577,8 +1577,8 @@
       "path": "src/components/panels/plans-panel.tsx",
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
-      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
-      "reviewedSha256": "9458485e1755f4e59ca5bc6687fe819f972a533e3df1a767d6f9ea3f7217a7fa"
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
+      "reviewedSha256": "d3a7f06226efe4809cdf79e1875639fdf3aef01a4fce098a51e32b69f5ff9e56"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
@@ -2651,8 +2651,8 @@
       "path": "src/lib/i18n/sections/plans.ts",
       "lines": 179,
       "sha256": "69e9ace530b29fa8ef2833856f5db32a078db32d50c3ec3396318eba33f51e39",
-      "status": "partial; complete EN/CS source inspection; directional layout guidance and duplicated/decorative copy remain under review",
-      "reviewedSha256": "13d952db7725c4cd624e40a412d6ab2dcc50f7935e0a24bb44edaebc2902d2aa"
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
+      "reviewedSha256": "b1c2d727d8cf9d839055816916ce1e18dc4b940f57db434710849ca1f24a7918"
     },
     {
       "path": "src/lib/i18n/sections/portfolio.ts",
@@ -4765,6 +4765,13 @@
       "lines": 50,
       "reviewedSha256": "a77f296077dcb44c90853f675bbe3a9fe90adc510ce0c58c513e86783c0f3cb5",
       "status": "source reviewed; finding 249 captured manual Calendar, bounded owned receipts/cancellation and native/guest checks pass; optional plan adoption and final release pending"
+    },
+    {
+      "path": "src/components/plans/use-plan-actions.ts",
+      "sha256": null,
+      "lines": 117,
+      "reviewedSha256": "5cc1fe7b1ec27b615029c4b69ec0998e84ff4287a666f4bad6a5b3db70c2a32a",
+      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending"
     }
   ],
   "baselineFileCount": 561

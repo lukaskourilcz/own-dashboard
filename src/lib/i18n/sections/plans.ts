@@ -32,6 +32,9 @@ type PlansStrings = {
   titleRequired: string;
   targetDateRequiredForCalendar: string;
   couldNotSavePlan: string;
+  saveUnconfirmed: string;
+  actionUnconfirmed: string;
+  planChanged: string;
   calendarEventFailed: string;
   calendarLinkFailed: string;
   calendarDeleteFailed: string;
@@ -100,13 +103,16 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     targetDateRequiredForCalendar:
       "Target date is required to add to calendar.",
     couldNotSavePlan: "Could not save plan.",
+    saveUnconfirmed: "Save was not confirmed. Retry the same details or reload Goals before creating another plan.",
+    actionUnconfirmed: "The change was not confirmed. Reload before trying again.",
+    planChanged: "This plan changed. Reload before trying again.",
     calendarEventFailed:
       "Plan saved. The calendar event was not confirmed; check Calendar before adding another event.",
     saving: "Saving…",
     addPlan: "Add plan",
     statusBoard: "Status board",
     noPlansYet: "No plans yet",
-    noPlansDescription: "Add one on the left to start tracking your goals.",
+    noPlansDescription: "Create a plan to start tracking your goals.",
     empty: "empty",
     changeStatus: "Change status",
     deletePlan: "Delete plan",
@@ -165,13 +171,16 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     targetDateRequiredForCalendar:
       "Pro přidání do kalendáře je nutné cílové datum.",
     couldNotSavePlan: "Plán se nepodařilo uložit.",
+    saveUnconfirmed: "Uložení nebylo potvrzeno. Zkuste stejné údaje znovu nebo před vytvořením dalšího plánu obnovte Cíle.",
+    actionUnconfirmed: "Změna nebyla potvrzena. Před dalším pokusem plán znovu načtěte.",
+    planChanged: "Plán se změnil. Před dalším pokusem ho znovu načtěte.",
     calendarEventFailed:
       "Plán je uložený. Událost v kalendáři nebyla potvrzena; než přidáte další, zkontrolujte Kalendář.",
     saving: "Ukládání…",
     addPlan: "Přidat plán",
     statusBoard: "Nástěnka stavů",
     noPlansYet: "Zatím žádné plány",
-    noPlansDescription: "Přidejte plán vlevo a začněte sledovat své cíle.",
+    noPlansDescription: "Vytvořte plán a začněte sledovat své cíle.",
     empty: "prázdné",
     changeStatus: "Změnit stav",
     deletePlan: "Smazat plán",

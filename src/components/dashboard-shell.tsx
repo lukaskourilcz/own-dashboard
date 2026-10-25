@@ -132,6 +132,7 @@ type Props = {
   previewProjectIntegration?: boolean;
   previewMusicIntegration?: boolean;
   previewPlanningIntegration?: boolean;
+  previewPlanIntegration?: boolean;
   previewTaskIntegration?: boolean;
   previewMonitoringIntegration?: boolean;
   previewPreferencesIntegration?: boolean;
@@ -279,9 +280,9 @@ function DashboardShellContent(props: Props) {
   const [activatedTabs, setActivatedTabs] = useState<ReadonlySet<NavTab>>(() => new Set());
   const dataOptions = useCallback((key: DashboardDataKey) => ({
     seeded: seededData.has(key),
-    enabled: (!props.isPreview || (props.previewOrganizationIntegration && key === "organizations") || (props.previewCompetitorIntegration && key === "competitors") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
+    enabled: (!props.isPreview || (props.previewOrganizationIntegration && key === "organizations") || (props.previewCompetitorIntegration && key === "competitors") || (props.previewPlanIntegration && key === "plans") || (props.previewPlanningIntegration && key === "weeklyReviews") || (props.previewTaskIntegration && key === "todos") || (props.previewCalendarIntegration && ["todayCalendar", "weekCalendar", "lastWeekCalendar"].includes(key)) || (props.previewRepositoryIntegration && ["repoNotes", "repoLinks"].includes(key)) || (props.previewProjectIntegration && ["projects", "projectCosts", "crons", "todos"].includes(key))) && tabNeedsDashboardData(tab, key, activatedTabs.has(tab)),
     onDemand: onDemandDataKeys(tab).includes(key),
-  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration, props.previewCompetitorIntegration]);
+  }), [seededData, tab, activatedTabs, props.isPreview, props.previewCalendarIntegration, props.previewRepositoryIntegration, props.previewProjectIntegration, props.previewPlanningIntegration, props.previewPlanIntegration, props.previewTaskIntegration, props.previewOrganizationIntegration, props.previewCompetitorIntegration]);
   const setTab = useCallback((next: NavTab) => {
     if (next === tab && selectedProjectId === null) return;
     requestNavigation(() => {

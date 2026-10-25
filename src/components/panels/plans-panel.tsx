@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { differenceInCalendarDays, format } from "date-fns";
 import {
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,13 +22,13 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
 import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
+import { usePlanActions } from "@/components/plans/use-plan-actions";
+import { PlanRecordError } from "@/lib/plan-records";
+import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
-import { qk } from "@/lib/queries/keys";
 import { parseDateOnly } from "@/lib/date-keys";
 import { useNow } from "@/lib/use-now";
 import type { Plan, PlanRecurrence, PlanStatus, Updater } from "@/lib/types";
@@ -85,176 +83,37 @@ export function PlansPanel({
   plans: Plan[];
   setPlans: Updater<Plan[]>;
 }) {
-  const ownerScope = useOwnerPreferences();
-  const supabase = createClient();
-  const qc = useQueryClient();
-  const t = useDict();
-  const confirm = useConfirmation();
-  const now = useNow();
-  const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(empty);
-  const [error, setError] = useState<string | null>(null);
-  const [calendarNote, setCalendarNote] = useState<string | null>(null);
+  const owner = useOwnerPreferences(), navigate = useGuardedNavigation();
+  const lifetime = useRef(new AbortController());
+  useLayoutEffect(() => { if (lifetime.current.signal.aborted) lifetime.current = new AbortController(); return () => lifetime.current.abort(); }, []);
+  const actions = usePlanActions(setPlans, plans), t = useDict(), now = useNow();
+  const [formOpen, setFormOpen] = useState(false), [form, setForm] = useState<FormState>(empty);
+  const [error, setError] = useState<string | null>(null), [saving, setSaving] = useState(false);
   const [view, setView] = useState<"board" | "timeline">("board");
-
-  // CREATE: needs the server-generated row (and the linked calendar event id),
-  // so this stays non-optimistic — apply to the cache in onSuccess. The
-  // calendar-event fetch + follow-up linked_calendar_event_id update are part
-  // of the mutation flow and are left exactly as before.
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const userId = await currentUserId(supabase, ownerScope?.capture());
-      if (!userId) throw new Error("no-user");
-      const { data: plan, error: planErr } = await supabase
-        .from("plans")
-        .insert({
-          user_id: userId,
-          title: form.title.trim(),
-          target_date: form.target_date || null,
-          status: form.status,
-          recurrence: form.recurrence,
-          notes: form.notes.trim() || null,
-        })
-        .select()
-        .single();
-      if (planErr || !plan) {
-        throw new Error(planErr?.message ?? t.plans.couldNotSavePlan);
-      }
-
-      let saved: Plan = plan;
-      if (form.addToCalendar && form.target_date) {
-        // The plan already exists. An optional calendar failure must not make
-        // the owner retry the insert and create another plan.
-        try {
-          const res = await fetch("/api/calendar/event", {
-            method: "POST",
-            signal: AbortSignal.timeout(15_000),
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              title: form.title.trim(),
-              date: form.target_date,
-              allDay: true,
-              description: form.notes.trim(),
-              recurrence: "none",
-            }),
-          });
-          if (res.ok) {
-            const ev = await res.json();
-            if (typeof ev.id !== "string" || !ev.id) { setCalendarNote(t.plans.calendarLinkFailed); return saved; }
-            const { data: updated, error: linkError } = await supabase
-              .from("plans")
-              .update({ linked_calendar_event_id: ev.id })
-              .eq("id", plan.id)
-              .select()
-              .single();
-            if (linkError || !updated) setCalendarNote(t.plans.calendarLinkFailed);
-            else saved = updated;
-          } else {
-            setCalendarNote(t.plans.calendarEventFailed);
-          }
-        } catch {
-          setCalendarNote(t.plans.calendarEventFailed);
-        }
-      }
-      return saved;
-    },
-    onSuccess: (saved) => {
-      setPlans((prev) => [saved, ...prev]);
-      setForm(empty);
-      setFormOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.plans });
-    },
-    onError: (e) => {
-      // Original returned silently when there was no authenticated user.
-      if (e instanceof Error && e.message === "no-user") return;
-      setError(e instanceof Error ? e.message : t.plans.couldNotSavePlan);
-    },
-  });
-
-  // Optimistic: the status flips in the cache immediately, rolls back on
-  // error, and reconciles with the DB via invalidate once settled.
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ plan, status }: { plan: Plan; status: PlanStatus }) => {
-      const { error } = await supabase
-        .from("plans")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", plan.id);
-      if (error) throw error;
-    },
-    onMutate: async ({ plan, status }) => {
-      await qc.cancelQueries({ queryKey: qk.plans });
-      const prev = qc.getQueryData<Plan[]>(qk.plans);
-      setPlans((old) =>
-        old.map((p) => (p.id === plan.id ? { ...p, status } : p)),
-      );
-      return { prev };
-    },
-    onError: (_e, _vars, ctx) => {
-      if (ctx?.prev) setPlans(ctx.prev);
-      setError(t.plans.couldNotSavePlan);
-    },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.plans }),
-  });
-
-  // DELETE: original removed from state only after a successful delete, so
-  // this applies the cache change in onSuccess (post-success), then fires the
-  // best-effort calendar-event cleanup fetch.
-  const removeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("plans").delete().eq("id", id);
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: async (id) => {
-      const plan = plans.find((p) => p.id === id);
-      setPlans((prev) => prev.filter((p) => p.id !== id));
-      // Keep the confirmed local deletion even if optional Calendar cleanup fails.
-      if (plan?.linked_calendar_event_id) {
-        const response = await fetch("/api/calendar/event", {
-          method: "DELETE",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: plan.linked_calendar_event_id }),
-          signal: AbortSignal.timeout(20000),
-        }).catch(() => null);
-        if (!response?.ok) setCalendarNote(t.plans.calendarDeleteFailed);
-        void qc.invalidateQueries({ queryKey: ["calendar"] });
-      }
-      void qc.invalidateQueries({ queryKey: qk.plans });
-    },
-    onError: () => setError(t.plans.couldNotSavePlan),
-  });
-
-  const saving = addMutation.isPending;
-
-  function addPlan(e: React.FormEvent) {
-    e.preventDefault();
-    if (addMutation.isPending) return;
+  const savingRef = useRef(false), creationId = useRef<string | null>(null);
+  const dirty = JSON.stringify(form) !== JSON.stringify(empty);
+  const valid = !!form.title.trim() && form.title.trim().length <= 500 && (!form.addToCalendar || !!form.target_date);
+  const reset = () => { creationId.current = null; setError(null); setForm(empty); setFormOpen(false); };
+  const close = (open: boolean) => { if (open) setFormOpen(true); else if (!savingRef.current) navigate(reset); };
+  async function savePlan(): Promise<boolean> {
+    if (savingRef.current || !formOpen) return false;
+    if (isGuestTour()) { guestReadOnlyError(); return false; }
     setError(null);
-    setCalendarNote(null);
-    if (!form.title.trim()) {
-      setError(t.plans.titleRequired);
-      return;
-    }
-    if (form.addToCalendar && !form.target_date) {
-      setError(t.plans.targetDateRequiredForCalendar);
-      return;
-    }
-    addMutation.mutate();
+    if (!form.title.trim() || form.title.trim().length > 500) { setError(t.plans.titleRequired); return false; }
+    if (form.addToCalendar && !form.target_date) { setError(t.plans.targetDateRequiredForCalendar); return false; }
+    const original = owner?.capture();
+    const captured = original ? { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) } : null;
+    if (!captured || captured.signal.aborted) { setError(t.plans.saveUnconfirmed); return false; }
+    savingRef.current = true; setSaving(true); creationId.current ??= crypto.randomUUID();
+    try {
+      await actions.create(creationId.current, { title: form.title.trim(), target_date: form.target_date || null, status: form.status, recurrence: form.recurrence, notes: form.notes.trim() || null }, form.addToCalendar);
+      captured.signal.throwIfAborted(); reset(); return true;
+    } catch (error) {
+      if (!captured.signal.aborted) setError(error instanceof PlanRecordError && error.reason === 'changed' ? t.plans.planChanged : t.plans.saveUnconfirmed);
+      return false;
+    } finally { savingRef.current = false; if (!captured.signal.aborted) setSaving(false); }
   }
-
-  function updateStatus(plan: Plan, status: PlanStatus) {
-    updateStatusMutation.mutate({ plan, status });
-  }
-
-  async function removePlan(id: string) {
-    if (await confirm({
-      title: t.common.delete,
-      description: t.common.deletePermanentlyConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) removeMutation.mutate(id);
-  }
+  useUnsavedDraft({ dirty: formOpen && dirty, pending: saving, canSave: valid && !saving, save: savePlan, discard: reset });
 
   const grouped = useMemo(() => {
     const map: Record<PlanStatus, Plan[]> = {
@@ -284,48 +143,28 @@ export function PlansPanel({
         title={t.plans.title}
         description={t.plans.description}
         action={
-          <div className="flex flex-wrap items-center gap-2"><Button onClick={() => setFormOpen(true)}><Plus />{t.plans.newPlan}</Button><div className="inline-flex rounded-md border border-border p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setView("board")}
-              aria-pressed={view === "board"}
-              className={cn(
-                "min-h-11 px-2.5 py-1 rounded transition-colors focus-ring md:min-h-8",
-                view === "board"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground-muted hover:text-foreground",
-              )}
-            >
-              {t.plans.board}
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("timeline")}
-              aria-pressed={view === "timeline"}
-              className={cn(
-                "min-h-11 px-2.5 py-1 rounded transition-colors focus-ring md:min-h-8",
-                view === "timeline"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground-muted hover:text-foreground",
-              )}
-            >
-              {t.plans.timeline}
-            </button>
-          </div></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button ref={button => actions.registerNewControl(button)} onClick={() => setFormOpen(true)}><Plus />{t.plans.newPlan}</Button>
+            <div className="inline-flex gap-1">
+              <Button variant={view === 'board' ? 'subtle' : 'ghost'} aria-pressed={view === 'board'} onClick={() => setView('board')}>{t.plans.board}</Button>
+              <Button variant={view === 'timeline' ? 'subtle' : 'ghost'} aria-pressed={view === 'timeline'} onClick={() => setView('timeline')}>{t.plans.timeline}</Button>
+            </div>
+          </div>
         }
       />
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}><DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.plans.newPlan}</DialogTitle></DialogHeader><form onSubmit={addPlan} className="space-y-3">
+      <Dialog open={formOpen} onOpenChange={close}><DialogContent className="max-w-lg" aria-describedby={undefined} aria-busy={saving} showClose={!saving} onEscapeKeyDown={event => { if (savingRef.current) event.preventDefault(); }} onPointerDownOutside={event => { if (savingRef.current) event.preventDefault(); }}><DialogHeader><DialogTitle>{t.plans.newPlan}</DialogTitle></DialogHeader><form onSubmit={event => { event.preventDefault(); void savePlan(); }} className="space-y-3"><fieldset disabled={saving} className="min-w-0 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="plan-title">{t.plans.formTitle}</Label>
                 <Input
                   id="plan-title"
+                  autoFocus maxLength={500}
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder={t.plans.titlePlaceholder}
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5">
                 <Label htmlFor="plan-status">{t.plans.status}</Label>
                 <SimpleSelect
                   id="plan-status"
@@ -367,6 +206,7 @@ export function PlansPanel({
                   }))}
                 />
               </div>
+              </div>
               {form.recurrence === "none" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="plan-date">{t.plans.targetDate}</Label>
@@ -392,7 +232,7 @@ export function PlansPanel({
               </div>
               <label
                 className={cn(
-                  "inline-flex items-center gap-2 text-xs text-foreground-muted",
+                  "inline-flex min-h-11 items-center gap-2 text-xs text-foreground-muted md:min-h-8",
                   form.recurrence !== "none" && "hidden",
                 )}
               >
@@ -407,27 +247,15 @@ export function PlansPanel({
                 <CalendarPlus className="h-3 w-3" />
                 {t.plans.addToCalendar}
               </label>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              {calendarNote && (
-                <p className="text-xs text-warning">{calendarNote}</p>
-              )}
+              {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
               <Button type="submit" disabled={saving} className="w-full">
                 <Plus className="h-3.5 w-3.5" />
                 {saving ? t.plans.saving : t.plans.addPlan}
               </Button>
-            </form></DialogContent></Dialog>
-      {calendarNote && <p role="status" className="mb-3 text-xs text-warning">{calendarNote}</p>}
-      {error && !formOpen && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}
-      <div className="grid gap-4 lg:grid-cols-3">
-
-
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>
-              {view === "board" ? t.plans.statusBoard : t.plans.timeline}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </fieldset></form></DialogContent></Dialog>
+      {actions.calendarNotice && <p role="status" className="mb-3 text-sm text-warning">{t.plans[actions.calendarNotice]}</p>}
+      {actions.notice && <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 text-sm text-destructive"><span>{actions.notice === 'changed' ? t.plans.planChanged : t.plans.actionUnconfirmed}</span><Button variant="outline" disabled={actions.reloading || actions.pending.size > 0} onClick={() => void actions.reload()}>{actions.reloading ? t.common.loading : t.common.retry}</Button></div>}
+      <section aria-label={view === "board" ? t.plans.statusBoard : t.plans.timeline}>
             {plans.length === 0 ? (
               <EmptyState
                 icon={Target}
@@ -435,7 +263,7 @@ export function PlansPanel({
                 description={t.plans.noPlansDescription}
               />
             ) : view === "board" ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {STATUSES.map((s) => (
                   <div
                     key={s.key}
@@ -457,8 +285,10 @@ export function PlansPanel({
                         <PlanCard
                           key={p.id}
                           plan={p}
-                          onStatus={(status) => updateStatus(p, status)}
-                          onDelete={() => removePlan(p.id)}
+                          pending={actions.pending.has(p.id)}
+                          deleteRef={button => actions.deleteControl(p.id, button)}
+                          onStatus={(status) => void actions.update(p, { status })}
+                          onDelete={() => void actions.remove(p)}
                         />
                       ))}
                       {grouped[s.key].length === 0 && (
@@ -477,15 +307,15 @@ export function PlansPanel({
                     key={p.id}
                     plan={p}
                     now={now}
-                    onStatus={(status) => updateStatus(p, status)}
-                    onDelete={() => removePlan(p.id)}
+                    pending={actions.pending.has(p.id)}
+                    deleteRef={button => actions.deleteControl(p.id, button)}
+                    onStatus={(status) => void actions.update(p, { status })}
+                    onDelete={() => void actions.remove(p)}
                   />
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
-      </div>
+      </section>
     </div>
   );
 }
@@ -494,22 +324,25 @@ function PlanCard({
   plan,
   onStatus,
   onDelete,
+  pending, deleteRef,
 }: {
   plan: Plan;
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
+  pending: boolean; deleteRef: (button: HTMLButtonElement | null) => void;
 }) {
   const t = useDict();
   const [editingStatus, setEditingStatus] = useState(false);
   return (
     <motion.li
       layout
-      className="rounded-md bg-surface border border-border p-2 shadow-soft"
+      aria-busy={pending}
+      className="rounded-md bg-surface border border-border p-2"
     >
       <div className="flex items-start gap-1">
         <p
           className={cn(
-            "text-xs font-medium flex-1 min-w-0",
+            "text-xs font-medium flex-1 min-w-0 break-words [overflow-wrap:anywhere]",
             plan.status === "done" && "line-through text-foreground-subtle",
             plan.status === "dropped" && "line-through text-foreground-subtle",
           )}
@@ -518,17 +351,19 @@ function PlanCard({
         </p>
         <button
           type="button"
+          disabled={pending}
           onClick={() => setEditingStatus((v) => !v)}
-          aria-label={t.plans.changeStatus}
-          className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring"
+          aria-label={`${plan.title}: ${t.plans.changeStatus}`}
+          className="inline-flex min-h-11 min-w-11 md:min-h-7 md:min-w-7 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring disabled:opacity-40 disabled:cursor-wait"
         >
           <Pencil className="h-2.5 w-2.5" />
         </button>
         <button
           type="button"
+          ref={deleteRef} disabled={pending}
           onClick={onDelete}
-          aria-label={t.plans.deletePlan}
-          className="inline-flex min-h-6 min-w-6 items-center justify-center text-foreground-subtle hover:text-destructive transition-colors focus-ring"
+          aria-label={`${plan.title}: ${t.plans.deletePlan}`}
+          className="inline-flex min-h-11 min-w-11 md:min-h-7 md:min-w-7 items-center justify-center text-foreground-subtle hover:text-destructive transition-colors focus-ring disabled:opacity-40 disabled:cursor-wait"
         >
           <Trash2 className="h-2.5 w-2.5" />
         </button>
@@ -562,8 +397,9 @@ function PlanCard({
                 onStatus(s.key);
                 setEditingStatus(false);
               }}
+              disabled={pending}
               className={cn(
-                "rounded px-[7px] py-[3px] text-[10px] font-medium uppercase tracking-wide",
+                "min-h-11 min-w-11 md:min-h-8 focus-ring disabled:opacity-40 disabled:cursor-wait rounded px-[7px] py-[3px] text-[10px] font-medium uppercase tracking-wide",
                 s.tone,
               )}
             >
@@ -584,11 +420,13 @@ function TimelineRow({
   now,
   onStatus,
   onDelete,
+  pending, deleteRef,
 }: {
   plan: Plan;
   now: Date | null;
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
+  pending: boolean; deleteRef: (button: HTMLButtonElement | null) => void;
 }) {
   const t = useDict();
   const locale = useDateLocale();
@@ -599,7 +437,8 @@ function TimelineRow({
   return (
     <motion.li
       layout
-      className="group flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 transition-all duration-150 hover:border-border-strong"
+      aria-busy={pending}
+      className="group grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[5rem_minmax(0,1fr)_6rem_auto]"
     >
       <div className="w-20 shrink-0 text-xs tabular">
         {plan.target_date ? (
@@ -633,12 +472,12 @@ function TimelineRow({
       <div className="flex-1 min-w-0">
         <p
           className={cn(
-            "text-sm font-medium truncate flex items-center gap-1.5",
+            "text-sm font-medium flex flex-wrap items-center gap-1.5",
             (plan.status === "done" || plan.status === "dropped") &&
               "line-through text-foreground-subtle",
           )}
         >
-          <span className="truncate">{plan.title}</span>
+          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{plan.title}</span>
           {plan.recurrence !== "none" && (
             <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-[7px] py-[3px] text-[10px] font-medium text-primary no-underline">
               <Repeat className="h-2 w-2" />
@@ -647,7 +486,7 @@ function TimelineRow({
           )}
         </p>
         {plan.notes && (
-          <p className="text-[11px] text-foreground-subtle truncate">
+          <p className="break-words text-[11px] text-foreground-subtle [overflow-wrap:anywhere]">
             {plan.notes}
           </p>
         )}
@@ -655,8 +494,9 @@ function TimelineRow({
       <SimpleSelect
         aria-label={`${plan.title}: ${t.plans.status}`}
         value={plan.status}
+        disabled={pending}
         onValueChange={(v) => onStatus(v as PlanStatus)}
-        className={cn("h-7 w-24 text-[11px]", statusMeta.tone)}
+        className={cn("col-start-2 row-start-2 w-24 text-[11px] sm:col-start-3 sm:row-start-1", statusMeta.tone)}
         options={STATUSES.map((s) => ({
           value: s.key,
           label: t.plans.statusLabel[s.key],
@@ -666,9 +506,10 @@ function TimelineRow({
         <Button
           size="icon-sm"
           variant="ghost"
+          ref={deleteRef} disabled={pending}
           onClick={onDelete}
-          aria-label={t.plans.deletePlan}
-          className="transition-opacity md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
+          aria-label={`${plan.title}: ${t.plans.deletePlan}`}
+          className="col-start-3 row-start-1 transition-opacity sm:col-start-4 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Trash2 className="h-3.5 w-3.5 text-destructive" />
         </Button>

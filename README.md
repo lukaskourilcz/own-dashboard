@@ -232,7 +232,7 @@ The migrations, in the order they run:
 121. `20261025114445_complete_competitor_records.sql` — prepared, unapplied; finite, monotonic competitor update versions and complete owned research snapshots; existing project/RLS ownership and stored fields remain unchanged. Complete captured-owner reads and confirmed editor/deletion controls are adopted in findings 226–228.
 
 122. `20261025142409_complete_data_exports.sql` — prepared, unapplied; complete captured-owner export snapshots with explicit table/column projections, existing invoker RLS, deterministic ordering and refused row/byte overflow. Finding 236 adopts its strict complete download route.
-123. `20261025170608_confirmed_plan_records.sql` — prepared, unapplied; finite monotonic plan versions and complete owned Goals/Home snapshots, with unchanged recurrence, Calendar links and invoker RLS. UI/read adoption follows separately.
+123. `20261025170608_confirmed_plan_records.sql` — prepared, unapplied; finite monotonic plan versions and complete owned Goals/Home snapshots, with unchanged recurrence, Calendar links and invoker RLS. Findings 247/250 adopt complete reads and confirmed Goals/Home controls; production rollout remains pending.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The thirty-seven audit migrations 87–123 remain unapplied; apply them in filename order before deploying the implementation branch.
 
