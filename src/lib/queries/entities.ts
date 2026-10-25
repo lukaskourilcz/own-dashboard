@@ -54,7 +54,11 @@ export function useEntityStore<T>(
     initialDataUpdatedAt: seeded ? undefined : 0,
     enabled: options?.enabled ?? true,
     ...(options?.retry === false ? { retry: false } : {}),
-    staleTime: options?.onDemand ? Infinity : 5 * 60 * 1000,
+    // An epoch-dated placeholder is still missing data. Infinity must only
+    // retain confirmed records, otherwise an unseeded destination never loads.
+    staleTime: options?.onDemand
+      ? (query) => query.state.dataUpdatedAt > 0 ? Infinity : 0
+      : 5 * 60 * 1000,
     refetchOnWindowFocus: options?.onDemand ? false : undefined,
     gcTime: Infinity,
   });

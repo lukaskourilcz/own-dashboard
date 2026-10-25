@@ -43,3 +43,21 @@ it("keeps verified cached records available when a background refresh fails", as
   expect(host.querySelector<HTMLInputElement>("input")?.value).toBe("verified");
   expect(host.querySelector('[role="alert"]')).toBeNull();
 });
+
+it("loads an unseeded on-demand destination once and keeps confirmed data fresh until explicit invalidation", async () => {
+  const load = vi.fn<() => Promise<string[]>>().mockResolvedValue(["confirmed health"]);
+  function Destination() {
+    const [records, , status] = useEntityStore(["health"], [], load, { seeded: false, onDemand: true, retry: false });
+    return <p>{status.ready ? records[0] : "waiting"}</p>;
+  }
+  act(() => root.render(<QueryClientProvider client={client}><Destination /></QueryClientProvider>));
+  await wait();
+  expect(host.textContent).toBe("confirmed health");
+  expect(load).toHaveBeenCalledOnce();
+  expect(client.getQueryCache().find({ queryKey: ["health"] })!.isStale()).toBe(false);
+  act(() => root.render(<QueryClientProvider client={client}><Destination /></QueryClientProvider>));
+  await wait();
+  expect(load).toHaveBeenCalledOnce();
+  await act(async () => { await client.invalidateQueries({ queryKey: ["health"] }); });
+  expect(load).toHaveBeenCalledTimes(2);
+});

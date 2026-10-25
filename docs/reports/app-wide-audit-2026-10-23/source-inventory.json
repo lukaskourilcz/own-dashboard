@@ -4430,10 +4430,10 @@
     },
     {
       "path": "src/lib/queries/entities.ts",
-      "lines": 80,
+      "lines": 88,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
-      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
-      "reviewedSha256": "bf42c5e772c5f5805db55a412cb0c9e8a59c6f36440f29a4170ee5533f825bf4"
+      "status": "source reviewed; finding 273 loads unconfirmed on-demand placeholders once and retains confirmed freshness until invalidation; mounted checks pass; final release pending",
+      "reviewedSha256": "04311bf05e0413dff9ca420cd4b7f91868686a819a2381dd0b262f3959ed94b2"
     },
     {
       "path": "src/lib/queries/fetchers.ts",
