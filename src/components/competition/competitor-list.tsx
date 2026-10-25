@@ -53,12 +53,13 @@ function LinkList({ urls }: { urls: string[] }) {
   );
 }
 
-export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
+export function CompetitorRow({ competitor, now, onEdit, onDelete, disabled }: {
   competitor: Competitor;
   /** Hydration-safe clock from the owning panel; null before hydration, when no freshness is shown. */
   now: Date | null;
   onEdit: () => void;
   onDelete: () => void;
+  disabled?: boolean;
 }) {
   const t = useDict();
   const p = t.portfolio;
@@ -101,12 +102,12 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
         </div>
         <div className="flex shrink-0">
           <Tooltip content={p.editCompetitor}>
-            <button type="button" onClick={onEdit} aria-label={`${p.editCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground sm:h-8 sm:w-8">
+            <button type="button" disabled={disabled} onClick={onEdit} aria-label={`${p.editCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground sm:h-8 sm:w-8">
               <Pencil aria-hidden className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
           <Tooltip content={p.deleteCompetitor}>
-            <button type="button" onClick={onDelete} aria-label={`${p.deleteCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-destructive sm:h-8 sm:w-8">
+            <button type="button" disabled={disabled} onClick={onDelete} aria-label={`${p.deleteCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-destructive sm:h-8 sm:w-8">
               <Trash2 aria-hidden className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
@@ -153,19 +154,20 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
   );
 }
 
-export function CompetitorList({ competitors, now, onEdit, onDelete, empty }: {
+export function CompetitorList({ competitors, now, onEdit, onDelete, empty, pending }: {
   competitors: Competitor[];
   /** Resolved once per panel with `useNow()` and handed down, so a long list opens one clock subscription, not one per row. */
   now: Date | null;
   onEdit: (competitor: Competitor) => void;
   onDelete: (competitor: Competitor) => void;
   empty: string;
+  pending?: ReadonlySet<string>;
 }) {
   if (competitors.length === 0) return <p className="px-3 py-3 text-sm text-foreground-muted">{empty}</p>;
   return (
     <ul className="divide-y divide-border">
       {sortCompetitors(competitors).map((competitor) => (
-        <CompetitorRow key={competitor.id} competitor={competitor} now={now} onEdit={() => onEdit(competitor)} onDelete={() => onDelete(competitor)} />
+        <CompetitorRow disabled={pending?.has(competitor.id)} key={competitor.id} competitor={competitor} now={now} onEdit={() => onEdit(competitor)} onDelete={() => onDelete(competitor)} />
       ))}
     </ul>
   );

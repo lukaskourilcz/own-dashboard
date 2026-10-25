@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { EntityBadge } from "@/components/ui/status-badge";
+import { useCompetitorActions } from "@/components/competition/use-competitor-actions";
+import { CompetitionRecovery } from "@/components/competition/competition-recovery";
 import { CompetitorList } from "@/components/competition/competitor-list";
-import { CompetitorDialog, competitorToForm, emptyCompetitorForm, useDeleteCompetitor, type CompetitorForm } from "@/components/competition/competitor-dialog";
+import { CompetitorDialog, competitorToForm, emptyCompetitorForm, type CompetitorForm } from "@/components/competition/competitor-dialog";
 import { parseDateOnly, todayKey } from "@/lib/date-keys";
 import { useDict, useLang } from "@/lib/i18n";
 import { isCompetitorReviewStale, staleCompetitorCount } from "@/lib/competition";
@@ -40,7 +42,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
   const [reviewFilter, setReviewFilter] = useState<"all" | "stale">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<CompetitorForm>(emptyCompetitorForm());
-  const remove = useDeleteCompetitor(setCompetitors);
+  const actions = useCompetitorActions(setCompetitors);
   // One clock for the whole panel: every row reads freshness from this prop
   // instead of subscribing itself. Null until hydration, so the server and the
   // first client render agree and no badge flashes in. The 30-second tick is
@@ -112,7 +114,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
       <PageHeader
         title={p.competitionTitle}
         description={p.competitionDescription}
-        action={<Button size="sm" onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>}
+        action={<Button size="sm" disabled={actions.pending.size > 0} onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>}
       />
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -126,10 +128,12 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
         <span className="text-xs tabular text-foreground-subtle">{p.competitorsCount(visible.length)}{staleTotal > 0 ? ` · ${p.staleCount(staleTotal)}` : ""}</span>
       </div>
 
+      <CompetitionRecovery actions={actions} />
+
       {staleTotal > 0 && <p className="mb-4 text-xs text-foreground-muted">{p.reviewStaleHint}</p>}
 
       {competitors.length === 0 ? (
-        <Card><CardContent className="py-8"><EmptyState icon={Swords} title={p.noCompetitors} description={p.noCompetitorsHint} action={<Button size="sm" onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>} /></CardContent></Card>
+        <Card><CardContent className="py-8"><EmptyState icon={Swords} title={p.noCompetitors} description={p.noCompetitorsHint} action={<Button size="sm" disabled={actions.pending.size > 0} onClick={() => openNew()}><Plus className="h-3.5 w-3.5" />{p.addCompetitor}</Button>} /></CardContent></Card>
       ) : (
         <div className="space-y-4">
           {groupsToRender.map((project) => {
@@ -149,17 +153,17 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <SectionLabel>{p.competitorsCount(list.length)}{groupStale > 0 ? ` · ${p.staleCount(groupStale)}` : ""}</SectionLabel>
-                    <Button size="sm" variant="outline" onClick={() => openNew(project.id)} aria-label={`${p.addCompetitor}: ${project.name}`}><Plus className="h-3.5 w-3.5" /></Button>
+                    <Button size="sm" variant="outline" disabled={actions.pending.size > 0} onClick={() => openNew(project.id)} aria-label={`${p.addCompetitor}: ${project.name}`}><Plus className="h-3.5 w-3.5" /></Button>
                   </div>
                 </CardHeader>
-                <CompetitorList competitors={list} now={now} onEdit={openEdit} onDelete={remove} empty={p.noCompetitorsForProject} />
+                <CompetitorList competitors={list} now={now} onEdit={openEdit} onDelete={actions.remove} pending={actions.pending} empty={p.noCompetitorsForProject} />
               </Card>
             );
           })}
         </div>
       )}
 
-      <CompetitorDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} projects={orderedProjects} setCompetitors={setCompetitors} />
+      <CompetitorDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} projects={orderedProjects} actions={actions} />
     </div>
   );
 }

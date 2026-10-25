@@ -796,15 +796,15 @@
       "path": "src/components/competition/competitor-dialog.tsx",
       "lines": 246,
       "sha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a",
-      "status": "partial source review: create/update/delete lack captured owner/version, stable creation id, synchronous pending/exit guards and confirmed delete receipts; invalid URL lines are silently dropped and raw provider errors displayed",
-      "reviewedSha256": "c47f788d134e1554004f71bfb199387759e8fd2bc4ce5e94c1f5f1384754820a"
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
+      "reviewedSha256": "7b5545fd26aed61cf7304a5ba7d140c7fb000b791be538a6d0e9abe71cde8580"
     },
     {
       "path": "src/components/competition/competitor-list.tsx",
       "lines": 172,
       "sha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6",
-      "status": "partial source review: shared clock, semantic scores and expandable rows retained; social links hidden without social text, long feature/rationale overflow, raw date and disclosure target consistency need native verification",
-      "reviewedSha256": "2d7d84acc3980e78dae94f923094fbf96e35587335eb85fd89411979bb9ba2a6"
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
+      "reviewedSha256": "1c310278b91723e8b739ab898c1397559194b94c8b6e384d0d60f567bdad51b1"
     },
     {
       "path": "src/components/cost-overview.tsx",
@@ -1451,8 +1451,8 @@
       "path": "src/components/panels/competition-panel.tsx",
       "lines": 165,
       "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
-      "status": "partial source review; all lines read; child list/dialog writes and project grouping/filter recovery remain",
-      "reviewedSha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5"
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
+      "reviewedSha256": "09fede3f193e23377cc224e19a8279c24f0c2c3a693908fe4d7a795cc1a27fa7"
     },
     {
       "path": "src/components/panels/dev-finance-panel.tsx",
@@ -1682,8 +1682,8 @@
       "path": "src/components/projects/project-competition.tsx",
       "lines": 45,
       "sha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6"
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
+      "reviewedSha256": "186f80d4bf495de000b35de03e32796e1b2f49b6265b03fbf81646322b9d3197"
     },
     {
       "path": "src/components/projects/project-doc-panel.tsx",
@@ -2658,8 +2658,8 @@
       "path": "src/lib/i18n/sections/portfolio.ts",
       "lines": 337,
       "sha256": "aaa1c95cd731b3f7418a9dad19217dd5053db7b4218aa5bb82cb2ecb3c2a9029",
-      "status": "source reviewed; finance correctness, CPU comparison and targeted rendered checks pass; large-list DOM/final app-wide release checks pending",
-      "reviewedSha256": "96b7affd91a5d0b1bb34b8a34ebc8597cab69c012e6f921e281eb112b26bd10e"
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending",
+      "reviewedSha256": "621632c2aae22e46f943dd68b958fb4eb1522cca228be1d2e6a25093da702082"
     },
     {
       "path": "src/lib/i18n/sections/professional.ts",
@@ -4646,6 +4646,20 @@
       "lines": 41,
       "reviewedSha256": "ab88fc97d93cc626005dcf26e7da9e28cbbfd3586aed7a4e257600aa6f3edf89",
       "status": "source reviewed; findings 226\u2013227 complete captured-owner reads and confirmed writes pass SDK/RLS tests; browser writer adoption and final release pending"
+    },
+    {
+      "path": "src/components/competition/use-competitor-actions.ts",
+      "sha256": null,
+      "lines": 85,
+      "reviewedSha256": "b4d4c823af6b6d16fbecfff3ddadafd75e1e68c9f3ddc1ce32619b97d3853c40",
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending"
+    },
+    {
+      "path": "src/components/competition/competition-recovery.tsx",
+      "sha256": null,
+      "lines": 14,
+      "reviewedSha256": "954cb7634094c8dfcf281ee091f0c7db36667620764771d5b43dec868510fa7e",
+      "status": "source reviewed; finding 228 confirms Competition edits/deletion, retained drafts, URL validation and pending/account lifecycle; remaining detail/recovery UX and final release pending"
     }
   ],
   "baselineFileCount": 561

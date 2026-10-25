@@ -229,7 +229,7 @@ The migrations, in the order they run:
 119. `20261025091027_complete_organization_records.sql` — prepared, unapplied; finite monotonic organization versions and a complete owned organization snapshot. Existing records and own-only policies remain unchanged; captured browser mutation adoption follows separately.
 
 120. `20261025094511_captured_collection_owner.sql` — prepared, unapplied; authenticated captured-owner binding before complete collection reads, including empty results; existing one-argument callers and collection policies remain unchanged.
-121. `20261025114445_complete_competitor_records.sql` — prepared, unapplied; finite, monotonic competitor update versions and complete owned research snapshots; existing project/RLS ownership and stored fields remain unchanged. Complete captured-owner reads are adopted in finding 226; confirmed editor/deletion adoption remains pending.
+121. `20261025114445_complete_competitor_records.sql` — prepared, unapplied; finite, monotonic competitor update versions and complete owned research snapshots; existing project/RLS ownership and stored fields remain unchanged. Complete captured-owner reads and confirmed editor/deletion controls are adopted in findings 226–228.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The thirty-five audit migrations 87–121 remain unapplied; apply them in filename order before deploying the implementation branch.
 
