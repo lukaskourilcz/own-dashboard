@@ -102,3 +102,7 @@ it('ARES accepts the primary contract maximum name without silently truncating i
 it('ARES refuses malformed projected fields rather than manufacturing registered text', async () => {
  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ ...subject(), obchodniJmeno: 123 }))); expect((await ares(request('ares', { ico: '27074358' }))).status).toBe(502);
 });
+it.each(['IE9*12345AB', 'IE9+12345AB', 'IE12.3456AB'])('VIES transport preserves the exact significant identifier %s', async vatId => {
+ const fetcher = vi.fn(async (_url: unknown, init?: RequestInit) => { const body = JSON.parse(String(init?.body)); expect(body).toEqual({ countryCode: 'IE', vatNumber: vatId.slice(2) }); return Response.json({ ...verdict(), countryCode: body.countryCode, vatNumber: body.vatNumber }); }); vi.stubGlobal('fetch', fetcher);
+ expect(await (await vies(request('vies', { vatId }))).json()).toMatchObject({ vatId, status: 'valid' }); expect(fetcher).toHaveBeenCalledOnce();
+});

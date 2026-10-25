@@ -14,3 +14,7 @@ it('refuses an invalid current clock and impossible stored calendar timestamp', 
  expect(vatCheckIsFresh(record, new Date(NaN))).toBe(false);
  expect(vatCheckIsFresh({ ...record, vat_verified_at: '2026-02-30T12:00:00Z' }, new Date('2026-03-03T12:00:00Z'))).toBe(false);
 });
+it.each(['IE9*12345AB', 'IE9+12345AB', 'IE12.3456AB'])('preserves significant VIES characters rather than checking a different number (%s)', vatId => {
+ const parsed = parseVatId(vatId); expect(parsed).not.toBeNull(); expect(`${parsed!.countryCode}${parsed!.number}`).toBe(vatId);
+});
+it.each(['CZ<b>27074358</b>', 'CZ27074358?', 'CZ27074358/'])('refuses unsupported punctuation instead of deleting it (%s)', vatId => { expect(parseVatId(vatId)).toBeNull(); });

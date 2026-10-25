@@ -4404,8 +4404,8 @@
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
-      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending",
-      "reviewedSha256": "63975a7c393cd92b534cbf40024c112b58d98f3ce56f4291085fc354eec35b81"
+      "status": "source reviewed; findings 212–214 nonfuture freshness, typed receipt schemas and identity-preserving VAT syntax tests pass; browser lifecycle and final release pending",
+      "reviewedSha256": "da9170a424d3445b75c9843ba99a714e4b8f32ae196916329facbbf1d93c9fc8"
     },
     {
       "path": "src/lib/telemetry-url.ts",

@@ -89,11 +89,14 @@ export type ParsedVatId = { countryCode: string; number: string };
 /** `CZ 270-743 58` → `{ countryCode: "CZ", number: "27074358" }`. */
 export function parseVatId(raw: unknown): ParsedVatId | null {
   if (typeof raw !== "string" || raw.length > 64) return null;
-  const value = raw.replace(/[^0-9a-z]/gi, "").toUpperCase();
-  const match = /^([A-Z]{2})([0-9A-Z]{2,12})$/.exec(value);
-  if (!match) return null;
-  const [, countryCode = "", number = ""] = match;
-  if (!countryCode || !number) return null;
+  const value = raw.replace(/[\s-]/g, "").toUpperCase();
+  const prefix = /^([A-Z]{2})(.*)$/.exec(value);
+  if (!prefix) return null;
+  const countryCode = prefix[1];
+  // Czech DIČ is numeric: dots retain their established human-formatting role.
+  // Elsewhere the VIES contract permits dots, plus and asterisks in the id.
+  const number = countryCode === "CZ" ? prefix[2].replace(/\./g, "") : prefix[2];
+  if (!/^[0-9A-Z+*.]{2,12}$/.test(number)) return null;
   return { countryCode, number };
 }
 
