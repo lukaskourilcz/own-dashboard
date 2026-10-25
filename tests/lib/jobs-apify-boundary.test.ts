@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { apifyTaskIds, normalizeApifyJob, fetchApifyTask } from '@/lib/jobs/apify';
+import { apifyTaskIds, normalizeApifyJob, fetchApifyTaskSnapshot, fetchApifyTask } from '@/lib/jobs/apify';
 const now = Date.parse('2026-10-25T12:00:00Z'), task = 'SyntheticTask';
 let network: ReturnType<typeof vi.fn>;
 const meta = (finishedAt = new Date(now - 1000).toISOString()) => ({ data: { id: 'SyntheticRun', actorTaskId: task, startedAt: new Date(now - 2000).toISOString(), finishedAt, status: 'SUCCEEDED', defaultDatasetId: 'SyntheticDataset' } });
@@ -75,4 +75,8 @@ it('bounds descriptive fields and tags, rejects invalid published dates and hand
 });
 it('deduplicates configured tasks before the existing five-task cap without reading credentials', () => {
  vi.stubEnv('APIFY_JOB_TASK_IDS', `one, one, owner~Task_ABC, ../invalid, ${'x'.repeat(129)},two,three,four,five`); expect(apifyTaskIds()).toEqual(['one', 'owner~Task_ABC', 'two', 'three', 'four']);
+});
+
+it('retains a completed task observation envelope even when its eligible job array is empty', async () => {
+ await expect(fetchApifyTaskSnapshot(task)).resolves.toEqual({ jobs: [], observedAt: meta().data.finishedAt });
 });

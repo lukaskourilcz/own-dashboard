@@ -1,16 +1,16 @@
 import { EMPLOYER_BOARDS, fetchEmployerBoard } from "./employer-sources";
-import { apifyTaskIds, fetchApifyTask } from "./apify";
+import { apifyTaskIds, fetchApifyTaskSnapshot } from "./apify";
 import { fetchCuratedJobs } from "./curated";
 import { decodeNumericEntity } from "@/lib/numeric-entities";
 import { brandConfig } from "@/lib/brand";
 import { isEuropeFriendly, isPrague, matchRole } from "./filter";
 import { jobSourceLabel } from "./meta";
-import type { ScrapedJob } from "./types";
+import type { ScrapedJob, ScrapedJobSnapshot } from "./types";
 
 /**
  * One module per job board, each normalizing into `ScrapedJob`. Every
  * source is best-effort: `fetchAllSources` isolates failures so one broken
- * board never takes the daily scrape down. The parsing helpers are pure
+ * board never takes an on-demand check down. The parsing helpers are pure
  * and exported for unit tests; only the `fetch*` functions touch the
  * network.
  *
@@ -707,17 +707,17 @@ export type JobSource = {
   id: string;
   /** Display label, read from the client-safe metadata so it lives in one place. */
   label: string;
-  fetch: () => Promise<ScrapedJob[]>;
+  fetch: (signal?: AbortSignal) => Promise<ScrapedJob[] | ScrapedJobSnapshot>;
 };
 
-function source(id: string, fetch: () => Promise<ScrapedJob[]>): JobSource {
+function source(id: string, fetch: (signal?: AbortSignal) => Promise<ScrapedJob[] | ScrapedJobSnapshot>): JobSource {
   return { id, label: jobSourceLabel(id), fetch };
 }
 
 export const JOB_SOURCES: JobSource[] = [
   source("curated", fetchCuratedJobs),
   ...EMPLOYER_BOARDS.map(b => ({ id: b.id, label: b.name, fetch: () => fetchEmployerBoard(b) })),
-  ...apifyTaskIds().map(id => ({ id: `apify-${id}`, label: `Apify ${id}`, fetch: () => fetchApifyTask(id) })),
+  ...apifyTaskIds().map(id => ({ id: `apify-${id}`, label: `Apify ${id}`, fetch: (signal?: AbortSignal) => fetchApifyTaskSnapshot(id, signal) })),
   source("startupjobs", fetchStartupJobs),
   source("jobscz", fetchJobsCz),
   source("pracecz", fetchPraceCz),

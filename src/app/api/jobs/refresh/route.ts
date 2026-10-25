@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const scrapeSignal = phase(45_000);
     scrapeSignal.throwIfAborted();
     const admin = createAdminClient(scrapeSignal);
-    const summary = await awaitWithSignal(runJobScrape(admin, { includeCzech }), scrapeSignal);
+    const summary = await awaitWithSignal(runJobScrape(admin, { includeCzech, signal: scrapeSignal }), scrapeSignal);
     scrapeSignal.throwIfAborted();
     // Tombstones stay owner-scoped; this route never deletes a shared listing itself.
     return NextResponse.json(expectedOwner === null ? summary : { ...summary, ownerId: user.id }, { status: summary.ok ? 200 : 500, headers });

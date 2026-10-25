@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { isCareerRelevant, matchRole } from "./filter";
 import { isJobUrl } from "./availability";
-import type { ScrapedJob } from "./types";
+import type { ScrapedJob, ScrapedJobSnapshot } from "./types";
 
 import { awaitWithSignal } from "@/lib/abortable";
 import { readTextPrefix } from "@/lib/bounded-text";
@@ -13,7 +13,7 @@ const publicationDate = z.union([instant, z.iso.date()]);
 const unavailable = () => new Error("career-apify-unavailable");
 
 /** Read only an already completed recent saved task. No Actor start endpoint. */
-export async function fetchApifyTask(taskId: string, parent?: AbortSignal): Promise<ScrapedJob[]> {
+export async function fetchApifyTaskSnapshot(taskId: string, parent?: AbortSignal): Promise<ScrapedJobSnapshot> {
   const token = process.env.APIFY_TOKEN, lifetime = new AbortController();
   const signal = AbortSignal.any([lifetime.signal, AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
   const get = async (path: string, maxCharacters: number) => {
@@ -63,11 +63,17 @@ export async function fetchApifyTask(taskId: string, parent?: AbortSignal): Prom
     const jobs = rows.map(row => normalizeApifyJob(row, taskId, observedAt)).filter((job): job is ScrapedJob => job !== null);
     const completed = Date.now();
     if (!Number.isFinite(completed) || completed < now || completed - started > 15_000 || completed - finished > 24 * 60 * 60 * 1000) throw unavailable();
-    signal.throwIfAborted(); return jobs;
+    signal.throwIfAborted(); return { jobs, observedAt };
   } catch {
     if (parent?.aborted) throw new DOMException("Request aborted", "AbortError");
     throw unavailable();
   } finally { lifetime.abort(); }
+}
+
+/** Existing array callers retain their contract; the orchestrator keeps the
+ * observation envelope so an empty filtered result cannot renew an old run. */
+export async function fetchApifyTask(taskId: string, parent?: AbortSignal): Promise<ScrapedJob[]> {
+ return (await fetchApifyTaskSnapshot(taskId, parent)).jobs;
 }
 
 export function normalizeApifyJob(

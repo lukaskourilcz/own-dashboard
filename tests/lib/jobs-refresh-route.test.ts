@@ -19,7 +19,7 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); });
 it('keeps the function limit, one verification and legacy response shape', async () => {
  const result = await POST(request()); expect(maxDuration).toBe(60); expect(result.status).toBe(200); expect(await result.json()).toEqual(summary); expect(result.headers.get('cache-control')).toBe('private, no-store');
- expect(state.auth).toHaveBeenCalledOnce(); expect(state.limit).toHaveBeenCalledWith(owner, { key: 'jobs-refresh', limit: 2, windowSec: 600 }); expect(query.eq).toHaveBeenCalledWith('user_id', owner); expect(query.retry).toHaveBeenCalledWith(false); expect(state.scrape).toHaveBeenCalledWith({ synthetic: true }, { includeCzech: false });
+ expect(state.auth).toHaveBeenCalledOnce(); expect(state.limit).toHaveBeenCalledWith(owner, { key: 'jobs-refresh', limit: 2, windowSec: 600 }); expect(query.eq).toHaveBeenCalledWith('user_id', owner); expect(query.retry).toHaveBeenCalledWith(false); expect(state.scrape).toHaveBeenCalledWith({ synthetic: true }, { includeCzech: false, signal: expect.any(AbortSignal) });
 });
 it('refuses a cached user accompanied by an authentication error before any refresh admission', async () => {
  state.auth.mockResolvedValue({ data: { user: { id: owner } }, error: { status: 401, message: 'synthetic-private-auth-detail' } });
@@ -47,7 +47,7 @@ it.each(['error', 'rejected', 'invalid'])('does not infer a source choice from %
  const result = await POST(request()); expect(result.status).toBe(503); expect(await result.text()).not.toContain('synthetic-private'); expect(state.scrape).not.toHaveBeenCalled(); expect(state.admin).not.toHaveBeenCalled();
 });
 it.each([null, { show_czech_career: true }])('preserves explicit Czech choice and the absent-row default (%j)', async preference => {
- state.preference.mockResolvedValue({ data: preference, error: null }); expect((await POST(request())).status).toBe(200); expect(state.scrape).toHaveBeenCalledWith({ synthetic: true }, { includeCzech: preference?.show_czech_career === true });
+ state.preference.mockResolvedValue({ data: preference, error: null }); expect((await POST(request())).status).toBe(200); expect(state.scrape).toHaveBeenCalledWith({ synthetic: true }, { includeCzech: preference?.show_czech_career === true, signal: expect.any(AbortSignal) });
 });
 it('retains the two-per-ten-minute rate limit before any service client or scrape', async () => {
  state.limit.mockResolvedValue({ ok: false, retryAfter: 30 }); const result = await POST(request()); expect(result.status).toBe(429); expect(result.headers.get('retry-after')).toBe('30'); expect(state.admin).not.toHaveBeenCalled(); expect(state.scrape).not.toHaveBeenCalled();
@@ -85,5 +85,5 @@ it.each([200, 503])('uses the installed SDK to read captured preferences once on
  vi.spyOn(api.auth, 'getUser').mockResolvedValue({ data: { user }, error: null }); state.client.mockResolvedValue(api);
  const result = await POST(request({ 'x-own-dashboard-owner': owner })); expect(result.status).toBe(status === 200 ? 200 : 503);
  expect(reads).toHaveLength(1); expect(reads[0].url.pathname).toBe('/rest/v1/user_preferences'); expect(reads[0].url.searchParams.get('user_id')).toBe(`eq.${owner}`); expect(reads[0].signal?.aborted).toBe(true);
- if (status === 200) expect(state.scrape).toHaveBeenCalledWith({ synthetic: true }, { includeCzech: true }); else { expect(state.scrape).not.toHaveBeenCalled(); expect(state.admin).not.toHaveBeenCalled(); }
+ if (status === 200) expect(state.scrape).toHaveBeenCalledWith({ synthetic: true }, { includeCzech: true, signal: expect.any(AbortSignal) }); else { expect(state.scrape).not.toHaveBeenCalled(); expect(state.admin).not.toHaveBeenCalled(); }
 });

@@ -145,8 +145,8 @@
       "path": "src/app/api/cron/jobs-scrape/route.ts",
       "lines": 51,
       "sha256": "5a0cf4052c04387e75d1decc78b0cf76e385d7d7109be92c6e48022ceb101c53",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "5a0cf4052c04387e75d1decc78b0cf76e385d7d7109be92c6e48022ceb101c53"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "96b141fa7070c656ad75a682f62d701766de64966fab2eeacbc2c62fcf0642fb"
     },
     {
       "path": "src/app/api/cron/payment-match/route.ts",
@@ -306,8 +306,8 @@
       "path": "src/app/api/jobs/refresh/route.ts",
       "lines": 63,
       "sha256": "6f95a5cfb69441489d4b3f960675bc21052c5543e202095198cc36adf80d62f9",
-      "status": "source reviewed; finding 264 refuses auth errors/captured-owner mismatch/uncertain preferences and bounds route waits; browser adoption and opaque scrape lifecycle/persistence remain open",
-      "reviewedSha256": "3d5467ef866bbe52133cef885093db1af6a34145c5579028e013b85cb182115c"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "05fc87d3e17cf214c2b06efb0924a16969c31978a29e637722bb1c8987e3c729"
     },
     {
       "path": "src/app/api/jobs/research-availability/route.ts",
@@ -2790,10 +2790,10 @@
     },
     {
       "path": "src/lib/jobs/apify.ts",
-      "lines": 135,
+      "lines": 141,
       "sha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771",
-      "status": "source reviewed; finding 268 completed-task GET-only admission, full bounded dataset evidence, timestamp/body/deadline and normalizer checks pass; orchestration/persistence and final release pending",
-      "reviewedSha256": "8b0b4839d57212297d03be3657c3418aeaf3a8f938db6f7e888c89b3aa7129ee"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "7a8885beb183d1f8fc353ce45167b3e935fba4e8a31d72b1746569705edaeca8"
     },
     {
       "path": "src/lib/jobs/availability.ts",
@@ -2902,17 +2902,17 @@
     },
     {
       "path": "src/lib/jobs/scrape.ts",
-      "lines": 261,
+      "lines": 126,
       "sha256": "aaa4d49ed457e40aee9e0c77d465610c989f327e86edcc1e8e19b3d49a67a49d",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "aaa4d49ed457e40aee9e0c77d465610c989f327e86edcc1e8e19b3d49a67a49d"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "3a4a23c63c15873c82cceca22c8f77116901a463753650990d3c94429ac0a423"
     },
     {
       "path": "src/lib/jobs/sources.ts",
       "lines": 729,
       "sha256": "2889a31b295058582ab83892a1e316cb8bea9a72629582640feb7d15273ae6e6",
-      "status": "partial; complete source inspection; bounded all-phase fetches, shape validation, complete-source evidence, numeric entity/date parsing and cleanup CPU remain under review; on-demand source isolation retained; finding 187 closes malformed numeric references with JPEG/feed integration regressions",
-      "reviewedSha256": "04289fa52724ade2c648b147dbbfb74a409dc8ca9697672e37c450e4587f0c79"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "0a78bd831bf00d5c3ab71baaecea96e137853352954513e1b094174d5441ea7d"
     },
     {
       "path": "src/lib/jobs/stats.ts",
@@ -2930,10 +2930,10 @@
     },
     {
       "path": "src/lib/jobs/types.ts",
-      "lines": 47,
+      "lines": 50,
       "sha256": "0971cf6bc9b727edec0d167ed38c13b6e843b71dcfb1fa322d3d370c4dda7921",
-      "status": "source reviewed; normalized provider/run type declarations only; runtime completeness/cancellation/persistence reviewed separately in remaining-review.md",
-      "reviewedSha256": "0971cf6bc9b727edec0d167ed38c13b6e843b71dcfb1fa322d3d370c4dda7921"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "a7f1bb9b75f14299a74f643a574ab5604c8ff6aba9590cec83732cec42dc07d3"
     },
     {
       "path": "src/lib/link-export.ts",
@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated read port fingerprint matches 124 canonical local migrations; prepared rollout and final release pending",
-      "reviewedSha256": "f1cc7bc705da7f53dcaa640d4defa29259098198e19b8a56fcef9ec2c64d4639"
+      "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
+      "reviewedSha256": "b6a1f5bb48da23a56b2596993e14421e288daa2027831d3bd069fa1bb94971c6"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
