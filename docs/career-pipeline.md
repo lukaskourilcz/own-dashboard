@@ -118,3 +118,8 @@ The security advisor reported no new Career finding. It also reported existing u
 The Vercel project is already linked to this repository. [Vercel's GitHub integration](https://vercel.com/docs/git/vercel-for-github) builds branch previews and deploys the production branch. The additive database migration is compatible with the previous frontend, allowing the code to be reviewed before switching the interface.
 
 Local verification passed lint, TypeScript and the production build, plus 276 unit tests. The full E2E run passed 45 checks and skipped 33 project duplicates; its two remaining stale/external-dependency test failures were corrected and both passed the targeted rerun, leaving all 47 executed checks covered. Details and visual limitations are recorded in `docs/design/visual-qa.md`.
+
+
+### Direct availability checks
+
+Direct public-page verification admits at most 100 listings in batches of 15. Its in-flight work shares a 22-second budget; each listing has one 15-second allowance across redirects and body download, capped at 1.5 MB. Caller cancellation reaches these requests. In-flight failures become unknown, and unstarted rows receive no invented state. This bound covers the direct verifier, not preceding route auth/database or native-board fetches.

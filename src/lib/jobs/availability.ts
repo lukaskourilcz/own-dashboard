@@ -1,3 +1,4 @@
+import { awaitWithSignal } from "@/lib/abortable";
 import type { JobListing } from "@/lib/types";
 
 export type Availability = "open" | "closed" | "unknown";
@@ -78,29 +79,36 @@ export function pageAvailability(
   return matchesTitle && applicationSignal ? "open" : "unknown";
 }
 
-async function checkListing(job: JobListing): Promise<Availability> {
+async function checkListing(job: JobListing, parent?: AbortSignal): Promise<Availability> {
+  const signal = AbortSignal.any([AbortSignal.timeout(LISTING_TIMEOUT_MS), ...(parent ? [parent] : [])]);
   let url = job.url;
   try {
     for (let redirects = 0; redirects < 4; redirects++) {
       if (!isJobUrl(url)) return "unknown";
-      const response = await fetch(url, {
+      signal.throwIfAborted();
+      const pending = fetch(url, {
         redirect: "manual",
         cache: "no-store",
-        signal: AbortSignal.timeout(LISTING_TIMEOUT_MS),
+        signal,
         headers: {
           accept: "text/html",
           "user-agent": "OwnDashboard Career availability check",
         },
       });
+      // An injected or stalled transport may settle after cancellation. Observe
+      // it and release its late response without holding the caller open.
+      void pending.then(response => { if (signal.aborted) void response.body?.cancel().catch(() => undefined); }).catch(() => undefined);
+      const response = await awaitWithSignal(pending, signal);
+      signal.throwIfAborted();
       if ([301, 302, 303, 307, 308].includes(response.status)) {
         const location = response.headers.get("location");
-        await response.body?.cancel();
+        void response.body?.cancel().catch(() => undefined);
         if (!location) return "unknown";
         url = new URL(location, url).href;
         continue;
       }
       if (response.status !== 200) {
-        await response.body?.cancel();
+        void response.body?.cancel().catch(() => undefined);
         return pageAvailability(response.status, "", job.title);
       }
       // Bound downloaded bytes as well as wall time; job pages are untrusted input.
@@ -109,16 +117,22 @@ async function checkListing(job: JobListing): Promise<Availability> {
       let html = "";
       let bytes = 0;
       const decoder = new TextDecoder();
+      const cancel = () => { void reader.cancel().catch(() => undefined); };
+      signal.addEventListener("abort", cancel, { once: true });
       try {
+        signal.throwIfAborted();
         while (true) {
-          const part = await reader.read();
-          if (part.done) break;
+          const part = await awaitWithSignal(reader.read(), signal);
+          signal.throwIfAborted();
+          if (part.done) { html += decoder.decode(); break; }
           bytes += part.value.byteLength;
           if (bytes > 1_500_000) return "unknown";
           html += decoder.decode(part.value, { stream: true });
         }
       } finally {
-        await reader.cancel();
+        signal.removeEventListener("abort", cancel);
+        cancel();
+        reader.releaseLock();
       }
       return pageAvailability(response.status, html, job.title);
     }
@@ -130,15 +144,17 @@ async function checkListing(job: JobListing): Promise<Availability> {
 
 export async function verifyListings(
   listings: JobListing[],
-  probe = checkListing,
+  probe: (job: JobListing, signal?: AbortSignal) => Promise<Availability> = checkListing,
+  parent?: AbortSignal,
 ) {
   const results: Record<string, Availability> = {};
-  const start = Date.now();
-  for (let i = 0; i < Math.min(listings.length, 100); i += 15) {
-    if (Date.now() - start > 22000) break;
-    const batch = listings.slice(i, i + 15);
+  const signal = AbortSignal.any([AbortSignal.timeout(22_000), ...(parent ? [parent] : [])]);
+  const candidates = listings.slice(0, 100);
+  for (let i = 0; i < candidates.length; i += 15) {
+    if (signal.aborted) break;
+    const batch = candidates.slice(i, i + 15);
     const states = await Promise.all(
-      batch.map((j) => probe(j).catch(() => "unknown" as const)),
+      batch.map((job) => awaitWithSignal(Promise.resolve().then(() => { signal.throwIfAborted(); return probe(job, signal); }), signal).catch(() => "unknown" as const)),
     );
     batch.forEach((j, n) => {
       results[j.id] = states[n];

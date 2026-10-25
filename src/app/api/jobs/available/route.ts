@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   );
   Object.assign(
     states,
-    await verifyListings(candidates.filter((j) => !nativeIds.has(j.source))),
+    await verifyListings(candidates.filter((j) => !nativeIds.has(j.source)), undefined, request.signal),
   );
   return NextResponse.json(
     {
