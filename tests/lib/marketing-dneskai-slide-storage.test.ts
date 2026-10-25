@@ -55,10 +55,10 @@ describe("DNESKAi render cache in the private marketing-assets bucket", () => {
     expect(files.upload).not.toHaveBeenCalled();
     expect(files.createSignedUrl).not.toHaveBeenCalled();
   });
-  it.each(['NoSuchKey', 'not_found', '404'])('recognizes a typed object absence in the slide cache (%s)', async (statusCode) => {
+  it.each([{ status: 404, statusCode: 'NoSuchKey' }, { status: 404, statusCode: 'not_found' }, { status: 404, statusCode: '404' }, { status: 400, statusCode: '404' }])('recognizes a typed object absence in the slide cache (%s)', async (error) => {
     const { db, files } = bucket();
     const storage = createDneskaiSlideStorage(db, owner);
-    files.info.mockResolvedValueOnce({ data: null, error: { status: 404, statusCode } } as never);
+    files.info.mockResolvedValueOnce({ data: null, error } as never);
     expect(await storage.find(renderKey)).toBeNull();
     expect(files.createSignedUrl).not.toHaveBeenCalled();
   });

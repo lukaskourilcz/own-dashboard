@@ -193,10 +193,10 @@ describe("reel storage", () => {
     expect(files.upload).not.toHaveBeenCalled();
     expect(files.createSignedUrl).not.toHaveBeenCalled();
   });
-  it.each(['NoSuchKey', 'not_found', '404'])('recognizes a typed object absence in the reel cache (%s)', async (statusCode) => {
+  it.each([{ status: 404, statusCode: 'NoSuchKey' }, { status: 404, statusCode: 'not_found' }, { status: 404, statusCode: '404' }, { status: 400, statusCode: '404' }])('recognizes a typed object absence in the reel cache (%s)', async (error) => {
     const { db, files } = facade();
     const storage = createDneskaiReelStorage(db as never, owner);
-    files.info.mockResolvedValueOnce({ data: null, error: { status: 404, statusCode } } as never);
+    files.info.mockResolvedValueOnce({ data: null, error } as never);
     expect(await storage.find(reelKey)).toBeNull();
     expect(files.createSignedUrl).not.toHaveBeenCalled();
   });

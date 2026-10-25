@@ -3883,9 +3883,9 @@
     {
       "path": "src/lib/marketing/storage-errors.ts",
       "sha256": null,
-      "lines": 7,
-      "status": "source reviewed; finding 189 shares typed storage absence classification across existing slide/Reel adapters; boundary and composed tests, lint and types pass; final release pending",
-      "reviewedSha256": "421e1a323b6f6471de1e5ed05288812de2cbf950a20751b3175f22f4e0936851"
+      "lines": 10,
+      "status": "source reviewed; findings 189 and 192 distinguish outages from typed object absence, including legacy HTTP 400/body 404; actual SDK/emulator dry-day and adapter tests, lint and types pass; final release pending",
+      "reviewedSha256": "ed22628fddaafbe06054685e31691b9cbb2cf02db63e5e154365658162a0d903"
     },
     {
       "path": "src/lib/marketing/store.ts",
