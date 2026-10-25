@@ -306,8 +306,8 @@
       "path": "src/app/api/jobs/refresh/route.ts",
       "lines": 63,
       "sha256": "6f95a5cfb69441489d4b3f960675bc21052c5543e202095198cc36adf80d62f9",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "6f95a5cfb69441489d4b3f960675bc21052c5543e202095198cc36adf80d62f9"
+      "status": "source reviewed; finding 264 refuses auth errors/captured-owner mismatch/uncertain preferences and bounds route waits; browser adoption and opaque scrape lifecycle/persistence remain open",
+      "reviewedSha256": "3d5467ef866bbe52133cef885093db1af6a34145c5579028e013b85cb182115c"
     },
     {
       "path": "src/app/api/jobs/research-availability/route.ts",

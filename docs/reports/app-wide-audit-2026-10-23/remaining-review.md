@@ -155,3 +155,6 @@ Finding 261 closes the checkpoint-89 Goals dismissal-focus failure by registerin
 
 
 Finding 263 closes the checkpoint-90 TikTok diagnostic omission and covers its other plain-error states through the existing provider-error class, paired EN/CS messages and conservative uncertainty/day-budget guidance. Other generic Error machine strings need their recorded-versus-wrapped paths traced before declaring them owner-visible gaps or adding copy; keep unknown/private details behind the existing fixed-code boundary.
+
+
+Finding 264 closes Career refresh admission: verification errors take precedence over cached users, optional captured-owner mismatch stops before quota/preferences/service work, and failed/malformed preferences never select a source default. Route waits and scoped database transport lifetime are bounded with fixed errors. The browser still needs to send/confirm its captured owner, and the opaque scraper's complete fan-out/cancellation/receipt/concurrent-write behavior remains open; a bounded route wait alone does not prove its background work stops.
