@@ -82,8 +82,8 @@ describe('Errors and costs keeps measured, booked and unknown apart', () => {
     expect(headers).toEqual([t.costs.date, t.costs.collection, t.costs.generation, t.costs.total, t.costs.booked]);
     const yesterday = costs.querySelectorAll('table tbody tr')[1]!;
     expect(yesterday.textContent).toContain(t.costs.unknown(1));
-    // Measured total excludes the booked $0.25: 0.04 sources + 0.37 drafting.
-    expect([...yesterday.querySelectorAll('td')].map((cell) => cell.textContent)).toEqual(['$0.04', '$0.37', '$0.41', '$0.25']);
+    // Measured total excludes the booked $0.13: 0.04 sources + 0.37 drafting.
+    expect([...yesterday.querySelectorAll('td')].map((cell) => cell.textContent)).toEqual(['$0.04', '$0.37', '$0.41', '$0.13']);
     expect(costs.querySelector('table')!.getAttribute('aria-describedby')).toBe('dneskai-days-help');
     expect(costs.querySelector('#dneskai-days-help')!.textContent).toBe(t.costs.daysHelp);
     const balances = costs.querySelector('[data-testid="dneskai-balances"]')!;

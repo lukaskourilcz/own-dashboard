@@ -795,3 +795,10 @@ The partial owner/date/id job index matches the actual JSON brand predicate. `co
 ## Full release checkpoint 77 — started
 
 The complete serial release pipeline starts at frozen application/test source `f6fd071`: all unit/component/database cases, full lint, ordinary production build, eight actual render traces, post-build types and the full optimized browser matrix. The verified local preview listener was stopped first. Application/test/migration inputs remain unchanged until the run ends; documentation, read-only review and isolated temporary probes may continue. No phase is yet passing evidence for this checkpoint. The last complete unit/lint/type pass is checkpoint 76; the last complete production/browser pass is checkpoint 73. Thirty-two audit migrations remain prepared/unapplied, and main merge remains pending.
+
+
+## Full unit checkpoint 77 — completed with one outdated preview expectation
+
+At frozen application/test source `f6fd071`, 4,896 cases pass, one intentionally skips and one preview assertion fails (451 passed files, one skipped file, one failed file; 453 total), in 183.00 seconds with two workers. The actual Costs row correctly shows measured $0.04 + $0.37 = $0.41 separately from booked $0.13. The old assertion still expects the retired $0.25 fixture amount. Only that expectation and its explanatory comment change; application behavior and the measured/booked separation remain intact. The pipeline stops before lint, build, traces, post-build types and browser phases. No later phase is passing evidence for checkpoint 77.
+
+The corrected preview expectation passes all fourteen workspace-tab cases in 10.76 seconds. It keeps the exact measured/booked/unknown assertions and changes no application behavior. A fresh complete release run is still required.
