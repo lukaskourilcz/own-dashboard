@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
-      "reviewedSha256": "d027257352183e73969d18680c15986b87bbaed9b1b56bf7c1cb12807fd15e7c"
+      "status": "source reviewed; owner cache/plan reads and finding 253 contiguous/widget-safe keyboard checks pass; other shell leads and final release pending",
+      "reviewedSha256": "59d1a8a500cd7b510c547dd4bf654110d62c84eaa2d2d12bf20aea7150d45313"
     },
     {
       "path": "src/components/demo-dashboard.tsx",

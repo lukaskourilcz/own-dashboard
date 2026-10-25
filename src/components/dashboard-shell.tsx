@@ -470,16 +470,26 @@ function DashboardShellContent(props: Props) {
   };
   const requiredStatuses = Object.entries(entityStatuses).filter(([key]) => tabNeedsDashboardData(tab, key as DashboardDataKey, activatedTabs.has(tab)));
 
-  const lastG = useRef(0);
+  const lastG = useRef<number | null>(null);
   useEffect(() => {
+    const reset = () => { lastG.current = null; };
     const handler = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable)) return;
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.key === "g") { lastG.current = Date.now(); return; }
-      if (Date.now() - lastG.current < 1500 && TAB_CHORDS[event.key]) { setTab(TAB_CHORDS[event.key]); lastG.current = 0; event.preventDefault(); return; }
+      const previous = lastG.current; reset();
+      const target = event.target instanceof Element ? event.target : null;
+      if (event.defaultPrevented || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (target?.closest('input,textarea,select,[role="dialog"],[role="combobox"],[role="listbox"],[role="menu"],[role="textbox"]')
+        || (target instanceof HTMLElement && target.isContentEditable)) return;
+      const now = performance.now();
+      // Resolve the second key first: g,g is the Goals chord, not another
+      // prefix. Every intervening/ignored key or focus change cancels it.
+      if (previous !== null && now >= previous && now - previous < 1500 && TAB_CHORDS[event.key]) {
+        event.preventDefault(); setTab(TAB_CHORDS[event.key]); return;
+      }
+      if (event.key === "g") lastG.current = now;
     };
-    window.addEventListener("keydown", handler); return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", handler);
+    window.addEventListener("focusin", reset);
+    return () => { reset(); window.removeEventListener("keydown", handler); window.removeEventListener("focusin", reset); };
   }, [setTab]);
   const selectedProjectName = useMemo(
     () => projects.find((project) => project.id === selectedProjectId)?.name,
