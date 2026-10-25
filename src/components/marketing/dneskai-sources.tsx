@@ -15,6 +15,17 @@ import type { DneskaiCollectionState, DneskaiEventSelection, DneskaiEventView } 
 /** Provider codes can be any string; inherited object members are never localized text. */
 const ownText = (dictionary: Record<string, string>, code: string): string | undefined => Object.hasOwn(dictionary, code) ? dictionary[code] : undefined;
 
+/** Immutable locale machinery is shared; no source/owner data survives a render. */
+const sourceFormatters = (locale: string) => ({
+  at: new Intl.DateTimeFormat(locale, { timeZone: 'Europe/Prague', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+  day: new Intl.DateTimeFormat(locale, { timeZone: 'Europe/Prague', day: 'numeric', month: 'short', year: 'numeric' }),
+  cost: new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }),
+  relevance: new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  age: new Intl.RelativeTimeFormat(locale, { numeric: 'always' }),
+});
+const SOURCE_FORMATTERS = { en: sourceFormatters('en-GB'), cs: sourceFormatters('cs-CZ') };
+type SourceCandidate = DneskaiCollectionState['candidates'][number];
+
 /** `onOpenReview` switches the project workspace to „Dnes ke schválení“, where the final review happens. */
 type Props = { projectId: string; lang: 'en' | 'cs'; onOpenReview: () => void; disabled?: boolean; now?: Date };
 export function DneskaiSources({ projectId, lang, onOpenReview, disabled = false, now = new Date() }: Props) {
@@ -37,14 +48,20 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
   const t = dneskaiSources[lang]; const today = pragueMarketingDate(now); const r = t.recovery;
   const capabilities = state.recovery ?? DNESKAI_RECOVERY_OFF;
   const tomorrow = new Date(Date.parse(`${today}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
-  const dateFormat = new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { timeZone: 'Europe/Prague', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const dateOnly = (date: string) => new Intl.DateTimeFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { timeZone: 'Europe/Prague', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${date}T12:00:00Z`));
-  const at = (date: string | null) => date ? <time dateTime={date}>{dateFormat.format(new Date(date))}</time> : t.noDate;
+  const formats = SOURCE_FORMATTERS[lang];
+  const dateOnly = (date: string) => formats.day.format(new Date(`${date}T12:00:00Z`));
+  const at = (date: string | null) => date ? <time dateTime={date}>{formats.at.format(new Date(date))}</time> : t.noDate;
   // An estimated publication date is an upper bound (see docs/dneskai-native-feeds.md) and says so in words.
   const published = (date: string | null, estimated?: boolean) => date ? <>{at(date)}{estimated && <> ({t.estimated})</>}</> : t.unknownPublished;
-  const latest = <K extends 'publishedAt' | 'fetchedAt'>(sourceId: string, key: K) => state.candidates.filter(candidate => candidate.sourceId === sourceId && candidate[key])
-    .reduce<DneskaiCollectionState['candidates'][number] | null>((best, candidate) => !best || Date.parse(String(candidate[key])) > Date.parse(String(best[key])) ? candidate : best, null);
-  const cost = (amount: number | null) => amount === null ? t.unknownCost : new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-GB', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(amount);
+  // Read each candidate once. Strictly later dates win, keeping the first row on a tie as before.
+  const latest = new Map<string, { published: SourceCandidate | null; imported: SourceCandidate | null }>();
+  for (const candidate of state.candidates) {
+    const value = latest.get(candidate.sourceId) ?? { published: null, imported: null };
+    if (candidate.publishedAt && (!value.published || Date.parse(candidate.publishedAt) > Date.parse(value.published.publishedAt!))) value.published = candidate;
+    if (!value.imported || Date.parse(candidate.fetchedAt) > Date.parse(value.imported.fetchedAt)) value.imported = candidate;
+    latest.set(candidate.sourceId, value);
+  }
+  const cost = (amount: number | null) => amount === null ? t.unknownCost : formats.cost.format(amount);
   const status = (value: 'never' | 'ok' | 'partial' | 'error' | 'held' | 'running' | 'complete' | 'failed') => <StatusBadge value={value} label={t[value]} tone={value === 'ok' || value === 'complete' ? 'success' : value === 'error' || value === 'failed' ? 'risk' : value === 'partial' || value === 'held' ? 'warning' : 'neutral'} />;
   const todayChecks = state.sourceStates.filter(value => value.lastAttemptAt && pragueMarketingDate(new Date(value.lastAttemptAt)) === today);
   const topicDays = [{ id: 'today', date: today, title: t.todayTopics, empty: t.noTodayTopics }, { id: 'tomorrow', date: tomorrow, title: t.nextTopics, empty: t.noTopics }];
@@ -123,7 +140,7 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
     <section aria-labelledby="dneskai-registry-title"><h3 id="dneskai-registry-title" className="mb-2 text-sm font-semibold">{t.registry}</h3>
       {state.sources.length === 0 ? <EmptyState align="start" title={t.empty} /> : <ul className="divide-y divide-border border-y border-border">{state.sources.map(source => {
         const value = state.sourceStates.find(item => item.sourceId === source.id); const url = sourceExternalUrl(source.url);
-        const newest = latest(source.id, 'publishedAt'), imported = latest(source.id, 'fetchedAt');
+        const { published: newest, imported } = latest.get(source.id) ?? { published: null, imported: null };
         return <li key={source.id} className="min-w-0 space-y-2 py-4">
           <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="break-words text-sm font-semibold">{url ? <a className="focus-ring rounded underline" href={url} target="_blank" rel="noopener noreferrer">{source.name}</a> : source.name}</p><p className="text-xs text-foreground-muted">{t.kinds[source.kind]} · {t.days}: {[...source.weekdays].sort((a, b) => a - b).map(day => t.weekdays[day]).join(', ')}</p></div>{status(value?.status ?? 'never')}</div>
           <dl className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-2 text-xs sm:grid-cols-2 xl:grid-cols-3">
@@ -148,10 +165,10 @@ export function DneskaiSourceRecords({ state, lang, now, recovery }: { state: Dn
  */
 function SelectionFacts({ selection, lang, now, published }: { selection: DneskaiEventSelection; lang: 'en' | 'cs'; now: Date; published: (date: string | null, estimated?: boolean) => ReactNode }) {
   const t = dneskaiSources[lang];
-  const locale = lang === 'cs' ? 'cs-CZ' : 'en-GB';
-  const relevance = selection.relevance === null ? t.noDate : new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(selection.relevance);
+  const formats = SOURCE_FORMATTERS[lang];
+  const relevance = selection.relevance === null ? t.noDate : formats.relevance.format(selection.relevance);
   const hours = selection.publishedAt ? (now.getTime() - Date.parse(selection.publishedAt)) / 3600000 : null;
-  const age = hours === null || hours < 0 ? null : new Intl.RelativeTimeFormat(locale, { numeric: 'always' }).format(-(hours < 48 ? Math.round(hours) : Math.round(hours / 24)), hours < 48 ? 'hour' : 'day');
+  const age = hours === null || hours < 0 ? null : formats.age.format(-(hours < 48 ? Math.round(hours) : Math.round(hours / 24)), hours < 48 ? 'hour' : 'day');
   return <div className="space-y-1">
     <dl className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground-muted">
       <div className="flex gap-1"><dt>{t.category}:</dt><dd>{selection.category ? t.categories[selection.category] : t.unclassified}</dd></div>

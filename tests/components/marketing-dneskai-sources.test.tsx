@@ -59,6 +59,22 @@ describe('read-only DNESKAi source checks', () => {
     expect(container.textContent).not.toMatch(/function |native code|\[object Object\]/);
     for (const code of codes) expect(container.textContent).not.toContain(code);
   });
+  it.each(['en', 'cs'] as const)('keeps independent newest-publication/import evidence and the first estimated row on a date tie (%s)', lang => {
+    const value = state(); const first = value.candidates[0]; const t = dneskaiSources[lang];
+    value.candidates = [
+      { ...first, id: 'import-only', publishedAt: null, fetchedAt: '2026-10-13T14:00:00Z' },
+      { ...first, id: 'first-published', publishedAt: '2026-10-12T13:00:00+02:00', dateEstimated: true, fetchedAt: '2026-10-13T12:00:00Z' },
+      { ...first, id: 'tied-published', publishedAt: '2026-10-12T11:00:00Z', fetchedAt: '2026-10-13T11:00:00Z' },
+      { ...first, id: 'foreign-source', sourceId: 'other-source', publishedAt: '2026-10-13T15:00:00Z', fetchedAt: '2026-10-13T16:00:00Z' },
+    ];
+    render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
+    const registry = container.querySelector('[aria-labelledby="dneskai-registry-title"]')!;
+    const fact = (label: string) => [...registry.querySelectorAll('dt')].find(node => node.textContent === label)?.parentElement?.querySelector('dd');
+    expect(fact(t.newestPublished)?.textContent).toContain(`(${t.estimated})`);
+    expect(fact(t.newestPublished)?.querySelector('time')?.dateTime).toBe('2026-10-12T13:00:00+02:00');
+    expect(fact(t.lastImport)?.querySelector('time')?.dateTime).toBe('2026-10-13T14:00:00Z');
+    expect(registry.querySelector('time[datetime="2026-10-13T16:00:00Z"]')).toBeNull();
+  });
   it('shows missing configuration and no scheduled checks without inventing a successful empty run', () => {
     const value = state(); value.enabled = false; value.blockers = ['collection-bridge-unconfigured']; value.sourceStates = []; value.candidates = []; value.runs = [];
     render(<DneskaiSourceRecords state={value} lang="en" now={now} />);

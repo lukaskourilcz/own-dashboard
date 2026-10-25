@@ -1050,10 +1050,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-sources.tsx",
-      "lines": 183,
+      "lines": 200,
       "sha256": "703f8068fc6a58d3741f0e491d5e19e9b59a0919e9dee549f61f8dbecca68e50",
-      "status": "partial; complete source inspection; captured recovery actions, cached failures, inherited dictionary lookup and row projection CPU remain under review; finding 194 closes inherited labels with EN/CS mounted/native evidence; other recorded leads remain open",
-      "reviewedSha256": "2ca427304626462e53b1a5233282dd50b1aced33cd92da93a8cb0ed07280d8a3"
+      "status": "partial; complete source inspection; captured recovery actions, cached failures, inherited dictionary lookup and row projection CPU remain under review; finding 194 closes inherited labels with EN/CS mounted/native evidence; other recorded leads remain open; finding 196 closes formatter/candidate projection cost with exact HTML/CPU parity; source/read/recovery lifecycle leads remain open",
+      "reviewedSha256": "30b793a833c8ca5abb43d1460c6fac54f0a4b85c3a9cb8ee1d16fe75c622a6f5"
     },
     {
       "path": "src/components/marketing/dneskai/audio-preview.tsx",

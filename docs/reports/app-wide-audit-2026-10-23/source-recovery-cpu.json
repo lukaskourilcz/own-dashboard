@@ -1,0 +1,42 @@
+{
+  "runtime": "v22.23.4",
+  "description": "Actual read-only Sources component rendered with schema-validated offline data. Exact HTML parity in EN/CS at both Prague DST transitions, three passes per sample, five interleaved samples after warm-up. Local CPU only; not production latency or billed savings.",
+  "sources": 20,
+  "candidates": 200,
+  "runs": 14,
+  "events": 60,
+  "variants": 4,
+  "passes": 3,
+  "htmlSha256s": [
+    "a17884639a46164399c78024f9845a222141524c2530de751ef5d7e58105b357",
+    "abecd40bdbe6554e648fccd8fcde2969386485aec706efd65e87071713bb2484",
+    "0921cabd9c50560838efc28046d1229e1ef668c62e7e5dfcdc23b021acdce31d",
+    "40c6c110912b4a215d77fc95de77ba0e129bbe6fb3d9ac24cdf7912f32ab5577"
+  ],
+  "samples": [
+    {
+      "beforeMs": 196.293542,
+      "afterMs": 73.80774999999994
+    },
+    {
+      "afterMs": 71.09291599999983,
+      "beforeMs": 107.55504100000007
+    },
+    {
+      "beforeMs": 102.33920799999987,
+      "afterMs": 71.79662500000018
+    },
+    {
+      "afterMs": 67.4982500000001,
+      "beforeMs": 104.50483299999996
+    },
+    {
+      "beforeMs": 103.29866600000014,
+      "afterMs": 69.68345799999997
+    }
+  ],
+  "median": {
+    "beforeMs": 104.50483299999996,
+    "afterMs": 71.09291599999983
+  }
+}
