@@ -2167,7 +2167,8 @@
       "path": "src/lib/changelog.ts",
       "lines": 414,
       "sha256": "44548285e642c4b3e223ec711b7ba17c0f41874e1fd9f82857e510e145e13ec4",
-      "status": "pending"
+      "status": "source reviewed; complete dated release data and pure window/Markdown helper inspection; historical observations retained; new audit release entry waits for main merge",
+      "reviewedSha256": "44548285e642c4b3e223ec711b7ba17c0f41874e1fd9f82857e510e145e13ec4"
     },
     {
       "path": "src/lib/chart-colors.ts",
@@ -2278,19 +2279,22 @@
       "path": "src/lib/demo/dneskai-workspace-demo.ts",
       "lines": 241,
       "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
-      "status": "pending"
+      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained",
+      "reviewedSha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
       "lines": 166,
       "sha256": "3b433e3248dcddaf97a56037bcf586c0a67b2f08f82fcb261bc41dc0b258f36b",
-      "status": "pending"
+      "status": "partial; complete source inspection; outdated renderer/reservation/disclosure metadata and current server fixture parity remain under review; invented data and committed authentic renders retained",
+      "reviewedSha256": "3b433e3248dcddaf97a56037bcf586c0a67b2f08f82fcb261bc41dc0b258f36b"
     },
     {
       "path": "src/lib/demo/fixtures.ts",
       "lines": 1016,
       "sha256": "5cfb6f9d28b0478a0f28bf739d24896bd4ecd3fe7149fc5fdf3a6dd17dc7222a",
-      "status": "pending"
+      "status": "partial; complete source inspection; non-UUID owner/version relationships, cached date lifetime and professional example consistency remain under review; fixture/live isolation remains mandatory",
+      "reviewedSha256": "d7dadb834adef7bed965cf2d99e8ce4407f7b1a7079108fddc2d4b2ee09de215"
     },
     {
       "path": "src/lib/dev-finance.ts",
@@ -2458,7 +2462,8 @@
       "path": "src/lib/i18n/sections/ai.ts",
       "lines": 467,
       "sha256": "de16a495764778fdf419b4a205c004b25fae81724dcd98ec5405196397b96cc1",
-      "status": "pending"
+      "status": "partial; complete EN/CS source inspection; count grammar, consistent Czech address and retained read/recovery guidance remain under review",
+      "reviewedSha256": "2aca76ffb878db9c75251dad7492c65902f0a55eb3ea9b31c054d1fb69a649f4"
     },
     {
       "path": "src/lib/i18n/sections/app.ts",
@@ -2534,7 +2539,8 @@
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
       "lines": 506,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "pending"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation",
+      "reviewedSha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
@@ -2589,7 +2595,8 @@
       "path": "src/lib/i18n/sections/jobs.ts",
       "lines": 563,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "pending"
+      "status": "partial; complete EN/CS source inspection; stale migration instructions, exact refresh-control names, confirmed source completeness and calm localized feedback require reconciliation",
+      "reviewedSha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",
@@ -2707,7 +2714,8 @@
       "path": "src/lib/i18n/sections/tips.ts",
       "lines": 218,
       "sha256": "49ad56bcdbe300f6545b7530008e5a399fa83cd358befb0db3010db3aa278dea",
-      "status": "pending"
+      "status": "partial; complete EN/CS source inspection; export implementation field names and concise description/recovery copy remain under review",
+      "reviewedSha256": "49ad56bcdbe300f6545b7530008e5a399fa83cd358befb0db3010db3aa278dea"
     },
     {
       "path": "src/lib/i18n/sections/todos.ts",
@@ -2868,13 +2876,15 @@
       "path": "src/lib/jobs/oslo-companies.ts",
       "lines": 454,
       "sha256": "77648e6147dc42fca077c776a490c43930369445181cba1cf3a7d3606a398572",
-      "status": "pending"
+      "status": "source reviewed; complete dated public employer-directory inspection; observation dates and per-vacancy verification limitations remain explicit; no live availability claim added",
+      "reviewedSha256": "77648e6147dc42fca077c776a490c43930369445181cba1cf3a7d3606a398572"
     },
     {
       "path": "src/lib/jobs/oslo-research.ts",
       "lines": 965,
       "sha256": "b8a9109122d1e69e33bcb1bc6b41960615c8270a93900c07ad98b7cd6e700aa3",
-      "status": "pending"
+      "status": "partial; complete dated bilingual research and identity/staleness helper inspection; query-only vacancy identity, repeated alias normalization and account-confirmed location wording require boundary tests",
+      "reviewedSha256": "b8a9109122d1e69e33bcb1bc6b41960615c8270a93900c07ad98b7cd6e700aa3"
     },
     {
       "path": "src/lib/jobs/pipeline.ts",
@@ -2901,7 +2911,8 @@
       "path": "src/lib/jobs/sources.ts",
       "lines": 730,
       "sha256": "2889a31b295058582ab83892a1e316cb8bea9a72629582640feb7d15273ae6e6",
-      "status": "pending"
+      "status": "partial; complete source inspection; bounded all-phase fetches, shape validation, complete-source evidence, numeric entity/date parsing and cleanup CPU remain under review; on-demand source isolation retained",
+      "reviewedSha256": "2889a31b295058582ab83892a1e316cb8bea9a72629582640feb7d15273ae6e6"
     },
     {
       "path": "src/lib/jobs/stats.ts",
@@ -2949,7 +2960,8 @@
       "path": "src/lib/marketing-calendars.ts",
       "lines": 409,
       "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
-      "status": "pending"
+      "status": "partial; complete source inspection; bounded/validated browser payload, complete caps/duplicate identities, valid times, dictionary labels and repeated title normalization remain under review; legacy read-only calendars retained",
+      "reviewedSha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4"
     },
     {
       "path": "src/lib/marketing/accounts-client.ts",
@@ -3347,7 +3359,8 @@
       "path": "src/lib/marketing/dneskai-recovery.ts",
       "lines": 154,
       "sha256": "9a7b2148a4531bea4429c558665d823fd7715fd84e385f8f3fb0c6deb2bc1cf8",
-      "status": "pending"
+      "status": "partial; complete source inspection; captured current brief/candidate evidence, caller budget and exact recovery action receipts remain under review; ordinary scheduler/consent/budget gates retained",
+      "reviewedSha256": "9a7b2148a4531bea4429c558665d823fd7715fd84e385f8f3fb0c6deb2bc1cf8"
     },
     {
       "path": "src/lib/marketing/dneskai-reel-format.ts",
