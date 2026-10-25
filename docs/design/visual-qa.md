@@ -462,3 +462,8 @@ Eight final EN/CS desktop/mobile cases pass in 26.3 seconds with exact synthetic
 ## Session retirement — 25 October 2026, finding 238
 
 Eight strengthened EN/CS desktop/mobile actual-SDK cookie/broadcast cases pass in 31.3 seconds. Account replacement and sign-out remove the private workspace and dirty editor without an unsaved-change prompt. Same-owner sign-in/refresh retain the draft without extra collection reads. The recovery page fits all six documented widths and passes axe with no page errors; its button performs a full reload into the fresh synthetic workspace. Later private requests are blocked before network dispatch, and client sign-in alone cannot reopen the retired scope. All identities/endpoints are synthetic. This is not real signed-in production verification; final consolidated checks remain open.
+
+
+## Owner cache integration — 25 October 2026, finding 241
+
+Forty-six final native EN/CS desktop/mobile cases pass in 2.1 minutes after private-cache separation. Competition writes, failed refresh recovery, paging/search, session retirement/reload, exact export downloads and guest isolation retain their prior behavior, target/reflow and accessibility assertions. Six real-store topology cases separately prove owner/cache and old-callback isolation; all 46 focused topology/session/route-data cases pass in 1.08 seconds. Shared query defaults are unchanged, and same-owner navigation introduces no collection request. This provider change adds no rendered wrapper or new visual asset. Final consolidated and production checks remain pending.

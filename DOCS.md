@@ -224,6 +224,8 @@ CSV quotes fields, uses CRLF and prefixes formula-like text with a tab inside th
 
 The catch-all server page has a thirty-second total lifetime, eight-second verified-auth and twenty-second data budgets. Required-read failures keep the editable shell unavailable, with no hidden SDK select retry. Calendar and preference readers inherit the data lifetime; route-scoped selection and one project read remain unchanged.
 
+Private React Query caches are keyed by the server-verified owner inside the shell. Replacing that owner creates another client; old setters and pending reads cannot populate its legacy entity keys. Root/public and tour caches stay separate, same-owner navigation retains its cache without extra reads, and retirement disposes only the old private client. Shared retry/focus defaults remain unchanged.
+
 The authenticated shell now retires on SDK sign-out or account replacement across tabs: owned action signals and queries cancel, private UI unmounts and protected requests refuse further work until a full document reload. Client auth events cannot seed or switch owner data. Same-owner refresh retains drafts without extra reads. Null startup verification is deferred outside SDK locks and bounded to eight seconds. Per-action captured-intent/server auth review remains separate; cancellation cannot undo accepted requests.
 
 ## AI boundary

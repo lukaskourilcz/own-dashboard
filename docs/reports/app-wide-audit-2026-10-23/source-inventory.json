@@ -719,8 +719,8 @@
       "path": "src/app/providers.tsx",
       "lines": 27,
       "sha256": "c7aa144540c6399c0aeaa0e7b74ff38c7e1086a40bb1ee1f95df71ffaeab38c7",
-      "status": "source read; auth cache transitions and optional analytics follow-up pending",
-      "reviewedSha256": "c7aa144540c6399c0aeaa0e7b74ff38c7e1086a40bb1ee1f95df71ffaeab38c7"
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
+      "reviewedSha256": "923fbccd365c2a8e4211aad76ef6d687adc16f106402dac3beafb2b815c0c1d5"
     },
     {
       "path": "src/components/brand-mark.tsx",
@@ -833,8 +833,8 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 502,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
-      "reviewedSha256": "864caf627fafa0a02ba918c82fc2d3b4aa0c4300d5aab4337e185d4b2e0d773d"
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
+      "reviewedSha256": "47dbe386d8cd904ad937b114f32baaeb0c2e98ede323df47c0d01ea09a761e37"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
@@ -4236,7 +4236,7 @@
       "path": "src/lib/queries/entities.ts",
       "lines": 80,
       "sha256": "46351e23d7595955e41f922826215f1ea4787a0a68d2116ebe7e2b908307a907",
-      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
       "reviewedSha256": "bf42c5e772c5f5805db55a412cb0c9e8a59c6f36440f29a4170ee5533f825bf4"
     },
     {
@@ -4730,6 +4730,20 @@
       "lines": 41,
       "status": "source reviewed; finding 238 actual-SDK session retirement checks pass; per-action/server leads and final release pending",
       "reviewedSha256": "a8d5ac99a0b16aacf5b72ac8679b0d045f7457e16827106ec8135a96bfff57d7"
+    },
+    {
+      "path": "src/components/owner-query-provider.tsx",
+      "sha256": null,
+      "lines": 24,
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
+      "reviewedSha256": "ea1e365715709746ce6d1ad1bbaa4b0d0c384d2dedcc76377f3a9c097c8494d2"
+    },
+    {
+      "path": "src/lib/queries/client.ts",
+      "sha256": null,
+      "lines": 6,
+      "status": "source reviewed; finding 241 private-owner cache/late-callback/Strict Mode and native checks pass; other leads and final release pending",
+      "reviewedSha256": "1532007f28320c86c94c8965c08e19878274e17e10a7453544d9b099436c3ea2"
     }
   ],
   "baselineFileCount": 561

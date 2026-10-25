@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { OwnerQueryProvider } from "@/components/owner-query-provider";
 import { OwnerSessionBoundary } from "@/components/owner-session-boundary";
 import { OwnerPreferencesProvider, useOwnerPreferences } from "@/lib/owner-preferences";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -216,7 +217,22 @@ const clientHydrated = () => true;
 const serverHydrated = () => false;
 
 export function DashboardShell(props: Props) {
-  return <OwnerPreferencesProvider ownerId={props.user.id} initial={!props.isPreview && props.initialPreferences.sync_available ? { cv_url_cs: props.initialPreferences.cv_url_cs, cv_url_en: props.initialPreferences.cv_url_en, show_czech_career: props.initialPreferences.show_czech_career === true } : undefined}><OwnerSessionBoundary enabled={!props.isPreview || props.previewSessionIntegration === true}><NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider></OwnerSessionBoundary></OwnerPreferencesProvider>;
+  return (
+    <OwnerPreferencesProvider
+      ownerId={props.user.id}
+      initial={!props.isPreview && props.initialPreferences.sync_available ? {
+        cv_url_cs: props.initialPreferences.cv_url_cs,
+        cv_url_en: props.initialPreferences.cv_url_en,
+        show_czech_career: props.initialPreferences.show_czech_career === true,
+      } : undefined}
+    >
+      <OwnerQueryProvider ownerId={props.user.id}>
+        <OwnerSessionBoundary enabled={!props.isPreview || props.previewSessionIntegration === true}>
+          <NavigationGuardProvider><DashboardShellContent {...props} /></NavigationGuardProvider>
+        </OwnerSessionBoundary>
+      </OwnerQueryProvider>
+    </OwnerPreferencesProvider>
+  );
 }
 
 function DashboardShellContent(props: Props) {
