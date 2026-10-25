@@ -81,3 +81,13 @@ it("does not reuse another repository occupying the same catalog name", async ()
   vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => Response.json({ id: 456, full_name: reused.full_name, repo: reused })));
   await render(<Workspace expectedId={123} />); await settle(() => expect(snapshot()).toMatchObject({ kind: "not-found" }));
 });
+
+it("does not mark a later account's cache disconnected after an older cancellation finishes", async () => {
+ let release!: () => void, current = true;
+ const cancel = vi.spyOn(client, 'cancelQueries').mockImplementationOnce(() => new Promise<void>(resolve => { release = resolve; }));
+ client.setQueryData(qk.repos, { kind: 'ok', repos: [repo] });
+ const pending = setReposDisconnected(client, () => current); expect(cancel).toHaveBeenCalledOnce();
+ current = false; const later = { kind: 'ok', repos: [{ ...repo, id: 456 }] }; client.setQueryData(qk.repos, later); release(); await pending;
+ expect(client.getQueryData(qk.repos)).toEqual(later);
+ await setReposDisconnected(client, () => false); expect(cancel).toHaveBeenCalledOnce();
+});

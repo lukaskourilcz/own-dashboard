@@ -349,3 +349,13 @@ describe("complete owner task snapshot", () => {
     await expect(readNeededTodoSnapshot(async () => ({data:null,error:null}))).rejects.toThrow();
   });
 });
+
+it('captures repository scan identities and cancels a held source before any later read', async () => {
+ const controller = new AbortController(); let release!: (value: NeededFileResult) => void;
+ const input = [{ ...repo }, { ...repo, id: 43, name: 'second', full_name: 'me/second' }];
+ const calls: string[] = [];
+ const pending = scanNeededRepos('u', input, '2026-10-25T00:00:00Z', async (owner, name) => { calls.push(`${owner}/${name}`); return new Promise(resolve => { release = resolve; }); }, { signal: controller.signal });
+ const failed = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+ input[1].name = 'renamed'; controller.abort(); release({ kind: 'not-found' }); await failed;
+ expect(calls).toEqual(['me/own-dashboard']);
+});

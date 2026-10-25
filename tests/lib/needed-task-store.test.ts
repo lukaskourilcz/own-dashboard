@@ -31,3 +31,17 @@ it("refuses conflicting/oversized inputs before a database call and skips empty 
   await expect(syncNeededTasks(client, Array(5001).fill(rows[0]))).rejects.toThrow("too large");
   expect(rpc).not.toHaveBeenCalled();
 });
+
+it("captures source inputs before a pending receipt and forwards parent cancellation", async () => {
+ let release!: (value: unknown) => void;
+ const signal = new AbortController();
+ const rpc = vi.fn((name, input) => { expect(name).toBe('sync_repository_tasks'); expect(input.p_remove).toEqual([]); return { abortSignal: (bounded: AbortSignal) => { expect(bounded.aborted).toBe(false); return new Promise(resolve => { release = resolve; }); } }; });
+ const input = structuredClone(rows), captured = structuredClone(input);
+ const pending = syncNeededTasks({ rpc } as unknown as SupabaseClient, input, [], new Set(['123']), signal.signal);
+ input[0].title = 'Changed while waiting';
+ expect(rpc.mock.calls[0][1].p_rows).toEqual(captured);
+ release({ data: { inserted: [{ ...inserted, ...captured[0] }], deleted_ids: [], retained_ids: [] }, error: null });
+ await expect(pending).resolves.toMatchObject({ added: 1 });
+ signal.abort(); const untouched = backend({});
+ await expect(syncNeededTasks(untouched.client, captured, [], new Set(), signal.signal)).rejects.toMatchObject({ name: 'AbortError' }); expect(untouched.rpc).not.toHaveBeenCalled();
+});

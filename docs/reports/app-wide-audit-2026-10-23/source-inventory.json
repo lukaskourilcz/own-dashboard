@@ -1624,8 +1624,8 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1110,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; captured manual writes, repository identity and row density checked in findings 177\u2013180; repository refresh/cleanup owner/pending lifecycle and final release remain pending",
-      "reviewedSha256": "8dfc74e815528f29cb45f63dc7145e9de7c199f583068042dd6f341140233303"
+      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177\u2013185; final release pending",
+      "reviewedSha256": "0648b959f84e989355020c0130c9d2133c9d8da25ec5545898273e8f0d1aa4c7"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -1775,11 +1775,39 @@
       "reviewedSha256": "c30fdfb3c8ba14bd2e12320a4b513097e29c90a1b253d9ef6a4762b5d159d6ce"
     },
     {
+      "path": "src/components/tasks/task-composer.tsx",
+      "sha256": null,
+      "lines": 95,
+      "status": "source reviewed; captured creation, stable retry identity, draft/pending/owner/exit guards and stale-read cancellation checked in finding 177; final release pending",
+      "reviewedSha256": "14e99ae61c6a87d9ff46d21c875fe62b7c85e6253cb4378ca46e44a19e2d9dd7"
+    },
+    {
       "path": "src/components/tasks/task-tags.tsx",
       "lines": 142,
       "sha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b",
       "status": "source reviewed; complete metadata rendering and rich EN/CS task-row integration with native reflow/axe checked in finding 180; final release pending",
       "reviewedSha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b"
+    },
+    {
+      "path": "src/components/tasks/task-title.tsx",
+      "sha256": null,
+      "lines": 24,
+      "status": "source reviewed; measured three-line disclosure, full selectable text, keyboard controls and resize cleanup checked in finding 180; final release pending",
+      "reviewedSha256": "43c0eb92ac0ed4d844c3762717a713abb4b4bb80bae3b52f7475de05f1d69aaf"
+    },
+    {
+      "path": "src/components/tasks/use-task-actions.ts",
+      "sha256": null,
+      "lines": 94,
+      "status": "source reviewed; captured row writes and mount/owner-bound neighbor focus restoration checked in findings 178/180; final release pending",
+      "reviewedSha256": "24ad9ec076634593ccc6f44b5b39028367d16d00ee577157ac98f34964da42ae"
+    },
+    {
+      "path": "src/components/tasks/use-task-repositories.ts",
+      "sha256": null,
+      "lines": 121,
+      "status": "source reviewed; finding 185 captures owner/source before confirmation and guards overlapping operations, exits, cancellation and local/external receipts; targeted unit/native checks pass; final release pending",
+      "reviewedSha256": "a28fdd5319afdf3192ea578f9457155d4db5c5a39afa707f5832c31c0e8048df"
     },
     {
       "path": "src/components/theme-toggle.tsx",
@@ -2328,8 +2356,8 @@
       "path": "src/lib/github-queries.ts",
       "lines": 93,
       "sha256": "5d019a70ae316a0870b058686606f5256e22de8aeaa56c50faf1ce5a3ac70dba",
-      "status": "source reviewed; expected-id metadata, retained history and disconnect cache tests pass; final optimized release pending",
-      "reviewedSha256": "35ea7d4a33e42bd6b50f1ae3da2e64735c9e67055915b183e1ba13b638d6b62f"
+      "status": "source reviewed; expected-id metadata, retained history and disconnect cache tests pass; finding 185 guards account changes across query cancellation; final release pending",
+      "reviewedSha256": "f39b3e70198c16fd0976dc7710506b55add8c135d895f1f73fa64c5efe939c54"
     },
     {
       "path": "src/lib/github-repository-contract.ts",
@@ -2337,6 +2365,13 @@
       "lines": 40,
       "status": "source reviewed; bounded/typed private repository server boundary passes targeted checks; client/cache/rendered phase and final release pending",
       "reviewedSha256": "c8488fdb13d75c0f4600aa03037f0f5d2c1961d638940a6fd4deab2434056116"
+    },
+    {
+      "path": "src/lib/github-repository-file-server.ts",
+      "sha256": null,
+      "lines": 57,
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
+      "reviewedSha256": "8813e040a742ac1ef9202acdcd35dbc55c1327fa295fc36eba901ed5960762bb"
     },
     {
       "path": "src/lib/github-token.ts",
@@ -2460,13 +2495,15 @@
       "path": "src/lib/i18n/sections/dates.ts",
       "lines": 115,
       "sha256": "60ad82b8a3e423cf0218ff50311334efd12d7295a750d3c2ebf20365349daacd",
-      "status": "pending"
+      "status": "source reviewed: typed EN/CS professional date labels, explicit recurrence and no restored personal scope; final rendered/release checks pending",
+      "reviewedSha256": "60ad82b8a3e423cf0218ff50311334efd12d7295a750d3c2ebf20365349daacd"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-account.ts",
       "lines": 120,
       "sha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5",
-      "status": "pending"
+      "status": "partial source review: typed EN/CS account/reply diagnostics retained; introduction assumes Instagram Login despite supported Facebook Login and misleadingly implies verification always leaves publishing off; reconcile with actual connection state",
+      "reviewedSha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
@@ -3868,15 +3905,15 @@
       "path": "src/lib/needed-sync.ts",
       "lines": 307,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
-      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
-      "reviewedSha256": "fba24d576926ffc4b7e362a39db53dd5684967220a433face9a040f7176adb23"
+      "status": "source reviewed; permanent repository/branch identity, pinned hashes, strict receipts and captured cancellable scans/cleanup verified in findings 179/185; final release pending",
+      "reviewedSha256": "03c677fb58183ab2f9653813759bbbc5dde1e91ec9ef20035a77dbd43a8622c6"
     },
     {
       "path": "src/lib/needed-task-store.ts",
       "sha256": null,
       "lines": 38,
-      "reviewedSha256": "a4ebcbf8ac02e9f1f3fe119f7cfe03570d60b63465d271c5066fe87ab5d31603",
-      "status": "source reviewed; task synchronization checks pass; final release checks pending"
+      "reviewedSha256": "a5cf95e4cb0dc958e92204f003afe1a952b57d6157c85ac4bc6a1989335253aa",
+      "status": "source reviewed; complete synchronization receipts, captured input versions and parent cancellation verified in finding 185; final release pending"
     },
     {
       "path": "src/lib/needed.ts",
@@ -4157,8 +4194,8 @@
       "path": "src/lib/repository-records.ts",
       "sha256": null,
       "lines": 63,
-      "reviewedSha256": "97cf4b7d0b816f7268089bf04a56cb2da587c121d9da9082c4c48217b5e9ebf2",
-      "status": "source reviewed; repository receipt checks pass; final release checks pending"
+      "reviewedSha256": "5b062271fee289f89de090f163a156223bfff7805c391db73b38c5d8d20dcf66",
+      "status": "source reviewed; exact repository receipts, captured batches and stop-before-later-batch cancellation verified in finding 185; final release pending"
     },
     {
       "path": "src/lib/sentry-privacy.ts",
@@ -4455,34 +4492,6 @@
       "lines": 88,
       "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
-    },
-    {
-      "path": "src/components/tasks/task-composer.tsx",
-      "sha256": null,
-      "lines": 95,
-      "status": "source reviewed; captured creation, stable retry identity, draft/pending/owner/exit guards and stale-read cancellation checked in finding 177; final release pending",
-      "reviewedSha256": "14e99ae61c6a87d9ff46d21c875fe62b7c85e6253cb4378ca46e44a19e2d9dd7"
-    },
-    {
-      "path": "src/components/tasks/use-task-actions.ts",
-      "sha256": null,
-      "lines": 94,
-      "status": "source reviewed; captured row writes and mount/owner-bound neighbor focus restoration checked in findings 178/180; final release pending",
-      "reviewedSha256": "24ad9ec076634593ccc6f44b5b39028367d16d00ee577157ac98f34964da42ae"
-    },
-    {
-      "path": "src/lib/github-repository-file-server.ts",
-      "sha256": null,
-      "lines": 57,
-      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
-      "reviewedSha256": "8813e040a742ac1ef9202acdcd35dbc55c1327fa295fc36eba901ed5960762bb"
-    },
-    {
-      "path": "src/components/tasks/task-title.tsx",
-      "sha256": null,
-      "lines": 24,
-      "status": "source reviewed; measured three-line disclosure, full selectable text, keyboard controls and resize cleanup checked in finding 180; final release pending",
-      "reviewedSha256": "43c0eb92ac0ed4d844c3762717a713abb4b4bb80bae3b52f7475de05f1d69aaf"
     }
   ],
   "baselineFileCount": 561

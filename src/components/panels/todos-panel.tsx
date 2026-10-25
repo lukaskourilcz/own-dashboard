@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   ChevronDown,
@@ -33,27 +32,13 @@ import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
-import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
 import { useTasksPerCategory } from "@/lib/use-prefs";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
-import { qk } from "@/lib/queries/keys";
-import { consumeRepositoryRecords } from "@/lib/repository-records";
-import { readOwnedCollection } from "@/lib/owned-records";
-import { syncNeededTasks } from "@/lib/needed-task-store";
-import { setReposDisconnected, useReposQuery } from "@/lib/github-queries";
-import { commitFile } from "@/lib/github";
 import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { assigneeForTodo, type Assignee } from "@/lib/needed";
-import {
-  diffNeededTodos,
-  removeFinishedFromNeeded,
-  scanNeededRepos,
-} from "@/lib/needed-sync";
+import { useTaskRepositories } from "@/components/tasks/use-task-repositories";
 import { useTaskActions } from "@/components/tasks/use-task-actions";
 import { TaskTitle } from "@/components/tasks/task-title";
 import { TaskComposer } from "@/components/tasks/task-composer";
@@ -68,10 +53,6 @@ import type { Locale } from "date-fns";
 import type { Organization, Project, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useNow } from "@/lib/use-now";
-
-function repoNamesPreview(names: string[]) {
-  return names.slice(0, 3).join(", ") + (names.length > 3 ? ` +${names.length - 3}` : "");
-}
 
 export function TodosPanel({
   taskIndex,
@@ -88,12 +69,8 @@ export function TodosPanel({
   organizations?: Organization[];
   compact?: boolean;
 }) {
-  const supabase = createClient();
-  const qc = useQueryClient();
   const t = useDict();
   const locale = useDateLocale();
-  const toast = useToast();
-  const confirm = useConfirmation();
   const [addOpen, setAddOpen] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
@@ -109,123 +86,10 @@ export function TodosPanel({
   const { count: tasksPerCategory } = useTasksPerCategory();
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
   // query off in the compact dashboard widget.
-  const reposQuery = useReposQuery(!compact);
+  const repositories = useTaskRepositories(ownerId, todos, !compact);
   const projectByTodo = useMemo(() => (taskIndex ?? buildProjectTaskIndex(projects, todos)).byTodo, [taskIndex, todos, projects]);
 
   const { toggle, remove, pendingIds } = useTaskActions(ownerId);
-
-  // Refresh: re-scan every repo's NEEDED.md (root, then docs/), add newly
-  // listed tasks and drop open GitHub tasks whose source line is gone. A repo
-  // whose file failed to load or was found at no path keeps its tasks: a
-  // missing file is unavailable, not an empty list.
-  const refresh = useMutation({
-    mutationFn: async () => {
-      const refreshed = await reposQuery.refetch();
-      const reposData = refreshed.data;
-      if (refreshed.isError || !reposData || reposData.kind !== "ok") {
-        throw new Error(
-          reposData?.kind === "disconnected" ? "disconnected" : "no-repos",
-        );
-      }
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("disconnected");
-
-      // Capture task versions before waiting for any repository reads.
-      const { data: existing } = await readOwnedCollection(supabase, "todos", userId, AbortSignal.timeout(15_000));
-      const nowIso = new Date().toISOString();
-      const { scanned, freshRows, missing, unavailable } = await scanNeededRepos(
-        userId,
-        reposData.repos,
-        nowIso,
-      );
-
-      const { toDeleteIds } = diffNeededTodos(scanned, freshRows, existing);
-      const obsolete = new Set(toDeleteIds);
-      const { added, removed, retained } = await syncNeededTasks(supabase, freshRows, existing.filter(row => obsolete.has(row.id)), scanned);
-      const focusResponse = await fetch("/api/daily-focus", {
-        method: "POST",
-        signal: AbortSignal.timeout(20000),
-      }).catch(() => null);
-      return {
-        added, removed, retained,
-        missing, unavailable,
-        dailyFocusUpdated: focusResponse?.ok === true,
-        listIncomplete: reposData.hasMore === true, listedCount: reposData.repos.length,
-      };
-    },
-    onSuccess: async ({ added, removed, retained, missing, unavailable, dailyFocusUpdated, listIncomplete, listedCount }) => {
-      if (added || removed) toast.ok(t.todos.refreshDone(added, removed));
-      else if (!retained && !missing.length && !unavailable.length && !listIncomplete) toast.ok(t.todos.refreshNothing);
-      if (listIncomplete) toast.info(t.todos.refreshRepoLimit(listedCount));
-      if (retained) toast.info(t.todos.refreshRetained(retained));
-      if (unavailable.length) toast.info(t.todos.refreshUnavailable(repoNamesPreview(unavailable)));
-      // A repository that lost its NEEDED.md keeps its tasks; say which, so
-      // the rows that stay are explained.
-      if (missing.length > 0) toast.info(t.todos.refreshMissing(repoNamesPreview(missing)));
-      await qc.invalidateQueries({ queryKey: qk.todos });
-      await qc.invalidateQueries({ queryKey: qk.dailyFocus });
-      if (!dailyFocusUpdated) toast.err(t.todos.dailyFocusRefreshErr);
-    },
-    onError: (e) => {
-      void qc.invalidateQueries({ queryKey: qk.todos });
-      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
-      const m = (e as Error).message;
-      toast.err(
-        m === "disconnected"
-          ? t.todos.refreshDisconnected
-          : m === "no-repos"
-            ? t.todos.refreshNoRepos
-            : t.todos.refreshErr,
-      );
-    },
-  });
-
-  // Delete finished NEEDED tasks from their repos' NEEDED.md (one commit per
-  // repo, to the path the file was found at), then clear the finished rows.
-  // Repos whose file failed to load or whose commit fails keep their rows so
-  // the action can be retried; a repo with no NEEDED.md left has nothing to
-  // edit, so its finished rows are cleared and it is named in a notice.
-  const clearFinished = useMutation({
-    mutationFn: async () => {
-      const { cleared: idsToDelete, missing, kept, disconnected } = await removeFinishedFromNeeded(
-        todos,
-        ({ owner, repo, path, content, count, expectedSha, expectedRepositoryId }, signal) =>
-          commitFile({
-            intent: "edit", expectedSha, expectedRepositoryId,
-            owner,
-            repo,
-            path,
-            content,
-            message: t.todos.finishedCommitMessage(count),
-          }, signal),
-      );
-
-      const eligible = new Set(idsToDelete);
-      const captured = todos.filter(todo => eligible.has(todo.id));
-      try {
-        const { deleted, retained } = await consumeRepositoryRecords(supabase, "todos", captured);
-        return { removed: deleted.size, missing, kept: kept + retained.size, disconnected };
-      } finally {
-        void qc.invalidateQueries({ queryKey: qk.todos });
-        void qc.invalidateQueries({ queryKey: qk.dailyFocus });
-        void qc.invalidateQueries({ queryKey: ["github", "file"] });
-      }
-    },
-    onSuccess: async ({ removed, missing, kept, disconnected }) => {
-      if (removed) toast.ok(t.todos.clearFromNeededDone(removed));
-      else if (!kept) toast.info(t.todos.clearFromNeededNone);
-      if (disconnected) { await setReposDisconnected(qc); toast.err(t.todos.refreshDisconnected); }
-      else if (kept) toast.err(t.todos.clearFromNeededIncomplete(kept));
-      if (missing.length) toast.info(t.todos.clearFromNeededMissing(repoNamesPreview(missing)));
-    },
-    onError: (e) => {
-      toast.err(
-        (e as Error).message === "disconnected"
-          ? t.todos.refreshDisconnected
-          : t.todos.clearFromNeededErr,
-      );
-    },
-  });
 
   const open = todos.filter((td) => !td.done);
   const done = todos.filter((td) => td.done);
@@ -365,16 +229,16 @@ export function TodosPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => refresh.mutate()}
-                disabled={refresh.isPending || reposQuery.isPending}
+                onClick={() => { void repositories.refresh(); }}
+                disabled={repositories.pending !== null || repositories.repositoriesPending}
               >
                 <RefreshCw
                   className={cn(
                     "h-3.5 w-3.5",
-                    refresh.isPending && "animate-spin",
+                    repositories.pending === "refresh" && "animate-spin",
                   )}
                 />
-                {refresh.isPending ? t.todos.refreshing : t.todos.refresh}
+                {repositories.pending === "refresh" ? t.todos.refreshing : t.todos.refresh}
               </Button>
             </Tooltip>
             <Tooltip content={t.todos.addTask}>
@@ -520,18 +384,9 @@ export function TodosPanel({
               onReopen={toggle}
               onRemove={remove}
               canClearNeeded={finishedNeeded > 0}
-              clearing={clearFinished.isPending}
-              onClearNeeded={() => {
-                void confirm({
-                  title: t.todos.clearFromNeeded,
-                  description: t.todos.clearFromNeededConfirm,
-                  confirmLabel: t.common.delete,
-                  cancelLabel: t.common.cancel,
-                  destructive: true,
-                }).then((approved) => {
-                  if (approved) clearFinished.mutate();
-                });
-              }}
+              cleanupDisabled={repositories.pending !== null}
+              clearing={repositories.pending === "clear"}
+              onClearNeeded={() => { void repositories.clear(); }}
             />
             </div>
           )}
@@ -742,6 +597,7 @@ function FinishedSection({
   onReopen,
   onRemove,
   canClearNeeded,
+  cleanupDisabled,
   clearing,
   onClearNeeded,
 }: {
@@ -754,6 +610,7 @@ function FinishedSection({
   onReopen: (td: Todo) => void;
   onRemove: (td: Todo) => void;
   canClearNeeded: boolean;
+  cleanupDisabled: boolean;
   clearing: boolean;
   onClearNeeded: () => void;
 }) {
@@ -783,7 +640,7 @@ function FinishedSection({
               size="sm"
               className="ml-auto"
               onClick={onClearNeeded}
-              disabled={clearing}
+              disabled={cleanupDisabled}
             >
               {clearing ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />

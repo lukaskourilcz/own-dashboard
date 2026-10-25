@@ -36,9 +36,11 @@ export async function saveRepositoryNote(client: SupabaseClient, expected: RepoN
 /** Clear only captured versions. An intervening edit/reopen stays owned data.
  * Partition receipts must name every submitted id exactly once. No private
  * body/title is placed in a REST URL or persisted to browser storage. */
-export async function consumeRepositoryRecords(client: SupabaseClient, entity: "repo_notes" | "todos", rows: (RepoNote | Todo)[]) {
+export async function consumeRepositoryRecords(client: SupabaseClient, entity: "repo_notes" | "todos", rows: (RepoNote | Todo)[], parent?: AbortSignal) {
+  parent?.throwIfAborted();
   const requested = new Set(rows.map(row => row.id));
   if (requested.size !== rows.length || rows.length > 20000) throw Error("Invalid repository batch");
+  rows = structuredClone(rows);
   const chunks: (RepoNote | Todo)[][] = []; let chunk: (RepoNote | Todo)[] = [], bytes = 2;
   for (const row of rows) {
     const size = new TextEncoder().encode(JSON.stringify(row)).byteLength + 1;
@@ -47,9 +49,10 @@ export async function consumeRepositoryRecords(client: SupabaseClient, entity: "
     chunk.push(row); bytes += size;
   }
   if (chunk.length) chunks.push(chunk);
-  const deleted = new Set<string>(), retained = new Set<string>(), signal = AbortSignal.timeout(30_000);
+  const deleted = new Set<string>(), retained = new Set<string>(), signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
   const receipt = z.object({ deleted_ids: z.array(z.uuid()), retained_ids: z.array(z.uuid()) });
   for (const batch of chunks) {
+    signal.throwIfAborted();
     const { data, error } = await awaitWithSignal(client.rpc("consume_repository_records", { p_entity: entity, p_rows: batch }).abortSignal(signal), signal);
     if (error) throw Error("Repository removal unconfirmed");
     const result = receipt.parse(data), ids = new Set(batch.map(row => row.id));

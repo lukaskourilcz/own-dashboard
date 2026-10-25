@@ -84,8 +84,10 @@ export function touchRepoInCache(qc: QueryClient, repoId: number): void {
 
 /** Cancel late reads before marking every remote GitHub projection offline.
  * Imported/local notes, tasks and links remain owned dashboard records. */
-export async function setReposDisconnected(qc: QueryClient): Promise<void> {
+export async function setReposDisconnected(qc: QueryClient, isCurrent: () => boolean = () => true): Promise<void> {
+  if (!isCurrent()) return;
   await qc.cancelQueries({ queryKey: ["github"] });
+  if (!isCurrent()) return;
   qc.setQueryData<LoadReposResult>(reposQueryKey, { kind: "disconnected" });
   for (const projection of ["repo", "commits", "activity", "detected-tools", "file", "about-project", "project-doc"]) {
     qc.setQueriesData({ queryKey: ["github", projection] }, { kind: "disconnected" });

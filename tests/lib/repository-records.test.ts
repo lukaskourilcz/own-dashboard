@@ -45,3 +45,16 @@ it("recovers the same creation identity after an ambiguous response without repl
   expect((await createRepositoryNote(client, input)).body).toBe("Already edited");
   expect(upsert).toHaveBeenCalledWith({ ...input, body: "" }, { onConflict: "id", ignoreDuplicates: true }); expect(eq).toHaveBeenCalledWith("id", id);
 });
+
+it("captures every batch before waiting and stops before a later batch after cancellation", async () => {
+ const controller = new AbortController();
+ const rows = Array.from({ length: 251 }, (_, index) => ({ ...note, id: `33333333-3333-4333-8333-${String(index).padStart(12, '0')}` }));
+ let release!: (value: unknown) => void;
+ const rpc = vi.fn((name, input) => { expect(name).toBe('consume_repository_records'); expect(input.p_rows).toHaveLength(250); return { abortSignal: () => new Promise(resolve => { release = resolve; }) }; });
+ const pending = consumeRepositoryRecords({ rpc } as unknown as SupabaseClient, 'repo_notes', rows, controller.signal);
+ const failed = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+ rows[0].body = 'Changed while waiting'; expect(rpc.mock.calls[0][1].p_rows[0].body).toBe(note.body);
+ controller.abort(); release({ data: { deleted_ids: rows.slice(0, 250).map(row => row.id), retained_ids: [] }, error: null }); await failed;
+ expect(rpc).toHaveBeenCalledOnce();
+ const untouched = backend({}); await expect(consumeRepositoryRecords(untouched.client, 'repo_notes', [note], controller.signal)).rejects.toMatchObject({ name: 'AbortError' }); expect(untouched.rpc).not.toHaveBeenCalled();
+});

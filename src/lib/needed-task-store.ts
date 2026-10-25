@@ -6,9 +6,11 @@ import type { Todo } from "@/lib/types";
 /** Both import controls share one owner transaction and checked receipts.
  * Only source versions captured by Refresh may be removed; changed/reopened
  * tasks stay. Database matching also preserves existing legacy imports. */
-export async function syncNeededTasks(client: SupabaseClient, rows: NeededTodoRow[], remove: Todo[] = [], scanned: Set<string> = new Set()) {
+export async function syncNeededTasks(client: SupabaseClient, rows: NeededTodoRow[], remove: Todo[] = [], scanned: Set<string> = new Set(), parent?: AbortSignal) {
+  parent?.throwIfAborted();
   if (!rows.length && !remove.length) return { added: 0, removed: 0, retained: 0, repos: 0 };
   if (rows.length > 5000 || remove.length > 20000) throw Error("Repository synchronization too large");
+  rows = structuredClone(rows); remove = structuredClone(remove); scanned = new Set(scanned);
   const expected = new Map<string, NeededTodoRow>(), requested = new Set(remove.map(row => row.id));
   if (requested.size !== remove.length) throw Error("Duplicate repository source");
   const key = (repo: string, raw: string) => JSON.stringify([repo, raw]);
@@ -17,7 +19,8 @@ export async function syncNeededTasks(client: SupabaseClient, rows: NeededTodoRo
     if (previous && JSON.stringify(previous) !== JSON.stringify(row)) throw Error("Conflicting repository source");
     expected.set(identity, row);
   }
-  const signal = AbortSignal.timeout(20_000);
+  const signal = AbortSignal.any([AbortSignal.timeout(20_000), ...(parent ? [parent] : [])]);
+  signal.throwIfAborted();
   const { data, error } = await awaitWithSignal(client.rpc("sync_repository_tasks", { p_rows: rows, p_remove: remove, p_scanned: [...scanned] }).abortSignal(signal), signal);
   if (error) throw Error("Repository synchronization unconfirmed");
   const { z } = await import("zod");

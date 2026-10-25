@@ -184,8 +184,12 @@ export async function scanNeededRepos(
   repos: GithubRepo[],
   nowIso: string,
   load?: NeededFileLoader,
+  options: { signal?: AbortSignal } = {},
 ): Promise<NeededScan> {
-  const batch = load ? null : await loadNeededBatch(repos);
+  const signal = AbortSignal.any([AbortSignal.timeout(60_000), ...(options.signal ? [options.signal] : [])]);
+  signal.throwIfAborted();
+  repos = structuredClone(repos);
+  const batch = load ? null : await awaitWithSignal(loadNeededBatch(repos, signal), signal);
   if (batch?.kind === "disconnected") throw new Error("disconnected");
   const files = new Map(batch?.kind === "ok" ? batch.files.map(file => [file.repoId, file.result]) : []);
   const scanned = new Set<string>();
@@ -193,7 +197,8 @@ export async function scanNeededRepos(
   const missing: string[] = [];
   const unavailable: string[] = [];
   for (const repo of repos) {
-    const res = load ? await load(repo.owner, repo.name) : files.get(String(repo.id)) ?? { kind: "error" as const };
+    signal.throwIfAborted();
+    const res = load ? await awaitWithSignal(load(repo.owner, repo.name), signal) : files.get(String(repo.id)) ?? { kind: "error" as const };
     if (res.kind === "disconnected") throw new Error("disconnected");
     if (res.kind === "ok") {
       scanned.add(String(repo.id));
