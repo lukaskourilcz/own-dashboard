@@ -1,6 +1,6 @@
 # Career workspace
 
-Updated 16 October 2026. The default market is Oslo, its commuting area and remote work explicitly compatible with Norway. Interface language remains Czech by default; application letters default to English.
+Operating boundaries updated 25 October 2026; the public research below remains the dated 16 October snapshot. The default market is Oslo, its commuting area and remote work explicitly compatible with Norway. Interface language remains Czech by default; application letters default to English.
 
 ## Oslo workflow
 
@@ -8,7 +8,7 @@ The default **Oslo** tab displays public research immediately, without fetching 
 
 The priority grid shows profile matches of at least 75%, excludes explicit barriers, stale research and alternative part-time contracts, and sorts by score. All researched roles, senior stretches, AI roles and contracts remain inspectable through filters. Every card opens a Radix dialog with a source link, working arrangement, salary/deadline when known, candidate evidence, gaps, score breakdown and the private editable English letter. Keyboard focus returns to the triggering card; unsaved edits have an explicit discard path.
 
-Opening a role or a saved/workflow tab is an explicit request to load owner-scoped records. **Check for new offers / Zkontrolovat nové nabídky** refreshes selected feeds, loads records and checks availability. There are no scheduled scrapes, focus refreshes, paid Actor runs or model calls in Career. A failed private-data load stays retryable rather than looking like an empty account.
+Opening a role or a saved/workflow tab is an explicit request to load owner-scoped records. **Check for new offers / Zkontrolovat nové nabídky** refreshes selected feeds, loads records and checks availability. There are no scheduled scrapes, focus refreshes, paid Actor runs or model calls in Career. A failed private-data load stays retryable rather than looking like an empty account. Refresh captures the original server-verified owner before waiting and confirms an owner-stamped result before activating private records or announcing success. Same-frame duplicate requests are blocked. An accepted check with a failed local reload offers a local retry without repeating the feed check; a timeout remains unconfirmed.
 
 ## Scoring and freshness
 
@@ -36,7 +36,7 @@ The additive preference migration is `20261015234547_oslo_career_preferences.sql
 
 ## Optional legacy Apify import
 
-With Czech content enabled, server-only `APIFY_TOKEN` and comma-separated `APIFY_JOB_TASK_IDS` can import already completed saved tasks. The importer accepts successful runs finished within 24 hours, at most 1,000 rows per task and five tasks, retaining original observation time. It never starts an Actor or schedules a paid run. Task output must establish role, location and stack; credentials do not prove a working integration.
+With Czech content enabled, server-only `APIFY_TOKEN` and comma-separated `APIFY_JOB_TASK_IDS` can import already completed saved tasks. The importer accepts a successful, non-future run completed within 24 hours and retains its original observation time. It verifies run/dataset identities and the direct task id; named tasks use their documented scoped endpoint. Each whole dataset must contain at most 1,000 raw records, confirmed by offset/count/total headers and a 1,001-record sentinel request. Hidden diagnostic fields are skipped while empty items remain in the counted window. Missing or inconsistent pagination and larger datasets are unavailable rather than silently partial. At most five distinct valid configured task references are read. One import has a fifteen-second total lifetime and ten seconds per GET/body phase, with parent cancellation, late/refused-body release and decoded text bounds (65,536 characters for metadata; 8,388,608 for dataset JSON). Eligible rows retain the registered job-host policy and bounded display fields; invalid publication dates become unknown. It never starts an Actor or schedules a paid run. Task output must establish role, location and stack; credentials do not prove a working integration. These adapter checks do not make a discovery feed complete, prove every scrape database receipt or serialize concurrent refreshes. Current endpoint/pagination contracts were checked against the [last task run](https://docs.apify.com/api/v2/actor-task-runs-last-get) and [dataset items](https://docs.apify.com/api/v2/dataset-items-get) references on 25 October.
 
 ## Limits
 

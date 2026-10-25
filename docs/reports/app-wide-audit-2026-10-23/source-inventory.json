@@ -2790,10 +2790,10 @@
     },
     {
       "path": "src/lib/jobs/apify.ts",
-      "lines": 97,
+      "lines": 135,
       "sha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771"
+      "status": "source reviewed; finding 268 completed-task GET-only admission, full bounded dataset evidence, timestamp/body/deadline and normalizer checks pass; orchestration/persistence and final release pending",
+      "reviewedSha256": "8b0b4839d57212297d03be3657c3418aeaf3a8f938db6f7e888c89b3aa7129ee"
     },
     {
       "path": "src/lib/jobs/availability.ts",
