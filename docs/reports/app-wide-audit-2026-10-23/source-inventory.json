@@ -1449,10 +1449,10 @@
     },
     {
       "path": "src/components/panels/career-board.tsx",
-      "lines": 411,
+      "lines": 465,
       "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
-      "status": "partial; stable drag context id and existing board browser regressions pass; full stage/read/mutation review pending",
-      "reviewedSha256": "bb9da398bad64a9e2d5335f98c3e8f4bdbd8d24a88a9489b8aac1a3d45bff4a7"
+      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending",
+      "reviewedSha256": "b8e17ae1cd60f098f85e145e37e5a76470fcb4daa515623a0bca367c7edc9fcb"
     },
     {
       "path": "src/components/panels/career-companies.tsx",
@@ -1471,9 +1471,9 @@
     {
       "path": "src/components/panels/career-pagination.tsx",
       "sha256": null,
-      "lines": 15,
-      "reviewedSha256": "dcf63f6159a0b9e41471e2dc482eaaaf369ccd7d54bc4519296ec33cee57e029",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending"
+      "lines": 16,
+      "reviewedSha256": "17127e66476f64fafba8e6423c141cf6c3048c9051446a5d92d6c86fdf6e9d96",
+      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending"
     },
     {
       "path": "src/components/panels/career-progress-dialog.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2929,
+      "lines": 2931,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 277 captured availability owner/row/cohort receipts, bounded reads and retained recovery pass mounted/native checks; remaining Career board/writes and final release pending",
-      "reviewedSha256": "17b68388a4541c04b244cf1353ac257481baf30c9e4cdc758760f3b6c0b5794e"
+      "status": "partial; findings 272\u2013278 close complete captured reads, availability and local list/board paging; saved/application/editor captured write contracts and final release remain; see remaining-review.md",
+      "reviewedSha256": "dee4756d139c0fa4be1daaa7ae4e8a88537cc94d31691036ffe3200a0be0b200"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -1913,8 +1913,8 @@
       "path": "src/components/ui/collection-pagination.tsx",
       "sha256": null,
       "lines": 19,
-      "reviewedSha256": "c3c3e7c7549b5a6d4d27d3fd3c05579eba101a8ac16f7a921fbd3ba4db643256",
-      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+      "reviewedSha256": "9b8a5f198e62e931da55a83eae990cc6ef529996abd045cb09d24eb1bdc9aca2",
+      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending"
     },
     {
       "path": "src/components/ui/confirmation-dialog.tsx",
@@ -2733,10 +2733,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 587,
+      "lines": 590,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "7ab64551e419571513c51894fd6aff63a1d9b48ba49792e6a1ed5b309649363b"
+      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending",
+      "reviewedSha256": "2a0a02bbba866544d40c9b000d6c630fe8f5f774d08e592f85f77948c9695a52"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",
@@ -2951,10 +2951,10 @@
     },
     {
       "path": "src/lib/jobs/board.ts",
-      "lines": 137,
+      "lines": 144,
       "sha256": "046095e31df24c6f2c19b8daad7c55f58655e2bb4e5201218fbde8b5067a2a91",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "046095e31df24c6f2c19b8daad7c55f58655e2bb4e5201218fbde8b5067a2a91"
+      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending",
+      "reviewedSha256": "5a0213ec018512d944a9604f68a7ed8535b8311f651fa41d6607d8b13f6e1b79"
     },
     {
       "path": "src/lib/jobs/career-directory.ts",

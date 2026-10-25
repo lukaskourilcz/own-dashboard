@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "viewportHeight": 4000,
+  "source": "Actual dev-preview synthetic SDK collection and stage move from e2e/audit-career-board-collections.spec.ts; tall viewport prevents ancestor clipping and fixed navigation overlap.",
+  "components": {
+    "src/components/panels/career-board.tsx": "b8e17ae1cd60f098f85e145e37e5a76470fcb4daa515623a0bca367c7edc9fcb",
+    "src/components/panels/career-pagination.tsx": "17127e66476f64fafba8e6423c141cf6c3048c9051446a5d92d6c86fdf6e9d96",
+    "src/components/panels/jobs-panel.tsx": "dee4756d139c0fa4be1daaa7ae4e8a88537cc94d31691036ffe3200a0be0b200",
+    "src/components/ui/collection-pagination.tsx": "9b8a5f198e62e931da55a83eae990cc6ef529996abd045cb09d24eb1bdc9aca2",
+    "src/lib/jobs/board.ts": "5a0213ec018512d944a9604f68a7ed8535b8311f651fa41d6607d8b13f6e1b79",
+    "src/lib/i18n/sections/jobs.ts": "2a0a02bbba866544d40c9b000d6c630fe8f5f774d08e592f85f77948c9695a52"
+  },
+  "records": [
+    {
+      "file": "career-board-paging-cs-1440.png",
+      "width": 1440,
+      "box": {
+        "x": 276,
+        "y": 680,
+        "width": 1120,
+        "height": 2143
+      },
+      "marks": [
+        {
+          "x": 0.8035714285714286,
+          "y": 2.8931404573028465,
+          "w": 21.25,
+          "h": 2.613159122725152,
+          "n": 1
+        }
+      ],
+      "pixelWidth": 1120,
+      "pixelHeight": 2143
+    },
+    {
+      "file": "career-board-paging-cs-430.png",
+      "width": 430,
+      "box": {
+        "x": 16,
+        "y": 1148.5,
+        "width": 398,
+        "height": 2395
+      },
+      "marks": [
+        {
+          "x": 2.2613065326633164,
+          "y": 2.5887265135699375,
+          "w": 59.79899497487437,
+          "h": 2.8392484342379958,
+          "n": 1
+        }
+      ],
+      "pixelWidth": 1095,
+      "pixelHeight": 6589
+    }
+  ]
+}

@@ -150,6 +150,7 @@ type JobsStrings = {
   listView: string;
   boardView: string;
   boardRegion: string;
+  boardPages: (column: string) => string;
   boardHint: string;
   boardColumnClosed: string;
   boardColumnEmpty: string;
@@ -341,6 +342,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     listView: "List",
     boardView: "Board",
     boardRegion: "Application stages",
+    boardPages: column => `${column} pages`,
     boardHint:
       "Drag a card to another stage, or use the stage menu on the card. A saved position becomes an application through Review / mark as sent, which records the real date you applied.",
     boardColumnClosed: "Closed",
@@ -532,6 +534,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     listView: "Seznam",
     boardView: "Tabule",
     boardRegion: "Fáze přihlášek",
+    boardPages: column => `${column}: stránky`,
     boardHint:
       "Kartu přetáhněte do jiné fáze, nebo použijte nabídku fáze přímo na kartě. Z uložené pozice se přihláška stane přes Zkontrolovat / označit odeslání, kde se zapíše skutečné datum odeslání.",
     boardColumnClosed: "Uzavřeno",

@@ -4,12 +4,13 @@ import { CollectionPagination } from '@/components/ui/collection-pagination';
 import type { CollectionPage } from '@/lib/collection-page';
 import { useDict } from '@/lib/i18n';
 
-export function CareerPagination({ page, onPage, label }: {
+export function CareerPagination({ page, onPage, label, stacked }: {
   page: CollectionPage;
   onPage: (index: number) => void;
   label: string;
+  stacked?: boolean;
 }) {
   const { jobs: t } = useDict();
   return <CollectionPagination page={page} onPage={onPage} label={label}
-    range={t.pageRange} previous={t.previousPage} next={t.nextPage} />;
+    range={t.pageRange} previous={t.previousPage} next={t.nextPage} stacked={stacked} />;
 }

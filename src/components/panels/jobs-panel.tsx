@@ -168,8 +168,8 @@ export function JobsPanel({
     [listings, showCzechCareer],
   );
 
-  const visibleSaved = savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row));
-  const visibleApplications = applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row));
+  const visibleSaved = useMemo(() => savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row)), [savedPositions, showCzechCareer]);
+  const visibleApplications = useMemo(() => applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row)), [applications, showCzechCareer]);
 
   // Listings the user already applied to, by listing id and by URL (manual
   // logs may match a scraped offer only by its link).
@@ -399,7 +399,7 @@ export function JobsPanel({
           timeZone={timeZone}
           applications={visibleApplications}
           setApplications={setApplications}
-          savedPositions={savedPositions}
+          savedPositions={visibleSaved}
           events={events}
           setEvents={setEvents}
           templates={templates}
@@ -2037,7 +2037,7 @@ function AppliedView({
   const [responseFilter, setResponseFilter] = useState("all");
   const [progressFor, setProgressFor] = useState<JobApplication | null>(null);
   const cohort = useMemo(()=>applications.filter(row=>(!since || row.applied_on >= since) && `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())),[applications,since,search]);
-  const visible = cohort.filter(row=>responseFilter === "all" || (responseFilter === "responded" ? !!row.responded_on : !row.responded_on));
+  const visible = useMemo(() => cohort.filter(row=>responseFilter === "all" || (responseFilter === "responded" ? !!row.responded_on : !row.responded_on)), [cohort, responseFilter]);
   const [pageIndex, setPageIndex] = useState(0);
   const page = collectionPage(visible, pageIndex);
   const eventsByApplication = useMemo(() => {
@@ -2196,11 +2196,13 @@ function AppliedView({
       {layout === "list" && <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.applicationPages} />}
       {layout === "board" ? (
         <CareerBoard
+          key={JSON.stringify([search, since, responseFilter])}
           applications={visible}
+          allApplications={applications}
           savedPositions={visibleSaved}
           statusLabel={statusLabel}
           statuses={STATUSES}
-          onStatus={(app, status) => statusMutation.mutate({ app, status })}
+          onStatus={(app, status) => statusMutation.mutateAsync({ app, status })}
           onProgress={(app) => setProgressFor(app)}
           onPrepare={onPrepare}
         />

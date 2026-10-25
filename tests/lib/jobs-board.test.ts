@@ -89,6 +89,21 @@ describe("board columns", () => {
 });
 
 describe("groupApplicationsByColumn", () => {
+  it("keeps distinct query-based vacancies while excluding the same recorded URL or listing", () => {
+    const a = app("2026-05-10", "applied", { listing_id: "listing-one", url: "https://example.test/careers?jobId=one" });
+    const sameUrl = { ...saved("same-url", "2026-05-02T08:00:00Z"), url: "https://www.example.test/careers?utm_source=mail&jobId=one#apply" };
+    const sameListing = { ...saved("same-listing", "2026-05-02T08:00:00Z"), listing_id: "listing-one" };
+    const other = { ...saved("other", "2026-05-02T08:00:00Z"), url: "https://example.test/careers?jobId=two" };
+    const positions = [sameUrl, sameListing, other], before = JSON.stringify(positions);
+    expect(groupApplicationsByColumn([a], positions).saved.map(row => row.id)).toEqual(["other"]);
+    expect(JSON.stringify(positions)).toBe(before);
+  });
+  it("does not turn an older recorded application back into Saved when the visible cohort is filtered", () => {
+    const recorded = app("2026-01-01", "applied", { url: "https://example.test/careers/one" });
+    const draft = { ...saved("draft", "2026-05-02T08:00:00Z"), url: recorded.url! };
+    expect(groupApplicationsByColumn([], [draft], { allApplications: [recorded] }).saved).toEqual([]);
+    expect(groupApplicationsByColumn([], [draft]).saved).toEqual([draft]);
+  });
   it("keeps saved positions in the saved column only", () => {
     const groups = groupApplicationsByColumn(
       [app("2026-05-10", "applied"), app("2026-05-09", "rejected")],

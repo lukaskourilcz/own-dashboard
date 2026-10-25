@@ -1,5 +1,8 @@
 # OwnDashboard visual QA
 
+> Career board (2026-10-26, finding 278): nineteen final native cases pass with one configured duplicate skip in 1.6 minutes. Each stage pages ten complete local records, keeps full counts and equal widths, excludes already-recorded saved cards, and reveals/focuses only the appropriate confirmed move. Failed moves restore the original control; mobile stage/drag targets reach 44px. Six-width reflow and axe pass. Four final capture cases pass in 19.3 seconds with a tall real viewport; the visual plan records the authentic paired board images and exact code hashes. Captured progress-write ownership/version controls remain separate.
+
+
 > Career availability (2026-10-25, finding 277): sixteen final EN/CS desktop/mobile cases pass in 1.9 minutes. The real interface rejects a foreign-owner result, starts one check after activation, retains failed next-window progress and confirms an explicit retry. Its recovery panel stays within 768px at six widths; axe passes. The 1,201-row local paging cases remain covered. Synthetic replies stand in for public page checks; no owner record, paid provider or publication is used. Broader audit and release work continues.
 
 
