@@ -3558,10 +3558,10 @@
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
-      "lines": 671,
+      "lines": 672,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
-      "status": "partial; upload/mix/source recovery copy and owned dictionary lookup checks pass (finding 147); complete code/dictionary reconciliation pending",
-      "reviewedSha256": "0af5068439c81660a02dc9bbc0ac8fb7308f5f5a7874154c5d2242f8e14f3ae6"
+      "status": "partial; recovery/dictionary ownership and alt-length diagnostic checks pass (findings 147/181); complete dictionary reconciliation and final release pending",
+      "reviewedSha256": "936bb113fcc88a79abb6863c3ab94ea15142bd96344abef3f6db7b49d0579d32"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",

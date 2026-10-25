@@ -87,6 +87,7 @@ const CODES = {
   'renderer-unavailable': ['retry', 'The slide renderer could not start.', 'Vykreslování slidů se nepodařilo spustit.'],
   'media-unavailable': ['retry', 'The source pictures could not be read.', 'Zdrojové obrázky nelze načíst.'],
   'alt-missing': ['edit', 'A slide has no alt text.', 'Slide nemá alternativní text.'],
+  'alt-too-long': ['edit', 'A slide’s alt text is longer than 1,000 characters.', 'Alternativní text slidu přesahuje 1 000 znaků.'],
   'caption-missing': ['edit', 'The caption is empty.', 'Popisek je prázdný.'],
   'schedule-invalid': ['edit', 'The planned time is not a valid Prague time.', 'Plánovaný čas není platný pražský čas.'],
   'schedule-outside-asset-window': ['edit', 'The time must be in the future and at most six days ahead.', 'Čas musí být v budoucnu a nejvýše šest dní dopředu.'],
