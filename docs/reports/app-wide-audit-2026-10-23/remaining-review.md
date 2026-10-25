@@ -59,6 +59,8 @@ Finding 163 closes native preview policy, startup/cancellation/disposal and reco
 
 ## Career provider and monitoring boundaries
 
+- Finding 188 closes query-based saved/applied vacancy collisions and repeated verified-alias parsing. Dated research remains dated evidence; no current live vacancy is inferred. Other provider and persistence checks below remain open.
+
 - Finding 170 closes inherited placeholder/member lookup in the deterministic Career template helper. No model/provider call or saved letter changes. Template fallback localization and the remaining letter-editor persistence/exit checks still need review.
 
 - Career availability reads only 500 rows while reporting remaining candidates from that same partial list. Preferences failures silently choose the default scope. Request/auth handling and provider work need bounded captured inputs and caller cancellation. Preserve on-demand checks and durable owner tombstones; the retired scrape route must not acquire a schedule.

@@ -2881,10 +2881,10 @@
     },
     {
       "path": "src/lib/jobs/oslo-research.ts",
-      "lines": 965,
+      "lines": 971,
       "sha256": "b8a9109122d1e69e33bcb1bc6b41960615c8270a93900c07ad98b7cd6e700aa3",
-      "status": "partial; complete dated bilingual research and identity/staleness helper inspection; query-only vacancy identity, repeated alias normalization and account-confirmed location wording require boundary tests",
-      "reviewedSha256": "b8a9109122d1e69e33bcb1bc6b41960615c8270a93900c07ad98b7cd6e700aa3"
+      "status": "source reviewed; finding 188 preserves query-based vacancy identity and indexes verified aliases with exact-result CPU parity, mounted saving regression and native research checks; dated observations retained; final release pending",
+      "reviewedSha256": "930e065565ffae0be1edae93712b32bd2d1e0c735519ab61c15700ee1f3e020b"
     },
     {
       "path": "src/lib/jobs/pipeline.ts",

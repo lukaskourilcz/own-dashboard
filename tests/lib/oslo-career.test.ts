@@ -92,6 +92,19 @@ describe("evidence-based research", () => {
     expect(careerPositionKey("https://jobs.ashbyhq.com/sanity/52fc85b3-fa35-48ec-ae43-63f8e7d22ac7")).toBe(careerPositionKey("https://www.sanity.io/careers/senior-software-engineer-content-agent"));
     expect(careerPositionKey("https://www.linkedin.com/jobs/view/4470834718/")).not.toBe(careerPositionKey("https://www.linkedin.com/jobs/view/4470834708/"));
   });
+  it('keeps query-based vacancy ids and ports distinct while ignoring UTM tracking', () => {
+    expect(careerPositionKey('https://example.com/careers?jobId=one')).not.toBe(careerPositionKey('https://example.com/careers?jobId=two'));
+    expect(careerPositionKey('https://example.com/careers?jobId=one&utm_source=newsletter&lang=en')).toBe(careerPositionKey('http://www.example.com/careers/?lang=en&jobId=one#details'));
+    expect(careerPositionKey('https://example.com:8443/careers?jobId=one')).not.toBe(careerPositionKey('https://example.com/careers?jobId=one'));
+    expect(researchForUrl('https://example.com/careers?jobId=one')).toBeUndefined();
+  });
+  it('retains every dated verified alias and its first matching record', () => {
+    for (const job of OSLO_JOBS) for (const url of [job.url, ...job.aliases]) {
+      const first = OSLO_JOBS.find(candidate => [candidate.url, ...candidate.aliases].some(alias => canonicalJobUrl(alias) === canonicalJobUrl(url)));
+      expect(researchForUrl(url)).toBe(first);
+      expect(careerPositionKey(url)).toBe(first!.id);
+    }
+  });
   it("expires priorities without resetting original research and catches passed deadlines", () => {
     const flowcase = OSLO_JOBS.find((row) => row.id === "flowcase-frontend")!;
     expect(researchIsStale(flowcase, new Date("2026-10-16"))).toBe(false);
