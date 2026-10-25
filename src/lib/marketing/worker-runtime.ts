@@ -1,4 +1,5 @@
 import "server-only";
+import { marketingStorageObjectMissing } from "./storage-errors";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -217,7 +218,11 @@ export function createDneskaiSlideStorage(db: Database, ownerId: string, options
       const store = await files();
       if (options.signal?.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
       const info = await store.info(key);
-      if (info.error || !info.data) return null;
+      if (info.error) {
+        if (marketingStorageObjectMissing(info.error)) return null;
+        throw new MarketingWorkerRuntimeError("asset-storage-failed");
+      }
+      if (!info.data) throw new MarketingWorkerRuntimeError("asset-storage-failed");
       const metadata: Record<string, unknown> = info.data.metadata ?? {};
       const recorded = typeof metadata.sha256 === "string" ? metadata.sha256 : "";
       if (!/^[a-f0-9]{64}$/.test(recorded) || metadata.ownerId !== ownerId || metadata.renderKey !== renderKey || info.data.contentType !== "image/jpeg"

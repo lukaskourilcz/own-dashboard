@@ -1,4 +1,5 @@
 import "server-only";
+import { marketingStorageObjectMissing } from "./storage-errors";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -59,7 +60,11 @@ export function createDneskaiReelStorage(db: Database, ownerId: string) {
     async find(reelKey: string): Promise<StoredDneskaiReel | null> {
       const key = dneskaiReelObjectKey(ownerId, reelKey);
       const info = await (await files()).info(key);
-      if (info.error || !info.data) return null;
+      if (info.error) {
+        if (marketingStorageObjectMissing(info.error)) return null;
+        throw new DneskaiReelError("reel-storage-failed");
+      }
+      if (!info.data) throw new DneskaiReelError("reel-storage-failed");
       const metadata: Record<string, unknown> = info.data.metadata ?? {};
       const recorded = typeof metadata.sha256 === "string" ? metadata.sha256 : "";
       if (!/^[a-f0-9]{64}$/.test(recorded) || metadata.ownerId !== ownerId || metadata.reelKey !== reelKey || info.data.contentType !== "video/mp4"

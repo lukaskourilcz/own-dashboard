@@ -18,8 +18,8 @@ function bucket(state: { public?: boolean; stored?: { bytes: Buffer; metadata: R
       stored = { bytes: body, metadata: options.metadata };
       return { data: { path: _key }, error: null };
     }),
-    info: vi.fn(async () => stored ? { data: { size: stored.bytes.length, contentType: "image/jpeg", metadata: stored.metadata }, error: null } : { data: null, error: { message: "Object not found" } }),
-    download: vi.fn(async () => stored ? { data: new Blob([new Uint8Array(stored.bytes)]), error: null } : { data: null, error: { message: "Object not found" } }),
+    info: vi.fn(async () => stored ? { data: { size: stored.bytes.length, contentType: "image/jpeg", metadata: stored.metadata }, error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }),
+    download: vi.fn(async () => stored ? { data: new Blob([new Uint8Array(stored.bytes)]), error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }),
     createSignedUrl: vi.fn(async (key: string) => ({ data: { signedUrl: `https://example.supabase.co/storage/v1/object/sign/marketing-assets/${key}?token=test-only` }, error: null })),
   };
   const getBucket = vi.fn(async () => ({ data: { public: state.public ?? false }, error: null }));
@@ -46,6 +46,21 @@ describe("DNESKAi render cache in the private marketing-assets bucket", () => {
     expect(hit).toEqual({ url: expect.stringMatching(/^https:\/\//), sha256, metadata: { rendererVersion: "test-only", renderKey, sha256, ownerId: owner } });
     expect(files.upload).toHaveBeenCalledTimes(1);
     expect(getBucket).toHaveBeenCalledTimes(1);
+  });
+  it.each([{ status: 503, statusCode: 'SlowDown' }, { status: 403, statusCode: 'AccessDenied' }, { status: 404, statusCode: 'NoSuchBucket' }, { status: 404, statusCode: 'TenantNotFound' }, { status: 404, statusCode: 'Unexpected' }, null])('refuses an unavailable slide cache instead of declaring a miss (%s)', async (error) => {
+    const { db, files } = bucket();
+    const storage = createDneskaiSlideStorage(db, owner);
+    files.info.mockResolvedValueOnce({ data: null, error } as never);
+    await expect(storage.find(renderKey)).rejects.toMatchObject({ code: 'asset-storage-failed' });
+    expect(files.upload).not.toHaveBeenCalled();
+    expect(files.createSignedUrl).not.toHaveBeenCalled();
+  });
+  it.each(['NoSuchKey', 'not_found', '404'])('recognizes a typed object absence in the slide cache (%s)', async (statusCode) => {
+    const { db, files } = bucket();
+    const storage = createDneskaiSlideStorage(db, owner);
+    files.info.mockResolvedValueOnce({ data: null, error: { status: 404, statusCode } } as never);
+    expect(await storage.find(renderKey)).toBeNull();
+    expect(files.createSignedUrl).not.toHaveBeenCalled();
   });
   it("refuses a public bucket, foreign or mismatched metadata and bytes that do not hash to the record", async () => {
     await expect(createDneskaiSlideStorage(bucket({ public: true }).db, owner).find(renderKey)).rejects.toThrow("private-asset-bucket-required");

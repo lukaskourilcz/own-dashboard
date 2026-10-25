@@ -111,6 +111,33 @@ describe("reel storage", () => {
     expect(dneskaiReelObjectKey(owner, reelKey)).toBe(`${owner}/marketing/dneskai/reels/${reelKey}.mp4`);
   });
 
+  it.each([{ status: 503, statusCode: 'SlowDown' }, { status: 403, statusCode: 'AccessDenied' }, { status: 404, statusCode: 'NoSuchBucket' }, { status: 404, statusCode: 'TenantNotFound' }, { status: 404, statusCode: 'Unexpected' }, null])('refuses an unavailable reel cache instead of declaring a miss (%s)', async (error) => {
+    const { db, files } = facade();
+    const storage = createDneskaiReelStorage(db as never, owner);
+    files.info.mockResolvedValueOnce({ data: null, error } as never);
+    await expect(storage.find(reelKey)).rejects.toMatchObject({ code: 'reel-storage-failed' });
+    expect(files.upload).not.toHaveBeenCalled();
+    expect(files.createSignedUrl).not.toHaveBeenCalled();
+  });
+  it.each(['NoSuchKey', 'not_found', '404'])('recognizes a typed object absence in the reel cache (%s)', async (statusCode) => {
+    const { db, files } = facade();
+    const storage = createDneskaiReelStorage(db as never, owner);
+    files.info.mockResolvedValueOnce({ data: null, error: { status: 404, statusCode } } as never);
+    expect(await storage.find(reelKey)).toBeNull();
+    expect(files.createSignedUrl).not.toHaveBeenCalled();
+  });
+  it('never encodes or uploads a Reel after a real storage adapter lookup fails', async () => {
+    const { db, files } = facade();
+    files.info.mockResolvedValueOnce({ data: null, error: { status: 503, statusCode: 'SlowDown' } } as never);
+    const store = createDneskaiReelStorage(db as never, owner);
+    const deps = { ...dependencies(), storage: store };
+    const query = database({ revision: deckRevision(), content_hash: contentHash, render_report: report() });
+    await expect(dneskaiReelForRevision({ ...db, ...query } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: 'reel-storage-failed' });
+    expect(deps.loadSlide).not.toHaveBeenCalled();
+    expect(deps.render).not.toHaveBeenCalled();
+    expect(files.upload).not.toHaveBeenCalled();
+  });
+
   it("refuses a public bucket and an object whose metadata names another owner", async () => {
     await expect(createDneskaiReelStorage(facade({ public: true }).db as never, owner).find(reelKey)).rejects.toMatchObject({ code: "reel-bucket-required" });
     const foreign = facade({ public: false }, { reelKey, sha256: digest, ownerId: "22222222-2222-4222-8222-222222222222" });

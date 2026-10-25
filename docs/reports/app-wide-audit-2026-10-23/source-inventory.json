@@ -3378,10 +3378,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 208,
+      "lines": 213,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys",
-      "reviewedSha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1"
+      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence",
+      "reviewedSha256": "eed2e9fd296054b8494aed6e20caff775779f9f91b654876c30921d4e655612f"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -3881,6 +3881,13 @@
       "reviewedSha256": "1b6dca64b8515c6da96af83011a0ef97d4705c196f1167cd2f6de9d98b7115be"
     },
     {
+      "path": "src/lib/marketing/storage-errors.ts",
+      "sha256": null,
+      "lines": 7,
+      "status": "source reviewed; finding 189 shares typed storage absence classification across existing slide/Reel adapters; boundary and composed tests, lint and types pass; final release pending",
+      "reviewedSha256": "421e1a323b6f6471de1e5ed05288812de2cbf950a20751b3175f22f4e0936851"
+    },
+    {
       "path": "src/lib/marketing/store.ts",
       "lines": 28,
       "sha256": "a33362bf8531847b157635011f4dc2dcab6ee552674df524b9ec2ca35a8c33fb",
@@ -3924,10 +3931,10 @@
     },
     {
       "path": "src/lib/marketing/worker-runtime.ts",
-      "lines": 393,
+      "lines": 398,
       "sha256": "a2121b43774eaaca2cba0dda10d58db19b293eae5055b69501bdf4bbbec209da",
-      "status": "partial; upload admission shares tested boundary (finding 144); provider, persistence and execution source review pending",
-      "reviewedSha256": "01af9fed8130dd3fc713454d3a2a0ae8e9c3746db5335a9c4163cb36382bcfd7"
+      "status": "partial; upload admission shares tested boundary (finding 144); provider, persistence and execution source review pending; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence",
+      "reviewedSha256": "66dc3f5949704810ced9250b8bf2026fd3c6de23d6d0d2a2427b74801ca0723f"
     },
     {
       "path": "src/lib/nav-tabs.ts",
