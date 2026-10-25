@@ -649,3 +649,8 @@ Seventeen more complete files cover Competition rows/editor/deletion, offline ev
 ## Source checkpoint after finding 185
 
 The Tasks panel and its repository lifecycle source review are closed with targeted evidence; final app-wide release remains separate. Two further dictionary files are read in full: Dates retains its professional scope, while account introduction copy still needs reconciliation with Facebook Login and existing publishing state. The inventory has 650 entries (70 pending, 174 partial). Thirty migrations remain prepared/unapplied. Source completion, current-document reconciliation, canonical migration rollout, main merge and deployed verification remain unfinished.
+
+
+## Validation checkpoint 72 — started, not yet passing
+
+The complete serial pipeline starts at frozen application/test source `235d00b`: full unit/component/database suite, lint, ordinary production build, eight native render traces, post-build types and the entire optimized browser matrix. This includes findings 182–185 and four new repository browser cases. Application/test inputs remain unchanged until the run ends. The local dev server was stopped before building; only documentation and read-only source inspection continue. The last complete run remains checkpoint 71 with five subsequently repaired fixture failures; no new full passing result is claimed yet.
