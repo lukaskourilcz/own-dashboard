@@ -130,3 +130,8 @@ Offline probes during checkpoint 73 reproduce three source leads against copies 
 ## Deployed advisor follow-up
 
 The 25 October read-only baseline reports 70 unindexed foreign keys, 73 auth/RLS init-plan warnings, 36 unused-index observations, one duplicate index, absolute Auth connection allocation, 15 authenticated definer functions and disabled leaked-password protection. The nine no-policy tables include deliberately inaccessible credential/private tables. These are advisor groups to reconcile with actual owned queries, permissions and the prepared migration chain, not permission to add every index, remove every unused index or broaden client policies. No production data/configuration changed. `review.md` records the baseline separately from local migration verification.
+
+
+## Export follow-up
+
+Finding 235 prepares the complete explicit-column captured-owner snapshot in migration 122. Route adoption, deadlines, auth/error handling, CSV protection and the Settings download flow remain unfinished. Preserve the supported scopes and state that combined data is not a whole-account backup. All 36 prepared migrations remain unapplied.

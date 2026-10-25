@@ -3345,8 +3345,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "generated read port reviewed against all 121 canonical migrations; eight-table shape unchanged; production rollout and consolidated release pending",
-      "reviewedSha256": "97f21fe38d4ac226579f03f55dab48b89ae8717ad71b97a95089b65aaf8f293b"
+      "status": "source reviewed; finding 235 snapshot foundation tested; route adoption and final release pending",
+      "reviewedSha256": "6bf7241a575c99cb28d9cd6eb567d2a829c0d14398ee8fbc4ee23da0b2fabeae"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4667,6 +4667,13 @@
       "lines": 20,
       "reviewedSha256": "ee733ab0d0ac512155303d52546809b43d619f1926fb21227dd3ec76ce7d0942",
       "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending"
+    },
+    {
+      "path": "src/lib/data-export-columns.ts",
+      "sha256": null,
+      "lines": 690,
+      "status": "source reviewed; finding 235 snapshot foundation tested; route adoption and final release pending",
+      "reviewedSha256": "52dbf92b287f197271b23bf22193c3bb78485eed8236dd44513b2288dcf9e375"
     }
   ],
   "baselineFileCount": 561
