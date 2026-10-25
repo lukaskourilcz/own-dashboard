@@ -9,24 +9,35 @@ import { readNeededBatch } from "@/lib/needed-batch-server";
 import { gitBlobSha } from "@/lib/github-file-server";
 const repos = Array.from({ length: 12 }, (_, index) => ({ id: index + 1, owner: "owner", name: `fixture-${index}` }));
 const file = (path = "NEEDED.md", content = "- [ ] Actual task") => Response.json({ type: "file", path, size: Buffer.byteLength(content), sha: gitBlobSha(content), html_url: `https://github.com/owner/fixture/blob/main/${path}`, encoding: "base64", content: Buffer.from(content).toString("base64") });
+const snapshot = (id: number, name: string, root: string | null = "- [ ] Actual task", docs: string | null = null) => {
+  const entry = (path: string, text: string | null) => text === null ? null : { path, oid: gitBlobSha(text), size: Buffer.byteLength(text), type: "blob", mode: 33188 };
+  return Response.json({ data: { repository: { databaseId: id, nameWithOwner: `owner/${name}`, isArchived: false, branch: { id: `REF_${id}`, name: "main", prefix: "refs/heads/", target: { __typename: "Commit", oid: "a".repeat(40), primary: entry("NEEDED.md", root), secondary: entry("docs/NEEDED.md", docs) } } } } });
+};
+const defaultFetch = async (path: string, init?: RequestInit) => {
+  if (path !== "/graphql") return file();
+  const { variables } = JSON.parse(String(init?.body)); return snapshot(Number(variables.repo.split("-").at(-1)) + 1, variables.repo);
+};
 const request = (body: unknown = { repos }, origin = "https://app.example") => new Request("https://app.example/api/github/needed", { method: "POST", headers: { origin }, body: JSON.stringify(body) });
-beforeEach(() => { state.user = true; state.limited = false; state.auth.mockReset().mockImplementation(async () => ({ data: { user: state.user ? { id: "owner" } : null } })); state.fetcher.mockReset().mockImplementation(async () => file()); state.factory.mockReset().mockReturnValue(state.fetcher); });
+beforeEach(() => { state.user = true; state.limited = false; state.auth.mockReset().mockImplementation(async () => ({ data: { user: state.user ? { id: "owner" } : null } })); state.fetcher.mockReset().mockImplementation(defaultFetch); state.factory.mockReset().mockReturnValue(state.fetcher); });
 afterEach(() => vi.restoreAllMocks());
 it("uses one authentication/provider context and at most four active repository reads", async () => {
   let active = 0, maximum = 0;
-  state.fetcher.mockImplementation(async () => { maximum = Math.max(maximum, ++active); await new Promise(resolve => setTimeout(resolve, 2)); active--; return file(); });
+  state.fetcher.mockImplementation(async (path, init) => { maximum = Math.max(maximum, ++active); await new Promise(resolve => setTimeout(resolve, 2)); active--; return defaultFetch(path, init); });
   const response = await POST(request()); expect(response.status).toBe(200);
   const body = await response.json(); expect(body.files).toHaveLength(12); expect(body.files.every((entry: { result: { kind: string } }) => entry.result.kind === "ok")).toBe(true);
-  expect(state.auth).toHaveBeenCalledOnce(); expect(state.factory).toHaveBeenCalledOnce(); expect(state.fetcher).toHaveBeenCalledTimes(12); expect(maximum).toBe(4);
+  expect(state.auth).toHaveBeenCalledOnce(); expect(state.factory).toHaveBeenCalledOnce(); expect(state.fetcher).toHaveBeenCalledTimes(24); expect(maximum).toBe(4);
   expect(response.headers.get("cache-control")).toBe("private, no-store");
 });
 it("tries docs only after confirmed root absence and preserves per-source failures", async () => {
-  state.fetcher.mockImplementation(async path => path.includes("fixture-0") ? path.endsWith("/docs/NEEDED.md") ? file("docs/NEEDED.md") : new Response(null, { status: 404 }) : Response.json({ private: "invented-provider-detail" }, { status: 503 }));
+  state.fetcher.mockImplementation(async (path, init) => {
+    if (path === "/graphql") { const { variables } = JSON.parse(init.body); return variables.repo === "fixture-0" ? snapshot(1, variables.repo, null, "- [ ] Actual task") : Response.json({ private: "invented-provider-detail" }, { status: 503 }); }
+    expect(path).toContain("/docs/NEEDED.md?ref=" + "a".repeat(40)); return file("docs/NEEDED.md");
+  });
   const response = await POST(request({ repos: repos.slice(0, 2) })); const body = await response.json();
   expect(body.files[0].result).toMatchObject({ kind: "ok", path: "docs/NEEDED.md" }); expect(body.files[1].result).toEqual({ kind: "error" }); expect(state.fetcher).toHaveBeenCalledTimes(3); expect(JSON.stringify(body)).not.toContain("invented-provider-detail");
 });
-it("confirms not-found only after both paths return 404", async () => {
-  state.fetcher.mockResolvedValue(new Response(null, { status: 404 }));
+it("confirms not-found only from both paths in the identified commit", async () => {
+  state.fetcher.mockImplementation(async () => snapshot(1, "fixture-0", null, null));
   const result = await readNeededBatch(repos.slice(0, 1), state.fetcher, new AbortController().signal);
   expect(result).toEqual({ kind: "ok", files: [{ repoId: "1", result: { kind: "not-found" } }] });
 });
@@ -40,7 +51,7 @@ it("does not turn a root-only 404 into confirmed absence after cancellation", as
   expect(await readNeededBatch(repos.slice(0, 1), state.fetcher, controller.signal)).toEqual({ kind: "ok", files: [{ repoId: "1", result: { kind: "error" } }] });
 });
 it("bounds actual serialized UTF-8 bytes across results", async () => {
-  state.fetcher.mockImplementation(async () => file("NEEDED.md", "Ž".repeat(500)));
+  state.fetcher.mockImplementation(async (path, init) => path === "/graphql" ? snapshot(Number(JSON.parse(init.body).variables.repo.split("-").at(-1)) + 1, JSON.parse(init.body).variables.repo, "Ž".repeat(500)) : file("NEEDED.md", "Ž".repeat(500)));
   const result = await readNeededBatch(repos.slice(0, 2), state.fetcher, new AbortController().signal, 2000);
   expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThanOrEqual(2000);
   if (result.kind === "ok") { expect(result.files.filter(file => file.result.kind === "ok")).toHaveLength(1); expect(result.files.filter(file => file.result.kind === "error")).toHaveLength(1); }
@@ -58,4 +69,21 @@ it("retains origin, owner, request-size and rate boundaries", async () => {
 it("stops further work when a provider context is disconnected", async () => {
   state.fetcher.mockResolvedValue(new Response(null, { status: 401 }));
   expect(await readNeededBatch(repos, state.fetcher, new AbortController().signal)).toEqual({ kind: "disconnected" }); expect(state.fetcher.mock.calls.length).toBeLessThanOrEqual(4);
+});
+
+it("retains a source when its name was reused, even when both files are absent", async () => {
+  state.fetcher.mockImplementation(async () => snapshot(999, "fixture-0", null, null));
+  expect(await readNeededBatch(repos.slice(0, 1), state.fetcher, new AbortController().signal)).toEqual({ kind: "ok", files: [{ repoId: "1", result: { kind: "error" } }] }); expect(state.fetcher).toHaveBeenCalledOnce();
+});
+it("does not treat a failed pinned file read as confirmed absence", async () => {
+  state.fetcher.mockImplementation(async path => path === "/graphql" ? snapshot(1, "fixture-0") : new Response(null, { status: 404 }));
+  expect(await readNeededBatch(repos.slice(0, 1), state.fetcher, new AbortController().signal)).toEqual({ kind: "ok", files: [{ repoId: "1", result: { kind: "error" } }] });
+});
+it("rejects a mismatched file blob and keeps its existing tasks", async () => {
+  state.fetcher.mockImplementation(async path => path === "/graphql" ? snapshot(1, "fixture-0") : file("NEEDED.md", "- [ ] Foreign source"));
+  expect(await readNeededBatch(repos.slice(0, 1), state.fetcher, new AbortController().signal)).toEqual({ kind: "ok", files: [{ repoId: "1", result: { kind: "error" } }] });
+});
+
+it("refuses an authentication error even when a cached user is present", async () => {
+  state.auth.mockResolvedValueOnce({ data: { user: { id: "owner" } }, error: Error("TEST_ONLY_PRIVATE_AUTH") }); const response = await POST(request()); expect(response.status).toBe(401); expect(state.factory).not.toHaveBeenCalled(); expect(await response.text()).not.toContain("TEST_ONLY_PRIVATE_AUTH");
 });

@@ -226,10 +226,10 @@
     },
     {
       "path": "src/app/api/github/commit/route.ts",
-      "lines": 65,
+      "lines": 70,
       "sha256": "c4278755341e9018affdad07c21a4b92b63caafe1196bef3344117797b85bb67",
-      "status": "source reviewed; file integrity targeted checks pass; final rendered/release checks pending",
-      "reviewedSha256": "eb2fbe33daa8e8ce742a045acca6f598224972696b1006b1c33d2a6b4a961b16"
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
+      "reviewedSha256": "f51aa3c5795d3fcaed6f09aaa2219d9d6a5975e2d724d5abaeb8d5aa4a8a9c02"
     },
     {
       "path": "src/app/api/github/commits/route.ts",
@@ -256,8 +256,8 @@
       "path": "src/app/api/github/needed/route.ts",
       "sha256": null,
       "lines": 30,
-      "reviewedSha256": "15a98b5e84c7eff68fbc90a5b944cca19e2b49a296ce3c56fc88375445926e26",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+      "reviewedSha256": "aa9aa0357baf98cfa77c63e73631bca7e0dd660ec3a8025ee5f540f5ebad49ff",
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending"
     },
     {
       "path": "src/app/api/github/repos/lookup/route.ts",
@@ -1596,8 +1596,8 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1124,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; captured creation/completion/deletion adopted in findings 177\u2013178; repository cleanup and density source/rendered review remain pending",
-      "reviewedSha256": "b3e3a5686b2c553abdb7d91c8eced4b17fe80ef2610e02b7cacd5d09e1eb32fc"
+      "status": "partially reviewed; captured manual writes and repository identity forwarding checked in findings 177\u2013179; refresh/cleanup owner/pending lifecycle and task-list density remain pending",
+      "reviewedSha256": "c2c2130d2a06b92f2333de2eb4cf048a699ed5bd00500fc5ae566072a4be56f3"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -2275,15 +2275,15 @@
       "path": "src/lib/github-file-contract.ts",
       "sha256": null,
       "lines": 28,
-      "reviewedSha256": "e6ff0739e5d0abc3abdde1484a9188b271479a17093614a5500f30ac49f2d1aa",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+      "reviewedSha256": "49149e2ce46ba131457dbda8f3aa224fc902e741d8d7d7f9e6df4a6c04a120ca",
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending"
     },
     {
       "path": "src/lib/github-file-server.ts",
       "sha256": null,
-      "lines": 39,
-      "reviewedSha256": "11c018671077222f09c01ebe85e0c5a59abfe21c8fa7a428d3ee47b221d00d9e",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+      "lines": 40,
+      "reviewedSha256": "ada654f26eaf86841977e564906f3b3e10ce8e9cc78c96abf2f9cc91c9bca0f6",
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending"
     },
     {
       "path": "src/lib/github-path.ts",
@@ -3768,9 +3768,9 @@
     {
       "path": "src/lib/needed-batch-server.ts",
       "sha256": null,
-      "lines": 36,
-      "reviewedSha256": "b8f2d1c772e65ec905ff6612451ead6e1b7db79112a8914eb548bfc82c57f1e6",
-      "status": "source reviewed; bounded repository scan checks pass; final release checks pending"
+      "lines": 40,
+      "reviewedSha256": "6fbb804039b5aadc0ee4924544a824567c5e518049ce55c6b3a2c26d159566a8",
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending"
     },
     {
       "path": "src/lib/needed-paths.ts",
@@ -3781,10 +3781,10 @@
     },
     {
       "path": "src/lib/needed-sync.ts",
-      "lines": 298,
+      "lines": 307,
       "sha256": "269500ebfa47ed167543a36dc30bc748a0707143b01d43a5aa968ae4a5ac8c9e",
-      "status": "source reviewed; targeted cleanup/import tests pass; final app-wide release checks pending",
-      "reviewedSha256": "429f7d0d3080fbb2013da8a8d895ed3db7b252a3e8d1f99fe8380d12fef6da94"
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
+      "reviewedSha256": "fba24d576926ffc4b7e362a39db53dd5684967220a433face9a040f7176adb23"
     },
     {
       "path": "src/lib/needed-task-store.ts",
@@ -4383,6 +4383,13 @@
       "lines": 76,
       "status": "source reviewed; captured row completion/deletion, synchronous reservations, confirmation/owner/unmount/exit guards and strict cache ordering checked in finding 178; final release pending",
       "reviewedSha256": "e41cf265ce6009b1e839282cb552b2d013a5b4e44a13da1e129ccbee62cd2e86"
+    },
+    {
+      "path": "src/lib/github-repository-file-server.ts",
+      "sha256": null,
+      "lines": 57,
+      "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
+      "reviewedSha256": "8813e040a742ac1ef9202acdcd35dbc55c1327fa295fc36eba901ed5960762bb"
     }
   ],
   "baselineFileCount": 561

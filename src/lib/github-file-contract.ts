@@ -16,7 +16,7 @@ const commonInput = z.object({
 });
 export const githubCommitInput = z.discriminatedUnion("intent", [
   commonInput.extend({ intent: z.literal("replace") }).strict(),
-  commonInput.extend({ intent: z.literal("edit"), expectedSha: gitSha }).strict(),
+  commonInput.extend({ intent: z.literal("edit"), expectedSha: gitSha, expectedRepositoryId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional() }).strict(),
 ]);
 export type CommitInput = z.input<typeof githubCommitInput>;
 export const githubFileResponse = z.object({ content: z.string().max(MAX_GITHUB_FILE_BYTES), html_url: githubWebUrl.nullable(), sha: gitSha });

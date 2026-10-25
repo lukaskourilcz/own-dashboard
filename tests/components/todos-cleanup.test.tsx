@@ -8,7 +8,8 @@ import { TodosPanel } from "@/components/panels/todos-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { todos as copy } from "@/lib/i18n/sections/todos";
 import type { Todo } from "@/lib/types";
-const state = vi.hoisted(() => ({ cleanup: vi.fn(), consume: vi.fn(), ok: vi.fn(), info: vi.fn(), err: vi.fn(), disconnected: vi.fn() }));
+const state = vi.hoisted(() => ({ cleanup: vi.fn(), consume: vi.fn(), ok: vi.fn(), info: vi.fn(), err: vi.fn(), disconnected: vi.fn(), commit: vi.fn() }));
+vi.mock("@/lib/github", async load => ({ ...await load<object>(), commitFile: (...args: unknown[]) => state.commit(...args) }));
 vi.mock("@/lib/needed-sync", async load => ({ ...await load<object>(), removeFinishedFromNeeded: (...args: unknown[]) => state.cleanup(...args) }));
 vi.mock("@/lib/repository-records", () => ({ consumeRepositoryRecords: (...args: unknown[]) => state.consume(...args) }));
 vi.mock("@/lib/github-queries", () => ({ useReposQuery: () => ({ data: { kind: "ok", repos: [] }, isPending: false }), setReposDisconnected: (...args: unknown[]) => state.disconnected(...args) }));
@@ -43,3 +44,13 @@ for (const lang of ["en", "cs"] as const) {
     await run(lang); expect(state.ok).toHaveBeenCalledWith(copy[lang].clearFromNeededDone(1)); expect(state.disconnected).toHaveBeenCalledWith(client); expect(state.err).toHaveBeenCalledWith(copy[lang].refreshDisconnected);
   });
 }
+
+it("carries the permanent repository identity and reviewed blob into the actual commit boundary", async () => {
+  state.commit.mockResolvedValue({ ok: true });
+  state.cleanup.mockImplementation(async (_tasks, commit) => {
+    await commit({ expectedRepositoryId: 42, owner: "owner", repo: "fixture", path: "docs/NEEDED.md", expectedSha: "a".repeat(40), content: "# Work\n", count: 1 }, new AbortController().signal);
+    return { cleared: [], missing: [], kept: 1, disconnected: false };
+  });
+  state.consume.mockResolvedValue({ deleted: new Set(), retained: new Set() }); await run("en");
+  expect(state.commit).toHaveBeenCalledWith({ intent: "edit", expectedRepositoryId: 42, owner: "owner", repo: "fixture", path: "docs/NEEDED.md", expectedSha: "a".repeat(40), content: "# Work\n", message: copy.en.finishedCommitMessage(1) }, expect.any(AbortSignal));
+});

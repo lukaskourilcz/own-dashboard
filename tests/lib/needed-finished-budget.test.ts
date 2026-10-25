@@ -68,3 +68,14 @@ it("uses the actual number of removed lines for a duplicated legacy task", async
   const result = await removeFinishedFromNeeded([task(1), { ...task(1), id: "duplicate" }], commit, async () => file);
   expect(commit.mock.calls[0][0].count).toBe(1); expect(result.cleared).toEqual(["task-1", "duplicate"]);
 });
+
+it("keeps legacy or ambiguous repository identities without reading or writing", async () => {
+  const commit = vi.fn<NeededCommit>(); const load = vi.fn();
+  const tasks = [{ ...task(1), repo_id: null }, { ...task(2), repo_id: "2.5" }, task(3), { ...task(3), id: "other-name", repo_name: "foreign" }];
+  expect(await removeFinishedFromNeeded(tasks, commit, load)).toEqual({ cleared: [], missing: [], kept: 4, disconnected: false }); expect(load).not.toHaveBeenCalled(); expect(commit).not.toHaveBeenCalled();
+});
+it("captures task source fields before waiting for a loader", async () => {
+  const original = task(1); let finish!: (value: NeededFileResult) => void; const load = vi.fn(() => new Promise<NeededFileResult>(resolve => { finish = resolve; })); const commit = vi.fn<NeededCommit>(async () => success);
+  const pending = removeFinishedFromNeeded([original], commit, load); original.needed_raw = "- [ ] Different task"; original.repo_id = "999"; finish(file);
+  expect(await pending).toMatchObject({ cleared: ["task-1"], kept: 0 }); expect(commit.mock.calls[0][0]).toMatchObject({ expectedRepositoryId: 1, content: "# Work\n" });
+});

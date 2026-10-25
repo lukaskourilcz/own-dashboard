@@ -276,6 +276,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     );
     expect(commits).toEqual([
       {
+        expectedRepositoryId: docsRepo.id,
         owner: "me",
         repo: "quorum",
         path: "docs/NEEDED.md",

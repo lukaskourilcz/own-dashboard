@@ -3,7 +3,6 @@ import { addDays, format } from "date-fns";
 import { loadNeededBatch } from "@/lib/needed-batch-client";
 import type { CommitOutcome, GithubRepo } from "./github";
 import {
-  loadNeededFile,
   neededTodoItems,
   removeNeededLines,
   type NeededFileResult,
@@ -154,7 +153,7 @@ export function diffNeededTodos(
   return { toInsert, toDeleteIds };
 }
 
-/** Reads one repository's NEEDED.md; `loadNeededFile` in the app. */
+/** Optional injected loader for isolated callers/tests; the app uses the identified batch reader. */
 export type NeededFileLoader = (
   owner: string,
   repo: string,
@@ -210,6 +209,7 @@ export async function scanNeededRepos(
 
 /** Commits new NEEDED.md content; `commitFile` in the app. */
 export type NeededCommit = (input: {
+  expectedRepositoryId: number;
   owner: string;
   repo: string;
   path: NeededFilePath;
@@ -248,6 +248,7 @@ export async function removeFinishedFromNeeded(
   load?: NeededFileLoader,
   options: { signal?: AbortSignal } = {},
 ): Promise<FinishedRemoval> {
+  todos = structuredClone(todos);
   const byRepo = new Map<string, Todo[]>();
   for (const td of todos) {
     if (
@@ -286,16 +287,17 @@ export async function removeFinishedFromNeeded(
   }
   for (const tasks of selected) {
     if (signal.aborted) break;
-    const owner = tasks[0].repo_owner!, name = tasks[0].repo_name!;
+    const owner = tasks[0].repo_owner!, name = tasks[0].repo_name!, repositoryId = Number(tasks[0].repo_id);
+    if (!Number.isSafeInteger(repositoryId) || repositoryId <= 0 || String(repositoryId) !== tasks[0].repo_id || tasks.some(task => task.repo_id !== tasks[0].repo_id || task.repo_owner !== owner || task.repo_name !== name)) continue;
     try {
       const cached = files.get(String(Number(tasks[0].repo_id)));
-      const res = await awaitWithSignal(load ? load(owner, name) : cached ? Promise.resolve(cached) : loadNeededFile(owner, name, undefined, signal), signal);
+      const res = await awaitWithSignal(load ? load(owner, name) : Promise.resolve(cached ?? { kind: "error" as const }), signal);
       if (res.kind === "disconnected") { disconnected = true; break; }
       if (res.kind === "not-found") { missing.push(`${owner}/${name}`); cleared.push(...tasks.map(task => task.id)); continue; }
       if (res.kind !== "ok") continue;
       const { next: content, removed } = removeNeededLines(res.content, tasks.map(task => task.needed_raw!));
       if (content !== res.content) {
-        const outcome = await awaitWithSignal(commit({ owner, repo: name, path: res.path, expectedSha: res.sha, content, count: removed }, signal), signal);
+        const outcome = await awaitWithSignal(commit({ expectedRepositoryId: repositoryId, owner, repo: name, path: res.path, expectedSha: res.sha, content, count: removed }, signal), signal);
         if (!outcome.ok) { if (outcome.status === 401) { disconnected = true; break; } continue; }
       }
       cleared.push(...tasks.map(task => task.id));

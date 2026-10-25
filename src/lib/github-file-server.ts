@@ -25,9 +25,10 @@ export function decodeGithubFile(raw: unknown, expectedPath: string) {
   return { content, html_url: file.html_url, sha: file.sha };
 }
 
-export async function readGithubTextFile(fetcher: (path: string) => Promise<Response>, owner: string, repo: string, path: string, signal: AbortSignal) {
+export async function readGithubTextFile(fetcher: (path: string) => Promise<Response>, owner: string, repo: string, path: string, signal: AbortSignal, ref?: string) {
   try {
-    const response = await awaitWithSignal(fetcher(`/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}`), signal);
+    signal.throwIfAborted();
+    const response = await awaitWithSignal(fetcher(`/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}${ref ? `?ref=${encodeURIComponent(ref)}` : ""}`), signal);
     if (!response.ok) {
       void response.body?.cancel().catch(() => undefined);
       return { ok: false as const, status: [401, 403, 404].includes(response.status) ? response.status : 502 };

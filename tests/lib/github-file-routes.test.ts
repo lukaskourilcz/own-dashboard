@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-const state = vi.hoisted(() => ({ user: true, limited: false, fetcher: vi.fn() }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user ? { id: "owner" } : null } }) } }) }));
+const state = vi.hoisted(() => ({ user: true, authError: false, limited: false, fetcher: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user ? { id: "owner" } : null }, error: state.authError ? Error("TEST_ONLY_PRIVATE_AUTH") : null }) } }) }));
 vi.mock("@/lib/github-token", () => ({ createGitHubFetcher: () => state.fetcher }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: async () => ({ ok: !state.limited, retryAfter: 60 }) }));
 import { POST } from "@/app/api/github/commit/route";
@@ -16,7 +16,7 @@ it("matches Git's independently documented blob hash", () => {
   expect(gitBlobSha("test content\n")).toBe("d670460b4b4aece5915caf5c68d12f560a9fe3e4");
 });
 beforeEach(() => {
-  state.user = true; state.limited = false;
+  state.user = true; state.authError = false; state.limited = false;
   state.fetcher.mockReset().mockImplementation(async (_url, init) => Response.json(init?.method === "PUT" ? receipt() : metadata()));
 });
 afterEach(() => vi.restoreAllMocks());
@@ -83,4 +83,16 @@ it.each(["oversized", "invalid-encoding", "different-sha", "different-path", "in
   if (kind === "different-sha") payload.sha = "a".repeat(40);
   if (kind === "different-path") payload.path = "other.md";
   state.fetcher.mockResolvedValue(Response.json(payload)); expect((await GET(fileRequest())).status).toBe(502);
+});
+
+const stableSnapshot = (id = 42) => ({ databaseId: id, nameWithOwner: "owner/repo", isArchived: false, branch: { id: "REF_42", prefix: "refs/heads/", name: "main", target: { __typename: "Commit", oid: "a".repeat(40), primary: { path, oid: gitBlobSha(old), size: Buffer.byteLength(old), type: "blob", mode: 33188 }, secondary: { path, oid: gitBlobSha(old), size: Buffer.byteLength(old), type: "blob", mode: 33188 } } } });
+it("routes a captured repository edit through a permanent branch and confirms its receipt", async () => {
+  state.fetcher.mockImplementation(async (_url, init) => Response.json({ data: JSON.parse(init.body).query.startsWith("mutation") ? { createCommitOnBranch: { commit: { oid: "b".repeat(40), url: `https://github.com/owner/repo/commit/${"b".repeat(40)}`, repository: { databaseId: 42 }, parents: { nodes: [{ oid: "a".repeat(40) }] }, file: { path, oid: gitBlobSha(text), size: Buffer.byteLength(text), type: "blob", mode: 33188 } }, ref: { id: "REF_42", prefix: "refs/heads/", target: { oid: "b".repeat(40) }, repository: { databaseId: 42 } } } } : { repository: stableSnapshot() } }));
+  const response = await POST(request({ ...input, expectedRepositoryId: 42 })); expect(response.status).toBe(200); expect(await response.json()).toMatchObject({ path, content: { sha: gitBlobSha(text) } }); expect(state.fetcher.mock.calls.map(call => call[0])).toEqual(["/graphql", "/graphql"]);
+});
+it("does not mutate a reused repository namespace or expose its mismatch", async () => {
+  state.fetcher.mockImplementation(async () => Response.json({ data: { repository: stableSnapshot(99) } })); const response = await POST(request({ ...input, expectedRepositoryId: 42 })); expect(response.status).toBe(409); expect(state.fetcher).toHaveBeenCalledOnce();
+});
+it("rejects invalid captured repository ids and authentication errors with cached users", async () => {
+  expect((await POST(request({ ...input, expectedRepositoryId: 0 }))).status).toBe(400); expect(state.fetcher).not.toHaveBeenCalled(); state.authError = true; const response = await POST(request(input)); expect(response.status).toBe(401); expect(await response.text()).not.toContain("TEST_ONLY_PRIVATE_AUTH"); expect(state.fetcher).not.toHaveBeenCalled();
 });

@@ -189,9 +189,9 @@ export function TodosPanel({
     mutationFn: async () => {
       const { cleared: idsToDelete, missing, kept, disconnected } = await removeFinishedFromNeeded(
         todos,
-        ({ owner, repo, path, content, count, expectedSha }, signal) =>
+        ({ owner, repo, path, content, count, expectedSha, expectedRepositoryId }, signal) =>
           commitFile({
-            intent: "edit", expectedSha,
+            intent: "edit", expectedSha, expectedRepositoryId,
             owner,
             repo,
             path,

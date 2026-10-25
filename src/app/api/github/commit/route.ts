@@ -7,6 +7,7 @@ import { awaitWithSignal } from "@/lib/abortable";
 import { readTextPrefix } from "@/lib/bounded-text";
 import { githubCommitInput, githubCommitResult, MAX_GITHUB_FILE_BYTES } from "@/lib/github-file-contract";
 import { gitBlobSha, githubFileMetadata, readGithubJson } from "@/lib/github-file-server";
+import { commitRepositoryFile, RepositoryFileConflict } from "@/lib/github-repository-file-server";
 import { z } from "zod";
 
 export const maxDuration = 30;
@@ -20,8 +21,8 @@ export async function POST(request: Request) {
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(25_000)]);
   try {
     const supabase = await createClient(signal);
-    const { data: { user } } = await awaitWithSignal(supabase.auth.getUser(), signal);
-    if (!user) return failure(401, "Not authenticated.");
+    const { data: { user }, error: authError } = await awaitWithSignal(supabase.auth.getUser(), signal);
+    if (authError || !user) return failure(401, "Not authenticated.");
     let input: z.output<typeof githubCommitInput>;
     try {
       const body = await awaitWithSignal(readTextPrefix(new Response(request.body), 2_100_000), signal);
@@ -34,6 +35,10 @@ export async function POST(request: Request) {
     const limited = await awaitWithSignal(rateLimit(user.id, { key: "github-commit", limit: 10, windowSec: 60 }), signal);
     if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { ...headers, "Retry-After": String(limited.retryAfter) } });
     const fetcher = createGitHubFetcher(user.id, signal);
+    if (input.intent === "edit" && input.expectedRepositoryId !== undefined) {
+      const result = await commitRepositoryFile(fetcher, { ...input, expectedRepositoryId: input.expectedRepositoryId }, signal);
+      return NextResponse.json(result, { headers });
+    }
     const base = `/repos/${input.owner}/${input.repo}/contents/${input.path.split("/").map(encodeURIComponent).join("/")}`;
     const head = await fetcher(`${base}${input.branch ? `?ref=${encodeURIComponent(input.branch)}` : ""}`);
     if (head.status === 401) return failure(401, "GitHub is not connected.");
@@ -61,5 +66,5 @@ export async function POST(request: Request) {
     if (raw.content.path !== input.path || raw.content.size !== Buffer.byteLength(input.content, "utf8") || raw.content.sha !== gitBlobSha(input.content, raw.content.sha.length)) return failure(502);
     return NextResponse.json(githubCommitResult.parse({ path: input.path, updated: Boolean(existing), unchanged: false,
       commit: raw.commit, content: { sha: raw.content.sha, html_url: raw.content.html_url } }), { headers });
-  } catch { return failure(502); }
+  } catch (error) { return failure(error instanceof RepositoryFileConflict ? 409 : error instanceof Error && error.message === "disconnected" ? 401 : signal.aborted ? 503 : 502); }
 }

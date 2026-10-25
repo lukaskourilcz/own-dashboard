@@ -14,8 +14,8 @@ export async function POST(request: Request) {
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(25_000)]);
   try {
     const client = await createClient(signal);
-    const { data: { user } } = await awaitWithSignal(client.auth.getUser(), signal);
-    if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401, headers });
+    const { data: { user }, error: authError } = await awaitWithSignal(client.auth.getUser(), signal);
+    if (authError || !user) return NextResponse.json({ error: "Not authenticated." }, { status: 401, headers });
     const body = await awaitWithSignal(readTextPrefix(new Response(request.body), 65_536), signal);
     if (body.truncated) return NextResponse.json({ error: "Request too large." }, { status: 413, headers });
     let json: unknown;
