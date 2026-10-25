@@ -1,0 +1,9 @@
+{
+  "source": "042b4c7",
+  "syntheticOnly": true,
+  "recordsPerCompleteRead": 1201,
+  "goalsMountedRows": 1201,
+  "homeMountedRows": 1201,
+  "goalsReadRequests": 1,
+  "homeReadRequests": 1
+}

@@ -1381,8 +1381,8 @@
       "path": "src/components/overview/recurring-plans.tsx",
       "lines": 175,
       "sha256": "997c694d074aaa0ea9bd3b92a49ff137bf503f9c3cd9fee827e6d93e27436e5c",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
-      "reviewedSha256": "ac8b60ab01b8611481a96a62ac98670cdd48e3c3dfe0b7b3194d1c62cfc4d23a"
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending",
+      "reviewedSha256": "17ccdbc7e7bc6a313d955996ca41137f993ee406c443f95e9419c9fd954f8268"
     },
     {
       "path": "src/components/overview/today-hero.tsx",
@@ -1577,8 +1577,8 @@
       "path": "src/components/panels/plans-panel.tsx",
       "lines": 654,
       "sha256": "0db3ace44c614ea1a09dd65e920f9e3a388d643638082fa7b536b94a7b405c4e",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
-      "reviewedSha256": "d3a7f06226efe4809cdf79e1875639fdf3aef01a4fce098a51e32b69f5ff9e56"
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending",
+      "reviewedSha256": "d3d9e9a9a187d430cb339831ff988586c9b7a71e29704dddaa58fd5e163b6e07"
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
@@ -2181,8 +2181,8 @@
       "path": "src/lib/competition.ts",
       "lines": 55,
       "sha256": "c0b1df04bca4cbc2ba6118511a1e2a978e31d2cabc01e84d09deb9974d0c6969",
-      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
-      "reviewedSha256": "2e9d3efbf30235af01fc06d38196e593ac8816c7f17dd4bc6d07e370789b15d8"
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending",
+      "reviewedSha256": "f511880065aa05956d45100bdd8aa195add83e6df92048b4193fe02c0b53b1dd"
     },
     {
       "path": "src/lib/cron-auth.ts",
@@ -2651,8 +2651,8 @@
       "path": "src/lib/i18n/sections/plans.ts",
       "lines": 179,
       "sha256": "69e9ace530b29fa8ef2833856f5db32a078db32d50c3ec3396318eba33f51e39",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending",
-      "reviewedSha256": "b1c2d727d8cf9d839055816916ce1e18dc4b940f57db434710849ca1f24a7918"
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending",
+      "reviewedSha256": "966c34c65a8a6c9b2d1d8641252fe195df52e957edc5c908d3df1066d3d58969"
     },
     {
       "path": "src/lib/i18n/sections/portfolio.ts",
@@ -4665,8 +4665,8 @@
       "path": "src/components/competition/competition-pagination.tsx",
       "sha256": null,
       "lines": 20,
-      "reviewedSha256": "ee733ab0d0ac512155303d52546809b43d619f1926fb21227dd3ec76ce7d0942",
-      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending"
+      "reviewedSha256": "e4de020da74a2cb02bcb0041b9035a5b833842538b3e30782c5cbf8e27757d9d",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
     },
     {
       "path": "src/lib/data-export-columns.ts",
@@ -4770,8 +4770,22 @@
       "path": "src/components/plans/use-plan-actions.ts",
       "sha256": null,
       "lines": 117,
-      "reviewedSha256": "5cc1fe7b1ec27b615029c4b69ec0998e84ff4287a666f4bad6a5b3db70c2a32a",
-      "status": "source reviewed; finding 250 confirmed Goals/Home actions, captured optional Calendar, draft/pending/guest/mobile/axe checks pass; large-list rendering, other leads and final release pending"
+      "reviewedSha256": "ac5c5daad04fe6d5d089bafb4157d9ffc12d184fc159ea5b34481d73d90a9823",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+    },
+    {
+      "path": "src/lib/collection-page.ts",
+      "sha256": null,
+      "lines": 10,
+      "reviewedSha256": "b14c94fdc6d8c5ce312fa140355f137159ed67d632c5b6d3cdb1753687c2e419",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
+    },
+    {
+      "path": "src/components/ui/collection-pagination.tsx",
+      "sha256": null,
+      "lines": 19,
+      "reviewedSha256": "c3c3e7c7549b5a6d4d27d3fd3c05579eba101a8ac16f7a921fbd3ba4db643256",
+      "status": "source reviewed; finding 251 bounded local Goals/Home/Competition pages, full access/counts and focus/contrast/pointer checks pass; other leads and final release pending"
     }
   ],
   "baselineFileCount": 561

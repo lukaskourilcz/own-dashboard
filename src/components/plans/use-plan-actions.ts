@@ -22,6 +22,8 @@ export function usePlanActions(setPlans: Updater<Plan[]>, rows: Plan[]) {
  const [notice, setNotice] = useState<'changed' | 'unconfirmed' | null>(null);
  const [calendarNotice, setCalendarNotice] = useState<'calendarEventFailed' | 'calendarLinkFailed' | 'calendarDeleteFailed' | null>(null);
  const [reloading, setReloading] = useState(false), reloadPending = useRef(false);
+ const actionControls = useRef(new Map<string, HTMLButtonElement>()), focusUpdate = useRef<Plan | null>(null);
+ const actionControl = (id: string, button: HTMLButtonElement | null) => { if (button) actionControls.current.set(id, button); else actionControls.current.delete(id); };
  const newControl = useRef<HTMLButtonElement | null>(null), controls = useRef(new Map<string, HTMLButtonElement>()), focusRemoval = useRef<{ source: Plan; next?: string } | null>(null);
  const registerNewControl = useCallback((button: HTMLButtonElement | null) => { newControl.current = button; }, []);
  const deleteControl = (id: string, button: HTMLButtonElement | null) => { if (button) controls.current.set(id, button); else controls.current.delete(id); };
@@ -32,6 +34,16 @@ export function usePlanActions(setPlans: Updater<Plan[]>, rows: Plan[]) {
   focusRemoval.current = null;
   const next = intent.next ? controls.current.get(intent.next) : null;
   (next && !next.disabled ? next : [...controls.current.values()].find(control => !control.disabled) ?? newControl.current)?.focus();
+ }, [pending, rows]);
+ useLayoutEffect(() => {
+  const source = focusUpdate.current; if (!source || pending.has(source.id)) return;
+  const current = rows.find(row => row.id === source.id);
+  // React Query can notify after pending clears. Wait until the captured
+  // source actually changes before restoring focus in a reordered/paged list.
+  if (current && applyPlanReceipt([current], source, null).length === 0) return;
+  focusUpdate.current = null;
+  const target = actionControls.current.get(source.id);
+  (target && !target.disabled ? target : [...actionControls.current.values()].find(control => !control.disabled) ?? newControl.current)?.focus();
  }, [pending, rows]);
  function capture(): PlanScope | null {
   if (!owner) return null;
@@ -81,8 +93,8 @@ export function usePlanActions(setPlans: Updater<Plan[]>, rows: Plan[]) {
  async function update(row: Plan, patch: PlanPatch) {
   if (isGuestTour()) { guestReadOnlyError(); return; }
   const source = structuredClone(row), scope = reserve(source.id); if (!scope) return;
-  try { const receipt = await updatePlanRecord(db, scope, source, patch); await apply(scope, source, receipt); setNotice(null); }
-  catch (error) { if (!scope.signal.aborted) failed(error); }
+  try { const receipt = await updatePlanRecord(db, scope, source, patch); focusUpdate.current = source; await apply(scope, source, receipt); setNotice(null); }
+  catch (error) { if (focusUpdate.current === source) focusUpdate.current = null; if (!scope.signal.aborted) failed(error); }
   finally { release(source.id, scope); }
  }
  async function remove(row: Plan) {
@@ -113,5 +125,5 @@ export function usePlanActions(setPlans: Updater<Plan[]>, rows: Plan[]) {
   finally { reloadPending.current = false; if (!scope.signal.aborted) setReloading(false); }
  }
  useUnsavedDraft({ dirty: false, pending: pending.size > 0, canSave: false, save: async () => false });
- return { create, update, remove, reload, reloading, pending, notice, calendarNotice, registerNewControl, deleteControl };
+ return { create, update, remove, reload, reloading, pending, notice, calendarNotice, registerNewControl, deleteControl, actionControl };
 }

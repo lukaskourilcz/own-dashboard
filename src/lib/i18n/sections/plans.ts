@@ -5,6 +5,11 @@ type PlansStrings = {
   title: string;
   description: string;
   board: string;
+  pages: string;
+  pageRange: (from: number, to: number, total: number) => string;
+  previous: string;
+  next: string;
+  noneOnPage: string;
   timeline: string;
   newPlan: string;
   formTitle: string;
@@ -62,6 +67,11 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     title: "Goals",
     description: "Outcomes you're working toward.",
     board: "Board",
+    pages: "Plan pages",
+    pageRange: (from, to, total) => `Plans ${from}–${to} of ${total}`,
+    previous: "Previous",
+    next: "Next",
+    noneOnPage: "No plans on this page.",
     timeline: "Timeline",
     newPlan: "New plan",
     formTitle: "Title",
@@ -129,6 +139,11 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     title: "Cíle",
     description: "Výsledky, ke kterým směřujete.",
     board: "Nástěnka",
+    pages: "Stránky plánů",
+    pageRange: (from, to, total) => `Plány ${from}–${to} z ${total}`,
+    previous: "Předchozí",
+    next: "Další",
+    noneOnPage: "Na této stránce nejsou žádné plány.",
     timeline: "Časová osa",
     newPlan: "Nový plán",
     formTitle: "Název",

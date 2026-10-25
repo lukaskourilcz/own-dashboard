@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useMemo, useState } from "react";
 import { Check, Repeat } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { collectionPage } from "@/lib/collection-page";
+import { CollectionPagination } from "@/components/ui/collection-pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDict } from "@/lib/i18n";
 import { useNow } from "@/lib/use-now";
@@ -27,11 +28,14 @@ export function RecurringPlans({
 }) {
   const t = useDict(), actions = usePlanActions(setPlans, plans), now = useNow();
 
+  const [page, setPage] = useState(0);
   const statuses = useMemo(
     () => (now ? recurringPlanStatuses(plans, now) : null),
     [plans, now],
   );
 
+  const currentPage = useMemo(() => collectionPage(statuses ?? [], page), [statuses, page]);
+  if (page !== currentPage.index) setPage(currentPage.index);
   const pending = statuses?.filter((s) => !s.done).length ?? 0;
 
   return (
@@ -42,7 +46,7 @@ export function RecurringPlans({
           {t.plans.recurringTitle}
         </CardTitle>
         {statuses && statuses.length > 0 && (
-          <span className="text-xs text-foreground-subtle tabular">
+          <span role="status" className="text-xs text-foreground-subtle tabular">
             {pending}/{statuses.length}
           </span>
         )}
@@ -66,29 +70,25 @@ export function RecurringPlans({
                 {t.plans.recurringAllDone}
               </p>
             )}
+            <CollectionPagination page={currentPage} onPage={setPage} label={t.plans.pages} range={t.plans.pageRange} previous={t.plans.previous} next={t.plans.next} disabled={actions.pending.size > 0} />
             <ul className="space-y-1.5">
-              <AnimatePresence initial={false}>
-                {statuses.map(({ plan, done, daysLeft }) => {
+                {currentPage.items.map(({ plan, done, daysLeft }) => {
                   // recurringPlanStatuses already excludes "none".
                   const cadence = plan.recurrence as Exclude<
                     PlanRecurrence,
                     "none"
                   >;
                   return (
-                  <motion.li
+                  <li
                     key={plan.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={cn(
+                                  className={cn(
                       "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors",
-                      done && "opacity-60",
                     )}
                   >
                     <Button
                       size="icon-sm" variant="ghost"
                       type="button"
+                      ref={button => actions.actionControl(plan.id, button)}
                       disabled={actions.pending.has(plan.id)}
                       aria-busy={actions.pending.has(plan.id)}
                       onClick={() => void actions.update(plan, { last_completed_at: !done ? new Date().toISOString() : null })}
@@ -134,10 +134,9 @@ export function RecurringPlans({
                         )}
                       </p>
                     </div>
-                  </motion.li>
+                  </li>
                   );
                 })}
-              </AnimatePresence>
             </ul>
           </>
         )}

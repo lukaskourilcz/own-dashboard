@@ -1,3 +1,4 @@
+import { collectionPage } from "@/lib/collection-page";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { childProjects, groupPortfolio, isPortfolioProject } from "@/lib/portfolio";
 import { projectEngagement } from "@/lib/projects";
@@ -80,8 +81,5 @@ export const COMPETITOR_PAGE_SIZE = 50;
 /** Paging is local to the complete confirmed collection; it never authorizes a
  * capped server read or turns a missing project into discarded research. */
 export function competitorPage<T>(rows: T[], requestedIndex: number) {
-  const pages = Math.max(1, Math.ceil(rows.length / COMPETITOR_PAGE_SIZE));
-  const index = Math.min(pages - 1, Number.isInteger(requestedIndex) && requestedIndex > 0 ? requestedIndex : 0);
-  const start = index * COMPETITOR_PAGE_SIZE;
-  return { index, items: rows.slice(start, start + COMPETITOR_PAGE_SIZE), from: rows.length ? start + 1 : 0, to: Math.min(rows.length, start + COMPETITOR_PAGE_SIZE), total: rows.length, pages };
+  return collectionPage(rows, requestedIndex, COMPETITOR_PAGE_SIZE);
 }
