@@ -17,6 +17,8 @@ for(const lang of ['en','cs'] as const)test(`${lang}: Goals centers its compact 
  await page.getByRole('button',{name:t.timeline,exact:true}).click();const timeline=page.getByRole('region',{name:t.timeline,exact:true});
  for(const width of [360,430,768,1024,1440,1728]){
   await page.setViewportSize({width,height:1000});const title=timeline.getByText(rows[0].title,{exact:true}).locator('..'),note=timeline.getByText(rows[0].notes,{exact:true});
+  await expect(note).toBeVisible();
+  if(width<768)await expect.poll(async()=>{const a=await title.boundingBox(),b=await note.boundingBox();return a&&b?b.y-a.y-a.height:-Infinity;}).toBeGreaterThanOrEqual(0);
   if(width>=768)await expect.poll(async()=>{const a=await title.boundingBox(),b=await note.boundingBox();return a&&b?Math.abs((a.y+a.height/2)-(b.y+b.height/2)):Infinity;}).toBeLessThanOrEqual(1);
   const status=timeline.getByRole('combobox',{name:`${rows[0].title}: ${t.status}`,exact:true}),remove=timeline.getByRole('button',{name:`${rows[0].title}: ${t.deletePlan}`,exact:true});await expect.poll(async()=>Math.abs(((await status.boundingBox())?.height??0)-((await remove.boundingBox())?.height??0))).toBeLessThanOrEqual(1);await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }
