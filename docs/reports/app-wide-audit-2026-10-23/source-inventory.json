@@ -593,15 +593,15 @@
       "path": "src/app/api/registry/ares/route.ts",
       "lines": 51,
       "sha256": "89ec9510dda470edd29d1ad48f880ee57d59cc0860df732cafda1f1e8d9df7d6",
-      "status": "partial; source inspected; typed bounded request/auth/provider identity and cancellation pending; see remaining-review.md",
-      "reviewedSha256": "89ec9510dda470edd29d1ad48f880ee57d59cc0860df732cafda1f1e8d9df7d6"
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending",
+      "reviewedSha256": "d978fc51a49b5a271a6f74fe2478c4d81f2e324b929a565117ad2776c7813d23"
     },
     {
       "path": "src/app/api/registry/vies/route.ts",
       "lines": 58,
       "sha256": "06678aeeca2d06d42ea6441b3df5a4f7af744188be67f42d5f9144f778209dc3",
-      "status": "partial; source inspected; typed bounded request/auth/provider identity and cancellation pending; see remaining-review.md",
-      "reviewedSha256": "06678aeeca2d06d42ea6441b3df5a4f7af744188be67f42d5f9144f778209dc3"
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending",
+      "reviewedSha256": "867ba4b014ea8e305d496bbd7a8f846ec764704b225417f3fe51767a79933765"
     },
     {
       "path": "src/app/api/tools/detected/route.ts",
@@ -4404,8 +4404,8 @@
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
-      "status": "source reviewed; finding 212 bounded pure normalization and finite nonfuture VAT freshness tests pass; registry route/browser identity and final release pending",
-      "reviewedSha256": "8547891c20789738f52ffcb979bf370acf8db83e62dbc86a5fbd191fc3ee5c57"
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending",
+      "reviewedSha256": "63975a7c393cd92b534cbf40024c112b58d98f3ce56f4291085fc354eec35b81"
     },
     {
       "path": "src/lib/telemetry-url.ts",
@@ -4602,8 +4602,8 @@
       "path": "src/lib/bounded-response.ts",
       "sha256": null,
       "lines": 32,
-      "reviewedSha256": "a38895140d484f9e02a0db332e02e34271beb5e0a3cbe550a326af10742a38c8",
-      "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
+      "reviewedSha256": "448b3a7566db1b8809d0e6b12e658580606d3ec9c806abaf1158668f384ac557",
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
     },
     {
       "path": "src/lib/project-traffic-contract.ts",
@@ -4618,6 +4618,13 @@
       "lines": 20,
       "reviewedSha256": "42eb07fc6107bf090b9e9c88086bd5efc3c3816480251e5cabb06b30483bf029",
       "status": "source reviewed; finding 211 owner-bound complete traffic reads, cache/cancellation and targeted/native recovery checks; final complete release pending"
+    },
+    {
+      "path": "src/lib/tax-registry-server.ts",
+      "sha256": null,
+      "lines": 75,
+      "reviewedSha256": "41034ed3104ac57143d0681cd781d1bbbc559024a972b8751353660f32641edb",
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
     }
   ],
   "baselineFileCount": 561

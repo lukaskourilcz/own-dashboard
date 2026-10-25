@@ -315,3 +315,15 @@ export function vatNameMismatch(
   if (!left || !right) return false;
   return left !== right;
 }
+
+
+/** Bounded projected browser receipts; no raw register metadata is exposed. */
+export const AresLookupSchema = z.object({
+  ownerId: z.uuid(), ico: z.string().regex(/^\d{8}$/), name: z.string().max(2000),
+  address: z.string().max(2048), city: z.string().max(256), zip: z.string().max(32),
+  country: z.string().max(256), vatId: z.string().max(64), checkedAt: registryTimestamp,
+}).strict();
+export const ViesLookupSchema = z.object({
+  ownerId: z.uuid(), vatId: z.string().min(4).max(64), status: z.enum(["valid", "invalid", "unavailable"]),
+  name: z.string().max(2000), address: z.string().max(4096), checkedAt: registryTimestamp,
+}).strict();

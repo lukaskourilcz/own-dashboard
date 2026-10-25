@@ -2,7 +2,7 @@ import { awaitWithSignal } from "@/lib/abortable";
 
 /** Complete UTF-8 response text under the caller's deadline and a byte cap.
  * Refused bodies are discarded without awaiting an uncooperative producer. */
-export async function boundedResponseText(response: Response, maximum: number, signal: AbortSignal): Promise<string> {
+export async function boundedResponseText(response: Pick<Response, "body" | "bodyUsed" | "headers">, maximum: number, signal: AbortSignal): Promise<string> {
   const discard = () => { if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined); };
   if (!Number.isSafeInteger(maximum) || maximum < 1 || signal.aborted) { discard(); throw new Error("Response unavailable"); }
   const declared = response.headers.get("content-length");
