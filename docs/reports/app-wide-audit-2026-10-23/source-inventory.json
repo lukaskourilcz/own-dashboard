@@ -54,8 +54,8 @@
       "path": "src/app/[[...slug]]/page.tsx",
       "lines": 199,
       "sha256": "79e57d3e370ab307d969fdb9b8bbd18e26bcae476f2f84f31a98807a1a56d861",
-      "status": "source reviewed; finding 247 complete captured plan read and strict mutation contracts pass SDK/RLS tests; Goals/Home controls and other leads/final release pending",
-      "reviewedSha256": "a81829c22f93f5efbf02ddd2118a2bfcbe8287b152f60d9706d8d83e2d680ecb"
+      "status": "source reviewed; findings 240/258 bound route reads and project safe display metadata after verified identity; actual SDK/route checks pass; final release pending",
+      "reviewedSha256": "e161083725f8a870733828c3e68397aac36d002fee5ace9e1a940dc06e91e91c"
     },
     {
       "path": "src/app/api/ai-links/enrich/route.ts",

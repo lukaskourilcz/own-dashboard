@@ -16,6 +16,9 @@ import { readOwnedCollection } from "@/lib/owned-records";
 import { resolveProjectRef } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
+import { safeWebUrl } from "@/lib/web-url";
+
+const displayNameSchema = z.string().trim().min(1).max(200);
 
 type DashboardPageInput = {
   params: Promise<{ slug?: string[] }>;
@@ -155,6 +158,9 @@ async function loadDashboardPage({ params, searchParams }: DashboardPageInput, t
   if (!query) return <DashboardDataUnavailable lang={prefs.language} />;
   const initialTipQuery = initialTab === "ig-tips" ? tipDeepLinkQuery(query.q) : null;
 
+  // Verified identity does not make the owner's editable display metadata a string.
+  const displayName = displayNameSchema.safeParse(user.user_metadata?.full_name);
+  const avatarUrl = safeWebUrl(user.user_metadata?.avatar_url, 2048);
   return <DashboardShell
     initialTab={initialTab}
     initialTimezone={prefs.timezone}
@@ -162,7 +168,7 @@ async function loadDashboardPage({ params, searchParams }: DashboardPageInput, t
     initialProjectId={requestedProject?.id}
     initialProjectTab={projectTabFromQuery(query.projectTab)}
     initialDataKeys={[...requiredData]}
-    user={{ id: user.id, email: user.email ?? "", name: (user.user_metadata?.full_name as string | undefined) ?? null, avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null }}
+    user={{ id: user.id, email: typeof user.email === "string" ? user.email : "", name: displayName.success ? displayName.data : null, avatar_url: avatarUrl?.startsWith("https://") ? avatarUrl : null }}
     initialSubscriptions={subscriptionsRes?.data ?? []}
     initialTodos={todosRes?.data ?? []}
     initialAccounts={accountsRes?.data ?? []}

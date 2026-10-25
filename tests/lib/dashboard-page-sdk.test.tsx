@@ -39,3 +39,35 @@ it('loads Goals through one complete captured-owner RPC instead of a capped REST
  const result = await page(['goals']); expect(result.type).toBe(DashboardShell); expect(result.props.initialPlans).toHaveLength(1201);
  expect(reads.filter(read => read.path.endsWith('/read_owned_collection'))).toHaveLength(1); expect(reads.some(read => read.path.endsWith('/plans'))).toBe(false);
 });
+
+it.each([
+ { full_name: 42, avatar_url: {} },
+ { full_name: { display: 'Synthetic name' }, avatar_url: [] },
+ { full_name: ['Synthetic name'], avatar_url: 'javascript:alert(1)' },
+ { full_name: '   ', avatar_url: 'http://cdn.example.test/avatar.png' },
+ { full_name: 'x'.repeat(201), avatar_url: `https://cdn.example.test/${'x'.repeat(2048)}` },
+ { full_name: null, avatar_url: 'https://synthetic-user:synthetic-password@cdn.example.test/avatar.png' },
+ { full_name: false, avatar_url: 'https://cdn.example.test/avatar\u0000.png' },
+])('keeps malformed display metadata out of the shell after actual SDK verification (%j)', async metadata => {
+ vi.mocked(state.api!.auth.getUser).mockRestore();
+ wire = async path => Response.json(path === '/auth/v1/user' ? { ...user, email: 'owner@example.test', user_metadata: metadata } : []);
+ const result = await page(['marketing']);
+ expect(result.type).toBe(DashboardShell);
+ expect(result.props.user).toEqual({ id: user.id, email: 'owner@example.test', name: null, avatar_url: null });
+ expect(reads.map(read => read.path)).toEqual(['/auth/v1/user', '/rest/v1/projects']);
+});
+it('projects only bounded display strings and preserves the verified owner independently of editable metadata', async () => {
+ vi.mocked(state.api!.auth.getUser).mockRestore();
+ wire = async path => Response.json(path === '/auth/v1/user' ? { ...user, email: 'owner@example.test', user_metadata: { id: '22222222-2222-4222-8222-222222222222', full_name: '  Žofie L.  ', avatar_url: ' https://cdn.example.test/avatar.png ', privateField: 'synthetic-private-note' } } : []);
+ const result = await page(['marketing']);
+ expect(result.type).toBe(DashboardShell);
+ expect(result.props.user).toEqual({ id: user.id, email: 'owner@example.test', name: 'Žofie L.', avatar_url: 'https://cdn.example.test/avatar.png' });
+ expect(reads.map(read => read.path)).toEqual(['/auth/v1/user', '/rest/v1/projects']);
+});
+it.each([null, { unexpected: true }])('keeps a malformed optional email out of the display DTO (%j)', async email => {
+ vi.mocked(state.api!.auth.getUser).mockRestore();
+ wire = async path => Response.json(path === '/auth/v1/user' ? { ...user, email } : []);
+ const result = await page(['marketing']);
+ expect(result.type).toBe(DashboardShell);
+ expect(result.props.user).toEqual({ id: user.id, email: '', name: null, avatar_url: null });
+});

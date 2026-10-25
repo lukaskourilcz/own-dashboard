@@ -146,3 +146,6 @@ Finding 242 closes the original-owner identity stage for all existing currentUse
 
 
 Finding 246 prepares finite maintained plan versions and complete snapshots in migration 123. Finding 247 adopts complete captured-owner reads in the server loader and browser shell, and verifies shared stable-create/versioned-write/delete contracts against actual SDK/RLS. Finding 250 adopts Goals/Home controls, pending/exit/draft recovery, confirmed row receipts and captured optional Calendar phases with mounted/native evidence. Finding 251 bounds Goals/Home to fifty locally paged rows with complete counts/access/order, empty-last-page clamping and completion/status/deletion focus. Shared Competition paging retains its contract. Static plan rows remove obsolete animated hit targets and faded contrast. Finding 253 reproduces and fixes g,g Goals navigation, stale prefixes and widget-key isolation; normal Home navigation and dirty-exit protection retain native evidence.
+
+
+Finding 258 closes the root display-metadata casts: actual SDK responses containing object/array/number names or unsafe avatars no longer enter Sidebar/Home props, and malformed optional email becomes an empty display fallback. Bounded trimmed names/HTTPS avatars remain display-only; metadata cannot replace the verified owner id. Other metadata writes and legacy endpoint/action phases remain separate.
