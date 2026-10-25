@@ -100,6 +100,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const [typeFilter, setTypeFilter] = useState<OrganizationType | "all">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [visited, setVisited] = useState({ name: false, website: false, email: false });
   const [ares, setAres] = useState<{ busy: boolean; message: "aresInvalidIco" | "aresUnavailable" | "aresNotFound" | "aresFilled" | null; filledAt: string | null }>({ busy: false, message: null, filledAt: null });
   const [registryNotice, setRegistryNotice] = useState<{ id: string; key: NoticeKey; error?: boolean } | null>(null);
   const [saveError, setSaveError] = useState<"organizationChanged" | "organizationSaveUnconfirmed" | "organizationInvalid" | null>(null);
@@ -113,7 +114,10 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const [reloadError, setReloadError] = useState(false);
   const readFailed = refreshFailed || reloadError;
   const queryKey = useMemo(() => [...qk.organizations, owner?.ownerId], [owner?.ownerId]);
-  const validForm = !!form.name.trim() && (!form.website.trim() || !!safeWebUrl(form.website)) && (!form.email.trim() || z.regexes.html5Email.test(form.email.trim()));
+  const invalidName = !form.name.trim();
+  const invalidWebsite = !!form.website.trim() && !safeWebUrl(form.website);
+  const invalidEmail = !!form.email.trim() && !z.regexes.html5Email.test(form.email.trim());
+  const validForm = !!form.name.trim() && !invalidWebsite && !invalidEmail;
   const dirty = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM);
   const capture = (): OrganizationScope | null => {
     if (!owner) return null;
@@ -180,7 +184,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
 
   async function saveDraft(): Promise<boolean> {
     if (creatingRef.current || draftLookup.current || reservations.current.size) return false;
-    if (!validForm) { setSaveError("organizationInvalid"); return false; }
+    if (!validForm) { setVisited({ name: true, website: true, email: true }); setSaveError("organizationInvalid"); return false; }
     const captured = capture();
     if (!captured || captured.signal.aborted) { setSaveError("organizationSaveUnconfirmed"); return false; }
     creatingRef.current = true; setCreating(true); setSaveError(null);
@@ -200,13 +204,13 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       await qc.cancelQueries({ queryKey, exact: true });
       if (captured.signal.aborted) return false;
       setOrganizations(old => old.some(row => row.id === item.id) ? old : [...old, item].sort((a, b) => a.name.localeCompare(b.name)));
-      draftIdentity.current = null; cancelDraftLookup(); setForm(EMPTY_FORM); setOpen(false); invalidate(); return true;
+      draftIdentity.current = null; cancelDraftLookup(); setForm(EMPTY_FORM); setVisited({ name: false, website: false, email: false }); setOpen(false); invalidate(); return true;
     } catch (error) {
       if (!captured.signal.aborted) setSaveError(errorKey(error) === "organizationChanged" ? "organizationChanged" : "organizationSaveUnconfirmed"); return false;
     } finally { creatingRef.current = false; if (!captured.signal.aborted) setCreating(false); }
   }
   useUnsavedDraft({ dirty, pending: creating || pendingRows.size > 0, canSave: validForm && !ares.busy && !creating && pendingRows.size === 0,
-    save: saveDraft, discard: () => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setSaveError(null); },
+    save: saveDraft, discard: () => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setVisited({ name: false, website: false, email: false }); setSaveError(null); },
   });
 
   async function runRegistry(organization: Organization, kind: "ares" | "vies", force = false) {
@@ -283,10 +287,10 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button ref={newClientControl} disabled={creating} onClick={() => { cancelDraftLookup(); setOpen(x => !x); }}><Plus />{p.newClient}</Button>} />
     {readFailed && <div className="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-surface-secondary p-3 md:flex-row md:items-center md:justify-between"><p className="min-w-0 flex-1 text-sm text-warning" role="alert">{p.organizationReadUnavailable}</p><Button className="md:shrink-0" variant="outline" disabled={reloading || pendingRows.size > 0 || creating} aria-busy={reloading} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button></div>}
     {open && <Card className="mx-auto mb-4 max-w-4xl"><CardContent className="p-4"><form aria-busy={ares.busy || creating} onSubmit={event => { event.preventDefault(); void saveDraft(); }}><fieldset disabled={creating} className="grid min-w-0 gap-3 sm:grid-cols-2">
-      <div className="space-y-1.5"><Label htmlFor={`${formId}-name`}>{p.name}</Label><Input id={`${formId}-name`} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor={`${formId}-name`}>{p.name}</Label><Input id={`${formId}-name`} required onBlur={() => setVisited(current => ({ ...current, name: true }))} aria-invalid={visited.name && invalidName || undefined} aria-describedby={visited.name && invalidName ? `${formId}-name-error` : undefined} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />{visited.name && invalidName && <p role="alert" id={`${formId}-name-error`} className="text-xs text-risk">{p.organizationNameRequired}</p>}</div>
       <div className="space-y-1.5"><Label>{p.type}</Label><SimpleSelect aria-label={p.type} value={form.type} onValueChange={(type) => setForm({ ...form, type: type as OrganizationType })} options={TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))} /></div>
-      <div className="space-y-1.5"><Label htmlFor={`${formId}-website`}>{p.website}</Label><Input id={`${formId}-website`} type="url" pattern="https?://.+" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
-      <div className="space-y-1.5"><Label htmlFor={`${formId}-email`}>{p.email}</Label><Input id={`${formId}-email`} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor={`${formId}-website`}>{p.website}</Label><Input id={`${formId}-website`} type="url" maxLength={2000} onBlur={() => setVisited(current => ({ ...current, website: true }))} aria-invalid={visited.website && invalidWebsite || undefined} aria-describedby={visited.website && invalidWebsite ? `${formId}-website-error` : undefined} value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />{visited.website && invalidWebsite && <p role="alert" id={`${formId}-website-error`} className="text-xs text-risk">{p.organizationWebsiteInvalid}</p>}</div>
+      <div className="space-y-1.5"><Label htmlFor={`${formId}-email`}>{p.email}</Label><Input id={`${formId}-email`} type="email" onBlur={() => setVisited(current => ({ ...current, email: true }))} aria-invalid={visited.email && invalidEmail || undefined} aria-describedby={visited.email && invalidEmail ? `${formId}-email-error` : undefined} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />{visited.email && invalidEmail && <p role="alert" id={`${formId}-email-error`} className="text-xs text-risk">{p.organizationEmailInvalid}</p>}</div>
       <div className="grid gap-3 sm:col-span-2 lg:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="org-ico">{p.companyId}</Label><div className="flex min-w-0 gap-2"><Input className="min-w-24 flex-1" id="org-ico" value={form.companyId} onChange={e => { const companyId = e.target.value; cancelDraftLookup(); setForm(current => ({ ...current, companyId })); }} /><Button type="button" variant="outline" className="shrink-0" disabled={ares.busy || !form.companyId.trim()} onClick={() => void fillFromAres()}><Building2 />{p.fillFromAres}</Button></div></div>
       <div className="space-y-1.5"><Label htmlFor="org-dic">{p.vatId}</Label><Input id="org-dic" value={form.vatId} onChange={(e) => setForm({ ...form, vatId: e.target.value })} /></div></div>
       {ares.message && <p className="text-xs text-foreground-muted sm:col-span-2" role={ares.filledAt ? "status" : "alert"}>{p[ares.message]}</p>}
@@ -295,7 +299,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       <div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label htmlFor="org-zip">{p.zip}</Label><Input id="org-zip" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor="org-country">{p.country}</Label><Input id="org-country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div></div>
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor={`${formId}-notes`}>{p.notes}</Label><Textarea id={`${formId}-notes`} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       {saveError && <div className="space-y-2 sm:col-span-2"><p className="text-sm text-risk" role="alert">{p[saveError]}</p>{saveError === "organizationChanged" && !readFailed && <Button type="button" variant="outline" disabled={reloading} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
-      <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" onClick={() => navigate(() => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setSaveError(null); setOpen(false); })}>{t.common.cancel}</Button><Button type="submit" disabled={!validForm || creating || ares.busy || pendingRows.size > 0} aria-busy={creating}>{p.create}</Button></div>
+      <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" onClick={() => navigate(() => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setVisited({ name: false, website: false, email: false }); setSaveError(null); setOpen(false); })}>{t.common.cancel}</Button><Button type="submit" disabled={!validForm || creating || ares.busy || pendingRows.size > 0} aria-busy={creating}>{p.create}</Button></div>
     </fieldset></form></CardContent></Card>}
     <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input ref={searchControl} aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
     {visibleOrganizations.length === 0 ? <EmptyState title={organizations.length === 0 ? p.clientsEmpty : t.common.none} icon={Users} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">{visibleOrganizations.map((org) => {

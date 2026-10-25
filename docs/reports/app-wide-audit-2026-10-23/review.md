@@ -1185,3 +1185,16 @@ Migration rollout, remaining source findings, PR reconciliation, main merge and 
 The current migration-119 guide still called complete organization reads and browser persistence future work. Its caller status now reflects findings 217–220 and the dependent captured-owner overload, while preserving the unapplied production rollout. The system map links the shared organization record boundary. This changes documentation only while checkpoint 85 keeps application/test inputs frozen.
 
 A read-only production catalog check of the existing export allowlist plus profile/preferences finds no column names matching token/secret/password/credential/api-key. This checks schema names only, not stored values or the export route's remaining completeness/error-handling issues. No credential table, owner record or production setting is read or changed.
+
+
+## Checkpoint 85 — complete browser run, four invalid-input timeouts
+
+The continuation reuses checkpoint 84's unchanged 5,339-pass/one-skip unit inputs. Full lint, the ordinary production build (3.0-second compile), all eight actual render traces and post-build TypeScript pass. The complete optimized matrix finishes all 832 configured cases in 29.4 minutes: 729 pass, 99 intentional variants skip and four fail. Each failure is the existing client invalid-email case in EN/CS on desktop/mobile: Playwright waits ninety seconds to click the now-disabled Create button. No other browser case fails. Source/test/migration inputs stay frozen for the complete run; the freeze ends afterward. This remains a failed full checkpoint, with the last completely passing run still checkpoint 82. No production or migration change occurs.
+
+## Finding 224 — explain client validation and align native URL admission
+
+Two mounted regressions against the preceding source reproduce invalid fields lacking associated guidance. The client form now exposes localized field errors and aria-invalid/describedby after blur, and clears them when corrected. Empty optional email/website fields remain valid; whitespace-only names receive guidance. Confirmed save and explicit discard reset the visited state. Existing captured write/owner/draft/exit behavior stays unchanged. The errors do not interrupt each initial keystroke.
+
+The old case-sensitive HTML URL pattern also contradicts the shared HTTP(S) validator for uppercase schemes. The form now uses the existing safe URL boundary and native URL input without that pattern, with the existing 2,000-character limit made explicit. Unsupported schemes and sign-in details remain refused. The native cases now verify disabled admission and linked messages rather than waiting to click a disabled control; they also verify uppercase HTTP(S), corrected fields, optional empty values and zero record requests.
+
+All 32 mounted client draft/persistence cases pass across two files in 6.26 seconds. TypeScript and targeted ESLint pass. Thirty-four native EN/CS desktop/mobile cases pass in 1.2 minutes, including all four checkpoint-85 failures, invoice label checks, captured client writes, six-width/axe recovery, long details and ordinary-preview isolation. The complete optimized run has not been repeated for this new source; its prior failure is retained above. No owner record, provider or production setting changes.

@@ -1444,8 +1444,8 @@
       "path": "src/components/panels/clients-panel.tsx",
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
-      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
-      "reviewedSha256": "adc087728cc593e55b9052d3587e7af5863f84c3576b1bad91f1fbf9961badba"
+      "status": "source reviewed; captured persistence, recovery, detail/focus and localized field validation pass targeted mounted/native checks; consolidated release pending",
+      "reviewedSha256": "519cfca90158604202d57dffa9626ed93ab3983a087660ccd3049d3eb7025f55"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
@@ -2665,8 +2665,8 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "source reviewed; captured client persistence, cached read recovery and long-detail/focus checks pass targeted mounted/native checks; consolidated release pending",
-      "reviewedSha256": "0270f1bbfbaa5ffcc2767bf83011979fd089188d8e1aafe532dc38ada2916b3b"
+      "status": "source reviewed; captured persistence, recovery, detail/focus and localized field validation pass targeted mounted/native checks; consolidated release pending",
+      "reviewedSha256": "f357bb24a9bef813950820a44e614f9c73b2fd31df4920643b4f98605eb00f4d"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",

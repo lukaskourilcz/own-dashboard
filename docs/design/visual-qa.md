@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Client field feedback (2026-10-25, finding 224): thirty-four native EN/CS desktop/mobile cases pass in 1.2 minutes. Invalid fields have localized linked guidance after blur, empty optional fields remain valid and uppercase HTTP(S) matches native admission. All four invalid-submit timeouts from checkpoint 85 pass in this targeted run; the earlier full run remains failed (729 pass, 99 skip, four fail). Captured saves, six-width/axe recovery, long details and ordinary preview remain covered. No production data changes.
+
 > Visual-plan checkpoint (2026-10-25): twenty-four actual desktop/mobile component pairs now include client refresh recovery and retained/discardable client forms from `5d7da1d`. All 48 mode/image loads, 390px/1440px light/dark reflow, highlight toggles and mapped coordinates pass with no artifact page errors. Older captures retain their own source labels. These are synthetic preview captures, not owner records or a production rollout.
 
 > Client notice refinement (2026-10-25, finding 222): four filtered native cases pass recovery/reflow in 11.6 seconds, but did not execute the new stacking assertion because it was placed in the wrong test. After checkpoint 84 catches that error, all fourteen affected EN/CS desktop/mobile cases pass in 40.3 seconds, including actual full-width mobile stacking, 44px targets, six widths, axe and recovery. Actual crops use synthetic data and a tall mobile viewport; no fixed navigation is hidden.
