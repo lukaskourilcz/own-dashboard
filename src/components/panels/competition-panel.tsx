@@ -165,7 +165,7 @@ export function CompetitionPanel({ projects, competitors, setCompetitors, onOpen
                     {entry && <p className="mt-0.5 text-xs text-foreground-muted">{entry.summary[lang]}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <SectionLabel>{p.competitorsCount(group.items.length)}{groupStale > 0 ? ` · ${p.staleCount(groupStale)}` : ""}</SectionLabel>
+                    {groups.length > 1 && <SectionLabel>{p.competitorsCount(group.items.length)}{groupStale > 0 ? ` · ${p.staleCount(groupStale)}` : ""}</SectionLabel>}
                     {project && <Button size="sm" variant="outline" disabled={actions.pending.size > 0} onClick={() => openNew(project.id)} aria-label={`${p.addCompetitor}: ${project.name}`}><Plus className="h-3.5 w-3.5" /></Button>}
                   </div>
                 </CardHeader>

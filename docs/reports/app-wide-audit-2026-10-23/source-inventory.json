@@ -1451,8 +1451,8 @@
       "path": "src/components/panels/competition-panel.tsx",
       "lines": 165,
       "sha256": "5f084d814d01e5c962519d58d35661f3efa1d3706d92ddd60a32312fa5db05a5",
-      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
-      "reviewedSha256": "5f2f0c6c34028d6aef8161b74f13076c75e65159bd839d83fa907f38229f06b8"
+      "status": "source reviewed; finding 232 removes single-group duplicate totals and the repeated project-tab title; prior complete paging/search/write/recovery checks pass; consolidated release pending",
+      "reviewedSha256": "2cae103d11762a88654bd926d3fe43080f848172ab5a1a8b8f1e779d221c5119"
     },
     {
       "path": "src/components/panels/dev-finance-panel.tsx",
@@ -1682,8 +1682,8 @@
       "path": "src/components/projects/project-competition.tsx",
       "lines": 45,
       "sha256": "548e2e31e6f28c73a4db90ceac798e6b20706760d5090c0429f41c513130aab6",
-      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
-      "reviewedSha256": "edf5b7b8c9add4cebd5f45788472b0dedf26242458839c34958e477c974932f8"
+      "status": "source reviewed; finding 232 removes single-group duplicate totals and the repeated project-tab title; prior complete paging/search/write/recovery checks pass; consolidated release pending",
+      "reviewedSha256": "e3fdb50fa2517363e9133a54f2e6aadfb004166160064a9ec1d79ee11d9cac99"
     },
     {
       "path": "src/components/projects/project-doc-panel.tsx",

@@ -143,3 +143,9 @@ it.each(['all','project'] as const)('pages locally and clamps after a shorter re
 it('clears filters explicitly and returns focus to search',async()=>{
  await render('en',[record()],'all');change(`input[aria-label="${portfolio.en.searchCompetitors}"]`,'No matching synthetic term');act(()=>button(portfolio.en.competitorClearFilters).click());expect(document.activeElement).toBe(host.querySelector(`input[aria-label="${portfolio.en.searchCompetitors}"]`));await settle(()=>expect(host.querySelectorAll('[data-competitor]')).toHaveLength(1));expect(queryReads).toBe(0);
 });
+it('shows one filtered total when only one project has matching research',async()=>{
+ await render('en',[record()],'all');expect([...host.querySelectorAll('p,span')].filter(node=>node.textContent===portfolio.en.competitorsCount(1))).toHaveLength(1);
+});
+it('keeps the project-tab total without repeating its destination title',async()=>{
+ await render('en',[record()],'project');expect([...host.querySelectorAll('[data-card-title]')].some(node=>node.textContent===portfolio.en.projectCompetitionTab)).toBe(false);expect(host.textContent).toContain(portfolio.en.competitorsCount(1));
+});
