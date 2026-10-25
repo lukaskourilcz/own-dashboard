@@ -1544,3 +1544,8 @@ The frozen run exits 1 at its first stage: 5,717 unit/database cases pass, one f
 The failed route case signs a request 301 seconds in the future using the advancing wall clock. Signing rounds to whole seconds, leaving less than one second beyond the accepted five-minute window. A pause between signing and verification can move that request inside the valid window. The route test now freezes Date while leaving asynchronous timers real, verifies both exact 300-second accepted boundaries and both 301-second refusals, and confirms refusal happens before database access. A finally block restores Date. Production authentication and its inclusive five-minute policy do not change.
 
 All 55 focused automation-auth, pilot and tick-route cases pass across three files in 683 milliseconds. Targeted ESLint passes. The ledger stays at 682 entries. Full checkpoint 88 remains failed; a new consolidated run is required before release. Other audit leads, 37 prepared migrations, PR/main reconciliation and deployed verification remain open.
+
+
+## Full checkpoint 89 — started, combined inputs frozen
+
+Checkpoint 89 freezes application/test/SQL and validation-tool inputs at 7bc4213. It repeats the complete sequential unit/database, ESLint, ordinary production build, render-trace, post-build TypeScript and optimized browser pipeline, with content checks between stages. No source/test/SQL/tool edits occur while this process runs. Both builds use only synthetic public configuration and must never deploy. Read-only review of remaining source leads continues. This start entry establishes no passing result; checkpoint 88 remains failed and checkpoint 86 is the latest consolidated full pass.
