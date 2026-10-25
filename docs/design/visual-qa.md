@@ -1,5 +1,8 @@
 # OwnDashboard visual QA
 
+> Career availability (2026-10-25, finding 277): sixteen final EN/CS desktop/mobile cases pass in 1.9 minutes. The real interface rejects a foreign-owner result, starts one check after activation, retains failed next-window progress and confirms an explicit retry. Its recovery panel stays within 768px at six widths; axe passes. The 1,201-row local paging cases remain covered. Synthetic replies stand in for public page checks; no owner record, paid provider or publication is used. Broader audit and release work continues.
+
+
 > Career collections (2026-10-25, finding 274): eighteen final native EN/CS desktop/mobile cases pass in 53.3 seconds. Complete 1,201-row offers, saved positions and application lists render fifty rows per page, search the final record and reset pages without more database/provider calls. Initial Career access makes no private collection read; application totals retain the full cohort. Six-width reflow, axe and existing recovery checks pass on isolated synthetic data. Board paging, remaining write/provider review and the final app-wide release stay open.
 
 

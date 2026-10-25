@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CareerPagination } from "@/components/panels/career-pagination";
 import { collectionPage } from "@/lib/collection-page";
+import { readCareerAvailability, availabilityVersionMatches, CareerAvailabilityError, type AvailabilityReceipt, type AvailabilityRequest } from "@/lib/jobs/availability-client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -82,7 +83,6 @@ import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
 import { isGoogleLetterUrl, isPositionReady, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
 import { CareerLetterHelper } from "./career-letter-helper";
-import type { Availability } from "@/lib/jobs/availability";
 import type { LetterLanguage } from "@/lib/jobs/letter-helper";
 import { useNow } from "@/lib/use-now";
 import { focusDayKey } from "@/lib/date-keys";
@@ -391,7 +391,7 @@ export function JobsPanel({
           userId={userId}
           savedPositions={savedPositions}
           setSavedPositions={setSavedPositions}
-          checking={checking}
+          checking={checking || loadingCareer}
           onCheck={checkOffers}
         />
       ) : (
@@ -484,63 +484,72 @@ function OpenPositionsView({
   const [mobileDetail, setMobileDetail] = useState(false);
   const [workplace, setWorkplace] = useState("all");
   const [seniority, setSeniority] = useState("all");
-  // Availability of listings is verified once per "Check for new offers"
-  // press (the check invalidates this key); it never refetches on mount,
-  // focus or an interval.
+  const ownerScope = useOwnerPreferences();
+  const lifetime = useRef(new AbortController());
+  const morePending = useRef(false);
+  const [moreFailureBase, setMoreFailureBase] = useState<AvailabilityReceipt | null>(null);
+  useLayoutEffect(() => {
+    if (lifetime.current.signal.aborted) lifetime.current = new AbortController();
+    return () => lifetime.current.abort();
+  }, []);
+  function captureAvailability(parent?: AbortSignal): AvailabilityRequest {
+    const scope = ownerScope?.capture();
+    if (!scope || scope.ownerId !== userId) throw new CareerAvailabilityError();
+    const signal = AbortSignal.any([scope.signal, lifetime.current.signal, ...(parent ? [parent] : [])]);
+    signal.throwIfAborted();
+    return { ownerId: scope.ownerId, signal, listings: listings.map(row => ({
+      id: row.id, source: row.source, title: row.title, url: row.url, last_seen_at: row.last_seen_at,
+    })) };
+  }
+  // No interval/focus/remount refresh. Every accepted state is bound to the
+  // original owner and the exact displayed listing version.
   const availability = useQuery({
     queryKey: [...qk.jobAvailability, userId],
-    queryFn: async () => {
-      if (isPreview)
-        return {
-          states: Object.fromEntries(
-            listings.map((l) => [l.id, "open" as const]),
-          ),
-          checkedAt: new Date().toISOString(),
-          candidates: listings.length,
-          remaining: 0,
-        };
-      const response = await fetch("/api/jobs/available", {
-        method: "POST",
-        cache: "no-store",
+    queryFn: ({ signal }): Promise<AvailabilityReceipt> => {
+      if (isPreview) return Promise.resolve({
+        ownerId: userId, candidateVersion: "preview", previouslyChecked: 0,
+        states: Object.fromEntries(listings.map(row => [row.id, "open" as const])),
+        versions: Object.fromEntries(listings.map(row => [row.id, { source: row.source, title: row.title, url: row.url, lastSeenAt: row.last_seen_at }])),
+        checkedAt: new Date().toISOString(), candidates: listings.length, remaining: 0,
       });
-      if (!response.ok) throw new Error(String(response.status));
-      return response.json() as Promise<{
-        states: Record<string, Availability>;
-        checkedAt: string;
-        candidates: number;
-        remaining: number;
-      }>;
+      return readCareerAvailability(captureAvailability(signal));
     },
-    retry: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    retry: false, staleTime: Infinity, gcTime: Infinity,
+    // Activation may mount this view before the enclosing refresh invalidates
+    // availability. Wait until that whole refresh finishes, then check once.
+    enabled: !checking,
+    refetchOnMount: false, refetchOnWindowFocus: false,
   });
   const moreChecks = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/jobs/available", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          checkedIds: Object.keys(availability.data?.states ?? {}),
-        }),
+    mutationFn: ({ request }: { request: AvailabilityRequest; base: AvailabilityReceipt }) => readCareerAvailability(request),
+    onSuccess: (result, { request, base }) => {
+      if (request.signal.aborted) return;
+      qc.setQueryData<AvailabilityReceipt>([...qk.jobAvailability, userId], current => {
+        // A newer explicit refresh owns the cache. Never merge a late page
+        // over its result or combine different discovery snapshots.
+        if (current !== base || result.candidateVersion !== base.candidateVersion) return current;
+        const states = { ...base.states, ...result.states };
+        if (result.candidates !== Object.keys(states).length + result.remaining) return current;
+        return { ...result, previouslyChecked: 0, states, versions: { ...base.versions, ...result.versions } };
       });
-      if (!response.ok) throw new Error("Availability check failed");
-      return response.json() as Promise<NonNullable<typeof availability.data>>;
     },
-    onSuccess: (result) =>
-      qc.setQueryData([...qk.jobAvailability, userId], {
-        ...result,
-        states: { ...availability.data?.states, ...result.states },
-      }),
-    onError: () =>
-      toast.err(
-        cs
-          ? "Další nabídky se nepodařilo ověřit."
-          : "Could not check the next listings.",
-      ),
+    onError: (_error, { request, base }) => { if (!request.signal.aborted) setMoreFailureBase(base); },
+    onSettled: () => { morePending.current = false; },
   });
+  function checkMore() {
+    if (morePending.current || checking || availability.isFetching || !availability.data) return;
+    morePending.current = true;
+    const base = availability.data;
+    try {
+      const request = captureAvailability();
+      const ids = new Set(request.listings.map(row => row.id));
+      request.checkedIds = Object.keys(base.states).filter(id => ids.has(id));
+      request.previousCheckedAt = base.checkedAt;
+      request.expectedVersion = base.candidateVersion;
+      setMoreFailureBase(null);
+      moreChecks.mutate({ request, base });
+    } catch { morePending.current = false; setMoreFailureBase(base); }
+  }
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"all" | JobRole>("all");
   const [source, setSource] = useState<string>("all");
@@ -578,7 +587,7 @@ function OpenPositionsView({
       if (
         availability.isFetching ||
         availability.isError ||
-        availability.data?.states[l.id] !== "open"
+        (availability.data?.states[l.id] !== "open" || !availabilityVersionMatches(l, availability.data.versions[l.id]))
       )
         return false;
       if (workplace === "prague" && !isPrague(l.location)) return false;
@@ -955,7 +964,7 @@ function OpenPositionsView({
             size="sm"
             variant="outline"
             onClick={() => void onCheck()}
-            disabled={checking}
+            disabled={checking || moreChecks.isPending}
           >
             <RefreshCw
               className={cn("h-3.5 w-3.5", checking && "animate-spin")}
@@ -1005,11 +1014,13 @@ function OpenPositionsView({
         )}
       </div>
       {!!availability.data?.remaining && !availability.isFetching && (
+        <div className={cn("mb-4", moreFailureBase === availability.data && "mx-auto flex w-full max-w-3xl flex-col gap-3 rounded-md border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between")}>
+        {moreFailureBase === availability.data && <p role="alert" className="min-w-0 flex-1 text-sm text-destructive">{cs ? "Další nabídky se nepodařilo potvrdit. Zkuste je ověřit znovu, nebo znovu načtěte aktuální nabídky." : "Could not confirm the next listings. Retry the check or check for new offers again."}</p>}
         <Button
           variant="outline"
-          className="mb-4"
-          disabled={moreChecks.isPending}
-          onClick={() => moreChecks.mutate()}
+          className={moreFailureBase === availability.data ? "w-full shrink-0 sm:w-auto" : undefined}
+          disabled={moreChecks.isPending || checking}
+          onClick={checkMore}
         >
           {moreChecks.isPending
             ? cs
@@ -1019,6 +1030,7 @@ function OpenPositionsView({
               ? `Ověřit další nabídky (${availability.data.remaining})`
               : `Check more listings (${availability.data.remaining})`}
         </Button>
+        </div>
       )}
       {listings.length === 0 ? (
         <Card className="p-0">
@@ -1027,7 +1039,7 @@ function OpenPositionsView({
             title={t.jobs.noListingsYet}
             description={t.jobs.noListingsDescription}
             action={
-              <Button size="sm" onClick={() => void onCheck()} disabled={checking}>
+              <Button size="sm" onClick={() => void onCheck()} disabled={checking || moreChecks.isPending}>
                 <RefreshCw
                   className={cn("h-3.5 w-3.5", checking && "animate-spin")}
                 />

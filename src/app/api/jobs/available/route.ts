@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { awaitWithSignal } from "@/lib/abortable";
 import { boundedResponseText } from "@/lib/bounded-response";
@@ -18,7 +19,7 @@ const headers = { "Cache-Control": "private, no-store" };
 const fail = (status: number) => NextResponse.json({
   error: status === 401 ? "unauthorized" : status === 409 ? "owner-changed" : status === 400 ? "invalid-request" : "jobs-availability-unavailable",
 }, { status, headers });
-const inputSchema = z.strictObject({ checkedIds: z.array(z.uuid()).max(10_000).default([]) })
+const inputSchema = z.strictObject({ checkedIds: z.array(z.uuid()).max(10_000).default([]), expectedVersion: z.string().regex(/^[a-f0-9]{64}$/).optional() })
   .refine(input => new Set(input.checkedIds).size === input.checkedIds.length);
 const preferenceSchema = z.strictObject({ show_czech_career: z.boolean() });
 const stateSchema = z.record(z.uuid(), z.enum(["open", "closed", "unknown"]));
@@ -77,6 +78,11 @@ export async function POST(request: Request) {
     const alreadyChecked = new Set(input.checkedIds);
     const allCandidates = snapshot.data.filter(job => isCareerRelevant(job) &&
       (includeCzech || (!isCzechJobSource(job.source) && isOsloRelevant(job))));
+    const candidateVersion = createHash("sha256").update(JSON.stringify(allCandidates.map(job =>
+      [job.id, job.source, job.title, job.url, job.last_seen_at]).sort((a, b) => a[0].localeCompare(b[0])))).digest("hex");
+    if (input.expectedVersion !== undefined && input.expectedVersion !== candidateVersion) {
+      return NextResponse.json({ error: "availability-changed" }, { status: 409, headers });
+    }
     const candidates = allCandidates.filter(job => !alreadyChecked.has(job.id));
     const boards = EMPLOYER_BOARDS.map(board => ({ ...board }));
     const nativeIds = new Set<string>(boards.map(board => board.id));
@@ -118,7 +124,11 @@ export async function POST(request: Request) {
     const end = Date.now();
     if (!Number.isFinite(end) || end < start) return fail(503);
     return NextResponse.json({
-      ownerId: ownerId, states, checkedAt: new Date(end).toISOString(), candidates: allCandidates.length,
+      ownerId, candidateVersion, states, checkedAt: new Date(end).toISOString(), candidates: allCandidates.length,
+      previouslyChecked: allCandidates.filter(job => alreadyChecked.has(job.id)).length,
+      versions: Object.fromEntries(candidates.filter(job => Object.hasOwn(states, job.id)).map(job => [job.id, {
+        source: job.source, title: job.title, url: job.url, lastSeenAt: job.last_seen_at,
+      }])),
       remaining: candidates.filter(job => !Object.hasOwn(states, job.id)).length,
     }, { headers });
   } catch { return fail(503); }

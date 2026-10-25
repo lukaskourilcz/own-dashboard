@@ -14,7 +14,7 @@ for (const lang of ['en', 'cs'] as const) test(`${lang}: Career refresh confirms
   if (calls === 2) return route.fulfill({ status: 429, json: { error: 'PRIVATE TEST provider text' } });
   const now = new Date().toISOString(); return route.fulfill({ json: { ownerId: sessionOwner, startedAt: now, finishedAt: now, ok: true, inserted: 0, refreshed: 1, pruned: 0, sources: { curated: { count: 1 } } } });
  });
- await page.route('**/api/jobs/available', route => route.fulfill({ json: { states: {}, checkedAt: new Date().toISOString(), candidates: 0, remaining: 0 } }));
+ await page.route('**/api/jobs/available', route => route.fulfill({ json: { ownerId: sessionOwner, candidateVersion: 'a'.repeat(64), previouslyChecked: 0, versions: {}, states: {}, checkedAt: new Date().toISOString(), candidates: 0, remaining: 0 } }));
  await page.goto('/dev-preview?tab=career&career=live');
  const check = () => page.getByRole('button', { name: jobs[lang].checkOffers, exact: true }).first();
  await check().click(); await expect.poll(() => calls).toBe(1); await expect(page.getByRole('button', { name: jobs[lang].checking, exact: true })).toBeDisabled(); expect(calls).toBe(1);

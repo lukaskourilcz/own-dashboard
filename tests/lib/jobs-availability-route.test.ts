@@ -60,3 +60,11 @@ it('retires a stalled body read without awaiting an uncooperative cancellation h
  const input=new Request('https://own.example/api/jobs/available',{method:'POST',headers:{origin:'https://own.example','content-type':'application/json'},body:new ReadableStream({cancel(){cancelled++;return new Promise(()=>{});}}),duplex:'half'} as RequestInit);
  const pending=POST(input);await vi.waitFor(()=>expect(deadlines.has(5000)).toBe(true));deadlines.get(5000)!.abort();expect((await pending).status).toBe(400);expect(cancelled).toBe(1);expect(state.auth).not.toHaveBeenCalled();
 });
+it('binds each returned state to its original database title, URL and version',async()=>{
+ const response=await POST(request());const result=await response.json();expect(result.candidateVersion).toMatch(/^[a-f0-9]{64}$/);expect(result.previouslyChecked).toBe(0);expect(result.versions).toEqual({[row().id]:{source:row().source,title:row().title,url:row().url,lastSeenAt:row().last_seen_at}});
+});
+it('continues only the same candidate cohort and refuses a changed version before public probes',async()=>{
+ const first=await(await POST(request())).json();state.verify.mockClear();
+ let response=await POST(request({checkedIds:[row().id],expectedVersion:first.candidateVersion}));expect(response.status).toBe(200);expect(await response.json()).toMatchObject({candidateVersion:first.candidateVersion,previouslyChecked:1,remaining:0,states:{},versions:{}});
+ state.verify.mockClear();state.read.mockResolvedValue({data:[{...row(),title:'Changed React frontend title'}],error:null});response=await POST(request({checkedIds:[row().id],expectedVersion:first.candidateVersion}));expect(response.status).toBe(409);expect(await response.json()).toEqual({error:'availability-changed'});expect(state.verify).not.toHaveBeenCalled();
+});

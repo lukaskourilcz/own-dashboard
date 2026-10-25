@@ -157,7 +157,7 @@ export function DemoDashboard({
       initialInboxItems={f.inboxItems}
       initialNotifications={f.notifications}
       initialWeeklyReviews={livePlanning ? [] : f.weeklyReviews}
-      initialJobListings={liveCareerRecords ? [] : f.jobListings}
+      initialJobListings={liveCareer ? [] : f.jobListings}
       initialJobUserStates={liveCareerRecords ? [] : f.jobUserStates}
       initialSavedJobPositions={liveCareerRecords ? [] : f.savedJobPositions}
       initialJobApplications={liveCareerRecords ? [] : f.jobApplications}

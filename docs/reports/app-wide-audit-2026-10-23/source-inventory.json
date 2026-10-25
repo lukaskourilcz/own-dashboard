@@ -290,10 +290,10 @@
     },
     {
       "path": "src/app/api/jobs/available/route.ts",
-      "lines": 126,
+      "lines": 136,
       "sha256": "8b9c72a03a10a8b1dfd6ad668001e51df116f0028b0414cbd06e2d1752f72105",
-      "status": "source reviewed; finding 276 complete captured availability admission/counts, strict inputs/receipts and phase cancellation pass actual SDK/RLS; browser adoption and final release pending",
-      "reviewedSha256": "780977ae651ab795b62696b16b3b67c59ddc70c34f34e12ea468f626484b6b24"
+      "status": "source reviewed; finding 277 captured availability owner/row/cohort receipts, bounded reads and retained recovery pass mounted/native checks; remaining Career board/writes and final release pending",
+      "reviewedSha256": "d91d5a135eb80719df5ed0c9cc9cc4d844bab5ee56cfc0bea016b907e9de8582"
     },
     {
       "path": "src/app/api/jobs/enrich/route.ts",
@@ -861,8 +861,8 @@
       "path": "src/components/demo-dashboard.tsx",
       "lines": 199,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "c97d31784331f830d4f028af7bb43c8e61b9ad96e058c6b22dc08cddb273265f"
+      "status": "source reviewed; finding 277 captured availability owner/row/cohort receipts, bounded reads and retained recovery pass mounted/native checks; remaining Career board/writes and final release pending",
+      "reviewedSha256": "33436a5ac7c1e9b7247b31d7e348b4cad6d35f5e5c565e3e360733a4f614dc09"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2917,
+      "lines": 2929,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "de0ed82df41f8a82e7cf24e707e3083d5a6e33d943d38cc095bff7af192a4c46"
+      "status": "source reviewed; finding 277 captured availability owner/row/cohort receipts, bounded reads and retained recovery pass mounted/native checks; remaining Career board/writes and final release pending",
+      "reviewedSha256": "17b68388a4541c04b244cf1353ac257481baf30c9e4cdc758760f3b6c0b5794e"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2934,6 +2934,13 @@
       "sha256": "699bb0908082faea2d3dcd021ab883a440e8d41a43612a64c03020406c3a3771",
       "status": "source reviewed; finding 269 atomic monotonic Career receipts, original observations, protected owner tombstones, bounded waits and actual SDK/native PostgreSQL checks pass; remaining provider/private-read and final release work pending",
       "reviewedSha256": "7a8885beb183d1f8fc353ce45167b3e935fba4e8a31d72b1746569705edaeca8"
+    },
+    {
+      "path": "src/lib/jobs/availability-client.ts",
+      "sha256": null,
+      "lines": 83,
+      "reviewedSha256": "5830cbfee6fc05b369c9db6c18e5a661b3b7c5c99135320004a27c34bd8a3957",
+      "status": "source reviewed; finding 277 captured availability owner/row/cohort receipts, bounded reads and retained recovery pass mounted/native checks; remaining Career board/writes and final release pending"
     },
     {
       "path": "src/lib/jobs/availability.ts",
