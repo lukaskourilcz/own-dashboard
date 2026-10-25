@@ -902,3 +902,15 @@ All 58 availability/Career workflow cases pass across two files in 357 ms; targe
 ## Full unit checkpoint 80 — started
 
 The complete unit/component/database suite starts at frozen application/test source `5701d7d`, including the corrected owner-bound Settings harness and bounded HTML parser. Full lint and TypeScript follow serially if it passes. No local server is running. Application/test/migration inputs stay frozen until completion; only documentation, read-only review and isolated temporary probes continue. This started unit checkpoint does not include a production build or optimized browser matrix and does not replace historical failures. Thirty-two migrations, remaining source leads, main merge and deployed verification remain pending.
+
+
+## Full unit checkpoint 80 — completed
+
+At frozen application/test source `5701d7d`, all 4,963 unit/component/database cases pass with one intentional skip (454 passed files, one skipped file; 455 total), in 182.13 seconds with two workers. Full ESLint and TypeScript pass serially against the same unchanged inputs. No production build, render traces or optimized browser matrix runs at this checkpoint; their last complete passing evidence remains checkpoint 73, with checkpoint 78's distinct failed matrix and subsequent passing visual follow-up preserved. Source/test work resumes after completion. Thirty-two prepared migrations, remaining source leads, main merge and deployed verification remain unfinished.
+
+The visual plan gains two authentic desktop/mobile pairs for private CV drafts and native editor typography. Each card now states capture provenance; the current review snapshot no longer implies every older screenshot was recaptured. Local source-recovery, cost-query-plan and bounded HTML evidence links are added. Artifact browser QA follows separately.
+
+An isolated offline probe of the unchanged owner-edit diagnostic applies the actual supported insert action: a three-slide deck becomes four slides, but edit counts are empty and approval score is 1 (as generated). The taxonomy and its strict feedback/dataset consumers need a coordinated repair; no provider, saved revision or approval is changed by this reproduction.
+
+
+The refreshed standalone plan loads all twenty-one images in both desktop/mobile modes. View switches, highlight toggles, 1440/390 px reflow and light/dark checks pass without page errors. The new private-preference and editor artifact captures are inspected. This is artifact QA, separate from native application or production release verification.
