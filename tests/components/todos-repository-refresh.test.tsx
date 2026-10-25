@@ -9,11 +9,11 @@ vi.mock("@/lib/github-queries", () => ({ useReposQuery: () => ({ data: { kind: "
 vi.mock("@/lib/owned-records", () => ({ readOwnedCollection: state.read }));
 vi.mock("@/lib/needed-sync", async load => ({ ...await load<object>(), scanNeededRepos: state.scan }));
 vi.mock("@/lib/needed-task-store", () => ({ syncNeededTasks: state.sync }));
-vi.mock("@/lib/supabase/user", () => ({ currentUserId: async () => "owner" }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 vi.mock("@/lib/use-prefs", () => ({ useTasksPerCategory: () => ({ count: 3 }) }));
 vi.mock("@/components/ui/confirmation-dialog", () => ({ useConfirmation: () => async () => true }));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ ok: state.ok, info: state.info, err: state.err }) }));
+import { owner } from "../../e2e/task-fixtures";
 import { TodosPanel } from "@/components/panels/todos-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { todos } from "@/lib/i18n/sections/todos";
@@ -28,7 +28,7 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); client.clear(); vi.unstubAllGlobals(); document.documentElement.lang = "cs"; });
 async function refresh(lang: "en" | "cs") {
   const storage = new Storage(); storage.setItem("lang", lang); vi.stubGlobal("localStorage", storage); document.documentElement.lang = lang;
-  await act(async () => root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel ownerId="owner" todos={[]} /></TooltipProvider></QueryClientProvider>));
+  await act(async () => root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel ownerId={owner} todos={[]} /></TooltipProvider></QueryClientProvider>));
   act(() => [...host.querySelectorAll("button")].find(button => button.textContent?.trim() === todos[lang].refresh)!.click());
   await vi.waitFor(async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, 5)); }); expect(state.refetch).toHaveBeenCalledOnce(); });
 }

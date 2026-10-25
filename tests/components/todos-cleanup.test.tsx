@@ -8,6 +8,7 @@ import { TodosPanel } from "@/components/panels/todos-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { todos as copy } from "@/lib/i18n/sections/todos";
 import type { Todo } from "@/lib/types";
+import { owner, task as taskFixture } from "../../e2e/task-fixtures";
 const state = vi.hoisted(() => ({ cleanup: vi.fn(), consume: vi.fn(), ok: vi.fn(), info: vi.fn(), err: vi.fn(), disconnected: vi.fn(), commit: vi.fn() }));
 vi.mock("@/lib/github", async load => ({ ...await load<object>(), commitFile: (...args: unknown[]) => state.commit(...args) }));
 vi.mock("@/lib/needed-sync", async load => ({ ...await load<object>(), removeFinishedFromNeeded: (...args: unknown[]) => state.cleanup(...args) }));
@@ -18,12 +19,12 @@ vi.mock("@/lib/use-prefs", () => ({ useTasksPerCategory: () => ({ count: 3 }) })
 vi.mock("@/components/ui/confirmation-dialog", () => ({ useConfirmation: () => async () => true }));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ ok: state.ok, info: state.info, err: state.err }) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const task = { id: "11111111-1111-4111-8111-111111111111", title: "Finished source task", done: true, source: "github", needed_raw: "- [ ] Finished source task", repo_id: "1", repo_name: "fixture", repo_owner: "owner", due_date: null, importance: null } as Todo;
+const task: Todo = { ...taskFixture("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "Finished source task"), done: true, source: "github", needed_raw: "- [ ] Finished source task", repo_id: "1", repo_name: "fixture", repo_owner: "owner" };
 let root: Root, host: HTMLDivElement, client: QueryClient;
 async function run(lang: "en" | "cs") {
   document.documentElement.lang = lang; const storage = new Storage(); storage.setItem("lang", lang); vi.stubGlobal("localStorage", storage);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host); client = new QueryClient();
-  await act(async () => { root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel ownerId="owner" todos={[task]} /></TooltipProvider></QueryClientProvider>); });
+  await act(async () => { root.render(<QueryClientProvider client={client}><TooltipProvider><TodosPanel ownerId={owner} todos={[task]} /></TooltipProvider></QueryClientProvider>); });
   const button = [...host.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent?.trim() === copy[lang].clearFromNeeded)!;
   expect(button).toBeDefined(); await act(async () => { button.click(); });
   await vi.waitFor(() => expect(state.consume).toHaveBeenCalledOnce());
@@ -41,7 +42,7 @@ for (const lang of ["en", "cs"] as const) {
   });
   it(`${lang}: a partial disconnect reports only confirmed local removals`, async () => {
     state.cleanup.mockResolvedValue({ cleared: [task.id], missing: [], kept: 2, disconnected: true }); state.consume.mockResolvedValue({ deleted: new Set([task.id]), retained: new Set() });
-    await run(lang); expect(state.ok).toHaveBeenCalledWith(copy[lang].clearFromNeededDone(1)); expect(state.disconnected).toHaveBeenCalledWith(client); expect(state.err).toHaveBeenCalledWith(copy[lang].refreshDisconnected);
+    await run(lang); expect(state.ok).toHaveBeenCalledWith(copy[lang].clearFromNeededDone(1)); expect(state.disconnected).toHaveBeenCalledWith(client, expect.any(Function)); expect(state.err).toHaveBeenCalledWith(copy[lang].refreshDisconnected);
   });
 }
 

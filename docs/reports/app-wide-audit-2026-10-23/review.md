@@ -654,3 +654,11 @@ The Tasks panel and its repository lifecycle source review are closed with targe
 ## Validation checkpoint 72 — started, not yet passing
 
 The complete serial pipeline starts at frozen application/test source `235d00b`: full unit/component/database suite, lint, ordinary production build, eight native render traces, post-build types and the entire optimized browser matrix. This includes findings 182–185 and four new repository browser cases. Application/test inputs remain unchanged until the run ends. The local dev server was stopped before building; only documentation and read-only source inspection continue. The last complete run remains checkpoint 71 with five subsequently repaired fixture failures; no new full passing result is claimed yet.
+
+
+## Full validation checkpoint 72 — completed with fixture failures
+
+At frozen application/test source `235d00b`, 4,765 unit/component/database cases pass, one intentionally skips and eleven fail (445 passed files, one skipped file, two failed files), in 188.04 seconds with two workers. Every failure is in the earlier panel cleanup/refresh fixtures that supply `owner` and incomplete task versions; the new captured owner/source boundary correctly refuses those inputs. These fixtures need the same complete owned UUID/version rows already used by the native tests, and the disconnect assertion needs its new current-operation guard. The pipeline stops before lint, build, render traces, post-build types and the optimized browser matrix. No phase after unit tests is passing evidence for checkpoint 72. Application/test inputs remained frozen throughout.
+
+
+The earlier panel cleanup/refresh fixtures now use a complete owned UUID/version task and a valid captured owner, and the cache-disconnection assertion includes its current-operation guard. All 77 panel/hook/source/cache cases pass across seven files in 4.61 seconds, with targeted lint and TypeScript passing. This changes fixtures only; application source remains `235d00b`. A new complete serial run is required before release.
