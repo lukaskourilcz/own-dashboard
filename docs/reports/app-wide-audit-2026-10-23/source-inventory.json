@@ -649,8 +649,8 @@
       "path": "src/app/auth/signout/route.ts",
       "lines": 31,
       "sha256": "5bb8e3dca064023d40a688f64026b7714105fbd9058f4ebb30f1548191f38b3e",
-      "status": "source reviewed; OAuth/logout targeted and relevant browser checks pass; final app-wide release pending",
-      "reviewedSha256": "60190cd3892c031f9bd2debb7e544d05f0d7fccfc9d23695deb1427fd025e6ea"
+      "status": "source reviewed; finding 245 auth-error provider revocation regression and focused logout checks pass; final release pending",
+      "reviewedSha256": "89492490ce334f0138d0cb444344b3a366009a592700575ea11a497463066ce4"
     },
     {
       "path": "src/app/dev-preview/page.tsx",

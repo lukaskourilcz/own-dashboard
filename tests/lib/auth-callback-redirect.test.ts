@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-const state = vi.hoisted(() => ({ session: {} as Record<string, unknown>, failed: false, exchange: vi.fn(), google: vi.fn(), github: vi.fn(), verify: vi.fn(), revoke: vi.fn(), signOut: vi.fn() }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { exchangeCodeForSession: state.exchange, getUser: async () => ({ data: { user: { id: "owner" } } }), signOut: state.signOut } }) }));
+const state = vi.hoisted(() => ({ session: {} as Record<string, unknown>, failed: false, exchange: vi.fn(), google: vi.fn(), github: vi.fn(), verify: vi.fn(), revoke: vi.fn(), getUser: vi.fn(), signOut: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { exchangeCodeForSession: state.exchange, getUser: state.getUser, signOut: state.signOut } }) }));
 vi.mock("@/lib/google-token", () => ({ storeGoogleTokens: state.google, revokeGoogleAccess: state.revoke }));
 vi.mock("@/lib/github-token", () => ({ storeGitHubTokens: state.github }));
 vi.mock("@/lib/oauth-grant-verification", () => ({ verifyOAuthGrant: state.verify }));
@@ -10,6 +10,7 @@ import { POST as signOut } from "@/app/auth/signout/route";
 beforeEach(() => {
   vi.restoreAllMocks(); state.session = {}; state.failed = false;
   state.google.mockReset(); state.github.mockReset(); state.verify.mockReset().mockResolvedValue(null);
+  state.getUser.mockReset().mockResolvedValue({ data: { user: { id: "owner" } }, error: null });
   state.revoke.mockReset().mockResolvedValue({ upstreamRevoked: true }); state.signOut.mockReset().mockResolvedValue({ error: null });
   state.exchange.mockReset().mockImplementation(async () => ({ data: { session: state.session, user: { id: "owner", user_metadata: {}, identities: [] } }, error: state.failed ? {} : null }));
 });
@@ -81,4 +82,10 @@ it("ends a hanging sign-out without an unconfirmed redirect", async () => {
   state.signOut.mockReturnValue(new Promise(() => undefined));
   const pending = signOut(new Request("https://app.example/auth/signout", { method: "POST", headers: { origin: "https://app.example" } }));
   await vi.waitFor(() => expect(state.signOut).toHaveBeenCalled()); controller.abort(); expect((await pending).status).toBe(503);
+});
+
+it('does not revoke a cached Google grant when user verification reports an error', async () => {
+ state.getUser.mockResolvedValue({ data: { user: { id: 'synthetic-cached-owner' } }, error: Error('Synthetic private auth failure') });
+ const result = await signOut(new Request('https://app.example/auth/signout', { method: 'POST', headers: { origin: 'https://app.example', accept: 'application/json' } }));
+ expect(state.revoke).not.toHaveBeenCalled(); expect(state.signOut).toHaveBeenCalledOnce(); expect(result.status).toBe(200); expect(await result.json()).toEqual({ ok: true });
 });

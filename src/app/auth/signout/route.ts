@@ -11,7 +11,10 @@ export async function POST(request: Request) {
   const signal = AbortSignal.timeout(25_000);
   try {
     const supabase = await createClient(signal);
-    const { data: { user } } = await awaitWithSignal(supabase.auth.getUser(), signal);
+    const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
+    // An auth error cannot authorize revocation of a cached user's grant.
+    // The dashboard session can still be cleared through the SDK below.
+    const user = auth.error ? null : auth.data.user;
     if (user) {
       try {
         const revokeSignal = AbortSignal.any([signal, AbortSignal.timeout(10_000)]);
