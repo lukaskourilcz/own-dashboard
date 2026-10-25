@@ -1444,8 +1444,8 @@
       "path": "src/components/panels/clients-panel.tsx",
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
-      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending",
-      "reviewedSha256": "7df076e96df3673b778f73badf02b839f5d3550e8518d308dce8012de20b88e5"
+      "status": "source reviewed; captured client writes, draft/exit recovery and localized notices pass mounted/native checks; final consolidated release pending",
+      "reviewedSha256": "5550c6bb9ceb4e9b489417407587325ec667063401dac529d84846a0a9b28a95"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
@@ -2665,8 +2665,8 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending",
-      "reviewedSha256": "5032e3b468ad2144ddd1802647a377b47239bb0ca42e22fddb8c0ea006e87169"
+      "status": "source reviewed; captured client writes, draft/exit recovery and localized notices pass mounted/native checks; final consolidated release pending",
+      "reviewedSha256": "efc6b1551c75d2336c7a6824fbf432aa3e55f1173c7b32ff44171342fd67fdb7"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",

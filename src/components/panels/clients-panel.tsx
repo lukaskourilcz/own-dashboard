@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { Building2, ExternalLink, Plus, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,21 +28,23 @@ import {
   vatNameMismatch,
   vatStatusOf,
   vatVerificationPatch,
-  type AresSubject,
-  type ViesResult,
 } from "@/lib/tax-registry";
-import { lookupAres, RegistryLookupError } from "@/lib/tax-registry-client";
+import { lookupAres, lookupVies, RegistryLookupError } from "@/lib/tax-registry-client";
 import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { computeTotals } from "@/lib/invoices";
 import { convert } from "@/lib/fx";
 import { formatCurrency } from "@/lib/utils";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
+import { applyOrganizationReceipt, createOrganizationRecord, updateOrganizationRecord, removeOrganizationRecord, OrganizationRecordError, type OrganizationFields, type OrganizationScope } from "@/lib/organization-records";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
+import { safeWebUrl } from "@/lib/web-url";
+import { z } from "zod";
 import type { ClientOpportunity, ImportantDate, Invoice, InvoiceItem, Note, Organization, OrganizationType, Project, Todo, Updater } from "@/lib/types";
 
 const TYPES: OrganizationType[] = ["client", "prospective_client", "employer", "prospective_employer", "personal_project", "other"];
 
+type NoticeKey = "aresFilled" | "aresNotFound" | "aresInvalidIco" | "aresUnavailable" | "vatNotEu" | "viesUnavailable" | "organizationChanged" | "organizationActionUnconfirmed";
 const EMPTY_FORM = { name: "", type: "client" as OrganizationType, website: "", email: "", notes: "", companyId: "", vatId: "", address: "", city: "", zip: "", country: "" };
 
 function formatCheckedAt(timestamp: string): string {
@@ -67,6 +69,11 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
 }) {
   const formId = useId();
   const owner = useOwnerPreferences();
+  const lifetime = useRef(new AbortController());
+  useLayoutEffect(() => {
+    if (lifetime.current.signal.aborted) lifetime.current = new AbortController();
+    return () => lifetime.current.abort();
+  }, []);
   const draftEpoch = useRef(0);
   const draftLookup = useRef<{ controller: AbortController; epoch: number } | null>(null);
   useEffect(() => () => { draftLookup.current?.controller.abort(); }, []);
@@ -77,13 +84,54 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const qc = useQueryClient();
   const toast = useToast();
   const confirm = useConfirmation();
+  const navigate = useGuardedNavigation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<OrganizationType | "all">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [ares, setAres] = useState<{ busy: boolean; message: "aresInvalidIco" | "aresUnavailable" | "aresNotFound" | "aresFilled" | null; filledAt: string | null }>({ busy: false, message: null, filledAt: null });
-  const [registryNotice, setRegistryNotice] = useState<{ id: string; text: string } | null>(null);
+  const [registryNotice, setRegistryNotice] = useState<{ id: string; key: NoticeKey; error?: boolean } | null>(null);
+  const [saveError, setSaveError] = useState<"organizationChanged" | "organizationSaveUnconfirmed" | "organizationInvalid" | null>(null);
+  const [creating, setCreating] = useState(false);
+  const creatingRef = useRef(false);
+  const draftIdentity = useRef<string | null>(null);
+  const reservations = useRef(new Map<string, OrganizationScope>());
+  const [pendingRows, setPendingRows] = useState<ReadonlySet<string>>(new Set());
+  const [reloading, setReloading] = useState(false);
+  const queryKey = useMemo(() => [...qk.organizations, owner?.ownerId], [owner?.ownerId]);
+  const validForm = !!form.name.trim() && (!form.website.trim() || !!safeWebUrl(form.website)) && (!form.email.trim() || z.regexes.html5Email.test(form.email.trim()));
+  const dirty = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM);
+  const capture = (): OrganizationScope | null => {
+    if (!owner) return null;
+    const captured = owner.capture();
+    return { ownerId: captured.ownerId, signal: AbortSignal.any([captured.signal, lifetime.current.signal]) };
+  };
+  const errorKey = (error: unknown) => error instanceof OrganizationRecordError && error.reason === "changed" ? "organizationChanged" as const : "organizationActionUnconfirmed" as const;
+  const invalidate = () => { void qc.invalidateQueries({ queryKey }); };
+  async function reloadOrganizations() {
+    if (reloading) return;
+    const captured = capture(); if (!captured || captured.signal.aborted) return;
+    setReloading(true);
+    try {
+      await qc.refetchQueries({ queryKey, exact: true }, { throwOnError: true });
+      if (!captured.signal.aborted && qc.getQueryState(queryKey)?.status === "success") setRegistryNotice(null);
+    }
+    catch { if (!captured.signal.aborted) toast.err(p.couldNotSave); }
+    finally { if (!captured.signal.aborted) setReloading(false); }
+  }
+  function reserve(organization: Organization) {
+    if (reservations.current.has(organization.id)) return null;
+    const captured = capture();
+    if (!captured || captured.signal.aborted || organization.user_id !== captured.ownerId) return null;
+    reservations.current.set(organization.id, captured); setPendingRows(new Set(reservations.current.keys()));
+    return captured;
+  }
+  function release(id: string, captured: OrganizationScope) {
+    if (reservations.current.get(id) !== captured) return;
+    reservations.current.delete(id);
+    if (!captured.signal.aborted) setPendingRows(new Set(reservations.current.keys()));
+  }
 
   // Read the public ARES register through /api/registry/ares and complete the
   // legally required invoice fields. Typed values are kept; the registered name
@@ -93,11 +141,11 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     setAres({ busy: false, message: null, filledAt: null });
   }
   async function fillFromAres() {
-    if (draftLookup.current) return;
+    if (draftLookup.current || creatingRef.current) return;
     const ico = normalizeIco(form.companyId), typedName = form.name;
     if (!isValidIco(ico)) { setAres({ busy: false, message: "aresInvalidIco", filledAt: null }); return; }
     if (!owner) { setAres({ busy: false, message: "aresUnavailable", filledAt: null }); return; }
-    const captured = owner.capture(), attempt = { controller: new AbortController(), epoch: draftEpoch.current };
+    const captured = capture()!, attempt = { controller: new AbortController(), epoch: draftEpoch.current };
     const signal = AbortSignal.any([captured.signal, attempt.controller.signal]);
     draftLookup.current = attempt; setAres({ busy: true, message: null, filledAt: null });
     try {
@@ -117,81 +165,82 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     } finally { if (draftLookup.current === attempt) draftLookup.current = null; }
   }
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("Not authenticated");
-      const { data, error } = await supabase.from("organizations").insert({ user_id: userId, name: form.name.trim(), type: form.type, website: form.website.trim() || null, email: form.email.trim() || null, notes: form.notes.trim(), company_id: normalizeIco(form.companyId) || null, vat_id: normalizeVatId(form.vatId) || form.vatId.trim() || null, address: form.address.trim() || null, city: form.city.trim() || null, zip: form.zip.trim() || null, country: form.country.trim() || null, ares_verified_at: ares.filledAt }).select().single();
-      if (error) throw error;
-      return data as Organization;
-    },
-    onSuccess: (item) => { cancelDraftLookup(); setOrganizations((old) => [...old, item].sort((a, b) => a.name.localeCompare(b.name))); setForm(EMPTY_FORM); setAres({ busy: false, message: null, filledAt: null }); setOpen(false); void qc.invalidateQueries({ queryKey: qk.organizations }); },
-    onError: () => toast.err(p.couldNotSave),
+  async function saveDraft(): Promise<boolean> {
+    if (creatingRef.current || draftLookup.current || reservations.current.size) return false;
+    if (!validForm) { setSaveError("organizationInvalid"); return false; }
+    const captured = capture();
+    if (!captured || captured.signal.aborted) { setSaveError("organizationSaveUnconfirmed"); return false; }
+    creatingRef.current = true; setCreating(true); setSaveError(null);
+    // The id survives edits and uncertain responses until confirmation/discard.
+    // Changing a draft after an uncertain commit cannot create a second row.
+    const id = draftIdentity.current ??= crypto.randomUUID();
+    const companyId = form.companyId.trim(), ico = normalizeIco(companyId);
+    const fields: OrganizationFields = {
+      name: form.name.trim(), type: form.type, website: form.website.trim() || null, email: form.email.trim() || null,
+      notes: form.notes.trim(), company_id: companyId.replace(/[^0-9]/g, "").length === 8 && /^[0-9.\s-]+$/.test(companyId) && isValidIco(ico) ? ico : companyId || null,
+      vat_id: normalizeVatId(form.vatId) || form.vatId.trim() || null,
+      address: form.address.trim() || null, city: form.city.trim() || null, zip: form.zip.trim() || null, country: form.country.trim() || null,
+      ares_verified_at: ares.filledAt, logo_url: null, phone: null, status: "active", vat_verification_status: "unchecked", vat_verified_at: null, vat_verified_id: null, vat_verified_name: null, vat_verified_address: null,
+    };
+    try {
+      const item = await createOrganizationRecord(supabase, captured, id, fields);
+      await qc.cancelQueries({ queryKey, exact: true });
+      if (captured.signal.aborted) return false;
+      setOrganizations(old => old.some(row => row.id === item.id) ? old : [...old, item].sort((a, b) => a.name.localeCompare(b.name)));
+      draftIdentity.current = null; cancelDraftLookup(); setForm(EMPTY_FORM); setOpen(false); invalidate(); return true;
+    } catch (error) {
+      if (!captured.signal.aborted) setSaveError(errorKey(error) === "organizationChanged" ? "organizationChanged" : "organizationSaveUnconfirmed"); return false;
+    } finally { creatingRef.current = false; if (!captured.signal.aborted) setCreating(false); }
+  }
+  useUnsavedDraft({ dirty, pending: creating || pendingRows.size > 0, canSave: validForm && !ares.busy && !creating && pendingRows.size === 0,
+    save: saveDraft, discard: () => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setSaveError(null); },
   });
 
-  // Ask VIES about an EU VAT id and store the verdict on the organization. A
-  // member-state outage is reported and never overwrites a verdict that still
-  // stands for the same number, so an ordinary Brussels timeout cannot erase a
-  // recorded check. A cached verdict inside the freshness window is reused;
-  // "Check again" is the explicit way past it.
-  const verifyMutation = useMutation({
-    mutationFn: async ({ organization, force }: { organization: Organization; force: boolean }): Promise<{ organization: Organization; message: string | null }> => {
-      if (!force && vatCheckIsFresh(organization, new Date())) return { organization, message: null };
-      const response = await fetch("/api/registry/vies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ vatId: organization.vat_id ?? "" }) });
-      const data = (await response.json().catch(() => ({}))) as Partial<ViesResult> & { checkedAt?: string };
-      if (!response.ok) return { organization, message: response.status === 400 ? p.vatNotEu : p.viesUnavailable };
-      const result: ViesResult = { status: data.status === "valid" || data.status === "invalid" ? data.status : "unavailable", name: data.name ?? "", address: data.address ?? "" };
-      const patch = vatVerificationPatch(organization, result, data.checkedAt ?? new Date().toISOString());
-      if (!patch) return { organization, message: p.viesUnavailable };
-      const { data: updated, error } = await supabase.from("organizations").update(patch).eq("id", organization.id).select().single();
-      if (error) throw error;
-      return { organization: updated as Organization, message: result.status === "unavailable" ? p.viesUnavailable : null };
-    },
-    onSuccess: ({ organization, message }) => {
-      setOrganizations((old) => old.map((item) => (item.id === organization.id ? organization : item)));
-      setRegistryNotice(message ? { id: organization.id, text: message } : null);
-      void qc.invalidateQueries({ queryKey: qk.organizations });
-    },
-    onError: () => toast.err(p.couldNotSave),
-  });
-
-  // The same ARES fill for an organization that already exists: an address
-  // typed before this feature landed, or one the register has since changed.
-  const aresMutation = useMutation({
-    mutationFn: async (organization: Organization): Promise<{ organization: Organization; message: string }> => {
-      const response = await fetch("/api/registry/ares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ico: normalizeIco(organization.company_id) }) });
-      const data = (await response.json().catch(() => ({}))) as Partial<AresSubject> & { checkedAt?: string };
-      if (!response.ok) return { organization, message: response.status === 404 ? p.aresNotFound : p.aresUnavailable };
-      const subject: AresSubject = { ico: normalizeIco(organization.company_id), name: data.name ?? "", address: data.address ?? "", city: data.city ?? "", zip: data.zip ?? "", country: data.country ?? "", vatId: data.vatId ?? "" };
-      const filled = applyAresSubject({ name: organization.name, address: organization.address ?? "", city: organization.city ?? "", zip: organization.zip ?? "", country: organization.country ?? "", vatId: organization.vat_id ?? "" }, subject);
-      const { data: updated, error } = await supabase.from("organizations").update({ name: filled.name, address: filled.address || null, city: filled.city || null, zip: filled.zip || null, country: filled.country || null, vat_id: filled.vatId || null, ares_verified_at: data.checkedAt ?? new Date().toISOString() }).eq("id", organization.id).select().single();
-      if (error) throw error;
-      return { organization: updated as Organization, message: p.aresFilled };
-    },
-    onSuccess: ({ organization, message }) => {
-      setOrganizations((old) => old.map((item) => (item.id === organization.id ? organization : item)).sort((a, b) => a.name.localeCompare(b.name)));
-      setRegistryNotice({ id: organization.id, text: message });
-      void qc.invalidateQueries({ queryKey: qk.organizations });
-    },
-    onError: () => toast.err(p.couldNotSave),
-  });
-  const removeMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("organizations").delete().eq("id", id); if (error) throw error; return id; },
-    onSuccess: (id) => {
-      setOrganizations((old) => old.filter((item) => item.id !== id));
-      for (const queryKey of [qk.organizations, qk.projects, qk.opportunities, qk.invoices, qk.todos, qk.notes, qk.importantDates]) void qc.invalidateQueries({ queryKey });
-    },
-    onError: () => toast.err(p.couldNotSave),
-  });
-  const removeOrganization = async (id: string) => {
-    if (await confirm({
-      title: p.delete,
-      description: p.confirmDeleteOrganization,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) removeMutation.mutate(id);
-  };
+  async function runRegistry(organization: Organization, kind: "ares" | "vies", force = false) {
+    const source = { ...organization }, captured = reserve(source);
+    if (!captured) return;
+    setRegistryNotice(null);
+    try {
+      const scope = { ...captured, signal: AbortSignal.any([captured.signal, AbortSignal.timeout(43_000)]) };
+      let updated: Organization | null = null, notice: NoticeKey | null = null;
+      if (kind === "vies") {
+        if (!force && vatCheckIsFresh(source, new Date())) return;
+        const result = await lookupVies(scope, source.vat_id ?? "");
+        const patch = vatVerificationPatch(source, result, result.checkedAt);
+        notice = result.status === "unavailable" ? "viesUnavailable" : null;
+        if (patch) updated = await updateOrganizationRecord(supabase, scope, source, patch);
+      } else {
+        const subject = await lookupAres(scope, source.company_id ?? "");
+        const filled = applyAresSubject({ name: source.name, address: source.address ?? "", city: source.city ?? "", zip: source.zip ?? "", country: source.country ?? "", vatId: source.vat_id ?? "" }, subject);
+        updated = await updateOrganizationRecord(supabase, scope, source, { name: filled.name, address: filled.address || null, city: filled.city || null, zip: filled.zip || null, country: filled.country || null, vat_id: filled.vatId || null, ares_verified_at: subject.checkedAt });
+        notice = "aresFilled";
+      }
+      if (updated) await qc.cancelQueries({ queryKey, exact: true });
+      if (captured.signal.aborted) return;
+      if (updated) { const receipt = updated; setOrganizations(old => applyOrganizationReceipt(old, source, receipt).sort((a, b) => a.name.localeCompare(b.name))); invalidate(); }
+      setRegistryNotice(notice ? { id: source.id, key: notice } : null);
+    } catch (error) {
+      if (!captured.signal.aborted) {
+        const key = error instanceof RegistryLookupError ? kind === "ares" ? error.reason === "not-found" ? "aresNotFound" : error.reason === "invalid" ? "aresInvalidIco" : "aresUnavailable" : error.reason === "invalid" ? "vatNotEu" : "viesUnavailable" : errorKey(error);
+        setRegistryNotice({ id: source.id, key, error: true });
+      }
+    } finally { release(source.id, captured); }
+  }
+  async function removeOrganization(organization: Organization) {
+    // Reserve and capture before the confirmation wait; a later refresh cannot
+    // turn the original delete intent into permission to remove a newer row.
+    const source = { ...organization }, captured = reserve(source);
+    if (!captured) return;
+    try {
+      if (!await confirm({ title: p.delete, description: p.confirmDeleteOrganization, confirmLabel: t.common.delete, cancelLabel: t.common.cancel, destructive: true }) || captured.signal.aborted) return;
+      await removeOrganizationRecord(supabase, captured, source);
+      await qc.cancelQueries({ queryKey, exact: true });
+      if (captured.signal.aborted) return;
+      setOrganizations(old => applyOrganizationReceipt(old, source, null));
+      for (const key of [queryKey, qk.projects, qk.opportunities, qk.invoices, qk.todos, qk.notes, qk.importantDates]) void qc.invalidateQueries({ queryKey: key });
+    } catch (error) { if (!captured.signal.aborted) setRegistryNotice({ id: source.id, key: errorKey(error), error: true }); }
+    finally { release(source.id, captured); }
+  }
   // Build relationships when records change, rather than rescanning every
   // collection for every client on each keystroke. Totals are needed only for
   // the one expanded client.
@@ -217,21 +266,22 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     (!clientQuery || `${org.name} ${org.email ?? ""}`.toLocaleLowerCase().includes(clientQuery)),
   );
   return <div>
-    <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button onClick={() => { cancelDraftLookup(); setOpen(x => !x); }}><Plus />{p.newClient}</Button>} />
-    {open && <Card className="mx-auto mb-4 max-w-4xl"><CardContent className="p-4"><form aria-busy={ares.busy} className="grid gap-3 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); if (form.name.trim() && !createMutation.isPending && !draftLookup.current) createMutation.mutate(); }}>
+    <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button disabled={creating} onClick={() => { cancelDraftLookup(); setOpen(x => !x); }}><Plus />{p.newClient}</Button>} />
+    {open && <Card className="mx-auto mb-4 max-w-4xl"><CardContent className="p-4"><form aria-busy={ares.busy || creating} onSubmit={event => { event.preventDefault(); void saveDraft(); }}><fieldset disabled={creating} className="grid min-w-0 gap-3 sm:grid-cols-2">
       <div className="space-y-1.5"><Label htmlFor={`${formId}-name`}>{p.name}</Label><Input id={`${formId}-name`} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
       <div className="space-y-1.5"><Label>{p.type}</Label><SimpleSelect aria-label={p.type} value={form.type} onValueChange={(type) => setForm({ ...form, type: type as OrganizationType })} options={TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))} /></div>
       <div className="space-y-1.5"><Label htmlFor={`${formId}-website`}>{p.website}</Label><Input id={`${formId}-website`} type="url" pattern="https?://.+" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor={`${formId}-email`}>{p.email}</Label><Input id={`${formId}-email`} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-      <div className="grid gap-3 sm:col-span-2 lg:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="org-ico">{p.companyId}</Label><div className="flex min-w-0 gap-2"><Input className="min-w-24 flex-1" id="org-ico" inputMode="numeric" value={form.companyId} onChange={e => { const companyId = e.target.value; cancelDraftLookup(); setForm(current => ({ ...current, companyId })); }} /><Button type="button" variant="outline" className="shrink-0" disabled={ares.busy || !form.companyId.trim()} onClick={() => void fillFromAres()}><Building2 />{p.fillFromAres}</Button></div></div>
+      <div className="grid gap-3 sm:col-span-2 lg:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="org-ico">{p.companyId}</Label><div className="flex min-w-0 gap-2"><Input className="min-w-24 flex-1" id="org-ico" value={form.companyId} onChange={e => { const companyId = e.target.value; cancelDraftLookup(); setForm(current => ({ ...current, companyId })); }} /><Button type="button" variant="outline" className="shrink-0" disabled={ares.busy || !form.companyId.trim()} onClick={() => void fillFromAres()}><Building2 />{p.fillFromAres}</Button></div></div>
       <div className="space-y-1.5"><Label htmlFor="org-dic">{p.vatId}</Label><Input id="org-dic" value={form.vatId} onChange={(e) => setForm({ ...form, vatId: e.target.value })} /></div></div>
       {ares.message && <p className="text-xs text-foreground-muted sm:col-span-2" role={ares.filledAt ? "status" : "alert"}>{p[ares.message]}</p>}
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="org-address">{p.address}</Label><Input id="org-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor="org-city">{p.city}</Label><Input id="org-city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label htmlFor="org-zip">{p.zip}</Label><Input id="org-zip" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor="org-country">{p.country}</Label><Input id="org-country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div></div>
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor={`${formId}-notes`}>{p.notes}</Label><Textarea id={`${formId}-notes`} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-      <Button type="submit" className="sm:col-span-2 sm:justify-self-end" disabled={!form.name.trim() || createMutation.isPending || ares.busy}>{p.create}</Button>
-    </form></CardContent></Card>}
+      {saveError && <div className="space-y-2 sm:col-span-2"><p className="text-sm text-risk" role="alert">{p[saveError]}</p>{saveError === "organizationChanged" && <Button type="button" variant="outline" disabled={reloading} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
+      <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" onClick={() => navigate(() => { cancelDraftLookup(); draftIdentity.current = null; setForm(EMPTY_FORM); setSaveError(null); setOpen(false); })}>{t.common.cancel}</Button><Button type="submit" disabled={!validForm || creating || ares.busy || pendingRows.size > 0} aria-busy={creating}>{p.create}</Button></div>
+    </fieldset></form></CardContent></Card>}
     <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
     {visibleOrganizations.length === 0 ? <EmptyState title={organizations.length === 0 ? p.clientsEmpty : t.common.none} icon={Users} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">{visibleOrganizations.map((org) => {
       const relatedProjects = related.projects.get(org.id) ?? [];
@@ -247,7 +297,8 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       const vatIsFresh = vatCheckIsFresh(org, new Date());
       const canVerifyVat = isEuVatId(org.vat_id);
       const canFillFromAres = isValidIco(org.company_id);
-      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 p-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)_auto]"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-h-11 min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div>{(org.email || org.website) && <p className="mt-1 break-words text-xs text-foreground-muted">{org.email ?? org.website}</p>}</button><div className="col-start-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground-muted lg:col-start-2 lg:row-start-1">{counts.projects + counts.opportunities + counts.invoices === 0 ? <span>{p.noRelatedRecords}</span> : [[p.projects, counts.projects], [p.opportunities, counts.opportunities], [p.invoices, counts.invoices]].filter(([, count]) => Number(count) > 0).map(([label, count]) => <span key={label}><strong className="tabular text-foreground">{count}</strong> {label}</span>)}</div><div className="col-start-2 row-start-1 flex justify-end lg:col-start-3"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} onClick={() => void removeOrganization(org.id)}><Trash2 /></Button></div></div>
+      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 p-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)_auto]"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-h-11 min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div>{(org.email || org.website) && <p className="mt-1 break-words text-xs text-foreground-muted">{org.email ?? org.website}</p>}</button><div className="col-start-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground-muted lg:col-start-2 lg:row-start-1">{counts.projects + counts.opportunities + counts.invoices === 0 ? <span>{p.noRelatedRecords}</span> : [[p.projects, counts.projects], [p.opportunities, counts.opportunities], [p.invoices, counts.invoices]].filter(([, count]) => Number(count) > 0).map(([label, count]) => <span key={label}><strong className="tabular text-foreground">{count}</strong> {label}</span>)}</div><div className="col-start-2 row-start-1 flex justify-end lg:col-start-3"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} disabled={pendingRows.has(org.id)} onClick={() => void removeOrganization(org)}><Trash2 /></Button></div></div>
+        {registryNotice?.id === org.id && <div className="space-y-2 px-3 pb-3"><p className={registryNotice.error ? "text-xs text-risk" : "text-xs text-foreground-muted"} role={registryNotice.error ? "alert" : "status"}>{p[registryNotice.key]}</p>{registryNotice.error && !(registryNotice.key === "aresNotFound" || registryNotice.key === "aresInvalidIco" || registryNotice.key === "vatNotEu") && <Button variant="outline" disabled={reloading || pendingRows.size > 0} onClick={() => void reloadOrganizations()}>{p.organizationReload}</Button>}</div>}
         {expanded && <div className="grid gap-4 border-t border-border bg-surface-inset p-4 lg:grid-cols-[minmax(14rem,.65fr)_minmax(0,1.35fr)]"><div className="space-y-2">{org.email && <a href={`mailto:${org.email}`} className="block text-sm underline">{org.email}</a>}{org.website && <a href={org.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm underline">{org.website}<ExternalLink className="h-3 w-3" /></a>}{org.notes && <p className="text-sm text-foreground-muted">{org.notes}</p>}{relatedInvoices.length > 0 && <p className="pt-2 text-xs font-medium tabular">{p.totalInvoiced}: {formatCurrency(invoiceTotal, displayCurrency)}</p>}
           <div className="space-y-2 border-t border-border pt-2">
             {org.company_id && <p className="text-xs tabular text-foreground-muted">{p.companyId}: {org.company_id}{org.ares_verified_at ? ` · ${p.aresFilledOn} ${formatCheckedAt(org.ares_verified_at)}` : ""}</p>}
@@ -256,11 +307,11 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
             {org.vat_id && !canVerifyVat && <p className="text-xs text-foreground-muted">{p.vatNotEu}</p>}
             {canVerifyVat && vatStatus === "unchecked" && <p className="text-xs text-foreground-muted">{p.vatNeverVerified}</p>}
             {(canFillFromAres || canVerifyVat) && <div className="flex flex-wrap gap-2 pt-1">
-              {canFillFromAres && <Button variant="outline" size="sm" disabled={aresMutation.isPending} aria-label={`${p.fillFromAres}: ${org.name}`} onClick={() => aresMutation.mutate(org)}><Building2 />{p.fillFromAres}</Button>}
-              {canVerifyVat && <Button variant={vatIsFresh ? "ghost" : "outline"} size="sm" disabled={verifyMutation.isPending} aria-label={`${vatIsFresh ? p.recheckVat : p.verifyVat}: ${org.name}`} onClick={() => verifyMutation.mutate({ organization: org, force: vatIsFresh })}><ShieldCheck />{vatIsFresh ? p.recheckVat : p.verifyVat}</Button>}
+              {canFillFromAres && <Button variant="outline" size="sm" disabled={pendingRows.has(org.id)} aria-label={`${p.fillFromAres}: ${org.name}`} onClick={() => void runRegistry(org, "ares")}><Building2 />{p.fillFromAres}</Button>}
+              {canVerifyVat && <Button variant={vatIsFresh ? "ghost" : "outline"} size="sm" disabled={pendingRows.has(org.id)} aria-label={`${vatIsFresh ? p.recheckVat : p.verifyVat}: ${org.name}`} onClick={() => void runRegistry(org, "vies", vatIsFresh)}><ShieldCheck />{vatIsFresh ? p.recheckVat : p.verifyVat}</Button>}
             </div>}
             {vatNameMismatch(org.name, org.vat_verified_name) && <p className="text-xs text-warning">{p.vatRegisteredAs}: {org.vat_verified_name}</p>}
-            {registryNotice?.id === org.id && <p className="text-xs text-foreground-muted" role="status">{registryNotice.text}</p>}
+
           </div></div><div><p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">{p.relatedWork}</p><ul className="mt-2 divide-y divide-border text-xs text-foreground-muted">{relatedProjects.map((item) => <li key={item.id} className="py-1.5"><Link className="font-medium text-foreground underline" href={`/projects/${encodeURIComponent(item.slug)}`} prefetch={false}>{item.name}</Link></li>)}{relatedOpportunities.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.opportunity}: {item.title}</span><StatusBadge value={item.status} /></li>)}{relatedInvoices.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.invoices}: {item.number}</span><StatusBadge value={item.status} /></li>)}{relatedTodos.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.task}: {item.title}</li>)}{relatedNotes.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.note}: {item.title}</li>)}{relatedDates.slice(0, 3).map((item) => <li key={item.id} className="py-1.5 tabular">{item.the_date}: {item.title}</li>)}</ul></div></div>}
       </article>;
     })}</div>}
