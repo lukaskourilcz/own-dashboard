@@ -44,6 +44,7 @@ type TodosStrings = {
   refreshUnavailable: (repos: string) => string;
   showAllCount: (n: number) => string;
   showLess: string;
+  showTaskText: string; hideTaskText: string;
   collapseGroup: string;
   expandGroup: string;
   repoTaskCount: (n: number) => string;
@@ -158,6 +159,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       `No NEEDED.md at the root or in docs/ of ${repos}. Their tasks were kept.`,
     showAllCount: (n) => `Show all ${n}`,
     showLess: "Show less",
+    showTaskText: "Show full task", hideTaskText: "Collapse task text",
     collapseGroup: "Collapse",
     expandGroup: "Expand",
     repoTaskCount: (n) => (n === 1 ? "1 task" : `${n} tasks`),
@@ -297,6 +299,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich úkoly zůstaly.`,
     showAllCount: (n) => `Zobrazit vše (${n})`,
     showLess: "Zobrazit méně",
+    showTaskText: "Zobrazit celý úkol", hideTaskText: "Sbalit text úkolu",
     collapseGroup: "Sbalit",
     expandGroup: "Rozbalit",
     repoTaskCount: (n) => {

@@ -1594,10 +1594,10 @@
     },
     {
       "path": "src/components/panels/todos-panel.tsx",
-      "lines": 1124,
+      "lines": 1110,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "partially reviewed; captured manual writes and repository identity forwarding checked in findings 177\u2013179; refresh/cleanup owner/pending lifecycle and task-list density remain pending",
-      "reviewedSha256": "c2c2130d2a06b92f2333de2eb4cf048a699ed5bd00500fc5ae566072a4be56f3"
+      "status": "partially reviewed; captured manual writes, repository identity and row density checked in findings 177\u2013180; repository refresh/cleanup owner/pending lifecycle and final release remain pending",
+      "reviewedSha256": "8dfc74e815528f29cb45f63dc7145e9de7c199f583068042dd6f341140233303"
     },
     {
       "path": "src/components/panels/tools-panel.tsx",
@@ -1750,7 +1750,7 @@
       "path": "src/components/tasks/task-tags.tsx",
       "lines": 142,
       "sha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b",
-      "status": "partial; source inspected; long metadata, actual contrast/target and task-row integration pending; see remaining-review.md",
+      "status": "source reviewed; complete metadata rendering and rich EN/CS task-row integration with native reflow/axe checked in finding 180; final release pending",
       "reviewedSha256": "c6b51e8e05a7d19f0333181fd8a6009c1731d37b568d577e52299427215ec27b"
     },
     {
@@ -2622,10 +2622,10 @@
     },
     {
       "path": "src/lib/i18n/sections/todos.ts",
-      "lines": 414,
+      "lines": 417,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; EN/CS create and row mutation recovery feedback checked in findings 177\u2013178; final release pending",
-      "reviewedSha256": "7b22dfbb2496aabbd6c3e1917b0fd8ea86bedddff17234c6f4423c657d597843"
+      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177\u2013180; final release pending",
+      "reviewedSha256": "8d13cb5b74faf010f9b28db6af47c3908497e6f2c89c28393a18d736616def20"
     },
     {
       "path": "src/lib/i18n/sections/tools.ts",
@@ -4380,9 +4380,9 @@
     {
       "path": "src/components/tasks/use-task-actions.ts",
       "sha256": null,
-      "lines": 76,
-      "status": "source reviewed; captured row completion/deletion, synchronous reservations, confirmation/owner/unmount/exit guards and strict cache ordering checked in finding 178; final release pending",
-      "reviewedSha256": "e41cf265ce6009b1e839282cb552b2d013a5b4e44a13da1e129ccbee62cd2e86"
+      "lines": 94,
+      "status": "source reviewed; captured row writes and mount/owner-bound neighbor focus restoration checked in findings 178/180; final release pending",
+      "reviewedSha256": "24ad9ec076634593ccc6f44b5b39028367d16d00ee577157ac98f34964da42ae"
     },
     {
       "path": "src/lib/github-repository-file-server.ts",
@@ -4390,6 +4390,13 @@
       "lines": 57,
       "status": "source reviewed; permanent repository/branch identity, pinned source hashes, strict write receipts and bounded cancellation checked in finding 179; final release pending",
       "reviewedSha256": "8813e040a742ac1ef9202acdcd35dbc55c1327fa295fc36eba901ed5960762bb"
+    },
+    {
+      "path": "src/components/tasks/task-title.tsx",
+      "sha256": null,
+      "lines": 24,
+      "status": "source reviewed; measured three-line disclosure, full selectable text, keyboard controls and resize cleanup checked in finding 180; final release pending",
+      "reviewedSha256": "43c0eb92ac0ed4d844c3762717a713abb4b4bb80bae3b52f7475de05f1d69aaf"
     }
   ],
   "baselineFileCount": 561

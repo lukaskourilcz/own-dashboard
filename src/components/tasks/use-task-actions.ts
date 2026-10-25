@@ -15,11 +15,13 @@ import type { Todo } from '@/lib/types';
 export function useTaskActions(ownerId: string) {
   const client = useQueryClient(), db = createClient(), confirm = useConfirmation(), toast = useToast(), t = useDict();
   const mounted = useRef(false), actor = useRef(ownerId), requests = useRef(new Map<string, AbortController>());
+  const focusFrames = useRef(new Set<number>());
   const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
     mounted.current = true;
     const pendingRequests = requests.current;
-    return () => { mounted.current = false; for (const request of pendingRequests.values()) request.abort(); };
+    const frames = focusFrames.current;
+    return () => { mounted.current = false; for (const request of pendingRequests.values()) request.abort(); for (const frame of frames) cancelAnimationFrame(frame); frames.clear(); };
   }, []);
   useLayoutEffect(() => {
     actor.current = ownerId;
@@ -40,6 +42,11 @@ export function useTaskActions(ownerId: string) {
       return;
     }
     const cancellation = new AbortController();
+    const initiator = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const sourceRow = initiator?.closest<HTMLElement>('[data-task-id]');
+    const rendered = [...document.querySelectorAll<HTMLElement>('[data-task-id]')];
+    const position = sourceRow ? rendered.indexOf(sourceRow) : -1;
+    const neighbors = position < 0 ? [] : [...rendered.slice(position + 1), ...rendered.slice(0, position).reverse()].map(row => row.dataset.taskId);
     requests.current.set(command.id, cancellation); setPendingIds(new Set(requests.current.keys()));
     const current = () => mounted.current && actor.current === command.ownerId && !cancellation.signal.aborted;
     try {
@@ -60,6 +67,17 @@ export function useTaskActions(ownerId: string) {
         const applied = applyTaskWriteReceipt(rows, command, receipt); reconcile = applied.reconcile; return applied.rows;
       });
       if (reconcile) void client.invalidateQueries({ queryKey: qk.todos, exact: true });
+      if (sourceRow && initiator) {
+        const frame = requestAnimationFrame(() => {
+          focusFrames.current.delete(frame);
+          if (!current() || initiator.isConnected || document.activeElement !== document.body) return;
+          const rows = [...document.querySelectorAll<HTMLElement>('[data-task-id]')];
+          const target = neighbors.map(id => rows.find(row => row.dataset.taskId === id)?.querySelector<HTMLElement>('button:not(:disabled)')).find(element => element && element.getClientRects().length > 0)
+            ?? document.querySelector<HTMLElement>('[data-task-focus-fallback]');
+          target?.focus({ preventScroll: true });
+        });
+        focusFrames.current.add(frame);
+      }
       void client.invalidateQueries({ queryKey: qk.dailyFocus });
       if (receipt.kind === 'absent') toast.info(t.todos.taskMissing);
     } catch {

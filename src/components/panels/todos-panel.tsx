@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "motion/react";
 import {
   ChevronDown,
   ChevronRight,
@@ -56,6 +55,7 @@ import {
   scanNeededRepos,
 } from "@/lib/needed-sync";
 import { useTaskActions } from "@/components/tasks/use-task-actions";
+import { TaskTitle } from "@/components/tasks/task-title";
 import { TaskComposer } from "@/components/tasks/task-composer";
 import { TaskTags } from "@/components/tasks/task-tags";
 import {
@@ -264,7 +264,7 @@ export function TodosPanel({
     );
   }
 
-  // Full view: open GitHub tasks become per-repo cards with a subcard each;
+  // Full view: task groups use shared row dividers;
   // hand-added tasks collect in a "Personal" card. The importance filter (0 =
   // all) narrows to tasks scoring at least `minImportance`; unscored tasks
   // (null) count as 0, so any active filter hides them.
@@ -382,6 +382,7 @@ export function TodosPanel({
                 size="icon"
                 onClick={() => setAddOpen(true)}
                 aria-label={t.todos.addTask}
+                data-task-focus-fallback
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -426,11 +427,12 @@ export function TodosPanel({
               </CardContent>
             </Card>
           ) : (
-            <div className="columns-1 gap-4 lg:columns-2">
+            <div className={cn("columns-1 gap-4", Number(openGlobal.length > 0) + taskGroups.length + Number(openPersonal.length > 0) > 1 ? "lg:columns-2" : "mx-auto max-w-2xl")}>
               {openGlobal.length > 0 && (
                 <TaskGroupCard
                   t={t}
                   locale={locale}
+                  label={t.todos.globalGroup}
                   items={openGlobal}
                   limit={tasksPerCategory}
                   pendingIds={pendingIds}
@@ -449,6 +451,7 @@ export function TodosPanel({
                   key={g.id}
                   t={t}
                   locale={locale}
+                  label={g.name}
                   items={g.items}
                   limit={tasksPerCategory}
                   pendingIds={pendingIds}
@@ -468,7 +471,7 @@ export function TodosPanel({
                         ) : (
                           <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
                         )}
-                        <span className="truncate">{g.name}</span>
+                        <span className="break-words [overflow-wrap:anywhere]">{g.name}</span>
                         <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
                       </a>
                     ) : (
@@ -478,7 +481,7 @@ export function TodosPanel({
                         ) : (
                           <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
                         )}
-                        <span className="truncate">{g.name}</span>
+                        <span className="break-words [overflow-wrap:anywhere]">{g.name}</span>
                       </span>
                     )
                   }
@@ -488,6 +491,7 @@ export function TodosPanel({
                 <TaskGroupCard
                   t={t}
                   locale={locale}
+                  label={t.todos.personalGroup}
                   items={openPersonal}
                   limit={tasksPerCategory}
                   pendingIds={pendingIds}
@@ -505,6 +509,7 @@ export function TodosPanel({
           )}
 
           {done.length > 0 && (
+            <div className={Number(openGlobal.length > 0) + taskGroups.length + Number(openPersonal.length > 0) <= 1 ? "mx-auto max-w-2xl" : undefined}>
             <FinishedSection
               t={t}
               locale={locale}
@@ -528,6 +533,7 @@ export function TodosPanel({
                 });
               }}
             />
+            </div>
           )}
 
       </div>
@@ -561,6 +567,7 @@ function TaskGroupCard({
   t,
   locale,
   header,
+  label,
   items,
   limit,
   onToggle,
@@ -570,11 +577,13 @@ function TaskGroupCard({
   t: Dict;
   locale: Locale;
   header: React.ReactNode;
+  label: string;
   items: Todo[];
   limit: number;
   onToggle: (td: Todo) => void;
   onRemove: (td: Todo) => void;
 }) {
+  const listId = useId();
   const [collapsed, setCollapsed] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const total = items.length;
@@ -589,8 +598,9 @@ function TaskGroupCard({
           type="button"
           onClick={() => setCollapsed((v) => !v)}
           aria-expanded={!collapsed}
-          aria-label={collapsed ? t.todos.expandGroup : t.todos.collapseGroup}
-          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+          aria-controls={listId}
+          aria-label={`${collapsed ? t.todos.expandGroup : t.todos.collapseGroup}: ${label}`}
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring md:size-8"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -605,10 +615,9 @@ function TaskGroupCard({
       </div>
       {!collapsed && (
         <>
-          <ul className="space-y-2 p-3">
-            <AnimatePresence initial={false}>
+          <ul id={listId} className="divide-y divide-border/60">
               {shown.map((td) => (
-                <TaskSubcard
+                <TaskRow
                   key={td.id}
                   t={t}
                   locale={locale}
@@ -618,13 +627,14 @@ function TaskGroupCard({
                   onRemove={onRemove}
                 />
               ))}
-            </AnimatePresence>
           </ul>
           {canExpand && (
             <button
               type="button"
               onClick={() => setShowAll((v) => !v)}
-              className="w-full border-t border-border/60 px-4 py-2 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+              aria-expanded={showAll}
+              aria-controls={listId}
+              className="min-h-11 w-full border-t border-border/60 px-4 py-2 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
             >
               {showAll ? t.todos.showLess : t.todos.showAllCount(total)}
             </button>
@@ -635,8 +645,8 @@ function TaskGroupCard({
   );
 }
 
-/** One task, rendered as a bordered subcard with its generated date + timer. */
-function TaskSubcard({
+/** One task row; metadata shares a wrapping line instead of stacking nested cards. */
+function TaskRow({
   pendingIds,
   t,
   locale,
@@ -652,14 +662,7 @@ function TaskSubcard({
   onRemove: (td: Todo) => void;
 }) {
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-      transition={{ duration: 0.15 }}
-      className="group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2"
-    >
+    <li data-task-id={td.id} className="group flex items-start gap-2 px-3 py-2">
       <Checkbox
         disabled={pendingIds.has(td.id)}
         aria-busy={pendingIds.has(td.id)}
@@ -667,19 +670,17 @@ function TaskSubcard({
         onCheckedChange={() => onToggle(td)}
         aria-label={td.title}
       />
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-3 break-words text-sm leading-5 text-foreground">
-          {td.title}
-        </p>
+      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">
+        <TaskTitle title={td.title} className="min-w-[min(100%,14rem)] flex-1" />
+        <div className="flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
         <TaskTags
           t={t}
           importance={td.importance}
           kind={td.task_kind}
           minutes={td.estimated_minutes}
           assignee={assigneeForTodo(td.needed_raw, td.needed_assignee)}
-          className="mt-1.5"
+          className="contents"
         />
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
           {td.generated_at && (
             <span className="tabular">
               {t.todos.generatedOn(
@@ -699,12 +700,12 @@ function TaskSubcard({
           aria-busy={pendingIds.has(td.id)}
           onClick={() => onRemove(td)}
           aria-label={t.common.delete}
-          className="inline-flex min-h-6 min-w-6 items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-destructive focus-ring disabled:opacity-50 md:size-8"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </Tooltip>
-    </motion.li>
+    </li>
   );
 }
 
@@ -756,13 +757,16 @@ function FinishedSection({
   clearing: boolean;
   onClearNeeded: () => void;
 }) {
+  const listId = useId();
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
         <button
           type="button"
           onClick={onToggleOpen}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-foreground focus-ring rounded"
+          aria-expanded={open}
+          aria-controls={listId}
+          className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-foreground focus-ring md:min-h-8"
         >
           {t.todos.finishedTitle}
           <span className="rounded-full bg-surface px-2 py-[3px] text-[10px] font-semibold tabular text-foreground-muted">
@@ -792,25 +796,24 @@ function FinishedSection({
         )}
       </div>
       {open && (
-        <ul className="divide-y divide-border/60">
+        <ul id={listId} className="divide-y divide-border/60">
           {items.map((td) => (
             <li
               key={td.id}
-              className="group flex items-center gap-3 px-4 py-2"
+              data-task-id={td.id}
+              className="group flex items-start gap-2 px-3 py-2"
             >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-foreground-subtle line-through">
-                  {td.title}
-                </p>
+              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">
+                <TaskTitle title={td.title} done className="min-w-[min(100%,14rem)] flex-1" />
+                <div className="flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
                 <TaskTags
                   t={t}
                   importance={td.importance}
                   kind={td.task_kind}
                   minutes={td.estimated_minutes}
                   assignee={assigneeForTodo(td.needed_raw, td.needed_assignee)}
-                  className="mt-1"
+                  className="contents"
                 />
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-foreground-subtle">
                   {td.repo_name && <span className="truncate">{td.repo_name}</span>}
                   {td.due_date && (
                     <span className="tabular">
@@ -830,7 +833,7 @@ function FinishedSection({
                   aria-busy={pendingIds.has(td.id)}
                   onClick={() => onReopen(td)}
                   aria-label={t.todos.reopen}
-                  className="p-1 rounded text-foreground-subtle hover:text-foreground focus-ring"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring disabled:opacity-50 md:size-8"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
@@ -842,7 +845,7 @@ function FinishedSection({
                   aria-busy={pendingIds.has(td.id)}
                   onClick={() => onRemove(td)}
                   aria-label={t.common.delete}
-                  className="p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-destructive focus-ring disabled:opacity-50 md:size-8"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -1065,17 +1068,8 @@ function TodoList({
 }) {
   return (
     <ul className="-mx-2">
-      <AnimatePresence initial={false}>
         {items.map((td) => (
-          <motion.li
-            key={td.id}
-            layout
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-            transition={{ duration: 0.15 }}
-            className="group flex items-center gap-3 rounded-md px-2 py-1.5 row-hover"
-          >
+          <li key={td.id} data-task-id={td.id} className="group flex items-start gap-2 rounded-md px-2 py-1.5 row-hover">
             <Checkbox
               disabled={pendingIds.has(td.id)}
               aria-busy={pendingIds.has(td.id)}
@@ -1084,14 +1078,7 @@ function TodoList({
               aria-label={td.title}
             />
             <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "line-clamp-3 text-sm leading-5 transition-colors",
-                  td.done && "line-through text-foreground-subtle",
-                )}
-              >
-                {td.title}
-              </p>
+              <TaskTitle title={td.title} done={td.done} />
               {td.due_date && (
                 <p className="text-[11px] text-foreground-subtle tabular">
                   {t.todos.due(
@@ -1110,15 +1097,14 @@ function TodoList({
                   aria-busy={pendingIds.has(td.id)}
                   onClick={() => onRemove(td)}
                   aria-label={t.common.delete}
-                  className="inline-flex min-h-6 min-w-6 items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-destructive focus-ring disabled:opacity-50 md:size-8"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </Tooltip>
             )}
-          </motion.li>
+          </li>
         ))}
-      </AnimatePresence>
     </ul>
   );
 }

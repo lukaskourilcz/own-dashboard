@@ -29,7 +29,7 @@ for (const lang of ['en', 'cs'] as const) {
     await expect(page.getByRole('checkbox', { name: f.second.title, exact: true })).toHaveCount(0);
     release(); await expect(first).toBeEnabled(); await expect(page.getByText(todos[lang].saveErr, { exact: true })).toBeVisible(); await expect.poll(f.reads).toBe(2);
     expect(f.rows()[1].done).toBe(true); expect(requests[0].p_expected).toEqual(f.first); await expect(page.getByText('TEST_ONLY_PRIVATE', { exact: true })).toHaveCount(0);
-    const reads = f.reads(); await first.click(); await expect(first).toHaveCount(0); expect(f.reads()).toBe(reads); expect(requests[2]).toEqual(requests[0]);
+    const reads = f.reads(); await first.click(); await expect(first).toHaveCount(0); expect(f.reads()).toBe(reads); expect(requests[2]).toEqual(requests[0]); await expect(page.getByRole("button", { name: todos[lang].addTask, exact: true })).toBeFocused();
     expect(errors.filter(error => !/^Failed to load resource: the server responded with a status of 503 .*\(https:\/\/example\.supabase\.co\/rest\/v1\/rpc\/write_task\)$/.test(error))).toEqual([]);
   });
   test(`${lang}: task deletion retains a conflicting row and removes only a confirmed retry`, async ({ page }) => {
