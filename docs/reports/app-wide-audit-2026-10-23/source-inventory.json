@@ -1444,8 +1444,8 @@
       "path": "src/components/panels/clients-panel.tsx",
       "lines": 226,
       "sha256": "5932fe3732c2794ce5b6433039b52564a1d609d4fa2c7cfb4ccaeaed200a6c36",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "13e1b791cd9a37cd596b0860220e98a0b831c9e9b3c3e8f342d2246b2c328510"
+      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending",
+      "reviewedSha256": "7df076e96df3673b778f73badf02b839f5d3550e8518d308dce8012de20b88e5"
     },
     {
       "path": "src/components/panels/competition-panel.tsx",
@@ -2665,8 +2665,8 @@
       "path": "src/lib/i18n/sections/professional.ts",
       "lines": 625,
       "sha256": "f04d54a6ead5e5ed891dd822054aa5ee56992871a6c59e4d417aeb619b37d74a",
-      "status": "partial; findings 164/166/168–169 EN/CS weekly recovery and compact action copy checked; remaining destination copy review pending",
-      "reviewedSha256": "491e521249f00b5bdcf0291e94b5b4eff3a6ac00f5c089c824e3e21943d42f30"
+      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending",
+      "reviewedSha256": "5032e3b468ad2144ddd1802647a377b47239bb0ca42e22fddb8c0ea006e87169"
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
@@ -4625,6 +4625,13 @@
       "lines": 75,
       "reviewedSha256": "41034ed3104ac57143d0681cd781d1bbbc559024a972b8751353660f32641edb",
       "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
+    },
+    {
+      "path": "src/lib/tax-registry-client.ts",
+      "sha256": null,
+      "lines": 36,
+      "reviewedSha256": "02af88b22328b4fdc8fa40c2a793c82c936b22ca0889578850a587b45e1be76c",
+      "status": "source reviewed; finding 215 captured new-form lookup and compact native EN/CS recovery pass; organization persistence and final release pending"
     }
   ],
   "baselineFileCount": 561

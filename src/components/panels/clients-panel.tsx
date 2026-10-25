@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -31,6 +31,8 @@ import {
   type AresSubject,
   type ViesResult,
 } from "@/lib/tax-registry";
+import { lookupAres, RegistryLookupError } from "@/lib/tax-registry-client";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { computeTotals } from "@/lib/invoices";
 import { convert } from "@/lib/fx";
 import { formatCurrency } from "@/lib/utils";
@@ -64,6 +66,10 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   displayCurrency: string;
 }) {
   const formId = useId();
+  const owner = useOwnerPreferences();
+  const draftEpoch = useRef(0);
+  const draftLookup = useRef<{ controller: AbortController; epoch: number } | null>(null);
+  useEffect(() => () => { draftLookup.current?.controller.abort(); }, []);
   const t = useDict();
   const p = t.professional;
   const { lang } = useLang();
@@ -76,26 +82,39 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
   const [typeFilter, setTypeFilter] = useState<OrganizationType | "all">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [ares, setAres] = useState<{ busy: boolean; message: string | null; filledAt: string | null }>({ busy: false, message: null, filledAt: null });
+  const [ares, setAres] = useState<{ busy: boolean; message: "aresInvalidIco" | "aresUnavailable" | "aresNotFound" | "aresFilled" | null; filledAt: string | null }>({ busy: false, message: null, filledAt: null });
   const [registryNotice, setRegistryNotice] = useState<{ id: string; text: string } | null>(null);
 
   // Read the public ARES register through /api/registry/ares and complete the
   // legally required invoice fields. Typed values are kept; the registered name
   // is refreshed, which is the whole point of the lookup.
+  function cancelDraftLookup() {
+    draftEpoch.current += 1; draftLookup.current?.controller.abort(); draftLookup.current = null;
+    setAres({ busy: false, message: null, filledAt: null });
+  }
   async function fillFromAres() {
-    const ico = normalizeIco(form.companyId);
-    if (!isValidIco(ico)) { setAres({ busy: false, message: p.aresInvalidIco, filledAt: null }); return; }
-    setAres({ busy: true, message: null, filledAt: null });
+    if (draftLookup.current) return;
+    const ico = normalizeIco(form.companyId), typedName = form.name;
+    if (!isValidIco(ico)) { setAres({ busy: false, message: "aresInvalidIco", filledAt: null }); return; }
+    if (!owner) { setAres({ busy: false, message: "aresUnavailable", filledAt: null }); return; }
+    const captured = owner.capture(), attempt = { controller: new AbortController(), epoch: draftEpoch.current };
+    const signal = AbortSignal.any([captured.signal, attempt.controller.signal]);
+    draftLookup.current = attempt; setAres({ busy: true, message: null, filledAt: null });
     try {
-      const response = await fetch("/api/registry/ares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ico }) });
-      const data = (await response.json().catch(() => ({}))) as Partial<AresSubject> & { checkedAt?: string };
-      if (!response.ok) { setAres({ busy: false, message: response.status === 404 ? p.aresNotFound : p.aresUnavailable, filledAt: null }); return; }
-      const subject: AresSubject = { ico, name: data.name ?? "", address: data.address ?? "", city: data.city ?? "", zip: data.zip ?? "", country: data.country ?? "", vatId: data.vatId ?? "" };
-      setForm((current) => ({ ...current, companyId: ico, ...applyAresSubject({ name: current.name, address: current.address, city: current.city, zip: current.zip, country: current.country, vatId: current.vatId }, subject) }));
-      setAres({ busy: false, message: p.aresFilled, filledAt: data.checkedAt ?? new Date().toISOString() });
-    } catch {
-      setAres({ busy: false, message: p.aresUnavailable, filledAt: null });
-    }
+      const subject = await lookupAres({ ownerId: captured.ownerId, signal }, ico);
+      if (signal.aborted || draftLookup.current !== attempt || draftEpoch.current !== attempt.epoch) return;
+      setForm(current => {
+        if (draftEpoch.current !== attempt.epoch || normalizeIco(current.companyId) !== ico) return current;
+        const filled = applyAresSubject(current, subject);
+        return { ...current, ...filled, companyId: ico, name: current.name === typedName ? filled.name : current.name };
+      });
+      setAres({ busy: false, message: "aresFilled", filledAt: subject.checkedAt });
+    } catch (error) {
+      if (!signal.aborted && draftLookup.current === attempt && draftEpoch.current === attempt.epoch) {
+        const message = error instanceof RegistryLookupError && error.reason === "not-found" ? "aresNotFound" : error instanceof RegistryLookupError && error.reason === "invalid" ? "aresInvalidIco" : "aresUnavailable";
+        setAres({ busy: false, message, filledAt: null });
+      }
+    } finally { if (draftLookup.current === attempt) draftLookup.current = null; }
   }
 
   const createMutation = useMutation({
@@ -106,7 +125,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
       if (error) throw error;
       return data as Organization;
     },
-    onSuccess: (item) => { setOrganizations((old) => [...old, item].sort((a, b) => a.name.localeCompare(b.name))); setForm(EMPTY_FORM); setAres({ busy: false, message: null, filledAt: null }); setOpen(false); void qc.invalidateQueries({ queryKey: qk.organizations }); },
+    onSuccess: (item) => { cancelDraftLookup(); setOrganizations((old) => [...old, item].sort((a, b) => a.name.localeCompare(b.name))); setForm(EMPTY_FORM); setAres({ busy: false, message: null, filledAt: null }); setOpen(false); void qc.invalidateQueries({ queryKey: qk.organizations }); },
     onError: () => toast.err(p.couldNotSave),
   });
 
@@ -198,20 +217,20 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     (!clientQuery || `${org.name} ${org.email ?? ""}`.toLocaleLowerCase().includes(clientQuery)),
   );
   return <div>
-    <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button onClick={() => setOpen((x) => !x)}><Plus />{p.newClient}</Button>} />
-    {open && <Card className="mb-4"><CardContent className="p-4"><form className="grid gap-3 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); if (form.name.trim() && !createMutation.isPending) createMutation.mutate(); }}>
+    <PageHeader title={p.clientsTitle} description={p.clientsDescription} action={<Button onClick={() => { cancelDraftLookup(); setOpen(x => !x); }}><Plus />{p.newClient}</Button>} />
+    {open && <Card className="mx-auto mb-4 max-w-4xl"><CardContent className="p-4"><form aria-busy={ares.busy} className="grid gap-3 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); if (form.name.trim() && !createMutation.isPending && !draftLookup.current) createMutation.mutate(); }}>
       <div className="space-y-1.5"><Label htmlFor={`${formId}-name`}>{p.name}</Label><Input id={`${formId}-name`} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
       <div className="space-y-1.5"><Label>{p.type}</Label><SimpleSelect aria-label={p.type} value={form.type} onValueChange={(type) => setForm({ ...form, type: type as OrganizationType })} options={TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))} /></div>
       <div className="space-y-1.5"><Label htmlFor={`${formId}-website`}>{p.website}</Label><Input id={`${formId}-website`} type="url" pattern="https?://.+" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor={`${formId}-email`}>{p.email}</Label><Input id={`${formId}-email`} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-      <div className="space-y-1.5"><Label htmlFor="org-ico">{p.companyId}</Label><div className="flex gap-2"><Input id="org-ico" inputMode="numeric" value={form.companyId} onChange={(e) => setForm({ ...form, companyId: e.target.value })} /><Button type="button" variant="outline" disabled={ares.busy || !form.companyId.trim()} onClick={() => void fillFromAres()}><Building2 />{p.fillFromAres}</Button></div></div>
-      <div className="space-y-1.5"><Label htmlFor="org-dic">{p.vatId}</Label><Input id="org-dic" value={form.vatId} onChange={(e) => setForm({ ...form, vatId: e.target.value })} /></div>
-      {ares.message && <p className="text-xs text-foreground-muted sm:col-span-2" role="status">{ares.message}</p>}
+      <div className="grid gap-3 sm:col-span-2 lg:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="org-ico">{p.companyId}</Label><div className="flex min-w-0 gap-2"><Input className="min-w-24 flex-1" id="org-ico" inputMode="numeric" value={form.companyId} onChange={e => { const companyId = e.target.value; cancelDraftLookup(); setForm(current => ({ ...current, companyId })); }} /><Button type="button" variant="outline" className="shrink-0" disabled={ares.busy || !form.companyId.trim()} onClick={() => void fillFromAres()}><Building2 />{p.fillFromAres}</Button></div></div>
+      <div className="space-y-1.5"><Label htmlFor="org-dic">{p.vatId}</Label><Input id="org-dic" value={form.vatId} onChange={(e) => setForm({ ...form, vatId: e.target.value })} /></div></div>
+      {ares.message && <p className="text-xs text-foreground-muted sm:col-span-2" role={ares.filledAt ? "status" : "alert"}>{p[ares.message]}</p>}
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="org-address">{p.address}</Label><Input id="org-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor="org-city">{p.city}</Label><Input id="org-city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label htmlFor="org-zip">{p.zip}</Label><Input id="org-zip" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} /></div><div className="space-y-1.5"><Label htmlFor="org-country">{p.country}</Label><Input id="org-country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div></div>
       <div className="space-y-1.5 sm:col-span-2"><Label htmlFor={`${formId}-notes`}>{p.notes}</Label><Textarea id={`${formId}-notes`} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-      <Button type="submit" className="sm:col-span-2" disabled={!form.name.trim() || createMutation.isPending}>{p.create}</Button>
+      <Button type="submit" className="sm:col-span-2 sm:justify-self-end" disabled={!form.name.trim() || createMutation.isPending || ares.busy}>{p.create}</Button>
     </form></CardContent></Card>}
     <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
     {visibleOrganizations.length === 0 ? <EmptyState title={organizations.length === 0 ? p.clientsEmpty : t.common.none} icon={Users} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">{visibleOrganizations.map((org) => {
