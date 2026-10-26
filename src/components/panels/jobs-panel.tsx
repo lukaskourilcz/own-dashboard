@@ -1644,6 +1644,7 @@ function CoverLetterField({
   readOnly = false,
   showLabel = true,
   helperRevision = 0,
+  protectContext = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -1660,6 +1661,7 @@ function CoverLetterField({
   readOnly?: boolean;
   showLabel?: boolean;
   helperRevision?: number;
+  protectContext?: boolean;
 }) {
   const t = useDict();
   const { lang } = useLang();
@@ -1683,7 +1685,7 @@ function CoverLetterField({
     }
     if (body == null) return;
     if (value.trim() && !window.confirm(t.jobs.overwriteLetterConfirm)) return;
-    onChange(
+    changeLetter(
       fillTemplate(body, {
         ...vars,
         date: format(new Date(), "PPP", { locale }),
@@ -1693,17 +1695,22 @@ function CoverLetterField({
 
   const templateWriter=useCareerTemplateWrite({userId,setTemplates});
   const [templateAttempt,setTemplateAttempt]=useState<{name:string;body:string}|null>(null),templateAttemptRef=useRef<typeof templateAttempt>(null),templateId=useRef<string|null>(null),nameRef=useRef("");
+  const initialContext={body:value,position:vars.position??'',company:vars.company??''};
+  const currentContext=useRef(initialContext),baselineContext=useRef(initialContext),attemptContext=useRef<typeof initialContext|null>(null);
+  useLayoutEffect(()=>{currentContext.current={body:value,position:vars.position??'',company:vars.company??''};},[value,vars.position,vars.company]);
+  function matchesContext(a:typeof currentContext.current,b:typeof currentContext.current){return a.body===b.body&&a.position===b.position&&a.company===b.company;}
   const templateLocked=templateWriter.pending!==null||!!templateWriter.failure&&templateWriter.failure.reason!=='invalid';
-  function confirmedTemplate(){templateAttemptRef.current=null;setTemplateAttempt(null);templateId.current=null;nameRef.current="";setDraftName("");toast.ok(t.jobs.templateSaved);}
+  function changeLetter(body:string){if(readOnly||templateWriter.isPending())return;currentContext.current={...currentContext.current,body};onChange(body);if(templateWriter.failure?.reason==='invalid')templateWriter.clearFailure();}
+  function confirmedTemplate(){const saved=attemptContext.current;if(saved)baselineContext.current=saved;attemptContext.current=null;templateAttemptRef.current=null;setTemplateAttempt(null);templateId.current=null;nameRef.current="";setDraftName("");toast.ok(t.jobs.templateSaved);return !protectContext||!!saved&&matchesContext(currentContext.current,saved);}
   async function saveAsTemplate(){
     if(templateWriter.isPending()||templateWriter.failure||!value.trim())return false;
     const defaultName=`[${letterLanguage.toUpperCase()}] ${vars.company || (lang === "cs" ? "Firma" : "Company")} · ${vars.position || (lang === "cs" ? "Dopis" : "Letter")} · ${new Date().toISOString().slice(0,10)}`;
     const fields={name:nameRef.current.trim()||defaultName.slice(0,CAREER_TEMPLATE_NAME_MAX).replace(/[\uD800-\uDBFF]$/u,''),body:value};
-    templateId.current??=crypto.randomUUID();templateAttemptRef.current=fields;setTemplateAttempt(fields);
-    const receipt=await templateWriter.create(templateId.current,fields);if(!receipt||!templateWriter.isCurrent())return false;confirmedTemplate();return true;
+    templateId.current??=crypto.randomUUID();templateAttemptRef.current=fields;attemptContext.current={body:value,position:vars.position??'',company:vars.company??''};setTemplateAttempt(fields);
+    const receipt=await templateWriter.create(templateId.current,fields);if(!receipt||!templateWriter.isCurrent())return false;return confirmedTemplate();
   }
   async function retryTemplate(){const receipt=await templateWriter.retry();if(receipt&&templateWriter.isCurrent())confirmedTemplate();}
-  useUnsavedDraft({get dirty(){return !!nameRef.current.trim()||templateAttemptRef.current!==null;},canSave:!templateWriter.failure&&!!value.trim()&&value.length<=CAREER_TEMPLATE_BODY_MAX,save:saveAsTemplate,discard:()=>{templateAttemptRef.current=null;templateId.current=null;nameRef.current="";setTemplateAttempt(null);setDraftName("");templateWriter.clearFailure();}});
+  useUnsavedDraft({get dirty(){return !!nameRef.current.trim()||templateAttemptRef.current!==null||protectContext&&!matchesContext(currentContext.current,baselineContext.current);},canSave:!templateWriter.failure&&!!value.trim()&&value.length<=CAREER_TEMPLATE_BODY_MAX,save:saveAsTemplate,discard:()=>{baselineContext.current=currentContext.current;attemptContext.current=null;templateAttemptRef.current=null;templateId.current=null;nameRef.current="";setTemplateAttempt(null);setDraftName("");templateWriter.clearFailure();}});
 
   return (
     <div className="space-y-4">
@@ -1716,7 +1723,7 @@ function CoverLetterField({
         company={vars.company ?? ""}
         description={description}
         value={value}
-        onChange={onChange}
+        onChange={changeLetter}
         language={letterLanguage}
         onLanguageChange={setLetterLanguage}
       />}
@@ -1785,7 +1792,7 @@ function CoverLetterField({
         readOnly={readOnly||templateWriter.pending!==null}
         id={id}
         value={value}
-        onChange={(e) => {if(!templateWriter.isPending())onChange(e.target.value);}}
+        onChange={(e) => changeLetter(e.target.value)}
         placeholder={t.jobs.coverLetterPlaceholder}
         rows={6}
         className="text-base leading-relaxed"
@@ -2344,6 +2351,7 @@ function LetterWorkspace({
           </label>
         </div>
         <CoverLetterField
+          protectContext
           value={letter}
           onChange={setLetter}
           templates={templates}

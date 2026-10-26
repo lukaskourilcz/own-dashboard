@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2472,
+      "lines": 2480,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 301 guards inline template retries and independent parent/child draft exits; 48 native cases pass; standalone letter workspace, Saved-letter controls and wider density pending",
-      "reviewedSha256": "8693546917017c2947a814bf469ac3716659149d7f44d831b3be5fa18ddea994"
+      "status": "source reviewed; findings 292\u2013303 captured application/template writes and canonical workspace draft guards pass targeted checks; large picker/history/previous-letter rendering, long rows and global board pending still open",
+      "reviewedSha256": "4613ca0e4d7088d03fae606723149d0dea1a991c62db5540c3140fedf6c34e9d"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
