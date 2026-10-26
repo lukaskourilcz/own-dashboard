@@ -1998,6 +1998,7 @@ function AppliedView({
       {layout === "board" ? (
         <CareerBoard
           key={JSON.stringify([search, since, responseFilter])}
+          disabled={progressWriter.pending!==null||recordWriter.pending!==null}
           applications={visible}
           allApplications={applications}
           savedPositions={visibleSaved}

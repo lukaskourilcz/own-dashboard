@@ -1449,10 +1449,10 @@
     },
     {
       "path": "src/components/panels/career-board.tsx",
-      "lines": 468,
+      "lines": 470,
       "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
-      "status": "source reviewed; findings 278/304 complete column paging and supported-only application/Saved links verified natively; shared global pending and dense drop-target review remain",
-      "reviewedSha256": "81b41324c069e9b437322abb6c7e0a29c9e2687a2270cac44b86f4a9a3cb161d"
+      "status": "source reviewed; finding 306 serializes board admission and reflects the shared writer pending state while retaining local paging/focus; targeted mounted/native checks pass; density and final release pending",
+      "reviewedSha256": "ddb64d42463ebd9457d3f28428aff56d8a1e4dd991c6d0d41aabdf6383cf0024"
     },
     {
       "path": "src/components/panels/career-companies.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2488,
+      "lines": 2489,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 305 bounds complete local application history/previous-letter rendering and fixes stretched sidebar/pager; large template picker, guidance drafts and global board pending remain",
-      "reviewedSha256": "ab054178033bc3a15de47e2abb7e5687fdaf9d0a3e4802d9ea49c0ca02227b96"
+      "status": "source reviewed; findings 303\u2013306 workspace guards, complete local history/letters, safe long rows and shared board pending adopted; large template picker, guidance input drafts and remaining density pending",
+      "reviewedSha256": "7010bc786045658807e483ade83ab54a055f8bebf23bfaf71d1fed30f3b4f303"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",

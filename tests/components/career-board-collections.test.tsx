@@ -15,7 +15,7 @@ vi.mock('@/components/ui/select',()=>({SimpleSelect:({value,onValueChange,option
 let root:Root,host:HTMLDivElement;
 beforeEach(()=>{document.documentElement.lang='en';host=document.createElement('div');document.body.append(host);root=createRoot(host);});
 afterEach(()=>{act(()=>root.unmount());host.remove();document.documentElement.lang='';});
-function tree(rows:JobApplication[]=apps,onStatus:(app:JobApplication,status:JobApplicationStatus)=>Promise<unknown>=vi.fn(async()=>{})){return <CareerBoard applications={rows} savedPositions={saved} statuses={statuses} statusLabel={statusLabel} onStatus={onStatus} onProgress={vi.fn()} onPrepare={vi.fn()}/>;}
+function tree(rows:JobApplication[]=apps,onStatus:(app:JobApplication,status:JobApplicationStatus)=>Promise<unknown>=vi.fn(async()=>{}),disabled=false){return <CareerBoard disabled={disabled} applications={rows} savedPositions={saved} statuses={statuses} statusLabel={statusLabel} onStatus={onStatus} onProgress={vi.fn()} onPrepare={vi.fn()}/>;}
 it('mounts only ten saved and ten applied cards while preserving both complete column counts',async()=>{
  await act(async()=>root.render(tree()));expect(host.querySelectorAll('a')).toHaveLength(20);expect([...host.querySelectorAll('h3')].map(el=>el.textContent)).toContain('Saved12');expect([...host.querySelectorAll('h3')].map(el=>el.textContent)).toContain('Applied21');
 });
@@ -43,4 +43,13 @@ it('does not take focus back from a newer page action when an earlier move compl
  act(()=>{next.focus();next.click();});
  await act(async()=>{root.render(tree(apps.map(row=>row.id===apps[0].id?{...row,status:'interviewing'}:row),save));finish();});
  expect(document.activeElement).toBe(next);expect(nav.textContent).toContain('11–20 of 20');
+});
+it('reserves one board-wide move before another same-frame card can invoke the shared writer',async()=>{
+ const finishes:(()=>void)[]=[],save=vi.fn(()=>new Promise<void>(resolve=>{finishes.push(resolve);}));await act(async()=>root.render(tree(apps,save)));
+ const controls=[...host.querySelectorAll<HTMLSelectElement>('[data-career-board-column="applied"] select')];
+ try{act(()=>{for(const control of controls.slice(0,2)){control.value='interviewing';control.dispatchEvent(new Event('change',{bubbles:true}));}});expect(save).toHaveBeenCalledOnce();expect(controls.every(control=>control.disabled)).toBe(true);expect(host.querySelector<HTMLButtonElement>('[data-career-board-column="applied"] nav button:last-child')?.disabled).toBe(false);}
+ finally{await act(async()=>{for(const finish of finishes)finish();});}
+});
+it('reflects an externally pending writer and refuses a forced change without blocking paging',async()=>{
+ const save=vi.fn(async()=>{});await act(async()=>root.render(tree(apps,save,true)));const controls=[...host.querySelectorAll<HTMLSelectElement>('[data-career-board-column="applied"] select')];expect(controls.every(control=>control.disabled)).toBe(true);act(()=>{controls[0].value='interviewing';controls[0].dispatchEvent(new Event('change',{bubbles:true}));});expect(save).not.toHaveBeenCalled();const next=host.querySelector<HTMLButtonElement>('[data-career-board-column="applied"] nav button:last-child')!;expect(next.disabled).toBe(false);act(()=>next.click());expect(host.querySelector('[data-career-board-column="applied"] nav')?.textContent).toContain('11–20 of 21');await act(async()=>root.render(tree(apps,save)));expect([...host.querySelectorAll<HTMLSelectElement>('[data-career-board-column="applied"] select')].every(control=>!control.disabled)).toBe(true);
 });

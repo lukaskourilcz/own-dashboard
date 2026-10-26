@@ -105,6 +105,7 @@ export function CareerBoard({
   onStatus,
   onProgress,
   onPrepare,
+  disabled = false,
 }: {
   applications: JobApplication[];
   savedPositions: SavedJobPosition[];
@@ -114,6 +115,7 @@ export function CareerBoard({
   onStatus: (app: JobApplication, status: JobApplicationStatus) => Promise<unknown>;
   onProgress: (app: JobApplication) => void;
   onPrepare: (position: SavedJobPosition) => void;
+  disabled?: boolean;
 }) {
   const t = useDict();
   const dragContextId = useId();
@@ -155,7 +157,7 @@ export function CareerBoard({
     }
   }, [reveal, groups]);
   async function move(app: JobApplication, status: JobApplicationStatus, focus: 'stage' | 'drag') {
-    if (pending.current.has(app.id) || app.status === status) return;
+    if (disabled || pending.current.size>0 || app.status === status) return;
     const signal = lifetime.current.signal;
     if (signal.aborted) return;
     const intent = ++interaction.current;
@@ -230,7 +232,7 @@ export function CareerBoard({
               {page.items.map(item => 'saved_at' in item
                 ? <SavedCard key={item.id} position={item} cs={cs} onPrepare={() => { interaction.current++; onPrepare(item); }} />
                 : <ApplicationCard key={item.id} app={item} cs={cs} statusLabel={statusLabel} statuses={statuses}
-                    pending={pendingIds.has(item.id)} onStatus={status => void move(item, status, 'stage')}
+                    pending={disabled||pendingIds.size>0} onStatus={status => void move(item, status, 'stage')}
                     onProgress={() => { interaction.current++; onProgress(item); }} />)}
             </BoardColumnPanel>;
           })}

@@ -2283,3 +2283,12 @@ All twenty-eight final native cases pass across three files in 1.8 minutes: EN/C
 ### Finding 305 visual evidence
 
 Two authentic desktop/mobile pairs bring the visual plan to 48 components at application `b8f9589c`. `career-letter-pages-captures.json` retains exact source/asset hashes, viewport, mapped history/sidebar/pager highlights and the initial sidebar geometry comparison. All four final images are inspected. All 48 visual-plan images decode in both modes; light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Earlier capture provenance stays unchanged; the inventory remains 706 entries.
+
+
+## Finding 306 — board availability matches the shared writer
+
+The mounted baseline dispatches changes on two different cards in one frame and enters the status callback twice (one targeted failing baseline, 3.06 seconds). The shared progress writer accepts one operation, while the board previously reserved and disabled only each individual card. Other cards could look available and then be refused without performing their selected move.
+
+The board now reserves one move synchronously before calling the writer, disables all competing application move/progress controls during that operation and also receives the enclosing progress/removal writer's pending state. Forced changes against an externally busy board never enter the callback. Local paging, scrolling and reading remain available. A newer page action still prevents delayed focus restoration; confirmed/refused moves keep their existing destination/source focus behavior. No writer, cache or database contract changes.
+
+All fifteen focused board/progress cases pass across two mounted files in 8.58 seconds. All nineteen native cases pass with one configured skip across three files in 1.3 minutes: EN/CS desktop/mobile, neighboring stage/progress controls, available pagers, confirmed/refused movement and focus, stale progress/contact recovery, six-width reflow and axe. TypeScript, targeted ESLint and whitespace checks pass. The inventory remains 706 entries; no SQL, provider, production record or additional read changes. Template-picker cost, guidance input drafts, broader density/app leads, migration rollout, clean final validation and main merge remain unfinished.
