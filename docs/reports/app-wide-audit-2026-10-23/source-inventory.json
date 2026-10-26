@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2852,
+      "lines": 2758,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 274\u2013287 verify complete paging, captured discovery/triage/Saved controls and canonical-query cancellation/reload; remaining import replacement, letter/application/progress/template writes and density under review; final release pending",
-      "reviewedSha256": "71e006bbb921e131aada8d20703e6b635cf6911bbb0ed376ff78caa5b9b13a93"
+      "status": "source reviewed; finding 292 captures application/draft owner and Saved version, exact retries, changed-only draft saves, guarded exits/cache and native EN/CS/mobile recovery; remaining progress/template/density and final release pending",
+      "reviewedSha256": "5518c0129f4848596ef6d8197ed99c51ac1b548a4f0eaabf6ee67d436f721969"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -4884,6 +4884,13 @@
       "lines": 81,
       "reviewedSha256": "3bd0dc6edb3392b797aab7bdcd7ca3652afa604a7794fe5241b1f763734529b5",
       "status": "source reviewed; finding 291 captured application foundation SDK/RLS and concurrency checks pass; dialog adoption and final release pending"
+    },
+    {
+      "path": "src/components/panels/use-career-application-draft.ts",
+      "sha256": null,
+      "lines": 101,
+      "reviewedSha256": "4df24c15d60f11853a20e0dbc4f4696734f6e167e596b72c8112d0d3adafdd24",
+      "status": "source reviewed; finding 292 captures application/draft owner and Saved version, exact retries, changed-only draft saves, guarded exits/cache and native EN/CS/mobile recovery; remaining progress/template/density and final release pending"
     }
   ],
   "baselineFileCount": 561

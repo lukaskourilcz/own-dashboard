@@ -83,6 +83,7 @@ import { applyCareerSaveReceipt, captureCareerListing, CareerSaveError } from "@
 import { applyCareerTriage, applyCareerTriageReceipt, CareerTriageError, type CareerTriageIntent } from "@/lib/career-triage";
 import { readCareerRecords, type CareerScope } from "@/lib/career-records";
 import { SavedPositionsView } from "./career-saved-positions";
+import { useCareerApplicationDraft } from "./use-career-application-draft";
 import { useGuardedNavigation } from "@/components/navigation-guard";
 import { CareerActionNotice } from "./career-action-notice";
 import { CareerCompanies } from "./career-companies";
@@ -193,7 +194,6 @@ export function JobsPanel({
     [applications],
   );
 
-  const [applyFor, setApplyFor] = useState<JobListing | null>(null);
   const [savedFor, setSavedFor] = useState<SavedJobPosition | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const qc = useQueryClient();
@@ -361,7 +361,7 @@ export function JobsPanel({
       {refreshFailure && (activated || view === "oslo") && <div className="mb-4 flex flex-wrap items-center gap-3"><p role="alert" className="text-sm text-destructive">{refreshFailure.message}</p>{refreshFailure.reload && <Button variant="outline" size="sm" onClick={() => void loadCareer()} disabled={checking || loadingCareer}>{loadingCareer ? t.common.loading : t.jobs.refreshReload}</Button>}</div>}
 
       {view === "oslo" ? (
-        <OsloCareerWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyFor(savedToListing(position)); setApplyOpen(true); }} />
+        <OsloCareerWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyOpen(true); }} />
       ) : !activated ? (
         <Card className="mx-auto flex w-full max-w-3xl flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><p role={activationFailed || refreshFailure ? "alert" : "status"} className="min-w-0 flex-1 text-sm">{refreshFailure?.message ?? (activationFailed ? lang === "cs" ? "Uložená Kariéra se nepodařila načíst. Zkuste to znovu." : "Could not load saved Career. Please retry." : lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…")}</p><Button variant="outline" className="w-full shrink-0 sm:w-auto" disabled={checking || loadingCareer} onClick={() => void loadCareer()}>{loadingCareer ? t.common.loading : lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
       ) : view === "companies" ? (
@@ -383,7 +383,6 @@ export function JobsPanel({
           onReveal={id => setRevealedSavedIds(current => new Set([...current, id]))}
           onPrepare={(position) => {
             setSavedFor(position);
-            setApplyFor(savedToListing(position));
             setApplyOpen(true);
           }}
         />
@@ -414,18 +413,17 @@ export function JobsPanel({
           setTemplates={setTemplates}
           onPrepare={(position) => {
             setSavedFor(position);
-            setApplyFor(savedToListing(position));
             setApplyOpen(true);
           }}
           userId={userId}
         />
       )}
 
-      <ApplyDialog
+      {applyOpen && savedFor && <ApplyDialog
+        key={savedFor.id}
         timeZone={timeZone}
         open={applyOpen}
         onOpenChange={setApplyOpen}
-        listing={applyFor}
         templates={templates}
         setTemplates={setTemplates}
         setApplications={setApplications}
@@ -434,7 +432,7 @@ export function JobsPanel({
         savedPosition={savedFor}
         setSavedPositions={setSavedPositions}
         onApplied={() => setSavedFor(null)}
-      />
+      />}
     </div>
   );
 }
@@ -1408,7 +1406,7 @@ function savedToListing(position: SavedJobPosition): JobListing {
 }
 
 /* ========================================================================= *
- * Apply dialog — from a saved position or as a manual log                   *
+ * Apply dialog — captured Saved position                                  *
  * ========================================================================= */
 
 /** Compact fit breakdown shown atop the apply dialog, so the cover letter can
@@ -1457,10 +1455,10 @@ function ApplyDialog({
   timeZone,
   open,
   onOpenChange,
-  listing,
   templates,
   setTemplates,
   setApplications,
+  setEvents,
   userId,
   savedPosition,
   setSavedPositions,
@@ -1469,13 +1467,12 @@ function ApplyDialog({
   timeZone: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  listing: JobListing | null;
   templates: CoverLetterTemplate[];
   setTemplates: Updater<CoverLetterTemplate[]>;
   setApplications: Updater<JobApplication[]>;
   setEvents: Updater<JobApplicationEvent[]>;
   userId: string;
-  savedPosition: SavedJobPosition | null;
+  savedPosition: SavedJobPosition;
   setSavedPositions: Updater<SavedJobPosition[]>;
   onApplied: () => void;
 }) {
@@ -1483,146 +1480,45 @@ function ApplyDialog({
   const now = useNow();
   const today = now ? focusDayKey(now, timeZone) : todayIso(timeZone);
   const cs = useLang().lang === "cs";
-  const [requestId, setRequestId] = useState("");
   const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
-
-  const [form, setForm] = useState({
-    title: "",
-    company: "",
-    url: "",
-    appliedOn: todayIso(timeZone),
-    coverLetter: "",
-    coverLetterUrl: "",
-    readiness: "draft",
-    notes: "",
-  });
-  const [formError, setFormError] = useState<string | null>(null);
-  // Reset the form whenever the dialog opens for a (different) job.
-  const [seededFor, setSeededFor] = useState<string | null>(null);
-  const seedKey = listing?.id ?? "manual";
-  if (open && seededFor !== seedKey) {
-    setSeededFor(seedKey);
-    setRequestId(savedPosition?.id ?? crypto.randomUUID());
-    setForm({
-      title: listing?.title ?? "",
-      company: listing?.company ?? "",
-      url: listing?.url ?? "",
-      appliedOn: todayIso(timeZone),
-      coverLetter: savedPosition?.cover_letter ?? "",
-      coverLetterUrl: savedPosition?.cover_letter_url ?? "",
-      readiness: savedPosition?.readiness ?? "draft",
-      notes: savedPosition?.notes ?? "",
-    });
-    setFormError(null);
-  }
-  if (!open && seededFor !== null) setSeededFor(null);
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      if (!isGoogleLetterUrl(form.coverLetterUrl)) throw new Error("Invalid Google Drive URL");
-      const { data, error } = await supabase.rpc("record_job_application", {
-        p_request_id: requestId, p_saved_id: savedPosition?.id ?? null,
-        p_payload: {
-          title: form.title.trim(), company: form.company.trim(), url: form.url.trim(),
-          listing_id: savedPosition ? savedPosition.listing_id : listing?.id ?? null,
-          source: listing?.source ?? "manual", location: listing?.location ?? null,
-          remote: savedPosition ? savedPosition.remote ?? null : listing?.remote ?? null,
-          cover_letter: form.coverLetter,
-          cover_letter_url: form.coverLetterUrl.trim() || null,
-          applied_on: form.appliedOn, notes: form.notes.trim(),
-        },
-      });
-      if (error || !data) throw error ?? new Error("no-data");
-      return { app: data as JobApplication, savedRemoved: !!savedPosition };
-    },
-    onSuccess: ({ app, savedRemoved }) => {
-      setApplications((prev) => [app, ...prev.filter(row => row.id !== app.id)]);
-
-      if (savedPosition && savedRemoved) {
-        setSavedPositions((prev) => prev.filter((position) => position.id !== savedPosition.id));
-        void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
-      }
-      toast.ok(t.jobs.applicationSaved);
-      void qc.invalidateQueries({ queryKey: qk.jobApplications });
-      void qc.invalidateQueries({ queryKey: qk.jobApplicationEvents });
-      onOpenChange(false);
-      onApplied();
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  const saveDraftMutation = useMutation({
-    mutationFn: async () => {
-      if (!savedPosition) return null;
-      if (!isGoogleLetterUrl(form.coverLetterUrl)) throw new Error("Invalid Google Drive URL");
-      const { data, error } = await supabase
-        .from("saved_job_positions")
-        .update({
-          title: form.title.trim(),
-          company: form.company.trim() || null,
-          url: form.url.trim(),
-          cover_letter: form.coverLetter,
-          cover_letter_url: form.coverLetterUrl.trim() || null,
-          readiness: form.readiness,
-          notes: form.notes.trim() || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", savedPosition.id)
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as SavedJobPosition;
-    },
-    onSuccess: (position) => {
-      if (!position) return;
-      setSavedPositions((current) => current.map((row) => row.id === position.id ? position : row));
-      toast.ok(t.jobs.draftSaved);
-      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (createMutation.isPending || saveDraftMutation.isPending) return;
-    if (!form.title.trim()) {
-      setFormError(t.jobs.positionRequired);
-      return;
-    }
-    if (!isGoogleLetterUrl(form.coverLetterUrl)) {
-      setFormError(cs ? "Vložte odkaz na dokument na Google Drive." : "Enter a Google Drive document link.");
-      return;
-    }
-    createMutation.mutate();
-  }
+  const requestExit = useGuardedNavigation();
+  const draft = useCareerApplicationDraft({source:savedPosition,userId,day:today,setSavedPositions,setApplications,setEvents,
+    onRecorded:()=>{toast.ok(t.jobs.applicationSaved);onOpenChange(false);onApplied();},
+    onDraftSaved:()=>toast.ok(t.jobs.draftSaved)});
+  const {form,update,pending,failure,locked}=draft;
+  const listing=useMemo(()=>savedToListing(draft.reviewedSource),[draft.reviewedSource]);
+  const message=draft.reloadFailed?(cs?"Pozici se nepodařilo načíst. Koncept zůstal zachovaný.":"The position could not be loaded. Your draft is kept.")
+    :failure?.reason==='changed'?(cs?"Uložená pozice se změnila. Koncept zůstal zachovaný. Před pokračováním načtěte aktuální pozici.":"The saved position changed. Your draft is kept. Load the current position before continuing.")
+    :failure?.reason==='invalid'?(cs?"Zkontrolujte název, délku údajů, odkazy a datum odeslání.":"Check the title, field lengths, links and application date.")
+    :failure?(cs?"Uložení není potvrzené. Zkuste znovu stejný požadavek; koncept zůstal zachovaný.":"The save is unconfirmed. Retry the same request; your draft is kept."):null;
+  function close(next:boolean){if(!next)requestExit(()=>onOpenChange(false));}
+  function submit(event:React.FormEvent){event.preventDefault();draft.record();}
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-5xl">
+    <Dialog open={open} onOpenChange={close}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-3xl" aria-busy={pending!==null}>
         <DialogTitle>
           {listing ? t.jobs.applyTitle : t.jobs.logManualTitle}
         </DialogTitle>
         {listing && (
           <p className="mt-1 truncate text-xs text-foreground-muted">
-            {[listing.title, listing.company].filter(Boolean).join(" — ")} (
-            {jobSourceLabel(listing.source)})
+            {jobSourceLabel(listing.source)}
           </p>
         )}
         {listing && <ApplyFitSummary listing={listing} />}
         <form onSubmit={submit} className="mt-3 space-y-3">
+          <fieldset disabled={pending!==null} className="min-w-0 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="job-app-title">{t.jobs.position}</Label>
               <Input
                 id="job-app-title"
-                value={form.title}
+                value={form.title} readOnly={locked}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, title: e.target.value }))
+                  update({title: e.target.value})
                 }
                 placeholder={t.jobs.positionPlaceholder}
-                maxLength={200}
+                maxLength={300}
                 autoFocus={!listing}
               />
             </div>
@@ -1630,12 +1526,12 @@ function ApplyDialog({
               <Label htmlFor="job-app-company">{t.jobs.company}</Label>
               <Input
                 id="job-app-company"
-                value={form.company}
+                value={form.company} readOnly={locked}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, company: e.target.value }))
+                  update({company: e.target.value})
                 }
                 placeholder={t.jobs.companyPlaceholder}
-                maxLength={200}
+                maxLength={500}
               />
             </div>
           </div>
@@ -1645,9 +1541,9 @@ function ApplyDialog({
               <Input
                 id="job-app-url"
                 type="url"
-                value={form.url}
+                value={form.url} readOnly={locked}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, url: e.target.value }))
+                  update({url: e.target.value})
                 }
                 placeholder="https://…"
               />
@@ -1657,23 +1553,24 @@ function ApplyDialog({
               <Input
                 id="job-app-date"
                 type="date"
-                value={form.appliedOn}
+                value={form.appliedOn} readOnly={locked}
                 max={today}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, appliedOn: e.target.value }))
+                  update({appliedOn: e.target.value})
                 }
               />
             </div>
           </div>
 
-          <div className="space-y-1.5"><Label htmlFor="cover-letter-drive">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}</Label><Input id="cover-letter-drive" type="url" value={form.coverLetterUrl} onChange={event=>setForm(current=>({...current,coverLetterUrl:event.target.value}))} placeholder="https://docs.google.com/document/d/…"/>
+          <div className="space-y-1.5"><Label htmlFor="cover-letter-drive">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}</Label><Input id="cover-letter-drive" type="url" value={form.coverLetterUrl} readOnly={locked} onChange={event=>update({coverLetterUrl:event.target.value})} placeholder="https://docs.google.com/document/d/…"/>
           {form.coverLetterUrl && isGoogleLetterUrl(form.coverLetterUrl) && <a className="inline-flex min-h-11 items-center text-sm underline focus-ring" href={form.coverLetterUrl} target="_blank" rel="noopener noreferrer">{cs?"Otevřít dokument":"Open document"}</a>}</div>
-          {savedPosition && <SimpleSelect value={form.readiness} onValueChange={readiness=>setForm(current=>({...current,readiness}))} aria-label={cs?"Připravenost přihlášky":"Application readiness"} options={["draft","ready","needs_review"].map(value=>({value,label:readinessLabel(value,cs)}))}/>}
+          {savedPosition && <SimpleSelect disabled={locked} value={form.readiness} onValueChange={readiness=>update({readiness:readiness as NonNullable<SavedJobPosition["readiness"]>})} aria-label={cs?"Připravenost přihlášky":"Application readiness"} options={["draft","ready","needs_review"].map(value=>({value,label:readinessLabel(value,cs)}))}/>}
           <p className="text-sm text-foreground-muted">{cs?"Po odeslání přihlášky na webu firmy zde potvrďte datum. Tlačítko níže pouze uloží záznam o odeslání.":"After applying on the employer website, confirm the date here. The button below only records that you sent the application."}</p>
           <CoverLetterField
+            readOnly={locked}
             description={listing?.description ?? undefined}
             value={form.coverLetter}
-            onChange={(v) => setForm((f) => ({ ...f, coverLetter: v }))}
+            onChange={(v) => update({coverLetter:v})}
             templates={templates}
             setTemplates={setTemplates}
             vars={{
@@ -1688,9 +1585,9 @@ function ApplyDialog({
             <Label htmlFor="job-app-notes">{t.jobs.notes}</Label>
             <Textarea
               id="job-app-notes"
-              value={form.notes}
+              value={form.notes} readOnly={locked}
               onChange={(e) =>
-                setForm((f) => ({ ...f, notes: e.target.value }))
+                update({notes: e.target.value})
               }
               placeholder={t.jobs.notesPlaceholder}
               rows={2}
@@ -1698,21 +1595,25 @@ function ApplyDialog({
             />
           </div>
 
-          {formError && <p className="text-xs text-destructive">{formError}</p>}
-          <div className="flex items-center justify-end gap-2 pt-1">
+          </fieldset>
+          {message&&<CareerActionNotice message={message}><div className="flex flex-wrap gap-2">
+            {failure?.reason==='unavailable'&&<Button type="button" variant="outline" disabled={pending!==null} onClick={draft.retry}>{cs?'Zkusit znovu':'Try again'}</Button>}
+            {failure&&failure.reason!=='invalid'&&<Button type="button" variant="outline" disabled={pending!==null} onClick={()=>void draft.reload()}>{cs?'Zahodit koncept a načíst aktuální':'Discard draft and load latest'}</Button>}
+          </div></CareerActionNotice>}
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
             <DialogClose asChild>
               <Button type="button" variant="ghost" size="sm">
                 {t.jobs.cancel}
               </Button>
             </DialogClose>
             {savedPosition && (
-              <Button type="button" variant="outline" size="sm" onClick={() => saveDraftMutation.mutate()} disabled={saveDraftMutation.isPending || createMutation.isPending}>
-                {saveDraftMutation.isPending ? t.jobs.saving : t.jobs.saveDraft}
+              <Button type="button" variant="outline" size="sm" onClick={() => void draft.saveDraft()} disabled={locked}>
+                {pending ? t.jobs.saving : t.jobs.saveDraft}
               </Button>
             )}
-            <Button type="submit" size="sm" disabled={createMutation.isPending || saveDraftMutation.isPending}>
+            <Button type="submit" size="sm" disabled={locked}>
               <Check className="h-3.5 w-3.5" />
-              {createMutation.isPending
+              {pending
                 ? t.jobs.saving
                 : t.jobs.saveApplication}
             </Button>
@@ -1736,6 +1637,7 @@ function CoverLetterField({
   userId,
   id = "job-cover-letter",
   description,
+  readOnly = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -1749,6 +1651,7 @@ function CoverLetterField({
   userId: string;
   id?: string;
   description?: string;
+  readOnly?: boolean;
 }) {
   const t = useDict();
   const { lang } = useLang();
@@ -1761,7 +1664,7 @@ function CoverLetterField({
   const supabase = createClient();
 
   function loadTemplate(key: string) {
-    if (!key) return;
+    if (readOnly || !key) return;
     let body: string | null = null;
     if (key.startsWith("builtin:")) {
       const tpl = BUILTIN_TEMPLATES.find((b) => `builtin:${b.id}` === key);
@@ -1799,7 +1702,7 @@ function CoverLetterField({
   });
 
   function saveAsTemplate() {
-    if (!value.trim()) return;
+    if (readOnly || !value.trim()) return;
     const name =
       draftName.trim() ||
       `[${letterLanguage.toUpperCase()}] ${vars.company || (lang === "cs" ? "Firma" : "Company")} · ${vars.position || (lang === "cs" ? "Dopis" : "Letter")} · ${new Date().toISOString().slice(0, 10)}`;
@@ -1808,6 +1711,7 @@ function CoverLetterField({
 
   return (
     <div className="space-y-4">
+      <fieldset disabled={readOnly} className="min-w-0 space-y-4">
       <CareerLetterHelper
         key={description ?? id}
         position={vars.position ?? ""}
@@ -1881,7 +1785,9 @@ function CoverLetterField({
           </Button>
         </div>
       </div>
+      </fieldset>
       <Textarea
+        readOnly={readOnly}
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
