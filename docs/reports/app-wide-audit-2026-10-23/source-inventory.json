@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2761,
+      "lines": 2741,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending",
-      "reviewedSha256": "90fa4ef4bf390a7860d0c2bfbdf331c6bcde3be68c013054071bf60503311f1e"
+      "status": "source reviewed; finding 297 adopts captured application deletion/letter saves, retained history/drafts, original confirmation scope, cancellation, canonical cache and nearby focus; Saved letter/templates/density and final release pending",
+      "reviewedSha256": "924d137ba364c2f2442f2e544136265b51c3dd2211f64d6f3162db063a68a91a"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -4918,7 +4918,14 @@
       "sha256": null,
       "lines": 43,
       "reviewedSha256": "f68636c220e991e61b7313cdc37e016503ceafba2b749855975db371a028175b",
-      "status": "source reviewed; finding 296 captured application letter/deletion foundation passes actual SDK/RLS stale-version, history, projection, cancellation and cache checks; browser adoption and final release pending"
+      "status": "source reviewed; findings 296\u2013297 captured application letter/deletion SDK/RLS/client and native browser adoption checks pass; final release pending"
+    },
+    {
+      "path": "src/components/panels/use-career-application-record-write.ts",
+      "sha256": null,
+      "lines": 60,
+      "reviewedSha256": "1be160f3dea9fae756a3b685953d8ac1c33cecd71ea50cd6d5d73578a40c614d",
+      "status": "source reviewed; finding 297 adopts captured application deletion/letter saves, retained history/drafts, original confirmation scope, cancellation, canonical cache and nearby focus; Saved letter/templates/density and final release pending"
     }
   ],
   "baselineFileCount": 561

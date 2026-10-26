@@ -83,9 +83,10 @@ import { applyCareerSaveReceipt, captureCareerListing, CareerSaveError } from "@
 import { applyCareerTriage, applyCareerTriageReceipt, CareerTriageError, type CareerTriageIntent } from "@/lib/career-triage";
 import { readCareerRecords, type CareerScope } from "@/lib/career-records";
 import { SavedPositionsView } from "./career-saved-positions";
+import { useCareerApplicationRecordWrite } from "./use-career-application-record-write";
 import { useCareerProgressWrite } from "./use-career-progress-write";
 import { useCareerApplicationDraft } from "./use-career-application-draft";
-import { useGuardedNavigation } from "@/components/navigation-guard";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
 import { CareerActionNotice } from "./career-action-notice";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
@@ -1883,14 +1884,13 @@ function AppliedView({
   // still does.
   const visibleSaved = useMemo(()=>savedPositions.filter(row=>`${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())),[savedPositions,search]);
   const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
   const confirm = useConfirmation();
 
   const now = useNow();
   const stats = useMemo(() => applicationStats(cohort, now ?? new Date(), timeZone), [cohort, now, timeZone]);
   const [letterFor, setLetterFor] = useState<JobApplication | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const actionActivity=useRef(0);
 
   const progressWriter=useCareerProgressWrite({userId,setApplications,setEvents});
   async function changeStatus(app:JobApplication,status:JobApplicationStatus){
@@ -1902,46 +1902,29 @@ function AppliedView({
     :progressWriter.failure?.reason==='changed'?(cs?'Přihláška se změnila. Změna stavu není potvrzená. Načtěte aktuální přihlášky.':'The application changed. The stage change is unconfirmed. Reload current applications.')
     :progressWriter.failure?t.jobs.couldNotSave:null;
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("job_applications")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.jobApplications });
-      const previousApplication = applications.find(app => app.id === id);
-      const previousEvents = events.filter(event => event.application_id === id);
-      setApplications((old) => old.filter((a) => a.id !== id));
-      setEvents((old) => old.filter((e) => e.application_id !== id));
-      return { previousApplication, previousEvents };
-    },
-    onSuccess: () => toast.ok(t.jobs.applicationDeleted),
-    onError: (_e, id, ctx) => {
-      if (ctx?.previousApplication) setApplications(current => current.some(app => app.id === id) ? current : [...current, ctx.previousApplication!]);
-      if (ctx?.previousEvents) setEvents(current => [...current.filter(event => event.application_id !== id), ...ctx.previousEvents]);
-      toast.err(t.jobs.couldNotDelete);
-    },
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: qk.jobApplications });
-      void qc.invalidateQueries({ queryKey: qk.jobApplicationEvents });
-    },
-  });
-
-  async function removeApplication(app: JobApplication) {
-    if (
-      await confirm({
-        title: t.jobs.deleteApplication,
-        description: t.jobs.deleteApplicationConfirm,
-        confirmLabel: t.common.delete,
-        cancelLabel: t.common.cancel,
-        destructive: true,
-      })
-    )
-      deleteMutation.mutate(app.id);
+  const recordWriter=useCareerApplicationRecordWrite({userId,setApplications,setEvents});
+  function restoreRemovalFocus(control:HTMLButtonElement,epoch:number,target:string|null|undefined){
+    requestAnimationFrame(()=>{
+      if(!recordWriter.isCurrent()||epoch!==actionActivity.current||document.activeElement!==document.body&&document.activeElement!==control)return;
+      if(target===undefined&&control.isConnected){control.focus();return;}
+      const next=target?document.querySelector<HTMLElement>(`[data-career-application="${target}"] [data-career-application-title]`):null;
+      (next??(target===undefined?document.querySelector<HTMLElement>('[data-career-removal-reload]'):null)??document.querySelector<HTMLElement>('[data-career-application-search]'))?.focus();
+    });
   }
+  async function removeApplication(app:JobApplication,control:HTMLButtonElement){
+    const epoch=actionActivity.current,index=visible.findIndex(row=>row.id===app.id),neighbor=visible[index+1]??visible[index-1];
+    const receipt=await recordWriter.remove(app,()=>confirm({title:t.jobs.deleteApplication,description:t.jobs.deleteApplicationConfirm,confirmLabel:t.common.delete,cancelLabel:t.common.cancel,destructive:true}));
+    if(!recordWriter.isCurrent())return;if(receipt)toast.ok(t.jobs.applicationDeleted);
+    restoreRemovalFocus(control,epoch,receipt?neighbor?.id??null:undefined);
+  }
+  async function retryRemoval(control:HTMLButtonElement){
+    const epoch=actionActivity.current,index=visible.findIndex(row=>row.id===recordWriter.failure?.source.id),neighbor=visible[index+1]??visible[index-1],receipt=await recordWriter.retry();
+    if(!recordWriter.isCurrent())return;if(receipt)toast.ok(t.jobs.applicationDeleted);
+    restoreRemovalFocus(control,epoch,receipt?neighbor?.id??null:undefined);
+  }
+  const removalMessage=recordWriter.reloadFailed?(cs?'Přihlášky se nepodařilo načíst. Zkuste to znovu.':'Applications could not be loaded. Try again.')
+    :recordWriter.failure?.reason==='changed'?(cs?'Přihláška se změnila nebo už neexistuje. Odebrání není potvrzené. Načtěte aktuální přihlášky.':'The application changed or is no longer available. Removal is unconfirmed. Reload current applications.')
+    :recordWriter.failure?t.jobs.couldNotDelete:null;
 
   const statusLabel: Record<JobApplicationStatus, string> = {
     applied: t.jobs.statusApplied,
@@ -1952,7 +1935,7 @@ function AppliedView({
   };
 
   return (
-    <div>
+    <div onPointerDownCapture={()=>{actionActivity.current++;}} onKeyDownCapture={()=>{actionActivity.current++;}}>
       {/* stats strip */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
@@ -1977,7 +1960,7 @@ function AppliedView({
       </div>
 
       <p className="mb-3 text-sm text-foreground-muted">{cs?"Statistiky vycházejí z vybraného období a hledání. Podíl odpovědí počítá přihlášky se zaznamenanou skutečnou odpovědí; u čerstvých přihlášek může být zatím nižší.":"Metrics use the selected period and search. Response rate counts applications with a recorded substantive response; recent applications have had less time to receive one."}</p>
-      <div className="mb-4 flex flex-wrap items-end gap-3"><Input value={search} onChange={event=>{ setSearch(event.target.value); setPageIndex(0); }} className="max-w-sm" aria-label={cs?"Hledat odeslané přihlášky":"Search sent applications"} placeholder={cs?"Firma nebo pozice":"Company or position"}/>
+      <div className="mb-4 flex flex-wrap items-end gap-3"><Input data-career-application-search value={search} onChange={event=>{ setSearch(event.target.value); setPageIndex(0); }} className="max-w-sm" aria-label={cs?"Hledat odeslané přihlášky":"Search sent applications"} placeholder={cs?"Firma nebo pozice":"Company or position"}/>
       <div><Label htmlFor="applications-since">{cs?"Odesláno od":"Applied since"}</Label><Input id="applications-since" type="date" value={since} onChange={event=>{ setSince(event.target.value); setPageIndex(0); }}/></div>
       <SimpleSelect value={responseFilter} onValueChange={value=>{ setResponseFilter(value); setPageIndex(0); }} aria-label={cs?"Filtrovat odpovědi":"Filter responses"} options={[{value:"all",label:cs?"Všechny přihlášky":"All applications"},{value:"responded",label:cs?"S odpovědí":"With response"},{value:"waiting",label:cs?"Bez odpovědi":"Without response"}]}/></div>
       {/* toolbar */}
@@ -2012,6 +1995,10 @@ function AppliedView({
         {progressWriter.failure?.reason==='unavailable'&&<Button variant="outline" disabled={progressWriter.pending!==null} onClick={()=>void progressWriter.retry()}>{cs?'Zkusit znovu':'Try again'}</Button>}
         {progressWriter.failure&&<Button variant="outline" disabled={progressWriter.pending!==null} onClick={()=>void progressWriter.reload(progressWriter.failure!.source.id)}>{cs?'Načíst přihlášky':'Reload applications'}</Button>}
       </div></CareerActionNotice>}
+      {removalMessage&&<CareerActionNotice message={removalMessage}><div className="flex flex-wrap gap-2">
+        {recordWriter.failure?.reason==='unavailable'&&<Button variant="outline" disabled={recordWriter.pending!==null} onClick={event=>void retryRemoval(event.currentTarget)}>{cs?'Zkusit znovu':'Try again'}</Button>}
+        {recordWriter.failure&&<Button data-career-removal-reload variant="outline" disabled={recordWriter.pending!==null} onClick={()=>void recordWriter.reload()}>{cs?'Načíst přihlášky':'Reload applications'}</Button>}
+      </div></CareerActionNotice>}
       {layout === "list" && <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.applicationPages} />}
       {layout === "board" ? (
         <CareerBoard
@@ -2044,10 +2031,10 @@ function AppliedView({
                 events={eventsByApplication.get(app.id) ?? []}
                 statusLabel={statusLabel}
                 onStatus={(status) => void changeStatus(app,status).catch(()=>{})}
-                disabled={progressWriter.pending!==null}
+                disabled={progressWriter.pending!==null||recordWriter.pending!==null}
                 onProgress={() => setProgressFor(app)}
                 onLetter={() => setLetterFor(app)}
-                onDelete={() => removeApplication(app)}
+                onDelete={(control) => void removeApplication(app,control)}
               />
             ))}
           </ul>
@@ -2055,14 +2042,16 @@ function AppliedView({
       )}
 
       {progressFor && <CareerProgressDialog timeZone={timeZone} key={progressFor.id} app={progressFor} onClose={()=>setProgressFor(null)} setApplications={setApplications} setEvents={setEvents} userId={userId}/>}
-      <LetterDialog
+      {letterFor && <LetterDialog
+        key={letterFor.id}
         app={letterFor}
         onClose={() => setLetterFor(null)}
         templates={templates}
         setTemplates={setTemplates}
         setApplications={setApplications}
         userId={userId}
-      />
+        setEvents={setEvents}
+      />}
       <TemplatesDialog
         open={templatesOpen}
         onOpenChange={setTemplatesOpen}
@@ -2091,7 +2080,7 @@ function ApplicationRow({
   onStatus: (s: JobApplicationStatus) => void;
   onProgress: () => void;
   onLetter: () => void;
-  onDelete: () => void;
+  onDelete: (control: HTMLButtonElement) => void;
 }) {
   const t = useDict();
   const cs = useLang().lang === "cs";
@@ -2110,6 +2099,7 @@ function ApplicationRow({
           <div className="flex items-center gap-2">
             {app.url ? (
               <a
+                data-career-application-title
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -2119,7 +2109,7 @@ function ApplicationRow({
                 {app.title}
               </a>
             ) : (
-              <span className="truncate text-sm font-medium" title={app.title}>
+              <span data-career-application-title tabIndex={-1} className="truncate text-sm font-medium focus-ring" title={app.title}>
                 {app.title}
               </span>
             )}
@@ -2172,7 +2162,7 @@ function ApplicationRow({
           <Tooltip content={t.jobs.deleteApplication}>
             <button
               type="button"
-              onClick={onDelete}
+              onClick={event=>onDelete(event.currentTarget)}
               disabled={disabled}
               aria-label={t.jobs.deleteApplication}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
@@ -2245,76 +2235,66 @@ function LetterDialog({
   templates,
   setTemplates,
   setApplications,
+  setEvents,
   userId,
 }: {
-  app: JobApplication | null;
+  app: JobApplication;
   onClose: () => void;
   templates: CoverLetterTemplate[];
   setTemplates: Updater<CoverLetterTemplate[]>;
   setApplications: Updater<JobApplication[]>;
+  setEvents: Updater<JobApplicationEvent[]>;
   userId: string;
 }) {
   const t = useDict();
   const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
-
-  const [letter, setLetter] = useState("");
-  const [seededFor, setSeededFor] = useState<string | null>(null);
-  if (app && seededFor !== app.id) {
-    setSeededFor(app.id);
-    setLetter(app.cover_letter);
-  }
-  if (!app && seededFor !== null) setSeededFor(null);
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (!app) throw new Error("no-app");
-      const { data, error } = await supabase
-        .from("job_applications")
-        .update({
-          cover_letter: letter,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", app.id)
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as JobApplication;
-    },
-    onSuccess: (row) => {
-      setApplications((prev) => prev.map((a) => (a.id === row.id ? row : a)));
-      toast.ok(t.jobs.letterSaved);
-      void qc.invalidateQueries({ queryKey: qk.jobApplications });
-      onClose();
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
+  const cs=useLang().lang==='cs',requestExit=useGuardedNavigation();
+  const [initial]=useState(()=>structuredClone(app)),[reviewed,setReviewed]=useState(initial),source=useRef(initial);
+  const [letter,setLetter]=useState(initial.cover_letter),fields=useRef(initial.cover_letter),dirty=useRef(false);
+  const writer=useCareerApplicationRecordWrite({userId,setApplications,setEvents}),locked=writer.pending!==null||!!writer.failure&&writer.failure.reason!=='invalid';
+  function update(value:string){if(locked||writer.isPending())return;fields.current=value;dirty.current=value!==source.current.cover_letter;setLetter(value);writer.clearFailure();}
+  async function save(){const receipt=await writer.saveLetter(source.current,fields.current);if(!receipt||!writer.isCurrent())return false;dirty.current=false;toast.ok(t.jobs.letterSaved);onClose();return true;}
+  async function retry(){const receipt=await writer.retry();if(receipt&&writer.isCurrent()){dirty.current=false;toast.ok(t.jobs.letterSaved);onClose();}}
+  async function reload(){const result=await writer.reload(source.current.id);if(!result?.row||!writer.isCurrent())return;source.current=result.row;setReviewed(result.row);fields.current=result.row.cover_letter;setLetter(fields.current);dirty.current=false;}
+  useUnsavedDraft({get dirty(){return dirty.current;},canSave:!writer.failure,save,discard:()=>{dirty.current=false;}});
+  const message=writer.reloadFailed?(cs?'Přihlášku se nepodařilo načíst. Dopis zůstal zachovaný.':'The application could not be loaded. Your letter is kept.')
+    :writer.failure?.reason==='changed'?(cs?'Přihláška se změnila nebo už neexistuje. Dopis zůstal zachovaný. Načtěte aktuální přihlášku.':'The application changed or is no longer available. Your letter is kept. Load the current application.')
+    :writer.failure?.reason==='invalid'?(cs?'Zkraťte dopis na nejvýše 64 000 znaků.':'Shorten the letter to at most 64,000 characters.')
+    :writer.failure?(cs?'Uložení není potvrzené. Dopis zůstal zachovaný. Zkuste znovu stejný požadavek.':'The save is unconfirmed. Your letter is kept. Retry the same request.'):null;
+  function close(){requestExit(onClose);}
 
   return (
-    <Dialog open={app !== null} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-xl">
+    <Dialog open onOpenChange={(v) => {if(!v)close();}}>
+      <DialogContent className="max-w-xl" aria-busy={writer.pending!==null}>
         <DialogTitle>{t.jobs.coverLetter}</DialogTitle>
         {app && (
           <p className="mt-1 truncate text-xs text-foreground-muted">
-            {[app.title, app.company].filter(Boolean).join(" — ")}
+            {[reviewed.title, reviewed.company].filter(Boolean).join(" — ")}
           </p>
         )}
         <div className="mt-3 space-y-3">
+          <fieldset disabled={writer.pending!==null}>
           <CoverLetterField
+            key={reviewed.updated_at}
+            readOnly={locked}
             id="job-letter-editor"
             value={letter}
-            onChange={setLetter}
+            onChange={update}
             templates={templates}
             setTemplates={setTemplates}
             vars={{
-              position: app?.title,
-              company: app?.company,
-              source: app?.source ? jobSourceLabel(app.source) : null,
+              position: reviewed.title,
+              company: reviewed.company,
+              source: reviewed.source ? jobSourceLabel(reviewed.source) : null,
             }}
             userId={userId}
           />
-          <div className="flex items-center justify-end gap-2">
+          </fieldset>
+          {message&&<CareerActionNotice message={message}><div className="flex flex-wrap gap-2">
+            {writer.failure?.reason==='unavailable'&&<Button variant="outline" disabled={writer.pending!==null} onClick={()=>void retry()}>{cs?'Zkusit znovu':'Try again'}</Button>}
+            {writer.failure&&writer.failure.reason!=='invalid'&&<Button variant="outline" disabled={writer.pending!==null} onClick={()=>void reload()}>{cs?'Zahodit koncept a načíst aktuální':'Discard draft and load latest'}</Button>}
+          </div></CareerActionNotice>}
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <DialogClose asChild>
               <Button type="button" variant="ghost" size="sm">
                 {t.jobs.cancel}
@@ -2322,11 +2302,11 @@ function LetterDialog({
             </DialogClose>
             <Button
               size="sm"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
+              onClick={() => void save()}
+              disabled={locked||letter===reviewed.cover_letter}
             >
               <Check className="h-3.5 w-3.5" />
-              {saveMutation.isPending ? t.jobs.saving : t.jobs.save}
+              {writer.pending ? t.jobs.saving : t.jobs.save}
             </Button>
           </div>
         </div>

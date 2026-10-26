@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { jobs } from "../src/lib/i18n/sections/jobs";
-import { gotoPreview, signInFixtureUser } from "./helpers";
+import {openApplication,applicationSource,applicationReceipt} from "./career-application-fixtures";
+import { gotoPreview } from "./helpers";
 
 test("a delayed job import preserves manual edits and cannot replace a newer URL",async ({page}) => {
  await gotoPreview(page);await page.goto("/dev-preview?tab=career&career=live");
@@ -31,20 +32,21 @@ test("application date defaults and maximum use the saved account timezone",asyn
 });
 
 
-test("a failed application deletion restores its recorded history",async ({page}) => {
- await gotoPreview(page);await signInFixtureUser(page);await page.goto("/dev-preview?tab=career");
- await page.getByRole("button",{name:/^Applied/}).click();
+test("a failed application deletion retains its recorded history",async ({page}) => {
+ const source=applicationSource(),receipt=applicationReceipt(source,{p_payload:{title:source.title,company:"Meridian Tools",url:source.url,cover_letter:source.cover_letter,cover_letter_url:null,applied_on:"2026-10-01",notes:null}});
+ await openApplication(page,"en",source,false,[receipt.row],[receipt.event,{...receipt.event,id:"77777777-dddd-4ddd-8ddd-dddddddddddd",kind:"note",detail:"Synthetic retained history"}]);
+ await page.getByRole("button",{name:/^Applied/}).click();let deletions=0;
  const row=page.locator("#main-content").getByRole("listitem").filter({hasText:"Meridian Tools"});
  await row.getByRole("button",{name:"History",exact:true}).click();
  await expect(row.locator("ul li")).toHaveCount(2);
  await page.route("**/rest/v1/job_applications**",async route => {
-   if(route.request().method()==="DELETE") await route.fulfill({status:500,contentType:"application/json",body:JSON.stringify({message:"Synthetic failure"})});
+   if(route.request().method()==="DELETE"){deletions++;await route.fulfill({status:500,contentType:"application/json",body:JSON.stringify({message:"Synthetic failure"})});}
    else await route.fulfill({status:200,contentType:"application/json",body:"[]"});
  });
  await row.getByRole("button",{name:"Delete application",exact:true}).click();
  await page.getByRole("dialog").getByRole("button",{name:"Delete",exact:true}).click();
  await expect(page.getByText(jobs.en.couldNotDelete,{exact:true})).toBeVisible();
  await expect(row).toBeVisible();
- await row.getByRole("button",{name:"History",exact:true}).click();
- await expect(row.locator("ul li")).toHaveCount(2);
+ await expect(row.getByRole("button",{name:"History",exact:true})).toHaveAttribute("aria-expanded","true");
+ await expect(row.locator("ul li")).toHaveCount(2);expect(deletions).toBe(1);
 });
