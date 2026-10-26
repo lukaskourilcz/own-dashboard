@@ -1,0 +1,88 @@
+{
+  "finding": 304,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "09e626a4",
+  "state": "Actual synthetic application row with supported destination, localized source and shared action targets. No production data.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "15125c03f9bd98b5da959d3ede1fccf1e308eac0e6f107d6a4b47f687df69f93",
+    "src/components/panels/career-board.tsx": "81b41324c069e9b437322abb6c7e0a29c9e2687a2270cac44b86f4a9a3cb161d",
+    "src/components/ui/button.tsx": "713fb407cbc34708a07da410243ee1984b97f0f7bdec3db8d359dc0cd542d4ba"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "box": {
+        "x": 277,
+        "y": 1042,
+        "width": 1118,
+        "height": 120.5
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 1.4311270125223614,
+          "y": 9.95850622406639,
+          "w": 14.622931574239713,
+          "h": 16.597510373443985
+        },
+        {
+          "n": 2,
+          "x": 78.89087656529517,
+          "y": 9.95850622406639,
+          "w": 19.677996422182467,
+          "h": 26.556016597510375
+        },
+        {
+          "n": 3,
+          "x": 1.4311270125223614,
+          "y": 66.80497925311204,
+          "w": 97.13774597495528,
+          "h": 23.236514522821576
+        }
+      ],
+      "asset": "career-application-row-cs-1440.png",
+      "assetSha256": "4c9c72812d844009ce7ca32c2b2a76c4769c53b37414ea317c386af9e8a6730f"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1200
+      },
+      "box": {
+        "x": 17,
+        "y": 886.5,
+        "width": 396,
+        "height": 216.5
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 4.040404040404041,
+          "y": 5.542725173210162,
+          "w": 41.28393308080808,
+          "h": 9.237875288683602
+        },
+        {
+          "n": 2,
+          "x": 4.040404040404041,
+          "y": 35.33487297921478,
+          "w": 64.64646464646465,
+          "h": 20.323325635103927
+        },
+        {
+          "n": 3,
+          "x": 4.040404040404041,
+          "y": 61.20092378752887,
+          "w": 91.91919191919192,
+          "h": 33.25635103926097
+        }
+      ],
+      "asset": "career-application-row-cs-430.png",
+      "assetSha256": "790d6a281a78d1ea32d090bcf275eb6e4b909e5b5a6126f200dbfb8a24b4f899"
+    }
+  }
+}
