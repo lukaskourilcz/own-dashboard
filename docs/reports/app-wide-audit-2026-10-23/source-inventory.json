@@ -2236,9 +2236,9 @@
     {
       "path": "src/lib/career-records.ts",
       "sha256": null,
-      "lines": 118,
-      "reviewedSha256": "aa1b003ac80a223e12f810c04868e8a399581ad3e69c67806447ee3d8a1e4eeb",
-      "status": "source reviewed; complete captured-owner reads and finding 291 shared strict application/event schemas pass SDK/RLS checks; final release pending"
+      "lines": 128,
+      "reviewedSha256": "2d1f49c2c19dff09016d1804f817d315cc923652465e4bf6c12182582ee7839d",
+      "status": "source reviewed; complete captured reads, shared strict schemas and microsecond application comparator pass SDK/RLS/client checks through finding 296; rollout and final release pending"
     },
     {
       "path": "src/lib/category-rules.ts",
@@ -4895,9 +4895,9 @@
     {
       "path": "src/lib/career-application-progress.ts",
       "sha256": null,
-      "lines": 60,
-      "reviewedSha256": "b3e08797943f5a67c67d62b9c7e40e58f0a10d9bf9ad396e8429bd06d0822160",
-      "status": "source reviewed; findings 294\u2013295 atomic captured progress/contact SDK/RLS/client and native stage/editor adoption checks pass; rollout and final release pending"
+      "lines": 59,
+      "reviewedSha256": "43a5a5857ba597c9bced4966d8c0eea7bb402eb6f0e77d73cf774f1237e4e097",
+      "status": "source reviewed; findings 294\u2013295 captured progress/contact and browser adoption pass SDK/RLS/native checks; finding 296 shares the tested complete source comparator; rollout and final release pending"
     },
     {
       "path": "supabase/migrations/20261026195100_captured_career_progress.sql",
@@ -4912,6 +4912,13 @@
       "lines": 55,
       "reviewedSha256": "68c30bc8838c498b545ff57ec61b48f908d549b123f2215ced05e28a7c8afd84",
       "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending"
+    },
+    {
+      "path": "src/lib/career-application-records.ts",
+      "sha256": null,
+      "lines": 43,
+      "reviewedSha256": "f68636c220e991e61b7313cdc37e016503ceafba2b749855975db371a028175b",
+      "status": "source reviewed; finding 296 captured application letter/deletion foundation passes actual SDK/RLS stale-version, history, projection, cancellation and cache checks; browser adoption and final release pending"
     }
   ],
   "baselineFileCount": 561

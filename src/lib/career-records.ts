@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { awaitWithSignal } from '@/lib/abortable';
-import { databaseTimestamp } from '@/lib/database-version';
+import { databaseTimestamp, databaseVersion } from '@/lib/database-version';
 import type {
   JobListing, JobUserState, SavedJobPosition, JobApplication, JobApplicationEvent,
   CoverLetterTemplate, JobScrapeRun,
@@ -69,6 +69,16 @@ export const savedCareerRecordSchema = schemas.saved_job_positions;
 export const careerTriageRecordSchema = schemas.job_user_state;
 export const careerApplicationRecordSchema = schemas.job_applications;
 export const careerApplicationEventSchema = schemas.job_application_events;
+
+/** Complete captured records compare PostgreSQL instants without dropping the
+ * microseconds that distinguish same-clock edits. */
+export function matchesCareerApplication(row: JobApplication, expected: Partial<JobApplication>) {
+  return Object.entries(expected).every(([key, value]) => {
+    const actual = row[key as keyof JobApplication];
+    return typeof actual === 'string' && typeof value === 'string' && ['created_at', 'updated_at', 'next_follow_up_at'].includes(key)
+      ? databaseVersion(actual) === databaseVersion(value) : actual === value;
+  });
+}
 
 const limits: Record<CareerCollection, number> = {
   job_listings: 10_000, job_user_state: 20_000, saved_job_positions: 10_000,

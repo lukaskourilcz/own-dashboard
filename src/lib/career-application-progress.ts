@@ -2,7 +2,7 @@ import {z} from 'zod';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {awaitWithSignal} from '@/lib/abortable';
 import {databaseTimestamp,databaseVersion} from '@/lib/database-version';
-import {careerApplicationRecordSchema,careerApplicationEventSchema,type CareerScope} from '@/lib/career-records';
+import {careerApplicationRecordSchema,careerApplicationEventSchema,matchesCareerApplication,type CareerScope} from '@/lib/career-records';
 import type {JobApplication,JobApplicationEvent} from '@/lib/types';
 
 const text=(maximum:number)=>z.string().trim().max(maximum).transform(value=>value||null).nullable();
@@ -17,7 +17,6 @@ const receiptSchema=z.strictObject({ownerId:z.uuid(),source:z.strictObject({id:z
 export type CareerProgressReceipt=z.infer<typeof receiptSchema>;
 export class CareerProgressError extends Error{constructor(readonly reason:'changed'|'invalid'|'unavailable'='unavailable'){super('Career progress unconfirmed');}}
 function equal(key:string,a:unknown,b:unknown){return typeof a==='string'&&typeof b==='string'&&['updated_at','created_at','next_follow_up_at','follow_up_at'].includes(key)?databaseVersion(a)===databaseVersion(b):a===b;}
-function matches(row:JobApplication,expected:Partial<JobApplication>){return Object.entries(expected).every(([key,value])=>equal(key,row[key as keyof JobApplication],value));}
 const noteSchema=z.strictObject({responded_on:z.iso.date().nullable(),response_kind:z.enum(['positive','negative','neutral']).nullable(),follow_up_at:databaseTimestamp.nullable(),notes:z.string().nullable()});
 
 /** Only changed fields enter the write bounds; the original full owned version
@@ -33,7 +32,7 @@ export async function progressCareerApplication(db:SupabaseClient,scope:CareerSc
   if(result.error)throw new CareerProgressError(result.error.code==='P0002'?'changed':result.error.code==='22023'?'invalid':'unavailable');
   const receipt=receiptSchema.parse(result.data),{row,events}=receipt;
   const {updated_at:previous,...expected}={...captured,...patch},changed=Object.entries(patch).some(([key,value])=>!equal(key,captured[key as keyof typeof captured],value));
-  if(receipt.ownerId!==ownerId||receipt.source.id!==captured.id||databaseVersion(receipt.source.updatedAt)!==databaseVersion(previous)||!matches(row,expected)
+  if(receipt.ownerId!==ownerId||receipt.source.id!==captured.id||databaseVersion(receipt.source.updatedAt)!==databaseVersion(previous)||!matchesCareerApplication(row,expected)
    ||(changed?databaseVersion(row.updated_at)!<=databaseVersion(previous)!:databaseVersion(row.updated_at)!==databaseVersion(previous)))throw new CareerProgressError();
   const statusChanged=captured.status!==row.status,noteChanged=['responded_on','response_kind','next_follow_up_at','notes'].some(key=>!equal(key,captured[key as keyof typeof captured],row[key as keyof typeof row]));
   if(events.length!==Number(statusChanged)+Number(noteChanged)||new Set(events.map(event=>event.id)).size!==events.length||new Set(events.map(event=>event.kind)).size!==events.length)throw new CareerProgressError();
@@ -51,7 +50,7 @@ export async function progressCareerApplication(db:SupabaseClient,scope:CareerSc
 }
 export function applyCareerProgressReceipt(rows:JobApplication[],source:JobApplication,receipt:CareerProgressReceipt):JobApplication[]{
  if(receipt.ownerId!==source.user_id||receipt.row.id!==source.id||receipt.row.user_id!==source.user_id||receipt.source.id!==source.id||databaseVersion(receipt.source.updatedAt)!==databaseVersion(source.updated_at))return rows;
- const index=rows.findIndex(row=>row.id===source.id&&matches(row,source));if(index<0||matches(rows[index],receipt.row))return rows;
+ const index=rows.findIndex(row=>row.id===source.id&&matchesCareerApplication(row,source));if(index<0||matchesCareerApplication(rows[index],receipt.row))return rows;
  const next=rows.slice();next[index]=receipt.row;return next;
 }
 export function applyCareerProgressEvents(rows:JobApplicationEvent[],base:JobApplicationEvent[],receipt:CareerProgressReceipt):JobApplicationEvent[]{
