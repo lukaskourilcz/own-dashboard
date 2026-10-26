@@ -69,6 +69,7 @@ export const savedCareerRecordSchema = schemas.saved_job_positions;
 export const careerTriageRecordSchema = schemas.job_user_state;
 export const careerApplicationRecordSchema = schemas.job_applications;
 export const careerApplicationEventSchema = schemas.job_application_events;
+export const careerTemplateRecordSchema = schemas.cover_letter_templates;
 
 /** Complete captured records compare PostgreSQL instants without dropping the
  * microseconds that distinguish same-clock edits. */

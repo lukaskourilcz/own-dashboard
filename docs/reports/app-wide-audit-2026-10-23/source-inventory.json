@@ -2236,9 +2236,9 @@
     {
       "path": "src/lib/career-records.ts",
       "sha256": null,
-      "lines": 128,
-      "reviewedSha256": "2d1f49c2c19dff09016d1804f817d315cc923652465e4bf6c12182582ee7839d",
-      "status": "source reviewed; complete captured reads, shared strict schemas and microsecond application comparator pass SDK/RLS/client checks through finding 296; rollout and final release pending"
+      "lines": 129,
+      "reviewedSha256": "0985f5934a7c3ca0227afddb757a6e0cb5f56218748b2313d0ce94176c3ddb42",
+      "status": "source reviewed; shared positive Career schemas including templates; findings 272\u2013299 targeted checks pass; final release pending"
     },
     {
       "path": "src/lib/category-rules.ts",
@@ -4926,6 +4926,13 @@
       "lines": 60,
       "reviewedSha256": "1be160f3dea9fae756a3b685953d8ac1c33cecd71ea50cd6d5d73578a40c614d",
       "status": "source reviewed; finding 297 adopts captured application deletion/letter saves, retained history/drafts, original confirmation scope, cancellation, canonical cache and nearby focus; Saved letter/templates/density and final release pending"
+    },
+    {
+      "path": "src/lib/career-template-records.ts",
+      "sha256": null,
+      "lines": 51,
+      "status": "source reviewed; finding 299 stable creation, captured edit/delete, strict receipts and scoped cancellation verified in 56 focused SDK/RLS/client checks; UI adoption and final release pending",
+      "reviewedSha256": "7f79cf6cfc08e0afab1499a4ea181c65ba5ee9a41bf5afeddac5cbafb10e3e0f"
     }
   ],
   "baselineFileCount": 561
