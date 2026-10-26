@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2843,
+      "lines": 2852,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 274\u2013286 verify complete paging, captured discovery/triage and Saved controls; canonical Career query-key regression, letter/application/progress/template writes and density remain open; final release pending",
-      "reviewedSha256": "7c3d4c8eb6ebadd9e618bcccdf4c8cc22e6e8974329959b266cea41e002ac6aa"
+      "status": "source reviewed; findings 274\u2013287 verify complete paging, captured discovery/triage/Saved controls and canonical-query cancellation/reload; remaining import replacement, letter/application/progress/template writes and density under review; final release pending",
+      "reviewedSha256": "71e006bbb921e131aada8d20703e6b635cf6911bbb0ed376ff78caa5b9b13a93"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",

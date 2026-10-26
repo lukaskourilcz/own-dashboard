@@ -10,6 +10,7 @@ import {TooltipProvider} from '@/components/ui/tooltip';
 import {jobListings} from '@/lib/demo/fixtures';
 import type {JobListing,JobUserState} from '@/lib/types';
 import {jobs} from '@/lib/i18n/sections/jobs';
+import {qk} from '@/lib/queries/keys';
 const gate=vi.hoisted(()=>({rpc:vi.fn(),confirm:vi.fn()}));
 vi.mock('@/lib/supabase/client',()=>({createClient:()=>({rpc:gate.rpc})}));
 vi.mock('@/components/ui/confirmation-dialog',()=>({useConfirmation:()=>gate.confirm}));
@@ -32,4 +33,16 @@ it('reserves once and captures nested source/state versions before the confirmat
 });
 it('retires confirmation before any SDK write when the original owner scope is replaced',async()=>{
  let finish!:(accepted:boolean)=>void;gate.confirm.mockImplementation(()=>new Promise<boolean>(resolve=>{finish=resolve;}));const button=await open();act(()=>button.click());expect(gate.confirm).toHaveBeenCalledOnce();await act(async()=>root.render(tree(other)));await act(async()=>{finish(true);});await settle();expect(gate.rpc).not.toHaveBeenCalled();expect(update).not.toHaveBeenCalled();
+});
+
+it('cancels the shell’s canonical private-state read before applying a confirmed triage receipt',async()=>{
+ const button=await open();let readSignal!:AbortSignal;
+ void client.fetchQuery({queryKey:qk.jobUserStates,queryFn:({signal})=>{readSignal=signal;return new Promise<JobUserState[]>(()=>{});}}).catch(()=>undefined);
+ const builder={retry:()=>builder,abortSignal:async()=>({data:{ownerId:owner,changes:[{listingId:source.id,next:null,row:null}]},error:null})};gate.rpc.mockReturnValue(builder);
+ await act(async()=>host.querySelector<HTMLButtonElement>('[data-career-shortlist]')!.click());await settle();expect(button).not.toBeNull();expect(update).toHaveBeenCalledOnce();expect(readSignal.aborted).toBe(true);
+});
+it('cancels the canonical Saved read before applying a discovery-save receipt',async()=>{
+ await open();let readSignal!:AbortSignal;void client.fetchQuery({queryKey:qk.savedJobPositions,queryFn:({signal})=>{readSignal=signal;return new Promise(()=>{});}}).catch(()=>undefined);
+ gate.rpc.mockImplementation((name:string,args:Record<string,string>)=>{expect(name).toBe('capture_career_listing');const builder={retry:()=>builder,abortSignal:async()=>({data:{ownerId:owner,requestId:args.p_saved_id,created:true,row:{id:args.p_saved_id,user_id:owner,listing_id:source.id,title:source.title,company:source.company,url:source.url,source:source.source,location:source.location,remote:source.remote,description:source.description,cover_letter:'',notes:null,saved_at:stamp,updated_at:stamp,cover_letter_url:null,readiness:'draft'}},error:null})};return builder;});
+ await act(async()=>host.querySelector<HTMLButtonElement>('[data-career-save]')!.click());await settle();expect(gate.rpc).toHaveBeenCalledOnce();expect(readSignal.aborted).toBe(true);
 });

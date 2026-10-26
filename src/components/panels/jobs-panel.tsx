@@ -696,7 +696,8 @@ function OpenPositionsView({
   const savingIds = useRef(new Set<string>());
   const [pendingSaves, setPendingSaves] = useState<ReadonlySet<string>>(new Set());
   const [saveIssue, setSaveIssue] = useState<{ listing: JobListing; changed: boolean } | null>(null);
-  const savedQueryKey = useMemo(() => [...qk.savedJobPositions, userId], [userId]);
+  // The shell already isolates its QueryClient by owner. Match its entity keys.
+  const savedQueryKey = qk.savedJobPositions;
   const saveRegion = useRef<HTMLDivElement>(null);
   const saveInteraction = useRef(0);
   const [saveFocus, setSaveFocus] = useState<{ id: string; epoch: number; confirmed: boolean } | null>(null);
@@ -728,7 +729,7 @@ function OpenPositionsView({
       saveAttempts.current.delete(listing.id);
       setSaveIssue(null); setSaveFocus({ id: listing.id, epoch, confirmed: true });
       toast.ok(t.jobs.positionSaved);
-      void qc.invalidateQueries({ queryKey: savedQueryKey, exact: true });
+      void qc.invalidateQueries({ queryKey: savedQueryKey, exact: true, refetchType: "none" });
     } catch (error) {
       if (!captured.signal.aborted) {
         const changed = error instanceof CareerSaveError && error.reason === "changed";
@@ -746,8 +747,8 @@ function OpenPositionsView({
   const triageBusy = useRef(false);
   const [triagePending, setTriagePending] = useState(false);
   const [triageIssue, setTriageIssue] = useState<{ attempt: TriageAttempt | null; reason: "unavailable" | "changed" | "limit" | "reload" } | null>(null);
-  const triageQueryKey = useMemo(() => [...qk.jobUserStates, userId], [userId]);
-  const listingQueryKey = useMemo(() => [...qk.jobListings, userId], [userId]);
+  const triageQueryKey = qk.jobUserStates;
+  const listingQueryKey = qk.jobListings;
   const [triageFocus, setTriageFocus] = useState<{ attempt: TriageAttempt; confirmed: boolean } | { reloaded: boolean; epoch: number } | null>(null);
   const handledTriageFocus = useRef<typeof triageFocus>(null);
   useLayoutEffect(() => {
@@ -791,7 +792,7 @@ function OpenPositionsView({
       }
       if (attempt.removing && saveInteraction.current === attempt.epoch) setPageIndex(attempt.revealPage);
       setTriageFocus({ attempt, confirmed: true });
-      void qc.invalidateQueries({ queryKey: triageQueryKey, exact: true });
+      void qc.invalidateQueries({ queryKey: triageQueryKey, exact: true, refetchType: "none" });
     } catch (error) {
       if (!captured.signal.aborted) {
         setTriageIssue({ attempt, reason: error instanceof CareerTriageError ? error.reason : "unavailable" });
@@ -835,14 +836,22 @@ function OpenPositionsView({
       if (triageIssue.reason === "unavailable" && triageIssue.attempt) {
         await performTriage({ ...triageIssue.attempt, epoch }, captured);
       } else {
-        const base = userStates, knownListings = listings, operation = new AbortController();
+        // `listings` is the displayed relevant subset, not the shell's complete
+        // cached collection. Guard the actual canonical snapshots instead.
+        const base = qc.getQueryData<JobUserState[]>(triageQueryKey);
+        const knownListings = qc.getQueryData<JobListing[]>(listingQueryKey), operation = new AbortController();
         const request = { ownerId: captured.ownerId, signal: AbortSignal.any([captured.signal, operation.signal]) };
         try {
           const [states, offers] = await Promise.all([
             readCareerRecords(supabase, "job_user_state", request), readCareerRecords(supabase, "job_listings", request),
           ]);
-          await awaitWithSignal(qc.cancelQueries({ queryKey: triageQueryKey, exact: true }), AbortSignal.any([captured.signal, AbortSignal.timeout(5_000)]));
+          const cancelSignal = AbortSignal.any([captured.signal, AbortSignal.timeout(5_000)]);
+          await awaitWithSignal(Promise.all([
+            qc.cancelQueries({ queryKey: triageQueryKey, exact: true }),
+            qc.cancelQueries({ queryKey: listingQueryKey, exact: true }),
+          ]), cancelSignal);
           if (captured.signal.aborted) return;
+          if (qc.getQueryData(triageQueryKey) !== base || qc.getQueryData(listingQueryKey) !== knownListings) throw new CareerTriageError();
           setUserStates(current => current === base ? states.data : current);
           qc.setQueryData<JobListing[]>(listingQueryKey, current => current === knownListings ? offers.data : current);
           setSelected(new Set()); setTriageIssue(null);

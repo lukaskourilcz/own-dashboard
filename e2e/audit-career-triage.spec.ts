@@ -60,3 +60,7 @@ for(const lang of ['en','cs'] as const){
  });
 
 }
+for(const lang of ['en','cs'] as const)test(`${lang}: conflict reload retires an offer whose public source changed`,async({page})=>{
+ const {store}=await setup(page,lang);await page.route('**/rest/v1/rpc/apply_career_triage',route=>route.fulfill({status:404,json:{code:'P0002',message:'PRIVATE TEST'}}));const main=await open(page,lang),source=store.rows[0];await main.locator(`[data-career-listing="${source.id}"] [data-career-shortlist]`).click();await expect(main.getByRole('alert')).toHaveText(jobs[lang].triageChanged);
+ store.rows=store.rows.map(row=>row.id===source.id?{...row,title:'Synthetic React refreshed source',last_seen_at:later}:row);await main.getByRole('button',{name:jobs[lang].triageReload,exact:true}).click();await expect(main.locator(`[data-career-listing="${source.id}"]`)).toHaveCount(0,{timeout:5000});await expect(main.locator('[data-career-listing]')).toHaveCount(2);expect(store.refreshes).toBe(0);
+});
