@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2741,
+      "lines": 2742,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 297 adopts captured application deletion/letter saves, retained history/drafts, original confirmation scope, cancellation, canonical cache and nearby focus; Saved letter/templates/density and final release pending",
-      "reviewedSha256": "924d137ba364c2f2442f2e544136265b51c3dd2211f64d6f3162db063a68a91a"
+      "status": "source reviewed; captured application/progress/deletion/letter controls and finding 298 single-heading/matching toolbar geometry pass native EN/CS/mobile checks; Saved letter/templates, wider density and final release pending",
+      "reviewedSha256": "d679626ff061a37a5655c5de3897cd9033901b13bbd8f82aff7b83447452567e"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",

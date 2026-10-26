@@ -2174,3 +2174,12 @@ Both actual letter-editor captures are inspected for the visual plan. They also 
 ### Finding 297 visual evidence
 
 The forty-first authentic desktop/mobile pair records application `c7186322`. `career-letter-captures.json` retains exact source/asset hashes, viewport and mapped annotations. Both retained-letter images are inspected. The entry explicitly identifies the repeated heading and uneven template-toolbar sizing as remaining work. The visual plan preserves earlier capture provenance and rebuilds from 702 source entries. All 41 images decode in both modes; light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Artifact-builder lint passes.
+
+
+## Finding 298 — one letter heading and matching template controls
+
+The existing-letter dialog now has one visible letter heading. The textarea keeps its associated screen-reader label. The shared template load control, optional name field and save action use the existing 32px desktop/44px mobile primitives. A narrower name field lets the toolbar fit one row within the 576px dialog; it stays full width on mobile. The wider application dialog and letter workspace retain their visible field labels. No persistence behavior or global primitive style changes.
+
+The first four native letter cases passed in 27.1 seconds. Added geometry assertions initially caught three mid-reflow size differences in the expanded 28-case attempt (25 passes/three failures). Recorded 768px samples show fields at 44/44px while the button has reached 32px; the computed reduced-motion transition is effectively zero, so this evidence does not establish a 150ms application delay. The checks now wait for settled native geometry while retaining equal-height, at-least-44px mobile and single-row desktop requirements. No application timeout or assertion threshold is widened. The four geometry cases then pass in 24.8 seconds, followed by all 28 unchanged-application EN/CS desktop/mobile cases in 1.7 minutes. They cover both dialog consumers, pending/conflict/retry/reload, six widths, keyboard guidance and axe. TypeScript, targeted ESLint and whitespace checks pass.
+
+The updated actual captures follow this application commit; prior images keep their provenance as the before-state. The ledger remains 702 sources, and no SQL, provider or production record is changed. Template/Saved-letter persistence, broader Career density and app leads, migration rollout, final clean validation and main merge remain unfinished.

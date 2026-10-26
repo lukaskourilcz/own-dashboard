@@ -1640,6 +1640,7 @@ function CoverLetterField({
   id = "job-cover-letter",
   description,
   readOnly = false,
+  showLabel = true,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -1654,6 +1655,7 @@ function CoverLetterField({
   id?: string;
   description?: string;
   readOnly?: boolean;
+  showLabel?: boolean;
 }) {
   const t = useDict();
   const { lang } = useLang();
@@ -1730,8 +1732,8 @@ function CoverLetterField({
       />}
       </details>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label htmlFor={id}>{t.jobs.coverLetter}</Label>
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <Label htmlFor={id} className={showLabel?undefined:'sr-only'}>{t.jobs.coverLetter}</Label>
+        <div data-career-letter-toolbar className="flex min-w-0 flex-wrap items-center gap-1.5">
           <Select
             value=""
             onValueChange={(v) => {
@@ -1739,7 +1741,7 @@ function CoverLetterField({
             }}
           >
             <SelectTrigger
-              className="h-7 w-auto min-w-36 text-[11px]"
+              className="w-full sm:w-auto sm:min-w-36"
               aria-label={t.jobs.loadTemplate}
             >
               <SelectValue placeholder={t.jobs.loadTemplate} />
@@ -1769,7 +1771,7 @@ function CoverLetterField({
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
             maxLength={150}
-            className="w-full sm:w-52"
+            className="w-full sm:w-40"
             aria-label={
               lang === "cs" ? "Název uloženého dopisu" : "Saved letter name"
             }
@@ -1782,8 +1784,6 @@ function CoverLetterField({
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            className="min-h-11 text-sm"
             onClick={saveAsTemplate}
             disabled={!value.trim() || saveTemplateMutation.isPending}
           >
@@ -2276,6 +2276,7 @@ function LetterDialog({
           <fieldset disabled={writer.pending!==null}>
           <CoverLetterField
             key={reviewed.updated_at}
+            showLabel={false}
             readOnly={locked}
             id="job-letter-editor"
             value={letter}
