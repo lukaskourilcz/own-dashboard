@@ -179,6 +179,10 @@ type JobsStrings = {
   newTemplate: string;
   editTemplate: string;
   templateName: string;
+  templateSearch: string;
+  untitledTemplate: string;
+  emptyTemplate: string;
+  noMatchingTemplates: string;
   templateNamePlaceholder: string;
   templateBody: string;
   templateBodyPlaceholder: string;
@@ -382,6 +386,10 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     newTemplate: "New template",
     editTemplate: "Edit template",
     templateName: "Name",
+    templateSearch: "Search template names",
+    untitledTemplate: "Untitled template",
+    emptyTemplate: "Empty template",
+    noMatchingTemplates: "No templates match this search.",
     templateNamePlaceholder: "e.g. Frontend — English",
     templateBody: "Template text",
     templateBodyPlaceholder: "Dear Hiring Manager…",
@@ -583,6 +591,10 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     newTemplate: "Nová šablona",
     editTemplate: "Upravit šablonu",
     templateName: "Název",
+    templateSearch: "Hledat v názvech šablon",
+    untitledTemplate: "Šablona bez názvu",
+    emptyTemplate: "Prázdná šablona",
+    noMatchingTemplates: "Žádná šablona neodpovídá hledání.",
     templateNamePlaceholder: "např. Frontend — anglicky",
     templateBody: "Text šablony",
     templateBodyPlaceholder: "Dobrý den…",

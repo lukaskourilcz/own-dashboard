@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2489,
+      "lines": 2437,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 303\u2013306 workspace guards, complete local history/letters, safe long rows and shared board pending adopted; large template picker, guidance input drafts and remaining density pending",
-      "reviewedSha256": "7010bc786045658807e483ade83ab54a055f8bebf23bfaf71d1fed30f3b4f303"
+      "status": "source reviewed; finding 307 mounts a bounded searchable template picker on demand and preserves parent/draft/focus flows; remaining guidance input drafts and density pending",
+      "reviewedSha256": "2e0401a474ac77db10de90277436a89bd03b409f0a70a0a774b0e9825b6ba522"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2733,10 +2733,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 617,
+      "lines": 629,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; finding 293 localized optional guidance, matching controls and shorter fields pass native EN/CS/mobile checks; final release pending",
-      "reviewedSha256": "7b503ebcd2733df6ab8b7d4990e2fb574571bb13f957c22ece37b9cfd663dc91"
+      "status": "source reviewed; finding 307 adds EN/CS picker search, fallback, empty and no-match copy; obsolete contact diagnostic copy remains under review",
+      "reviewedSha256": "a4dc818415c89758fba4315b7e7a6bc621a5d0adf4d572ce9c0a70b8be526356"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",
@@ -4945,8 +4945,8 @@
       "path": "src/components/panels/career-templates-dialog.tsx",
       "sha256": null,
       "lines": 85,
-      "status": "source reviewed; findings 300\u2013301 retained template manager and shared fixed failure/retry presentation verified; final release pending",
-      "reviewedSha256": "10b25133c8e8256609001f31d294776eb57dfc89c596a1e7dace6fec248f5546"
+      "status": "source reviewed; findings 300/307 captured template manager and localized blank/whitespace legacy-name display verified; final release pending",
+      "reviewedSha256": "c54c346b69c7f8d2db21b3200c1603b6fa3270ee0b954bdecde14694e7b9b8f5"
     },
     {
       "path": "src/components/panels/use-career-saved-letter-draft.ts",
@@ -4954,6 +4954,13 @@
       "lines": 62,
       "status": "source reviewed; finding 302 original owner/source/defaults, stable creation, changed-field saves, explicit reload and guarded cache receipts verified in mounted/SDK/RLS tests; final release pending",
       "reviewedSha256": "51a8c7781294a3478f79f7c5e53610f4b073511385045b288ee59f53aa552bf0"
+    },
+    {
+      "path": "src/components/panels/career-template-picker.tsx",
+      "sha256": null,
+      "lines": 97,
+      "reviewedSha256": "51d1733fdb5ba581843289cb3c05773c55765421d6928ec2fcb8bc01d500b389",
+      "status": "source reviewed; finding 307 bounded 50 saved plus 3 built-in choices, complete 10000-record accent-tolerant search, no extra reads, legacy fallback, keyboard/focus and native six-width/axe verification pass; final release pending"
     }
   ],
   "baselineFileCount": 561

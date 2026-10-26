@@ -49,9 +49,9 @@ export function CareerTemplatesDialog({onClose,templates,setTemplates,userId}:{o
    <CareerTemplateFailure writer={writer} onReload={()=>void writer.reload()}/>
    {templates.length===0?<p className="py-6 text-center text-sm text-foreground-muted">{t.jobs.noTemplatesYet}</p>:<>
     <ul className="divide-y divide-border rounded-md border border-border">{page.items.map(row=><li key={row.id} className="flex min-w-0 items-center gap-2 px-3 py-2">
-     <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{row.name||t.jobs.templateName}</p><p className="truncate text-xs text-foreground-subtle">{row.body.slice(0,180).replace(/\s+/g,' ').slice(0,90)}</p></div>
-     <Button variant="ghost" size="icon" disabled={locked} aria-label={`${t.jobs.editTemplate}: ${row.name||t.jobs.templateName}`} onClick={()=>setEditor({id:row.id,source:structuredClone(row)})}><Pencil className="h-3.5 w-3.5"/></Button>
-     <Button variant="ghost" size="icon" disabled={locked} aria-label={`${t.jobs.deleteTemplate}: ${row.name||t.jobs.templateName}`} onClick={event=>void remove(row,event.currentTarget)}><Trash2 className="h-3.5 w-3.5"/></Button>
+     <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{row.name.trim()||t.jobs.untitledTemplate}</p><p className="truncate text-xs text-foreground-subtle">{row.body.slice(0,180).replace(/\s+/g,' ').slice(0,90)}</p></div>
+     <Button variant="ghost" size="icon" disabled={locked} aria-label={`${t.jobs.editTemplate}: ${row.name.trim()||t.jobs.untitledTemplate}`} onClick={()=>setEditor({id:row.id,source:structuredClone(row)})}><Pencil className="h-3.5 w-3.5"/></Button>
+     <Button variant="ghost" size="icon" disabled={locked} aria-label={`${t.jobs.deleteTemplate}: ${row.name.trim()||t.jobs.untitledTemplate}`} onClick={event=>void remove(row,event.currentTarget)}><Trash2 className="h-3.5 w-3.5"/></Button>
     </li>)}</ul>
     <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.templatesTitle}/>
    </>}

@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   Bookmark,
   Check,
+  ChevronDown,
   ExternalLink,
   Files,
   FileText,
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCareerTemplateWrite } from "@/components/panels/use-career-template-write";
 import { CAREER_TEMPLATE_NAME_MAX, CAREER_TEMPLATE_BODY_MAX } from "@/lib/career-template-records";
+import { CareerTemplatePicker } from "@/components/panels/career-template-picker";
 import { CareerTemplatesDialog, CareerTemplateFailure } from "@/components/panels/career-templates-dialog";
 import { CareerPagination } from "@/components/panels/career-pagination";
 import { collectionPage } from "@/lib/collection-page";
@@ -34,16 +36,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-  SimpleSelect,
-} from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import {
   Dialog,
   DialogClose,
@@ -61,7 +54,7 @@ import { jobSourceLabel } from "@/lib/jobs/meta";
 import { JobSources } from "@/components/panels/job-sources";
 import { compareByFit, matchListing, type JobMatch } from "@/lib/jobs/match";
 import { applicationStats } from "@/lib/jobs/stats";
-import { BUILTIN_TEMPLATES, fillTemplate } from "@/lib/jobs/template";
+import { fillTemplate } from "@/lib/jobs/template";
 import type {
   CoverLetterTemplate,
   JobApplication,
@@ -1671,26 +1664,13 @@ function CoverLetterField({
   const [guidanceOpen, setGuidanceOpen] = useState(() => !value.trim());
   const [guidanceMounted, setGuidanceMounted] = useState(() => !value.trim());
   const locale = useDateLocale();
+  const pickerId=useId(),[pickerOpen,setPickerOpen]=useState(false);
   const toast = useToast();
 
-  function loadTemplate(key: string) {
-    if (readOnly || templateLocked || !key) return;
-    let body: string | null = null;
-    if (key.startsWith("builtin:")) {
-      const tpl = BUILTIN_TEMPLATES.find((b) => `builtin:${b.id}` === key);
-      body = tpl ? tpl.body[letterLanguage] : null;
-    } else {
-      const tpl = templates.find((x) => `tpl:${x.id}` === key);
-      body = tpl?.body ?? null;
-    }
-    if (body == null) return;
-    if (value.trim() && !window.confirm(t.jobs.overwriteLetterConfirm)) return;
-    changeLetter(
-      fillTemplate(body, {
-        ...vars,
-        date: format(new Date(), "PPP", { locale }),
-      }),
-    );
+  function loadTemplate(body:string){
+    if(readOnly||templateLocked)return false;
+    if(value.trim()&&!window.confirm(t.jobs.overwriteLetterConfirm))return false;
+    changeLetter(fillTemplate(body,{...vars,date:format(new Date(),"PPP",{locale})}));return true;
   }
 
   const templateWriter=useCareerTemplateWrite({userId,setTemplates});
@@ -1714,6 +1694,7 @@ function CoverLetterField({
 
   return (
     <div className="space-y-4">
+      {pickerOpen&&<CareerTemplatePicker id={pickerId} templates={templates} language={letterLanguage} onSelect={loadTemplate} onClose={()=>setPickerOpen(false)}/>}
       <fieldset disabled={readOnly||templateWriter.pending!==null} className="min-w-0 space-y-4">
       <details open={guidanceOpen} onToggle={event=>{const open=event.currentTarget.open;setGuidanceOpen(open);if(open)setGuidanceMounted(true);}}>
       <summary className="min-h-11 cursor-pointer rounded-sm py-3 text-sm font-medium focus-ring">{t.jobs.letterGuidance}</summary>
@@ -1732,40 +1713,7 @@ function CoverLetterField({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Label htmlFor={id} className={showLabel?undefined:'sr-only'}>{t.jobs.coverLetter}</Label>
         <div data-career-letter-toolbar className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <Select
-            value=""
-            disabled={readOnly||templateLocked}
-            onValueChange={(v) => {
-              if (v) loadTemplate(v);
-            }}
-          >
-            <SelectTrigger
-              className="w-full sm:w-auto sm:min-w-36"
-              aria-label={t.jobs.loadTemplate}
-            >
-              <SelectValue placeholder={t.jobs.loadTemplate} />
-            </SelectTrigger>
-            <SelectContent>
-              {templates.length > 0 && (
-                <SelectGroup>
-                  <SelectLabel>{t.jobs.savedTemplatesGroup}</SelectLabel>
-                  {templates.map((tpl) => (
-                    <SelectItem key={tpl.id} value={`tpl:${tpl.id}`}>
-                      {tpl.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              )}
-              <SelectGroup>
-                <SelectLabel>{t.jobs.builtinTemplatesGroup}</SelectLabel>
-                {BUILTIN_TEMPLATES.map((b) => (
-                  <SelectItem key={b.id} value={`builtin:${b.id}`}>
-                    {b.name[lang]}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <Button type="button" variant="outline" role="combobox" aria-haspopup="dialog" aria-expanded={pickerOpen} aria-controls={pickerOpen?pickerId:undefined} aria-label={t.jobs.loadTemplate} disabled={readOnly||templateLocked} className="w-full justify-between sm:w-auto sm:min-w-36" onClick={()=>setPickerOpen(true)}><span>{t.jobs.loadTemplate}</span><ChevronDown className="h-4 w-4 text-foreground-muted"/></Button>
           <Input
             value={draftName}
             readOnly={templateLocked}

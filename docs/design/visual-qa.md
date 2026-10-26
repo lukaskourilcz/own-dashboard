@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Template-picker update (2026-10-26, finding 307): sixty affected EN/CS desktop/mobile cases pass. Sixteen final picker cases pass after visual inspection catches and repairs desktop preview clipping. The complete 10,000-template library remains searchable while only fifty saved choices and three built-ins mount; focus, refusal, fallback/empty states, six widths and axe are checked without extra reads. The wider audit/release remains unfinished.
+
 > Career history update (2026-10-26, finding 305): twenty-eight final EN/CS desktop/mobile native cases pass. Complete history and 1,201 previous letters remain reachable through fifty-record local pages, with no extra reads. The narrow sidebar fits its content and stacks the pager with a single-line range. Keyboard, disclosure state, reuse/dirty exits, six widths and axe are included; wider release work remains open.
 
 > Career row update (2026-10-26, finding 304): twenty EN/CS desktop/mobile native cases pass. Unsupported destinations remain text, long rows wrap, controls match at 44px mobile/32px desktop and the manual source label is localized. Six-width reflow, axe, board move/focus and letter/removal recovery are included. Final app-wide release remains unfinished.
