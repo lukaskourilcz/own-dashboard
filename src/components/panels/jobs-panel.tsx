@@ -12,7 +12,6 @@ import {
   Files,
   FileText,
   History,
-  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -23,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CareerTemplatesDialog } from "@/components/panels/career-templates-dialog";
 import { CareerPagination } from "@/components/panels/career-pagination";
 import { collectionPage } from "@/lib/collection-page";
 import { readCareerAvailability, availabilityVersionMatches, CareerAvailabilityError, type AvailabilityReceipt, type AvailabilityRequest } from "@/lib/jobs/availability-client";
@@ -2046,13 +2046,12 @@ function AppliedView({
         userId={userId}
         setEvents={setEvents}
       />}
-      <TemplatesDialog
-        open={templatesOpen}
-        onOpenChange={setTemplatesOpen}
+      {templatesOpen && <CareerTemplatesDialog
+        onClose={() => setTemplatesOpen(false)}
         templates={templates}
         setTemplates={setTemplates}
         userId={userId}
-      />
+      />}
     </div>
   );
 }
@@ -2313,264 +2312,6 @@ function LetterDialog({
 /* ========================================================================= *
  * Templates manager                                                         *
  * ========================================================================= */
-
-function TemplatesDialog({
-  open,
-  onOpenChange,
-  templates,
-  setTemplates,
-  userId,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  templates: CoverLetterTemplate[];
-  setTemplates: Updater<CoverLetterTemplate[]>;
-  userId: string;
-}) {
-  const t = useDict();
-  const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
-  const confirm = useConfirmation();
-
-  const [editing, setEditing] = useState<CoverLetterTemplate | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: "", body: "" });
-  const [formError, setFormError] = useState<string | null>(null);
-  const formOpen = creating || editing !== null;
-
-  function openCreate() {
-    setEditing(null);
-    setCreating(true);
-    setForm({ name: "", body: "" });
-    setFormError(null);
-  }
-
-  function openEdit(tpl: CoverLetterTemplate) {
-    setCreating(false);
-    setEditing(tpl);
-    setForm({ name: tpl.name, body: tpl.body });
-    setFormError(null);
-  }
-
-  function closeForm() {
-    setCreating(false);
-    setEditing(null);
-    setFormError(null);
-  }
-
-  const saveMutation = useMutation({
-    mutationFn: async (vars: {
-      id: string | null;
-      name: string;
-      body: string;
-    }) => {
-      if (vars.id) {
-        const { data, error } = await supabase
-          .from("cover_letter_templates")
-          .update({
-            name: vars.name,
-            body: vars.body,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", vars.id)
-          .select()
-          .single();
-        if (error || !data) throw error ?? new Error("no-data");
-        return data as CoverLetterTemplate;
-      }
-      const { data, error } = await supabase
-        .from("cover_letter_templates")
-        .insert({ user_id: userId, name: vars.name, body: vars.body })
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as CoverLetterTemplate;
-    },
-    onSuccess: (tpl, vars) => {
-      setTemplates((prev) =>
-        vars.id ? prev.map((x) => (x.id === tpl.id ? tpl : x)) : [...prev, tpl],
-      );
-      toast.ok(t.jobs.templateSaved);
-      void qc.invalidateQueries({ queryKey: qk.coverLetterTemplates });
-      closeForm();
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("cover_letter_templates")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.coverLetterTemplates });
-      const prev = qc.getQueryData<CoverLetterTemplate[]>(
-        qk.coverLetterTemplates,
-      );
-      setTemplates((old) => old.filter((x) => x.id !== id));
-      return { prev };
-    },
-    onSuccess: () => toast.ok(t.jobs.templateDeleted),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setTemplates(ctx.prev);
-      toast.err(t.jobs.couldNotDelete);
-    },
-    onSettled: () =>
-      qc.invalidateQueries({ queryKey: qk.coverLetterTemplates }),
-  });
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const name = form.name.trim();
-    const body = form.body.trim();
-    if (!name) {
-      setFormError(t.jobs.nameRequired);
-      return;
-    }
-    if (!body) {
-      setFormError(t.jobs.bodyRequired);
-      return;
-    }
-    saveMutation.mutate({ id: editing?.id ?? null, name, body });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl" showClose={false}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <DialogTitle>{t.jobs.templatesTitle}</DialogTitle>
-            <p className="mt-1 text-xs text-foreground-muted">
-              {t.jobs.templatesDescription}
-            </p>
-          </div>
-          {!formOpen && (
-            <Button size="sm" onClick={openCreate}>
-              <Plus className="h-3.5 w-3.5" />
-              {t.jobs.newTemplate}
-            </Button>
-          )}
-        </div>
-
-        {formOpen ? (
-          <form onSubmit={submit} className="mt-4 space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tpl-name">{t.jobs.templateName}</Label>
-              <Input
-                id="tpl-name"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                placeholder={t.jobs.templateNamePlaceholder}
-                maxLength={120}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tpl-body">{t.jobs.templateBody}</Label>
-              <Textarea
-                id="tpl-body"
-                value={form.body}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, body: e.target.value }))
-                }
-                placeholder={t.jobs.templateBodyPlaceholder}
-                rows={10}
-                className="text-base leading-relaxed"
-              />
-              <p className="text-[11px] text-foreground-subtle">
-                {t.jobs.placeholdersHint}
-              </p>
-            </div>
-            {formError && (
-              <p className="text-xs text-destructive">{formError}</p>
-            )}
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={closeForm}
-              >
-                {t.jobs.cancel}
-              </Button>
-              <Button type="submit" size="sm" disabled={saveMutation.isPending}>
-                <Check className="h-3.5 w-3.5" />
-                {saveMutation.isPending ? t.jobs.saving : t.jobs.save}
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <div className="mt-4">
-            {templates.length === 0 ? (
-              <p className="py-6 text-center text-xs text-foreground-muted">
-                {t.jobs.noTemplatesYet}
-              </p>
-            ) : (
-              <ul className="divide-y divide-border rounded-md border border-border">
-                {templates.map((tpl) => (
-                  <li
-                    key={tpl.id}
-                    className="flex items-center gap-2 px-3 py-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium">{tpl.name}</p>
-                      <p className="truncate text-[11px] text-foreground-subtle">
-                        {tpl.body.replace(/\s+/g, " ").slice(0, 90)}
-                      </p>
-                    </div>
-                    <Tooltip content={t.jobs.editTemplate}>
-                      <button
-                        type="button"
-                        onClick={() => openEdit(tpl)}
-                        aria-label={t.jobs.editTemplate}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                    </Tooltip>
-                    <Tooltip content={t.jobs.deleteTemplate}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void confirm({
-                            title: t.jobs.deleteTemplate,
-                            description: t.jobs.deleteTemplateConfirm,
-                            confirmLabel: t.common.delete,
-                            cancelLabel: t.common.cancel,
-                            destructive: true,
-                          }).then((approved) => {
-                            if (approved) deleteMutation.mutate(tpl.id);
-                          })
-                        }
-                        aria-label={t.jobs.deleteTemplate}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </Tooltip>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="mt-4 flex justify-end">
-              <DialogClose asChild>
-                <Button type="button" variant="ghost" size="sm">
-                  {t.jobs.cancel}
-                </Button>
-              </DialogClose>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function LetterWorkspace({
   templates,

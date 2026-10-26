@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2736,
+      "lines": 2477,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; captured application/progress/deletion/letter controls and finding 298 single-heading/matching toolbar geometry pass native EN/CS/mobile checks; Saved letter/templates, wider density and final release pending",
-      "reviewedSha256": "abc725571de05f2d5ac7cbe3b8527bfd9115cc15cea79038c10e038e531a3bea"
+      "status": "source reviewed; findings 292\u2013300 captured application writes and extracted guarded template manager targeted checks pass; inline template/Saved-letter persistence and density pending",
+      "reviewedSha256": "6d8296aff01eb5c97a082c43e44e6eb26c83d8d49331a199f9bef16665915a7e"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -4933,6 +4933,20 @@
       "lines": 51,
       "status": "source reviewed; finding 299 stable creation, captured edit/delete, strict receipts and scoped cancellation verified in 56 focused SDK/RLS/client checks; UI adoption and final release pending",
       "reviewedSha256": "7f79cf6cfc08e0afab1499a4ea181c65ba5ee9a41bf5afeddac5cbafb10e3e0f"
+    },
+    {
+      "path": "src/components/panels/use-career-template-write.ts",
+      "sha256": null,
+      "lines": 56,
+      "status": "source reviewed; finding 300 captured template writes, original-owner lifetime, exact retries, confirmation and guarded cache/reload verified; final release pending",
+      "reviewedSha256": "6ef4df3506f96bd2856d0f552e62eda189dc440ef579508d83152664fe182232"
+    },
+    {
+      "path": "src/components/panels/career-templates-dialog.tsx",
+      "sha256": null,
+      "lines": 85,
+      "status": "source reviewed; finding 300 stable create/captured edit/delete, retained drafts, navigation guards and complete local paging pass EN/CS desktop/mobile/native six-width axe checks; final release pending",
+      "reviewedSha256": "f5587513997bc80c5b678bf232014eb3251e5e853f218d50b399a15b51883f6f"
     }
   ],
   "baselineFileCount": 561
