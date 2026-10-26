@@ -297,10 +297,10 @@
     },
     {
       "path": "src/app/api/jobs/enrich/route.ts",
-      "lines": 50,
+      "lines": 66,
       "sha256": "8e135ad82ff8c8f05528a2603020dcb916f1a7453343bb96e44dda392df1b7fc",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "169ebeda756f1b2ed8143f17f2f11738289f51d7a7f4dc48b26bab4a01f04e46"
+      "status": "source reviewed; finding 285 verifies auth-error/owner admission, bounded body/auth/quota/provider phases, strict metadata and cancellation/disposal; final release pending",
+      "reviewedSha256": "a9d416f22a7002df29158c54b9048db64f4fe4897337ca4a55ec2f739f905288"
     },
     {
       "path": "src/app/api/jobs/refresh/route.ts",
@@ -2986,10 +2986,10 @@
     },
     {
       "path": "src/lib/jobs/enrich.ts",
-      "lines": 17,
+      "lines": 27,
       "sha256": "16b2e5d1e6b7717e2e22897afe853a4a06b67c72116047754fa3329d40c548c0",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "4bd9cb9a8b4183a56817a072e472c79cb55b710ea5033757e9a4c9c42a091859"
+      "status": "source reviewed; finding 285 validates normalized encoded URL length and shared strict owner/input-bound metadata; editor adoption pending",
+      "reviewedSha256": "13b3814568923e88e73a5dccf615bc2ceefccc28b14d974334ac5dde43145470"
     },
     {
       "path": "src/lib/jobs/filter.ts",
@@ -4849,6 +4849,13 @@
       "lines": 117,
       "status": "source reviewed; finding 284 verifies captured Saved insert/update/delete, stable collision recovery, strict receipts, version predicates and cache guards through SDK/RLS; browser editor adoption and final release pending",
       "reviewedSha256": "81b25a888e3564f42c0e0cffcf288a685fe3dfa49f3dfcdffc61df8c1583a654"
+    },
+    {
+      "path": "src/lib/jobs/enrich-client.ts",
+      "sha256": null,
+      "lines": 33,
+      "status": "source reviewed; finding 285 verifies original-owner/input identity, streamed body bound, total deadline, cancellation and body retirement; browser form adoption pending",
+      "reviewedSha256": "855a494c52515a350ea58d2eb51c64453832d50c1e8ba7ead2f1b6e6969879af"
     }
   ],
   "baselineFileCount": 561

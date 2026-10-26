@@ -24,3 +24,7 @@ describe("saved job URL import", () => {
 it.each([null,[],{},42,"https://user:password@jobs.example.test/role","x".repeat(2049)])("rejects malformed or credential-bearing job links (%j)",value => {
  expect(normalizeJobUrl(value)).toBeNull();
 });
+
+it("refuses a normalized URL whose encoded form exceeds the storage contract",()=>{
+ expect(normalizeJobUrl("https://example.test/"+"界".repeat(300))).toBeNull();
+});
