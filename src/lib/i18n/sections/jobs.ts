@@ -170,8 +170,6 @@ type JobsStrings = {
   contactLabel: string;
   contactName: string;
   contactEmail: string;
-  contactMigrationPending: string;
-  contactSaveFailed: string;
   // Templates manager
   manageTemplates: string;
   templatesTitle: string;
@@ -376,9 +374,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     contactLabel: "Contact at the company",
     contactName: "Contact name",
     contactEmail: "Contact email",
-    contactMigrationPending:
-      "Contact fields appear once supabase/migrations/20260916141348_job_application_contacts.sql has been applied.",
-    contactSaveFailed: "The stage and notes were saved; the contact could not be.",
     manageTemplates: "Templates",
     templatesTitle: "Cover letter templates",
     templatesDescription:
@@ -581,9 +576,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     contactLabel: "Kontakt ve firmě",
     contactName: "Jméno kontaktu",
     contactEmail: "E-mail kontaktu",
-    contactMigrationPending:
-      "Pole kontaktu se objeví, až bude nasazena migrace supabase/migrations/20260916141348_job_application_contacts.sql.",
-    contactSaveFailed: "Fáze a poznámky se uložily, kontakt se uložit nepodařilo.",
     manageTemplates: "Šablony",
     templatesTitle: "Šablony motivačních dopisů",
     templatesDescription:

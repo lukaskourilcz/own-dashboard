@@ -1477,10 +1477,10 @@
     },
     {
       "path": "src/components/panels/career-progress-dialog.tsx",
-      "lines": 78,
+      "lines": 77,
       "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
-      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending",
-      "reviewedSha256": "8356cb0da453fd1df78cdbb1681c18df39540d8dbf771e84a30a4e3c3ff432ff"
+      "status": "source reviewed; findings 295/308 atomic captured progress/contact controls and retained recovery verified; obsolete initial-shape migration branch retired; final release pending",
+      "reviewedSha256": "4e1c8aaa01df3968ad78898403c4d5f4ae072d8fffe0da775ff43d75b6143cd8"
     },
     {
       "path": "src/components/panels/clients-panel.tsx",
@@ -2733,10 +2733,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 629,
+      "lines": 621,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; finding 307 adds EN/CS picker search, fallback, empty and no-match copy; obsolete contact diagnostic copy remains under review",
-      "reviewedSha256": "a4dc818415c89758fba4315b7e7a6bc621a5d0adf4d572ce9c0a70b8be526356"
+      "status": "source reviewed; findings 307\u2013308 EN/CS picker states and retirement of obsolete contact migration/partial-save diagnostics verified; remaining density copy review pending",
+      "reviewedSha256": "1096b3f471ee7c22b8ac49b8c7b20af2491fec3c6ffce1b3180458610597f0c9"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",

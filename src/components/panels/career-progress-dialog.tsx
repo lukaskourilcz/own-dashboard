@@ -24,7 +24,6 @@ export function CareerProgressDialog({app,userId,onClose,setApplications,setEven
  const [initial]=useState(()=>structuredClone(app)),[reviewed,setReviewed]=useState(initial),source=useRef(initial),[form,setForm]=useState(()=>seed(initial)),fields=useRef(form),baseline=useRef(form),dirty=useRef(false);
  const writer=useCareerProgressWrite({userId,setApplications,setEvents});
  const locked=writer.pending!==null||!!writer.failure&&writer.failure.reason!=='invalid';
- const contactsAvailable='contact_name'in initial&&'contact_email'in initial;
  function update(patch:Partial<Form>){if(locked||writer.isPending())return;const next={...fields.current,...patch};fields.current=next;dirty.current=Object.keys(next).some(key=>next[key as keyof Form]!==baseline.current[key as keyof Form]);setForm(next);writer.clearFailure();}
  function patch(){
   const value=fields.current,before=seed(source.current),result:CareerProgressPatch={};
@@ -32,8 +31,8 @@ export function CareerProgressDialog({app,userId,onClose,setApplications,setEven
   if(value.response!==before.response||value.date!==before.date){result.response_kind=value.response==='none'?null:value.response;result.responded_on=value.response==='none'?null:value.date;}
   if(value.followUp!==before.followUp)result.next_follow_up_at=value.followUp?`${value.followUp}T09:00:00Z`:null;
   if(value.notes!==before.notes)result.notes=value.notes;
-  if(contactsAvailable&&value.contactName!==before.contactName)result.contact_name=value.contactName;
-  if(contactsAvailable&&value.contactEmail!==before.contactEmail)result.contact_email=value.contactEmail;
+  if(value.contactName!==before.contactName)result.contact_name=value.contactName;
+  if(value.contactEmail!==before.contactEmail)result.contact_email=value.contactEmail;
   return result;
  }
  async function save(){const receipt=await writer.perform(source.current,patch());if(!receipt||!writer.isCurrent())return false;dirty.current=false;onClose();return true;}
@@ -64,7 +63,7 @@ export function CareerProgressDialog({app,userId,onClose,setApplications,setEven
      <div className="space-y-1.5"><Label htmlFor="follow-up-date">{cs?'Kdy se připomenout':'Follow-up date'}</Label><Input id="follow-up-date" type="date" value={form.followUp} readOnly={locked} onChange={event=>update({followUp:event.target.value})}/></div>
     </div>
     <fieldset className="space-y-1.5"><legend className="text-sm font-medium">{t.jobs.contactLabel}</legend>
-     {contactsAvailable?<div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="contact-name">{t.jobs.contactName}</Label><Input id="contact-name" maxLength={200} value={form.contactName} readOnly={locked} onChange={event=>update({contactName:event.target.value})}/></div><div className="space-y-1.5"><Label htmlFor="contact-email">{t.jobs.contactEmail}</Label><Input id="contact-email" type="email" maxLength={200} value={form.contactEmail} readOnly={locked} onChange={event=>update({contactEmail:event.target.value})}/></div></div>:<p className="text-sm text-foreground-muted">{t.jobs.contactMigrationPending}</p>}
+     <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="contact-name">{t.jobs.contactName}</Label><Input id="contact-name" maxLength={200} value={form.contactName} readOnly={locked} onChange={event=>update({contactName:event.target.value})}/></div><div className="space-y-1.5"><Label htmlFor="contact-email">{t.jobs.contactEmail}</Label><Input id="contact-email" type="email" maxLength={200} value={form.contactEmail} readOnly={locked} onChange={event=>update({contactEmail:event.target.value})}/></div></div>
     </fieldset>
     <div className="space-y-1.5"><Label htmlFor="progress-notes">{cs?'Poznámky a další krok':'Notes and next step'}</Label><Textarea id="progress-notes" value={form.notes} readOnly={locked} onChange={event=>update({notes:event.target.value})} rows={3}/></div>
    </fieldset>
