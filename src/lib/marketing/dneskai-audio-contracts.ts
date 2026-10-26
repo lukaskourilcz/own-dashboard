@@ -19,6 +19,8 @@ export type DneskaiAudioType = keyof typeof DNESKAI_AUDIO_TYPES;
 export const DNESKAI_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 /** The Lab and Zdroje play this much of a track as a preview. */
 export const DNESKAI_AUDIO_PREVIEW_SECONDS = 10;
+/** Maximum wait for the browser to acknowledge starting a preview. */
+export const DNESKAI_AUDIO_PREVIEW_STARTUP_MS = 10_000;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const httpsUrl = z.string().min(1).max(2048).refine(value => /^https:\/\/\S+$/i.test(value) && !value.includes('\\') && !!safeWebUrl(value, 2048));

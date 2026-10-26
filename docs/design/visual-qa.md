@@ -488,3 +488,8 @@ Two additional Czech long-title desktop/mobile capture checks pass in 14.0 secon
 ### 26 October — Career import replacement and canonical reads (findings 287–288)
 
 All 78 targeted Career cases pass in one 4.3-minute EN/CS desktop/mobile run. Replacing a pending import URL aborts its obsolete read and keeps typed details without another automatic import. Canonical Saved/private-state reads are cancelled before confirmed writes; conflict reload retires changed offers until new availability evidence is checked. The legacy generic-preview import test now uses the explicit guarded synthetic-owner harness. The existing complete-private-load parent gate remains intact. Older captures retain their original source hashes; this is interaction evidence, not a recapture or full release pass.
+
+
+### 26 October — Music startup contract (finding 289)
+
+All four EN/CS desktop/mobile native cases recover a controlled six-second synthetic WAV response, then confirm stop/repeat/navigation disposal (48.5 seconds). The app still fails a stalled startup at ten seconds; its playback assertion now observes that existing limit. Sixty-one focused cases retain cancellation/late-acknowledgement coverage. This does not identify the cause of checkpoint 97's earlier delay or establish production playback latency. No real music/provider is used.

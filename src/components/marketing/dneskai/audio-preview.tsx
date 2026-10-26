@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle, Pause, Play } from 'lucide-react';
-import { DNESKAI_AUDIO_PREVIEW_SECONDS, type DneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-contracts';
+import { DNESKAI_AUDIO_PREVIEW_SECONDS, DNESKAI_AUDIO_PREVIEW_STARTUP_MS, type DneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-contracts';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 
 type PreviewSession = { id: string; audio: HTMLAudioElement; startup: number | null; end: number | null; stop: () => void };
 // Browser interaction only: separately mounted Lab pickers share one active
 // preview. No media or mutable request state is created during server rendering.
 let activePreview: PreviewSession | null = null;
-const STARTUP_LIMIT_MS = 10_000;
 
 /** A stopped/obsolete play promise cannot affect the current selection. */
 export function useDneskaiAudioPreview() {
@@ -57,7 +56,7 @@ export function useDneskaiAudioPreview() {
       audio.ontimeupdate = () => { if (isCurrent() && audio.currentTime >= DNESKAI_AUDIO_PREVIEW_SECONDS) stop(); };
       audio.src = track.previewUrl;
       const requested = current;
-      requested.startup = window.setTimeout(fail, STARTUP_LIMIT_MS);
+      requested.startup = window.setTimeout(fail, DNESKAI_AUDIO_PREVIEW_STARTUP_MS);
       void audio.play().then(() => {
         if (!isCurrent()) return;
         if (requested.startup !== null) window.clearTimeout(requested.startup);

@@ -1078,10 +1078,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/audio-preview.tsx",
-      "lines": 84,
+      "lines": 83,
       "sha256": "0fb560ea14c83df14e07a4df4983d7ce8bf65dca74c2594e761d8bcba5870d96",
-      "status": "source reviewed; cancellation, native playback, disposal and EN/CS recovery checks pass in finding 163; final release checks pending",
-      "reviewedSha256": "9607aa03fd92df11a37f7cc3df1e3cb06bf899e19870a51558e6190473284648"
+      "status": "source reviewed; findings 163/289 verify cancellation, native playback/disposal, unchanged ten-second startup and controlled six-second EN/CS recovery; broader Music management and final release pending",
+      "reviewedSha256": "408f12269652ccaec819dc8b109f791be1a639dfa3b3960f27d883e7f578327e"
     },
     {
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
@@ -3203,10 +3203,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
-      "lines": 115,
+      "lines": 118,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "source reviewed; strict browser audio DTOs share the 50-recommendation bound with the server; final release pending",
-      "reviewedSha256": "b16b1b612c35cc7238f9cb16205716a13637410033551e3f442634f3ed7a66c5"
+      "status": "source reviewed; strict browser audio DTOs share the 50-recommendation bound and unchanged ten-second startup contract; final release pending",
+      "reviewedSha256": "cd660243fe10eb2b2b8034e3bd86282d4d934eb53f8d4b89ed102438470a355d"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",

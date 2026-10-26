@@ -17,7 +17,7 @@ These are follow-ups from source inspection, not completed repairs or release ev
 
 ## Music and paid audio signals
 
-Finding 163 closes native preview policy, startup/cancellation/disposal and recovery; management page/signing boundaries are in findings 159–160. The remaining work is separate:
+Finding 163 closes native preview policy, startup/cancellation/disposal and recovery; finding 289 aligns the native assertion with the unchanged ten-second startup contract and proves controlled six-second recovery without extending application timing; management page/signing boundaries are in findings 159–160. The remaining work is separate:
 
 - Finding 260 closes the reproduced 65-versus-50 recommendation failure with a shared maximum, Meta-first/hint-slot policy, deterministic ties and owned fresh metadata validation in one bounded no-retry query. The route still needs to expose unavailable trends separately from an empty list while retaining the uploaded library.
 - Niche candidates silently cap at 500 and discard malformed entries. Confirm completeness and read only the ranking fields actually needed. Invalid clocks/cancellation must refuse further work.

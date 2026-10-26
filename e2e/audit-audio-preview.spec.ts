@@ -4,6 +4,7 @@ import { gotoPreview, watchConsole } from './helpers';
 import { DEMO_DNESKAI_AUDIO_TRACKS } from '../src/lib/marketing/dneskai-audio-client';
 import { dneskaiAudio } from '../src/lib/i18n/sections/dneskai-audio';
 import { dneskaiSourceList } from '../src/lib/i18n/sections/dneskai-source-list';
+import { DNESKAI_AUDIO_PREVIEW_STARTUP_MS } from '../src/lib/marketing/dneskai-audio-contracts';
 
 // Invented silent PCM only; no downloaded track, credential or provider call.
 function silentWav() {
@@ -26,7 +27,7 @@ for (const lang of ['en', 'cs'] as const) {
       } });
     });
     await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
-    let reads = 0, writes = 0, mediaReads = 0, fresh = false;
+    let reads = 0, writes = 0, mediaReads = 0, fresh = false, delayedFresh = false;
     let releaseRefresh: (() => void) | undefined;
     await page.route('**/api/marketing/dneskai/audio', async route => {
       if (route.request().method() !== 'GET') { writes++; return route.fulfill({ status: 405, json: {} }); }
@@ -34,8 +35,13 @@ for (const lang of ['en', 'cs'] as const) {
       if (fresh) await new Promise<void>(resolve => { releaseRefresh = resolve; });
       return route.fulfill({ json: { tracks: [{ ...DEMO_DNESKAI_AUDIO_TRACKS[0]!, previewUrl: `https://test-only.supabase.co/audio-preview-${fresh ? "fresh" : "expired"}.wav` }], trends: [], nextOffset: null } });
     });
-    await page.route('https://test-only.supabase.co/audio-preview-*.wav', route => {
+    await page.route('https://test-only.supabase.co/audio-preview-*.wav', async route => {
       mediaReads++;
+      // A valid response can take longer than the assertion default while
+      // remaining inside the application's existing ten-second startup limit.
+      if (route.request().url().endsWith('-fresh.wav') && !delayedFresh) {
+        delayedFresh = true; await new Promise(resolve => setTimeout(resolve, 6_000));
+      }
       return route.request().url().endsWith('-expired.wav') ? route.fulfill({ status: 403, body: '' })
         : route.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() });
     });
@@ -65,7 +71,7 @@ for (const lang of ['en', 'cs'] as const) {
     await expect(play).toBeEnabled();
     await play.click();
     const stop = music.getByRole('button', { name: t.stop('Quiet Circuit'), exact: true });
-    await expect(stop).toHaveAttribute('aria-pressed', 'true');
+    await expect(stop).toHaveAttribute('aria-pressed', 'true', { timeout: DNESKAI_AUDIO_PREVIEW_STARTUP_MS + 1000 });
     expect(await page.evaluate(() => {
       const audio = (window as unknown as AudioWindow).auditAudio.at(-1)!;
       return audio.preload === 'none' && !audio.paused && audio.currentSrc.endsWith('-fresh.wav');
