@@ -724,6 +724,8 @@ export type JobListing = {
 export type JobUserStateValue = "shortlisted" | "deleted";
 
 export type JobUserState = {
+  /** Nullable until its first versioned update; legacy fixtures may omit it. */
+  updated_at?: string | null;
   id: string;
   user_id: string;
   listing_id: string;

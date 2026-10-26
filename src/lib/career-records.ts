@@ -33,7 +33,7 @@ const schemas = {
     description: nullableText, posted_at: stamp.nullable(), first_seen_at: stamp, last_seen_at: stamp,
   }),
   job_user_state: z.strictObject({
-    ...own, listing_id: uuid, state: z.enum(['shortlisted', 'deleted']), created_at: stamp,
+    ...own, listing_id: uuid, state: z.enum(['shortlisted', 'deleted']), created_at: stamp, updated_at: stamp.nullable(),
   }),
   saved_job_positions: z.strictObject({
     ...own, listing_id: uuid.nullable(), title: z.string(), company: nullableText,
@@ -66,6 +66,7 @@ const schemas = {
 };
 /** Shared positive contract for complete reads and confirmed private writes. */
 export const savedCareerRecordSchema = schemas.saved_job_positions;
+export const careerTriageRecordSchema = schemas.job_user_state;
 
 const limits: Record<CareerCollection, number> = {
   job_listings: 10_000, job_user_state: 20_000, saved_job_positions: 10_000,
