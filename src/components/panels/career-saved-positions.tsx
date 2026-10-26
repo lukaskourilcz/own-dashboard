@@ -40,6 +40,7 @@ export function SavedPositionsView({readyOnly,positions,setPositions,userId,onPr
  const [draftOwner]=useState(userId);
  const [showFields,setShowFields]=useState(false),[search,setSearch]=useState(''),[pageIndex,setPageIndex]=useState(0),[pending,setPending]=useState<'write'|'import'|'reload'|null>(null),[failure,setFailure]=useState<Failure|null>(null);
  const lifetime=useRef(new AbortController()),operation=useRef<CareerScope|null>(null),urlControl=useRef<HTMLInputElement|null>(null),searchControl=useRef<HTMLInputElement|null>(null),activity=useRef(0);
+ const importStop=useRef<AbortController|null>(null);
  const focusAfter=useRef<{epoch:number;target:string|null;removed?:string}|null>(null),root=useRef<HTMLDivElement|null>(null);
  const restoreControl=useRef<{element:HTMLElement;epoch:number}|null>(null);
  // The QueryClient itself belongs to this owner; use the shell's canonical key.
@@ -56,13 +57,20 @@ export function SavedPositionsView({readyOnly,positions,setPositions,userId,onPr
   if(intent.target&&!target)return;
   focusAfter.current=null;(target??searchControl.current)?.focus();
  },[positions,pending]);
- function update(patch:Partial<Form>){if(operation.current&&pending!=='import')return;const next={...fields.current,...patch};fields.current=next;dirty.current=Object.values(next).some(value=>value.trim()!=='');setForm(next);setFailure(null);}
+ function update(patch:Partial<Form>){
+  if(operation.current&&!importStop.current)return;
+  if(importStop.current&&patch.url!==undefined&&patch.url!==fields.current.url){
+   importStop.current.abort();importStop.current=null;operation.current=null;setPending(null);
+  }
+  const next={...fields.current,...patch};fields.current=next;dirty.current=Object.values(next).some(value=>value.trim()!=='');setForm(next);setFailure(null);
+ }
  function reset(){if(operation.current)return;fields.current=empty();dirty.current=false;creationId.current=null;setForm(fields.current);setShowFields(false);setFailure(null);urlControl.current?.focus();}
  function reserve(kind:NonNullable<typeof pending>){
   if(operation.current||!owner||userId!==draftOwner)return null;const original=owner.capture();if(original.ownerId!==draftOwner)return null;
-  const captured={ownerId:original.ownerId,signal:AbortSignal.any([original.signal,lifetime.current.signal])};if(captured.signal.aborted)return null;operation.current=captured;setPending(kind);return captured;
+  const cancellation=kind==='import'?new AbortController():null;
+  const captured={ownerId:original.ownerId,signal:AbortSignal.any([original.signal,lifetime.current.signal,...(cancellation?[cancellation.signal]:[])])};if(captured.signal.aborted)return null;importStop.current=cancellation;operation.current=captured;setPending(kind);return captured;
  }
- function release(captured:CareerScope){if(operation.current!==captured)return;operation.current=null;if(!captured.signal.aborted)setPending(null);}
+ function release(captured:CareerScope){if(operation.current!==captured)return;const retired=captured.signal.aborted;operation.current=null;importStop.current?.abort();importStop.current=null;if(!retired)setPending(null);}
  async function cancelOlderRead(captured:CareerScope){const signal=AbortSignal.any([captured.signal,AbortSignal.timeout(5_000)]);await awaitWithSignal(qc.cancelQueries({queryKey,exact:true}),signal);signal.throwIfAborted();}
  async function perform(attempt:Attempt,alreadyReserved?:CareerScope):Promise<boolean>{
   const captured=alreadyReserved??reserve('write');if(!captured)return false;
@@ -125,7 +133,7 @@ export function SavedPositionsView({readyOnly,positions,setPositions,userId,onPr
  return <div ref={root} data-career-saved className="mx-auto w-full max-w-3xl space-y-4" onPointerDownCapture={()=>{activity.current++;}} onKeyDownCapture={()=>{activity.current++;}}>
   {!readyOnly&&<Card className="space-y-3 p-4">
    <div><h2 className="text-base font-semibold">{t.jobs.saveByUrl}</h2><p className="mt-1 text-sm text-foreground-muted">{t.jobs.saveByUrlDescription}</p></div>
-   <div className="flex flex-col gap-2 sm:flex-row"><Input ref={urlControl} type="url" value={form.url} disabled={pending!==null} onChange={event=>update({url:event.target.value})} placeholder="https://…" aria-label={t.jobs.link}/><Button type="button" variant="outline" onClick={()=>void importUrl()} disabled={!normalizeJobUrl(form.url)||pending!==null}>{pending==='import'?t.jobs.importing:t.jobs.importFromUrl}</Button>{!showFields&&<Button type="button" variant="ghost" onClick={()=>setShowFields(true)} disabled={pending!==null}>{cs?'Vyplnit ručně':'Enter manually'}</Button>}</div>
+   <div className="flex flex-col gap-2 sm:flex-row"><Input ref={urlControl} type="url" value={form.url} disabled={locked} onChange={event=>update({url:event.target.value})} placeholder="https://…" aria-label={t.jobs.link}/><Button type="button" variant="outline" onClick={()=>void importUrl()} disabled={!normalizeJobUrl(form.url)||pending!==null}>{pending==='import'?t.jobs.importing:t.jobs.importFromUrl}</Button>{!showFields&&<Button type="button" variant="ghost" onClick={()=>setShowFields(true)} disabled={pending!==null}>{cs?'Vyplnit ručně':'Enter manually'}</Button>}</div>
    {showFields&&<div className="space-y-3 border-t border-border pt-3">
     <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="saved-job-title">{t.jobs.position}</Label><Input id="saved-job-title" value={form.title} readOnly={locked} onChange={event=>update({title:event.target.value})}/></div><div className="space-y-1.5"><Label htmlFor="saved-job-company">{t.jobs.company}</Label><Input id="saved-job-company" value={form.company} readOnly={locked} onChange={event=>update({company:event.target.value})}/></div></div>
     <div className="space-y-1.5"><Label htmlFor="saved-job-location">{cs?'Lokalita':'Location'}</Label><Input id="saved-job-location" value={form.location} readOnly={locked} onChange={event=>update({location:event.target.value})}/></div>

@@ -4860,9 +4860,9 @@
     {
       "path": "src/components/panels/career-saved-positions.tsx",
       "sha256": null,
-      "lines": 147,
-      "status": "source reviewed; finding 286 adopts captured manual insertion/removal/import, retained drafts, pending/exit/owner guards, safe legacy links and session-only reveal; native EN/CS/mobile/a11y checks pass; final release pending",
-      "reviewedSha256": "0666ff32195bebda83f9d3b6ab422002097c64d9ef9d4406fa6db798ebe29094"
+      "lines": 155,
+      "status": "source reviewed; findings 286/288 verify captured manual save/removal/import, URL-replacement cancellation, retained drafts, pending/exit/owner guards and safe legacy links; all 78 native Career cases pass; remaining letter/application work and final release pending",
+      "reviewedSha256": "8e3e7c62984f96346592adf89606af89baea57a8578422913815f2e3e1753b32"
     }
   ],
   "baselineFileCount": 561

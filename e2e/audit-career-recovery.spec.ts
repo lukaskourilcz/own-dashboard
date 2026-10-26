@@ -3,14 +3,16 @@ import { jobs } from "../src/lib/i18n/sections/jobs";
 import { gotoPreview, signInFixtureUser } from "./helpers";
 
 test("a delayed job import preserves manual edits and cannot replace a newer URL",async ({page}) => {
- await gotoPreview(page);await page.goto("/dev-preview?tab=career");
+ await gotoPreview(page);await page.goto("/dev-preview?tab=career&career=live");
  await page.getByRole("button",{name:/^Saved/}).click();
  const url=page.getByRole("textbox",{name:"Link",exact:true});
  await url.fill("https://jobs.example.test/first");
  let release!:()=>Promise<void>;
- await page.route("**/api/jobs/enrich",async route => {release=()=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({url:"https://jobs.example.test/first",title:"Imported title",company:"Imported company",description:"Imported description"})});});
+ await page.route("**/api/jobs/enrich",async route => {release=()=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({ownerId:route.request().headers()["x-own-dashboard-owner"],inputUrl:"https://jobs.example.test/first",url:"https://jobs.example.test/first",title:"Imported title",company:"Imported company",description:"Imported description"})}).catch(()=>undefined);});
  await page.getByRole("button",{name:"Fill from URL",exact:true}).click();
+ await expect.poll(()=>typeof release).toBe("function");
  await page.getByLabel("Position",{exact:true}).fill("My edited title");
+ await expect(url).toBeEditable({timeout:1000});
  await url.fill("https://jobs.example.test/second");
  await expect.poll(()=>typeof release).toBe("function");await release();
  await expect(page.getByRole("button",{name:"Fill from URL",exact:true})).toBeEnabled();
