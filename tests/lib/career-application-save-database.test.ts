@@ -62,6 +62,9 @@ it('excludes future private columns from application/event receipts',async()=>{
 });
 it.each(['upgrade','rollback'] as const)('preserves private history during %s',async mode=>{
  const before=await createMigratedDatabase({owner,instant,beforeMigration:migration});try{
+  const historical=(await before.query<{id:string}>("insert into job_applications(user_id,title,cover_letter,notes,applied_on) values($1,'Synthetic historical role','Synthetic retained letter','Synthetic retained note','2026-10-01') returning id",[owner])).rows[0];
+  await before.query("insert into job_application_events(user_id,application_id,kind,detail) values($1,$2,'applied','2026-10-01')",[owner,historical.id]);
+
   const snapshot=async()=>(await before.query("select jsonb_build_object('saved',(select jsonb_agg(to_jsonb(s) order by id) from saved_job_positions s),'apps',(select jsonb_agg(to_jsonb(a)-'request_fingerprint' order by id) from job_applications a),'events',(select jsonb_agg(to_jsonb(e) order by id) from job_application_events e)) data")).rows,original=await snapshot();const sql=readFileSync(`supabase/migrations/${migration}`,'utf8');
   if(mode==='upgrade')await before.exec(sql);else await expect(before.transaction(async tx=>{await tx.exec(sql);throw Error('Synthetic rollback');})).rejects.toThrow('Synthetic rollback');expect(await snapshot()).toEqual(original);
   if(mode==='upgrade')expect((await before.query('select id from job_applications where request_fingerprint is not null')).rows).toHaveLength(0);
