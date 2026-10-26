@@ -2185,4 +2185,9 @@ The first four native letter cases passed in 27.1 seconds. Added geometry assert
 The updated actual captures follow this application commit; prior images keep their provenance as the before-state. The ledger remains 702 sources, and no SQL, provider or production record is changed. Template/Saved-letter persistence, broader Career density and app leads, migration rollout, final clean validation and main merge remain unfinished.
 
 
-Finding 298 copy follow-up: the toolbar now reuses the canonical EN/CS template-name label and placeholder, keeping the shorter field readable without clipping its optional-name hint. All four populated-letter cases pass again in 27.0 seconds, with geometry/recovery/keyboard/axe checks unchanged. TypeScript and targeted lint pass. The capture measurement now includes the actual toolbar bounds alongside the letter and recovery notice.
+Finding 298 copy follow-up: the toolbar now reuses the canonical EN/CS template-name label and placeholder, replacing the clipped longer hint with the short, readable canonical name. All four populated-letter cases pass again in 27.0 seconds, with geometry/recovery/keyboard/axe checks unchanged. TypeScript and targeted lint pass. The capture measurement now includes the actual toolbar bounds alongside the letter and recovery notice.
+
+
+### Finding 298 visual evidence
+
+The forty-second authentic desktop/mobile pair records application `7f91e36f`. `career-letter-toolbar-captures.json` retains component/asset hashes, the measured toolbar/letter/recovery highlights and a representative native breakpoint sample. Both final images are inspected. The prior finding 297 images remain unchanged and are labeled as the before-state. All 42 visual-plan images decode in both modes; light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. The final four EN/CS capture cases pass in 27.0 seconds; artifact-builder lint passes. The source inventory remains 702 entries.
