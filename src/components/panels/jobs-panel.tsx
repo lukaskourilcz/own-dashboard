@@ -80,6 +80,9 @@ import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
 import { researchForUrl, careerPositionKey } from "@/lib/jobs/oslo-research";
 import { CareerBoard } from "./career-board";
 import { applyCareerSaveReceipt, captureCareerListing, CareerSaveError } from "@/lib/career-listing-save";
+import { applyCareerTriage, applyCareerTriageReceipt, CareerTriageError, type CareerTriageIntent } from "@/lib/career-triage";
+import { readCareerRecords, type CareerScope } from "@/lib/career-records";
+import { CareerActionNotice } from "./career-action-notice";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
 import { isGoogleLetterUrl, isPositionReady, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
@@ -685,54 +688,6 @@ function OpenPositionsView({
   const page = collectionPage(visible, pageIndex);
   const pageDetail = page.items.find(row => row.id === detailId) ?? page.items[0];
 
-  // Set / replace / clear the per-listing triage state. Non-optimistic —
-  // the returned row lands in the cache, then an invalidate reconciles.
-  const stateMutation = useMutation({
-    mutationFn: async (vars: {
-      listing: JobListing;
-      next: JobUserStateValue | null;
-      existing: JobUserState | undefined;
-    }) => {
-      if (vars.next === null) {
-        if (!vars.existing) return null;
-        const { error } = await supabase
-          .from("job_user_state")
-          .delete()
-          .eq("id", vars.existing.id);
-        if (error) throw error;
-        return null;
-      }
-      const { data, error } = await supabase
-        .from("job_user_state")
-        .upsert(
-          {
-            user_id: userId,
-            listing_id: vars.listing.id,
-            state: vars.next,
-          },
-          { onConflict: "user_id,listing_id" },
-        )
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as JobUserState;
-    },
-    onSuccess: (row, vars) => {
-      setUserStates((prev) => {
-        const rest = prev.filter((s) => s.listing_id !== vars.listing.id);
-        return row ? [...rest, row] : rest;
-      });
-      void qc.invalidateQueries({ queryKey: qk.jobUserStates });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  function toggleState(listing: JobListing, kind: JobUserStateValue) {
-    const existing = stateByListing.get(listing.id);
-    const next = existing?.state === kind ? null : kind;
-    stateMutation.mutate({ listing, next, existing });
-  }
-
   const saveAttempts = useRef(new Map<string, { requestId: string; listing: JobListing }>());
   const savingIds = useRef(new Set<string>());
   const [pendingSaves, setPendingSaves] = useState<ReadonlySet<string>>(new Set());
@@ -753,7 +708,7 @@ function OpenPositionsView({
   }, [saveFocus, pendingSaves]);
 
   async function saveListing(listing: JobListing) {
-    if (savingIds.current.has(listing.id)) return;
+    if (savingIds.current.size || triageBusy.current) return;
     const original = ownerScope?.capture();
     if (!original || original.ownerId !== userId || original.signal.aborted || lifetime.current.signal.aborted) return;
     const captured = { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) };
@@ -783,46 +738,123 @@ function OpenPositionsView({
     }
   }
 
-  const deleteMutation = useMutation({
-    mutationFn: async (rows: JobListing[]) => {
-      const { data, error } = await supabase
-        .from("job_user_state")
-        .upsert(
-          rows.map((listing) => ({
-            user_id: userId,
-            listing_id: listing.id,
-            state: "deleted" as const,
-          })),
-          { onConflict: "user_id,listing_id" },
-        )
-        .select();
-      if (error) throw error;
-      return (data ?? []) as JobUserState[];
-    },
-    onSuccess: (rows) => {
-      const deletedIds = new Set(rows.map((row) => row.listing_id));
-      setUserStates((current) => [
-        ...current.filter((row) => !deletedIds.has(row.listing_id)),
-        ...rows,
-      ]);
-      setSelected(new Set());
-      toast.ok(t.jobs.listingDeleted);
-      void qc.invalidateQueries({ queryKey: qk.jobUserStates });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  async function deleteListings(rows: JobListing[]) {
-    if (rows.length === 0) return;
-    const approved = await confirm({
-      title: t.jobs.deleteListingsTitle,
-      description: t.jobs.deleteListingsDescription(rows.length),
-      confirmLabel: t.jobs.deleteSelected(rows.length),
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    });
-    if (approved) deleteMutation.mutate(rows);
+  type TriageAttempt = { intents: CareerTriageIntent[]; base: JobUserState[]; removing: boolean; selection: boolean; epoch: number; neighbor: string | null; revealPage: number };
+  const triageBusy = useRef(false);
+  const [triagePending, setTriagePending] = useState(false);
+  const [triageIssue, setTriageIssue] = useState<{ attempt: TriageAttempt | null; reason: "unavailable" | "changed" | "limit" | "reload" } | null>(null);
+  const triageQueryKey = useMemo(() => [...qk.jobUserStates, userId], [userId]);
+  const listingQueryKey = useMemo(() => [...qk.jobListings, userId], [userId]);
+  const [triageFocus, setTriageFocus] = useState<{ attempt: TriageAttempt; confirmed: boolean } | { reloaded: boolean; epoch: number } | null>(null);
+  const handledTriageFocus = useRef<typeof triageFocus>(null);
+  useLayoutEffect(() => {
+    if (!triageFocus || handledTriageFocus.current === triageFocus || triagePending) return;
+    handledTriageFocus.current = triageFocus;
+    const root = saveRegion.current, epoch = "reloaded" in triageFocus ? triageFocus.epoch : triageFocus.attempt.epoch;
+    if (!root || lifetime.current.signal.aborted || saveInteraction.current !== epoch) return;
+    if (document.activeElement !== document.body && document.activeElement && !root.contains(document.activeElement)) return;
+    if ("reloaded" in triageFocus) {
+      root.querySelector<HTMLElement>(triageFocus.reloaded ? "[data-career-search]" : "[data-career-triage-recovery]")?.focus();
+      return;
+    }
+    const { attempt, confirmed } = triageFocus;
+    const cards = [...root.querySelectorAll<HTMLElement>("[data-career-listing]")];
+    const original = cards.find(card => card.dataset.careerListing === attempt.intents[0].listing.id);
+    if (!confirmed || !attempt.removing) {
+      const target = attempt.selection ? root.querySelector<HTMLButtonElement>("[data-career-delete-selected]") : original?.querySelector<HTMLButtonElement>(attempt.removing ? "[data-career-delete]" : "[data-career-shortlist]");
+      (target ?? root.querySelector<HTMLInputElement>("[data-career-search]"))?.focus();
+    }
+    else {
+      const neighbor = cards.find(card => card.dataset.careerListing === attempt.neighbor) ?? cards[0];
+      (neighbor?.querySelector<HTMLButtonElement>("[data-career-open]") ?? root.querySelector<HTMLInputElement>("[data-career-search]"))?.focus();
+    }
+  }, [triageFocus, triagePending]);
+  function triageScope() {
+    const original = ownerScope?.capture();
+    if (!original || original.ownerId !== userId) return null;
+    return { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) };
   }
+  async function performTriage(attempt: TriageAttempt, captured: CareerScope) {
+    try {
+      captured.signal.throwIfAborted(); setTriageIssue(null);
+      const receipt = await applyCareerTriage(supabase, captured, attempt.intents);
+      await awaitWithSignal(qc.cancelQueries({ queryKey: triageQueryKey, exact: true }), AbortSignal.any([captured.signal, AbortSignal.timeout(5_000)]));
+      if (captured.signal.aborted) return;
+      setUserStates(current => applyCareerTriageReceipt(current, attempt.base, receipt));
+      if (attempt.removing) {
+        const ids = new Set(attempt.intents.map(item => item.listing.id));
+        setSelected(current => new Set([...current].filter(id => !ids.has(id))));
+        toast.ok(t.jobs.listingDeleted);
+      }
+      if (attempt.removing && saveInteraction.current === attempt.epoch) setPageIndex(attempt.revealPage);
+      setTriageFocus({ attempt, confirmed: true });
+      void qc.invalidateQueries({ queryKey: triageQueryKey, exact: true });
+    } catch (error) {
+      if (!captured.signal.aborted) {
+        setTriageIssue({ attempt, reason: error instanceof CareerTriageError ? error.reason : "unavailable" });
+        setTriageFocus({ attempt, confirmed: false });
+      }
+    }
+  }
+  async function startTriage(rows: JobListing[], removing: boolean, fromSelection = false) {
+    if (!rows.length || triageBusy.current || savingIds.current.size) return;
+    const captured = triageScope(); if (!captured || captured.signal.aborted) return;
+    if (rows.length > 1000) { setTriageIssue({ attempt: null, reason: "limit" }); return; }
+    triageBusy.current = true; setTriagePending(true);
+    const ids = new Set(rows.map(row => row.id));
+    const firstRemoved = Math.max(0, visible.findIndex(row => ids.has(row.id)));
+    const neighbors = [...visible.slice(firstRemoved + 1), ...visible.slice(0, firstRemoved).reverse()];
+    const neighbor = neighbors.find(row => !ids.has(row.id))?.id ?? null;
+    const remaining = visible.filter(row => !ids.has(row.id));
+    const attempt: TriageAttempt = {
+      intents: rows.map(listing => {
+        const existing = stateByListing.get(listing.id);
+        return { id: crypto.randomUUID(), listing: { id: listing.id, url: listing.url, last_seen_at: listing.last_seen_at },
+          next: removing ? "deleted" : existing?.state === "shortlisted" ? null : "shortlisted", existing: existing ? { ...existing } : null };
+      }),
+      base: userStates, removing, selection: fromSelection, epoch: saveInteraction.current,
+      neighbor, revealPage: Math.max(0, Math.floor(remaining.findIndex(row => row.id === neighbor) / 50)),
+    };
+    try {
+      if (removing && !await confirm({ title: t.jobs.deleteListingsTitle, description: t.jobs.deleteListingsDescription(rows.length), confirmLabel: t.jobs.deleteSelected(rows.length), cancelLabel: t.common.cancel, destructive: true })) { if (!captured.signal.aborted) setTriageFocus({ attempt, confirmed: false }); return; }
+      if (!captured.signal.aborted) await performTriage(attempt, captured);
+    } finally { triageBusy.current = false; if (!captured.signal.aborted) setTriagePending(false); }
+  }
+  async function recoverTriage() {
+    if (!triageIssue || triageBusy.current || savingIds.current.size) return;
+    const epoch = saveInteraction.current;
+    if (triageIssue.reason === "limit") {
+      setSelected(new Set()); setTriageIssue(null); setTriageFocus({ reloaded: true, epoch }); return;
+    }
+    const captured = triageScope(); if (!captured || captured.signal.aborted) return;
+    triageBusy.current = true; setTriagePending(true);
+    try {
+      if (triageIssue.reason === "unavailable" && triageIssue.attempt) {
+        await performTriage({ ...triageIssue.attempt, epoch }, captured);
+      } else {
+        const base = userStates, knownListings = listings, operation = new AbortController();
+        const request = { ownerId: captured.ownerId, signal: AbortSignal.any([captured.signal, operation.signal]) };
+        try {
+          const [states, offers] = await Promise.all([
+            readCareerRecords(supabase, "job_user_state", request), readCareerRecords(supabase, "job_listings", request),
+          ]);
+          await awaitWithSignal(qc.cancelQueries({ queryKey: triageQueryKey, exact: true }), AbortSignal.any([captured.signal, AbortSignal.timeout(5_000)]));
+          if (captured.signal.aborted) return;
+          setUserStates(current => current === base ? states.data : current);
+          qc.setQueryData<JobListing[]>(listingQueryKey, current => current === knownListings ? offers.data : current);
+          setSelected(new Set()); setTriageIssue(null);
+          if (saveInteraction.current === epoch) setPageIndex(0);
+          setTriageFocus({ reloaded: true, epoch });
+        } finally { operation.abort(); }
+      }
+    } catch {
+      if (!captured.signal.aborted) {
+        setTriageIssue(current => current ? { ...current, reason: "reload" } : current);
+        setTriageFocus({ reloaded: false, epoch });
+      }
+    } finally { triageBusy.current = false; if (!captured.signal.aborted) setTriagePending(false); }
+  }
+  function toggleState(listing: JobListing) { void startTriage([listing], false); }
+  function deleteListings(rows: JobListing[], fromSelection = false) { return startTriage(rows, true, fromSelection); }
 
   const lastRunAt = lastRun?.finished_at ?? lastRun?.started_at ?? null;
   const failedSources = Object.entries(lastRun?.sources ?? {}).filter(
@@ -871,6 +903,7 @@ function OpenPositionsView({
           <div className="relative w-full max-w-xs">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
             <Input
+              data-career-search
               aria-label={t.jobs.searchPlaceholder}
               placeholder={t.jobs.searchPlaceholder}
               value={query}
@@ -939,12 +972,14 @@ function OpenPositionsView({
               <Button
                 size="sm"
                 variant="destructive"
+                data-career-delete-selected
                 onClick={() =>
                   void deleteListings(
                     listings.filter((listing) => selected.has(listing.id)),
+                    true,
                   )
                 }
-                disabled={deleteMutation.isPending}
+                disabled={triagePending || pendingSaves.size > 0}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t.jobs.deleteSelected(selected.size)}
@@ -1047,10 +1082,12 @@ function OpenPositionsView({
         </Button>
         </div>
       )}
-      {saveIssue && <div className="mx-auto mb-4 flex w-full max-w-3xl sm:w-fit flex-col gap-3 rounded-md border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-        <p role="alert" className="min-w-0 flex-1 text-sm text-destructive">{saveIssue.changed ? t.jobs.saveListingChanged : t.jobs.saveUnconfirmed}</p>
-        <Button variant="outline" className="w-full shrink-0 sm:w-auto" disabled={pendingSaves.size > 0 || checking} onClick={() => saveIssue.changed ? void onCheck() : void saveListing(saveIssue.listing)}>{saveIssue.changed ? t.jobs.checkOffers : t.common.retry}</Button>
-      </div>}
+      {saveIssue && <CareerActionNotice message={saveIssue.changed ? t.jobs.saveListingChanged : t.jobs.saveUnconfirmed}>
+        <Button variant="outline" className="w-full shrink-0 sm:w-auto" disabled={pendingSaves.size > 0 || triagePending || checking} onClick={() => saveIssue.changed ? void onCheck() : void saveListing(saveIssue.listing)}>{saveIssue.changed ? t.jobs.checkOffers : t.common.retry}</Button>
+      </CareerActionNotice>}
+      {triageIssue && <CareerActionNotice message={triageIssue.reason === "limit" ? t.jobs.triageLimit : triageIssue.reason === "changed" ? t.jobs.triageChanged : triageIssue.reason === "reload" ? t.jobs.triageReloadFailed : t.jobs.triageUnconfirmed}>
+        <Button data-career-triage-recovery variant="outline" className="w-full shrink-0 sm:w-auto" disabled={triagePending || pendingSaves.size > 0} onClick={() => void recoverTriage()}>{triagePending ? t.jobs.checking : triageIssue.reason === "limit" ? t.jobs.clearSelection : triageIssue.reason === "unavailable" ? t.common.retry : t.jobs.triageReload}</Button>
+      </CareerActionNotice>}
       {listings.length === 0 ? (
         <Card className="p-0">
           <EmptyState
@@ -1099,9 +1136,10 @@ function OpenPositionsView({
                       return next;
                     })
                   }
-                  onShortlist={() => toggleState(l, "shortlisted")}
+                  onShortlist={() => toggleState(l)}
                   onDelete={() => void deleteListings([l])}
                   pending={pendingSaves.has(l.id)}
+                  triagePending={triagePending || pendingSaves.size > 0}
                   onApply={() => void saveListing(l)}
                   onDetail={() => {
                     setDetailId(l.id);
@@ -1121,6 +1159,7 @@ function OpenPositionsView({
                     listing={detail}
                     saved={savedListingIds.has(detail.id) || savedUrls.has(careerPositionKey(detail.url))}
                     pending={pendingSaves.has(detail.id)}
+                    blocked={triagePending || pendingSaves.size > 0}
                     onApply={() => void saveListing(detail)}
                   />
                 ) : null;
@@ -1138,6 +1177,7 @@ function OpenPositionsView({
                       listing={detail}
                       saved={savedListingIds.has(detail.id) || savedUrls.has(careerPositionKey(detail.url))}
                       pending={pendingSaves.has(detail.id)}
+                      blocked={triagePending || pendingSaves.size > 0}
                       onApply={() => {
                         setMobileDetail(false);
                         void saveListing(detail);
@@ -1234,6 +1274,7 @@ function ListingRow({
   applied,
   saved,
   pending,
+  triagePending,
   selected,
   onSelect,
   onShortlist,
@@ -1248,6 +1289,7 @@ function ListingRow({
   applied: boolean;
   saved: boolean;
   pending: boolean;
+  triagePending: boolean;
   selected: boolean;
   onSelect: () => void;
   onShortlist: () => void;
@@ -1262,6 +1304,7 @@ function ListingRow({
     <article aria-labelledby={titleId} data-career-listing={listing.id} className={cn("min-w-0 p-4", active && "bg-accent/50")}>
       <div className="flex items-start gap-3">
         <Checkbox
+          disabled={triagePending}
           checked={selected}
           onCheckedChange={onSelect}
           aria-label={listing.title}
@@ -1301,7 +1344,7 @@ function ListingRow({
         <Button
           size="sm"
           variant="outline"
-          onClick={onShortlist}
+          data-career-shortlist aria-describedby={titleId} disabled={triagePending} onClick={onShortlist}
           aria-pressed={state === "shortlisted"}
           aria-label={
             state === "shortlisted" ? t.jobs.unshortlist : t.jobs.shortlist
@@ -1316,12 +1359,12 @@ function ListingRow({
         <Button
           size="sm"
           variant="ghost"
-          onClick={onDelete}
+          data-career-delete aria-describedby={titleId} disabled={triagePending} onClick={onDelete}
           aria-label={t.jobs.deleteListing}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        <Button aria-describedby={titleId} data-career-save size="sm" className="ml-auto" onClick={onApply} disabled={saved || applied || pending}>
+        <Button aria-describedby={titleId} data-career-save size="sm" className="ml-auto" onClick={onApply} disabled={saved || applied || pending || triagePending}>
           <Bookmark className="h-4 w-4" />
           {pending ? t.jobs.saving : saved ? t.jobs.savedBadge : t.jobs.savePosition}
         </Button>
@@ -2902,11 +2945,13 @@ function CareerJobDetails({
   onApply,
   saved,
   pending,
+  blocked,
 }: {
   listing: JobListing;
   onApply: () => void;
   saved: boolean;
   pending: boolean;
+  blocked: boolean;
 }) {
   const { lang } = useLang();
   const cs = lang === "cs";
@@ -2925,7 +2970,7 @@ function CareerJobDetails({
         {detail.salary || (cs ? "Mzda neuvedena" : "Salary not specified")}
       </p>
       <div className="my-4 flex flex-wrap gap-2">
-        <Button aria-describedby={titleId} onClick={onApply} disabled={saved || pending}>
+        <Button aria-describedby={titleId} onClick={onApply} disabled={saved || pending || blocked}>
           <Bookmark className="h-4 w-4" />
           {pending ? t.jobs.saving : saved ? t.jobs.savedBadge : t.jobs.savePosition}
         </Button>

@@ -243,7 +243,7 @@ The migrations, in the order they run:
 
 129. `20261025235237_captured_career_listing_save.sql` — prepared, unapplied; captured-owner/version atomic discovery saves with stable retries, unchanged existing private drafts and strict receipts. Uses the existing source guard without granting global write access.
 
-130. `20261026001926_captured_career_triage.sql` — prepared, unapplied; nullable monotonic triage versions, atomic captured source/state changes and durable deletion markers protected from legacy writes or listing cascades. Existing owner-deletion cascades remain valid; browser controls adopt this foundation separately.
+130. `20261026001926_captured_career_triage.sql` — prepared, unapplied; nullable monotonic triage versions, atomic captured source/state changes and durable deletion markers protected from legacy writes or listing cascades. Existing owner-deletion cascades remain valid; finding 283 adopts captured browser confirmation, retry and recovery.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The forty-four audit migrations 87–130 remain unapplied; apply them in filename order before deploying the implementation branch.
 

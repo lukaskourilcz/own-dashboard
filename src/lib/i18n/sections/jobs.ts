@@ -65,6 +65,12 @@ type JobsStrings = {
   positionSaved: string;
   saveUnconfirmed: string;
   saveListingChanged: string;
+  triageUnconfirmed: string;
+  triageChanged: string;
+  triageLimit: string;
+  triageReloadFailed: string;
+  triageReload: string;
+  clearSelection: string;
   saveByUrl: string;
   saveByUrlDescription: string;
   importFromUrl: string;
@@ -256,6 +262,12 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     positionSaved: "Position saved.",
     saveUnconfirmed: "Saving this position was not confirmed.",
     saveListingChanged: "This offer changed. Check for new offers before saving it.",
+    triageUnconfirmed: "The change was not confirmed.",
+    triageChanged: "These offers changed. Reload current offers and select them again.",
+    triageLimit: "Select at most 1,000 offers per change.",
+    triageReloadFailed: "Could not reload current offers.",
+    triageReload: "Reload offers",
+    clearSelection: "Clear selection",
     saveByUrl: "Save a position from a link",
     saveByUrlDescription: "Paste a job URL. The title, company and description will be filled when the page allows it; you can correct every field before saving.",
     importFromUrl: "Fill from URL",
@@ -451,6 +463,12 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     positionSaved: "Pozice byla uložena.",
     saveUnconfirmed: "Uložení pozice není potvrzené.",
     saveListingChanged: "Tato nabídka se změnila. Před uložením znovu ověřte aktuální nabídky.",
+    triageUnconfirmed: "Změnu se nepodařilo potvrdit.",
+    triageChanged: "Nabídky se změnily. Načtěte aktuální nabídky a vyberte je znovu.",
+    triageLimit: "Pro jednu změnu vyberte nejvýše 1 000 nabídek.",
+    triageReloadFailed: "Aktuální nabídky se nepodařilo načíst.",
+    triageReload: "Načíst nabídky",
+    clearSelection: "Zrušit výběr",
     saveByUrl: "Uložit pozici z odkazu",
     saveByUrlDescription: "Vložte URL inzerátu. Pokud to stránka dovolí, doplní se název, firma a popis; před uložením můžete všechna pole upravit.",
     importFromUrl: "Doplnit z URL",
