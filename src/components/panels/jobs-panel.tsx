@@ -2080,6 +2080,8 @@ function ApplicationRow({
   const cs = useLang().lang === "cs";
   const locale = useDateLocale();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyPageIndex,setHistoryPageIndex]=useState(0);
+  const historyPage=historyOpen?collectionPage(events,historyPageIndex):null;
   const link=safeWebUrl(app.url,2048);
 
   const appliedDate = new Date(`${app.applied_on}T00:00:00`);
@@ -2174,12 +2176,13 @@ function ApplicationRow({
         <span className="text-sm text-foreground-muted">{app.responded_on ? `${cs?"První odpověď":"First response"}: ${format(new Date(`${app.responded_on}T00:00:00`),"PP",{locale})}` : cs?"Zatím bez zaznamenané odpovědi":"No response recorded yet"}</span>
         {app.next_follow_up_at && <span className="text-sm text-foreground-muted">{cs?"Připomenout":"Follow up"}: {format(new Date(app.next_follow_up_at),"PP",{locale})}</span>}
       </div>
-      {historyOpen && (
+      {historyPage && (
+        <div data-career-application-history>
         <ul className="mt-2 space-y-1 border-l-2 border-border pl-3">
           {events.length === 0 && (
             <li className="text-[11px] text-foreground-subtle">—</li>
           )}
-          {events.map((e) => (
+          {historyPage.items.map((e) => (
             <li key={e.id} className="text-[11px] text-foreground-muted">
               <span className="font-medium text-foreground">
                 {e.kind === "applied"
@@ -2196,6 +2199,8 @@ function ApplicationRow({
             </li>
           ))}
         </ul>
+        <CareerPagination page={historyPage} onPage={setHistoryPageIndex} label={t.jobs.history}/>
+        </div>
       )}
 
       {(app.contact_name || app.contact_email) && (
@@ -2332,6 +2337,9 @@ function LetterWorkspace({
   const [position, setPosition] = useState("");
   const [company, setCompany] = useState("");
   const [letter, setLetter] = useState("");
+  const previous=useMemo(()=>applications.filter(app=>app.cover_letter.trim()),[applications]);
+  const [previousPageIndex,setPreviousPageIndex]=useState(0),previousPage=collectionPage(previous,previousPageIndex);
+  const previousLabel=cs?"Předchozí dopisy":"Previous letters";
   return (
     <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(240px,1fr)]">
       <section className="min-w-0 space-y-4">
@@ -2366,13 +2374,11 @@ function LetterWorkspace({
             : "Save an unfinished letter as a named template. Record a sent letter with its application in Applications."}
         </p>
       </section>
-      <aside className="min-w-0 space-y-4">
+      <aside data-career-previous-letters className="min-w-0 self-start space-y-4">
         <h2 className="text-base font-semibold">
-          {cs ? "Předchozí dopisy" : "Previous letters"}
+          {previousLabel}
         </h2>
-        {applications
-          .filter((a) => a.cover_letter.trim())
-          .map((a) => (
+        {previousPage.items.map((a) => (
             <details key={a.id} className="border-b border-border pb-3">
               <summary className="cursor-pointer break-words text-sm font-medium">
                 {a.company} · {a.title}
@@ -2402,7 +2408,8 @@ function LetterWorkspace({
               </Button>
             </details>
           ))}
-        {!applications.some((a) => a.cover_letter.trim()) && (
+        <CareerPagination page={previousPage} onPage={setPreviousPageIndex} label={previousLabel} stacked/>
+        {previous.length===0 && (
           <p className="text-sm text-foreground-muted">
             {cs
               ? "Uložené dopisy k žádostem se objeví zde."

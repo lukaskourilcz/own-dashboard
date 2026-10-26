@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Career history update (2026-10-26, finding 305): twenty-eight final EN/CS desktop/mobile native cases pass. Complete history and 1,201 previous letters remain reachable through fifty-record local pages, with no extra reads. The narrow sidebar fits its content and stacks the pager with a single-line range. Keyboard, disclosure state, reuse/dirty exits, six widths and axe are included; wider release work remains open.
+
 > Career row update (2026-10-26, finding 304): twenty EN/CS desktop/mobile native cases pass. Unsupported destinations remain text, long rows wrap, controls match at 44px mobile/32px desktop and the manual source label is localized. Six-width reflow, axe, board move/focus and letter/removal recovery are included. Final app-wide release remains unfinished.
 
 > Letter-workspace update (2026-10-26, finding 303): forty affected EN/CS desktop/mobile native cases pass. Workspace context protects navigation, a pending older template receipt retains newer context and corrected invalid text unlocks saving. Earlier application/template recovery, axe and reflow checks are included. The visual plan retains its dated authentic captures; this behavior change adds no invented UI.

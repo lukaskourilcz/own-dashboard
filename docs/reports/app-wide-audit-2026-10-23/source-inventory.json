@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2481,
+      "lines": 2488,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 304 closes unsupported application links, long row reflow, localized manual source and shared mobile targets; history/previous-letter/picker costs and guidance draft review pending",
-      "reviewedSha256": "15125c03f9bd98b5da959d3ede1fccf1e308eac0e6f107d6a4b47f687df69f93"
+      "status": "source reviewed; finding 305 bounds complete local application history/previous-letter rendering and fixes stretched sidebar/pager; large template picker, guidance drafts and global board pending remain",
+      "reviewedSha256": "ab054178033bc3a15de47e2abb7e5687fdaf9d0a3e4802d9ea49c0ca02227b96"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
