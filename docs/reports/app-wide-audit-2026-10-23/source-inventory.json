@@ -1449,10 +1449,10 @@
     },
     {
       "path": "src/components/panels/career-board.tsx",
-      "lines": 465,
+      "lines": 468,
       "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
-      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending",
-      "reviewedSha256": "b8e17ae1cd60f098f85e145e37e5a76470fcb4daa515623a0bca367c7edc9fcb"
+      "status": "source reviewed; findings 278/304 complete column paging and supported-only application/Saved links verified natively; shared global pending and dense drop-target review remain",
+      "reviewedSha256": "81b41324c069e9b437322abb6c7e0a29c9e2687a2270cac44b86f4a9a3cb161d"
     },
     {
       "path": "src/components/panels/career-companies.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2480,
+      "lines": 2481,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 292\u2013303 captured application/template writes and canonical workspace draft guards pass targeted checks; large picker/history/previous-letter rendering, long rows and global board pending still open",
-      "reviewedSha256": "4613ca0e4d7088d03fae606723149d0dea1a991c62db5540c3140fedf6c34e9d"
+      "status": "source reviewed; finding 304 closes unsupported application links, long row reflow, localized manual source and shared mobile targets; history/previous-letter/picker costs and guidance draft review pending",
+      "reviewedSha256": "15125c03f9bd98b5da959d3ede1fccf1e308eac0e6f107d6a4b47f687df69f93"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",

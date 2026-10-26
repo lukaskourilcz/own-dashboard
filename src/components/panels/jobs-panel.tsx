@@ -2080,35 +2080,36 @@ function ApplicationRow({
   const cs = useLang().lang === "cs";
   const locale = useDateLocale();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const link=safeWebUrl(app.url,2048);
 
   const appliedDate = new Date(`${app.applied_on}T00:00:00`);
-  const subtitle = [app.company, app.source ? jobSourceLabel(app.source) : null]
+  const subtitle = [app.company, app.source==='manual'?(cs?'Ručně':'Manual'):app.source ? jobSourceLabel(app.source) : null]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <li data-career-application={app.id} className="px-4 py-3">
+    <li data-career-application={app.id} className="min-w-0 px-4 py-3 [overflow-wrap:anywhere]">
       <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-full sm:basis-0">
           <div className="flex items-center gap-2">
-            {app.url ? (
+            {link ? (
               <a
                 data-career-application-title
-                href={app.url}
+                href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="max-w-full truncate text-sm font-medium hover:underline focus-ring rounded-sm"
+                className="block min-w-0 break-words text-sm font-medium hover:underline focus-ring rounded-sm"
                 title={app.title}
               >
                 {app.title}
               </a>
             ) : (
-              <span data-career-application-title tabIndex={-1} className="truncate text-sm font-medium focus-ring" title={app.title}>
+              <span data-career-application-title tabIndex={-1} className="block min-w-0 break-words text-sm font-medium focus-ring" title={app.title}>
                 {app.title}
               </span>
             )}
           </div>
-          <p className="mt-0.5 truncate text-xs text-foreground-muted">
+          <p className="mt-0.5 break-words text-xs text-foreground-muted">
             {subtitle}
           </p>
           <p className="mt-0.5 text-[11px] text-foreground-subtle">
@@ -2122,47 +2123,47 @@ function ApplicationRow({
             disabled={disabled}
             value={app.status}
             onValueChange={(v) => onStatus(v as JobApplicationStatus)}
-            className="h-7 w-auto min-w-28 text-[11px]"
+            className="h-11 w-auto min-w-28 text-xs md:h-8"
             aria-label={t.jobs.statusLabel}
             options={STATUSES.map((s) => ({ value: s, label: statusLabel[s] }))}
           />
           <Tooltip content={t.jobs.coverLetterAction}>
-            <button
-              type="button"
+            <Button
+              type="button" variant="ghost" size="icon"
               onClick={onLetter}
               disabled={disabled}
               aria-label={t.jobs.coverLetterAction}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+              className="text-foreground-muted hover:text-foreground"
             >
               <FileText className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content={t.jobs.history}>
-            <button
-              type="button"
+            <Button
+              type="button" variant="ghost" size="icon"
               onClick={() => setHistoryOpen((v) => !v)}
               aria-label={t.jobs.history}
               aria-expanded={historyOpen}
               className={cn(
-                "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors focus-ring",
+                "",
                 historyOpen
                   ? "bg-accent text-foreground"
                   : "text-foreground-muted hover:bg-surface-hover hover:text-foreground",
               )}
             >
               <History className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content={t.jobs.deleteApplication}>
-            <button
-              type="button"
+            <Button
+              type="button" variant="ghost" size="icon"
               onClick={event=>onDelete(event.currentTarget)}
               disabled={disabled}
               aria-label={t.jobs.deleteApplication}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+              className="text-foreground-muted hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>

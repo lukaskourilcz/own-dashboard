@@ -40,6 +40,7 @@ import type {
   SavedJobPosition,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { safeWebUrl } from "@/lib/web-url";
 
 /** The columns a card can actually be dropped on. "saved" is never one. */
 const DROP_COLUMNS = BOARD_COLUMNS.filter(
@@ -308,6 +309,7 @@ function ApplicationCard({
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
     useDraggable({ id: app.id, disabled: pending });
   const due = isFollowUpDue(app);
+  const link=safeWebUrl(app.url,2048);
 
   return (
     <div
@@ -334,9 +336,9 @@ function ApplicationCard({
           <GripVertical className="h-3.5 w-3.5" aria-hidden />
         </button>
         <div className="min-w-0 flex-1">
-          {app.url ? (
+          {link ? (
             <a
-              href={app.url}
+              href={link}
               target="_blank"
               rel="noopener noreferrer"
               className="block break-words text-sm font-medium hover:underline focus-ring rounded-sm"
@@ -423,17 +425,18 @@ function SavedCard({
   onPrepare: () => void;
 }) {
   const t = useDict();
+  const link=safeWebUrl(position.url,2048);
 
   return (
     <Card className="p-2.5 shadow-none">
-      <a
-        href={position.url}
+      {link?<a
+        href={link}
         target="_blank"
         rel="noopener noreferrer"
         className="block break-words text-sm font-medium hover:underline focus-ring rounded-sm"
       >
         {position.title}
-      </a>
+      </a>:<p className="break-words text-sm font-medium">{position.title}</p>}
       {position.company && (
         <p className="mt-0.5 break-words text-xs text-foreground-muted">
           {position.company}
