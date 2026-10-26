@@ -2303,3 +2303,8 @@ All 10,000 supported saved records remain searchable, including Czech names ente
 All sixty affected native cases pass across four files in 2.7 minutes, including EN/CS desktop/mobile picker, manager, template retry/both-draft closure and existing application-letter/removal recovery. The first inspected desktop capture reveals inherited `md:h-8` clipping the preview line inside a content row. Explicit desktop auto height repairs it; all sixteen final picker cases pass in 49.0 seconds with a preview-height assertion, complete 10,000-record search, keyboard paging, focus, six widths and axe. Twenty shared template/pagination cases pass in 1.32 seconds. TypeScript, targeted ESLint and whitespace checks pass.
 
 Both final picker images are inspected for the visual plan. The inventory has 707 sources. No SQL, production record or provider changes; the canonical/prepared counts remain 133/47. Guidance input drafts, obsolete contact availability copy, remaining density/provider/monitoring/app leads, migration rollout, clean final validation and main merge remain unfinished.
+
+
+### Finding 307 visual evidence
+
+The forty-ninth authentic desktop/mobile pair records application `cf892a72`. `career-template-picker-captures.json` retains exact source/asset hashes, viewport and mapped search/choice-window/pager highlights. Both final images are inspected after the desktop preview-height repair. All 49 visual-plan images decode in both modes; light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Older capture dates/hashes stay unchanged, while their follow-up captions now acknowledge completed template/workspace safeguards rather than listing them as unfinished. The inventory remains 707 entries.
