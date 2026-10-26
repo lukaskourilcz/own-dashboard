@@ -1925,3 +1925,10 @@ All twelve final native cases pass in 42.9 seconds across EN/CS desktop/mobile: 
 Two inspected authentic Czech dark failure-notice captures, their component hashes and percentage annotations are recorded in [capture metadata](career-save-captures.json). The new visual-plan entry brings the gallery to thirty-six pairs while retaining every older capture's provenance. The source inventory has 688 entries. Triage, manual URL/private editors, application/progress/letter/template controls and other remaining app leads are still open. Forty-three prepared files (87–129), canonical rollout, final release, PR/main and deployed checks remain unfinished. Checkpoint 95 excludes this repair.
 
 The gallery rebuild from application snapshot `612e691` loads all thirty-six images in each view, passes light/dark reflow at 390/1,440 px and keeps highlight controls working without page errors. Both new notice captures were visually inspected; every older capture keeps its original evidence date and component provenance.
+
+
+## Full checkpoint 96 — started, primary inputs frozen
+
+Checkpoint 96 freezes application/test/SQL/tool inputs at `612e691` after findings 279–281; gallery metadata `b9f00d4` retains thirty-six authentic pairs. It repeats full unit/database checks, ESLint, the ordinary production build, eight render packaging traces, post-build TypeScript and the optimized 958-case browser pipeline, checking the manifest between stages and at completion. A start establishes no pass; checkpoint 95 remains the latest consolidated full pass. No source/test/SQL/tool change may enter the primary checkout until the process exits. Independent repairs continue in the descendant checkout.
+
+The source inventory has 688 entries and all 129 migrations are canonical locally. Forty-three prepared files (87–129), remaining Career/editor/provider and app-wide leads, canonical rollout, final release, PR/main and deployed checks remain unfinished. Synthetic environments and the E2E build are never deployment artifacts.
