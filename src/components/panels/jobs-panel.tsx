@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CareerTemplatesDialog } from "@/components/panels/career-templates-dialog";
+import { useCareerTemplateWrite } from "@/components/panels/use-career-template-write";
+import { CAREER_TEMPLATE_NAME_MAX, CAREER_TEMPLATE_BODY_MAX } from "@/lib/career-template-records";
+import { CareerTemplatesDialog, CareerTemplateFailure } from "@/components/panels/career-templates-dialog";
 import { CareerPagination } from "@/components/panels/career-pagination";
 import { collectionPage } from "@/lib/collection-page";
 import { readCareerAvailability, availabilityVersionMatches, CareerAvailabilityError, type AvailabilityReceipt, type AvailabilityRequest } from "@/lib/jobs/availability-client";
@@ -1485,7 +1487,7 @@ function ApplyDialog({
   const toast = useToast();
   const requestExit = useGuardedNavigation();
   const draft = useCareerApplicationDraft({source:savedPosition,userId,day:today,setSavedPositions,setApplications,setEvents,
-    onRecorded:()=>{toast.ok(t.jobs.applicationSaved);onOpenChange(false);onApplied();},
+    onRecorded:()=>{toast.ok(t.jobs.applicationSaved);requestExit(()=>{onOpenChange(false);onApplied();});},
     onDraftSaved:()=>toast.ok(t.jobs.draftSaved)});
   const {form,update,pending,failure,locked}=draft;
   const listing=useMemo(()=>savedToListing(draft.reviewedSource),[draft.reviewedSource]);
@@ -1641,6 +1643,7 @@ function CoverLetterField({
   description,
   readOnly = false,
   showLabel = true,
+  helperRevision = 0,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -1656,6 +1659,7 @@ function CoverLetterField({
   description?: string;
   readOnly?: boolean;
   showLabel?: boolean;
+  helperRevision?: number;
 }) {
   const t = useDict();
   const { lang } = useLang();
@@ -1666,11 +1670,9 @@ function CoverLetterField({
   const [guidanceMounted, setGuidanceMounted] = useState(() => !value.trim());
   const locale = useDateLocale();
   const toast = useToast();
-  const qc = useQueryClient();
-  const supabase = createClient();
 
   function loadTemplate(key: string) {
-    if (readOnly || !key) return;
+    if (readOnly || templateLocked || !key) return;
     let body: string | null = null;
     if (key.startsWith("builtin:")) {
       const tpl = BUILTIN_TEMPLATES.find((b) => `builtin:${b.id}` === key);
@@ -1689,39 +1691,27 @@ function CoverLetterField({
     );
   }
 
-  const saveTemplateMutation = useMutation({
-    mutationFn: async (vars2: { name: string; body: string }) => {
-      const { data, error } = await supabase
-        .from("cover_letter_templates")
-        .insert({ user_id: userId, name: vars2.name, body: vars2.body })
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as CoverLetterTemplate;
-    },
-    onSuccess: (tpl) => {
-      setTemplates((prev) => [...prev, tpl]);
-      toast.ok(t.jobs.templateSaved);
-      void qc.invalidateQueries({ queryKey: qk.coverLetterTemplates });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  function saveAsTemplate() {
-    if (readOnly || !value.trim()) return;
-    const name =
-      draftName.trim() ||
-      `[${letterLanguage.toUpperCase()}] ${vars.company || (lang === "cs" ? "Firma" : "Company")} · ${vars.position || (lang === "cs" ? "Dopis" : "Letter")} · ${new Date().toISOString().slice(0, 10)}`;
-    saveTemplateMutation.mutate({ name, body: value });
+  const templateWriter=useCareerTemplateWrite({userId,setTemplates});
+  const [templateAttempt,setTemplateAttempt]=useState<{name:string;body:string}|null>(null),templateAttemptRef=useRef<typeof templateAttempt>(null),templateId=useRef<string|null>(null),nameRef=useRef("");
+  const templateLocked=templateWriter.pending!==null||!!templateWriter.failure&&templateWriter.failure.reason!=='invalid';
+  function confirmedTemplate(){templateAttemptRef.current=null;setTemplateAttempt(null);templateId.current=null;nameRef.current="";setDraftName("");toast.ok(t.jobs.templateSaved);}
+  async function saveAsTemplate(){
+    if(templateWriter.isPending()||templateWriter.failure||!value.trim())return false;
+    const defaultName=`[${letterLanguage.toUpperCase()}] ${vars.company || (lang === "cs" ? "Firma" : "Company")} · ${vars.position || (lang === "cs" ? "Dopis" : "Letter")} · ${new Date().toISOString().slice(0,10)}`;
+    const fields={name:nameRef.current.trim()||defaultName.slice(0,CAREER_TEMPLATE_NAME_MAX).replace(/[\uD800-\uDBFF]$/u,''),body:value};
+    templateId.current??=crypto.randomUUID();templateAttemptRef.current=fields;setTemplateAttempt(fields);
+    const receipt=await templateWriter.create(templateId.current,fields);if(!receipt||!templateWriter.isCurrent())return false;confirmedTemplate();return true;
   }
+  async function retryTemplate(){const receipt=await templateWriter.retry();if(receipt&&templateWriter.isCurrent())confirmedTemplate();}
+  useUnsavedDraft({get dirty(){return !!nameRef.current.trim()||templateAttemptRef.current!==null;},canSave:!templateWriter.failure&&!!value.trim()&&value.length<=CAREER_TEMPLATE_BODY_MAX,save:saveAsTemplate,discard:()=>{templateAttemptRef.current=null;templateId.current=null;nameRef.current="";setTemplateAttempt(null);setDraftName("");templateWriter.clearFailure();}});
 
   return (
     <div className="space-y-4">
-      <fieldset disabled={readOnly} className="min-w-0 space-y-4">
+      <fieldset disabled={readOnly||templateWriter.pending!==null} className="min-w-0 space-y-4">
       <details open={guidanceOpen} onToggle={event=>{const open=event.currentTarget.open;setGuidanceOpen(open);if(open)setGuidanceMounted(true);}}>
       <summary className="min-h-11 cursor-pointer rounded-sm py-3 text-sm font-medium focus-ring">{t.jobs.letterGuidance}</summary>
       {guidanceMounted&&<CareerLetterHelper
-        key={description ?? id}
+        key={`${helperRevision}:${description ?? id}`}
         position={vars.position ?? ""}
         company={vars.company ?? ""}
         description={description}
@@ -1731,11 +1721,13 @@ function CoverLetterField({
         onLanguageChange={setLetterLanguage}
       />}
       </details>
+      </fieldset>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Label htmlFor={id} className={showLabel?undefined:'sr-only'}>{t.jobs.coverLetter}</Label>
         <div data-career-letter-toolbar className="flex min-w-0 flex-wrap items-center gap-1.5">
           <Select
             value=""
+            disabled={readOnly||templateLocked}
             onValueChange={(v) => {
               if (v) loadTemplate(v);
             }}
@@ -1769,7 +1761,8 @@ function CoverLetterField({
           </Select>
           <Input
             value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
+            readOnly={templateLocked}
+            onChange={(e) => {if(templateWriter.isPending())return;nameRef.current=e.target.value;setDraftName(e.target.value);templateWriter.clearFailure();}}
             maxLength={150}
             className="w-full sm:w-40"
             aria-label={t.jobs.templateName}
@@ -1778,20 +1771,21 @@ function CoverLetterField({
           <Button
             type="button"
             variant="outline"
-            onClick={saveAsTemplate}
-            disabled={!value.trim() || saveTemplateMutation.isPending}
+            onClick={()=>void saveAsTemplate()}
+            disabled={!value.trim()||templateLocked}
           >
             <Plus className="h-3 w-3" />
             {t.jobs.saveAsTemplate}
           </Button>
         </div>
       </div>
-      </fieldset>
+      <CareerTemplateFailure writer={templateWriter} onRetry={()=>void retryTemplate()}/>
+      {templateAttempt&&templateWriter.failure&&templateAttempt.body!==value&&<div className="space-y-1.5"><Label htmlFor={`${id}-template-attempt`}>{lang==='cs'?'Dopis z nepotvrzeného uložení šablony':'Letter from the unconfirmed template save'}</Label><Textarea id={`${id}-template-attempt`} readOnly value={templateAttempt.body} rows={3}/></div>}
       <Textarea
-        readOnly={readOnly}
+        readOnly={readOnly||templateWriter.pending!==null}
         id={id}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {if(!templateWriter.isPending())onChange(e.target.value);}}
         placeholder={t.jobs.coverLetterPlaceholder}
         rows={6}
         className="text-base leading-relaxed"
@@ -2243,12 +2237,13 @@ function LetterDialog({
   const toast = useToast();
   const cs=useLang().lang==='cs',requestExit=useGuardedNavigation();
   const [initial]=useState(()=>structuredClone(app)),[reviewed,setReviewed]=useState(initial),source=useRef(initial);
+  const [helperRevision,setHelperRevision]=useState(0);
   const [letter,setLetter]=useState(initial.cover_letter),fields=useRef(initial.cover_letter),dirty=useRef(false);
   const writer=useCareerApplicationRecordWrite({userId,setApplications,setEvents}),locked=writer.pending!==null||!!writer.failure&&writer.failure.reason!=='invalid';
   function update(value:string){if(locked||writer.isPending())return;fields.current=value;dirty.current=value!==source.current.cover_letter;setLetter(value);writer.clearFailure();}
-  async function save(){const receipt=await writer.saveLetter(source.current,fields.current);if(!receipt||!writer.isCurrent())return false;dirty.current=false;toast.ok(t.jobs.letterSaved);onClose();return true;}
-  async function retry(){const receipt=await writer.retry();if(receipt&&writer.isCurrent()){dirty.current=false;toast.ok(t.jobs.letterSaved);onClose();}}
-  async function reload(){const result=await writer.reload(source.current.id);if(!result?.row||!writer.isCurrent())return;source.current=result.row;setReviewed(result.row);fields.current=result.row.cover_letter;setLetter(fields.current);dirty.current=false;}
+  async function save(){if(fields.current===source.current.cover_letter)return true;const receipt=await writer.saveLetter(source.current,fields.current);if(!receipt||!writer.isCurrent())return false;source.current=receipt;setReviewed(receipt);dirty.current=false;toast.ok(t.jobs.letterSaved);return true;}
+  async function retry(){const receipt=await writer.retry();if(receipt&&writer.isCurrent()){source.current=receipt;setReviewed(receipt);dirty.current=false;toast.ok(t.jobs.letterSaved);requestExit(onClose);}}
+  async function reload(){const result=await writer.reload(source.current.id);if(!result?.row||!writer.isCurrent())return;source.current=result.row;setReviewed(result.row);setHelperRevision(value=>value+1);fields.current=result.row.cover_letter;setLetter(fields.current);dirty.current=false;}
   useUnsavedDraft({get dirty(){return dirty.current;},canSave:!writer.failure,save,discard:()=>{dirty.current=false;}});
   const message=writer.reloadFailed?(cs?'Přihlášku se nepodařilo načíst. Dopis zůstal zachovaný.':'The application could not be loaded. Your letter is kept.')
     :writer.failure?.reason==='changed'?(cs?'Přihláška se změnila nebo už neexistuje. Dopis zůstal zachovaný. Načtěte aktuální přihlášku.':'The application changed or is no longer available. Your letter is kept. Load the current application.')
@@ -2268,7 +2263,7 @@ function LetterDialog({
         <div className="mt-3 space-y-3">
           <fieldset disabled={writer.pending!==null}>
           <CoverLetterField
-            key={reviewed.updated_at}
+            helperRevision={helperRevision}
             showLabel={false}
             readOnly={locked}
             id="job-letter-editor"
@@ -2296,7 +2291,7 @@ function LetterDialog({
             </DialogClose>
             <Button
               size="sm"
-              onClick={() => void save()}
+              onClick={()=>void save().then(saved=>{if(saved)requestExit(onClose);})}
               disabled={locked||letter===reviewed.cover_letter}
             >
               <Check className="h-3.5 w-3.5" />

@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Career draft update (2026-10-26, finding 301): all 48 affected EN/CS desktop/mobile cases pass, including inline template retries, both-draft navigation saves and confirmed application recording with an unsaved template. Earlier six-width, axe and recovery checks remain in that run. These isolated checks do not complete the wider release audit.
+
 > Career template manager update (2026-10-26, finding 300): sixteen native cases pass across EN/CS and desktop/mobile. Captured edits, stable creation retries, retained conflict/reload drafts, pending exits, confirmed removal/focus, local paging and mobile targets are checked; the editor also passes six widths and axe. These are synthetic preview checks, not a final app-wide release.
 
 > Career board (2026-10-26, finding 278): nineteen final native cases pass with one configured duplicate skip in 1.6 minutes. Each stage pages ten complete local records, keeps full counts and equal widths, excludes already-recorded saved cards, and reveals/focuses only the appropriate confirmed move. Failed moves restore the original control; mobile stage/drag targets reach 44px. Six-width reflow and axe pass. Four final capture cases pass in 19.3 seconds with a tall real viewport; the visual plan records the authentic paired board images and exact code hashes. Captured progress-write ownership/version controls remain separate.

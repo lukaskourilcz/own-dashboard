@@ -19,7 +19,7 @@ import {useDict,useLang} from '@/lib/i18n';
 import type {CoverLetterTemplate,Updater} from '@/lib/types';
 
 type Writer=ReturnType<typeof useCareerTemplateWrite>;
-function TemplateFailure({writer,onReload,onRetry}:{writer:Writer;onReload?:()=>void;onRetry?:()=>void}){
+export function CareerTemplateFailure({writer,onReload,onRetry}:{writer:Writer;onReload?:()=>void;onRetry?:()=>void}){
  const cs=useLang().lang==='cs';
  const message=writer.reloadFailed?(cs?'Šablony se nepodařilo načíst. Koncept zůstal zachovaný.':'Templates could not be loaded. Your draft is kept.')
   :writer.failure?.reason==='changed'?(cs?'Šablona se změnila nebo už neexistuje. Koncept zůstal zachovaný.':'The template changed or is no longer available. Your draft is kept.')
@@ -46,7 +46,7 @@ export function CareerTemplatesDialog({onClose,templates,setTemplates,userId}:{o
    {!editor&&<Button data-career-new-template disabled={locked} onClick={()=>setEditor({id:crypto.randomUUID(),source:null})}><Plus className="h-3.5 w-3.5"/>{t.jobs.newTemplate}</Button>}
   </div>
   {editor?<TemplateEditor key={editor.id} initial={editor.source} id={editor.id} writer={writer} onClose={closeForm}/>:<div className="mt-4 space-y-4">
-   <TemplateFailure writer={writer} onReload={()=>void writer.reload()}/>
+   <CareerTemplateFailure writer={writer} onReload={()=>void writer.reload()}/>
    {templates.length===0?<p className="py-6 text-center text-sm text-foreground-muted">{t.jobs.noTemplatesYet}</p>:<>
     <ul className="divide-y divide-border rounded-md border border-border">{page.items.map(row=><li key={row.id} className="flex min-w-0 items-center gap-2 px-3 py-2">
      <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{row.name||t.jobs.templateName}</p><p className="truncate text-xs text-foreground-subtle">{row.body.slice(0,180).replace(/\s+/g,' ').slice(0,90)}</p></div>
@@ -79,7 +79,7 @@ function TemplateEditor({initial,id,writer,onClose}:{initial:CoverLetterTemplate
  return <form className="mt-4 space-y-3" onSubmit={event=>{event.preventDefault();void save();}}>
   <div className="space-y-1.5"><Label htmlFor="tpl-name">{t.jobs.templateName}</Label><Input autoFocus id="tpl-name" value={form.name} readOnly={locked} onChange={event=>update('name',event.target.value)} maxLength={CAREER_TEMPLATE_NAME_MAX} placeholder={t.jobs.templateNamePlaceholder}/></div>
   <div className="space-y-1.5"><Label htmlFor="tpl-body">{t.jobs.templateBody}</Label><Textarea id="tpl-body" value={form.body} readOnly={locked} onChange={event=>update('body',event.target.value)} maxLength={CAREER_TEMPLATE_BODY_MAX} rows={6} className="text-base leading-relaxed"/><p className="text-xs text-foreground-subtle">{t.jobs.placeholdersHint}</p></div>
-  <TemplateFailure writer={writer} onRetry={()=>void retry()} onReload={reviewed?()=>void reload():undefined}/>
+  <CareerTemplateFailure writer={writer} onRetry={()=>void retry()} onReload={reviewed?()=>void reload():undefined}/>
   <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="ghost" onClick={()=>requestExit(onClose)}>{t.jobs.cancel}</Button><Button type="submit" disabled={locked||!changed||!valid}><Check className="h-3.5 w-3.5"/>{writer.pending?t.jobs.saving:t.jobs.save}</Button></div>
  </form>;
 }

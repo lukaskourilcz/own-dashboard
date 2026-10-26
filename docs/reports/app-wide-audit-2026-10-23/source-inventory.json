@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2477,
+      "lines": 2472,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 292\u2013300 captured application writes and extracted guarded template manager targeted checks pass; inline template/Saved-letter persistence and density pending",
-      "reviewedSha256": "6d8296aff01eb5c97a082c43e44e6eb26c83d8d49331a199f9bef16665915a7e"
+      "status": "source reviewed; finding 301 guards inline template retries and independent parent/child draft exits; 48 native cases pass; standalone letter workspace, Saved-letter controls and wider density pending",
+      "reviewedSha256": "8693546917017c2947a814bf469ac3716659149d7f44d831b3be5fa18ddea994"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -4888,9 +4888,9 @@
     {
       "path": "src/components/panels/use-career-application-draft.ts",
       "sha256": null,
-      "lines": 101,
-      "reviewedSha256": "4df24c15d60f11853a20e0dbc4f4696734f6e167e596b72c8112d0d3adafdd24",
-      "status": "source reviewed; finding 292 captures application/draft owner and Saved version, exact retries, changed-only draft saves, guarded exits/cache and native EN/CS/mobile recovery; remaining progress/template/density and final release pending"
+      "lines": 103,
+      "reviewedSha256": "ad4872cf48e707464321fbc46bd5761eba6bb83e4e4b13a2022cfe917cabe676",
+      "status": "source reviewed; findings 292/301 captured application draft/recording, retained recovery and guarded parent closure verified; confirmed recording retires further writes; final release pending"
     },
     {
       "path": "src/lib/career-application-progress.ts",
@@ -4945,8 +4945,8 @@
       "path": "src/components/panels/career-templates-dialog.tsx",
       "sha256": null,
       "lines": 85,
-      "status": "source reviewed; finding 300 stable create/captured edit/delete, retained drafts, navigation guards and complete local paging pass EN/CS desktop/mobile/native six-width axe checks; final release pending",
-      "reviewedSha256": "f5587513997bc80c5b678bf232014eb3251e5e853f218d50b399a15b51883f6f"
+      "status": "source reviewed; findings 300\u2013301 retained template manager and shared fixed failure/retry presentation verified; final release pending",
+      "reviewedSha256": "10b25133c8e8256609001f31d294776eb57dfc89c596a1e7dace6fec248f5546"
     }
   ],
   "baselineFileCount": 561

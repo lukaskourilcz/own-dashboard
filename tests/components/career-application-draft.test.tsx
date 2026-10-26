@@ -41,5 +41,6 @@ it('cancels all canonical reads before applying receipts and preserves newer cac
  client.setQueryData(qk.jobApplications,[]);client.setQueryData(qk.jobApplicationEvents,[]);client.setQueryData(qk.savedJobPositions,[source]);const signals:AbortSignal[]=[];
  for(const queryKey of [qk.savedJobPositions,qk.jobApplications,qk.jobApplicationEvents])void client.fetchQuery({queryKey,queryFn:({signal})=>{signals.push(signal);return new Promise(()=>{});}}).catch(()=>undefined);
  gate.record.mockResolvedValue(receipt);await act(async()=>root.render(tree()));await act(async()=>draft.record());expect(signals).toHaveLength(3);expect(signals.every(signal=>signal.aborted)).toBe(true);expect(recorded).toHaveBeenCalledOnce();
+ expect(draft.pending).toBeNull();expect(draft.locked).toBe(true);const confirmedForm=draft.form;await act(async()=>{draft.update({notes:'Synthetic post-record edit'});draft.record();await draft.saveDraft();await draft.reload();});expect(draft.form).toBe(confirmedForm);expect(gate.record).toHaveBeenCalledOnce();expect(gate.update).not.toHaveBeenCalled();expect(gate.read).not.toHaveBeenCalled();
  const updater=apps.mock.calls[0][0] as (rows:JobApplication[])=>JobApplication[],newer=[{...application,notes:'Synthetic newer progress'}];expect(updater(newer)).toBe(newer);
 });

@@ -26,11 +26,12 @@ export function useCareerApplicationDraft(props:Props){
  const [form,setForm]=useState(()=>seed(initial,props.day));
  const source=useRef(initial),baseline=useRef(form),fields=useRef(form),dirty=useRef(false);
  const [pending,setPending]=useState<'write'|'reload'|null>(null),[failure,setFailure]=useState<Failure|null>(null),[reloadFailed,setReloadFailed]=useState(false);
+ const [recorded,setRecorded]=useState(false),recordedRef=useRef(false);
  const failureRef=useRef<Failure|null>(null),operation=useRef<CareerScope|null>(null),lifetime=useRef(new AbortController());
  useLayoutEffect(()=>{if(lifetime.current.signal.aborted)lifetime.current=new AbortController();return()=>lifetime.current.abort();},[]);
  function fail(value:Failure|null){failureRef.current=value;setFailure(value);setReloadFailed(false);}
  function reserve(kind:'write'|'reload'){
-  if(operation.current||!owner||owner.ownerId!==draftOwner||props.userId!==draftOwner)return null;
+  if(recordedRef.current||operation.current||!owner||owner.ownerId!==draftOwner||props.userId!==draftOwner)return null;
   const original=owner.capture(),captured={ownerId:original.ownerId,signal:AbortSignal.any([original.signal,lifetime.current.signal])};
   if(captured.signal.aborted)return null;operation.current=captured;setPending(kind);return captured;
  }
@@ -40,7 +41,7 @@ export function useCareerApplicationDraft(props:Props){
   await awaitWithSignal(Promise.all(keys.map(queryKey=>qc.cancelQueries({queryKey,exact:true}))),signal);signal.throwIfAborted();
  }
  function update(patch:Partial<Form>){
-  if(operation.current||failureRef.current&&failureRef.current.reason!=='invalid')return;
+  if(recordedRef.current||operation.current||failureRef.current&&failureRef.current.reason!=='invalid')return;
   const next={...fields.current,...patch};fields.current=next;dirty.current=Object.keys(next).some(key=>next[key as keyof Form]!==baseline.current[key as keyof Form]);setForm(next);fail(null);
  }
  async function perform(attempt:Attempt):Promise<boolean>{
@@ -54,7 +55,7 @@ export function useCareerApplicationDraft(props:Props){
     if(applications)props.setApplications(current=>applyCareerApplicationReceipt(current,applications,receipt));
     if(events)props.setEvents(current=>applyCareerApplicationEvent(current,events,receipt));
     for(const queryKey of [qk.savedJobPositions,qk.jobApplications,qk.jobApplicationEvents])void qc.invalidateQueries({queryKey,exact:true,refetchType:'none'});
-    dirty.current=false;fail(null);props.onRecorded();
+    dirty.current=false;fail(null);recordedRef.current=true;setRecorded(true);release(captured);props.onRecorded();
    }else{
     const receipt=await updateCareerSavedRecord(db,captured,attempt.source,attempt.patch);captured.signal.throwIfAborted();
     await cancelReads(captured,[qk.savedJobPositions]);captured.signal.throwIfAborted();
@@ -67,6 +68,7 @@ export function useCareerApplicationDraft(props:Props){
   finally{release(captured);}
  }
  function saveDraft():Promise<boolean>{
+  if(recordedRef.current)return Promise.resolve(true);
   if(operation.current||failureRef.current&&failureRef.current.reason!=='invalid')return Promise.resolve(false);
   const value={...fields.current},before=seed(source.current,value.appliedOn),patch:CareerSavedPatch={};
   // Only changed fields enter the new-write bounds; untouched legacy text survives.
@@ -97,5 +99,5 @@ export function useCareerApplicationDraft(props:Props){
   finally{release(captured);}
  }
  useUnsavedDraft({get dirty(){return dirty.current||failureRef.current?.reason==='unavailable';},get pending(){return operation.current!==null;},canSave:!!form.title.trim()&&!failure,save:saveDraft,discard:()=>{if(!operation.current)dirty.current=false;}});
- return{form,reviewedSource,update,pending,failure,reloadFailed,locked:pending!==null||!!failure&&failure.reason!=='invalid',saveDraft,record,retry:()=>{const failed=failureRef.current;if(failed?.reason==='unavailable')void perform(failed.attempt);},reload};
+ return{form,reviewedSource,update,pending,failure,reloadFailed,locked:recorded||pending!==null||!!failure&&failure.reason!=='invalid',saveDraft,record,retry:()=>{const failed=failureRef.current;if(failed?.reason==='unavailable')void perform(failed.attempt);},reload};
 }
