@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview } from "./helpers";
+import { common } from "../src/lib/i18n/sections/common";
 
 test("Oslo grid opens complete research, protects edits and has keyboard-safe dialogs", async ({
   page,
@@ -38,19 +39,19 @@ test("Oslo grid opens complete research, protects edits and has keyboard-safe di
     .fill("Preview-only edited draft.");
   await page.keyboard.press("Escape");
   const confirmation = page.getByRole("dialog", {
-    name: "Zahodit neuložené úpravy?",
+    name: common.cs.unsaved.title,
   });
   await expect(confirmation).toBeVisible();
   await confirmation
-    .getByRole("button", { name: "Pokračovat v úpravách" })
+    .getByRole("button", { name: common.cs.unsaved.stay })
     .click();
   await expect(dialog.getByLabel("Text průvodního dopisu")).toHaveValue(
     "Preview-only edited draft.",
   );
   await page.keyboard.press("Escape");
   await page
-    .getByRole("dialog", { name: "Zahodit neuložené úpravy?" })
-    .getByRole("button", { name: "Zahodit úpravy", exact: true })
+    .getByRole("dialog", { name: common.cs.unsaved.title })
+    .getByRole("button", { name: common.cs.unsaved.discard, exact: true })
     .click();
   await expect(page.getByRole("dialog")).toBeHidden();
   await expect(

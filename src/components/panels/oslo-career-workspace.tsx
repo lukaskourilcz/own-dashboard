@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import {
   ArrowUpRight,
   Check,
@@ -23,10 +22,11 @@ import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { useGuardedNavigation } from "@/components/navigation-guard";
+import { useCareerSavedLetterDraft } from "@/components/panels/use-career-saved-letter-draft";
+import { CareerActionNotice } from "@/components/panels/career-action-notice";
+import { isGoogleLetterUrl } from "@/lib/jobs/pipeline";
 import { useLang } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/client";
-import { qk } from "@/lib/queries/keys";
 import {
   OSLO_JOBS,
   OSLO_RESEARCHED_ON,
@@ -58,8 +58,7 @@ export function OsloCareerWorkspace(props: Props) {
   const [selected, setSelected] = useState<ResearchJob | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const confirm = useConfirmation();
+  const requestExit = useGuardedNavigation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [today] = useState(() => new Date());
   const isPriority = (job: ResearchJob) =>
@@ -94,7 +93,6 @@ export function OsloCareerWorkspace(props: Props) {
     : undefined;
 
   async function open(job: ResearchJob) {
-    setDirty(false);
     setSelected(job);
     setLoadError(false);
     if (props.activated || props.isPreview) return;
@@ -387,24 +385,7 @@ export function OsloCareerWorkspace(props: Props) {
         open={!!selected}
         onOpenChange={(open) => {
           if (open) return;
-          if (!dirty) {
-            setSelected(null);
-            return;
-          }
-          void confirm({
-            title: cs ? "Zahodit neuložené úpravy?" : "Discard unsaved edits?",
-            description: cs
-              ? "Dopis má neuložené změny. Vraťte se k němu a uložte je, nebo je zahoďte."
-              : "This letter has unsaved changes. Return and save them, or discard the edits.",
-            confirmLabel: cs ? "Zahodit úpravy" : "Discard edits",
-            cancelLabel: cs ? "Pokračovat v úpravách" : "Keep editing",
-            destructive: true,
-          }).then((ok) => {
-            if (ok) {
-              setDirty(false);
-              setSelected(null);
-            }
-          });
+          requestExit(() => setSelected(null));
         }}
       >
         <DialogContent
@@ -452,12 +433,11 @@ export function OsloCareerWorkspace(props: Props) {
                 </div>
               ) : (
                 <RoleLetter
-                  key={`${selected.id}:${saved?.id ?? "new"}`}
+                  key={selected.id}
                   job={selected}
                   position={saved}
                   application={applied}
                   {...props}
-                  onDirtyChange={setDirty}
                   onPrepare={(position) => {
                     setSelected(null);
                     props.onPrepare(position);
@@ -642,92 +622,20 @@ function RoleLetter({
   userId,
   setSavedPositions,
   onPrepare,
-  onDirtyChange,
 }: Pick<Props, "isPreview" | "userId" | "setSavedPositions" | "onPrepare"> & {
   job: ResearchJob;
   position?: SavedJobPosition;
   application?: JobApplication;
-  onDirtyChange: (dirty: boolean) => void;
 }) {
   const cs = useLang().lang === "cs";
   const toast = useToast();
-  const qc = useQueryClient();
-  const [letter, setLetter] = useState(
-    position?.cover_letter ?? application?.cover_letter ?? "",
-  );
-  const [notes, setNotes] = useState(position?.notes ?? "");
-  const [readiness, setReadiness] = useState(
-    position?.readiness ?? (job.blocker ? "needs_review" : "draft"),
-  );
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const dirty =
-    letter !== (position?.cover_letter ?? application?.cover_letter ?? "") ||
-    notes !== (position?.notes ?? "") ||
-    readiness !==
-      (position?.readiness ?? (job.blocker ? "needs_review" : "draft"));
-  useEffect(() => {
-    onDirtyChange(dirty);
-  }, [dirty, onDirtyChange]);
-  async function save() {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      if (isPreview) {
-        toast.ok(
-          cs
-            ? "Náhled: změny se neukládají do účtu."
-            : "Preview: changes are not written to your account.",
-        );
-        return;
-      }
-      const client = createClient();
-      const payload = {
-        user_id: userId,
-        title: job.title,
-        company: job.company,
-        url: job.url,
-        source: job.source,
-        location: job.location,
-        description: job.summary.en,
-        cover_letter: letter,
-        notes: notes.trim() || null,
-        readiness,
-        updated_at: new Date().toISOString(),
-      };
-      const response = position
-        ? await client
-            .from("saved_job_positions")
-            .update(payload)
-            .eq("id", position.id)
-            .eq("user_id", userId)
-            .select()
-            .single()
-        : await client
-            .from("saved_job_positions")
-            .insert(payload)
-            .select()
-            .single();
-      if (response.error || !response.data)
-        throw response.error ?? new Error("Missing saved row");
-      const row = response.data as SavedJobPosition;
-      setSavedPositions((current) => [
-        row,
-        ...current.filter((value) => value.id !== row.id),
-      ]);
-      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
-      toast.ok(cs ? "Koncept uložen." : "Draft saved.");
-    } catch {
-      setError(
-        cs
-          ? "Dopis se nepodařilo uložit. Text zůstává v dialogu; zkuste to znovu."
-          : "Could not save the letter. Your text remains in this dialog; please retry.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+  const draft=useCareerSavedLetterDraft({userId,initial:position??null,defaults:{title:job.title,company:job.company,url:job.url,source:job.source,location:job.location,description:job.summary.en,cover_letter:application?.cover_letter??'',readiness:job.blocker?'needs_review':'draft'},setPositions:setSavedPositions,disabled:isPreview,onSaved:()=>toast.ok(cs?'Koncept uložen.':'Draft saved.')});
+  const {letter,notes,readiness}=draft.form,busy=draft.pending!==null,dirty=draft.changed,locked=draft.locked;
+  const message=draft.reloadFailed?(cs?'Pozici se nepodařilo načíst. Dopis zůstal zachovaný.':'The position could not be loaded. Your letter is kept.')
+    :draft.failure?.reason==='changed'?(cs?'Uložená pozice se změnila nebo už neexistuje. Dopis zůstal zachovaný.':'The saved position changed or is no longer available. Your letter is kept.')
+    :draft.failure?.reason==='invalid'?(cs?'Zkontrolujte délku dopisu a poznámek.':'Check the letter and note lengths.')
+    :draft.failure?(cs?'Uložení není potvrzené. Zkuste znovu stejný požadavek.':'The save is unconfirmed. Retry the same request.'):null;
+  const documentUrl=draft.reviewed?.cover_letter_url&&isGoogleLetterUrl(draft.reviewed.cover_letter_url)?draft.reviewed.cover_letter_url:null;
   return (
     <div className="space-y-4 border-t border-border bg-surface-secondary px-5 py-5 sm:px-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -735,9 +643,9 @@ function RoleLetter({
           <FileText className="size-4" aria-hidden />
           {cs ? "Průvodní dopis · anglicky" : "Cover letter · English"}
         </h3>
-        {position?.cover_letter_url && (
+        {documentUrl && (
           <a
-            href={position.cover_letter_url}
+            href={documentUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="focus-ring text-xs text-primary underline underline-offset-4"
@@ -765,10 +673,10 @@ function RoleLetter({
       </Label>
       <Textarea
         id="oslo-letter"
-        disabled={busy}
+        readOnly={locked}
         value={letter}
-        onChange={(e) => setLetter(e.target.value)}
-        rows={13}
+        onChange={(e) => draft.update({letter:e.target.value})}
+        rows={6}
         className="bg-surface text-sm leading-7"
         placeholder={
           cs
@@ -782,23 +690,23 @@ function RoleLetter({
         </Label>
         <Textarea
           id="oslo-letter-notes"
-          disabled={busy}
+          readOnly={locked}
           className="mt-2 bg-surface"
           rows={2}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => draft.update({notes:e.target.value})}
         />
       </div>
       <SimpleSelect
         value={readiness}
-        disabled={busy}
+        disabled={locked}
         onValueChange={(value) => {
           if (
             value === "draft" ||
             value === "ready" ||
             value === "needs_review"
           )
-            setReadiness(value);
+            draft.update({readiness:value});
         }}
         aria-label={cs ? "Připravenost dopisu" : "Letter readiness"}
         options={[
@@ -810,15 +718,14 @@ function RoleLetter({
           },
         ]}
       />
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      {message&&<CareerActionNotice message={message}><div className="flex flex-wrap gap-2">
+        {draft.failure?.reason==='unavailable'&&<Button variant="outline" disabled={busy} onClick={()=>void draft.retry()}>{cs?'Zkusit znovu':'Try again'}</Button>}
+        {draft.failure&&draft.failure.reason!=='invalid'&&<Button variant="outline" disabled={busy} onClick={()=>void draft.reload()}>{cs?'Zahodit koncept a načíst aktuální':'Discard draft and load latest'}</Button>}
+      </div></CareerActionNotice>}
       <div className="flex flex-wrap gap-2">
         <Button
-          disabled={busy || !letter.trim() || (!dirty && !!position)}
-          onClick={() => void save()}
+          disabled={locked||(!dirty&&!!draft.reviewed)||!draft.reviewed&&!letter.trim()&&!notes.trim()}
+          onClick={()=>{if(isPreview)toast.ok(cs?"Náhled: změny se neukládají do účtu.":"Preview: changes are not written to your account.");else void draft.save();}}
         >
           {busy
             ? cs
@@ -843,11 +750,11 @@ function RoleLetter({
           <Copy aria-hidden />
           {cs ? "Kopírovat dopis" : "Copy letter"}
         </Button>
-        {position && !application && (
+        {draft.reviewed && !application && (
           <Button
             variant="outline"
-            disabled={busy || dirty}
-            onClick={() => onPrepare(position)}
+            disabled={locked || dirty}
+            onClick={()=>{if(draft.reviewed&&!draft.isPending()&&!draft.isDirty()&&draft.isCurrent())onPrepare(draft.reviewed);}}
           >
             {cs ? "Zaznamenat odeslání…" : "Record application…"}
           </Button>

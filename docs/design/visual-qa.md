@@ -1,5 +1,7 @@
 # OwnDashboard visual QA
 
+> Oslo letter update (2026-10-26, finding 302): seventeen native cases pass with one configured skip across EN/CS desktop/mobile. Retained draft/retry, explicit reload, navigation save and confirmed application handoff are checked; the existing six-width/two-theme and axe matrix also passes. Ordinary previews remain isolated from private writes. This is targeted evidence, with the wider audit/release unfinished.
+
 > Career draft update (2026-10-26, finding 301): all 48 affected EN/CS desktop/mobile cases pass, including inline template retries, both-draft navigation saves and confirmed application recording with an unsaved template. Earlier six-width, axe and recovery checks remain in that run. These isolated checks do not complete the wider release audit.
 
 > Career template manager update (2026-10-26, finding 300): sixteen native cases pass across EN/CS and desktop/mobile. Captured edits, stable creation retries, retained conflict/reload drafts, pending exits, confirmed removal/focus, local paging and mobile targets are checked; the editor also passes six widths and axe. These are synthetic preview checks, not a final app-wide release.

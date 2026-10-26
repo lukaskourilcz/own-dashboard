@@ -1610,10 +1610,10 @@
     },
     {
       "path": "src/components/panels/oslo-career-workspace.tsx",
-      "lines": 899,
+      "lines": 810,
       "sha256": "356d8d0e887e599350aaa9995ac772179f2461b887c290ecc3c21b503811d188",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0db041b7bca17976d9d6f2cf54b748828adc982b47212b65c4483bb726544e10"
+      "status": "source reviewed; finding 302 adopts captured Saved-letter edits/creation, retained recovery and shared pending/dirty exits; native EN/CS mobile/desktop, six widths and axe pass; final release pending",
+      "reviewedSha256": "3507e8e207f79a4556142f155a99e1c29f062a1f7470e01fd85928a2ad13574a"
     },
     {
       "path": "src/components/panels/plans-panel.tsx",
@@ -4947,6 +4947,13 @@
       "lines": 85,
       "status": "source reviewed; findings 300\u2013301 retained template manager and shared fixed failure/retry presentation verified; final release pending",
       "reviewedSha256": "10b25133c8e8256609001f31d294776eb57dfc89c596a1e7dace6fec248f5546"
+    },
+    {
+      "path": "src/components/panels/use-career-saved-letter-draft.ts",
+      "sha256": null,
+      "lines": 62,
+      "status": "source reviewed; finding 302 original owner/source/defaults, stable creation, changed-field saves, explicit reload and guarded cache receipts verified in mounted/SDK/RLS tests; final release pending",
+      "reviewedSha256": "51a8c7781294a3478f79f7c5e53610f4b073511385045b288ee59f53aa552bf0"
     }
   ],
   "baselineFileCount": 561
