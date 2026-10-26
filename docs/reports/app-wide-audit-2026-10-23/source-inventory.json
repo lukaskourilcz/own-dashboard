@@ -1463,10 +1463,10 @@
     },
     {
       "path": "src/components/panels/career-letter-helper.tsx",
-      "lines": 250,
+      "lines": 251,
       "sha256": "d641db47cd512b2d249d870516721dc3a6136249f46cb18f69294f4380f41ecb",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "d641db47cd512b2d249d870516721dc3a6136249f46cb18f69294f4380f41ecb"
+      "status": "source reviewed; finding 293 localized optional guidance, matching controls and shorter fields pass native EN/CS/mobile checks; final release pending",
+      "reviewedSha256": "1084f3e0f91ca0767df5ad8d7387916771ed27e52e0e681b387d1d60c8aa6f96"
     },
     {
       "path": "src/components/panels/career-pagination.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2758,
+      "lines": 2763,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 292 captures application/draft owner and Saved version, exact retries, changed-only draft saves, guarded exits/cache and native EN/CS/mobile recovery; remaining progress/template/density and final release pending",
-      "reviewedSha256": "5518c0129f4848596ef6d8197ed99c51ac1b548a4f0eaabf6ee67d436f721969"
+      "status": "source reviewed; finding 292 captured application/draft recovery and 293 optional retained letter guidance pass native EN/CS/mobile, keyboard, reflow and axe; progress/templates/density and final release pending",
+      "reviewedSha256": "61521046880a9728f174628471cec53bdad49ea681c6b54bc93d696c99d4e8e5"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2733,10 +2733,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 614,
+      "lines": 617,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; finding 286 keeps explicit URL-import instructions and Saved search labels in EN/CS; other Career copy/density review and final release pending",
-      "reviewedSha256": "1cb83fdaf4a7fb6c86e5d45550bb7685fe58426c424fd41ffa956f086e248297"
+      "status": "source reviewed; finding 293 localized optional guidance, matching controls and shorter fields pass native EN/CS/mobile checks; final release pending",
+      "reviewedSha256": "7b503ebcd2733df6ab8b7d4990e2fb574571bb13f957c22ece37b9cfd663dc91"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",

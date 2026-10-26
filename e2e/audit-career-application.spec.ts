@@ -7,6 +7,13 @@ import {sessionOwner} from './owner-session-fixtures';
 import {openApplication,applicationSource,applicationReceipt,applicationStamp,applicationLater} from './career-application-fixtures';
 
 for(const lang of ['en','cs'] as const){
+ test(`${lang}: existing letters open directly while optional guidance keeps its working text`,async({page})=>{
+  const {dialog,store}=await openApplication(page,lang),summary=dialog.locator('summary').filter({hasText:jobs[lang].letterGuidance}),guidance=dialog.getByRole('region',{name:lang==='cs'?'Průvodce dopisem':'Letter guidance',exact:true});
+  await expect(guidance).toHaveCount(0);await expect(dialog.locator('#job-cover-letter')).toBeVisible();await summary.focus();await summary.press('Enter');await expect(guidance).toBeVisible();const motivation=guidance.getByPlaceholder(lang==='cs'?'Jedna konkrétní věta vašimi slovy.':'One specific sentence in your own words.');await motivation.fill('Synthetic retained motivation');await summary.focus();await summary.press('Space');await expect(guidance).toBeHidden();await summary.press('Enter');await expect(motivation).toHaveValue('Synthetic retained motivation');await expect(dialog.locator('#job-cover-letter')).toHaveValue('Synthetic private letter');expect(store.errors).toEqual([]);
+ });
+ test(`${lang}: blank letters keep deterministic draft guidance open`,async({page})=>{
+  const {dialog,store}=await openApplication(page,lang,{...applicationSource(),cover_letter:''});await expect(dialog.getByRole('region',{name:lang==='cs'?'Průvodce dopisem':'Letter guidance',exact:true})).toBeVisible();await expect(dialog.locator('#job-cover-letter')).toHaveValue('');expect(store.errors).toEqual([]);
+ });
  test(`${lang}: pending conversion guards exits and exact uncertain retry preserves newer progress`,async({page})=>{
   const source={...applicationSource(),notes:'Synthetic retained submission'},{store,main,dialog}=await openApplication(page,lang,source);let held:Route|undefined,first:Record<string,unknown>|undefined,writes=0;
   await page.route('**/rest/v1/rpc/record_captured_job_application',route=>{writes++;const input=route.request().postDataJSON();expect(input.p_expected_owner).toBe(sessionOwner);expect(input.p_saved_id).toBe(source.id);expect(input.p_saved_updated_at).toBe(applicationStamp);

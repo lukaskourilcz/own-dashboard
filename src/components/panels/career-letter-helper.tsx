@@ -94,6 +94,7 @@ export function CareerLetterHelper({
             : "What to mention in this application"}
         </h3>
         <SimpleSelect
+          className="w-full sm:w-36"
           value={language}
           onValueChange={(v) => onLanguageChange(v as LetterLanguage)}
           aria-label={cs ? "Jazyk dopisu" : "Letter language"}
@@ -112,7 +113,7 @@ export function CareerLetterHelper({
         <Textarea
           value={jobText}
           onChange={(e) => setJobText(e.target.value)}
-          rows={5}
+          rows={3}
           maxLength={20000}
           className="text-sm"
         />

@@ -112,6 +112,7 @@ type JobsStrings = {
   link: string;
   appliedOn: string;
   coverLetter: string;
+  letterGuidance: string;
   coverLetterPlaceholder: string;
   loadTemplate: string;
   builtinTemplatesGroup: string;
@@ -310,6 +311,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     link: "Link",
     appliedOn: "Applied on",
     coverLetter: "Cover letter",
+    letterGuidance: "Draft assistance",
     coverLetterPlaceholder:
       "Write your cover letter here, or load one of your templates…",
     loadTemplate: "Load template",
@@ -511,6 +513,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     link: "Odkaz",
     appliedOn: "Datum přihlášení",
     coverLetter: "Motivační dopis",
+    letterGuidance: "Pomoc s návrhem dopisu",
     coverLetterPlaceholder:
       "Napište motivační dopis, nebo načtěte některou ze šablon…",
     loadTemplate: "Načíst šablonu",

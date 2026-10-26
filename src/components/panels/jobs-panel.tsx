@@ -1502,7 +1502,7 @@ function ApplyDialog({
         </DialogTitle>
         {listing && (
           <p className="mt-1 truncate text-xs text-foreground-muted">
-            {jobSourceLabel(listing.source)}
+            {listing.source==='manual'?(cs?'Ručně uložená pozice':'Manually saved position'):jobSourceLabel(listing.source)}
           </p>
         )}
         {listing && <ApplyFitSummary listing={listing} />}
@@ -1658,6 +1658,8 @@ function CoverLetterField({
   const { showCzechCareer } = useCzechCareerVisibility();
   const [letterLanguage, setLetterLanguage] = useState<LetterLanguage>(showCzechCareer ? lang : "en");
   const [draftName, setDraftName] = useState("");
+  const [guidanceOpen, setGuidanceOpen] = useState(() => !value.trim());
+  const [guidanceMounted, setGuidanceMounted] = useState(() => !value.trim());
   const locale = useDateLocale();
   const toast = useToast();
   const qc = useQueryClient();
@@ -1712,7 +1714,9 @@ function CoverLetterField({
   return (
     <div className="space-y-4">
       <fieldset disabled={readOnly} className="min-w-0 space-y-4">
-      <CareerLetterHelper
+      <details open={guidanceOpen} onToggle={event=>{const open=event.currentTarget.open;setGuidanceOpen(open);if(open)setGuidanceMounted(true);}}>
+      <summary className="min-h-11 cursor-pointer rounded-sm py-3 text-sm font-medium focus-ring">{t.jobs.letterGuidance}</summary>
+      {guidanceMounted&&<CareerLetterHelper
         key={description ?? id}
         position={vars.position ?? ""}
         company={vars.company ?? ""}
@@ -1721,7 +1725,8 @@ function CoverLetterField({
         onChange={onChange}
         language={letterLanguage}
         onLanguageChange={setLetterLanguage}
-      />
+      />}
+      </details>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Label htmlFor={id}>{t.jobs.coverLetter}</Label>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -1792,7 +1797,7 @@ function CoverLetterField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t.jobs.coverLetterPlaceholder}
-        rows={9}
+        rows={6}
         className="text-base leading-relaxed"
       />
       <div className="flex flex-wrap gap-3">
