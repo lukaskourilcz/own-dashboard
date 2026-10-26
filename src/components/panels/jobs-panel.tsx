@@ -82,6 +82,8 @@ import { CareerBoard } from "./career-board";
 import { applyCareerSaveReceipt, captureCareerListing, CareerSaveError } from "@/lib/career-listing-save";
 import { applyCareerTriage, applyCareerTriageReceipt, CareerTriageError, type CareerTriageIntent } from "@/lib/career-triage";
 import { readCareerRecords, type CareerScope } from "@/lib/career-records";
+import { SavedPositionsView } from "./career-saved-positions";
+import { useGuardedNavigation } from "@/components/navigation-guard";
 import { CareerActionNotice } from "./career-action-notice";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
@@ -90,7 +92,6 @@ import { CareerLetterHelper } from "./career-letter-helper";
 import type { LetterLanguage } from "@/lib/jobs/letter-helper";
 import { useNow } from "@/lib/use-now";
 import { focusDayKey } from "@/lib/date-keys";
-import { normalizeJobUrl } from "@/lib/jobs/enrich";
 import { safeWebUrl } from "@/lib/web-url";
 import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { awaitWithSignal } from "@/lib/abortable";
@@ -161,6 +162,8 @@ export function JobsPanel({
 }: Props) {
   const t = useDict();
   const cvLinks = useCvLinks();
+  const navigate = useGuardedNavigation();
+  const [revealedSavedIds, setRevealedSavedIds] = useState<ReadonlySet<string>>(new Set());
   const cvCs = safeWebUrl(cvLinks.cs), cvEn = safeWebUrl(cvLinks.en);
   const { showCzechCareer } = useCzechCareerVisibility();
   const { lang } = useLang();
@@ -172,7 +175,7 @@ export function JobsPanel({
     [listings, showCzechCareer],
   );
 
-  const visibleSaved = useMemo(() => savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row)), [savedPositions, showCzechCareer]);
+  const visibleSaved = useMemo(() => savedPositions.filter(row => showCzechCareer || revealedSavedIds.has(row.id) || !!researchForUrl(row.url) || isOsloSnapshot(row)), [savedPositions, showCzechCareer, revealedSavedIds]);
   const visibleApplications = useMemo(() => applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row)), [applications, showCzechCareer]);
 
   // Listings the user already applied to, by listing id and by URL (manual
@@ -310,14 +313,14 @@ export function JobsPanel({
                 )}
               </div>
             )}
-            {(view !== "open" || !activated) && <Button onClick={() => { setView("open"); void checkOffers(); }} disabled={checking || loadingCareer}><RefreshCw className={cn("size-4",checking && "animate-spin")} aria-hidden />{checking ? t.jobs.checking : t.jobs.checkOffers}</Button>}
+            {(view !== "open" || !activated) && <Button onClick={() => navigate(() => { setView("open"); void checkOffers(); })} disabled={checking || loadingCareer}><RefreshCw className={cn("size-4",checking && "animate-spin")} aria-hidden />{checking ? t.jobs.checking : t.jobs.checkOffers}</Button>}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
               {(["oslo", "open", "saved", "ready", "applied", "letters", "companies"] as const).map(
                 (v) => (
                   <button
                     key={v}
                     type="button"
-                    onClick={() => { setView(v); if (v !== "oslo" && !activated) void loadCareer(); }}
+                    onClick={() => { if (v !== view) navigate(() => { setView(v); if (v !== "oslo" && !activated) void loadCareer(); }); }}
                     className={cn(
                       "min-h-11 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-ring",
                       view === v
@@ -377,9 +380,10 @@ export function JobsPanel({
           positions={visibleSaved.filter(row => view === "ready" ? isPositionReady(row) : !isPositionReady(row))}
           setPositions={setSavedPositions}
           userId={userId}
-          onPrepare={(position, listing) => {
+          onReveal={id => setRevealedSavedIds(current => new Set([...current, id]))}
+          onPrepare={(position) => {
             setSavedFor(position);
-            setApplyFor(listing);
+            setApplyFor(savedToListing(position));
             setApplyOpen(true);
           }}
         />
@@ -1392,174 +1396,6 @@ function savedToListing(position: SavedJobPosition): JobListing {
     first_seen_at: position.saved_at,
     last_seen_at: position.updated_at,
   };
-}
-
-function SavedPositionsView({
-  readyOnly,
-  positions,
-  setPositions,
-  userId,
-  onPrepare,
-}: {
-  readyOnly: boolean;
-  positions: SavedJobPosition[];
-  setPositions: Updater<SavedJobPosition[]>;
-  userId: string;
-  onPrepare: (position: SavedJobPosition, listing: JobListing) => void;
-}) {
-  const t = useDict();
-  const { lang } = useLang();
-  const cs = lang === "cs";
-  const toast = useToast();
-  const locale = useDateLocale();
-  const qc = useQueryClient();
-  const supabase = createClient();
-  const [form, setForm] = useState({ url: "", title: "", company: "", location: "", description: "" });
-  const [showFields, setShowFields] = useState(false);
-  const [search, setSearch] = useState("");
-  const visible = positions.filter(row => `${row.company} ${row.title}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
-  const [pageIndex, setPageIndex] = useState(0);
-  const page = collectionPage(visible, pageIndex);
-
-
-  function importUrl(url: string) {
-    if (enrich.isPending) return;
-    if (!normalizeJobUrl(url)) { toast.err(t.jobs.urlImportFailed); return; }
-    setShowFields(true);
-    enrich.mutate({ url, baseline: { ...form } });
-  }
-
-  const enrich = useMutation({
-    mutationFn: async ({ url }: { url: string; baseline: typeof form }) => {
-      const response = await fetch("/api/jobs/enrich", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-        signal: AbortSignal.timeout(20000),
-      });
-      const result = (await response.json()) as Partial<typeof form> & { error?: string };
-      if (!response.ok || !result || typeof result.title !== "string") throw new Error("enrich-failed");
-      return result;
-    },
-    onSuccess: (result, { url, baseline }) => setForm((current) => {
-      if (current.url.trim() !== url.trim()) return current;
-      const next = { ...current };
-      for (const key of ["title", "company", "location", "description"] as const) {
-        if (current[key] === baseline[key] && typeof result[key] === "string") next[key] = result[key];
-      }
-      if (normalizeJobUrl(result.url)) next.url = normalizeJobUrl(result.url)!;
-      return next;
-    }),
-    onError: () => toast.err(t.jobs.urlImportFailed),
-  });
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const url = normalizeJobUrl(form.url);
-      if (!url || !form.title.trim()) throw new Error("invalid-position");
-      const { data, error } = await supabase
-        .from("saved_job_positions")
-        .upsert({
-          user_id: userId,
-          title: form.title.trim(),
-          company: form.company.trim() || null,
-          url,
-          source: "manual",
-          location: form.location.trim() || null,
-          description: form.description.trim() || null,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id,url" })
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as SavedJobPosition;
-    },
-    onSuccess: (position) => {
-      setPositions((current) => [position, ...current.filter((row) => row.id !== position.id)]);
-      setForm({ url: "", title: "", company: "", location: "", description: "" });
-      setShowFields(false);
-      toast.ok(t.jobs.positionSaved);
-      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("saved_job_positions").delete().eq("id", id);
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: (id) => {
-      setPositions((current) => current.filter((position) => position.id !== id));
-      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
-    },
-    onError: () => toast.err(t.jobs.couldNotDelete),
-  });
-
-  return (
-    <div className="space-y-4">
-      {!readyOnly && <Card className="space-y-3">
-        <div>
-          <h2 className="text-base font-semibold">{t.jobs.saveByUrl}</h2>
-          <p className="mt-1 text-sm text-foreground-muted">{t.jobs.saveByUrlDescription}</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            type="url"
-            value={form.url}
-            onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))}
-            onPaste={(event) => {
-              const url = event.clipboardData.getData("text").trim();
-              if (url) queueMicrotask(() => importUrl(url));
-            }}
-            placeholder="https://…"
-            aria-label={t.jobs.link}
-          />
-          <Button type="button" variant="outline" onClick={() => importUrl(form.url)} disabled={!form.url.trim() || enrich.isPending}>
-            {enrich.isPending ? t.jobs.importing : t.jobs.importFromUrl}
-          </Button>
-        </div>
-        {showFields && (
-          <div className="space-y-3 border-t border-border pt-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5"><Label htmlFor="saved-job-title">{t.jobs.position}</Label><Input id="saved-job-title" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} /></div>
-              <div className="space-y-1.5"><Label htmlFor="saved-job-company">{t.jobs.company}</Label><Input id="saved-job-company" value={form.company} onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))} /></div>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="saved-job-location">{cs ? "Lokalita" : "Location"}</Label><Input id="saved-job-location" value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} /></div>
-            <div className="space-y-1.5"><Label htmlFor="saved-job-description">{cs ? "Popis pozice" : "Job description"}</Label><Textarea id="saved-job-description" rows={6} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></div>
-            <div className="flex justify-end"><Button type="button" onClick={() => save.mutate()} disabled={!form.url.trim() || !form.title.trim() || save.isPending}><Bookmark className="h-4 w-4" />{t.jobs.savePosition}</Button></div>
-          </div>
-        )}
-      </Card>}
-      <Input value={search} onChange={event=>{ setSearch(event.target.value); setPageIndex(0); }} aria-label={cs?"Hledat přihlášku":"Search applications"} placeholder={cs?"Firma nebo pozice":"Company or position"} className="max-w-sm"/>
-
-      <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.savedPages} />
-      {visible.length === 0 ? (
-        <EmptyState icon={Bookmark} title={t.jobs.noSavedPositions} description={t.jobs.noSavedPositionsDescription} className="py-16" />
-      ) : (
-        <div className="divide-y divide-border rounded-md border border-border bg-surface">
-          {page.items.map((position) => (
-            <article key={position.id} data-career-position={position.id} className="flex flex-col gap-3 p-4">
-              <div className="min-w-0 flex-1">
-                <a href={position.url} target="_blank" rel="noopener noreferrer" className="break-words text-base font-semibold hover:underline focus-ring rounded-sm">{position.title}</a>
-                <p className="mt-1 text-sm text-foreground-muted">{[position.company, position.location].filter(Boolean).join(" · ")}</p>
-                <p className="mt-1 text-sm text-foreground-muted">{readinessLabel(position.readiness,cs)}</p>
-                {position.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground-muted">{position.notes}</p>}
-                <p className="mt-1 text-xs text-foreground-subtle">{cs ? "Uloženo" : "Saved"} {formatDistanceToNow(new Date(position.saved_at), { addSuffix: true, locale })}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="outline" size="sm"><a href={position.url} target="_blank" rel="noopener noreferrer">{cs?"Inzerát":"Job posting"}<ExternalLink className="h-4 w-4"/></a></Button>
-                {position.cover_letter_url && isGoogleLetterUrl(position.cover_letter_url) && <Button asChild variant="outline" size="sm"><a href={position.cover_letter_url} target="_blank" rel="noopener noreferrer">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}<ExternalLink className="h-4 w-4"/></a></Button>}
-                <Button variant="ghost" size="sm" onClick={() => remove.mutate(position.id)} aria-label={cs ? "Odebrat uloženou pozici" : "Remove saved position"}><Trash2 className="h-4 w-4" /></Button>
-                <Button size="sm" onClick={() => onPrepare(position, savedToListing(position))}><FileText className="h-4 w-4" />{readyOnly ? (cs?"Zkontrolovat / označit odeslání":"Review / mark as sent") : t.jobs.prepareApplication}</Button>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 /* ========================================================================= *

@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 3007,
+      "lines": 2843,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 274\u2013283 verify complete list/board paging, captured availability/discovery saves and triage confirmation/retry/reload/focus; manual URL/private editors and dense/repeated scope presentation remain under review; final release pending",
-      "reviewedSha256": "132d26349a52670dffaf8f7edc13dec9cc33c201c542c5fafd5a43a5081c7863"
+      "status": "source reviewed; findings 274\u2013286 verify complete paging, captured discovery/triage and Saved controls; canonical Career query-key regression, letter/application/progress/template writes and density remain open; final release pending",
+      "reviewedSha256": "7c3d4c8eb6ebadd9e618bcccdf4c8cc22e6e8974329959b266cea41e002ac6aa"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2735,8 +2735,8 @@
       "path": "src/lib/i18n/sections/jobs.ts",
       "lines": 614,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending",
-      "reviewedSha256": "e3512aae07bf605fe847d867f618367676b2808278c34a4a07e765a4bfc18618"
+      "status": "source reviewed; finding 286 keeps explicit URL-import instructions and Saved search labels in EN/CS; other Career copy/density review and final release pending",
+      "reviewedSha256": "1cb83fdaf4a7fb6c86e5d45550bb7685fe58426c424fd41ffa956f086e248297"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",
@@ -4856,6 +4856,13 @@
       "lines": 33,
       "status": "source reviewed; finding 285 verifies original-owner/input identity, streamed body bound, total deadline, cancellation and body retirement; browser form adoption pending",
       "reviewedSha256": "855a494c52515a350ea58d2eb51c64453832d50c1e8ba7ead2f1b6e6969879af"
+    },
+    {
+      "path": "src/components/panels/career-saved-positions.tsx",
+      "sha256": null,
+      "lines": 147,
+      "status": "source reviewed; finding 286 adopts captured manual insertion/removal/import, retained drafts, pending/exit/owner guards, safe legacy links and session-only reveal; native EN/CS/mobile/a11y checks pass; final release pending",
+      "reviewedSha256": "0666ff32195bebda83f9d3b6ab422002097c64d9ef9d4406fa6db798ebe29094"
     }
   ],
   "baselineFileCount": 561

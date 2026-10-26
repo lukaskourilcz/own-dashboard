@@ -476,3 +476,8 @@ Eight strengthened EN/CS desktop/mobile actual-SDK cookie/broadcast cases pass i
 ## Owner cache integration — 25 October 2026, finding 241
 
 Forty-six final native EN/CS desktop/mobile cases pass in 2.1 minutes after private-cache separation. Competition writes, failed refresh recovery, paging/search, session retirement/reload, exact export downloads and guest isolation retain their prior behavior, target/reflow and accessibility assertions. Six real-store topology cases separately prove owner/cache and old-callback isolation; all 46 focused topology/session/route-data cases pass in 1.08 seconds. Shared query defaults are unchanged, and same-owner navigation introduces no collection request. This provider change adds no rendered wrapper or new visual asset. Final consolidated and production checks remain pending.
+
+
+### 26 October — Saved Career forms (finding 286)
+
+The authentic preview confirms the hidden manual-save regression and its session-only reveal repair. All sixteen final EN/CS desktop/mobile cases pass after the centered-width/spacing and explicit-import copy changes (1.9 minutes). Both languages cover six widths, axe, retained failed/conflicting drafts, guarded exits, stable retry, preserved private history, newer typed fields and confirmed-removal focus. Twenty Saved/board cases and twenty-eight collection/Saved cases pass before the final spacing refinement; these are separate targeted runs, not a full release pass. No real backend or provider is used. The separate canonical discovery/triage key regression and remaining letter/application/density work remain open.
