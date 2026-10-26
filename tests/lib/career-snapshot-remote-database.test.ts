@@ -46,7 +46,7 @@ it('keeps private remote evidence inside own-only RLS and explicit reader grants
  await db.query("insert into saved_job_positions(user_id,title,url,remote) values($1,'Foreign synthetic role','https://thehub.io/jobs/foreign-remote',true)",[other]);
  const result=await readCareerRecords(client,'saved_job_positions',scope());expect(result.data.some(row=>row.user_id!==owner)).toBe(false);
  await expect(readCareerRecords(client,'saved_job_positions',{...scope(),ownerId:other})).rejects.toThrow('Career unavailable');
- expect((await db.query("select prosecdef,proconfig,has_function_privilege('anon',oid,'execute') anon from pg_proc where oid='public.record_job_application(uuid,uuid,jsonb)'::regprocedure")).rows).toEqual([{prosecdef:false,proconfig:['search_path=""'],anon:false}]);
+ expect((await db.query("select prosecdef,proconfig,has_function_privilege('anon',oid,'execute') anon from pg_proc where oid='public.record_job_application(uuid,uuid,jsonb)'::regprocedure")).rows).toEqual([{prosecdef:false,proconfig:['search_path=""','lock_timeout=5s'],anon:false}]);
 });
 it.each(['missing','invalid'] as const)('refuses %s remote fields in a purported complete snapshot',async mode=>{
  const row={id:crypto.randomUUID(),user_id:owner,listing_id:null,title:'Synthetic malformed read',company:null,url:'https://thehub.io/jobs/malformed-read',source:'manual',location:'Europe',description:null,cover_letter:'',notes:null,saved_at:instant,updated_at:instant,cover_letter_url:null,readiness:'draft',...(mode==='invalid'?{remote:'true'}:{})};

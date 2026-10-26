@@ -3499,8 +3499,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated eight-table read port from all 130 canonical migrations; targeted SQL/SDK checks pass; canonical rollout and final release pending",
-      "reviewedSha256": "85f4acaa8fa49db4a0a542fa1bdb764169474e281ac162111cce496fa053b5a2"
+      "status": "source reviewed; read-only eight-table port regenerated from 131 canonical migrations; finding 290 changes only the schema fingerprint, not table fields; prepared rollout and final release pending",
+      "reviewedSha256": "b284fccdff9cb3d2eeb8c30a0e21182dbaab94ae2f662241abc5e16de95d85c8"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4863,6 +4863,13 @@
       "lines": 155,
       "status": "source reviewed; findings 286/288 verify captured manual save/removal/import, URL-replacement cancellation, retained drafts, pending/exit/owner guards and safe legacy links; all 78 native Career cases pass; remaining letter/application work and final release pending",
       "reviewedSha256": "8e3e7c62984f96346592adf89606af89baea57a8578422913815f2e3e1753b32"
+    },
+    {
+      "path": "supabase/migrations/20261026163911_career_application_lock_order.sql",
+      "sha256": null,
+      "lines": 42,
+      "status": "source reviewed; finding 290 prepares consistent application/source lock order, per-lock bound and 300-character titles; native concurrency and full-chain SDK/RLS/upgrade/rollback checks pass; unapplied and final release pending",
+      "reviewedSha256": "72566b6c9537039e8c1de031ec5ed41f5074bb92c1aa82b10b909d94b3cb7d26"
     }
   ],
   "baselineFileCount": 561

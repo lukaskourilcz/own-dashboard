@@ -1,0 +1,38 @@
+{
+  "mode": "fixed",
+  "privateRowUnlockedBeforeSourceGuard": true,
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal schema with exact stock Career tables, directory migration and migrations 125/127/128/131; deterministic owner-day stand-in; full canonical chain verified separately in PGlite",
+  "deadlockDetected": false,
+  "applicationExit": 0,
+  "cleanupExit": 0,
+  "state": {
+    "globalRows": 0,
+    "savedRows": 0,
+    "applications": 1,
+    "events": 1,
+    "retainedPrivateSnapshot": true
+  },
+  "baseline": {
+    "engine": "17.11 (Postgres.app)",
+    "fixture": "isolated minimal schema with exact stock Career tables, directory migration and migrations 125/127/128; deterministic owner-day stand-in; not the complete canonical chain",
+    "deadlockDetected": true,
+    "applicationExit": 3,
+    "cleanupExit": 0,
+    "state": {
+      "globalRows": 0,
+      "savedRows": 1,
+      "applications": 0,
+      "events": 0,
+      "retainedPrivateSnapshot": true
+    }
+  },
+  "sourceHashes": {
+    "supabase/schema.sql": "c110493ec5d40fc74737b3687dc3af9dbd07f3397613f9aa3152ca173a93511c",
+    "supabase/migrations/20260911080040_career_directory_and_application_pipeline.sql": "9592302cb51301b1fb9662519699ade9482cfb05ff20292ef4d53d2eac5200db",
+    "supabase/migrations/20261025204635_career_monotonic_source_snapshots.sql": "b8ccb6c19ffdeab576f076ef45978c2882e65c3112166c9a80397480c8cfab15",
+    "supabase/migrations/20261025233522_career_snapshot_remote_evidence.sql": "46d546d8ecec81bfa697c982c8515b8acd042afa0fa1e71cf488c55a50054e4b",
+    "supabase/migrations/20261025234711_career_private_record_versions.sql": "05c841b353c196a0383699af1d9c7ab35d9ead0a9e7c6868be1674afece5016d",
+    "supabase/migrations/20261026163911_career_application_lock_order.sql": "72566b6c9537039e8c1de031ec5ed41f5074bb92c1aa82b10b909d94b3cb7d26"
+  }
+}

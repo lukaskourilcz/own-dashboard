@@ -245,7 +245,9 @@ The migrations, in the order they run:
 
 130. `20261026001926_captured_career_triage.sql` — prepared, unapplied; nullable monotonic triage versions, atomic captured source/state changes and durable deletion markers protected from legacy writes or listing cascades. Existing owner-deletion cascades remain valid; finding 283 adopts captured browser confirmation, retry and recovery.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The forty-four audit migrations 87–130 remain unapplied; apply them in filename order before deploying the implementation branch.
+131. `20261026163911_career_application_lock_order.sql` — prepared, unapplied; application conversion takes the existing shared source guard before private row locks, bounds each lock wait at five seconds and accepts the existing 300-character source-title contract. Request identity, snapshots, events, RLS and owner-day semantics remain.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The forty-five audit migrations 87–131 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 
