@@ -1,5 +1,5 @@
 import {sessionOwner} from "./owner-session-fixtures";
-import {openApplication,applicationSource,applicationReceipt} from "./career-application-fixtures";
+import {openApplication,applicationSource,applicationReceipt,progressReceipt} from "./career-application-fixtures";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview } from "./helpers";
@@ -45,21 +45,16 @@ test("prepared applications expose posting and Drive links and record a sent sna
   await progress.getByLabel("First response date").fill(sent.applied_on as string);
   await progress.getByLabel("Notes and next step").fill("Interview invitation received; arrange a time.");
   let responsePayload: Record<string, unknown> | undefined;
-  await page.route("**/rest/v1/rpc/update_job_application_progress", async route => {
+  await page.route("**/rest/v1/rpc/update_captured_job_application", async route => {
     responsePayload = route.request().postDataJSON();
-    recorded = {
-      ...recorded, ...sent, user_id: sessionOwner, status: responsePayload!.p_status,
-      responded_on: responsePayload!.p_responded_on, response_kind: responsePayload!.p_response_kind,
-      next_follow_up_at: responsePayload!.p_follow_up_at, notes: responsePayload!.p_notes,
-      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    };
-    store.applications=[recorded as unknown as typeof store.applications[number]];
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(recorded) });
+    const receipt=progressReceipt(store.applications[0],responsePayload!.p_patch as Record<string,unknown>);
+    recorded=receipt.row;store.applications=[receipt.row];store.events.push(...receipt.events);
+    await route.fulfill({json:receipt});
   });
   await progress.getByRole("button", { name: "Save", exact: true }).click();
   await expect(progress).toBeHidden();
-  expect(responsePayload!.p_response_kind).toBe("positive");
-  expect(responsePayload!.p_responded_on).toBe(sent.applied_on);
+  expect((responsePayload!.p_patch as Record<string,unknown>).response_kind).toBe("positive");
+  expect((responsePayload!.p_patch as Record<string,unknown>).responded_on).toBe(sent.applied_on);
   await expect(row.getByText(/First response:/)).toBeVisible();
   await expect(page.getByText("100%", { exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/career-response-${info.project.name}.png`, fullPage: true });

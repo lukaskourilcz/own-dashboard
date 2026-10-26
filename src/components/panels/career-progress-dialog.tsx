@@ -1,93 +1,78 @@
 "use client";
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { SimpleSelect } from "@/components/ui/select";
-import { useDict, useLang } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/client";
-import { useNow } from "@/lib/use-now";
-import { focusDayKey } from "@/lib/date-keys";
-import { qk } from "@/lib/queries/keys";
-import type { JobApplication, Updater } from "@/lib/types";
+import {useRef,useState} from 'react';
+import {Button} from '@/components/ui/button';
+import {Dialog,DialogContent,DialogTitle} from '@/components/ui/dialog';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {SimpleSelect} from '@/components/ui/select';
+import {useGuardedNavigation,useUnsavedDraft} from '@/components/navigation-guard';
+import {useDict,useLang} from '@/lib/i18n';
+import {useNow} from '@/lib/use-now';
+import {focusDayKey} from '@/lib/date-keys';
+import type {CareerProgressPatch} from '@/lib/career-application-progress';
+import type {JobApplication,JobApplicationEvent,Updater} from '@/lib/types';
+import {useCareerProgressWrite} from './use-career-progress-write';
+import {CareerActionNotice} from './career-action-notice';
 
-export function CareerProgressDialog({ app, onClose, setApplications, timeZone = "Europe/Prague" }: {
-  timeZone?: string;
-  app: JobApplication; onClose: () => void; setApplications: Updater<JobApplication[]>;
-}) {
-  const t = useDict();
-  const cs = useLang().lang === "cs";
-  const qc = useQueryClient();
-  const [status, setStatus] = useState(app.status);
-  const [response, setResponse] = useState(app.response_kind ?? "none");
-  const [date, setDate] = useState(app.responded_on ?? "");
-  const [followUp, setFollowUp] = useState(app.next_follow_up_at?.slice(0,10) ?? "");
-  const [notes, setNotes] = useState(app.notes ?? "");
-  // PostgREST omits a column that does not exist, so the presence of the key is
-  // the honest test for whether the contact migration has been applied.
-  const contactsAvailable = "contact_name" in app || "contact_email" in app;
-  const [contactName, setContactName] = useState(app.contact_name ?? "");
-  const [contactEmail, setContactEmail] = useState(app.contact_email ?? "");
-  const [contactFailed, setContactFailed] = useState(false);
-  const now = useNow();
-  const today = focusDayKey(now ?? new Date(), timeZone);
-  const save = useMutation({
-    mutationFn: async () => {
-      if (response !== "none" && (!date || date < app.applied_on || date > today)) throw new Error("date");
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc("update_job_application_progress", {
-        p_id: app.id, p_status: status, p_responded_on: response === "none" ? null : date,
-        p_response_kind: response === "none" ? null : response,
-        p_follow_up_at: followUp ? `${followUp}T09:00:00Z` : null, p_notes: notes,
-      });
-      if (error || !data) throw error ?? new Error("no-data");
-      const row = data as JobApplication;
-      // The progress RPC is a whole-row update of the stage/response columns and
-      // knows nothing about contacts, so the contact pair is a second, own-only
-      // write guarded by the same RLS policies. It runs only when it changed.
-      const changed = contactName.trim() !== (app.contact_name ?? "") || contactEmail.trim() !== (app.contact_email ?? "");
-      if (!contactsAvailable || !changed) return { row, contactFailed: false };
-      const { data: withContact, error: contactError } = await supabase.from("job_applications")
-        .update({ contact_name: contactName.trim() || null, contact_email: contactEmail.trim() || null, updated_at: new Date().toISOString() })
-        .eq("id", app.id).select().single().then(result => result, () => ({data:null,error:new Error("contact-write-failed")}));
-      if (contactError || !withContact) return { row, contactFailed: true };
-      return { row: withContact as JobApplication, contactFailed: false };
-    },
-    onSuccess: ({ row, contactFailed: failed }) => {
-      setApplications(old => old.map(item => item.id === row.id ? row : item));
-      void qc.invalidateQueries({queryKey:qk.jobApplications});
-      void qc.invalidateQueries({queryKey:qk.jobApplicationEvents});
-      setContactFailed(failed);
-      if (!failed) onClose();
-    },
-  });
-  return <Dialog open onOpenChange={open => !open && onClose()}><DialogContent className="max-w-xl">
-    <DialogTitle>{cs ? "Odpověď a další postup" : "Response and follow-up"}</DialogTitle>
-    <p className="text-sm text-foreground-muted break-words">{app.company} · {app.title}</p>
-    <form className="mt-3 space-y-4" onSubmit={event => {event.preventDefault();if (!save.isPending) save.mutate();}}>
-      <div className="space-y-1.5"><Label>{cs ? "Stav přihlášky" : "Application status"}</Label><SimpleSelect value={status} onValueChange={value=>setStatus(value as JobApplication["status"])} aria-label={cs ? "Stav přihlášky" : "Application status"} options={[
-        {value:"applied",label:cs?"Odesláno":"Applied"},{value:"interviewing",label:cs?"Pohovory":"Interviewing"},
-        {value:"offer",label:cs?"Nabídka":"Offer"},{value:"rejected",label:cs?"Zamítnuto":"Rejected"},{value:"withdrawn",label:cs?"Staženo":"Withdrawn"},
-      ]}/></div>
-      <div className="space-y-1.5"><Label>{cs ? "První skutečná odpověď" : "First substantive response"}</Label><SimpleSelect value={response} onValueChange={setResponse} aria-label={cs ? "První skutečná odpověď" : "First substantive response"} options={[
-        {value:"none",label:cs?"Bez odpovědi":"No response"},{value:"positive",label:cs?"Zájem / pozvání":"Interest / invitation"},
-        {value:"negative",label:cs?"Zamítnutí":"Rejection"},{value:"neutral",label:cs?"Dotaz / jiná odpověď":"Question / other response"},
-      ]}/><p className="text-sm text-foreground-muted">{cs?"Automatické potvrzení přijetí CV sem nepočítejte.":"Do not count an automated acknowledgement of your CV."}</p></div>
-      {response !== "none" && <div className="space-y-1.5"><Label htmlFor="response-date">{cs?"Datum první odpovědi":"First response date"}</Label><Input id="response-date" type="date" min={app.applied_on} max={today} required value={date} onChange={event=>setDate(event.target.value)}/></div>}
-      <div className="space-y-1.5"><Label htmlFor="follow-up-date">{cs?"Kdy se připomenout":"Follow-up date"}</Label><Input id="follow-up-date" type="date" value={followUp} onChange={event=>setFollowUp(event.target.value)}/></div>
-      <fieldset className="space-y-1.5"><legend className="text-sm font-medium">{t.jobs.contactLabel}</legend>
-        {contactsAvailable ? <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label htmlFor="contact-name">{t.jobs.contactName}</Label><Input id="contact-name" maxLength={200} value={contactName} onChange={event=>setContactName(event.target.value)}/></div>
-          <div className="space-y-1.5"><Label htmlFor="contact-email">{t.jobs.contactEmail}</Label><Input id="contact-email" type="email" maxLength={200} value={contactEmail} onChange={event=>setContactEmail(event.target.value)}/></div>
-        </div> : <p className="text-sm text-foreground-muted">{t.jobs.contactMigrationPending}</p>}
-      </fieldset>
-      <div className="space-y-1.5"><Label htmlFor="progress-notes">{cs?"Poznámky a další krok":"Notes and next step"}</Label><Textarea id="progress-notes" value={notes} onChange={event=>setNotes(event.target.value)} rows={4}/></div>
-      {contactFailed && <p role="alert" className="text-sm text-destructive">{t.jobs.contactSaveFailed}</p>}
-      {save.isError && <p role="alert" className="text-sm text-destructive">{cs?"Změny se nepodařilo uložit. Zkontrolujte data a zkuste to znovu.":"Could not save changes. Check the dates and try again."}</p>}
-      <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>{cs?"Zrušit":"Cancel"}</Button><Button disabled={save.isPending}>{save.isPending?(cs?"Ukládám…":"Saving…"):(cs?"Uložit":"Save")}</Button></div>
-    </form>
-  </DialogContent></Dialog>;
+type Form={status:JobApplication['status'];response:NonNullable<JobApplication['response_kind']>|'none';date:string;followUp:string;notes:string;contactName:string;contactEmail:string};
+const seed=(app:JobApplication):Form=>({status:app.status,response:app.response_kind??'none',date:app.responded_on??'',followUp:app.next_follow_up_at?.slice(0,10)??'',notes:app.notes??'',contactName:app.contact_name??'',contactEmail:app.contact_email??''});
+export function CareerProgressDialog({app,userId,onClose,setApplications,setEvents,timeZone='Europe/Prague'}:{
+ app:JobApplication;userId:string;onClose:()=>void;setApplications:Updater<JobApplication[]>;setEvents:Updater<JobApplicationEvent[]>;timeZone?:string;
+}){
+ const t=useDict(),cs=useLang().lang==='cs',requestExit=useGuardedNavigation(),now=useNow(),today=focusDayKey(now??new Date(),timeZone);
+ const [initial]=useState(()=>structuredClone(app)),[reviewed,setReviewed]=useState(initial),source=useRef(initial),[form,setForm]=useState(()=>seed(initial)),fields=useRef(form),baseline=useRef(form),dirty=useRef(false);
+ const writer=useCareerProgressWrite({userId,setApplications,setEvents});
+ const locked=writer.pending!==null||!!writer.failure&&writer.failure.reason!=='invalid';
+ const contactsAvailable='contact_name'in initial&&'contact_email'in initial;
+ function update(patch:Partial<Form>){if(locked||writer.isPending())return;const next={...fields.current,...patch};fields.current=next;dirty.current=Object.keys(next).some(key=>next[key as keyof Form]!==baseline.current[key as keyof Form]);setForm(next);writer.clearFailure();}
+ function patch(){
+  const value=fields.current,before=seed(source.current),result:CareerProgressPatch={};
+  if(value.status!==before.status)result.status=value.status;
+  if(value.response!==before.response||value.date!==before.date){result.response_kind=value.response==='none'?null:value.response;result.responded_on=value.response==='none'?null:value.date;}
+  if(value.followUp!==before.followUp)result.next_follow_up_at=value.followUp?`${value.followUp}T09:00:00Z`:null;
+  if(value.notes!==before.notes)result.notes=value.notes;
+  if(contactsAvailable&&value.contactName!==before.contactName)result.contact_name=value.contactName;
+  if(contactsAvailable&&value.contactEmail!==before.contactEmail)result.contact_email=value.contactEmail;
+  return result;
+ }
+ async function save(){const receipt=await writer.perform(source.current,patch());if(!receipt||!writer.isCurrent())return false;dirty.current=false;onClose();return true;}
+ async function retry(){const receipt=await writer.retry();if(receipt&&writer.isCurrent()){dirty.current=false;onClose();}}
+ async function reload(){const row=await writer.reload(source.current.id);if(!row||!writer.isCurrent())return;source.current=row;setReviewed(row);baseline.current=seed(row);fields.current=baseline.current;dirty.current=false;setForm(fields.current);}
+ useUnsavedDraft({get dirty(){return dirty.current;},canSave:!writer.failure,save,discard:()=>{dirty.current=false;}});
+ const message=writer.reloadFailed?(cs?'Přihlášku se nepodařilo načíst. Koncept zůstal zachovaný.':'The application could not be loaded. Your draft is kept.')
+  :writer.failure?.reason==='changed'?(cs?'Přihláška se změnila. Koncept zůstal zachovaný. Načtěte aktuální přihlášku.':'The application changed. Your draft is kept. Load the current application.')
+  :writer.failure?.reason==='invalid'?(cs?'Zkontrolujte data odpovědi, délku údajů a kontaktní e-mail.':'Check the response dates, field lengths and contact email.')
+  :writer.failure?(cs?'Uložení není potvrzené. Zkuste znovu stejný požadavek nebo načtěte aktuální přihlášku.':'The save is unconfirmed. Retry the same request or load the current application.'):null;
+ function close(){requestExit(onClose);}
+ return <Dialog open onOpenChange={open=>{if(!open)close();}}><DialogContent className="max-w-xl" aria-busy={writer.pending!==null}>
+  <DialogTitle>{cs?'Odpověď a další postup':'Response and follow-up'}</DialogTitle>
+  <p className="text-sm text-foreground-muted break-words">{[reviewed.company,reviewed.title].filter(Boolean).join(' · ')}</p>
+  <form className="mt-3 space-y-4" onSubmit={event=>{event.preventDefault();if(!locked)void save();}}>
+   <fieldset disabled={writer.pending!==null} className="min-w-0 space-y-4">
+    <div className="grid gap-3 sm:grid-cols-2">
+     <div className="space-y-1.5"><Label>{cs?'Stav přihlášky':'Application status'}</Label><SimpleSelect disabled={locked} value={form.status} onValueChange={value=>update({status:value as JobApplication['status']})} aria-label={cs?'Stav přihlášky':'Application status'} options={[
+      {value:'applied',label:t.jobs.statusApplied},{value:'interviewing',label:t.jobs.statusInterviewing},{value:'offer',label:t.jobs.statusOffer},{value:'rejected',label:t.jobs.statusRejected},{value:'withdrawn',label:t.jobs.statusWithdrawn},
+     ]}/></div>
+     <div className="space-y-1.5"><Label>{cs?'První skutečná odpověď':'First substantive response'}</Label><SimpleSelect disabled={locked} value={form.response} onValueChange={value=>update({response:value as Form['response']})} aria-label={cs?'První skutečná odpověď':'First substantive response'} options={[
+      {value:'none',label:cs?'Bez odpovědi':'No response'},{value:'positive',label:cs?'Zájem / pozvání':'Interest / invitation'},{value:'negative',label:cs?'Zamítnutí':'Rejection'},{value:'neutral',label:cs?'Dotaz / jiná odpověď':'Question / other response'},
+     ]}/></div>
+    </div>
+    <p className="text-sm text-foreground-muted">{cs?'Automatické potvrzení přijetí CV sem nepočítejte.':'Do not count an automated acknowledgement of your CV.'}</p>
+    <div className="grid gap-3 sm:grid-cols-2">
+     {form.response!=='none'&&<div className="space-y-1.5"><Label htmlFor="response-date">{cs?'Datum první odpovědi':'First response date'}</Label><Input id="response-date" type="date" min={reviewed.applied_on} max={today} required value={form.date} readOnly={locked} onChange={event=>update({date:event.target.value})}/></div>}
+     <div className="space-y-1.5"><Label htmlFor="follow-up-date">{cs?'Kdy se připomenout':'Follow-up date'}</Label><Input id="follow-up-date" type="date" value={form.followUp} readOnly={locked} onChange={event=>update({followUp:event.target.value})}/></div>
+    </div>
+    <fieldset className="space-y-1.5"><legend className="text-sm font-medium">{t.jobs.contactLabel}</legend>
+     {contactsAvailable?<div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="contact-name">{t.jobs.contactName}</Label><Input id="contact-name" maxLength={200} value={form.contactName} readOnly={locked} onChange={event=>update({contactName:event.target.value})}/></div><div className="space-y-1.5"><Label htmlFor="contact-email">{t.jobs.contactEmail}</Label><Input id="contact-email" type="email" maxLength={200} value={form.contactEmail} readOnly={locked} onChange={event=>update({contactEmail:event.target.value})}/></div></div>:<p className="text-sm text-foreground-muted">{t.jobs.contactMigrationPending}</p>}
+    </fieldset>
+    <div className="space-y-1.5"><Label htmlFor="progress-notes">{cs?'Poznámky a další krok':'Notes and next step'}</Label><Textarea id="progress-notes" value={form.notes} readOnly={locked} onChange={event=>update({notes:event.target.value})} rows={3}/></div>
+   </fieldset>
+   {message&&<CareerActionNotice message={message}><div className="flex flex-wrap gap-2">
+    {writer.failure?.reason==='unavailable'&&<Button type="button" variant="outline" disabled={writer.pending!==null} onClick={()=>void retry()}>{cs?'Zkusit znovu':'Try again'}</Button>}
+    {writer.failure&&writer.failure.reason!=='invalid'&&<Button type="button" variant="outline" disabled={writer.pending!==null} onClick={()=>void reload()}>{cs?'Zahodit koncept a načíst aktuální':'Discard draft and load latest'}</Button>}
+   </div></CareerActionNotice>}
+   <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="ghost" onClick={close}>{cs?'Zrušit':'Cancel'}</Button><Button type="submit" disabled={locked}>{writer.pending?(cs?'Ukládám…':'Saving…'):(cs?'Uložit':'Save')}</Button></div>
+  </form>
+ </DialogContent></Dialog>;
 }

@@ -83,6 +83,7 @@ import { applyCareerSaveReceipt, captureCareerListing, CareerSaveError } from "@
 import { applyCareerTriage, applyCareerTriageReceipt, CareerTriageError, type CareerTriageIntent } from "@/lib/career-triage";
 import { readCareerRecords, type CareerScope } from "@/lib/career-records";
 import { SavedPositionsView } from "./career-saved-positions";
+import { useCareerProgressWrite } from "./use-career-progress-write";
 import { useCareerApplicationDraft } from "./use-career-application-draft";
 import { useGuardedNavigation } from "@/components/navigation-guard";
 import { CareerActionNotice } from "./career-action-notice";
@@ -1891,28 +1892,15 @@ function AppliedView({
   const [letterFor, setLetterFor] = useState<JobApplication | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
 
-  const statusMutation = useMutation({
-    mutationFn: async (vars: {
-      app: JobApplication;
-      status: JobApplicationStatus;
-    }) => {
-      const { data, error } = await supabase.rpc("update_job_application_progress", {
-        p_id: vars.app.id, p_status: vars.status, p_responded_on: vars.app.responded_on ?? null,
-        p_response_kind: vars.app.response_kind ?? null, p_follow_up_at: vars.app.next_follow_up_at ?? null,
-        p_notes: vars.app.notes ?? "",
-      });
-      if (error || !data) throw error ?? new Error("no-data");
-      return { app: data as JobApplication };
-    },
-    onSuccess: ({ app }) => {
-      setApplications((prev) => prev.map((a) => (a.id === app.id ? app : a)));
-
-      toast.ok(t.jobs.statusUpdated);
-      void qc.invalidateQueries({ queryKey: qk.jobApplications });
-      void qc.invalidateQueries({ queryKey: qk.jobApplicationEvents });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
+  const progressWriter=useCareerProgressWrite({userId,setApplications,setEvents});
+  async function changeStatus(app:JobApplication,status:JobApplicationStatus){
+    const receipt=await progressWriter.perform(app,{status});
+    if(!receipt||!progressWriter.isCurrent())throw new Error('Career change unconfirmed');
+    toast.ok(t.jobs.statusUpdated);
+  }
+  const progressMessage=progressWriter.reloadFailed?(cs?'Přihlášky se nepodařilo načíst. Zkuste to znovu.':'Applications could not be loaded. Try again.')
+    :progressWriter.failure?.reason==='changed'?(cs?'Přihláška se změnila. Změna stavu není potvrzená. Načtěte aktuální přihlášky.':'The application changed. The stage change is unconfirmed. Reload current applications.')
+    :progressWriter.failure?t.jobs.couldNotSave:null;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -2020,6 +2008,10 @@ function AppliedView({
         </Button>
       </div>
 
+      {progressMessage&&<CareerActionNotice message={progressMessage}><div className="flex flex-wrap gap-2">
+        {progressWriter.failure?.reason==='unavailable'&&<Button variant="outline" disabled={progressWriter.pending!==null} onClick={()=>void progressWriter.retry()}>{cs?'Zkusit znovu':'Try again'}</Button>}
+        {progressWriter.failure&&<Button variant="outline" disabled={progressWriter.pending!==null} onClick={()=>void progressWriter.reload(progressWriter.failure!.source.id)}>{cs?'Načíst přihlášky':'Reload applications'}</Button>}
+      </div></CareerActionNotice>}
       {layout === "list" && <CareerPagination page={page} onPage={setPageIndex} label={t.jobs.applicationPages} />}
       {layout === "board" ? (
         <CareerBoard
@@ -2029,7 +2021,7 @@ function AppliedView({
           savedPositions={visibleSaved}
           statusLabel={statusLabel}
           statuses={STATUSES}
-          onStatus={(app, status) => statusMutation.mutateAsync({ app, status })}
+          onStatus={changeStatus}
           onProgress={(app) => setProgressFor(app)}
           onPrepare={onPrepare}
         />
@@ -2051,7 +2043,8 @@ function AppliedView({
                 app={app}
                 events={eventsByApplication.get(app.id) ?? []}
                 statusLabel={statusLabel}
-                onStatus={(status) => statusMutation.mutate({ app, status })}
+                onStatus={(status) => void changeStatus(app,status).catch(()=>{})}
+                disabled={progressWriter.pending!==null}
                 onProgress={() => setProgressFor(app)}
                 onLetter={() => setLetterFor(app)}
                 onDelete={() => removeApplication(app)}
@@ -2061,7 +2054,7 @@ function AppliedView({
         </Card>
       )}
 
-      {progressFor && <CareerProgressDialog timeZone={timeZone} key={progressFor.id} app={progressFor} onClose={()=>setProgressFor(null)} setApplications={setApplications}/>}
+      {progressFor && <CareerProgressDialog timeZone={timeZone} key={progressFor.id} app={progressFor} onClose={()=>setProgressFor(null)} setApplications={setApplications} setEvents={setEvents} userId={userId}/>}
       <LetterDialog
         app={letterFor}
         onClose={() => setLetterFor(null)}
@@ -2089,8 +2082,10 @@ function ApplicationRow({
   onProgress,
   onLetter,
   onDelete,
+  disabled,
 }: {
   app: JobApplication;
+  disabled: boolean;
   events: JobApplicationEvent[];
   statusLabel: Record<JobApplicationStatus, string>;
   onStatus: (s: JobApplicationStatus) => void;
@@ -2140,6 +2135,7 @@ function ApplicationRow({
 
         <div className="flex shrink-0 items-center gap-1">
           <SimpleSelect
+            disabled={disabled}
             value={app.status}
             onValueChange={(v) => onStatus(v as JobApplicationStatus)}
             className="h-7 w-auto min-w-28 text-[11px]"
@@ -2150,6 +2146,7 @@ function ApplicationRow({
             <button
               type="button"
               onClick={onLetter}
+              disabled={disabled}
               aria-label={t.jobs.coverLetterAction}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
             >
@@ -2176,6 +2173,7 @@ function ApplicationRow({
             <button
               type="button"
               onClick={onDelete}
+              disabled={disabled}
               aria-label={t.jobs.deleteApplication}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
             >
@@ -2187,7 +2185,7 @@ function ApplicationRow({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {app.cover_letter_url && isGoogleLetterUrl(app.cover_letter_url) && <Button asChild size="sm" variant="outline"><a href={app.cover_letter_url} target="_blank" rel="noopener noreferrer">{cs?"Dopis na Google Drive":"Cover letter on Google Drive"}<ExternalLink className="h-4 w-4"/></a></Button>}
-        <Button size="sm" variant="outline" onClick={onProgress}>{cs?"Odpověď / další postup":"Response / follow-up"}</Button>
+        <Button size="sm" variant="outline" onClick={onProgress} disabled={disabled}>{cs?"Odpověď / další postup":"Response / follow-up"}</Button>
         <span className="text-sm text-foreground-muted">{app.responded_on ? `${cs?"První odpověď":"First response"}: ${format(new Date(`${app.responded_on}T00:00:00`),"PP",{locale})}` : cs?"Zatím bez zaznamenané odpovědi":"No response recorded yet"}</span>
         {app.next_follow_up_at && <span className="text-sm text-foreground-muted">{cs?"Připomenout":"Follow up"}: {format(new Date(app.next_follow_up_at),"PP",{locale})}</span>}
       </div>

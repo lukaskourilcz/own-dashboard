@@ -1477,10 +1477,10 @@
     },
     {
       "path": "src/components/panels/career-progress-dialog.tsx",
-      "lines": 89,
+      "lines": 78,
       "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "eb5a7fa81d07c155f8c52f16a4a0a6047a304b0e6230edbad5e2ebcc984ba0d9"
+      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending",
+      "reviewedSha256": "8356cb0da453fd1df78cdbb1681c18df39540d8dbf771e84a30a4e3c3ff432ff"
     },
     {
       "path": "src/components/panels/clients-panel.tsx",
@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2763,
+      "lines": 2761,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; finding 292 captured application/draft recovery and 293 optional retained letter guidance pass native EN/CS/mobile, keyboard, reflow and axe; progress/templates/density and final release pending",
-      "reviewedSha256": "61521046880a9728f174628471cec53bdad49ea681c6b54bc93d696c99d4e8e5"
+      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending",
+      "reviewedSha256": "90fa4ef4bf390a7860d0c2bfbdf331c6bcde3be68c013054071bf60503311f1e"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -4847,7 +4847,7 @@
       "path": "src/lib/career-saved-records.ts",
       "sha256": null,
       "lines": 117,
-      "status": "source reviewed; finding 284 verifies captured Saved insert/update/delete, stable collision recovery, strict receipts, version predicates and cache guards through SDK/RLS; browser editor adoption and final release pending",
+      "status": "source reviewed; finding 284 captured Saved CRUD and 286 manual form adoption pass SDK/RLS/native checks; other letter editor adoption and final release pending",
       "reviewedSha256": "81b25a888e3564f42c0e0cffcf288a685fe3dfa49f3dfcdffc61df8c1583a654"
     },
     {
@@ -4876,14 +4876,14 @@
       "sha256": null,
       "lines": 75,
       "reviewedSha256": "c3d0baa58db13f792595db1bec6340d6552e147d1aaf4c2b4afd476f04cc59d9",
-      "status": "source reviewed; finding 291 captured application foundation SDK/RLS and concurrency checks pass; dialog adoption and final release pending"
+      "status": "source reviewed; findings 291\u2013292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
     },
     {
       "path": "supabase/migrations/20261026182155_captured_career_application.sql",
       "sha256": null,
       "lines": 81,
       "reviewedSha256": "3bd0dc6edb3392b797aab7bdcd7ca3652afa604a7794fe5241b1f763734529b5",
-      "status": "source reviewed; finding 291 captured application foundation SDK/RLS and concurrency checks pass; dialog adoption and final release pending"
+      "status": "source reviewed; findings 291\u2013292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
     },
     {
       "path": "src/components/panels/use-career-application-draft.ts",
@@ -4897,14 +4897,21 @@
       "sha256": null,
       "lines": 60,
       "reviewedSha256": "b3e08797943f5a67c67d62b9c7e40e58f0a10d9bf9ad396e8429bd06d0822160",
-      "status": "source reviewed; finding 294 atomic captured progress/contact foundation passes full-chain SDK/RLS/client checks; browser adoption, rollout and final release pending"
+      "status": "source reviewed; findings 294\u2013295 atomic captured progress/contact SDK/RLS/client and native stage/editor adoption checks pass; rollout and final release pending"
     },
     {
       "path": "supabase/migrations/20261026195100_captured_career_progress.sql",
       "sha256": null,
       "lines": 78,
       "reviewedSha256": "e3463672cee9930786d66f300070122023fff9a5db4faf9bdd9a7fd1b6816840",
-      "status": "source reviewed; finding 294 atomic captured progress/contact foundation passes full-chain SDK/RLS/client checks; browser adoption, rollout and final release pending"
+      "status": "source reviewed; findings 294\u2013295 atomic captured progress/contact SDK/RLS/client and native stage/editor adoption checks pass; rollout and final release pending"
+    },
+    {
+      "path": "src/components/panels/use-career-progress-write.ts",
+      "sha256": null,
+      "lines": 55,
+      "reviewedSha256": "68c30bc8838c498b545ff57ec61b48f908d549b123f2215ced05e28a7c8afd84",
+      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending"
     }
   ],
   "baselineFileCount": 561

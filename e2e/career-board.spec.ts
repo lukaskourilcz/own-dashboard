@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview } from "./helpers";
+import {jobApplications,savedJobPositions} from "../src/lib/demo/fixtures";
+import {sessionOwner} from "./owner-session-fixtures";
+import {progressReceipt} from "./career-application-fixtures";
 
 async function openCareer(page: Page, narrow: boolean, cs = false): Promise<void> {
   const career = cs ? "Kariéra" : "Career";
@@ -19,7 +22,10 @@ async function openCareer(page: Page, narrow: boolean, cs = false): Promise<void
 
 test("the stage board groups every column and preserves the progress fields on a stage change", async ({ page }, info) => {
   await gotoPreview(page);
-  await openCareer(page, info.project.name === "mobile");
+  const applications=jobApplications.map((row,index)=>({...row,id:`${String(index+1).padStart(8,'0')}-eeee-4eee-8eee-eeeeeeeeeeee`,user_id:sessionOwner,listing_id:null,remote:row.remote??null,organization_id:row.organization_id??null,next_follow_up_at:row.next_follow_up_at??null,cover_letter_url:row.cover_letter_url??null,request_id:null,responded_on:row.responded_on??null,response_kind:row.response_kind??null,contact_name:row.contact_name??null,contact_email:row.contact_email??null}));
+  const saved=savedJobPositions.map((row,index)=>({...row,id:`${String(index+100).padStart(8,'0')}-eeee-4eee-8eee-eeeeeeeeeeee`,user_id:sessionOwner,listing_id:null,remote:row.remote??null,cover_letter_url:row.cover_letter_url??null,readiness:row.readiness??'draft'}));
+  await page.route('**/rest/v1/rpc/read_career_records',route=>{const input=route.request().postDataJSON();return route.fulfill({json:{ownerId:sessionOwner,collection:input.p_entity,rows:input.p_entity==='job_applications'?applications:input.p_entity==='saved_job_positions'?saved:[]}});});
+  await page.goto('/dev-preview?tab=career&career=records');
   await page.getByRole("button", { name: /^Applied/ }).click();
 
   // The dense list is the default; the board is the opt-in layout.
@@ -51,33 +57,17 @@ test("the stage board groups every column and preserves the progress fields on a
   expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
   await page.screenshot({ path: `test-results/career-board-${info.project.name}.png`, fullPage: true });
 
-  // Changing a stage from the board writes through the same RPC the list uses,
-  // and must carry the response, follow-up and notes back unchanged — the
-  // function is a whole-row update.
-  let payload: Record<string, unknown> | undefined;
-  await page.route("**/rest/v1/rpc/update_job_application_progress", async (route) => {
-    payload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        id: "app-2", user_id: "preview-user", listing_id: null, title: "Senior React Engineer",
-        company: "Harbour Systems", url: null, source: "manual", location: "Oslo", cover_letter: "",
-        status: payload!.p_status, applied_on: "2026-01-01", notes: payload!.p_notes,
-        next_follow_up_at: payload!.p_follow_up_at, responded_on: payload!.p_responded_on,
-        response_kind: payload!.p_response_kind,
-        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-      }),
-    });
-  });
-  await page.getByRole("combobox", { name: /Senior React Engineer/ }).click();
-  await page.getByRole("option", { name: "Interviewing", exact: true }).click();
-  await expect.poll(() => payload?.p_status).toBe("interviewing");
-  expect(payload!.p_id).toBe("app-2");
-  expect(payload!.p_notes).toBe("Preview only. Asked about the team size; no answer yet.");
-  expect(typeof payload!.p_follow_up_at).toBe("string");
-  expect(payload!.p_responded_on).toBeNull();
-  expect(payload!.p_response_kind).toBeNull();
+  // A stage patch carries only the changed field and captured owner/version.
+  const original=applications.find(row=>row.title==='Senior React Engineer')!;
+  let payload:Record<string,unknown>|undefined;
+  await page.route('**/rest/v1/rpc/update_captured_job_application',route=>{payload=route.request().postDataJSON();return route.fulfill({json:progressReceipt(original,payload!.p_patch as Record<string,unknown>)});});
+  await page.getByRole('combobox',{name:/Senior React Engineer/}).click();await page.getByRole('option',{name:'Interviewing',exact:true}).click();
+  await expect.poll(()=>payload?.p_patch).toEqual({status:'interviewing'});
+  expect(payload).toMatchObject({p_expected_owner:sessionOwner,p_id:original.id,p_updated_at:original.updated_at});
+  await expect(board.getByRole('combobox',{name:/Senior React Engineer/})).toContainText('Interviewing');
+  expect(original.notes).toBe('Preview only. Asked about the team size; no answer yet.');
+  expect(typeof original.next_follow_up_at).toBe('string');
+
 });
 
 test("the Czech stage board reflows across the supported widths", async ({ page }, info) => {
