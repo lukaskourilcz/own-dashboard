@@ -2236,9 +2236,9 @@
     {
       "path": "src/lib/career-records.ts",
       "sha256": null,
-      "lines": 116,
-      "reviewedSha256": "6e065c54fd6eef066ac88b1ea882ddd8718a8bcdbbed55cac6207493c9e9aaee",
-      "status": "source reviewed; complete strict captured-owner reads include private remote evidence and nullable triage versions; SDK/RLS checks pass; canonical rollout and final release pending"
+      "lines": 118,
+      "reviewedSha256": "aa1b003ac80a223e12f810c04868e8a399581ad3e69c67806447ee3d8a1e4eeb",
+      "status": "source reviewed; complete captured-owner reads and finding 291 shared strict application/event schemas pass SDK/RLS checks; final release pending"
     },
     {
       "path": "src/lib/category-rules.ts",
@@ -3499,8 +3499,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; read-only eight-table port regenerated from 131 canonical migrations; finding 290 changes only the schema fingerprint, not table fields; prepared rollout and final release pending",
-      "reviewedSha256": "b284fccdff9cb3d2eeb8c30a0e21182dbaab94ae2f662241abc5e16de95d85c8"
+      "status": "source reviewed; eight-table read port regenerated from 132 canonical migrations; only schema fingerprint changes; prepared rollout and final release pending",
+      "reviewedSha256": "7d8548d57df03b78afec954db114f9d8cad1cb9c10188ac3ac10c3fa4ddd10cc"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4870,6 +4870,20 @@
       "lines": 42,
       "status": "source reviewed; finding 290 prepares consistent application/source lock order, per-lock bound and 300-character titles; native concurrency and full-chain SDK/RLS/upgrade/rollback checks pass; unapplied and final release pending",
       "reviewedSha256": "72566b6c9537039e8c1de031ec5ed41f5074bb92c1aa82b10b909d94b3cb7d26"
+    },
+    {
+      "path": "src/lib/career-application-save.ts",
+      "sha256": null,
+      "lines": 75,
+      "reviewedSha256": "c3d0baa58db13f792595db1bec6340d6552e147d1aaf4c2b4afd476f04cc59d9",
+      "status": "source reviewed; finding 291 captured application foundation SDK/RLS and concurrency checks pass; dialog adoption and final release pending"
+    },
+    {
+      "path": "supabase/migrations/20261026182155_captured_career_application.sql",
+      "sha256": null,
+      "lines": 81,
+      "reviewedSha256": "3bd0dc6edb3392b797aab7bdcd7ca3652afa604a7794fe5241b1f763734529b5",
+      "status": "source reviewed; finding 291 captured application foundation SDK/RLS and concurrency checks pass; dialog adoption and final release pending"
     }
   ],
   "baselineFileCount": 561

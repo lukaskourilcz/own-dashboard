@@ -67,6 +67,8 @@ const schemas = {
 /** Shared positive contract for complete reads and confirmed private writes. */
 export const savedCareerRecordSchema = schemas.saved_job_positions;
 export const careerTriageRecordSchema = schemas.job_user_state;
+export const careerApplicationRecordSchema = schemas.job_applications;
+export const careerApplicationEventSchema = schemas.job_application_events;
 
 const limits: Record<CareerCollection, number> = {
   job_listings: 10_000, job_user_state: 20_000, saved_job_positions: 10_000,
