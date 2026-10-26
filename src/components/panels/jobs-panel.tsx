@@ -1772,14 +1772,8 @@ function CoverLetterField({
             onChange={(e) => setDraftName(e.target.value)}
             maxLength={150}
             className="w-full sm:w-40"
-            aria-label={
-              lang === "cs" ? "Název uloženého dopisu" : "Saved letter name"
-            }
-            placeholder={
-              lang === "cs"
-                ? "Název dopisu (volitelné)"
-                : "Letter name (optional)"
-            }
+            aria-label={t.jobs.templateName}
+            placeholder={t.jobs.templateName}
           />
           <Button
             type="button"

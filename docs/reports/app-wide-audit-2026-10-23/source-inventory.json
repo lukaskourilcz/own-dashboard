@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2742,
+      "lines": 2736,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
       "status": "source reviewed; captured application/progress/deletion/letter controls and finding 298 single-heading/matching toolbar geometry pass native EN/CS/mobile checks; Saved letter/templates, wider density and final release pending",
-      "reviewedSha256": "d679626ff061a37a5655c5de3897cd9033901b13bbd8f82aff7b83447452567e"
+      "reviewedSha256": "abc725571de05f2d5ac7cbe3b8527bfd9115cc15cea79038c10e038e531a3bea"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
