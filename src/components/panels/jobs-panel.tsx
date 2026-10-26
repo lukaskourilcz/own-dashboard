@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -79,6 +79,7 @@ import { isCareerRelevant, isOsloRelevant, snapshotRemote, isOsloSnapshot, isPra
 import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
 import { researchForUrl, careerPositionKey } from "@/lib/jobs/oslo-research";
 import { CareerBoard } from "./career-board";
+import { applyCareerSaveReceipt, captureCareerListing, CareerSaveError } from "@/lib/career-listing-save";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
 import { isGoogleLetterUrl, isPositionReady, readinessLabel, progressEventLabel } from "@/lib/jobs/pipeline";
@@ -732,42 +733,55 @@ function OpenPositionsView({
     stateMutation.mutate({ listing, next, existing });
   }
 
-  const saveMutation = useMutation({
-    mutationFn: async (listing: JobListing) => {
-      const existing = savedPositions.find(position => careerPositionKey(position.url) === careerPositionKey(listing.url));
-      if (existing) return existing;
-      const { data, error } = await supabase
-        .from("saved_job_positions")
-        .upsert(
-          {
-            user_id: userId,
-            listing_id: listing.id,
-            title: listing.title,
-            company: listing.company,
-            url: listing.url,
-            source: listing.source,
-            location: listing.location,
-            description: listing.description,
-            remote: listing.remote,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,url" },
-        )
-        .select()
-        .single();
-      if (error || !data) throw error ?? new Error("no-data");
-      return data as SavedJobPosition;
-    },
-    onSuccess: (position) => {
-      setSavedPositions((current) => [
-        position,
-        ...current.filter((row) => row.id !== position.id),
-      ]);
+  const saveAttempts = useRef(new Map<string, { requestId: string; listing: JobListing }>());
+  const savingIds = useRef(new Set<string>());
+  const [pendingSaves, setPendingSaves] = useState<ReadonlySet<string>>(new Set());
+  const [saveIssue, setSaveIssue] = useState<{ listing: JobListing; changed: boolean } | null>(null);
+  const savedQueryKey = useMemo(() => [...qk.savedJobPositions, userId], [userId]);
+  const saveRegion = useRef<HTMLDivElement>(null);
+  const saveInteraction = useRef(0);
+  const [saveFocus, setSaveFocus] = useState<{ id: string; epoch: number; confirmed: boolean } | null>(null);
+  const focusedSave = useRef<typeof saveFocus>(null);
+  useLayoutEffect(() => {
+    if (!saveFocus || focusedSave.current === saveFocus || pendingSaves.has(saveFocus.id)) return;
+    focusedSave.current = saveFocus;
+    const root = saveRegion.current;
+    if (!root || lifetime.current.signal.aborted || saveInteraction.current !== saveFocus.epoch) return;
+    if (document.activeElement !== document.body && document.activeElement && !root.contains(document.activeElement)) return;
+    const card = [...root.querySelectorAll<HTMLElement>("[data-career-listing]")].find(element => element.dataset.careerListing === saveFocus.id);
+    card?.querySelector<HTMLButtonElement>(saveFocus.confirmed ? "[data-career-open]" : "[data-career-save]")?.focus();
+  }, [saveFocus, pendingSaves]);
+
+  async function saveListing(listing: JobListing) {
+    if (savingIds.current.has(listing.id)) return;
+    const original = ownerScope?.capture();
+    if (!original || original.ownerId !== userId || original.signal.aborted || lifetime.current.signal.aborted) return;
+    const captured = { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) };
+    const attempt = saveAttempts.current.get(listing.id) ?? { requestId: crypto.randomUUID(), listing: { ...listing } };
+    saveAttempts.current.set(listing.id, attempt);
+    savingIds.current.add(listing.id); setPendingSaves(new Set(savingIds.current)); setSaveIssue(null);
+    const base = savedPositions, epoch = saveInteraction.current;
+    try {
+      const receipt = await captureCareerListing(supabase, captured, attempt.requestId, attempt.listing);
+      await awaitWithSignal(qc.cancelQueries({ queryKey: savedQueryKey, exact: true }), AbortSignal.any([captured.signal, AbortSignal.timeout(5_000)]));
+      if (captured.signal.aborted) return;
+      setSavedPositions(current => applyCareerSaveReceipt(current, base, receipt));
+      saveAttempts.current.delete(listing.id);
+      setSaveIssue(null); setSaveFocus({ id: listing.id, epoch, confirmed: true });
       toast.ok(t.jobs.positionSaved);
-      void qc.invalidateQueries({ queryKey: qk.savedJobPositions });
-    },
-    onError: () => toast.err(t.jobs.couldNotSave),
-  });
+      void qc.invalidateQueries({ queryKey: savedQueryKey, exact: true });
+    } catch (error) {
+      if (!captured.signal.aborted) {
+        const changed = error instanceof CareerSaveError && error.reason === "changed";
+        if (changed) saveAttempts.current.delete(listing.id);
+        setSaveIssue({ listing: attempt.listing, changed });
+        setSaveFocus({ id: listing.id, epoch, confirmed: false });
+      }
+    } finally {
+      savingIds.current.delete(listing.id);
+      if (!captured.signal.aborted) setPendingSaves(new Set(savingIds.current));
+    }
+  }
 
   const deleteMutation = useMutation({
     mutationFn: async (rows: JobListing[]) => {
@@ -816,7 +830,7 @@ function OpenPositionsView({
   );
 
   return (
-    <div className="min-w-0">
+    <div ref={saveRegion} onPointerDownCapture={() => { saveInteraction.current++; }} onKeyDownCapture={() => { saveInteraction.current++; }} className="min-w-0">
       <div className="mb-4 border-l-2 border-primary pl-4 text-sm leading-relaxed">
         <p className="font-medium">React · TypeScript · Next.js · Node.js</p>
         <p className="text-foreground-muted">
@@ -1033,6 +1047,10 @@ function OpenPositionsView({
         </Button>
         </div>
       )}
+      {saveIssue && <div className="mx-auto mb-4 flex w-full max-w-3xl sm:w-fit flex-col gap-3 rounded-md border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p role="alert" className="min-w-0 flex-1 text-sm text-destructive">{saveIssue.changed ? t.jobs.saveListingChanged : t.jobs.saveUnconfirmed}</p>
+        <Button variant="outline" className="w-full shrink-0 sm:w-auto" disabled={pendingSaves.size > 0 || checking} onClick={() => saveIssue.changed ? void onCheck() : void saveListing(saveIssue.listing)}>{saveIssue.changed ? t.jobs.checkOffers : t.common.retry}</Button>
+      </div>}
       {listings.length === 0 ? (
         <Card className="p-0">
           <EmptyState
@@ -1083,7 +1101,8 @@ function OpenPositionsView({
                   }
                   onShortlist={() => toggleState(l, "shortlisted")}
                   onDelete={() => void deleteListings([l])}
-                  onApply={() => saveMutation.mutate(l)}
+                  pending={pendingSaves.has(l.id)}
+                  onApply={() => void saveListing(l)}
                   onDetail={() => {
                     setDetailId(l.id);
                     if (window.matchMedia("(max-width: 1279px)").matches)
@@ -1101,7 +1120,8 @@ function OpenPositionsView({
                   <CareerJobDetails
                     listing={detail}
                     saved={savedListingIds.has(detail.id) || savedUrls.has(careerPositionKey(detail.url))}
-                    onApply={() => saveMutation.mutate(detail)}
+                    pending={pendingSaves.has(detail.id)}
+                    onApply={() => void saveListing(detail)}
                   />
                 ) : null;
               })()}
@@ -1117,9 +1137,10 @@ function OpenPositionsView({
                     <CareerJobDetails
                       listing={detail}
                       saved={savedListingIds.has(detail.id) || savedUrls.has(careerPositionKey(detail.url))}
+                      pending={pendingSaves.has(detail.id)}
                       onApply={() => {
                         setMobileDetail(false);
-                        saveMutation.mutate(detail);
+                        void saveListing(detail);
                       }}
                     />
                   ) : null;
@@ -1212,6 +1233,7 @@ function ListingRow({
   state,
   applied,
   saved,
+  pending,
   selected,
   onSelect,
   onShortlist,
@@ -1225,6 +1247,7 @@ function ListingRow({
   state: JobUserStateValue | undefined;
   applied: boolean;
   saved: boolean;
+  pending: boolean;
   selected: boolean;
   onSelect: () => void;
   onShortlist: () => void;
@@ -1234,8 +1257,9 @@ function ListingRow({
   active: boolean;
 }) {
   const t = useDict();
+  const titleId = useId();
   return (
-    <article data-career-listing={listing.id} className={cn("min-w-0 p-4", active && "bg-accent/50")}>
+    <article aria-labelledby={titleId} data-career-listing={listing.id} className={cn("min-w-0 p-4", active && "bg-accent/50")}>
       <div className="flex items-start gap-3">
         <Checkbox
           checked={selected}
@@ -1245,6 +1269,8 @@ function ListingRow({
         <div className="min-w-0 flex-1">
           <button
             type="button"
+            id={titleId}
+            data-career-open
             onClick={onDetail}
             aria-pressed={active}
             className="focus-ring min-h-11 break-words text-left text-base font-semibold hover:underline"
@@ -1295,9 +1321,9 @@ function ListingRow({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        <Button size="sm" className="ml-auto" onClick={onApply} disabled={saved || applied}>
+        <Button aria-describedby={titleId} data-career-save size="sm" className="ml-auto" onClick={onApply} disabled={saved || applied || pending}>
           <Bookmark className="h-4 w-4" />
-          {saved ? t.jobs.savedBadge : t.jobs.savePosition}
+          {pending ? t.jobs.saving : saved ? t.jobs.savedBadge : t.jobs.savePosition}
         </Button>
       </div>
     </article>
@@ -2875,14 +2901,17 @@ function CareerJobDetails({
   listing: detail,
   onApply,
   saved,
+  pending,
 }: {
   listing: JobListing;
   onApply: () => void;
   saved: boolean;
+  pending: boolean;
 }) {
   const { lang } = useLang();
   const cs = lang === "cs";
   const t = useDict();
+  const titleId = useId();
   return (
     <section
       className="min-w-0 rounded-md border border-border bg-surface p-5"
@@ -2891,14 +2920,14 @@ function CareerJobDetails({
       <p className="mb-2 text-sm text-foreground-muted">
         {detail.company} · {detail.location}
       </p>
-      <h2 className="break-words text-xl font-semibold">{detail.title}</h2>
+      <h2 id={titleId} className="break-words text-xl font-semibold">{detail.title}</h2>
       <p className="mt-2 text-sm text-foreground-muted">
         {detail.salary || (cs ? "Mzda neuvedena" : "Salary not specified")}
       </p>
       <div className="my-4 flex flex-wrap gap-2">
-        <Button onClick={onApply} disabled={saved}>
+        <Button aria-describedby={titleId} onClick={onApply} disabled={saved || pending}>
           <Bookmark className="h-4 w-4" />
-          {saved ? t.jobs.savedBadge : t.jobs.savePosition}
+          {pending ? t.jobs.saving : saved ? t.jobs.savedBadge : t.jobs.savePosition}
         </Button>
         <Button asChild variant="outline">
           <a href={detail.url} target="_blank" rel="noopener noreferrer">

@@ -1,0 +1,82 @@
+{
+  "finding": 281,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "state": "Actual Career discovery save failure after a held synthetic SDK response; no owner record or provider call.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "0bafdb74edd95a993e6e2b162ef23e2e80a49365f336f5b7867ca85bbd5919e8",
+    "src/lib/career-listing-save.ts": "bb5bcd0a690faf881ec2432d31a0eaf02a19daceaff814e97c320623d087ac76",
+    "src/lib/career-records.ts": "fca727168e78a708fa23c0376aa7330573f10254696b98e3d7c34ae533f0e114",
+    "src/lib/i18n/sections/jobs.ts": "70c43c294fd4b9b68e7a711925b2a209ff1f9263ba09565a4451bf29a09e4400"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "box": {
+        "x": 659.453125,
+        "y": 517.5,
+        "width": 353.09375,
+        "height": 66
+      },
+      "marks": [
+        {
+          "x": 4.81458536153642,
+          "y": 34.84848484848485,
+          "w": 56.05805823524206,
+          "h": 30.303030303030305,
+          "n": 1
+        },
+        {
+          "x": 64.27117444021594,
+          "y": 25.757575757575758,
+          "w": 30.914240198247633,
+          "h": 48.484848484848484,
+          "n": 2
+        }
+      ],
+      "png": {
+        "width": 354,
+        "height": 67,
+        "bytes": 5303,
+        "sha256": "005a72f223ef0ce250c9c41f2d330247403b6cfeaf82523966643abea6689d31"
+      }
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1000
+      },
+      "box": {
+        "x": 16,
+        "y": 565.25,
+        "width": 398,
+        "height": 110
+      },
+      "marks": [
+        {
+          "x": 4.271356783919598,
+          "y": 15.454545454545455,
+          "w": 91.4572864321608,
+          "h": 18.181818181818183,
+          "n": 1
+        },
+        {
+          "x": 4.271356783919598,
+          "y": 44.54545454545455,
+          "w": 91.4572864321608,
+          "h": 40,
+          "n": 2
+        }
+      ],
+      "png": {
+        "width": 1095,
+        "height": 305,
+        "bytes": 18177,
+        "sha256": "257cda128946506c30e38fd74dc974db54dbfbbd39e47175a4c06375a88d21f6"
+      }
+    }
+  }
+}

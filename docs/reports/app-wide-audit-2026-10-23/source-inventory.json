@@ -1554,10 +1554,10 @@
     },
     {
       "path": "src/components/panels/jobs-panel.tsx",
-      "lines": 2933,
+      "lines": 2962,
       "sha256": "e0167e2d1722b8bff8aa3b93356508987ec06908aa9ef946eba042c287821ef8",
-      "status": "source reviewed; findings 274\u2013279 verify complete list/board paging, captured availability and remote snapshot evidence; private mutation/editor controls and dense board presentation remain under review; final release pending",
-      "reviewedSha256": "521ce2485b3ff1926a6d61622a63c36ba088953e29cfe7ee85f167819a9f678e"
+      "status": "source reviewed; findings 274\u2013281 verify complete list/board paging, captured availability, remote evidence and atomic discovery saves with retained retry/focus; private editors/triage and dense board presentation remain under review; final release pending",
+      "reviewedSha256": "0bafdb74edd95a993e6e2b162ef23e2e80a49365f336f5b7867ca85bbd5919e8"
     },
     {
       "path": "src/components/panels/link-export-dialog.tsx",
@@ -2236,8 +2236,8 @@
     {
       "path": "src/lib/career-records.ts",
       "sha256": null,
-      "lines": 112,
-      "reviewedSha256": "91919f09755c51d92907db80e385e779ccb68f4e7d64438bac940b96a31d189b",
+      "lines": 115,
+      "reviewedSha256": "fca727168e78a708fa23c0376aa7330573f10254696b98e3d7c34ae533f0e114",
       "status": "source reviewed; complete strict captured-owner reads include nullable workplace evidence; SDK/RLS and targeted checks pass; final release pending"
     },
     {
@@ -2733,10 +2733,10 @@
     },
     {
       "path": "src/lib/i18n/sections/jobs.ts",
-      "lines": 590,
+      "lines": 596,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
       "status": "source reviewed; finding 278 bounded local board columns, recorded-position exclusion and pending/revealed/retained focus pass native/mounted checks; captured metadata writes and final release pending",
-      "reviewedSha256": "2a0a02bbba866544d40c9b000d6c630fe8f5f774d08e592f85f77948c9695a52"
+      "reviewedSha256": "70c43c294fd4b9b68e7a711925b2a209ff1f9263ba09565a4451bf29a09e4400"
     },
     {
       "path": "src/lib/i18n/sections/kpi.ts",
@@ -3499,8 +3499,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; generated eight-table read port from all 128 canonical migrations, targeted SQL/SDK/type checks pass; canonical rollout and final release pending",
-      "reviewedSha256": "2a0a9e6c40553c12f6bb0a02805edd386a90a75a1b5c9a9b6a57db4942da69da"
+      "status": "source reviewed; generated eight-table read port from all 129 canonical migrations, targeted SQL/SDK/type checks pass; canonical rollout and final release pending",
+      "reviewedSha256": "54cb1c0b45d126e483a1b06855a446b3774ff69608c981457866e78eeb305474"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4821,6 +4821,13 @@
       "lines": 88,
       "reviewedSha256": "dff630f24f7fcf72410987094c71dcdee3f44e2cee793a1d843710b7b09c2019",
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
+    },
+    {
+      "path": "src/lib/career-listing-save.ts",
+      "sha256": null,
+      "lines": 46,
+      "status": "source reviewed; finding 281 captured atomic discovery-save client, strict receipts, original scope/cancellation and cache guards pass; targeted native recovery/focus and PostgreSQL concurrency checks pass; canonical rollout and final release pending",
+      "reviewedSha256": "bb5bcd0a690faf881ec2432d31a0eaf02a19daceaff814e97c320623d087ac76"
     }
   ],
   "baselineFileCount": 561

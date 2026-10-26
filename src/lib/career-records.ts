@@ -64,6 +64,9 @@ const schemas = {
     sources: z.record(z.string(), z.strictObject({ count, pruned: count.optional(), error: z.string().optional() })),
   }),
 };
+/** Shared positive contract for complete reads and confirmed private writes. */
+export const savedCareerRecordSchema = schemas.saved_job_positions;
+
 const limits: Record<CareerCollection, number> = {
   job_listings: 10_000, job_user_state: 20_000, saved_job_positions: 10_000,
   job_applications: 10_000, job_application_events: 50_000,

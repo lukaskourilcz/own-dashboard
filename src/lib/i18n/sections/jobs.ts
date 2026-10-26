@@ -63,6 +63,8 @@ type JobsStrings = {
   savedBadge: string;
   savePosition: string;
   positionSaved: string;
+  saveUnconfirmed: string;
+  saveListingChanged: string;
   saveByUrl: string;
   saveByUrlDescription: string;
   importFromUrl: string;
@@ -252,6 +254,8 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     savedBadge: "Saved",
     savePosition: "Save position",
     positionSaved: "Position saved.",
+    saveUnconfirmed: "Saving this position was not confirmed.",
+    saveListingChanged: "This offer changed. Check for new offers before saving it.",
     saveByUrl: "Save a position from a link",
     saveByUrlDescription: "Paste a job URL. The title, company and description will be filled when the page allows it; you can correct every field before saving.",
     importFromUrl: "Fill from URL",
@@ -445,6 +449,8 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     savedBadge: "Uloženo",
     savePosition: "Uložit pozici",
     positionSaved: "Pozice byla uložena.",
+    saveUnconfirmed: "Uložení pozice není potvrzené.",
+    saveListingChanged: "Tato nabídka se změnila. Před uložením znovu ověřte aktuální nabídky.",
     saveByUrl: "Uložit pozici z odkazu",
     saveByUrlDescription: "Vložte URL inzerátu. Pokud to stránka dovolí, doplní se název, firma a popis; před uložením můžete všechna pole upravit.",
     importFromUrl: "Doplnit z URL",

@@ -1,0 +1,20 @@
+{
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal schema with exact migrations 125/126/129 and prior saved-column definitions; full chain verified separately in PGlite",
+  "concurrent": {
+    "calls": 2,
+    "created": 1,
+    "rows": 1,
+    "samePrivateId": true
+  },
+  "sourceWait": {
+    "staleRefused": true,
+    "staleRows": 0,
+    "freshTitleMatches": true,
+    "nativeRemote": true
+  },
+  "globalPrivileges": {
+    "select": true,
+    "update": false
+  }
+}
