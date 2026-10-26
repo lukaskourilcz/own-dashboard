@@ -4842,6 +4842,13 @@
       "lines": 8,
       "status": "source reviewed; finding 283 shared bounded Career action feedback passes mounted/native recovery, mobile, keyboard and axe checks; final release pending",
       "reviewedSha256": "9c5838ae6f9d2b6aacde4002e46a2a16d947ad7e679197911f9c704529a77d5f"
+    },
+    {
+      "path": "src/lib/career-saved-records.ts",
+      "sha256": null,
+      "lines": 117,
+      "status": "source reviewed; finding 284 verifies captured Saved insert/update/delete, stable collision recovery, strict receipts, version predicates and cache guards through SDK/RLS; browser editor adoption and final release pending",
+      "reviewedSha256": "81b25a888e3564f42c0e0cffcf288a685fe3dfa49f3dfcdffc61df8c1583a654"
     }
   ],
   "baselineFileCount": 561
