@@ -6,6 +6,16 @@ import ffmpeg from 'ffmpeg-static';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { probeDneskaiAudioDuration } from '@/lib/marketing/dneskai-audio';
 vi.mock('server-only', () => ({}));
+const children = vi.hoisted(() => new Map<string, import('node:child_process').ChildProcess>());
+vi.mock('node:child_process', async original => {
+  const actual = await original<typeof import('node:child_process')>();
+  return {...actual, spawn: (...args: Parameters<typeof actual.spawn>) => {
+    const child = actual.spawn(...args);
+    children.set(String(args[0]), child);
+    return child;
+  }};
+});
+
 let folder: string;
 beforeAll(async () => { folder = await mkdtemp(path.join(tmpdir(), 'audio-probe-fixture-')); });
 afterAll(async () => { await rm(folder, { recursive: true, force: true }); });
@@ -15,8 +25,9 @@ async function childFixture(name: string) {
   await writeFile(script, `#!/bin/sh\nprintf '%s' "$$" > ${quoted}\ntrap '' TERM\nprintf '%s\\n' 'Duration: 00:01:00.00' ' Stream #0:0: Audio: mp3' >&2\nwhile :; do :; done\n`); await chmod(script, 0o700);
   return { script, pidFile };
 }
-async function expectStopped(pidFile: string) {
-  const pid = Number(await readFile(pidFile, 'utf8')); expect(Number.isSafeInteger(pid)).toBe(true);
+function expectStopped(script: string) {
+  const pid = children.get(script)?.pid; expect(Number.isSafeInteger(pid)).toBe(true);
+  if (pid === undefined) throw new Error('Fixture child did not spawn');
   expect(() => process.kill(pid, 0)).toThrow();
 }
 describe('bounded local audio probing', () => {
@@ -31,16 +42,26 @@ describe('bounded local audio probing', () => {
     const duration = await probeDneskaiAudioDuration(await readFile(file)); expect(duration).toBeGreaterThan(1900); expect(duration).toBeLessThan(2300);
   });
   it('kills a stalled decoder even when it prints plausible metadata and ignores SIGTERM', async () => {
-    const { script, pidFile } = await childFixture('timeout'), start = performance.now();
+    const { script } = await childFixture('timeout'), start = performance.now();
     await expect(probeDneskaiAudioDuration(Buffer.from('fixture'), { ffmpegPath: script, timeoutMs: 1500 })).rejects.toMatchObject({ code: 'audio-library-unavailable' });
-    expect(performance.now() - start).toBeLessThan(4000); await expectStopped(pidFile);
+    expect(performance.now() - start).toBeLessThan(4000); expectStopped(script);
   });
   it('kills a decoder on caller cancellation and does not expose the abort reason', async () => {
     const { script, pidFile } = await childFixture('abort'), controller = new AbortController();
     const pending = probeDneskaiAudioDuration(Buffer.from('fixture'), { ffmpegPath: script, signal: controller.signal });
     const outcome = pending.then(() => ({ name: 'unexpected-success', message: '' }), error => ({ name: error.name, message: error.message }));
-    await vi.waitFor(async () => expect(await readFile(pidFile, 'utf8')).toMatch(/^\d+$/)); controller.abort(new Error('synthetic-private-abort-reason'));
-    expect(await outcome).toEqual({ name: 'AbortError', message: 'Request aborted' }); await expectStopped(pidFile);
+    try {
+      // Readiness may take longer than Vitest's default one-second polling window.
+      // This changes only the fixture wait, within the unchanged 15-second probe cap.
+      await vi.waitFor(async () => expect(await readFile(pidFile, 'utf8')).toMatch(/^\d+$/), {timeout:4000});
+      controller.abort(new Error('synthetic-private-abort-reason'));
+      expect(await outcome).toEqual({name:'AbortError',message:'Request aborted'});
+      expectStopped(script);
+    } finally {
+      // A failed readiness assertion must still reap the fixture child.
+      controller.abort();
+      await outcome;
+    }
   });
   it('refuses unsupported playlists even when they refer to a valid local audio file', async () => {
     const file = path.join(folder, 'local.wav'); execFileSync(ffmpeg as unknown as string, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', '-y', file]);

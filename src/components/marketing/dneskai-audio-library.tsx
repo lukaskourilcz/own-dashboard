@@ -1,19 +1,19 @@
 'use client';
 
 import { useId, useRef, useState, useLayoutEffect, type FormEvent } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {useOwnerPreferences} from '@/lib/owner-preferences';
-import {useUnsavedDraft} from '@/components/navigation-guard';
+import {useUnsavedDraft, useGuardedNavigation} from '@/components/navigation-guard';
 import {DneskaiAudioToggleSchema,type DneskaiAudioToggle} from '@/lib/marketing/dneskai-audio-contracts';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioTrendsStatus } from '@/lib/marketing/dneskai-audio-contracts';
 import Image from 'next/image';
-import { DneskaiAudioRequestError, dneskaiAudioFileProblem, useDneskaiAudioLibrary, setDneskaiAudioTrackEnabled, applyDneskaiAudioToggleReceipt, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
+import { DneskaiAudioRequestError, dneskaiAudioFileProblem, useDneskaiAudioLibrary, setDneskaiAudioTrackEnabled, applyDneskaiAudioToggleReceipt, createDneskaiAudioUploadSession } from '@/lib/marketing/dneskai-audio-client';
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from './dneskai/audio-preview';
 import { DneskaiAudioTrendsNotice, DneskaiAudioReadNotice } from './dneskai/audio-trends-notice';
 
@@ -43,9 +43,7 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
     {query.isRefetching && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-sm text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => { player.stop(); void query.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
-    {!preview && query.data && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
-      <DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.upload.title}</DialogTitle></DialogHeader><UploadForm lang={lang} embedded /></DialogContent>
-    </Dialog>}
+    {!preview && query.data && <AudioUploadDialog lang={lang} />}
   </section>;
 }
 
@@ -187,56 +185,168 @@ function TrackList({ tracks, lang, preview, player, previewRefreshing, readFaile
 
 const ACCEPT = Object.keys(DNESKAI_AUDIO_TYPES).join(',');
 
-function UploadForm({ lang, embedded = false }: { lang: Lang; embedded?: boolean }) {
-  const t = dneskaiAudio[lang];
-  const id = useId();
-  const client = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [fields, setFields] = useState({ title: '', artist: '', source: 'pixabay' as (typeof DNESKAI_AUDIO_UPLOAD_SOURCES)[number], sourceUrl: '', licenceNote: '', mood: '' });
-  const [message, setMessage] = useState<{ tone: 'success' | 'risk'; text: string } | null>(null);
-  const upload = useMutation({
-    mutationFn: (selected: File) => uploadDneskaiAudioTrack(selected, {
-      title: fields.title.trim(), artist: fields.artist.trim(), source: fields.source, sourceUrl: fields.sourceUrl.trim(), licenceNote: fields.licenceNote.trim(),
-      mood: fields.mood.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 5),
-    }),
-    onSuccess: (track) => {
-      setMessage({ tone: 'success', text: t.upload.done(track.title) });
-      setFile(null); setFields({ ...fields, title: '', artist: '', sourceUrl: '', mood: '' });
-      if (fileRef.current) fileRef.current.value = '';
-    },
-    onError: (failure) => setMessage({ tone: 'risk', text: failure instanceof DneskaiAudioRequestError && Object.hasOwn(t.errors, failure.code) ? t.errors[failure.code]! : t.failed }),
-    onSettled: () => client.invalidateQueries({ queryKey: qk.dneskaiAudio }),
-  });
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    const problem = dneskaiAudioFileProblem(file);
-    if (problem) { setMessage({ tone: 'risk', text: t.upload[problem] }); return; }
-    setMessage(null);
-    upload.mutate(file!);
-  };
-  const field = (key: 'title' | 'artist' | 'sourceUrl' | 'licenceNote', label: string, options: { type?: string; max: number; placeholder?: string }) =>
-    <div className="min-w-0"><label htmlFor={`${id}-${key}`} className="text-xs font-medium">{label}</label>
-      <Input id={`${id}-${key}`} type={options.type ?? 'text'} required maxLength={options.max} placeholder={options.placeholder} value={fields[key]} onChange={(event) => setFields({ ...fields, [key]: event.target.value })} /></div>;
-  return <form onSubmit={submit} className="min-w-0 space-y-3" aria-labelledby={embedded ? undefined : `${id}-heading`} aria-label={embedded ? t.upload.title : undefined} data-testid="dneskai-audio-upload">
+function AudioUploadDialog({ lang }: {
+    lang: Lang;
+}) {
+    const [open, setOpen] = useState(false), navigate = useGuardedNavigation();
+    return <Dialog open={open} onOpenChange={next => next ? setOpen(true) : navigate(() => setOpen(false))}>
+    <DialogTrigger asChild><Button>{dneskaiAudio[lang].upload.title}</Button></DialogTrigger>
+    <DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{dneskaiAudio[lang].upload.title}</DialogTitle></DialogHeader><UploadForm lang={lang} embedded/></DialogContent>
+  </Dialog>;
+}
+const emptyUploadFields = () => ({title:'', artist:'', source:'pixabay' as (typeof DNESKAI_AUDIO_UPLOAD_SOURCES)[number], sourceUrl:'', licenceNote:'', mood:''});
+function UploadForm({ lang, embedded = false }: {
+    lang: Lang;
+    embedded?: boolean;
+}) {
+    const t = dneskaiAudio[lang], id = useId(), client = useQueryClient(), owner = useOwnerPreferences();
+    const fileRef = useRef<HTMLInputElement>(null), lifetime = useRef(new AbortController()), pendingRef = useRef(false), dirtyRef = useRef(false);
+    const session = useRef<ReturnType<typeof createDneskaiAudioUploadSession> | null>(null), original = useRef<AbortSignal | null>(null);
+    const fileValue = useRef<File | null>(null), values = useRef(emptyUploadFields());
+    const [file, setFile] = useState<File | null>(null), [fields, setFields] = useState(emptyUploadFields);
+    const [pending, setPending] = useState(false), [locked, setLocked] = useState(false);
+    const [message, setMessage] = useState<{
+        tone: 'success' | 'risk';
+        text: string;
+    } | null>(null);
+    useLayoutEffect(() => {
+        if (lifetime.current.signal.aborted)
+            lifetime.current = new AbortController();
+        return () => lifetime.current.abort();
+    }, []);
+    function reset() {
+        if (pendingRef.current)
+            return;
+        session.current = null;
+        original.current = null;
+        dirtyRef.current = false;
+        fileValue.current = null;
+        values.current = emptyUploadFields();
+        setFile(null);
+        setFields(values.current);
+        setLocked(false);
+        setMessage(null);
+        if (fileRef.current)
+            fileRef.current.value = '';
+    }
+    function failureMessage(failure: unknown) {
+        if (failure instanceof DneskaiAudioRequestError && !['decision-failed','audio-library-unavailable','audio-track-write-failed'].includes(failure.code) && Object.hasOwn(t.errors,failure.code)) return t.errors[failure.code]!;
+        return t.upload.unconfirmed;
+    }
+    async function save(): Promise<boolean> {
+        if (pendingRef.current)
+            return false;
+        const problem = dneskaiAudioFileProblem(fileValue.current);
+        if (problem) {
+            setMessage({ tone: 'risk', text: t.upload[problem] });
+            return false;
+        }
+        try {
+            if (!session.current) {
+                if (!owner)
+                    throw new DneskaiAudioRequestError('unauthorized', 0);
+                const captured = owner.capture(), signal = AbortSignal.any([captured.signal, lifetime.current.signal]);
+                signal.throwIfAborted();
+                session.current = createDneskaiAudioUploadSession({ ownerId: captured.ownerId, signal }, fileValue.current!, {
+                    title: values.current.title, artist: values.current.artist, source: values.current.source, sourceUrl: values.current.sourceUrl.trim(), licenceNote: values.current.licenceNote,
+                    mood: values.current.mood.split(',').map(tag => tag.trim()).filter(Boolean),
+                });
+                original.current = signal;
+            }
+        }
+        catch (failure) {
+            setMessage({ tone: 'risk', text: failureMessage(failure) });
+            return false;
+        }
+        const signal = original.current!;
+        if (signal.aborted)
+            return false;
+        pendingRef.current = true;
+        dirtyRef.current = true;
+        setPending(true);
+        setLocked(true);
+        setMessage(null);
+        try {
+            const track = await session.current.run();
+            if (signal.aborted)
+                return false;
+            await client.cancelQueries({ queryKey: qk.dneskaiAudio });
+            if (signal.aborted)
+                return false;
+            pendingRef.current = false;
+            reset();
+            setMessage({ tone: 'success', text: t.upload.done(track.title) });
+            void client.invalidateQueries({ queryKey: qk.dneskaiAudio });
+            return true;
+        }
+        catch (failure) {
+            if (!signal.aborted)
+                setMessage({ tone: 'risk', text: failureMessage(failure) });
+            return false;
+        }
+        finally {
+            pendingRef.current = false;
+            if (!signal.aborted)
+                setPending(false);
+        }
+    }
+    useUnsavedDraft({ get dirty() {
+            return dirtyRef.current;
+        }, get pending() {
+            return pendingRef.current;
+        }, get canSave() {
+            return !!fileValue.current;
+        }, save, discard: reset });
+    function change(key: keyof typeof fields, value: string) {
+        if (session.current || pendingRef.current)
+            return;
+        dirtyRef.current = true;
+        values.current = { ...values.current, [key]: value };
+        setFields(values.current);
+        setMessage(null);
+    }
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        void save();
+    };
+    const field = (key: 'title' | 'artist' | 'sourceUrl' | 'licenceNote', label: string, options: {
+        type?: string;
+        max: number;
+        placeholder?: string;
+    }) => <div className="min-w-0"><label htmlFor={`${id}-${key}`} className="text-xs font-medium">{label}</label>
+      <Input id={`${id}-${key}`} type={options.type ?? 'text'} required maxLength={options.max} placeholder={options.placeholder} className="min-h-11" value={fields[key]} disabled={pending} readOnly={locked} onChange={event => change(key, event.target.value)}/></div>;
+    return <form onSubmit={submit} className="min-w-0 space-y-3" aria-labelledby={embedded ? undefined : `${id}-heading`} aria-label={embedded ? t.upload.title : undefined} aria-busy={pending} data-testid="dneskai-audio-upload">
     {!embedded && <h3 id={`${id}-heading`} className="text-sm font-medium">{t.upload.title}</h3>}
     <div><label htmlFor={`${id}-file`} className="text-xs font-medium">{t.upload.file}</label>
-      <input ref={fileRef} id={`${id}-file`} type="file" accept={ACCEPT} required className="focus-ring block min-h-11 w-full text-sm file:mr-3 file:min-h-11 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:text-sm"
-        onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></div>
+      <input ref={fileRef} id={`${id}-file`} type="file" accept={ACCEPT} required disabled={locked || pending} className="focus-ring block min-h-11 w-full text-sm file:mr-3 file:min-h-11 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:text-sm" onChange={event => {
+        if (session.current || pendingRef.current)
+            return;
+        dirtyRef.current = true;
+        fileValue.current = event.target.files?.[0] ?? null;
+        setFile(fileValue.current);
+        setMessage(null);
+    }}/></div>
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
       {field('title', t.upload.trackTitle, { max: 120 })}
       {field('artist', t.upload.artist, { max: 120 })}
       <div className="min-w-0"><label htmlFor={`${id}-source`} className="text-xs font-medium">{t.upload.source}</label>
-        <select id={`${id}-source`} value={fields.source} onChange={(event) => setFields({ ...fields, source: event.target.value as typeof fields.source })} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring">
-          {DNESKAI_AUDIO_UPLOAD_SOURCES.map((source) => <option key={source} value={source}>{t.sources[source]}</option>)}
+        <select id={`${id}-source`} value={fields.source} disabled={locked || pending} onChange={event => change('source', event.target.value)} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring">
+          {DNESKAI_AUDIO_UPLOAD_SOURCES.map(source => <option key={source} value={source}>{t.sources[source]}</option>)}
         </select></div>
       {field('sourceUrl', t.upload.sourceUrl, { type: 'url', max: 2048, placeholder: 'https://' })}
       {field('licenceNote', t.upload.licenceNote, { max: 500, placeholder: t.upload.licencePlaceholder })}
       <div className="min-w-0"><label htmlFor={`${id}-mood`} className="text-xs font-medium">{t.upload.mood}</label>
-        <Input id={`${id}-mood`} value={fields.mood} maxLength={160} onChange={(event) => setFields({ ...fields, mood: event.target.value })} /></div>
+        <Input id={`${id}-mood`} className="min-h-11" value={fields.mood} disabled={pending} readOnly={locked} maxLength={160} onChange={event => change('mood', event.target.value)}/></div>
     </div>
     <div aria-live="polite">{message && <p role={message.tone === 'risk' ? 'alert' : 'status'} className={message.tone === 'risk' ? 'text-sm text-risk' : 'text-sm text-success'}>{message.text}</p>}</div>
-    <Button type="submit" className="min-h-11" disabled={upload.isPending} aria-busy={upload.isPending}>{upload.isPending ? t.upload.uploading : t.upload.submit}</Button>
+    {locked && !pending && <p className="text-xs text-foreground-muted">{t.upload.retained}</p>}
+    <div className={locked ? "grid grid-cols-1 gap-2 sm:w-fit sm:grid-cols-2" : "flex"}>
+      <Button type="submit" className="min-h-11" disabled={pending || !owner || !file} aria-busy={pending}>{pending ? t.upload.uploading : locked ? t.upload.retry : t.upload.submit}</Button>
+      {locked && <Button type="button" variant="outline" className="min-h-11" disabled={pending} onClick={() => {
+        reset();
+        fileRef.current?.focus();
+    }}>{t.upload.discard}</Button>}
+    </div>
   </form>;
 }
 

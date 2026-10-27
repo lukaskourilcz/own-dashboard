@@ -10,7 +10,7 @@ import { readTextPrefix } from '@/lib/bounded-text';
 import { databaseVersion } from '@/lib/database-version';
 import {
   DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema, DneskaiAudioToggleSchema, DneskaiAudioToggleReceiptSchema,
-  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus, type DneskaiAudioCursor, type DneskaiAudioToggle, type DneskaiAudioToggleReceipt,
+  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioTrendsStatus, type DneskaiAudioCursor, type DneskaiAudioToggle, type DneskaiAudioToggleReceipt,
 } from './dneskai-audio-contracts';
 
 /** Only known codes leave the request boundary; upstream text never enters a dictionary. */
@@ -178,31 +178,73 @@ export function dneskaiAudioFileProblem(file: { type: string; size: number } | n
   return null;
 }
 
-/** Prepare a signed path, upload the file straight to storage, then let the server check it and record the track. */
-export async function uploadDneskaiAudioTrack(file: File, fields: DneskaiAudioUpload, parent?: AbortSignal): Promise<DneskaiAudioTrack> {
-  const signal = budget(55_000, parent);
-  try {
-    if (dneskaiAudioFileProblem(file)) throw new DneskaiAudioRequestError('invalid-request', 0);
-    const contentType = file.type as DneskaiAudioType;
-    const parsed = DneskaiAudioCreateSchema.omit({ action: true, uploadId: true, contentType: true }).safeParse(fields);
-    if (!parsed.success) throw new DneskaiAudioRequestError('invalid-request', 0);
-    const captured = parsed.data;
-    // The prepared UUID adds exactly 36 ASCII bytes; reject oversized metadata before preparing or uploading a file.
-    if (new TextEncoder().encode(JSON.stringify({ action: 'create', uploadId: '', contentType, ...captured })).byteLength + 36 > MAX_POST_BYTES) throw new DneskaiAudioRequestError('invalid-request', 0);
-    const prepared = DneskaiAudioPreparedSchema.parse(await post({ action: 'prepare', contentType, bytes: file.size }, signal));
-    const parts = prepared.path.split('/');
-    if (parts.length !== 2 || !z.uuid().safeParse(parts[0]).success || parts[1] !== `${prepared.uploadId}.${DNESKAI_AUDIO_TYPES[contentType]}`) throw new DneskaiAudioRequestError('decision-failed', 0);
-    signal.throwIfAborted();
-    const { error } = await awaitWithSignal(createSignedStorageClient(signal).from('marketing-audio').uploadToSignedUrl(prepared.path, prepared.token, file, { contentType, upsert: false }), signal);
-    if (error) throw new DneskaiAudioRequestError('decision-failed', 0);
-    const track = z.strictObject({ track: DneskaiAudioTrackSchema }).parse(await post({ action: 'create', uploadId: prepared.uploadId, contentType, ...captured }, signal)).track;
-    const moods = [...new Set(captured.mood)];
-    if (track.id !== prepared.uploadId || track.title !== captured.title || track.artist !== captured.artist || track.source !== captured.source
-      || track.sourceUrl !== captured.sourceUrl || track.licenceNote !== captured.licenceNote || track.mood.length !== moods.length || track.mood.some((tag, index) => tag !== moods[index])) throw new DneskaiAudioRequestError('decision-failed', 0);
-    return track;
-  } catch (error) { failed(error, parent); }
+/** Retains one original owner/file/metadata identity in memory, never a signed token. */
+export function createDneskaiAudioUploadSession(scope: {
+    ownerId: string;
+    signal: AbortSignal;
+}, file: File, fields: DneskaiAudioUpload) {
+    let ownerId: string, uploadId: string, captured: DneskaiAudioCreate;
+    try {
+        ownerId = z.uuid().parse(scope.ownerId);
+        if (dneskaiAudioFileProblem(file))
+            throw new Error();
+        uploadId = crypto.randomUUID();
+        captured = DneskaiAudioCreateSchema.parse({ ...fields, action: 'create', uploadId, contentType: file.type });
+        if (new TextEncoder().encode(JSON.stringify({ ...captured, ownerId })).byteLength > MAX_POST_BYTES)
+            throw new Error();
+    }
+    catch {
+        throw new DneskaiAudioRequestError('invalid-request', 0);
+    }
+    const originalSignal = scope.signal;
+    const contentType = captured.contentType;
+    let fileMayExist = false, running = false;
+    const confirm = async (signal: AbortSignal) => {
+        const reply = z.strictObject({ ownerId: z.uuid(), track: DneskaiAudioTrackSchema }).parse(await post({ ...captured, ownerId }, signal));
+        signal.throwIfAborted();
+        const track = reply.track, moods = [...new Set(captured.mood)];
+        if (reply.ownerId !== ownerId || track.id !== uploadId || track.title !== captured.title || track.artist !== captured.artist || track.source !== captured.source
+            || track.sourceUrl !== captured.sourceUrl || track.licenceNote !== captured.licenceNote || track.mood.length !== moods.length || track.mood.some((tag, index) => tag !== moods[index]))
+            throw new DneskaiAudioRequestError('decision-failed', 0);
+        return track;
+    };
+    return Object.freeze({ ownerId, uploadId, async run(parent?: AbortSignal): Promise<DneskaiAudioTrack> {
+            if (running)
+                throw new DneskaiAudioRequestError('decision-failed', 0);
+            running = true;
+            const caller = AbortSignal.any([originalSignal, ...(parent ? [parent] : [])]);
+            const signal = budget(55000, caller);
+            try {
+                signal.throwIfAborted();
+                if (fileMayExist) {
+                    try {
+                        return await confirm(signal);
+                    }
+                    catch (error) {
+                        signal.throwIfAborted();
+                        if (!(error instanceof DneskaiAudioRequestError) || error.code !== 'audio-upload-missing')
+                            throw error;
+                    }
+                }
+                const prepared = DneskaiAudioPreparedSchema.parse(await post({ action: 'prepare', ownerId, uploadId, contentType, bytes: file.size }, signal));
+                if (prepared.ownerId !== ownerId || prepared.uploadId !== uploadId || prepared.path !== `${ownerId}/${uploadId}.${DNESKAI_AUDIO_TYPES[contentType]}`)
+                    throw new DneskaiAudioRequestError('decision-failed', 0);
+                signal.throwIfAborted();
+                fileMayExist = true;
+                const { error } = await awaitWithSignal(createSignedStorageClient(signal).from('marketing-audio').uploadToSignedUrl(prepared.path, prepared.token, file, { contentType, upsert: false }), signal);
+                signal.throwIfAborted();
+                if (error)
+                    throw new DneskaiAudioRequestError('decision-failed', 0);
+                return await confirm(signal);
+            }
+            catch (error) {
+                failed(error, caller);
+            }
+            finally {
+                running = false;
+            }
+        } });
 }
-
 
 /** Shared first-page read for the format switch, picker and library; later pages are explicit owner actions. */
 const AudioContinuationSchema = z.strictObject({offset:z.number().int().min(1).max(1_000_000),after:DneskaiAudioCursorSchema});

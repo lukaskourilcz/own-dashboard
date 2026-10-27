@@ -117,7 +117,7 @@ describe("audio route", () => {
 
   it("is hidden while the Reels switch is off", async () => {
     expect((await GET()).status).toBe(404);
-    expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 10 }))).status).toBe(404);
+    expect((await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 10 }))).status).toBe(404);
     expect(mocks.admin).not.toHaveBeenCalled();
   });
   it("rejects malformed page and track selectors", async () => {
@@ -131,15 +131,15 @@ describe("audio route", () => {
     const { db, files } = storage(null);
     mocks.admin.mockReturnValue(db);
     expect(await (await GET()).json()).toEqual({ tracks: [], nextOffset: null, trends: [], trendsStatus: "disabled" });
-    const prepared = await (await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 1024 }))).json();
+    const prepared = await (await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 1024 }))).json();
     expect(prepared).toMatchObject({ token: "upload-token" });
     expect(prepared.path).toMatch(new RegExp(`^${owner}/[0-9a-f-]{36}\\.mp3$`));
-    expect(files.createSignedUploadUrl).toHaveBeenCalledWith(prepared.path);
+    expect(files.createSignedUploadUrl).toHaveBeenCalledWith(prepared.path, {upsert:false});
   });
   it("refuses a stranger, a cross-origin post, a file over 20 MB and an unknown action", async () => {
     vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
-    expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 10 }, "https://evil.example"))).status).toBe(403);
-    expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 21 * 1024 * 1024 }))).status).toBe(400);
+    expect((await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 10 }, "https://evil.example"))).status).toBe(403);
+    expect((await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 21 * 1024 * 1024 }))).status).toBe(400);
     expect((await POST(post({ action: "delete", id: uploadId }))).status).toBe(400);
     mocks.client.mockReturnValue({ auth: { getUser: async () => ({ data: { user: null } }) } });
     expect((await GET()).status).toBe(401);

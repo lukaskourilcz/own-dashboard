@@ -74,7 +74,7 @@ export const DneskaiAudioPrepareSchema = z.strictObject({
   contentType: z.enum(Object.keys(DNESKAI_AUDIO_TYPES) as [DneskaiAudioType, ...DneskaiAudioType[]]),
   bytes: z.number().int().min(1).max(DNESKAI_AUDIO_MAX_BYTES),
 });
-export const DneskaiAudioPreparedSchema = z.strictObject({ uploadId: z.uuid(), path: z.string().min(1).max(300), token: z.string().min(1).max(4000) });
+export const DneskaiAudioPreparedSchema = z.strictObject({ ownerId: z.uuid(), uploadId: z.uuid(), path: z.string().min(1).max(300), token: z.string().min(1).max(4000) });
 export type DneskaiAudioPrepared = z.infer<typeof DneskaiAudioPreparedSchema>;
 
 export const DneskaiAudioCreateSchema = z.strictObject({
@@ -98,7 +98,9 @@ export const DneskaiAudioToggleReceiptSchema = z.discriminatedUnion('kind',[
   toggleReceipt.extend({kind:z.literal('absent'),updatedAt:z.null()}),
 ]);
 export type DneskaiAudioToggleReceipt = z.infer<typeof DneskaiAudioToggleReceiptSchema>;
-export const DneskaiAudioRequestSchema = z.discriminatedUnion('action', [DneskaiAudioPrepareSchema, DneskaiAudioCreateSchema, DneskaiAudioToggleSchema]);
+export const DneskaiAudioPrepareRequestSchema = DneskaiAudioPrepareSchema.extend({ownerId:z.uuid(),uploadId:z.uuid()});
+export const DneskaiAudioCreateRequestSchema = DneskaiAudioCreateSchema.extend({ownerId:z.uuid()});
+export const DneskaiAudioRequestSchema = z.discriminatedUnion('action', [DneskaiAudioPrepareRequestSchema, DneskaiAudioCreateRequestSchema, DneskaiAudioToggleSchema]);
 export type DneskaiAudioRequest = z.infer<typeof DneskaiAudioRequestSchema>;
 
 /**

@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ upload: vi.fn(), factory: vi.fn() }));
 vi.mock('@/lib/supabase/client', () => ({ createSignedStorageClient: mocks.factory }));
-import { DEMO_DNESKAI_AUDIO_TRACKS, dneskaiAudioFileProblem, loadDneskaiAudioOptions, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
+import { DEMO_DNESKAI_AUDIO_TRACKS, dneskaiAudioFileProblem, loadDneskaiAudioOptions, setDneskaiAudioTrackEnabled, createDneskaiAudioUploadSession } from '@/lib/marketing/dneskai-audio-client';
 const id = '33333333-3333-4333-8333-333333333333', owner = '11111111-1111-4111-8111-111111111111';
-const prepared = () => ({ uploadId: id, path: `${owner}/${id}.mp3`, token: 'set' });
+const prepared = () => ({ ownerId: owner, uploadId: id, path: `${owner}/${id}.mp3`, token: 'set' });
 const fields = () => ({ title: 'Captured track', artist: 'Fixture artist', source: 'original' as const, licenceNote: 'Own fixture recording', sourceUrl: 'https://example.test/audio', mood: ['calm'] });
 const file = () => new File(['fixture'], 'fixture.mp3', { type: 'audio/mpeg' });
 const track = () => ({ ...DEMO_DNESKAI_AUDIO_TRACKS[0]!, id, ...fields(), enabled: false });
-beforeEach(() => { mocks.upload.mockReset().mockResolvedValue({ error: null }); mocks.factory.mockReset().mockImplementation(() => ({ from: () => ({ uploadToSignedUrl: mocks.upload }) })); });
+async function uploadDneskaiAudioTrack(file:File,metadata:ReturnType<typeof fields>,parent?:AbortSignal){return createDneskaiAudioUploadSession({ownerId:owner,signal:parent ?? new AbortController().signal},file,metadata).run();}
+beforeEach(() => { vi.spyOn(crypto,'randomUUID').mockReturnValue(id); mocks.upload.mockReset().mockResolvedValue({ error: null }); mocks.factory.mockReset().mockImplementation(() => ({ from: () => ({ uploadToSignedUrl: mocks.upload }) })); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const outcome = (pending: Promise<unknown>) => pending.then(() => 'unexpected-success', error => ({ code: error.code, name: error.name, message: error.message }));
 function stalledBudget() { const controller = new AbortController(); const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal); return { controller, timeout }; }
@@ -85,13 +86,13 @@ describe('captured and bounded audio upload', () => {
   });
   it.each(['id', 'title', 'artist', 'source', 'sourceUrl', 'licenceNote', 'mood'])('requires a matching created track %s', async key => {
     const changed = { ...track(), [key]: key === 'id' ? owner : key === 'source' ? 'pixabay' : key === 'mood' ? ['other'] : key === 'sourceUrl' ? 'https://example.test/other' : 'Other' };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(Response.json(prepared())).mockResolvedValueOnce(Response.json({ track: changed })));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(Response.json(prepared())).mockResolvedValueOnce(Response.json({ ownerId:owner, track: changed })));
     await expect(uploadDneskaiAudioTrack(file(), fields())).rejects.toHaveProperty('code', 'decision-failed');
   });
   it('captures fields before prepare, reuses one whole-flow signal and preserves a later disable', async () => {
     const captured = fields(), calls: Array<Record<string, unknown>> = []; let release!: () => void;
     mocks.upload.mockImplementation(() => new Promise(resolve => { release = () => resolve({ error: null }); }));
-    const signals: Array<AbortSignal | null | undefined> = [], fetcher = vi.fn(async (_url, init) => { signals.push(init.signal); const body = JSON.parse(init.body); calls.push(body); return Response.json(body.action === 'prepare' ? prepared() : { track: track() }); }); vi.stubGlobal('fetch', fetcher);
+    const signals: Array<AbortSignal | null | undefined> = [], fetcher = vi.fn(async (_url, init) => { signals.push(init.signal); const body = JSON.parse(init.body); calls.push(body); return Response.json(body.action === 'prepare' ? prepared() : { ownerId:owner, track: track() }); }); vi.stubGlobal('fetch', fetcher);
     const result = uploadDneskaiAudioTrack(file(), captured); await vi.waitFor(() => expect(mocks.upload).toHaveBeenCalledOnce()); captured.title = 'Changed during upload'; captured.mood.push('bright'); release();
     const saved = await result; expect(saved.id).toBe(id); expect(saved.enabled).toBe(false); expect(calls[1]).toMatchObject({ title: 'Captured track', mood: ['calm'] }); expect(signals[0]).toBe(signals[1]); expect(mocks.factory.mock.calls[0]![0]).toBe(signals[0]);
   });

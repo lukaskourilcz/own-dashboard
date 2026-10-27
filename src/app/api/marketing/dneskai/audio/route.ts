@@ -110,13 +110,16 @@ export async function POST(request: Request) {
       const timedOut = error instanceof MarketingRequestBodyError && error.code === 'request-body-timeout';
       return Response.json({ error: timedOut ? 'audio-library-unavailable' : 'invalid-request' }, { status: timedOut ? 408 : 400, headers });
     }
-    if(input.action==='toggle' && input.ownerId!==user)return Response.json({error:'unauthorized'},{status:401,headers});
+    if(input.ownerId!==user)return Response.json({error:'unauthorized'},{status:401,headers});
     const limited = await awaitWithSignal(rateLimit(user, { key: 'dneskai-audio', limit: 30, windowSec: 600 }), signal);
     if (!limited.ok) return Response.json({ error: 'rate-limited' }, { status: 429, headers: { ...headers, 'Retry-After': String(limited.retryAfter) } });
     signal.throwIfAborted();
     const db = createAdminClient(signal);
-    if (input.action === 'prepare') return Response.json(await awaitWithSignal(prepareDneskaiAudioUpload(db, user, input.contentType), signal), { headers });
-    if (input.action === 'create') return Response.json({ track: await awaitWithSignal(createDneskaiAudioTrack(db, user, input, { signal }), signal) }, { headers });
+    if (input.action === 'prepare') return Response.json(await awaitWithSignal(prepareDneskaiAudioUpload(db, user, input.contentType, input.uploadId), signal), { headers });
+    if (input.action === 'create') {
+      const {ownerId, ...intent} = input;
+      return Response.json({ownerId, track: await awaitWithSignal(createDneskaiAudioTrack(db, user, intent, {signal}), signal)}, {headers});
+    }
     const receipt=await awaitWithSignal(setDneskaiAudioTrackEnabled(db,user,input.id,input.enabled,input.expectedVersion,signal),signal);
     return Response.json({receipt},{headers});
   } catch (failure) { return failed(failure); }

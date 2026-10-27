@@ -12,8 +12,8 @@ vi.mock('@/lib/marketing/dneskai-audio', async importOriginal => ({
 import { GET, POST } from '@/app/api/marketing/dneskai/audio/route';
 const owner = '11111111-1111-4111-8111-111111111111', id = '33333333-3333-4333-8333-333333333333';
 const url = 'https://fixture.invalid/api/marketing/dneskai/audio';
-const intent = { action: 'create', uploadId: id, contentType: 'audio/mpeg', title: 'Fixture', artist: 'Fixture', source: 'original', licenceNote: 'Own fixture', sourceUrl: 'https://example.test/audio', mood: [] };
-const post = (value: unknown = { action: 'prepare', contentType: 'audio/mpeg', bytes: 100 }) => new Request(url, { method: 'POST', headers: { Origin: 'https://fixture.invalid' }, body: JSON.stringify(value) });
+const intent = { ownerId:owner, action: 'create', uploadId: id, contentType: 'audio/mpeg', title: 'Fixture', artist: 'Fixture', source: 'original', licenceNote: 'Own fixture', sourceUrl: 'https://example.test/audio', mood: [] };
+const post = (value: unknown = { ownerId:owner, uploadId:id, action: 'prepare', contentType: 'audio/mpeg', bytes: 100 }) => new Request(url, { method: 'POST', headers: { Origin: 'https://fixture.invalid' }, body: JSON.stringify(value) });
 const stalled = () => new Promise<never>(() => {});
 function controlledTimeouts() {
   const timeouts = new Map<number, AbortController>();
@@ -26,7 +26,7 @@ beforeEach(() => {
   vi.resetAllMocks(); vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED', 'true'); vi.stubEnv('DNESKAI_AUDIO_TRENDS_ENABLED', 'false');
   m.client.mockImplementation(async () => ({ auth: { getUser: m.user } }));
   m.user.mockResolvedValue({ data: { user: { id: owner } }, error: null }); m.admin.mockReturnValue({}); m.limited.mockResolvedValue({ ok: true, retryAfter: 0 });
-  m.list.mockResolvedValue({ tracks: [], nextOffset: null }); m.selected.mockResolvedValue([]); m.prepare.mockResolvedValue({ uploadId: id, path: `${owner}/${id}.mp3`, token: 'TEST-ONLY-upload-token' });
+  m.list.mockResolvedValue({ tracks: [], nextOffset: null }); m.selected.mockResolvedValue([]); m.prepare.mockResolvedValue({ ownerId:owner, uploadId: id, path: `${owner}/${id}.mp3`, token: 'TEST-ONLY-upload-token' });
   m.create.mockResolvedValue({ id }); m.toggle.mockResolvedValue(undefined);
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); vi.useRealTimers(); });
@@ -124,4 +124,17 @@ it('forwards the captured version and returns the positive saved receipt',async(
 });
 it('requires the owner and version instead of accepting a legacy bare toggle',async()=>{
  expect((await POST(post({action:'toggle',id,enabled:false}))).status).toBe(400);expect(m.limited).not.toHaveBeenCalled();expect(m.toggle).not.toHaveBeenCalled();
+});
+
+it.each(['prepare','create'] as const)('rejects a changed original owner before rate/service %s work',async action=>{
+ const body=action==='prepare'?{action,ownerId:id,uploadId:id,contentType:'audio/mpeg',bytes:7}:{...intent,ownerId:id};const response=await POST(post(body));expect(response.status).toBe(401);expect(m.limited).not.toHaveBeenCalled();expect(m.admin).not.toHaveBeenCalled();
+});
+it('signs only the captured upload identity and stamps its original owner',async()=>{
+ const response=await POST(post());expect(response.status).toBe(200);expect(m.prepare).toHaveBeenCalledWith({},owner,'audio/mpeg',id);expect(await response.json()).toMatchObject({ownerId:owner,uploadId:id,path:owner+'/'+id+'.mp3'});
+});
+it('passes captured create fields without transport-only owner metadata and stamps the receipt',async()=>{
+ const response=await POST(post(intent));expect(response.status).toBe(200);const {ownerId,...captured}=intent;expect(m.create).toHaveBeenCalledWith({},owner,captured,expect.objectContaining({signal:expect.any(AbortSignal)}));expect(await response.json()).toEqual({ownerId,track:{id}});
+});
+it.each([{action:'prepare',contentType:'audio/mpeg',bytes:7},{...intent,ownerId:undefined},{action:'prepare',ownerId:owner,contentType:'audio/mpeg',bytes:7}])('refuses uncaptured legacy upload intent: %#',async value=>{
+ expect((await POST(post(value))).status).toBe(400);expect(m.limited).not.toHaveBeenCalled();expect(m.admin).not.toHaveBeenCalled();
 });

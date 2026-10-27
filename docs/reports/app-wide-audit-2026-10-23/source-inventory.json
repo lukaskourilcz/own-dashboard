@@ -388,10 +388,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
-      "lines": 123,
+      "lines": 126,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "a2e71f7a28a3290cbf1d38229e4601c80361e1a5ca796cb7b0c280f26b8eaa6e"
+      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
+      "reviewedSha256": "51c46713a80ad264332e81faf62aa88839558cd3649f6d6e8423d99e7131a733"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -1036,10 +1036,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-audio-library.tsx",
-      "lines": 261,
+      "lines": 371,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "331f7fad0ff8c780860ec8f84ff719e215584d8f5373ba5da324884859a86ffd"
+      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
+      "reviewedSha256": "1639606b78bb117644816eae7338839100e2d6a81c871872a4812e0ccea53298"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -2782,10 +2782,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
-      "lines": 176,
+      "lines": 178,
       "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "70814bca12902fa64e2accbedb28c4595a8c93263f9e3a4f60b491c234e04717"
+      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
+      "reviewedSha256": "87e2b4cc2a21d22a44fcc39837ed97f37caddf51675f443b47ed855d0aff7fa9"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",
@@ -3322,17 +3322,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-client.ts",
-      "lines": 255,
+      "lines": 297,
       "sha256": "64ecb5d35f16a6099ec814f15024050a876a00a8f60073af1de94b36b4fc5fc2",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "f02735a53202674b8998015883e2a0d9aeb10f23e9a5b185bb04fb69d4ac1a3e"
+      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
+      "reviewedSha256": "34682c4374106475567fa382f1cfaaa53f5a80923f34a116d7b2c49df0ede2bd"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
-      "lines": 132,
+      "lines": 134,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "8490d295e4d3c7a2e0375bc03568b127ff3c459cfea8d9ea4fde3f2eb08d2ebf"
+      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
+      "reviewedSha256": "69a9faf3dc22ec77c2add66d5565e87cd698aa91fcda6c24bb22baf255868aaa"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",
@@ -3359,8 +3359,8 @@
       "path": "src/lib/marketing/dneskai-audio.ts",
       "lines": 334,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial review; finding 325 positively confirms owned-object absence after download failure, retains uncertain objects and bounds proof reads; captured toggles verified; upload/renderer and final release pending",
-      "reviewedSha256": "30a0375b824a9466ebf1296613f5dde16aebbdc752f074fbeb677d4d798e2d46"
+      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
+      "reviewedSha256": "036b714fb53a49aa998e99f10598aba362bf8ad4afd5930c436e30da2a5bb48d"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",

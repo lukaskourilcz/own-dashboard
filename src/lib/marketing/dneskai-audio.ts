@@ -1,6 +1,5 @@
 import "server-only";
 import { spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -134,13 +133,14 @@ async function signAudioRows(db: Database, owner: string, values: unknown[], sig
 }
 
 /** A signed upload URL for exactly one new object. Nothing is recorded until `createDneskaiAudioTrack` checks the file. */
-export async function prepareDneskaiAudioUpload(db: Database, owner: string, contentType: DneskaiAudioType): Promise<DneskaiAudioPrepared> {
+export async function prepareDneskaiAudioUpload(db: Database, owner: string, contentType: DneskaiAudioType, uploadId: string): Promise<DneskaiAudioPrepared> {
   z.uuid().parse(owner);
-  const uploadId = randomUUID();
+  z.uuid().parse(uploadId);
+  DneskaiAudioCreateSchema.shape.contentType.parse(contentType);
   const name = objectName(owner, uploadId, contentType);
-  const { data, error } = await db.storage.from(DNESKAI_AUDIO_BUCKET).createSignedUploadUrl(name);
+  const { data, error } = await db.storage.from(DNESKAI_AUDIO_BUCKET).createSignedUploadUrl(name, {upsert:false});
   if (error || !data?.token) throw new DneskaiAudioError("audio-library-unavailable");
-  return { uploadId, path: name, token: data.token };
+  return { ownerId: owner, uploadId, path: name, token: data.token };
 }
 
 /** Reads `Duration: hh:mm:ss.cc` from ffmpeg's probe of the file; null when ffmpeg finds no audio stream. */
