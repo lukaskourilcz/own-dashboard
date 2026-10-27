@@ -507,3 +507,10 @@ All 78 targeted Career cases pass in one 4.3-minute EN/CS desktop/mobile run. Re
 ### 26 October — Music startup contract (finding 289)
 
 All four EN/CS desktop/mobile native cases recover a controlled six-second synthetic WAV response, then confirm stop/repeat/navigation disposal (48.5 seconds). The app still fails a stalled startup at ten seconds; its playback assertion now observes that existing limit. Sixty-one focused cases retain cancellation/late-acknowledgement coverage. This does not identify the cause of checkpoint 97's earlier delay or establish production playback latency. No real music/provider is used.
+
+
+### 27 October — optional Music recovery and shared hints (finding 313)
+
+All sixteen native cases pass across three files in 1.6 minutes: EN/CS light/dark desktop/mobile, unavailable/empty/ready recommendations with retained uploaded tracks, keyboard retry, fitted desktop message/action, 44px mobile action, six viewport widths and axe. Existing native preview startup/disposal and synthetic Lab version/approval hashes retain their behavior. The initial new fixture assumes a fixed startup read count; the final fixture checks exactly one additional explicit retry after settled focus. No application timing changes and no real provider/publication occurs. All 321 focused audio cases pass; fourteen final hint/recovery mounted cases separately include shared due-only reads, retained sound values and stale copy feedback. Final consolidated and production checks remain pending.
+
+Two final Czech capture checks pass in 19.6 seconds at committed application `0c041e17`. The inspected library/recovery crops and mapped highlights are in the audit’s `audio-trends-recovery-captures.json`; they show synthetic fixtures. The local visual plan now has fifty authentic desktop/mobile pairs and 709 source entries. Every image decodes in both modes, and light/dark 390/1440px artifact reflow/highlight controls pass without page errors. Old images keep their original capture dates/hashes. Track density, captured writes, page reconciliation and other remaining leads remain in the authoritative remaining-review list.

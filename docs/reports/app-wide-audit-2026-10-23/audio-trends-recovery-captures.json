@@ -1,0 +1,76 @@
+{
+  "finding": 313,
+  "capturedDate": "2026-10-27",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "0c041e17",
+  "state": "Actual synthetic optional-trend outage with one confirmed uploaded-track fixture. No production data.",
+  "components": {
+    "src/components/marketing/dneskai-audio-library.tsx": "d4ed599681dd5037212c4850ebbc4ecbef6021c32f6b6ae92ee4309dfb349437",
+    "src/components/marketing/dneskai/audio-trends-notice.tsx": "a5cdb23aaef10640c7428ff68915a4a1374f06462983446e6c16229079f50728",
+    "src/lib/marketing/dneskai-audio-client.ts": "c6a4d7507843120d63c41f2e25233e8eab8087026df54a9a4a793ba73e6898b3",
+    "src/lib/marketing/dneskai-audio-contracts.ts": "e6f2714f59bcef099b13d8b6c227b26843d8bad405556e86b0abf86c00de127d",
+    "src/lib/i18n/sections/dneskai-audio.ts": "03749c4c4c912b3f8fb53089b558241562e5bf36fc7a39f5a67fa3269a81eeae"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "box": {
+        "x": 276,
+        "y": 211,
+        "width": 1120,
+        "height": 310
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 32.58064516129032,
+          "w": 100,
+          "h": 27.096774193548388
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 74.19354838709677,
+          "w": 37.486049107142854,
+          "h": 10.32258064516129
+        }
+      ],
+      "asset": "audio-trends-recovery-cs-1440.png",
+      "assetSha256": "46b5336d6e330418b031b9b2eb6d8982931f04112b58035059cf0af018d1a7b6"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1200
+      },
+      "box": {
+        "x": 16,
+        "y": 215,
+        "width": 398,
+        "height": 398
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 30.402010050251256,
+          "w": 100,
+          "h": 25.12562814070352
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 66.83417085427136,
+          "w": 100,
+          "h": 18.09045226130653
+        }
+      ],
+      "asset": "audio-trends-recovery-cs-430.png",
+      "assetSha256": "670a819f41da71438b740e2b60a5a68391fcef4409b9423f9f9c4ea29e697448"
+    }
+  }
+}
