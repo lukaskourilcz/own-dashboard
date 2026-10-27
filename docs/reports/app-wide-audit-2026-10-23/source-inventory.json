@@ -4071,10 +4071,10 @@
     },
     {
       "path": "src/lib/marketing/orchestrator.ts",
-      "lines": 204,
+      "lines": 231,
       "sha256": "f83a5180ea40a9de68e97013f5d11548790e9c135005a1e35513eb489a15d8d1",
-      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending",
-      "reviewedSha256": "bca38aa022b9cbb6df8fe5b6065a28764e9ff4fd309a726ce46696c0d51fc6c3"
+      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains",
+      "reviewedSha256": "4b35aa2c3cb2c345698aafe6d544572e5f88886821943d7102a5b02237f1b5db"
     },
     {
       "path": "src/lib/marketing/owner-edits.ts",
@@ -4148,10 +4148,10 @@
     },
     {
       "path": "src/lib/marketing/scheduler-ports.ts",
-      "lines": 216,
+      "lines": 220,
       "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
-      "reviewedSha256": "0d7c27e1c563877fc4531549f87a04aa6b20a4c4919dedfc7837523690138023"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains",
+      "reviewedSha256": "1e6999653b756ae2d8918cc5d1ec68cfe87a64a03c55f0d9df887eca3752ee51"
     },
     {
       "path": "src/lib/marketing/scheduler.ts",

@@ -173,9 +173,13 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       return due || pending || reel;
     },
     async publishDue(dryRun, signal) {
-      // #165: start the render of a Reel due within 45 minutes, so its MP4 waits at the slot. Best effort, $0.
-      if (!dryRun && options.origin) await prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS).catch(() => null);
-      const result = options.origin ? await publishDueMarketing(db, owner, "dneskai", dryRun, signal, undefined, { origin: options.origin }) : await publishDueMarketing(db, owner, "dneskai", dryRun, signal);
+      const check=()=>{if(signal.aborted)throw new DOMException('Request aborted','AbortError');};check();
+      // Prepare strictly future Reels; native compute/storage remain bounded work. Due Reels are handled once below.
+      if (!dryRun && options.origin) await prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS,signal).catch(() => null);
+      check();
+      const pending=options.origin?publishDueMarketing(db,owner,"dneskai",dryRun,signal,undefined,{origin:options.origin}):publishDueMarketing(db,owner,"dneskai",dryRun,signal);
+      const result=await awaitWithSignal(pending,signal);
+      check();
       return { outcomes: result.outcomes.map((outcome) => ({ publicationId: outcome.publicationId, status: outcome.status, errorCode: outcome.errorCode ?? null })) };
     },
     async nextReconciliation(checkedBefore) {

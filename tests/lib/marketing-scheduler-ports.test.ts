@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   audio: vi.fn(), config: vi.fn(), chart: vi.fn(), tick: vi.fn(), pending: vi.fn(), collect: vi.fn(), purge: vi.fn(), loader: vi.fn(), briefs: vi.fn(), briefsGetter: vi.fn(),
-  execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), list: vi.fn(), refresh: vi.fn(), renew: vi.fn(),
+  prepare:vi.fn(),execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), list: vi.fn(), refresh: vi.fn(), renew: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/marketing/dneskai-collection', () => ({ tickDneskaiCollection: (...args: unknown[]) => mocks.tick(...args) }));
@@ -12,7 +12,7 @@ vi.mock('@/lib/marketing/dneskai-media', () => ({
 vi.mock('@/lib/marketing/dneskai-wiring', () => ({ getCreateDneskaiBriefs: (...args: unknown[]) => { mocks.briefsGetter(...args); return mocks.briefs; } }));
 vi.mock('@/lib/marketing/worker-runtime', () => ({ executeMarketingJob: (...args: unknown[]) => mocks.execute(...args) }));
 vi.mock('@/lib/marketing/source-refresh', () => ({ refreshSource: 'refresh-source-function' }));
-vi.mock('@/lib/marketing/orchestrator', () => ({ publishDueMarketing: (...args: unknown[]) => mocks.publish(...args), reconcileStoredMarketingPublication: (...args: unknown[]) => mocks.reconcile(...args) }));
+vi.mock('@/lib/marketing/orchestrator', () => ({ prepareUpcomingDneskaiReels:(...args:unknown[])=>mocks.prepare(...args),publishDueMarketing: (...args: unknown[]) => mocks.publish(...args), reconcileStoredMarketingPublication: (...args: unknown[]) => mocks.reconcile(...args) }));
 vi.mock('@/lib/marketing/meta-credentials', async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/marketing/meta-credentials')>(), resolveMetaPublisherConfig: (...args: unknown[]) => mocks.config(...args), listMetaTokenMetadata: (...args: unknown[]) => mocks.list(...args), refreshInstagramToken: (...args: unknown[]) => mocks.refresh(...args) }));
 vi.mock('@/lib/marketing/asset-urls', () => ({ renewStoredRevisionAssetUrls: (...args: unknown[]) => mocks.renew(...args) }));
 vi.mock('@/lib/marketing/dneskai-audio-trends',async original=>({...await original<typeof import('@/lib/marketing/dneskai-audio-trends')>(),ingestDneskaiAudioTrends:(...args:unknown[])=>mocks.audio(...args)}));
@@ -220,3 +220,8 @@ describe('captured audio observation admission',()=>{
  it('refuses a foreign account before credential/provider work',async()=>{const h=fakeDb({marketing_accounts:[{...observationAccount,user_id:other}]});expect(await createMarketingSchedulerPorts(h.db,owner,{}).audioTrends!(new Date(observationNow),new AbortController().signal)).toMatchObject({status:'skipped',code:'account-unverified'});expect(mocks.config).not.toHaveBeenCalled();expect(mocks.audio).not.toHaveBeenCalled();});
  it('refuses a cancelled caller before account work',async()=>{const h=fakeDb({}),parent=new AbortController();parent.abort();await expect(createMarketingSchedulerPorts(h.db,owner,{}).audioTrends!(new Date(observationNow),parent.signal)).rejects.toThrow();expect(h.log).toHaveLength(0);expect(mocks.config).not.toHaveBeenCalled();});
 });
+
+it('carries the original tick scope through future preparation before due publishing',async()=>{const {db}=fakeDb({}),scope=new AbortController();mocks.prepare.mockResolvedValue(null);mocks.publish.mockResolvedValue({outcomes:[]});expect(await createMarketingSchedulerPorts(db,owner,{}, {origin:'https://own.example'}).publishDue(false,scope.signal)).toEqual({outcomes:[]});expect(mocks.prepare).toHaveBeenCalledWith(db,owner,'https://own.example',45*60000,scope.signal);expect(mocks.publish).toHaveBeenCalledWith(db,owner,'dneskai',false,scope.signal,undefined,{origin:'https://own.example'});});
+it('starts no publication step after the original tick retires during optional preparation',async()=>{const {db}=fakeDb({}),scope=new AbortController();mocks.prepare.mockImplementationOnce(async()=>{scope.abort('TEST_ONLY_PRIVATE_REASON');return null;});await expect(createMarketingSchedulerPorts(db,owner,{}, {origin:'https://own.example'}).publishDue(false,scope.signal)).rejects.toHaveProperty('name','AbortError');expect(mocks.publish).not.toHaveBeenCalled();});
+
+it('settles a retired tick even if its publication dependency ignores cancellation',async()=>{const {db}=fakeDb({}),scope=new AbortController();mocks.publish.mockImplementationOnce(()=>new Promise(()=>{}));const pending=createMarketingSchedulerPorts(db,owner,{}).publishDue(true,scope.signal).catch(error=>error);await vi.waitFor(()=>expect(mocks.publish).toHaveBeenCalledOnce());scope.abort('TEST_ONLY_PRIVATE_REASON');expect(await pending).toMatchObject({name:'AbortError',message:'Request aborted'});expect(mocks.prepare).not.toHaveBeenCalled();});
