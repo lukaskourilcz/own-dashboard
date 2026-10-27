@@ -3623,10 +3623,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
-      "lines": 166,
+      "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from all 143 canonical migrations; canonical rollout and final app-wide release checks pending",
-      "reviewedSha256": "23244fd339dec575b828a67f8849df697dbf653d250a55258d0cfdcd31f899bd"
+      "status": "source reviewed; eight-table read port regenerated from all 144 canonical migrations; captured account-control API/browser adoption, canonical rollout and final release checks pending",
+      "reviewedSha256": "3bb4dc6bd3c42db38f2a8475a431c6b64cdd1113bbaec9794933ea22193adb2f"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
