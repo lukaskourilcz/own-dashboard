@@ -17,6 +17,7 @@ vi.mock('@/lib/marketing/publisher', async (original) => ({ ...await original<ty
 vi.mock('@/lib/marketing/meta-credentials', async (original) => ({ ...await original<typeof import('@/lib/marketing/meta-credentials')>(), resolveMetaPublisherConfig: m.config }));
 import { prepareUpcomingDneskaiReels, publishDueMarketing } from '@/lib/marketing/orchestrator';
 import { createMarketingSchedulerPorts } from '@/lib/marketing/scheduler-ports';
+import { dneskaiReelForRevision } from '@/lib/marketing/dneskai-reel';
 const owner = '11111111-1111-4111-8111-111111111111', revisionId = '22222222-2222-4222-8222-222222222222', publication = '33333333-3333-4333-8333-333333333333', account = '44444444-4444-4444-8444-444444444444', instant = '2026-10-27T12:00:00Z';
 let database: Awaited<ReturnType<typeof createMigratedDatabase>>, service: SupabaseClient, queueBodies: string[] = [];
 beforeAll(async () => {
@@ -155,4 +156,12 @@ it('retains an unavailable due Reel and starts no optional future preparation',a
  await queue('2026-10-27T11:59:00Z');await queueFuture();m.find.mockRejectedValue(new Error('TEST_ONLY_PRIVATE_STORAGE_DETAIL'));
  expect(await createMarketingSchedulerPorts(service,owner,{}, {origin:'https://own.example'}).publishDue(false,new AbortController().signal)).toEqual({outcomes:[{publicationId:publication,status:'held',errorCode:'reel-storage-failed'}]});
  expect(m.request).not.toHaveBeenCalled();expect(m.publish).not.toHaveBeenCalled();expect(queueBodies).toEqual([]);
+});
+
+it('carries one approved hash from the database queue through signed intent and refuses later withdrawal',async()=>{
+ await queue('2026-10-27T12:20:00Z');expect(await prepareUpcomingDneskaiReels(service,owner,'https://own.example')).toBe('reel-render-pending');
+ const captured=m.request.mock.calls[0][0],current=(await database.query<{content_hash:string}>('select content_hash from public.marketing_revisions where id=$1',[revisionId])).rows[0];expect(captured.revisionHash).toBe(current.content_hash);
+ await database.query("update public.marketing_revisions set status='review',ready=false,approved_hash=null where id=$1",[revisionId]);
+ const loadAudio=vi.fn(),loadSlide=vi.fn(),render=vi.fn(),storage={find:vi.fn(),put:vi.fn()};
+ await expect(dneskaiReelForRevision(service,owner,revisionId,{approvedRevisionHash:captured.revisionHash,loadAudio,loadSlide,render,storage})).rejects.toHaveProperty('code','reel-revision-unavailable');expect(loadAudio).not.toHaveBeenCalled();expect(storage.find).not.toHaveBeenCalled();expect(render).not.toHaveBeenCalled();
 });

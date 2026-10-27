@@ -8,6 +8,7 @@ vi.mock('@/lib/rate-limit', () => ({ rateLimit: m.limited }));
 vi.mock('@/lib/marketing/dneskai-reel', async (original) => ({ ...await original<typeof import('@/lib/marketing/dneskai-reel')>(), dneskaiReelForRevision: m.reel, recordDneskaiReel: m.record, createDneskaiReelStorage: () => ({}) }));
 import { signAutomationBody } from '@/lib/marketing/automation-auth';
 import { POST } from '@/app/api/marketing/dneskai/render-reel/route';
+const revisionHash='c'.repeat(64);
 const owner = '11111111-1111-4111-8111-111111111111', revisionId = '33333333-3333-4333-8333-333333333333', url = 'https://reel-route.invalid/api/marketing/dneskai/render-reel';
 const request = (signal?: AbortSignal) => new Request(url, { method: 'POST', signal, headers: { Origin: 'https://reel-route.invalid', 'Content-Type': 'application/json' }, body: JSON.stringify({ revisionId }) });
 beforeEach(() => {
@@ -184,10 +185,10 @@ it('starts signed asynchronous work under its own background scope after acknowl
     const secret = 'TEST_ONLY_SCHEDULER_SECRET_NOT_A_REAL_KEY';
     vi.stubEnv('MARKETING_OWNER_ID', owner);
     vi.stubEnv('MARKETING_SCHEDULER_SECRET', secret);
-    const controller = new AbortController(), body = JSON.stringify({ revisionId, async: true });
+    const controller = new AbortController(), body = JSON.stringify({ revisionId, revisionHash, async: true });
     const response = await POST(new Request(url, { method: 'POST', headers: signAutomationBody(body, secret), body, signal: controller.signal }));
     expect(response.status).toBe(202);
-    expect(await response.json()).toEqual({status:'accepted',ownerId:owner,revisionId,audioTrackId:null});
+    expect(await response.json()).toEqual({status:'accepted',ownerId:owner,revisionId,revisionHash,audioTrackId:null});
     expect(m.after).toHaveBeenCalledOnce();
     expect(m.admin).not.toHaveBeenCalled();
     expect(m.user).not.toHaveBeenCalled();
@@ -203,7 +204,7 @@ it('allows no signed background work from a worker role or a cookie-only async b
     const secret = 'TEST_ONLY_WORKER_SECRET_NOT_A_REAL_KEY';
     vi.stubEnv('MARKETING_OWNER_ID', owner);
     vi.stubEnv('MARKETING_WORKER_SECRET', secret);
-    const body = JSON.stringify({ revisionId, async: true });
+    const body = JSON.stringify({ revisionId, revisionHash, async: true });
     expect((await POST(new Request(url, { method: 'POST', headers: signAutomationBody(body, secret), body }))).status).toBe(403);
     expect((await POST(new Request(url, { method: 'POST', headers: { Origin: 'https://reel-route.invalid' }, body }))).status).toBe(400);
     expect(m.after).not.toHaveBeenCalled();
@@ -216,7 +217,7 @@ it('contains a background registration failure without exposing framework diagno
     m.after.mockImplementationOnce(() => {
         throw new Error('TEST_ONLY_PRIVATE_FRAMEWORK_DETAIL');
     });
-    const body = JSON.stringify({ revisionId, async: true });
+    const body = JSON.stringify({ revisionId, revisionHash, async: true });
     const response = await POST(new Request(url, { method: 'POST', headers: signAutomationBody(body, secret), body }));
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: 'reel-request-unavailable' });
@@ -230,7 +231,7 @@ it('bounds a signed background render and logs only the fixed failure code', asy
     });
     m.reel.mockImplementation(() => new Promise(() => {
     }));
-    const body = JSON.stringify({ revisionId, async: true });
+    const body = JSON.stringify({ revisionId, revisionHash, async: true });
     expect((await POST(new Request(url, { method: 'POST', headers: signAutomationBody(body, secret), body }))).status).toBe(202);
     const pending = m.after.mock.calls[0][0]();
     await vi.waitFor(() => expect(m.reel).toHaveBeenCalledOnce());
@@ -238,4 +239,16 @@ it('bounds a signed background render and logs only the fixed failure code', asy
     await pending;
     expect(m.record).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(JSON.stringify({ event: 'dneskai-reel-render-failed', code: 'reel-timeout' }));
+});
+
+it('registers no signed background work without its captured revision hash',async()=>{
+ const secret='TEST_ONLY_SCHEDULER_SECRET_NOT_A_REAL_KEY';vi.stubEnv('MARKETING_OWNER_ID',owner);vi.stubEnv('MARKETING_SCHEDULER_SECRET',secret);
+ const body=JSON.stringify({revisionId,async:true}),response=await POST(new Request(url,{method:'POST',headers:signAutomationBody(body,secret),body}));expect(response.status).toBe(400);expect(m.after).not.toHaveBeenCalled();expect(m.admin).not.toHaveBeenCalled();
+});
+it('passes the captured signed hash into rendering and refuses a contradictory returned hash before recording',async()=>{
+ const secret='TEST_ONLY_SCHEDULER_SECRET_NOT_A_REAL_KEY';vi.stubEnv('MARKETING_OWNER_ID',owner);vi.stubEnv('MARKETING_SCHEDULER_SECRET',secret);
+ m.reel.mockResolvedValueOnce({revisionHash:'f'.repeat(64)});const body=JSON.stringify({revisionId,revisionHash}),response=await POST(new Request(url,{method:'POST',headers:signAutomationBody(body,secret),body}));expect(response.status).toBe(404);expect(await response.json()).toEqual({error:'reel-revision-unavailable'});expect(m.reel.mock.calls[0][3].approvedRevisionHash).toBe(revisionHash);expect(m.record).not.toHaveBeenCalled();
+});
+it('keeps captured scheduler intent fields out of cookie-only previews',async()=>{
+ const response=await POST(new Request(url,{method:'POST',headers:{Origin:'https://reel-route.invalid'},body:JSON.stringify({revisionId,revisionHash})}));expect(response.status).toBe(400);expect(m.reel).not.toHaveBeenCalled();expect(m.admin).not.toHaveBeenCalled();
 });

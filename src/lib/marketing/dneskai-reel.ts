@@ -174,6 +174,8 @@ export type DneskaiReelDependencies = {
   loadAudio(revision: ReturnType<typeof parseContentRevision>,signal?:AbortSignal): Promise<DneskaiReelAudio | null>;
   storage: ReturnType<typeof createDneskaiReelStorage>;
   render?: typeof renderDneskaiReel;
+  /** Signed scheduler intent; owner previews may still render unapproved drafts. */
+  approvedRevisionHash?: string;
   signal?: AbortSignal;
 };
 
@@ -191,12 +193,19 @@ export async function dneskaiReelForRevision(db: Database, ownerId: string, revi
             throw new DneskaiReelError("reel-revision-unavailable");
         if (!z.uuid().safeParse(revisionId).success)
             throw new DneskaiReelError("reel-revision-unavailable");
+        const expected = dependencies.approvedRevisionHash;
+        if (expected !== undefined && !z.string().regex(/^[a-f0-9]{64}$/).safeParse(expected).success) throw new DneskaiReelError('reel-revision-unavailable');
+        const approvalShape = expected === undefined ? undefined : z.strictObject({
+            id: z.literal(revisionId), user_id: z.literal(ownerId), content_hash: z.literal(expected),
+            status: z.literal('approved'), ready: z.literal(true), approved_hash: z.literal(expected),
+        });
         const readSignal = AbortSignal.any([signal, AbortSignal.timeout(15000)]);
-        const { data, error } = await awaitWithSignal(db.from('marketing_revisions').select('id,user_id,revision,content_hash,render_report').eq('id', revisionId).eq('user_id', ownerId).retry(false).abortSignal(readSignal).maybeSingle(), readSignal).catch(() => {
+        const { data, error } = await awaitWithSignal(db.from('marketing_revisions').select(expected === undefined ? 'id,user_id,revision,content_hash,render_report' : 'id,user_id,revision,content_hash,render_report,status,ready,approved_hash').eq('id', revisionId).eq('user_id', ownerId).retry(false).abortSignal(readSignal).maybeSingle(), readSignal).catch(() => {
             throw new DneskaiReelError('reel-revision-unavailable');
         });
         signal.throwIfAborted();
-        const checked = z.strictObject({ id: z.uuid(), user_id: z.uuid(), revision: z.unknown(), content_hash: z.string().regex(/^[a-f0-9]{64}$/), render_report: z.unknown() }).safeParse(data);
+        const shape = z.strictObject({ id: z.uuid(), user_id: z.uuid(), revision: z.unknown(), content_hash: z.string().regex(/^[a-f0-9]{64}$/), render_report: z.unknown() });
+        const checked = (approvalShape ? shape.extend(approvalShape.shape) : shape).safeParse(data);
         if (error || !checked.success || checked.data.id !== revisionId || checked.data.user_id !== ownerId)
             throw new DneskaiReelError('reel-revision-unavailable');
         const row = checked.data;
@@ -249,6 +258,18 @@ export async function dneskaiReelForRevision(db: Database, ownerId: string, revi
             throw new DneskaiReelError('reel-slides-unavailable');
         }
         signal.throwIfAborted();
+        if (approvalShape) {
+            // Recheck after input transfers without holding a database transaction through native encoding.
+            const approvalSignal = AbortSignal.any([signal, AbortSignal.timeout(15000)]);
+            const approval = await awaitWithSignal(db.from('marketing_revisions')
+                .select('id,user_id,content_hash,status,ready,approved_hash').eq('id', revisionId).eq('user_id', ownerId)
+                .retry(false).abortSignal(approvalSignal).maybeSingle(), approvalSignal).catch(() => {
+                    throw new DneskaiReelError('reel-revision-unavailable');
+                });
+            signal.throwIfAborted();
+            if (approval.error || !approvalShape.safeParse(approval.data).success)
+                throw new DneskaiReelError('reel-revision-unavailable');
+        }
         const rendered = await awaitWithSignal((dependencies.render ?? renderDneskaiReel)({ slides, audio, signal }), signal);
         signal.throwIfAborted();
         const stored = await awaitWithSignal(dependencies.storage.put({
@@ -363,11 +384,12 @@ export async function lastDneskaiReelAudio(db: Database, ownerId: string, except
 }
 
 /** Acknowledges only registered post-response work, not a durable job or a completed/stored Reel. */
-export const DneskaiReelAcceptedSchema=z.strictObject({status:z.literal('accepted'),ownerId:z.uuid(),revisionId:z.uuid(),audioTrackId:z.uuid().nullable()});
+export const DneskaiReelAcceptedSchema=z.strictObject({status:z.literal('accepted'),ownerId:z.uuid(),revisionId:z.uuid(),revisionHash:z.string().regex(/^[a-f0-9]{64}$/),audioTrackId:z.uuid().nullable()});
 /** Ask the same deployment once; require its exact scoped 202 acknowledgement within ten seconds. */
 export async function requestDneskaiReelRender(input: {
     origin: string;
     revisionId: string;
+    revisionHash: string;
     audioTrackId: string | null;
     signal?: AbortSignal;
     env?: Record<string, string | undefined>;
@@ -383,12 +405,13 @@ export async function requestDneskaiReelRender(input: {
     try {
         const ownerId = z.uuid().parse(env.MARKETING_OWNER_ID);
         z.uuid().parse(input.revisionId);
+        z.string().regex(/^[a-f0-9]{64}$/).parse(input.revisionHash);
         z.uuid().nullable().parse(input.audioTrackId);
         signal.throwIfAborted();
         const origin = new URL(input.origin);
         if (!secret || secret.length < 32 || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash || !['https:', 'http:'].includes(origin.protocol) || origin.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname))
             return false;
-        const body = JSON.stringify({ revisionId: input.revisionId, audioTrackId: input.audioTrackId, async: true });
+        const body = JSON.stringify({ revisionId: input.revisionId, revisionHash: input.revisionHash, audioTrackId: input.audioTrackId, async: true });
         const pending = (input.fetcher ?? fetch)(new URL('/api/marketing/dneskai/render-reel', origin).href, { method: 'POST', body, redirect: 'error', cache: 'no-store', signal, headers: signAutomationBody(body, secret) });
         void pending.then(response => {
             if (signal.aborted)
@@ -402,7 +425,7 @@ export async function requestDneskaiReelRender(input: {
         }
         const receipt = DneskaiReelAcceptedSchema.parse(JSON.parse(await boundedResponseText(response, 1024, signal)));
         signal.throwIfAborted();
-        return receipt.ownerId === ownerId && receipt.revisionId === input.revisionId && receipt.audioTrackId === input.audioTrackId;
+        return receipt.ownerId === ownerId && receipt.revisionId === input.revisionId && receipt.revisionHash === input.revisionHash && receipt.audioTrackId === input.audioTrackId;
     }
     catch {
         if (response)

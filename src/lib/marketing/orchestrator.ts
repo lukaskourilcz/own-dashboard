@@ -40,7 +40,7 @@ async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,
   catch{return {reel:null,hold:'reel-audio-unavailable'};}
  }
  if(options.signal?.aborted)return {reel:null,hold:'reel-render-unavailable'};
- const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,audioTrackId,...(options.signal?{signal:options.signal}:{})});
+ const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,revisionHash:state.revisionRow.content_hash,audioTrackId,...(options.signal?{signal:options.signal}:{})});
  return {reel:null,hold:requested?'reel-render-pending':'reel-render-unavailable'};
 }
 /** Prepare only strictly future approved Reels; due work belongs to the same tick's publisher. */

@@ -458,10 +458,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
-      "lines": 138,
+      "lines": 140,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review; findings 329\u2013332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains",
-      "reviewedSha256": "f9d09a62d4f097858c8e35b23558d72db039cecad9413c622811f92333b8576c"
+      "status": "partial source review; findings 329\u2013332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains; finding 341 captured approved-hash signed request/ack/core and pre-native approval checks verified; independent admission remains",
+      "reviewedSha256": "d92f1f097300ddb7d4c0fbbe4bc5f146da69bc3aa3885f6876f7ff5d031802d1"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -3658,10 +3658,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 412,
+      "lines": 435,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review; findings 189\u2013190/193 and 328\u2013332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains; finding 338 positive exact private cache absence and original read lifetime verified",
-      "reviewedSha256": "18d5e5e30b35783200032ccbf1283a6f4a602efc2113194ce1bbd38905bdac93"
+      "status": "partial source review; findings 189\u2013190/193 and 328\u2013332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains; finding 338 positive exact private cache absence and original read lifetime verified; finding 341 captured approved-hash signed request/ack/core and pre-native approval checks verified; independent admission remains",
+      "reviewedSha256": "87c58e3d32c2b7d36bb36e432f8d2f235fa320401070205bd55dd153a87ec55b"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -4073,8 +4073,8 @@
       "path": "src/lib/marketing/orchestrator.ts",
       "lines": 231,
       "sha256": "f83a5180ea40a9de68e97013f5d11548790e9c135005a1e35513eb489a15d8d1",
-      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains",
-      "reviewedSha256": "4b35aa2c3cb2c345698aafe6d544572e5f88886821943d7102a5b02237f1b5db"
+      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains; finding 341 captured approved-hash signed request/ack/core and pre-native approval checks verified; independent admission remains",
+      "reviewedSha256": "614dae94e2c84413bdf0e5e6c44bd25eb3c01e4214db1f32921ca247e51f42dd"
     },
     {
       "path": "src/lib/marketing/owner-edits.ts",

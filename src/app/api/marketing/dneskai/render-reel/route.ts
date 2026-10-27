@@ -17,10 +17,10 @@ export const maxDuration = 300;
 
 const headers = { 'Cache-Control': 'private, no-store', Vary:'Cookie' };
 /**
- * `audioTrackId` and `async` are for the scheduler only (#165): the rotation's track for a post without its own
- * choice, and an answer of 202 before the render, which then runs in `after()` within this function's 300 s.
+ * `revisionHash`, `audioTrackId` and `async` are for the scheduler only (#165): the rotation's track for a post without its own
+ * choice, an exact captured approved hash, and an answer of 202 before the render, which then runs in `after()` within this function's 300 s.
  */
-const RequestSchema = z.strictObject({ revisionId: z.uuid(), audioTrackId: z.uuid().nullable().optional(), async: z.literal(true).optional() });
+const RequestSchema = z.strictObject({ revisionId: z.uuid(), revisionHash:z.string().regex(/^[a-f0-9]{64}$/).optional(), audioTrackId: z.uuid().nullable().optional(), async: z.literal(true).optional() });
 /** Bound the render/record phase inside the function's existing 300 s limit. */
 const RENDER_BUDGET_MS = 280_000;
 
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         catch {
             return Response.json({ error: 'invalid-request' }, { status: 400, headers });
         }
-        if (!automation && (input.audioTrackId !== undefined || input.async))
+        if ((automation && input.revisionHash === undefined) || (!automation && (input.revisionHash !== undefined || input.audioTrackId !== undefined || input.async)))
             return Response.json({ error: 'invalid-request' }, { status: 400, headers });
         if (!automation) {
             const limited = await awaitWithSignal(rateLimit(ownerId, { key: 'dneskai-render-reel', limit: 6, windowSec: 600 }), admission);
@@ -102,8 +102,10 @@ export async function POST(request: Request) {
                 return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId, phaseSignal??signal) : null;
             },
             storage: createDneskaiReelStorage(db, ownerId, signal), signal,
+            ...(automation ? {approvedRevisionHash:input.revisionHash} : {}),
         }), signal);
         signal.throwIfAborted();
+        if (automation && reel.revisionHash !== input.revisionHash) throw new DneskaiReelError('reel-revision-unavailable');
         await awaitWithSignal(recordDneskaiReel(db, ownerId, input.revisionId, { reelKey: reel.reelKey, revisionHash: reel.revisionHash, audioId: reel.audioId, sha256: reel.sha256, bytes: reel.bytes },signal), signal);
         signal.throwIfAborted();
         return reel;
@@ -124,7 +126,7 @@ export async function POST(request: Request) {
         catch {
             return Response.json({ error: 'reel-request-unavailable' }, { status: 503, headers });
         }
-        return Response.json(DneskaiReelAcceptedSchema.parse({ status: 'accepted',ownerId,revisionId:input.revisionId,audioTrackId:input.audioTrackId??null }), { status: 202, headers });
+        return Response.json(DneskaiReelAcceptedSchema.parse({ status: 'accepted',ownerId,revisionId:input.revisionId,revisionHash:input.revisionHash,audioTrackId:input.audioTrackId??null }), { status: 202, headers });
     }
     const signal = AbortSignal.any([request.signal, AbortSignal.timeout(RENDER_BUDGET_MS)]);
     try {
