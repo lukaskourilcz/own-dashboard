@@ -52,7 +52,6 @@ export function DneskaiAudioPicker({ value, onChange, preview, disabled = false,
     {query.isRefetching && <p role="status" className="text-xs text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-xs text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching || selected.isFetching} onClick={() => { player.stop(); void query.refetch(); if (missing) void selected.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={disabled || query.isFetching} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
-    {query.isFetchNextPageError && <p role="alert" className="text-xs text-risk">{t.unavailable}</p>}
     <p id={`${id}-audio-help`} className="text-xs text-foreground-muted">{tracks.length || trends.length || query.pageProblem ? t.picker.help : t.picker.none}{value?.startsWith('ig:') ? ` ${t.trends.attached}` : ''}</p>
   </div>;
 }

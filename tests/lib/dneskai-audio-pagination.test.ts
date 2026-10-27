@@ -23,8 +23,8 @@ afterAll(async () => database?.close());
 describe('Audio pages and rotation beyond 200 tracks', () => {
   it('pages in stable id order and returns a chosen disabled track directly', async () => {
     const first = await listDneskaiAudioPage(client, owner);
-    const second = await listDneskaiAudioPage(client, owner, first.nextOffset!);
-    const third = await listDneskaiAudioPage(client, owner, second.nextOffset!);
+    const second = await listDneskaiAudioPage(client, owner, first.nextOffset!, undefined, first.nextCursor);
+    const third = await listDneskaiAudioPage(client, owner, second.nextOffset!, undefined, second.nextCursor);
     expect([first.tracks.length, second.tracks.length, third.tracks.length]).toEqual([200, 200, 1]);
     expect(new Set([...first.tracks, ...second.tracks, ...third.tracks].map(track => track.id)).size).toBe(401);
     expect(third.nextOffset).toBeNull();

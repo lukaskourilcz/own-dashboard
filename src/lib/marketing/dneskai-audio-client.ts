@@ -9,14 +9,14 @@ import { awaitWithSignal } from '@/lib/abortable';
 import { readTextPrefix } from '@/lib/bounded-text';
 import { databaseVersion } from '@/lib/database-version';
 import {
-  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema,
-  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus,
+  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema,
+  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus, type DneskaiAudioCursor,
 } from './dneskai-audio-contracts';
 
 /** Only known codes leave the request boundary; upstream text never enters a dictionary. */
 const refusalCode = z.enum(['decision-failed', 'audio-library-unavailable', 'audio-upload-missing', 'audio-upload-invalid', 'audio-track-unavailable', 'audio-track-write-failed', 'rate-limited', 'invalid-request', 'unauthorized', 'not-found']);
 export class DneskaiAudioRequestError extends Error {
-  constructor(readonly code: z.infer<typeof refusalCode>, readonly status: number) { super(code); this.name = 'DneskaiAudioRequestError'; }
+  constructor(readonly code: z.infer<typeof refusalCode> | 'audio-page-unavailable', readonly status: number) { super(code); this.name = 'DneskaiAudioRequestError'; }
 }
 const URL_PATH = '/api/marketing/dneskai/audio';
 const MAX_POST_BYTES = 8192;
@@ -59,24 +59,38 @@ export async function loadDneskaiAudioLibrary(preview: boolean, signal?: AbortSi
 }
 
 /** The library and, while their switch is on, today's trending sounds (#167). Null while Reels are off. */
-export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSignal, offset = 0, trackId?: string): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[]; trendsStatus?: DneskaiAudioTrendsStatus; nextOffset?: number | null } | null> {
+export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSignal, offset = 0, trackId?: string, after?: DneskaiAudioCursor): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[]; trendsStatus?: DneskaiAudioTrendsStatus; nextOffset?: number | null; nextCursor?: DneskaiAudioCursor } | null> {
   if (preview) return { tracks: DEMO_DNESKAI_AUDIO_TRACKS, trends: [], trendsStatus: 'disabled' };
   const signal = budget(20_000, parent);
+  let pageAdmitted = false;
   try {
     z.number().int().min(0).max(1_000_000).parse(offset);
-    if (trackId !== undefined) { z.uuid().parse(trackId); if (offset !== 0) throw new Error('invalid-selector'); }
+    if (trackId !== undefined) { z.uuid().parse(trackId); if (offset !== 0 || after !== undefined) throw new Error('invalid-selector'); }
+    const cursor = after === undefined ? undefined : DneskaiAudioCursorSchema.parse(after);
+    if ((offset > 0) !== !!cursor) throw new Error('invalid-selector');
     signal.throwIfAborted();
     const params = new URLSearchParams();
     if (offset) params.set('offset', String(offset));
     if (trackId) params.set('trackId', trackId);
+    if (cursor) {params.set('afterCreatedAt', cursor.createdAt); params.set('afterId', cursor.id);}
+    pageAdmitted = offset > 0;
     const response = await awaitWithSignal(fetch(`${URL_PATH}${params.size ? `?${params}` : ''}`, { cache: 'no-store', signal }), signal);
     if (!response.ok) { const refused = await failure(response, signal); if (response.status === 404 && refused.code === 'not-found' && offset === 0) return null; throw refused; }
     const parsed = DneskaiAudioLibrarySchema.parse(await json(response, 2_097_152, signal));
     if (new Set(parsed.tracks.map(track => track.id)).size !== parsed.tracks.length || new Set(parsed.trends?.map(trend => trend.audioId) ?? []).size !== (parsed.trends?.length ?? 0)
       || (trackId && (parsed.tracks.length > 1 || parsed.tracks.some(track => track.id !== trackId) || parsed.nextOffset != null))
       || (parsed.nextOffset != null && (!parsed.tracks.length || parsed.nextOffset !== offset + parsed.tracks.length))) throw new Error('invalid-page');
-    return { tracks: parsed.tracks, trends: parsed.trends ?? [], ...(parsed.trendsStatus ? {trendsStatus: parsed.trendsStatus} : {}), nextOffset: parsed.nextOffset ?? null };
-  } catch (error) { failed(error, parent); }
+    const last = parsed.tracks.at(-1);
+    if (parsed.nextOffset != null ? !parsed.nextCursor || !last || parsed.nextCursor.id !== last.id || databaseVersion(parsed.nextCursor.createdAt) !== databaseVersion(last.createdAt) : parsed.nextCursor !== undefined) throw new Error('invalid-cursor');
+    if (cursor && parsed.tracks.some(track => {
+      const version = databaseVersion(track.createdAt), boundary = databaseVersion(cursor.createdAt)!;
+      return version === null || version < boundary || (version === boundary && track.id <= cursor.id);
+    })) throw new Error('invalid-cursor');
+    return { ...(parsed.nextCursor ? {nextCursor: parsed.nextCursor} : {}), tracks: parsed.tracks, trends: parsed.trends ?? [], ...(parsed.trendsStatus ? {trendsStatus: parsed.trendsStatus} : {}), nextOffset: parsed.nextOffset ?? null };
+  } catch (error) {
+    if (pageAdmitted && !parent?.aborted) throw new DneskaiAudioRequestError('audio-page-unavailable', error instanceof DneskaiAudioRequestError ? error.status : 0);
+    failed(error, parent);
+  }
 }
 
 /** Validate the legacy acknowledgement; captured toggle receipts are the next server phase. */
@@ -123,9 +137,11 @@ export async function uploadDneskaiAudioTrack(file: File, fields: DneskaiAudioUp
 
 
 /** Shared first-page read for the format switch, picker and library; later pages are explicit owner actions. */
-const audioLibraryQuery = (preview: boolean) => ({queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0, retry: false as const, staleTime: 30000,
-  queryFn: ({signal, pageParam}: {signal: AbortSignal; pageParam: number}) => loadDneskaiAudioOptions(preview, signal, pageParam),
-  getNextPageParam: (last: Awaited<ReturnType<typeof loadDneskaiAudioOptions>>) => last?.nextOffset ?? undefined});
+const AudioContinuationSchema = z.strictObject({offset:z.number().int().min(1).max(1_000_000),after:DneskaiAudioCursorSchema});
+type AudioPageParam = number | z.infer<typeof AudioContinuationSchema>;
+const audioLibraryQuery = (preview: boolean) => ({queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0 as AudioPageParam, retry: false as const, staleTime: 30000,
+  queryFn: ({signal, pageParam}: {signal: AbortSignal; pageParam: AudioPageParam}) => typeof pageParam === 'number' ? loadDneskaiAudioOptions(preview, signal, pageParam) : loadDneskaiAudioOptions(preview, signal, pageParam.offset, undefined, pageParam.after),
+  getNextPageParam: (last: Awaited<ReturnType<typeof loadDneskaiAudioOptions>>): AudioPageParam | undefined => last?.nextOffset != null && last.nextCursor ? {offset: last.nextOffset, after: last.nextCursor} : undefined});
 export function useDneskaiAudioLibrary(preview: boolean, enabled = true) {
   const query = useInfiniteQuery({...audioLibraryQuery(preview), enabled});
   const client = useQueryClient();
@@ -138,7 +154,12 @@ export function useDneskaiAudioLibrary(preview: boolean, enabled = true) {
     let previous: {id: string; version: bigint} | undefined, pageProblem = false;
     for (let index = 0; index < pages.length; index++) {
       const page = pages[index];
-      if (!page || (index === 0 ? params?.[index] !== 0 : pages[index - 1]?.nextOffset !== params?.[index])) {pageProblem = true; break;}
+      const param = params?.[index], before = pages[index - 1];
+      if (!page || (index === 0 && param !== 0)) {pageProblem = true; break;}
+      if (index > 0) {
+        const continuation = AudioContinuationSchema.safeParse(param);
+        if (!continuation.success || !before?.nextCursor || before.nextOffset !== continuation.data.offset || before.nextCursor.id !== continuation.data.after.id || databaseVersion(before.nextCursor.createdAt) !== databaseVersion(continuation.data.after.createdAt)) {pageProblem = true; break;}
+      }
       // Admit an entire page before adding any row. Repeated ids or a shifted
       // order must not replace an already loaded track or duplicate a choice.
       const pageIds = new Set<string>();
@@ -161,5 +182,6 @@ export function useDneskaiAudioLibrary(preview: boolean, enabled = true) {
     try {await client.fetchInfiniteQuery({...audioLibraryQuery(preview), pages: 1, staleTime: 0});}
     catch { /* The query keeps the failed state and retained rows for recovery. */ }
   }, [client, preview]);
-  return {...query, ...normalized, hasNextPage: !normalized.pageProblem && query.hasNextPage, reloadLibrary};
+  const pageProblem = normalized.pageProblem || (query.error instanceof DneskaiAudioRequestError && query.error.code === 'audio-page-unavailable');
+  return {...query, ...normalized, pageProblem, hasNextPage: !pageProblem && query.hasNextPage, reloadLibrary};
 }

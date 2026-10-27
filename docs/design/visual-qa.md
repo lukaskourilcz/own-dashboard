@@ -528,3 +528,7 @@ All four new EN/CS desktop/mobile cases pass for arrow-key selection/wrapping, a
 ### 27 October — retained Music page recovery (finding 321)
 
 All four final EN/CS desktop/mobile native cases pass in 48.9 seconds for rejecting repeated page identities, retaining verified tracks/upload access, scoped axe and an explicit keyboard reload from the first page. The recovery remains visible and disabled while that read is held, then clears on confirmed replacement. No duplicate row, unconfirmed replacement or write occurs. The earlier initial-navigation timeout is excluded; thirteen mounted continuation tests separately cover whole-page refusal, timestamp precision, saved selection and failed reload recovery. Server cursor stability and final release remain separate.
+
+### 27 October — stable Music cursor continuation (finding 322)
+
+The sixteen-case related native batch passes all four page-recovery and eight retained-read cases across EN/CS desktop/mobile, plus three format-keyboard cases. The remaining CS desktop format case fails on the recurring React pre-mount warning after its behavior and axe assertions pass. This is fifteen passes in 4.5 minutes, not a clean matrix. The warning remains under investigation. The cursor API itself is covered by six actual SDK/full-chain database cases and the complete 681-case audio/scheduler run; no owner/provider write occurs.

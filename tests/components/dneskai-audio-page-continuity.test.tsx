@@ -44,7 +44,7 @@ for (const lang of ['en', 'cs'] as const) {
             const rejected = kind === 'duplicate' ? [{ ...captured, title: 'Unconfirmed replacement' }] : kind === 'reversed' ? [{ ...captured, id: '11111111-1111-4111-8111-111111111111', title: 'Unconfirmed earlier row' }] : kind === 'microsecond' ? [{ ...captured, id: '33333333-3333-4333-8333-333333333333', title: 'Unconfirmed older microsecond', createdAt: '2026-10-23T08:00:00.000001Z' }] : [{ ...captured, id: '33333333-3333-4333-8333-333333333333', title: 'Unconfirmed partial page' }, captured];
             let fresh = false;
             const fetcher = vi.fn(async (url: RequestInfo | URL) => Response.json({
-                tracks: String(url).includes('offset=1') ? rejected : [{ ...captured, title: fresh ? 'Confirmed reloaded track' : first.title }], nextOffset: fresh || String(url).includes('offset=1') ? null : 1, trendsStatus: 'disabled'
+                tracks: String(url).includes('offset=1') ? rejected : [{ ...captured, title: fresh ? 'Confirmed reloaded track' : first.title }], nextOffset: fresh || String(url).includes('offset=1') ? null : 1, ...(!fresh && !String(url).includes('offset=1') ? {nextCursor:{id:captured.id,createdAt:captured.createdAt}}:{}), trendsStatus: 'disabled'
             }));
             vi.stubGlobal('fetch', fetcher);
             render(<DneskaiAudioLibrary lang={lang}/>);
@@ -66,7 +66,7 @@ for (const lang of ['en', 'cs'] as const) {
             expect(String(fetcher.mock.calls[2]?.[0])).not.toContain('offset=');
         });
     it(`${lang}: does not silently accept a disabled feature as the end of a loaded library`, async () => {
-        vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => String(url).includes('offset=1') ? Response.json({ error: 'not-found' }, { status: 404 }) : Response.json({ tracks: [first], nextOffset: 1, trendsStatus: 'disabled' })));
+        vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => String(url).includes('offset=1') ? Response.json({ error: 'not-found' }, { status: 404 }) : Response.json({ tracks: [first], nextOffset: 1, nextCursor:{id:first.id,createdAt:first.createdAt}, trendsStatus: 'disabled' })));
         render(<DneskaiAudioLibrary lang={lang}/>);
         await settle();
         const more = [...host.querySelectorAll('button')].find(button => button.textContent === dneskaiAudio[lang].loadMore)!;
@@ -77,7 +77,7 @@ for (const lang of ['en', 'cs'] as const) {
     });
     it(`${lang}: the picker retains its choice when next-page ids repeat`, async () => {
         vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => Response.json({
-            tracks: [{ ...first, title: String(url).includes('offset=1') ? 'Unconfirmed replacement' : first.title }], nextOffset: String(url).includes('offset=1') ? null : 1, trendsStatus: 'disabled'
+            tracks: [{ ...first, title: String(url).includes('offset=1') ? 'Unconfirmed replacement' : first.title }], nextOffset: String(url).includes('offset=1') ? null : 1, ...(!String(url).includes('offset=1') ? {nextCursor:{id:first.id,createdAt:first.createdAt}}:{}), trendsStatus: 'disabled'
         })));
         const change = vi.fn();
         render(<DneskaiAudioPicker lang={lang} value={first.id} onChange={change} preview={false}/>);
@@ -99,14 +99,14 @@ it('keeps the verified prefix and recovery after a failed full reload', async ()
         if (String(url).includes('offset=1')) return Response.json({tracks: [first], nextOffset: null, trendsStatus: 'disabled'});
         roots++;
         if (roots === 2) return Response.json({error: 'audio-library-unavailable'}, {status: 503});
-        return Response.json({tracks: [first], nextOffset: roots === 1 ? 1 : null, trendsStatus: 'disabled'});
+        return Response.json({tracks: [first], nextOffset: roots === 1 ? 1 : null, ...(roots === 1?{nextCursor:{id:first.id,createdAt:first.createdAt}}:{}), trendsStatus: 'disabled'});
     });
     vi.stubGlobal('fetch', fetcher);
     render(<DneskaiAudioLibrary lang="en"/>); await settle();
     const button = (name: string) => [...host.querySelectorAll('button')].find(element => element.textContent === name)!;
     await act(async () => button(dneskaiAudio.en.loadMore).click()); await settle();
     await act(async () => button(dneskaiAudio.en.retry).click()); await settle();
-    expect(host.textContent).toContain(first.title); expect(host.textContent).toContain(dneskaiAudio.en.pagesUnavailable);
+    expect(host.textContent).toContain(first.title); expect(host.textContent).toContain(dneskaiAudio.en.refreshUnavailable);
     expect(host.querySelectorAll('[data-testid="dneskai-audio-track"]')).toHaveLength(1);
     await act(async () => button(dneskaiAudio.en.retry).click()); await settle();
     expect(host.textContent).not.toContain(dneskaiAudio.en.pagesUnavailable); expect(fetcher).toHaveBeenCalledTimes(4);

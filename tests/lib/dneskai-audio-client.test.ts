@@ -112,3 +112,38 @@ describe('independent optional trend availability',()=>{
  it.each(['ready','unavailable','disabled'] as const)('retains owned library data and the explicit %s state',async trendsStatus=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({tracks:[track()],trends:[],trendsStatus,nextOffset:null})));expect(await loadDneskaiAudioOptions(false)).toMatchObject({tracks:[track()],trends:[],trendsStatus});});
  it.each([{trendsStatus:'ready'},{trendsStatus:'unknown',trends:[]},{trendsStatus:'unavailable',trends:[{audioId:'9',title:'Synthetic',artist:null,type:'music',durationMs:null,coverUrl:null,daysSeen:1,nicheCount:0,tiktok:false,attachable:true}]}])('refuses contradictory or unverified optional metadata %j',async optional=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({tracks:[track()],...optional})));await expect(loadDneskaiAudioOptions(false)).rejects.toHaveProperty('code','decision-failed');});
 });
+
+describe('captured Music cursor continuation', () => {
+  const cursor = () => ({id, createdAt: '2026-10-23T08:00:00.000001Z'});
+  it.each([
+    {after: undefined, offset: 1},
+    {after: cursor(), offset: 0},
+    {after: {...cursor(), id: 'invalid'}, offset: 1},
+    {after: {...cursor(), createdAt: '2026-10-23T08:00:00.0000001Z'}, offset: 1},
+    {after: {...cursor(), extra: true}, offset: 1},
+  ])('refuses an invalid cursor selector before HTTP: %#', async ({after, offset}) => {
+    const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
+    await expect(loadDneskaiAudioOptions(false, undefined, offset, undefined, after)).rejects.toHaveProperty('code', 'decision-failed');
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it.each(['missing','wrong-id','wrong-time','extra','terminal'] as const)('requires a correlated next cursor: %s', async kind => {
+    const row = track(), boundary = {id:row.id, createdAt:row.createdAt};
+    const nextCursor = kind === 'missing' ? undefined : kind === 'wrong-id' ? {...boundary,id:owner} : kind === 'wrong-time' ? {...boundary,createdAt:'2026-10-23T08:00:01Z'} : kind === 'extra' ? {...boundary,extra:true} : boundary;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({tracks:[row],nextOffset:kind==='terminal'?null:1,...(nextCursor?{nextCursor}:{}),trendsStatus:'disabled'})));
+    await expect(loadDneskaiAudioOptions(false)).rejects.toHaveProperty('code', 'decision-failed');
+  });
+  it('captures the boundary before waiting and encodes both complete sort columns', async () => {
+    const captured=cursor();let finish!:(value:Response)=>void;const fetcher=vi.fn((url:RequestInfo|URL)=>{expect(String(url)).toContain('offset=1');return new Promise<Response>(resolve=>{finish=resolve;});});vi.stubGlobal('fetch',fetcher);
+    const pending=loadDneskaiAudioOptions(false,undefined,1,undefined,captured);captured.createdAt='2026-10-24T00:00:00Z';captured.id=owner;
+    const url=new URL(String(fetcher.mock.calls[0]?.[0]),'https://example.test');expect(url.searchParams.get('afterCreatedAt')).toBe('2026-10-23T08:00:00.000001Z');expect(url.searchParams.get('afterId')).toBe(id);
+    finish(Response.json({tracks:[{...track(),createdAt:'2026-10-23T08:00:00.000002Z'}],nextOffset:null}));expect((await pending)?.tracks).toHaveLength(1);
+  });
+  it.each(['older-time','equal-boundary','failed','disabled'] as const)('keeps a later-page %s failure available for explicit whole-library recovery',async kind=>{
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue(kind==='failed'?Response.json({error:'audio-library-unavailable'},{status:503}):kind==='disabled'?Response.json({error:'not-found'},{status:404}):Response.json({tracks:[{...track(),createdAt:kind==='older-time'?'2026-10-23T08:00:00Z':cursor().createdAt}],nextOffset:null})));
+    await expect(loadDneskaiAudioOptions(false,undefined,1,undefined,cursor())).rejects.toHaveProperty('code','audio-page-unavailable');
+  });
+  it('keeps caller cancellation distinct from a continuation refusal',async()=>{
+    const parent=new AbortController(),fetcher=vi.fn(()=>new Promise<Response>(()=>{}));vi.stubGlobal('fetch',fetcher);
+    const pending=outcome(loadDneskaiAudioOptions(false,parent.signal,1,undefined,cursor()));parent.abort('TEST_ONLY_PRIVATE_REASON');expect(await pending).toMatchObject({name:'AbortError',message:'Request aborted'});
+  });
+});

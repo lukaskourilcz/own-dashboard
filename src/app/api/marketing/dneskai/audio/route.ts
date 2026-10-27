@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
-import { DneskaiAudioRequestSchema, type DneskaiAudioRequest } from '@/lib/marketing/dneskai-audio-contracts';
+import { DneskaiAudioRequestSchema, DneskaiAudioCursorSchema, type DneskaiAudioRequest } from '@/lib/marketing/dneskai-audio-contracts';
 import { DneskaiAudioError, createDneskaiAudioTrack, listDneskaiAudioTracks, listDneskaiAudioPage, prepareDneskaiAudioUpload, setDneskaiAudioTrackEnabled } from '@/lib/marketing/dneskai-audio';
 import { dneskaiReelsEnabled } from '@/lib/marketing/dneskai-reel';
 import { dneskaiAudioTrendsEnabled, listDneskaiAudioTrends } from '@/lib/marketing/dneskai-audio-trends';
@@ -54,7 +54,11 @@ export async function GET(request?: Request) {
     const params = new URL(request?.url ?? 'https://local.invalid').searchParams;
     const selected = params.get('trackId');
     const offset = params.get('offset') ?? '0';
-    if ([...params.keys()].some(key => !['trackId', 'offset'].includes(key) || params.getAll(key).length !== 1) || !/^\d{1,7}$/.test(offset) || Number(offset) > 1_000_000 || (selected !== null && (!z.uuid().safeParse(selected).success || params.has('offset')))) return Response.json({ error: 'invalid-request' }, { status: 400, headers });
+    const hasCursor = params.has('afterCreatedAt') || params.has('afterId');
+    const cursor = hasCursor ? DneskaiAudioCursorSchema.safeParse({createdAt: params.get('afterCreatedAt'), id: params.get('afterId')}) : undefined;
+    if ([...params.keys()].some(key => !['trackId', 'offset', 'afterCreatedAt', 'afterId'].includes(key) || params.getAll(key).length !== 1)
+      || !/^\d{1,7}$/.test(offset) || Number(offset) > 1_000_000 || (Number(offset) > 0) !== hasCursor || (cursor && !cursor.success)
+      || (selected !== null && (!z.uuid().safeParse(selected).success || params.has('offset') || hasCursor))) return Response.json({error: 'invalid-request'}, {status: 400, headers});
     signal.throwIfAborted();
     const db = createAdminClient(signal);
     if (selected) return Response.json({ tracks: await awaitWithSignal(listDneskaiAudioTracks(db, user, selected, signal), signal), nextOffset: null }, { headers });
@@ -62,7 +66,7 @@ export async function GET(request?: Request) {
     const trendsEnabled = dneskaiAudioTrendsEnabled();
     const sourceFlags = {DNESKAI_SOURCES_TABLE_ENABLED: process.env.DNESKAI_SOURCES_TABLE_ENABLED};
     const observedAt = new Date();
-    const page = await awaitWithSignal(listDneskaiAudioPage(db, user, Number(offset), signal), signal);
+    const page = await awaitWithSignal(listDneskaiAudioPage(db, user, Number(offset), signal, cursor?.success ? cursor.data : undefined), signal);
     if (!first) return Response.json(page, {headers});
     if (!trendsEnabled) return Response.json({...page, trends: [], trendsStatus: 'disabled'}, {headers});
     // Optional suggestions must not replace a confirmed uploaded library with

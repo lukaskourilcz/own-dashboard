@@ -21,7 +21,7 @@ for (const lang of ['en', 'cs'] as const)
             const later = new URL(route.request().url()).searchParams.has('offset');
             return route.fulfill({
                 json: {
-                    tracks: [{ ...DEMO_DNESKAI_AUDIO_TRACKS[0], title: later ? 'Unconfirmed replacement' : fresh ? 'Reloaded track' : 'Retained track' }], nextOffset: later || fresh ? null : 1, trends: [], trendsStatus: 'disabled'
+                    tracks: [{ ...DEMO_DNESKAI_AUDIO_TRACKS[0], title: later ? 'Unconfirmed replacement' : fresh ? 'Reloaded track' : 'Retained track' }], nextOffset: later || fresh ? null : 1, ...(!later && !fresh ? {nextCursor:{id:DEMO_DNESKAI_AUDIO_TRACKS[0].id,createdAt:DEMO_DNESKAI_AUDIO_TRACKS[0].createdAt}}:{}), trends: [], trendsStatus: 'disabled'
                 }
             });
         });

@@ -39,7 +39,6 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
         </>}
     {query.isRefetching && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-sm text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => { player.stop(); void query.refetch(); }}>{t.refreshPreview}</Button></div>}
-    {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
     {!preview && query.data && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
       <DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.upload.title}</DialogTitle></DialogHeader><UploadForm lang={lang} embedded /></DialogContent>

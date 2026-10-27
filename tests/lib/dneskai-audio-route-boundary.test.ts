@@ -98,3 +98,19 @@ it('keeps known rate refusals and gives the creation/probe the same cancellable 
   expect(options.signal).toBe(m.admin.mock.calls[0]![0]); timeouts.get(50_000)!.abort('synthetic private reason');
   const response = await pending; expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: 'audio-library-unavailable' }); expect(options.signal.aborted).toBe(true); expect(m.create).toHaveBeenCalledOnce();
 });
+
+it.each([
+  'offset=200', `offset=200&afterId=${id}`, 'offset=200&afterCreatedAt=2026-10-23T08%3A00%3A00Z',
+  `afterId=${id}&afterCreatedAt=2026-10-23T08%3A00%3A00Z`,
+  `offset=200&afterId=${id}&afterCreatedAt=invalid`,
+  `offset=200&afterId=${id}&afterCreatedAt=2026-10-23T08%3A00%3A00.0000001Z`,
+  `offset=200&afterId=${id}&afterId=${id}&afterCreatedAt=2026-10-23T08%3A00%3A00Z`,
+  `offset=200&afterId=${id}&afterCreatedAt=2026-10-23T08%3A00%3A00Z&trackId=${id}`,
+])('refuses incomplete or ambiguous cursor input before service reads: %s',async query=>{
+  expect((await GET(new Request(url+'?'+query))).status).toBe(400);expect(m.admin).not.toHaveBeenCalled();
+});
+it('forwards the captured complete cursor and never requests first-page optional trends',async()=>{
+ const response=await GET(new Request(url+'?offset=200&afterId='+id+'&afterCreatedAt=2026-10-23T08%3A00%3A00.000001Z'));
+ expect(response.status).toBe(200);expect(m.list).toHaveBeenCalledWith(expect.anything(),owner,200,expect.any(AbortSignal),{id,createdAt:'2026-10-23T08:00:00.000001Z'});
+ expect(await response.json()).not.toHaveProperty('trendsStatus');
+});

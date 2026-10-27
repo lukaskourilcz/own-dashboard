@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { safeWebUrl } from '@/lib/web-url';
+import { databaseTimestamp } from '@/lib/database-version';
 
 /**
  * The DNESKAi audio library (#164) as the browser sees it: Zdroje → Hudba and the Lab's audio picker. Browser-safe.
@@ -62,7 +63,9 @@ export type DneskaiAudioTrend = z.infer<typeof DneskaiAudioTrendSchema>;
 export const DNESKAI_AUDIO_TRENDS_MAX = 50;
 export const DneskaiAudioTrendsStatusSchema = z.enum(['ready', 'unavailable', 'disabled']);
 export type DneskaiAudioTrendsStatus = z.infer<typeof DneskaiAudioTrendsStatusSchema>;
-export const DneskaiAudioLibrarySchema = z.strictObject({ trendsStatus: DneskaiAudioTrendsStatusSchema.optional(), tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(DNESKAI_AUDIO_TRENDS_MAX).optional(), nextOffset: z.number().int().min(0).max(1_000_000).nullable().optional() }).refine(value => value.trendsStatus === 'ready' ? value.trends !== undefined : !value.trendsStatus || !value.trends?.length);
+export const DneskaiAudioCursorSchema = z.strictObject({id: z.uuid(), createdAt: databaseTimestamp});
+export type DneskaiAudioCursor = z.infer<typeof DneskaiAudioCursorSchema>;
+export const DneskaiAudioLibrarySchema = z.strictObject({ nextCursor: DneskaiAudioCursorSchema.optional(), trendsStatus: DneskaiAudioTrendsStatusSchema.optional(), tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(DNESKAI_AUDIO_TRENDS_MAX).optional(), nextOffset: z.number().int().min(0).max(1_000_000).nullable().optional() }).refine(value => value.trendsStatus === 'ready' ? value.trends !== undefined : !value.trendsStatus || !value.trends?.length);
 export type DneskaiAudioLibrary = z.infer<typeof DneskaiAudioLibrarySchema>;
 
 export const DneskaiAudioPrepareSchema = z.strictObject({

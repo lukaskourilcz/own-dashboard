@@ -9,8 +9,8 @@ import { awaitWithSignal } from "@/lib/abortable";
 import { databaseTimestamp, databaseVersion } from "@/lib/database-version";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import {
-  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema,
-  type DneskaiAudioCreate, type DneskaiAudioPrepared, type DneskaiAudioTrack, type DneskaiAudioType,
+  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema,
+  type DneskaiAudioCreate, type DneskaiAudioPrepared, type DneskaiAudioTrack, type DneskaiAudioType, type DneskaiAudioCursor,
 } from "./dneskai-audio-contracts";
 import { dneskaiFfmpegPath } from "./dneskai-reel-render";
 import type { DneskaiReelAudio } from "./dneskai-reel-render";
@@ -70,16 +70,27 @@ function readAudioRows(owner: string, data: unknown[]): TrackRow[] {
   return rows;
 }
 
-/** One complete, validated owner page plus a sentinel; never infer exhaustion from a truncated REST page. */
-export async function listDneskaiAudioPage(db: Database, owner: string, offset = 0, parent?: AbortSignal): Promise<{ tracks: DneskaiAudioTrack[]; nextOffset: number | null }> {
+/** One validated owner page after the exact created-time/id tuple. The offset
+ * counts displayed rows for continuity; the database never skips that count.
+ * Exact remaining counts and a sentinel still detect truncated REST pages. */
+export async function listDneskaiAudioPage(db: Database, owner: string, offset = 0, parent?: AbortSignal, after?: DneskaiAudioCursor): Promise<{ tracks: DneskaiAudioTrack[]; nextOffset: number | null; nextCursor?: DneskaiAudioCursor }> {
   z.uuid().parse(owner); z.number().int().min(0).max(1_000_000).parse(offset);
+  const cursor = after === undefined ? undefined : DneskaiAudioCursorSchema.parse(after);
+  if ((offset > 0) !== !!cursor) throw unavailable();
   const signal = readBudget(parent); if (signal.aborted) throw new DOMException("Request aborted", "AbortError");
-  const { data, error, count } = await awaitWithSignal(db.from("marketing_audio_tracks").select(TRACK_COLUMNS, { count: "exact" }).eq("user_id", owner)
-    .order("created_at", { ascending: true }).order("id", { ascending: true }).range(offset, offset + 200).retry(false).abortSignal(signal), signal);
-  if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count === null || count < 0 || data.length !== Math.min(201, Math.max(0, count - offset))) throw unavailable();
+  let query = db.from("marketing_audio_tracks").select(TRACK_COLUMNS, {count: "exact"}).eq("user_id", owner);
+  if (cursor) query = query.or(`created_at.gt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.gt.${cursor.id})`);
+  const {data, error, count} = await awaitWithSignal(query.order("created_at", {ascending: true}).order("id", {ascending: true}).range(0, 200).retry(false).abortSignal(signal), signal);
+  if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count === null || count < 0 || data.length !== Math.min(201, count)) throw unavailable();
   const rows = readAudioRows(owner, data), nextOffset = rows.length > 200 ? offset + 200 : null;
+  if (cursor && rows[0]) {
+    const boundary = databaseVersion(cursor.createdAt)!, firstVersion = databaseVersion(rows[0].created_at)!;
+    if (firstVersion < boundary || (firstVersion === boundary && rows[0].id <= cursor.id)) throw unavailable();
+  }
   if (nextOffset !== null && nextOffset > 1_000_000) throw unavailable();
-  return { tracks: await signAudioRows(db, owner, rows.slice(0, 200), signal), nextOffset };
+  const tracks = await signAudioRows(db, owner, rows.slice(0, 200), signal);
+  const last = tracks.at(-1);
+  return {tracks, nextOffset, ...(nextOffset !== null && last ? {nextCursor: {id: last.id, createdAt: last.createdAt}} : {})};
 }
 
 /** One owned chosen track, even off-page or disabled; confirmed absence stays distinct from a failed read. */
