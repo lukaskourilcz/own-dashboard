@@ -2815,3 +2815,14 @@ All 1,933 combined cases pass across 108 files in 112.04 seconds with one worker
 No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Remaining unbounded caller adoption, account transport/metadata/write/browser lifecycles, durable independent Reel admission, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.
 
 The 53-pair visual plan references committed application `cecfebd0`; both image modes, light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Actual capture provenance remains `d72aaae4`.
+
+
+### Finding 344 — streamed account-action admission
+
+All four account-action baselines fail in 224 ms: each consumes the complete 64-chunk, 4 MiB producer plus EOF before rejecting the stated 1,000-byte body limit. Verification, publishing switch, engagement switch and webhook actions now adopt the shared request reader with a real 1,000-byte ceiling and five-second whole-body budget under the original account request scope. The oversized fixture stops within two pulls, cancels the tail and starts no privileged work.
+
+Malformed/oversized input keeps the existing invalid-request 400 response. Disconnects, original retirement and whole-upload timeout return the existing fixed unavailable 503 code, without treating a late body as a new valid action. No setting, subscription or credential change is admitted after those refusals. Existing cross-origin/owner/rate checks and normal action inputs remain covered. The reader bounds consumption/allocation; it does not promise that all transport buffers or previously accepted external work can be undone.
+
+All 1,953 combined cases pass across 109 files in 113.14 seconds with one worker. The first six-file set passes 99 cases in 1.49 seconds. The expanded eight-file set passes 137 in 2.94 seconds. Twenty new route matrix cases cover each reproduced oversized producer, stalled cancellation hooks, five-second whole-upload timeout and timer cleanup, malformed UTF-8 and empty-chunk floods, with retained reader/privileged-admission checks. Final full TypeScript, targeted ESLint without warnings and whitespace pass.
+
+No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Account response/metadata/provider/atomic-write/browser lifecycles, durable independent Reel admission, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.

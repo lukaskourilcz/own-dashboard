@@ -318,17 +318,17 @@
     },
     {
       "path": "src/app/api/marketing/accounts/enable/route.ts",
-      "lines": 59,
+      "lines": 64,
       "sha256": "647da00a2731a93f6fd8ceab40d5cdcfd61e64399986065e28d0e8fb4ef5b45f",
-      "status": "partial; owned account/token checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "43b4393385b6031009820a269b2998049dff48098319407e80f4494ca3c2dc0a"
+      "status": "partial; owned account/token checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
+      "reviewedSha256": "ce54b2fed5db26e3b3e8dec292ab5a4f662b25bee3d67e7c8ba2c78a638a38fb"
     },
     {
       "path": "src/app/api/marketing/accounts/engagement/route.ts",
-      "lines": 59,
+      "lines": 64,
       "sha256": "d3258702b3fccd901a9cec7ae63de319b82029e9387391c8217e45f1aa85e043",
-      "status": "partial; owned scope/expiry checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "85e1ed6034ea713be40bde3c367feccd7a075f051c34a75dd47255d49a77bb23"
+      "status": "partial; owned scope/expiry checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
+      "reviewedSha256": "9b44e579d091f39d5d9dd28f3c61a015a91a53e5e01c4223da46f095ca6a4020"
     },
     {
       "path": "src/app/api/marketing/accounts/route.ts",
@@ -339,17 +339,17 @@
     },
     {
       "path": "src/app/api/marketing/accounts/verify/route.ts",
-      "lines": 45,
+      "lines": 50,
       "sha256": "5cd426048129b83230eaa4bd7ac4d3c0e4873ffbc5e6a5298b871fa175c156cd",
-      "status": "partial; owner gate and fixed verification errors inspected; bounded setup/body/auth and captured receipt checks remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "62ed32e97dc8c70c603136db188600c97e1ccb46817365ce77e411956a1c5b9a"
+      "status": "partial; owner gate and fixed verification errors inspected; bounded setup/body/auth and captured receipt checks remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
+      "reviewedSha256": "4e4116661118c2731fb1a0e9374fdbc0a895fcc9cba7aff3223d58b53973fc4d"
     },
     {
       "path": "src/app/api/marketing/accounts/webhook/route.ts",
-      "lines": 46,
+      "lines": 51,
       "sha256": "6816912a12bb1075fb3903eb94a515f4180f7e8f587a463551f56e1fb2cf7ffa",
-      "status": "partial; owner/brand/account gate inspected; bounded setup/body/auth and cancellation through Graph remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "fe8b262a892a949924bd5fed61e82429b2548af7614e316660767ef5110cb579"
+      "status": "partial; owner/brand/account gate inspected; bounded setup/body/auth and cancellation through Graph remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
+      "reviewedSha256": "ab301b85e6960274249af78a7419ed009b5b56d1250b3b805dd79e01b9695d78"
     },
     {
       "path": "src/app/api/marketing/automation/route.ts",

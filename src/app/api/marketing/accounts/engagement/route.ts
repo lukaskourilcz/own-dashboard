@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { readVerifiedServerOwner } from '@/lib/supabase/server-owner';
 import { awaitWithSignal } from '@/lib/abortable';
+import { boundedRequestText, MarketingRequestBodyError } from '@/lib/marketing/http';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
@@ -30,8 +31,12 @@ export async function POST(request: Request) {
   if (!limited.ok) return Response.json({error:'rate-limited'},{status:429,headers:{'Retry-After':String(limited.retryAfter)}});
   if (!process.env.MARKETING_OWNER_ID || process.env.MARKETING_OWNER_ID !== ownerId) return Response.json({ error: 'marketing-owner-required' }, { status: 403 });
   let input: z.infer<typeof Input>;
-  try { const raw = await request.text(); if (raw.length > 1000) throw new Error('too-large'); input = Input.parse(JSON.parse(raw)); }
-  catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
+  try { input = Input.parse(JSON.parse(await boundedRequestText(request,1000,signal))); }
+  catch (error) {
+    if (signal.aborted || error instanceof MarketingRequestBodyError && ['request-body-aborted','request-body-timeout'].includes(error.code))
+      return Response.json({error:'account-store-failed'},{status:503});
+    return Response.json({error:'invalid-request'},{status:400});
+  }
   if (signal.aborted) return Response.json({error:'account-store-failed'},{status:503});
   const db = createAdminClient(signal);
   try {
