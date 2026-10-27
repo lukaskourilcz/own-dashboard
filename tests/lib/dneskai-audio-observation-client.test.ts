@@ -1,0 +1,77 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { createClient } from '@supabase/supabase-js';
+import { ingestDneskaiAudioTrends } from '@/lib/marketing/dneskai-audio-trends';
+import type { MetaPublisherConfig } from '@/lib/marketing/publisher';
+import { observationOwner as owner, observationAccount, observationNow, observationReceipt, type ObservationArgs } from '../helpers/dneskai-audio-observation-fixtures';
+vi.mock('server-only', () => ({}));
+const config: MetaPublisherConfig = { enabled: true, apiVersion: 'v99.0', apiVersionVerifiedAt: '2026-10-20T00:00:00Z', loginMode: 'facebook', accessToken: 'TEST-ONLY-meta-observation', tokenExpiresAt: '2099-01-01T00:00:00Z', scopes: ['instagram_basic'], approvedAssetHosts: [] };
+const graphBody = { data: [{ audio_id: '1', title: 'Synthetic sound', display_artist: 'Synthetic artist' }] };
+const graph = vi.fn(async (url: string | URL | Request, init?: RequestInit) => { void url; void init; return Response.json(graphBody); });
+function harness(wire?: (args: ObservationArgs) => Promise<Response>) {
+    const calls: {
+        args: ObservationArgs;
+        signal?: AbortSignal | null;
+        url: string;
+    }[] = [];
+    const db = createClient('https://offline.supabase.test', 'TEST-ONLY-public', { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: async (url, init) => { const args = JSON.parse(String(init?.body)) as ObservationArgs; calls.push({ args, signal: init?.signal, url: String(url) }); return wire ? wire(args) : Response.json(observationReceipt(args)); } } });
+    return { db, calls };
+}
+const input = () => ({ config: { ...config, scopes: [...config.scopes] }, account: { ...observationAccount }, remoteAccountId: observationAccount.remote_account_id, today: '2026-10-23', now: new Date(observationNow), fetcher: graph as unknown as typeof fetch });
+afterEach(() => { vi.restoreAllMocks(); graph.mockReset(); graph.mockImplementation(async () => Response.json(graphBody)); });
+it('persists one captured positive batch with real SDK transport, no old read or credential serialization', async () => {
+    const h = harness(), args = input();
+    expect(await ingestDneskaiAudioTrends(h.db, owner, args)).toEqual({ status: 'done', stored: 1 });
+    expect(h.calls).toHaveLength(1);
+    expect(h.calls[0].url).toMatch(/\/rpc\/record_dneskai_audio_observations$/);
+    expect(h.calls[0].args).toMatchObject({ p_owner: owner, p_account: args.account.id, p_remote: args.remoteAccountId, p_day: args.today, p_observed_at: args.now.toISOString(), p_enabled: false });
+    expect(JSON.stringify(h.calls)).not.toContain(config.accessToken);
+    expect(AbortSignal.timeout).toBeDefined();
+});
+it('captures mutable account, clock, remote id and configuration before either provider await', async () => {
+    const h = harness(), args = input();
+    let release!: (response: Response) => void;
+    graph.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+    const result = ingestDneskaiAudioTrends(h.db, owner, args);
+    args.account.remote_account_id = '9';
+    args.account.verified_at = '2026-10-23T12:01:00Z';
+    args.config.apiVersion = 'v88.0';
+    args.config.accessToken = 'TEST-ONLY-mutated';
+    args.remoteAccountId = '9';
+    args.today = '2026-10-24';
+    args.now.setUTCDate(24);
+    release(Response.json(graphBody));
+    expect(await result).toMatchObject({ stored: 1 });
+    expect(graph.mock.calls[1][0]).toContain('v99.0/ig_audio');
+    expect(graph.mock.calls[1][0]).toContain(observationAccount.remote_account_id);
+    expect(h.calls[0].args.p_day).toBe('2026-10-23');
+    expect(h.calls[0].args.p_remote).toBe(observationAccount.remote_account_id);
+});
+it.each([null, {}, { status: 'done' }, { private_detail: 'Synthetic excluded' }])('refuses missing and malformed persistence receipts %j', async (receipt) => { const h = harness(async () => Response.json(receipt)); await expect(ingestDneskaiAudioTrends(h.db, owner, input())).rejects.toThrow(/^audio-trends-store-failed$/); expect(h.calls).toHaveLength(1); });
+it.each(['ownerId', 'accountId', 'remoteAccountId', 'verifiedAt', 'day', 'observedAt'])('refuses a mismatched %s receipt', async (key) => { const h = harness(async (args) => Response.json({ ...observationReceipt(args), [key]: key === 'remoteAccountId' ? '99' : key === 'day' ? '2026-10-24' : key.endsWith('At') ? '2026-10-23T12:00:00.000001Z' : '99999999-9999-4999-8999-999999999999' })); await expect(ingestDneskaiAudioTrends(h.db, owner, input())).rejects.toThrow('audio-trends-store-failed'); });
+it.each([{ title: 'Changed' }, { audioId: '9' }, { outcome: 'superseded' }, { observedAt: '2026-10-23T11:59:59Z' }, { accountId: '99999999-9999-4999-8999-999999999999' }])('refuses conflicting confirmed observations %j', async (patch) => { const h = harness(async (args) => { const receipt = observationReceipt(args); return Response.json({ ...receipt, rows: receipt.rows.map(row => ({ ...row, ...patch })) }); }); await expect(ingestDneskaiAudioTrends(h.db, owner, input())).rejects.toThrow('audio-trends-store-failed'); });
+it('reports a newer persisted observation as superseded, not newly stored', async () => { const h = harness(async (args) => { const receipt = observationReceipt(args); return Response.json({ ...receipt, rows: receipt.rows.map(row => ({ ...row, outcome: 'superseded', title: 'Newer', observedAt: '2026-10-23T12:00:00.000001Z' })) }); }); expect(await ingestDneskaiAudioTrends(h.db, owner, input())).toEqual({ status: 'done', stored: 0 }); });
+it.each(['account-changed', 'day-changed'])('retains explicit %s checkpoint without claiming persistence', async (status) => { const h = harness(async (args) => Response.json({ ...observationReceipt(args), status, rows: [] })); expect(await ingestDneskaiAudioTrends(h.db, owner, input())).toEqual({ status: 'skipped', code: `audio-trends-${status}`, stored: 0 }); });
+it('does not retry SDK refusals or expose private database details', async () => { const h = harness(async () => Response.json({ message: 'Synthetic private refusal' }, { status: 503 })); await expect(ingestDneskaiAudioTrends(h.db, owner, input())).rejects.toThrow(/^audio-trends-store-failed$/); expect(h.calls).toHaveLength(1); });
+it.each([{ audio_id: Number.MAX_SAFE_INTEGER + 1, title: 'Unsafe numeric' }, { audio_id: '2', title: '   ' }])('ignores invalid provider items without persisting them %j', async (item) => { const h = harness(); graph.mockImplementation(async () => Response.json({ data: [item] })); expect(await ingestDneskaiAudioTrends(h.db, owner, input())).toEqual({ status: 'done', stored: 0 }); expect(h.calls).toHaveLength(0); });
+it('drops credential-bearing artwork URLs before storage', async () => { const h = harness(); graph.mockImplementation(async () => Response.json({ data: [{ ...graphBody.data[0], cover_artwork_thumbnail_url: 'https://cdn.example.test/image?access_token=TEST-ONLY-artwork' }] })); await ingestDneskaiAudioTrends(h.db, owner, input()); expect(h.calls[0].args.p_items[0].cover_artwork_thumbnail_url).toBeNull(); });
+it.each([['overflow', () => new Response('x'.repeat(262145))], ['invalid-utf8', () => new Response(new Uint8Array([0xff]))], ['bad-length', () => new Response('{}', { headers: { 'content-length': '999999' } })]])('bounds complete provider bodies: %s', async (_label, response) => { const h = harness(); graph.mockImplementationOnce(async () => response()); await expect(ingestDneskaiAudioTrends(h.db, owner, input())).rejects.toThrow(/^audio-trends-request-failed$/); expect(h.calls).toHaveLength(0); expect(graph).toHaveBeenCalledTimes(1); });
+it('shares one total deadline across both provider phases and cancels a late body without waiting', async () => {
+    const deadline = new AbortController();
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(deadline.signal);
+    const h = harness();
+    let release!: (response: Response) => void;
+    graph.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+    const result = ingestDneskaiAudioTrends(h.db, owner, input()).catch(error => error);
+    deadline.abort('Synthetic private reason');
+    expect(await result).toHaveProperty('message', 'audio-trends-request-failed');
+    let cancelled = false;
+    release(new Response(new ReadableStream({ cancel() { cancelled = true; return new Promise(() => { }); } })));
+    await vi.waitFor(() => expect(cancelled).toBe(true));
+    expect(graph).toHaveBeenCalledTimes(1);
+    expect(h.calls).toHaveLength(0);
+    expect(AbortSignal.timeout).toHaveBeenCalledTimes(1);
+    expect(AbortSignal.timeout).toHaveBeenCalledWith(15000);
+});
+it('cancels stalled body production and never starts persistence', async () => { const deadline = new AbortController(); vi.spyOn(AbortSignal, 'timeout').mockReturnValue(deadline.signal); const h = harness(); let cancelled = false; graph.mockImplementationOnce(async () => new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('{"data":[')); }, cancel() { cancelled = true; } }))); const result = ingestDneskaiAudioTrends(h.db, owner, input()).catch(error => error); await vi.waitFor(() => expect(graph).toHaveBeenCalledTimes(1)); deadline.abort(); expect(await result).toHaveProperty('message', 'audio-trends-request-failed'); await vi.waitFor(() => expect(cancelled).toBe(true)); expect(h.calls).toHaveLength(0); });
+it('ends stalled persistence at the same pass deadline and ignores late receipts', async () => { const deadline = new AbortController(); vi.spyOn(AbortSignal, 'timeout').mockReturnValue(deadline.signal); let finish!: (response: Response) => void; const h = harness(() => new Promise(resolve => { finish = resolve; })); const result = ingestDneskaiAudioTrends(h.db, owner, input()).catch(error => error); await vi.waitFor(() => expect(h.calls).toHaveLength(1)); deadline.abort(); expect(await result).toHaveProperty('message', 'audio-trends-store-failed'); expect(h.calls[0].signal?.aborted).toBe(true); finish(Response.json(observationReceipt(h.calls[0].args))); await Promise.resolve(); expect(h.calls).toHaveLength(1); });
+it('refuses cancelled and mismatched account/day input before provider work', async () => { const h = harness(), parent = new AbortController(); parent.abort(); await expect(ingestDneskaiAudioTrends(h.db, owner, { ...input(), signal: parent.signal })).rejects.toThrow('audio-trends-request-failed'); expect(await ingestDneskaiAudioTrends(h.db, owner, { ...input(), remoteAccountId: '9' })).toMatchObject({ status: 'skipped', code: 'audio-trends-input-invalid' }); expect(await ingestDneskaiAudioTrends(h.db, owner, { ...input(), today: '2026-02-30' })).toMatchObject({ status: 'skipped' }); expect(graph).not.toHaveBeenCalled(); });

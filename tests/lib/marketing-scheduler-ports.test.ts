@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
-  tick: vi.fn(), pending: vi.fn(), collect: vi.fn(), purge: vi.fn(), loader: vi.fn(), briefs: vi.fn(), briefsGetter: vi.fn(),
+  audio: vi.fn(), config: vi.fn(), chart: vi.fn(), tick: vi.fn(), pending: vi.fn(), collect: vi.fn(), purge: vi.fn(), loader: vi.fn(), briefs: vi.fn(), briefsGetter: vi.fn(),
   execute: vi.fn(), publish: vi.fn(), reconcile: vi.fn(), list: vi.fn(), refresh: vi.fn(), renew: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
@@ -13,8 +13,11 @@ vi.mock('@/lib/marketing/dneskai-wiring', () => ({ getCreateDneskaiBriefs: (...a
 vi.mock('@/lib/marketing/worker-runtime', () => ({ executeMarketingJob: (...args: unknown[]) => mocks.execute(...args) }));
 vi.mock('@/lib/marketing/source-refresh', () => ({ refreshSource: 'refresh-source-function' }));
 vi.mock('@/lib/marketing/orchestrator', () => ({ publishDueMarketing: (...args: unknown[]) => mocks.publish(...args), reconcileStoredMarketingPublication: (...args: unknown[]) => mocks.reconcile(...args) }));
-vi.mock('@/lib/marketing/meta-credentials', async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/marketing/meta-credentials')>(), listMetaTokenMetadata: (...args: unknown[]) => mocks.list(...args), refreshInstagramToken: (...args: unknown[]) => mocks.refresh(...args) }));
+vi.mock('@/lib/marketing/meta-credentials', async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/marketing/meta-credentials')>(), resolveMetaPublisherConfig: (...args: unknown[]) => mocks.config(...args), listMetaTokenMetadata: (...args: unknown[]) => mocks.list(...args), refreshInstagramToken: (...args: unknown[]) => mocks.refresh(...args) }));
 vi.mock('@/lib/marketing/asset-urls', () => ({ renewStoredRevisionAssetUrls: (...args: unknown[]) => mocks.renew(...args) }));
+vi.mock('@/lib/marketing/dneskai-audio-trends',async original=>({...await original<typeof import('@/lib/marketing/dneskai-audio-trends')>(),ingestDneskaiAudioTrends:(...args:unknown[])=>mocks.audio(...args)}));
+vi.mock('@/lib/marketing/dneskai-audio-tiktok',async original=>({...await original<typeof import('@/lib/marketing/dneskai-audio-tiktok')>(),advanceDneskaiTikTokChart:(...args:unknown[])=>mocks.chart(...args)}));
+import {observationAccount,observationNow} from '../helpers/dneskai-audio-observation-fixtures';
 import { createMarketingSchedulerPorts, resolveDneskaiProjectId } from '@/lib/marketing/scheduler-ports';
 import { runMarketingTick, type MarketingSchedulerPorts, type MarketingSchedulerStore } from '@/lib/marketing/scheduler';
 
@@ -26,7 +29,7 @@ function fakeDb(tables: Record<string, Array<Record<string, unknown>> | { error:
   const db = {
     rpc: vi.fn(),
     from(table: string) {
-      const entry = { table, calls: [] as Call[] }; log.push(entry);
+      const entry = { table, calls: [] as Call[] }; log.push(entry); let single=false;
       const rows = () => {
         const value = tables[table] ?? [];
         if (!Array.isArray(value)) return { data: null, error: { message: value.error } };
@@ -34,8 +37,8 @@ function fakeDb(tables: Record<string, Array<Record<string, unknown>> | { error:
       };
       const builder: Record<string, unknown> = new Proxy({}, {
         get(_target, property) {
-          if (property === 'then') return (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(rows()).then(resolve, reject);
-          if (property === 'maybeSingle') return async () => { const result = rows(); return { data: result.data?.[0] ?? null, error: result.error }; };
+          if (property === 'then') return (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => {const result=rows();return Promise.resolve(single?{data:result.data?.[0]??null,error:result.error}:result).then(resolve,reject);};
+          if (property === 'maybeSingle') return () => {single=true;return builder;};
           return (...args: unknown[]) => { entry.calls.push([String(property), args]); return builder; };
         },
       });
@@ -205,4 +208,15 @@ describe('a carousel left at container-pending by the slot tick', () => {
     expect(mocks.publish).toHaveBeenCalledWith(db, owner, 'dneskai', false, expect.any(AbortSignal));
     expect(result.did.find((entry) => entry.category === 'publishing')?.detail).toMatchObject({ dryRun: false, published: 1 });
   });
+});
+
+
+describe('captured audio observation admission',()=>{
+ it('captures the original clock before account/credential waits and reads only positive account fields',async()=>{
+  const h=fakeDb({marketing_accounts:[observationAccount]}),clock=new Date(observationNow);let release!:(value:unknown)=>void;mocks.config.mockImplementationOnce(()=>new Promise(resolve=>{release=resolve;}));mocks.audio.mockResolvedValueOnce({status:'done',stored:1});
+  const result=createMarketingSchedulerPorts(h.db,owner,{}).audioTrends!(clock,new AbortController().signal);await vi.waitFor(()=>expect(mocks.config).toHaveBeenCalledTimes(1));clock.setUTCDate(24);release({loginMode:'facebook'});expect(await result).toMatchObject({stored:1});expect(mocks.audio.mock.calls[0][2]).toMatchObject({account:observationAccount,today:'2026-10-23',now:observationNow});expect(h.calls('marketing_accounts')[0]).toContainEqual(['select',['id,user_id,brand,platform,remote_account_id,verified_at,enabled']]);expect(h.calls('marketing_accounts')[0]).toContainEqual(['retry',[false]]);expect(mocks.chart).not.toHaveBeenCalled();
+ });
+ it.each(['audio-trends-input-invalid','audio-trends-account-changed','audio-trends-day-changed'])('does not enter paid chart work after %s',async code=>{const h=fakeDb({marketing_accounts:[observationAccount]});mocks.config.mockResolvedValueOnce({loginMode:'facebook'});mocks.audio.mockResolvedValueOnce({status:'skipped',code,stored:0});expect(await createMarketingSchedulerPorts(h.db,owner,{DNESKAI_TIKTOK_TRENDS_ENABLED:'true'}).audioTrends!(new Date(observationNow),new AbortController().signal)).toMatchObject({code});expect(mocks.chart).not.toHaveBeenCalled();});
+ it('refuses a foreign account before credential/provider work',async()=>{const h=fakeDb({marketing_accounts:[{...observationAccount,user_id:other}]});expect(await createMarketingSchedulerPorts(h.db,owner,{}).audioTrends!(new Date(observationNow),new AbortController().signal)).toMatchObject({status:'skipped',code:'account-unverified'});expect(mocks.config).not.toHaveBeenCalled();expect(mocks.audio).not.toHaveBeenCalled();});
+ it('refuses a cancelled caller before account work',async()=>{const h=fakeDb({}),parent=new AbortController();parent.abort();await expect(createMarketingSchedulerPorts(h.db,owner,{}).audioTrends!(new Date(observationNow),parent.signal)).rejects.toThrow();expect(h.log).toHaveLength(0);expect(mocks.config).not.toHaveBeenCalled();});
 });

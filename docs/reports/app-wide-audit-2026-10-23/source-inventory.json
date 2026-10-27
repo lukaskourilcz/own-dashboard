@@ -27,7 +27,7 @@
       "path": "sentry.client.config.ts",
       "sha256": "72804a156309b809355392dd050cf10067fcd44773df933fa726c9b22ff70968",
       "lines": 24,
-      "status": "retired; replaced by native instrumentation-client.ts in findings 76–77"
+      "status": "retired; replaced by native instrumentation-client.ts in findings 76\u201377"
     },
     {
       "path": "sentry.edge.config.ts",
@@ -663,7 +663,7 @@
       "path": "src/app/globals.css",
       "lines": 788,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; findings 171–172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
+      "status": "partial; complete CSS source inspected; findings 171\u2013172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
       "reviewedSha256": "1a9f4c86868901c9b8dcc6d61aadb503f33f3bf251056b02937fc8fee7b8a276"
     },
     {
@@ -1710,7 +1710,7 @@
       "path": "src/components/panels/todos-panel.tsx",
       "lines": 1110,
       "sha256": "36e7f88a5c8a36c79a519e516e78289d08b7bfd483f5cd4a0006f0544b7c31fd",
-      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177–185; final release pending",
+      "status": "source reviewed; captured manual writes, permanent repository identity, compact rows and captured/cancellable refresh/cleanup verified in findings 177\u2013185; final release pending",
       "reviewedSha256": "0648b959f84e989355020c0130c9d2133c9d8da25ec5545898273e8f0d1aa4c7"
     },
     {
@@ -2109,7 +2109,7 @@
       "path": "src/components/work/weekly-planning.tsx",
       "lines": 745,
       "sha256": "93cbcb997f73523453ffc7cea0823898cc23a281912238dc0ae03cfb97ac6615",
-      "status": "partial; findings 164/166–169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
+      "status": "partial; findings 164/166\u2013169 complete focus, confirmed saves, identity/exit recovery and compact equal-action layout checked; remaining aggregate/legacy input review and final release pending",
       "reviewedSha256": "b59dc5381857cbb8394603de3434d306b73a638465c04e63f8555e0e5f47be9c"
     },
     {
@@ -2308,21 +2308,21 @@
       "sha256": null,
       "lines": 59,
       "reviewedSha256": "43a5a5857ba597c9bced4966d8c0eea7bb402eb6f0e77d73cf774f1237e4e097",
-      "status": "source reviewed; findings 294–295 captured progress/contact and browser adoption pass SDK/RLS/native checks; finding 296 shares the tested complete source comparator; rollout and final release pending"
+      "status": "source reviewed; findings 294\u2013295 captured progress/contact and browser adoption pass SDK/RLS/native checks; finding 296 shares the tested complete source comparator; rollout and final release pending"
     },
     {
       "path": "src/lib/career-application-records.ts",
       "sha256": null,
       "lines": 43,
       "reviewedSha256": "f68636c220e991e61b7313cdc37e016503ceafba2b749855975db371a028175b",
-      "status": "source reviewed; findings 296–297 captured application letter/deletion SDK/RLS/client and native browser adoption checks pass; final release pending"
+      "status": "source reviewed; findings 296\u2013297 captured application letter/deletion SDK/RLS/client and native browser adoption checks pass; final release pending"
     },
     {
       "path": "src/lib/career-application-save.ts",
       "sha256": null,
       "lines": 75,
       "reviewedSha256": "c3d0baa58db13f792595db1bec6340d6552e147d1aaf4c2b4afd476f04cc59d9",
-      "status": "source reviewed; findings 291–292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
+      "status": "source reviewed; findings 291\u2013292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
     },
     {
       "path": "src/lib/career-listing-save.ts",
@@ -2336,7 +2336,7 @@
       "sha256": null,
       "lines": 129,
       "reviewedSha256": "0985f5934a7c3ca0227afddb757a6e0cb5f56218748b2313d0ce94176c3ddb42",
-      "status": "source reviewed; shared positive Career schemas including templates; findings 272–299 targeted checks pass; final release pending"
+      "status": "source reviewed; shared positive Career schemas including templates; findings 272\u2013299 targeted checks pass; final release pending"
     },
     {
       "path": "src/lib/career-saved-records.ts",
@@ -2399,7 +2399,7 @@
       "sha256": null,
       "lines": 41,
       "reviewedSha256": "ab88fc97d93cc626005dcf26e7da9e28cbbfd3586aed7a4e257600aa6f3edf89",
-      "status": "source reviewed; findings 226–227 complete captured-owner reads and confirmed writes pass SDK/RLS tests; browser writer adoption and final release pending"
+      "status": "source reviewed; findings 226\u2013227 complete captured-owner reads and confirmed writes pass SDK/RLS tests; browser writer adoption and final release pending"
     },
     {
       "path": "src/lib/cron-auth.ts",
@@ -2854,7 +2854,7 @@
       "path": "src/lib/i18n/sections/jobs.ts",
       "lines": 621,
       "sha256": "2c0ca23ad12d30f2d642464a13aa19b9d844014fc97b007d0696e1a714ce6106",
-      "status": "source reviewed; findings 307–308 EN/CS picker states and retirement of obsolete contact migration/partial-save diagnostics verified; remaining density copy review pending",
+      "status": "source reviewed; findings 307\u2013308 EN/CS picker states and retirement of obsolete contact migration/partial-save diagnostics verified; remaining density copy review pending",
       "reviewedSha256": "1096b3f471ee7c22b8ac49b8c7b20af2491fec3c6ffce1b3180458610597f0c9"
     },
     {
@@ -2980,7 +2980,7 @@
       "path": "src/lib/i18n/sections/todos.ts",
       "lines": 417,
       "sha256": "0fe15fe3e69a5bcc62ec0f5a0c7664271b851fc62bc1cc5cf4602ad0c2c8f05b",
-      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177–180; final release pending",
+      "status": "source reviewed; EN/CS task recovery and full-text disclosure checked in findings 177\u2013180; final release pending",
       "reviewedSha256": "a184a3990cbeb3eb556a48282ffa1d3bb9e7f86a2a0f0d3b73ad553a960db93e"
     },
     {
@@ -3345,15 +3345,15 @@
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
       "lines": 142,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; findings 256–260 bound TikTok admission/lifetime and finding 263 uses covered provider errors with EN/CS guidance; exact persistence/matching/progress remain open",
+      "status": "source reviewed; findings 256\u2013260 bound TikTok admission/lifetime and finding 263 uses covered provider errors with EN/CS guidance; exact persistence/matching/progress remain open",
       "reviewedSha256": "5eb7f37855978c784ff7487451fc4c3fb7948b8c797e827d45e13f0203206c14"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
-      "lines": 118,
+      "lines": 197,
       "sha256": "9b935d2e36d4e6eaa35d47c7250a2c8bcd85b1ae76dd41434a2d902c8cef00a6",
-      "status": "source reviewed; finding 260 validates fresh owned recommendation reads, shared 50-result bound, ranking ties and cancellation; atomic ingest and remaining progress leads open",
-      "reviewedSha256": "f0fd3c7fb687b00ede1c45759fc743c09918c4a42a786ec7aa4854110254c753"
+      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending",
+      "reviewedSha256": "0c5dd9ad4ccfe83a6168dd3986118fb13f9d6abedf0d8750c84e6d18477012bb"
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
@@ -3625,8 +3625,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from 135 canonical files; only schema fingerprint changes; rollout and final release pending",
-      "reviewedSha256": "f34be5bd56c68b4f8fcf71f7bf75595a2a9f428711f53c0d9809bae19909a856"
+      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending",
+      "reviewedSha256": "378388964a65d21ad2399db6f3030344f63da299c9c83b2c264f6342a75586a8"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4148,10 +4148,10 @@
     },
     {
       "path": "src/lib/marketing/scheduler-ports.ts",
-      "lines": 207,
+      "lines": 216,
       "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
-      "status": "partial; complete source inspection; bounded complete eligibility/lease prechecks, cancellation, renewable-read starvation and exact persisted reconciliation receipts remain under review",
-      "reviewedSha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54"
+      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending",
+      "reviewedSha256": "8449f4af539dd22b40770a66c85358f8a36c5b9db90295f4bb1b190d0d1f0e9d"
     },
     {
       "path": "src/lib/marketing/scheduler.ts",
@@ -4740,7 +4740,7 @@
       "path": "src/lib/task-write.ts",
       "lines": 119,
       "sha256": null,
-      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176–177; remaining callers and final release separate",
+      "status": "source reviewed; strict task receipts, captured source-safe cache updates and Unicode creation bounds checked in findings 176\u2013177; remaining callers and final release separate",
       "reviewedSha256": "8a3ff87773dee890e2e43527285a099156e177b9b61392eba241f1203f19f9a0"
     },
     {
@@ -4761,7 +4761,7 @@
       "path": "src/lib/tax-registry.ts",
       "lines": 311,
       "sha256": "f3e5b21227e9b6fdf24841c0379eec92a1a6813ffc20eeab53d3ce17f0cbdc70",
-      "status": "source reviewed; findings 212–214 nonfuture freshness, typed receipt schemas and identity-preserving VAT syntax tests pass; browser lifecycle and final release pending",
+      "status": "source reviewed; findings 212\u2013214 nonfuture freshness, typed receipt schemas and identity-preserving VAT syntax tests pass; browser lifecycle and final release pending",
       "reviewedSha256": "da9170a424d3445b75c9843ba99a714e4b8f32ae196916329facbbf1d93c9fc8"
     },
     {
@@ -4931,7 +4931,7 @@
       "path": "src/lib/weekly-review-save.ts",
       "sha256": null,
       "lines": 94,
-      "status": "source reviewed; findings 167–168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
+      "status": "source reviewed; findings 167\u2013168 captured save and bounded exact reload with SDK/database/cache checks pass; final release pending",
       "reviewedSha256": "db5f9b9d933fb90741a1518bbe5aa33b0c96dac40b15856b843aaa36a0e2f227"
     },
     {
@@ -4967,14 +4967,21 @@
       "sha256": null,
       "lines": 81,
       "reviewedSha256": "3bd0dc6edb3392b797aab7bdcd7ca3652afa604a7794fe5241b1f763734529b5",
-      "status": "source reviewed; findings 291–292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
+      "status": "source reviewed; findings 291\u2013292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
     },
     {
       "path": "supabase/migrations/20261026195100_captured_career_progress.sql",
       "sha256": null,
       "lines": 78,
       "reviewedSha256": "e3463672cee9930786d66f300070122023fff9a5db4faf9bdd9a7fd1b6816840",
-      "status": "source reviewed; findings 294–295 atomic captured progress/contact SDK/RLS/client and native stage/editor adoption checks pass; rollout and final release pending"
+      "status": "source reviewed; findings 294\u2013295 atomic captured progress/contact SDK/RLS/client and native stage/editor adoption checks pass; rollout and final release pending"
+    },
+    {
+      "path": "supabase/migrations/20261027044222_atomic_dneskai_audio_observations.sql",
+      "sha256": null,
+      "lines": 118,
+      "reviewedSha256": "b5e0e62ca1b86d93aa9814090a54c87bf61fc478587c6d5b526a8e026374d879",
+      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending"
     }
   ],
   "baselineFileCount": 561

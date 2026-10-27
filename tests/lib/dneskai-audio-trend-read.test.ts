@@ -2,14 +2,15 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 vi.mock('server-only', () => ({}));
 import { listDneskaiAudioTrends } from '@/lib/marketing/dneskai-audio-trends';
+import {observationReadRow} from '../helpers/dneskai-audio-observation-fixtures';
 import { DneskaiAudioLibrarySchema } from '@/lib/marketing/dneskai-audio-contracts';
 
 const owner = '11111111-1111-4111-8111-111111111111';
-const row = (id: number, patch = {}) => ({ user_id: owner, audio_id: String(id), title: `Sound ${id}`, display_artist: null, audio_type: 'music', duration_ms: 1000, cover_artwork_thumbnail_url: null, days_seen: 1, niche_count: 0, tiktok: false, last_seen: '2026-10-25', ...patch });
+const row = observationReadRow;
 const niche = (id: number) => ({ audioId: String(id), title: `Niche ${id}`, artist: null, reels: 1, plays: 1, score: 1 });
 function database(rows: unknown[], wire?: () => Promise<Response>) {
- const calls: { url: URL; signal: AbortSignal | null | undefined }[] = [];
- const db = createClient('https://offline.supabase.test', 'TEST-ONLY-public', { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: async (input, init) => { calls.push({ url: new URL(String(input)), signal: init?.signal }); return wire ? wire() : Response.json(rows); } } });
+ const calls: { url: URL; signal: AbortSignal | null | undefined; body: unknown }[] = [];
+ const db = createClient('https://offline.supabase.test', 'TEST-ONLY-public', { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: async (input, init) => { calls.push({ url: new URL(String(input)), signal: init?.signal, body: JSON.parse(String(init?.body)) }); return wire ? wire() : Response.json({ownerId:owner,today:'2026-10-25',rows}); } } });
  return { db, calls };
 }
 afterEach(() => { vi.restoreAllMocks(); });
@@ -31,8 +32,8 @@ it('projects owned fresh metadata and preserves the niche join in one bounded qu
  const h = database([row(1), row(2, { days_seen: 5 })]);
  const result = await listDneskaiAudioTrends(h.db, owner, '2026-10-25', [{ ...niche(1), reels: 4 }]);
  expect(result.map(sound => sound.audioId)).toEqual(['1', '2']); expect(result[0].nicheCount).toBe(4);
- const params = h.calls[0].url.searchParams;
- expect(params.get('user_id')).toBe(`eq.${owner}`); expect(params.get('last_seen')).toBe('gte.2026-10-24'); expect(params.getAll('last_seen')).toEqual(['gte.2026-10-24', 'lte.2026-10-25']); expect(params.get('limit')).toBe('50'); expect(params.get('order')).toBe('days_seen.desc,audio_id.asc'); expect(params.get('select')).toContain('user_id');
+ expect(h.calls[0].url.pathname).toBe('/rest/v1/rpc/read_dneskai_audio_observations');
+ expect(h.calls[0].body).toEqual({p_owner:owner,p_today:'2026-10-25'});
 });
 it.each(['2026-02-30', 'not-a-date'])('refuses an invalid calendar day before requesting (%s)', async day => {
  const h = database([]); await expect(listDneskaiAudioTrends(h.db, owner, day)).rejects.toThrow('audio-trends-store-failed'); expect(h.calls).toHaveLength(0);
@@ -70,3 +71,6 @@ it('rejects an already cancelled caller before transport without exposing its re
  const h = database([]), parent = new AbortController(); parent.abort('synthetic-private-abort');
  await expect(listDneskaiAudioTrends(h.db, owner, '2026-10-25', [], parent.signal)).rejects.toThrow(/^audio-trends-store-failed$/); expect(h.calls).toHaveLength(0);
 });
+
+it('uses a complete empty niche ranking instead of an old stored count',async()=>{const h=database([row(1)]);expect((await listDneskaiAudioTrends(h.db,owner,'2026-10-25'))[0].nicheCount).toBe(0);});
+it.each([{observed_account_id:null},{observed_verified_at:'2026-10-25T12:00:00.000001Z'},{observed_at:'2026-10-23T12:00:00Z'},{tiktok:true}])('refuses unproven or inconsistent account evidence %j',async patch=>{await expect(listDneskaiAudioTrends(database([row(1,patch)]).db,owner,'2026-10-25')).rejects.toThrow('audio-trends-store-failed');});

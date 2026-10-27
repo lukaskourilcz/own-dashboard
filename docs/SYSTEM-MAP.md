@@ -1,6 +1,6 @@
 # OwnDashboard system map
 
-This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 27 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 49 prepared migrations (87–135) still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
+This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 27 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 50 prepared migrations (87–136) still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
 
 ## 1. What OwnDashboard is
 
@@ -266,7 +266,7 @@ Storage buckets, all private: `marketing-assets` (rendered slide JPEGs), `market
 
 The 23 prepared migrations `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation. The routine feature switches and editor activation are deployed; see NEEDED.md and the Astra handoff for the recorded state. Do not repeat the completed migration push.
 
-The app-wide review has **49 prepared, unapplied audit migrations (87–135)**. The [README migration list](../README.md) and [migration guide](migration-guide.md#applying-the-prepared-migrations) are authoritative for the exact files, privileges, rollback and rollout order; the latest is `20261027030141_complete_dneskai_niche_audio_read.sql`. These local preparations do not establish Production rollout. Apply the complete filename-ordered chain before merging the implementation branch. Current validation and limits remain in [the app-wide review](reports/app-wide-audit-2026-10-23/review.md).
+The app-wide review has **50 prepared, unapplied audit migrations (87–136)**. The [README migration list](../README.md) and [migration guide](migration-guide.md#applying-the-prepared-migrations) are authoritative for the exact files, privileges, rollback and rollout order; the latest is `20261027044222_atomic_dneskai_audio_observations.sql`. These local preparations do not establish Production rollout. Apply the complete filename-ordered chain before merging the implementation branch. Current validation and limits remain in [the app-wide review](reports/app-wide-audit-2026-10-23/review.md).
 
 Remaining activation dependencies are distinct:
 
