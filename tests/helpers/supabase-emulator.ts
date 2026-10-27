@@ -326,7 +326,7 @@ export class SupabaseEmulator {
         const value = args[key];
         const bound = value === null || value === undefined ? null
           : type === 'json' || type === 'jsonb' ? JSON.stringify(value)
-            : type.endsWith('[]') ? (Array.isArray(value) ? `{${value.map((item) => `"${String(item).replace(/(["\\])/g, '\\$1')}"`).join(',')}}` : String(value))
+            : type.endsWith('[]') ? (Array.isArray(value) ? `{${value.map((item) => item === null ? 'NULL' : `"${String(item).replace(/(["\\])/g, '\\$1')}"`).join(',')}}` : String(value))
               : typeof value === 'object' ? JSON.stringify(value) : String(value);
         return `${ident(key)} => ${builder.bind(bound)}::${type}`;
       }).join(', ')})`;

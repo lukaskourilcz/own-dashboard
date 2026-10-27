@@ -253,7 +253,9 @@ The migrations, in the order they run:
 
 134. `20261027022446_atomic_uptime_kuma_transitions.sql` — prepared, unapplied; service-only stable-monitor/time transitions atomically record an alert and failed cron run, resolve every matching open alert on recovery and suppress stale/repeated events. Historical name-keyed alerts remain unchanged.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The forty-eight audit migrations 87–134 remain unapplied; apply them in filename order before deploying the implementation branch.
+135. `20261027030141_complete_dneskai_niche_audio_read.sql` — prepared, unapplied; one service-only owned seven-day snapshot projects ranking fields, bounds complete results at 10,000 records/10 MiB and uses a partial date/id index. No candidate rewrite or provider request.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The forty-nine audit migrations 87–135 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 

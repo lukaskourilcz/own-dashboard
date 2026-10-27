@@ -3329,10 +3329,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",
-      "lines": 52,
+      "lines": 90,
       "sha256": "acef8bf74369b3b5ad041a12074280d3d3c68df774acca85dd5bc82d0b9ffbc1",
-      "status": "source reviewed; observed music flags establish no licence/attachment permission; complete niche reads and ranking input leads remain open",
-      "reviewedSha256": "9e6de7cd07352db390c009bd1ffc11c990cf9b80e09f565daf4cff17a4b66906"
+      "status": "source reviewed; finding 312 replaces the 500/full-article prefix with a complete minimal owned seven-day snapshot, strict scope/ranking receipts and cancellation; full-chain SDK/10,000-bound/projection tests pass; optional failure presentation and release remain separate",
+      "reviewedSha256": "bc30e7f4be1620f270e6fe4c5c003b0849ec9a7945b1543e1c335320190b1d65"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
@@ -3618,8 +3618,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from 134 canonical files; only schema fingerprint changes; rollout and final release pending",
-      "reviewedSha256": "6f8d401e6a54887a3af20ec8b1b79ad0c35ed93fd67969f63dddde649d8bbe0c"
+      "status": "source reviewed; eight-table read port regenerated from 135 canonical files; only schema fingerprint changes; rollout and final release pending",
+      "reviewedSha256": "f34be5bd56c68b4f8fcf71f7bf75595a2a9f428711f53c0d9809bae19909a856"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3709,8 +3709,8 @@
       "path": "src/lib/marketing/dneskai-source-catalog.ts",
       "lines": 88,
       "sha256": "58162b53aa0f5077d60d53342fd1d5f7f6314c0e1138ac7374c4bdaff6f4927b",
-      "status": "source reviewed; complete exact-count catalogs, no registry fallback, removed/disabled source refusal and empty admission checks pass (finding 146); final release checks pending",
-      "reviewedSha256": "28c4b379cd104f113bbbfe8d3dab6cb581073563e1b48935a76a084127cceb6d"
+      "status": "source reviewed; complete owned catalog/count/shape validation retained; finding 312 propagates the enclosing niche-read lifetime; other caller/provider phase boundaries and final release remain separate",
+      "reviewedSha256": "a8b6458c63ac522d3c6d1699865ad38e1b11798c698472bc84886aeb8d9f15d1"
     },
     {
       "path": "src/lib/marketing/dneskai-source-list-client.ts",

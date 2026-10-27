@@ -82,7 +82,7 @@ export async function readDneskaiSourceRows(db: SourceDb, owner: string, project
  * The registry is only for the explicit switch-off path. With owner settings
  * enabled, neither failed reads nor removed sources may silently enable it.
  */
-export async function loadDneskaiSourceCatalog(db: SourceDb, owner: string, project: string, env: Record<string, string | undefined> = process.env): Promise<DneskaiSourceCatalog> {
+export async function loadDneskaiSourceCatalog(db: SourceDb, owner: string, project: string, env: Record<string, string | undefined> = process.env, parent?: AbortSignal): Promise<DneskaiSourceCatalog> {
   if (!dneskaiSourcesTableEnabled(env)) return DNESKAI_REGISTRY_CATALOG;
-  return dneskaiTableCatalog(await readDneskaiSourceRows(db, owner, project));
+  return dneskaiTableCatalog(await readDneskaiSourceRows(db, owner, project, parent));
 }
