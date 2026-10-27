@@ -7,7 +7,7 @@ Career now stores the company directory in Supabase and connects saved positions
 Career displays public Oslo research immediately. Opening a role or saved/workflow tab loads private records on demand; **Check for new offers / Zkontrolovat nové nabídky** also refreshes feeds and availability. The prepared queue accepts explicit ready text-only drafts as well as Google Docs links. See [current Oslo workflow](career-workspace.md).
 
 1. Save a position or open an imported one. Attach its Google Docs or Drive file URL and review the posting, letter and eligibility notes. Readiness is explicit: draft, ready or needs review.
-2. Open **Applications to send / Přihlášky k odeslání**. The list includes every saved position with a letter link, including visibly marked items needing review. Search by company or role.
+2. Open **Applications to send / Přihlášky k odeslání**. The Ready list includes explicitly ready drafts, including text-only letters, and valid Google letter links unless marked needs review. Drafts and items needing review stay in the other saved-position view. Search by company or role.
 3. Apply through the employer's own site. Return to the review dialog, choose the actual date and select **Record sent application**. This records an action the owner has already taken; it does not contact an employer.
 4. Open **Applied** and record the first substantive response separately from the hiring stage. An automated receipt does not count as a reply. Record a follow-up date, the contact at the company and the next step; the contact has its own two fields and the notes hold the rest.
 5. Filter the sent cohort by application date and company/role. The response filter changes the visible list while the metric denominator remains the whole selected sent cohort.
@@ -25,12 +25,13 @@ Interviewing, Offer and Closed.
   date, so a card there cannot be dragged into Applied — it carries the same
   **Review / mark as sent** button the prepared list uses, which opens the
   review dialog and records the date the owner actually applied through
-  `record_job_application`. A drag that skipped it would invent that date.
-- Dragging a card calls the same `update_job_application_progress` RPC the list
-  uses, passing the existing response, follow-up and notes back unchanged: the
-  function is a whole-row update, so an omitted argument would erase the value.
-  The RPC appends a `status` history row only when the stage really changed, so
-  the board's moves land in the same timeline as everything else.
+  `record_captured_job_application`, using the original Saved identity/version. A drag that skipped review would invent that date.
+- Dragging a card calls `update_captured_job_application` through the same
+  bounded writer as the response dialog. It captures the original owner and
+  complete application version, then sends only the changed status. Omitted
+  response, follow-up, notes and contact fields remain unchanged. A stale
+  version refuses the write; an uncertain result offers explicit recovery.
+  Only an actual stage change adds a status event, in the same transaction.
 - Every drag has a keyboard and touch equivalent. Each card carries a stage
   menu, which is the complete path without dragging; the drag handle is the
   only element with drag listeners and `touch-action: none`, so card text stays
@@ -80,10 +81,12 @@ A direct link is sufficient for this workflow and creates no extra background AP
 ## Data and consistency
 
 - `career_companies` stores the owner, company name, URL, category, country, research notes and last check date. The directory loads only when its Career subtab is open, with a user-scoped React Query key and a 1,000-row bound. Public Oslo career destinations are available in production and merge with owner links; Czech destinations require the Settings opt-in.
-- `saved_job_positions` adds `cover_letter_url` and `readiness`. Existing saved positions keep their identities and drafts. The prepared list uses the presence of a letter link; readiness is a review flag, not a second application status.
-- `job_applications` adds the letter URL, idempotent request ID, first-response date and response kind. Existing status and follow-up columns remain authoritative. A later migration adds the contact pair; the progress RPC does not take it, so the contact is a separate own-only update guarded by the same RLS policies and reported separately when it fails.
-- `record_job_application` records the application, adds its initial event and consumes the saved position in one transaction. An owner/request unique key and transaction lock make retries return the original record. A manually saved position retains a null listing foreign key instead of incorrectly using its saved-row UUID.
-- `update_job_application_progress` updates the stage, response and follow-up together, adding history only when values change. Response dates cannot precede sending or lie in the future through the RPC.
+- `saved_job_positions` adds `cover_letter_url` and `readiness`. Existing saved positions keep their identities and drafts. The Ready view uses the shared readiness rule: explicit ready text-only drafts or valid Google letter links not marked needs review. Readiness stays distinct from a sent application status.
+- `job_applications` stores the letter URL, request identity, first-response date, response kind and contacts. Status and follow-up columns remain authoritative. The captured progress RPC commits submitted contact and progress changes together; a contact-only change adds no event.
+- `record_captured_job_application` verifies the expected owner and original Saved version, records the reviewed application and initial event, and consumes that exact Saved row in one transaction. Source metadata comes from its private Saved snapshot. Explicit retry of the same captured intent returns the original application without overwriting later progress; changed or foreign intents are refused. A manually saved position keeps its null listing foreign key.
+- `update_captured_job_application` accepts a bounded seven-field patch with the captured owner/id/version. It commits progress, contacts and the relevant changed history atomically; unchanged values cause no rewrite/event. Dates retain the owner-day validation. The older RPCs remain in canonical SQL for compatibility and are not the current board/dialog write path.
+
+The captured writers depend on prepared migrations 132 (`20261026182155_captured_career_application.sql`) and 133 (`20261026195100_captured_career_progress.sql`). Apply the complete audit chain 87–140 in order before deploying these callers; see the [current migration guide](migration-guide.md). This source description does not imply those files are already applied in Production.
 
 The functions use `SECURITY INVOKER`, an empty search path and explicit owner checks, following [Supabase's function guidance](https://supabase.com/docs/guides/database/functions). Directory access has explicit authenticated grants and [own-only RLS policies](https://supabase.com/docs/guides/database/postgres/row-level-security). [PostgreSQL transaction and row locks](https://www.postgresql.org/docs/current/explicit-locking.html) keep the sent transition atomic. Anonymous callers cannot read the directory or execute these functions.
 
