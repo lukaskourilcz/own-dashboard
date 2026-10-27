@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useUnsavedDraft } from "@/components/navigation-guard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,14 @@ import {
 } from "@/lib/jobs/letter-helper";
 import { matchListing } from "@/lib/jobs/match";
 
+type GuidanceInputs = { jobText: string; motivation: string; chosen: string[] | null; excludedSkills: string[] };
+const sameChoices = (a: string[], b: string[]) => a.length === b.length && a.every(id => b.includes(id));
+function sameInputs(a: GuidanceInputs, b: GuidanceInputs) {
+  return a.jobText === b.jobText && a.motivation === b.motivation &&
+    (a.chosen === null ? b.chosen === null : b.chosen !== null && sameChoices(a.chosen, b.chosen)) &&
+    sameChoices(a.excludedSkills, b.excludedSkills);
+}
+
 export function CareerLetterHelper({
   position,
   company,
@@ -22,21 +31,38 @@ export function CareerLetterHelper({
   onChange,
   language,
   onLanguageChange,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   position: string;
   company: string;
   description?: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (v: string) => void | boolean;
   language: LetterLanguage;
   onLanguageChange: (v: LetterLanguage) => void;
 }) {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const [jobText, setJobText] = useState(description);
-  const [motivation, setMotivation] = useState("");
-  const [chosen, setChosen] = useState<string[] | null>(null);
-  const [excludedSkills, setExcludedSkills] = useState<string[]>([]);
+  const [inputs, setInputs] = useState<GuidanceInputs>(() => ({jobText: description, motivation: "", chosen: null, excludedSkills: []}));
+  const [hasChanges, setHasChanges] = useState(false);
+  const fields = useRef(inputs), baseline = useRef(inputs), dirty = useRef(false);
+  const {jobText, motivation, chosen, excludedSkills} = inputs;
+  function update(patch: Partial<GuidanceInputs>) {
+    if (readOnly) return;
+    const next = {...fields.current, ...patch};
+    fields.current = next;
+    dirty.current = !sameInputs(next, baseline.current);
+    setHasChanges(dirty.current);
+    setInputs(next);
+  }
+  function discard() {
+    fields.current = baseline.current;
+    dirty.current = false;
+    setHasChanges(false);
+    setInputs(baseline.current);
+  }
+  useUnsavedDraft({get dirty() {return dirty.current;}, canSave: false, save: async () => false, discard});
   const suggestions = useMemo(
     () => suggestEvidence(`${position} ${company} ${jobText}`),
     [position, company, jobText],
@@ -57,11 +83,8 @@ export function CareerLetterHelper({
   );
   const selectedIds =
     chosen ?? suggestions.slice(0, 3).map((e) => e.evidence.id);
-  const selected = suggestions.filter((e) =>
-    selectedIds.includes(e.evidence.id),
-  );
-  const skills = match.matched.filter((s) => !excludedSkills.includes(s.name));
   function draft() {
+    if (readOnly) return;
     if (
       value.trim() &&
       !window.confirm(
@@ -71,16 +94,26 @@ export function CareerLetterHelper({
       )
     )
       return;
-    onChange(
+    const current = fields.current;
+    const evidence = suggestEvidence(`${position} ${company} ${current.jobText}`);
+    const ids = current.chosen ?? evidence.slice(0, 3).map(e => e.evidence.id);
+    const matched = matchListing({title: position, description: current.jobText, tags: [], seniority: null});
+    const accepted = onChange(
       buildLetter({
         language,
         position,
         company,
-        motivation,
-        evidenceIds: selected.map((e) => e.evidence.id),
-        skills: skills.map((s) => s.name),
+        motivation: current.motivation,
+        evidenceIds: evidence.filter(e => ids.includes(e.evidence.id)).map(e => e.evidence.id),
+        skills: matched.matched.filter(s => !current.excludedSkills.includes(s.name)).map(s => s.name),
       }),
     );
+    if (accepted !== false) {
+      baseline.current = current;
+      dirty.current = false;
+      setHasChanges(false);
+      setInputs({...current});
+    }
   }
   return (
     <section
@@ -95,6 +128,7 @@ export function CareerLetterHelper({
         </h3>
         <SimpleSelect
           className="w-full sm:w-36"
+          disabled={readOnly}
           value={language}
           onValueChange={(v) => onLanguageChange(v as LetterLanguage)}
           aria-label={cs ? "Jazyk dopisu" : "Letter language"}
@@ -112,7 +146,8 @@ export function CareerLetterHelper({
         </span>
         <Textarea
           value={jobText}
-          onChange={(e) => setJobText(e.target.value)}
+          readOnly={readOnly}
+          onChange={(e) => update({jobText: e.target.value})}
           rows={3}
           maxLength={20000}
           className="text-sm"
@@ -143,13 +178,13 @@ export function CareerLetterHelper({
           >
             <Checkbox
               checked={selectedIds.includes(e.id)}
-              onCheckedChange={(checked) =>
-                setChosen(
-                  checked
-                    ? [...selectedIds, e.id]
-                    : selectedIds.filter((id) => id !== e.id),
-                )
-              }
+              disabled={readOnly}
+              onCheckedChange={(checked) => {
+                const defaults = suggestEvidence(`${position} ${company} ${fields.current.jobText}`).slice(0, 3).map(e => e.evidence.id);
+                const current = fields.current.chosen ?? defaults;
+                const next = checked ? [...new Set([...current, e.id])] : current.filter(id => id !== e.id);
+                update({chosen: sameChoices(next, defaults) ? null : next});
+              }}
             />
             <span className="min-w-0">
               <strong className="block">{e.employer}</strong>
@@ -192,13 +227,10 @@ export function CareerLetterHelper({
               >
                 <Checkbox
                   checked={!excludedSkills.includes(s.name)}
-                  onCheckedChange={(checked) =>
-                    setExcludedSkills((old) =>
-                      checked
-                        ? old.filter((id) => id !== s.name)
-                        : [...old, s.name],
-                    )
-                  }
+                  disabled={readOnly}
+                  onCheckedChange={(checked) => update({excludedSkills: checked
+                    ? fields.current.excludedSkills.filter(id => id !== s.name)
+                    : [...new Set([...fields.current.excludedSkills, s.name])]})}
                 />
                 {s.name}
               </label>
@@ -222,7 +254,8 @@ export function CareerLetterHelper({
         </span>
         <Textarea
           value={motivation}
-          onChange={(e) => setMotivation(e.target.value)}
+          readOnly={readOnly}
+          onChange={(e) => update({motivation: e.target.value})}
           rows={2}
           maxLength={1500}
           placeholder={
@@ -236,10 +269,13 @@ export function CareerLetterHelper({
         <Button
           type="button"
           onClick={draft}
-          disabled={!jobText.trim() && !position.trim()}
+          disabled={readOnly || (!jobText.trim() && !position.trim())}
         >
           {cs ? "Sestavit upravitelný návrh" : "Build editable draft"}
         </Button>
+        {hasChanges && <Button type="button" variant="outline" onClick={discard}>
+          {cs ? "Zahodit úpravy průvodce" : "Discard guidance changes"}
+        </Button>}
         <Label className="text-foreground-muted">
           {cs
             ? "Před odesláním zkontrolujte každé tvrzení."

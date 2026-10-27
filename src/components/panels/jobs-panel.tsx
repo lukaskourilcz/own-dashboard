@@ -1680,7 +1680,7 @@ function CoverLetterField({
   useLayoutEffect(()=>{currentContext.current={body:value,position:vars.position??'',company:vars.company??''};},[value,vars.position,vars.company]);
   function matchesContext(a:typeof currentContext.current,b:typeof currentContext.current){return a.body===b.body&&a.position===b.position&&a.company===b.company;}
   const templateLocked=templateWriter.pending!==null||!!templateWriter.failure&&templateWriter.failure.reason!=='invalid';
-  function changeLetter(body:string){if(readOnly||templateWriter.isPending())return;currentContext.current={...currentContext.current,body};onChange(body);if(templateWriter.failure?.reason==='invalid')templateWriter.clearFailure();}
+  function changeLetter(body:string){if(readOnly||templateWriter.isPending())return false;currentContext.current={...currentContext.current,body};onChange(body);if(templateWriter.failure?.reason==='invalid')templateWriter.clearFailure();return true;}
   function confirmedTemplate(){const saved=attemptContext.current;if(saved)baselineContext.current=saved;attemptContext.current=null;templateAttemptRef.current=null;setTemplateAttempt(null);templateId.current=null;nameRef.current="";setDraftName("");toast.ok(t.jobs.templateSaved);return !protectContext||!!saved&&matchesContext(currentContext.current,saved);}
   async function saveAsTemplate(){
     if(templateWriter.isPending()||templateWriter.failure||!value.trim())return false;
@@ -1695,7 +1695,7 @@ function CoverLetterField({
   return (
     <div className="space-y-4">
       {pickerOpen&&<CareerTemplatePicker id={pickerId} templates={templates} language={letterLanguage} onSelect={loadTemplate} onClose={()=>setPickerOpen(false)}/>}
-      <fieldset disabled={readOnly||templateWriter.pending!==null} className="min-w-0 space-y-4">
+      <fieldset className="min-w-0 space-y-4">
       <details open={guidanceOpen} onToggle={event=>{const open=event.currentTarget.open;setGuidanceOpen(open);if(open)setGuidanceMounted(true);}}>
       <summary className="min-h-11 cursor-pointer rounded-sm py-3 text-sm font-medium focus-ring">{t.jobs.letterGuidance}</summary>
       {guidanceMounted&&<CareerLetterHelper
@@ -1705,6 +1705,7 @@ function CoverLetterField({
         description={description}
         value={value}
         onChange={changeLetter}
+        readOnly={readOnly||templateWriter.pending!==null}
         language={letterLanguage}
         onLanguageChange={setLetterLanguage}
       />}
