@@ -4,12 +4,15 @@ import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createMigratedDatabase } from '../helpers/supabase-pglite';
 import { SupabaseEmulator } from '../helpers/supabase-emulator';
 import { databaseVersion } from '@/lib/database-version';
+import { applyMarketingAccountControl } from '@/lib/marketing/account-control-server';
 vi.mock('server-only', () => ({}));
 const owner = '11111111-1111-4111-8111-111111111111', id = '22222222-2222-4222-8222-222222222222', version = '2026-10-27T10:00:00.000001Z';
-let database: Awaited<ReturnType<typeof createMigratedDatabase>>, service: SupabaseClient, authenticated: SupabaseClient, anonymous: SupabaseClient;
+let database: Awaited<ReturnType<typeof createMigratedDatabase>>, service: SupabaseClient, authenticated: SupabaseClient, anonymous: SupabaseClient, emulator: SupabaseEmulator;
 beforeAll(async () => {
     database = await createMigratedDatabase({ owner, instant: version });
-    const origin = 'https://account-toggle.supabase.co', emulator = new SupabaseEmulator(database, origin, { service: 'TEST-ONLY-service', users: { [owner]: 'TEST-ONLY-owner' } }), options = { global: { fetch: emulator.fetch.bind(emulator) }, auth: { persistSession: false, autoRefreshToken: false } };
+    const origin = 'https://account-toggle.supabase.co';
+    emulator = new SupabaseEmulator(database, origin, { service: 'TEST-ONLY-service', users: { [owner]: 'TEST-ONLY-owner' } });
+    const options = { global: { fetch: emulator.fetch.bind(emulator) }, auth: { persistSession: false, autoRefreshToken: false } };
     service = createClient(origin, 'TEST-ONLY-service', options);
     anonymous = createClient(origin, 'TEST-ONLY-anon', options);
     authenticated = createClient(origin, 'TEST-ONLY-anon', { ...options, global: { ...options.global, headers: { Authorization: 'Bearer TEST-ONLY-owner' } } });
@@ -170,4 +173,34 @@ it('preserves populated account/token data and table grants through successful a
         expect(await preserved()).toEqual(before);
     }
     expect((await service.rpc('toggle_owned_marketing_account', command())).data.kind).toBe('saved');
+});
+it('the strict service adapter confirms an actual persisted transaction and its full microsecond intent', async () => {
+    const result = await applyMarketingAccountControl(service, owner, { ownerId: owner, accountId: id, expectedVersion: version, enabled: true }, 'publishing');
+    expect(result.kind).toBe('saved');
+    expect((await stored()).rows[0].row.enabled).toBe(true);
+    expect(databaseVersion(result.expectedVersion)).toBe(databaseVersion(version));
+});
+it('the strict service adapter preserves non-mutating blocked and changed results', async () => {
+    await database.query("update public.marketing_account_tokens set expires_at='2000-01-01T00:00:00Z' where account_id=$1", [id]);
+    const input = { ownerId: owner, accountId: id, expectedVersion: version, enabled: true }, before = await stored();
+    expect(await applyMarketingAccountControl(service, owner, input, 'publishing')).toMatchObject({ kind: 'blocked', code: 'access-token-expired' });
+    expect(await stored()).toEqual(before);
+    await database.query("update public.marketing_accounts set handle='newer' where id=$1", [id]);
+    expect(await applyMarketingAccountControl(service, owner, input, 'publishing')).toMatchObject({ kind: 'changed' });
+});
+it('keeps a lost acknowledgement uncertain and refuses to rewrite on the original retry', async () => {
+    let calls = 0;
+    const fetcher = vi.fn(async (input, init) => {
+        const reply = await emulator.fetch(input, init);
+        if (++calls === 1)
+            throw new TypeError('TEST_ONLY_PRIVATE_LOST_ACK');
+        return reply;
+    }), db = createClient('https://account-toggle.supabase.co', 'TEST-ONLY-service', { global: { fetch: fetcher }, auth: { persistSession: false, autoRefreshToken: false } }), input = { ownerId: owner, accountId: id, expectedVersion: version, enabled: true };
+    await expect(applyMarketingAccountControl(db, owner, input, 'publishing')).rejects.toMatchObject({ message: 'Account control unavailable' });
+    expect(fetcher).toHaveBeenCalledOnce();
+    const committed = await stored();
+    expect(committed.rows[0].row.enabled).toBe(true);
+    expect(await applyMarketingAccountControl(db, owner, input, 'publishing')).toMatchObject({ kind: 'changed' });
+    expect(await stored()).toEqual(committed);
+    expect(fetcher).toHaveBeenCalledTimes(2);
 });

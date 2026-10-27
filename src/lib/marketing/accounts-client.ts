@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
 import { boundedResponseText } from '@/lib/bounded-response';
 import { databaseTimestamp } from '@/lib/database-version';
+import {confirmMarketingAccountControl,MarketingAccountControlSchema,MarketingAccountSwitchSchema,type MarketingAccountControl,type MarketingAccountSwitch} from './account-control-contracts';
 
 /** Browser-safe view of a connected marketing account. It never carries a token. */
 const timestamp = databaseTimestamp;
@@ -106,4 +107,14 @@ export async function setMarketingAccountEnabled(accountId: string, enabled: boo
     if (account.id !== accountId || account.enabled !== enabled) throw new Error();
     return account;
   });
+}
+
+/** Captured control transport; route/panel adoption follows before enabling these requests. */
+export async function submitMarketingAccountControl(input:MarketingAccountControl,kind:MarketingAccountSwitch,parent?:AbortSignal){
+ const intent=MarketingAccountControlSchema.safeParse(input),control=MarketingAccountSwitchSchema.safeParse(kind);
+ if(!intent.success||!control.success)throw new MarketingAccountRequestError('invalid-request');
+ return accountRequest(control.data==='publishing'?'/api/marketing/accounts/enable':'/api/marketing/accounts/engagement',intent.data,parent,35000,value=>{
+  const body=z.strictObject({receipt:z.unknown()}).parse(value);
+  return confirmMarketingAccountControl(body.receipt,intent.data,control.data);
+ });
 }

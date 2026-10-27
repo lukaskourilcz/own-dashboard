@@ -3245,10 +3245,10 @@
     },
     {
       "path": "src/lib/marketing/accounts-client.ts",
-      "lines": 109,
+      "lines": 120,
       "sha256": "2b3bf1c1744f68d995b9e6862ad445259d61e553c4e3aafed11058c0cfd0bb30",
-      "status": "partial; browser-safe metadata shape inspected; finite clocks/timestamps, duplicate account identities, bounded bodies/deadlines and requested-state receipts remain; see remaining-review.md; finding 346 exact action receipts, bounded original browser transport, finite timestamps/unique list proof and fixed diagnostics verified; captured browser source/recovery and atomic writes remain",
-      "reviewedSha256": "638704f76c2067df84e6c09e062d6c3739bf9e979b79a16fca90ccef3ed69791"
+      "status": "partial; browser-safe metadata shape inspected; finite clocks/timestamps, duplicate account identities, bounded bodies/deadlines and requested-state receipts remain; see remaining-review.md; finding 346 exact action receipts, bounded original browser transport, finite timestamps/unique list proof and fixed diagnostics verified; captured browser source/recovery and atomic writes remain; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain",
+      "reviewedSha256": "4e60dd424b12626fff57da735a47030225046a171cc360f6284996edcef6696b"
     },
     {
       "path": "src/lib/marketing/asset-urls.ts",
@@ -5031,6 +5031,20 @@
       "lines": 24,
       "reviewedSha256": "77b733f9364226c29a7bed345d5e9ea0dbd8b106fb38d14e797f1f83f2baa989",
       "status": "source reviewed; final app-wide release pending; finding 338 positive exact private cache absence and original read lifetime verified"
+    },
+    {
+      "path": "src/lib/marketing/account-control-contracts.ts",
+      "sha256": null,
+      "lines": 24,
+      "reviewedSha256": "fc0d2ae9078581bf0d8dd2290804961099336a5ba56a3d264110857c3167e341",
+      "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
+    },
+    {
+      "path": "src/lib/marketing/account-control-server.ts",
+      "sha256": null,
+      "lines": 25,
+      "reviewedSha256": "18a8f85d3204c97db8b59fd7117dd9aa2a7dbf04b0695eaf2d604f909ead1d9d",
+      "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
     }
   ],
   "baselineFileCount": 561
