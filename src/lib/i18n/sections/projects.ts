@@ -141,6 +141,9 @@ type ProjectsStrings = {
   heartbeatStale: string;
   heartbeatNever: string;
   heartbeatUnmonitored: string;
+  heartbeatUnknown: string;
+  heartbeatUnknownHint: string;
+  heartbeatEstimate: string;
   heartbeatLastSuccess: (when: string) => string;
   heartbeatNoSuccess: string;
   heartbeatUnmonitoredHint: string;
@@ -291,6 +294,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     heartbeatStale: "Not reporting",
     heartbeatNever: "No run yet",
     heartbeatUnmonitored: "Unmonitored",
+    heartbeatUnknown: "Not assessed",
+    heartbeatUnknownHint: "The clock or recorded success time cannot be verified.",
+    heartbeatEstimate: "Estimated from the schedule’s longest usual gap or the saved run frequency.",
     heartbeatLastSuccess: (when) => `Last success ${when}`,
     heartbeatNoSuccess: "No successful run recorded yet.",
     heartbeatUnmonitoredHint:
@@ -441,6 +447,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     heartbeatStale: "Nehlásí se",
     heartbeatNever: "Zatím bez běhu",
     heartbeatUnmonitored: "Bez hlídání",
+    heartbeatUnknown: "Nevyhodnoceno",
+    heartbeatUnknownHint: "Nelze ověřit aktuální čas nebo čas zaznamenaného úspěchu.",
+    heartbeatEstimate: "Odhad podle nejdelší obvyklé mezery v rozvrhu nebo uložené četnosti běhů.",
     heartbeatLastSuccess: (when) => `Poslední úspěch ${when}`,
     heartbeatNoSuccess: "Zatím není zaznamenaný žádný úspěšný běh.",
     heartbeatUnmonitoredHint:

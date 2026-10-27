@@ -236,8 +236,8 @@ URL itself — the push URL is a credential.
 
 POST a success to `/api/crons/log` with the cron's `cron_id`, and confirm
 `last_success_at` moves and the stored URL receives one request. POST a failure
-and confirm neither happens. Leave the cron un-run past three of its own
-scheduled intervals and confirm the list badge reads Not reporting and the
+and confirm neither happens. Leave the cron without a recorded success past three of its estimated longest
+usual gaps and confirm the list badge reads Not reporting and the
 project health explains it.
 
 For the current receiver, apply migration 134 below too. With `UPTIME_KUMA_WEBHOOK_TOKEN` and `DASHBOARD_OWNER_ID` set, POST a Kuma down

@@ -1652,10 +1652,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 1978,
+      "lines": 1989,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
-      "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
-      "reviewedSha256": "2c2a327ca5cd2109f6153ce94cec1389d9293332e86dc507bb0ef33b6bd0ca6e"
+      "status": "partial; captured owner/project/classification/notes/deletion foundations and finding 311 estimated/unknown heartbeat UI checked; remaining operational metadata writes, density and final release pending",
+      "reviewedSha256": "856c26503565dde23e018ca44c4fdd14f813e081f6635a73d45207bccfe83fb1"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -2403,10 +2403,10 @@
     },
     {
       "path": "src/lib/cron-heartbeat.ts",
-      "lines": 205,
+      "lines": 223,
       "sha256": "57ec68c2292cae58be1f086e2e313c45123371e9c67be95f24c9f147e2cf7598",
-      "status": "partial; finding 310 validates confirmed numeric Kuma id/status/UTC facts and excludes vendor diagnostics; schedule-derived weekday/step heartbeat estimates remain under review",
-      "reviewedSha256": "180fb64587e286daa0ed6ec3af2e41fefc6f270bdf3ea118544af61dfc40b260"
+      "status": "source reviewed; findings 310/311 validate minimal Kuma events and conservative schedule/timing estimates; weekday/Gregorian enumeration and affected client/native checks pass; final release pending",
+      "reviewedSha256": "ca5ba42f8e00a739a59f23893201bbf208952c45ab2d21b0b9f112c5124ce42e"
     },
     {
       "path": "src/lib/cron-log-contract.ts",
@@ -2922,10 +2922,10 @@
     },
     {
       "path": "src/lib/i18n/sections/projects.ts",
-      "lines": 452,
+      "lines": 461,
       "sha256": "88fac34bbd0306170aabd850f200520a8ec0e9cfbd5a9e12551f335743526a87",
-      "status": "source reviewed; bilingual project form/deletion/conflict, note recovery, unavailability and classification copy checked; final release pending",
-      "reviewedSha256": "d1446034cded0eb661fd5ac5d994ed092729decc1f81db5a0577f321d61bbb7a"
+      "status": "source reviewed; finding 311 adds EN/CS unknown-time and estimate details; native keyboard/reflow/axe checks pass; final release pending",
+      "reviewedSha256": "551afe22fbbafaf1c0661ede3d2a27cf03854b65b23290aa7245f0ee4c82a32c"
     },
     {
       "path": "src/lib/i18n/sections/prompts.ts",

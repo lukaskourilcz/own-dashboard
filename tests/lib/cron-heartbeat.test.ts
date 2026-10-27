@@ -42,8 +42,8 @@ describe("expectedIntervalMs", () => {
     expect(expectedIntervalMs(cron({ schedule: "30 * * * *" }))).toBe(HOUR);
     expect(expectedIntervalMs(cron({ schedule: "0 */4 * * *" }))).toBe(4 * HOUR);
     expect(expectedIntervalMs(cron({ schedule: "0 7 * * 0" }))).toBe(7 * DAY);
-    expect(expectedIntervalMs(cron({ schedule: "0 7 * * 1-5" }))).toBe((7 * DAY) / 5);
-    expect(expectedIntervalMs(cron({ schedule: "0 7 1 * *" }))).toBe(30 * DAY);
+    expect(expectedIntervalMs(cron({ schedule: "0 7 * * 1-5" }))).toBe(3 * DAY);
+    expect(expectedIntervalMs(cron({ schedule: "0 7 1 * *" }))).toBe(31 * DAY);
   });
 
   it("falls back to runs_per_month for an expression it cannot read", () => {
@@ -65,7 +65,7 @@ describe("expectedIntervalMs", () => {
   });
   it("counts each selected weekday once, with both Sunday aliases", () => {
     expect(expectedIntervalMs(cron({ schedule: "0 7 * * 0,7" }))).toBe(7 * DAY);
-    expect(expectedIntervalMs(cron({ schedule: "0 7 * * 1-5,5" }))).toBe(7 * DAY / 5);
+    expect(expectedIntervalMs(cron({ schedule: "0 7 * * 1-5,5" }))).toBe(3 * DAY);
   });
 });
 
@@ -131,7 +131,7 @@ describe("cronHeartbeatState", () => {
   it("treats an unparseable timestamp as no success at all", () => {
     expect(
       cronHeartbeatState(cron({ last_success_at: "not a date" }), now),
-    ).toMatchObject({ state: "never", lastSuccessAt: null });
+    ).toMatchObject({ state: "unknown", lastSuccessAt: null });
   });
 
   it("counts only the stale ones for project health", () => {

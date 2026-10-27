@@ -1576,7 +1576,7 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
   const t = useDict();
   const locale = useDateLocale();
   const now = useNow();
-  const { state, lastSuccessAt } = cronHeartbeatState(cron, now ?? new Date(0));
+  const { state, lastSuccessAt } = cronHeartbeatState(cron, now ?? new Date(NaN));
   const map: Record<
     CronHeartbeatState,
     { label: string; cls: string; Icon: typeof Check }
@@ -1601,6 +1601,11 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
       cls: "border-border bg-surface-muted text-foreground-muted",
       Icon: Clock,
     },
+    unknown: {
+      label: t.projects.heartbeatUnknown,
+      cls: "border-border bg-surface-muted text-foreground-muted",
+      Icon: CircleDashed,
+    },
     unmonitored: {
       label: t.projects.heartbeatUnmonitored,
       cls: "border-border bg-surface-muted text-foreground-muted",
@@ -1608,7 +1613,7 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
     },
   };
   const entry = map[state];
-  const detail = lastSuccessAt
+  const detail = state === "unknown" ? t.projects.heartbeatUnknownHint : lastSuccessAt
     ? t.projects.heartbeatLastSuccess(
         now ? formatDistance(lastSuccessAt, now, { addSuffix: true, locale }) : "—",
       )
@@ -1616,7 +1621,7 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
       ? t.projects.heartbeatUnmonitoredHint
       : t.projects.heartbeatNoSuccess;
   return (
-    <Tooltip content={detail}>
+    <Tooltip content={<div className="max-w-xs space-y-1"><p>{detail}</p>{(state === "ok" || state === "late" || state === "stale") && <p>{t.projects.heartbeatEstimate}</p>}</div>}>
       {/* Focusable so the detail is reachable by keyboard, not hover only. */}
       <span
         tabIndex={0}

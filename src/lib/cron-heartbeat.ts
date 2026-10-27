@@ -5,17 +5,18 @@ import type { Cron } from "@/lib/types";
  * success. Pure and deterministic: no clock of its own, no network, no service.
  *
  *   unmonitored — disabled, or nothing to judge it by yet
+ *   unknown     — clock or recorded timestamp cannot be assessed
  *   never       — monitored but it has not reported a single success
  *   ok          — reported within one expected interval (plus slack)
  *   late        — one to three intervals behind
- *   stale       — more than three intervals behind; treat as broken
+ *   stale       — no recorded success for more than three estimated gaps
  */
-export type CronHeartbeatState = "ok" | "late" | "stale" | "never" | "unmonitored";
+export type CronHeartbeatState = "ok" | "late" | "stale" | "never" | "unmonitored" | "unknown";
 
 export type CronHeartbeatResult = {
   state: CronHeartbeatState;
   lastSuccessAt: Date | null;
-  /** Expected gap between two runs, in milliseconds. */
+  /** Conservative usual gap between runs; an estimate, not scheduler proof. */
   intervalMs: number;
   /** How far past the expected interval the last success is; 0 when on time. */
   overdueByMs: number;
@@ -32,10 +33,10 @@ const STALE_INTERVALS = 3;
 const OK_INTERVALS = 1.5;
 
 /**
- * How long we expect to wait between two runs of `schedule`.
+ * The longest usual gap for the supported schedule shapes.
  *
  * This reads the handful of 5-field shapes the cron form actually produces —
- * it is not a cron parser and does not pretend to be one. Anything it does not
+ * it is not a scheduler or timezone oracle. Anything it does not
  * recognize falls back to the row's own `runs_per_month`, which the owner sets
  * for the cost estimate anyway, so an exotic expression degrades to a coarser
  * interval instead of a wrong verdict.
@@ -43,8 +44,10 @@ const OK_INTERVALS = 1.5;
 export function expectedIntervalMs(
   cron: Pick<Cron, "schedule" | "runs_per_month">,
 ): number {
+  const frequency = Number.isFinite(cron.runs_per_month) && cron.runs_per_month > 0 ? cron.runs_per_month : 1;
+  const fallback = Math.max(MINUTE, MONTH / Math.max(1, frequency));
+  if (typeof cron.schedule !== "string" || cron.schedule.length > 256) return fallback;
   const fields = cron.schedule.trim().split(/\s+/);
-  const fallback = MONTH / Math.max(1, Number(cron.runs_per_month) || 1);
   if (fields.length !== 5) return fallback;
 
   const [minute, hour, dayOfMonth, month, dayOfWeek] = fields;
@@ -68,11 +71,15 @@ export function expectedIntervalMs(
   if (dayOfMonth === "*" && dayOfWeek === "*") return DAY;
   // Weekly: 0 7 * * 0 — or a list of weekdays, e.g. 0 7 * * 1-5.
   if (dayOfMonth === "*") {
-    const days = countDayOfWeek(dayOfWeek);
-    return days > 0 ? (7 * DAY) / days : fallback;
+    const days = longestWeekdayGap(dayOfWeek);
+    return days > 0 ? days * DAY : fallback;
   }
   // Monthly: 0 7 1 * *
-  if (dayOfWeek === "*" && isFixed(dayOfMonth, 1, 31)) return MONTH;
+  if (dayOfWeek === "*" && isFixed(dayOfMonth, 1, 31)) {
+    const date = Number(dayOfMonth);
+    // Dates 29–31 can skip February/short months. Never use an average here.
+    return (date <= 28 ? 31 : date === 29 ? 59 : date === 30 ? 60 : 61) * DAY;
+  }
 
   return fallback;
 }
@@ -99,6 +106,11 @@ export function cronHeartbeatState(
     return { state: "unmonitored", lastSuccessAt, intervalMs, overdueByMs: 0 };
   }
 
+  const clock = now.getTime();
+  if (!Number.isFinite(clock) || (cron.last_success_at && (!lastSuccessAt || lastSuccessAt.getTime() > clock + 5 * MINUTE))) {
+    return { state: "unknown", lastSuccessAt, intervalMs, overdueByMs: 0 };
+  }
+
   const monitored = cron.heartbeat_url.trim() !== "";
   if (!lastSuccessAt) {
     return {
@@ -109,7 +121,7 @@ export function cronHeartbeatState(
     };
   }
 
-  const ageMs = now.getTime() - lastSuccessAt.getTime();
+  const ageMs = Math.max(0, clock - lastSuccessAt.getTime());
   const overdueByMs = Math.max(0, ageMs - intervalMs);
   if (ageMs <= intervalMs * OK_INTERVALS) {
     return { state: "ok", lastSuccessAt, intervalMs, overdueByMs };
@@ -186,8 +198,8 @@ function stepOf(field: string): number | null {
   return Number.isFinite(step) && step > 0 ? step : null;
 }
 
-/** How many weekdays `0`, `1-5` or `1,3,5` selects; 0 when unreadable. */
-function countDayOfWeek(field: string): number {
+/** Largest gap across a selected weekday set, including the week boundary. */
+function longestWeekdayGap(field: string): number {
   const days = new Set<number>();
   for (const part of field.split(",")) {
     const range = /^(\d+)-(\d+)$/.exec(part);
@@ -201,5 +213,11 @@ function countDayOfWeek(field: string): number {
     if (!isFixed(part, 0, 7)) return 0;
     days.add(Number(part) % 7);
   }
-  return days.size;
+  const ordered = [...days].sort((a, b) => a - b);
+  let largest = 0;
+  for (let index = 0; index < ordered.length; index++) {
+    const next = index + 1 < ordered.length ? ordered[index + 1] : ordered[0] + 7;
+    largest = Math.max(largest, next - ordered[index]);
+  }
+  return largest;
 }
