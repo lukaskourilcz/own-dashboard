@@ -3,7 +3,8 @@ import {DNESKAI_REEL_MAX_BYTES} from "./dneskai-reel-format";
 import {boundedStreamBytes,boundedResponseText} from "@/lib/bounded-response";
 import {awaitWithSignal} from "@/lib/abortable";
 import {databaseTimestamp} from "@/lib/database-version";
-import { marketingStorageObjectMissing } from "./storage-errors";
+import {readDneskaiCacheObjectPresence} from "./dneskai-object-presence";
+import { marketingStorageAbsenceCandidate } from "./storage-errors";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -16,7 +17,7 @@ import {DNESKAI_AUDIO_MAX_BYTES} from "./dneskai-audio-contracts";
 import { MARKETING_ASSET_MAX_BYTES,MARKETING_ASSET_BUCKET, MARKETING_ASSET_URL_SECONDS, dneskaiSlideObjectKey } from "./worker-runtime";
 
 /**
- * Stored DNESKAi Reels (#163): renders an approved deck's slides into an MP4 once per reel key and keeps it in the
+ * Stored DNESKAi Reels (#163): renders an approved deck's slides under a content key and keeps the MP4 in the
  * private `marketing-reels` bucket (migration 20261023130000). Instagram receives a signed URL, valid seven days
  * like the slide URLs, which its cURL fetch can read without a session.
  */
@@ -51,15 +52,15 @@ const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex
 export function createDneskaiReelStorage(db: Database, ownerId: string, signal?: AbortSignal) {
     z.uuid().parse(ownerId);
     let checked: Promise<void> | null = null;
-    const files = async () => {
-        signal?.throwIfAborted();
+    const files = async (scope = signal) => {
+        scope?.throwIfAborted();
         checked ??= db.storage.getBucket(DNESKAI_REEL_BUCKET).then(({ data, error }) => {
-            if (error || !data || data.public)
+            if (error || !data || data.public !== false)
                 throw new DneskaiReelError("reel-bucket-required");
         });
         try {
-            await awaitWithSignal(checked, signal);
-            signal?.throwIfAborted();
+            await awaitWithSignal(checked, scope);
+            scope?.throwIfAborted();
         }
         catch (failure) {
             checked = null;
@@ -67,31 +68,40 @@ export function createDneskaiReelStorage(db: Database, ownerId: string, signal?:
         }
         return db.storage.from(DNESKAI_REEL_BUCKET);
     };
-    const sign = async (key: string) => {
-        const signed = await awaitWithSignal((await files()).createSignedUrl(key, MARKETING_ASSET_URL_SECONDS), signal);
-        signal?.throwIfAborted();
+    const sign = async (key: string, scope = signal) => {
+        const signed = await awaitWithSignal((await files(scope)).createSignedUrl(key, MARKETING_ASSET_URL_SECONDS), scope);
+        scope?.throwIfAborted();
         if (signed.error || !signed.data?.signedUrl?.startsWith("https://"))
             throw new DneskaiReelError("reel-storage-failed");
         return signed.data.signedUrl;
     };
     return {
         async find(reelKey: string): Promise<StoredDneskaiReel | null> {
-            const key = dneskaiReelObjectKey(ownerId, reelKey);
-            const info = await awaitWithSignal((await files()).info(key), signal);
-            signal?.throwIfAborted();
-            if (info.error) {
-                if (marketingStorageObjectMissing(info.error))
-                    return null;
-                throw new DneskaiReelError("reel-storage-failed");
+            const scope = AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]);
+            try {
+                scope.throwIfAborted();
+                const key = dneskaiReelObjectKey(ownerId, reelKey);
+                const info = await awaitWithSignal((await files(scope)).info(key), scope);
+                scope.throwIfAborted();
+                if (info.error) {
+                    if (marketingStorageAbsenceCandidate(info.error) && await readDneskaiCacheObjectPresence(db, ownerId, 'reel', reelKey, scope) === 'absent')
+                        return null;
+                    throw new DneskaiReelError("reel-storage-failed");
+                }
+                if (!info.data)
+                    throw new DneskaiReelError("reel-storage-failed");
+                const metadata: Record<string, unknown> = info.data.metadata ?? {};
+                const recorded = typeof metadata.sha256 === "string" ? metadata.sha256 : "";
+                if (!/^[a-f0-9]{64}$/.test(recorded) || metadata.ownerId !== ownerId || metadata.reelKey !== reelKey || info.data.contentType !== "video/mp4"
+                    || !Number.isInteger(info.data.size) || !info.data.size || info.data.size > DNESKAI_REEL_MAX_BYTES)
+                    throw new DneskaiReelError("reel-storage-failed");
+                return { reelKey, url: await sign(key, scope), sha256: recorded, bytes: info.data.size };
             }
-            if (!info.data)
-                throw new DneskaiReelError("reel-storage-failed");
-            const metadata: Record<string, unknown> = info.data.metadata ?? {};
-            const recorded = typeof metadata.sha256 === "string" ? metadata.sha256 : "";
-            if (!/^[a-f0-9]{64}$/.test(recorded) || metadata.ownerId !== ownerId || metadata.reelKey !== reelKey || info.data.contentType !== "video/mp4"
-                || !Number.isInteger(info.data.size) || !info.data.size || info.data.size > DNESKAI_REEL_MAX_BYTES)
-                throw new DneskaiReelError("reel-storage-failed");
-            return { reelKey, url: await sign(key), sha256: recorded, bytes: info.data.size };
+            catch (error) {
+                if (signal?.aborted)
+                    throw new DOMException('Request aborted', 'AbortError');
+                throw error instanceof DneskaiReelError ? error : new DneskaiReelError('reel-storage-failed');
+            }
         },
         async put(input: {
             reelKey: string;

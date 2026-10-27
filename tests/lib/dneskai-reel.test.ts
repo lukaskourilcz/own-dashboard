@@ -175,7 +175,9 @@ describe("reel storage", () => {
       info: vi.fn(async () => ({ data: { size: bytes.length, contentType: "video/mp4", metadata }, error: null })),
       createSignedUrl: vi.fn(async () => ({ data: { signedUrl: "https://test-only.supabase.co/signed" }, error: null })),
     };
-    return { files, db: { storage: { getBucket: vi.fn(async () => ({ data: bucket, error: null })), from: vi.fn(() => files) } } };
+    const proof={state:'present' as 'present'|'absent'};
+    const rpc=vi.fn((_name:string,args:{p_key:string})=>{const query={retry:()=>query,abortSignal:async()=>({data:{ownerId:owner,kind:'reel',key:args.p_key,state:proof.state},error:null})};return query;});
+    return { files,proof,db: { rpc,storage: { getBucket: vi.fn(async () => ({ data: bucket, error: null })), from: vi.fn(() => files) } } };
   }
 
   it("uploads once under the owner prefix without upsert and signs only a verified object", async () => {
@@ -196,8 +198,8 @@ describe("reel storage", () => {
     expect(files.upload).not.toHaveBeenCalled();
     expect(files.createSignedUrl).not.toHaveBeenCalled();
   });
-  it.each([{ status: 404, statusCode: 'NoSuchKey' }, { status: 404, statusCode: 'not_found' }, { status: 404, statusCode: '404' }, { status: 400, statusCode: '404' }])('recognizes a typed object absence in the reel cache (%s)', async (error) => {
-    const { db, files } = facade();
+  it.each([{ status: 404, statusCode: 'NoSuchKey' }, { status: 404, statusCode: 'not_found' }, { status: 404, statusCode: '404' }, { status: 400, statusCode: '404' }])('confirms exact owned absence after a typed candidate in the reel cache (%s)', async (error) => {
+    const { db, files,proof } = facade();proof.state='absent';
     const storage = createDneskaiReelStorage(db as never, owner);
     files.info.mockResolvedValueOnce({ data: null, error } as never);
     expect(await storage.find(reelKey)).toBeNull();
@@ -309,3 +311,5 @@ it('never changes an explicitly selected library track into silence',async()=>{c
 it.each([0,8*1024*1024+1])('stops after the first unsupported slide length %s',async size=>{const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies();deps.loadSlide.mockResolvedValue(Buffer.alloc(size));await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toHaveProperty('code','reel-slides-unavailable');expect(deps.loadSlide).toHaveBeenCalledOnce();expect(deps.render).not.toHaveBeenCalled();expect(deps.storage.put).not.toHaveBeenCalled();});
 it('refuses oversize audio before cache, slide or encoding work',async()=>{const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies();deps.loadAudio.mockResolvedValue({id:'44444444-4444-4444-8444-444444444444',bytes:Buffer.alloc(20*1024*1024+1)} as never);await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toHaveProperty('code','reel-audio-unavailable');expect(deps.storage.find).not.toHaveBeenCalled();expect(deps.loadSlide).not.toHaveBeenCalled();});
 it('settles cancellation even when an audio dependency never responds',async()=>{const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies(),controller=new AbortController();deps.loadAudio.mockImplementation(()=>new Promise(()=>{}));const pending=dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,{...deps,signal:controller.signal}).catch(error=>error);await vi.waitFor(()=>expect(deps.loadAudio).toHaveBeenCalledOnce());controller.abort('TEST_ONLY_PRIVATE_REASON');expect(await pending).toMatchObject({name:'AbortError',message:'Request aborted'});expect(deps.storage.find).not.toHaveBeenCalled();});
+
+it.each([{}, {public:null}, {public:0}])('refuses unknown private Reel bucket metadata: %#',async value=>{const getBucket=vi.fn(async()=>({data:value,error:null})),info=vi.fn(),db={storage:{getBucket,from:()=>({info})}};await expect(createDneskaiReelStorage(db as never,owner).find('a'.repeat(64))).rejects.toHaveProperty('code','reel-bucket-required');expect(info).not.toHaveBeenCalled();});
