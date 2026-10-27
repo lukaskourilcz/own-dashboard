@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
+import { awaitWithSignal } from '@/lib/abortable';
 import { MarketingAccountsResponseSchema } from '@/lib/marketing/accounts-client';
 import { dneskaiCommentWebhookConfigured, dneskaiEngagementWatchEnabled } from '@/lib/marketing/dneskai-engagement';
 
@@ -11,20 +12,26 @@ import { dneskaiCommentWebhookConfigured, dneskaiEngagementWatchEnabled } from '
  */
 export const runtime = 'nodejs';
 const TokenRow = z.object({ account_id: z.uuid(), expires_at: z.string(), refreshed_at: z.string(), scopes: z.array(z.string()), login_mode: z.enum(['instagram', 'facebook', 'threads']) });
-export async function GET() {
-  const db = await createClient(); const { data: { user } } = await db.auth.getUser();
-  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
+export async function GET(request: Request) {
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(15000)]);
+  let context: Awaited<ReturnType<typeof readVerifiedServerContext>>;
+  try { context = await readVerifiedServerContext(signal); }
+  catch { return Response.json({error:'accounts-unavailable'},{status:503}); }
+  if (!context) return Response.json({error:'unauthorized'},{status:401});
+  const {db,ownerId} = context;
   // #160: the comment-reply columns exist once 20261023120000 is applied, which DNESKAI_ENGAGEMENT_ENABLED waits for.
   const engagement = dneskaiEngagementWatchEnabled(process.env);
-  const [accounts, tokens] = await Promise.all([
-    db.from('marketing_accounts').select(`id,user_id,brand,platform,handle,verified_at,enabled${engagement ? ',engagement_enabled,engagement_blocked_code,engagement_blocked_at' : ''}`).eq('user_id', user.id).order('brand').limit(4),
+  const results = await awaitWithSignal(Promise.all([
+    db.from('marketing_accounts').select(`id,user_id,brand,platform,handle,verified_at,enabled${engagement ? ',engagement_enabled,engagement_blocked_code,engagement_blocked_at' : ''}`).eq('user_id', ownerId).order('brand').limit(4),
     db.rpc('marketing_account_token_status'),
-  ]);
+  ]),signal).catch(()=>null);
+  if (!results || signal.aborted) return Response.json({error:'accounts-unavailable'},{status:503});
+  const [accounts,tokens] = results;
   const tokenRows = z.array(TokenRow).max(20).safeParse(tokens.data ?? []);
   if (accounts.error || tokens.error || !tokenRows.success) return Response.json({ error: 'accounts-unavailable' }, { status: 503 });
   const rows = (accounts.data ?? []) as unknown as Array<{ id: string; user_id: string; brand: string; platform: string; handle: string; verified_at: string | null; enabled: boolean;
     engagement_enabled?: boolean; engagement_blocked_code?: string | null; engagement_blocked_at?: string | null }>;
-  const parsed = MarketingAccountsResponseSchema.safeParse({ accounts: rows.filter(row => row.user_id === user.id).map(row => {
+  const parsed = MarketingAccountsResponseSchema.safeParse({ accounts: rows.filter(row => row.user_id === ownerId).map(row => {
     const token = tokenRows.data.find(item => item.account_id === row.id);
     return { id: row.id, brand: row.brand, platform: row.platform, handle: row.handle, verifiedAt: row.verified_at, enabled: row.enabled,
       token: token ? { expiresAt: token.expires_at, refreshedAt: token.refreshed_at, scopes: token.scopes, loginMode: token.login_mode } : null,

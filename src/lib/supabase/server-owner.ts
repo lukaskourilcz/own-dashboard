@@ -9,7 +9,7 @@ export class ServerOwnerUnavailableError extends Error {
     }
 }
 /** One verified server identity; a cached user accompanying an auth error never authorizes work. */
-export async function readVerifiedServerOwner(parent: AbortSignal): Promise<string | null> {
+export async function readVerifiedServerContext(parent: AbortSignal): Promise<{ownerId:string;db:Awaited<ReturnType<typeof createClient>>} | null> {
     const signal = AbortSignal.any([parent, AbortSignal.timeout(10000)]);
     try {
         signal.throwIfAborted();
@@ -23,11 +23,16 @@ export async function readVerifiedServerOwner(parent: AbortSignal): Promise<stri
         }
         if (!data.user)
             return null;
-        return z.uuid().parse(data.user.id);
+        return {ownerId:z.uuid().parse(data.user.id),db:session};
     }
     catch {
         if (parent.aborted)
             throw new DOMException('Request aborted', 'AbortError');
         throw new ServerOwnerUnavailableError();
     }
+}
+
+/** Reuse the same verified session boundary when only its owner id is needed. */
+export async function readVerifiedServerOwner(parent: AbortSignal): Promise<string | null> {
+    return (await readVerifiedServerContext(parent))?.ownerId ?? null;
 }

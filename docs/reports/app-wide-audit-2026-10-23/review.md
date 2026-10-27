@@ -2789,3 +2789,14 @@ All 1,619 combined cases pass across 87 files in 113.78 seconds with one worker.
 No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Durable independent render admission, prefix fairness, subprocess/disk and SDK JSON boundaries, orphan retention, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.
 
 The 53-pair visual plan references committed application `e8a2e87d`; both image modes, light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Actual capture provenance remains `d72aaae4`.
+
+
+### Finding 342 — verified account-route admission
+
+All five account-route baselines fail in 275 ms: cached users accompanying rejected authentication reach account reads or privileged admission. Account listing, verification, publishing switch, engagement switch and webhook controls now reuse the existing strict server-owner boundary. Its context form returns the original verified session for the own-RLS list read; owner-id-only callers delegate to that same implementation. Rejected authentication returns 401, while unavailable/thrown/malformed authentication returns fixed 503 without trusting the cached user.
+
+Original request/deadline scope reaches session construction and subsequent service clients. Rate admission is observed under that scope, and retirement before its result prevents body consumption and privileged work. The account list's concurrent own-session reads settle under its original scope. These are admission/consumer boundaries: complete body/provider/metadata and atomic account/token mutation proof remain separate work. No account setting, credential, webhook subscription or reply is changed by these tests.
+
+All 1,714 combined cases pass across 92 files in 109.84 seconds with one worker. The first five-file set passes 46 cases in 887 ms. The expanded seven-file account/Music/Reel set passes 157 in 2.95 seconds. Added cases cover all five cached-user refusals, 400/403 auth rejection, 0/429/503 auth unavailability, malformed/thrown identity, prior retirement, stalled authentication, retirement during and after stalled rate admission, fixed diagnostics and a stalled own-session list. The GET fixtures now supply the actual request for cancellation. Final full TypeScript, targeted ESLint without warnings and whitespace pass.
+
+No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Account metadata/transport/write and browser lifecycle, durable independent Reel admission, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.

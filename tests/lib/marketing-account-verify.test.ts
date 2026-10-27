@@ -165,15 +165,15 @@ describe('owner account routes', () => {
       limit: async () => ({ data: [{ id: accountId, user_id: owner, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verified_at: stored.verifiedAt, enabled: false }], error: null }) };
     mocks.sessionFrom.mockReturnValue(query);
     mocks.sessionRpc.mockResolvedValue({ data: [{ account_id: accountId, brand: 'dneskai', platform: 'instagram', expires_at: stored.token.expiresAt, refreshed_at: stored.token.refreshedAt, scopes: stored.token.scopes, login_mode: 'instagram' }], error: null });
-    const response = await GET();
+    const response = await GET(new Request("https://own.example/api/marketing/accounts"));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ accounts: [{ id: accountId, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verifiedAt: stored.verifiedAt, enabled: false, token: stored.token }] });
     expect(filters).toContainEqual(['user_id', owner]);
     expect(mocks.sessionRpc).toHaveBeenCalledWith('marketing_account_token_status');
     mocks.sessionRpc.mockResolvedValue({ data: null, error: { message: 'down' } });
-    expect((await GET()).status).toBe(503);
+    expect((await GET(new Request("https://own.example/api/marketing/accounts"))).status).toBe(503);
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request("https://own.example/api/marketing/accounts"))).status).toBe(401);
   });
 });
 

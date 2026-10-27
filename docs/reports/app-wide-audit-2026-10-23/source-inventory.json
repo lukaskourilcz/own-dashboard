@@ -318,38 +318,38 @@
     },
     {
       "path": "src/app/api/marketing/accounts/enable/route.ts",
-      "lines": 52,
+      "lines": 59,
       "sha256": "647da00a2731a93f6fd8ceab40d5cdcfd61e64399986065e28d0e8fb4ef5b45f",
-      "status": "partial; owned account/token checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md",
-      "reviewedSha256": "647da00a2731a93f6fd8ceab40d5cdcfd61e64399986065e28d0e8fb4ef5b45f"
+      "status": "partial; owned account/token checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "43b4393385b6031009820a269b2998049dff48098319407e80f4494ca3c2dc0a"
     },
     {
       "path": "src/app/api/marketing/accounts/engagement/route.ts",
-      "lines": 52,
+      "lines": 59,
       "sha256": "d3258702b3fccd901a9cec7ae63de319b82029e9387391c8217e45f1aa85e043",
-      "status": "partial; owned scope/expiry checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md",
-      "reviewedSha256": "d3258702b3fccd901a9cec7ae63de319b82029e9387391c8217e45f1aa85e043"
+      "status": "partial; owned scope/expiry checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "85e1ed6034ea713be40bde3c367feccd7a075f051c34a75dd47255d49a77bb23"
     },
     {
       "path": "src/app/api/marketing/accounts/route.ts",
-      "lines": 35,
+      "lines": 42,
       "sha256": "21f4f3c313edea0e71f63c6cfbfa569edcadaf4834addbe95c9dbdb69d9f1cae",
-      "status": "partial; non-secret projection inspected; auth errors, duplicate/completeness/timestamp checks and bounded reads remain; see remaining-review.md",
-      "reviewedSha256": "21f4f3c313edea0e71f63c6cfbfa569edcadaf4834addbe95c9dbdb69d9f1cae"
+      "status": "partial; non-secret projection inspected; auth errors, duplicate/completeness/timestamp checks and bounded reads remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "b98136b2c1887decc7516bc7565fbe7f5f8e6fd53e87a1db99c903cbd54d187b"
     },
     {
       "path": "src/app/api/marketing/accounts/verify/route.ts",
-      "lines": 38,
+      "lines": 45,
       "sha256": "5cd426048129b83230eaa4bd7ac4d3c0e4873ffbc5e6a5298b871fa175c156cd",
-      "status": "partial; owner gate and fixed verification errors inspected; bounded setup/body/auth and captured receipt checks remain; see remaining-review.md",
-      "reviewedSha256": "5cd426048129b83230eaa4bd7ac4d3c0e4873ffbc5e6a5298b871fa175c156cd"
+      "status": "partial; owner gate and fixed verification errors inspected; bounded setup/body/auth and captured receipt checks remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "62ed32e97dc8c70c603136db188600c97e1ccb46817365ce77e411956a1c5b9a"
     },
     {
       "path": "src/app/api/marketing/accounts/webhook/route.ts",
-      "lines": 39,
+      "lines": 46,
       "sha256": "6816912a12bb1075fb3903eb94a515f4180f7e8f587a463551f56e1fb2cf7ffa",
-      "status": "partial; owner/brand/account gate inspected; bounded setup/body/auth and cancellation through Graph remain; see remaining-review.md",
-      "reviewedSha256": "6816912a12bb1075fb3903eb94a515f4180f7e8f587a463551f56e1fb2cf7ffa"
+      "status": "partial; owner/brand/account gate inspected; bounded setup/body/auth and cancellation through Graph remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "fe8b262a892a949924bd5fed61e82429b2548af7614e316660767ef5110cb579"
     },
     {
       "path": "src/app/api/marketing/automation/route.ts",
@@ -5014,9 +5014,9 @@
     {
       "path": "src/lib/supabase/server-owner.ts",
       "sha256": null,
-      "lines": 33,
-      "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending",
-      "reviewedSha256": "ffd826116ad4464a201962e2ae17edbe0425439ce0169ba33abc241e6d8fba71"
+      "lines": 38,
+      "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "578d795d2466fe28f5fe46bff2fd2bdd0459d8ece2ddc31f91a82c5f8a087ef4"
     },
     {
       "path": "src/lib/marketing/dneskai-slide-format.ts",
