@@ -19,7 +19,7 @@ function bucket(state: { public?: boolean; stored?: { bytes: Buffer; metadata: R
       return { data: { path: _key }, error: null };
     }),
     info: vi.fn(async () => stored ? { data: { size: stored.bytes.length, contentType: "image/jpeg", metadata: stored.metadata }, error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }),
-    download: vi.fn(async () => stored ? { data: new Blob([new Uint8Array(stored.bytes)]), error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }),
+    download: vi.fn(() => ({asStream: async () => stored ? { data: new Blob([new Uint8Array(stored.bytes)]).stream(), error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }})),
     createSignedUrl: vi.fn(async (key: string) => ({ data: { signedUrl: `https://example.supabase.co/storage/v1/object/sign/marketing-assets/${key}?token=test-only` }, error: null })),
   };
   const getBucket = vi.fn(async () => ({ data: { public: state.public ?? false }, error: null }));

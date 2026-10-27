@@ -4218,10 +4218,10 @@
     },
     {
       "path": "src/lib/marketing/worker-runtime.ts",
-      "lines": 427,
+      "lines": 452,
       "sha256": "a2121b43774eaaca2cba0dda10d58db19b293eae5055b69501bdf4bbbec209da",
-      "status": "partial; upload admission shares tested boundary (finding 144); finding 189 closes cache outage-as-miss; finding 332 reuses the unchanged 8 MiB asset limit in the Reel consumer; provider, persistence and broader execution review pending; finding 338 positive exact private cache absence and original read lifetime verified",
-      "reviewedSha256": "af62ae299297b814ce9846d4e1b5fbc0056c072fdd2d30a2151ce03443317355"
+      "status": "partial; upload admission shares tested boundary (finding 144); finding 189 closes cache outage-as-miss; finding 332 reuses the unchanged 8 MiB asset limit in the Reel consumer; provider, persistence and broader execution review pending; finding 338 positive exact private cache absence and original read lifetime verified; finding 339 bounds successful cache/upload-confirmation JPEG streams and original write consumer lifetime; SDK JSON/upload transport and durable render admission remain separate",
+      "reviewedSha256": "126639bf08c00b0b062c25b9b7ca114a42958a35c2290827a41cbad195d150be"
     },
     {
       "path": "src/lib/nav-tabs.ts",
