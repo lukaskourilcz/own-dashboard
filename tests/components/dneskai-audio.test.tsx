@@ -92,10 +92,10 @@ describe('Lab format switch (#165)', () => {
     const onChange = vi.fn();
     render(<DneskaiFormatSwitch value="carousel" onChange={onChange} preview={false} lang={lang} />); await settle();
     const t = dneskaiAudio[lang].format;
-    const radios = [...container.querySelectorAll('[role="radio"]')];
-    expect(radios.map((radio) => [radio.textContent, radio.getAttribute('aria-checked')])).toEqual([[t.carousel, 'true'], [t.reel, 'false']]);
+    const radios = [...container.querySelectorAll('input[type="radio"]')];
+    expect(radios.map((radio) => [radio.parentElement?.textContent, String((radio as HTMLInputElement).checked)])).toEqual([[t.carousel, 'true'], [t.reel, 'false']]);
     expect(container.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe(t.label);
-    act(() => { (radios[1] as HTMLButtonElement).click(); });
+    act(() => { (radios[1] as HTMLInputElement).click(); });
     expect(onChange).toHaveBeenCalledWith('reel');
   });
   it('is hidden while Reels are off and for a post that is not a carousel or Reel', async () => {

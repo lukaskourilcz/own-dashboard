@@ -1148,10 +1148,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/format-switch.tsx",
-      "lines": 29,
+      "lines": 30,
       "sha256": "356dea24f619bbe7f46cfb6788c0d12123a406f0f29c521929d1bd054aba8d1f",
-      "status": "partial; full source inspected; radio group lacks roving focus/arrow/Home/End behavior and read-failure recovery remains pending",
-      "reviewedSha256": "356dea24f619bbe7f46cfb6788c0d12123a406f0f29c521929d1bd054aba8d1f"
+      "status": "source reviewed; finding 320 native format radio keyboard/grouping, six-width targets, EN/CS and scoped axe pass; final release pending",
+      "reviewedSha256": "e7063af0ead6a71dc0faba3de56665cdaaac3b569c6f89bcd683d431163de2ae"
     },
     {
       "path": "src/components/marketing/dneskai/lab/kit-tiles.tsx",

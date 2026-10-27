@@ -86,7 +86,7 @@ for (const lang of ['en', 'cs'] as const) {
         });
         await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&music=live');
         const lab = page.getByTestId('dneskai-lab');
-        await lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: t.format.reel, exact: true }).click();
+        await lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: t.format.reel, exact: true }).locator('..').click();
         const picker = lab.getByTestId('dneskai-audio-picker'), select = picker.getByRole('combobox', { name: t.picker.label, exact: true });
         await select.selectOption(DEMO_DNESKAI_AUDIO_TRACKS[0].id);
         rootEmpty = true;

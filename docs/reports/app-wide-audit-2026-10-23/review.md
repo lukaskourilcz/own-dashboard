@@ -2480,3 +2480,12 @@ The source ledger remains 714 entries and migrations remain 138 canonical/52 pre
 
 Finding 319 visual evidence: two final Czech desktop/mobile capture cases pass in 1.3 minutes at committed application `48c24408`. Both actual cropped states are inspected. `audio-read-recovery-captures.json` retains source/asset hashes, CSS viewport/crop dimensions and mapped retained-track/recovery highlights. The visual plan now has 51 authentic component pairs; earlier capture provenance remains unchanged.
 All 51 visual-plan images decode in desktop and mobile modes; light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. The new pair retains the exact `48c24408` capture provenance.
+
+
+### Finding 320 — native format radio keyboard behavior
+
+The authentic Lab baseline fails after ArrowRight leaves Reel unchecked (14.7-second native run). The two custom buttons expose radio roles but no radio keyboard behavior. Native inputs now share a unique group name inside the existing labelled fieldset. They preserve the appearance, 44px labels, semantic selection colors and visible focus ring, while providing native arrow selection/wrapping and one Tab stop. Pending/disabled fieldsets keep native control semantics. No extra state/effect, request or library read is introduced.
+
+All 25 related mounted audio/recovery cases pass in 7.80 seconds. The final twelve-case native batch passes ten, including all four new EN/CS desktop/mobile keyboard cases, six widths, 44px visible targets, scoped axe, unchanged Lab slide and no marketing request. Two existing EN mobile recovery cases finish their behavior checks but fail on a React pre-mount state-update console warning. Their exact unchanged rerun passes both in 41.8 seconds, for twelve recovered cases; this is not a clean consolidated pass. The warning's origin remains a recorded lead and is not suppressed. The earlier native attempt is interrupted after identifying two fixture assumptions: the engagement action follows the format group, and the visible native radio label is its pointer target. The final fixtures use native Tab order and click that visible label without forced events.
+
+TypeScript, targeted ESLint without warnings and whitespace checks pass. The source ledger remains 714 entries; no SQL or owner/provider write occurs. Canonical rollout, remaining leads, a clean final matrix and main merge stay pending.

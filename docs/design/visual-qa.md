@@ -519,3 +519,8 @@ Two final Czech capture checks pass in 19.6 seconds at committed application `0c
 ### 27 October — cached Music and saved-track recovery (finding 319)
 
 All eight native EN/CS desktop/mobile cases pass in 1.2 minutes against the actual Music library and Lab picker. Failed reads retain tracks, upload access and the exact choice; keyboard retry disables while pending, and saved-track recovery makes only the detail read. The library recovery fits its desktop content and has a full-width mobile target. All six widths (360, 430, 768, 1024, 1440, 1728), scoped axe and unexpected-console checks pass. Requests and records are synthetic; these checks do not publish, render, spend or change an owner record. Capture provenance and final release remain separate.
+
+
+### 27 October — native format keyboard controls (finding 320)
+
+All four new EN/CS desktop/mobile cases pass for arrow-key selection/wrapping, a single radio-group Tab stop, returning to the selected option, unchanged Lab slide, 44px visible labels at all six widths and scoped axe. Native inputs preserve the existing appearance and named fieldset without custom keyboard state. The related twelve-case batch has ten passes and two React console-warning failures; both unchanged EN mobile recovery cases pass on retry in 41.8 seconds. Its pre-mount warning remains an explicit source/final-matrix lead, not a suppressed or claimed fixed issue.
