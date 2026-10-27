@@ -37,6 +37,7 @@ export const DneskaiAudioTrackSchema = z.strictObject({
   durationMs: z.number().int().min(1000).max(900000),
   mood,
   enabled: z.boolean(),
+  updatedAt: databaseTimestamp,
   createdAt: z.iso.datetime({ offset: true }).max(64),
   /** A signed URL valid for an hour, for the preview player; null for an Instagram library track. */
   previewUrl: httpsUrl.nullable(),
@@ -88,7 +89,15 @@ export const DneskaiAudioCreateSchema = z.strictObject({
   mood,
 });
 export type DneskaiAudioCreate = z.infer<typeof DneskaiAudioCreateSchema>;
-export const DneskaiAudioToggleSchema = z.strictObject({ action: z.literal('toggle'), id: z.uuid(), enabled: z.boolean() });
+export const DneskaiAudioToggleSchema = z.strictObject({action:z.literal('toggle'),ownerId:z.uuid(),id:z.uuid(),expectedVersion:databaseTimestamp,enabled:z.boolean()});
+export type DneskaiAudioToggle = z.infer<typeof DneskaiAudioToggleSchema>;
+const toggleReceipt = z.strictObject({ownerId:z.uuid(),id:z.uuid(),expectedVersion:databaseTimestamp,requestedEnabled:z.boolean()});
+export const DneskaiAudioToggleReceiptSchema = z.discriminatedUnion('kind',[
+  toggleReceipt.extend({kind:z.literal('saved'),updatedAt:databaseTimestamp}),
+  toggleReceipt.extend({kind:z.literal('changed'),updatedAt:databaseTimestamp}),
+  toggleReceipt.extend({kind:z.literal('absent'),updatedAt:z.null()}),
+]);
+export type DneskaiAudioToggleReceipt = z.infer<typeof DneskaiAudioToggleReceiptSchema>;
 export const DneskaiAudioRequestSchema = z.discriminatedUnion('action', [DneskaiAudioPrepareSchema, DneskaiAudioCreateSchema, DneskaiAudioToggleSchema]);
 export type DneskaiAudioRequest = z.infer<typeof DneskaiAudioRequestSchema>;
 

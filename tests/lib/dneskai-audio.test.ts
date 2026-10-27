@@ -66,7 +66,7 @@ function storage(bytes: Buffer | null) {
   const query = {
     select: vi.fn(() => query), retry: vi.fn(() => query), abortSignal: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), range: vi.fn(() => query), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: rows, error: null, count: rows.length }).then(resolve), limit: vi.fn(async () => ({ data: rows, error: null })),
     maybeSingle: vi.fn(async () => ({ data: rows[0] ?? null, error: null })),
-    insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, instagram_audio_id: null, created_at: "2026-10-23T08:00:00Z" }); return { error: null }; }),
+    insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, instagram_audio_id: null, created_at: "2026-10-23T08:00:00Z", updated_at:"2026-10-23T08:00:00Z" }); return { error: null }; }),
   };
   return { db: { from: vi.fn(() => query), storage: { from: vi.fn(() => files) } }, files, inserted, rows };
 }

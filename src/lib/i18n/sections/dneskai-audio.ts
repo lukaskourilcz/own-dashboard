@@ -3,6 +3,7 @@ import type { DneskaiAudioSource } from '@/lib/marketing/dneskai-audio-contracts
 /** Zdroje → Hudba and the Lab's audio picker (#164). */
 const en = {
   title: 'Music', reelsOff: 'Music is available when DNESKAi Reels are enabled.',
+  reloadLibrary:'Reload library',
   loadMore: 'Load more tracks', retry: 'Retry', selectedMissing: 'Saved selection (details unavailable)',
   intro: 'Tracks a Reel may play. Use only Meta Sound Collection downloads, which are cleared for Instagram, Pixabay Music under the Pixabay Content License, or your own recordings. Record where each file came from.',
   loading: 'Loading the music library…',
@@ -45,6 +46,7 @@ const en = {
     'audio-upload-missing': 'The uploaded file could not be verified. Keep the draft and retry.',
     'audio-upload-invalid': 'The file is not audio between 1 second and 15 minutes long.',
     'audio-track-unavailable': 'This track is no longer in the library.',
+    'audio-track-changed':'This track changed. Reload the library before changing it again.',
     'audio-track-write-failed': 'The saved track could not be confirmed. Refresh the library before retrying.',
     'rate-limited': 'Too many attempts. Wait a few minutes and try again.',
     'invalid-request': 'Check the fields and try again.',
@@ -87,6 +89,7 @@ const en = {
 
 const cs: typeof en = {
   title: 'Hudba', reelsOff: 'Hudba je dostupná, když jsou Reels DNESKAi zapnuté.',
+  reloadLibrary:'Obnovit knihovnu',
   loadMore: 'Načíst další skladby', retry: 'Zkusit znovu', selectedMissing: 'Uložený výběr (podrobnosti nedostupné)',
   intro: 'Skladby, které může Reel hrát. Používejte jen stažené skladby z Meta Sound Collection, které jsou pro Instagram schválené, hudbu z Pixabay pod licencí Pixabay Content License, nebo vlastní nahrávky. U každého souboru zapište, odkud pochází.',
   loading: 'Načítám hudební knihovnu…',
@@ -129,6 +132,7 @@ const cs: typeof en = {
     'audio-upload-missing': 'Soubor se nepodařilo ověřit. Ponechte koncept a zkuste to znovu.',
     'audio-upload-invalid': 'Soubor není zvuk o délce 1 sekunda až 15 minut.',
     'audio-track-unavailable': 'Tato skladba už v knihovně není.',
+    'audio-track-changed':'Skladba se změnila. Před další změnou obnovte knihovnu.',
     'audio-track-write-failed': 'Uloženou skladbu se nepodařilo potvrdit. Před dalším pokusem obnovte knihovnu.',
     'rate-limited': 'Příliš mnoho pokusů. Počkejte několik minut a zkuste to znovu.',
     'invalid-request': 'Zkontrolujte pole a zkuste to znovu.',

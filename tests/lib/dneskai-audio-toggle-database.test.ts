@@ -138,3 +138,11 @@ it('refuses and rolls back an upgrade over an unsupported historical version',as
   expect(await legacy.query('select to_jsonb(t) as row from public.marketing_audio_tracks t')).toEqual(before);expect((await legacy.query<{value:string|null}>("select to_regprocedure('public.toggle_owned_dneskai_audio_track(uuid,uuid,timestamptz,boolean)') as value")).rows[0]?.value).toBeNull();
  }finally{await legacy.close();}
 });
+
+it('adopts the strict server helper receipt and rejects its stale retry',async()=>{
+ const {setDneskaiAudioTrackEnabled}=await import('@/lib/marketing/dneskai-audio');
+ const reply=await setDneskaiAudioTrackEnabled(client as never,owner,id,false,version);
+ expect(reply).toMatchObject({kind:'saved',ownerId:owner,id,requestedEnabled:false});
+ await expect(setDneskaiAudioTrackEnabled(client as never,owner,id,false,version)).rejects.toHaveProperty('code','audio-track-changed');
+ await expect(setDneskaiAudioTrackEnabled(client as never,'22222222-2222-4222-8222-222222222222',id,false,version)).rejects.toHaveProperty('code','audio-track-unavailable');
+});

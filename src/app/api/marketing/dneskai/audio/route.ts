@@ -20,7 +20,7 @@ export const maxDuration = 60;
 const headers = { 'Cache-Control': 'private, no-store' };
 const requestBudget = (request: Request | undefined, milliseconds: number) => AbortSignal.any([AbortSignal.timeout(milliseconds), ...(request ? [request.signal] : [])]);
 const STATUS: Record<string, number> = {
-  'audio-library-unavailable': 503, 'audio-upload-missing': 409, 'audio-upload-invalid': 422, 'audio-track-unavailable': 404, 'audio-track-write-failed': 503,
+  'audio-library-unavailable': 503, 'audio-upload-missing': 409, 'audio-upload-invalid': 422, 'audio-track-unavailable': 404, 'audio-track-write-failed': 503, 'audio-track-changed':409,
 };
 
 async function owner(parent: AbortSignal) {
@@ -110,13 +110,14 @@ export async function POST(request: Request) {
       const timedOut = error instanceof MarketingRequestBodyError && error.code === 'request-body-timeout';
       return Response.json({ error: timedOut ? 'audio-library-unavailable' : 'invalid-request' }, { status: timedOut ? 408 : 400, headers });
     }
+    if(input.action==='toggle' && input.ownerId!==user)return Response.json({error:'unauthorized'},{status:401,headers});
     const limited = await awaitWithSignal(rateLimit(user, { key: 'dneskai-audio', limit: 30, windowSec: 600 }), signal);
     if (!limited.ok) return Response.json({ error: 'rate-limited' }, { status: 429, headers: { ...headers, 'Retry-After': String(limited.retryAfter) } });
     signal.throwIfAborted();
     const db = createAdminClient(signal);
     if (input.action === 'prepare') return Response.json(await awaitWithSignal(prepareDneskaiAudioUpload(db, user, input.contentType), signal), { headers });
     if (input.action === 'create') return Response.json({ track: await awaitWithSignal(createDneskaiAudioTrack(db, user, input, { signal }), signal) }, { headers });
-    await awaitWithSignal(setDneskaiAudioTrackEnabled(db, user, input.id, input.enabled), signal);
-    return Response.json({ ok: true }, { headers });
+    const receipt=await awaitWithSignal(setDneskaiAudioTrackEnabled(db,user,input.id,input.enabled,input.expectedVersion,signal),signal);
+    return Response.json({receipt},{headers});
   } catch (failure) { return failed(failure); }
 }

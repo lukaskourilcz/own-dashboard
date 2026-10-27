@@ -6,7 +6,7 @@ const owner = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-422
 const id = (number: number) => `00000000-0000-4000-8000-${String(number).padStart(12, '0')}`;
 function row(number = 1) {
   return { id: id(number), user_id: owner, title: `Fixture ${number}`, artist: 'Fixture artist', source: 'original', licence_note: 'Own fixture', source_url: 'https://example.test/source', storage_path: `marketing-audio/${owner}/${id(number)}.mp3`, instagram_audio_id: null,
-    duration_ms: 60000, mood: ['calm'], enabled: true, created_at: '2026-10-24T10:00:00.000001+00:00' };
+    duration_ms: 60000, mood: ['calm'], enabled: true, updated_at:'2026-10-24T10:00:00.000001+00:00', created_at: '2026-10-24T10:00:00.000001+00:00' };
 }
 type SignedEntry = { path: string; error: string | null; signedURL: string | null };
 let values: unknown[], total: number | null, databaseStatus: number, signingStatus: number, databaseRequests: URL[], signedNames: string[][];
@@ -50,6 +50,7 @@ it('detects a backend row cap below the requested page size', async () => {
   await unavailable(listDneskaiAudioPage(client, owner)); expect(signedNames).toEqual([]);
 });
 it.each([
+  ['missing maintained version', {updated_at:undefined}], ['invalid maintained version', {updated_at:'infinity'}], ['unsupported maintained precision', {updated_at:'2026-10-24T10:00:00.0000001Z'}],
   ['malformed timestamp', { created_at: 'invalid' }], ['non-Postgres timestamp precision', { created_at: '2026-10-24T10:00:00.0000001Z' }],
   ['foreign owner', { user_id: other }], ['unsafe source URL', { source_url: 'https://user:password@example.test/source' }], ['null mood', { mood: null }],
   ['wrong object identity', { storage_path: `marketing-audio/${owner}/${id(2)}.mp3` }], ['foreign object owner', { storage_path: `marketing-audio/${other}/${id(1)}.mp3` }],

@@ -114,3 +114,14 @@ it('forwards the captured complete cursor and never requests first-page optional
  expect(response.status).toBe(200);expect(m.list).toHaveBeenCalledWith(expect.anything(),owner,200,expect.any(AbortSignal),{id,createdAt:'2026-10-23T08:00:00.000001Z'});
  expect(await response.json()).not.toHaveProperty('trendsStatus');
 });
+
+it('refuses a foreign captured toggle owner before rate or service work',async()=>{
+ const response=await POST(post({action:'toggle',ownerId:'22222222-2222-4222-8222-222222222222',id,enabled:false,expectedVersion:'2026-10-27T10:00:00.000001Z'}));expect(response.status).toBe(401);expect(m.limited).not.toHaveBeenCalled();expect(m.admin).not.toHaveBeenCalled();
+});
+it('forwards the captured version and returns the positive saved receipt',async()=>{
+ const expectedVersion='2026-10-27T10:00:00.000001Z',receipt={kind:'saved',ownerId:owner,id,expectedVersion,requestedEnabled:false,updatedAt:'2026-10-27T10:00:00.000002Z'};m.toggle.mockResolvedValue(receipt);
+ const response=await POST(post({action:'toggle',ownerId:owner,id,enabled:false,expectedVersion}));expect(response.status).toBe(200);expect(await response.json()).toEqual({receipt});expect(m.toggle).toHaveBeenCalledWith(expect.anything(),owner,id,false,expectedVersion,expect.any(AbortSignal));
+});
+it('requires the owner and version instead of accepting a legacy bare toggle',async()=>{
+ expect((await POST(post({action:'toggle',id,enabled:false}))).status).toBe(400);expect(m.limited).not.toHaveBeenCalled();expect(m.toggle).not.toHaveBeenCalled();
+});

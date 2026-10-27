@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient, type QueryClient, type InfiniteData } from '@tanstack/react-query';
 import { qk } from '@/lib/queries/keys';
 import { z } from 'zod';
 import { createSignedStorageClient } from '@/lib/supabase/client';
@@ -9,12 +9,12 @@ import { awaitWithSignal } from '@/lib/abortable';
 import { readTextPrefix } from '@/lib/bounded-text';
 import { databaseVersion } from '@/lib/database-version';
 import {
-  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema,
-  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus, type DneskaiAudioCursor,
+  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema, DneskaiAudioToggleSchema, DneskaiAudioToggleReceiptSchema,
+  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus, type DneskaiAudioCursor, type DneskaiAudioToggle, type DneskaiAudioToggleReceipt,
 } from './dneskai-audio-contracts';
 
 /** Only known codes leave the request boundary; upstream text never enters a dictionary. */
-const refusalCode = z.enum(['decision-failed', 'audio-library-unavailable', 'audio-upload-missing', 'audio-upload-invalid', 'audio-track-unavailable', 'audio-track-write-failed', 'rate-limited', 'invalid-request', 'unauthorized', 'not-found']);
+const refusalCode = z.enum(['decision-failed', 'audio-library-unavailable', 'audio-upload-missing', 'audio-upload-invalid', 'audio-track-unavailable', 'audio-track-write-failed', 'audio-track-changed', 'rate-limited', 'invalid-request', 'unauthorized', 'not-found']);
 export class DneskaiAudioRequestError extends Error {
   constructor(readonly code: z.infer<typeof refusalCode> | 'audio-page-unavailable', readonly status: number) { super(code); this.name = 'DneskaiAudioRequestError'; }
 }
@@ -35,19 +35,40 @@ function failed(error: unknown, parent?: AbortSignal): never {
   if (parent?.aborted) throw new DOMException('Request aborted', 'AbortError');
   throw error instanceof DneskaiAudioRequestError ? error : new DneskaiAudioRequestError('decision-failed', 0);
 }
+async function audioResponse(url: string, init: RequestInit, signal: AbortSignal): Promise<Response> {
+    signal.throwIfAborted();
+    let discarded = false;
+    const discard = (response: Response) => {
+        if (discarded)
+            return;
+        discarded = true;
+        void response.body?.cancel().catch(() => undefined);
+    };
+    const pending = fetch(url, { ...init, signal });
+    void pending.then(response => {
+        if (signal.aborted)
+            discard(response);
+    }, () => undefined);
+    const response = await awaitWithSignal(pending, signal);
+    if (signal.aborted) {
+        discard(response);
+        signal.throwIfAborted();
+    }
+    return response;
+}
 async function post(body: unknown, signal: AbortSignal): Promise<unknown> {
   signal.throwIfAborted();
   const encoded = JSON.stringify(body);
   if (new TextEncoder().encode(encoded).byteLength > MAX_POST_BYTES) throw new DneskaiAudioRequestError('invalid-request', 0);
-  const response = await awaitWithSignal(fetch(URL_PATH, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: encoded, signal }), signal);
+  const response = await audioResponse(URL_PATH, {method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:encoded},signal);
   if (!response.ok) throw await failure(response, signal);
   return json(response, 16_384, signal);
 }
 
 /** Two sample tracks for `/dev-preview`; no file behind them, so nothing plays. */
 export const DEMO_DNESKAI_AUDIO_TRACKS: DneskaiAudioTrack[] = [
-  { id: '0f6b5c1e-3d2a-4c8b-9e7f-1a2b3c4d5e01', title: 'Quiet Circuit', artist: 'Sample artist', source: 'pixabay', licenceNote: 'Pixabay Content License (sample)', sourceUrl: 'https://pixabay.com/music/', durationMs: 72_000, mood: ['calm', 'tech'], enabled: true, createdAt: '2026-10-23T08:00:00.000Z', previewUrl: null },
-  { id: '0f6b5c1e-3d2a-4c8b-9e7f-1a2b3c4d5e02', title: 'Morning Signal', artist: 'Sample artist', source: 'meta-sound-collection', licenceNote: 'Meta Sound Collection, cleared for Instagram (sample)', sourceUrl: 'https://www.facebook.com/sound/collection/', durationMs: 45_000, mood: ['upbeat'], enabled: false, createdAt: '2026-10-23T08:05:00.000Z', previewUrl: null },
+  { id: '0f6b5c1e-3d2a-4c8b-9e7f-1a2b3c4d5e01', title: 'Quiet Circuit', artist: 'Sample artist', source: 'pixabay', licenceNote: 'Pixabay Content License (sample)', sourceUrl: 'https://pixabay.com/music/', durationMs: 72_000, mood: ['calm', 'tech'], enabled: true, createdAt: '2026-10-23T08:00:00.000Z', updatedAt:'2026-10-23T08:00:00.000Z', previewUrl: null },
+  { id: '0f6b5c1e-3d2a-4c8b-9e7f-1a2b3c4d5e02', title: 'Morning Signal', artist: 'Sample artist', source: 'meta-sound-collection', licenceNote: 'Meta Sound Collection, cleared for Instagram (sample)', sourceUrl: 'https://www.facebook.com/sound/collection/', durationMs: 45_000, mood: ['upbeat'], enabled: false, createdAt: '2026-10-23T08:05:00.000Z', updatedAt:'2026-10-23T08:05:00.000Z', previewUrl: null },
 ];
 
 /**
@@ -74,7 +95,7 @@ export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSi
     if (trackId) params.set('trackId', trackId);
     if (cursor) {params.set('afterCreatedAt', cursor.createdAt); params.set('afterId', cursor.id);}
     pageAdmitted = offset > 0;
-    const response = await awaitWithSignal(fetch(`${URL_PATH}${params.size ? `?${params}` : ''}`, { cache: 'no-store', signal }), signal);
+    const response = await audioResponse(`${URL_PATH}${params.size ? `?${params}` : ''}`, {cache:'no-store'},signal);
     if (!response.ok) { const refused = await failure(response, signal); if (response.status === 404 && refused.code === 'not-found' && offset === 0) return null; throw refused; }
     const parsed = DneskaiAudioLibrarySchema.parse(await json(response, 2_097_152, signal));
     if (new Set(parsed.tracks.map(track => track.id)).size !== parsed.tracks.length || new Set(parsed.trends?.map(trend => trend.audioId) ?? []).size !== (parsed.trends?.length ?? 0)
@@ -93,11 +114,58 @@ export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSi
   }
 }
 
-/** Validate the legacy acknowledgement; captured toggle receipts are the next server phase. */
-export async function setDneskaiAudioTrackEnabled(id: string, enabled: boolean, parent?: AbortSignal): Promise<void> {
-  const signal = budget(20_000, parent);
-  try { z.uuid().parse(id); z.boolean().parse(enabled); z.strictObject({ ok: z.literal(true) }).parse(await post({ action: 'toggle', id, enabled }, signal)); }
-  catch (error) { failed(error, parent); }
+function confirmedAudioToggleReceipt(intent: DneskaiAudioToggle, value: unknown): Extract<DneskaiAudioToggleReceipt, {
+    kind: 'saved';
+}> {
+    const receipt = DneskaiAudioToggleReceiptSchema.parse(value);
+    if (receipt.kind !== 'saved' || receipt.ownerId !== intent.ownerId || receipt.id !== intent.id || receipt.requestedEnabled !== intent.enabled || databaseVersion(receipt.expectedVersion) !== databaseVersion(intent.expectedVersion) || databaseVersion(receipt.updatedAt)! <= databaseVersion(intent.expectedVersion)!)
+        throw new DneskaiAudioRequestError('decision-failed', 0);
+    return receipt;
+}
+
+/** The original owner and exact row version are captured before transport. */
+export async function setDneskaiAudioTrackEnabled(input: DneskaiAudioToggle, parent?: AbortSignal): Promise<Extract<DneskaiAudioToggleReceipt, {
+    kind: 'saved';
+}>> {
+    const signal = budget(20000, parent);
+    try {
+        const intent = DneskaiAudioToggleSchema.parse(input);
+        const reply = z.strictObject({ receipt: z.unknown() }).parse(await post(intent, signal));
+        const receipt = confirmedAudioToggleReceipt(intent, reply.receipt);
+        return receipt;
+    }
+    catch (error) {
+        failed(error, parent);
+    }
+}
+
+/** Patch only the captured source version; never roll back a newer cached row. */
+export function applyDneskaiAudioToggleReceipt(client: QueryClient, input: DneskaiAudioToggle, value: Extract<DneskaiAudioToggleReceipt, {
+    kind: 'saved';
+}>) {
+    const intent = DneskaiAudioToggleSchema.parse(input), receipt = confirmedAudioToggleReceipt(intent, value);
+    let seen = false, reconcile = false;
+    type Page = Awaited<ReturnType<typeof loadDneskaiAudioOptions>>;
+    const patch = (page: Page): Page => {
+        if (!page)
+            return page;
+        let changed = false;
+        const tracks = page.tracks.map(track => {
+            if (track.id !== intent.id)
+                return track;
+            seen = true;
+            if (databaseVersion(track.updatedAt) !== databaseVersion(intent.expectedVersion)) {
+                reconcile = true;
+                return track;
+            }
+            changed = true;
+            return { ...track, enabled: receipt.requestedEnabled, updatedAt: receipt.updatedAt };
+        });
+        return changed ? { ...page, tracks } : page;
+    };
+    client.setQueryData<InfiniteData<Page>>([...qk.dneskaiAudio, false, 'pages'], before => before ? { ...before, pages: before.pages.map(patch) } : before);
+    client.setQueryData<Page>([...qk.dneskaiAudio, false, 'selected', intent.id], before => before ? patch(before) : before);
+    return { reconcile: reconcile || !seen };
 }
 
 export type DneskaiAudioUpload = Omit<DneskaiAudioCreate, 'action' | 'uploadId' | 'contentType'>;
@@ -179,8 +247,8 @@ export function useDneskaiAudioLibrary(preview: boolean, enabled = true) {
     await client.cancelQueries({queryKey, exact: true});
     // Keep confirmed rows, the warning and the mounted upload draft while
     // replacing the invalid continuation with one explicit first-page read.
-    try {await client.fetchInfiniteQuery({...audioLibraryQuery(preview), pages: 1, staleTime: 0});}
-    catch { /* The query keeps the failed state and retained rows for recovery. */ }
+    try {await client.fetchInfiniteQuery({...audioLibraryQuery(preview), pages: 1, staleTime: 0});return true;}
+    catch { return false; }
   }, [client, preview]);
   const pageProblem = normalized.pageProblem || (query.error instanceof DneskaiAudioRequestError && query.error.code === 'audio-page-unavailable');
   return {...query, ...normalized, pageProblem, hasNextPage: !pageProblem && query.hasNextPage, reloadLibrary};

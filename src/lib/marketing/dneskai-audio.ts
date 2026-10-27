@@ -9,8 +9,8 @@ import { awaitWithSignal } from "@/lib/abortable";
 import { databaseTimestamp, databaseVersion } from "@/lib/database-version";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import {
-  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema,
-  type DneskaiAudioCreate, type DneskaiAudioPrepared, type DneskaiAudioTrack, type DneskaiAudioType, type DneskaiAudioCursor,
+  DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioTrackSchema, DneskaiAudioCursorSchema, DneskaiAudioToggleSchema, DneskaiAudioToggleReceiptSchema,
+  type DneskaiAudioCreate, type DneskaiAudioPrepared, type DneskaiAudioTrack, type DneskaiAudioType, type DneskaiAudioCursor, type DneskaiAudioToggleReceipt,
 } from "./dneskai-audio-contracts";
 import { dneskaiFfmpegPath } from "./dneskai-reel-render";
 import type { DneskaiReelAudio } from "./dneskai-reel-render";
@@ -25,7 +25,7 @@ type Database = ReturnType<typeof createAdminClient>;
 export const DNESKAI_AUDIO_BUCKET = "marketing-audio";
 const PREVIEW_URL_SECONDS = 60 * 60;
 
-export const DNESKAI_AUDIO_ERROR_CODES = ["audio-library-unavailable", "audio-upload-missing", "audio-upload-invalid", "audio-track-unavailable", "audio-track-write-failed"] as const;
+export const DNESKAI_AUDIO_ERROR_CODES = ["audio-library-unavailable", "audio-upload-missing", "audio-upload-invalid", "audio-track-unavailable", "audio-track-write-failed", "audio-track-changed"] as const;
 export type DneskaiAudioErrorCode = typeof DNESKAI_AUDIO_ERROR_CODES[number];
 export class DneskaiAudioError extends Error {
   constructor(readonly code: DneskaiAudioErrorCode) { super(code); this.name = "DneskaiAudioError"; }
@@ -38,10 +38,10 @@ const TrackRowSchema = z.strictObject({
   source: DneskaiAudioTrackSchema.shape.source, licence_note: DneskaiAudioTrackSchema.shape.licenceNote,
   source_url: DneskaiAudioTrackSchema.shape.sourceUrl, storage_path: z.string().max(300).nullable(),
   instagram_audio_id: z.string().regex(/^\d{1,40}$/).nullable(), duration_ms: DneskaiAudioTrackSchema.shape.durationMs,
-  mood: DneskaiAudioTrackSchema.shape.mood, enabled: z.boolean(), created_at: databaseTimestamp,
+  mood: DneskaiAudioTrackSchema.shape.mood, enabled: z.boolean(), created_at: databaseTimestamp, updated_at: databaseTimestamp,
 });
 type TrackRow = z.infer<typeof TrackRowSchema>;
-const TRACK_COLUMNS = "id,user_id,title,artist,source,licence_note,source_url,storage_path,instagram_audio_id,duration_ms,mood,enabled,created_at";
+const TRACK_COLUMNS = "id,user_id,title,artist,source,licence_note,source_url,storage_path,instagram_audio_id,duration_ms,mood,enabled,created_at,updated_at";
 const readBudget = (parent?: AbortSignal) => AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
 const unavailable = () => new DneskaiAudioError("audio-library-unavailable");
 
@@ -128,7 +128,7 @@ async function signAudioRows(db: Database, owner: string, values: unknown[], sig
   }
   return rows.map((row, index) => DneskaiAudioTrackSchema.parse({
     id: row.id, title: row.title, artist: row.artist, source: row.source, licenceNote: row.licence_note, sourceUrl: row.source_url,
-    durationMs: row.duration_ms, mood: row.mood, enabled: row.enabled, createdAt: row.created_at,
+    durationMs: row.duration_ms, mood: row.mood, enabled: row.enabled, createdAt: row.created_at, updatedAt: row.updated_at,
     previewUrl: names[index] ? signed.get(names[index]!) ?? null : null,
   }));
 }
@@ -240,11 +240,32 @@ export async function createDneskaiAudioTrack(db: Database, owner: string, value
   return track;
 }
 
-export async function setDneskaiAudioTrackEnabled(db: Database, owner: string, id: string, enabled: boolean): Promise<void> {
-  z.uuid().parse(owner);
-  const { data, error } = await db.from("marketing_audio_tracks").update({ enabled, updated_at: new Date().toISOString() }).eq("user_id", owner).eq("id", id).select("id");
-  if (error) throw new DneskaiAudioError("audio-track-write-failed");
-  if (!data?.length) throw new DneskaiAudioError("audio-track-unavailable");
+export async function setDneskaiAudioTrackEnabled(db: Database, owner: string, id: string, enabled: boolean, expectedVersion: string, parent?: AbortSignal): Promise<Extract<DneskaiAudioToggleReceipt, {
+    kind: 'saved';
+}>> {
+    const signal = readBudget(parent);
+    try {
+        const intent = DneskaiAudioToggleSchema.parse({ action: 'toggle', ownerId: owner, id, enabled, expectedVersion });
+        signal.throwIfAborted();
+        const { data, error } = await awaitWithSignal(db.rpc('toggle_owned_dneskai_audio_track', { p_owner: intent.ownerId, p_id: intent.id, p_expected_at: intent.expectedVersion, p_enabled: intent.enabled }).retry(false).abortSignal(signal), signal);
+        if (error)
+            throw new DneskaiAudioError('audio-track-write-failed');
+        const receipt = DneskaiAudioToggleReceiptSchema.parse(data);
+        const expected = databaseVersion(intent.expectedVersion)!;
+        if (receipt.ownerId !== intent.ownerId || receipt.id !== intent.id || databaseVersion(receipt.expectedVersion) !== expected || receipt.requestedEnabled !== intent.enabled
+            || (receipt.kind === 'saved' && databaseVersion(receipt.updatedAt)! <= expected) || (receipt.kind === 'changed' && databaseVersion(receipt.updatedAt) === expected))
+            throw new DneskaiAudioError('audio-track-write-failed');
+        if (receipt.kind === 'changed')
+            throw new DneskaiAudioError('audio-track-changed');
+        if (receipt.kind === 'absent')
+            throw new DneskaiAudioError('audio-track-unavailable');
+        return receipt;
+    }
+    catch (error) {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw error instanceof DneskaiAudioError ? error : new DneskaiAudioError('audio-track-write-failed');
+    }
 }
 
 /** The stored bytes of one track for the renderer; a track chosen at approval stays usable even if switched off later. */

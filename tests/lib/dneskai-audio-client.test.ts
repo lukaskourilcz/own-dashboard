@@ -57,7 +57,7 @@ describe('audio request/body bounds and safe recovery', () => {
     const parent = new AbortController(); parent.abort('synthetic-private-reason'); const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
     expect(await outcome(loadDneskaiAudioOptions(false, parent.signal))).toMatchObject({ name: 'AbortError', message: 'Request aborted' }); expect(fetcher).not.toHaveBeenCalled();
   });
-  it.each([{}, { ok: false }, { ok: true, extra: true }])('refuses a malformed toggle acknowledgement (%j)', async body => { vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body))); await expect(setDneskaiAudioTrackEnabled(id, true)).rejects.toHaveProperty('code', 'decision-failed'); });
+  it.each([{}, { ok: false }, { ok: true, extra: true }])('refuses a malformed toggle acknowledgement (%j)', async body => { vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body))); await expect(setDneskaiAudioTrackEnabled({action:'toggle',ownerId:owner,id,enabled:true,expectedVersion:track().updatedAt})).rejects.toHaveProperty('code', 'decision-failed'); });
 });
 
 describe('captured and bounded audio upload', () => {
