@@ -33,15 +33,12 @@ export async function GET(request: Request) {
   const {db,ownerId} = context;
   // #160: the comment-reply columns exist once 20261023120000 is applied, which DNESKAI_ENGAGEMENT_ENABLED waits for.
   const engagement = dneskaiEngagementWatchEnabled(process.env);
-  const results = await awaitWithSignal(Promise.all([
-    db.from('marketing_accounts').select(`id,user_id,brand,platform,handle,verified_at,enabled${engagement ? ',engagement_enabled,engagement_blocked_code,engagement_blocked_at' : ''}`).eq('user_id', ownerId).order('brand').limit(4),
-    db.rpc('marketing_account_token_status'),
-  ]),signal).catch(()=>null);
-  if (!results || signal.aborted) return Response.json({error:'accounts-unavailable'},{status:503});
-  const [accounts,tokens] = results;
-  const checkedAccounts = z.array(AccountRow.extend({user_id:z.literal(ownerId)})).max(4).safeParse(accounts.data);
-  const tokenRows = z.array(TokenRow).max(4).safeParse(tokens.data);
-  if (accounts.error || tokens.error || !checkedAccounts.success || !tokenRows.success)
+  const result = await awaitWithSignal(db.rpc('read_owned_marketing_accounts',{p_owner:ownerId}).retry(false).abortSignal(signal),signal).catch(()=>null);
+  const snapshot = z.strictObject({ownerId:z.literal(ownerId),accounts:z.unknown(),tokens:z.unknown()}).safeParse(result?.data);
+  if (!result || result.error || !snapshot.success || signal.aborted) return Response.json({error:'accounts-unavailable'},{status:503});
+  const checkedAccounts = z.array(AccountRow.extend({user_id:z.literal(ownerId)})).max(4).safeParse(snapshot.data.accounts);
+  const tokenRows = z.array(TokenRow).max(4).safeParse(snapshot.data.tokens);
+  if (!checkedAccounts.success || !tokenRows.success)
     return Response.json({error:'accounts-unavailable'},{status:503});
   // The database permits two brands × two platforms, with one account per tuple and one token per account.
   const rows = checkedAccounts.data, byId = new Map(rows.map(row=>[row.id,row]));

@@ -265,7 +265,9 @@ The migrations, in the order they run:
 
 142. `20261027184102_confirmed_dneskai_cache_object_presence.sql` — prepared, unapplied; service-only read-only exact owned slide/Reel path presence proof distinguishes absent cache objects from unavailable Storage.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The fifty-six audit migrations 87–142 remain unapplied; apply them in filename order before deploying the implementation branch.
+143. `20261027194255_confirmed_marketing_account_snapshot.sql` — prepared, unapplied; authenticated-only captured-owner stable account/token-metadata snapshot under existing own RLS; no credentials, writes or table grants.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The fifty-seven audit migrations 87–143 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 

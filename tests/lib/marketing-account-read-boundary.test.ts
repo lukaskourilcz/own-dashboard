@@ -10,7 +10,7 @@ const token = () => ({
     account_id: id, brand: 'dneskai', platform: 'instagram', expires_at: '2026-12-01T10:00:00Z', refreshed_at: '2026-10-27T10:00:00Z', scopes: ['instagram_business_basic'], login_mode: 'instagram'
 });
 function fixture(accounts: unknown, tokens: unknown) {
-    const fetcher = vi.fn(async (input: unknown) => Response.json(String(input).includes('/rpc/') ? tokens : accounts)), db = createClient('https://account-read.supabase.co', 'TEST-ONLY-session', { global: { fetch: fetcher }, auth: { persistSession: false, autoRefreshToken: false } });
+    const fetcher = vi.fn(async (input: unknown,init?:RequestInit) => {if(new URL(String(input)).pathname!=='/rest/v1/rpc/read_owned_marketing_accounts'||JSON.parse(String(init?.body)).p_owner!==owner)throw new Error('TEST_ONLY_UNEXPECTED_SNAPSHOT_REQUEST');return Response.json({ownerId:owner,accounts,tokens});}), db = createClient('https://account-read.supabase.co', 'TEST-ONLY-session', { global: { fetch: fetcher }, auth: { persistSession: false, autoRefreshToken: false } });
     vi.spyOn(db.auth, 'getUser').mockResolvedValue({ data: { user: { id: owner } }, error: null } as never);
     m.session.mockResolvedValue(db);
     return { fetcher, db };
@@ -37,7 +37,7 @@ it('returns a confirmed empty account list without inventing missing data', asyn
     const { fetcher } = fixture([], []), response = await GET(new Request('https://own.example/api/marketing/accounts'));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ accounts: [] });
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledOnce();
 });
 it('keeps a positively owned account without stored metadata readable with token null', async () => {
     fixture([{ ...account(), verified_at: null }], []);
@@ -56,11 +56,8 @@ it('reads all four supported account tuples and matches each token once under th
         };
     }) => row.token.loginMode)).toEqual(['instagram', 'threads', 'facebook', 'threads']);
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
-    const query = new URL(String(fetcher.mock.calls.find(([url]) => !String(url).includes('/rpc/'))![0]));
-    expect(query.searchParams.get('user_id')).toBe('eq.' + owner);
-    expect(query.searchParams.get('limit')).toBe('4');
-    expect(query.searchParams.get('select')).not.toContain('access_token');
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(new URL(String(fetcher.mock.calls[0][0])).pathname).toBe('/rest/v1/rpc/read_owned_marketing_accounts');
+    expect(fetcher).toHaveBeenCalledOnce();
 });
 it.each([
     { rows: [{ ...account(), unexpected: 'TEST_ONLY_PRIVATE_DETAIL' }], tokens: [token()] },
@@ -89,4 +86,11 @@ it('returns explicit engagement proof and refuses missing selected engagement fi
     expect((await response.json()).accounts[0].engagement).toEqual({ enabled: false, blockedCode: null, blockedAt: null, webhook: false });
     fixture([{ ...account(), engagement_enabled: false }], [token()]);
     expect((await GET(new Request('https://own.example/api/marketing/accounts'))).status).toBe(503);
+});
+
+it.each([null,{}, {ownerId:other,accounts:[],tokens:[]},{ownerId:owner,accounts:[],tokens:[],extra:true}])('refuses malformed or foreign snapshot receipts: %#',async value=>{
+ const {fetcher}=fixture([],[]);fetcher.mockResolvedValueOnce(Response.json(value));const response=await GET(new Request('https://own.example/api/marketing/accounts'));expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'accounts-unavailable'});expect(fetcher).toHaveBeenCalledOnce();
+});
+it('makes one exact original-owner RPC with no retry after unavailable database transport',async()=>{
+ const {fetcher}=fixture([],[]);fetcher.mockResolvedValueOnce(Response.json({message:'TEST_ONLY_PRIVATE_DATABASE_DETAIL'},{status:503}));const response=await GET(new Request('https://own.example/api/marketing/accounts'));expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'accounts-unavailable'});expect(fetcher).toHaveBeenCalledOnce();expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toEqual({p_owner:owner});
 });

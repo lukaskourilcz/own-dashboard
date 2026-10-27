@@ -123,8 +123,7 @@ it('bounds the owner-scoped account list after authentication using the same cap
     const caller = new AbortController(), query = { select: () => query, eq: () => query, order: () => query, limit: () => new Promise(() => {
         }) };
     m.user.mockResolvedValueOnce({ data: { user: { id: owner } }, error: null });
-    m.session.mockResolvedValueOnce({ auth: { getUser: m.user }, from: () => query, rpc: () => new Promise(() => {
-        }) });
+    m.session.mockResolvedValueOnce({ auth: { getUser: m.user }, from: () => query, rpc: () => {const pending={retry:()=>pending,abortSignal:()=>pending,then:()=>new Promise(()=>{})};return pending;} });
     const pending = GET(request(routes[0], caller.signal));
     await vi.waitFor(() => expect(m.user).toHaveBeenCalledOnce());
     caller.abort('TEST_ONLY_PRIVATE_REASON');

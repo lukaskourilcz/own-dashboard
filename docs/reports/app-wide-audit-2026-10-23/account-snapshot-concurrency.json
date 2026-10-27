@@ -1,0 +1,14 @@
+{
+  "serverVersion": "17.11 (Postgres.app)",
+  "migrationSha256": "893b74b5a62ea56be1d5326e323fbab93d1a3b6143bf08dbd6b8607754c473a6",
+  "waitingOn": "advisory",
+  "duringConcurrentCommit": {
+    "handle": "before",
+    "expiresAt": "2026-12-01T10:00:00+00:00"
+  },
+  "nextStatement": {
+    "handle": "after",
+    "expiresAt": "2026-12-02T11:00:00+01:00"
+  },
+  "scope": "Two actual PostgreSQL work connections; exact migration 143 with minimal synthetic relevant tables and a metadata-RPC advisory barrier; not a full native replay and no Production connection"
+}
