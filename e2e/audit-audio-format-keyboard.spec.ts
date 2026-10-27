@@ -2,6 +2,15 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { dneskaiAudio } from '../src/lib/i18n/sections/dneskai-audio';
+test.beforeEach(async ({page}) => {
+    await page.addInitScript(() => {
+        const original = console.error.bind(console);
+        console.error = (...values: unknown[]) => {
+            if (typeof values[0] === 'string' && values[0].includes("hasn't mounted yet")) original(...values, new Error('AUDIT_PREMOUNT_CALLER').stack);
+            else original(...values);
+        };
+    });
+});
 for (const lang of ['en', 'cs'] as const)
     test(`${lang}: format radios use native keyboard selection without moving the Lab slide`, async ({ page }) => {
         const errors = watchConsole(page), t = dneskaiAudio[lang].format, writes: string[] = [];
