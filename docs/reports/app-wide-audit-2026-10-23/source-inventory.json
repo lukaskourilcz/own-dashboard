@@ -332,10 +332,10 @@
     },
     {
       "path": "src/app/api/marketing/accounts/route.ts",
-      "lines": 42,
+      "lines": 66,
       "sha256": "21f4f3c313edea0e71f63c6cfbfa569edcadaf4834addbe95c9dbdb69d9f1cae",
-      "status": "partial; non-secret projection inspected; auth errors, duplicate/completeness/timestamp checks and bounded reads remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "b98136b2c1887decc7516bc7565fbe7f5f8e6fd53e87a1db99c903cbd54d187b"
+      "status": "partial; non-secret projection inspected; auth errors, duplicate/completeness/timestamp checks and bounded reads remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 345 strict owned/unique account and metadata projection, four-tuple completeness bound and explicit unavailable results verified; atomic cross-read consistency/JSON/browser work remains",
+      "reviewedSha256": "79b815fb34e54a1aa1ff9da122ffc0fce837567525ca1aaffdb0f521b455d36c"
     },
     {
       "path": "src/app/api/marketing/accounts/verify/route.ts",
