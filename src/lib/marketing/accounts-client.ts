@@ -1,11 +1,14 @@
 import { z } from 'zod';
+import { awaitWithSignal } from '@/lib/abortable';
+import { boundedResponseText } from '@/lib/bounded-response';
+import { databaseTimestamp } from '@/lib/database-version';
 
 /** Browser-safe view of a connected marketing account. It never carries a token. */
-const timestamp = z.string().min(1).max(64);
+const timestamp = databaseTimestamp;
 export const MarketingAccountStatusSchema = z.strictObject({
   id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), handle: z.string().min(1).max(100),
   verifiedAt: timestamp.nullable(), enabled: z.boolean(),
-  token: z.strictObject({ expiresAt: timestamp, refreshedAt: timestamp, scopes: z.array(z.string().max(64)).max(20), loginMode: z.enum(['instagram', 'facebook', 'threads']) }).nullable(),
+  token: z.strictObject({ expiresAt: timestamp, refreshedAt: timestamp, scopes: z.array(z.string().min(1).max(64)).max(20).refine(values=>new Set(values).size===values.length), loginMode: z.enum(['instagram', 'facebook', 'threads']) }).nullable(),
   /**
    * #160: replies to keyword comments for this account. Present only while the server runs the comment watcher
    * (DNESKAI_ENGAGEMENT_ENABLED); `blockedCode` says why replies stopped, such as messaging switched off.
@@ -15,7 +18,7 @@ export const MarketingAccountStatusSchema = z.strictObject({
     webhook: z.boolean().optional() }).optional(),
 });
 export type MarketingAccountStatus = z.infer<typeof MarketingAccountStatusSchema>;
-export const MarketingAccountsResponseSchema = z.strictObject({ accounts: z.array(MarketingAccountStatusSchema).max(4) });
+export const MarketingAccountsResponseSchema = z.strictObject({ accounts: z.array(MarketingAccountStatusSchema).max(4).refine(rows=>new Set(rows.map(row=>row.id)).size===rows.length && new Set(rows.map(row=>`${row.brand}/${row.platform}`)).size===rows.length) });
 /** `page` (#166): the Facebook Page @dneskai is linked to, under Facebook Login only. */
 export const MarketingAccountVerifyResponseSchema = z.strictObject({ account: MarketingAccountStatusSchema, accountType: z.string().max(40), tokenStored: z.boolean(),
   page: z.strictObject({ id: z.string().regex(/^\d{1,100}$/), name: z.string().max(200) }).optional() });
@@ -34,34 +37,73 @@ export function marketingTokenState(token: MarketingAccountStatus['token'], now:
 export class MarketingAccountRequestError extends Error {
   constructor(readonly code: string) { super(code); this.name = 'MarketingAccountRequestError'; }
 }
-async function errorCode(response: Response): Promise<string> {
-  try { const body = await response.json() as { error?: unknown }; return typeof body.error === 'string' && /^[a-z0-9-]{1,80}$/.test(body.error) ? body.error : 'account-request-failed'; }
-  catch { return 'account-request-failed'; }
+/** One observed consumer scope, bounded JSON and no automatic request replay. */
+async function accountRequest<T>(path: string, body: unknown | undefined, parent: AbortSignal | undefined, milliseconds: number, validate: (value: unknown) => T): Promise<T> {
+  const signal = AbortSignal.any([AbortSignal.timeout(milliseconds), ...(parent ? [parent] : [])]);
+  const discard = (response: Response) => { if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined); };
+  let response: Response | undefined;
+  try {
+    signal.throwIfAborted();
+    const pending = fetch(path, {cache:'no-store',redirect:'error',signal,...(body === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});
+    void pending.then(result=>{if(signal.aborted)discard(result);},()=>undefined);
+    response = await awaitWithSignal(pending,signal);
+    signal.throwIfAborted();
+    if (response.status === 429) { discard(response); throw new MarketingAccountRequestError('rate-limited'); }
+    if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') throw new Error();
+    const value: unknown = JSON.parse(await boundedResponseText(response,response.status===200?16384:4096,signal));
+    if (response.status !== 200) {
+      const refusal = z.strictObject({error:z.string().regex(/^[a-z0-9-]{1,80}$/)}).safeParse(value);
+      throw new MarketingAccountRequestError(refusal.success?refusal.data.error:'account-request-failed');
+    }
+    const result = validate(value);
+    signal.throwIfAborted();
+    return result;
+  } catch (error) {
+    if (response) discard(response);
+    if (parent?.aborted) throw new DOMException('Request aborted','AbortError');
+    throw error instanceof MarketingAccountRequestError ? error : new MarketingAccountRequestError('account-request-failed');
+  }
+}
+function accountSelector(accountId: string) {
+  if (!z.uuid().safeParse(accountId).success) throw new MarketingAccountRequestError('invalid-request');
 }
 export async function loadMarketingAccounts(signal?: AbortSignal) {
-  const response = await fetch('/api/marketing/accounts', { cache: 'no-store', signal });
-  if (!response.ok) throw new MarketingAccountRequestError(await errorCode(response));
-  return MarketingAccountsResponseSchema.parse(await response.json()).accounts;
+  return accountRequest('/api/marketing/accounts',undefined,signal,20000,value=>MarketingAccountsResponseSchema.parse(value).accounts);
 }
-export async function verifyMarketingAccount(brand: 'dneskai', platform: 'instagram'): Promise<MarketingAccountVerifyResponse> {
-  const response = await fetch('/api/marketing/accounts/verify', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand, platform }) });
-  if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
-  return MarketingAccountVerifyResponseSchema.parse(await response.json());
+export async function verifyMarketingAccount(brand: 'dneskai', platform: 'instagram', signal?: AbortSignal): Promise<MarketingAccountVerifyResponse> {
+  if (brand !== 'dneskai' || platform !== 'instagram') throw new MarketingAccountRequestError('invalid-request');
+  return accountRequest('/api/marketing/accounts/verify',{brand,platform},signal,35000,value=>{
+    const result = MarketingAccountVerifyResponseSchema.parse(value);
+    if (result.account.brand !== brand || result.account.platform !== platform) throw new Error();
+    return result;
+  });
 }
-/** #161: whether Meta sends the account's comments to the webhook, or a request to subscribe it ($0, one Graph call). */
+/** Whether Meta sends the account's comments, or the result of an explicit subscription request. */
 export async function marketingCommentSubscription(accountId: string, action: 'status' | 'subscribe', signal?: AbortSignal): Promise<boolean> {
-  const response = await fetch('/api/marketing/accounts/webhook', { method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId, action }) });
-  if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
-  return z.strictObject({ subscribed: z.boolean() }).parse(await response.json()).subscribed;
+  accountSelector(accountId);
+  if (!['status','subscribe'].includes(action)) throw new MarketingAccountRequestError('invalid-request');
+  return accountRequest('/api/marketing/accounts/webhook',{accountId,action},signal,35000,value=>{
+    const result = z.strictObject({subscribed:z.boolean()}).parse(value);
+    if (action === 'subscribe' && !result.subscribed) throw new Error();
+    return result.subscribed;
+  });
 }
-/** #160: turns replies to keyword comments on or off for one account; turning them on clears an earlier block. */
-export async function setMarketingAccountEngagement(accountId: string, enabled: boolean): Promise<MarketingAccountStatus> {
-  const response = await fetch('/api/marketing/accounts/engagement', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId, enabled }) });
-  if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
-  return z.strictObject({ account: MarketingAccountStatusSchema }).parse(await response.json()).account;
+/** Turns replies on or off only after the captured account/state is positively returned. */
+export async function setMarketingAccountEngagement(accountId: string, enabled: boolean, signal?: AbortSignal): Promise<MarketingAccountStatus> {
+  accountSelector(accountId);
+  if (typeof enabled !== 'boolean') throw new MarketingAccountRequestError('invalid-request');
+  return accountRequest('/api/marketing/accounts/engagement',{accountId,enabled},signal,35000,value=>{
+    const account = z.strictObject({account:MarketingAccountStatusSchema}).parse(value).account;
+    if (account.id !== accountId || account.engagement?.enabled !== enabled) throw new Error();
+    return account;
+  });
 }
-export async function setMarketingAccountEnabled(accountId: string, enabled: boolean): Promise<MarketingAccountStatus> {
-  const response = await fetch('/api/marketing/accounts/enable', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId, enabled }) });
-  if (!response.ok) throw new MarketingAccountRequestError(response.status === 429 ? 'rate-limited' : await errorCode(response));
-  return z.strictObject({ account: MarketingAccountStatusSchema }).parse(await response.json()).account;
+export async function setMarketingAccountEnabled(accountId: string, enabled: boolean, signal?: AbortSignal): Promise<MarketingAccountStatus> {
+  accountSelector(accountId);
+  if (typeof enabled !== 'boolean') throw new MarketingAccountRequestError('invalid-request');
+  return accountRequest('/api/marketing/accounts/enable',{accountId,enabled},signal,35000,value=>{
+    const account = z.strictObject({account:MarketingAccountStatusSchema}).parse(value).account;
+    if (account.id !== accountId || account.enabled !== enabled) throw new Error();
+    return account;
+  });
 }

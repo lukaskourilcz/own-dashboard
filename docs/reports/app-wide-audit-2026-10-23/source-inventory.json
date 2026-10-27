@@ -3245,10 +3245,10 @@
     },
     {
       "path": "src/lib/marketing/accounts-client.ts",
-      "lines": 67,
+      "lines": 109,
       "sha256": "2b3bf1c1744f68d995b9e6862ad445259d61e553c4e3aafed11058c0cfd0bb30",
-      "status": "partial; browser-safe metadata shape inspected; finite clocks/timestamps, duplicate account identities, bounded bodies/deadlines and requested-state receipts remain; see remaining-review.md",
-      "reviewedSha256": "2b3bf1c1744f68d995b9e6862ad445259d61e553c4e3aafed11058c0cfd0bb30"
+      "status": "partial; browser-safe metadata shape inspected; finite clocks/timestamps, duplicate account identities, bounded bodies/deadlines and requested-state receipts remain; see remaining-review.md; finding 346 exact action receipts, bounded original browser transport, finite timestamps/unique list proof and fixed diagnostics verified; captured browser source/recovery and atomic writes remain",
+      "reviewedSha256": "638704f76c2067df84e6c09e062d6c3739bf9e979b79a16fca90ccef3ed69791"
     },
     {
       "path": "src/lib/marketing/asset-urls.ts",
