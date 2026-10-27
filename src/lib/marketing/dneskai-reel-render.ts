@@ -1,3 +1,5 @@
+import {awaitWithSignal} from "@/lib/abortable";
+import {DNESKAI_SLIDE_JPEG} from "./dneskai-slide-format";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -94,21 +96,34 @@ export async function dneskaiFfmpegPath(): Promise<string> {
 }
 
 /** One frame of the reel for a slide: the blurred, darkened slide filling 1080 × 1920 with the sharp slide centred on it. */
-export async function composeDneskaiReelFrame(slide: Buffer): Promise<Buffer> {
-  let sharp;
-  try { sharp = (await import("sharp")).default; }
-  catch { throw new DneskaiReelRenderError("reel-compose-failed"); }
-  try {
-    const { width, height, slideWidth } = { ...DNESKAI_REEL };
-    const meta = await sharp(slide).metadata();
-    if (!meta.width || !meta.height) throw new Error("no-size");
-    const slideHeight = Math.round(slideWidth * meta.height / meta.width / 2) * 2;
-    const [background, foreground] = await Promise.all([
-      sharp(slide).resize(width, height, { fit: "cover" }).blur(36).modulate({ brightness: 0.62 }).toColourspace("srgb").toBuffer(),
-      sharp(slide).resize(slideWidth, slideHeight, { fit: "fill" }).toColourspace("srgb").toBuffer(),
-    ]);
-    return await sharp(background).composite([{ input: foreground, gravity: "center" }]).jpeg({ quality: 95, chromaSubsampling: "4:4:4" }).toBuffer();
-  } catch { throw new DneskaiReelRenderError("reel-compose-failed"); }
+export async function composeDneskaiReelFrame(slide: Buffer, parent?: AbortSignal): Promise<Buffer> {
+    const signal = AbortSignal.any([AbortSignal.timeout(30000), ...(parent ? [parent] : [])]);
+    try {
+        signal.throwIfAborted();
+        if (!Buffer.isBuffer(slide) || !slide.length || slide.length > DNESKAI_SLIDE_JPEG.maxBytes)
+            throw new Error();
+        const sharp = (await awaitWithSignal(import('sharp'), signal)).default;
+        signal.throwIfAborted();
+        const options = { limitInputPixels: DNESKAI_SLIDE_JPEG.width * DNESKAI_SLIDE_JPEG.height, limitInputChannels: 3, failOn: 'warning' as const };
+        const meta = await awaitWithSignal(sharp(slide, options).metadata(), signal);
+        signal.throwIfAborted();
+        if (meta.format !== 'jpeg' || meta.width !== DNESKAI_SLIDE_JPEG.width || meta.height !== DNESKAI_SLIDE_JPEG.height || meta.orientation !== undefined && meta.orientation !== 1)
+            throw new Error();
+        const { width, height, slideWidth } = DNESKAI_REEL, slideHeight = Math.round(slideWidth * meta.height / meta.width / 2) * 2;
+        const [background, foreground] = await awaitWithSignal(Promise.all([
+            sharp(slide, options).resize(width, height, { fit: 'cover' }).blur(36).modulate({ brightness: 0.62 }).toColourspace('srgb').timeout({ seconds: 15 }).toBuffer(),
+            sharp(slide, options).resize(slideWidth, slideHeight, { fit: 'fill' }).toColourspace('srgb').timeout({ seconds: 15 }).toBuffer(),
+        ]), signal);
+        signal.throwIfAborted();
+        const frame = await awaitWithSignal(sharp(background, { limitInputPixels: width * height, limitInputChannels: 3, failOn: 'warning' }).composite([{ input: foreground, gravity: 'center' }]).jpeg({ quality: 95, chromaSubsampling: '4:4:4' }).timeout({ seconds: 15 }).toBuffer(), signal);
+        signal.throwIfAborted();
+        if (!frame.length || frame.length > DNESKAI_SLIDE_JPEG.maxBytes)
+            throw new Error();
+        return frame;
+    }
+    catch {
+        throw new DneskaiReelRenderError(signal.aborted ? 'reel-timeout' : 'reel-compose-failed');
+    }
 }
 
 /** The ffmpeg arguments for frames `frame-<i>.jpg` and an optional `audio` file in `dir`. Pure, for the tests. */
@@ -158,10 +173,8 @@ function runFfmpeg(binary: string, args: string[], signal?: AbortSignal): Promis
   return new Promise((resolve, reject) => {
     if (signal?.aborted) { reject(new DneskaiReelRenderError("reel-timeout")); return; }
     let child;
-    try { child = spawn(binary, args, { stdio: ["ignore", "ignore", "pipe"] }); }
+    try { child = spawn(binary, args, { stdio: ["ignore", "ignore", "ignore"] }); }
     catch { reject(new DneskaiReelRenderError("reel-ffmpeg-unavailable")); return; }
-    let stderr = "";
-    child.stderr?.on("data", (chunk: Buffer) => { stderr = (stderr + chunk.toString()).slice(-4000); });
     const abort = () => { child.kill("SIGKILL"); };
     signal?.addEventListener("abort", abort, { once: true });
     child.on("error", (error: NodeJS.ErrnoException) => {
@@ -173,8 +186,7 @@ function runFfmpeg(binary: string, args: string[], signal?: AbortSignal): Promis
       if (signal?.aborted) reject(new DneskaiReelRenderError("reel-timeout"));
       else if (code === 0) resolve();
       else {
-        // ffmpeg's own words stay in the function log only; the caller sees a fixed code.
-        console.warn(JSON.stringify({ event: "dneskai-reel-ffmpeg-failed", code, stderr: stderr.slice(-800) }));
+        console.warn(JSON.stringify({ event: "dneskai-reel-ffmpeg-failed", code }));
         reject(new DneskaiReelRenderError("reel-encode-failed"));
       }
     });
@@ -183,23 +195,46 @@ function runFfmpeg(binary: string, args: string[], signal?: AbortSignal): Promis
 
 /** Renders the reel in a temporary directory and returns the MP4 bytes. Nothing is stored. */
 export async function renderDneskaiReel(input: DneskaiReelInput): Promise<DneskaiReelResult> {
-  const count = input.slides.length;
-  if (count < 1 || count > DNESKAI_REEL.maxSlides || input.slides.some((slide) => !Buffer.isBuffer(slide) || !slide.length)
-    || (input.audio && (!input.audio.bytes.length || !/^[A-Za-z0-9-]{1,64}$/.test(input.audio.id)))) throw new DneskaiReelRenderError("reel-input-invalid");
-  const binary = input.ffmpegPath ?? await dneskaiFfmpegPath();
-  const dir = await mkdtemp(path.join(tmpdir(), "dneskai-reel-"));
-  try {
-    const frames = await Promise.all(input.slides.map((slide) => composeDneskaiReelFrame(slide)));
-    if (input.signal?.aborted) throw new DneskaiReelRenderError("reel-timeout");
-    await Promise.all(frames.map((frame, index) => writeFile(path.join(dir, `frame-${index}.jpg`), frame)));
-    const audioFile = input.audio ? path.join(dir, "audio") : null;
-    if (input.audio && audioFile) await writeFile(audioFile, input.audio.bytes);
-    const output = path.join(dir, "reel.mp4");
-    await runFfmpeg(binary, dneskaiReelFfmpegArgs({ dir, slideCount: count, audioFile, output, threads: input.threads }), input.signal);
-    const bytes = await readFile(output).catch(() => { throw new DneskaiReelRenderError("reel-encode-failed"); });
-    if (!bytes.length) throw new DneskaiReelRenderError("reel-encode-failed");
-    return { bytes, sha256: sha256(bytes), durationSeconds: dneskaiReelDuration(count), slideCount: count, silent: !input.audio };
-  } finally {
-    await rm(dir, { recursive: true, force: true }).catch(() => undefined);
-  }
+    if (input.signal?.aborted)
+        throw new DneskaiReelRenderError('reel-timeout');
+    const count = input.slides.length;
+    if (count < 1 || count > DNESKAI_REEL.maxSlides || input.slides.some((slide) => !Buffer.isBuffer(slide) || !slide.length)
+        || (input.audio && (!input.audio.bytes.length || !/^[A-Za-z0-9-]{1,64}$/.test(input.audio.id))))
+        throw new DneskaiReelRenderError("reel-input-invalid");
+    const binary = input.ffmpegPath ?? await dneskaiFfmpegPath();
+    if (input.signal?.aborted)
+        throw new DneskaiReelRenderError('reel-timeout');
+    const dir = await mkdtemp(path.join(tmpdir(), "dneskai-reel-"));
+    try {
+        for (let index = 0; index < count; index++) {
+            if (input.signal?.aborted)
+                throw new DneskaiReelRenderError('reel-timeout');
+            const frame = await composeDneskaiReelFrame(input.slides[index]!, input.signal);
+            if (input.signal?.aborted)
+                throw new DneskaiReelRenderError('reel-timeout');
+            await writeFile(path.join(dir, `frame-${index}.jpg`), frame, { signal: input.signal });
+        }
+        if (input.signal?.aborted)
+            throw new DneskaiReelRenderError('reel-timeout');
+        const audioFile = input.audio ? path.join(dir, "audio") : null;
+        if (input.audio && audioFile)
+            await writeFile(audioFile, input.audio.bytes, { signal: input.signal });
+        if (input.signal?.aborted)
+            throw new DneskaiReelRenderError('reel-timeout');
+        const output = path.join(dir, "reel.mp4");
+        await runFfmpeg(binary, dneskaiReelFfmpegArgs({ dir, slideCount: count, audioFile, output, threads: input.threads }), input.signal);
+        if (input.signal?.aborted)
+            throw new DneskaiReelRenderError('reel-timeout');
+        const bytes = await readFile(output, { signal: input.signal }).catch(() => {
+            throw new DneskaiReelRenderError("reel-encode-failed");
+        });
+        if (input.signal?.aborted)
+            throw new DneskaiReelRenderError('reel-timeout');
+        if (!bytes.length)
+            throw new DneskaiReelRenderError("reel-encode-failed");
+        return { bytes, sha256: sha256(bytes), durationSeconds: dneskaiReelDuration(count), slideCount: count, silent: !input.audio };
+    }
+    finally {
+        await rm(dir, { recursive: true, force: true }).catch(() => undefined);
+    }
 }

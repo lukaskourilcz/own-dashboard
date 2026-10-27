@@ -1,3 +1,5 @@
+import {DNESKAI_SLIDE_JPEG} from "./dneskai-slide-format";
+export {DNESKAI_SLIDE_JPEG} from "./dneskai-slide-format";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
@@ -35,7 +37,7 @@ export const DNESKAI_STUDIO = {
 export const DNESKAI_RENDER_POLICY = "dneskai-render/3";
 export const DNESKAI_RENDERER_VERSION = `carousel-studio/${DNESKAI_STUDIO.version}+${DNESKAI_STUDIO.commit.slice(0, 7)}`;
 /** Instagram portrait: exactly 1080 × 1350, baseline JPEG at quality 92 without chroma subsampling, sRGB, at most 8 MiB. */
-export const DNESKAI_SLIDE_JPEG = { width: 1080, height: 1350, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;
+// DNESKAI_SLIDE_JPEG is re-exported above for existing callers.
 
 export const DNESKAI_RENDER_FAILURE_CODES = ["render-input-invalid", "render-rasterizer-unavailable", "render-rasterization-failed", "render-jpeg-encoding-failed", "asset-too-large", "asset-dimensions-invalid", "asset-storage-failed", "stored-asset-hash-mismatch", "stored-asset-metadata-mismatch", "worker-timeout"] as const;
 export type DneskaiRenderFailureCode = typeof DNESKAI_RENDER_FAILURE_CODES[number];

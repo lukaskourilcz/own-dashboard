@@ -3651,10 +3651,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel-render.ts",
-      "lines": 205,
+      "lines": 240,
       "sha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8",
-      "status": "partial source review: shell-free ffmpeg args, bounded stderr and temporary directory cleanup retained; eager parallel image CPU before abort, image/audio/output bounds and subprocess lifecycle need verification; no render or provider request performed; finding 190 closes physical media identity, full revision/loaded JPEG binding and legacy exact-hash reads; duplicate admission and native work bounds remain open",
-      "reviewedSha256": "735ce7883771b4b6d20a7d3755cd70320bb328a5bbb04cbe4be9c57c5d3c9ea2"
+      "status": "partial source review; findings 190/332–334 verify physical identity, approved JPEG canvas/pixel/channel/byte input, bounded per-frame processing, sequential preparation and fixed native diagnostics; audio/MP4/output/subprocess completion, duplicate admission and final release remain open",
+      "reviewedSha256": "b870185123295eb016fde6192170bb0e566de12d33e31f073762123c5128a6d1"
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
@@ -3679,10 +3679,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-render.ts",
-      "lines": 518,
+      "lines": 520,
       "sha256": "ec424d59dda7c3763bbacfa91d7c1005212c2e92b32cb5127a5c32a736e54b84",
-      "status": "partial; complete source inspection; first-slide display parity, bounded native work/media reads and cache admission remain under review; clip/glyph and immutable render-key gates retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "fc5ba1daf8e825b02ee3b1daf9c89be283d4ac8928a7b663685e96641039ce6a"
+      "status": "partial; findings 193/334 retain positional slide policy and existing JPEG policy through a shared pure format constant; first-slide parity, native/media/cache admission, other lifecycle leads and final release remain open",
+      "reviewedSha256": "a3fed34bcf65c3fa4a61bdc7f14ddacb841012b4ff32615f1e80b6f76203a974"
     },
     {
       "path": "src/lib/marketing/dneskai-revision-edit.ts",
@@ -5017,6 +5017,13 @@
       "lines": 33,
       "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending",
       "reviewedSha256": "ffd826116ad4464a201962e2ae17edbe0425439ce0169ba33abc241e6d8fba71"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-slide-format.ts",
+      "sha256": null,
+      "lines": 2,
+      "status": "source reviewed; finding 334 shares the unchanged immutable approved JPEG format between slide producer and native Reel consumer; final release checks pending",
+      "reviewedSha256": "610688a9ef79cfc469822e507e2f506c842f06544abc44ea85ca7329a597317f"
     }
   ],
   "baselineFileCount": 561
