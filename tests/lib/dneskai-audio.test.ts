@@ -68,7 +68,8 @@ function storage(bytes: Buffer | null) {
     maybeSingle: vi.fn(async () => ({ data: rows[0] ?? null, error: null })),
     insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, instagram_audio_id: null, created_at: "2026-10-23T08:00:00Z", updated_at:"2026-10-23T08:00:00Z" }); return { error: null }; }),
   };
-  return { db: { from: vi.fn(() => query), storage: { from: vi.fn(() => files) } }, files, inserted, rows };
+  const presence={retry:()=>presence,abortSignal:()=>presence,then:(resolve:(value:unknown)=>unknown)=>Promise.resolve({data:{ownerId:owner,id:uploadId,contentType:'audio/mpeg',state:'absent'},error:null}).then(resolve)};
+  return { db: { rpc:vi.fn(()=>presence),from: vi.fn(() => query), storage: { from: vi.fn(() => files) } }, files, inserted, rows };
 }
 
 describe("createDneskaiAudioTrack", () => {

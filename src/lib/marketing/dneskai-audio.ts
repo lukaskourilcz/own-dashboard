@@ -200,6 +200,30 @@ async function confirmedAudioCreation(db: Database, owner: string, input: Dneska
   return track;
 }
 
+/** Only a positive database snapshot can distinguish absence from an unreadable object. */
+export async function readDneskaiAudioObjectPresence(db: Database, owner: string, id: string, contentType: DneskaiAudioType, parent?: AbortSignal): Promise<'present' | 'absent'> {
+    const signal = readBudget(parent);
+    try {
+        z.uuid().parse(owner);
+        z.uuid().parse(id);
+        z.enum(['audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/wav', 'audio/x-wav', 'audio/ogg']).parse(contentType);
+        signal.throwIfAborted();
+        const { data, error } = await awaitWithSignal(db.rpc('read_owned_dneskai_audio_object', { p_owner: owner, p_id: id, p_content_type: contentType }).retry(false).abortSignal(signal), signal);
+        signal.throwIfAborted();
+        if (error)
+            throw new Error();
+        const receipt = z.strictObject({ ownerId: z.uuid(), id: z.uuid(), contentType: z.string(), state: z.enum(['present', 'absent']) }).parse(data);
+        if (receipt.ownerId !== owner || receipt.id !== id || receipt.contentType !== contentType)
+            throw new Error();
+        return receipt.state;
+    }
+    catch {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw new DneskaiAudioError('audio-library-unavailable');
+    }
+}
+
 /**
  * Records a decodable 1 s–15 min upload and confirms its captured metadata.
  * Identical retries preserve the stored track, including a later disable.
@@ -217,7 +241,14 @@ export async function createDneskaiAudioTrack(db: Database, owner: string, value
   const files = db.storage.from(DNESKAI_AUDIO_BUCKET), name = objectName(owner, input.uploadId, input.contentType);
   const downloaded = await awaitWithSignal(files.download(name), signal);
   check();
-  if (downloaded.error || !downloaded.data) throw new DneskaiAudioError("audio-upload-missing");
+  if (downloaded.error || !downloaded.data) {
+    if (downloaded.error && !downloaded.data) {
+      const presence = await readDneskaiAudioObjectPresence(db, owner, input.uploadId, input.contentType, signal);
+      check();
+      if (presence === 'absent') throw new DneskaiAudioError('audio-upload-missing');
+    }
+    throw new DneskaiAudioError('audio-library-unavailable');
+  }
   if (!downloaded.data.size || downloaded.data.size > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
   const bytes = Buffer.from(await awaitWithSignal(downloaded.data.arrayBuffer(), signal));
   check();

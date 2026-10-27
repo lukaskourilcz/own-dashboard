@@ -3357,10 +3357,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
-      "lines": 303,
+      "lines": 334,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "95c6adfc290c25d884c10a2d6318ecc4451ce550867c8bf01e7a31bc3d1927bf"
+      "status": "partial review; finding 325 positively confirms owned-object absence after download failure, retains uncertain objects and bounds proof reads; captured toggles verified; upload/renderer and final release pending",
+      "reviewedSha256": "30a0375b824a9466ebf1296613f5dde16aebbdc752f074fbeb677d4d798e2d46"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",
@@ -3625,8 +3625,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from all 139 canonical migrations; prepared rollout and final release pending",
-      "reviewedSha256": "2c78b3f8abfafb28595c1fbc41a27ebed205a2e0a83c9f534ef5d16368397413"
+      "status": "source reviewed; eight-table read port regenerated from all 140 canonical migrations; prepared rollout and final release pending",
+      "reviewedSha256": "dcbdb50040ea40ce1266f282958270fc4c8b7c2db8af6136c7cec62abbb3037a"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",

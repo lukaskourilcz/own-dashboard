@@ -8,6 +8,8 @@ vi.mock('server-only', () => ({}));
 const owner = '11111111-1111-4111-8111-111111111111', uploadId = '33333333-3333-4333-8333-333333333333';
 const name = `${owner}/${uploadId}.mp3`;
 const intent = () => DneskaiAudioCreateSchema.parse({ action: 'create', uploadId, contentType: 'audio/mpeg', title: 'Fixture track', artist: 'Fixture artist', source: 'original', licenceNote: 'Own fixture recording', sourceUrl: 'https://example.test/recording', mood: ['calm', 'calm'] });
+let downloadFailureStatus:number|null=null;
+let proofUnavailable=false;
 let loseInsertAck = false, insertRequests = 0, downloadRequests = 0;
 let abortAfterInsert: AbortController | null = null;
 let database: Awaited<ReturnType<typeof createMigratedDatabase>>, client: ReturnType<typeof createClient>;
@@ -15,7 +17,8 @@ beforeAll(async () => {
   database = await createMigratedDatabase({ owner, instant: '2026-10-24T19:00:00Z' });
   const origin = 'https://audio-confirmation.supabase.co', emulator = new SupabaseEmulator(database, origin, { service: 'TEST-ONLY-service-role', users: {} });
   client = createClient(origin, 'TEST-ONLY-service-role', { global: { fetch: async (url, init) => {
-    if (/^\/storage\/v1\/object\/(?:authenticated\/)?marketing-audio\//.test(new URL(String(url)).pathname) && (init?.method ?? 'GET') === 'GET') downloadRequests++;
+    if(proofUnavailable && new URL(String(url)).pathname==='/rest/v1/rpc/read_owned_dneskai_audio_object')return Response.json({message:'TEST_ONLY_PRIVATE_PROOF_DETAIL'},{status:503});
+    if (/^\/storage\/v1\/object\/(?:authenticated\/)?marketing-audio\//.test(new URL(String(url)).pathname) && (init?.method ?? 'GET') === 'GET') {downloadRequests++;if(downloadFailureStatus!==null)return Response.json({code:'InternalError',message:'TEST_ONLY_PRIVATE_STORAGE_DETAIL'},{status:downloadFailureStatus});}
     const response = await emulator.fetch(url, init);
     if (new URL(String(url)).pathname === '/rest/v1/marketing_audio_tracks' && init?.method === 'POST') { insertRequests++; abortAfterInsert?.abort('synthetic private reason'); if (loseInsertAck) return Response.json({ message: 'Synthetic lost acknowledgement' }, { status: 503 }); }
     return response;
@@ -23,7 +26,7 @@ beforeAll(async () => {
 }, 120_000);
 afterAll(async () => database?.close());
 beforeEach(async () => {
-  loseInsertAck = false; insertRequests = 0; downloadRequests = 0; abortAfterInsert = null;
+  proofUnavailable=false;downloadFailureStatus=null;loseInsertAck = false; insertRequests = 0; downloadRequests = 0; abortAfterInsert = null;
   await database.exec('drop trigger if exists audio_create_test on public.marketing_audio_tracks; delete from public.marketing_audio_tracks; delete from storage.objects;');
   const result = await client.storage.from('marketing-audio').upload(name, new Uint8Array([1, 2, 3]), { contentType: 'audio/mpeg', upsert: false }); expect(result.error).toBeNull();
 });
@@ -112,4 +115,14 @@ describe('audio creation preserves its uploaded object and confirms captured met
     expect(outcome).toBe('audio-upload-missing'); expect(await objectExists()).toBe(true);
   });
 
+});
+
+it.each([401,403,404,429,500,503])('does not label an existing upload missing after Storage HTTP %s',async status=>{downloadFailureStatus=status;await expect(createDneskaiAudioTrack(client,owner,intent(),{probe:async()=>60000})).rejects.toHaveProperty('code','audio-library-unavailable');expect(await objectExists()).toBe(true);expect(insertRequests).toBe(0);});
+
+it('reports missing only after the exact owned object is confirmed absent',async()=>{
+ await database.query('delete from storage.objects where bucket_id=$1 and name=$2',['marketing-audio',name]);const probe=vi.fn(async()=>60000);await expect(createDneskaiAudioTrack(client,owner,intent(),{probe})).rejects.toHaveProperty('code','audio-upload-missing');expect(probe).not.toHaveBeenCalled();expect(insertRequests).toBe(0);
+});
+
+it('keeps the uploaded object when presence cannot be confirmed',async()=>{
+ downloadFailureStatus=404;proofUnavailable=true;const probe=vi.fn(async()=>60000);await expect(createDneskaiAudioTrack(client,owner,intent(),{probe})).rejects.toMatchObject({code:'audio-library-unavailable',message:'audio-library-unavailable'});expect(probe).not.toHaveBeenCalled();expect(insertRequests).toBe(0);expect(await objectExists()).toBe(true);
 });
