@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { advanceDneskaiTikTokChart, dneskaiTikTokDailyCeiling, dneskaiTikTokInput, dneskaiTikTokSounds, DNESKAI_TIKTOK_ACTOR, DNESKAI_TIKTOK_PASS_MS, DNESKAI_TIKTOK_RESPONSE_BYTES } from '@/lib/marketing/dneskai-audio-tiktok';
 import type { MetaPublisherConfig } from '@/lib/marketing/publisher';
+import {tikTokAdmissionReceipt,tikTokBindingReceipt} from '../helpers/dneskai-tiktok-admission-fixtures';
 import {observationAccount} from '../helpers/dneskai-audio-observation-fixtures';
 const account=(remote='1')=>({...observationAccount,remote_account_id:remote});
 import { createClient } from '@supabase/supabase-js';
@@ -20,12 +21,13 @@ function rpcQuery<T>(work: Promise<T>) {
 }
 
 function harness(runs: Array<{ id: string; ref: string; reserved_at: string; settled: boolean }>, reserve: { admitted: boolean; id?: string } = { admitted: true, id: spendId }) {
+  let admittedAt=now.toISOString();
   const rpc = vi.fn(async (name: string, args: Record<string, unknown>):Promise<{data:unknown;error:{message:string}|null}> => {
     if (name === 'read_dneskai_tiktok_progress') return {data:{ownerId:owner,until:args.p_until,rows:runs.map(row=>({...row,cost_usd:row.settled?0.076:null,reserved_usd:0.1,processed:row.settled}))},error:null};
     if(name==='complete_dneskai_tiktok_run'){const matches=args.p_matches as Array<{audioId:string;title:string;artist:string|null}>;writes.push(...matches);return{data:{ownerId:owner,accountId:args.p_account,remoteAccountId:args.p_remote,verifiedAt:args.p_verified_at,spendId:args.p_spend,ref:args.p_ref,reservedAt:args.p_reserved_at,day:args.p_day,observedAt:args.p_observed_at,sourceDay:'2026-10-23',costUsd:0.076,completedAt:args.p_observed_at,rows:matches.map(item=>({audioId:item.audioId,outcome:'stored',sourceDay:'2026-10-23',observedAt:args.p_observed_at,accountId:args.p_account,remoteAccountId:args.p_remote,verifiedAt:args.p_verified_at,spendId:args.p_spend}))},error:null};}
-    if (name === 'marketing_reserve_dneskai_topic_spend') return { data: reserve, error: null };
+    if (name === 'reserve_dneskai_tiktok_run'){admittedAt=String(args.p_requested_at);return {data:tikTokAdmissionReceipt(args,reserve),error:null};}
     if (name === 'marketing_settle_dneskai_topic_spend') return { data: true, error: null };
-    if (name === 'marketing_dneskai_tiktok_bind') return { data: args.p_ref === 'tiktok:run_2:dataset_2', error: null };
+    if(name==='bind_dneskai_tiktok_run')return{data:tikTokBindingReceipt(args),error:null};
     throw new Error(name);
   });
   const writes: unknown[] = [];
@@ -35,7 +37,7 @@ function harness(runs: Array<{ id: string; ref: string; reserved_at: string; set
     calls.push(`${init.method ?? 'GET'} ${url.replace(/\?.*$/, '')}`);
     if (url.includes('/actor-runs/run_1')) return Response.json({ data: run() });
     if (url.includes('/datasets/dataset_1/items')) return Response.json([{ title: 'Ruka ruku myje', author: 'Interpret', rank: 1 }, { error: 'x' }, { title: 'Unknown song' }]);
-    if (url.includes('/acts/') && init.method === 'POST') { expect(JSON.parse(String(init.body))).toEqual(dneskaiTikTokInput()); return Response.json({ data: run({ id: 'run_2', defaultDatasetId: 'dataset_2', status: 'READY', startedAt:now.toISOString(), finishedAt: null, usageTotalUsd: null }) }); }
+    if (url.includes('/acts/') && init.method === 'POST') { expect(JSON.parse(String(init.body))).toEqual(dneskaiTikTokInput()); return Response.json({ data: run({ id: 'run_2', defaultDatasetId: 'dataset_2', status: 'READY', startedAt:admittedAt, finishedAt: null, usageTotalUsd: null }) }); }
     if (url.includes('/ig_audio')) {
       const query = new URL(url).searchParams.get('search_query') ?? '';
       return Response.json({ data: query.startsWith('Ruka') ? [{ audio_id: '777', title: 'Ruka ruku myje', display_artist: 'Interpret' }] : [] });
@@ -59,7 +61,7 @@ describe('the TikTok CZ chart (#167)', () => {
       .toEqual({ status: 'done', started: true, read: 2, matched: 1 });
     expect(h.writes).toEqual([expect.objectContaining({ audioId: '777', title: 'Ruka ruku myje' })]);
     expect(h.rpc).toHaveBeenCalledWith('complete_dneskai_tiktok_run',expect.objectContaining({p_owner:owner,p_spend:spendId,p_matches:[{audioId:'777',title:'Ruka ruku myje',artist:'Interpret'}]}));
-    expect(h.rpc).toHaveBeenCalledWith('marketing_reserve_dneskai_topic_spend', expect.objectContaining({ p_kind: 'tiktok', p_reservation: 0.1, p_ceiling: 0.1 }));
+    expect(h.rpc).toHaveBeenCalledWith('reserve_dneskai_tiktok_run', expect.objectContaining({ p_account:account().id,p_day:'2026-10-24',p_ceiling:0.1 }));
     expect(h.calls).toContain('POST https://api.apify.com/v2/acts/clockworks~tiktok-trends-scraper/runs');
   });
 
@@ -71,7 +73,7 @@ describe('the TikTok CZ chart (#167)', () => {
     }
     const unpaid = harness([]);
     expect(await advanceDneskaiTikTokChart(unpaid.db, owner, { account:account(), config: config(), igUserId: '1', today: '2026-10-24', env: { DNESKAI_TIKTOK_TRENDS_ENABLED: 'true' }, fetcher: unpaid.fetcher, signal: AbortSignal.timeout(5000), now })).toMatchObject({ code: 'tiktok-paid-disabled', started: false });
-    expect(unpaid.rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_reserve_dneskai_topic_spend');
+    expect(unpaid.rpc.mock.calls.map(([name]) => name)).not.toContain('reserve_dneskai_tiktok_run');
     const capped = harness([], { admitted: false });
     expect(await advanceDneskaiTikTokChart(capped.db, owner, { account:account(), config: config(), igUserId: '1', today: '2026-10-24', env: paid, fetcher: capped.fetcher, signal: AbortSignal.timeout(5000), now })).toMatchObject({ code: 'tiktok-budget-exhausted', started: false });
     expect(capped.fetcher).not.toHaveBeenCalled();
@@ -106,15 +108,15 @@ describe('captured TikTok day and cancellation boundaries', () => {
   });
   it('keeps an accepted reservation uncertain and starts no provider work after cancellation', async () => {
     const h = harness([]), abort = new AbortController(), original = h.rpc.getMockImplementation()!;
-    h.rpc.mockImplementation(async (name, args) => { const result = await original(name, args); if (name === 'marketing_reserve_dneskai_topic_spend') abort.abort(); return result; });
+    h.rpc.mockImplementation(async (name, args) => { const result = await original(name, args); if (name === 'reserve_dneskai_tiktok_run') abort.abort(); return result; });
     await expect(advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal }))).rejects.toThrow('tiktok-cancelled');
-    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['read_dneskai_tiktok_progress', 'marketing_reserve_dneskai_topic_spend']); expect(h.fetcher).not.toHaveBeenCalled();
+    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['read_dneskai_tiktok_progress', 'reserve_dneskai_tiktok_run']); expect(h.fetcher).not.toHaveBeenCalled();
   });
   it('does not bind or settle an ambiguously started provider call after cancellation', async () => {
     const h = harness([]), abort = new AbortController();
     const fetcher = vi.fn(async () => { abort.abort(); return Response.json({ data: run({ id: 'run_2', defaultDatasetId: 'dataset_2' }) }); }) as unknown as typeof fetch;
     await expect(advanceDneskaiTikTokChart(h.db, owner, options(h, { signal: abort.signal, fetcher }))).rejects.toThrow('tiktok-cancelled');
-    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['read_dneskai_tiktok_progress', 'marketing_reserve_dneskai_topic_spend']); expect(fetcher).toHaveBeenCalledOnce();
+    expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['read_dneskai_tiktok_progress', 'reserve_dneskai_tiktok_run']); expect(fetcher).toHaveBeenCalledOnce();
   });
   it('cannot turn a paid switch on by mutating the caller environment during a read', async () => {
     const h = harness([]), env = { ...paid, MARKETING_DNESKAI_PAID_ENABLED: 'false' };
@@ -143,7 +145,7 @@ describe('one bounded TikTok pass', () => {
   it.each(['runs', 'reserve', 'complete', 'bind'])('bounds an uncooperative %s RPC and ignores its late receipt', async phase => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const h = harness(phase === 'complete' ? [{ id: spendId, ref: 'tiktok:run_1:dataset_1', reserved_at: '2026-10-23T02:30:00Z', settled: false }] : []);
-    const original = h.rpc.getMockImplementation()!, blocked = { runs: 'read_dneskai_tiktok_progress', reserve: 'marketing_reserve_dneskai_topic_spend', complete: 'complete_dneskai_tiktok_run', bind: 'marketing_dneskai_tiktok_bind' }[phase]!;
+    const original = h.rpc.getMockImplementation()!, blocked = { runs: 'read_dneskai_tiktok_progress', reserve: 'reserve_dneskai_tiktok_run', complete: 'complete_dneskai_tiktok_run', bind: 'bind_dneskai_tiktok_run' }[phase]!;
     let finish!: (value: Awaited<ReturnType<typeof original>>) => void;
     h.rpc.mockImplementation((name, args) => name === blocked ? new Promise(resolve => { finish = resolve; }) : original(name, args));
     const result = advanceDneskaiTikTokChart(h.db, owner, options(h)).catch(error => error);
@@ -163,7 +165,7 @@ describe('one bounded TikTok pass', () => {
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
     await vi.advanceTimersByTimeAsync(DNESKAI_TIKTOK_PASS_MS + 1); expect(await result).toHaveProperty('message', 'tiktok-deadline');
     finish(new Response(new ReadableStream({ cancel }))); await vi.advanceTimersByTimeAsync(0);
-    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['read_dneskai_tiktok_progress', 'marketing_reserve_dneskai_topic_spend']);
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).toEqual(['read_dneskai_tiktok_progress', 'reserve_dneskai_tiktok_run']);
   });
   it('bounds a stalled provider body and releases its reader', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -179,7 +181,7 @@ describe('one bounded TikTok pass', () => {
     const response = new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(' '.repeat(DNESKAI_TIKTOK_RESPONSE_BYTES + 1))); }, cancel }));
     const fetcher = vi.fn(async () => response) as unknown as typeof fetch;
     expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher))).toMatchObject({ started: false, code: 'tiktok-response-unavailable' });
-    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_dneskai_tiktok_bind');
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).not.toContain('bind_dneskai_tiktok_run');
   });
   it('refuses an HTTP error without reading a stalled or private error body', async () => {
     const h = harness([]), cancel = vi.fn();
@@ -234,7 +236,7 @@ describe('conservative TikTok to Meta identity',()=>{
 });
 
 
-it.each([['multibyte overflow',new TextEncoder().encode('á'.repeat(DNESKAI_TIKTOK_RESPONSE_BYTES/2+1))],['invalid UTF8',new Uint8Array([0xff])]])('bounds actual bytes and decoding for %s',async(_label,bytes)=>{const h=harness([]),fetcher=vi.fn(async()=>new Response(bytes)) as unknown as typeof fetch;expect(await advanceDneskaiTikTokChart(h.db,owner,{account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher,signal:new AbortController().signal,now})).toMatchObject({started:false,code:'tiktok-response-unavailable'});expect(h.rpc.mock.calls.map(([name])=>name)).toEqual(['read_dneskai_tiktok_progress','marketing_reserve_dneskai_topic_spend']);});
+it.each([['multibyte overflow',new TextEncoder().encode('á'.repeat(DNESKAI_TIKTOK_RESPONSE_BYTES/2+1))],['invalid UTF8',new Uint8Array([0xff])]])('bounds actual bytes and decoding for %s',async(_label,bytes)=>{const h=harness([]),fetcher=vi.fn(async()=>new Response(bytes)) as unknown as typeof fetch;expect(await advanceDneskaiTikTokChart(h.db,owner,{account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher,signal:new AbortController().signal,now})).toMatchObject({started:false,code:'tiktok-response-unavailable'});expect(h.rpc.mock.calls.map(([name])=>name)).toEqual(['read_dneskai_tiktok_progress','reserve_dneskai_tiktok_run']);});
 
 it('does not claim matched or settle the run when its atomic completion is unconfirmed',async()=>{
  const h=harness([{id:spendId,ref:'tiktok:run_1:dataset_1',reserved_at:'2026-10-23T02:30:00Z',settled:false}]),original=h.rpc.getMockImplementation()!;
@@ -250,3 +252,6 @@ it.each([{id:'different'},{actId:'different'},{defaultDatasetId:'different'},{st
 it('keeps unmetered runs unresolved without searching, completing or starting new paid work',async()=>{const h=harness([{id:spendId,ref:'tiktok:run_1:dataset_1',reserved_at:'2026-10-23T02:30:00Z',settled:false}]),fetcher=vi.fn(async()=>Response.json({data:run({usageTotalUsd:null})})) as unknown as typeof fetch;await expect(advanceDneskaiTikTokChart(h.db,owner,{account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher,signal:new AbortController().signal,now})).rejects.toThrow('tiktok-cost-unavailable');expect(fetcher).toHaveBeenCalledOnce();expect(h.rpc.mock.calls.map(([name])=>name)).toEqual(['read_dneskai_tiktok_progress']);});
 it('settles an old chart without issuing new dataset or matching requests',async()=>{const h=harness([{id:spendId,ref:'tiktok:run_1:dataset_1',reserved_at:'2026-10-22T02:30:00Z',settled:false}]),base=h.fetcher;h.rpc.mockImplementationOnce(async(name,args)=>{void name;return{data:{ownerId:owner,until:args.p_until,rows:[{id:spendId,ref:'tiktok:run_1:dataset_1',reserved_at:'2026-10-22T02:30:00Z',settled:false,cost_usd:null,reserved_usd:0.1,processed:false}]},error:null};});const fetcher=vi.fn(async(url:RequestInfo|URL,init?:RequestInit)=>String(url).includes('/actor-runs/')?Response.json({data:run({startedAt:'2026-10-22T02:30:00Z',finishedAt:'2026-10-22T03:00:00Z'})}):base(url,init)) as typeof fetch;h.rpc.mockImplementationOnce(async()=>({data:{ownerId:owner,accountId:account().id,remoteAccountId:'1',verifiedAt:account().verified_at,spendId,ref:'tiktok:run_1:dataset_1',reservedAt:'2026-10-22T02:30:00Z',day:'2026-10-24',observedAt:now.toISOString(),sourceDay:'2026-10-22',costUsd:0.076,completedAt:now.toISOString(),rows:[]},error:null}));expect(await advanceDneskaiTikTokChart(h.db,owner,{account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:{DNESKAI_TIKTOK_TRENDS_ENABLED:'true',APIFY_TOKEN:'TEST-ONLY-read'},fetcher,signal:new AbortController().signal,now})).toMatchObject({matched:0,read:0,started:false});expect(fetcher).toHaveBeenCalledOnce();expect(h.writes).toHaveLength(0);});
 it('keeps the original parent cancellation identity when the caller replaces its options signal',async()=>{const h=harness([]),parent=new AbortController();let finish!:(value:{data:unknown;error:null})=>void;h.rpc.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));const options={account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher:h.fetcher,signal:parent.signal,now};const pending=advanceDneskaiTikTokChart(h.db,owner,options).catch(error=>error);await vi.waitFor(()=>expect(h.rpc).toHaveBeenCalledTimes(1));options.signal=new AbortController().signal;parent.abort('Synthetic private caller reason');expect(await pending).toHaveProperty('message','tiktok-cancelled');finish({data:{ownerId:owner,until:now.toISOString(),rows:[]},error:null});expect(h.fetcher).not.toHaveBeenCalled();});
+
+it('starts no paid provider work from a reservation receipt stamped for another owner',async()=>{const h=harness([]),original=h.rpc.getMockImplementation()!;h.rpc.mockImplementation((name,args)=>['reserve_dneskai_tiktok_run','reserve_dneskai_tiktok_run'].includes(name)?Promise.resolve({data:{...tikTokAdmissionReceipt(args),ownerId:'99999999-9999-4999-8999-999999999999'},error:null}):original(name,args));await expect(advanceDneskaiTikTokChart(h.db,owner,{account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher:h.fetcher,signal:new AbortController().signal,now})).rejects.toThrow('tiktok-admission-unavailable');expect(h.fetcher).not.toHaveBeenCalled();});
+it('does not report a durable provider start from an unscoped Boolean binding acknowledgement',async()=>{const h=harness([]),original=h.rpc.getMockImplementation()!;h.rpc.mockImplementation((name,args)=>['bind_dneskai_tiktok_run','bind_dneskai_tiktok_run'].includes(name)?Promise.resolve({data:true,error:null}):original(name,args));expect(await advanceDneskaiTikTokChart(h.db,owner,{account:account(),config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher:h.fetcher,signal:new AbortController().signal,now})).toMatchObject({started:false,code:'tiktok-bind-unavailable'});});

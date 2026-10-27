@@ -2,7 +2,8 @@ import 'server-only';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiApifyRunSchema, DneskaiProviderError, type DneskaiApifyRegistration } from './dneskai-providers';
-import { reserveDneskaiTopicSpend } from './dneskai-topic-spend';
+import {reserveDneskaiTikTokRun,bindDneskaiTikTokRun,DNESKAI_TIKTOK_ACTOR,DNESKAI_TIKTOK_RESULTS} from './dneskai-tiktok-admission';
+export {DNESKAI_TIKTOK_ACTOR,DNESKAI_TIKTOK_RESERVATION_USD,DNESKAI_TIKTOK_RESULTS,dneskaiTikTokInput} from './dneskai-tiktok-admission';
 import type { MetaPublisherConfig } from './publisher';
 import { pragueMarketingDate } from './weekly-planning';
 import { awaitWithSignal } from '@/lib/abortable';
@@ -15,7 +16,7 @@ import { boundedResponseText } from '@/lib/bounded-response';
  * The TikTok early signal (#167, plan C5): TikTok Creative Center's Czech sound chart through Apify's
  * `clockworks/tiktok-trends-scraper`, once a day under its own cost cap in the topic spend ledger
  * (`20261023130300`). A chart sound found in Meta's audio search for @dneskai (Facebook Login) marks its row in
- * `marketing_audio_trends` with `tiktok = true`; nothing else is stored. Off unless `DNESKAI_TIKTOK_TRENDS_ENABLED`.
+ * `marketing_audio_trends` with dated account-bound proof; legacy booleans do not establish current evidence. Off unless `DNESKAI_TIKTOK_TRENDS_ENABLED`.
  *
  * One daily tick reads the run the previous tick started and settles its cost, then reserves and starts today's,
  * so the signal is a day behind and the tick never waits for Apify.
@@ -23,10 +24,6 @@ import { boundedResponseText } from '@/lib/bounded-response';
 type Database = Pick<SupabaseClient, 'rpc'>;
 type Environment = Record<string, string | undefined>;
 
-export const DNESKAI_TIKTOK_ACTOR = { id: 'sDvA9jM4WRTDX4Syr', name: 'clockworks~tiktok-trends-scraper' } as const;
-/** 25 results estimate $0.0935 on Free / $0.076 on Starter (25 October); the charge cap stays $0.10. */
-export const DNESKAI_TIKTOK_RESERVATION_USD = 0.1;
-export const DNESKAI_TIKTOK_RESULTS = 25;
 export const DEFAULT_DNESKAI_TIKTOK_DAILY_USD = 0.1;
 export const DNESKAI_TIKTOK_PASS_MS = 12_000;
 export const DNESKAI_TIKTOK_RESPONSE_BYTES = 262_144;
@@ -66,10 +63,6 @@ function paidAllowed(env: Environment) {
   return dneskaiTikTokTrendsEnabled(env) && env.MARKETING_DNESKAI_APIFY_ENABLED === 'true' && env.MARKETING_DNESKAI_PAID_ENABLED === 'true' && env.MARKETING_AI_CONSENT === 'true' && !!env.APIFY_TOKEN;
 }
 
-/** The actor input: Czech songs on the surging leaderboard, no hashtags, creators or videos. */
-export function dneskaiTikTokInput() {
-  return { adsScrapeSounds: true, adsSoundsCountryCode: 'CZ', adsRankType: 'surging', adsScrapeHashtags: false, adsScrapeCreators: false, adsScrapeVideos: false, resultsPerPage: DNESKAI_TIKTOK_RESULTS };
-}
 
 const SoundSchema = z.object({ title: z.string().max(300).optional(), name: z.string().max(300).optional(), songName: z.string().max(300).optional(),
   author: z.string().max(300).optional(), artist: z.string().max(300).optional(), rank: z.number().optional(), error: z.unknown().optional() }).loose();
@@ -229,20 +222,20 @@ async function advanceTikTokPass(db: Database, owner: string, input: Parameters<
   if (rows.some((row) => pragueMarketingDate(new Date(row.reserved_at)) === today)) return outcome;
   if (!paidAllowed(env)) return { ...outcome, code: 'tiktok-paid-disabled' };
   active(signal);
-  const spendId = await reserveDneskaiTopicSpend(db, owner, 'tiktok', 'tiktok:pending', DNESKAI_TIKTOK_RESERVATION_USD, dneskaiTikTokDailyCeiling(env), signal);
+  const admission = await reserveDneskaiTikTokRun(db, owner, {account,now,ceilingUsd:dneskaiTikTokDailyCeiling(env),signal});
   active(signal);
-  if (!spendId) return { ...outcome, code: 'tiktok-budget-exhausted' };
-  const params = new URLSearchParams({ waitForFinish: '0', timeout: '300', restartOnError: 'false', maxItems: String(DNESKAI_TIKTOK_RESULTS), maxTotalChargeUsd: String(DNESKAI_TIKTOK_RESERVATION_USD) });
-  let run: DneskaiApifyRegistration;
-  try { run = DneskaiApifyRunSchema.parse((await apify(`acts/${DNESKAI_TIKTOK_ACTOR.name}/runs?${params}`, { method: 'POST', body: JSON.stringify(dneskaiTikTokInput()) }, env, fetcher, signal) as { data?: unknown })?.data); }
+  if (!admission) return { ...outcome, code: 'tiktok-budget-exhausted' };
+  const params = new URLSearchParams({ waitForFinish: '0', timeout: '300', restartOnError: 'false', maxItems: String(admission.input.resultsPerPage), maxTotalChargeUsd: String(admission.reservationUsd) });
+  let run: DneskaiApifyRegistration & {startedAt:string};
+  try { run = DneskaiApifyRunSchema.extend({startedAt:databaseTimestamp}).parse((await apify(`acts/${admission.actorName}/runs?${params}`, { method: 'POST', body: JSON.stringify(admission.input) }, env, fetcher, signal) as { data?: unknown })?.data); }
   catch (failure) {
     // Whether Apify started a run is unknown, so the reservation stays and counts in full.
     return { ...outcome, code: failure instanceof Error && /^tiktok-/.test(failure.message) ? failure.message : 'tiktok-invalid-response' };
   }
   if (run.actId !== DNESKAI_TIKTOK_ACTOR.id) return { ...outcome, code: 'tiktok-apify-binding-invalid' };
   active(signal);
-  const bound = await awaitWithSignal(db.rpc('marketing_dneskai_tiktok_bind', { p_owner: owner, p_id: spendId, p_ref: `tiktok:${run.id}:${run.defaultDatasetId}` }).retry(false).abortSignal(signal), signal);
+  try { await bindDneskaiTikTokRun(db, owner, {admission,provider:{id:run.id,actorId:DNESKAI_TIKTOK_ACTOR.id,datasetId:run.defaultDatasetId,startedAt:run.startedAt},now,signal}); }
+  catch { active(signal); return {...outcome,code:'tiktok-bind-unavailable'}; }
   active(signal);
-  if (bound.error || bound.data !== true) return { ...outcome, code: 'tiktok-budget-unavailable' };
   return { ...outcome, started: true };
 }

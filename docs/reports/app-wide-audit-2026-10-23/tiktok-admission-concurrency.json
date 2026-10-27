@@ -1,0 +1,19 @@
+{
+  "finding": 317,
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal native database with exact stock account/audio/topic-spend tables, exact topic-spent and migration-124 admission plus migrations 136–138; full 138-file chain verified separately in PGlite/actual SDK",
+  "oneConcurrentPragueDayAdmission": true,
+  "exactConcurrentBindingReplay": true,
+  "knownStartBoundAfterReverification": true,
+  "ambiguousCostStillReserved": true,
+  "admissionOutcomes": [
+    true,
+    false
+  ],
+  "state": {
+    "rows": 1,
+    "reserved": 0.1,
+    "bound": 1,
+    "settled": 0
+  }
+}

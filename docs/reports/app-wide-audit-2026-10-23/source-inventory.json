@@ -3343,10 +3343,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
-      "lines": 248,
+      "lines": 241,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
-      "reviewedSha256": "f28e990091f4e1f595c5050d7e0bacc50e628d8fefbf702c89dadb2c38c89987"
+      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "d2527d004bdf912453c4921ac7c40c9df5ec2200eedf49d8fc43e46dc29479a4"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
@@ -3625,8 +3625,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
-      "reviewedSha256": "26b251ee380a97d766e7746bf8f3b2d203eedfe448027e83b50a14f88f391e92"
+      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "5d4613d2f7c45ef788ed8151ae7499c68935476c4ead4d1df213ff69f48b8df4"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4996,6 +4996,20 @@
       "lines": 186,
       "reviewedSha256": "a062b995023362351c16009b5b112de9c64e3dceeb48e291a915caf66e9f010b",
       "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-tiktok-admission.ts",
+      "sha256": null,
+      "lines": 90,
+      "reviewedSha256": "a7c0759af59216559382d82b3ba68c254a099e93d256463df6071d2c25342885",
+      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
+    },
+    {
+      "path": "supabase/migrations/20261027061021_captured_dneskai_tiktok_admission.sql",
+      "sha256": null,
+      "lines": 111,
+      "reviewedSha256": "77eb14ae6e77ec6008c9aefdfca0b9c9fdc243e2153f6cb7d56b6b3080e4e233",
+      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
     }
   ],
   "baselineFileCount": 561
