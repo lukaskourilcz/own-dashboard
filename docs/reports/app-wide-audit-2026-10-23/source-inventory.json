@@ -346,10 +346,10 @@
     },
     {
       "path": "src/app/api/marketing/accounts/webhook/route.ts",
-      "lines": 51,
+      "lines": 63,
       "sha256": "6816912a12bb1075fb3903eb94a515f4180f7e8f587a463551f56e1fb2cf7ffa",
-      "status": "partial; owner/brand/account gate inspected; bounded setup/body/auth and cancellation through Graph remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
-      "reviewedSha256": "ab301b85e6960274249af78a7419ed009b5b56d1250b3b805dd79e01b9695d78"
+      "status": "partial; findings 342/344/351 verified owner/auth/rate/body admission, strict exact owned-account read and original 30-second scope through subscription/Page/provider response; complete subscription identity/pagination and credential-rotation semantics, SDK JSON and final app-wide release remain",
+      "reviewedSha256": "d826467a3d1ea122c0eea8f024545a64a0777aeee8fc514bf7b14fc613cddf27"
     },
     {
       "path": "src/app/api/marketing/automation/route.ts",
@@ -3483,10 +3483,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-engagement-ports.ts",
-      "lines": 194,
+      "lines": 207,
       "sha256": "d4c5209978442f7c4e32112927199908e4aa00be7bfd279405af7733f774277e",
-      "status": "partial; complete source inspection; complete target reads, exact current account/claim/finish/check receipts and bounded Graph body/deadline remain under review; no real reply/subscription sent",
-      "reviewedSha256": "d4c5209978442f7c4e32112927199908e4aa00be7bfd279405af7733f774277e"
+      "status": "partial; finding 351 captures subscription selectors and bounds credential/Page/Graph consumer lifetimes and JSON without retry; watcher target completeness, claim/finalization receipts, provider identity/pagination and private/public send result contracts remain; final app-wide release pending",
+      "reviewedSha256": "b7d9f5a00368d9c3547c672fbb82cbb1b5477b85adb7c2c182d5f2327e0e7462"
     },
     {
       "path": "src/lib/marketing/dneskai-engagement-watch.ts",
@@ -4092,10 +4092,17 @@
     },
     {
       "path": "src/lib/marketing/meta-facebook-page.ts",
-      "lines": 55,
+      "lines": 56,
       "sha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291",
-      "status": "partial source review: bearer-only credentials and IG/Page binding retained; unbounded response body, missing explicit page-list completeness and fallback error semantics need verification",
-      "reviewedSha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291"
+      "status": "partial; finding 351 captures original config and bounds Page requests/complete JSON, late-body disposal and total lifetime; complete Page pagination, duplicate/link identity and fallback error classification remain; final app-wide release pending",
+      "reviewedSha256": "16b834e4f982698639080f26f76be359b9a818100114aded3cb7fae277814d5a"
+    },
+    {
+      "path": "src/lib/marketing/meta-graph-response.ts",
+      "sha256": null,
+      "lines": 45,
+      "status": "source reviewed; finding 351 no-retry original-scope bounded complete Graph JSON, late response disposal and fixed local diagnostics targeted; final app-wide release pending",
+      "reviewedSha256": "46f6e2adc6ef12b8c02972274f236d4108fd2ae5ce16be7ef42761cca9dfd1da"
     },
     {
       "path": "src/lib/marketing/offline-import-client.ts",

@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
 import type { MetaPublisherConfig } from './publisher';
 
 /**
@@ -20,20 +21,20 @@ const PageSchema = z.object({ id: numericId, access_token: tokenValue.optional()
 
 export async function resolveFacebookPage(config: Pick<MetaPublisherConfig, 'apiVersion' | 'accessToken' | 'loginMode'>, igUserId: string,
   options: { fetcher?: typeof fetch; signal?: AbortSignal } = {}): Promise<FacebookPage> {
+  config = { apiVersion: config.apiVersion, accessToken: config.accessToken, loginMode: config.loginMode };
   if (config.loginMode !== 'facebook') throw new FacebookPageError('login-mode-mismatch');
   if (!/^v\d+\.\d+$/.test(config.apiVersion)) throw new FacebookPageError('api-version-unverified');
   if (!numericId.safeParse(igUserId).success || !config.accessToken) throw new FacebookPageError('account-unavailable');
+  const signal = AbortSignal.any([AbortSignal.timeout(20_000), ...(options.signal ? [options.signal] : [])]);
   const get = async (path: string, fields: string) => {
     const url = new URL(`https://graph.facebook.com/${config.apiVersion}/${path}`);
     url.searchParams.set('fields', fields);
-    const timeout = AbortSignal.timeout(10_000);
-    let response: Response;
-    try { response = await (options.fetcher ?? fetch)(url.href, { method: 'GET', redirect: 'error', cache: 'no-store', headers: { Authorization: `Bearer ${config.accessToken}` },
-      signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout }); }
-    catch { throw new FacebookPageError('meta-request-uncertain', true); }
-    let body: unknown = null;
-    try { body = await response.json(); } catch { body = null; }
-    return { ok: response.ok, status: response.status, body };
+    try {
+      const reply = await metaGraphResponse(url.href, { method: 'GET', headers: { Authorization: `Bearer ${config.accessToken}` } }, signal, options.fetcher, 131_072);
+      return { ok: reply.status === 200, ...reply };
+    } catch (error) {
+      throw new FacebookPageError(error instanceof MetaGraphRequestError && error.code === 'meta-invalid-response' ? 'meta-invalid-response' : 'meta-request-uncertain', true);
+    }
   };
   const listed = await get('me/accounts', 'id,access_token,instagram_business_account{id}');
   if (listed.ok) {
