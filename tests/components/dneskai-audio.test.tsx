@@ -112,7 +112,7 @@ describe('Lab format switch (#165)', () => {
 describe('trending sounds in the picker and in Hudba (#167)', () => {
   const trend = { audioId: '587784541076604', title: 'Trend Song', artist: 'Trend Artist', type: 'music' as const, durationMs: 30_000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false, attachable: true };
   it('lists trending sounds above the library and says Instagram adds the chosen one', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [track({ id: '11111111-1111-4111-8111-111111111111', title: 'One' })], trends: [trend] })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [track({ id: '11111111-1111-4111-8111-111111111111', title: 'One' })], trendsStatus: 'ready', trends: [trend] })));
     render(<DneskaiAudioPicker value="ig:587784541076604" onChange={() => {}} preview={false} lang="cs" />); await settle();
     const groups = [...container.querySelectorAll('optgroup')].map((group) => group.getAttribute('label'));
     expect(groups).toEqual([dneskaiAudio.cs.trends.title, dneskaiAudio.cs.title]);
@@ -120,7 +120,7 @@ describe('trending sounds in the picker and in Hudba (#167)', () => {
     expect(container.textContent).toContain(dneskaiAudio.cs.trends.attached);
   });
   it.each(['en', 'cs'] as const)('shows the trending list in Hudba with type and days (%s)', async (lang) => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trends: [trend] })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trendsStatus: 'ready', trends: [trend] })));
     render(<DneskaiAudioLibrary lang={lang} />); await settle();
     const t = dneskaiAudio[lang].trends;
     const list = container.querySelector('[data-testid="dneskai-audio-trends"]')!;
@@ -132,7 +132,7 @@ describe('trending sounds in the picker and in Hudba (#167)', () => {
 describe('niche sounds (#167)', () => {
   it('shows niche-only sounds in Hudba as hints and keeps them out of the picker', async () => {
     const hint = { audioId: '9', title: 'Niche Song', artist: null, type: 'music' as const, durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: 2, tiktok: true, attachable: false };
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trends: [hint] })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trendsStatus: 'ready', trends: [hint] })));
     render(<DneskaiAudioLibrary lang="en" />); await settle();
     const t = dneskaiAudio.en.trends;
     expect(container.querySelector('[data-testid="dneskai-audio-trends"]')?.textContent).toContain(`${t.type.music} · ${t.niche(2)} · ${t.tiktok} · ${t.hintOnly}`);

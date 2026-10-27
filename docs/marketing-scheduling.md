@@ -374,3 +374,10 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 A real pg_cron run, a real pg_net request and the Vault read are verified only in Supabase.
 
 Read-only reconciliation requires the complete normalized submitted caption, matching account/media kind and time, and no advertised continuation of the media page. A shared caption prefix or a short page with `paging.next` stays unresolved; recovery never retries publication.
+
+
+### Music read recovery — audit branch, 27 October 2026
+
+The first library page reports `trendsStatus` as `ready`, `unavailable` or `disabled`. A ready response includes its complete validated bounded recommendations; a confirmed empty list has its own quiet display. Optional project/niche/trend work shares a separate six-second lifetime inside the existing eighteen-second GET budget and uses a transport that ends with that lifetime. Failure retains confirmed uploaded tracks and returns unavailable, while actual caller cancellation remains terminal. Later/selected-track pages perform no optional trend work. Owner, Prague observation day and source-mode flags are captured before the library wait.
+
+Music and the post picker show the same explicit retry, retain the saved sound value and do not offer unconfirmed recommendations. The desktop message/action row fits its contents; mobile uses one full-width action. The manual post hint shares the existing paged-library cache, reads only while due, memoizes its derived choice and keeps copy feedback bound to the clicked name/latest attempt. The existing seven-day hint policy, ten-second preview startup/disposal, approval hashes and publication authority remain unchanged. All changes here are locally verified code, not a live account or automatic-publication receipt.

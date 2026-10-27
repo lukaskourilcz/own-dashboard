@@ -58,15 +58,31 @@ export async function GET(request?: Request) {
     signal.throwIfAborted();
     const db = createAdminClient(signal);
     if (selected) return Response.json({ tracks: await awaitWithSignal(listDneskaiAudioTracks(db, user, selected, signal), signal), nextOffset: null }, { headers });
+    const first = Number(offset) === 0;
+    const trendsEnabled = dneskaiAudioTrendsEnabled();
+    const sourceFlags = {DNESKAI_SOURCES_TABLE_ENABLED: process.env.DNESKAI_SOURCES_TABLE_ENABLED};
+    const observedAt = new Date();
     const page = await awaitWithSignal(listDneskaiAudioPage(db, user, Number(offset), signal), signal);
-    // #167: today's trending sounds, only while their switch is on.
-    // #167: Meta's list joined with the niche ranking of the tracked education profiles (both $0, read from storage).
-    const trends = Number(offset) === 0 && dneskaiAudioTrendsEnabled() ? await awaitWithSignal((async () => {
-      const niche = await resolveDneskaiProjectId(db, user).then((project) => loadDneskaiNicheSounds(db, user, project, new Date())).catch(() => []);
-      signal.throwIfAborted();
-      return listDneskaiAudioTrends(db, user, pragueMarketingDate(new Date()), niche, signal).catch(() => []);
-    })(), signal) : undefined;
-    return Response.json({ ...page, ...(trends ? { trends } : {}) }, { headers });
+    if (!first) return Response.json(page, {headers});
+    if (!trendsEnabled) return Response.json({...page, trends: [], trendsStatus: 'disabled'}, {headers});
+    // Optional suggestions must not replace a confirmed uploaded library with
+    // an outage or look like an empty successful read. One short lifetime also
+    // retires the separate database transport when this optional phase ends.
+    const optional = AbortSignal.any([signal, AbortSignal.timeout(6_000)]);
+    try {
+      optional.throwIfAborted();
+      const trendDb = createAdminClient(optional);
+      const project = await awaitWithSignal(resolveDneskaiProjectId(trendDb, user), optional);
+      optional.throwIfAborted();
+      const niche = await awaitWithSignal(loadDneskaiNicheSounds(trendDb, user, project, observedAt, sourceFlags, optional), optional);
+      optional.throwIfAborted();
+      const trends = await awaitWithSignal(listDneskaiAudioTrends(trendDb, user, pragueMarketingDate(observedAt), niche, optional), optional);
+      optional.throwIfAborted();
+      return Response.json({...page, trends, trendsStatus: 'ready'}, {headers});
+    } catch {
+      if (request?.signal.aborted) throw new Error('audio-library-unavailable');
+      return Response.json({...page, trends: [], trendsStatus: 'unavailable'}, {headers});
+    }
   }
   catch (failure) { return failed(failure); }
 }

@@ -8,6 +8,7 @@ import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
 import { dneskaiAudioClock, type DneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-contracts';
 import { useDneskaiAudioLibrary, loadDneskaiAudioOptions } from '@/lib/marketing/dneskai-audio-client';
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from '../audio-preview';
+import { DneskaiAudioTrendsNotice } from '../audio-trends-notice';
 
 type Props = { value: string | null; onChange: (trackId: string | null) => void; preview: boolean; disabled?: boolean; lang: 'en' | 'cs' };
 
@@ -26,7 +27,7 @@ export function DneskaiAudioPicker({ value, onChange, preview, disabled = false,
   const player = useDneskaiAudioPreview();
   if (!query.data) return null;
   // Only sounds in Meta's list can be attached; niche-only sounds show in Zdroje → Hudba as hints (#167).
-  const trends = query.data.trends.filter((trend) => trend.attachable);
+  const trends = query.data.trendsStatus === 'ready' ? query.data.trends.filter((trend) => trend.attachable) : [];
   const tracks = [...query.data.tracks, ...(missing ? selected.data?.tracks ?? [] : [])].filter((track) => track.source !== 'instagram-library' && (track.enabled || track.id === value));
   const chosen: DneskaiAudioTrack | null = tracks.find((track) => track.id === value) ?? null;
   const describe = (track: DneskaiAudioTrack) => `${track.title} · ${track.artist} · ${dneskaiAudioClock(track.durationMs)}`;
@@ -43,6 +44,7 @@ export function DneskaiAudioPicker({ value, onChange, preview, disabled = false,
       </select>
       {chosen && <DneskaiAudioPlayButton track={chosen} playing={player.playing === chosen.id} pending={player.starting === chosen.id} failed={player.error === chosen.id} disabled={query.isRefetching || selected.isFetching} onToggle={player.toggle} lang={lang} />}
     </div>
+    <DneskaiAudioTrendsNotice status={query.data.trendsStatus} lang={lang} pending={disabled || query.isFetching} onRetry={() => void query.refetch()} />
     {query.isRefetching && <p role="status" className="text-xs text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-xs text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching || selected.isFetching} onClick={() => { player.stop(); void query.refetch(); if (missing) void selected.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={disabled || query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}

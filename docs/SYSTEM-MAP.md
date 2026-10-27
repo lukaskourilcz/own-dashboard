@@ -1,6 +1,6 @@
 # OwnDashboard system map
 
-This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 25 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 35 prepared migrations still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
+This map describes the app, its code and outside systems. Integration states are the last verified 23 October 2026 receipts in [the handoff](astra-handoff.md), not fresh live checks. Main is `d6f60c7` at the 27 October fetch; Quorum studio provenance remains `893a495`. The app-wide implementation is in [draft PR #226](https://github.com/lukaskourilcz/own-dashboard/pull/226), with 49 prepared migrations (87–135) still required before merge. Details and exact validation limits are in [the review](reports/app-wide-audit-2026-10-23/review.md).
 
 ## 1. What OwnDashboard is
 
@@ -179,7 +179,9 @@ The DNESKAi workspace has four tabs and a `⋯` menu (#169; the project header i
   expiry, the comment-reply switch and the webhook subscription), Obnova témat (last night's collection, held topics and
   the recovery actions) and Klávesové zkratky, then the general project sections.
 
-### Reels and music (prepared, off)
+### Reels and music
+
+The [first native Reel](reports/dneskai-first-reel-2026-10-23.md) was published on 23 October with a library track. That receipt does not verify OwnDashboard’s automatic renderer/scheduler/publisher path. Its library/storage schema is applied; optional Meta trends still require Facebook Login.
 
 `renderDneskaiReel` (`dneskai-reel-render.ts`, #163) turns a post's rendered slides into a 1080 × 1920 MP4 with
 `ffmpeg-static`: 3.5 s per slide, 0.5 s crossfades, a gentle zoom, AAC audio or a silent track. The route
@@ -191,7 +193,7 @@ one); the publishing step renders its MP4 up to 45 minutes before the slot and p
 with slide 1 as the cover. Under Facebook Login a Reel may instead carry a trending sound from Meta's Audio API:
 the MP4 is then silent and the publisher sends `audio_configuration` (`DNESKAI_AUDIO_TRENDS_ENABLED`, #167). Zdroje →
 Hudba → Trendy zvuky ranks those sounds by how often the tracked education profiles used them in their reels this
-week, and marks the ones also rising on TikTok CZ. Details: `docs/dneskai-source-media.md`,
+week, and marks the ones also rising on TikTok CZ. The audit branch's music response distinguishes confirmed recommendations, unavailability and a disabled feature. A short optional lifetime preserves the confirmed uploaded library during a suggestion outage; explicit retry retains a saved sound choice. Niche counts are distinct Reels, not profile counts. Manual post hints reuse the shared query only inside their seven-day due window. Captured track writes, complete page reconciliation and Meta/TikTok ingestion remain separate review work. Details: `docs/dneskai-source-media.md`,
 `docs/marketing-scheduling.md#reels-165`.
 
 ### Publishing
@@ -240,18 +242,18 @@ Costs show in "Chyby a náklady" in the `⋯` menu.
 | `marketing_dneskai_runs`, `_stages`, `_candidates`, `_source_states` | Nightly collection runs, paid stages with reservations, collected stories, feed cursors |
 | `marketing_media_assets`, `_asset_links`, `_collections` | Source pictures (sha256, credit, pHash), per-story links and collection state |
 | `marketing_dneskai_briefs` | One brief per selected event and slot, its status and job |
-| `marketing_dneskai_daily_mix` | The owner's news and education posts a day and active times (prepared, `20261023100300`, behind `DNESKAI_DAILY_MIX_ENABLED`) |
-| `marketing_dneskai_sources` | The sources Zdroje edits: Instagram handles and websites with kind, topic, tier, weekdays, item cap and switch; seeded once from the registry file (prepared, `20261023110000`, behind `DNESKAI_SOURCES_TABLE_ENABLED`) |
-| `marketing_dneskai_topics` | Topics (náměty): working titles the owner approves before anything is paid for, with kind, source, keyword, verdict, evidence and status (prepared, `20261023100000`, behind `DNESKAI_TOPICS_ENABLED`) |
+| `marketing_dneskai_daily_mix` | The owner's news and education posts a day and active times (schema applied 23 October, `20261023100300`, behind `DNESKAI_DAILY_MIX_ENABLED`) |
+| `marketing_dneskai_sources` | The sources Zdroje edits: Instagram handles and websites with kind, topic, tier, weekdays, item cap and switch; seeded once from the registry file (schema applied 23 October, `20261023110000`, behind `DNESKAI_SOURCES_TABLE_ENABLED`) |
+| `marketing_dneskai_topics` | Topics (náměty): working titles the owner approves before anything is paid for, with kind, source, keyword, verdict, evidence and status (schema applied 23 October, `20261023100000`, behind `DNESKAI_TOPICS_ENABLED`) |
 | `marketing_campaigns`, `marketing_calendar_entries` | Daily campaign and slot entries a job is bound to |
 | `marketing_jobs` | Generation jobs: request, fence, lease, result (deck, revision, usage) |
 | `marketing_revisions` | Every version of a post: content, `content_hash`, render report, status, `approved_hash` |
-| `marketing_audio_trends` | Trending sounds from Meta's Audio API per day, with the niche count and the TikTok mark (prepared, `20261023130200`, #167; Facebook Login only) |
-| `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (prepared, `20261023130100`, #164) |
+| `marketing_audio_trends` | Trending sounds from Meta's Audio API per day, with the niche count and the TikTok mark (schema applied 23 October, `20261023130200`, #167; Facebook Login only) |
+| `marketing_audio_tracks` | Reel music library: title, artist, source, licence note, source page, file in `marketing-audio`, duration, mood, enabled (schema applied 23 October, `20261023130100`, #164) |
 | `marketing_publications` | Approved posts queued, claimed, published or in reconciliation, with receipts |
-| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (prepared, `20261023120000`) |
-| `marketing_instagram_comment_replies`, `marketing_instagram_comment_checks` | One private reply per keyword comment (comment id, media, keyword, status; no commenter data) and the watcher's cursor and counts per post (prepared, `20261023120000`, #160) |
-| `marketing_private.dneskai_topic_spend` | Paid topic work: transcripts, topic model calls and TikTok chart runs, each reserved before it starts (prepared, `20261023100100`, `20261023130300`) |
+| `marketing_accounts`, `marketing_account_tokens` | `@dneskai` and its Instagram token (service-role only); the account's comment-reply switch and block (schema applied 23 October, `20261023120000`) |
+| `marketing_instagram_comment_replies`, `marketing_instagram_comment_checks` | One private reply per keyword comment (comment id, media, keyword, status; no commenter data) and the watcher's cursor and counts per post (schema applied 23 October, `20261023120000`, #160) |
+| `marketing_private.dneskai_topic_spend` | Paid topic work: transcripts, topic model calls and TikTok chart runs, each reserved before it starts (schema applied 23 October, `20261023100100`, `20261023130300`) |
 | `marketing_private.dneskai_apify_research`, `marketing_dneskai_research_metrics` | The research plan's ledger and its derived public metrics (prepared, `20261022013957`) |
 | `marketing_events` | Publication and revision events, including one `dneskai-reel-rendered` row per stored Reel |
 | `marketing_ticks`, `marketing_scheduler_state` | Scheduler record and leases |
@@ -264,7 +266,7 @@ Storage buckets, all private: `marketing-assets` (rendered slide JPEGs), `market
 
 The 23 prepared migrations `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation. The routine feature switches and editor activation are deployed; see NEEDED.md and the Astra handoff for the recorded state. Do not repeat the completed migration push.
 
-The audit implementation and subsequent app-wide review add **thirteen prepared, unapplied migrations**: `20261023135551_dneskai_engagement_receipts.sql` for complete owner/RLS-scoped receipts, `20261023164118_app_wide_rls_initplans.sql` for statement-level identity checks, `20261023170010_project_parent_rls_lookup.sql` for non-recursive parent checks, `20261023175801_daily_focus_garden_summary.sql` for complete execution history, `20261023183345_career_owner_day.sql` for Career dates, `20261023190841_invoice_document_transaction.sql` for atomic invoice saves, and `20261023200938_atomic_knowledge_documents.sql` for atomic prompt/resource saves, repeat-safe curated imports and complete bounded collections, and `20261023210737_library_category_merge.sql` for atomic category merges, and `20261023212535_atomic_payment_matching.sql` for complete matching snapshots, atomic settlements and service-only owner discovery, and `20261023221856_transaction_rule_context.sql` for complete financial rule/parent-id context under invoker ownership, and `20261023222504_confirmed_transaction_import.sql` for confirmed CSV/bank batches under the existing partial unique index, and `20261023233432_atomic_bank_credentials.sql` for service-only atomic Fio credential/connection storage and removal, and `20261024001739_invoice_payment_state.sql` for atomic manual payment state and match-metadata cleanup. All new functions use invoker rights and explicit grants. Apply in filename order before merging the audit branch. No Production settings or data were changed by these local code/UX tests. Current validation and rollout status: [app-wide review](reports/app-wide-audit-2026-10-23/review.md).
+The app-wide review has **49 prepared, unapplied audit migrations (87–135)**. The [README migration list](../README.md) and [migration guide](migration-guide.md#applying-the-prepared-migrations) are authoritative for the exact files, privileges, rollback and rollout order; the latest is `20261027030141_complete_dneskai_niche_audio_read.sql`. These local preparations do not establish Production rollout. Apply the complete filename-ordered chain before merging the implementation branch. Current validation and limits remain in [the app-wide review](reports/app-wide-audit-2026-10-23/review.md).
 
 Remaining activation dependencies are distinct:
 

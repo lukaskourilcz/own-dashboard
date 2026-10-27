@@ -129,7 +129,7 @@ describe("audio route", () => {
     vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
     const { db, files } = storage(null);
     mocks.admin.mockReturnValue(db);
-    expect(await (await GET()).json()).toEqual({ tracks: [], nextOffset: null });
+    expect(await (await GET()).json()).toEqual({ tracks: [], nextOffset: null, trends: [], trendsStatus: "disabled" });
     const prepared = await (await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 1024 }))).json();
     expect(prepared).toMatchObject({ token: "upload-token" });
     expect(prepared.path).toMatch(new RegExp(`^${owner}/[0-9a-f-]{36}\\.mp3$`));

@@ -388,10 +388,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
-      "lines": 82,
+      "lines": 118,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "source reviewed; findings 159/160 bound owner/audio phases and finding 260 carries cancellation through validated recommendations; captured mutation and explicit trend-outage presentation remain open",
-      "reviewedSha256": "6acd88b37099fe1be448affef71e8f5fd56426888969e69eeb4b7756fc479288"
+      "status": "partial; finding 313 captures optional owner/day/source flags and separates ready/unavailable/disabled reads under a six-second transport while preserving confirmed tracks; captured mutation/session contracts and final release pending",
+      "reviewedSha256": "af8c329442e69d4dac802dc9e760a69d19510a07353c89b9d44b802d46467688"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -1036,10 +1036,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-audio-library.tsx",
-      "lines": 149,
+      "lines": 151,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "partial; preview disposal/recovery and native EN/CS browser checks pass in finding 163; page reconciliation, selection errors, toggle/upload, trend and remaining interaction review pending",
-      "reviewedSha256": "6f4adce57840b22c2385fcd520865ce5b19f07b9f93f103c25fb20f026257aed"
+      "status": "partial; finding 313 adds fitted optional-read recovery with retained tracks and explicit empty/disabled states; native EN/CS six-width/axe/preview checks pass; cached refresh, page reconciliation, persistence and density remain open",
+      "reviewedSha256": "d4ed599681dd5037212c4850ebbc4ecbef6021c32f6b6ae92ee4309dfb349437"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -1082,6 +1082,13 @@
       "sha256": "0fb560ea14c83df14e07a4df4983d7ce8bf65dca74c2594e761d8bcba5870d96",
       "status": "source reviewed; findings 163/289 verify cancellation, native playback/disposal, unchanged ten-second startup and controlled six-second EN/CS recovery; broader Music management and final release pending",
       "reviewedSha256": "408f12269652ccaec819dc8b109f791be1a639dfa3b3960f27d883e7f578327e"
+    },
+    {
+      "path": "src/components/marketing/dneskai/audio-trends-notice.tsx",
+      "sha256": null,
+      "lines": 22,
+      "reviewedSha256": "a5cdb23aaef10640c7428ff68915a4a1374f06462983446e6c16229079f50728",
+      "status": "source reviewed; finding 313 shares fitted desktop/full-width mobile optional-read recovery in library/picker; EN/CS keyboard, geometry, six-width and axe checks pass; final release pending"
     },
     {
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
@@ -1127,10 +1134,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
-      "lines": 52,
+      "lines": 54,
       "sha256": "bc010e40745ae936c191f2ff1528f43634ad6a71be0aba39eeb88d3ac3e50653",
-      "status": "partial; preview disposal/recovery and native EN/CS browser checks pass in finding 163; page reconciliation, selection errors, toggle/upload, trend and remaining interaction review pending",
-      "reviewedSha256": "f9b689ab0207006d4040e26ad26d48741a2aa3e997c5d8b31720454ac7c6eb26"
+      "status": "partial; finding 313 retains the exact saved sound through optional failure, refuses unconfirmed suggestions and provides explicit retry; selected-read/cached-refresh/page reconciliation and final release pending",
+      "reviewedSha256": "c8be78f6bbdae0608010f582e44eb1d93a10c52c0c2f840669eef8846499e1de"
     },
     {
       "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
@@ -1203,10 +1210,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/music-hint.tsx",
-      "lines": 56,
+      "lines": 68,
       "sha256": "a0c6f1429d9d57e16987273216f053bf6b8513e6f21d9b950fc7d196c1c65a1d",
-      "status": "partial; full source inspected; separate first-page query runs before the due check, repeated ranking and clipboard lifecycle need repair; preserve saved choice",
-      "reviewedSha256": "a0c6f1429d9d57e16987273216f053bf6b8513e6f21d9b950fc7d196c1c65a1d"
+      "status": "source reviewed; finding 313 shares due-only library reads, memoizes the derived choice and binds copy feedback to original name/latest attempt/lifetime; mounted tests pass; shared page-reconciliation and final release remain separate",
+      "reviewedSha256": "0a0c1a6feb2772af4a27af49327687602ac11ca481be011da4e90e04d7ea7029"
     },
     {
       "path": "src/components/marketing/dneskai/overflow-menu.tsx",
@@ -2775,10 +2782,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
-      "lines": 156,
+      "lines": 162,
       "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
-      "status": "partial; preview disposal/recovery and native EN/CS browser checks pass in finding 163; page reconciliation, selection errors, toggle/upload, trend and remaining interaction review pending",
-      "reviewedSha256": "a28fbfed05ebb5e6554b6a3afa7530fced8c69a80efc8cdb56ca44e29d78a152"
+      "status": "source reviewed; finding 313 supplies EN/CS ready/unavailable/disabled recovery and correct distinct-Reel copy; native and mounted checks pass; remaining Music density/interaction changes and release separate",
+      "reviewedSha256": "03749c4c4c912b3f8fb53089b558241562e5bf36fc7a39f5a67fa3269a81eeae"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",
@@ -3315,17 +3322,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-client.ts",
-      "lines": 133,
+      "lines": 134,
       "sha256": "64ecb5d35f16a6099ec814f15024050a876a00a8f60073af1de94b36b4fc5fc2",
-      "status": "partial; bounded/cancellable known-code requests, prepared/created intent correlation, page shape and selected identity checks pass (156); server toggle receipts, infinite-page merge and stable upload retry lifecycle remain pending",
-      "reviewedSha256": "84d49fd332110b69a56e47cd2d41e1cd758d094d164f7cf887b3a451b59cd66e"
+      "status": "partial; finding 313 validates optional availability and memoizes the shared enabled-aware page snapshot; bounded reads and existing captured upload intent checks retained; server toggle receipts, page reconciliation and stable upload retry/lifetime remain open",
+      "reviewedSha256": "c6a4d7507843120d63c41f2e25233e8eab8087026df54a9a4a793ba73e6898b3"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
-      "lines": 118,
+      "lines": 120,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "source reviewed; strict browser audio DTOs share the 50-recommendation bound and unchanged ten-second startup contract; final release pending",
-      "reviewedSha256": "cd660243fe10eb2b2b8034e3bd86282d4d934eb53f8d4b89ed102438470a355d"
+      "status": "source reviewed; finding 313 adds positive independent suggestion status/metadata consistency while retaining legacy unconfirmed responses, fifty recommendations and unchanged preview contract; audio checks pass; final release pending",
+      "reviewedSha256": "e6f2714f59bcef099b13d8b6c227b26843d8bad405556e86b0abf86c00de127d"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",

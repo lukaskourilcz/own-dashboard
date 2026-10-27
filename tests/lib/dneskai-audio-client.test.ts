@@ -107,3 +107,8 @@ describe('captured and bounded audio upload', () => {
     expect(await outcome(uploadDneskaiAudioTrack(file(), fields()))).toMatchObject({ code: 'decision-failed', message: 'decision-failed' });
   });
 });
+
+describe('independent optional trend availability',()=>{
+ it.each(['ready','unavailable','disabled'] as const)('retains owned library data and the explicit %s state',async trendsStatus=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({tracks:[track()],trends:[],trendsStatus,nextOffset:null})));expect(await loadDneskaiAudioOptions(false)).toMatchObject({tracks:[track()],trends:[],trendsStatus});});
+ it.each([{trendsStatus:'ready'},{trendsStatus:'unknown',trends:[]},{trendsStatus:'unavailable',trends:[{audioId:'9',title:'Synthetic',artist:null,type:'music',durationMs:null,coverUrl:null,daysSeen:1,nicheCount:0,tiktok:false,attachable:true}]}])('refuses contradictory or unverified optional metadata %j',async optional=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({tracks:[track()],...optional})));await expect(loadDneskaiAudioOptions(false)).rejects.toHaveProperty('code','decision-failed');});
+});

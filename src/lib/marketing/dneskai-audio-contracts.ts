@@ -60,7 +60,9 @@ export const DneskaiAudioTrendSchema = z.strictObject({
 export type DneskaiAudioTrend = z.infer<typeof DneskaiAudioTrendSchema>;
 /** `trends` only while `DNESKAI_AUDIO_TRENDS_ENABLED` is on. */
 export const DNESKAI_AUDIO_TRENDS_MAX = 50;
-export const DneskaiAudioLibrarySchema = z.strictObject({ tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(DNESKAI_AUDIO_TRENDS_MAX).optional(), nextOffset: z.number().int().min(0).max(1_000_000).nullable().optional() });
+export const DneskaiAudioTrendsStatusSchema = z.enum(['ready', 'unavailable', 'disabled']);
+export type DneskaiAudioTrendsStatus = z.infer<typeof DneskaiAudioTrendsStatusSchema>;
+export const DneskaiAudioLibrarySchema = z.strictObject({ trendsStatus: DneskaiAudioTrendsStatusSchema.optional(), tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(DNESKAI_AUDIO_TRENDS_MAX).optional(), nextOffset: z.number().int().min(0).max(1_000_000).nullable().optional() }).refine(value => value.trendsStatus === 'ready' ? value.trends !== undefined : !value.trendsStatus || !value.trends?.length);
 export type DneskaiAudioLibrary = z.infer<typeof DneskaiAudioLibrarySchema>;
 
 export const DneskaiAudioPrepareSchema = z.strictObject({

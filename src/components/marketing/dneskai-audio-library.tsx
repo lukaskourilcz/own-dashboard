@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { qk } from '@/lib/queries/keys';
 import { dneskaiAudio } from '@/lib/i18n/sections/dneskai-audio';
-import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack, type DneskaiAudioTrend } from '@/lib/marketing/dneskai-audio-contracts';
+import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioTrendsStatus } from '@/lib/marketing/dneskai-audio-contracts';
 import Image from 'next/image';
 import { DneskaiAudioRequestError, dneskaiAudioFileProblem, useDneskaiAudioLibrary, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from './dneskai/audio-preview';
+import { DneskaiAudioTrendsNotice } from './dneskai/audio-trends-notice';
 
 type Lang = 'en' | 'cs';
 type Props = { lang: Lang; preview?: boolean; showDisabled?: boolean };
@@ -30,7 +31,7 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
       : query.isError && !query.data ? <div role="alert"><p className="text-sm text-risk">{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t.retry}</Button></div>
-        : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} /><TrendList trends={query.data?.trends ?? []} lang={lang} /></>}
+        : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} /><TrendList trends={query.data?.trends ?? []} status={query.data?.trendsStatus} lang={lang} pending={query.isFetching} onRetry={() => void query.refetch()} /></>}
     {query.isRefetching && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-sm text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => { player.stop(); void query.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
@@ -129,13 +130,14 @@ function UploadForm({ lang, embedded = false }: { lang: Lang; embedded?: boolean
   </form>;
 }
 
-/** Trendy zvuky (#167): today's trending sounds from Meta's Audio API. Instagram attaches them; nothing is downloaded. */
-function TrendList({ trends, lang }: { trends: DneskaiAudioTrend[]; lang: Lang }) {
+/** Confirmed Meta recommendations and niche hints; nothing is downloaded. */
+function TrendList({ trends, status, lang, pending, onRetry }: { trends: DneskaiAudioTrend[]; status: DneskaiAudioTrendsStatus | undefined; lang: Lang; pending: boolean; onRetry: () => void }) {
   const t = dneskaiAudio[lang].trends;
-  if (!trends.length) return null;
+  if (status === 'disabled') return null;
   return <section aria-labelledby="dneskai-audio-trends-title" className="min-w-0 space-y-2" data-testid="dneskai-audio-trends">
     <h3 id="dneskai-audio-trends-title" className="text-sm font-medium">{t.title}</h3>
-    <p className="text-xs text-foreground-muted">{t.intro}</p>
+    <DneskaiAudioTrendsNotice status={status} empty={!trends.length} lang={lang} pending={pending} onRetry={onRetry} />
+    {status === 'ready' && trends.length > 0 && <><p className="text-xs text-foreground-muted">{t.intro}</p>
     <ul className="divide-y divide-border border-y border-border">
       {trends.map((trend) => <li key={trend.audioId} className="flex min-w-0 items-center gap-3 py-2">
         {trend.coverUrl ? <Image unoptimized src={trend.coverUrl} alt="" width={44} height={44} className="size-11 shrink-0 rounded object-cover" /> : <span aria-hidden className="size-11 shrink-0 rounded bg-surface-muted" />}
@@ -144,6 +146,6 @@ function TrendList({ trends, lang }: { trends: DneskaiAudioTrend[]; lang: Lang }
           <p className="text-xs text-foreground-muted">{[t.type[trend.type], trend.daysSeen ? t.days(trend.daysSeen) : null, trend.nicheCount ? t.niche(trend.nicheCount) : null, trend.tiktok ? t.tiktok : null, trend.attachable ? null : t.hintOnly].filter(Boolean).join(' · ')}</p>
         </div>
       </li>)}
-    </ul>
+    </ul></>}
   </section>;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { qk } from '@/lib/queries/keys';
 import { z } from 'zod';
@@ -8,7 +9,7 @@ import { awaitWithSignal } from '@/lib/abortable';
 import { readTextPrefix } from '@/lib/bounded-text';
 import {
   DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema,
-  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType,
+  type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus,
 } from './dneskai-audio-contracts';
 
 /** Only known codes leave the request boundary; upstream text never enters a dictionary. */
@@ -57,8 +58,8 @@ export async function loadDneskaiAudioLibrary(preview: boolean, signal?: AbortSi
 }
 
 /** The library and, while their switch is on, today's trending sounds (#167). Null while Reels are off. */
-export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSignal, offset = 0, trackId?: string): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[]; nextOffset?: number | null } | null> {
-  if (preview) return { tracks: DEMO_DNESKAI_AUDIO_TRACKS, trends: [] };
+export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSignal, offset = 0, trackId?: string): Promise<{ tracks: DneskaiAudioTrack[]; trends: DneskaiAudioTrend[]; trendsStatus?: DneskaiAudioTrendsStatus; nextOffset?: number | null } | null> {
+  if (preview) return { tracks: DEMO_DNESKAI_AUDIO_TRACKS, trends: [], trendsStatus: 'disabled' };
   const signal = budget(20_000, parent);
   try {
     z.number().int().min(0).max(1_000_000).parse(offset);
@@ -73,7 +74,7 @@ export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSi
     if (new Set(parsed.tracks.map(track => track.id)).size !== parsed.tracks.length || new Set(parsed.trends?.map(trend => trend.audioId) ?? []).size !== (parsed.trends?.length ?? 0)
       || (trackId && (parsed.tracks.length > 1 || parsed.tracks.some(track => track.id !== trackId) || parsed.nextOffset != null))
       || (parsed.nextOffset != null && (!parsed.tracks.length || parsed.nextOffset !== offset + parsed.tracks.length))) throw new Error('invalid-page');
-    return { tracks: parsed.tracks, trends: parsed.trends ?? [], nextOffset: parsed.nextOffset ?? null };
+    return { tracks: parsed.tracks, trends: parsed.trends ?? [], ...(parsed.trendsStatus ? {trendsStatus: parsed.trendsStatus} : {}), nextOffset: parsed.nextOffset ?? null };
   } catch (error) { failed(error, parent); }
 }
 
@@ -121,13 +122,13 @@ export async function uploadDneskaiAudioTrack(file: File, fields: DneskaiAudioUp
 
 
 /** Shared first-page read for the format switch, picker and library; later pages are explicit owner actions. */
-export function useDneskaiAudioLibrary(preview: boolean) {
-  const query = useInfiniteQuery({ queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0, retry: false, staleTime: 30000,
+export function useDneskaiAudioLibrary(preview: boolean, enabled = true) {
+  const query = useInfiniteQuery({ queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0, retry: false, staleTime: 30000, enabled,
     queryFn: ({ signal, pageParam }) => loadDneskaiAudioOptions(preview, signal, pageParam),
     getNextPageParam: (last) => last?.nextOffset ?? undefined });
   const pages = query.data?.pages;
-  const data = !pages ? undefined : pages[0] === null ? null : {
-    tracks: pages.flatMap(page => page?.tracks ?? []), trends: pages[0]?.trends ?? [],
-  };
+  const data = useMemo(() => !pages ? undefined : pages[0] === null ? null : {
+    tracks: pages.flatMap(page => page?.tracks ?? []), trends: pages[0]?.trends ?? [], trendsStatus: pages[0]?.trendsStatus,
+  }, [pages]);
   return { ...query, data };
 }
