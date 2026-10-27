@@ -6,7 +6,7 @@ import { reserveDneskaiTopicSpend, settleDneskaiTopicSpend } from './dneskai-top
 import type { MetaPublisherConfig } from './publisher';
 import { pragueMarketingDate } from './weekly-planning';
 import { awaitWithSignal } from '@/lib/abortable';
-import { readTextPrefix } from '@/lib/bounded-text';
+import { boundedResponseText } from '@/lib/bounded-response';
 
 /**
  * The TikTok early signal (#167, plan C5): TikTok Creative Center's Czech sound chart through Apify's
@@ -27,20 +27,25 @@ export const DNESKAI_TIKTOK_RESERVATION_USD = 0.1;
 export const DNESKAI_TIKTOK_RESULTS = 25;
 export const DEFAULT_DNESKAI_TIKTOK_DAILY_USD = 0.1;
 export const DNESKAI_TIKTOK_PASS_MS = 12_000;
-export const DNESKAI_TIKTOK_RESPONSE_CHARACTERS = 262_144;
+export const DNESKAI_TIKTOK_RESPONSE_BYTES = 262_144;
 
 async function boundedResponse(response: Response, signal: AbortSignal): Promise<unknown> {
-  const body = await awaitWithSignal(readTextPrefix(response, DNESKAI_TIKTOK_RESPONSE_CHARACTERS, signal), signal);
-  if (body.truncated) throw new DneskaiProviderError('tiktok-response-too-large');
-  try { return JSON.parse(body.text); } catch { throw new DneskaiProviderError('tiktok-invalid-response'); }
+  try { return JSON.parse(await boundedResponseText(response, DNESKAI_TIKTOK_RESPONSE_BYTES, signal)); }
+  catch { active(signal); throw new DneskaiProviderError('tiktok-response-unavailable'); }
 }
+const discard = (response: Response | undefined) => {
+  if (response?.body && !response.body.locked) void response.body.cancel().catch(() => undefined);
+};
 async function providerResponse(fetcher: typeof fetch, url: string, init: RequestInit, signal: AbortSignal): Promise<Response> {
   active(signal);
-  // A non-cooperative fetch may resolve after our caller has already stopped waiting.
-  return awaitWithSignal(fetcher(url, { ...init, signal }).then(response => {
-    if (signal.aborted) void response.body?.cancel().catch(() => undefined);
-    return response;
-  }), signal);
+  let received: Response | undefined;
+  try {
+    return await awaitWithSignal(fetcher(url, { ...init, signal }).then(response => {
+      received = response;
+      if (signal.aborted) discard(response);
+      return response;
+    }), signal);
+  } catch (error) { discard(received); throw error; }
 }
 
 export function dneskaiTikTokTrendsEnabled(env: Environment = process.env): boolean {
@@ -69,13 +74,19 @@ const SoundSchema = z.object({ title: z.string().max(300).optional(), name: z.st
 export type DneskaiTikTokSound = { title: string; artist: string | null; rank: number | null };
 /** The chart's sounds by title (and artist, when the item has one); error items and untitled items are dropped. */
 export function dneskaiTikTokSounds(items: readonly unknown[]): DneskaiTikTokSound[] {
-  return items.flatMap((raw) => {
+  const sounds = items.flatMap((raw) => {
     const item = SoundSchema.safeParse(raw);
     if (!item.success || item.data.error) return [];
     const title = (item.data.title ?? item.data.songName ?? item.data.name ?? '').trim();
     if (!title) return [];
     return [{ title: title.slice(0, 300), artist: (item.data.author ?? item.data.artist ?? '').trim().slice(0, 300) || null, rank: item.data.rank ?? null }];
-  }).slice(0, DNESKAI_TIKTOK_RESULTS);
+  });
+  const unique = new Map<string, DneskaiTikTokSound>();
+  for (const sound of sounds) {
+    const key = JSON.stringify([audioIdentity(sound.title), audioIdentity(sound.artist ?? '')]);
+    if (!unique.has(key)) unique.set(key, sound);
+  }
+  return [...unique.values()].slice(0, DNESKAI_TIKTOK_RESULTS);
 }
 
 async function apify(path: string, init: RequestInit, env: Environment, fetcher: typeof fetch, signal: AbortSignal): Promise<unknown> {
@@ -84,7 +95,7 @@ async function apify(path: string, init: RequestInit, env: Environment, fetcher:
   try { response = await providerResponse(fetcher, `https://api.apify.com/v2/${path}`, { ...init, headers: { Authorization: `Bearer ${env.APIFY_TOKEN}`, 'Content-Type': 'application/json' }, redirect: 'error', cache: 'no-store' }, signal); }
   catch { active(signal); throw new DneskaiProviderError('tiktok-request-failed'); }
   if (signal.aborted || !response.ok) {
-    void response.body?.cancel().catch(() => undefined);
+    discard(response);
     active(signal);
     throw new DneskaiProviderError(`tiktok-http-${response.status}`);
   }
@@ -97,7 +108,34 @@ function active(signal: AbortSignal) {
   if (signal.aborted) throw new DneskaiProviderError('tiktok-cancelled');
 }
 
-/** Searches Meta's audio for a chart title; the best hit's id, or null. Facebook Login only. */
+const audioIdentity = (value: string) => value.normalize('NFKC').trim().replace(/\s+/gu, ' ').toLowerCase();
+const searchSchema = z.object({
+  data: z.array(z.object({
+    audio_id: z.union([z.string().regex(/^\d{1,40}$/), z.number().int().positive().max(Number.MAX_SAFE_INTEGER)]).transform(String),
+    title: z.string().max(300).trim().min(1), display_artist: z.string().max(300).nullish(),
+  })).max(50),
+  paging: z.object({next: z.string().max(16_384).nullish()}).optional(), error: z.unknown().optional(),
+});
+/** Unique exact title/artist in one bounded returned set. A continued set cannot prove uniqueness. */
+function matchedAudio(sound: DneskaiTikTokSound, body: unknown): { audioId: string; title: string; artist: string | null } | null {
+  const parsed = searchSchema.safeParse(body);
+  if (!parsed.success || parsed.data.error !== undefined) throw new DneskaiProviderError('tiktok-audio-unavailable');
+  if (parsed.data.paging?.next != null) return null;
+  const byId = new Map<string, {audioId: string; title: string; artist: string | null}>();
+  const conflicting = new Set<string>();
+  for (const item of parsed.data.data) {
+    const value = {audioId: item.audio_id, title: item.title, artist: item.display_artist?.trim() || null};
+    const previous = byId.get(value.audioId);
+    if (previous && (previous.title !== value.title || previous.artist !== value.artist)) conflicting.add(value.audioId);
+    else byId.set(value.audioId, value);
+  }
+  if (conflicting.size) return null;
+  const matching = [...byId.values()].filter(item => audioIdentity(item.title) === audioIdentity(sound.title) &&
+    (!sound.artist || (item.artist !== null && audioIdentity(item.artist) === audioIdentity(sound.artist))));
+  return matching.length === 1 ? matching[0] : null;
+}
+
+/** Facebook Login only; unavailable search retains the run for reconciliation instead of confirming no match. */
 async function instagramAudioFor(sound: DneskaiTikTokSound, config: MetaPublisherConfig, igUserId: string, fetcher: typeof fetch, signal: AbortSignal): Promise<{ audioId: string; title: string; artist: string | null } | null> {
   active(signal);
   const url = new URL(`https://graph.facebook.com/${config.apiVersion}/ig_audio`);
@@ -105,17 +143,13 @@ async function instagramAudioFor(sound: DneskaiTikTokSound, config: MetaPublishe
   url.searchParams.set('search_query', [sound.title, sound.artist].filter(Boolean).join(' ').slice(0, 200));
   let response: Response;
   try { response = await providerResponse(fetcher, url.href, { method: 'GET', redirect: 'error', cache: 'no-store', headers: { Authorization: `Bearer ${config.accessToken}` } }, signal); }
-  catch { active(signal); return null; }
+  catch { active(signal); throw new DneskaiProviderError('tiktok-audio-unavailable'); }
   if (signal.aborted || !response.ok) {
-    void response.body?.cancel().catch(() => undefined);
-    active(signal);
-    return null;
+    discard(response); active(signal); throw new DneskaiProviderError('tiktok-audio-unavailable');
   }
-  const body = z.object({ data: z.array(z.object({ audio_id: z.union([z.string(), z.number()]).transform(String), title: z.string().max(300), display_artist: z.string().max(300).nullish() }).loose()).max(50) })
-    .safeParse(await boundedResponse(response, signal));
+  const body = await boundedResponse(response, signal);
   active(signal);
-  const hit = body.success ? body.data.data.find((item) => /^\d{1,40}$/.test(item.audio_id) && item.title.trim().toLowerCase() === sound.title.toLowerCase()) : undefined;
-  return hit ? { audioId: hit.audio_id, title: hit.title.trim(), artist: hit.display_artist?.trim() || null } : null;
+  return matchedAudio(sound, body);
 }
 
 export type DneskaiTikTokOutcome = { status: 'done' | 'skipped'; code?: string; started: boolean; read: number; matched: number };

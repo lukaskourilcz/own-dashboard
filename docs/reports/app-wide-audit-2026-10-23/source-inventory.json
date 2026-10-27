@@ -3343,10 +3343,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
-      "lines": 142,
+      "lines": 242,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; findings 256\u2013260 bound TikTok admission/lifetime and finding 263 uses covered provider errors with EN/CS guidance; exact persistence/matching/progress remain open",
-      "reviewedSha256": "5eb7f37855978c784ff7487451fc4c3fb7948b8c797e827d45e13f0203206c14"
+      "status": "source reviewed; finding 315 conservative title/artist/duplicate/continuation matching, deduplicated chart searches and strict byte/UTF-8 transport pass 121 focused checks; dated persistence, run-progress receipts and final release pending",
+      "reviewedSha256": "1b3354858d14335533f8daf40186147b4b10bf52ecc01964666419e9d9064c80"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",

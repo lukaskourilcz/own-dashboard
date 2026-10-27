@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { advanceDneskaiTikTokChart, dneskaiTikTokDailyCeiling, dneskaiTikTokInput, dneskaiTikTokSounds, DNESKAI_TIKTOK_ACTOR, DNESKAI_TIKTOK_PASS_MS, DNESKAI_TIKTOK_RESPONSE_CHARACTERS } from '@/lib/marketing/dneskai-audio-tiktok';
+import { advanceDneskaiTikTokChart, dneskaiTikTokDailyCeiling, dneskaiTikTokInput, dneskaiTikTokSounds, DNESKAI_TIKTOK_ACTOR, DNESKAI_TIKTOK_PASS_MS, DNESKAI_TIKTOK_RESPONSE_BYTES } from '@/lib/marketing/dneskai-audio-tiktok';
 import type { MetaPublisherConfig } from '@/lib/marketing/publisher';
 import { createClient } from '@supabase/supabase-js';
 
@@ -173,9 +173,9 @@ describe('one bounded TikTok pass', () => {
   });
   it('refuses a truncated structured response and releases the rest without a retry', async () => {
     const h = harness([]), cancel = vi.fn();
-    const response = new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(' '.repeat(DNESKAI_TIKTOK_RESPONSE_CHARACTERS + 1))); }, cancel }));
+    const response = new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(' '.repeat(DNESKAI_TIKTOK_RESPONSE_BYTES + 1))); }, cancel }));
     const fetcher = vi.fn(async () => response) as unknown as typeof fetch;
-    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher))).toMatchObject({ started: false, code: 'tiktok-response-too-large' });
+    expect(await advanceDneskaiTikTokChart(h.db, owner, options(h, fetcher))).toMatchObject({ started: false, code: 'tiktok-response-unavailable' });
     expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(h.rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_dneskai_tiktok_bind');
   });
   it('refuses an HTTP error without reading a stalled or private error body', async () => {
@@ -199,3 +199,36 @@ describe('one bounded TikTok pass', () => {
     if (kind === 'stalled') { finish(Response.json([])); await vi.advanceTimersByTimeAsync(0); expect(requests).toHaveLength(1); expect(h.fetcher).not.toHaveBeenCalled(); }
   });
 });
+
+describe('conservative TikTok to Meta identity',()=>{
+ const sourceRun={id:spendId,ref:'tiktok:run_1:dataset_1',reserved_at:'2026-10-23T02:30:00Z',settled:false};
+ const options=(fetcher:typeof fetch)=>({config:config(),igUserId:'1',today:'2026-10-24',env:{DNESKAI_TIKTOK_TRENDS_ENABLED:'true',APIFY_TOKEN:'TEST-ONLY-chart-read'},fetcher,signal:new AbortController().signal,now});
+ function search(body:unknown,chartArtist:string|null='Interpret'){
+  const h=harness([sourceRun]),base=h.fetcher;
+  const fetcher=vi.fn(async(url:RequestInfo|URL,init?:RequestInit)=>{
+   if(String(url).includes('/datasets/'))return Response.json([{title:'Ruka ruku myje',...(chartArtist?{artist:chartArtist}:{})}]);
+   if(String(url).includes('/ig_audio'))return Response.json(body);
+   return base(url,init);
+  }) as typeof fetch;
+  return{h,fetcher};
+ }
+ it('uses the explicit artist instead of the first same-title recording',async()=>{const f=search({data:[{audio_id:'1',title:'Ruka ruku myje',display_artist:'Different artist'},{audio_id:'2',title:'Ruka ruku myje',display_artist:'Interpret'}]});await advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher));expect(f.h.writes).toEqual([expect.objectContaining({audio_id:'2'})]);});
+ it.each([
+  ['two recordings',{data:[{audio_id:'1',title:'Ruka ruku myje',display_artist:'Interpret'},{audio_id:'2',title:'Ruka ruku myje',display_artist:'Interpret'}]}],
+  ['conflicting duplicate id',{data:[{audio_id:'1',title:'Ruka ruku myje',display_artist:'Interpret'},{audio_id:'1',title:'Ruka ruku myje',display_artist:'Different artist'}]}],
+  ['continued search',{data:[{audio_id:'1',title:'Ruka ruku myje',display_artist:'Interpret'}],paging:{next:'https://graph.facebook.com/synthetic-next'}}],
+  ['missing artist',{data:[{audio_id:'1',title:'Ruka ruku myje'}]}],
+  ['different diacritics',{data:[{audio_id:'1',title:'Růka ruku myje',display_artist:'Interpret'}]}],
+  ['different recording title',{data:[{audio_id:'1',title:'Ruka ruku myje (Remix)',display_artist:'Interpret'}]}],
+ ] as const)('leaves %s unmatched rather than selecting an arbitrary recording',async(_label,body)=>{const f=search(body);expect(await advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher))).toMatchObject({matched:0});expect(f.h.writes).toHaveLength(0);});
+ it('accepts identical duplicate evidence and normalizes only equivalent spacing/case',async()=>{const value={audio_id:'2',title:' RUKA  RUKU MYJE ',display_artist:' INTERPRET '};const f=search({data:[value,value]});expect(await advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher))).toMatchObject({matched:1});expect(f.h.writes).toHaveLength(1);});
+ it('accepts one title-only result when the chart artist is unknown',async()=>{const f=search({data:[{audio_id:'2',title:'Ruka ruku myje',display_artist:'Interpret'}]},null);expect(await advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher))).toMatchObject({matched:1});});
+ it.each([{data:[{audio_id:Number.MAX_SAFE_INTEGER+1,title:'Ruka ruku myje',display_artist:'Interpret'}]},{data:null},{data:[{audio_id:'1',title:'Ruka ruku myje',display_artist:'Interpret'}],error:{message:'Synthetic private Graph error'}},{data:Array.from({length:51},(_,index)=>({audio_id:String(index+1),title:'Ruka ruku myje',display_artist:'Interpret'}))}])('retains unavailable search for reconciliation rather than settling as an empty match: %j',async body=>{const f=search(body);await expect(advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher))).rejects.toThrow(/^tiktok-audio-unavailable$/);expect(f.h.writes).toHaveLength(0);expect(f.h.rpc.mock.calls.map(([name])=>name)).toEqual(['marketing_dneskai_tiktok_runs']);});
+ it('retains a failed metadata request and discards its body without settling or starting a new paid run',async()=>{const h=harness([sourceRun]),cancel=vi.fn(),base=h.fetcher;const fetcher=vi.fn(async(url:RequestInfo|URL,init?:RequestInit)=>String(url).includes('/ig_audio')?new Response(new ReadableStream({cancel}),{status:503}):base(url,init)) as typeof fetch;await expect(advanceDneskaiTikTokChart(h.db,owner,{...options(fetcher),env:paid})).rejects.toThrow('tiktok-audio-unavailable');expect(cancel).toHaveBeenCalledOnce();expect(h.writes).toHaveLength(0);expect(h.rpc.mock.calls.map(([name])=>name)).toEqual(['marketing_dneskai_tiktok_runs']);});
+ it('refuses conflicting duplicate evidence in either order without hiding another possible recording',async()=>{for(const data of [[{audio_id:'1',title:'Ruka ruku myje',display_artist:'Different'},{audio_id:'1',title:'Ruka ruku myje',display_artist:'Interpret'},{audio_id:'2',title:'Ruka ruku myje',display_artist:'Interpret'}],[{audio_id:'2',title:'Ruka ruku myje',display_artist:'Interpret'},{audio_id:'1',title:'Ruka ruku myje',display_artist:'Interpret'},{audio_id:'1',title:'Ruka ruku myje',display_artist:'Different'}]]){const f=search({data});expect(await advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher))).toMatchObject({matched:0});expect(f.h.writes).toHaveLength(0);}});
+ it('deduplicates equivalent chart identities before Meta searches',async()=>{const h=harness([sourceRun]),base=h.fetcher,fetcher=vi.fn(async(url:RequestInfo|URL,init?:RequestInit)=>String(url).includes('/datasets/')?Response.json([{title:'Ruka ruku myje',artist:'Interpret'},{title:' RUKA  RUKU MYJE ',artist:'INTERPRET'}]):base(url,init)) as typeof fetch;expect(await advanceDneskaiTikTokChart(h.db,owner,options(fetcher))).toMatchObject({read:1,matched:1});expect(h.calls.filter(call=>call.includes('/ig_audio'))).toHaveLength(1);expect(h.writes).toHaveLength(1);});
+ it('refuses two title-only recordings when the chart artist is unknown',async()=>{const f=search({data:[{audio_id:'1',title:'Ruka ruku myje',display_artist:'One'},{audio_id:'2',title:'Ruka ruku myje',display_artist:'Two'}]},null);expect(await advanceDneskaiTikTokChart(f.h.db,owner,options(f.fetcher))).toMatchObject({matched:0});expect(f.h.writes).toHaveLength(0);});
+});
+
+
+it.each([['multibyte overflow',new TextEncoder().encode('á'.repeat(DNESKAI_TIKTOK_RESPONSE_BYTES/2+1))],['invalid UTF8',new Uint8Array([0xff])]])('bounds actual bytes and decoding for %s',async(_label,bytes)=>{const h=harness([]),fetcher=vi.fn(async()=>new Response(bytes)) as unknown as typeof fetch;expect(await advanceDneskaiTikTokChart(h.db,owner,{config:config(),igUserId:'1',today:'2026-10-24',env:paid,fetcher,signal:new AbortController().signal,now})).toMatchObject({started:false,code:'tiktok-response-unavailable'});expect(h.rpc.mock.calls.map(([name])=>name)).toEqual(['marketing_dneskai_tiktok_runs','marketing_reserve_dneskai_topic_spend']);});
