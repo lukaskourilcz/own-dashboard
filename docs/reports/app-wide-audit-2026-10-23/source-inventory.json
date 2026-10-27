@@ -1136,8 +1136,8 @@
       "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
       "lines": 54,
       "sha256": "bc010e40745ae936c191f2ff1528f43634ad6a71be0aba39eeb88d3ac3e50653",
-      "status": "partial; finding 313 retains the exact saved sound through optional failure, refuses unconfirmed suggestions and provides explicit retry; selected-read/cached-refresh/page reconciliation and final release pending",
-      "reviewedSha256": "c8be78f6bbdae0608010f582e44eb1d93a10c52c0c2f840669eef8846499e1de"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "58ef51fb53fb8ed8324f2c223088a2c467659327c5587437e2ea96a8bd4a1a4d"
     },
     {
       "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
@@ -3331,8 +3331,8 @@
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",
       "lines": 120,
       "sha256": "b6c81422215220476bb17c67ff0b9c471e813a7e9734ab6b5d026d85df4b78a3",
-      "status": "source reviewed; finding 313 adds positive independent suggestion status/metadata consistency while retaining legacy unconfirmed responses, fifty recommendations and unchanged preview contract; audio checks pass; final release pending",
-      "reviewedSha256": "e6f2714f59bcef099b13d8b6c227b26843d8bad405556e86b0abf86c00de127d"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "5e13c8ce4b578c516ff389e648955a7c1fa83ffb4b7bfb038c930fb2c8de30bf"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-niche.ts",
@@ -3343,17 +3343,17 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
-      "lines": 242,
+      "lines": 248,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; finding 315 conservative title/artist/duplicate/continuation matching, deduplicated chart searches and strict byte/UTF-8 transport pass 121 focused checks; dated persistence, run-progress receipts and final release pending",
-      "reviewedSha256": "1b3354858d14335533f8daf40186147b4b10bf52ecc01964666419e9d9064c80"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "f28e990091f4e1f595c5050d7e0bacc50e628d8fefbf702c89dadb2c38c89987"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
-      "lines": 197,
+      "lines": 202,
       "sha256": "9b935d2e36d4e6eaa35d47c7250a2c8bcd85b1ae76dd41434a2d902c8cef00a6",
-      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending",
-      "reviewedSha256": "0c5dd9ad4ccfe83a6168dd3986118fb13f9d6abedf0d8750c84e6d18477012bb"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "db608460dfc69b319e8785e9ec6558229a33aa115aaaf9b27ad4108e8fcf529a"
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
@@ -3625,8 +3625,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending",
-      "reviewedSha256": "378388964a65d21ad2399db6f3030344f63da299c9c83b2c264f6342a75586a8"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "26b251ee380a97d766e7746bf8f3b2d203eedfe448027e83b50a14f88f391e92"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4150,8 +4150,8 @@
       "path": "src/lib/marketing/scheduler-ports.ts",
       "lines": 216,
       "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
-      "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending",
-      "reviewedSha256": "8449f4af539dd22b40770a66c85358f8a36c5b9db90295f4bb1b190d0d1f0e9d"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
+      "reviewedSha256": "0d7c27e1c563877fc4531549f87a04aa6b20a4c4919dedfc7837523690138023"
     },
     {
       "path": "src/lib/marketing/scheduler.ts",
@@ -4982,6 +4982,20 @@
       "lines": 118,
       "reviewedSha256": "b5e0e62ca1b86d93aa9814090a54c87bf61fc478587c6d5b526a8e026374d879",
       "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-tiktok-progress.ts",
+      "sha256": null,
+      "lines": 141,
+      "reviewedSha256": "5abcd8eab28e86458fdbb152dcffa846f31c6ce7160d05e5a8e1f3ed50c28cb2",
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending"
+    },
+    {
+      "path": "supabase/migrations/20261027050940_dated_dneskai_tiktok_receipts.sql",
+      "sha256": null,
+      "lines": 186,
+      "reviewedSha256": "a062b995023362351c16009b5b112de9c64e3dceeb48e291a915caf66e9f010b",
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending"
     }
   ],
   "baselineFileCount": 561

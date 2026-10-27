@@ -26,7 +26,7 @@ export function DneskaiAudioPicker({ value, onChange, preview, disabled = false,
     queryFn: ({ signal }) => loadDneskaiAudioOptions(preview, signal, 0, value!) });
   const player = useDneskaiAudioPreview();
   if (!query.data) return null;
-  // Only sounds in Meta's list can be attached; niche-only sounds show in Zdroje → Hudba as hints (#167).
+  // Only sounds with current Meta trend/search proof can be attached; niche-only sounds show in Zdroje → Hudba as hints (#167).
   const trends = query.data.trendsStatus === 'ready' ? query.data.trends.filter((trend) => trend.attachable) : [];
   const tracks = [...query.data.tracks, ...(missing ? selected.data?.tracks ?? [] : [])].filter((track) => track.source !== 'instagram-library' && (track.enabled || track.id === value));
   const chosen: DneskaiAudioTrack | null = tracks.find((track) => track.id === value) ?? null;

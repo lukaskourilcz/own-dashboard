@@ -49,12 +49,12 @@ export const DneskaiAudioTrendSchema = z.strictObject({
   type: z.enum(['music', 'original_sound']),
   durationMs: z.number().int().min(0).max(3_600_000).nullable(),
   coverUrl: httpsUrl.nullable(),
-  /** 0 for a sound known only from the niche ranking. */
+  /** 0 without confirmed Meta trend history (a niche hint or a dated TikTok search match). */
   daysSeen: z.number().int().min(0),
   /** Distinct reels of the tracked education profiles that used it in the last seven days (#167). */
   nicheCount: z.number().int().min(0),
   tiktok: z.boolean(),
-  /** In Meta's trending list for this account, so Instagram can attach it to a Reel; niche-only sounds are a hint. */
+  /** Current account proof from Meta trends/search; niche-only sounds remain a manual hint. */
   attachable: z.boolean(),
 });
 export type DneskaiAudioTrend = z.infer<typeof DneskaiAudioTrendSchema>;

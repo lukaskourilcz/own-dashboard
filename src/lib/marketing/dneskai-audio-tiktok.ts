@@ -2,10 +2,13 @@ import 'server-only';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiApifyRunSchema, DneskaiProviderError, type DneskaiApifyRegistration } from './dneskai-providers';
-import { reserveDneskaiTopicSpend, settleDneskaiTopicSpend } from './dneskai-topic-spend';
+import { reserveDneskaiTopicSpend } from './dneskai-topic-spend';
 import type { MetaPublisherConfig } from './publisher';
 import { pragueMarketingDate } from './weekly-planning';
 import { awaitWithSignal } from '@/lib/abortable';
+import {DneskaiAudioAccountSchema,type DneskaiAudioAccount} from './dneskai-audio-trends';
+import {readDneskaiTikTokProgress,completeDneskaiTikTokRun,TikTokTerminalRunSchema,type DneskaiTikTokMatch} from './dneskai-tiktok-progress';
+import {databaseTimestamp,databaseVersion} from '@/lib/database-version';
 import { boundedResponseText } from '@/lib/bounded-response';
 
 /**
@@ -17,8 +20,7 @@ import { boundedResponseText } from '@/lib/bounded-response';
  * One daily tick reads the run the previous tick started and settles its cost, then reserves and starts today's,
  * so the signal is a day behind and the tick never waits for Apify.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
-type Database = Pick<SupabaseClient<any>, 'from' | 'rpc'>;
+type Database = Pick<SupabaseClient, 'rpc'>;
 type Environment = Record<string, string | undefined>;
 
 export const DNESKAI_TIKTOK_ACTOR = { id: 'sDvA9jM4WRTDX4Syr', name: 'clockworks~tiktok-trends-scraper' } as const;
@@ -158,13 +160,13 @@ export type DneskaiTikTokOutcome = { status: 'done' | 'skipped'; code?: string; 
  * One daily pass: read and settle the previous run (marking matched sounds), then reserve and start today's. Under
  * Instagram Login it does nothing and spends nothing: without Meta's audio search no chart title can become a sound.
  */
-export async function advanceDneskaiTikTokChart(db: Database, owner: string, input: { config: MetaPublisherConfig; igUserId: string; today: string; env?: Environment; fetcher?: typeof fetch; signal: AbortSignal; now?: Date }): Promise<DneskaiTikTokOutcome> {
-  const lifetime = new AbortController(), timer = setTimeout(() => lifetime.abort(), DNESKAI_TIKTOK_PASS_MS);
-  const signal = AbortSignal.any([input.signal, lifetime.signal]);
+export async function advanceDneskaiTikTokChart(db: Database, owner: string, input: { config: MetaPublisherConfig; account: DneskaiAudioAccount; igUserId: string; today: string; env?: Environment; fetcher?: typeof fetch; signal: AbortSignal; now?: Date }): Promise<DneskaiTikTokOutcome> {
+  const parent = input.signal, lifetime = new AbortController(), timer = setTimeout(() => lifetime.abort(), DNESKAI_TIKTOK_PASS_MS);
+  const signal = AbortSignal.any([parent, lifetime.signal]);
   try {
     return await awaitWithSignal(advanceTikTokPass(db, owner, { ...input, signal }), signal);
   } catch (error) {
-    if (input.signal.aborted) throw new DneskaiProviderError('tiktok-cancelled');
+    if (parent.aborted) throw new DneskaiProviderError('tiktok-cancelled');
     if (lifetime.signal.aborted) throw new DneskaiProviderError('tiktok-deadline');
     throw error;
   } finally { clearTimeout(timer); lifetime.abort(); }
@@ -180,42 +182,46 @@ async function advanceTikTokPass(db: Database, owner: string, input: Parameters<
   if (!dneskaiTikTokTrendsEnabled(env)) return { ...outcome, status: 'skipped', code: 'tiktok-trends-disabled' };
   if (config.loginMode !== 'facebook' || config.credentialHold || !config.accessToken) return { ...outcome, status: 'skipped', code: 'audio-trends-facebook-login-required' };
   if (!Number.isFinite(now.getTime()) || !z.iso.date().safeParse(today).success || pragueMarketingDate(now) !== today || !/^\d{1,100}$/.test(igUserId) || !/^v\d+\.\d+$/.test(config.apiVersion)) return { ...outcome, status: 'skipped', code: 'tiktok-input-invalid' };
+  const parsedAccount = DneskaiAudioAccountSchema.safeParse(input.account);
+  if (!parsedAccount.success || parsedAccount.data.user_id !== owner || parsedAccount.data.remote_account_id !== igUserId || databaseVersion(parsedAccount.data.verified_at)! > BigInt(now.getTime())*BigInt(1000)) return {...outcome,status:'skipped',code:'tiktok-input-invalid'};
+  const account = parsedAccount.data;
   active(signal);
-  const runs = await awaitWithSignal(db.rpc('marketing_dneskai_tiktok_runs', { p_owner: owner }).retry(false).abortSignal(signal), signal);
+  const rows = await readDneskaiTikTokProgress(db, owner, now, signal);
   active(signal);
-  if (runs.error) throw new DneskaiProviderError('tiktok-budget-unavailable');
-  const parsed = z.array(z.strictObject({ id: z.uuid(), ref: z.string().min(1).max(300), reserved_at: z.iso.datetime({ offset: true }), settled: z.boolean() })).max(5).safeParse(runs.data);
-  if (!parsed.success || new Set(parsed.data.map(row => row.id)).size !== parsed.data.length || parsed.data.some(row => Date.parse(row.reserved_at) > now.getTime())) throw new DneskaiProviderError('tiktok-budget-unavailable');
-  const rows = parsed.data;
 
   // 1. The previous run: read its chart once it has finished, mark the sounds, settle the measured cost.
-  for (const row of rows.filter((item) => !item.settled)) {
+  for (const row of rows.filter((item) => !item.processed)) {
     active(signal);
     const ids = /^tiktok:([A-Za-z0-9_-]{1,100}):([A-Za-z0-9_-]{1,100})$/.exec(row.ref);
     if (!ids || !env.APIFY_TOKEN) continue;
-    const run = DneskaiApifyRunSchema.safeParse((await apify(`actor-runs/${ids[1]}`, { method: 'GET' }, env, fetcher, signal) as { data?: unknown })?.data);
-    if (!run.success || run.data.actId !== DNESKAI_TIKTOK_ACTOR.id || run.data.defaultDatasetId !== ids[2]) continue;
-    if (['READY', 'RUNNING', 'TIMING-OUT', 'ABORTING'].includes(run.data.status)) continue;
-    if (run.data.status === 'SUCCEEDED') {
-      const items = z.array(z.unknown()).max(200).safeParse(await apify(`datasets/${ids[2]}/items?format=json&clean=true&limit=${DNESKAI_TIKTOK_RESULTS + 5}`, { method: 'GET' }, env, fetcher, signal));
-      const sounds = items.success ? dneskaiTikTokSounds(items.data) : [];
+    const registration = DneskaiApifyRunSchema.extend({startedAt: databaseTimestamp}).safeParse((await apify(`actor-runs/${ids[1]}`, { method: 'GET' }, env, fetcher, signal) as { data?: unknown })?.data);
+    if (!registration.success || registration.data.id !== ids[1] || registration.data.actId !== DNESKAI_TIKTOK_ACTOR.id || registration.data.defaultDatasetId !== ids[2]) throw new DneskaiProviderError('tiktok-run-unavailable');
+    if (['READY', 'RUNNING', 'TIMING-OUT', 'ABORTING'].includes(registration.data.status)) continue;
+    const run = TikTokTerminalRunSchema.safeParse({id: registration.data.id, actorId: registration.data.actId, datasetId: registration.data.defaultDatasetId,
+      status: registration.data.status, startedAt: registration.data.startedAt, finishedAt: registration.data.finishedAt, usageUsd: registration.data.usageTotalUsd ?? null});
+    if (!run.success || databaseVersion(run.data.startedAt)! < databaseVersion(row.reserved_at)! - BigInt(300_000_000) ||
+      databaseVersion(run.data.finishedAt)! < databaseVersion(run.data.startedAt)! || databaseVersion(run.data.finishedAt)! > BigInt(now.getTime()+300_000)*BigInt(1000)) throw new DneskaiProviderError('tiktok-run-unavailable');
+    // Apify warns the first terminal response may still carry preliminary cost/statistics.
+    if (databaseVersion(run.data.finishedAt)! > BigInt(now.getTime())*BigInt(1000)-BigInt(10_000_000)) continue;
+    if (run.data.usageUsd === null) throw new DneskaiProviderError('tiktok-cost-unavailable');
+    const sourceDay = pragueMarketingDate(new Date(row.reserved_at)), since = new Date(Date.parse(today+'T12:00:00Z')-86_400_000).toISOString().slice(0,10);
+    const matches = new Map<string,DneskaiTikTokMatch>();
+    if (run.data.status === 'SUCCEEDED' && sourceDay >= since) {
+      const raw = await apify(`datasets/${ids[2]}/items?format=json&clean=true&limit=${DNESKAI_TIKTOK_RESULTS + 5}`, { method: 'GET' }, env, fetcher, signal);
+      const items = z.array(z.unknown()).max(200).safeParse(raw);
+      if (!items.success) throw new DneskaiProviderError('tiktok-invalid-response');
+      const sounds = dneskaiTikTokSounds(items.data);
       outcome.read += sounds.length;
       for (const sound of sounds) {
         const audio = await instagramAudioFor(sound, config, igUserId, fetcher, signal);
         if (!audio) continue;
-        active(signal);
-        const { error } = await awaitWithSignal(db.from('marketing_audio_trends').upsert({ user_id: owner, audio_id: audio.audioId, title: audio.title, display_artist: audio.artist, audio_type: 'music',
-          first_seen: today, last_seen: today, tiktok: true, updated_at: now.toISOString() }, { onConflict: 'user_id,audio_id', ignoreDuplicates: true }).retry(false).abortSignal(signal), signal);
-        active(signal);
-        if (error) throw new DneskaiProviderError('audio-trends-store-failed');
-        await awaitWithSignal(db.from('marketing_audio_trends').update({ tiktok: true }).eq('user_id', owner).eq('audio_id', audio.audioId).retry(false).abortSignal(signal), signal);
-        active(signal);
-        outcome.matched++;
+        const previous = matches.get(audio.audioId);
+        if (previous && (previous.title !== audio.title || previous.artist !== audio.artist)) throw new DneskaiProviderError('tiktok-audio-unavailable');
+        matches.set(audio.audioId,audio);
       }
     }
-    // An unknown cost counts in full, as everywhere in the ledger.
     active(signal);
-    await settleDneskaiTopicSpend(db, owner, row.id, run.data.usageTotalUsd ?? DNESKAI_TIKTOK_RESERVATION_USD, signal);
+    outcome.matched += await completeDneskaiTikTokRun(db, owner, {account,row,run:run.data,matches:[...matches.values()],now,signal});
     active(signal);
   }
 

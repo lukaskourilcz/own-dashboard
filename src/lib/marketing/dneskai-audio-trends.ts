@@ -141,15 +141,19 @@ export async function ingestDneskaiAudioTrends(db: Database, owner: string, inpu
 /** Niche-only sounds shown next to Meta's list. */
 export const DNESKAI_NICHE_SOUNDS_SHOWN = 15;
 
-const TrendRowSchema = z.strictObject({
+const TrendProofSchema = z.strictObject({
   user_id: z.uuid(), audio_id: DneskaiAudioTrendSchema.shape.audioId,
   title: DneskaiAudioTrendSchema.shape.title.min(1).refine(value => value.trim() === value), display_artist: DneskaiAudioTrendSchema.shape.artist,
   audio_type: DneskaiAudioTrendSchema.shape.type, duration_ms: DneskaiAudioTrendSchema.shape.durationMs,
-  cover_artwork_thumbnail_url: DneskaiAudioTrendSchema.shape.coverUrl, days_seen: DneskaiAudioTrendSchema.shape.daysSeen.min(1),
-  tiktok: z.literal(false), last_seen: z.iso.date(),
+  cover_artwork_thumbnail_url: DneskaiAudioTrendSchema.shape.coverUrl, days_seen: DneskaiAudioTrendSchema.shape.daysSeen,
+  tiktok: z.boolean(), last_seen: z.iso.date(),
   observed_account_id: z.uuid(), observed_remote_account_id: z.string().regex(/^\d{1,100}$/),
   observed_verified_at: databaseTimestamp, observed_at: databaseTimestamp,
 });
+const TrendRowSchema = z.discriminatedUnion('tiktok', [
+  TrendProofSchema.extend({tiktok: z.literal(false), days_seen: TrendProofSchema.shape.days_seen.min(1)}),
+  TrendProofSchema.extend({tiktok: z.literal(true), tiktok_seen_on: z.iso.date(), tiktok_seen_at: databaseTimestamp}),
+]);
 const NicheSchema = z.array(z.object({
   audioId: DneskaiAudioTrendSchema.shape.audioId, title: DneskaiAudioTrendSchema.shape.title.min(1).refine(value => value.trim() === value).nullable(), artist: DneskaiAudioTrendSchema.shape.artist,
   reels: z.number().int().nonnegative(), plays: z.number().nonnegative(), score: z.number().nonnegative(),
@@ -178,6 +182,7 @@ export async function listDneskaiAudioTrends(db: Database, owner: string, today:
       rows.some(row => row.user_id !== owner || row.last_seen < since || row.last_seen > today ||
         pragueMarketingDate(new Date(row.observed_at)) < since || pragueMarketingDate(new Date(row.observed_at)) > today ||
         databaseVersion(row.observed_verified_at)! > databaseVersion(row.observed_at)! ||
+        (row.tiktok && (row.tiktok_seen_on < since || row.tiktok_seen_on > today || row.tiktok_seen_on > pragueMarketingDate(new Date(row.tiktok_seen_at)) || pragueMarketingDate(new Date(row.tiktok_seen_at)) > today || pragueMarketingDate(new Date(row.tiktok_seen_at)) < since || databaseVersion(row.observed_verified_at)! > databaseVersion(row.tiktok_seen_at)!)) ||
         row.observed_account_id !== rows[0].observed_account_id || row.observed_remote_account_id !== rows[0].observed_remote_account_id ||
         databaseVersion(row.observed_verified_at) !== databaseVersion(rows[0].observed_verified_at))) throw new Error();
     const ranked = new Map(hints.map(sound => [sound.audioId, sound]));

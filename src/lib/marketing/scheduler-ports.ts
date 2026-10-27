@@ -128,7 +128,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       // #167: the TikTok CZ chart, its own switch and daily cap; a failure there never hides Meta's list.
       if (!dneskaiTikTokTrendsEnabled(env) || ["audio-trends-input-invalid", "audio-trends-account-changed", "audio-trends-day-changed"].includes(trends.code ?? "")) return trends;
       signal?.throwIfAborted();
-      const tiktok = await advanceDneskaiTikTokChart(db, owner, { config, igUserId, today, env, signal, now: clock }).catch((failure: unknown) =>
+      const tiktok = await advanceDneskaiTikTokChart(db, owner, { config, account, igUserId, today, env, signal, now: clock }).catch((failure: unknown) =>
         ({ status: "skipped" as const, code: failure instanceof Error && /^[a-z][a-z0-9-]{1,79}$/.test(failure.message) ? failure.message : "tiktok-unavailable", started: false, read: 0, matched: 0 }));
       return { ...trends, tiktok: { started: tiktok.started, read: tiktok.read, matched: tiktok.matched, ...(tiktok.code ? { code: tiktok.code } : {}) } };
     },
