@@ -95,11 +95,11 @@ export async function POST(request: Request) {
         const db = createAdminClient(signal);
         const reel = await awaitWithSignal(dneskaiReelForRevision(db, ownerId, input.revisionId, {
             loadSlide: renderKey => loadDneskaiSlideBytes(db, ownerId, renderKey),
-            loadAudio: async (revision) => {
+            loadAudio: async (revision,phaseSignal) => {
                 if (revision.audio && 'instagramAudioId' in revision.audio)
                     return null;
                 const trackId = revision.audio?.trackId ?? input.audioTrackId ?? null;
-                return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId, signal) : null;
+                return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId, phaseSignal??signal) : null;
             },
             storage: createDneskaiReelStorage(db, ownerId, signal), signal,
         }), signal);

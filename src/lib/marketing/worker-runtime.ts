@@ -159,7 +159,7 @@ export async function readMarketingJob(db: Database, ownerId: string, jobId: str
   // A failed job may record the usage it spent (#116); only a job in review has a result to read.
   return { jobId: z.uuid().parse(data.id), status: z.enum(["queued", "running", "review", "failed", "reconciliation"]).parse(expired ? "reconciliation" : data.status), ...(data.result && data.status === "review" && !expired ? { result: data.result as MarketingWorkerResult } : {}), ...(expired || data.error_code ? { errorCode: expired ? "worker-lease-expired" : String(data.error_code) } : {}) };
 }
-const MARKETING_ASSET_MAX_BYTES = 8 * 1024 * 1024;
+export const MARKETING_ASSET_MAX_BYTES = 8 * 1024 * 1024;
 async function privateAssetFiles(db: Database) {
   const { data: bucket, error: bucketError } = await db.storage.getBucket(MARKETING_ASSET_BUCKET);
   if (bucketError || !bucket || bucket.public) throw new MarketingWorkerRuntimeError("private-asset-bucket-required");

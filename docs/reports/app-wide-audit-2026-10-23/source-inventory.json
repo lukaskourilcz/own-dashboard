@@ -460,8 +460,8 @@
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
       "lines": 138,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review; finding 329 rejects auth-error users, bounds body/auth/rate admission and foreground/background service scopes, contains late results and private diagnostics; stored/accepted proof, duplicate background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending",
-      "reviewedSha256": "381d6036745bbf6e5a0b41d7d542e05c002d37ede5e107c9d80e36dd58e2ae57"
+      "status": "partial source review; findings 329–332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending",
+      "reviewedSha256": "2243221e46a1fab812aedb7b6223ba6834a737192050986ab54b6bf6808b9416"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -3658,10 +3658,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 312,
+      "lines": 363,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review; findings 189–190 and 193 preserve physical media identity, policy and cache outage semantics; finding 328 adds strict minimal owned audio history, deterministic ties and bounded cancellation; broader storage/read/record/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending",
-      "reviewedSha256": "8affeaa653e0b308627ceba1054b9c322a30cebe40403473d7b0f565f169876d"
+      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; eager slide/native/record/durable admission and final release pending",
+      "reviewedSha256": "d2815b879376853bf951e426320f94c5e18dd7774d6ad5b56b56fe1e7bbee3f1"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -4220,8 +4220,8 @@
       "path": "src/lib/marketing/worker-runtime.ts",
       "lines": 398,
       "sha256": "a2121b43774eaaca2cba0dda10d58db19b293eae5055b69501bdf4bbbec209da",
-      "status": "partial; upload admission shares tested boundary (finding 144); provider, persistence and execution source review pending; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence",
-      "reviewedSha256": "66dc3f5949704810ced9250b8bf2026fd3c6de23d6d0d2a2427b74801ca0723f"
+      "status": "partial; upload admission shares tested boundary (finding 144); finding 189 closes cache outage-as-miss; finding 332 reuses the unchanged 8 MiB asset limit in the Reel consumer; provider, persistence and broader execution review pending",
+      "reviewedSha256": "2c0706ea9c76f6abef5a4c6f06f455f3013a6d1cf7d0b089eccf50ac5d6b08b0"
     },
     {
       "path": "src/lib/nav-tabs.ts",

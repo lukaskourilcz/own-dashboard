@@ -24,7 +24,8 @@ function renderedRevision() {
 }
 
 function database(row: unknown) {
-  const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle: vi.fn(async () => ({ data: row, error: null })) };
+  let requestedId=revisionId;
+  const query = { select: vi.fn(() => query), eq: vi.fn((key:string,value:string) => {if(key==='id')requestedId=value;return query;}),retry:vi.fn(()=>query),abortSignal:vi.fn(()=>query), maybeSingle: vi.fn(async () => ({ data: row&&typeof row==='object'?{id:requestedId,user_id:owner,...row}:row, error: null })) };
   return { from: vi.fn(() => query), query };
 }
 type Db = Parameters<typeof dneskaiReelForRevision>[0];
@@ -106,6 +107,7 @@ describe("dneskaiReelForRevision", () => {
     await expect(dneskaiReelForRevision({ from } as unknown as Db, owner, revisionId, deps)).rejects.toMatchObject({ code: 'reel-slides-unavailable' });
     expect(deps.render).not.toHaveBeenCalled();
     expect(deps.storage.put).not.toHaveBeenCalled();
+    expect(deps.loadSlide).toHaveBeenCalledOnce();
   });
   it('refuses an inconsistent revision hash before cache lookup', async () => {
     const { from } = database({ revision: renderedRevision(), content_hash: 'f'.repeat(64), render_report: report() });
@@ -288,3 +290,22 @@ describe("render-reel route", () => {
     expect(await response.json()).toEqual({ error: "reel-render-required" });
   });
 });
+
+it.each(['audio','cache','slides','encode','put'] as const)('starts no later Reel phase after cancellation during %s',async phase=>{
+ const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies(),controller=new AbortController();let resume!:(value:unknown)=>void;const gate=new Promise(done=>{resume=done;}),paused=vi.fn(()=>gate);
+ if(phase==='audio')deps.loadAudio=paused as never;if(phase==='cache')deps.storage.find=paused as never;if(phase==='slides')deps.loadSlide=paused as never;if(phase==='encode')deps.render=paused as never;if(phase==='put')deps.storage.put=paused as never;
+ const result=dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,{...deps,signal:controller.signal}).then(()=>({name:'unexpected-success'}),error=>error);
+ await vi.waitFor(()=>expect(paused).toHaveBeenCalled());controller.abort('TEST_ONLY_PRIVATE_REASON');resume(phase==='slides'?Buffer.from('slide-1'):phase==='encode'?{bytes:Buffer.from('fixture'),durationSeconds:9.5,silent:true}:phase==='put'?{reelKey:'a'.repeat(64),url:'https://example.test/reel',sha256:'b'.repeat(64),bytes:7}:null);
+ expect(await result).toMatchObject({name:'AbortError',message:'Request aborted'});if(phase==='audio')expect(deps.storage.find).not.toHaveBeenCalled();if(['audio','cache'].includes(phase))expect(deps.loadSlide).not.toHaveBeenCalled();if(['audio','cache','slides'].includes(phase))expect(deps.render).not.toHaveBeenCalled();if(phase!=='put')expect(deps.storage.put).not.toHaveBeenCalled();
+});
+
+it.each([{id:'55555555-5555-4555-8555-555555555555'},{user_id:'55555555-5555-4555-8555-555555555555'},{extra:true}])('requires exact projected revision identity before any later phase: %#',async fields=>{
+ const {from}=database({id:revisionId,user_id:owner,revision:renderedRevision(),content_hash:contentHash,render_report:report(),...fields}),deps=dependencies();await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toMatchObject({code:'reel-revision-unavailable'});expect(deps.loadAudio).not.toHaveBeenCalled();expect(deps.storage.find).not.toHaveBeenCalled();
+});
+it('starts no revision read after the original rendering scope retires',async()=>{const controller=new AbortController();controller.abort('TEST_ONLY_PRIVATE_REASON');const {from}=database(null),deps=dependencies();await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,{...deps,signal:controller.signal})).rejects.toMatchObject({name:'AbortError',message:'Request aborted'});expect(from).not.toHaveBeenCalled();});
+it('stops before cache/file work if a selected explicit track differs from the returned track',async()=>{const selected={...renderedRevision(),audio:{trackId:'44444444-4444-4444-8444-444444444444'}},deps=dependencies(),{from}=database({revision:selected,content_hash:revisionContentHash(selected),render_report:report()});deps.loadAudio.mockResolvedValue({id:'55555555-5555-4555-8555-555555555555',bytes:Buffer.from('fixture')} as never);await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toHaveProperty('code','reel-audio-unavailable');expect(deps.storage.find).not.toHaveBeenCalled();});
+
+it('never changes an explicitly selected library track into silence',async()=>{const selected={...renderedRevision(),audio:{trackId:'44444444-4444-4444-8444-444444444444'}},deps=dependencies(),{from}=database({revision:selected,content_hash:revisionContentHash(selected),render_report:report()});await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toHaveProperty('code','reel-audio-unavailable');expect(deps.storage.find).not.toHaveBeenCalled();});
+it.each([0,8*1024*1024+1])('stops after the first unsupported slide length %s',async size=>{const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies();deps.loadSlide.mockResolvedValue(Buffer.alloc(size));await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toHaveProperty('code','reel-slides-unavailable');expect(deps.loadSlide).toHaveBeenCalledOnce();expect(deps.render).not.toHaveBeenCalled();expect(deps.storage.put).not.toHaveBeenCalled();});
+it('refuses oversize audio before cache, slide or encoding work',async()=>{const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies();deps.loadAudio.mockResolvedValue({id:'44444444-4444-4444-8444-444444444444',bytes:Buffer.alloc(20*1024*1024+1)} as never);await expect(dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,deps)).rejects.toHaveProperty('code','reel-audio-unavailable');expect(deps.storage.find).not.toHaveBeenCalled();expect(deps.loadSlide).not.toHaveBeenCalled();});
+it('settles cancellation even when an audio dependency never responds',async()=>{const {from}=database({revision:renderedRevision(),content_hash:contentHash,render_report:report()}),deps=dependencies(),controller=new AbortController();deps.loadAudio.mockImplementation(()=>new Promise(()=>{}));const pending=dneskaiReelForRevision({from} as unknown as Db,owner,revisionId,{...deps,signal:controller.signal}).catch(error=>error);await vi.waitFor(()=>expect(deps.loadAudio).toHaveBeenCalledOnce());controller.abort('TEST_ONLY_PRIVATE_REASON');expect(await pending).toMatchObject({name:'AbortError',message:'Request aborted'});expect(deps.storage.find).not.toHaveBeenCalled();});

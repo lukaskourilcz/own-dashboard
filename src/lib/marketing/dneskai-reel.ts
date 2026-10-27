@@ -7,11 +7,12 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { DneskaiRenderReportSchema, parseContentRevision } from "./contracts";
-import { DNESKAI_REEL, DNESKAI_REEL_POLICY, dneskaiReelDuration, dneskaiReelKey, renderDneskaiReel, type DneskaiReelAudio } from "./dneskai-reel-render";
+import { DNESKAI_REEL, DNESKAI_REEL_POLICY, dneskaiReelDuration, dneskaiReelKey, renderDneskaiReel, DneskaiReelRenderError,type DneskaiReelAudio } from "./dneskai-reel-render";
 import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { revisionContentHash } from "./hashes";
 import { signAutomationBody } from "./automation-auth";
-import { MARKETING_ASSET_BUCKET, MARKETING_ASSET_URL_SECONDS, dneskaiSlideObjectKey } from "./worker-runtime";
+import {DNESKAI_AUDIO_MAX_BYTES} from "./dneskai-audio-contracts";
+import { MARKETING_ASSET_MAX_BYTES,MARKETING_ASSET_BUCKET, MARKETING_ASSET_URL_SECONDS, dneskaiSlideObjectKey } from "./worker-runtime";
 
 /**
  * Stored DNESKAi Reels (#163): renders an approved deck's slides into an MP4 once per reel key and keeps it in the
@@ -129,9 +130,9 @@ export async function loadDneskaiSlideBytes(db: Database, ownerId: string, rende
 }
 
 export type DneskaiReelDependencies = {
-  loadSlide(renderKey: string): Promise<Buffer>;
+  loadSlide(renderKey: string,signal?:AbortSignal): Promise<Buffer>;
   /** The revision's audio, or null for the silent variant. */
-  loadAudio(revision: ReturnType<typeof parseContentRevision>): Promise<DneskaiReelAudio | null>;
+  loadAudio(revision: ReturnType<typeof parseContentRevision>,signal?:AbortSignal): Promise<DneskaiReelAudio | null>;
   storage: ReturnType<typeof createDneskaiReelStorage>;
   render?: typeof renderDneskaiReel;
   signal?: AbortSignal;
@@ -144,38 +145,88 @@ export type DneskaiReelOutcome = StoredDneskaiReel & { cached: boolean; duration
  * or render and store one. Refuses a revision without a clean deck render; never touches approval or publication.
  */
 export async function dneskaiReelForRevision(db: Database, ownerId: string, revisionId: string, dependencies: DneskaiReelDependencies): Promise<DneskaiReelOutcome> {
-  z.uuid().parse(ownerId);
-  if (!z.uuid().safeParse(revisionId).success) throw new DneskaiReelError("reel-revision-unavailable");
-  const { data: row, error } = await db.from("marketing_revisions").select("revision,content_hash,render_report").eq("id", revisionId).eq("user_id", ownerId).maybeSingle();
-  if (error || !row) throw new DneskaiReelError("reel-revision-unavailable");
-  let revision;
-  try { revision = parseContentRevision(row.revision); } catch { throw new DneskaiReelError("reel-revision-unavailable"); }
-  if (!revision.deck) throw new DneskaiReelError("reel-revision-not-deck");
-  if (row.content_hash !== revisionContentHash(revision)) throw new DneskaiReelError("reel-revision-unavailable");
-  const report = DneskaiRenderReportSchema.safeParse(row.render_report);
-  const slideCount = revision.deck.slides.length;
-  if (dneskaiDeckContentBlocked(revision.deck) || !report.success || report.data.status !== "rendered" || report.data.problems.some((problem) => problem.blocking)
-    || report.data.renderKeys.length !== slideCount || revision.assets.length !== slideCount || revision.assets.some(asset => asset.mimeType !== "image/jpeg")
-    || report.data.renderKeys.some(key => !/^[a-f0-9]{64}$/.test(key)) || slideCount > DNESKAI_REEL.maxSlides) throw new DneskaiReelError("reel-render-required");
-  const revisionHash = String(row.content_hash);
-  const audio = await dependencies.loadAudio(revision);
-  if (audio && !audio.bytes.length) throw new DneskaiReelError("reel-audio-unavailable");
-  const audioIdentity = audio ? { id: audio.id, sha256: sha256(audio.bytes) } : null;
-  const reelKey = dneskaiReelKey({ slideSha256s: revision.assets.map(asset => asset.sha256), audio: audioIdentity });
-  const found = await dependencies.storage.find(reelKey);
-  const durationSeconds = dneskaiReelDuration(slideCount);
-  if (found) return { ...found, cached: true, durationSeconds, silent: !audio, revisionHash, audioId: audio?.id ?? null };
-  let slides: Buffer[];
-  try { slides = await Promise.all(report.data.renderKeys.map((key) => dependencies.loadSlide(key))); }
-  catch { throw new DneskaiReelError("reel-slides-unavailable"); }
-  if (slides.some((bytes, index) => sha256(bytes) !== revision.assets[index]!.sha256)) throw new DneskaiReelError("reel-slides-unavailable");
-  const rendered = await (dependencies.render ?? renderDneskaiReel)({ slides, audio, signal: dependencies.signal });
-  const stored = await dependencies.storage.put({
-    reelKey,
-    bytes: rendered.bytes,
-    metadata: { audioId: audio?.id ?? "silent", audioSha256: audioIdentity?.sha256 ?? "silent", policy: DNESKAI_REEL_POLICY, durationSeconds: String(rendered.durationSeconds) },
-  });
-  return { ...stored, cached: false, durationSeconds: rendered.durationSeconds, silent: rendered.silent, revisionHash, audioId: audio?.id ?? null };
+    const signal = AbortSignal.any([AbortSignal.timeout(280000), ...(dependencies.signal ? [dependencies.signal] : [])]);
+    try {
+        signal.throwIfAborted();
+        if (!z.uuid().safeParse(ownerId).success)
+            throw new DneskaiReelError("reel-revision-unavailable");
+        if (!z.uuid().safeParse(revisionId).success)
+            throw new DneskaiReelError("reel-revision-unavailable");
+        const readSignal = AbortSignal.any([signal, AbortSignal.timeout(15000)]);
+        const { data, error } = await awaitWithSignal(db.from('marketing_revisions').select('id,user_id,revision,content_hash,render_report').eq('id', revisionId).eq('user_id', ownerId).retry(false).abortSignal(readSignal).maybeSingle(), readSignal).catch(() => {
+            throw new DneskaiReelError('reel-revision-unavailable');
+        });
+        signal.throwIfAborted();
+        const checked = z.strictObject({ id: z.uuid(), user_id: z.uuid(), revision: z.unknown(), content_hash: z.string().regex(/^[a-f0-9]{64}$/), render_report: z.unknown() }).safeParse(data);
+        if (error || !checked.success || checked.data.id !== revisionId || checked.data.user_id !== ownerId)
+            throw new DneskaiReelError('reel-revision-unavailable');
+        const row = checked.data;
+        let revision;
+        try {
+            revision = parseContentRevision(row.revision);
+        }
+        catch {
+            throw new DneskaiReelError("reel-revision-unavailable");
+        }
+        if (revision.brand !== 'dneskai')
+            throw new DneskaiReelError('reel-revision-not-deck');
+        if (!revision.deck)
+            throw new DneskaiReelError("reel-revision-not-deck");
+        if (row.content_hash !== revisionContentHash(revision))
+            throw new DneskaiReelError("reel-revision-unavailable");
+        const report = DneskaiRenderReportSchema.safeParse(row.render_report);
+        const slideCount = revision.deck.slides.length;
+        if (dneskaiDeckContentBlocked(revision.deck) || !report.success || report.data.status !== "rendered" || report.data.problems.some((problem) => problem.blocking)
+            || report.data.renderKeys.length !== slideCount || revision.assets.length !== slideCount || revision.assets.some(asset => asset.mimeType !== "image/jpeg")
+            || report.data.renderKeys.some(key => !/^[a-f0-9]{64}$/.test(key)) || slideCount > DNESKAI_REEL.maxSlides)
+            throw new DneskaiReelError("reel-render-required");
+        const revisionHash = String(row.content_hash);
+        const audio = await awaitWithSignal(dependencies.loadAudio(revision, signal), signal);
+        signal.throwIfAborted();
+        if (revision.audio && 'trackId' in revision.audio && !audio)
+            throw new DneskaiReelError('reel-audio-unavailable');
+        if (audio && (!z.uuid().safeParse(audio.id).success || !Buffer.isBuffer(audio.bytes) || !audio.bytes.length || audio.bytes.length > DNESKAI_AUDIO_MAX_BYTES || revision.audio && ('instagramAudioId' in revision.audio || revision.audio.trackId !== audio.id)))
+            throw new DneskaiReelError("reel-audio-unavailable");
+        const audioIdentity = audio ? { id: audio.id, sha256: sha256(audio.bytes) } : null;
+        const reelKey = dneskaiReelKey({ slideSha256s: revision.assets.map(asset => asset.sha256), audio: audioIdentity });
+        const found = await awaitWithSignal(dependencies.storage.find(reelKey), signal);
+        signal.throwIfAborted();
+        const durationSeconds = dneskaiReelDuration(slideCount);
+        if (found)
+            return { ...found, cached: true, durationSeconds, silent: !audio, revisionHash, audioId: audio?.id ?? null };
+        const slides: Buffer[] = [];
+        try {
+            for (const key of report.data.renderKeys) {
+                signal.throwIfAborted();
+                const bytes = await awaitWithSignal(dependencies.loadSlide(key, signal), signal);
+                signal.throwIfAborted();
+                if (!Buffer.isBuffer(bytes) || !bytes.length || bytes.length > MARKETING_ASSET_MAX_BYTES || sha256(bytes) !== revision.assets[slides.length]!.sha256)
+                    throw new DneskaiReelError('reel-slides-unavailable');
+                slides.push(bytes);
+            }
+        }
+        catch {
+            signal.throwIfAborted();
+            throw new DneskaiReelError('reel-slides-unavailable');
+        }
+        signal.throwIfAborted();
+        const rendered = await awaitWithSignal((dependencies.render ?? renderDneskaiReel)({ slides, audio, signal }), signal);
+        signal.throwIfAborted();
+        const stored = await awaitWithSignal(dependencies.storage.put({
+            reelKey,
+            bytes: rendered.bytes,
+            metadata: { audioId: audio?.id ?? "silent", audioSha256: audioIdentity?.sha256 ?? "silent", policy: DNESKAI_REEL_POLICY, durationSeconds: String(rendered.durationSeconds) },
+        }), signal);
+        signal.throwIfAborted();
+        return { ...stored, cached: false, durationSeconds: rendered.durationSeconds, silent: rendered.silent, revisionHash, audioId: audio?.id ?? null };
+    }
+    catch (error) {
+        if (dependencies.signal?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        if (signal.aborted)
+            throw new DneskaiReelRenderError('reel-timeout');
+        throw error;
+    }
 }
 
 /* ---- the render record (#165) --------------------------------------------------------------------------------- */
