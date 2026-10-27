@@ -16,6 +16,7 @@ vi.mock('@/lib/marketing/source-refresh', async (original) => ({ ...await origin
 vi.mock('@/lib/marketing/publisher', async (original) => ({ ...await original<typeof import('@/lib/marketing/publisher')>(), publishMarketingRevision: m.publish }));
 vi.mock('@/lib/marketing/meta-credentials', async (original) => ({ ...await original<typeof import('@/lib/marketing/meta-credentials')>(), resolveMetaPublisherConfig: m.config }));
 import { prepareUpcomingDneskaiReels, publishDueMarketing } from '@/lib/marketing/orchestrator';
+import { createMarketingSchedulerPorts } from '@/lib/marketing/scheduler-ports';
 const owner = '11111111-1111-4111-8111-111111111111', revisionId = '22222222-2222-4222-8222-222222222222', publication = '33333333-3333-4333-8333-333333333333', account = '44444444-4444-4444-8444-444444444444', instant = '2026-10-27T12:00:00Z';
 let database: Awaited<ReturnType<typeof createMigratedDatabase>>, service: SupabaseClient, queueBodies: string[] = [];
 beforeAll(async () => {
@@ -129,4 +130,29 @@ it('reads bounded queue identity without transferring the complete private revis
     expect(new TextEncoder().encode(queueBodies[0]).length).toBeLessThan(1024);
     expect(queueBodies[0]).not.toContain('"caption"');
     expect(m.request).toHaveBeenCalledOnce();
+});
+
+const futureRevision='55555555-5555-4555-8555-555555555555',futurePublication='66666666-6666-4666-8666-666666666666';
+async function queueFuture(){
+ await database.query("insert into public.marketing_revisions(id,user_id,brand,revision,content_hash,status,ready,approved_hash) select $1,user_id,brand,revision,content_hash,status,ready,approved_hash from public.marketing_revisions where id=$2 on conflict(id) do nothing",[futureRevision,revisionId]);
+ await database.query("insert into public.marketing_publications(id,user_id,revision_id,platform,status,scheduled_at) values($1,$2,$3,'instagram','queued','2026-10-27T12:20:00Z')",[futurePublication,owner,futureRevision]);
+}
+it('spends one scheduler publication step on the due Reel before optional future preparation',async()=>{
+ await queue('2026-10-27T11:59:00Z');await queueFuture();
+ const result=await createMarketingSchedulerPorts(service,owner,{}, {origin:'https://own.example'}).publishDue(false,new AbortController().signal);
+ expect(result.outcomes).toEqual([{publicationId:publication,status:'held',errorCode:'reel-render-pending'}]);
+ expect(m.request).toHaveBeenCalledOnce();expect(m.request).toHaveBeenCalledWith(expect.objectContaining({revisionId}));expect(m.publish).not.toHaveBeenCalled();
+ expect(queueBodies).toEqual([]);
+ expect((await database.query<{status:string}>('select status from public.marketing_publications order by id')).rows.map(row=>row.status)).toEqual(['queued','queued']);
+});
+it('prepares one future Reel after a quiet due step without claiming or sending it',async()=>{
+ await queueFuture();
+ expect(await createMarketingSchedulerPorts(service,owner,{}, {origin:'https://own.example'}).publishDue(false,new AbortController().signal)).toEqual({outcomes:[]});
+ expect(m.request).toHaveBeenCalledOnce();expect(m.request).toHaveBeenCalledWith(expect.objectContaining({revisionId:futureRevision}));expect(m.publish).not.toHaveBeenCalled();expect(queueBodies).toHaveLength(1);
+ expect((await database.query<{status:string}>('select status from public.marketing_publications')).rows[0].status).toBe('queued');
+});
+it('retains an unavailable due Reel and starts no optional future preparation',async()=>{
+ await queue('2026-10-27T11:59:00Z');await queueFuture();m.find.mockRejectedValue(new Error('TEST_ONLY_PRIVATE_STORAGE_DETAIL'));
+ expect(await createMarketingSchedulerPorts(service,owner,{}, {origin:'https://own.example'}).publishDue(false,new AbortController().signal)).toEqual({outcomes:[{publicationId:publication,status:'held',errorCode:'reel-storage-failed'}]});
+ expect(m.request).not.toHaveBeenCalled();expect(m.publish).not.toHaveBeenCalled();expect(queueBodies).toEqual([]);
 });

@@ -4148,10 +4148,10 @@
     },
     {
       "path": "src/lib/marketing/scheduler-ports.ts",
-      "lines": 220,
+      "lines": 222,
       "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains",
-      "reviewedSha256": "1e6999653b756ae2d8918cc5d1ec68cfe87a64a03c55f0d9df887eca3752ee51"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains; finding 340 prioritizes due/continuation outcomes before optional future Reel work and bounds retired preparation",
+      "reviewedSha256": "e019df85c6f71efdbf9596203d95932096668e08a332f328839bb060e1f641a3"
     },
     {
       "path": "src/lib/marketing/scheduler.ts",

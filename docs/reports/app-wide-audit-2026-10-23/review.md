@@ -2765,3 +2765,12 @@ All 1,590 combined cases pass across 86 files in 130.26 seconds with one worker.
 No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries with 192 partial statuses and the canonical chain remains 142 files/56 prepared. Broader tick resource budgeting, independent render admission, subprocess/disk and SDK JSON boundaries, orphan retention, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.
 
 The 53-pair visual plan references committed application `6c5f3e97`; both image modes, light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Actual capture provenance remains `d72aaae4`.
+
+
+### Finding 340 — due work owns the scheduler publication step
+
+One actual-SDK/full-chain scheduler baseline fails with ten passes in 2.77 seconds: two different queued Reels, one due and one future, cause two render requests in one publication step. The scheduler now runs due/claimed continuation work first. Any resulting outcome owns the step; optional future preparation runs only after an empty successful result. Dry runs and unavailable/retired due work start no optional preparation. This partitions one step's requests, not independent scheduler/owner requests or durable encoding jobs.
+
+All 1,598 combined cases pass across 86 files in 114.61 seconds with one worker. The first three-file repair set passes 87 cases in 3.49 seconds. The expanded five-file set passes 116 in 5.02 seconds. Actual SDK/142-file database cases verify one due render request, retained queued rows without claims/sends, one future preparation after a quiet result and no future request after a due-storage hold. Added port checks cover published/held/failed outcomes, optional preparation outage, and uncooperative preparation cancellation without exposing private reasons. Original tick scope reaches both phases, with no later phase after retirement. Final TypeScript, targeted ESLint without warnings and whitespace pass.
+
+No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Captured approved-hash background intent, durable independent render admission, first-prefix fairness, subprocess/disk and SDK JSON boundaries, orphan retention, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.

@@ -174,12 +174,14 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     async publishDue(dryRun, signal) {
       const check=()=>{if(signal.aborted)throw new DOMException('Request aborted','AbortError');};check();
-      // Prepare strictly future Reels; native compute/storage remain bounded work. Due Reels are handled once below.
-      if (!dryRun && options.origin) await prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS,signal).catch(() => null);
-      check();
       const pending=options.origin?publishDueMarketing(db,owner,"dneskai",dryRun,signal,undefined,{origin:options.origin}):publishDueMarketing(db,owner,"dneskai",dryRun,signal);
       const result=await awaitWithSignal(pending,signal);
       check();
+      // Due/continuation work owns this step. Prepare a future Reel only when that step was quiet.
+      if (!dryRun && options.origin && result.outcomes.length === 0) {
+        await awaitWithSignal(prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS,signal),signal).catch(() => null);
+        check();
+      }
       return { outcomes: result.outcomes.map((outcome) => ({ publicationId: outcome.publicationId, status: outcome.status, errorCode: outcome.errorCode ?? null })) };
     },
     async nextReconciliation(checkedBefore) {
