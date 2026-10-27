@@ -460,8 +460,8 @@
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
       "lines": 138,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review; findings 329–332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending",
-      "reviewedSha256": "2243221e46a1fab812aedb7b6223ba6834a737192050986ab54b6bf6808b9416"
+      "status": "partial source review; findings 329–332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains",
+      "reviewedSha256": "e87162b89046ae47ef31a5a571d92a5638a6db03abbb89a25679601f621c3789"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -2227,9 +2227,9 @@
     {
       "path": "src/lib/bounded-response.ts",
       "sha256": null,
-      "lines": 33,
-      "reviewedSha256": "3dd53d6321b6f942d17daf0340dcf00653719ce4d128e00fe4a70f1640b469aa",
-      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending"
+      "lines": 89,
+      "reviewedSha256": "7b0bc6c7773d5a1403c15eac0f6fdb80ebf1461d3d2eb1e52401ef22c51a6369",
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains"
     },
     {
       "path": "src/lib/bounded-text.ts",
@@ -3357,10 +3357,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
-      "lines": 443,
+      "lines": 425,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial review; findings 323–328 verify captured toggles, positive absence, retained upload sessions, bounded audio streams and strict captured rotation reads; SDK non-success parser, concurrent rotation, orphan retention and final release pending",
-      "reviewedSha256": "aae8460589a3535515446857b405d0d2b0798e9c8b52f3356f70eb7f15ad6989"
+      "status": "partial review; findings 323–328 verify captured toggles, positive absence, retained upload sessions, bounded audio streams and strict captured rotation reads; SDK non-success parser, concurrent rotation, orphan retention and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains",
+      "reviewedSha256": "de70c1908881ad803b7820b2880545a508fc98bf398e31c4ff28f74d8467659e"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",
@@ -3658,10 +3658,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 363,
+      "lines": 391,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; eager slide/native/record/durable admission and final release pending",
-      "reviewedSha256": "d2815b879376853bf951e426320f94c5e18dd7774d6ad5b56b56fe1e7bbee3f1"
+      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains",
+      "reviewedSha256": "f0dce6aedb978f97c0c10e7bd57dc721111642a419aeddc699cddc0d8ad95383"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",

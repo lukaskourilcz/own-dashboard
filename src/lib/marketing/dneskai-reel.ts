@@ -1,5 +1,5 @@
 import "server-only";
-import {boundedResponseText} from "@/lib/bounded-response";
+import {boundedStreamBytes,boundedResponseText} from "@/lib/bounded-response";
 import {awaitWithSignal} from "@/lib/abortable";
 import {databaseTimestamp} from "@/lib/database-version";
 import { marketingStorageObjectMissing } from "./storage-errors";
@@ -116,17 +116,45 @@ export function createDneskaiReelStorage(db: Database, ownerId: string, signal?:
 }
 
 /** A rendered slide JPEG from the render-key cache in `marketing-assets`, checked against its recorded sha256. */
-export async function loadDneskaiSlideBytes(db: Database, ownerId: string, renderKey: string): Promise<Buffer> {
-  const store = db.storage.from(MARKETING_ASSET_BUCKET);
-  const key = dneskaiSlideObjectKey(ownerId, renderKey);
-  const info = await store.info(key);
-  const recorded = info.data?.metadata?.sha256;
-  if (info.error || !info.data || typeof recorded !== "string" || info.data.metadata?.ownerId !== ownerId) throw new DneskaiReelError("reel-slides-unavailable");
-  const downloaded = await store.download(key);
-  if (downloaded.error || !downloaded.data) throw new DneskaiReelError("reel-slides-unavailable");
-  const bytes = Buffer.from(await downloaded.data.arrayBuffer());
-  if (sha256(bytes) !== recorded) throw new DneskaiReelError("reel-slides-unavailable");
-  return bytes;
+export async function loadDneskaiSlideBytes(db: Database, ownerId: string, renderKey: string, parent?: AbortSignal): Promise<Buffer> {
+    const signal = AbortSignal.any([AbortSignal.timeout(15000), ...(parent ? [parent] : [])]), discard = (stream: ReadableStream | null) => {
+        if (stream && !stream.locked)
+            void stream.cancel().catch(() => undefined);
+    };
+    try {
+        signal.throwIfAborted();
+        const key = dneskaiSlideObjectKey(ownerId, renderKey), store = db.storage.from(MARKETING_ASSET_BUCKET);
+        const info = await awaitWithSignal(store.info(key), signal);
+        signal.throwIfAborted();
+        const metadata = info.data?.metadata, recorded = metadata?.sha256, size = info.data?.size;
+        if (info.error || !info.data || metadata?.ownerId !== ownerId || metadata?.renderKey !== renderKey || typeof recorded !== 'string' || !/^[a-f0-9]{64}$/.test(recorded) || info.data.contentType !== 'image/jpeg' || !Number.isSafeInteger(size) || !size || size < 1 || size > MARKETING_ASSET_MAX_BYTES)
+            throw new Error();
+        const pending = Promise.resolve(store.download(key, {}, { signal }).asStream());
+        void pending.then(result => {
+            if (signal.aborted)
+                discard(result.data);
+        }, () => undefined);
+        const result = await awaitWithSignal(pending, signal);
+        if (signal.aborted) {
+            discard(result.data);
+            signal.throwIfAborted();
+        }
+        if (result.error || !result.data) {
+            discard(result.data);
+            throw new Error();
+        }
+        const collected = await boundedStreamBytes(result.data, size, signal, size);
+        signal.throwIfAborted();
+        const bytes = Buffer.from(collected.buffer, collected.byteOffset, collected.byteLength);
+        if (sha256(bytes) !== recorded)
+            throw new Error();
+        return bytes;
+    }
+    catch {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw new DneskaiReelError('reel-slides-unavailable');
+    }
 }
 
 export type DneskaiReelDependencies = {

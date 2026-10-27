@@ -4,6 +4,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { z } from "zod";
+import {boundedStreamBytes,BoundedStreamError} from "@/lib/bounded-response";
 import { awaitWithSignal } from "@/lib/abortable";
 import { databaseTimestamp, databaseVersion } from "@/lib/database-version";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -250,33 +251,14 @@ async function downloadAudioBytes(db: Database, name: string, parent?: AbortSign
             discard(stream);
             throw unavailable();
         }
-        const reader = stream.getReader();
-        let complete = false, size = 0, parts = 0;
-        const chunks: Buffer[] = [];
         try {
-            for (;;) {
-                const part = await awaitWithSignal(reader.read(), signal);
-                signal.throwIfAborted();
-                if (part.done)
-                    break;
-                if (!(part.value instanceof Uint8Array) || ++parts > 65536)
-                    throw unavailable();
-                size += part.value.byteLength;
-                if (size > DNESKAI_AUDIO_MAX_BYTES)
-                    throw new DneskaiAudioError('audio-upload-invalid');
-                if (part.value.byteLength)
-                    chunks.push(Buffer.from(part.value));
-            }
-            if (!size)
-                throw new DneskaiAudioError('audio-upload-invalid');
-            signal.throwIfAborted();
-            complete = true;
-            return Buffer.concat(chunks, size);
+            const bytes = await boundedStreamBytes(stream, DNESKAI_AUDIO_MAX_BYTES, signal, 1);
+            return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
         }
-        finally {
-            if (!complete)
-                void reader.cancel().catch(() => undefined);
-            reader.releaseLock();
+        catch (error) {
+            if (error instanceof BoundedStreamError && error.reason === 'size')
+                throw new DneskaiAudioError('audio-upload-invalid');
+            throw error;
         }
     }
     catch (error) {
