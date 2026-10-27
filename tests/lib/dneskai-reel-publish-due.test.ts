@@ -123,3 +123,12 @@ it('does not request an explicitly chosen-track render after the original publis
  vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED','true');const controller=new AbortController(),chosen=parseContentRevision({...revision,audio:{trackId:track}});mocks.find.mockImplementation(async()=>{controller.abort('TEST_ONLY_PRIVATE_REASON');return null;});mocks.request.mockResolvedValue(true);const {db,rpc}=database(),hash=revisionHash(chosen),original=db.from.bind(db);db.from=((table:string)=>{const query=original(table) as unknown as {single:()=>Promise<unknown>};if(table==='marketing_revisions')query.single=async()=>({data:{id:revisionId,user_id:owner,campaign_id:null,revision:chosen,content_hash:hash,status:'approved',ready:true,approved_hash:hash},error:null});return query;}) as unknown as typeof db.from;
  expect(await publishDueMarketing(db,owner,'dneskai',false,controller.signal,undefined,{origin:'https://own.example'})).toEqual(held('reel-render-unavailable'));expect(mocks.last).not.toHaveBeenCalled();expect(mocks.next).not.toHaveBeenCalled();expect(mocks.request).not.toHaveBeenCalled();expect(names(rpc)).toEqual([]);
 });
+
+it('holds an unavailable stored-Reel lookup without rotating, rendering or claiming',async()=>{
+ vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED','true');mocks.find.mockRejectedValue(new Error('TEST_ONLY_PRIVATE_LOOKUP'));mocks.last.mockResolvedValue(null);mocks.next.mockResolvedValue(track);mocks.request.mockResolvedValue(true);
+ const {db,rpc}=database();expect(await publishDueMarketing(db,owner,'dneskai',false,undefined,undefined,{origin:'https://own.example'})).toEqual(held('reel-storage-failed'));expect(mocks.last).not.toHaveBeenCalled();expect(mocks.next).not.toHaveBeenCalled();expect(mocks.request).not.toHaveBeenCalled();expect(mocks.publish).not.toHaveBeenCalled();expect(names(rpc)).toEqual([]);
+});
+
+it('does not send or overwrite a claimed receipt after its second Reel lookup becomes unavailable',async()=>{
+ vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED','true');mocks.find.mockResolvedValueOnce({reelKey:'7'.repeat(64),url:'https://test-only.supabase.co/reel.mp4',sha256:'8'.repeat(64),bytes:1000,audioId:track}).mockRejectedValueOnce(new Error('TEST_ONLY_PRIVATE_DETAIL'));const {db,rpc}=database();expect(await publishDueMarketing(db,owner,'dneskai',false,undefined,undefined,{origin:'https://own.example'})).toEqual(held('reel-storage-failed'));expect(mocks.publish).not.toHaveBeenCalled();expect(names(rpc)).toEqual(['marketing_claim_due']);
+});

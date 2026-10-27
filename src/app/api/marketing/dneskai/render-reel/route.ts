@@ -101,7 +101,7 @@ export async function POST(request: Request) {
                 const trackId = revision.audio?.trackId ?? input.audioTrackId ?? null;
                 return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId, signal) : null;
             },
-            storage: createDneskaiReelStorage(db, ownerId), signal,
+            storage: createDneskaiReelStorage(db, ownerId, signal), signal,
         }), signal);
         signal.throwIfAborted();
         await awaitWithSignal(recordDneskaiReel(db, ownerId, input.revisionId, { reelKey: reel.reelKey, revisionHash: reel.revisionHash, audioId: reel.audioId, sha256: reel.sha256, bytes: reel.bytes }), signal);

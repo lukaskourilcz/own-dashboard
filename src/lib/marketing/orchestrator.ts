@@ -1,4 +1,5 @@
 import 'server-only';
+import {awaitWithSignal} from '@/lib/abortable';
 import { createHash } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { parseContentRevision,parseSourcePacket,publishedStoryReceipt,sourceUsable,type MarketingBrand,type MarketingRevisionRow,type PublicationRow,type SourcePacket } from './contracts';
@@ -21,7 +22,9 @@ async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,
  const revision=state.revisionRow.revision;
  if(!deckReel(revision))return {reel:null,hold:null};
  if(!dneskaiReelsEnabled())return {reel:null,hold:'reels-disabled'};
- const reel=await findDneskaiReelForRevision(db,owner,state.revisionRow.id,state.revisionRow.content_hash).catch(()=>null);
+ let reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;
+ try{const lookupSignal=AbortSignal.any([AbortSignal.timeout(15000),...(options.signal?[options.signal]:[])]);lookupSignal.throwIfAborted();reel=await awaitWithSignal(findDneskaiReelForRevision(db,owner,state.revisionRow.id,state.revisionRow.content_hash,undefined,lookupSignal),lookupSignal);lookupSignal.throwIfAborted();}
+ catch{return {reel:null,hold:options.signal?.aborted?'reel-render-unavailable':'reel-storage-failed'};}
  if(reel)return {reel,hold:null};
  if(options.dryRun)return {reel:null,hold:'reel-render-pending'};
  if(!options.origin)return {reel:null,hold:'reel-render-unavailable'};
@@ -167,7 +170,12 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
   let container=publication.remote_container_id,code=publication.error_code;
   // The stored account token wins over the environment bootstrap; a held credential stops at the gate.
   const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);
-  const reel=deckReel(state.revisionRow.revision)?await findDneskaiReelForRevision(db,owner,publication.revision_id,state.revisionRow.content_hash).catch(()=>null):null;
+  let reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>=null;
+  if(deckReel(state.revisionRow.revision)){
+   try{reel=await findDneskaiReelForRevision(db,owner,publication.revision_id,state.revisionRow.content_hash,undefined,signal);}
+   catch{outcomes.push({publicationId:publication.id,status:'held' as const,errorCode:'reel-storage-failed',remoteContainerId:container,remoteMediaId:publication.remote_media_id,remoteUrl:publication.remote_url});continue;}
+   if(!reel){outcomes.push({publicationId:publication.id,status:'held' as const,errorCode:'reel-render-pending',remoteContainerId:container,remoteMediaId:publication.remote_media_id,remoteUrl:publication.remote_url});continue;}
+  }
   const outcome=await publishMarketingRevision({...state,reel,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
    if(checkpoint.stage==='outcome'){
     const {error:receiptError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:publication.id,p_expected_container:container,p_expected_error:code,p_status:checkpoint.status,p_container:checkpoint.remoteContainerId,p_media:checkpoint.remoteMediaId,p_url:checkpoint.remoteUrl,p_error:checkpoint.errorCode});

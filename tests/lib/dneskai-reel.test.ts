@@ -152,7 +152,8 @@ it('reads a recorded legacy MP4 key only for its exact approved revision hash', 
   const storage = memoryStorage(), reelKey = '7'.repeat(64), digest = '8'.repeat(64);
   const payload = { reelKey, revisionHash: contentHash, audioId: null, sha256: digest, bytes: 12 };
   storage.stored.set(reelKey, { url: 'https://test-only.supabase.co/legacy.mp4', sha256: digest, bytes: 12 });
-  const query = { select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: [{ payload }], error: null })) };
+  let requestedHash = contentHash;
+  const query = { select: vi.fn(() => query), eq: vi.fn((key: string, value: string) => { if(key === 'payload->>revisionHash') requestedHash = value; return query; }), order: vi.fn(() => query), limit: vi.fn(() => query),retry:vi.fn(()=>query),abortSignal:vi.fn(async()=>({data:requestedHash===contentHash?[{...payload,id:'44444444-4444-4444-8444-444444444444',user_id:owner,revision_id:revisionId,kind:'dneskai-reel-rendered',created_at:'2026-10-27T10:00:00Z'}]:[],error:null})) };
   const db = { from: vi.fn(() => query) } as unknown as Db;
   expect(await findDneskaiReelForRevision(db, owner, revisionId, contentHash, storage as never)).toMatchObject({ reelKey, sha256: digest });
   expect(query.eq).toHaveBeenCalledWith('user_id', owner);
