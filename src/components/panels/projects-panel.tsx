@@ -195,6 +195,7 @@ type ProjectsPanelProps = {
   /** Isolated fake-backend harness only; other marketing actions stay in preview. */
   previewSourceSettingsIntegration?: boolean;
   previewMusicIntegration?: boolean;
+  previewAccountIntegration?: boolean;
   /** Fixture previews never write; the registry sync is skipped there. */
   isPreview?: boolean;
 };
@@ -207,6 +208,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     return <ProjectWorkspace
       initialProjectTab={props.initialProjectTab}
       previewMusicIntegration={props.previewMusicIntegration}
+      previewAccountIntegration={props.previewAccountIntegration}
       previewSourceSettingsIntegration={props.previewSourceSettingsIntegration}
       project={selected}
       allProjects={props.projects}

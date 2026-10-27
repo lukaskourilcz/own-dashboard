@@ -49,3 +49,11 @@ it("isolates task-write fixtures from other preview scopes and real backends", a
  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL","https://backend.example");
  expect((await PreviewPage({searchParams:Promise.resolve({tasks:"live"})})).props.children.props.liveTasks).toBe(false);
 });
+
+it("enables account controls separately and only against the nonexistent backend", async () => {
+  vi.stubEnv("NODE_ENV", "test"); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ accounts: "live" }) })).props.liveAccounts).toBe(true);
+  expect((await PreviewPage({ searchParams: Promise.resolve({ music: "live" }) })).props.liveAccounts).toBe(false);
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://backend.example");
+  expect((await PreviewPage({ searchParams: Promise.resolve({ accounts: "live" }) })).props.children.props.liveAccounts).toBe(false);
+});

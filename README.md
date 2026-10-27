@@ -267,9 +267,11 @@ The migrations, in the order they run:
 
 143. `20261027194255_confirmed_marketing_account_snapshot.sql` — prepared, unapplied; authenticated-only captured-owner stable account/token-metadata snapshot under existing own RLS; no credentials, writes or table grants.
 
-144. `20261027195903_captured_marketing_account_switches.sql` — prepared, unapplied; finite monotonic account versions and service-only captured switch transactions with locked current token eligibility and post-trigger receipts. API/browser adoption remains in progress.
+144. `20261027195903_captured_marketing_account_switches.sql` — prepared, unapplied; finite monotonic account versions and service-only captured switch transactions with locked current token eligibility and post-trigger receipts. Finding 350 adopts the captured API/browser controls; migration 145 includes versions in the private read.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The fifty-eight audit migrations 87–144 remain unapplied; apply them in filename order before deploying the implementation branch.
+145. `20261027202033_versioned_marketing_account_snapshot.sql` — prepared, unapplied; adds exact account versions to the existing authenticated-owner snapshot without credential values or row/table-grant changes.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The fifty-nine audit migrations 87–145 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 

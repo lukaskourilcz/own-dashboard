@@ -160,10 +160,10 @@ describe('owner account routes', () => {
     expect(failed.status).toBe(503); expect(await failed.json()).toEqual({ error: 'account-verification-unavailable' });
   });
   it('lists own accounts with token metadata through the session client', async () => {
-    mocks.sessionRpc.mockResolvedValue({ data: {ownerId:owner,accounts:[{id:accountId,user_id:owner,brand:'dneskai',platform:'instagram',handle:'dneskai',verified_at:stored.verifiedAt,enabled:false}],tokens:[{account_id:accountId,brand:'dneskai',platform:'instagram',expires_at:stored.token.expiresAt,refreshed_at:stored.token.refreshedAt,scopes:stored.token.scopes,login_mode:'instagram'}]}, error: null });
+    mocks.sessionRpc.mockResolvedValue({ data: {ownerId:owner,accounts:[{id:accountId,updated_at:'2026-10-27T10:00:00.000001Z',user_id:owner,brand:'dneskai',platform:'instagram',handle:'dneskai',verified_at:stored.verifiedAt,enabled:false}],tokens:[{account_id:accountId,brand:'dneskai',platform:'instagram',expires_at:stored.token.expiresAt,refreshed_at:stored.token.refreshedAt,scopes:stored.token.scopes,login_mode:'instagram'}]}, error: null });
     const response = await GET(new Request("https://own.example/api/marketing/accounts"));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ accounts: [{ id: accountId, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verifiedAt: stored.verifiedAt, enabled: false, token: stored.token }] });
+    expect(await response.json()).toEqual({ accounts: [{ id: accountId, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verifiedAt: stored.verifiedAt, enabled: false, updatedAt:'2026-10-27T10:00:00.000001Z', token: stored.token }] });
     expect(mocks.sessionFrom).not.toHaveBeenCalled();
     expect(mocks.sessionRpc).toHaveBeenCalledWith('read_owned_marketing_accounts',{p_owner:owner});
     mocks.sessionRpc.mockResolvedValue({ data: null, error: { message: 'down' } });

@@ -138,3 +138,29 @@ it('preserves populated accounts, token metadata and table privileges through ca
     expect(await preserved()).toEqual(before);
     expect((await authenticated.rpc('read_owned_marketing_accounts', { p_owner: owner })).error).toBeNull();
 });
+it('projects the exact current microsecond account version through the private snapshot', async () => {
+    const version = '2026-10-27T10:00:00.123456Z';
+    await database.query('update public.marketing_accounts set updated_at=$1 where id=$2', [version, id]);
+    const expected = (await database.query<{ version: string }>("select to_jsonb(a)->>'updated_at' as version from public.marketing_accounts a where id=$1", [id])).rows[0].version;
+    const reply = await authenticated.rpc('read_owned_marketing_accounts', { p_owner: owner });
+    expect(reply.error).toBeNull(); expect(reply.data.accounts[0].updated_at).toBe(expected);
+});
+it('upgrades the existing snapshot with versions without changing rows, credentials or table privileges', async () => {
+    const prior = readFileSync('supabase/migrations/20261027194255_confirmed_marketing_account_snapshot.sql', 'utf8');
+    const migration = readFileSync('supabase/migrations/20261027202033_versioned_marketing_account_snapshot.sql', 'utf8');
+    const preserved = () => database.query("select (select jsonb_agg(to_jsonb(a) order by id) from public.marketing_accounts a) accounts,(select jsonb_agg(jsonb_build_object('id',account_id,'expiry',expires_at,'hash',md5(access_token)) order by account_id) from public.marketing_account_tokens) tokens,(select jsonb_agg(jsonb_build_object('name',relname,'acl',relacl::text) order by relname) from pg_class where oid in('public.marketing_accounts'::regclass,'public.marketing_account_tokens'::regclass)) acl");
+    const before = await preserved();
+    await database.exec('begin;drop function public.read_owned_marketing_accounts(uuid);');
+    try {
+        await database.exec(prior);
+        expect((await authenticated.rpc('read_owned_marketing_accounts', { p_owner: owner })).data.accounts[0]).not.toHaveProperty('updated_at');
+        await database.exec(migration);
+        expect((await authenticated.rpc('read_owned_marketing_accounts', { p_owner: owner })).data.accounts[0].updated_at).toEqual(expect.any(String));
+        expect(await preserved()).toEqual(before);
+    } finally { await database.exec('rollback'); }
+    await database.exec('begin;drop function public.read_owned_marketing_accounts(uuid);');
+    try { await database.exec(prior); await expect(database.exec(migration + ';select 1/0;')).rejects.toThrow(); }
+    finally { await database.exec('rollback'); }
+    expect(await preserved()).toEqual(before);
+    expect((await authenticated.rpc('read_owned_marketing_accounts', { p_owner: owner })).error).toBeNull();
+});

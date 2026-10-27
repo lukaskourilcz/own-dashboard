@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
 import { boundedResponseText } from '@/lib/bounded-response';
-import { databaseTimestamp } from '@/lib/database-version';
+import { databaseTimestamp,databaseVersion } from '@/lib/database-version';
 import {confirmMarketingAccountControl,MarketingAccountControlSchema,MarketingAccountSwitchSchema,type MarketingAccountControl,type MarketingAccountSwitch} from './account-control-contracts';
 
 /** Browser-safe view of a connected marketing account. It never carries a token. */
 const timestamp = databaseTimestamp;
 export const MarketingAccountStatusSchema = z.strictObject({
   id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), handle: z.string().min(1).max(100),
-  verifiedAt: timestamp.nullable(), enabled: z.boolean(),
+  verifiedAt: timestamp.nullable(), enabled: z.boolean(), updatedAt:timestamp.optional(),
   token: z.strictObject({ expiresAt: timestamp, refreshedAt: timestamp, scopes: z.array(z.string().min(1).max(64)).max(20).refine(values=>new Set(values).size===values.length), loginMode: z.enum(['instagram', 'facebook', 'threads']) }).nullable(),
   /**
    * #160: replies to keyword comments for this account. Present only while the server runs the comment watcher
@@ -69,7 +69,7 @@ function accountSelector(accountId: string) {
   if (!z.uuid().safeParse(accountId).success) throw new MarketingAccountRequestError('invalid-request');
 }
 export async function loadMarketingAccounts(signal?: AbortSignal) {
-  return accountRequest('/api/marketing/accounts',undefined,signal,20000,value=>MarketingAccountsResponseSchema.parse(value).accounts);
+  return accountRequest('/api/marketing/accounts',undefined,signal,20000,value=>{const rows=MarketingAccountsResponseSchema.parse(value).accounts;if(rows.some(row=>!row.updatedAt))throw new Error();return rows;});
 }
 export async function verifyMarketingAccount(brand: 'dneskai', platform: 'instagram', signal?: AbortSignal): Promise<MarketingAccountVerifyResponse> {
   if (brand !== 'dneskai' || platform !== 'instagram') throw new MarketingAccountRequestError('invalid-request');
@@ -89,27 +89,7 @@ export async function marketingCommentSubscription(accountId: string, action: 's
     return result.subscribed;
   });
 }
-/** Turns replies on or off only after the captured account/state is positively returned. */
-export async function setMarketingAccountEngagement(accountId: string, enabled: boolean, signal?: AbortSignal): Promise<MarketingAccountStatus> {
-  accountSelector(accountId);
-  if (typeof enabled !== 'boolean') throw new MarketingAccountRequestError('invalid-request');
-  return accountRequest('/api/marketing/accounts/engagement',{accountId,enabled},signal,35000,value=>{
-    const account = z.strictObject({account:MarketingAccountStatusSchema}).parse(value).account;
-    if (account.id !== accountId || account.engagement?.enabled !== enabled) throw new Error();
-    return account;
-  });
-}
-export async function setMarketingAccountEnabled(accountId: string, enabled: boolean, signal?: AbortSignal): Promise<MarketingAccountStatus> {
-  accountSelector(accountId);
-  if (typeof enabled !== 'boolean') throw new MarketingAccountRequestError('invalid-request');
-  return accountRequest('/api/marketing/accounts/enable',{accountId,enabled},signal,35000,value=>{
-    const account = z.strictObject({account:MarketingAccountStatusSchema}).parse(value).account;
-    if (account.id !== accountId || account.enabled !== enabled) throw new Error();
-    return account;
-  });
-}
-
-/** Captured control transport; route/panel adoption follows before enabling these requests. */
+/** Submit one captured account change without automatic replay. */
 export async function submitMarketingAccountControl(input:MarketingAccountControl,kind:MarketingAccountSwitch,parent?:AbortSignal){
  const intent=MarketingAccountControlSchema.safeParse(input),control=MarketingAccountSwitchSchema.safeParse(kind);
  if(!intent.success||!control.success)throw new MarketingAccountRequestError('invalid-request');
@@ -117,4 +97,33 @@ export async function submitMarketingAccountControl(input:MarketingAccountContro
   const body=z.strictObject({receipt:z.unknown()}).parse(value);
   return confirmMarketingAccountControl(body.receipt,intent.data,control.data);
  });
+}
+
+/** Patch only the captured cached row after an exact saved receipt. */
+export function applyMarketingAccountControlReceipt(
+  rows: readonly MarketingAccountStatus[] | undefined,
+  input: MarketingAccountControl,
+  kind: MarketingAccountSwitch,
+  value: unknown,
+) {
+  const receipt = confirmMarketingAccountControl(value, input, kind);
+  if (receipt.kind !== 'saved' || !rows) return { accounts: rows, reconcile: true };
+  const index = rows.findIndex(row => row.id === input.accountId);
+  const current = rows[index];
+  if (!current?.updatedAt || databaseVersion(current.updatedAt) !== databaseVersion(input.expectedVersion)) {
+    return { accounts: rows, reconcile: true };
+  }
+  if (kind === 'engagement' && !current.engagement) return { accounts: rows, reconcile: true };
+  const updated = MarketingAccountStatusSchema.parse({
+    ...current,
+    updatedAt: receipt.updatedAt,
+    ...(kind === 'publishing' ? { enabled: input.enabled } : {
+      engagement: { ...current.engagement, enabled: input.enabled,
+        ...(input.enabled ? { blockedCode: null, blockedAt: null } : {}),
+      },
+    }),
+  });
+  const accounts = [...rows];
+  accounts[index] = updated;
+  return { accounts, reconcile: false };
 }

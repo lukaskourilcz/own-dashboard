@@ -27,6 +27,7 @@ export function DemoDashboard({
   liveRepositories = false,
   liveProjectRecords = false,
   liveMusic = false,
+  liveAccounts = false,
   livePlanning = false,
   livePlanRecords = false,
   liveTasks = false,
@@ -60,6 +61,8 @@ export function DemoDashboard({
   liveProjectRecords?: boolean;
   /** Isolated fake-backend Music tests only; the public tour remains read-only. */
   liveMusic?: boolean;
+  /** Isolated fake-backend account control checks only. */
+  liveAccounts?: boolean;
   /** Isolated fake-backend weekly planning checks only. */
   livePlanning?: boolean;
   /** Isolated fake-backend Goals/Home plan checks only. */
@@ -107,6 +110,7 @@ export function DemoDashboard({
       previewRepositoryIntegration={liveRepositories}
       previewProjectIntegration={liveProjectRecords}
       previewMusicIntegration={liveMusic}
+      previewAccountIntegration={liveAccounts}
       previewPlanIntegration={livePlanRecords}
       previewPlanningIntegration={livePlanning}
       previewTaskIntegration={liveTasks}
@@ -119,7 +123,7 @@ export function DemoDashboard({
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
       previewCompetitorIntegration={liveCompetitors}
-      user={liveMusic || livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={liveAccounts || liveMusic || livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}

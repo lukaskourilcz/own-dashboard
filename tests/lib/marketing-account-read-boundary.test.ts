@@ -5,7 +5,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: (...args: unknown[]) => m.session(...args) }));
 import { GET } from '@/app/api/marketing/accounts/route';
 const owner = '11111111-1111-4111-8111-111111111111', id = '22222222-2222-4222-8222-222222222222', other = '33333333-3333-4333-8333-333333333333';
-const account = () => ({ id, user_id: owner, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verified_at: '2026-10-27T10:00:00Z', enabled: false });
+const account = () => ({ id, updated_at:'2026-10-27T10:00:00.000001Z', user_id: owner, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verified_at: '2026-10-27T10:00:00Z', enabled: false });
 const token = () => ({
     account_id: id, brand: 'dneskai', platform: 'instagram', expires_at: '2026-12-01T10:00:00Z', refreshed_at: '2026-10-27T10:00:00Z', scopes: ['instagram_business_basic'], login_mode: 'instagram'
 });

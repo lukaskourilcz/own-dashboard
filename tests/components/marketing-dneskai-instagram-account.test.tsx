@@ -5,17 +5,20 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DneskaiCommentSubscription, DneskaiEngagementSwitch, DneskaiInstagramAccount, DneskaiInstagramAccountRecord } from '@/components/marketing/dneskai-instagram-account';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
+import {OwnerPreferencesProvider} from '@/lib/owner-preferences';
+import {qk} from '@/lib/queries/keys';
 import type { MarketingAccountStatus } from '@/lib/marketing/accounts-client';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 let container: HTMLDivElement; let root: Root; let client: QueryClient;
+const owner='11111111-1111-4111-8111-111111111111';
 const now = new Date('2026-10-20T12:00:00Z');
 const account = (patch: Partial<MarketingAccountStatus> = {}): MarketingAccountStatus => ({ id: '44444444-4444-4444-8444-444444444444', brand: 'dneskai', platform: 'instagram', handle: 'dneskai',
-  verifiedAt: '2026-10-20T10:00:00.123456+00:00', enabled: false,
+  verifiedAt: '2026-10-20T10:00:00.123456+00:00', updatedAt:'2026-10-20T10:00:00.123456+00:00', enabled: false,
   token: { expiresAt: '2026-12-19T10:00:00+00:00', refreshedAt: '2026-10-20T10:00:00.123456+00:00', scopes: ['instagram_business_basic', 'instagram_business_content_publish'], loginMode: 'instagram' }, ...patch });
 beforeEach(() => { container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); });
 afterEach(() => { act(() => root.unmount()); container.remove(); client.clear(); vi.unstubAllGlobals(); });
-const render = (node: React.ReactNode) => act(() => root.render(<QueryClientProvider client={client}>{node}</QueryClientProvider>));
+const render = (node: React.ReactNode) => act(() => root.render(<OwnerPreferencesProvider ownerId={owner}><QueryClientProvider client={client}>{node}</QueryClientProvider></OwnerPreferencesProvider>));
 const settle = () => act(async () => { await new Promise(done => setTimeout(done, 20)); });
 
 describe('DNESKAi Instagram account status', () => {
@@ -87,12 +90,13 @@ describe('replies to keyword comments (#160)', () => {
     expect(container.querySelector('[data-testid="dneskai-engagement-switch"]')).toBeNull();
   });
   it('turns replies on with one POST and explains a block in both languages', async () => {
-    const fetcher = vi.fn(async () => Response.json({ account: withEngagement({ enabled: true, blockedCode: null, blockedAt: null }) }));
+    const before=withEngagement({enabled:false,blockedCode:null,blockedAt:null});client.setQueryData(qk.marketingAccounts,[before]);
+    const fetcher = vi.fn(async () => Response.json({receipt:{kind:'saved',ownerId:owner,id:before.id,expectedVersion:before.updatedAt,switch:'engagement',requestedEnabled:true,updatedAt:'2026-10-20T10:00:00.123457+00:00'}}));
     vi.stubGlobal('fetch', fetcher);
     render(<DneskaiEngagementSwitch account={withEngagement({ enabled: false, blockedCode: null, blockedAt: null })} lang="en" now={now} />);
     act(() => container.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     await settle();
-    expect(fetcher).toHaveBeenCalledWith('/api/marketing/accounts/engagement', expect.objectContaining({ method: 'POST', body: JSON.stringify({ accountId: account().id, enabled: true }) }));
+    expect(fetcher).toHaveBeenCalledWith('/api/marketing/accounts/engagement', expect.objectContaining({ method: 'POST', body: JSON.stringify({ ownerId:owner,accountId: account().id,expectedVersion:account().updatedAt,enabled: true }) }));
     expect(container.textContent).toContain(t.engagement.enabledNow);
     for (const lang of ['en', 'cs'] as const) {
       act(() => root.unmount()); root = createRoot(container);
@@ -131,5 +135,82 @@ describe('comment webhook subscription (#161)', () => {
     act(() => root.unmount()); root = createRoot(container);
     render(<DneskaiEngagementSwitch account={account({ engagement: { enabled: true, blockedCode: null, blockedAt: null, webhook: true } })} lang="en" now={now} />);
     expect(container.querySelector('[data-testid="dneskai-comment-subscription"]')).not.toBeNull();
+  });
+});
+
+const deferred = <T,>() => { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; };
+const publishButton = () => container.querySelector<HTMLButtonElement>('[data-testid="dneskai-publishing-switch"] button')!;
+const saved = (before: MarketingAccountStatus, enabled = true) => ({ receipt: { kind: 'saved', ownerId: owner, id: before.id, expectedVersion: before.updatedAt, switch: 'publishing', requestedEnabled: enabled, updatedAt: '2026-10-20T10:00:00.123457Z' } });
+
+describe('captured account controls and recovery', () => {
+  beforeEach(() => vi.stubGlobal('confirm', vi.fn(() => true)));
+  afterEach(() => vi.restoreAllMocks());
+  it('retains confirmed details after a failed refresh and resumes only after an explicit successful reload', async () => {
+    const before = account(); client.setQueryData(qk.marketingAccounts, [before]);
+    let available = false;
+    const fetcher = vi.fn(async () => available ? Response.json({ accounts: [before] }) : Response.json({ error: 'account-store-failed' }, { status: 503 })); vi.stubGlobal('fetch', fetcher);
+    render(<DneskaiInstagramAccount lang="en" now={now} />); await settle();
+    expect(container.textContent).toContain('@dneskai'); expect(container.textContent).toContain(dneskaiAccount.en.cachedUnavailable); expect(publishButton().disabled).toBe(true);
+    available = true;
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="dneskai-account-recovery"] button')!.click()); await settle();
+    expect(container.querySelector('[data-testid="dneskai-account-recovery"]')).toBeNull(); expect(publishButton().disabled).toBe(false); expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it('reserves the original version synchronously, sends once, and patches a saved result without a second GET', async () => {
+    const before = account(), response = deferred<Response>(), writes: RequestInit[] = []; let reads = 0;
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => { if (init?.method === 'POST') { writes.push(init); return response.promise; } reads++; return Promise.resolve(Response.json({ accounts: [before] })); }));
+    render(<DneskaiInstagramAccount lang="en" now={now} />); await settle();
+    act(() => { publishButton().click(); publishButton().click(); });
+    expect(writes).toHaveLength(1); expect(JSON.parse(String(writes[0].body))).toEqual({ ownerId: owner, accountId: before.id, expectedVersion: before.updatedAt, enabled: true });
+    await act(async () => response.resolve(Response.json(saved(before)))); await settle();
+    expect(reads).toBe(1); expect(client.getQueryData<MarketingAccountStatus[]>(qk.marketingAccounts)?.[0]).toMatchObject({ enabled: true, updatedAt: saved(before).receipt.updatedAt });
+    expect(publishButton().textContent).toBe(dneskaiAccount.en.disable);
+  });
+  it('keeps a newer cached row and requires a read when an older save completes', async () => {
+    const before = account(), response = deferred<Response>();
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => init?.method === 'POST' ? response.promise : Promise.resolve(Response.json({ accounts: [before] }))));
+    render(<DneskaiInstagramAccount lang="en" now={now} />); await settle(); act(() => publishButton().click());
+    const newer = { ...before, handle: 'newer_handle', updatedAt: '2026-10-20T10:00:00.123458Z' };
+    act(() => client.setQueryData(qk.marketingAccounts, [newer]));
+    await act(async () => response.resolve(Response.json(saved(before)))); await settle();
+    expect(client.getQueryData(qk.marketingAccounts)).toEqual([newer]); expect(container.textContent).toContain(dneskaiAccount.en.changed); expect(publishButton().disabled).toBe(true);
+  });
+  it('holds an uncertain write without replay, then clears the hold after a fresh explicit read', async () => {
+    const before = account(); let writes = 0;
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => { if (init?.method === 'POST') { writes++; throw new Error('PRIVATE transport detail'); } return Response.json({ accounts: [before] }); }));
+    render(<DneskaiInstagramAccount lang="cs" now={now} />); await settle(); await act(async () => publishButton().click()); await settle();
+    expect(writes).toBe(1); expect(publishButton().disabled).toBe(true); expect(container.textContent).toContain(dneskaiAccount.cs.operationFailed); expect(container.textContent).not.toContain('PRIVATE');
+    act(() => publishButton().click()); expect(writes).toBe(1);
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="dneskai-account-recovery"] button')!.click()); await settle();
+    expect(publishButton().disabled).toBe(false); expect(container.textContent).not.toContain(dneskaiAccount.cs.operationFailed);
+  });
+  it('invalidates the original cache and ignores a late acknowledgment after unmount', async () => {
+    client.setQueryDefaults(qk.marketingAccounts, { gcTime: Infinity });
+    const before = account(), response = deferred<Response>(); let signal!: AbortSignal;
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => { if (init?.method === 'POST') { signal = init.signal!; return response.promise; } return Promise.resolve(Response.json({ accounts: [before] })); }));
+    render(<DneskaiInstagramAccount lang="en" now={now} />); await settle(); act(() => publishButton().click());
+    act(() => root.unmount()); root = createRoot(container); expect(signal.aborted).toBe(true);
+    await act(async () => response.resolve(Response.json(saved(before)))); await settle();
+    expect(client.getQueryState(qk.marketingAccounts)?.isInvalidated).toBe(true); expect(client.getQueryData(qk.marketingAccounts)).toEqual([before]);
+  });
+  it('does not transplant a pending result into a replacement owner scope', async () => {
+    client.setQueryDefaults(qk.marketingAccounts, { gcTime: Infinity });
+    const before = account(), response = deferred<Response>(); let signal!: AbortSignal;
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => { if (init?.method === 'POST') { signal = init.signal!; return response.promise; } return Promise.resolve(Response.json({ accounts: [before] })); }));
+    render(<DneskaiInstagramAccount lang="en" now={now} />); await settle(); act(() => publishButton().click());
+    act(() => root.render(<OwnerPreferencesProvider ownerId="99999999-9999-4999-8999-999999999999"><QueryClientProvider client={client}><p>Replacement owner</p></QueryClientProvider></OwnerPreferencesProvider>));
+    expect(signal.aborted).toBe(true); await act(async () => response.resolve(Response.json(saved(before)))); await settle();
+    expect(container.textContent).toBe('Replacement owner'); expect(client.getQueryData(qk.marketingAccounts)).toEqual([before]);
+  });
+  it('requires a fresh read for a changed business receipt and does not claim success', async () => {
+    const before = account(); let writes = 0;
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => { if (init?.method === 'POST') { writes++; return Response.json({ receipt: { ...saved(before).receipt, kind: 'changed' } }); } return Response.json({ accounts: [before] }); }));
+    render(<DneskaiInstagramAccount lang="en" now={now} />); await settle(); await act(async () => publishButton().click()); await settle();
+    expect(writes).toBe(1); expect(container.textContent).toContain(dneskaiAccount.en.changed); expect(container.textContent).not.toContain(dneskaiAccount.en.enabledNow); expect(publishButton().disabled).toBe(true);
+  });
+  it('keeps the known comment subscription visible when a refresh fails', async () => {
+    const before = account(), key = [...qk.marketingAccounts, 'comment-subscription', before.id]; client.setQueryData(key, true);
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'account-request-failed' }, { status: 503 })));
+    render(<DneskaiCommentSubscription account={before} lang="en" />); await settle();
+    expect(container.textContent).toContain(dneskaiAccount.en.engagement.webhookOn); expect(container.textContent).toContain(dneskaiAccount.en.operationFailed); expect(container.textContent).not.toContain(dneskaiAccount.en.failed);
   });
 });

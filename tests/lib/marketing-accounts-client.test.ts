@@ -1,23 +1,28 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { loadMarketingAccounts, setMarketingAccountEnabled, setMarketingAccountEngagement, marketingCommentSubscription, verifyMarketingAccount } from '@/lib/marketing/accounts-client';
+import { loadMarketingAccounts, submitMarketingAccountControl, marketingCommentSubscription, verifyMarketingAccount } from '@/lib/marketing/accounts-client';
 const id = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
+const expectedVersion='2026-10-27T10:00:00.000001Z',ownerId='33333333-3333-4333-8333-333333333333';
+const intent=(accountId:string,enabled:boolean)=>({ownerId,accountId,expectedVersion,enabled});
+const controlReceipt=(kind:'publishing'|'engagement',enabled:boolean)=>({ownerId,id,expectedVersion,switch:kind,requestedEnabled:enabled,kind:'saved',updatedAt:'2026-10-27T10:00:00.000002Z'});
+const setMarketingAccountEnabled=(accountId:string,enabled:boolean,signal?:AbortSignal)=>submitMarketingAccountControl(intent(accountId,enabled),'publishing',signal);
+const setMarketingAccountEngagement=(accountId:string,enabled:boolean,signal?:AbortSignal)=>submitMarketingAccountControl(intent(accountId,enabled),'engagement',signal);
 const account = () => ({
-    id, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verifiedAt: '2026-10-27T10:00:00Z', enabled: false, token: null, engagement: { enabled: false, blockedCode: null, blockedAt: null }
+    id, updatedAt:expectedVersion, brand: 'dneskai', platform: 'instagram', handle: 'dneskai', verifiedAt: '2026-10-27T10:00:00Z', enabled: false, token: null, engagement: { enabled: false, blockedCode: null, blockedAt: null }
 });
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
 it('refuses a switch receipt naming another account', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ account: { ...account(), id: other, enabled: true } })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({receipt:{...controlReceipt('publishing',true),id:other}})));
     await expect(setMarketingAccountEnabled(id, true)).rejects.toMatchObject({ name: 'MarketingAccountRequestError', code: 'account-request-failed' });
 });
 it('refuses a switch receipt with the opposite publishing state', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ account: account() })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({receipt:controlReceipt('publishing',false)})));
     await expect(setMarketingAccountEnabled(id, true)).rejects.toMatchObject({ name: 'MarketingAccountRequestError', code: 'account-request-failed' });
 });
 it('refuses a switch receipt with the opposite engagement state', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ account: account() })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({receipt:controlReceipt('engagement',false)})));
     await expect(setMarketingAccountEngagement(id, true)).rejects.toMatchObject({ name: 'MarketingAccountRequestError', code: 'account-request-failed' });
 });
 it('refuses verification naming a different brand', async () => {
@@ -33,8 +38,8 @@ const operations = [
     {
         name: 'verify', budget: 35000, call: (signal?: AbortSignal) => verifyMarketingAccount('dneskai', 'instagram', signal), reply: () => ({ account: account(), accountType: 'BUSINESS', tokenStored: false })
     },
-    { name: 'publishing', budget: 35000, call: (signal?: AbortSignal) => setMarketingAccountEnabled(id, false, signal), reply: () => ({ account: account() }) },
-    { name: 'engagement', budget: 35000, call: (signal?: AbortSignal) => setMarketingAccountEngagement(id, false, signal), reply: () => ({ account: account() }) },
+    { name: 'publishing', budget: 35000, call: (signal?: AbortSignal) => setMarketingAccountEnabled(id, false, signal), reply: () => ({receipt:controlReceipt('publishing',false)}) },
+    { name: 'engagement', budget: 35000, call: (signal?: AbortSignal) => setMarketingAccountEngagement(id, false, signal), reply: () => ({receipt:controlReceipt('engagement',false)}) },
     { name: 'subscription', budget: 35000, call: (signal?: AbortSignal) => marketingCommentSubscription(id, 'status', signal), reply: () => ({ subscribed: false }) },
 ];
 it.each(operations)('$name returns a positive exact reply once within the original caller scope', async ({ call, reply }) => {

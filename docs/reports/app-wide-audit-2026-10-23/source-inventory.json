@@ -318,24 +318,24 @@
     },
     {
       "path": "src/app/api/marketing/accounts/enable/route.ts",
-      "lines": 64,
+      "lines": 44,
       "sha256": "647da00a2731a93f6fd8ceab40d5cdcfd61e64399986065e28d0e8fb4ef5b45f",
-      "status": "partial; owned account/token checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
-      "reviewedSha256": "ce54b2fed5db26e3b3e8dec292ab5a4f662b25bee3d67e7c8ba2c78a638a38fb"
+      "status": "partial; findings 342/344 verified owner/auth/rate/body admission and finding 350 captured publishing RPC with current locked eligibility and exact business receipts verified; underlying SDK JSON consumption and final app-wide release remain",
+      "reviewedSha256": "ab2dd1df9a8bc83fd34a0a8a4238c13395e0a9bd81074fc45e585413e400c635"
     },
     {
       "path": "src/app/api/marketing/accounts/engagement/route.ts",
-      "lines": 64,
+      "lines": 45,
       "sha256": "d3258702b3fccd901a9cec7ae63de319b82029e9387391c8217e45f1aa85e043",
-      "status": "partial; owned scope/expiry checks inspected; bounded auth/body/lifecycle and requested-state receipts remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 344 streamed 1000-byte/five-second account input admission verified; metadata/provider/write/browser proof remains separate",
-      "reviewedSha256": "9b44e579d091f39d5d9dd28f3c61a015a91a53e5e01c4223da46f095ca6a4020"
+      "status": "partial; findings 342/344 verified owner/auth/rate/body admission and finding 350 captured engagement RPC with current login-mode scopes, locked eligibility and exact business receipts verified; underlying SDK JSON consumption and final app-wide release remain",
+      "reviewedSha256": "df2c319d68a6723e0b6c88fe75fdfafcb17b054af999116787aed0eccd4d12d5"
     },
     {
       "path": "src/app/api/marketing/accounts/route.ts",
       "lines": 63,
       "sha256": "21f4f3c313edea0e71f63c6cfbfa569edcadaf4834addbe95c9dbdb69d9f1cae",
-      "status": "partial; non-secret projection inspected; auth errors, duplicate/completeness/timestamp checks and bounded reads remain; see remaining-review.md; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate; finding 345 strict owned/unique account and metadata projection, four-tuple completeness bound and explicit unavailable results verified; atomic cross-read consistency/JSON/browser work remains; finding 347 one captured authenticated-owner snapshot closes two-read skew, canonical 143/local SDK-RLS/native snapshot proof; account write/provider/browser and release remain",
-      "reviewedSha256": "36a75855792fd22fe8fa0e1960f73d5a5ba421e44dd1f157d4a521a30b27fd80"
+      "status": "partial; findings 342/345/347/350 verified owner, strict complete secret-free projection and one bounded stable private snapshot with full account version; underlying SDK JSON consumption and final app-wide release remain",
+      "reviewedSha256": "71e7a6965f42a93ff0782f8cea6e1f373cb5907cca0cfea27220a7d858e15631"
     },
     {
       "path": "src/app/api/marketing/accounts/verify/route.ts",
@@ -654,10 +654,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 62,
+      "lines": 63,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
       "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "c4f42ea002801d8ac02783a9d54ae0daecf7d12e1d9d2a89b68d14ba7b316c0f"
+      "reviewedSha256": "75a9201a723e7bf609a65f7e64205ccd98f9ce7213a00a22825295bf4d85407f"
     },
     {
       "path": "src/app/globals.css",
@@ -852,17 +852,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 581,
+      "lines": 582,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
       "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "7daa47147d74c1c1734f5b4e73e482440f0263084346620552dcd9e0f7b93548"
+      "reviewedSha256": "c0441c670ca83899cc98f1afebfa03fcb77c873ea8eb6a08412304ed9040b58d"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 199,
+      "lines": 203,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
       "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "dd07e56e43c1b428a696b186cf4b9aa691880ab9f3d4df627d3f551fa9024b72"
+      "reviewedSha256": "73faee079a2e370d9c857a4237da827366f3783c894711fc8a36f82f9dc6cc2d"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1050,10 +1050,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
-      "lines": 133,
+      "lines": 238,
       "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
-      "status": "partial source review: secret-free account metadata and gated controls retained; cached read recovery, synchronous captured mutations, duplicate publishing labels and unknown subscription status need repair verification",
-      "reviewedSha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea"
+      "status": "partial; finding 350 captured owner/version controls, pending exit/unmount guard, retained cached account/subscription recovery, shared expiry clock, compact EN/CS layout and exact cache patch verified; verification/subscription provider proof, final app-wide release remain; reproduced development warning traced to Next hot refresh, frozen-source matrix clean",
+      "reviewedSha256": "71d7ac68214e0730f3363e93754148a48bd1ee2b9605a5a5636d1291e2e9e32e"
     },
     {
       "path": "src/components/marketing/dneskai-source-forms.tsx",
@@ -1217,10 +1217,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/overflow-menu.tsx",
-      "lines": 92,
+      "lines": 94,
       "sha256": "576be5de6b91046d39345f884a65e001c3651632596d16f662663a45a5dc867c",
       "status": "partial; lazy panels and keyboard/focus routing inspected; child pending/dirty dismissal lifecycle remains; see remaining-review.md",
-      "reviewedSha256": "576be5de6b91046d39345f884a65e001c3651632596d16f662663a45a5dc867c"
+      "reviewedSha256": "cbaad957c33f4287d77f94a137a08f11964292c6c7a66cb037c6df5cdfabce1c"
     },
     {
       "path": "src/components/marketing/dneskai/published-tab.tsx",
@@ -1298,6 +1298,13 @@
       "sha256": "9d808373ce57ceb9075c17c7209249d75a7cce2273249c26ad4d4976411b0660",
       "status": "partial; selection sequencing and stop-after-current semantics inspected; confirmed acknowledgements, owner/unmount/cancellation/exit lifecycle remain; see remaining-review.md",
       "reviewedSha256": "9d808373ce57ceb9075c17c7209249d75a7cce2273249c26ad4d4976411b0660"
+    },
+    {
+      "path": "src/components/marketing/use-account-action-scope.ts",
+      "sha256": null,
+      "lines": 58,
+      "status": "source reviewed; captured account action lifetime and pending exit guard targeted; final app-wide release checks pending",
+      "reviewedSha256": "bd1e71135f96623be9d2c27328e011d788f12c464a724416ebc12290bdace905"
     },
     {
       "path": "src/components/marketing/use-marketing-calendars.ts",
@@ -1659,10 +1666,10 @@
     },
     {
       "path": "src/components/panels/projects-panel.tsx",
-      "lines": 1989,
+      "lines": 1991,
       "sha256": "48e6dd9af337281bce077445ae42af7630124ef1541595c5c07b41ebab4ac39c",
       "status": "partial; captured owner/project/classification/notes/deletion foundations and finding 311 estimated/unknown heartbeat UI checked; remaining operational metadata writes, density and final release pending",
-      "reviewedSha256": "856c26503565dde23e018ca44c4fdd14f813e081f6635a73d45207bccfe83fb1"
+      "reviewedSha256": "57c1e94a14e535b7b3c3c91e768c00b330fc1b5c71de11445d0d2934dc46f00d"
     },
     {
       "path": "src/components/panels/prompts-panel.tsx",
@@ -1855,10 +1862,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 321,
+      "lines": 322,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
       "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
-      "reviewedSha256": "cbbc7884b36ad559b247b682df1cdfc223c680f32807f5eb612963d89600543a"
+      "reviewedSha256": "785b1366b22cba202683d4f7128d47d99ea3ba1673a8c8caae7bef59c3e4b16d"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -2775,10 +2782,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-account.ts",
-      "lines": 120,
+      "lines": 122,
       "sha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5",
       "status": "partial source review: typed EN/CS account/reply diagnostics retained; introduction assumes Instagram Login despite supported Facebook Login and misleadingly implies verification always leaves publishing off; reconcile with actual connection state; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
-      "reviewedSha256": "23b0469070368e8e5285e55ece7db07dd8b9b81ae4db362691f41397c425e7ae"
+      "reviewedSha256": "131ea6a3183878e0c4762c39904aca5b87fd65874b4f059511a3a9eff0016ab3"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
@@ -3244,11 +3251,25 @@
       "reviewedSha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4"
     },
     {
+      "path": "src/lib/marketing/account-control-contracts.ts",
+      "sha256": null,
+      "lines": 24,
+      "reviewedSha256": "fc0d2ae9078581bf0d8dd2290804961099336a5ba56a3d264110857c3167e341",
+      "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
+    },
+    {
+      "path": "src/lib/marketing/account-control-server.ts",
+      "sha256": null,
+      "lines": 25,
+      "reviewedSha256": "18a8f85d3204c97db8b59fd7117dd9aa2a7dbf04b0695eaf2d604f909ead1d9d",
+      "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
+    },
+    {
       "path": "src/lib/marketing/accounts-client.ts",
-      "lines": 120,
+      "lines": 129,
       "sha256": "2b3bf1c1744f68d995b9e6862ad445259d61e553c4e3aafed11058c0cfd0bb30",
-      "status": "partial; browser-safe metadata shape inspected; finite clocks/timestamps, duplicate account identities, bounded bodies/deadlines and requested-state receipts remain; see remaining-review.md; finding 346 exact action receipts, bounded original browser transport, finite timestamps/unique list proof and fixed diagnostics verified; captured browser source/recovery and atomic writes remain; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain",
-      "reviewedSha256": "4e60dd424b12626fff57da735a47030225046a171cc360f6284996edcef6696b"
+      "status": "partial; findings 346/349/350 bounded original browser requests, strict captured intent/business receipts, immutable exact-version cache patch and explicit unavailable recovery verified; verification/subscription provider semantics and final app-wide release remain",
+      "reviewedSha256": "99caf07226e969ce5505d3423f2148c952bb88ed722fa1ce94a9b0ea6342e05e"
     },
     {
       "path": "src/lib/marketing/asset-urls.ts",
@@ -3580,6 +3601,13 @@
       "reviewedSha256": "5b0827d6e41a7727171bba55dc8689d263daa210ccaf183a45665526514e10a3"
     },
     {
+      "path": "src/lib/marketing/dneskai-object-presence.ts",
+      "sha256": null,
+      "lines": 24,
+      "reviewedSha256": "77b733f9364226c29a7bed345d5e9ea0dbd8b106fb38d14e797f1f83f2baa989",
+      "status": "source reviewed; final app-wide release pending; finding 338 positive exact private cache absence and original read lifetime verified"
+    },
+    {
       "path": "src/lib/marketing/dneskai-paid-actions.ts",
       "lines": 177,
       "sha256": "9823218bca61cec6468ea233bfdf36e84cef8576bad2bf91abe7180ad25ff7c7",
@@ -3626,7 +3654,7 @@
       "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
       "status": "source reviewed; eight-table read port regenerated from all 144 canonical migrations; captured account-control API/browser adoption, canonical rollout and final release checks pending",
-      "reviewedSha256": "3bb4dc6bd3c42db38f2a8475a431c6b64cdd1113bbaec9794933ea22193adb2f"
+      "reviewedSha256": "db53ff1c937df116bdb64c7b60de2cd749ea8e79c207375f9e179c9c8781a2ff"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3699,6 +3727,13 @@
       "reviewedSha256": "8a3fed7161e9ba1b6ba967456a2b54bf310131b127bcc87569868974ccfa8762"
     },
     {
+      "path": "src/lib/marketing/dneskai-slide-format.ts",
+      "sha256": null,
+      "lines": 2,
+      "status": "source reviewed; finding 334 shares the unchanged immutable approved JPEG format between slide producer and native Reel consumer; final release checks pending",
+      "reviewedSha256": "610688a9ef79cfc469822e507e2f506c842f06544abc44ea85ca7329a597317f"
+    },
+    {
       "path": "src/lib/marketing/dneskai-slide-layout.ts",
       "lines": 232,
       "sha256": "4cc114cccb37f66ec76d17815d29159ed2513c3f52c11ec03c8824f86ddb3797",
@@ -3739,6 +3774,20 @@
       "sha256": "1b3c901b8cd2c8bc831d1a81a5ca71fed475b98e690393a58fe67a88c1ab8b44",
       "status": "partial; owned project helper distinguishes unavailable reads and supports bounded cancellation (finding 151); collection/history/grouping persistence review pending",
       "reviewedSha256": "db3862cf097b7e03313230905e7a59cf4248ea90c37e328d0bf6cbc76913911d"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-tiktok-admission.ts",
+      "sha256": null,
+      "lines": 90,
+      "reviewedSha256": "a7c0759af59216559382d82b3ba68c254a099e93d256463df6071d2c25342885",
+      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
+    },
+    {
+      "path": "src/lib/marketing/dneskai-tiktok-progress.ts",
+      "sha256": null,
+      "lines": 141,
+      "reviewedSha256": "5abcd8eab28e86458fdbb152dcffa846f31c6ce7160d05e5a8e1f3ed50c28cb2",
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending"
     },
     {
       "path": "src/lib/marketing/dneskai-titling.ts",
@@ -4709,6 +4758,13 @@
       "reviewedSha256": "85e4bb5fa8f7c2f87b50c38c6c1d9bf43313a097c5b12428988211afce55a3fa"
     },
     {
+      "path": "src/lib/supabase/server-owner.ts",
+      "sha256": null,
+      "lines": 38,
+      "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
+      "reviewedSha256": "578d795d2466fe28f5fe46bff2fd2bdd0459d8ece2ddc31f91a82c5f8a087ef4"
+    },
+    {
       "path": "src/lib/supabase/server.ts",
       "lines": 30,
       "sha256": "b928b8ff87d2e549c123ad5cc426d0ea340957612dfe1bf30df2f186c789d446",
@@ -4984,13 +5040,6 @@
       "status": "source reviewed; finding 314 account-bound atomic Meta observations, bounded captured transport and positive recommendation receipts pass full-chain SDK/RLS and native concurrency checks; prepared rollout, TikTok persistence and final release pending"
     },
     {
-      "path": "src/lib/marketing/dneskai-tiktok-progress.ts",
-      "sha256": null,
-      "lines": 141,
-      "reviewedSha256": "5abcd8eab28e86458fdbb152dcffa846f31c6ce7160d05e5a8e1f3ed50c28cb2",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending"
-    },
-    {
       "path": "supabase/migrations/20261027050940_dated_dneskai_tiktok_receipts.sql",
       "sha256": null,
       "lines": 186,
@@ -4998,53 +5047,11 @@
       "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending"
     },
     {
-      "path": "src/lib/marketing/dneskai-tiktok-admission.ts",
-      "sha256": null,
-      "lines": 90,
-      "reviewedSha256": "a7c0759af59216559382d82b3ba68c254a099e93d256463df6071d2c25342885",
-      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
-    },
-    {
       "path": "supabase/migrations/20261027061021_captured_dneskai_tiktok_admission.sql",
       "sha256": null,
       "lines": 111,
       "reviewedSha256": "77eb14ae6e77ec6008c9aefdfca0b9c9fdc243e2153f6cb7d56b6b3080e4e233",
       "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
-    },
-    {
-      "path": "src/lib/supabase/server-owner.ts",
-      "sha256": null,
-      "lines": 38,
-      "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "578d795d2466fe28f5fe46bff2fd2bdd0459d8ece2ddc31f91a82c5f8a087ef4"
-    },
-    {
-      "path": "src/lib/marketing/dneskai-slide-format.ts",
-      "sha256": null,
-      "lines": 2,
-      "status": "source reviewed; finding 334 shares the unchanged immutable approved JPEG format between slide producer and native Reel consumer; final release checks pending",
-      "reviewedSha256": "610688a9ef79cfc469822e507e2f506c842f06544abc44ea85ca7329a597317f"
-    },
-    {
-      "path": "src/lib/marketing/dneskai-object-presence.ts",
-      "sha256": null,
-      "lines": 24,
-      "reviewedSha256": "77b733f9364226c29a7bed345d5e9ea0dbd8b106fb38d14e797f1f83f2baa989",
-      "status": "source reviewed; final app-wide release pending; finding 338 positive exact private cache absence and original read lifetime verified"
-    },
-    {
-      "path": "src/lib/marketing/account-control-contracts.ts",
-      "sha256": null,
-      "lines": 24,
-      "reviewedSha256": "fc0d2ae9078581bf0d8dd2290804961099336a5ba56a3d264110857c3167e341",
-      "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
-    },
-    {
-      "path": "src/lib/marketing/account-control-server.ts",
-      "sha256": null,
-      "lines": 25,
-      "reviewedSha256": "18a8f85d3204c97db8b59fd7117dd9aa2a7dbf04b0695eaf2d604f909ead1d9d",
-      "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
     }
   ],
   "baselineFileCount": 561

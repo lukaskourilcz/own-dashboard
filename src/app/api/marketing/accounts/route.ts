@@ -14,7 +14,7 @@ import { dneskaiCommentWebhookConfigured, dneskaiEngagementWatchEnabled } from '
 export const runtime = 'nodejs';
 const AccountRow = z.strictObject({
   id:z.uuid(),user_id:z.uuid(),brand:MarketingAccountStatusSchema.shape.brand,platform:MarketingAccountStatusSchema.shape.platform,
-  handle:MarketingAccountStatusSchema.shape.handle,verified_at:databaseTimestamp.nullable(),enabled:z.boolean(),
+  updated_at:databaseTimestamp,handle:MarketingAccountStatusSchema.shape.handle,verified_at:databaseTimestamp.nullable(),enabled:z.boolean(),
   engagement_enabled:z.boolean().optional(),engagement_blocked_code:z.string().regex(/^[a-z0-9-]{1,100}$/).nullable().optional(),
   engagement_blocked_at:databaseTimestamp.nullable().optional(),
 });
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   }
   const parsed = MarketingAccountsResponseSchema.safeParse({ accounts: rows.map(row => {
     const token = byAccount.get(row.id);
-    return { id: row.id, brand: row.brand, platform: row.platform, handle: row.handle, verifiedAt: row.verified_at, enabled: row.enabled,
+    return { id: row.id, brand: row.brand, platform: row.platform, handle: row.handle, verifiedAt: row.verified_at, enabled: row.enabled, updatedAt:row.updated_at,
       token: token ? { expiresAt: token.expires_at, refreshedAt: token.refreshed_at, scopes: token.scopes, loginMode: token.login_mode } : null,
       ...(engagement ? { engagement: { enabled: row.engagement_enabled, blockedCode: row.engagement_blocked_code, blockedAt: row.engagement_blocked_at, webhook: dneskaiCommentWebhookConfigured(process.env) } } : {}) };
   }) });

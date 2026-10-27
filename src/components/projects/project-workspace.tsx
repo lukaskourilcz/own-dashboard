@@ -130,6 +130,7 @@ type Props = {
   isPreview?: boolean;
   previewSourceSettingsIntegration?: boolean;
   previewMusicIntegration?: boolean;
+  previewAccountIntegration?: boolean;
 };
 
 function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
@@ -273,7 +274,7 @@ export function ProjectWorkspace(props: Props) {
       }}>
         {tabs.map((item) => <button key={item.id} type="button" id={`${tabId}-${item.id}`} role="tab" tabIndex={tab === item.id ? 0 : -1} aria-controls={`${tabId}-panel`} aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("min-h-11 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium focus-ring md:min-h-8", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
       </div>
-      {dneskai && <DneskaiOverflowMenu projectId={project.id} lang={lang} preview={!!props.isPreview} sections={dneskaiSections} activeSection={openSection?.id ?? null}
+      {dneskai && <DneskaiOverflowMenu projectId={project.id} lang={lang} preview={!!props.isPreview} liveAccount={props.previewAccountIntegration} sections={dneskaiSections} activeSection={openSection?.id ?? null}
         onSection={(id) => { flushSync(() => setTab(id)); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); }} onOpenReview={openDneskaiReview} />}
     </div>
 

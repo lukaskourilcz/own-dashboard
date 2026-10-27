@@ -10,6 +10,7 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { useLang } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import {useGuardedNavigation} from '@/components/navigation-guard';
 import type { ProjectTabId } from '@/lib/project-workspace-tabs';
 
 type Lang = 'en' | 'cs';
@@ -29,12 +30,13 @@ const Sources = dynamic(() => import('../dneskai-sources').then((module) => modu
  * The DNESKAi workspace `⋯` button (#169). Four panels open as dialogs (Errors and costs, the Instagram account, topic
  * recovery, keyboard shortcuts); below them the general project sections, which select their tab.
  */
-export function DneskaiOverflowMenu({ projectId, lang, preview, sections, activeSection, onSection, onOpenReview }: {
-  projectId: string; lang: Lang; preview: boolean;
+export function DneskaiOverflowMenu({ projectId, lang, preview, liveAccount = false, sections, activeSection, onSection, onOpenReview }: {
+  projectId: string; lang: Lang; preview: boolean; liveAccount?: boolean;
   sections: ReadonlyArray<{ id: ProjectTabId; label: string }>; activeSection: ProjectTabId | null;
   onSection: (id: ProjectTabId) => void; onOpenReview: () => void;
 }) {
   const t = dneskaiWorkspace[lang].more;
+  const guarded=useGuardedNavigation();
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -75,7 +77,7 @@ export function DneskaiOverflowMenu({ projectId, lang, preview, sections, active
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
-    <Dialog open={panel !== null} onOpenChange={(next) => { if (!next) setPanel(null); }}>
+    <Dialog open={panel !== null} onOpenChange={(next) => { if (!next) guarded(()=>setPanel(null)); }}>
       <DialogContent className={cn(panel === 'costs' || panel === 'recovery' ? 'max-w-5xl' : 'max-w-xl')} data-testid={panel ? `dneskai-more-${panel}` : undefined}
         {...(panel === 'costs' ? { 'aria-describedby': undefined } : {})} onCloseAutoFocus={(event) => { event.preventDefault(); if (focusMoved.current) focusMoved.current = false; else trigger.current?.focus(); }}>
         <DialogHeader>
@@ -83,7 +85,7 @@ export function DneskaiOverflowMenu({ projectId, lang, preview, sections, active
           {panel && panel !== 'costs' && <DialogDescription>{t[`${panel}Description`]}</DialogDescription>}
         </DialogHeader>
         {panel === 'costs' && <WorkspaceTab tab="dneskai-costs" projectId={projectId} lang={lang} preview={preview} />}
-        {panel === 'account' && <InstagramAccount lang={lang} disabled={preview} embedded />}
+        {panel === 'account' && <InstagramAccount lang={lang} disabled={preview && !liveAccount} embedded />}
         {panel === 'recovery' && <Sources projectId={projectId} lang={lang} disabled={preview} onOpenReview={() => { focusMoved.current = true; setPanel(null); onOpenReview(); }} />}
         {panel === 'shortcuts' && <dl className="space-y-2 text-xs">{dneskaiLab[lang].shortcuts.rows.map(([key, value]) => <div key={key} className="flex justify-between gap-4"><dt className="font-mono">{key}</dt><dd>{value}</dd></div>)}</dl>}
       </DialogContent>
