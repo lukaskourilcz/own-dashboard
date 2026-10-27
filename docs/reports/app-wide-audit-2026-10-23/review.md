@@ -2802,3 +2802,14 @@ All 1,714 combined cases pass across 92 files in 109.84 seconds with one worker.
 No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Account metadata/transport/write and browser lifecycle, durable independent Reel admission, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.
 
 The 53-pair visual plan references committed application `9d033acd`; both image modes, light/dark 390/1440px reflow, mapped highlights and controls pass without page errors. Actual capture provenance remains `d72aaae4`.
+
+
+### Finding 343 — immutable work-bounded request snapshots
+
+Four baselines fail in 327 ms across marketing and knowledge input: each accepts 70,000 empty chunks without a separate work/allocation ceiling, and each authenticates/consumes producer-mutated Buffer bytes rather than the bytes originally received. Both request readers now reuse the existing shared immutable bounded collector. Empty chunks count toward its 65,536-chunk ceiling; accepted byte chunks become owned snapshots. The change removes two duplicate collectors, while preserving each caller's byte cap, five-second original read budget and fixed error contract.
+
+Marketing preserves exact signed UTF-8, including its BOM and whitespace; knowledge retains its previous BOM decoding and empty-body contract. Both refuse malformed UTF-8, consumed requests and another reader's locked stream with fixed errors. They do not take or cancel somebody else's lock. Existing parent/disconnect handling, nonblocking hostile cancellation, reader release and timer cleanup remain covered. The size refusal still maps to payload-too-large/capture-too-large, independently from an unavailable/invalid body.
+
+All 1,933 combined cases pass across 108 files in 112.04 seconds with one worker. The first five-file set passes 50 cases in 1.30 seconds; the expanded set passes 58 in 1.44 seconds. Twelve new matrix cases cover both readers' reproduced failures, the exact inclusive chunk ceiling, foreign locks, consumed input and malformed UTF-8. Existing route-admission cases retain original signed input, 408/413 failures before privileged work, and worker error classes. Final full TypeScript, targeted ESLint without warnings and whitespace pass.
+
+No SQL, UI capture, managed mutation, external provider/model request, publication, message, deployment or spend occurs. The ledger remains 717 entries/192 partial statuses and migrations remain 142 canonical/56 prepared. Remaining unbounded caller adoption, account transport/metadata/write/browser lifecycles, durable independent Reel admission, remaining page/source review, canonical rollout, consolidated checks and main merge remain unfinished.

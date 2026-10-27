@@ -3959,10 +3959,10 @@
     },
     {
       "path": "src/lib/marketing/http.ts",
-      "lines": 54,
+      "lines": 41,
       "sha256": "5757a070f59c830d4199ad5f2f93a301f7ae6811c599e721b3eae8169f71247e",
-      "status": "source reviewed; bounded byte/whole-upload deadline, cancellation and signed UTF-8 tests pass (finding 144); final release checks pending",
-      "reviewedSha256": "b4be05afe6fc43a4c0a4ac0afbc3fa320c5cd355f98a3d6f4441548db701c1ee"
+      "status": "source reviewed; bounded byte/whole-upload deadline, cancellation and signed UTF-8 tests pass (finding 144); final release checks pending; finding 343 reuses immutable bounded byte collector for request chunks, preserving body deadlines/errors/BOM contracts; caller adoption and final release remain separate",
+      "reviewedSha256": "f6b25f4bbdab5c8daa8450e39b18886720c8af262a92717c3eb8d97832f69c10"
     },
     {
       "path": "src/lib/marketing/humanizer.ts",
@@ -3980,10 +3980,10 @@
     },
     {
       "path": "src/lib/marketing/knowledge-body.ts",
-      "lines": 16,
+      "lines": 25,
       "sha256": "6412bf7a958d2c51bf30a00e66201fd7d31beac81617b5f6dbffa9db21ae8750",
-      "status": "source reviewed; bounded UTF-8 bytes, strict declared length, five-second deadline, request/parent cancellation and reader cleanup checked in finding 174; caller authentication/persistence and final release are separate",
-      "reviewedSha256": "19e18433186029e9b41698aba1df8f377e4184a5f33bb8fca73b942e5b8b993c"
+      "status": "source reviewed; bounded UTF-8 bytes, strict declared length, five-second deadline, request/parent cancellation and reader cleanup checked in finding 174; caller authentication/persistence and final release are separate; finding 343 reuses immutable bounded byte collector for request chunks, preserving body deadlines/errors/BOM contracts; caller adoption and final release remain separate",
+      "reviewedSha256": "2a7f00a2bb655eb009acf710a89e9374e0ace207d45a4f308bea49ca3c32a967"
     },
     {
       "path": "src/lib/marketing/knowledge-copy.ts",
