@@ -140,51 +140,36 @@ export function staleCronCount(
 
 /* ---- inbound Uptime Kuma notifications ----------------------------------- */
 
-/** The Kuma webhook body, as far as we rely on it. Every field is optional. */
-export type UptimeKumaPayload = {
-  heartbeat?: { status?: unknown; time?: unknown; msg?: unknown };
-  monitor?: { id?: unknown; name?: unknown };
-  msg?: unknown;
-};
-
+/** Confirmed transition facts from a default Kuma webhook. */
 export type UptimeKumaEvent = {
-  /** The monitor's name, or `Monitor <id>` when it sent no name. */
+  monitorId: number;
   monitor: string;
+  observedAt: string;
   down: boolean;
-  message: string;
 };
 
-/**
- * Read the fields the receiver relies on out of a Kuma notification body.
- *
- * The shape belongs to Kuma, not to us, so this validates rather than trusts:
- * a body with no identifiable monitor returns null and is ignored. A status
- * that is not explicitly "up" counts as down, because the safe failure for an
- * alert is to be heard.
- */
-export function parseUptimeKumaEvent(
-  body: UptimeKumaPayload | null | undefined,
-): UptimeKumaEvent | null {
-  if (!body || typeof body !== "object") return null;
-  const rawName = body.monitor?.name;
-  const rawId = body.monitor?.id;
-  const monitor =
-    typeof rawName === "string" && rawName.trim()
-      ? rawName.trim().slice(0, 200)
-      : typeof rawId === "number" || typeof rawId === "string"
-        ? `Monitor ${rawId}`
-        : "";
-  if (!monitor) return null;
-
-  const status = body.heartbeat?.status;
-  const up = status === 1 || status === "1" || status === true;
-  const rawMessage =
-    typeof body.heartbeat?.msg === "string"
-      ? body.heartbeat.msg
-      : typeof body.msg === "string"
-        ? body.msg
-        : "";
-  return { monitor, down: !up, message: rawMessage.trim().slice(0, 500) };
+/** Default Kuma webhook facts only. Its raw heartbeat time is UTC, while
+ * pending/maintenance/test notifications do not prove either transition.
+ * Never retain the vendor monitor options or free-form diagnostic message. */
+export function parseUptimeKumaEvent(body: unknown, now = Date.now()): UptimeKumaEvent | null {
+  if (!body || typeof body !== "object" || Array.isArray(body) || !Number.isFinite(now)) return null;
+  const payload = body as Record<string, unknown>;
+  if (!payload.monitor || typeof payload.monitor !== "object" || Array.isArray(payload.monitor) ||
+      !payload.heartbeat || typeof payload.heartbeat !== "object" || Array.isArray(payload.heartbeat)) return null;
+  const monitor = payload.monitor as Record<string, unknown>, heartbeat = payload.heartbeat as Record<string, unknown>;
+  const id = monitor.id;
+  if (typeof id !== "number" || !Number.isSafeInteger(id) || id < 1 ||
+      (heartbeat.monitorID !== undefined && heartbeat.monitorID !== id) ||
+      (heartbeat.status !== 0 && heartbeat.status !== 1) || typeof heartbeat.time !== "string") return null;
+  // Kuma serializes YYYY-MM-DD HH:mm:ss.SSS in UTC. Also accept explicit UTC ISO.
+  const time = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\.(\d{1,3}))?(Z)?$/.exec(heartbeat.time);
+  if (!time || time[0] !== heartbeat.time || time[1].startsWith("0000") || (heartbeat.time.includes("T") && !time[4]) || (!heartbeat.time.includes("T") && time[4])) return null;
+  const observedAt = `${time[1]}T${time[2]}.${(time[3] ?? "").padEnd(3, "0")}Z`;
+  const stamp = Date.parse(observedAt);
+  if (!Number.isFinite(stamp) || new Date(stamp).toISOString() !== observedAt || stamp > now + 300_000) return null;
+  const name = typeof monitor.name === "string" ? monitor.name.trim().slice(0, 200).replace(/[\uD800-\uDBFF]$/u, '') : "";
+  if (!name.isWellFormed() || /[\u0000-\u001f\u007f]/u.test(name)) return null;
+  return {monitorId: id, monitor: name || `Monitor ${id}`, observedAt, down: heartbeat.status === 0};
 }
 
 /* ---- field helpers ------------------------------------------------------- */

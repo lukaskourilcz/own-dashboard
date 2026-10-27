@@ -633,10 +633,10 @@
     },
     {
       "path": "src/app/api/webhooks/uptime-kuma/route.ts",
-      "lines": 160,
+      "lines": 75,
       "sha256": "9498058665090aa577e01cd33e5d4acef76659cb65b185ac18fac75e3dfea3bd",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "9498058665090aa577e01cd33e5d4acef76659cb65b185ac18fac75e3dfea3bd"
+      "status": "source reviewed; finding 310 bounds authenticated body/deadline/cancellation and confirms captured atomic stable-monitor transitions; focused route/client/database and native concurrency checks pass; prepared rollout/final release pending",
+      "reviewedSha256": "d9715a7a73ba26c6f91e79c3a121f3b5feb23a4f84dedd20f9ec4a7dd9d841c3"
     },
     {
       "path": "src/app/auth/callback/route.ts",
@@ -1448,6 +1448,13 @@
       "reviewedSha256": "71655220806b944c3abd51c6058a2106c198c545c38cd8e23b184862e7dd42b7"
     },
     {
+      "path": "src/components/panels/career-action-notice.tsx",
+      "sha256": null,
+      "lines": 8,
+      "status": "source reviewed; finding 283 shared bounded Career action feedback passes mounted/native recovery, mobile, keyboard and axe checks; final release pending",
+      "reviewedSha256": "9c5838ae6f9d2b6aacde4002e46a2a16d947ad7e679197911f9c704529a77d5f"
+    },
+    {
       "path": "src/components/panels/career-board.tsx",
       "lines": 470,
       "sha256": "dbbcec151b883345a742ca93b1c783c9685231e90faa6315a3f9eb98412d3faf",
@@ -1481,6 +1488,27 @@
       "sha256": "d783ba3b2226397ea997156a5b4df515ce8ba4692339d0e24ee26ee682f087e5",
       "status": "source reviewed; findings 295/308 atomic captured progress/contact controls and retained recovery verified; obsolete initial-shape migration branch retired; final release pending",
       "reviewedSha256": "4e1c8aaa01df3968ad78898403c4d5f4ae072d8fffe0da775ff43d75b6143cd8"
+    },
+    {
+      "path": "src/components/panels/career-saved-positions.tsx",
+      "sha256": null,
+      "lines": 155,
+      "status": "source reviewed; findings 286/288 verify captured manual save/removal/import, URL-replacement cancellation, retained drafts, pending/exit/owner guards and safe legacy links; all 78 native Career cases pass; remaining letter/application work and final release pending",
+      "reviewedSha256": "8e3e7c62984f96346592adf89606af89baea57a8578422913815f2e3e1753b32"
+    },
+    {
+      "path": "src/components/panels/career-template-picker.tsx",
+      "sha256": null,
+      "lines": 97,
+      "reviewedSha256": "51d1733fdb5ba581843289cb3c05773c55765421d6928ec2fcb8bc01d500b389",
+      "status": "source reviewed; finding 307 bounded 50 saved plus 3 built-in choices, complete 10000-record accent-tolerant search, no extra reads, legacy fallback, keyboard/focus and native six-width/axe verification pass; final release pending"
+    },
+    {
+      "path": "src/components/panels/career-templates-dialog.tsx",
+      "sha256": null,
+      "lines": 85,
+      "status": "source reviewed; findings 300/307 captured template manager and localized blank/whitespace legacy-name display verified; final release pending",
+      "reviewedSha256": "c54c346b69c7f8d2db21b3200c1603b6fa3270ee0b954bdecde14694e7b9b8f5"
     },
     {
       "path": "src/components/panels/clients-panel.tsx",
@@ -1684,6 +1712,41 @@
       "sha256": "e8a0a0fcd2f3a1384ec83dbbb98b34e0a7491e9b23d271a9c57b8ee54a7068fe",
       "status": "source reviewed; finding 242 original-owner identity stage adopted/tested; later reader/write/UX phases and final release pending",
       "reviewedSha256": "fb5f82c865b4e6a8ad8883ff48a84845439f3dee8ea6d1ef02dc3cd3f0afc6ed"
+    },
+    {
+      "path": "src/components/panels/use-career-application-draft.ts",
+      "sha256": null,
+      "lines": 103,
+      "reviewedSha256": "ad4872cf48e707464321fbc46bd5761eba6bb83e4e4b13a2022cfe917cabe676",
+      "status": "source reviewed; findings 292/301 captured application draft/recording, retained recovery and guarded parent closure verified; confirmed recording retires further writes; final release pending"
+    },
+    {
+      "path": "src/components/panels/use-career-application-record-write.ts",
+      "sha256": null,
+      "lines": 60,
+      "reviewedSha256": "1be160f3dea9fae756a3b685953d8ac1c33cecd71ea50cd6d5d73578a40c614d",
+      "status": "source reviewed; finding 297 adopts captured application deletion/letter saves, retained history/drafts, original confirmation scope, cancellation, canonical cache and nearby focus; Saved letter/templates/density and final release pending"
+    },
+    {
+      "path": "src/components/panels/use-career-progress-write.ts",
+      "sha256": null,
+      "lines": 55,
+      "reviewedSha256": "68c30bc8838c498b545ff57ec61b48f908d549b123f2215ced05e28a7c8afd84",
+      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending"
+    },
+    {
+      "path": "src/components/panels/use-career-saved-letter-draft.ts",
+      "sha256": null,
+      "lines": 62,
+      "status": "source reviewed; finding 302 original owner/source/defaults, stable creation, changed-field saves, explicit reload and guarded cache receipts verified in mounted/SDK/RLS tests; final release pending",
+      "reviewedSha256": "51a8c7781294a3478f79f7c5e53610f4b073511385045b288ee59f53aa552bf0"
+    },
+    {
+      "path": "src/components/panels/use-career-template-write.ts",
+      "sha256": null,
+      "lines": 56,
+      "status": "source reviewed; finding 300 captured template writes, original-owner lifetime, exact retries, confirmation and guarded cache/reload verified; final release pending",
+      "reviewedSha256": "6ef4df3506f96bd2856d0f552e62eda189dc440ef579508d83152664fe182232"
     },
     {
       "path": "src/components/panels/work-overview-panel.tsx",
@@ -2234,11 +2297,60 @@
       "reviewedSha256": "9529460a54ef4a675655b3d95c280c2930f942e84f93d7272f5fb5554e024a23"
     },
     {
+      "path": "src/lib/career-application-progress.ts",
+      "sha256": null,
+      "lines": 59,
+      "reviewedSha256": "43a5a5857ba597c9bced4966d8c0eea7bb402eb6f0e77d73cf774f1237e4e097",
+      "status": "source reviewed; findings 294–295 captured progress/contact and browser adoption pass SDK/RLS/native checks; finding 296 shares the tested complete source comparator; rollout and final release pending"
+    },
+    {
+      "path": "src/lib/career-application-records.ts",
+      "sha256": null,
+      "lines": 43,
+      "reviewedSha256": "f68636c220e991e61b7313cdc37e016503ceafba2b749855975db371a028175b",
+      "status": "source reviewed; findings 296–297 captured application letter/deletion SDK/RLS/client and native browser adoption checks pass; final release pending"
+    },
+    {
+      "path": "src/lib/career-application-save.ts",
+      "sha256": null,
+      "lines": 75,
+      "reviewedSha256": "c3d0baa58db13f792595db1bec6340d6552e147d1aaf4c2b4afd476f04cc59d9",
+      "status": "source reviewed; findings 291–292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
+    },
+    {
+      "path": "src/lib/career-listing-save.ts",
+      "sha256": null,
+      "lines": 46,
+      "status": "source reviewed; finding 281 captured atomic discovery-save client, strict receipts, original scope/cancellation and cache guards pass; targeted native recovery/focus and PostgreSQL concurrency checks pass; canonical rollout and final release pending",
+      "reviewedSha256": "bb5bcd0a690faf881ec2432d31a0eaf02a19daceaff814e97c320623d087ac76"
+    },
+    {
       "path": "src/lib/career-records.ts",
       "sha256": null,
       "lines": 129,
       "reviewedSha256": "0985f5934a7c3ca0227afddb757a6e0cb5f56218748b2313d0ce94176c3ddb42",
       "status": "source reviewed; shared positive Career schemas including templates; findings 272–299 targeted checks pass; final release pending"
+    },
+    {
+      "path": "src/lib/career-saved-records.ts",
+      "sha256": null,
+      "lines": 117,
+      "status": "source reviewed; finding 284 captured Saved CRUD and 286 manual form adoption pass SDK/RLS/native checks; other letter editor adoption and final release pending",
+      "reviewedSha256": "81b25a888e3564f42c0e0cffcf288a685fe3dfa49f3dfcdffc61df8c1583a654"
+    },
+    {
+      "path": "src/lib/career-template-records.ts",
+      "sha256": null,
+      "lines": 51,
+      "status": "source reviewed; finding 299 stable creation, captured edit/delete, strict receipts and scoped cancellation verified in 56 focused SDK/RLS/client checks; UI adoption and final release pending",
+      "reviewedSha256": "7f79cf6cfc08e0afab1499a4ea181c65ba5ee9a41bf5afeddac5cbafb10e3e0f"
+    },
+    {
+      "path": "src/lib/career-triage.ts",
+      "sha256": null,
+      "lines": 63,
+      "status": "source reviewed; finding 282 atomic captured triage, strict complete receipts, scope/deadline and cache guards pass targeted SDK/SQL/client checks; browser adoption and final release pending",
+      "reviewedSha256": "2f689ff39a85f7427afce16bb994f577dd63653712c2c9e9620d81ed9ebd51a1"
     },
     {
       "path": "src/lib/category-rules.ts",
@@ -2291,10 +2403,10 @@
     },
     {
       "path": "src/lib/cron-heartbeat.ts",
-      "lines": 220,
+      "lines": 205,
       "sha256": "57ec68c2292cae58be1f086e2e313c45123371e9c67be95f24c9f147e2cf7598",
-      "status": "partial; full source inspected; provider/monitoring bounds, completeness, captured evidence and receipt follow-ups remain in remaining-review.md",
-      "reviewedSha256": "ad8e1e6d253e82b065cdd5c2873dd60ec6f34b3e03435b686b6b94180b7cb5cd"
+      "status": "partial; finding 310 validates confirmed numeric Kuma id/status/UTC facts and excludes vendor diagnostics; schedule-derived weekday/step heartbeat estimates remain under review",
+      "reviewedSha256": "180fb64587e286daa0ed6ec3af2e41fefc6f270bdf3ea118544af61dfc40b260"
     },
     {
       "path": "src/lib/cron-log-contract.ts",
@@ -2985,6 +3097,13 @@
       "reviewedSha256": "16c82bc4faa6340ef026aec2ed3f0f54f54313a1389581b8361b0d7a48c5ffd5"
     },
     {
+      "path": "src/lib/jobs/enrich-client.ts",
+      "sha256": null,
+      "lines": 33,
+      "status": "source reviewed; finding 285 verifies original-owner/input identity, streamed body bound, total deadline, cancellation and body retirement; browser form adoption pending",
+      "reviewedSha256": "855a494c52515a350ea58d2eb51c64453832d50c1e8ba7ead2f1b6e6969879af"
+    },
+    {
       "path": "src/lib/jobs/enrich.ts",
       "lines": 27,
       "sha256": "16b2e5d1e6b7717e2e22897afe853a4a06b67c72116047754fa3329d40c548c0",
@@ -3499,8 +3618,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from 133 canonical files; only schema fingerprint changes; rollout and final release pending",
-      "reviewedSha256": "3728427e1d79895847a0d3588b09c4421cd91bf0e591305bb7ac9e457e83ee82"
+      "status": "source reviewed; eight-table read port regenerated from 134 canonical files; only schema fingerprint changes; rollout and final release pending",
+      "reviewedSha256": "6f8d401e6a54887a3af20ec8b1b79ad0c35ed93fd67969f63dddde649d8bbe0c"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4704,6 +4823,13 @@
       "reviewedSha256": "9bb71cfe4a095ad5203efc8ad5f9231ac724df6799975d609d2690bc0ba8a4b9"
     },
     {
+      "path": "src/lib/uptime-kuma.ts",
+      "sha256": null,
+      "lines": 59,
+      "reviewedSha256": "3e7f403f0a856a3f2d5819a81a3dbe5ead552e7f5e22ef8d5d45070939c38e47",
+      "status": "source reviewed; finding 310 captures service event intent and confirms strict no-retry stored receipts; full-chain SDK/owner/grant/rollback and cancellation checks pass; prepared rollout/final release pending"
+    },
+    {
       "path": "src/lib/use-dashboard-layout.ts",
       "lines": 66,
       "sha256": "2a83f698129a2a0ab9a2308692fea63345b4e1d6b64ce59e58af59ce9c284f95",
@@ -4823,60 +4949,11 @@
       "status": "source reviewed; task synchronization checks pass; final release checks pending"
     },
     {
-      "path": "src/lib/career-listing-save.ts",
-      "sha256": null,
-      "lines": 46,
-      "status": "source reviewed; finding 281 captured atomic discovery-save client, strict receipts, original scope/cancellation and cache guards pass; targeted native recovery/focus and PostgreSQL concurrency checks pass; canonical rollout and final release pending",
-      "reviewedSha256": "bb5bcd0a690faf881ec2432d31a0eaf02a19daceaff814e97c320623d087ac76"
-    },
-    {
-      "path": "src/lib/career-triage.ts",
-      "sha256": null,
-      "lines": 63,
-      "status": "source reviewed; finding 282 atomic captured triage, strict complete receipts, scope/deadline and cache guards pass targeted SDK/SQL/client checks; browser adoption and final release pending",
-      "reviewedSha256": "2f689ff39a85f7427afce16bb994f577dd63653712c2c9e9620d81ed9ebd51a1"
-    },
-    {
-      "path": "src/components/panels/career-action-notice.tsx",
-      "sha256": null,
-      "lines": 8,
-      "status": "source reviewed; finding 283 shared bounded Career action feedback passes mounted/native recovery, mobile, keyboard and axe checks; final release pending",
-      "reviewedSha256": "9c5838ae6f9d2b6aacde4002e46a2a16d947ad7e679197911f9c704529a77d5f"
-    },
-    {
-      "path": "src/lib/career-saved-records.ts",
-      "sha256": null,
-      "lines": 117,
-      "status": "source reviewed; finding 284 captured Saved CRUD and 286 manual form adoption pass SDK/RLS/native checks; other letter editor adoption and final release pending",
-      "reviewedSha256": "81b25a888e3564f42c0e0cffcf288a685fe3dfa49f3dfcdffc61df8c1583a654"
-    },
-    {
-      "path": "src/lib/jobs/enrich-client.ts",
-      "sha256": null,
-      "lines": 33,
-      "status": "source reviewed; finding 285 verifies original-owner/input identity, streamed body bound, total deadline, cancellation and body retirement; browser form adoption pending",
-      "reviewedSha256": "855a494c52515a350ea58d2eb51c64453832d50c1e8ba7ead2f1b6e6969879af"
-    },
-    {
-      "path": "src/components/panels/career-saved-positions.tsx",
-      "sha256": null,
-      "lines": 155,
-      "status": "source reviewed; findings 286/288 verify captured manual save/removal/import, URL-replacement cancellation, retained drafts, pending/exit/owner guards and safe legacy links; all 78 native Career cases pass; remaining letter/application work and final release pending",
-      "reviewedSha256": "8e3e7c62984f96346592adf89606af89baea57a8578422913815f2e3e1753b32"
-    },
-    {
       "path": "supabase/migrations/20261026163911_career_application_lock_order.sql",
       "sha256": null,
       "lines": 42,
       "status": "source reviewed; finding 290 prepares consistent application/source lock order, per-lock bound and 300-character titles; native concurrency and full-chain SDK/RLS/upgrade/rollback checks pass; unapplied and final release pending",
       "reviewedSha256": "72566b6c9537039e8c1de031ec5ed41f5074bb92c1aa82b10b909d94b3cb7d26"
-    },
-    {
-      "path": "src/lib/career-application-save.ts",
-      "sha256": null,
-      "lines": 75,
-      "reviewedSha256": "c3d0baa58db13f792595db1bec6340d6552e147d1aaf4c2b4afd476f04cc59d9",
-      "status": "source reviewed; findings 291–292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
     },
     {
       "path": "supabase/migrations/20261026182155_captured_career_application.sql",
@@ -4886,81 +4963,11 @@
       "status": "source reviewed; findings 291–292 captured application conversion, intent recovery and browser dialog adoption pass SDK/RLS/concurrency/native checks; rollout and final release pending"
     },
     {
-      "path": "src/components/panels/use-career-application-draft.ts",
-      "sha256": null,
-      "lines": 103,
-      "reviewedSha256": "ad4872cf48e707464321fbc46bd5761eba6bb83e4e4b13a2022cfe917cabe676",
-      "status": "source reviewed; findings 292/301 captured application draft/recording, retained recovery and guarded parent closure verified; confirmed recording retires further writes; final release pending"
-    },
-    {
-      "path": "src/lib/career-application-progress.ts",
-      "sha256": null,
-      "lines": 59,
-      "reviewedSha256": "43a5a5857ba597c9bced4966d8c0eea7bb402eb6f0e77d73cf774f1237e4e097",
-      "status": "source reviewed; findings 294–295 captured progress/contact and browser adoption pass SDK/RLS/native checks; finding 296 shares the tested complete source comparator; rollout and final release pending"
-    },
-    {
       "path": "supabase/migrations/20261026195100_captured_career_progress.sql",
       "sha256": null,
       "lines": 78,
       "reviewedSha256": "e3463672cee9930786d66f300070122023fff9a5db4faf9bdd9a7fd1b6816840",
       "status": "source reviewed; findings 294–295 atomic captured progress/contact SDK/RLS/client and native stage/editor adoption checks pass; rollout and final release pending"
-    },
-    {
-      "path": "src/components/panels/use-career-progress-write.ts",
-      "sha256": null,
-      "lines": 55,
-      "reviewedSha256": "68c30bc8838c498b545ff57ec61b48f908d549b123f2215ced05e28a7c8afd84",
-      "status": "source reviewed; finding 295 captured stage/progress/contact saves, retained conflict/reload drafts, paired cancellation, canonical event/cache receipts and native EN/CS/mobile checks pass; letter/template/deletion/density and final release pending"
-    },
-    {
-      "path": "src/lib/career-application-records.ts",
-      "sha256": null,
-      "lines": 43,
-      "reviewedSha256": "f68636c220e991e61b7313cdc37e016503ceafba2b749855975db371a028175b",
-      "status": "source reviewed; findings 296–297 captured application letter/deletion SDK/RLS/client and native browser adoption checks pass; final release pending"
-    },
-    {
-      "path": "src/components/panels/use-career-application-record-write.ts",
-      "sha256": null,
-      "lines": 60,
-      "reviewedSha256": "1be160f3dea9fae756a3b685953d8ac1c33cecd71ea50cd6d5d73578a40c614d",
-      "status": "source reviewed; finding 297 adopts captured application deletion/letter saves, retained history/drafts, original confirmation scope, cancellation, canonical cache and nearby focus; Saved letter/templates/density and final release pending"
-    },
-    {
-      "path": "src/lib/career-template-records.ts",
-      "sha256": null,
-      "lines": 51,
-      "status": "source reviewed; finding 299 stable creation, captured edit/delete, strict receipts and scoped cancellation verified in 56 focused SDK/RLS/client checks; UI adoption and final release pending",
-      "reviewedSha256": "7f79cf6cfc08e0afab1499a4ea181c65ba5ee9a41bf5afeddac5cbafb10e3e0f"
-    },
-    {
-      "path": "src/components/panels/use-career-template-write.ts",
-      "sha256": null,
-      "lines": 56,
-      "status": "source reviewed; finding 300 captured template writes, original-owner lifetime, exact retries, confirmation and guarded cache/reload verified; final release pending",
-      "reviewedSha256": "6ef4df3506f96bd2856d0f552e62eda189dc440ef579508d83152664fe182232"
-    },
-    {
-      "path": "src/components/panels/career-templates-dialog.tsx",
-      "sha256": null,
-      "lines": 85,
-      "status": "source reviewed; findings 300/307 captured template manager and localized blank/whitespace legacy-name display verified; final release pending",
-      "reviewedSha256": "c54c346b69c7f8d2db21b3200c1603b6fa3270ee0b954bdecde14694e7b9b8f5"
-    },
-    {
-      "path": "src/components/panels/use-career-saved-letter-draft.ts",
-      "sha256": null,
-      "lines": 62,
-      "status": "source reviewed; finding 302 original owner/source/defaults, stable creation, changed-field saves, explicit reload and guarded cache receipts verified in mounted/SDK/RLS tests; final release pending",
-      "reviewedSha256": "51a8c7781294a3478f79f7c5e53610f4b073511385045b288ee59f53aa552bf0"
-    },
-    {
-      "path": "src/components/panels/career-template-picker.tsx",
-      "sha256": null,
-      "lines": 97,
-      "reviewedSha256": "51d1733fdb5ba581843289cb3c05773c55765421d6928ec2fcb8bc01d500b389",
-      "status": "source reviewed; finding 307 bounded 50 saved plus 3 built-in choices, complete 10000-record accent-tolerant search, no extra reads, legacy fallback, keyboard/focus and native six-width/axe verification pass; final release pending"
     }
   ],
   "baselineFileCount": 561
