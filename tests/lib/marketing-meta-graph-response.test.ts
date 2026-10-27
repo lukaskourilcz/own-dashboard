@@ -47,3 +47,7 @@ it('owns byte chunks even when the producer reuses its buffer', async () => {
  const stream = new ReadableStream({ pull(controller) { if (!count++) controller.enqueue(mutable); else { mutable.fill(120); controller.close(); } } }, { highWaterMark: 0 });
  expect((await metaGraphResponse(url, {}, new AbortController().signal, async () => new Response(stream, { headers: { 'Content-Type': 'application/json' } }))).body).toEqual({ a: 1 });
 });
+it('discards a refused body when the caller only needs its HTTP status', async () => {
+ const cancel = vi.fn(), response = new Response(new ReadableStream({ cancel }), { status: 400, headers: { 'Content-Type': 'text/html' } });
+ expect(await metaGraphResponse(url, {}, new AbortController().signal, async () => response, { readErrors: false })).toEqual({ status: 400, body: null }); expect(cancel).toHaveBeenCalledOnce();
+});

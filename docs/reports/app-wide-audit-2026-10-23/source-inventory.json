@@ -1052,7 +1052,7 @@
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
       "lines": 238,
       "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
-      "status": "partial; finding 350 captured owner/version controls, pending exit/unmount guard, retained cached account/subscription recovery, shared expiry clock, compact EN/CS layout and exact cache patch verified; verification/subscription provider proof, final app-wide release remain; reproduced development warning traced to Next hot refresh, frozen-source matrix clean",
+      "status": "partial; finding 350 captured owner/version controls, pending exit/unmount guard, retained cached account/subscription recovery, shared expiry clock, compact EN/CS layout and exact cache patch verified; complete provider Page/subscription identity/pagination, verification concurrency/store proof and final app-wide release remain; reproduced development warning traced to Next hot refresh, frozen-source matrix clean",
       "reviewedSha256": "71d7ac68214e0730f3363e93754148a48bd1ee2b9605a5a5636d1291e2e9e32e"
     },
     {
@@ -4078,10 +4078,10 @@
     },
     {
       "path": "src/lib/marketing/meta-account.ts",
-      "lines": 152,
+      "lines": 177,
       "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
-      "status": "partial source review: owner/handle/scopes and stored-versus-bootstrap selection retained; bounded cancellable database/provider work, complete Facebook Page lookup and exact returned account/token metadata receipt need verification",
-      "reviewedSha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17"
+      "status": "partial; finding 352 bounds original verification lookup/provider/store consumers, disables lookup/write retries, validates exact owned lookup and finite strict remote-identity receipt; complete Page pagination, concurrent account/credential changes and post-trigger store proof remain; underlying SDK JSON and final app-wide release pending",
+      "reviewedSha256": "22aa05cf99175e1c451f55a401bb6385c72b0e78a991efe0588798965cbeb93d"
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",
@@ -4095,14 +4095,14 @@
       "lines": 56,
       "sha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291",
       "status": "partial; finding 351 captures original config and bounds Page requests/complete JSON, late-body disposal and total lifetime; complete Page pagination, duplicate/link identity and fallback error classification remain; final app-wide release pending",
-      "reviewedSha256": "16b834e4f982698639080f26f76be359b9a818100114aded3cb7fae277814d5a"
+      "reviewedSha256": "395260bdb55e37c3a0a694778e8295e2e70f2f8381ad00acacfb308d26e7ca78"
     },
     {
       "path": "src/lib/marketing/meta-graph-response.ts",
       "sha256": null,
-      "lines": 45,
+      "lines": 50,
       "status": "source reviewed; finding 351 no-retry original-scope bounded complete Graph JSON, late response disposal and fixed local diagnostics targeted; final app-wide release pending",
-      "reviewedSha256": "46f6e2adc6ef12b8c02972274f236d4108fd2ae5ce16be7ef42761cca9dfd1da"
+      "reviewedSha256": "05aa8a1b8ba2aa4f76c80ddadef052d7bc659f79f4b271b5825beea5cad68db5"
     },
     {
       "path": "src/lib/marketing/offline-import-client.ts",

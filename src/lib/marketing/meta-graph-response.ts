@@ -16,8 +16,9 @@ export async function metaGraphResponse(
   init: RequestInit,
   parent: AbortSignal,
   fetcher: typeof fetch = fetch,
-  maximum = 16_384,
+  options: { maximum?: number; readErrors?: boolean } = {},
 ): Promise<{ status: number; body: unknown }> {
+  const maximum = options.maximum ?? 16_384;
   const signal = AbortSignal.any([parent, AbortSignal.timeout(10_000), ...(init.signal ? [init.signal] : [])]);
   const discard = (response: Response) => {
     if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined);
@@ -32,6 +33,10 @@ export async function metaGraphResponse(
   } catch {
     if (response) discard(response);
     throw new MetaGraphRequestError('meta-request-uncertain');
+  }
+  if (response.status !== 200 && options.readErrors === false) {
+    discard(response);
+    return { status: response.status, body: null };
   }
   try {
     if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') throw new Error();

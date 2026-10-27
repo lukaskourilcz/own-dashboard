@@ -289,3 +289,6 @@ opens the devShark and knowledge operations of `/api/marketing/n8n`).
 
 
 Audit finding 351 bounds the existing owner-triggered comment-subscription path through account, credentials, linked Page and provider response work. An interrupted or unknown result remains unconfirmed; use the panel's explicit read recovery before another subscription attempt. These local checks create no real subscription. Complete Page/subscription identity and pagination verification remains tracked in the app-wide remaining review; prepared migrations and final release prerequisites above still apply.
+
+
+Audit finding 352 bounds the existing Verify account action and confirms that its store reply describes the exact remote identity that was checked. Failed, malformed or interrupted verification remains unconfirmed; recovery reads current state instead of automatically sending the write again. Fresh credentials are still entered only in their Vercel fields. Captured-version verification concurrency, complete Page lookup and final production release remain separate checks in the audit.

@@ -27,9 +27,9 @@ function admin(result: { data: unknown; error: unknown } = { data: stored, error
     : store.readError ? { data: null, error: { message: 'TEST-ONLY database detail' } } : { data: store.token ? [store.token] : [], error: null });
   const filters: Array<[string, unknown]> = [];
   const query = { select: () => query, eq: (key: string, value: unknown) => { filters.push([key, value]); return query; },
-    maybeSingle: async () => ({ data: store.token !== undefined || store.readError ? { id: accountId } : null, error: store.lookupError ? { message: 'TEST-ONLY database detail' } : null }) };
+    abortSignal: () => query, retry: () => query, maybeSingle: async () => ({ data: store.token !== undefined || store.readError ? { id: accountId, user_id: owner, brand: 'dneskai', platform: 'instagram' } : null, error: store.lookupError ? { message: 'TEST-ONLY database detail' } : null }) };
   const from = vi.fn(() => query);
-  return { db: { rpc, from } as unknown as ReturnType<typeof createAdminClient>, rpc, from, filters };
+  return { db: { rpc: (...args: unknown[]) => { const pending = { abortSignal: () => pending, retry: () => pending, then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => rpc(...args as [string]).then(resolve, reject) }; return pending; }, from } as unknown as ReturnType<typeof createAdminClient>, rpc, from, filters };
 }
 const storedToken = (patch: Partial<StoredToken> = {}): StoredToken => ({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', expires_at: '2027-01-15T00:00:00+00:00', refreshed_at: '2026-11-16T00:00:00+00:00',
   scopes: ['instagram_business_basic', 'instagram_business_content_publish'], login_mode: 'instagram', ...patch });

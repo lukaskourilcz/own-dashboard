@@ -30,7 +30,7 @@ export async function resolveFacebookPage(config: Pick<MetaPublisherConfig, 'api
     const url = new URL(`https://graph.facebook.com/${config.apiVersion}/${path}`);
     url.searchParams.set('fields', fields);
     try {
-      const reply = await metaGraphResponse(url.href, { method: 'GET', headers: { Authorization: `Bearer ${config.accessToken}` } }, signal, options.fetcher, 131_072);
+      const reply = await metaGraphResponse(url.href, { method: 'GET', headers: { Authorization: `Bearer ${config.accessToken}` } }, signal, options.fetcher, { maximum: 131_072 });
       return { ok: reply.status === 200, ...reply };
     } catch (error) {
       throw new FacebookPageError(error instanceof MetaGraphRequestError && error.code === 'meta-invalid-response' ? 'meta-invalid-response' : 'meta-request-uncertain', true);
