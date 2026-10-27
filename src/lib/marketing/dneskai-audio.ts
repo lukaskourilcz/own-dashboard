@@ -224,6 +224,68 @@ export async function readDneskaiAudioObjectPresence(db: Database, owner: string
     }
 }
 
+/** Collect at most 20 MiB from the installed SDK's streaming download, never an eager Blob. */
+async function downloadAudioBytes(db: Database, name: string, parent?: AbortSignal): Promise<Buffer | null> {
+    const signal = readBudget(parent);
+    const discard = (stream: ReadableStream | null) => {
+        if (stream && !stream.locked)
+            void stream.cancel().catch(() => undefined);
+    };
+    try {
+        signal.throwIfAborted();
+        const pending = Promise.resolve(db.storage.from(DNESKAI_AUDIO_BUCKET).download(name, {}, { signal }).asStream());
+        void pending.then(result => {
+            if (signal.aborted)
+                discard(result.data);
+        }, () => undefined);
+        const result = await awaitWithSignal(pending, signal);
+        if (signal.aborted) {
+            discard(result.data);
+            signal.throwIfAborted();
+        }
+        const { data: stream, error } = result;
+        if (error && !stream)
+            return null;
+        if (error || !stream) {
+            discard(stream);
+            throw unavailable();
+        }
+        const reader = stream.getReader();
+        let complete = false, size = 0, parts = 0;
+        const chunks: Buffer[] = [];
+        try {
+            for (;;) {
+                const part = await awaitWithSignal(reader.read(), signal);
+                signal.throwIfAborted();
+                if (part.done)
+                    break;
+                if (!(part.value instanceof Uint8Array) || ++parts > 65536)
+                    throw unavailable();
+                size += part.value.byteLength;
+                if (size > DNESKAI_AUDIO_MAX_BYTES)
+                    throw new DneskaiAudioError('audio-upload-invalid');
+                if (part.value.byteLength)
+                    chunks.push(Buffer.from(part.value));
+            }
+            if (!size)
+                throw new DneskaiAudioError('audio-upload-invalid');
+            signal.throwIfAborted();
+            complete = true;
+            return Buffer.concat(chunks, size);
+        }
+        finally {
+            if (!complete)
+                void reader.cancel().catch(() => undefined);
+            reader.releaseLock();
+        }
+    }
+    catch (error) {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw error instanceof DneskaiAudioError ? error : unavailable();
+    }
+}
+
 /**
  * Records a decodable 1 s–15 min upload and confirms its captured metadata.
  * Identical retries preserve the stored track, including a later disable.
@@ -238,21 +300,15 @@ export async function createDneskaiAudioTrack(db: Database, owner: string, value
   const existing = await confirmedAudioCreation(db, owner, input, signal);
   check();
   if (existing) return existing;
-  const files = db.storage.from(DNESKAI_AUDIO_BUCKET), name = objectName(owner, input.uploadId, input.contentType);
-  const downloaded = await awaitWithSignal(files.download(name), signal);
+  const name = objectName(owner, input.uploadId, input.contentType);
+  const bytes = await downloadAudioBytes(db, name, signal);
   check();
-  if (downloaded.error || !downloaded.data) {
-    if (downloaded.error && !downloaded.data) {
-      const presence = await readDneskaiAudioObjectPresence(db, owner, input.uploadId, input.contentType, signal);
-      check();
-      if (presence === 'absent') throw new DneskaiAudioError('audio-upload-missing');
-    }
-    throw new DneskaiAudioError('audio-library-unavailable');
+  if (!bytes) {
+    const presence = await readDneskaiAudioObjectPresence(db, owner, input.uploadId, input.contentType, signal);
+    check();
+    if (presence === 'absent') throw new DneskaiAudioError('audio-upload-missing');
+    throw unavailable();
   }
-  if (!downloaded.data.size || downloaded.data.size > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
-  const bytes = Buffer.from(await awaitWithSignal(downloaded.data.arrayBuffer(), signal));
-  check();
-  if (!bytes.length || bytes.length > DNESKAI_AUDIO_MAX_BYTES) throw new DneskaiAudioError("audio-upload-invalid");
   const durationMs = await awaitWithSignal((options.probe ?? probeDneskaiAudioDuration)(bytes, { signal }), signal).catch(error => {
     if (error instanceof DneskaiAudioError || (error instanceof DOMException && error.name === "AbortError")) throw error;
     throw new DneskaiAudioError("audio-library-unavailable");
@@ -300,15 +356,29 @@ export async function setDneskaiAudioTrackEnabled(db: Database, owner: string, i
 }
 
 /** The stored bytes of one track for the renderer; a track chosen at approval stays usable even if switched off later. */
-export async function loadDneskaiAudioTrack(db: Database, owner: string, trackId: string): Promise<DneskaiReelAudio> {
-  z.uuid().parse(owner);
-  if (!z.uuid().safeParse(trackId).success) throw new DneskaiAudioError("audio-track-unavailable");
-  const { data, error } = await db.from("marketing_audio_tracks").select("id,storage_path").eq("user_id", owner).eq("id", trackId).maybeSingle();
-  const name = objectFromPath(owner, (data as { storage_path: string | null } | null)?.storage_path ?? null, trackId);
-  if (error || !data || !name) throw new DneskaiAudioError("audio-track-unavailable");
-  const downloaded = await db.storage.from(DNESKAI_AUDIO_BUCKET).download(name);
-  if (downloaded.error || !downloaded.data) throw new DneskaiAudioError("audio-track-unavailable");
-  return { id: trackId, bytes: Buffer.from(await downloaded.data.arrayBuffer()) };
+export async function loadDneskaiAudioTrack(db: Database, owner: string, trackId: string, parent?: AbortSignal): Promise<DneskaiReelAudio> {
+    const signal = readBudget(parent);
+    try {
+        z.uuid().parse(owner);
+        z.uuid().parse(trackId);
+        signal.throwIfAborted();
+        const { data, error } = await awaitWithSignal(db.from('marketing_audio_tracks').select('id,user_id,storage_path').eq('user_id', owner).eq('id', trackId).retry(false).abortSignal(signal).maybeSingle(), signal);
+        signal.throwIfAborted();
+        const row = z.strictObject({ id: z.uuid(), user_id: z.uuid(), storage_path: z.string().min(1).max(300) }).parse(data);
+        const name = objectFromPath(owner, row.storage_path, trackId);
+        if (error || row.id !== trackId || row.user_id !== owner || !name)
+            throw new Error();
+        const bytes = await downloadAudioBytes(db, name, signal);
+        signal.throwIfAborted();
+        if (!bytes)
+            throw new Error();
+        return { id: trackId, bytes };
+    }
+    catch {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw new DneskaiAudioError('audio-track-unavailable');
+    }
 }
 
 /** The track rotation picks after `previousId` among the owner's enabled stored tracks, or null for an empty library. */

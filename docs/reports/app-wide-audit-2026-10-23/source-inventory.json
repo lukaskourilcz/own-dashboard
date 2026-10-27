@@ -460,8 +460,8 @@
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
       "lines": 100,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review: signed scheduler/publisher scope and bounded input retained; duplicate background render admission, cancellable storage/read/record phases and exact accepted-result identity need verification; model-free encoding still consumes function CPU",
-      "reviewedSha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8"
+      "status": "partial source review; finding 327 passes original render cancellation into strict owned audio metadata/file reads; auth, slide/storage/record phases, duplicate background admission, exact accepted-result identity and final release pending",
+      "reviewedSha256": "61f24c63cb31e95d5de5aba742cebf3a2f740277634128c08828e979dfe4c9c7"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -3357,10 +3357,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
-      "lines": 334,
+      "lines": 404,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
-      "reviewedSha256": "036b714fb53a49aa998e99f10598aba362bf8ad4afd5930c436e30da2a5bb48d"
+      "status": "partial review; findings 323\u2013327 verify captured toggles, positive object absence, retained upload sessions and bounded renderer metadata/streaming audio reads; rotation, SDK non-success parser, orphan retention and final release pending",
+      "reviewedSha256": "fa5e8c6e7e67754b1dc08872142b7fc076620afe0688a2f4121b65cefa843ff1"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",

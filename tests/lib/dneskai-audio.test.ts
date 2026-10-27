@@ -56,7 +56,7 @@ describe("upload checks", () => {
 
 function storage(bytes: Buffer | null) {
   const files = {
-    download: vi.fn(async () => bytes ? { data: new Blob([new Uint8Array(bytes)]), error: null } : { data: null, error: { message: "missing" } }),
+    download: vi.fn(() => ({asStream:async () => bytes ? {data:new Response(new Uint8Array(bytes)).body,error:null} : {data:null,error:{message:"missing"}}})),
     remove: vi.fn(async () => ({ data: [], error: null })),
     createSignedUrls: vi.fn(async (names: string[]) => ({ data: names.map((path) => ({ path, signedUrl: `https://test-only.supabase.co/storage/v1/object/sign/marketing-audio/${path}?token=t`, error: null })), error: null })),
     createSignedUploadUrl: vi.fn(async (path: string) => ({ data: { path, token: "upload-token", signedUrl: "https://test-only.supabase.co/upload" }, error: null })),
@@ -85,11 +85,11 @@ describe("createDneskaiAudioTrack", () => {
     expect(files.remove).not.toHaveBeenCalled();
     expect(inserted).toEqual([]);
   });
-  it('refuses an oversized Blob before duplicating its bytes', async () => {
-    const { db, files, inserted } = storage(Buffer.from('fixture')); const copy = vi.fn();
-    files.download.mockResolvedValue({ data: { size: 20 * 1024 * 1024 + 1, arrayBuffer: copy } as unknown as Blob, error: null });
+  it('refuses an oversized stream before probing or recording it', async () => {
+    const { db, files, inserted } = storage(Buffer.from('fixture')); const cancel = vi.fn();
+    files.download.mockReturnValue({asStream:async()=>({data:new ReadableStream({start(controller){controller.enqueue(new Uint8Array(20*1024*1024+1));},cancel}),error:null})});
     await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => 5000 })).rejects.toMatchObject({ code: 'audio-upload-invalid' });
-    expect(copy).not.toHaveBeenCalled(); expect(files.remove).not.toHaveBeenCalled(); expect(inserted).toEqual([]);
+    expect(cancel).toHaveBeenCalledOnce(); expect(files.remove).not.toHaveBeenCalled(); expect(inserted).toEqual([]);
   });
   it.each([NaN, Infinity, 1.5])('refuses an invalid measured duration before a write (%s)', async duration => {
     const { db, files, inserted } = storage(Buffer.from('fixture'));
@@ -102,9 +102,9 @@ describe("createDneskaiAudioTrack", () => {
   });
   it("loads a track's bytes only from the owner's folder", async () => {
     const { db, rows } = storage(Buffer.from("mp3"));
-    rows.push({ id: uploadId, storage_path: `marketing-audio/${owner}/${uploadId}.mp3` });
+    rows.push({ id: uploadId, user_id:owner, storage_path: `marketing-audio/${owner}/${uploadId}.mp3` });
     expect((await loadDneskaiAudioTrack(db as never, owner, uploadId)).bytes).toEqual(Buffer.from("mp3"));
-    rows[0] = { id: uploadId, storage_path: `marketing-audio/22222222-2222-4222-8222-222222222222/${uploadId}.mp3` };
+    rows[0] = { id: uploadId, user_id:owner, storage_path: `marketing-audio/22222222-2222-4222-8222-222222222222/${uploadId}.mp3` };
     await expect(loadDneskaiAudioTrack(db as never, owner, uploadId)).rejects.toMatchObject({ code: "audio-track-unavailable" });
   });
 });

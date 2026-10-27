@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         // A trending Instagram sound (#167) is attached by Instagram: the MP4 stays silent.
         if (revision.audio && 'instagramAudioId' in revision.audio) return null;
         const trackId = revision.audio?.trackId ?? input.audioTrackId ?? null;
-        return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId) : null;
+        return trackId ? loadDneskaiAudioTrack(db, ownerId, trackId, signal) : null;
       },
       storage: createDneskaiReelStorage(db, ownerId),
       signal,

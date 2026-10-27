@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ client: vi.fn(), limited: vi.fn(async () => ({ ok: true, retryAfter: 0 })), reel: vi.fn(), record: vi.fn(async () => undefined) }));
+const mocks = vi.hoisted(() => ({ client: vi.fn(), limited: vi.fn(async () => ({ ok: true, retryAfter: 0 })), reel: vi.fn(), record: vi.fn(async () => undefined), audio:vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.client() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
@@ -228,11 +228,12 @@ describe("render-reel route", () => {
     vi.clearAllMocks();
     mocks.client.mockReturnValue({ auth: { getUser: async () => ({ data: { user: { id: owner } } }) } });
   });
-  afterEach(() => { vi.unstubAllEnvs(); vi.doUnmock("@/lib/marketing/dneskai-reel"); vi.resetModules(); });
+  afterEach(() => { vi.unstubAllEnvs(); vi.doUnmock("@/lib/marketing/dneskai-reel"); vi.doUnmock("@/lib/marketing/dneskai-audio"); vi.resetModules(); });
 
   async function route() {
     vi.resetModules();
     vi.doMock("@/lib/marketing/dneskai-reel", async (original) => ({ ...(await original<object>()), dneskaiReelForRevision: mocks.reel, recordDneskaiReel: mocks.record }));
+    vi.doMock("@/lib/marketing/dneskai-audio", async original => ({...await original<object>(),loadDneskaiAudioTrack:mocks.audio}));
     return (await import("@/app/api/marketing/dneskai/render-reel/route")).POST;
   }
 
@@ -266,6 +267,15 @@ describe("render-reel route", () => {
     const answer = await POST(signed);
     expect([401, 403]).toContain(answer.status);
     expect(mocks.reel).not.toHaveBeenCalled();
+  });
+
+  it('passes the original render lifetime to the approved-track byte reader',async()=>{
+    vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED','true');
+    const audioId='44444444-4444-4444-8444-444444444444';mocks.audio.mockResolvedValue({id:audioId,bytes:Buffer.from('fixture')});
+    mocks.reel.mockImplementation(async (_db,_owner,_revisionId,deps)=>{
+      expect(deps.signal).toBeInstanceOf(AbortSignal);await deps.loadAudio({...renderedRevision(),audio:{trackId:audioId}});expect(mocks.audio).toHaveBeenCalledWith({},owner,audioId,deps.signal);
+      return {reelKey:'7'.repeat(64),url:'https://test-only.supabase.co/signed',sha256:'8'.repeat(64),bytes:10,durationSeconds:9.5,silent:false,cached:false,revisionHash:contentHash,audioId};
+    });const POST=await route();expect((await POST(ownerRequest())).status).toBe(200);expect(mocks.audio).toHaveBeenCalledOnce();
   });
 
   it("maps a refused revision to 409", async () => {

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMigratedDatabase } from '../helpers/supabase-pglite';
 import { SupabaseEmulator } from '../helpers/supabase-emulator';
-import { createDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio';
+import { createDneskaiAudioTrack, loadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio';
 import { DneskaiAudioCreateSchema } from '@/lib/marketing/dneskai-audio-contracts';
 vi.mock('server-only', () => ({}));
 const owner = '11111111-1111-4111-8111-111111111111', uploadId = '33333333-3333-4333-8333-333333333333';
@@ -10,6 +10,7 @@ const name = `${owner}/${uploadId}.mp3`;
 const intent = () => DneskaiAudioCreateSchema.parse({ action: 'create', uploadId, contentType: 'audio/mpeg', title: 'Fixture track', artist: 'Fixture artist', source: 'original', licenceNote: 'Own fixture recording', sourceUrl: 'https://example.test/recording', mood: ['calm', 'calm'] });
 let downloadFailureStatus:number|null=null;
 let proofUnavailable=false;
+let downloadResponse:(()=>Response)|null=null;
 let loseInsertAck = false, insertRequests = 0, downloadRequests = 0;
 let abortAfterInsert: AbortController | null = null;
 let database: Awaited<ReturnType<typeof createMigratedDatabase>>, client: ReturnType<typeof createClient>;
@@ -18,7 +19,7 @@ beforeAll(async () => {
   const origin = 'https://audio-confirmation.supabase.co', emulator = new SupabaseEmulator(database, origin, { service: 'TEST-ONLY-service-role', users: {} });
   client = createClient(origin, 'TEST-ONLY-service-role', { global: { fetch: async (url, init) => {
     if(proofUnavailable && new URL(String(url)).pathname==='/rest/v1/rpc/read_owned_dneskai_audio_object')return Response.json({message:'TEST_ONLY_PRIVATE_PROOF_DETAIL'},{status:503});
-    if (/^\/storage\/v1\/object\/(?:authenticated\/)?marketing-audio\//.test(new URL(String(url)).pathname) && (init?.method ?? 'GET') === 'GET') {downloadRequests++;if(downloadFailureStatus!==null)return Response.json({code:'InternalError',message:'TEST_ONLY_PRIVATE_STORAGE_DETAIL'},{status:downloadFailureStatus});}
+    if (/^\/storage\/v1\/object\/(?:authenticated\/)?marketing-audio\//.test(new URL(String(url)).pathname) && (init?.method ?? 'GET') === 'GET') {downloadRequests++;if(downloadResponse)return downloadResponse();if(downloadFailureStatus!==null)return Response.json({code:'InternalError',message:'TEST_ONLY_PRIVATE_STORAGE_DETAIL'},{status:downloadFailureStatus});}
     const response = await emulator.fetch(url, init);
     if (new URL(String(url)).pathname === '/rest/v1/marketing_audio_tracks' && init?.method === 'POST') { insertRequests++; abortAfterInsert?.abort('synthetic private reason'); if (loseInsertAck) return Response.json({ message: 'Synthetic lost acknowledgement' }, { status: 503 }); }
     return response;
@@ -26,7 +27,7 @@ beforeAll(async () => {
 }, 120_000);
 afterAll(async () => database?.close());
 beforeEach(async () => {
-  proofUnavailable=false;downloadFailureStatus=null;loseInsertAck = false; insertRequests = 0; downloadRequests = 0; abortAfterInsert = null;
+  downloadResponse=null;proofUnavailable=false;downloadFailureStatus=null;loseInsertAck = false; insertRequests = 0; downloadRequests = 0; abortAfterInsert = null;
   await database.exec('drop trigger if exists audio_create_test on public.marketing_audio_tracks; delete from public.marketing_audio_tracks; delete from storage.objects;');
   const result = await client.storage.from('marketing-audio').upload(name, new Uint8Array([1, 2, 3]), { contentType: 'audio/mpeg', upsert: false }); expect(result.error).toBeNull();
 });
@@ -125,4 +126,18 @@ it('reports missing only after the exact owned object is confirmed absent',async
 
 it('keeps the uploaded object when presence cannot be confirmed',async()=>{
  downloadFailureStatus=404;proofUnavailable=true;const probe=vi.fn(async()=>60000);await expect(createDneskaiAudioTrack(client,owner,intent(),{probe})).rejects.toMatchObject({code:'audio-library-unavailable',message:'audio-library-unavailable'});expect(probe).not.toHaveBeenCalled();expect(insertRequests).toBe(0);expect(await objectExists()).toBe(true);
+});
+
+it('loads confirmed owned bytes for rendering after a later disable without changing history',async()=>{
+ await createDneskaiAudioTrack(client,owner,intent(),{probe:async()=>60000});await database.query('update public.marketing_audio_tracks set enabled=false where id=$1',[uploadId]);const before=await database.query('select to_jsonb(t) as row from public.marketing_audio_tracks t');const audio=await loadDneskaiAudioTrack(client,owner,uploadId);expect(audio.id).toBe(uploadId);expect([...audio.bytes]).toEqual([1,2,3]);expect(await database.query('select to_jsonb(t) as row from public.marketing_audio_tracks t')).toEqual(before);expect(await objectExists()).toBe(true);
+});
+
+it('stops an oversized upload stream before its tail, probe or insert without deleting the object',async()=>{
+ let pulls=0;const cancel=vi.fn(()=>new Promise<void>(()=>{})),probe=vi.fn(async()=>60000);downloadResponse=()=>new Response(new ReadableStream({pull(controller){if(++pulls<=32)controller.enqueue(new Uint8Array(1024*1024));else controller.close();},cancel}));await expect(createDneskaiAudioTrack(client,owner,intent(),{probe})).rejects.toHaveProperty('code','audio-upload-invalid');expect(pulls).toBeLessThanOrEqual(22);expect(cancel).toHaveBeenCalledOnce();expect(probe).not.toHaveBeenCalled();expect(insertRequests).toBe(0);expect(await objectExists()).toBe(true);
+});
+it('cancels a stalled upload body without starting later proof, probe or insert phases',async()=>{
+ const controller=new AbortController(),cancel=vi.fn(()=>new Promise<void>(()=>{})),response=new Response(new ReadableStream({cancel})),probe=vi.fn(async()=>60000);downloadResponse=()=>response;const pending=createDneskaiAudioTrack(client,owner,intent(),{probe,signal:controller.signal}).catch(error=>error);await vi.waitFor(()=>expect(response.body?.locked).toBe(true));controller.abort('TEST_ONLY_PRIVATE_REASON');expect(await pending).toMatchObject({name:'AbortError',message:'Request aborted'});expect(cancel).toHaveBeenCalledOnce();expect(probe).not.toHaveBeenCalled();expect(insertRequests).toBe(0);expect(await objectExists()).toBe(true);
+});
+it('verifies streamed uploaded bytes without the SDK eager Blob allocation',async()=>{
+ const response=new Response(new Uint8Array([1,2,3])),blob=vi.spyOn(response,'blob'),probe=vi.fn(async(bytes:Buffer)=>{expect([...bytes]).toEqual([1,2,3]);return 60000;});downloadResponse=()=>response;expect((await createDneskaiAudioTrack(client,owner,intent(),{probe})).id).toBe(uploadId);expect(blob).not.toHaveBeenCalled();expect(probe).toHaveBeenCalledOnce();
 });
