@@ -12,7 +12,7 @@ import { DNESKAI_AUDIO_TYPES, DNESKAI_AUDIO_UPLOAD_SOURCES, dneskaiAudioClock, t
 import Image from 'next/image';
 import { DneskaiAudioRequestError, dneskaiAudioFileProblem, useDneskaiAudioLibrary, setDneskaiAudioTrackEnabled, uploadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio-client';
 import { DneskaiAudioPlayButton, useDneskaiAudioPreview } from './dneskai/audio-preview';
-import { DneskaiAudioTrendsNotice } from './dneskai/audio-trends-notice';
+import { DneskaiAudioTrendsNotice, DneskaiAudioReadNotice } from './dneskai/audio-trends-notice';
 
 type Lang = 'en' | 'cs';
 type Props = { lang: Lang; preview?: boolean; showDisabled?: boolean };
@@ -30,13 +30,13 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
     <div className="min-w-0"><h2 id="dneskai-audio-title" className="text-sm font-semibold">{t.title}</h2><p className="mt-1 max-w-3xl text-sm text-foreground-muted">{t.intro}</p></div>
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
-      : query.isError && !query.data ? <div role="alert"><p className="text-sm text-risk">{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t.retry}</Button></div>
-        : <><TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} /><TrendList trends={query.data?.trends ?? []} status={query.data?.trendsStatus} lang={lang} pending={query.isFetching} onRetry={() => void query.refetch()} /></>}
+      : query.isError && !query.data ? <DneskaiAudioReadNotice message={t.unavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />
+        : <>{query.isRefetchError && <DneskaiAudioReadNotice message={query.error instanceof DneskaiAudioRequestError && query.error.code === 'unauthorized' ? t.errors.unauthorized : t.refreshUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />}<TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} />{(!query.isRefetchError || query.data?.trendsStatus === 'ready') && <TrendList trends={query.data?.trends ?? []} status={query.data?.trendsStatus} lang={lang} pending={query.isFetching} onRetry={() => void query.refetch()} />}</>}
     {query.isRefetching && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-sm text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => { player.stop(); void query.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
     {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
-    {!preview && query.isSuccess && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
+    {!preview && query.data && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
       <DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.upload.title}</DialogTitle></DialogHeader><UploadForm lang={lang} embedded /></DialogContent>
     </Dialog>}
   </section>;

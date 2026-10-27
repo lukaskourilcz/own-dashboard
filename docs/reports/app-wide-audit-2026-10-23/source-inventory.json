@@ -1038,8 +1038,8 @@
       "path": "src/components/marketing/dneskai-audio-library.tsx",
       "lines": 151,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "partial; finding 313 adds fitted optional-read recovery with retained tracks and explicit empty/disabled states; native EN/CS six-width/axe/preview checks pass; cached refresh, page reconciliation, persistence and density remain open",
-      "reviewedSha256": "d4ed599681dd5037212c4850ebbc4ecbef6021c32f6b6ae92ee4309dfb349437"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
+      "reviewedSha256": "e100dd30b91458132ed9e68a8f80d4fde4b2a1c1ac6da546e7c1415ddf53f610"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -1086,9 +1086,9 @@
     {
       "path": "src/components/marketing/dneskai/audio-trends-notice.tsx",
       "sha256": null,
-      "lines": 22,
-      "reviewedSha256": "a5cdb23aaef10640c7428ff68915a4a1374f06462983446e6c16229079f50728",
-      "status": "source reviewed; finding 313 shares fitted desktop/full-width mobile optional-read recovery in library/picker; EN/CS keyboard, geometry, six-width and axe checks pass; final release pending"
+      "lines": 30,
+      "reviewedSha256": "6542c7ec5e2451c45097322a22c78b6a61a60d736dd9289b32d3bfd762aabdf4",
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending"
     },
     {
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
@@ -1134,10 +1134,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
-      "lines": 54,
+      "lines": 57,
       "sha256": "bc010e40745ae936c191f2ff1528f43634ad6a71be0aba39eeb88d3ac3e50653",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending",
-      "reviewedSha256": "58ef51fb53fb8ed8324f2c223088a2c467659327c5587437e2ea96a8bd4a1a4d"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
+      "reviewedSha256": "53c3574bf91ba960fc9e3ac7d2acda10bd9b1b9ba8f18805a3393aa41cf2e691"
     },
     {
       "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
@@ -1164,8 +1164,8 @@
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
       "lines": 381,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
-      "reviewedSha256": "aa9a64b4b27799b2e76d83278408f9075778d57840bb2ad7f4647005768334a0"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
+      "reviewedSha256": "0af51c82a259464fe0dec355df20ac24bc9adbd4c49f5727ed57bb68fe831702"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
@@ -1261,8 +1261,8 @@
       "path": "src/components/marketing/dneskai/workspace.tsx",
       "lines": 124,
       "sha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f",
-      "status": "partial; shared reads, history guard and held render polling inspected; stale-cache recovery, direct cursor page labels and preview/query identity remain; see remaining-review.md",
-      "reviewedSha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
+      "reviewedSha256": "e795798f0e8cd7cebce9fdfdbd214a48cc0b04ab2f7b2df99b67d065401dc5c7"
     },
     {
       "path": "src/components/marketing/job-health.tsx",
@@ -1855,10 +1855,10 @@
     },
     {
       "path": "src/components/projects/project-workspace.tsx",
-      "lines": 320,
+      "lines": 321,
       "sha256": "15398473eaa387e18ea12eaa95da88334c4d61a69d136946ddf0b940aba3ff3a",
-      "status": "source reviewed; finding 231 verifies complete local paging/search, preserved project order, missing-project recovery and centered Competition views; consolidated release pending",
-      "reviewedSha256": "7e0895f40805bebb0ddc01977b070c55e04923e23b7186f951c4cf988d12847b"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
+      "reviewedSha256": "cbbc7884b36ad559b247b682df1cdfc223c680f32807f5eb612963d89600543a"
     },
     {
       "path": "src/components/projects/use-project-deletion.ts",
@@ -2782,10 +2782,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
-      "lines": 162,
+      "lines": 170,
       "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
-      "status": "source reviewed; finding 313 supplies EN/CS ready/unavailable/disabled recovery and correct distinct-Reel copy; native and mounted checks pass; remaining Music density/interaction changes and release separate",
-      "reviewedSha256": "03749c4c4c912b3f8fb53089b558241562e5bf36fc7a39f5a67fa3269a81eeae"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
+      "reviewedSha256": "ae71cb1a24c4648c644d1303b1c4a26f394b584eea61afadde6916e31c1d4e33"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",

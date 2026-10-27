@@ -31,7 +31,7 @@ import { DneskaiTopicsList } from './topics-list';
 import { DneskaiSlideInspector } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
-type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; guest?: boolean; onSavedRevision?: () => void };
+type Props = { read: DneskaiWorkspaceRead; projectId: string; lang: 'en' | 'cs'; preview: boolean; liveMusic?: boolean; refreshing: boolean; onRefresh: () => void; renderFailed: ReadonlySet<string>; addRenderFailed: (id: string) => void; guest?: boolean; onSavedRevision?: () => void };
 const selection = () => typeof window === 'undefined' ? { post: '', slide: 0 } : { post: new URLSearchParams(window.location.search).get('labPost') ?? '', slide: Math.max(0, Math.floor(Number(new URLSearchParams(window.location.search).get('labSlide'))) || 0) };
 function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
@@ -247,9 +247,9 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <legend className="sr-only">{t.post.title}</legend>
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} count={caption => dneskaiDraftCaption({ ...draft, caption }).length} help={draft.engagement ? dneskaiWorkspace[props.lang].editor.captionCountHelp : undefined} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
-          {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview} lang={props.lang} />}
+          {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview && !props.liveMusic} lang={props.lang} />}
           {props.read.capabilities?.engagement && <DneskaiEngagementEditor id={`${id}-engagement`} draft={draft} onDraft={setDraft} handle={post.account.handle} lang={props.lang} />}
-          {draft.format === 'reel' && <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview} lang={props.lang} />}
+          {draft.format === 'reel' && <DneskaiAudioPicker value={draft.audioTrackId} onChange={(audioTrackId) => setDraft({ ...draft, audioTrackId })} preview={props.preview && !props.liveMusic} lang={props.lang} />}
           {post.deck?.format === 'single-image' && <p className="text-xs text-foreground-muted">{t.post.reelRequiresDeck}</p>}
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>

@@ -48,11 +48,11 @@ function useRenderFailed(projectId: string) {
  * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Today, Calendar and Posts share the review
  * read; Errors and costs has its own. In the preview the reads come from the in-memory demo, never from a server.
  */
-export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean }) {
-  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : <ReviewRead key={projectId} tab={tab} projectId={projectId} lang={lang} preview={preview} />;
+export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false, liveMusic = false }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean; liveMusic?: boolean }) {
+  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : <ReviewRead key={projectId} tab={tab} projectId={projectId} lang={lang} preview={preview} liveMusic={liveMusic} />;
 }
 
-function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean }) {
+function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean; liveMusic: boolean }) {
   const t = dneskaiWorkspace[lang];
   const pathname = usePathname();
   const guest = preview && pathname === '/guest';
@@ -82,7 +82,7 @@ function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWor
         <Button variant="outline" size="sm" disabled={!next || query.isFetching} onClick={() => { if (next) requestNavigation(() => changePages([...pages, next])); }}>{t.decisions.older}</Button>
       </div><p className="text-xs text-foreground-muted">{t.decisions.context}</p>
     </nav>}
-    {tab === 'dneskai-review' ? <ReviewExperience {...props} onSavedRevision={() => changePages([])} guest={guest} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
+    {tab === 'dneskai-review' ? <ReviewExperience {...props} liveMusic={liveMusic} onSavedRevision={() => changePages([])} guest={guest} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
       : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} renderFailed={renderFailed} />}
   </div>;
 }
