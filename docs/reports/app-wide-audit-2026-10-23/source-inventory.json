@@ -3867,6 +3867,13 @@
       "reviewedSha256": "75c52fec7158a45f78d65c927efe08bc30f543465650474620f685de75a268b6"
     },
     {
+      "path": "src/lib/marketing/facebook-page-list.ts",
+      "sha256": null,
+      "lines": 57,
+      "status": "source reviewed; finding 353 complete bounded Page traversal, explicit continuation, original endpoint/field/cursor binding and duplicate/cap/retirement refusal targeted; provider list is not an immutable snapshot; final release pending",
+      "reviewedSha256": "01f04705703efb649c7b9ef91bec654b9c04385e55fbc72c6ac0e3279a2f368a"
+    },
+    {
       "path": "src/lib/marketing/free-feeds/security/content.ts",
       "lines": 35,
       "sha256": "2f71549cb98f6301d6c47a447806e3f27af670d28a3744bf00db066bcce70e15",
@@ -4078,10 +4085,10 @@
     },
     {
       "path": "src/lib/marketing/meta-account.ts",
-      "lines": 177,
+      "lines": 182,
       "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
-      "status": "partial; finding 352 bounds original verification lookup/provider/store consumers, disables lookup/write retries, validates exact owned lookup and finite strict remote-identity receipt; complete Page pagination, concurrent account/credential changes and post-trigger store proof remain; underlying SDK JSON and final app-wide release pending",
-      "reviewedSha256": "22aa05cf99175e1c451f55a401bb6385c72b0e78a991efe0588798965cbeb93d"
+      "status": "partial; finding 352 bounds original verification lookup/provider/store consumers, disables lookup/write retries, validates exact owned lookup and finite strict remote-identity receipt; finding 353 complete bounded unique Page lookup and restricted initial fallback verified; concurrent account/credential changes and post-trigger store proof remain; underlying SDK JSON and final app-wide release pending",
+      "reviewedSha256": "97dce8b31ee701eab582401b5b8cbb77cae30c5da7d973f0c690af743a40b7b6"
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",
@@ -4092,10 +4099,10 @@
     },
     {
       "path": "src/lib/marketing/meta-facebook-page.ts",
-      "lines": 56,
+      "lines": 63,
       "sha256": "190975ecef65843eb2e2382a5461b9e43bab72d94f6bd1d2a9d168796e9a7291",
-      "status": "partial; finding 351 captures original config and bounds Page requests/complete JSON, late-body disposal and total lifetime; complete Page pagination, duplicate/link identity and fallback error classification remain; final app-wide release pending",
-      "reviewedSha256": "395260bdb55e37c3a0a694778e8295e2e70f2f8381ad00acacfb308d26e7ca78"
+      "status": "partial; findings 351/353 capture config and original bounded request/body lifetime, traverse complete declared Page results with unique matching, refuse duplicate/capped/contradictory continuations and restrict Page-token fallback to the initial 400; provider mutations between requests, subscription identity and final release remain",
+      "reviewedSha256": "e05994f347de7e291856860e3b763188467e977150fcc46310ae4176de8ad8a5"
     },
     {
       "path": "src/lib/marketing/meta-graph-response.ts",

@@ -2,6 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
 import { databaseTimestamp } from '@/lib/database-version';
+import { readFacebookPages } from './facebook-page-list';
 import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { bootstrapMetaCredential, FACEBOOK_LOGIN_SCOPES, INSTAGRAM_LOGIN_SCOPES, metaScopesStorable, readStoredMetaToken, type BootstrapMetaCredential, type StoredMetaToken } from './meta-credentials';
@@ -109,13 +110,17 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
   // The store refuses more than 20 scopes or a malformed one; refuse here first so nothing is sent or written.
   if (!metaScopesStorable(credential.scopes) || new Set(credential.scopes).size !== credential.scopes.length) fail('verified-scopes-invalid');
 
-  const get = async (url: URL): Promise<unknown> => {
+  const getRaw = async (url: URL) => {
     let reply: Awaited<ReturnType<typeof metaGraphResponse>>;
     try {
       reply = await metaGraphResponse(url.href, { method: 'GET', headers: { Authorization: `Bearer ${credential.accessToken}` } }, signal, options.fetcher, { maximum: mode === 'facebook' ? 131_072 : 16_384, readErrors: false });
     } catch (error) {
       return fail(error instanceof MetaGraphRequestError && error.code === 'meta-invalid-response' ? 'meta-invalid-response' : 'meta-request-failed', 502);
     }
+    return reply;
+  };
+  const get = async (url: URL): Promise<unknown> => {
+    const reply = await getRaw(url);
     if (reply.status !== 200) return fail(`meta-http-${reply.status}`, 502);
     return reply.body;
   };
@@ -130,24 +135,24 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
     accounts.searchParams.set('fields', fields); accounts.searchParams.set('limit', '25');
     let pages: z.infer<typeof PageSchema>[];
     try {
-      const listed = z.object({ data: z.array(PageSchema).max(25) }).safeParse(await get(accounts));
-      if (listed.success) pages = listed.data.data;
+      const listed = await readFacebookPages(accounts, PageSchema, getRaw, signal);
+      if (listed.kind === 'complete') pages = listed.pages;
       else {
-        const me = new URL(`https://graph.facebook.com/${version}/me`); me.searchParams.set('fields', fields);
+        if (!listed.first || listed.status !== 400) return fail(`meta-http-${listed.status}`, 502);
+        const me = new URL(`https://graph.facebook.com/${version}/me`);
+        me.searchParams.set('fields', fields);
         const single = PageSchema.safeParse(await get(me));
         if (!single.success) return fail('meta-invalid-response', 502);
         pages = [single.data];
       }
     } catch (error) {
-      if (!(error instanceof MarketingAccountVerificationError) || !/^meta-http-4\d\d$/.test(error.code)) throw error;
-      // A Page token cannot list Pages; read the Page itself.
-      const me = new URL(`https://graph.facebook.com/${version}/me`); me.searchParams.set('fields', fields);
-      const single = PageSchema.safeParse(await get(me));
-      if (!single.success) return fail('meta-invalid-response', 502);
-      pages = [single.data];
+      if (error instanceof MarketingAccountVerificationError) throw error;
+      return fail(error instanceof MetaGraphRequestError ? error.code : 'meta-request-failed', 502);
     }
     const handle = expectedHandle;
-    const linked = pages.find(item => item.instagram_business_account?.username.toLowerCase() === handle);
+    const matches = pages.filter(item => item.instagram_business_account?.username.toLowerCase() === handle);
+    if (matches.length > 1) return fail('meta-invalid-response', 502);
+    const linked = matches[0];
     if (!linked) return fail(pages.some(item => item.instagram_business_account) ? 'remote-account-handle-mismatch' : 'facebook-page-link-required');
     profile = { user_id: linked.instagram_business_account!.id, username: linked.instagram_business_account!.username, account_type: 'PAGE_LINKED' };
     page = { id: linked.id, name: linked.name };
