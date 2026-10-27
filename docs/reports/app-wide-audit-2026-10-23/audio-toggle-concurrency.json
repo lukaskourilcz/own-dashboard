@@ -1,0 +1,21 @@
+{
+  "finding": 323,
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal native database with exact stock marketing_audio_tracks and canonical migration 139; complete 139-file chain and SDK/RLS verified separately",
+  "sameVersionOutcomes": [
+    "saved",
+    "changed"
+  ],
+  "oppositeVersionOutcomes": [
+    "saved",
+    "changed"
+  ],
+  "rowLockObserved": true,
+  "staleSameValueNotAcknowledged": true,
+  "state": {
+    "rows": 1,
+    "enabled": true
+  },
+  "migration": "supabase/migrations/20261027111657_captured_dneskai_audio_toggles.sql",
+  "migrationSha256": "7860b75f4238b32161c72bb01bafe4707784d766c3d23eaab6a812b1a2d3a57c"
+}
