@@ -3644,24 +3644,24 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel-format.ts",
-      "lines": 12,
+      "lines": 15,
       "sha256": "1fd32d6aa80e3155a8a47bb720fffe9be87ed8ad8460d9ce4b110395b368a7ee",
-      "status": "source reviewed; education/news format and feature flag regressions covered by checkpoint 61; renderer/publisher execution remains separate",
-      "reviewedSha256": "1fd32d6aa80e3155a8a47bb720fffe9be87ed8ad8460d9ce4b110395b368a7ee"
+      "status": "source reviewed; education/news format and feature flag regressions covered by checkpoint 61; renderer/publisher execution remains separate; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains",
+      "reviewedSha256": "bce12395c0b386102f8c14583759c34d9fcf6d8057410c9977b2a79a27d12706"
     },
     {
       "path": "src/lib/marketing/dneskai-reel-render.ts",
-      "lines": 240,
+      "lines": 286,
       "sha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8",
-      "status": "partial source review; findings 190/332–334 verify physical identity, approved JPEG canvas/pixel/channel/byte input, bounded per-frame processing, sequential preparation and fixed native diagnostics; audio/MP4/output/subprocess completion, duplicate admission and final release remain open",
-      "reviewedSha256": "b870185123295eb016fde6192170bb0e566de12d33e31f073762123c5128a6d1"
+      "status": "partial source review; findings 190/332–334 verify physical identity, approved JPEG canvas/pixel/channel/byte input, bounded per-frame processing, sequential preparation and fixed native diagnostics; audio/MP4/output/subprocess completion, duplicate admission and final release remain open; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains",
+      "reviewedSha256": "4a810fbe45d60d98077b09883ebb490ce9ce13b797d605ea07f3670c1ea93cfd"
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 391,
+      "lines": 392,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains",
-      "reviewedSha256": "f0dce6aedb978f97c0c10e7bd57dc721111642a419aeddc699cddc0d8ad95383"
+      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains",
+      "reviewedSha256": "fa5e2b1db7ea728f2e49eb3f7edddb7cff935e70c87c13da70691fe101500cf4"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",

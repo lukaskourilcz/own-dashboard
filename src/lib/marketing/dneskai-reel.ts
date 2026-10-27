@@ -1,4 +1,5 @@
 import "server-only";
+import {DNESKAI_REEL_MAX_BYTES} from "./dneskai-reel-format";
 import {boundedStreamBytes,boundedResponseText} from "@/lib/bounded-response";
 import {awaitWithSignal} from "@/lib/abortable";
 import {databaseTimestamp} from "@/lib/database-version";
@@ -23,7 +24,7 @@ type Database = ReturnType<typeof createAdminClient>;
 
 export const DNESKAI_REEL_BUCKET = "marketing-reels";
 /** The bucket's own limit (migration). A 10-slide reel at 8 Mbps is about 31 MB. */
-export const DNESKAI_REEL_MAX_BYTES = 64 * 1024 * 1024;
+export {DNESKAI_REEL_MAX_BYTES} from "./dneskai-reel-format";
 
 /** Server-only switch for everything Reel: the render route and, with #165, publishing a revision as a Reel. */
 export function dneskaiReelsEnabled(env: Record<string, string | undefined> = process.env): boolean {

@@ -1,8 +1,10 @@
 import {awaitWithSignal} from "@/lib/abortable";
+import {DNESKAI_AUDIO_MAX_BYTES} from "./dneskai-audio-contracts";
+import {DNESKAI_REEL_MAX_BYTES} from "./dneskai-reel-format";
 import {DNESKAI_SLIDE_JPEG} from "./dneskai-slide-format";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, open,rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { canonicalJson } from "./contracts";
@@ -193,42 +195,86 @@ function runFfmpeg(binary: string, args: string[], signal?: AbortSignal): Promis
   });
 }
 
+/** Read only a confirmed regular output into one bounded Buffer, including a final EOF/size check. */
+async function readDneskaiReelOutput(file: string, signal: AbortSignal): Promise<Buffer> {
+    let handle: Awaited<ReturnType<typeof open>> | undefined;
+    try {
+        signal.throwIfAborted();
+        const pending = open(file, 'r');
+        void pending.then(value => {
+            if (signal.aborted)
+                void value.close().catch(() => undefined);
+        }, () => undefined);
+        handle = await awaitWithSignal(pending, signal);
+        signal.throwIfAborted();
+        const info = await awaitWithSignal(handle.stat(), signal);
+        signal.throwIfAborted();
+        if (!info.isFile() || !Number.isSafeInteger(info.size) || info.size < 1 || info.size > DNESKAI_REEL_MAX_BYTES)
+            throw new Error();
+        const bytes = Buffer.alloc(info.size);
+        let offset = 0;
+        while (offset < bytes.length) {
+            signal.throwIfAborted();
+            const result = await awaitWithSignal(handle.read(bytes, offset, Math.min(1024 * 1024, bytes.length - offset), offset), signal);
+            signal.throwIfAborted();
+            if (result.bytesRead < 1)
+                throw new Error();
+            offset += result.bytesRead;
+        }
+        const extra = await awaitWithSignal(handle.read(Buffer.alloc(1), 0, 1, bytes.length), signal), after = await awaitWithSignal(handle.stat(), signal);
+        signal.throwIfAborted();
+        if (extra.bytesRead !== 0 || after.size !== info.size || after.mtimeMs !== info.mtimeMs || after.ctimeMs !== info.ctimeMs)
+            throw new Error();
+        const closing = handle.close();
+        handle = undefined;
+        await awaitWithSignal(closing, signal);
+        signal.throwIfAborted();
+        return bytes;
+    }
+    catch {
+        throw new DneskaiReelRenderError(signal.aborted ? 'reel-timeout' : 'reel-encode-failed');
+    }
+    finally {
+        if (handle)
+            void handle.close().catch(() => undefined);
+    }
+}
+
 /** Renders the reel in a temporary directory and returns the MP4 bytes. Nothing is stored. */
 export async function renderDneskaiReel(input: DneskaiReelInput): Promise<DneskaiReelResult> {
-    if (input.signal?.aborted)
+    const signal = AbortSignal.any([AbortSignal.timeout(280000), ...(input.signal ? [input.signal] : [])]);
+    if (signal.aborted)
         throw new DneskaiReelRenderError('reel-timeout');
     const count = input.slides.length;
-    if (count < 1 || count > DNESKAI_REEL.maxSlides || input.slides.some((slide) => !Buffer.isBuffer(slide) || !slide.length)
-        || (input.audio && (!input.audio.bytes.length || !/^[A-Za-z0-9-]{1,64}$/.test(input.audio.id))))
+    if (count < 1 || count > DNESKAI_REEL.maxSlides || input.slides.some((slide) => !Buffer.isBuffer(slide) || !slide.length || slide.length > DNESKAI_SLIDE_JPEG.maxBytes)
+        || (input.audio && (!Buffer.isBuffer(input.audio.bytes) || !input.audio.bytes.length || input.audio.bytes.length > DNESKAI_AUDIO_MAX_BYTES || !/^[A-Za-z0-9-]{1,64}$/.test(input.audio.id))))
         throw new DneskaiReelRenderError("reel-input-invalid");
     const binary = input.ffmpegPath ?? await dneskaiFfmpegPath();
-    if (input.signal?.aborted)
+    if (signal.aborted)
         throw new DneskaiReelRenderError('reel-timeout');
     const dir = await mkdtemp(path.join(tmpdir(), "dneskai-reel-"));
     try {
         for (let index = 0; index < count; index++) {
-            if (input.signal?.aborted)
+            if (signal.aborted)
                 throw new DneskaiReelRenderError('reel-timeout');
-            const frame = await composeDneskaiReelFrame(input.slides[index]!, input.signal);
-            if (input.signal?.aborted)
+            const frame = await composeDneskaiReelFrame(input.slides[index]!, signal);
+            if (signal.aborted)
                 throw new DneskaiReelRenderError('reel-timeout');
-            await writeFile(path.join(dir, `frame-${index}.jpg`), frame, { signal: input.signal });
+            await writeFile(path.join(dir, `frame-${index}.jpg`), frame, { signal });
         }
-        if (input.signal?.aborted)
+        if (signal.aborted)
             throw new DneskaiReelRenderError('reel-timeout');
         const audioFile = input.audio ? path.join(dir, "audio") : null;
         if (input.audio && audioFile)
-            await writeFile(audioFile, input.audio.bytes, { signal: input.signal });
-        if (input.signal?.aborted)
+            await writeFile(audioFile, input.audio.bytes, { signal });
+        if (signal.aborted)
             throw new DneskaiReelRenderError('reel-timeout');
         const output = path.join(dir, "reel.mp4");
-        await runFfmpeg(binary, dneskaiReelFfmpegArgs({ dir, slideCount: count, audioFile, output, threads: input.threads }), input.signal);
-        if (input.signal?.aborted)
+        await runFfmpeg(binary, dneskaiReelFfmpegArgs({ dir, slideCount: count, audioFile, output, threads: input.threads }), signal);
+        if (signal.aborted)
             throw new DneskaiReelRenderError('reel-timeout');
-        const bytes = await readFile(output, { signal: input.signal }).catch(() => {
-            throw new DneskaiReelRenderError("reel-encode-failed");
-        });
-        if (input.signal?.aborted)
+        const bytes = await readDneskaiReelOutput(output, signal);
+        if (signal.aborted)
             throw new DneskaiReelRenderError('reel-timeout');
         if (!bytes.length)
             throw new DneskaiReelRenderError("reel-encode-failed");
