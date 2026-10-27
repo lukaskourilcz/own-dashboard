@@ -69,7 +69,7 @@ describe('marketing code texts (#119)', () => {
       'account-unavailable', 'meta-http-400', 'access-token-expired', 'remote-account-handle-mismatch',
       'source-disabled', 'reader-disabled', 'empty-source', 'collection-timeout', 'source-rate-limited', 'fetch-failed',
       'yield-to-publication', 'tick-budget-exhausted', 'publishing-failed', 'collection-failed', 'container-error', 'remote-container-in_progress'];
-    named.push('tiktok-input-invalid', 'tiktok-budget-invalid', 'tiktok-cancelled', 'tiktok-deadline', 'tiktok-response-too-large', 'tiktok-invalid-response', 'tiktok-request-failed', 'tiktok-unavailable', 'tiktok-http-503');
+    named.push('reel-request-unavailable','audio-page-unavailable','audio-track-changed','tiktok-admission-unavailable','tiktok-completion-unavailable','tiktok-input-invalid', 'tiktok-budget-invalid', 'tiktok-cancelled', 'tiktok-deadline', 'tiktok-response-too-large', 'tiktok-invalid-response', 'tiktok-request-failed', 'tiktok-unavailable', 'tiktok-http-503');
     expect(named.filter((code) => !marketingCodeKnown(code))).toEqual([]);
   });
 

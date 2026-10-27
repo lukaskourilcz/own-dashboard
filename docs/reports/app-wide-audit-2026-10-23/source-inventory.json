@@ -388,10 +388,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/audio/route.ts",
-      "lines": 126,
+      "lines": 113,
       "sha256": "4633443aac3a9eeb8962bd23fd4308c3843ab6678f4d8bf240eca1db38f314b3",
-      "status": "partial review; finding 326 stable original owner/file/metadata upload sessions, strict prepare/create receipts, pending exits and retained same-file retry verified; toggles and positive absence verified; renderer/rotation/file bounds and final release pending",
-      "reviewedSha256": "51c46713a80ad264332e81faf62aa88839558cd3649f6d6e8423d99e7131a733"
+      "status": "partial review; finding 329 shares strict bounded server owner verification; captured upload/toggle and complete library boundaries verified; broader SDK/resource and final release checks remain separate",
+      "reviewedSha256": "ca76143a3e7f14e6f7d840af1822d250e197177ec31f174123d3dbc977df425e"
     },
     {
       "path": "src/app/api/marketing/dneskai/briefs/route.ts",
@@ -458,10 +458,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
-      "lines": 100,
+      "lines": 138,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review; finding 327 passes original render cancellation into strict owned audio metadata/file reads; auth, slide/storage/record phases, duplicate background admission, exact accepted-result identity and final release pending",
-      "reviewedSha256": "61f24c63cb31e95d5de5aba742cebf3a2f740277634128c08828e979dfe4c9c7"
+      "status": "partial source review; finding 329 rejects auth-error users, bounds body/auth/rate admission and foreground/background service scopes, contains late results and private diagnostics; stored/accepted proof, duplicate background admission and final release pending",
+      "reviewedSha256": "80eb72be1cf570e84340b9bf50dcbe58e2e02fcd2d3d81bd34e75bfce026ac9b"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -4022,10 +4022,10 @@
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
-      "lines": 672,
+      "lines": 695,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
-      "status": "source reviewed; finding 263 covers TikTok validation/cancellation/deadline/body/HTTP and spend uncertainty in EN/CS; generic-error boundary follow-up and final release pending",
-      "reviewedSha256": "c85f9545006ff9e2e1193bbb2300c92fd6b6843dfa2a119c200344df621fb8b4"
+      "status": "source reviewed; finding 329 closes emitted audio/TikTok label gaps and adds truthful retained-result EN/CS guidance; known generic admission/completion codes pinned; broader generic-error and final release follow-up pending",
+      "reviewedSha256": "dde2410025af34f3dfa7e028f950e0810a6e86e09f6836e0f424a74de4815269"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",
@@ -5010,6 +5010,13 @@
       "lines": 111,
       "reviewedSha256": "77eb14ae6e77ec6008c9aefdfca0b9c9fdc243e2153f6cb7d56b6b3080e4e233",
       "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
+    },
+    {
+      "path": "src/lib/supabase/server-owner.ts",
+      "sha256": null,
+      "lines": 33,
+      "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending",
+      "reviewedSha256": "ffd826116ad4464a201962e2ae17edbe0425439ce0169ba33abc241e6d8fba71"
     }
   ],
   "baselineFileCount": 561

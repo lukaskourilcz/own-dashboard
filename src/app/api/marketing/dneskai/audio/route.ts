@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
 import { boundedRequestText, MarketingRequestBodyError } from '@/lib/marketing/http';
-import { createClient } from '@/lib/supabase/server';
+import {readVerifiedServerOwner} from '@/lib/supabase/server-owner';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
@@ -23,19 +23,6 @@ const STATUS: Record<string, number> = {
   'audio-library-unavailable': 503, 'audio-upload-missing': 409, 'audio-upload-invalid': 422, 'audio-track-unavailable': 404, 'audio-track-write-failed': 503, 'audio-track-changed':409,
 };
 
-async function owner(parent: AbortSignal) {
-  const signal = AbortSignal.any([parent, AbortSignal.timeout(10_000)]);
-  signal.throwIfAborted();
-  const session = await awaitWithSignal(createClient(signal), signal);
-  const { data, error } = await awaitWithSignal(session.auth.getUser(), signal);
-  if (error) {
-    if ([400, 401, 403].includes(error.status ?? 0)) return null;
-    throw new DneskaiAudioError('audio-library-unavailable');
-  }
-  if (!data.user) return null;
-  if (!z.uuid().safeParse(data.user.id).success) throw new DneskaiAudioError('audio-library-unavailable');
-  return data.user.id;
-}
 function failed(failure: unknown) {
   const code = failure instanceof DneskaiAudioError ? failure.code : 'audio-library-unavailable';
   return Response.json({ error: code }, { status: STATUS[code] ?? 503, headers });
@@ -49,7 +36,7 @@ export async function GET(request?: Request) {
   if (!dneskaiReelsEnabled()) return Response.json({ error: 'not-found' }, { status: 404, headers });
   const signal = requestBudget(request, 18_000);
   try {
-    const user = await owner(signal);
+    const user = await readVerifiedServerOwner(signal);
     if (!user) return Response.json({ error: 'unauthorized' }, { status: 401, headers });
     const params = new URL(request?.url ?? 'https://local.invalid').searchParams;
     const selected = params.get('trackId');
@@ -101,7 +88,7 @@ export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
   const signal = requestBudget(request, 50_000);
   try {
-    const user = await owner(signal);
+    const user = await readVerifiedServerOwner(signal);
     if (!user) return Response.json({ error: 'unauthorized' }, { status: 401, headers });
     let input: DneskaiAudioRequest;
     try { input = DneskaiAudioRequestSchema.parse(JSON.parse(await boundedRequestText(request, 8192, signal))); }
