@@ -44,14 +44,15 @@ export function DneskaiAudioPicker({ value, onChange, preview, disabled = false,
       </select>
       {chosen && <DneskaiAudioPlayButton track={chosen} playing={player.playing === chosen.id} pending={player.starting === chosen.id} failed={player.error === chosen.id} disabled={query.isRefetching || selected.isFetching} onToggle={player.toggle} lang={lang} />}
     </div>
-    {query.isRefetchError && <DneskaiAudioReadNotice message={query.error instanceof DneskaiAudioRequestError && query.error.code === 'unauthorized' ? t.errors.unauthorized : t.refreshUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />}
+    {query.pageProblem && <DneskaiAudioReadNotice message={t.pagesUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.reloadLibrary()} />}
+    {query.isRefetchError && !query.pageProblem && <DneskaiAudioReadNotice message={query.error instanceof DneskaiAudioRequestError && query.error.code === 'unauthorized' ? t.errors.unauthorized : t.refreshUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />}
     {missing && selected.isFetching && !selected.data && !selected.isError && <p role="status" className="text-xs text-foreground-muted">{t.selectedLoading}</p>}
     {missing && (selected.isError || selected.data === null) && <DneskaiAudioReadNotice message={selected.error instanceof DneskaiAudioRequestError && selected.error.code === 'unauthorized' ? t.errors.unauthorized : t.selectedUnavailable} retryLabel={t.selectedRetry} pending={selected.isFetching} onRetry={() => void selected.refetch()} testId="dneskai-audio-selected-notice" />}
-    {!query.isRefetchError && <DneskaiAudioTrendsNotice status={query.data.trendsStatus} lang={lang} pending={disabled || query.isFetching} onRetry={() => void query.refetch()} />}
+    {!query.isRefetchError && !query.pageProblem && <DneskaiAudioTrendsNotice status={query.data.trendsStatus} lang={lang} pending={disabled || query.isFetching} onRetry={() => void query.refetch()} />}
     {query.isRefetching && <p role="status" className="text-xs text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-xs text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching || selected.isFetching} onClick={() => { player.stop(); void query.refetch(); if (missing) void selected.refetch(); }}>{t.refreshPreview}</Button></div>}
-    {query.hasNextPage && <Button variant="outline" size="sm" disabled={disabled || query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
+    {query.hasNextPage && <Button variant="outline" size="sm" disabled={disabled || query.isFetching} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
     {query.isFetchNextPageError && <p role="alert" className="text-xs text-risk">{t.unavailable}</p>}
-    <p id={`${id}-audio-help`} className="text-xs text-foreground-muted">{tracks.length || trends.length ? t.picker.help : t.picker.none}{value?.startsWith('ig:') ? ` ${t.trends.attached}` : ''}</p>
+    <p id={`${id}-audio-help`} className="text-xs text-foreground-muted">{tracks.length || trends.length || query.pageProblem ? t.picker.help : t.picker.none}{value?.startsWith('ig:') ? ` ${t.trends.attached}` : ''}</p>
   </div>;
 }

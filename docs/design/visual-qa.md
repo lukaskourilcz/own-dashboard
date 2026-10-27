@@ -524,3 +524,7 @@ All eight native EN/CS desktop/mobile cases pass in 1.2 minutes against the actu
 ### 27 October — native format keyboard controls (finding 320)
 
 All four new EN/CS desktop/mobile cases pass for arrow-key selection/wrapping, a single radio-group Tab stop, returning to the selected option, unchanged Lab slide, 44px visible labels at all six widths and scoped axe. Native inputs preserve the existing appearance and named fieldset without custom keyboard state. The related twelve-case batch has ten passes and two React console-warning failures; both unchanged EN mobile recovery cases pass on retry in 41.8 seconds. Its pre-mount warning remains an explicit source/final-matrix lead, not a suppressed or claimed fixed issue.
+
+### 27 October — retained Music page recovery (finding 321)
+
+All four final EN/CS desktop/mobile native cases pass in 48.9 seconds for rejecting repeated page identities, retaining verified tracks/upload access, scoped axe and an explicit keyboard reload from the first page. The recovery remains visible and disabled while that read is held, then clears on confirmed replacement. No duplicate row, unconfirmed replacement or write occurs. The earlier initial-navigation timeout is excluded; thirteen mounted continuation tests separately cover whole-page refusal, timestamp precision, saved selection and failed reload recovery. Server cursor stability and final release remain separate.

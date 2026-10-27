@@ -1036,10 +1036,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-audio-library.tsx",
-      "lines": 151,
+      "lines": 156,
       "sha256": "42a133520cc7e3cab804bcf4bef25f3892e682c86bf5efd85f740fc89d491cff",
-      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
-      "reviewedSha256": "e100dd30b91458132ed9e68a8f80d4fde4b2a1c1ac6da546e7c1415ddf53f610"
+      "status": "partial review; finding 321 cross-page identity/order admission and explicit retained reload verified; server cursor, captured write lifecycle and final release pending",
+      "reviewedSha256": "4737d82ddaaa181fe646bd1a9b707cf405ad2a1a950bab23257ab3befe3e2557"
     },
     {
       "path": "src/components/marketing/dneskai-daily-mix.tsx",
@@ -1134,10 +1134,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
-      "lines": 57,
+      "lines": 58,
       "sha256": "bc010e40745ae936c191f2ff1528f43634ad6a71be0aba39eeb88d3ac3e50653",
-      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
-      "reviewedSha256": "53c3574bf91ba960fc9e3ac7d2acda10bd9b1b9ba8f18805a3393aa41cf2e691"
+      "status": "partial review; finding 321 cross-page identity/order admission and explicit retained reload verified; server cursor, captured write lifecycle and final release pending",
+      "reviewedSha256": "04ff31b173e5a5abaed4895bbdfce8e78e94be8bde5b03b44175ef5c0f3417a7"
     },
     {
       "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
@@ -2782,10 +2782,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
-      "lines": 170,
+      "lines": 172,
       "sha256": "a3e694a12462c14edfaf0cdb0b4056117f5ddec7924584d09aed180532a2f1e4",
-      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
-      "reviewedSha256": "ae71cb1a24c4648c644d1303b1c4a26f394b584eea61afadde6916e31c1d4e33"
+      "status": "partial review; finding 321 cross-page identity/order admission and explicit retained reload verified; server cursor, captured write lifecycle and final release pending",
+      "reviewedSha256": "0ba73f7496125ba3d7ccaabc20e0d4e69155dc33d6207aec6c9613e9e435065b"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-daily-mix.ts",
@@ -3322,10 +3322,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-client.ts",
-      "lines": 134,
+      "lines": 165,
       "sha256": "64ecb5d35f16a6099ec814f15024050a876a00a8f60073af1de94b36b4fc5fc2",
-      "status": "partial; finding 313 validates optional availability and memoizes the shared enabled-aware page snapshot; bounded reads and existing captured upload intent checks retained; server toggle receipts, page reconciliation and stable upload retry/lifetime remain open",
-      "reviewedSha256": "c6a4d7507843120d63c41f2e25233e8eab8087026df54a9a4a793ba73e6898b3"
+      "status": "partial review; finding 321 cross-page identity/order admission and explicit retained reload verified; server cursor, captured write lifecycle and final release pending",
+      "reviewedSha256": "fae80f0d8b5d3a4512a2a186052c9b81c264352fe679d99623038cc3bbc8afa5"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-contracts.ts",

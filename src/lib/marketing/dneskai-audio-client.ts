@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { qk } from '@/lib/queries/keys';
 import { z } from 'zod';
 import { createSignedStorageClient } from '@/lib/supabase/client';
 import { awaitWithSignal } from '@/lib/abortable';
 import { readTextPrefix } from '@/lib/bounded-text';
+import { databaseVersion } from '@/lib/database-version';
 import {
   DNESKAI_AUDIO_MAX_BYTES, DNESKAI_AUDIO_TYPES, DneskaiAudioCreateSchema, DneskaiAudioLibrarySchema, DneskaiAudioPreparedSchema, DneskaiAudioTrackSchema,
   type DneskaiAudioCreate, type DneskaiAudioTrack, type DneskaiAudioTrend, type DneskaiAudioType, type DneskaiAudioTrendsStatus,
@@ -69,7 +70,7 @@ export async function loadDneskaiAudioOptions(preview: boolean, parent?: AbortSi
     if (offset) params.set('offset', String(offset));
     if (trackId) params.set('trackId', trackId);
     const response = await awaitWithSignal(fetch(`${URL_PATH}${params.size ? `?${params}` : ''}`, { cache: 'no-store', signal }), signal);
-    if (!response.ok) { const refused = await failure(response, signal); if (response.status === 404 && refused.code === 'not-found') return null; throw refused; }
+    if (!response.ok) { const refused = await failure(response, signal); if (response.status === 404 && refused.code === 'not-found' && offset === 0) return null; throw refused; }
     const parsed = DneskaiAudioLibrarySchema.parse(await json(response, 2_097_152, signal));
     if (new Set(parsed.tracks.map(track => track.id)).size !== parsed.tracks.length || new Set(parsed.trends?.map(trend => trend.audioId) ?? []).size !== (parsed.trends?.length ?? 0)
       || (trackId && (parsed.tracks.length > 1 || parsed.tracks.some(track => track.id !== trackId) || parsed.nextOffset != null))
@@ -122,13 +123,43 @@ export async function uploadDneskaiAudioTrack(file: File, fields: DneskaiAudioUp
 
 
 /** Shared first-page read for the format switch, picker and library; later pages are explicit owner actions. */
+const audioLibraryQuery = (preview: boolean) => ({queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0, retry: false as const, staleTime: 30000,
+  queryFn: ({signal, pageParam}: {signal: AbortSignal; pageParam: number}) => loadDneskaiAudioOptions(preview, signal, pageParam),
+  getNextPageParam: (last: Awaited<ReturnType<typeof loadDneskaiAudioOptions>>) => last?.nextOffset ?? undefined});
 export function useDneskaiAudioLibrary(preview: boolean, enabled = true) {
-  const query = useInfiniteQuery({ queryKey: [...qk.dneskaiAudio, preview, 'pages'], initialPageParam: 0, retry: false, staleTime: 30000, enabled,
-    queryFn: ({ signal, pageParam }) => loadDneskaiAudioOptions(preview, signal, pageParam),
-    getNextPageParam: (last) => last?.nextOffset ?? undefined });
+  const query = useInfiniteQuery({...audioLibraryQuery(preview), enabled});
+  const client = useQueryClient();
   const pages = query.data?.pages;
-  const data = useMemo(() => !pages ? undefined : pages[0] === null ? null : {
-    tracks: pages.flatMap(page => page?.tracks ?? []), trends: pages[0]?.trends ?? [], trendsStatus: pages[0]?.trendsStatus,
-  }, [pages]);
-  return { ...query, data };
+  const params = query.data?.pageParams;
+  const normalized = useMemo(() => {
+    if (!pages) return {data: undefined, pageProblem: false};
+    if (pages[0] === null && pages.length === 1) return {data: null, pageProblem: false};
+    const tracks: DneskaiAudioTrack[] = [], ids = new Set<string>();
+    let previous: {id: string; version: bigint} | undefined, pageProblem = false;
+    for (let index = 0; index < pages.length; index++) {
+      const page = pages[index];
+      if (!page || (index === 0 ? params?.[index] !== 0 : pages[index - 1]?.nextOffset !== params?.[index])) {pageProblem = true; break;}
+      // Admit an entire page before adding any row. Repeated ids or a shifted
+      // order must not replace an already loaded track or duplicate a choice.
+      const pageIds = new Set<string>();
+      let end = previous;
+      for (const track of page.tracks) {
+        const version = databaseVersion(track.createdAt);
+        if (version === null || ids.has(track.id) || pageIds.has(track.id) || (end && (version < end.version || (version === end.version && track.id <= end.id)))) {pageProblem = true; break;}
+        pageIds.add(track.id); end = {id: track.id, version};
+      }
+      if (pageProblem) break;
+      tracks.push(...page.tracks); for (const id of pageIds) ids.add(id); previous = end;
+    }
+    return {data: {tracks, trends: pages[0]?.trends ?? [], trendsStatus: pages[0]?.trendsStatus}, pageProblem};
+  }, [pages, params]);
+  const reloadLibrary = useCallback(async () => {
+    const queryKey = [...qk.dneskaiAudio, preview, 'pages'];
+    await client.cancelQueries({queryKey, exact: true});
+    // Keep confirmed rows, the warning and the mounted upload draft while
+    // replacing the invalid continuation with one explicit first-page read.
+    try {await client.fetchInfiniteQuery({...audioLibraryQuery(preview), pages: 1, staleTime: 0});}
+    catch { /* The query keeps the failed state and retained rows for recovery. */ }
+  }, [client, preview]);
+  return {...query, ...normalized, hasNextPage: !normalized.pageProblem && query.hasNextPage, reloadLibrary};
 }

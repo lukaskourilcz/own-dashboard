@@ -31,11 +31,16 @@ export function DneskaiAudioLibrary({ lang, preview = false, showDisabled = fals
     {preview && <p role="status" className="text-sm text-foreground-muted">{t.preview}</p>}
     {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
       : query.isError && !query.data ? <DneskaiAudioReadNotice message={t.unavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />
-        : <>{query.isRefetchError && <DneskaiAudioReadNotice message={query.error instanceof DneskaiAudioRequestError && query.error.code === 'unauthorized' ? t.errors.unauthorized : t.refreshUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />}<TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} />{(!query.isRefetchError || query.data?.trendsStatus === 'ready') && <TrendList trends={query.data?.trends ?? []} status={query.data?.trendsStatus} lang={lang} pending={query.isFetching} onRetry={() => void query.refetch()} />}</>}
+        : <>
+          {query.pageProblem && <DneskaiAudioReadNotice message={t.pagesUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.reloadLibrary()} />}
+          {query.isRefetchError && !query.pageProblem && <DneskaiAudioReadNotice message={query.error instanceof DneskaiAudioRequestError && query.error.code === 'unauthorized' ? t.errors.unauthorized : t.refreshUnavailable} retryLabel={t.retry} pending={query.isFetching} onRetry={() => void query.refetch()} />}
+          {(!query.pageProblem || !!query.data?.tracks.length) && <TrackList tracks={query.data?.tracks ?? []} lang={lang} preview={preview} player={player} previewRefreshing={query.isRefetching} />}
+          {((!query.isRefetchError && !query.pageProblem) || query.data?.trendsStatus === 'ready') && <TrendList trends={query.data?.trends ?? []} status={query.data?.trendsStatus} lang={lang} pending={query.isFetching} onRetry={() => void query.refetch()} />}
+        </>}
     {query.isRefetching && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
     {player.error && <div className="flex flex-wrap items-center gap-2"><p role="alert" className="text-sm text-risk">{t.previewFailed}</p><Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => { player.stop(); void query.refetch(); }}>{t.refreshPreview}</Button></div>}
     {query.isFetchNextPageError && <p role="alert" className="text-sm text-risk">{t.unavailable}</p>}
-    {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
+    {query.hasNextPage && <Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t.loading : t.loadMore}</Button>}
     {!preview && query.data && <Dialog><DialogTrigger asChild><Button>{t.upload.title}</Button></DialogTrigger>
       <DialogContent className="max-w-2xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.upload.title}</DialogTitle></DialogHeader><UploadForm lang={lang} embedded /></DialogContent>
     </Dialog>}
