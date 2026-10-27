@@ -147,6 +147,27 @@ async function instagramAudioFor(sound: DneskaiTikTokSound, config: MetaPublishe
   return matchedAudio(sound, body);
 }
 
+/** Bounded free metadata concurrency; failures cancel siblings before any further lookup or commit. */
+async function matchChartSounds(sounds: readonly DneskaiTikTokSound[], config: MetaPublisherConfig, igUserId: string, fetcher: typeof fetch, parent: AbortSignal): Promise<Array<DneskaiTikTokMatch | null>> {
+  const lifetime = new AbortController(), signal = AbortSignal.any([parent, lifetime.signal]);
+  const results: Array<DneskaiTikTokMatch | null> = Array.from({length: sounds.length}, () => null);
+  let next = 0;
+  const worker = async () => {
+    for (;;) {
+      active(signal);
+      const index = next++;
+      if (index >= sounds.length) return;
+      results[index] = await instagramAudioFor(sounds[index], config, igUserId, fetcher, signal);
+      active(signal);
+    }
+  };
+  try {
+    await Promise.all(Array.from({length: Math.min(3, sounds.length)}, worker));
+    active(parent);
+    return results;
+  } finally { lifetime.abort(); }
+}
+
 export type DneskaiTikTokOutcome = { status: 'done' | 'skipped'; code?: string; started: boolean; read: number; matched: number };
 
 /**
@@ -205,8 +226,7 @@ async function advanceTikTokPass(db: Database, owner: string, input: Parameters<
       if (!items.success) throw new DneskaiProviderError('tiktok-invalid-response');
       const sounds = dneskaiTikTokSounds(items.data);
       outcome.read += sounds.length;
-      for (const sound of sounds) {
-        const audio = await instagramAudioFor(sound, config, igUserId, fetcher, signal);
+      for (const audio of await matchChartSounds(sounds, config, igUserId, fetcher, signal)) {
         if (!audio) continue;
         const previous = matches.get(audio.audioId);
         if (previous && (previous.title !== audio.title || previous.artist !== audio.artist)) throw new DneskaiProviderError('tiktok-audio-unavailable');

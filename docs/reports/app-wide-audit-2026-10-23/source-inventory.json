@@ -3343,10 +3343,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio-tiktok.ts",
-      "lines": 241,
+      "lines": 261,
       "sha256": "499ffa393a3c6460796db6ae0c0cae7f392e56609387c475860e53350b4e30f1",
-      "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending",
-      "reviewedSha256": "d2527d004bdf912453c4921ac7c40c9df5ec2200eedf49d8fc43e46dc29479a4"
+      "status": "source reviewed; finding 318 bounded three-request free metadata concurrency, ordered results and sibling/queued/late cancellation pass 135 focused checks; captured paid admission/completion retained; scheduler frequency/lifecycle, prepared rollout and final release pending",
+      "reviewedSha256": "efc8b9c220dcb4dc808c544475020acf819a1fb222f2fc2c4abbd501623eda2b"
     },
     {
       "path": "src/lib/marketing/dneskai-audio-trends.ts",
