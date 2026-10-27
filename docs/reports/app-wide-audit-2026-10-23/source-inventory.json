@@ -460,8 +460,8 @@
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
       "lines": 138,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review; findings 329–332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains",
-      "reviewedSha256": "e87162b89046ae47ef31a5a571d92a5638a6db03abbb89a25679601f621c3789"
+      "status": "partial source review; findings 329–332 verify original owner, bounded foreground/background scopes, exact registered-work acceptance and captured audio lifetime; positive persisted receipts, durable duplicate admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains",
+      "reviewedSha256": "f9d09a62d4f097858c8e35b23558d72db039cecad9413c622811f92333b8576c"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -3625,8 +3625,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 166,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from all 140 canonical migrations; prepared rollout and final release pending",
-      "reviewedSha256": "dcbdb50040ea40ce1266f282958270fc4c8b7c2db8af6136c7cec62abbb3037a"
+      "status": "source reviewed; eight-table read port regenerated from all 140 canonical migrations; prepared rollout and final release pending; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains",
+      "reviewedSha256": "dd49d53171abb2db0b0bd06b4c7f62b50d687bd3e752a9ca570ce72646527de7"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3658,10 +3658,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 392,
+      "lines": 402,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains",
-      "reviewedSha256": "fa5e2b1db7ea728f2e49eb3f7edddb7cff935e70c87c13da70691fe101500cf4"
+      "status": "partial source review; findings 189–190/193 and 328–332 verify physical media identity, outage holds, owned minimal history/lookup, scoped acceptance and captured phase cancellation/input proof; native/record/durable admission and final release pending; finding 333 shared immutable byte collector and successful slide streams verified; SDK JSON/native resource work remains; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains; finding 336 exact atomic owned/hash persisted-record proof and explicit lost-ack recovery verified against canonical 141; encoding admission/cache/release work remains",
+      "reviewedSha256": "c603cf254baf323a69f95dc7f4b7416e1535cb1f5b82428671de4869578cd4d9"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",

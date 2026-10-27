@@ -255,7 +255,7 @@ describe("render-reel route", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ url: "https://test-only.supabase.co/signed", silent: true, cached: false });
     expect(mocks.reel.mock.calls[0]!.slice(1, 3)).toEqual([owner, revisionId]);
-    expect(mocks.record).toHaveBeenCalledWith(expect.anything(), owner, revisionId, { reelKey: "7".repeat(64), revisionHash: contentHash, audioId: null, sha256: "8".repeat(64), bytes: 10 });
+    expect(mocks.record).toHaveBeenCalledWith(expect.anything(), owner, revisionId, { reelKey: "7".repeat(64), revisionHash: contentHash, audioId: null, sha256: "8".repeat(64), bytes: 10 },mocks.reel.mock.calls[0]![3].signal);
   });
 
   it("refuses a stranger, a cross-origin post and an automation role other than scheduler or publisher", async () => {

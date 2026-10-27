@@ -104,7 +104,7 @@ export async function POST(request: Request) {
             storage: createDneskaiReelStorage(db, ownerId, signal), signal,
         }), signal);
         signal.throwIfAborted();
-        await awaitWithSignal(recordDneskaiReel(db, ownerId, input.revisionId, { reelKey: reel.reelKey, revisionHash: reel.revisionHash, audioId: reel.audioId, sha256: reel.sha256, bytes: reel.bytes }), signal);
+        await awaitWithSignal(recordDneskaiReel(db, ownerId, input.revisionId, { reelKey: reel.reelKey, revisionHash: reel.revisionHash, audioId: reel.audioId, sha256: reel.sha256, bytes: reel.bytes },signal), signal);
         signal.throwIfAborted();
         return reel;
     };

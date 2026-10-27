@@ -272,14 +272,24 @@ const ReelRecordSchema = z.object({
 });
 export type DneskaiReelRecord = z.infer<typeof ReelRecordSchema>;
 
-export async function recordDneskaiReel(db: Database, ownerId: string, revisionId: string, reel: DneskaiReelRecord): Promise<void> {
-  z.uuid().parse(ownerId);
-  const existing = await db.from("marketing_events").select("id").eq("user_id", ownerId).eq("revision_id", revisionId).eq("kind", DNESKAI_REEL_EVENT)
-    .eq("payload->>reelKey", reel.reelKey).limit(1);
-  if (existing.error) throw new DneskaiReelError("reel-storage-failed");
-  if (existing.data?.length) return;
-  const { error } = await db.from("marketing_events").insert({ user_id: ownerId, revision_id: revisionId, kind: DNESKAI_REEL_EVENT, payload: ReelRecordSchema.parse(reel), delivered_at: new Date().toISOString() });
-  if (error) throw new DneskaiReelError("reel-storage-failed");
+export async function recordDneskaiReel(db: Database, ownerId: string, revisionId: string, reel: DneskaiReelRecord, parent?: AbortSignal): Promise<void> {
+    const signal = AbortSignal.any([AbortSignal.timeout(15000), ...(parent ? [parent] : [])]);
+    try {
+        z.uuid().parse(ownerId);
+        z.uuid().parse(revisionId);
+        const record = ReelRecordSchema.strict().extend({ bytes: z.number().int().min(1).max(DNESKAI_REEL_MAX_BYTES) }).parse(reel);
+        signal.throwIfAborted();
+        const { data, error } = await awaitWithSignal(db.rpc('record_owned_dneskai_reel', { p_owner: ownerId, p_revision: revisionId, p_revision_hash: record.revisionHash, p_reel_key: record.reelKey, p_audio_id: record.audioId, p_sha256: record.sha256, p_bytes: record.bytes }).retry(false).abortSignal(signal), signal);
+        signal.throwIfAborted();
+        if (error)
+            throw new Error();
+        z.strictObject({ ownerId: z.literal(ownerId), revisionId: z.literal(revisionId), revisionHash: z.literal(record.revisionHash), reelKey: z.literal(record.reelKey), audioId: record.audioId === null ? z.null() : z.literal(record.audioId), sha256: z.literal(record.sha256), bytes: z.literal(record.bytes), eventId: z.uuid(), createdAt: databaseTimestamp, created: z.boolean() }).parse(data);
+    }
+    catch {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw new DneskaiReelError('reel-storage-failed');
+    }
 }
 
 /** Exact approved-hash history, then a positively matching immutable object. Only confirmed empty history is absent. */
