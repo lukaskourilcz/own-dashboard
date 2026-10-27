@@ -33,7 +33,7 @@ test('Lab picks a Reel track, saves a new version and approves its hash', async 
   const errors = watchConsole(page), t = dneskaiLab.en, audio = dneskaiAudio.en;
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const lab = page.getByTestId('dneskai-lab');
-  await lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: audio.format.reel, exact: true }).click();
+  await lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: audio.format.reel, exact: true }).locator('..').click();
   const picker = lab.getByTestId('dneskai-audio-picker');
   await expect(picker).toBeVisible();
   const select = picker.getByRole('combobox', { name: audio.picker.label, exact: true });
@@ -59,14 +59,14 @@ test('Lab switches a carousel to a Reel, saves a new version and approves its ha
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const lab = page.getByTestId('dneskai-lab');
   const group = lab.getByTestId('dneskai-format-switch').getByRole('radiogroup', { name: format.label, exact: true });
-  await expect(group.getByRole('radio', { name: format.carousel, exact: true })).toHaveAttribute('aria-checked', 'true');
-  await group.getByRole('radio', { name: format.reel, exact: true }).click();
+  await expect(group.getByRole('radio', { name: format.carousel, exact: true })).toBeChecked();
+  await group.getByRole('radio', { name: format.reel, exact: true }).locator('..').click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
   const axe = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-format-switch"]').withTags(tags).analyze();
   expect(axe.violations).toEqual([]);
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
   await expect(page).toHaveURL(/labPost=/);
-  await expect(lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: format.reel, exact: true })).toHaveAttribute('aria-checked', 'true');
+  await expect(lab.getByTestId('dneskai-format-switch').getByRole('radio', { name: format.reel, exact: true })).toBeChecked();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   await page.getByTestId('dneskai-lab-approve').click();
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
