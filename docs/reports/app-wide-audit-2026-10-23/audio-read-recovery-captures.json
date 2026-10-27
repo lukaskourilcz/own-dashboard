@@ -1,0 +1,75 @@
+{
+  "finding": 319,
+  "capturedDate": "2026-10-27",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "48c24408",
+  "state": "Actual synthetic cached library refresh failure retaining its loaded track and upload access. No production data.",
+  "components": {
+    "src/components/marketing/dneskai-audio-library.tsx": "e100dd30b91458132ed9e68a8f80d4fde4b2a1c1ac6da546e7c1415ddf53f610",
+    "src/components/marketing/dneskai/audio-trends-notice.tsx": "6542c7ec5e2451c45097322a22c78b6a61a60d736dd9289b32d3bfd762aabdf4",
+    "src/components/marketing/dneskai/lab/audio-picker.tsx": "53c3574bf91ba960fc9e3ac7d2acda10bd9b1b9ba8f18805a3393aa41cf2e691",
+    "src/lib/i18n/sections/dneskai-audio.ts": "ae71cb1a24c4648c644d1303b1c4a26f394b584eea61afadde6916e31c1d4e33"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "box": {
+        "x": 276,
+        "y": 211,
+        "width": 1120,
+        "height": 282
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 35.46099290780142,
+          "w": 44.57310267857143,
+          "h": 11.347517730496454
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 52.836879432624116,
+          "w": 100,
+          "h": 29.78723404255319
+        }
+      ],
+      "asset": "audio-read-recovery-cs-1440.png",
+      "assetSha256": "e6bc83df8f1cd271180d0413f5e156d28a44c042c0c3b038e87de4f2065c21ac"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1200
+      },
+      "box": {
+        "x": 16,
+        "y": 215,
+        "width": 398,
+        "height": 370
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 32.432432432432435,
+          "w": 100,
+          "h": 19.45945945945946
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 56.486486486486484,
+          "w": 100,
+          "h": 27.027027027027028
+        }
+      ],
+      "asset": "audio-read-recovery-cs-430.png",
+      "assetSha256": "0555b637ad4f161edcc5c8510ffe67bca83c55a7431274c2dc7db03cb345034a"
+    }
+  }
+}
