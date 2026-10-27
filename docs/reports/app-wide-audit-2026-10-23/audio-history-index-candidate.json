@@ -1,0 +1,191 @@
+{
+  "decision": "deferred; the managed table has eight events and no recorded app Reels on 27 October 2026",
+  "managedObservation": {
+    "date": "2026-10-27",
+    "eventRows": 8,
+    "recordedReelRows": 0,
+    "readOnly": true
+  },
+  "candidateSql": "create index marketing_events_owner_kind_recent on public.marketing_events(user_id,kind,created_at desc,id desc)",
+  "candidateSha256": "0328c54022509a927ebaa99247c992b1ba48c146a19cd934e536fa3b0c9afd58",
+  "fixtureRows": 10001,
+  "fixtureRevisions": 2,
+  "query": "select id,user_id,revision_id,kind,created_at,payload->'reelKey' as reel_key,payload->'revisionHash' as revision_hash,payload->'audioId' as audio_id,payload->'sha256' as sha256,payload->'bytes' as bytes from public.marketing_events where user_id=$1 and kind='dneskai-reel-rendered' and revision_id<>$2 order by created_at desc,id desc limit 1",
+  "beforePlan": {
+    "rows": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 329.04,
+              "Total Cost": 329.05,
+              "Plan Rows": 1,
+              "Plan Width": 238,
+              "Disabled": false,
+              "Plans": [
+                {
+                  "Node Type": "Sort",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 329.04,
+                  "Total Cost": 329.05,
+                  "Plan Rows": 1,
+                  "Plan Width": 238,
+                  "Disabled": false,
+                  "Sort Key": [
+                    "created_at DESC",
+                    "id DESC"
+                  ],
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "marketing_events",
+                      "Alias": "marketing_events",
+                      "Startup Cost": 0,
+                      "Total Cost": 329.03,
+                      "Plan Rows": 1,
+                      "Plan Width": 238,
+                      "Disabled": false,
+                      "Filter": "((revision_id <> '22222222-2222-4222-8222-222222222222'::uuid) AND (user_id = '11111111-1111-4111-8111-111111111111'::uuid) AND (kind = 'dneskai-reel-rendered'::text))"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "QUERY PLAN",
+        "dataTypeID": 114
+      }
+    ],
+    "command": "EXPLAIN",
+    "affectedRows": 0
+  },
+  "afterPlan": {
+    "rows": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.41,
+              "Total Cost": 8.44,
+              "Plan Rows": 1,
+              "Plan Width": 238,
+              "Disabled": false,
+              "Plans": [
+                {
+                  "Node Type": "Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "marketing_events_owner_kind_recent",
+                  "Relation Name": "marketing_events",
+                  "Alias": "marketing_events",
+                  "Startup Cost": 0.41,
+                  "Total Cost": 8.44,
+                  "Plan Rows": 1,
+                  "Plan Width": 238,
+                  "Disabled": false,
+                  "Index Cond": "((user_id = '11111111-1111-4111-8111-111111111111'::uuid) AND (kind = 'dneskai-reel-rendered'::text))",
+                  "Filter": "(revision_id <> '22222222-2222-4222-8222-222222222222'::uuid)"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "QUERY PLAN",
+        "dataTypeID": 114
+      }
+    ],
+    "command": "EXPLAIN",
+    "affectedRows": 0
+  },
+  "genericPlan": {
+    "rows": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.41,
+              "Total Cost": 0.67,
+              "Plan Rows": 1,
+              "Plan Width": 24,
+              "Disabled": false,
+              "Plans": [
+                {
+                  "Node Type": "Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "marketing_events_owner_kind_recent",
+                  "Relation Name": "marketing_events",
+                  "Alias": "marketing_events",
+                  "Startup Cost": 0.41,
+                  "Total Cost": 647.41,
+                  "Plan Rows": 2500,
+                  "Plan Width": 24,
+                  "Disabled": false,
+                  "Index Cond": "((user_id = $1) AND (kind = $2))",
+                  "Filter": "(revision_id <> $3)"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "QUERY PLAN",
+        "dataTypeID": 114
+      }
+    ],
+    "command": "EXPLAIN",
+    "affectedRows": 0
+  },
+  "indexBytes": 892928,
+  "history": {
+    "rows": [
+      {
+        "fingerprint": "1879726ee189aca8a660380803c53055",
+        "count": 10001
+      }
+    ],
+    "fields": [
+      {
+        "name": "fingerprint",
+        "dataTypeID": 25
+      },
+      {
+        "name": "count",
+        "dataTypeID": 23
+      }
+    ],
+    "command": "SELECT",
+    "affectedRows": 0,
+    "rowCount": 1
+  }
+}

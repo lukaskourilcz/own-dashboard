@@ -3357,10 +3357,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-audio.ts",
-      "lines": 404,
+      "lines": 443,
       "sha256": "9cd708c4237aa9e5a244623d01433ad90f2486b9cfc4da71d2540042c61f8e7a",
-      "status": "partial review; findings 323\u2013327 verify captured toggles, positive object absence, retained upload sessions and bounded renderer metadata/streaming audio reads; rotation, SDK non-success parser, orphan retention and final release pending",
-      "reviewedSha256": "fa5e8c6e7e67754b1dc08872142b7fc076620afe0688a2f4121b65cefa843ff1"
+      "status": "partial review; findings 323\u2013328 verify captured toggles, positive absence, retained upload sessions, bounded audio streams and strict captured rotation reads; SDK non-success parser, concurrent rotation, orphan retention and final release pending",
+      "reviewedSha256": "aae8460589a3535515446857b405d0d2b0798e9c8b52f3356f70eb7f15ad6989"
     },
     {
       "path": "src/lib/marketing/dneskai-brief-read.ts",
@@ -3658,10 +3658,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 220,
+      "lines": 239,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review: private immutable objects and revision-bound render records retained; storage outage versus absence, total bytes/cancellation, duplicate encoding/record admission and physical media cache identity need repair verification; caption/schedule-only hashes currently force new MP4 keys; finding 189 closes cache outage-as-miss behavior with composed no-encode evidence; finding 190 closes physical media identity, full revision/loaded JPEG binding and legacy exact-hash reads; duplicate admission and native work bounds remain open; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "78cee1b56f90ba2a633b3d30ab42cd1142eaa456ec63001af549534d36dfd6ae"
+      "status": "partial source review; findings 189\u2013190 and 193 preserve physical media identity, policy and cache outage semantics; finding 328 adds strict minimal owned audio history, deterministic ties and bounded cancellation; broader storage/read/record/background admission and final release pending",
+      "reviewedSha256": "4de1751c5b931ffbb2586f6d42f67bb19dde3d614bead099af5c75467e85cf3f"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -4071,10 +4071,10 @@
     },
     {
       "path": "src/lib/marketing/orchestrator.ts",
-      "lines": 187,
+      "lines": 196,
       "sha256": "f83a5180ea40a9de68e97013f5d11548790e9c135005a1e35513eb489a15d8d1",
-      "status": "partial; complete source inspection; complete current source/account reads, caller budget, exact persistence receipts and Reel background admission remain under review; publication fences retained",
-      "reviewedSha256": "f83a5180ea40a9de68e97013f5d11548790e9c135005a1e35513eb489a15d8d1"
+      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending",
+      "reviewedSha256": "8514b4cf61d22d3bc1827044e389109e416386c1cb9b37176b23b26d4149e6ed"
     },
     {
       "path": "src/lib/marketing/owner-edits.ts",

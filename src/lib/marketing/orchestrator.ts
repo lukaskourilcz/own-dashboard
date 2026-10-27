@@ -17,7 +17,7 @@ import { nextDneskaiAudioTrackId } from './dneskai-audio';
  * render is requested (rotation track when the owner chose none) and the publication stays queued for the next tick.
  * Returns the stored Reel, or the hold code that keeps the publication queued.
  */
-async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,options:{dryRun:boolean;origin?:string}):Promise<{reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;hold:string|null}>{
+async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,options:{dryRun:boolean;origin?:string;signal?:AbortSignal}):Promise<{reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;hold:string|null}>{
  const revision=state.revisionRow.revision;
  if(!deckReel(revision))return {reel:null,hold:null};
  if(!dneskaiReelsEnabled())return {reel:null,hold:'reels-disabled'};
@@ -25,7 +25,16 @@ async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,
  if(reel)return {reel,hold:null};
  if(options.dryRun)return {reel:null,hold:'reel-render-pending'};
  if(!options.origin)return {reel:null,hold:'reel-render-unavailable'};
- const audioTrackId=revision.audio?null:await nextDneskaiAudioTrackId(db,owner,await lastDneskaiReelAudio(db,owner,state.revisionRow.id).catch(()=>null)).catch(()=>null);
+ let audioTrackId:string|null=null;
+ if(!revision.audio){
+  try{
+   const audioSignal=AbortSignal.any([AbortSignal.timeout(15000),...(options.signal?[options.signal]:[])]);
+   audioSignal.throwIfAborted();const previous=await lastDneskaiReelAudio(db,owner,state.revisionRow.id,audioSignal);audioSignal.throwIfAborted();
+   audioTrackId=await nextDneskaiAudioTrackId(db,owner,previous,audioSignal);audioSignal.throwIfAborted();
+  }
+  catch{return {reel:null,hold:'reel-audio-unavailable'};}
+ }
+ if(options.signal?.aborted)return {reel:null,hold:'reel-render-unavailable'};
  const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,audioTrackId});
  return {reel:null,hold:requested?'reel-render-pending':'reel-render-unavailable'};
 }
@@ -142,7 +151,7 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
  let reelHold:{publicationId:string;code:string}|null=null;
  for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand){await publishingState(db,owner,publication.revision_id,true,signal);
   // #165: a Reel without its stored MP4 is never claimed; the claim would turn the hold into a failure.
-  if(!reelHold){const prepared=await prepareDneskaiReel(db,owner,state,{dryRun,origin:options.origin});if(prepared.hold)reelHold={publicationId:publication.id,code:prepared.hold};}
+  if(!reelHold){const prepared=await prepareDneskaiReel(db,owner,state,{dryRun,origin:options.origin,signal});if(prepared.hold)reelHold={publicationId:publication.id,code:prepared.hold};}
   if(!dryRun&&!credentialHold){const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);if(config.credentialHold)credentialHold={publicationId:publication.id,code:config.credentialHold};}}}
  let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').in('error_code',['container-pending',CONTAINER_RETRY_CODE]).gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
  if(pending.error)throw new Error('publication-state-unavailable');

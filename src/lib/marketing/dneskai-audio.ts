@@ -382,23 +382,62 @@ export async function loadDneskaiAudioTrack(db: Database, owner: string, trackId
 }
 
 /** The track rotation picks after `previousId` among the owner's enabled stored tracks, or null for an empty library. */
-export async function nextDneskaiAudioTrackId(db: Database, owner: string, previousId: string | null): Promise<string | null> {
-  z.uuid().parse(owner);
-  const eligible = () => db.from("marketing_audio_tracks").select("id,created_at").eq("user_id", owner)
-    .eq("enabled", true).neq("source", "instagram-library").not("storage_path", "is", null);
-  // Read the predecessor separately, even if it was disabled after the last publication.
-  if (previousId && z.uuid().safeParse(previousId).success) {
-    const previous = await db.from("marketing_audio_tracks").select("id,created_at").eq("user_id", owner).eq("id", previousId).maybeSingle();
-    if (previous.error) throw new DneskaiAudioError("audio-library-unavailable");
-    const at = z.iso.datetime({ offset: true }).safeParse(previous.data?.created_at);
-    if (at.success) {
-      const next = await eligible().or(`created_at.gt.${at.data},and(created_at.eq.${at.data},id.gt.${previousId})`)
-        .order("created_at", { ascending: true }).order("id", { ascending: true }).limit(1).maybeSingle();
-      if (next.error) throw new DneskaiAudioError("audio-library-unavailable");
-      if (next.data) return next.data.id;
+export async function nextDneskaiAudioTrackId(db: Database, owner: string, previousId: string | null, parent?: AbortSignal): Promise<string | null> {
+    const signal = readBudget(parent);
+    try {
+        z.uuid().parse(owner);
+        if (previousId !== null)
+            z.uuid().parse(previousId);
+        signal.throwIfAborted();
+        const predecessorSchema = z.strictObject({ id: z.uuid(), user_id: z.uuid(), created_at: databaseTimestamp });
+        const eligibleSchema = predecessorSchema.extend({ enabled: z.literal(true), source: DneskaiAudioCreateSchema.shape.source, storage_path: z.string().max(300) });
+        const eligible = () => db.from('marketing_audio_tracks').select('id,user_id,created_at,enabled,source,storage_path').eq('user_id', owner).eq('enabled', true).neq('source', 'instagram-library').not('storage_path', 'is', null);
+        const read = async (after?: {
+            created_at: string;
+            id: string;
+        }) => {
+            let query = eligible();
+            if (after)
+                query = query.or(`created_at.gt.${after.created_at},and(created_at.eq.${after.created_at},id.gt.${after.id})`);
+            signal.throwIfAborted();
+            const pending: PromiseLike<{
+                data: unknown;
+                error: unknown;
+            }> = query.order('created_at', { ascending: true }).order('id', { ascending: true }).limit(1).retry(false).abortSignal(signal).maybeSingle();
+            const { data, error } = await awaitWithSignal(pending, signal);
+            signal.throwIfAborted();
+            if (error)
+                throw new Error();
+            if (data === null)
+                return null;
+            const row = eligibleSchema.parse(data);
+            if (row.user_id !== owner || !objectFromPath(owner, row.storage_path, row.id))
+                throw new Error();
+            return row;
+        };
+        if (previousId !== null) {
+            const { data, error } = await awaitWithSignal(db.from('marketing_audio_tracks').select('id,user_id,created_at').eq('user_id', owner).eq('id', previousId).retry(false).abortSignal(signal).maybeSingle(), signal);
+            signal.throwIfAborted();
+            if (error)
+                throw new Error();
+            if (data !== null) {
+                const previous = predecessorSchema.parse(data);
+                if (previous.user_id !== owner || previous.id !== previousId)
+                    throw new Error();
+                const next = await read(previous);
+                if (next) {
+                    const before = databaseVersion(previous.created_at)!, after = databaseVersion(next.created_at)!;
+                    if (after < before || after === before && next.id <= previous.id)
+                        throw new Error();
+                    return next.id;
+                }
+            }
+        }
+        return (await read())?.id ?? null;
     }
-  }
-  const first = await eligible().order("created_at", { ascending: true }).order("id", { ascending: true }).limit(1).maybeSingle();
-  if (first.error) throw new DneskaiAudioError("audio-library-unavailable");
-  return first.data?.id ?? null;
+    catch {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw unavailable();
+    }
 }

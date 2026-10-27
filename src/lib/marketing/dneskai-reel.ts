@@ -1,4 +1,6 @@
 import "server-only";
+import {awaitWithSignal} from "@/lib/abortable";
+import {databaseTimestamp} from "@/lib/database-version";
 import { marketingStorageObjectMissing } from "./storage-errors";
 import { createHash } from "node:crypto";
 import { z } from "zod";
@@ -193,12 +195,29 @@ export async function findDneskaiReelForRevision(db: Database, ownerId: string, 
 }
 
 /** The track of the most recent Reel of another revision, for the rotation; null before the first Reel. */
-export async function lastDneskaiReelAudio(db: Database, ownerId: string, exceptRevisionId: string): Promise<string | null> {
-  const { data, error } = await db.from("marketing_events").select("revision_id,payload").eq("user_id", ownerId).eq("kind", DNESKAI_REEL_EVENT)
-    .neq("revision_id", exceptRevisionId).order("created_at", { ascending: false }).limit(1);
-  if (error) throw new DneskaiReelError("reel-storage-failed");
-  const record = ReelRecordSchema.safeParse((data?.[0] as { payload?: unknown } | undefined)?.payload);
-  return record.success ? record.data.audioId : null;
+export async function lastDneskaiReelAudio(db: Database, ownerId: string, exceptRevisionId: string, parent?: AbortSignal): Promise<string | null> {
+    const signal = AbortSignal.any([AbortSignal.timeout(15000), ...(parent ? [parent] : [])]);
+    try {
+        z.uuid().parse(ownerId);
+        z.uuid().parse(exceptRevisionId);
+        signal.throwIfAborted();
+        const { data, error } = await awaitWithSignal(db.from('marketing_events').select('id,user_id,revision_id,kind,created_at,reelKey:payload->reelKey,revisionHash:payload->revisionHash,audioId:payload->audioId,sha256:payload->sha256,bytes:payload->bytes').eq('user_id', ownerId).eq('kind', DNESKAI_REEL_EVENT).neq('revision_id', exceptRevisionId).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(1).retry(false).abortSignal(signal), signal);
+        signal.throwIfAborted();
+        if (error)
+            throw new Error();
+        const rows = z.array(ReelRecordSchema.strict().extend({ id: z.uuid(), user_id: z.uuid(), revision_id: z.uuid(), kind: z.literal(DNESKAI_REEL_EVENT), created_at: databaseTimestamp, bytes: z.number().int().min(1).max(DNESKAI_REEL_MAX_BYTES) })).max(1).parse(data);
+        if (!rows.length)
+            return null;
+        const row = rows[0]!;
+        if (row.user_id !== ownerId || row.revision_id === exceptRevisionId)
+            throw new Error();
+        return row.audioId;
+    }
+    catch {
+        if (parent?.aborted)
+            throw new DOMException('Request aborted', 'AbortError');
+        throw new DneskaiReelError('reel-storage-failed');
+    }
 }
 
 /**
