@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import {writeFileSync} from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { DEMO_DNESKAI_AUDIO_TRACKS } from '../src/lib/marketing/dneskai-audio-client';
@@ -7,7 +8,7 @@ import { common } from '../src/lib/i18n/sections/common';
 import { nav } from '../src/lib/i18n/sections/nav';
 const owner='11111111-1111-4111-8111-111111111111';
 for (const lang of ['en', 'cs'] as const)
-    test(`${lang}: captured music toggle protects pending exits and reconciles uncertainty with a read`, async ({ page }) => {
+    test(`${lang}: captured music toggle protects pending exits and reconciles uncertainty with a read`, async ({ page },info) => {
         const errors = watchConsole(page), t = dneskaiAudio[lang];
         let track = { ...DEMO_DNESKAI_AUDIO_TRACKS[0] }, writes = 0, reads = 0, release: (() => void) | undefined;
         await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
@@ -55,6 +56,15 @@ for (const lang of ['en', 'cs'] as const)
             expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
             const button=library.getByRole('button',{name:t.reloadLibrary,exact:true}),box=(await button.boundingBox())!;
             expect(box.height).toBeGreaterThanOrEqual(width<768?44:32);
+        }
+        if(lang==='cs'){
+            const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1200});
+            const file=`test-results/audio-toggle-recovery-cs-${width}`;await library.screenshot({path:file+'.png',animations:'disabled'});
+            const box=(await library.boundingBox())!,marks=[];
+            for(const [index,element] of [toggle,library.getByTestId('dneskai-audio-read-notice')].entries()){
+                const rect=(await element.boundingBox())!;marks.push({n:index+1,x:100*(rect.x-box.x)/box.width,y:100*(rect.y-box.y)/box.height,w:100*rect.width/box.width,h:100*rect.height/box.height});
+            }
+            writeFileSync(file+'.json',JSON.stringify({viewport:{width,height:1200},box,marks},null,2)+'\n');
         }
         const reload = library.getByRole('button', { name: t.reloadLibrary, exact: true });
         await reload.focus();

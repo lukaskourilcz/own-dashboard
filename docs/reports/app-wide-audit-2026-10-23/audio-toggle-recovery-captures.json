@@ -1,0 +1,75 @@
+{
+  "finding": 324,
+  "capturedDate": "2026-10-27",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "576e34ad",
+  "state": "Actual synthetic uncertain track toggle: saved checkbox retained, row blocked, explicit read-only recovery. No production record.",
+  "components": {
+    "src/components/marketing/dneskai-audio-library.tsx": "331f7fad0ff8c780860ec8f84ff719e215584d8f5373ba5da324884859a86ffd",
+    "src/lib/marketing/dneskai-audio-client.ts": "f02735a53202674b8998015883e2a0d9aeb10f23e9a5b185bb04fb69d4ac1a3e",
+    "src/lib/marketing/dneskai-audio-contracts.ts": "8490d295e4d3c7a2e0375bc03568b127ff3c459cfea8d9ea4fde3f2eb08d2ebf",
+    "src/lib/i18n/sections/dneskai-audio.ts": "70814bca12902fa64e2accbedb28c4595a8c93263f9e3a4f60b491c234e04717"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "box": {
+        "x": 276,
+        "y": 211,
+        "width": 1120,
+        "height": 278
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 96.78571428571429,
+          "y": 44.96402877697842,
+          "w": 3.2142857142857144,
+          "h": 11.510791366906474
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 66.54676258992805,
+          "w": 60.27622767857143,
+          "h": 11.510791366906474
+        }
+      ],
+      "asset": "audio-toggle-recovery-cs-1440.png",
+      "assetSha256": "b925dc4785bceb33ed89c600f70e649100d6d9f9324dabd03c6f5ba91b9c2570"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1200
+      },
+      "box": {
+        "x": 16,
+        "y": 215,
+        "width": 398,
+        "height": 386
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 88.94472361809045,
+          "y": 37.56476683937824,
+          "w": 11.055276381909549,
+          "h": 11.398963730569948
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 57.25388601036269,
+          "w": 100,
+          "h": 23.83419689119171
+        }
+      ],
+      "asset": "audio-toggle-recovery-cs-430.png",
+      "assetSha256": "d22c2cbbca3d7224612f5881f6d1f5ebbd9960e631115deef9b45f77e73faf94"
+    }
+  }
+}
