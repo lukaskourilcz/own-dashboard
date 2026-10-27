@@ -460,8 +460,8 @@
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
       "lines": 138,
       "sha256": "b4c1b58cb3ea6940c004e4c51c53cbbf065a60a3480b0b768f21a8b880dedfd8",
-      "status": "partial source review; finding 329 rejects auth-error users, bounds body/auth/rate admission and foreground/background service scopes, contains late results and private diagnostics; stored/accepted proof, duplicate background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains",
-      "reviewedSha256": "1e2d8e4ec561b9d2c01d50748809b215999b324729347b2cd10b799705321bba"
+      "status": "partial source review; finding 329 rejects auth-error users, bounds body/auth/rate admission and foreground/background service scopes, contains late results and private diagnostics; stored/accepted proof, duplicate background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending",
+      "reviewedSha256": "381d6036745bbf6e5a0b41d7d542e05c002d37ede5e107c9d80e36dd58e2ae57"
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
@@ -2227,9 +2227,9 @@
     {
       "path": "src/lib/bounded-response.ts",
       "sha256": null,
-      "lines": 32,
-      "reviewedSha256": "448b3a7566db1b8809d0e6b12e658580606d3ec9c806abaf1158668f384ac557",
-      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending"
+      "lines": 33,
+      "reviewedSha256": "3dd53d6321b6f942d17daf0340dcf00653719ce4d128e00fe4a70f1640b469aa",
+      "status": "source reviewed; finding 213 typed bounded identity-matched registry routes, offline/native admission and primary synthetic response evidence pass; browser lifecycle and final release pending; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending"
     },
     {
       "path": "src/lib/bounded-text.ts",
@@ -3658,10 +3658,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",
-      "lines": 280,
+      "lines": 312,
       "sha256": "d484d3a0a88e2ea1cca11e289fedd563eeb2eed29d8ab80300a05dabb2cc2de1",
-      "status": "partial source review; findings 189–190 and 193 preserve physical media identity, policy and cache outage semantics; finding 328 adds strict minimal owned audio history, deterministic ties and bounded cancellation; broader storage/read/record/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains",
-      "reviewedSha256": "368a1059a356935308b3b947f2991d9411ce268b99d36145a94ac1facc445b6b"
+      "status": "partial source review; findings 189–190 and 193 preserve physical media identity, policy and cache outage semantics; finding 328 adds strict minimal owned audio history, deterministic ties and bounded cancellation; broader storage/read/record/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending",
+      "reviewedSha256": "8affeaa653e0b308627ceba1054b9c322a30cebe40403473d7b0f565f169876d"
     },
     {
       "path": "src/lib/marketing/dneskai-registry.ts",
@@ -4073,8 +4073,8 @@
       "path": "src/lib/marketing/orchestrator.ts",
       "lines": 204,
       "sha256": "f83a5180ea40a9de68e97013f5d11548790e9c135005a1e35513eb489a15d8d1",
-      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains",
-      "reviewedSha256": "af5729be53b4674f79ac7e82a91bf0446ffd7273d6763d18a4084e82cce91921"
+      "status": "partial review; finding 328 holds uncertain audio selection before render/claim, shares a bounded publisher lifetime and refuses a late render after cancellation; broader source/account receipts, Reel cache/request/background admission and final release pending; finding 330 exact approved-hash stored lookup/identity and original cancellation verified; broader admission and lifecycle review remains; finding 331 scoped accepted response and bounded immutable chunks verified; final release checks pending",
+      "reviewedSha256": "bca38aa022b9cbb6df8fe5b6065a28764e9ff4fd309a726ce46696c0d51fc6c3"
     },
     {
       "path": "src/lib/marketing/owner-edits.ts",

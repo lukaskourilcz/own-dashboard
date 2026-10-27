@@ -10,14 +10,15 @@ export async function boundedResponseText(response: Pick<Response, "body" | "bod
   if (response.bodyUsed || response.body?.locked) { discard(); throw new Error("Response unavailable"); }
   const reader = response.body?.getReader();
   if (!reader) throw new Error("Response unavailable");
-  const chunks: Uint8Array[] = []; let size = 0, complete = false;
+  const chunks: Uint8Array[] = []; let size = 0, count = 0, complete = false;
   try {
     for (;;) {
       const part = await awaitWithSignal(reader.read(), signal); signal.throwIfAborted();
       if (part.done) break;
+      if (++count > 65536) throw new Error("Response unavailable");
       size += part.value.byteLength;
       if (size > maximum) throw new Error("Response unavailable");
-      chunks.push(part.value);
+      if (part.value.byteLength) chunks.push(new Uint8Array(part.value));
     }
     const bytes = new Uint8Array(size); let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }

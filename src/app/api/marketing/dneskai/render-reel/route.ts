@@ -9,7 +9,7 @@ import { authenticateAutomation } from '@/lib/marketing/automation-auth';
 import { boundedRequestText, MarketingRequestBodyError } from '@/lib/marketing/http';
 import { DneskaiReelRenderError } from '@/lib/marketing/dneskai-reel-render';
 import { DneskaiAudioError, loadDneskaiAudioTrack } from '@/lib/marketing/dneskai-audio';
-import { DneskaiReelError, createDneskaiReelStorage, recordDneskaiReel, dneskaiReelForRevision, dneskaiReelsEnabled, loadDneskaiSlideBytes } from '@/lib/marketing/dneskai-reel';
+import { DneskaiReelAcceptedSchema,DneskaiReelError, createDneskaiReelStorage, recordDneskaiReel, dneskaiReelForRevision, dneskaiReelsEnabled, loadDneskaiSlideBytes } from '@/lib/marketing/dneskai-reel';
 
 export const runtime = 'nodejs';
 /** Native encoding retains the existing five-minute function limit. */
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
         catch {
             return Response.json({ error: 'reel-request-unavailable' }, { status: 503, headers });
         }
-        return Response.json({ status: 'rendering' }, { status: 202, headers });
+        return Response.json(DneskaiReelAcceptedSchema.parse({ status: 'accepted',ownerId,revisionId:input.revisionId,audioTrackId:input.audioTrackId??null }), { status: 202, headers });
     }
     const signal = AbortSignal.any([request.signal, AbortSignal.timeout(RENDER_BUDGET_MS)]);
     try {

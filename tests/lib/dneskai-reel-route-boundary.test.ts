@@ -187,6 +187,7 @@ it('starts signed asynchronous work under its own background scope after acknowl
     const controller = new AbortController(), body = JSON.stringify({ revisionId, async: true });
     const response = await POST(new Request(url, { method: 'POST', headers: signAutomationBody(body, secret), body, signal: controller.signal }));
     expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({status:'accepted',ownerId:owner,revisionId,audioTrackId:null});
     expect(m.after).toHaveBeenCalledOnce();
     expect(m.admin).not.toHaveBeenCalled();
     expect(m.user).not.toHaveBeenCalled();

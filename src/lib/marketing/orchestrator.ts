@@ -38,7 +38,7 @@ async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,
   catch{return {reel:null,hold:'reel-audio-unavailable'};}
  }
  if(options.signal?.aborted)return {reel:null,hold:'reel-render-unavailable'};
- const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,audioTrackId});
+ const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,audioTrackId,...(options.signal?{signal:options.signal}:{})});
  return {reel:null,hold:requested?'reel-render-pending':'reel-render-unavailable'};
 }
 /** Starts the Reel render of approved posts due within `aheadMs`, one per call, so the MP4 is ready at the slot. */

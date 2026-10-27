@@ -46,3 +46,10 @@ it("does not accept a previously consumed suffix as a complete response", async 
 it("hides an untrusted producer's failure text", async () => {
   await expect(boundedResponseText(new Response(new ReadableStream({ pull(controller) { controller.error(new Error('PRIVATE TEST producer')); } })), 100, fresh())).rejects.toThrow(/^Response unavailable$/);
 });
+
+it('refuses a finite zero-byte chunk flood without retaining every allocation',async()=>{
+ let pulls=0;const cancel=vi.fn(),response=new Response(new ReadableStream({pull(controller){if(++pulls<65538)controller.enqueue(new Uint8Array());else controller.close();},cancel},{highWaterMark:0}));await expect(boundedResponseText(response,1024,fresh())).rejects.toThrow('Response unavailable');expect(pulls).toBeLessThanOrEqual(65537);expect(cancel).toHaveBeenCalledOnce();expect(response.body?.locked).toBe(false);
+});
+it.each([()=>new Uint8Array([65]),()=>Buffer.from([65])])('captures each admitted chunk before a producer reuses its buffer: %#',async makeBytes=>{
+ const bytes=makeBytes();let step=0;const response=new Response(new ReadableStream({pull(controller){if(step++===0)controller.enqueue(bytes);else{bytes[0]=66;controller.enqueue(bytes);controller.close();}}},{highWaterMark:0}));expect(await boundedResponseText(response,2,fresh())).toBe('AB');
+});

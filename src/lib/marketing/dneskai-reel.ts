@@ -1,4 +1,5 @@
 import "server-only";
+import {boundedResponseText} from "@/lib/bounded-response";
 import {awaitWithSignal} from "@/lib/abortable";
 import {databaseTimestamp} from "@/lib/database-version";
 import { marketingStorageObjectMissing } from "./storage-errors";
@@ -261,20 +262,51 @@ export async function lastDneskaiReelAudio(db: Database, ownerId: string, except
     }
 }
 
-/**
- * Asks this deployment's render route for a revision's Reel, signed as the scheduler, and returns once the route has
- * accepted the job (202): the render itself runs in that function's own 300 s, not in the 60 s tick (#165).
- */
-export async function requestDneskaiReelRender(input: { origin: string; revisionId: string; audioTrackId: string | null; env?: Record<string, string | undefined>; fetcher?: typeof fetch }): Promise<boolean> {
-  const secret = (input.env ?? process.env).MARKETING_SCHEDULER_SECRET;
-  let origin: URL;
-  try { origin = new URL(input.origin); } catch { return false; }
-  if (!secret || secret.length < 32 || origin.protocol !== "https:" && origin.hostname !== "localhost" && origin.hostname !== "127.0.0.1") return false;
-  const body = JSON.stringify({ revisionId: input.revisionId, audioTrackId: input.audioTrackId, async: true });
-  try {
-    const response = await (input.fetcher ?? fetch)(new URL("/api/marketing/dneskai/render-reel", origin).href, {
-      method: "POST", body, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000), headers: signAutomationBody(body, secret),
-    });
-    return response.status === 202 || response.ok;
-  } catch { return false; }
+/** Acknowledges only registered post-response work, not a durable job or a completed/stored Reel. */
+export const DneskaiReelAcceptedSchema=z.strictObject({status:z.literal('accepted'),ownerId:z.uuid(),revisionId:z.uuid(),audioTrackId:z.uuid().nullable()});
+/** Ask the same deployment once; require its exact scoped 202 acknowledgement within ten seconds. */
+export async function requestDneskaiReelRender(input: {
+    origin: string;
+    revisionId: string;
+    audioTrackId: string | null;
+    signal?: AbortSignal;
+    env?: Record<string, string | undefined>;
+    fetcher?: typeof fetch;
+}): Promise<boolean> {
+    const env = input.env ?? process.env, secret = env.MARKETING_SCHEDULER_SECRET;
+    const signal = AbortSignal.any([AbortSignal.timeout(10000), ...(input.signal ? [input.signal] : [])]);
+    const discard = (response: Response) => {
+        if (response.body && !response.body.locked)
+            void response.body.cancel().catch(() => undefined);
+    };
+    let response: Response | undefined;
+    try {
+        const ownerId = z.uuid().parse(env.MARKETING_OWNER_ID);
+        z.uuid().parse(input.revisionId);
+        z.uuid().nullable().parse(input.audioTrackId);
+        signal.throwIfAborted();
+        const origin = new URL(input.origin);
+        if (!secret || secret.length < 32 || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash || !['https:', 'http:'].includes(origin.protocol) || origin.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname))
+            return false;
+        const body = JSON.stringify({ revisionId: input.revisionId, audioTrackId: input.audioTrackId, async: true });
+        const pending = (input.fetcher ?? fetch)(new URL('/api/marketing/dneskai/render-reel', origin).href, { method: 'POST', body, redirect: 'error', cache: 'no-store', signal, headers: signAutomationBody(body, secret) });
+        void pending.then(response => {
+            if (signal.aborted)
+                discard(response);
+        }, () => undefined);
+        response = await awaitWithSignal(pending, signal);
+        signal.throwIfAborted();
+        if (response.status !== 202 || response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+            discard(response);
+            return false;
+        }
+        const receipt = DneskaiReelAcceptedSchema.parse(JSON.parse(await boundedResponseText(response, 1024, signal)));
+        signal.throwIfAborted();
+        return receipt.ownerId === ownerId && receipt.revisionId === input.revisionId && receipt.audioTrackId === input.audioTrackId;
+    }
+    catch {
+        if (response)
+            discard(response);
+        return false;
+    }
 }

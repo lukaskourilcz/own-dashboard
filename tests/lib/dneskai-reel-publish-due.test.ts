@@ -71,7 +71,7 @@ describe('publishDueMarketing with a deck Reel (#165)', () => {
     expect(await publishDueMarketing(db, owner, 'dneskai', false, undefined, undefined, { origin: 'https://own.example' })).toEqual(held('reel-render-pending'));
     expect(mocks.next).toHaveBeenCalledWith(db, owner, '66666666-6666-4666-8666-666666666666',expect.any(AbortSignal));
     expect(mocks.last.mock.calls[0][3]).toBe(mocks.next.mock.calls[0][3]);
-    expect(mocks.request).toHaveBeenCalledWith({ origin: 'https://own.example', revisionId, audioTrackId: track });
+    expect(mocks.request).toHaveBeenCalledWith({ origin: 'https://own.example', revisionId, audioTrackId: track,signal:expect.any(AbortSignal) });
     expect(names(rpc)).toEqual([]);
   });
 
@@ -112,7 +112,7 @@ it.each(['last','next'] as const)('holds the unclaimed Reel instead of requestin
 });
 
 it('keeps a positively empty rotation eligible for a silent render without claiming publication',async()=>{
- vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED','true');mocks.find.mockResolvedValue(null);mocks.last.mockResolvedValue(null);mocks.next.mockResolvedValue(null);mocks.request.mockResolvedValue(true);const {db,rpc}=database();expect(await publishDueMarketing(db,owner,'dneskai',false,undefined,undefined,{origin:'https://own.example'})).toEqual(held('reel-render-pending'));expect(mocks.request).toHaveBeenCalledWith({origin:'https://own.example',revisionId,audioTrackId:null});expect(mocks.publish).not.toHaveBeenCalled();expect(names(rpc)).toEqual([]);
+ vi.stubEnv('MARKETING_DNESKAI_REELS_ENABLED','true');mocks.find.mockResolvedValue(null);mocks.last.mockResolvedValue(null);mocks.next.mockResolvedValue(null);mocks.request.mockResolvedValue(true);const {db,rpc}=database();expect(await publishDueMarketing(db,owner,'dneskai',false,undefined,undefined,{origin:'https://own.example'})).toEqual(held('reel-render-pending'));expect(mocks.request).toHaveBeenCalledWith({origin:'https://own.example',revisionId,audioTrackId:null,signal:expect.any(AbortSignal)});expect(mocks.publish).not.toHaveBeenCalled();expect(names(rpc)).toEqual([]);
 });
 
 it.each(['last','next'] as const)('starts no later render phase after cancellation during %s audio selection',async phase=>{
