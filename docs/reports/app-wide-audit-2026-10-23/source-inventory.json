@@ -3861,10 +3861,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",
-      "lines": 356,
+      "lines": 370,
       "sha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a",
-      "status": "partial; findings 199/366 complete cost/tick aggregate, original fifteen-second review/cost consumers, per-query no-retry/cancellation and missing core-array refusal pass actual SDK/full-chain checks; waiting-context null stays unknown; selected-calendar completeness, optional latency, Topic lifetimes and final release remain",
-      "reviewedSha256": "80020f7eb36f9fbb2358450bbdfa2ae41b95050981df4ea511408b0681e1ad4f"
+      "status": "partial; findings 199/366 complete cost/tick aggregate, original fifteen-second review/cost consumers, per-query no-retry/cancellation and missing core-array refusal pass actual SDK/full-chain checks; waiting-context null stays unknown; selected-calendar completeness, finding 368 bounds optional title/engagement reads to three seconds with source-title/unavailable fallback; Topic lifetimes and final release remain",
+      "reviewedSha256": "15e4b84290edd320096a0f4d181e923b03bb77a79e3e1ac4ffcf0ebcb8c72714"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",

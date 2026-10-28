@@ -41,6 +41,20 @@ const money = (value: unknown): number | null => {
 const safeCode = (value: unknown): string | null => typeof value === 'string' && /^[a-z][a-z0-9_-]{0,99}$/.test(value) ? value : null;
 const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string): T[] => { if (result.error || !Array.isArray(result.data)) throw new Error(failure); return result.data; };
 
+/** Optional titles/diagnostics must not consume the whole workspace allowance. */
+async function optionalRead<T>(parent: AbortSignal, request: (signal: AbortSignal) => PromiseLike<{ data: T; error: unknown }>): Promise<{ data: T | null; error: unknown }> {
+  parent.throwIfAborted();
+  const signal = AbortSignal.any([parent, AbortSignal.timeout(3_000)]);
+  try {
+    const result = await awaitWithSignal(request(signal), signal);
+    signal.throwIfAborted();
+    return result;
+  } catch {
+    parent.throwIfAborted();
+    return { data: null, error: true };
+  }
+}
+
 type Tables = DneskaiReadDatabase['public']['Tables'];
 type RevisionRow = Pick<Tables['marketing_revisions']['Row'], 'id' | 'replaces_id' | 'status' | 'ready' | 'content_hash' | 'created_at' | 'approved_at' | 'feedback' | 'revision' | 'render_report'>;
 type PublicationRow = Pick<Tables['marketing_publications']['Row'], 'id' | 'revision_id' | 'status' | 'scheduled_at' | 'remote_url' | 'error_code' | 'last_checked_at'>;
@@ -136,8 +150,8 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     ids.length ? db.from('marketing_events').select('revision_id,created_at').eq('user_id', owner).eq('kind', 'published').in('revision_id', ids).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
     eventIds.length ? db.from('marketing_dneskai_briefs').select('id,event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
     // #211: only with the topic bridge on, because marketing_dneskai_topics exists only after 20261023100000.
-    options.topicTitles ? db.from('marketing_dneskai_topics').select('brief_id,title_cs,job_id:evidence->>jobId').eq('user_id', owner).in('status', ['enriching', 'briefed', 'generated'])
-      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
+    options.topicTitles ? optionalRead(signal, phase => db.from('marketing_dneskai_topics').select('brief_id,title_cs,job_id:evidence->>jobId').eq('user_id', owner).in('status', ['enriching', 'briefed', 'generated'])
+      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2).retry(false).abortSignal(phase)) : Promise.resolve({ data: [], error: null }),
   ]), signal);
   signal.throwIfAborted();
   const topicTitles = dneskaiTopicTitles(topicResult.error || !Array.isArray(topicResult.data) ? [] : topicResult.data as TopicTitleRow[]);
@@ -195,10 +209,10 @@ async function attachEngagementReceipts(db: Database, owner: string, posts: Dnes
   z.uuid().parse(owner);
   const watched = posts.filter(post => post.engagement && post.publication?.status === 'published');
   signal.throwIfAborted();
-  const { data, error } = await awaitWithSignal(db.rpc('marketing_dneskai_engagement_receipts', {
+  const { data, error } = await optionalRead(signal, phase => db.rpc('marketing_dneskai_engagement_receipts', {
     p_publication_ids: watched.map(post => post.publication!.id),
     p_since: new Date(now.getTime() - ENGAGEMENT_SUMMARY_MS).toISOString(), p_until: now.toISOString(),
-  }).retry(false).abortSignal(signal), signal);
+  }).retry(false).abortSignal(phase));
   signal.throwIfAborted();
   if (error) return undefined; // Includes a migration not yet applied; never present partial data as zero.
   const parsed = EngagementReadSchema.safeParse(data);

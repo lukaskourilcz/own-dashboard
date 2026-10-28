@@ -2,6 +2,7 @@ import {createClient} from '@supabase/supabase-js';
 import {afterEach,expect,it,vi} from 'vitest';
 import {readDneskaiCosts,readDneskaiWorkspace} from '@/lib/marketing/dneskai-workspace-read';
 import type {DneskaiReadDatabase} from '@/lib/marketing/dneskai-read-database.generated';
+import {deckRevision} from './marketing-dneskai-revision-fixture';
 vi.mock('server-only',()=>({}));
 const owner='11111111-1111-4111-8111-111111111111',now=new Date('2026-10-28T10:00:00Z');
 const client=(fetcher:typeof fetch)=>createClient<DneskaiReadDatabase>('https://offline.supabase.test','TEST-ONLY-PUBLIC',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:fetcher}});
@@ -45,4 +46,17 @@ it('bounds a direct consumer even when its SDK transport ignores cancellation',a
  try{await vi.advanceTimersByTimeAsync(14_999);expect(release).toHaveLength(5);expect(settled).toBe(false);
   await vi.advanceTimersByTimeAsync(1);expect(settled).toBe(true);expect(await pending).toMatchObject({name:'AbortError'});
  }finally{for(const finish of release)finish(Response.json([]));await pending;}
+});
+
+for(const optional of ['topics','engagement']as const)it(`keeps confirmed workspace data available after a stalled optional ${optional} read`,async()=>{
+ vi.useFakeTimers();vi.spyOn(AbortSignal,'timeout').mockImplementation(ms=>{const controller=new AbortController();setTimeout(()=>controller.abort(),ms);return controller.signal;});
+ let release!:(response:Response)=>void;let settled=false;let optionalSignal:AbortSignal|null|undefined;
+ const blocked=optional==='topics'?'marketing_dneskai_topics':'marketing_dneskai_engagement_receipts';
+ const postId='33333333-3333-4333-8333-333333333333';
+ const row={id:postId,replaces_id:null,status:'review',ready:true,content_hash:'a'.repeat(64),created_at:now.toISOString(),approved_at:null,feedback:null,revision:deckRevision(),render_report:null};
+ const fetcher:typeof fetch=async(input,init)=>{const value=url(input);return value.pathname.endsWith('/'+blocked)?new Promise(resolve=>{release=resolve;optionalSignal=init?.signal;}):Response.json(value.pathname.endsWith('/marketing_revisions')&&value.searchParams.get('status')==='in.(review,returned)'?[row]:[]);};
+ const pending=readDneskaiWorkspace(client(fetcher),owner,now,undefined,{topicTitles:optional==='topics',engagement:optional==='engagement'}).then(value=>{settled=true;return value;});
+ try{await vi.advanceTimersByTimeAsync(2999);expect(release).toBeTypeOf('function');expect(settled).toBe(false);await vi.advanceTimersByTimeAsync(1);expect(settled).toBe(true);
+  const read=await pending;expect(read.posts.map(post=>post.id)).toEqual([postId]);expect(read.accounts).toEqual([]);expect(optionalSignal?.aborted).toBe(true);if(optional==='engagement'){expect(read.engagementStatus).toBe('unavailable');expect(read.engagementSummary).toBeUndefined();}
+ }finally{release(Response.json(optional==='topics'?[]:{receipts:[],summary:{posts:0,commentsSeen:0,keywordMatches:0,privateSent:0,publicSent:0,failed:0}}));await pending;}
 });
