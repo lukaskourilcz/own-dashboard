@@ -1095,7 +1095,7 @@
       "lines": 38,
       "sha256": "4153d6c195c48b1c1a88ce115879c96afc484dc2fe5ac22e33121fa05cf71ab1",
       "status": "partial; Prague grid inspected; missing unreadable warning and free-slot availability evidence remain; see remaining-review.md",
-      "reviewedSha256": "4153d6c195c48b1c1a88ce115879c96afc484dc2fe5ac22e33121fa05cf71ab1"
+      "reviewedSha256": "4d5f3edb0cdd0a46e68c606d7bca682220cdb3fb4b2fba84e02ce2fe88130322"
     },
     {
       "path": "src/components/marketing/dneskai/code-text.tsx",
@@ -1106,10 +1106,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/costs-tab.tsx",
-      "lines": 183,
+      "lines": 185,
       "sha256": "4e3e9debe28f537db465cd5857347812b3f9203f152414c6421932233999d7ab",
-      "status": "source reviewed; locale-specific cost formatters preserve rendered parity with measured local CPU reduction; read/token/requeue lifecycles and consolidated release pending",
-      "reviewedSha256": "0e1a7019a46fd0b2e1bbe0e87874fe2d4703ad3a6a0735346d2b239e3a3096ba"
+      "status": "source reviewed; locale-specific cost formatters preserve rendered parity with measured local CPU reduction; finding 362 preserves mounted costs during failed refresh; token/requeue lifecycles, duplicate dialog heading and consolidated release pending",
+      "reviewedSha256": "bb5cd60f36e44ef11bce59f191a54bf346b3adcc2b27e9d51a964aee15f1739d"
     },
     {
       "path": "src/components/marketing/dneskai/counted-field.tsx",
@@ -1226,8 +1226,8 @@
       "path": "src/components/marketing/dneskai/published-tab.tsx",
       "lines": 74,
       "sha256": "03d1adc6dc39023b1ea9ee844b70329a2254ec61d5f5b519f8710c250753a6d2",
-      "status": "partial; post filters/receipt labels inspected; source-window truth, cached failure and shared Music read remain; see remaining-review.md",
-      "reviewedSha256": "03d1adc6dc39023b1ea9ee844b70329a2254ec61d5f5b519f8710c250753a6d2"
+      "status": "partial; post filters/receipt labels inspected; finding 362 retains cached posts and adds keyboard initial-read recovery; source-window truth, shared Music read and final release remain; see remaining-review.md",
+      "reviewedSha256": "3b13d36ffca4e8c3508786c9c3ff151f4136d0586306fe1dff39808cbda80e56"
     },
     {
       "path": "src/components/marketing/dneskai/render-problems.tsx",
@@ -1259,10 +1259,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/workspace.tsx",
-      "lines": 124,
+      "lines": 155,
       "sha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f",
-      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
-      "reviewedSha256": "e795798f0e8cd7cebce9fdfdbd214a48cc0b04ab2f7b2df99b67d065401dc5c7"
+      "status": "partial; finding 362 retains confirmed review/cost data and mounted drafts after read failure, adds compact explicit retry with keyboard focus and stops failed render polling until recovery; cursor depth, preview query identity and captured writes remain under review; final release pending",
+      "reviewedSha256": "714ba9f6bb553a6aff97cc6a13c84006fb8ab7ca7ae94f15b7d951b594b95aca"
     },
     {
       "path": "src/components/marketing/job-health.tsx",
@@ -2543,10 +2543,10 @@
     },
     {
       "path": "src/lib/demo/dneskai-workspace-demo.ts",
-      "lines": 243,
+      "lines": 249,
       "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
-      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open",
-      "reviewedSha256": "9c8880c919807e0719251911a6c9a4d5bb6e7f982a79ccf33fd8e3b814978e53"
+      "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 362 initial/refresh error fixtures are restricted to /dev-preview, never /guest",
+      "reviewedSha256": "2fa125fd1fae39778f2e57d332af3f40e1682002840efb6e626985141914f9ea"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
@@ -2824,10 +2824,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-workspace.ts",
-      "lines": 192,
+      "lines": 196,
       "sha256": "7e281eca192bf5c908eef8abbfccfbd9efb323b6a862bd33f1bb87defa1cb07f",
-      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending",
-      "reviewedSha256": "4214fb9996d213bbf428ec1d2555cc02205c5719cd814b32f9c6c52d314cc520"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 362 neutral initial/cached read recovery and costs-specific EN/CS messages",
+      "reviewedSha256": "727a8859545ba0365007f6390209e8ff95f6809093073dd3e3b16c48069a1ca9"
     },
     {
       "path": "src/lib/i18n/sections/finances.ts",

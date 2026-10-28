@@ -247,3 +247,53 @@ describe('Draft preview recovery', () => {
     expect(button()).toBeUndefined();
   });
 });
+
+for (const lang of ['en','cs'] as const) {
+ const mountRead = async (tab:DneskaiWorkspaceTabId) => {
+  act(()=>root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab={tab} projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));await wait(400);
+ };
+ it(`retains the confirmed Calendar subtree after a refresh failure (${lang})`,async()=>{
+  await mountRead('dneskai-calendar');const calendar=container.querySelector('[data-testid="dneskai-calendar"]');expect(calendar).not.toBeNull();
+  vi.spyOn(demoDneskaiWorkspaceApi,'loadReview').mockRejectedValue(Error('TEST_ONLY_REVIEW_READ_FAILURE'));
+  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});});await wait(20);
+  expect(container.querySelector('[data-testid="dneskai-calendar"]')).toBe(calendar);expect(container.querySelector('[role="alert"]')).not.toBeNull();
+ });
+ it(`offers a local retry when the initial review read fails (${lang})`,async()=>{
+  vi.spyOn(demoDneskaiWorkspaceApi,'loadReview').mockRejectedValueOnce(Error('TEST_ONLY_REVIEW_READ_FAILURE'));await mountRead('dneskai-calendar');
+  const retry=[...container.querySelectorAll('button')].find(button=>button.textContent===dneskaiWorkspace[lang].refresh);expect(retry).toBeDefined();
+  await act(async()=>{retry!.click();});await wait(300);expect(container.querySelector('[data-testid="dneskai-calendar"]')).not.toBeNull();
+ });
+ it(`retains the confirmed Costs subtree after a refresh failure (${lang})`,async()=>{
+  await mountRead('dneskai-costs');const costs=container.querySelector('[data-testid="dneskai-costs"]');expect(costs).not.toBeNull();
+  vi.spyOn(demoDneskaiWorkspaceApi,'loadCosts').mockRejectedValue(Error('TEST_ONLY_COST_READ_FAILURE'));
+  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).costs,exact:true});});await wait(20);
+  expect(container.querySelector('[data-testid="dneskai-costs"]')).toBe(costs);expect(container.querySelector('[role="alert"]')).not.toBeNull();
+ });
+ it(`offers a local retry when the initial cost read fails (${lang})`,async()=>{
+  vi.spyOn(demoDneskaiWorkspaceApi,'loadCosts').mockRejectedValueOnce(Error('TEST_ONLY_COST_READ_FAILURE'));await mountRead('dneskai-costs');
+  const retry=[...container.querySelectorAll('button')].find(button=>button.textContent===dneskaiWorkspace[lang].refresh);expect(retry).toBeDefined();
+  await act(async()=>{retry!.click();});await wait(300);expect(container.querySelector('[data-testid="dneskai-costs"]')).not.toBeNull();
+ });
+}
+
+it('keeps an unsaved caption mounted when a background review refresh fails',async()=>{
+ await show('dneskai-review');vi.spyOn(demoDneskaiWorkspaceApi,'fit').mockRejectedValue(new DneskaiWorkspaceRequestError('fit-unavailable',503));vi.spyOn(demoDneskaiWorkspaceApi,'renderPreview').mockRejectedValue(new DneskaiWorkspaceRequestError('preview-unavailable',503));const field=container.querySelector<HTMLTextAreaElement>('textarea[id$="-caption"]');expect(field).not.toBeNull();
+ const value=field!.value+'\nRetained draft.';type(field!,value);await wait(30);
+ vi.spyOn(demoDneskaiWorkspaceApi,'loadReview').mockRejectedValue(Error('TEST_ONLY_REVIEW_READ_FAILURE'));
+ await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});});await wait(20);
+ expect(container.querySelector('textarea[id$="-caption"]')).toBe(field);expect(field!.value).toBe(value);
+});
+it('stops automatic render polling after a read error until an explicit successful retry',async()=>{
+ vi.useFakeTimers();
+ try{
+  act(()=>root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-calendar" projectId={DEMO_DNESKAI_PROJECT_ID} lang="en" preview /></TooltipProvider></QueryClientProvider>));
+  await act(async()=>{await vi.advanceTimersByTimeAsync(500);});
+  const read=vi.spyOn(demoDneskaiWorkspaceApi,'loadReview');
+  await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(read).toHaveBeenCalledOnce();
+  read.mockRejectedValue(Error('TEST_ONLY_REVIEW_READ_FAILURE'));
+  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});await vi.advanceTimersByTimeAsync(20);});expect(read).toHaveBeenCalledTimes(2);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(read).toHaveBeenCalledTimes(2);
+  read.mockRestore();await act(async()=>{const pending=client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});await vi.advanceTimersByTimeAsync(200);await pending;});
+  const resumed=vi.spyOn(demoDneskaiWorkspaceApi,'loadReview');await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(resumed).toHaveBeenCalledOnce();
+ }finally{vi.useRealTimers();}
+});

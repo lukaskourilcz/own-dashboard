@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useGuardedNavigation } from '@/components/navigation-guard';
 import { DneskaiDecisionCursorSchema, type DneskaiDecisionCursor } from '@/lib/marketing/dneskai-workspace';
 import { usePathname } from 'next/navigation';
@@ -25,8 +25,33 @@ const AWAITING_RENDER_POLL_MS = 30_000;
 
 function useReviewRead(projectId: string, preview: boolean, before: DneskaiDecisionCursor | null = null) {
   return useQuery<DneskaiWorkspaceRead>({ queryKey: before ? dneskaiWorkspaceKeys(projectId).reviewPage(before) : dneskaiWorkspaceKeys(projectId).review, ...options,
-    refetchInterval: (query) => query.state.data && dneskaiAwaitingRender(query.state.data) ? AWAITING_RENDER_POLL_MS : false,
+    refetchInterval: (query) => query.state.status !== 'error' && query.state.data && dneskaiAwaitingRender(query.state.data) ? AWAITING_RENDER_POLL_MS : false,
     queryFn: async ({ signal }) => (await dneskaiWorkspaceApi(preview)).loadReview(projectId, signal, before ?? undefined) });
+}
+
+/** Keep one explicit read in flight and restore focus after replacing its retry row. */
+function useReadRecovery(data: unknown, fetching: boolean, refetch: () => Promise<unknown>) {
+  const container = useRef<HTMLDivElement>(null), focusAfter = useRef(false), pending = useRef(false);
+  useLayoutEffect(() => {
+    if (!focusAfter.current || fetching && data === undefined) return;
+    const active = document.activeElement;
+    // Removing Retry can leave focus on the dialog trap's fallback container.
+    const dialog = container.current?.closest('[role="dialog"]');
+    if (active !== document.body && active !== dialog && !(active instanceof HTMLElement && active.hasAttribute('data-dneskai-read-retry'))) { focusAfter.current = false; return; }
+    const target = container.current?.querySelector<HTMLElement>(data === undefined ? '[data-dneskai-read-retry]' : '[data-testid="dneskai-lab-refresh"], h2[tabindex="-1"]');
+    if (target && !target.hasAttribute('disabled')) { focusAfter.current = false; target.focus(); }
+  }, [data, fetching]);
+  const reload = () => {
+    if (pending.current) return;
+    focusAfter.current = document.activeElement instanceof HTMLElement && document.activeElement.hasAttribute('data-dneskai-read-retry');
+    pending.current = true;
+    void refetch().then(() => { pending.current = false; }, () => { pending.current = false; });
+  };
+  return [container, reload] as const;
+}
+function ReadFailure({ message, lang, refreshing, onRefresh }: { message: string; lang: Lang; refreshing: boolean; onRefresh: () => void }) {
+  const t = dneskaiWorkspace[lang];
+  return <div className="mx-auto flex w-fit max-w-full flex-col gap-3 sm:flex-row sm:items-center" data-testid="dneskai-read-recovery"><p role="alert" className="min-w-0 text-sm text-risk">{message}</p><Button data-dneskai-read-retry variant="outline" className="min-h-11 w-full shrink-0 sm:w-40" disabled={refreshing} aria-busy={refreshing} onClick={onRefresh}>{refreshing ? t.refreshing : t.refresh}</Button></div>;
 }
 
 /**
@@ -70,11 +95,13 @@ function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude
   const requestNavigation = useGuardedNavigation();
   const query = useReviewRead(projectId, preview, pages.at(-1) ?? null);
   const [renderFailed, addRenderFailed] = useRenderFailed(projectId);
-  if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
-  if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
-  const props = { read: query.data, lang, preview, refreshing: query.isFetching, onRefresh: () => void query.refetch() };
-  const next = query.data.decisionPage?.nextCursor;
-  return <div className="min-w-0 space-y-4">
+  const [readContainer, reload] = useReadRecovery(query.data, query.isFetching, () => query.refetch());
+  const read = query.data;
+  if (read === undefined) return <div ref={readContainer}>{query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p> : <ReadFailure message={t.unavailable} lang={lang} refreshing={query.isFetching} onRefresh={reload}/>}</div>;
+  const props = { read, lang, preview, refreshing: query.isFetching, onRefresh: reload };
+  const next = read.decisionPage?.nextCursor;
+  return <div ref={readContainer} className="min-w-0 space-y-4" data-testid="dneskai-workspace-read">
+    {query.isError && <p role="alert" className="text-sm text-warning" data-testid="dneskai-cached-read">{t.cachedUnavailable}</p>}
     {(next || pages.length > 0) && <nav aria-label={t.decisions.label} className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" disabled={!pages.length || query.isFetching} onClick={() => requestNavigation(() => changePages(pages.slice(0, -1)))}>{t.decisions.newer}</Button>
@@ -94,10 +121,14 @@ function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang;
   // The posts that cannot be approved come from the review read, shared with the other tabs.
   const review = useReviewRead(projectId, preview);
   const [renderFailed] = useRenderFailed(projectId);
-  if (query.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
-  if (query.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
-  return <DneskaiCostsTab read={query.data} review={review.isPending ? 'loading' : review.isError ? 'unavailable' : review.data} renderFailed={renderFailed} lang={lang} preview={preview}
-    refreshing={query.isFetching || review.isFetching} onRefresh={() => { void query.refetch(); void review.refetch(); }} />;
+  const refreshing = query.isFetching || review.isFetching;
+  const [readContainer, reload] = useReadRecovery(query.data, refreshing, () => Promise.all([query.refetch(), review.refetch()]));
+  if (query.data === undefined) return <div ref={readContainer}>{query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.costs.loading}</p> : <ReadFailure message={t.costs.unavailable} lang={lang} refreshing={refreshing} onRefresh={reload}/>}</div>;
+  return <div ref={readContainer} className="min-w-0 space-y-4" data-testid="dneskai-costs-read">
+    {(query.isError || review.isError && review.data !== undefined) && <p role="alert" className="text-sm text-warning" data-testid="dneskai-cached-read">{t.cachedUnavailable}</p>}
+    <DneskaiCostsTab read={query.data} review={review.data ?? (review.isPending ? 'loading' : 'unavailable')} renderFailed={renderFailed} lang={lang} preview={preview}
+      refreshing={refreshing} onRefresh={reload} />
+  </div>;
 }
 
 type LabProps = Omit<Parameters<typeof DneskaiLabTab>[0], 'guest'>;

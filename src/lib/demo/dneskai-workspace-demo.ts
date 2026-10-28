@@ -20,6 +20,12 @@ import { dneskaiNextFreeSlot, dneskaiTakenSlots } from '@/lib/marketing/dneskai-
  * server does, with the same refusal codes. Edits render through a fixture-only route using committed synthetic images. No owner data, paid provider,
  * storage or publication endpoint is used; all post changes stay in memory.
  */
+/** Isolated read-failure fixtures; the public guest tour never uses this control. */
+function failPreviewRead(kind: 'review' | 'costs') {
+  if (typeof window === 'undefined' || window.location.pathname !== '/dev-preview') return;
+  const failure = new URLSearchParams(window.location.search).get('workspaceReadFailure');
+  if (failure === kind || failure === 'all') throw new Error('Fixture read unavailable');
+}
 let store: DneskaiWorkspaceRead | null = null;
 const read = () => (store ??= createDneskaiWorkspaceFixture(new Date()));
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -104,8 +110,8 @@ function approveOne(id: string, expectedHash: string): string {
 
 export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: true,
-  async loadReview() { await pause(120); return clone(read()); },
-  async loadCosts() { await pause(120); const costs = createDneskaiCostsFixture(new Date()); costs.generation.spentUsd = demoSpentUsd; return costs; },
+  async loadReview() { failPreviewRead('review'); await pause(120); return clone(read()); },
+  async loadCosts() { failPreviewRead('costs'); await pause(120); const costs = createDneskaiCostsFixture(new Date()); costs.generation.spentUsd = demoSpentUsd; return costs; },
   async loadAccounts() { await pause(60); return clone(demoAccounts(new Date())); },
   async loadMedia(_projectId, candidateId): Promise<DneskaiMediaRead> {
     await pause(80);

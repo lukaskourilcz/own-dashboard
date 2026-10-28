@@ -34,7 +34,7 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
   const share = spentUsd !== null && ceilingUsd ? Math.min(100, Math.round((spentUsd / ceilingUsd) * 100)) : 0;
   const tone = (status: string) => status === 'complete' ? 'success' as const : status === 'failed' ? 'risk' as const : status === 'running' ? 'information' as const : 'warning' as const;
   return <section aria-labelledby="dneskai-costs-title" className="min-w-0 space-y-6" data-testid="dneskai-costs">
-    <TabHeader id="dneskai-costs-title" title={t.costs.title} intro={t.costs.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
+    <TabHeader focusable id="dneskai-costs-title" title={t.costs.title} intro={t.costs.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
     <div className="grid min-w-0 gap-4 md:grid-cols-2">
       <section aria-labelledby="dneskai-budget-title" className="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-4">
         <h3 id="dneskai-budget-title" className="text-sm font-semibold">{t.costs.budget}</h3>
