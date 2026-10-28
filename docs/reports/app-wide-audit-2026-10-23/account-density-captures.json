@@ -1,7 +1,7 @@
 {
   "finding": 356,
   "capturedDate": "2026-10-28",
-  "applicationCommit": null,
+  "applicationCommit": "fa310322",
   "state": "Authentic isolated dev-preview account states; compact feedback and explicit keyboard recovery; no provider or owner write.",
   "components": {
     "src/components/marketing/dneskai-instagram-account.tsx": "4b0630b8a74be91234e471705e6345a53dc2c952717c1e34332d39f30552d512",
