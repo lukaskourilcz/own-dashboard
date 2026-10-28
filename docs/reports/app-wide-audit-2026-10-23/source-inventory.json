@@ -3854,10 +3854,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-client.ts",
-      "lines": 214,
+      "lines": 219,
       "sha256": "7ccf832fb792175e21060d02a2c24ec3ee0c1dd9a936cbdff59607f130a613f4",
-      "status": "partial; finding 369 separates and binds Calendar response kinds; finding 371 captures one original thirty-second GET allowance, bounded success/error streams, cancellation, fixed diagnostics and no replay; POST body lifetimes, captured writes and exact action receipts remain",
-      "reviewedSha256": "3e378af3290c9d9895719627bcaef9967c3e6cafc3402a763d9f9544120c30f3"
+      "status": "partial; findings 369/371 separate Calendar reads and bound GET success/error transport; finding 372 shares original captured request/body transport across POSTs, with separate preview/fit/requeue limits and no malformed-JSON acknowledgement; captured owner/action lifetimes and exact action receipts remain",
+      "reviewedSha256": "94c706878181417529f306818ab1704aa1d5162f02ec7cd69c4e265833ed3ea6"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",

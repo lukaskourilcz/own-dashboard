@@ -70,7 +70,7 @@ export interface DneskaiWorkspaceApi {
 }
 
 const codeShape = /^[a-z][a-z0-9_-]{0,99}$/;
-async function failure(response: Response, signal?: AbortSignal, fallback = 'decision-failed'): Promise<DneskaiWorkspaceRequestError> {
+async function failure(response: Response, signal: AbortSignal, fallback = 'decision-failed'): Promise<DneskaiWorkspaceRequestError> {
   let code = fallback;
   let revisionId: string | null = null;
   try {
@@ -78,7 +78,7 @@ async function failure(response: Response, signal?: AbortSignal, fallback = 'dec
       if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined);
       throw new Error('rate-limited');
     }
-    const body = (signal ? JSON.parse(await boundedResponseText(response, 4096, signal)) : await response.json()) as { error?: unknown; reason?: unknown; id?: unknown };
+    const body = JSON.parse(await boundedResponseText(response, 4096, signal)) as { error?: unknown; reason?: unknown; id?: unknown };
     // An approval refusal names its reason (`render-blocked`, `revision-changed`, …); prefer it over the generic code.
     const reason = typeof body.reason === 'string' && codeShape.test(body.reason) ? body.reason : null;
     code = reason ?? (typeof body.error === 'string' && codeShape.test(body.error) ? body.error : code);
@@ -90,34 +90,39 @@ async function failure(response: Response, signal?: AbortSignal, fallback = 'dec
   const wait = Number.isFinite(seconds) ? seconds : Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : 0;
   return new DneskaiWorkspaceRequestError(response.status === 429 ? 'rate-limited' : code, response.status, revisionId, wait);
 }
-/** One original read allowance covers headers, success and error bodies. No automatic replay. */
-async function getJson(url: string, parent?: AbortSignal): Promise<unknown> {
-  const signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
+/** Capture and consume one request under its original allowance. No automatic replay. */
+async function requestJson(url: string, parent: AbortSignal | undefined, settings: {
+  method: 'GET' | 'POST'; body?: unknown; milliseconds: number; bytes: number; fallback: string;
+}): Promise<unknown> {
+  const { method, milliseconds, bytes, fallback } = settings;
+  const signal = AbortSignal.any([AbortSignal.timeout(milliseconds), ...(parent ? [parent] : [])]);
   const discard = (response: Response) => { if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined); };
   let response: Response | undefined;
   try {
     signal.throwIfAborted();
-    const pending = fetch(url, { cache: 'no-store', redirect: 'error', signal });
+    const requestBody = method === 'POST' ? JSON.stringify(settings.body) : undefined;
+    const pending = fetch(url, { cache: 'no-store', redirect: 'error', signal, ...(method === 'POST' ? {
+      method, headers: { 'Content-Type': 'application/json' }, body: requestBody,
+    } : {}) });
     void pending.then(value => { if (signal.aborted) discard(value); }, () => undefined);
     response = await awaitWithSignal(pending, signal);
     signal.throwIfAborted();
-    if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json' && response.status !== 429) throw new Error('unavailable');
-    if (response.status !== 200) throw await failure(response, signal, 'dneskai-workspace-unavailable');
-    const value: unknown = JSON.parse(await boundedResponseText(response, 8 * 1024 * 1024, signal));
+    if (method === 'GET' ? response.status !== 200 : !response.ok) throw await failure(response, signal, fallback);
+    if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') throw new Error('unavailable');
+    const value: unknown = JSON.parse(await boundedResponseText(response, bytes, signal));
     signal.throwIfAborted();
     return value;
   } catch (error) {
     if (response) discard(response);
     if (parent?.aborted) throw new DOMException('Request aborted', 'AbortError');
-    throw error instanceof DneskaiWorkspaceRequestError ? error : new DneskaiWorkspaceRequestError('dneskai-workspace-unavailable', response?.ok ? 502 : response?.status ?? 0);
+    throw error instanceof DneskaiWorkspaceRequestError ? error : new DneskaiWorkspaceRequestError(fallback, response?.ok ? 502 : response?.status ?? 0);
   }
 }
-async function post(body: unknown, url = '/api/marketing/revisions', signal?: AbortSignal): Promise<unknown> {
-  let response: Response;
-  try { response = await fetch(url, { signal, method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
-  catch { throw new DneskaiWorkspaceRequestError('decision-failed', 0); }
-  if (!response.ok) throw await failure(response);
-  return response.json().catch(() => ({}));
+function getJson(url: string, parent?: AbortSignal): Promise<unknown> {
+  return requestJson(url, parent, { method: 'GET', milliseconds: 30_000, bytes: 8 * 1024 * 1024, fallback: 'dneskai-workspace-unavailable' });
+}
+function post(body: unknown, url = '/api/marketing/revisions', parent?: AbortSignal, limits = { milliseconds: 65_000, bytes: 64 * 1024 }): Promise<unknown> {
+  return requestJson(url, parent, { method: 'POST', body, ...limits, fallback: 'decision-failed' });
 }
 
 export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
@@ -172,7 +177,7 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   },
   fit: (request, signal) => fitAt('/api/marketing/dneskai/fit', request, signal),
   async requeuePublication(id) {
-    const result = z.strictObject({ result: z.enum(MARKETING_PUBLICATION_REQUEUE_RESULTS) }).safeParse(await post({ action: 'requeue', id }, '/api/marketing/publications'));
+    const result = z.strictObject({ result: z.enum(MARKETING_PUBLICATION_REQUEUE_RESULTS) }).safeParse(await post({ action: 'requeue', id }, '/api/marketing/publications', undefined, { milliseconds: 20_000, bytes: 64 * 1024 }));
     if (!result.success) throw new DneskaiWorkspaceRequestError('publication-requeue-failed', 502);
     return result.data.result;
   },
@@ -181,14 +186,14 @@ export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
 
 /** POST a preview request and validate the answer; the harness posts the edited deck to its fixture-only twin. */
 export async function previewAt(url: string, body: unknown, signal?: AbortSignal): Promise<DneskaiPreviewResult> {
-  const result = DneskaiPreviewResultSchema.safeParse(await post(body, url, signal));
+  const result = DneskaiPreviewResultSchema.safeParse(await post(body, url, signal, { milliseconds: 20_000, bytes: 2 * 1024 * 1024 }));
   if (!result.success) throw new DneskaiWorkspaceRequestError('render-unavailable', 502);
   return result.data;
 }
 
 /** POST a fit request and validate the answer; the preview posts to its fixture-only twin of the route. */
 export async function fitAt(url: string, request: DneskaiFitRequest, signal?: AbortSignal): Promise<DneskaiFitResult> {
-  const result = DneskaiFitResultSchema.safeParse(await post(request, url, signal));
+  const result = DneskaiFitResultSchema.safeParse(await post(request, url, signal, { milliseconds: 15_000, bytes: 64 * 1024 }));
   if (!result.success) throw new DneskaiWorkspaceRequestError('fit-unavailable', 502);
   return result.data;
 }
