@@ -4085,24 +4085,24 @@
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
-      "lines": 697,
+      "lines": 698,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
       "status": "source reviewed; finding 329 closes emitted audio/TikTok label gaps and adds truthful retained-result EN/CS guidance; known generic admission/completion codes pinned; broader generic-error and final release follow-up pending",
-      "reviewedSha256": "ded835bea0641bd55c368b6d3f3f8edeb4c16db6c932d2eb05a803e3fa472523"
+      "reviewedSha256": "dc7084746a8cc0acb4444e60c315be2080bd67f38953a34a70348502198b8755"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",
-      "lines": 189,
+      "lines": 185,
       "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
-      "status": "partial; findings 352/353/355/358 original bounded verification/private token read, complete unique Page traversal, captured owner/account/version/private credential fingerprint, no-retry canonical transaction and strict exact receipt verified; underlying SDK JSON allocation and final app-wide release remain",
-      "reviewedSha256": "d3689cbbc9768633bd1e213d10479ea9a3fe9ca04a07d2fb22a188fe9b05405f"
+      "status": "partial; findings 352/353/355/358/360 original bounded verification/private token read, complete unique Page traversal, captured owner/account/version/private credential fingerprint, no-retry canonical transaction and strict exact receipt verified; shared server-private credential capture; underlying SDK JSON allocation and final app-wide release remain",
+      "reviewedSha256": "0e328e8f448dd389bd40acb9a859e8ab01a2c32a1281463625631418534b3972"
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",
-      "lines": 231,
+      "lines": 263,
       "sha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d",
-      "status": "partial; finding 358 original bounded renewal and private read, finite unique metadata, immutable selector/clock/config, no-retry adapters and exact non-secret store acknowledgement verified; captured concurrent account/credential replacement, post-trigger renewal proof, metadata-list completeness/lifetime and underlying SDK JSON remain",
-      "reviewedSha256": "c99ee5624f780ea06ea852bd376012646fe9fc25a25e46422cabb9400d2d9fab"
+      "status": "partial; findings 358/360 bounded original renewal, owned account/version/private fingerprint capture, canonical transaction, strict non-secret receipts and lost acknowledgement retained; actual SDK/full-chain races close overwritten account/replacement credentials; metadata-list completeness/lifetime, underlying SDK JSON and final release remain",
+      "reviewedSha256": "dc63def7dee2d63588355e12390fdf103bf971267cb50aaf7a6db17e53bd0420"
     },
     {
       "path": "src/lib/marketing/meta-facebook-page.ts",

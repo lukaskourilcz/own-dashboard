@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
 import { awaitWithSignal } from '@/lib/abortable';
 import { databaseTimestamp, databaseVersion } from '@/lib/database-version';
 import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
@@ -58,6 +59,13 @@ export function metaScopesStorable(scopes: readonly string[]): boolean {
 const storedScopes = z.array(scope).max(META_SCOPE_LIMIT).refine(values => new Set(values).size === values.length);
 const StoredRowSchema = z.strictObject({ access_token: tokenValue, expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
 const MetadataRowSchema = z.object({ account_id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
+const PrivateInstagramCapture = z.strictObject({ tokenHash: z.string().regex(/^[0-9a-f]{64}$/), expiresAt: databaseTimestamp,
+  refreshedAt: databaseTimestamp, scopes: storedScopes, loginMode: z.enum(['instagram', 'facebook']) });
+/** Server-private equality evidence; never include this value in a public receipt or diagnostic. */
+export function captureStoredInstagramCredential(token: StoredMetaToken | null) {
+  return token === null ? null : PrivateInstagramCapture.parse({ tokenHash: createHash('sha256').update(token.accessToken, 'utf8').digest('hex'),
+    expiresAt: token.expiresAt, refreshedAt: token.refreshedAt, scopes: token.scopes, loginMode: token.loginMode });
+}
 const RefreshResponseSchema = z.object({ access_token: tokenValue, token_type: z.string().max(20).optional(), expires_in: z.number().int().positive().max(90 * 24 * 60 * 60) });
 
 export class MetaCredentialError extends Error {
@@ -159,14 +167,16 @@ export async function resolveMetaPublisherConfig(db: Database, owner: string, ac
 
 /**
  * Exchanges an unexpired, at-least-24-hour-old Instagram Login token for a
- * new 60-day token and stores it with a compare-and-set on refreshed_at.
+ * new token, then stores it only while the captured account version and private
+ * credential fingerprint still match.
  *
  * Meta documents this endpoint only with the token as the `access_token`
  * query parameter, so that is the one request here that carries it in the URL.
  * The URL is never logged or returned. A network failure, unreadable response
  * or failed store is reported as `uncertain` and is not retried. When the
  * stored token has expired, a live bootstrap token is refreshed into the same
- * row (compare-and-set on the expired row's refreshed_at).
+ * row under the same captured transaction; the underlying private writer retains
+ * its refreshed_at comparison as an additional check.
  */
 export async function refreshInstagramToken(db: Database, owner: string, account: MetaCredentialAccount,
   options: { env?: Environment; now?: Date; fetcher?: typeof fetch; signal?: AbortSignal } = {}): Promise<InstagramTokenRefreshOutcome> {
@@ -184,9 +194,18 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   const appId = env.MARKETING_META_APP_ID ?? '', appSecret = env.MARKETING_META_APP_SECRET ?? '';
   const version = env[`${metaEnvironmentPrefix(original.brand, original.platform)}_API_VERSION`] ?? '';
   const fetcher = options.fetcher ?? fetch;
-  let stored: StoredMetaToken | null;
-  try { stored = await readStoredMetaToken(db, owner, original.id, signal); }
-  catch { return outcome('held', 'credential-store-unavailable'); }
+  let stored: StoredMetaToken | null, privateCapture: ReturnType<typeof captureStoredInstagramCredential>, accountVersion: string;
+  try {
+    signal.throwIfAborted();
+    const lookup = await awaitWithSignal(db.from('marketing_accounts').select('id,user_id,brand,platform,updated_at').eq('user_id', owner).eq('id', original.id).eq('brand', original.brand).eq('platform', original.platform).retry(false).abortSignal(signal).maybeSingle(), signal);
+    signal.throwIfAborted();
+    if (lookup.error) throw new Error();
+    if (lookup.data === null) return outcome('held', 'account-unavailable');
+    const captured = z.strictObject({ id: z.literal(original.id), user_id: z.literal(owner), brand: z.literal(original.brand), platform: z.literal(original.platform), updated_at: databaseTimestamp }).parse(lookup.data);
+    accountVersion = captured.updated_at;
+    stored = await readStoredMetaToken(db, owner, original.id, signal);
+    privateCapture = captureStoredInstagramCredential(stored);
+  } catch { return outcome('held', 'credential-store-unavailable'); }
   if (signal.aborted) return outcome('uncertain', 'refresh-request-uncertain');
   const fromEnvironment = bootstrap.accessToken ? { accessToken: bootstrap.accessToken, expiresAt: bootstrap.expiresAt, refreshedAt: null, scopes: bootstrap.scopes, loginMode: bootstrap.loginMode } : null;
   const live = (expiresAt: string) => Number.isFinite(instant(expiresAt)) && instant(expiresAt) > now.getTime();
@@ -219,11 +238,24 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   const expiresAt = new Date(now.getTime() + body.data.expires_in * 1000).toISOString();
   try {
     signal.throwIfAborted();
-    const saved = await awaitWithSignal(db.rpc('marketing_store_account_token', { p_owner: owner, p_account: original.id, p_expected_refreshed_at: stored?.refreshedAt ?? null,
+    const saved = await awaitWithSignal(db.rpc('renew_owned_marketing_credential', { p_owner: owner, p_expected_id: original.id, p_expected_at: accountVersion, p_expected_token: privateCapture, p_brand: original.brand, p_platform: original.platform,
       p_token: body.data.access_token, p_expires_at: expiresAt, p_scopes: current.scopes, p_login_mode: current.loginMode }).retry(false).abortSignal(signal), signal);
     signal.throwIfAborted();
-    const metadata = z.strictObject({ accountId: z.literal(original.id), token: z.strictObject({ expiresAt: databaseTimestamp, refreshedAt: databaseTimestamp, scopes: storedScopes, loginMode }) }).parse(saved.data);
-    if (saved.error || databaseVersion(metadata.token.expiresAt) !== databaseVersion(expiresAt) || metadata.token.loginMode !== current.loginMode
+    if (saved.error) throw new Error();
+    const intent = { ownerId: z.literal(owner), expectedId: z.literal(original.id), expectedVersion: databaseTimestamp };
+    const receipt = z.discriminatedUnion('kind', [
+      z.strictObject({ ...intent, kind: z.literal('changed'), id: z.uuid().nullable(), updatedAt: databaseTimestamp.nullable() }),
+      z.strictObject({ ...intent, kind: z.literal('refreshed'), id: z.literal(original.id), updatedAt: databaseTimestamp,
+        result: z.strictObject({ accountId: z.literal(original.id), token: z.strictObject({ expiresAt: databaseTimestamp, refreshedAt: databaseTimestamp, scopes: storedScopes, loginMode }) }) }),
+    ]).parse(saved.data);
+    if (databaseVersion(receipt.expectedVersion) !== databaseVersion(accountVersion)) throw new Error();
+    if (receipt.kind === 'changed') {
+      if ((receipt.id === null) !== (receipt.updatedAt === null)) throw new Error();
+      return outcome('held', 'refresh-account-changed');
+    }
+    if (databaseVersion(receipt.updatedAt) !== databaseVersion(accountVersion)) throw new Error();
+    const metadata = receipt.result;
+    if (databaseVersion(metadata.token.expiresAt) !== databaseVersion(expiresAt) || metadata.token.loginMode !== current.loginMode
       || metadata.token.scopes.length !== current.scopes.length || metadata.token.scopes.some((value, index) => value !== current.scopes[index])
       || stored && databaseVersion(metadata.token.refreshedAt)! <= databaseVersion(stored.refreshedAt)!) throw new Error();
     return { status: 'refreshed', accountId: original.id, expiresAt: metadata.token.expiresAt, refreshedAt: metadata.token.refreshedAt };

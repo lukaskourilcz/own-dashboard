@@ -6,11 +6,11 @@ const account={id,user_id:owner,brand:'dneskai' as const,platform:'instagram' as
 const scopes=['instagram_business_basic','instagram_business_content_publish'];
 const token={access_token:'TEST-ONLY-STORED-TOKEN-00000001',expires_at:'2026-11-01T10:00:00Z',refreshed_at:'2026-09-01T10:00:00Z',scopes,login_mode:'instagram'};
 const body={access_token:'TEST-ONLY-RENEWED-TOKEN-00000001',expires_in:5184000};
-function database(read:()=>Promise<unknown>=async()=>({data:[token],error:null}), saved?:unknown) {
+function database(read:()=>Promise<unknown>=async()=>({data:[token],error:null}), saved?:unknown,transform:(receipt:Record<string,unknown>)=>unknown=value=>value,readAccount:()=>Promise<{data:unknown;error:unknown}>=async()=>({data:{...account,updated_at:now.toISOString()},error:null})) {
  const rpc=vi.fn((name:string,args:Record<string,unknown>)=>{
-  const pending=name==='marketing_read_account_token'?read():Promise.resolve({data:saved??{accountId:id,token:{expiresAt:args.p_expires_at,refreshedAt:now.toISOString(),scopes,loginMode:'instagram'}},error:null});
+  const pending=name==='marketing_read_account_token'?read():Promise.resolve({data:transform({kind:'refreshed',ownerId:owner,expectedId:id,expectedVersion:args.p_expected_at,id,updatedAt:args.p_expected_at,result:saved??{accountId:id,token:{expiresAt:args.p_expires_at,refreshedAt:now.toISOString(),scopes,loginMode:'instagram'}}}),error:null});
   const query={retry:()=>query,abortSignal:()=>query,then:pending.then.bind(pending)};return query;
- });return {db:{rpc} as never,rpc};
+ });const lookup={select:()=>lookup,eq:()=>lookup,retry:()=>lookup,abortSignal:()=>lookup,maybeSingle:readAccount};return {db:{from:()=>lookup,rpc} as never,rpc};
 }
 afterEach(()=>vi.restoreAllMocks());
 it('starts no store or provider work after original refresh retirement',async()=>{
@@ -56,7 +56,7 @@ it('captures the account, clock and renewal configuration before the private rea
  selected.id='33333333-3333-4333-8333-333333333333';clock.setUTCFullYear(2099);env.MARKETING_META_APP_ID='99999';env.MARKETING_META_APP_SECRET='TEST_ONLY_REPLACEMENT_APP_SECRET';env.MARKETING_DNESKAI_INSTAGRAM_API_VERSION='v99.0';
  release({data:[{...token,login_mode:'facebook'}],error:null});expect(await pending).toMatchObject({status:'refreshed',accountId:id});
  const url=new URL(String(fetcher.mock.calls[0]?.[0]));expect(url.pathname).toBe('/v24.0/oauth/access_token');expect(url.searchParams.get('client_id')).toBe('12345');expect(url.searchParams.get('client_secret')).toBe('TEST_ONLY_ORIGINAL_APP_SECRET');
- expect(rpc).toHaveBeenLastCalledWith('marketing_store_account_token',expect.objectContaining({p_account:id}));
+ expect(rpc).toHaveBeenLastCalledWith('renew_owned_marketing_credential',expect.objectContaining({p_expected_id:id}));
 });
 it('bounds the whole renewal while an injected provider never settles',async()=>{
  const timeouts=new Map<number,AbortController>();vi.spyOn(AbortSignal,'timeout').mockImplementation(ms=>{const scope=new AbortController();timeouts.set(ms,scope);return scope.signal;});
@@ -66,7 +66,40 @@ it('bounds the whole renewal while an injected provider never settles',async()=>
 });
 it('does not confirm a write acknowledgement delivered after original retirement',async()=>{
  const caller=new AbortController(),{db,rpc}=database(),original=rpc.getMockImplementation()!;
- rpc.mockImplementation((name,args)=>{if(name!=='marketing_store_account_token')return original(name,args);const pending:Promise<unknown>=Promise.resolve().then(()=>{caller.abort();return {data:{accountId:id,token:{expiresAt:'2026-12-27T10:00:00Z',refreshedAt:now.toISOString(),scopes,loginMode:'instagram'}},error:null};});const query={retry:()=>query,abortSignal:()=>query,then:pending.then.bind(pending)};return query;});
+ rpc.mockImplementation((name,args)=>{if(name!=='renew_owned_marketing_credential')return original(name,args);const pending:Promise<unknown>=Promise.resolve().then(()=>{caller.abort();return {data:{accountId:id,token:{expiresAt:'2026-12-27T10:00:00Z',refreshedAt:now.toISOString(),scopes,loginMode:'instagram'}},error:null};});const query={retry:()=>query,abortSignal:()=>query,then:pending.then.bind(pending)};return query;});
  expect(await refreshInstagramToken(db,owner,account,{now,env:{},fetcher:async()=>Response.json(body),signal:caller.signal})).toMatchObject({status:'uncertain',code:'refresh-store-failed'});
  expect(rpc).toHaveBeenCalledTimes(2);
+});
+
+it.each([
+ {ownerId:'33333333-3333-4333-8333-333333333333'}, {expectedId:'33333333-3333-4333-8333-333333333333'},
+ {expectedVersion:'2026-10-28T10:00:00.000001Z'}, {id:'33333333-3333-4333-8333-333333333333'},
+ {updatedAt:'2026-10-28T10:00:00.000001Z'}, {kind:'future'}, {result:null}, {tokenHash:'TEST_ONLY_FORBIDDEN_PUBLIC_FIELD'},
+])('refuses a foreign, contradictory or extended transaction receipt: %#',async patch=>{
+ const {db,rpc}=database(undefined,undefined,value=>({...value,...patch}));
+ expect(await refreshInstagramToken(db,owner,account,{now,env:{},fetcher:async()=>Response.json(body)})).toEqual({status:'uncertain',accountId:id,code:'refresh-store-failed'});expect(rpc).toHaveBeenCalledTimes(2);
+});
+it('reports a confirmed changed capture once and preserves its held state',async()=>{
+ const {db,rpc}=database(undefined,undefined,value=>({kind:'changed',ownerId:owner,expectedId:id,expectedVersion:value.expectedVersion,id,updatedAt:value.expectedVersion})),fetcher=vi.fn(async()=>Response.json(body));
+ expect(await refreshInstagramToken(db,owner,account,{now,env:{},fetcher})).toEqual({status:'held',accountId:id,code:'refresh-account-changed'});expect(fetcher).toHaveBeenCalledOnce();expect(rpc).toHaveBeenCalledTimes(2);
+});
+it('does not treat contradictory changed id/version presence as a confirmed conflict',async()=>{
+ const {db}=database(undefined,undefined,value=>({kind:'changed',ownerId:owner,expectedId:id,expectedVersion:value.expectedVersion,id:null,updatedAt:value.expectedVersion}));
+ expect(await refreshInstagramToken(db,owner,account,{now,env:{},fetcher:async()=>Response.json(body)})).toMatchObject({status:'uncertain',code:'refresh-store-failed'});
+});
+
+it.each([
+ {data:{...account,id:'33333333-3333-4333-8333-333333333333',updated_at:now.toISOString()},error:null},
+ {data:{...account,user_id:'33333333-3333-4333-8333-333333333333',updated_at:now.toISOString()},error:null},
+ {data:{...account,brand:'devshark',updated_at:now.toISOString()},error:null},
+ {data:{...account,platform:'threads',updated_at:now.toISOString()},error:null},
+ {data:{...account,updated_at:'infinity'},error:null}, {data:[],error:null}, {data:undefined,error:null},
+ {data:{...account,updated_at:now.toISOString()},error:{message:'TEST_ONLY_PRIVATE_LOOKUP_DETAIL'}},
+])('refuses an unconfirmed original owned account before any credential or provider read: %#',async lookup=>{
+ const {db,rpc}=database(undefined,undefined,value=>value,async()=>lookup),fetcher=vi.fn(async()=>Response.json(body));
+ expect(await refreshInstagramToken(db,owner,account,{now,env:{},fetcher})).toEqual({status:'held',accountId:id,code:'credential-store-unavailable'});expect(rpc).not.toHaveBeenCalled();expect(fetcher).not.toHaveBeenCalled();
+});
+it('keeps positive account absence distinct from an unavailable lookup',async()=>{
+ const {db,rpc}=database(undefined,undefined,value=>value,async()=>({data:null,error:null})),fetcher=vi.fn(async()=>Response.json(body));
+ expect(await refreshInstagramToken(db,owner,account,{now,env:{},fetcher})).toEqual({status:'held',accountId:id,code:'account-unavailable'});expect(rpc).not.toHaveBeenCalled();expect(fetcher).not.toHaveBeenCalled();
 });

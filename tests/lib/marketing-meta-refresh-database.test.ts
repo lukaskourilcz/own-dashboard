@@ -21,16 +21,21 @@ it('renews once through the actual SDK and canonical credential writer with exac
  const calls:string[]=[],fetcher:typeof fetch=async(input,init)=>{calls.push(new URL(String(input)).pathname);return emulator.fetch(input,init);};
  const result=await refreshInstagramToken(client(fetcher),owner,account,{now,env:{},fetcher:async()=>provider()});
  expect(result).toEqual({status:'refreshed',accountId:id,expiresAt:'2026-12-27T10:00:00+00:00',refreshedAt:'2026-10-28T10:00:00+00:00'});
- expect(calls).toEqual(['/rest/v1/rpc/marketing_read_account_token','/rest/v1/rpc/marketing_store_account_token']);expect(JSON.stringify(result)).not.toContain('TEST_ONLY');
+ expect(calls).toEqual(['/rest/v1/marketing_accounts','/rest/v1/rpc/marketing_read_account_token','/rest/v1/rpc/renew_owned_marketing_credential']);expect(JSON.stringify(result)).not.toContain('TEST_ONLY');
  expect((await database.query<{same:boolean}>('select access_token=$2 as same from public.marketing_account_tokens where account_id=$1',[id,renewed])).rows[0]?.same).toBe(true);
 });
-it('does not retry an unavailable actual SDK credential read or call the provider',async()=>{
+it('does not retry an unavailable actual SDK owned-account read or call the provider',async()=>{
  const read=vi.fn(async()=>Response.json({message:'TEST_ONLY_PRIVATE_DATABASE_DETAIL'},{status:503,headers:{'Retry-After':'0'}})),graph=vi.fn(async()=>provider());
  expect(await refreshInstagramToken(client(read),owner,account,{now,env:{},fetcher:graph})).toMatchObject({status:'held',code:'credential-store-unavailable'});
  expect(read).toHaveBeenCalledOnce();expect(graph).not.toHaveBeenCalled();
 });
 it('keeps a committed renewal with a lost acknowledgement uncertain and sends only one write',async()=>{
- let writes=0;const fetcher:typeof fetch=async(input,init)=>{const response=await emulator.fetch(input,init);if(new URL(String(input)).pathname.endsWith('/marketing_store_account_token')){writes++;throw Error('TEST_ONLY_LOST_ACK');}return response;};
+ let writes=0;const fetcher:typeof fetch=async(input,init)=>{const response=await emulator.fetch(input,init);if(new URL(String(input)).pathname.endsWith('/renew_owned_marketing_credential')){writes++;throw Error('TEST_ONLY_LOST_ACK');}return response;};
  expect(await refreshInstagramToken(client(fetcher),owner,account,{now,env:{},fetcher:async()=>provider()})).toMatchObject({status:'uncertain',code:'refresh-store-failed'});
  expect(writes).toBe(1);expect((await database.query<{same:boolean}>('select access_token=$2 as same from public.marketing_account_tokens where account_id=$1',[id,renewed])).rows[0]?.same).toBe(true);
+});
+
+it('does not retry an unavailable actual private read after a confirmed account lookup',async()=>{
+ let reads=0;const graph=vi.fn(async()=>provider()),fetcher:typeof fetch=async(input,init)=>{reads++;return new URL(String(input)).pathname.endsWith('/marketing_read_account_token')?Response.json({message:'TEST_ONLY_PRIVATE_DATABASE_DETAIL'},{status:503,headers:{'Retry-After':'0'}}):emulator.fetch(input,init);};
+ expect(await refreshInstagramToken(client(fetcher),owner,account,{now,env:{},fetcher:graph})).toMatchObject({status:'held',code:'credential-store-unavailable'});expect(reads).toBe(2);expect(graph).not.toHaveBeenCalled();
 });

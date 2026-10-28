@@ -273,7 +273,7 @@ The migrations, in the order they run:
 
 146. `20261027212131_captured_marketing_account_verification.sql` — prepared, unapplied; service-only captured owner/account/version and private credential-fingerprint transaction with exact persisted account/token checks. Finding 355 adopts strict captured verification receipts; canonical rollout remains pending.
 
-147. `20261028123118_captured_marketing_credential_renewal.sql` — prepared, unapplied; service-only account/version/private credential-fingerprint renewal with unchanged-account and exact persisted-token proof. Caller adoption remains required.
+147. `20261028123118_captured_marketing_credential_renewal.sql` — prepared, unapplied; service-only account/version/private credential-fingerprint renewal with unchanged-account and exact persisted-token proof. Finding 360 adopts captured renewal and exact receipts; canonical rollout remains pending.
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The sixty-one audit migrations 87–147 remain unapplied; apply them in filename order before deploying the implementation branch.
 

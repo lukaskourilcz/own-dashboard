@@ -1,13 +1,12 @@
 import 'server-only';
 import { z } from 'zod';
-import { createHash } from 'node:crypto';
-import { confirmAccountVerification, VerifiedAccountRecordSchema } from './account-verification-contracts';
+import { confirmAccountVerification, type VerifiedAccountRecordSchema } from './account-verification-contracts';
 import { awaitWithSignal } from '@/lib/abortable';
 import { databaseTimestamp } from '@/lib/database-version';
 import { readFacebookPages } from './facebook-page-list';
 import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
 import type { createAdminClient } from '@/lib/supabase/admin';
-import { bootstrapMetaCredential, FACEBOOK_LOGIN_SCOPES, INSTAGRAM_LOGIN_SCOPES, metaScopesStorable, readStoredMetaToken, type BootstrapMetaCredential, type StoredMetaToken } from './meta-credentials';
+import { bootstrapMetaCredential, captureStoredInstagramCredential, FACEBOOK_LOGIN_SCOPES, INSTAGRAM_LOGIN_SCOPES, metaScopesStorable, readStoredMetaToken, type BootstrapMetaCredential, type StoredMetaToken } from './meta-credentials';
 
 /**
  * Owner-triggered verification of the DNESKAi Instagram account (#121).
@@ -36,7 +35,6 @@ export class MarketingAccountVerificationError extends Error {
 const fail = (code: string, status = 409): never => { throw new MarketingAccountVerificationError(code, status); };
 
 const ProfileSchema = z.object({ user_id: z.string().regex(/^\d{1,100}$/), username: z.string().regex(/^[A-Za-z0-9._]{1,30}$/), account_type: z.string().max(40) });
-const PrivateCredentialCapture = VerifiedAccountRecordSchema.shape.token.extend({ tokenHash: z.string().regex(/^[0-9a-f]{64}$/) });
 type VerificationSource = { account: { id: string; updatedAt: string } | null; token: StoredMetaToken | null };
 
 export type VerifiedMarketingAccount = { accountId: string; brand: VerifiableBrand; platform: 'instagram'; handle: string; accountType: string; verifiedAt: string; enabled: boolean;
@@ -96,11 +94,9 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
   const version = env[`${prefix}_API_VERSION`] ?? '';
   if (!/^v\d+\.\d+$/.test(version)) fail('api-version-unverified');
   const source = await storedInstagramToken(db, ownerId, brand, signal);
-  let privateCapture: z.infer<typeof PrivateCredentialCapture> | null = null;
-  try {
-    if (source.token) privateCapture = PrivateCredentialCapture.parse({ tokenHash: createHash('sha256').update(source.token.accessToken, 'utf8').digest('hex'),
-      expiresAt: source.token.expiresAt, refreshedAt: source.token.refreshedAt, scopes: source.token.scopes, loginMode: source.token.loginMode });
-  } catch { return fail('credential-store-unavailable', 503); }
+  let privateCapture: ReturnType<typeof captureStoredInstagramCredential>;
+  try { privateCapture = captureStoredInstagramCredential(source.token); }
+  catch { return fail('credential-store-unavailable', 503); }
   const credential = verificationCredential(source.token, bootstrap, now, mode);
   if ('hold' in credential) return fail(credential.hold);
   if ((mode === 'facebook' ? FACEBOOK_LOGIN_SCOPES : INSTAGRAM_LOGIN_SCOPES).some(scope => !credential.scopes.includes(scope))) fail('publishing-scopes-unverified');

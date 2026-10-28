@@ -75,6 +75,7 @@ const CODES = {
   'deck-edit-slide-invalid': ['reload', 'A slide in the edit does not exist in this version.', 'Slide z úpravy v této verzi neexistuje.'],
   'deck-edit-invalid': ['edit', 'The edited slides are not valid; check required text and lengths.', 'Upravené slidy nejsou platné; zkontrolujte povinný text a délky.'],
   'deck-edit-unsupported': ['investigate', 'This post has no slide deck, so slides cannot be edited.', 'Tento příspěvek nemá slidy, proto je nelze upravit.'],
+  'refresh-account-changed': ['accountReload', 'The account or its credential changed during renewal.', 'Účet nebo jeho přihlašovací údaje se během obnovení změnily.'],
   'account-changed': ['accountReload', 'The account or its credentials changed during verification.', 'Účet nebo jeho přihlašovací údaje se během ověřování změnily.'],
   'account-unavailable': ['account', 'The chosen account is not a verified @dneskai Instagram account.', 'Vybraný účet není ověřený instagramový účet @dneskai.'],
   'account-platform-changed': ['edit', 'The post cannot move to another platform.', 'Příspěvek nelze přesunout na jinou platformu.'],

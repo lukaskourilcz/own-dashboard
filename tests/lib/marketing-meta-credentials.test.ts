@@ -19,12 +19,13 @@ const row = (token: StoredMetaToken) => ({ access_token: token.accessToken, expi
 function database(token: StoredMetaToken | null, options: { readError?: boolean; storeError?: boolean } = {}) {
   const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
     if (name === 'marketing_read_account_token') return options.readError ? { data: null, error: { message: 'down' } } : { data: token ? [row(token)] : [], error: null };
-    if (name === 'marketing_store_account_token') return options.storeError ? { data: null, error: { message: 'token changed' } }
-      : { data: { accountId: args.p_account, token: { expiresAt: args.p_expires_at, refreshedAt: now.toISOString(), scopes: args.p_scopes, loginMode: args.p_login_mode } }, error: null };
+    if (name === 'renew_owned_marketing_credential') return options.storeError ? { data: null, error: { message: 'token changed' } }
+      : { data: { kind: 'refreshed', ownerId: owner, expectedId: args.p_expected_id, expectedVersion: args.p_expected_at, id: args.p_expected_id, updatedAt: args.p_expected_at, result: { accountId: args.p_expected_id, token: { expiresAt: args.p_expires_at, refreshedAt: now.toISOString(), scopes: args.p_scopes, loginMode: args.p_login_mode } } }, error: null };
     if (name === 'marketing_account_token_metadata') return { data: [{ account_id: account.id, brand: 'dneskai', platform: 'instagram', expires_at: at(5 * day), refreshed_at: at(-55 * day), scopes: ['instagram_business_basic'], login_mode: 'instagram' }], error: null };
     throw new Error(`unexpected rpc ${name}`);
   });
-  return { db: { rpc: (...args: [string, Record<string, unknown>]) => {
+  const lookup = { select: () => lookup, eq: () => lookup, retry: () => lookup, abortSignal: () => lookup, maybeSingle: async () => ({ data: { ...account, updated_at: now.toISOString() }, error: null }) };
+  return { db: { from: () => lookup, rpc: (...args: [string, Record<string, unknown>]) => {
     const pending = rpc(...args), query = { retry: () => query, abortSignal: () => query, then: pending.then.bind(pending) };
     return query;
   } } as unknown as ReturnType<typeof createAdminClient>, rpc };
@@ -85,7 +86,7 @@ describe('refreshInstagramToken', () => {
     expect(`${parsed.origin}${parsed.pathname}`).toBe('https://graph.instagram.com/refresh_access_token');
     expect(Object.fromEntries(parsed.searchParams)).toEqual({ grant_type: 'ig_refresh_token', access_token: current.accessToken });
     expect(init).toMatchObject({ method: 'GET', redirect: 'error' });
-    expect(rpc).toHaveBeenLastCalledWith('marketing_store_account_token', { p_owner: owner, p_account: account.id, p_expected_refreshed_at: current.refreshedAt,
+    expect(rpc).toHaveBeenLastCalledWith('renew_owned_marketing_credential', { p_owner: owner, p_expected_id: account.id, p_expected_at: now.toISOString(), p_brand: 'dneskai', p_platform: 'instagram', p_expected_token: { tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/), expiresAt: current.expiresAt, refreshedAt: current.refreshedAt, scopes: current.scopes, loginMode: current.loginMode },
       p_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', p_expires_at: at(60 * day), p_scopes: current.scopes, p_login_mode: 'instagram' });
     expect(JSON.stringify(outcome)).not.toContain('TEST-ONLY');
   });
@@ -93,7 +94,7 @@ describe('refreshInstagramToken', () => {
     const { db, rpc } = database(null);
     const fetcher = meta(Response.json({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0003', expires_in: 5_184_000 }));
     expect(await refreshInstagramToken(db, owner, account, { env: env(), now, fetcher })).toMatchObject({ status: 'refreshed' });
-    expect(rpc).toHaveBeenLastCalledWith('marketing_store_account_token', expect.objectContaining({ p_expected_refreshed_at: null, p_scopes: ['instagram_business_basic', 'instagram_business_content_publish'] }));
+    expect(rpc).toHaveBeenLastCalledWith('renew_owned_marketing_credential', expect.objectContaining({ p_expected_token: null, p_scopes: ['instagram_business_basic', 'instagram_business_content_publish'] }));
     const young = meta(Response.json({}));
     expect(await refreshInstagramToken(db, owner, account, { env: env({ MARKETING_DNESKAI_INSTAGRAM_TOKEN_EXPIRES_AT: at(59.5 * day) }), now, fetcher: young })).toMatchObject({ status: 'skipped', code: 'access-token-too-new' });
     expect(young).not.toHaveBeenCalled();
@@ -103,7 +104,7 @@ describe('refreshInstagramToken', () => {
     const fetcher = meta(Response.json({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0005', expires_in: 5_184_000 }));
     expect(await refreshInstagramToken(db, owner, account, { env: env(), now, fetcher })).toMatchObject({ status: 'refreshed', expiresAt: at(60 * day) });
     expect(new URL((fetcher.mock.calls[0] as [string])[0]).searchParams.get('access_token')).toBe('TEST-ONLY-BOOTSTRAP-TOKEN-0001');
-    expect(rpc).toHaveBeenLastCalledWith('marketing_store_account_token', expect.objectContaining({ p_expected_refreshed_at: expired.refreshedAt, p_token: 'TEST-ONLY-REFRESHED-TOKEN-0005',
+    expect(rpc).toHaveBeenLastCalledWith('renew_owned_marketing_credential', expect.objectContaining({ p_expected_token: expect.objectContaining({ refreshedAt: expired.refreshedAt }), p_token: 'TEST-ONLY-REFRESHED-TOKEN-0005',
       p_scopes: ['instagram_business_basic', 'instagram_business_content_publish'] }));
     expect(chooseMetaCredential(expired, bootstrapMetaCredential('dneskai', 'instagram', env()), now)).toMatchObject({ source: 'environment' });
   });
@@ -154,7 +155,7 @@ describe('Facebook Login tokens (#166)', () => {
     const url = new URL((fetcher.mock.calls[0] as [string])[0]);
     expect(`${url.origin}${url.pathname}`).toBe('https://graph.facebook.com/v99.0/oauth/access_token');
     expect(Object.fromEntries(url.searchParams)).toEqual({ grant_type: 'fb_exchange_token', client_id: '123456789', client_secret: 'TEST-ONLY-APP-SECRET-0001', fb_exchange_token: 'TEST-ONLY-STORED-TOKEN-000001' });
-    expect(rpc).toHaveBeenCalledWith('marketing_store_account_token', expect.objectContaining({ p_token: 'TEST-ONLY-EXCHANGED-TOKEN-01', p_login_mode: 'facebook' }));
+    expect(rpc).toHaveBeenCalledWith('renew_owned_marketing_credential', expect.objectContaining({ p_token: 'TEST-ONLY-EXCHANGED-TOKEN-01', p_login_mode: 'facebook' }));
   });
   it('publishes through graph.facebook.com with the Facebook Login scopes', async () => {
     const { db } = database(stored({ loginMode: 'facebook', expiresAt: at(30 * day), scopes: ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement'] }));
