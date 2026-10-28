@@ -430,10 +430,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/fit/route.ts",
-      "lines": 22,
+      "lines": 32,
       "sha256": "bb3b0fcd4df485067161ece234505b075db705e6796d483aa638f9316ffd8a2b",
-      "status": "partial; full fit dispatch inspected; pure-render/no-model boundary and rate limit checked; auth-error handling, bounded request and rate-limit failure boundary remain pending",
-      "reviewedSha256": "bb3b0fcd4df485067161ece234505b075db705e6796d483aa638f9316ffd8a2b"
+      "status": "source reviewed; findings 193/375 retain slide/legacy policy and pure no-media/no-model fit, verify owner admission, bound original ten-second consumer, rate/body waits and actual request bytes in owner/fixture paths; EN/CS desktop/mobile fit/draft/keyboard flows pass; already admitted native/limiter work is not claimed remotely cancelled; final consolidated release pending",
+      "reviewedSha256": "116fb19de1ad1211ac0414b24133599baa1602a055f2e67a8ab28f751f992f7c"
     },
     {
       "path": "src/app/api/marketing/dneskai/generate/route.ts",
@@ -3539,10 +3539,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-fit.ts",
-      "lines": 65,
+      "lines": 77,
       "sha256": "abe11e9b01b8839623459aeb034e6b4be88413251ac9663214131d50a24d1846",
-      "status": "partial source review: same deck/render fitting and no-media/no-model boundary retained; request body cap applies after whole text read and fit work has no total cancellation budget; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "54f69f019b9ee2379c35e704c4fb573aa57dca9786d27c6ff99d92ffb54a8f8d"
+      "status": "source reviewed; findings 193/375 retain slide/legacy policy and pure no-media/no-model fit, verify owner admission, bound original ten-second consumer, rate/body waits and actual request bytes in owner/fixture paths; EN/CS desktop/mobile fit/draft/keyboard flows pass; already admitted native/limiter work is not claimed remotely cancelled; final consolidated release pending",
+      "reviewedSha256": "a37a3d4a411e734372738ae3ad8ba5de012fb4adbb4834472689fe630b962491"
     },
     {
       "path": "src/lib/marketing/dneskai-generation.ts",

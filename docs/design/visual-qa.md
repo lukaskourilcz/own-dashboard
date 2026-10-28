@@ -568,3 +568,7 @@ Four authentic `/dev-preview` EN/CS desktop/phone unknown-occupancy checks pass 
 Six-width EN/CS/light/dark native Calendar checks pass all 24 cases in 1.1 minutes after an initial 22-pass/two-failure run (development-server restart navigation timeout and recurring React pre-mount warning). Equal-width days fit their own contents; issue causes remain visible and native disclosures expose complete next steps/codes with Enter/Space, retained focus and 44px mobile targets. Reduced-motion, reflow and scoped axe pass. Czech desktop/phone crops are visually inspected. The intermittent warning and consolidated optimized release remain open.
 
 Finding 370's final touch-device set passes all six in 17.8 seconds. The local visual plan now contains 62 authentic image pairs: all load in desktop/mobile modes, light/dark 390/1440 reflow and highlight mappings pass without page errors. Calendar density captures are pinned to application `216e985b`; the earlier unknown-occupancy capture stays dated separately.
+
+### 28 October — finding 375 text fitting
+
+All four existing EN/CS desktop/mobile Lab typing flows pass in 38.5 seconds after bounded fit admission/body/result consumption: saved pixels, text-fit feedback, dirty exits and keyboard behavior remain. No layout or new capture is introduced. Next emits a development LCP-image loading notice for a fixture photograph; actual above-fold loading still needs investigation, and this is not a production LCP sample. Consolidated optimized release remains pending.
