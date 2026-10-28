@@ -580,3 +580,5 @@ Eight existing EN/CS desktop/mobile typing/draft flows have seven passes/one fir
 ### 28 October — finding 377 Lab feedback and focus
 
 All 26 six-width EN/CS/theme desktop cases pass in 2.3 minutes: one instruction beside the named action group, retained draft badge/disabled approval reason, reduced motion, touch targets, reflow, scoped axe and discard focus to Approve or the heading. All six new touch-device cases also pass; Czech action crops are visually inspected. Existing typing passes in EN/CS. Broader kit-save checks retain intermittent five-second saved-message failures despite later passing repetitions/a passing trace; see the audit report for exact results. Those failures are not hidden by the clean targeted UX matrix. Consolidated optimized verification remains open.
+
+Finding 377's rebuilt visual plan contains 63 authentic desktop/phone image pairs. All load in both modes; light/dark 390/1440 reflow, highlight mappings and toggles pass without page errors. The Lab action crops are pinned to application `d3e2b18f`; prior component captures keep their own dates and source commits.

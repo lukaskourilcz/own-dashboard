@@ -1,0 +1,74 @@
+{
+  "applicationCommit": "d3e2b18f",
+  "capturedDate": "2026-10-28",
+  "fixture": "Authentic /dev-preview edited synthetic Lab post; one approval instruction and no private/model/publish operation.",
+  "components": {
+    "src/components/marketing/dneskai/lab/lab-tab.tsx": "e027ac2e84f168a996cb91a868418eb9ea7964bc8905397d49a998bfa1aec50e",
+    "src/components/marketing/dneskai/lab/stage.tsx": "5a6c3b6f1eab091bbea44d9ebc6a73bacbe525dbd1ed734bd8d3d03efb1bbe06",
+    "src/lib/i18n/sections/dneskai-lab.ts": "b5bfc6f32410f9d48a46b82cb10642797d233db9632a0a7ac19557ddd1d8e9b2"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 500,
+        "y": 943,
+        "width": 896,
+        "height": 121
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 10.743801652892563,
+          "w": 100,
+          "h": 13.223140495867769
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 30.578512396694215,
+          "w": 15.9423828125,
+          "h": 26.446280991735538
+        },
+        {
+          "n": 3,
+          "x": 55.521065848214285,
+          "y": 30.578512396694215,
+          "w": 13.368443080357142,
+          "h": 26.446280991735538
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 16,
+        "y": 839,
+        "width": 398,
+        "height": 197
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 6.598984771573604,
+          "w": 100,
+          "h": 8.121827411167512
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 18.781725888324875,
+          "w": 35.89038944723618,
+          "h": 22.33502538071066
+        },
+        {
+          "n": 3,
+          "x": 51.790201005025125,
+          "y": 45.17766497461929,
+          "w": 30.09579145728643,
+          "h": 22.33502538071066
+        }
+      ]
+    }
+  }
+}
