@@ -205,3 +205,5 @@ Finding 279 closes the native Europe-wide remote save→Saved evidence loss and 
 
 - Finding 387 retains one previous legacy-calendar snapshot for transient failures, but Work's empty-state wording and IG TIPS' Not yet applied filter/count need conservative wording/admission when a read is incomplete, capped or stale. A wide PlansStatus band still forces short count/notice text into separate rows; inspect the captured desktop/phone geometry before compacting it.
 - Checkpoint 101's ongoing frozen browser attempt has flagged Work health clock cases in EN/CS and both Design Lab image comparisons. Keep the original results/diffs; investigate without classifying them as infrastructure, relaxing timing or blindly updating baselines.
+
+- Finding 389 closes the date-dependent Work clock test fixture after an unchanged optimized trace identifies its missing future-dated Career link. Four controlled-date EN/CS/device cases pass. Finding 388's outer-window clip/selected-deck loading repair is still a draft: its affected native/unit failures and interrupted batch must be resolved before acceptance or golden refresh.

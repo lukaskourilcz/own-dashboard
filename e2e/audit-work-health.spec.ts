@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { gotoPreview, watchConsole } from "./helpers";
 import { nav } from "../src/lib/i18n/sections/nav";
 import { professional } from "../src/lib/i18n/sections/professional";
+import type { JobApplication } from "../src/lib/types";
 const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", owner = "11111111-1111-4111-8111-111111111111", stamp = "2026-10-23T09:00:00Z";
 test.use({ timezoneId: "Europe/Prague" });
 for (const lang of ["en", "cs"] as const) test(`${lang}: health changes on the clock and heartbeat warnings agree in Work and the workspace`, async ({ page }) => {
@@ -16,7 +17,22 @@ for (const lang of ["en", "cs"] as const) test(`${lang}: health changes on the c
   const cron = { id: "fixture-clock-cron", user_id: owner, project_id: id, name: "Hourly run", schedule: "0 * * * *", runs_per_month: 720, is_ai_call: false, cost_per_run: 0, currency: "USD", enabled: true, heartbeat_url: "https://example.test/heartbeat", last_success_at: "2026-10-23T20:00:00Z", created_at: stamp, updated_at: stamp };
   const records: Record<string, unknown[]> = { projects: [project], todos: [task], crons: [cron] };
   await page.route("**/rest/v1/rpc/read_owned_collection", route => route.fulfill({ json: records[route.request().postDataJSON().p_entity] ?? [] }));
-  await page.goto("/dev-preview?projectRecords=live");
+  // The ordinary preview follows the server's current date. This clock test
+  // needs its own fixed follow-up so the Career link cannot drift into future.
+  const application: JobApplication = {
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", user_id: owner, listing_id: null,
+    title: "Clock follow-up", company: "Synthetic company", url: null, source: "manual",
+    location: null, remote: null, cover_letter: "", status: "applied", applied_on: "2026-10-20",
+    notes: null, created_at: stamp, updated_at: stamp, organization_id: null,
+    next_follow_up_at: stamp, cover_letter_url: null, request_id: null,
+    responded_on: null, response_kind: null, contact_name: null, contact_email: null,
+  };
+  await page.route("**/rest/v1/rpc/read_career_records", route => {
+    const input = route.request().postDataJSON();
+    expect(input.p_expected_owner).toBe(owner);
+    return route.fulfill({ json: { ownerId: owner, collection: input.p_entity, rows: input.p_entity === "job_applications" ? [application] : [] } });
+  });
+  await page.goto("/dev-preview?projectRecords=live&career=records");
   const mobile = page.getByTestId("mobile-nav");
   if (await mobile.isVisible()) await mobile.getByRole("button", { name: nav[lang].sections.work, exact: true }).click();
   else await page.getByRole("complementary").getByRole("button", { name: nav[lang].sections.work, exact: true }).click();
