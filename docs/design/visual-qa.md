@@ -609,3 +609,5 @@ Four EN/CS desktop/mobile browser cases pass in 16.5 seconds. A stale scheduled-
 ### 28 October — finding 382 complete Lab slot availability
 
 All twelve final desktop cases pass in 57.6 seconds at six widths (EN light/CS dark); both final 430px touch-device cases pass in 9.4 seconds. Unknown occupancy is never described as full or free. Explicit reload restores focus to the candidate action, its confirmation retains the shown time and cancellation makes no approval. The compact notice pairs title/action on a wrapping row above one explanation. Reflow, scoped axe, phone targets and no private marketing calls pass. Final Czech desktop/phone recovery crops are visually inspected. The earlier layout's twelve desktop cases and six focused captures also pass; final optimized release remains open.
+
+Finding 382 adds the actual missed-slot recovery component to the local plan, now 65 desktop/phone pairs. All 65 images load in both modes; 390/1440 light/dark reflow, mapped highlights/toggles and page-error checks pass. The compact availability crops are pinned to `687accca`; prior scheduling/feedback captures keep their dates and source commits.
