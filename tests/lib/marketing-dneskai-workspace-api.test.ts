@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn(), readReceipts: vi.fn(), costRead: vi.fn(), restCap: Infinity }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks), rpc: (name: string, args: CostReadArgs) => { if (name !== 'marketing_dneskai_cost_totals') return mocks.readReceipts(name, args); const query = { retry: () => query, abortSignal: () => query, then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(mocks.costRead(args)).then(resolve, reject) }; return query; } }) }));
-vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ rpc: (name: string, args: { p_owner: string }) => {
+  const query = { retry: () => query, abortSignal: () => query, then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(mocks.rpc(name, args)).then(resolve, reject) };
+  return query;
+} }) }));
 import { GET as review } from '@/app/api/marketing/dneskai/review/route';
 import { GET as costs } from '@/app/api/marketing/dneskai/costs/route';
 import { DneskaiCostsReadSchema, DneskaiWorkspaceReadSchema, dneskaiPostState, dneskaiStateContext, pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
@@ -295,7 +298,7 @@ describe('GET /api/marketing/dneskai/costs (#119)', () => {
   });
   it('refuses an authentication error even when a cached user accompanies it', async () => {
     mocks.user.mockResolvedValueOnce({ data: { user: { id: owner } }, error: { message: 'PRIVATE auth detail' } });
-    const response = await get(costs, `projectId=${project}`); expect(response.status).toBe(401); expect(await response.json()).toEqual({ error: 'unauthorized' }); expect(mocks.costRead).not.toHaveBeenCalled(); expect(mocks.rpc).not.toHaveBeenCalled();
+    const response = await get(costs, `projectId=${project}`); expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: 'dneskai-costs-unavailable' }); expect(mocks.costRead).not.toHaveBeenCalled(); expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('shows an unreadable spend and a malformed ceiling as codes, not as zero', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'PRIVATE' } });

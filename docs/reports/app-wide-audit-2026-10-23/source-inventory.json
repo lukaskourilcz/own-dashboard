@@ -416,10 +416,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/costs/route.ts",
-      "lines": 49,
+      "lines": 61,
       "sha256": "655d5d087a82742e5117483c05fc5265614ff44649daa074ba9475cec24d2ba8",
-      "status": "partial; owned project and unknown spend inspected; auth/setup deadlines and availability/404 distinction remain; see remaining-review.md; finding 199 closes complete cost/tick aggregation and cost-read auth/cancellation; remaining workspace read/lifecycle leads open",
-      "reviewedSha256": "5c553b3103172e302e4184c9aa37c5ab68ca4d41446e6045f95b7a83e073b6c9"
+      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain",
+      "reviewedSha256": "0bceda9a89e0e002764b9645846b36b7da3fd0dc7c9bbb62a3a7ed98f9de9f65"
     },
     {
       "path": "src/app/api/marketing/dneskai/daily-mix/route.ts",
@@ -444,10 +444,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/media/route.ts",
-      "lines": 33,
+      "lines": 41,
       "sha256": "3ceec0b9ba0501a7bdd425d0c09b720bbfcacfd347343a8ec525596a6b9a4ea6",
-      "status": "partial; full owner/project/media read route inspected; auth errors, cancellation, outage versus absence, signing and collection completeness remain pending",
-      "reviewedSha256": "3ceec0b9ba0501a7bdd425d0c09b720bbfcacfd347343a8ec525596a6b9a4ea6"
+      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain",
+      "reviewedSha256": "04c49a97c7961e1e74b8c33d88f28f779c1196fdacaeaf266155ec541064dbc5"
     },
     {
       "path": "src/app/api/marketing/dneskai/preview/route.ts",
@@ -465,10 +465,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
-      "lines": 43,
+      "lines": 52,
       "sha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9",
-      "status": "partial source review: own-only RLS/project gate, bounded date/cursor and no-store retained; cached-user auth errors, duplicate parameters and bounded complete workspace reads need verification",
-      "reviewedSha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9"
+      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain",
+      "reviewedSha256": "954a1649929bca9477ef4ace608f4120bc2c611d5165dc3dbdbe2dc9d204fcf5"
     },
     {
       "path": "src/app/api/marketing/dneskai/source-list/route.ts",

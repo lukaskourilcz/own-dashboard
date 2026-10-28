@@ -39,6 +39,7 @@ function database(overrides: { failTable?: string; projectRow?: Record<string, u
     let limit = Infinity;
     const query = {
       select: () => query,
+      retry: () => query, abortSignal: () => query,
       eq: (field: string, value: unknown) => { filters.push([table, 'eq', field, value]); rows = rows.filter((row) => !(field in row) || row[field] === value); return query; },
       in: (field: string, values: unknown[]) => { filters.push([table, 'in', field, values]); rows = rows.filter((row) => values.includes(row[field])); return query; },
       order: () => query,
