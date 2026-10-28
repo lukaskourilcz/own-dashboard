@@ -31,7 +31,7 @@ const tables: Record<string, Array<Record<string, unknown>>> = {
   marketing_media_assets: [{ id: uuid(1), sha256: sha(1), user_id: owner }],
 };
 
-function database(overrides: { failTable?: string; projectRow?: Record<string, unknown> | null } = {}) {
+function database(overrides: { failTable?: string; nullTable?: string; projectRow?: Record<string, unknown> | null } = {}) {
   const filters: Array<[string, string, string, unknown]> = [];
   const signed: Array<{ bucket: string; names: string[]; seconds: number }> = [];
   const from = (table: string) => {
@@ -47,7 +47,7 @@ function database(overrides: { failTable?: string; projectRow?: Record<string, u
       maybeSingle: async () => ({ data: overrides.projectRow !== undefined ? overrides.projectRow : rows[0] ?? null, error: null }),
       then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(overrides.failTable === table
         ? { data: null, error: { message: 'private database detail' } }
-        : { data: rows.slice(0, limit).map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => !['user_id', 'project_id'].includes(key) || table === 'projects'))), error: null }).then(resolve, reject),
+        : { data: overrides.nullTable === table ? null : rows.slice(0, limit).map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => !['user_id', 'project_id'].includes(key) || table === 'projects'))), error: null }).then(resolve, reject),
     };
     return query;
   };
@@ -127,4 +127,9 @@ describe('loadDneskaiMedia (browser)', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ schemaVersion: 'dneskai-media/2', candidates: [] })));
     await expect(loadDneskaiMedia(project)).rejects.toThrow();
   });
+});
+
+it.each(['marketing_dneskai_candidates','marketing_media_collections','marketing_media_asset_links'])('does not present a missing %s result as an empty media tray',async nullTable=>{
+ mocks.db.mockReturnValue(database({nullTable}).db);
+ const response=await get(`?projectId=${project}`);expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'media-unavailable'});
 });

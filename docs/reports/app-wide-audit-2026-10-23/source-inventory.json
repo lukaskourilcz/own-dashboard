@@ -446,8 +446,8 @@
       "path": "src/app/api/marketing/dneskai/media/route.ts",
       "lines": 41,
       "sha256": "3ceec0b9ba0501a7bdd425d0c09b720bbfcacfd347343a8ec525596a6b9a4ea6",
-      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain",
-      "reviewedSha256": "04c49a97c7961e1e74b8c33d88f28f779c1196fdacaeaf266155ec541064dbc5"
+      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain; finding 367 original fifteen-second media read, non-retrying query phases, missing-array refusal and signing admission/consumer retirement pass SDK/SQL/image/brief checks; already admitted signing transport, malformed-row handling and remaining collection/purge/receipt work stay separate",
+      "reviewedSha256": "0e8213f1a3376b21847f028a06cce07fee3606201857b9002723cb7a4b3aeaf0"
     },
     {
       "path": "src/app/api/marketing/dneskai/preview/route.ts",
@@ -3588,10 +3588,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-media.ts",
-      "lines": 533,
+      "lines": 545,
       "sha256": "a8a321edbaf7446b9a3db25f96e3ab5ddec9a3e42aae03b7b154a57c8609e861",
-      "status": "partial; complete source inspection; captured candidate/registry identity, storage absence versus outage, byte/read/deadline bounds, exact receipts and uncertain retention failures remain under review",
-      "reviewedSha256": "a8a321edbaf7446b9a3db25f96e3ab5ddec9a3e42aae03b7b154a57c8609e861"
+      "status": "partial; complete source inspection; captured candidate/registry identity, storage absence versus outage, byte/read/deadline bounds, exact receipts and uncertain retention failures remain under review; finding 367 original fifteen-second media read, non-retrying query phases, missing-array refusal and signing admission/consumer retirement pass SDK/SQL/image/brief checks; already admitted signing transport, malformed-row handling and remaining collection/purge/receipt work stay separate",
+      "reviewedSha256": "fbf44e4746d702e6be4c62912ff8ce3711098f20bafbf0191ec6cc373a870dfd"
     },
     {
       "path": "src/lib/marketing/dneskai-move.ts",

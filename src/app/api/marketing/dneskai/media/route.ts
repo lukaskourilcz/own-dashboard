@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   }
   try {
     signal.throwIfAborted();
-    const media = await awaitWithSignal(readDneskaiMedia(db, ownerId, projectId!, { ...(candidateId ? { candidateId } : {}), sign: true }), signal);
+    const media = await awaitWithSignal(readDneskaiMedia(db, ownerId, projectId!, { signal, ...(candidateId ? { candidateId } : {}), sign: true }), signal);
     signal.throwIfAborted();
     return Response.json(media, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {

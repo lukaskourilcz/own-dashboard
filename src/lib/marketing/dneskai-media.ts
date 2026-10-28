@@ -1,4 +1,5 @@
 import 'server-only';
+import { awaitWithSignal } from '@/lib/abortable';
 import { dneskaiRichEvidenceEnabled } from './dneskai-evidence-rollout';
 import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -482,32 +483,43 @@ const CollectionRowSchema = z.object({
  * capability flags and duplicate marker, plus the collection state, so a missing picture is visible.
  * Reads through the caller's client, so a session client sees only the owner's rows (RLS).
  */
-export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, project: string, options: { candidateId?: string; sign?: boolean; store?: DneskaiMediaObjectStore } = {}): Promise<DneskaiMediaRead> {
+export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, project: string, options: { candidateId?: string; sign?: boolean; store?: DneskaiMediaObjectStore; signal?: AbortSignal } = {}): Promise<DneskaiMediaRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(options.signal ? [options.signal] : [])]);
+  const { candidateId, sign, store } = options;
+  const richEvidence = dneskaiRichEvidenceEnabled();
+  signal.throwIfAborted();
   const query = db.from('marketing_dneskai_candidates').select('id,status,candidate').eq('user_id', owner).eq('project_id', project);
-  const { data: candidateRows, error } = await (options.candidateId ? query.eq('id', options.candidateId) : query.eq('status', 'selected').order('updated_at', { ascending: false }).limit(8));
-  if (error) throw new DneskaiMediaError('media-read-unavailable');
-  const candidates = (candidateRows ?? []).flatMap((row) => { const parsed = DneskaiCandidateSchema.safeParse(row.candidate); return parsed.success && parsed.data.id === row.id ? [parsed.data] : []; });
+  const { data: candidateRows, error } = await awaitWithSignal((candidateId ? query.eq('id', candidateId) : query.eq('status', 'selected').order('updated_at', { ascending: false }).limit(8)).retry(false).abortSignal(signal), signal);
+  signal.throwIfAborted();
+  if (error || !Array.isArray(candidateRows)) throw new DneskaiMediaError('media-read-unavailable');
+  const candidates = candidateRows.flatMap((row) => { const parsed = DneskaiCandidateSchema.safeParse(row.candidate); return parsed.success && parsed.data.id === row.id ? [parsed.data] : []; });
   if (!candidates.length) return { schemaVersion: DNESKAI_MEDIA_READ_VERSION, candidates: [] };
   const ids = candidates.map((candidate) => candidate.id);
-  const [collections, links] = await Promise.all([
-    db.from('marketing_media_collections').select(`candidate_id,status,page_status,page_error,attempted_at,completed_at,skipped,plan${dneskaiRichEvidenceEnabled() ? ',article_text' : ''}`).eq('user_id', owner).eq('project_id', project).in('candidate_id', ids),
+  signal.throwIfAborted();
+  const [collections, links] = await awaitWithSignal(Promise.all([
+    db.from('marketing_media_collections').select(`candidate_id,status,page_status,page_error,attempted_at,completed_at,skipped,plan${richEvidence ? ',article_text' : ''}`).eq('user_id', owner).eq('project_id', project).in('candidate_id', ids).retry(false).abortSignal(signal),
     db.from('marketing_media_asset_links').select('candidate_id,position,origin_url,origin_kind,credit,asset:marketing_media_assets(id,sha256,width,height,mime,bytes,storage_path,fetched_at,phash,duplicate_of_asset_id,purged_at)')
-      .eq('user_id', owner).eq('project_id', project).in('candidate_id', ids).order('position', { ascending: true }).limit(100),
-  ]);
-  if (collections.error || links.error) throw new DneskaiMediaError('media-read-unavailable');
-  const linkRows = z.array(LinkRowSchema).parse(links.data ?? []);
-  const collectionRows = new Map(z.array(CollectionRowSchema).parse(collections.data ?? []).map((row) => [row.candidate_id, row]));
+      .eq('user_id', owner).eq('project_id', project).in('candidate_id', ids).order('position', { ascending: true }).limit(100).retry(false).abortSignal(signal),
+  ]), signal);
+  signal.throwIfAborted();
+  if (collections.error || links.error || !Array.isArray(collections.data) || !Array.isArray(links.data)) throw new DneskaiMediaError('media-read-unavailable');
+  const linkRows = z.array(LinkRowSchema).parse(links.data);
+  const collectionRows = new Map(z.array(CollectionRowSchema).parse(collections.data).map((row) => [row.candidate_id, row]));
   const shaById = new Map(linkRows.map((row) => [row.asset.id, row.asset.sha256]));
   const missing = [...new Set(linkRows.flatMap((row) => row.asset.duplicate_of_asset_id && !shaById.has(row.asset.duplicate_of_asset_id) ? [row.asset.duplicate_of_asset_id] : []))];
   if (missing.length) {
-    const canonical = await db.from('marketing_media_assets').select('id,sha256').eq('user_id', owner).in('id', missing);
-    if (canonical.error) throw new DneskaiMediaError('media-read-unavailable');
-    for (const row of z.array(z.object({ id: z.uuid(), sha256: z.string() })).parse(canonical.data ?? [])) shaById.set(row.id, row.sha256);
+    signal.throwIfAborted();
+    const canonical = await awaitWithSignal(db.from('marketing_media_assets').select('id,sha256').eq('user_id', owner).in('id', missing).retry(false).abortSignal(signal), signal);
+    signal.throwIfAborted();
+    if (canonical.error || !Array.isArray(canonical.data)) throw new DneskaiMediaError('media-read-unavailable');
+    for (const row of z.array(z.object({ id: z.uuid(), sha256: z.string() })).parse(canonical.data)) shaById.set(row.id, row.sha256);
   }
   const live = linkRows.filter((row) => !row.asset.purged_at);
   const names = live.map((row) => objectName(owner, row.asset.storage_path));
-  const urls = options.sign ? await (options.store ?? supabaseMediaObjectStore(db)).sign(names, DNESKAI_MEDIA_PREVIEW_SECONDS).catch(() => names.map(() => null)) : [];
+  signal.throwIfAborted();
+  const urls = sign && names.length ? await awaitWithSignal((store ?? supabaseMediaObjectStore(db)).sign(names, DNESKAI_MEDIA_PREVIEW_SECONDS), signal).catch(() => { signal.throwIfAborted(); return names.map(() => null); }) : [];
+  signal.throwIfAborted();
   const previews = new Map(live.map((row, index) => [`${row.candidate_id}:${row.asset.id}`, urls[index] ?? null]));
   return DneskaiMediaReadSchema.parse({
     schemaVersion: DNESKAI_MEDIA_READ_VERSION,
@@ -515,11 +527,11 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
       const collection = collectionRows.get(candidate.id);
       return {
         candidateId: candidate.id, sourceId: candidate.sourceId, title: candidate.title, url: candidate.url, candidateStatus: candidate.status,
-        ...(dneskaiRichEvidenceEnabled() && collection?.article_text?{articleText:collection.article_text}:{}),
+        ...(richEvidence && collection?.article_text?{articleText:collection.article_text}:{}),
         captionOnly: dneskaiCaptionOnly(candidate), mediaType: candidate.instagram?.mediaType ?? null,
         collection: collection ? { status: collection.status, pageStatus: collection.page_status, pageError: collection.page_error, attemptedAt: collection.attempted_at, completedAt: collection.completed_at, skipped: collection.skipped.map(({ position, code }) => ({ position, code })) } : null,
         assets: linkRows.filter((row) => row.candidate_id === candidate.id).sort((left, right) => left.position - right.position).map((row) => ({
-          ...(dneskaiRichEvidenceEnabled() && collection?.plan?.find(p=>p.position===row.position)?.sourceAltText?{sourceAltText:collection.plan.find(p=>p.position===row.position)!.sourceAltText}:{}),
+          ...(richEvidence && collection?.plan?.find(p=>p.position===row.position)?.sourceAltText?{sourceAltText:collection.plan.find(p=>p.position===row.position)!.sourceAltText}:{}),
           assetId: row.asset.id, sha256: row.asset.sha256, position: row.position, originKind: row.origin_kind, originUrl: row.origin_url, credit: row.credit,
           width: row.asset.width, height: row.asset.height, mime: row.asset.mime, bytes: row.asset.bytes, fetchedAt: row.asset.fetched_at,
           ...dneskaiMediaCapabilities(row.asset),
