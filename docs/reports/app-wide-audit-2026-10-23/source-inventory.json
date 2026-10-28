@@ -495,7 +495,7 @@
       "path": "src/app/api/marketing/import/route.ts",
       "lines": 34,
       "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open",
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open; finding 395 prepares complete persisted post-trigger confirmation in existing service-only RPC with safe exact-source replay (migration 150, unapplied); browser intent and SDK JSON resource contract remain separate",
       "reviewedSha256": "7ed433dbd6ec27d0dcc6ab258647ecd06b523dc3ec9f58aa63642b6aaa082777"
     },
     {
@@ -3661,7 +3661,7 @@
       "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
       "status": "source reviewed; eight-table read port regenerated from all 148 canonical migration files; finite account versions retained; final rollout/release pending",
-      "reviewedSha256": "71f0f8b792d58a28f45d918f461bf0072d285bacc68c24aa12d2599bc73a60b5"
+      "reviewedSha256": "0c86f15293bf667998811098c386cd2a065dbcd3789671a03e7adb1b18bfbd0b"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",

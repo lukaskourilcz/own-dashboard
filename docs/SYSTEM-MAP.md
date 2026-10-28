@@ -266,7 +266,7 @@ Storage buckets, all private: `marketing-assets` (rendered slide JPEGs), `market
 
 The 23 prepared migrations `20261022000000` through `20261023130300` were applied on 23 October 2026 under owner authorisation. The routine feature switches and editor activation are deployed; see NEEDED.md and the Astra handoff for the recorded state. Do not repeat the completed migration push.
 
-The app-wide review has **63 prepared, unapplied audit migrations (87–149)**. The [README migration list](../README.md) and [migration guide](migration-guide.md#applying-the-prepared-migrations) are authoritative for the exact files, privileges, rollback and rollout order; the latest is `20261028154447_complete_dneskai_calendar.sql`. These local preparations do not establish Production rollout. Apply the complete filename-ordered chain before merging the implementation branch. Current validation and limits remain in [the app-wide review](reports/app-wide-audit-2026-10-23/review.md).
+The app-wide review has **64 prepared, unapplied audit migrations (87–150)**. The [README migration list](../README.md) and [migration guide](migration-guide.md#applying-the-prepared-migrations) are authoritative for the exact files, privileges, rollback and rollout order; the latest is `20261028233906_confirmed_marketing_campaign_import.sql`. These local preparations do not establish Production rollout. Apply the complete filename-ordered chain before merging the implementation branch. Current validation and limits remain in [the app-wide review](reports/app-wide-audit-2026-10-23/review.md).
 
 Remaining activation dependencies are distinct:
 
