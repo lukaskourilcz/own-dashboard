@@ -553,3 +553,8 @@ All 52 frozen-source desktop browser checks pass in 2.7 minutes across six width
 ### 28 October — one costs title and retained account refresh (finding 363)
 
 The combined frozen-source development run has 55 passes and one React pre-mount console-warning failure in 3.3 minutes. Behavior, focus and scoped axe pass in that remaining EN/light 1440px initial-review case; five unchanged stack-instrumented repeats pass in 17.8 seconds without a warning. This is recovered coverage, not a clean matrix or a demonstrated cause. All ten focused mobile checks pass in 36.1 seconds. Account failures retain confirmed expiry/status, use the existing Costs Refresh and restore its keyboard focus after all reads finish. Costs has one visible heading and an accessible dialog name during loading/errors. Six-width, both-language/theme costs geometry and heading checks pass. No warning is suppressed, timeout extended or real record/provider used.
+
+
+### 28 October — linked review navigation and unreadable Calendar context (finding 364)
+
+All sixteen combined EN/CS desktop/touch browser checks pass in 1.1 minutes. Linked review pages avoid a fabricated page number; returning to the first page removes the cursor and focuses the Calendar heading even when the pager disappears. Scoped axe, mobile action height and reflow pass. Existing initial retry/account refresh focus stays intact. Mounted tests separately confirm unknown-depth continuation, known numbering after return and Calendar's unreadable-record copy. Calendar completeness remains open, and the earlier intermittent development warning is not considered resolved by this focused clean run.

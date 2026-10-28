@@ -37,7 +37,7 @@ function useReadRecovery(data: unknown, fetching: boolean, refetch: () => Promis
     const active = document.activeElement;
     // Removing Retry can leave focus on the dialog trap's fallback container.
     const dialog = container.current?.closest('[role="dialog"]');
-    if (active !== document.body && active !== dialog && !(active instanceof HTMLElement && (active.hasAttribute('data-dneskai-read-retry') || active.hasAttribute('data-dneskai-read-refresh')))) { focusAfter.current = null; return; }
+    if (active !== document.body && active !== dialog && !(active instanceof HTMLElement && (active.hasAttribute('data-dneskai-read-retry') || active.hasAttribute('data-dneskai-read-refresh') || active.hasAttribute('data-dneskai-read-page')))) { focusAfter.current = null; return; }
     const selector = focusAfter.current === 'refresh' ? '[data-dneskai-read-refresh]' : data === undefined ? '[data-dneskai-read-retry]' : '[data-testid="dneskai-lab-refresh"], h2[tabindex="-1"]';
     const target = container.current?.querySelector<HTMLElement>(selector);
     if (target && !target.hasAttribute('disabled')) { focusAfter.current = null; target.focus(); }
@@ -45,11 +45,16 @@ function useReadRecovery(data: unknown, fetching: boolean, refetch: () => Promis
   const reload = () => {
     if (pending.current) return;
     const active = document.activeElement;
-    focusAfter.current = active instanceof HTMLElement && container.current?.contains(active) ? active.hasAttribute('data-dneskai-read-retry') ? 'retry' : active.hasAttribute('data-dneskai-read-refresh') ? 'refresh' : null : null;
+    focusAfter.current = null;
+    if (active instanceof HTMLElement && container.current?.contains(active)) {
+      if (active.hasAttribute('data-dneskai-read-retry')) focusAfter.current = 'retry';
+      else if (active.hasAttribute('data-dneskai-read-refresh')) focusAfter.current = 'refresh';
+    }
     pending.current = true;
     void refetch().then(() => { pending.current = false; }, () => { pending.current = false; });
   };
-  return [container, reload] as const;
+  const focusContent = () => { focusAfter.current = 'retry'; };
+  return [container, reload, focusContent] as const;
 }
 function ReadFailure({ message, lang, refreshing, onRefresh }: { message: string; lang: Lang; refreshing: boolean; onRefresh: () => void }) {
   const t = dneskaiWorkspace[lang];
@@ -83,13 +88,16 @@ function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude
   const t = dneskaiWorkspace[lang];
   const pathname = usePathname();
   const guest = preview && pathname === '/guest';
-  const [pages, setPages] = useState<DneskaiDecisionCursor[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try { const raw = new URLSearchParams(window.location.search).get('reviewBefore'); return raw ? [DneskaiDecisionCursorSchema.parse(JSON.parse(raw))] : []; }
-    catch { return []; }
+  const [{ pages, linked }, setNavigation] = useState<{ pages: DneskaiDecisionCursor[]; linked: boolean }>(() => {
+    const first = { pages: [], linked: false };
+    if (typeof window === 'undefined') return first;
+    try {
+      const raw = new URLSearchParams(window.location.search).get('reviewBefore');
+      return raw && raw.length <= 200 ? { pages: [DneskaiDecisionCursorSchema.parse(JSON.parse(raw))], linked: true } : first;
+    } catch { return first; }
   });
   const changePages = (next: DneskaiDecisionCursor[]) => {
-    setPages(next);
+    setNavigation(current => ({ pages: next, linked: next.length > 0 && current.linked }));
     const url = new URL(window.location.href);
     if (next.length) url.searchParams.set('reviewBefore', JSON.stringify(next.at(-1))); else url.searchParams.delete('reviewBefore');
     window.history.replaceState(window.history.state, '', url);
@@ -97,7 +105,7 @@ function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude
   const requestNavigation = useGuardedNavigation();
   const query = useReviewRead(projectId, preview, pages.at(-1) ?? null);
   const [renderFailed, addRenderFailed] = useRenderFailed(projectId);
-  const [readContainer, reload] = useReadRecovery(query.data, query.isFetching, () => query.refetch());
+  const [readContainer, reload, focusContent] = useReadRecovery(query.data, query.isFetching, () => query.refetch());
   const read = query.data;
   if (read === undefined) return <div ref={readContainer}>{query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p> : <ReadFailure message={t.unavailable} lang={lang} refreshing={query.isFetching} onRefresh={reload}/>}</div>;
   const props = { read, lang, preview, refreshing: query.isFetching, onRefresh: reload };
@@ -106,9 +114,9 @@ function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude
     {query.isError && <p role="alert" className="text-sm text-warning" data-testid="dneskai-cached-read">{t.cachedUnavailable}</p>}
     {(next || pages.length > 0) && <nav aria-label={t.decisions.label} className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" disabled={!pages.length || query.isFetching} onClick={() => requestNavigation(() => changePages(pages.slice(0, -1)))}>{t.decisions.newer}</Button>
-        <span className="text-xs text-foreground-muted">{t.decisions.page(pages.length + 1)}</span>
-        <Button variant="outline" size="sm" disabled={!next || query.isFetching} onClick={() => { if (next) requestNavigation(() => changePages([...pages, next])); }}>{t.decisions.older}</Button>
+        <Button data-dneskai-read-page variant="outline" size="sm" disabled={!pages.length || query.isFetching} onClick={() => requestNavigation(() => { focusContent(); changePages(pages.slice(0, -1)); })}>{t.decisions.newer}</Button>
+        <span className="text-xs text-foreground-muted">{linked ? t.decisions.continuation : t.decisions.page(pages.length + 1)}</span>
+        <Button data-dneskai-read-page variant="outline" size="sm" disabled={!next || query.isFetching} onClick={() => { if (next) requestNavigation(() => { focusContent(); changePages([...pages, next]); }); }}>{t.decisions.older}</Button>
       </div><p className="text-xs text-foreground-muted">{t.decisions.context}</p>
     </nav>}
     {tab === 'dneskai-review' ? <ReviewExperience {...props} liveMusic={liveMusic} onSavedRevision={() => changePages([])} guest={guest} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />

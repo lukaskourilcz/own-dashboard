@@ -50,3 +50,18 @@ for(const lang of ['en','cs']as const)for(const cached of [false,true]){
   await fail(page,null);await refresh.focus();await refresh.press('Enter');await expect(section.getByRole('alert')).toHaveCount(0);await expect(section.locator('time')).toBeVisible();await expect(refresh).toBeFocused();expect(errors).toEqual([]);
  });
 }
+
+for(const lang of ['en','cs']as const){
+ test(`linked review page keeps its unknown depth and returns keyboard focus to Calendar: ${lang}`,async({page},info)=>{
+  const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];
+  await gotoPreview(page,{lang,theme:'dark'});
+  const cursor={createdAt:'2026-10-20T00:00:00.000Z',id:'11111111-1111-4111-8111-111111111111'};
+  await page.goto('/dev-preview?project=dneskai&reviewBefore='+encodeURIComponent(JSON.stringify(cursor)));
+  await page.getByRole('tab',{name:t.tabs.calendar,exact:true}).click();
+  const nav=page.getByRole('navigation',{name:t.decisions.label,exact:true});await expect(nav).toBeVisible();await expect(nav).toContainText(t.decisions.continuation);await expect(nav).not.toContainText(t.decisions.page(2));
+  expect(await nav.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-workspace-read"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  const newer=nav.getByRole('button',{name:t.decisions.newer,exact:true});if(width<768)expect((await newer.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await newer.focus();await newer.press('Enter');await expect(nav).toHaveCount(0);await expect(page.getByTestId('dneskai-calendar').getByRole('heading',{name:t.calendar.title,exact:true})).toBeFocused();expect(new URL(page.url()).searchParams.has('reviewBefore')).toBe(false);expect(errors).toEqual([]);
+ });
+}

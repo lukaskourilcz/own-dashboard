@@ -3093,3 +3093,14 @@ Source review also confirms that private and fixture workspaces mount independen
 
 
 The sixty-pair visual plan now references review snapshot 07cd4f48. Its four costs crops are recaptured from that application, with one visible title and updated normalized highlights; the review crops retain their explicit 7be81d77 provenance. All sixty images decode in both modes, light/dark 390/1440px reflow and mapped highlight controls pass without page errors.
+
+
+### Finding 364 — truthful linked-page depth and Calendar read warnings
+
+Four mounted regressions fail in 2.73 seconds: a directly linked older review cursor is labeled page two without any known depth, and Calendar alone omits the shared unreadable-record warning. Navigation now distinguishes linked context from pages reached from a known first page. Continuing farther from that link keeps the nonnumeric label; returning to the first page resets known numbering, including subsequent older navigation. Initial cursor parsing shares the route's 200-character bound. Calendar uses the same unreadable warning as Posts/Costs. No extra read, timer or database change is introduced.
+
+Two native baseline cases also reproduce lost focus when returning from a linked cursor removes its pager. The existing read-recovery hook now accepts a paging focus request only inside the guarded navigation callback; successful paging focuses the loaded heading or Lab action, and a failed read focuses Retry. It continues respecting intervening meaningful focus. Refresh capture is rewritten as ordinary conditionals for readability without changing its behavior.
+
+All 58 focused checks pass across four files in 28.03 seconds, including both linked-depth sequences, fresh numbering after return, unreadable copy and the existing workspace/client/state flows. The earlier label/warning-only set also passes 58 in 27.71 seconds. All sixteen combined native EN/CS desktop/touch checks pass in 1.1 minutes for linked navigation, URL cleanup, keyboard focus, scoped axe, initial recovery and account refresh continuity. Final full TypeScript, targeted ESLint without warnings and whitespace pass. No new screenshots are needed for these small labels/behavior changes; the visual plan retains its explicitly dated 07cd4f48 snapshot and capture sources. The earlier intermittent development warning remains a separate consolidated-release lead.
+
+Current remaining-review prose also reconciles the already fixed post-precheck/lease cancellation gap and workspace formatter status rather than repeating them as open work. The ledger remains 723 entries/190 partial statuses. No SQL, managed/provider/model operation, publication, message, deployment or spend occurs. Calendar completeness/free-slot proof, remaining captured mutation/provider/source work, canonical rollout, consolidated verification and main merge remain unfinished.

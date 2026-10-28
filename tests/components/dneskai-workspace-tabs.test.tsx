@@ -350,3 +350,32 @@ it('keeps Costs Refresh busy until its account read settles and admits one synch
  await wait(20);
  expect(button().disabled).toBe(false);
 });
+
+for (const lang of ['en', 'cs'] as const) {
+ it(`does not invent a page depth for a directly linked review cursor (${lang})`, async () => {
+  const t = dneskaiWorkspace[lang], linked = { createdAt: '2026-10-20T00:00:00.000Z', id: '11111111-1111-4111-8111-111111111111' }, older = { ...linked, createdAt: '2026-10-19T00:00:00.000Z' };
+  window.history.replaceState(null, '', 'http://localhost:3000/dev-preview?reviewBefore='+encodeURIComponent(JSON.stringify(linked)));
+  const original = demoDneskaiWorkspaceApi.loadReview;
+  vi.spyOn(demoDneskaiWorkspaceApi, 'loadReview').mockImplementation(async (project, signal, before) => ({ ...await original(project, signal, before), decisionPage: { nextCursor: before?.createdAt === older.createdAt ? null : before ? older : linked } }));
+  try {
+   act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-calendar" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
+   await wait(400);
+   const nav = () => container.querySelector('nav')!;
+   expect(nav().textContent).not.toContain(t.decisions.page(2));
+   const click = async (label:string) => { act(() => { [...nav().querySelectorAll('button')].find(button => button.textContent === label)!.click(); }); await wait(400); };
+   await click(t.decisions.older);
+   expect(nav().textContent).not.toContain(t.decisions.page(3));
+   await click(t.decisions.newer); await click(t.decisions.newer);
+   expect(nav().textContent).toContain(t.decisions.page(1));
+   await click(t.decisions.older);
+   expect(nav().textContent).toContain(t.decisions.page(2));
+  } finally { window.history.replaceState(null, '', 'http://localhost:3000/'); }
+ });
+ it(`discloses unreadable stored records in Calendar (${lang})`, async () => {
+  const original = demoDneskaiWorkspaceApi.loadReview;
+  vi.spyOn(demoDneskaiWorkspaceApi, 'loadReview').mockImplementation(async (...args) => ({ ...await original(...args), unreadable: 2 }));
+  act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-calendar" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
+  await wait(400);
+  expect(container.querySelector('[data-testid="dneskai-calendar"]')!.textContent).toContain(dneskaiWorkspace[lang].unreadable(2));
+ });
+}

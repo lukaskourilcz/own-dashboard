@@ -1094,8 +1094,8 @@
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
       "lines": 38,
       "sha256": "4153d6c195c48b1c1a88ce115879c96afc484dc2fe5ac22e33121fa05cf71ab1",
-      "status": "partial; Prague grid inspected; missing unreadable warning and free-slot availability evidence remain; see remaining-review.md",
-      "reviewedSha256": "4d5f3edb0cdd0a46e68c606d7bca682220cdb3fb4b2fba84e02ce2fe88130322"
+      "status": "partial; finding 364 restores the shared unreadable-record warning; Prague grid inspected; complete post/job context and free-slot availability evidence remain; see remaining-review.md",
+      "reviewedSha256": "1a82d895bdb1d5808858e39f4e972cd801606d777480365707abfe2700db3429"
     },
     {
       "path": "src/components/marketing/dneskai/code-text.tsx",
@@ -1259,10 +1259,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/workspace.tsx",
-      "lines": 161,
+      "lines": 169,
       "sha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f",
-      "status": "partial; findings 362/363 retain confirmed review/cost/account data and mounted drafts, compact explicit recovery, original keyboard focus and one in-flight refresh; failed render polling pauses until recovery; preview/private clients are independently mounted under OwnerQueryProvider/GuestBoundary, with no mutable mode switch; cursor depth, calendar completeness and captured writes remain; final release pending",
-      "reviewedSha256": "380bf20be3e2be2e809d5081553cc7e95d7372f34371597bfeff43ef2d0ecd8d"
+      "status": "partial; findings 362/363 retain confirmed review/cost/account data and mounted drafts, compact explicit recovery, original keyboard focus and one in-flight refresh; failed render polling pauses until recovery; preview/private clients are independently mounted under OwnerQueryProvider/GuestBoundary, with no mutable mode switch; finding 364 labels directly linked cursors without invented depth, resets known numbering at the first page and restores paging focus; calendar completeness and captured writes remain; final release pending",
+      "reviewedSha256": "0cee822fed85e57737af18750257c95974898305ec79d7aa946707f1a1cd5167"
     },
     {
       "path": "src/components/marketing/job-health.tsx",
@@ -2826,8 +2826,8 @@
       "path": "src/lib/i18n/sections/dneskai-workspace.ts",
       "lines": 196,
       "sha256": "7e281eca192bf5c908eef8abbfccfbd9efb323b6a862bd33f1bb87defa1cb07f",
-      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 362 neutral initial/cached read recovery and costs-specific EN/CS messages",
-      "reviewedSha256": "c08d3a1d416d8c68ed827e9ab23692edbd25c679f676502137495aba6c2b8387"
+      "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 362 neutral initial/cached read recovery and costs-specific EN/CS messages; finding 364 linked-page EN/CS labels avoid inventing cursor depth",
+      "reviewedSha256": "31bb0ba360230862ad5de35f32b5db5c9a4298cc7161a1f5e6718a94abf63832"
     },
     {
       "path": "src/lib/i18n/sections/finances.ts",
