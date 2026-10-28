@@ -18,6 +18,9 @@ export class DneskaiWorkspaceRequestError extends Error {
   constructor(readonly code: string, readonly status: number, readonly revisionId: string | null = null, readonly retryAfterMs = 0) { super(code); this.name = 'DneskaiWorkspaceRequestError'; }
 }
 
+/** Costs shares live account metadata with Sources; fixture accounts stay separate. */
+export const dneskaiWorkspaceAccountKey = (preview: boolean) => preview ? [...qk.marketingAccounts, 'preview'] : qk.marketingAccounts;
+
 export const DneskaiEditResultSchema = z.strictObject({
   id: z.uuid(),
   ready: z.boolean(),

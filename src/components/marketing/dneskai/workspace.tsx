@@ -4,9 +4,9 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useGuardedNavigation } from '@/components/navigation-guard';
 import { DneskaiDecisionCursorSchema, type DneskaiDecisionCursor } from '@/lib/marketing/dneskai-workspace';
 import { usePathname } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys } from '@/lib/marketing/dneskai-workspace-client';
+import { dneskaiWorkspaceAccountKey, dneskaiWorkspaceApi, dneskaiWorkspaceKeys } from '@/lib/marketing/dneskai-workspace-client';
 import { dneskaiAwaitingRender, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiLabTab } from './lab/lab-tab';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
@@ -31,19 +31,21 @@ function useReviewRead(projectId: string, preview: boolean, before: DneskaiDecis
 
 /** Keep one explicit read in flight and restore focus after replacing its retry row. */
 function useReadRecovery(data: unknown, fetching: boolean, refetch: () => Promise<unknown>) {
-  const container = useRef<HTMLDivElement>(null), focusAfter = useRef(false), pending = useRef(false);
+  const container = useRef<HTMLDivElement>(null), focusAfter = useRef<'retry' | 'refresh' | null>(null), pending = useRef(false);
   useLayoutEffect(() => {
     if (!focusAfter.current || fetching && data === undefined) return;
     const active = document.activeElement;
     // Removing Retry can leave focus on the dialog trap's fallback container.
     const dialog = container.current?.closest('[role="dialog"]');
-    if (active !== document.body && active !== dialog && !(active instanceof HTMLElement && active.hasAttribute('data-dneskai-read-retry'))) { focusAfter.current = false; return; }
-    const target = container.current?.querySelector<HTMLElement>(data === undefined ? '[data-dneskai-read-retry]' : '[data-testid="dneskai-lab-refresh"], h2[tabindex="-1"]');
-    if (target && !target.hasAttribute('disabled')) { focusAfter.current = false; target.focus(); }
+    if (active !== document.body && active !== dialog && !(active instanceof HTMLElement && (active.hasAttribute('data-dneskai-read-retry') || active.hasAttribute('data-dneskai-read-refresh')))) { focusAfter.current = null; return; }
+    const selector = focusAfter.current === 'refresh' ? '[data-dneskai-read-refresh]' : data === undefined ? '[data-dneskai-read-retry]' : '[data-testid="dneskai-lab-refresh"], h2[tabindex="-1"]';
+    const target = container.current?.querySelector<HTMLElement>(selector);
+    if (target && !target.hasAttribute('disabled')) { focusAfter.current = null; target.focus(); }
   }, [data, fetching]);
   const reload = () => {
     if (pending.current) return;
-    focusAfter.current = document.activeElement instanceof HTMLElement && document.activeElement.hasAttribute('data-dneskai-read-retry');
+    const active = document.activeElement;
+    focusAfter.current = active instanceof HTMLElement && container.current?.contains(active) ? active.hasAttribute('data-dneskai-read-retry') ? 'retry' : active.hasAttribute('data-dneskai-read-refresh') ? 'refresh' : null : null;
     pending.current = true;
     void refetch().then(() => { pending.current = false; }, () => { pending.current = false; });
   };
@@ -116,13 +118,17 @@ function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude
 
 function CostsTab({ projectId, lang, preview }: { projectId: string; lang: Lang; preview: boolean }) {
   const t = dneskaiWorkspace[lang];
+  const client = useQueryClient(), accountKey = dneskaiWorkspaceAccountKey(preview);
+  const accountsFetching = useIsFetching({ queryKey: accountKey, exact: true });
   const query = useQuery({ queryKey: dneskaiWorkspaceKeys(projectId).costs, ...options,
     queryFn: async ({ signal }) => (await dneskaiWorkspaceApi(preview)).loadCosts(projectId, signal) });
   // The posts that cannot be approved come from the review read, shared with the other tabs.
   const review = useReviewRead(projectId, preview);
   const [renderFailed] = useRenderFailed(projectId);
-  const refreshing = query.isFetching || review.isFetching;
-  const [readContainer, reload] = useReadRecovery(query.data, refreshing, () => Promise.all([query.refetch(), review.refetch()]));
+  const refreshing = query.isFetching || review.isFetching || accountsFetching > 0;
+  const [readContainer, reload] = useReadRecovery(query.data, refreshing, () => Promise.all([
+    query.refetch(), review.refetch(), client.refetchQueries({ queryKey: accountKey, exact: true, type: 'active' }),
+  ]));
   if (query.data === undefined) return <div ref={readContainer}>{query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.costs.loading}</p> : <ReadFailure message={t.costs.unavailable} lang={lang} refreshing={refreshing} onRefresh={reload}/>}</div>;
   return <div ref={readContainer} className="min-w-0 space-y-4" data-testid="dneskai-costs-read">
     {(query.isError || review.isError && review.data !== undefined) && <p role="alert" className="text-sm text-warning" data-testid="dneskai-cached-read">{t.cachedUnavailable}</p>}

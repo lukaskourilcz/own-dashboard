@@ -21,7 +21,7 @@ import { dneskaiNextFreeSlot, dneskaiTakenSlots } from '@/lib/marketing/dneskai-
  * storage or publication endpoint is used; all post changes stay in memory.
  */
 /** Isolated read-failure fixtures; the public guest tour never uses this control. */
-function failPreviewRead(kind: 'review' | 'costs') {
+function failPreviewRead(kind: 'review' | 'costs' | 'accounts') {
   if (typeof window === 'undefined' || window.location.pathname !== '/dev-preview') return;
   const failure = new URLSearchParams(window.location.search).get('workspaceReadFailure');
   if (failure === kind || failure === 'all') throw new Error('Fixture read unavailable');
@@ -112,7 +112,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: true,
   async loadReview() { failPreviewRead('review'); await pause(120); return clone(read()); },
   async loadCosts() { failPreviewRead('costs'); await pause(120); const costs = createDneskaiCostsFixture(new Date()); costs.generation.spentUsd = demoSpentUsd; return costs; },
-  async loadAccounts() { await pause(60); return clone(demoAccounts(new Date())); },
+  async loadAccounts() { failPreviewRead('accounts'); await pause(60); return clone(demoAccounts(new Date())); },
   async loadMedia(_projectId, candidateId): Promise<DneskaiMediaRead> {
     await pause(80);
     const media = read().posts.flatMap((post) => post.brief?.media ?? []).filter((item, index, all) => item.candidateId === candidateId && all.findIndex((other) => other.assetSha256 === item.assetSha256) === index);

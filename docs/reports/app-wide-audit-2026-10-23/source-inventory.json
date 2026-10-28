@@ -1106,10 +1106,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/costs-tab.tsx",
-      "lines": 185,
+      "lines": 184,
       "sha256": "4e3e9debe28f537db465cd5857347812b3f9203f152414c6421932233999d7ab",
-      "status": "source reviewed; locale-specific cost formatters preserve rendered parity with measured local CPU reduction; finding 362 preserves mounted costs during failed refresh; token/requeue lifecycles, duplicate dialog heading and consolidated release pending",
-      "reviewedSha256": "bb5cd60f36e44ef11bce59f191a54bf346b3adcc2b27e9d51a964aee15f1739d"
+      "status": "source reviewed; findings 221/362/363 reuse locale formatters, retain confirmed costs/account metadata after failed reads and retry all mounted reads with the existing Refresh; requeue lifecycle and consolidated release pending",
+      "reviewedSha256": "dca05e34f61e2dfb4bc3a850af68a198bae8e86c6e5a063c3b76519495919ca1"
     },
     {
       "path": "src/components/marketing/dneskai/counted-field.tsx",
@@ -1217,10 +1217,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/overflow-menu.tsx",
-      "lines": 94,
+      "lines": 97,
       "sha256": "576be5de6b91046d39345f884a65e001c3651632596d16f662663a45a5dc867c",
-      "status": "partial; lazy panels and keyboard/focus routing inspected; child pending/dirty dismissal lifecycle remains; see remaining-review.md",
-      "reviewedSha256": "cbaad957c33f4287d77f94a137a08f11964292c6c7a66cb037c6df5cdfabce1c"
+      "status": "partial; lazy panels and keyboard/focus routing inspected; child pending/dirty dismissal lifecycle remains; see remaining-review.md; finding 363 one visible costs heading and lazy/error dialog naming",
+      "reviewedSha256": "82aae4ec57bb431681f83bd2e13df2f4a2f1b4aa457d7fcf26817ea3ad54f76e"
     },
     {
       "path": "src/components/marketing/dneskai/published-tab.tsx",
@@ -1254,15 +1254,15 @@
       "path": "src/components/marketing/dneskai/tab-header.tsx",
       "lines": 21,
       "sha256": "3ec9de2cd4c39428ed72e8080428bbed17887df597ab34368b4e861a3a8dbdb5",
-      "status": "source reviewed; single tab heading, pending refresh state, preview/unreadable copy and shared targets inspected; final rendered matrix pending",
-      "reviewedSha256": "3ec9de2cd4c39428ed72e8080428bbed17887df597ab34368b4e861a3a8dbdb5"
+      "status": "source reviewed; single tab heading, pending refresh state, preview/unreadable copy and shared targets inspected; final rendered matrix pending; finding 363 shared refresh focus marker preserves disabled read target",
+      "reviewedSha256": "1340e5ab00a377fac0cdfc514223c2288e153c21300ca4bf8dd8500489978c1b"
     },
     {
       "path": "src/components/marketing/dneskai/workspace.tsx",
-      "lines": 155,
+      "lines": 161,
       "sha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f",
-      "status": "partial; finding 362 retains confirmed review/cost data and mounted drafts after read failure, adds compact explicit retry with keyboard focus and stops failed render polling until recovery; cursor depth, preview query identity and captured writes remain under review; final release pending",
-      "reviewedSha256": "714ba9f6bb553a6aff97cc6a13c84006fb8ab7ca7ae94f15b7d951b594b95aca"
+      "status": "partial; findings 362/363 retain confirmed review/cost/account data and mounted drafts, compact explicit recovery, original keyboard focus and one in-flight refresh; failed render polling pauses until recovery; preview/private clients are independently mounted under OwnerQueryProvider/GuestBoundary, with no mutable mode switch; cursor depth, calendar completeness and captured writes remain; final release pending",
+      "reviewedSha256": "380bf20be3e2be2e809d5081553cc7e95d7372f34371597bfeff43ef2d0ecd8d"
     },
     {
       "path": "src/components/marketing/job-health.tsx",
@@ -2546,7 +2546,7 @@
       "lines": 249,
       "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
       "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 362 initial/refresh error fixtures are restricted to /dev-preview, never /guest",
-      "reviewedSha256": "2fa125fd1fae39778f2e57d332af3f40e1682002840efb6e626985141914f9ea"
+      "reviewedSha256": "cc8d91e8defe7baa011a04ca36b94ebf343bc6d85d99871aaac643657bb20b38"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
@@ -2827,7 +2827,7 @@
       "lines": 196,
       "sha256": "7e281eca192bf5c908eef8abbfccfbd9efb323b6a862bd33f1bb87defa1cb07f",
       "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 362 neutral initial/cached read recovery and costs-specific EN/CS messages",
-      "reviewedSha256": "727a8859545ba0365007f6390209e8ff95f6809093073dd3e3b16c48069a1ca9"
+      "reviewedSha256": "c08d3a1d416d8c68ed827e9ab23692edbd25c679f676502137495aba6c2b8387"
     },
     {
       "path": "src/lib/i18n/sections/finances.ts",
@@ -3854,10 +3854,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-client.ts",
-      "lines": 184,
+      "lines": 187,
       "sha256": "7ccf832fb792175e21060d02a2c24ec3ee0c1dd9a936cbdff59607f130a613f4",
       "status": "partial; complete source inspection; bounded response/work budgets, caller cancellation and exact action receipts remain under review; preview port separation retained",
-      "reviewedSha256": "7ccf832fb792175e21060d02a2c24ec3ee0c1dd9a936cbdff59607f130a613f4"
+      "reviewedSha256": "4282f97ec9e500cba164669dd6225234d34cb36df836405ea08da9c372f29b89"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",

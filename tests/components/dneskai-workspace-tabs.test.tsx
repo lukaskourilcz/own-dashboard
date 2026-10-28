@@ -10,6 +10,7 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { DNESKAI_TONE_TINTS } from '@/components/marketing/dneskai/state-chip';
 import { DNESKAI_STATE_TONES } from '@/lib/marketing/dneskai-workspace';
+import { qk } from '@/lib/queries/keys';
 import { dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 vi.mock('@/lib/i18n', () => ({ useLang: () => ({ lang: 'en' }) }));
 // A plain element stands in for next/image; the slide strips only need its src, size and alt.
@@ -296,4 +297,56 @@ it('stops automatic render polling after a read error until an explicit successf
   read.mockRestore();await act(async()=>{const pending=client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});await vi.advanceTimersByTimeAsync(200);await pending;});
   const resumed=vi.spyOn(demoDneskaiWorkspaceApi,'loadReview');await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(resumed).toHaveBeenCalledOnce();
  }finally{vi.useRealTimers();}
+});
+
+for (const lang of ['en', 'cs'] as const) {
+ const mountCosts = async () => {
+  act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-costs" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
+  await wait(400);
+ };
+ const refreshCosts = () => [...container.querySelectorAll<HTMLButtonElement>('[data-testid="dneskai-costs"] button')].find(button => button.textContent === dneskaiWorkspace[lang].refresh)!;
+ it(`retains confirmed account status on a failed read and retries it with Costs Refresh (${lang})`, async () => {
+  const accounts = vi.spyOn(demoDneskaiWorkspaceApi, 'loadAccounts');
+  await mountCosts();
+  const section = container.querySelector('#dneskai-token-title')!.parentElement!;
+  const confirmed = section.querySelector('time')!;
+  expect(confirmed).not.toBeNull();
+  accounts.mockRejectedValueOnce(Error('TEST_ONLY_ACCOUNT_READ_FAILURE'));
+  await act(async () => { await client.refetchQueries({ queryKey: [...qk.marketingAccounts, 'preview'], exact: true }); });
+  await wait(20);
+  expect(section.querySelector('time')).toBe(confirmed);
+  expect(section.querySelector('[role="alert"]')).not.toBeNull();
+  expect(container.querySelectorAll('[data-testid="dneskai-costs"] button')).toHaveLength(1);
+  act(() => refreshCosts().click()); await wait(400);
+  expect(accounts).toHaveBeenCalledTimes(3);
+  expect(section.querySelector('[role="alert"]')).toBeNull();
+  expect(section.querySelector('time')).not.toBeNull();
+ });
+ it(`retries a missing initial account status with the existing Costs Refresh (${lang})`, async () => {
+  const accounts = vi.spyOn(demoDneskaiWorkspaceApi, 'loadAccounts').mockRejectedValueOnce(Error('TEST_ONLY_ACCOUNT_READ_FAILURE'));
+  await mountCosts();
+  const section = container.querySelector('#dneskai-token-title')!.parentElement!;
+  expect(section.querySelector('[role="alert"]')).not.toBeNull();
+  act(() => refreshCosts().click()); await wait(400);
+  expect(accounts).toHaveBeenCalledTimes(2);
+  expect(section.querySelector('[role="alert"]')).toBeNull();
+  expect(section.querySelector('time')).not.toBeNull();
+ });
+}
+
+it('keeps Costs Refresh busy until its account read settles and admits one synchronous attempt', async () => {
+ const accounts = vi.spyOn(demoDneskaiWorkspaceApi, 'loadAccounts');
+ await show('dneskai-costs');
+ const confirmed = client.getQueryData<Awaited<ReturnType<typeof demoDneskaiWorkspaceApi.loadAccounts>>>([...qk.marketingAccounts, 'preview'])!;
+ let finish!: (value: Awaited<ReturnType<typeof demoDneskaiWorkspaceApi.loadAccounts>>) => void;
+ accounts.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const button = () => container.querySelector<HTMLButtonElement>('[data-dneskai-read-refresh]')!;
+ act(() => { button().click(); button().click(); });
+ await wait(300);
+ expect(accounts).toHaveBeenCalledTimes(2);
+ expect(button().disabled).toBe(true);
+ expect(button().getAttribute('aria-busy')).toBe('true');
+ await act(async () => { finish(confirmed); });
+ await wait(20);
+ expect(button().disabled).toBe(false);
 });

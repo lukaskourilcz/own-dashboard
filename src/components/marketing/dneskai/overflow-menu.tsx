@@ -80,10 +80,13 @@ export function DneskaiOverflowMenu({ projectId, lang, preview, liveAccount = fa
     <Dialog open={panel !== null} onOpenChange={(next) => { if (!next) guarded(()=>setPanel(null)); }}>
       <DialogContent className={cn(panel === 'costs' || panel === 'recovery' ? 'max-w-5xl' : 'max-w-xl')} data-testid={panel ? `dneskai-more-${panel}` : undefined}
         {...(panel === 'costs' ? { 'aria-describedby': undefined } : {})} onCloseAutoFocus={(event) => { event.preventDefault(); if (focusMoved.current) focusMoved.current = false; else trigger.current?.focus(); }}>
-        <DialogHeader>
-          <DialogTitle>{panel ? t[panel] : ''}</DialogTitle>
-          {panel && panel !== 'costs' && <DialogDescription>{t[`${panel}Description`]}</DialogDescription>}
-        </DialogHeader>
+        {panel === 'costs'
+          // The loaded costs view owns its visible heading. Keep the dialog named during lazy loading/errors too.
+          ? <DialogTitle asChild><span className="sr-only">{t.costs}</span></DialogTitle>
+          : <DialogHeader>
+            <DialogTitle>{panel ? t[panel] : ''}</DialogTitle>
+            {panel && <DialogDescription>{t[`${panel}Description`]}</DialogDescription>}
+          </DialogHeader>}
         {panel === 'costs' && <WorkspaceTab tab="dneskai-costs" projectId={projectId} lang={lang} preview={preview} />}
         {panel === 'account' && <InstagramAccount lang={lang} disabled={preview && !liveAccount} embedded />}
         {panel === 'recovery' && <Sources projectId={projectId} lang={lang} disabled={preview} onOpenReview={() => { focusMoved.current = true; setPanel(null); onOpenReview(); }} />}
