@@ -125,6 +125,9 @@ export function DneskaiLabTab(props: Props) {
 /** Draft problems that make the edit itself invalid, so no preview can be drawn until the owner fixes them. */
 const PREVIEW_BLOCKERS = new Set(['text-missing', 'alt-missing', 'alt-too-long', 'deck-edit-slide-count']);
 
+/** Read the current clock at action boundaries, independently of the shared display tick. */
+function approvalTimePassed(at: string) { return !(Date.parse(at) > Date.now()); }
+
 function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch, onSaved, order, now, ...props }: Props & { lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; onDirty: (dirty: boolean) => void; onChoose: (id: string) => void; onBatch: () => void; onSaved: (id: string, notice?: string) => void; order: DneskaiLabPost[]; now: number }) {
   const t = copy[props.lang];
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
@@ -172,7 +175,8 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const mediaState = media.some((item) => item.isPending) ? 'loading' : media.some((item) => item.isError) ? 'unavailable' : 'ready';
   const onLoaded = (url: string, ok: boolean) => setLoaded((before) => before.get(url) === ok ? before : new Map(before).set(url, ok));
   const allLoaded = lab.slides.length > 0 && lab.slides.every((item) => item.render && loaded.get(item.render.url) === true);
-  const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : !allLoaded ? t.actions.imagesLoading : null;
+  const scheduledExpired = !(Date.parse(post.scheduledAt) > now);
+  const block = props.guest ? t.publicTour : dirty ? t.actions.dirty : lab.block ? t.actions.blocked[lab.block] : scheduledExpired ? t.actions.scheduleExpired : !allLoaded ? t.actions.imagesLoading : null;
   const publishable = post.status === 'review' && !!post.deck;
   const canReturn = ['review', 'approved'].includes(post.status) && !['claimed', 'published', 'reconciliation'].includes(post.publication?.status ?? '');
   const publishBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.publishNowDirty : lab.block ? t.actions.blocked[lab.block] : !account?.enabled ? t.actions.publishNowOff : !allLoaded ? t.actions.imagesLoading : null;
@@ -186,6 +190,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: keys.review }), client.invalidateQueries({ queryKey: keys.costs })]); }
   async function perform(action: 'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate'): Promise<boolean> {
     if (props.guest || busy || (action === 'return' && (!canReturn || dirty)) || (action === 'approve' && block) || (action === 'publish' && publishBlock) || (action === 'move' && (moveBlock || !moveTarget)) || (action === 'regenerate' && (regenerateBlock || !regenerateNote.trim()))) return false;
+    if (action === 'approve' && approvalTimePassed(post.scheduledAt)) { setError('schedule-expired'); return false; }
     if (action === 'save') {
       const problems = draftProblems(post, draft, fit.status === 'ready' ? fit.result : null);
       if (!request || problems.length) { setError(problems.find((problem) => problem.field === 'scheduledAt')?.code ?? problems.find((problem) => problem.field.startsWith('engagement.'))?.code ?? 'deck-edit-invalid'); return false; }
@@ -193,6 +198,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     setBusyAction(action); setError(null); setMessage('');
     try {
       const api = await dneskaiWorkspaceApi(props.preview);
+      if (action === 'approve' && approvalTimePassed(post.scheduledAt)) throw new DneskaiWorkspaceRequestError('schedule-expired', 409);
       if (action === 'approve') { await api.approve(post.id, post.contentHash); setMessage(t.actions.approved(lab.deadline.time)); }
       else if (action === 'save') { const result = await api.edit(request!); onSaved(result.id); setMessage(t.actions.saved); }
       else if (action === 'publish') { const result = await api.publishNow(post.id, post.contentHash); const done = t.actions.publishNowDone(pragueClock(result.scheduledAt)); setDialog(null); onSaved(result.id, done); setMessage(done); }
@@ -271,7 +277,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       </div>
     </div>
     <div role="group" className={cn('space-y-2 border-t border-border bg-surface/95 py-3', !dirty && 'sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 md:bottom-0 backdrop-blur-sm group-has-[fieldset:focus-within]/lab-session:static')} aria-label={t.actions.label}>
-      {block && <p id={`${id}-block`} role={dirty && !props.guest ? 'status' : undefined} className={cn('text-xs', dirty && !props.guest ? 'text-warning' : 'text-foreground-muted')}>{block}</p>}
+      {block && <p id={`${id}-block`} role={(dirty || scheduledExpired) && !props.guest ? 'status' : undefined} className={cn('text-xs', (dirty || scheduledExpired) && !props.guest ? 'text-warning' : 'text-foreground-muted')}>{block}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>
         <Button variant="outline" disabled={props.guest || busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>

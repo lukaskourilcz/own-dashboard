@@ -92,7 +92,8 @@ export const shortHash = (hash: string) => hash.slice(0, 7);
 
 export function dneskaiLabDeadline(at: string, now: number): DneskaiLabDeadline {
   const minutesLeft = Math.floor((Date.parse(at) - now) / 60_000);
-  return { at, time: pragueTime(at), date: pragueDate(at), minutesLeft, urgent: minutesLeft >= 0 && minutesLeft < DNESKAI_LAB_URGENT_MINUTES, passed: minutesLeft < 0 };
+  const passed = !(Date.parse(at) > now);
+  return { at, time: pragueTime(at), date: pragueDate(at), minutesLeft, urgent: !passed && minutesLeft < DNESKAI_LAB_URGENT_MINUTES, passed };
 }
 
 /**

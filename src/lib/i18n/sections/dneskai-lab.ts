@@ -174,6 +174,7 @@ const en = {
       'account-unverified': 'Verify the @dneskai account in Sources first.',
     } satisfies Record<DneskaiLabApprovalBlock, string>,
     imagesLoading: 'The slides are still loading. Approve once you can see them.',
+    scheduleExpired: 'The saved time is no longer in the future. Set a later time before approving.',
   },
   approveDay: {
     title: 'Approve the day',
@@ -431,6 +432,7 @@ const cs: typeof en = {
       'account-unverified': 'Nejdřív ověřte účet @dneskai v záložce Zdroje.',
     },
     imagesLoading: 'Slidy se ještě načítají. Schvalte, až je uvidíte.',
+    scheduleExpired: 'Uložený čas už není v budoucnosti. Před schválením zvolte pozdější čas.',
   },
   approveDay: {
     title: 'Schválit celý den',

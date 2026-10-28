@@ -1162,10 +1162,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
-      "lines": 390,
+      "lines": 396,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial review; findings 319/377\u2013380 verify retained library recovery, one dirty instruction, discard focus, input-bound fitting, truthful live slot help and unobstructed dirty/focused fields; clean review retains sticky actions; captured actions/receipts, temporal approval, complete next-slot advice, save timing and final release remain open",
-      "reviewedSha256": "70a652bd819f29ecfa4e999f7151b50290b8fe515340850d20ede505b25f5c5b"
+      "status": "partial review; findings 319/377\u2013380 verify retained library recovery, one dirty instruction, discard focus, input-bound fitting, truthful live slot help and unobstructed dirty/focused fields; clean review retains sticky actions; captured actions/receipts, complete next-slot advice, save timing and final release remain open; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions and complete slot advice remain separate",
+      "reviewedSha256": "80bf43c93b94e6e30e91f4732b755a5f335e76dd750c8653c09f2ccdc094b19c"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
@@ -2803,10 +2803,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
-      "lines": 520,
+      "lines": 522,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open; finding 379 derives saved-slot near-expiry on render without replacing drafts and uses truthful EN/CS editable-field help; sticky mobile action overlap and other recorded leads remain open",
-      "reviewedSha256": "97a7da7dd58d97896584e90c2ff835dd8e251e972ffbb5085f6bed895177c0c9"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open; finding 379 derives saved-slot near-expiry on render without replacing drafts and uses truthful EN/CS editable-field help; sticky mobile action overlap and other recorded leads remain open; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions and complete slot advice remain separate",
+      "reviewedSha256": "f78343d3cfac601abb225f365c3e78b89d540621d14c4feb3833d81dd2f85e1d"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
@@ -3560,10 +3560,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-lab.ts",
-      "lines": 339,
+      "lines": 340,
       "sha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798",
-      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "63fe05a762fe6b3c4cc447a5acd232f6afb0d8d94fe84397d278e6e0a5c414f9"
+      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions and complete slot advice remain separate",
+      "reviewedSha256": "ebc6a9a146653ac5d3a8b4d9a646e7c708783bd779fe61674ddf42d384f7b569"
     },
     {
       "path": "src/lib/marketing/dneskai-media-contracts.ts",
