@@ -1,0 +1,26 @@
+{
+  "applicationBase": "7e3bbc5d",
+  "sourceState": "Finding 396 reviewed working tree; exact component hashes below. Captures are real dev-preview UI, not generated UI.",
+  "capturedDate": "2026-10-29",
+  "fixture": "Isolated nonexistent backend, registered synthetic preview/save stand-ins and controlled Prague clock. No real owner/provider/publication data.",
+  "components": {
+    "src/components/marketing/calendar-import.tsx": "1b9d7a47846602d47a4421da78eb998df029b4248b3f880893c6be3ea3dec2b4",
+    "src/lib/marketing/calendar-import-client.ts": "04a6d5b57a94afa00c9a44464dee783275222fa006f7d1c518d303f8d7b44e13",
+    "src/app/api/marketing/import/route.ts": "3cff3fb4ce0b70351366a2ecabeb2c82676589a4febbdaaa3805f83e6db1fd18",
+    "src/components/panels/marketing-panel.tsx": "04323dcfc72e4bc4bbe236bd3b7b2493d430ec2d59754e627b53dd7a5770c744",
+    "src/components/ui/dialog.tsx": "12ffe96cdb180a9045021653256447d35277a8f5c327ddde39b53c3dd1961ddb"
+  },
+  "captures": {
+    "1440": {
+      "path": "assets/calendar-import-396-cs-1440.png",
+      "width": 768,
+      "height": 138
+    },
+    "430": {
+      "path": "assets/calendar-import-396-cs-430.png",
+      "width": 398,
+      "height": 330
+    }
+  },
+  "verified": "EN/CS, light/dark, 360/430/768/1024/1440/1728 layout, matching heights, reflow and axe; EN/CS desktop/phone captured write/recovery/exit/focus checks."
+}

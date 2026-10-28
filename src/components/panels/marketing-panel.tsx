@@ -11,6 +11,7 @@ import { MarketingJobHealthSummary } from '@/components/marketing/job-health';
 import { KnowledgeLibrary } from '@/components/marketing/knowledge-library';
 import { KnowledgeImport } from '@/components/marketing/knowledge-import';
 import { CalendarImport } from '@/components/marketing/calendar-import';
+import { useGuardedNavigation } from '@/components/navigation-guard';
 import { pragueScheduledAt,pragueLocalInput } from '@/lib/marketing/clock';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -25,8 +26,8 @@ const subscribeUrl=(notify:()=>void)=>{window.addEventListener('popstate',notify
 const urlSnapshot=()=>window.location.search;
 const serverUrlSnapshot=()=>'';
 
-export function MarketingPanel({isPreview=false,onOpenKnowledge}:{isPreview?:boolean;onOpenKnowledge:()=>void}){
- const t=useDict().marketingWorkspace;const {lang}=useLang();const qc=useQueryClient();
+export function MarketingPanel({isPreview=false,liveCalendarImport=false,onOpenKnowledge}:{isPreview?:boolean;liveCalendarImport?:boolean;onOpenKnowledge:()=>void}){
+ const navigate=useGuardedNavigation();const t=useDict().marketingWorkspace;const {lang}=useLang();const qc=useQueryClient();
  const [view,setView]=useState<'review'|'calendar'|'knowledge'|'results'>('review');
  const queryString=useSyncExternalStore(subscribeUrl,urlSnapshot,serverUrlSnapshot);
  const requestedBrand=new URLSearchParams(queryString).get('brand');
@@ -44,7 +45,7 @@ export function MarketingPanel({isPreview=false,onOpenKnowledge}:{isPreview?:boo
   <PageHeader title={t.title} description={t.description} action={<Button variant="outline" disabled={isPreview||query.isFetching} onClick={()=>void query.refetch()}>{t.refresh}</Button>}/>
   <div className="mb-4 flex flex-wrap items-center gap-2">
    <div role="tablist" aria-label={t.title} className="flex max-w-full gap-1 overflow-x-auto">
-    {(['review','calendar','knowledge','results'] as const).map(key=><Button key={key} id={`marketing-tab-${key}`} role="tab" aria-controls={`marketing-panel-${key}`} tabIndex={view===key?0:-1} aria-selected={view===key} onKeyDown={e=>{const keys=['review','calendar','knowledge','results'] as const;let next=keys.indexOf(key);if(e.key==='ArrowRight')next=(next+1)%4;else if(e.key==='ArrowLeft')next=(next+3)%4;else if(e.key==='Home')next=0;else if(e.key==='End')next=3;else return;e.preventDefault();setView(keys[next]);document.getElementById(`marketing-tab-${keys[next]}`)?.focus();}} variant={view===key?'default':'ghost'} onClick={()=>setView(key)}>{t[key]}</Button>)}
+    {(['review','calendar','knowledge','results'] as const).map(key=><Button key={key} id={`marketing-tab-${key}`} role="tab" aria-controls={`marketing-panel-${key}`} tabIndex={view===key?0:-1} aria-selected={view===key} onKeyDown={e=>{const keys=['review','calendar','knowledge','results'] as const;let next=keys.indexOf(key);if(e.key==='ArrowRight')next=(next+1)%4;else if(e.key==='ArrowLeft')next=(next+3)%4;else if(e.key==='Home')next=0;else if(e.key==='End')next=3;else return;e.preventDefault();navigate(()=>{setView(keys[next]);document.getElementById(`marketing-tab-${keys[next]}`)?.focus();});}} variant={view===key?'default':'ghost'} onClick={()=>navigate(()=>setView(key))}>{t[key]}</Button>)}
    </div>
    <label className="ml-auto text-xs text-foreground-muted"><span className="sr-only">{t.account}</span><select className="h-11 rounded-md border border-border bg-surface px-3 text-foreground md:h-8" value={brand} onChange={e=>setBrand(e.target.value==='dneskai'||e.target.value==='devshark'?e.target.value:'all')}><option value="all">{t.all}</option><option value="dneskai">DNESKAi</option><option value="devshark">devShark</option></select></label>
   </div>
@@ -64,7 +65,7 @@ export function MarketingPanel({isPreview=false,onOpenKnowledge}:{isPreview?:boo
     <footer className="flex flex-wrap gap-2 border-t border-border px-4 py-3"><Button disabled={isPreview||busy===row.id||!row.ready||!verified||!currentSources||!activeCampaign||!r.assets.every(asset=>loadedAssets.has(asset.sha256))||row.status!=='review'} onClick={()=>void decide({action:'approve',id:row.id,expectedHash:row.content_hash},row.id)}>{t.approve}</Button><Button variant="outline" disabled={isPreview||busy===row.id} onClick={()=>{setEditMode('edit');setEditing(row);setCaption(r.caption);setSchedule(pragueLocalInput(r.scheduledAt));setFeedback('');}}>{t.edit}</Button><Button variant="ghost" disabled={isPreview||busy===row.id} onClick={()=>{setEditMode('returned');setEditing(row);setCaption('');setFeedback('');}}>{t.return}</Button><Button variant="ghost" disabled={isPreview||busy===row.id} onClick={()=>void decide({action:'skipped',id:row.id},row.id)}>{t.skip}</Button></footer>
    </article>;
   })}</div>)}
-  {view==='calendar'&&<CalendarImport disabled={isPreview} onImported={()=>void qc.invalidateQueries({queryKey:qk.marketingState})}/>}
+  {view==='calendar'&&<CalendarImport disabled={isPreview&&!liveCalendarImport} onImported={()=>void qc.invalidateQueries({queryKey:qk.marketingState})}/>}
   {view==='calendar'&&(data.campaigns.length===0?<EmptyState title={t.noCalendar}/>:<WeeklyMarketingCalendar state={data} brand={brand} lang={lang} disabled={isPreview} busy={busy} onChanged={()=>void qc.invalidateQueries({queryKey:qk.marketingState})} onActivate={async c=>{setBusy(c.id);try{const response=await fetch('/api/marketing/campaigns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:c.id,expectedHash:c.source_hash})});if(!response.ok)throw new Error();await qc.invalidateQueries({queryKey:qk.marketingState});setMessage(t.saved);}catch{setMessage(t.failed);}finally{setBusy(null);}}}/>)}
   {view==='knowledge'&&<div className="space-y-4"><KnowledgeImport disabled={isPreview} onImported={()=>{void qc.invalidateQueries({queryKey:qk.marketingState});void qc.invalidateQueries({queryKey:qk.marketingKnowledge});}}/><KnowledgeLibrary disabled={isPreview}/><Button variant="outline" onClick={onOpenKnowledge}>{t.openKnowledge}</Button></div>}
   {view==='results'&&<WeeklyResults revisions={data.revisions} publications={data.publications} brand={brand} lang={lang}/>}

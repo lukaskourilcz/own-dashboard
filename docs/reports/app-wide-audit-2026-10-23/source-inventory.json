@@ -495,8 +495,8 @@
       "path": "src/app/api/marketing/import/route.ts",
       "lines": 34,
       "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open; finding 395 prepares complete persisted post-trigger confirmation in existing service-only RPC with safe exact-source replay (migration 150, unapplied); browser intent and SDK JSON resource contract remain separate",
-      "reviewedSha256": "7ed433dbd6ec27d0dcc6ab258647ecd06b523dc3ec9f58aa63642b6aaa082777"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open; finding 395 prepares complete persisted post-trigger confirmation in existing service-only RPC with safe exact-source replay (migration 150, unapplied); browser intent and SDK JSON resource contract remain separate; finding 396 fingerprints the complete owner-stamped planned result and refuses changed matching/report before service admission; general SDK JSON resource contract remains",
+      "reviewedSha256": "3cff3fb4ce0b70351366a2ecabeb2c82676589a4febbdaaa3805f83e6db1fd18"
     },
     {
       "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
@@ -656,8 +656,8 @@
       "path": "src/app/dev-preview/page.tsx",
       "lines": 63,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "75a9201a723e7bf609a65f7e64205ccd98f9ce7213a00a22825295bf4d85407f"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only",
+      "reviewedSha256": "76951e5569fe5d4ea6babe86e6e93f100b9740488d99ae05c86f4a6a28f0c1e7"
     },
     {
       "path": "src/app/globals.css",
@@ -854,15 +854,15 @@
       "path": "src/components/dashboard-shell.tsx",
       "lines": 582,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending",
-      "reviewedSha256": "c0441c670ca83899cc98f1afebfa03fcb77c873ea8eb6a08412304ed9040b58d"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only",
+      "reviewedSha256": "e5e00449a310cfefd4513f0ece964bb3e4bf5ce51718a885a200160d80a26fba"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
       "lines": 203,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending",
-      "reviewedSha256": "73faee079a2e370d9c857a4237da827366f3783c894711fc8a36f82f9dc6cc2d"
+      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only",
+      "reviewedSha256": "3f3c481f7fa77fee3a1183c0f0a20f3398935b63206eb4691be8ab9622d8bf7e"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1017,8 +1017,8 @@
       "path": "src/components/marketing/calendar-import.tsx",
       "lines": 11,
       "sha256": "d3248265ca4dca971be0d498f0c34fe3a609e2a9707780cc6b5849107a51dfa4",
-      "status": "partial; full source inspected; hardcoded October 18 start, unchecked preview response and unstable/cancellable import lifecycle require repair",
-      "reviewedSha256": "d3248265ca4dca971be0d498f0c34fe3a609e2a9707780cc6b5849107a51dfa4"
+      "status": "source reviewed; finding 396 checks captured owner/preview identity, same-turn admission, response budgets, Prague live default and fixed selected date, pending-write exits, cancellation, explicit uncertainty recovery, current publishing-neutral copy and fifty-reference local paging; six-width EN/CS/theme/native checks pass; final release remains",
+      "reviewedSha256": "1b9d7a47846602d47a4421da78eb998df029b4248b3f880893c6be3ea3dec2b4"
     },
     {
       "path": "src/components/marketing/calendar-slot.tsx",
@@ -1619,8 +1619,8 @@
       "path": "src/components/panels/marketing-panel.tsx",
       "lines": 80,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949"
+      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate",
+      "reviewedSha256": "04323dcfc72e4bc4bbe236bd3b7b2493d430ec2d59754e627b53dd7a5770c744"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
@@ -2004,8 +2004,8 @@
       "path": "src/components/ui/dialog.tsx",
       "lines": 132,
       "sha256": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa"
+      "status": "source reviewed; final release checks pending; finding 396 preserves deliberately moved external recovery focus during late close restoration; Goals Escape/Close/outside dismissal checks pass; command-palette custom restoration separately reproduces with the old dialog too and remains open",
+      "reviewedSha256": "12ffe96cdb180a9045021653256447d35277a8f5c327ddde39b53c3dd1961ddb"
     },
     {
       "path": "src/components/ui/empty-state.tsx",
@@ -3237,6 +3237,13 @@
       "reviewedSha256": "a397b351ff05783a49901b5681b570392930336f8ee6f542f788ab0815f45e4c"
     },
     {
+      "path": "src/lib/marketing-calendar-response.ts",
+      "sha256": null,
+      "lines": 36,
+      "status": "source reviewed; finding 385 verifies complete canonical source outcomes, selected browser fields, bounded shape/date/time/identity and parser-limit parity; targeted unit/native checks pass; final release pending",
+      "reviewedSha256": "56f3a3785343c43c385dfdb815671cf1ad483b97476c5d4b47f55f863ec8cc63"
+    },
+    {
       "path": "src/lib/marketing-calendars-server.ts",
       "lines": 59,
       "sha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d",
@@ -3291,6 +3298,13 @@
       "sha256": "df48f7ebe72ebd2782b5880449af55e48eecb2bdeca4a15c511c4c39bf061f57",
       "status": "source reviewed; signed owner/role/brand, tampering, timestamps and pilot admission covered by checkpoint 61; execution routes remain separate",
       "reviewedSha256": "df48f7ebe72ebd2782b5880449af55e48eecb2bdeca4a15c511c4c39bf061f57"
+    },
+    {
+      "path": "src/lib/marketing/calendar-import-client.ts",
+      "sha256": null,
+      "lines": 64,
+      "status": "source reviewed; finding 396 validates complete owner/brand/week/report preview and exact save fingerprints, original 65-second/1.1MiB response limits, no replay and explicit changed/unconfirmed outcomes; 27 transport cases and actual UI checks pass; final release remains",
+      "reviewedSha256": "04a6d5b57a94afa00c9a44464dee783275222fa006f7d1c518d303f8d7b44e13"
     },
     {
       "path": "src/lib/marketing/calendar-source.ts",
@@ -5080,13 +5094,6 @@
       "lines": 63,
       "status": "source reviewed; finding 369 complete stable invoker Calendar snapshot passes full-chain actual SDK/RLS, bounds, unknown dates, DST and drop/recreate checks; canonical production rollout and final release pending",
       "reviewedSha256": "346d68c87e0d2b558954794107bf1f356d5f32f586bc2edd172ad2b5ba64e0dc"
-    },
-    {
-      "path": "src/lib/marketing-calendar-response.ts",
-      "sha256": null,
-      "lines": 36,
-      "status": "source reviewed; finding 385 verifies complete canonical source outcomes, selected browser fields, bounded shape/date/time/identity and parser-limit parity; targeted unit/native checks pass; final release pending",
-      "reviewedSha256": "56f3a3785343c43c385dfdb815671cf1ad483b97476c5d4b47f55f863ec8cc63"
     },
     {
       "path": "tsconfig.app.json",

@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { contentHash } from '@/lib/marketing/hashes';
 const m = vi.hoisted(() => ({ client: vi.fn(), auth: vi.fn(), from: vi.fn(), select: vi.fn(), eq: vi.fn(), limit: vi.fn(), retry: vi.fn(), querySignal: vi.fn(), knowledge: vi.fn(), writeResult: vi.fn(), writeRetry: vi.fn(), writeSignal: vi.fn(), reader: vi.fn(), factory: vi.fn(), fetcher: vi.fn(), prepare: vi.fn(), admin: vi.fn(), rpc: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: m.client }));
@@ -10,7 +11,8 @@ vi.mock('@/lib/marketing/campaign-import', () => ({ planCampaignImport: m.prepar
 import { POST } from '@/app/api/marketing/import/route';
 const owner = '11111111-1111-4111-8111-111111111111', hash = 'b'.repeat(64);
 const plan = { schemaVersion: 'marketing-calendar/1', project: 'devshark', entries: [] };
-const request = (kind: 'repository' | 'inline', apply: boolean, signal?: AbortSignal) => new Request('https://own.example/api/marketing/import', { method: 'POST', headers: { Origin: 'https://own.example', 'Content-Type': 'application/json' }, signal, body: JSON.stringify({ ...(kind === 'repository' ? { source: 'repository', brand: 'devshark', expectedHash: hash } : { plan }), startsOn: '2026-11-01', apply }) });
+const preparedFixture = () => ({ campaign: { brand: 'devshark', starts_on: '2026-11-01', ends_on: '2026-11-07', source_hash: hash, source_snapshot: { private: 'TEST_ONLY_AUTHORED_COPY' } }, entries: [{ original: { body: 'TEST_ONLY_AUTHORED_COPY' } }], report: { inputCount: 0, outputCount: 0, shiftDays: 0, held: 0, backlog: 0, completed: 0, unmatchedTipTitles: [], ambiguousTipTitles: [] } });
+const request = (kind: 'repository' | 'inline', apply: boolean, signal?: AbortSignal) => new Request('https://own.example/api/marketing/import', { method: 'POST', headers: { Origin: 'https://own.example', 'Content-Type': 'application/json' }, signal, body: JSON.stringify({ ...(kind === 'repository' ? { source: 'repository', brand: 'devshark', expectedHash: hash, ...(process.env.AUDIT_ORIGINAL_IMPORT_FINGERPRINT === '1' ? {} : { expectedImportHash: contentHash({ ownerId: owner, ...preparedFixture() }) }) } : { plan }), startsOn: '2026-11-01', apply }) });
 beforeEach(() => {
  vi.clearAllMocks();
  const query = { select: m.select, eq: m.eq, limit: m.limit, retry: m.retry, abortSignal: m.querySignal, then: (resolve: (value: unknown) => unknown, reject?: (error: unknown) => unknown) => Promise.resolve(m.knowledge()).then(resolve, reject) };
@@ -18,7 +20,7 @@ beforeEach(() => {
  m.auth.mockResolvedValue({ data: { user: { id: owner } }, error: null }); m.from.mockReturnValue(query);
  m.client.mockResolvedValue({ auth: { getUser: m.auth }, from: m.from });
  m.knowledge.mockResolvedValue({ data: [], error: null, count: 0 }); m.reader.mockResolvedValue(plan); m.factory.mockReturnValue(m.fetcher);
- m.prepare.mockReturnValue({ campaign: { brand: 'devshark', starts_on: '2026-11-01', ends_on: '2026-11-07', source_hash: hash, source_snapshot: { private: 'TEST_ONLY_AUTHORED_COPY' } }, entries: [{ original: { body: 'TEST_ONLY_AUTHORED_COPY' } }], report: { inputCount: 0, outputCount: 0, shiftDays: 0, held: 0, backlog: 0, completed: 0, unmatchedTipTitles: [], ambiguousTipTitles: [] } });
+ m.prepare.mockImplementation(preparedFixture);
  const write = { retry: m.writeRetry, abortSignal: m.writeSignal, then: (resolve: (value: unknown) => unknown, reject?: (error: unknown) => unknown) => Promise.resolve(m.writeResult()).then(resolve, reject) };
  m.writeRetry.mockReturnValue(write); m.writeSignal.mockReturnValue(write); m.rpc.mockReturnValue(write);
  m.admin.mockReturnValue({ rpc: m.rpc }); m.writeResult.mockResolvedValue({ data: '22222222-2222-4222-8222-222222222222', error: null });
@@ -116,7 +118,22 @@ it('keeps every displayed field while sending a summary of a real 156-entry cale
  m.reader.mockResolvedValue(original); m.prepare.mockImplementation(actual.planCampaignImport);
  const prepared = actual.planCampaignImport(original, '2026-11-01', []), response = await POST(request('repository', false));
  expect(response.status).toBe(200); const bytes = await response.text(), value = JSON.parse(bytes);
- expect(value).toEqual({ ownerId: owner, campaign: { brand: prepared.campaign.brand, starts_on: prepared.campaign.starts_on, ends_on: prepared.campaign.ends_on, source_hash: prepared.campaign.source_hash }, report: prepared.report });
+ expect(value).toEqual({ ownerId: owner, importHash: contentHash({ ownerId: owner, ...prepared }), campaign: { brand: prepared.campaign.brand, starts_on: prepared.campaign.starts_on, ends_on: prepared.campaign.ends_on, source_hash: prepared.campaign.source_hash }, report: prepared.report });
  expect(value.report.inputCount).toBe(156); expect(value.report.outputCount).toBe(156); expect(m.rpc).not.toHaveBeenCalled();
- if (process.env.AUDIT_CAPTURE_IMPORT_METRICS === '1') writeFileSync('/tmp/app-audit-394-preview-bytes.json', JSON.stringify({ fixture: 'marketingshark', inputCount: 156, fullPreparedBytes: Buffer.byteLength(JSON.stringify(prepared)), previewBytes: Buffer.byteLength(bytes), allDisplayedFieldsEqual: true, metric: 'local fixture response bytes; not latency, production or billing evidence' }, null, 2) + '\n');
+ if (process.env.AUDIT_CAPTURE_IMPORT_METRICS === '1') writeFileSync('/tmp/app-audit-396-preview-bytes.json', JSON.stringify({ fixture: 'marketingshark', inputCount: 156, fullPreparedBytes: Buffer.byteLength(JSON.stringify(prepared)), previewBytes: Buffer.byteLength(bytes), allDisplayedFieldsEqual: true, metric: 'local fixture response bytes; not latency, production or billing evidence' }, null, 2) + '\n');
+});
+
+it('binds preview and apply to the complete owner-stamped planned result', async () => {
+ const expected = contentHash({ ownerId: owner, ...preparedFixture() });
+ const preview = await POST(request('repository', false)); expect((await preview.json()).importHash).toBe(expected);
+ const saved = await POST(request('repository', true)); expect(saved.status).toBe(200); expect((await saved.json()).importHash).toBe(expected);
+});
+it.each(['missing', 'wrong', 'changed-matches', 'changed-report'] as const)('refuses %s preview identity before any write', async kind => {
+ const input = await request('repository', true).json();
+ if (kind === 'missing') delete input.expectedImportHash;
+ if (kind === 'wrong') input.expectedImportHash = 'a'.repeat(64);
+ if (kind === 'changed-matches') m.prepare.mockReturnValueOnce({ ...preparedFixture(), entries: [{ ...preparedFixture().entries[0], knowledge_ids: [owner] }] });
+ if (kind === 'changed-report') m.prepare.mockReturnValueOnce({ ...preparedFixture(), report: { ...preparedFixture().report, ambiguousTipTitles: ['TEST_ONLY_CHANGED_MATCH'] } });
+ const response = await POST(new Request('https://own.example/api/marketing/import', { method: 'POST', headers: { Origin: 'https://own.example', 'Content-Type': 'application/json' }, body: JSON.stringify(input) }));
+ expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: 'calendar-import-preview-changed' }); expect(m.admin).not.toHaveBeenCalled(); expect(m.rpc).not.toHaveBeenCalled();
 });

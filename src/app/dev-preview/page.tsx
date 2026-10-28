@@ -19,10 +19,10 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function PreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string; projectTab?: string | string[]; tab?: string; calendars?: string; repositories?: string; projectRecords?: string; music?: string; accounts?: string; planning?: string; planRecords?: string; tasks?: string; categories?: string; monitoring?: string; career?: string; preferences?: string; calendar?: string; organizations?: string; competitors?: string; exports?: string; session?: string; q?: string | string[] }>;
+  searchParams: Promise<{ project?: string; projectTab?: string | string[]; tab?: string; imports?: string; calendars?: string; repositories?: string; projectRecords?: string; music?: string; accounts?: string; planning?: string; planRecords?: string; tasks?: string; categories?: string; monitoring?: string; career?: string; preferences?: string; calendar?: string; organizations?: string; competitors?: string; exports?: string; session?: string; q?: string | string[] }>;
 }) {
   if (process.env.NODE_ENV === "production" && process.env.NEXT_E2E !== "1") notFound();
-  const { project, projectTab, tab, calendars, repositories, projectRecords, music, accounts, planning, planRecords, tasks, categories, monitoring, career, preferences, calendar, organizations, competitors, exports: dataExports, session, q } = await searchParams;
+  const { project, projectTab, tab, imports, calendars, repositories, projectRecords, music, accounts, planning, planRecords, tasks, categories, monitoring, career, preferences, calendar, organizations, competitors, exports: dataExports, session, q } = await searchParams;
 
   // `?tab=` opens a destination directly, the fixture equivalent of visiting
   // its URL — used for sections hidden from navigation (Inbox, References).
@@ -34,6 +34,7 @@ export default async function PreviewPage({
       projectRef={project}
       initialProjectTab={projectTabFromQuery(projectTab)}
       initialTab={isNavTab(tab) ? tab : undefined}
+      liveMarketingImport={imports === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveMarketingCalendars={calendars === "live"}
       liveRepositories={repositories === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}
       liveProjectRecords={projectRecords === "live" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://example.supabase.co"}

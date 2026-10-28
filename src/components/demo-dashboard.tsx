@@ -24,6 +24,7 @@ export function DemoDashboard({
   initialTab,
   language = "cs",
   liveMarketingCalendars = false,
+  liveMarketingImport = false,
   liveRepositories = false,
   liveProjectRecords = false,
   liveMusic = false,
@@ -55,6 +56,8 @@ export function DemoDashboard({
    * for that endpoint; the public tour always shows the fixture.
    */
   liveMarketingCalendars?: boolean;
+  /** Isolated fake-backend calendar-import checks; never enabled in the public tour. */
+  liveMarketingImport?: boolean;
   /** Dev/E2E-only mocked repository interactions; disabled in the public tour. */
   liveRepositories?: boolean;
   /** Dev/E2E-only mocked project collection/write boundaries. */
@@ -109,6 +112,7 @@ export function DemoDashboard({
       isPreview
       previewRepositoryIntegration={liveRepositories}
       previewProjectIntegration={liveProjectRecords}
+      previewMarketingImportIntegration={liveMarketingImport}
       previewMusicIntegration={liveMusic}
       previewAccountIntegration={liveAccounts}
       previewPlanIntegration={livePlanRecords}
@@ -123,7 +127,7 @@ export function DemoDashboard({
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
       previewCompetitorIntegration={liveCompetitors}
-      user={liveAccounts || liveMusic || livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={liveMarketingImport || liveAccounts || liveMusic || livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}

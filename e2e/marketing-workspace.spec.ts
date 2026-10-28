@@ -41,7 +41,7 @@ for (const lang of ["en", "cs"] as const) {
         await expect(panel.getByText(copy.noCalendar, { exact: true })).toBeVisible();
         await expect(panel.getByRole("combobox")).toBeDisabled();
         await expect(panel.locator('input[type="date"]')).toBeDisabled();
-        await expect(panel.getByRole("button", { name: lang === "cs" ? "Zkontrolovat přesun" : "Preview migration", exact: true })).toBeDisabled();
+        await expect(panel.getByRole("button", { name: lang === "cs" ? "Zkontrolovat plán" : "Preview plan", exact: true })).toBeDisabled();
       }
       if (key === "knowledge") {
         const knowledge = knowledgeImportCopy[lang];

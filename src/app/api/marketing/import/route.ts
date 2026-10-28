@@ -9,11 +9,12 @@ import { createGitHubFetcher } from '@/lib/github-token';
 import { BrandSchema } from '@/lib/marketing/contracts';
 import { planCampaignImport } from '@/lib/marketing/campaign-import';
 import { readKnowledgeBody } from '@/lib/marketing/knowledge-body';
+import { contentHash } from '@/lib/marketing/hashes';
 
 export const maxDuration = 60;
 const Input = z.union([
  z.strictObject({ plan: z.unknown(), startsOn: z.iso.date(), apply: z.boolean() }),
- z.strictObject({ source: z.literal('repository'), brand: BrandSchema, startsOn: z.iso.date(), apply: z.boolean(), expectedHash: z.string().regex(/^[a-f0-9]{64}$/).optional() }),
+ z.strictObject({ source: z.literal('repository'), brand: BrandSchema, startsOn: z.iso.date(), apply: z.boolean(), expectedHash: z.string().regex(/^[a-f0-9]{64}$/).optional(), expectedImportHash: z.string().regex(/^[a-f0-9]{64}$/).optional() }),
 ]);
 const ideaSchema = z.strictObject({ id: z.uuid(), user_id: z.uuid(), title: z.string().max(10_000) });
 const reply = (body: object, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'private, no-store' } });
@@ -62,9 +63,11 @@ export async function POST(request: Request) {
   catch { return reply({ error: 'calendar-import-plan-invalid' }, 400); }
   signal.throwIfAborted();
   if ('source' in input && input.apply && input.expectedHash !== prepared.campaign.source_hash) return reply({ error: 'calendar-source-changed' }, 409);
+  const importHash = contentHash({ ownerId, ...prepared });
+  if ('source' in input && input.apply && input.expectedImportHash !== importHash) return reply({ error: 'calendar-import-preview-changed' }, 409);
   if (!input.apply) {
    const { brand, starts_on, ends_on, source_hash } = prepared.campaign;
-   return reply({ ownerId, campaign: { brand, starts_on, ends_on, source_hash }, report: prepared.report });
+   return reply({ ownerId, importHash, campaign: { brand, starts_on, ends_on, source_hash }, report: prepared.report });
   }
   const admin = createAdminClient(signal);
   const writeSignal = AbortSignal.any([signal, AbortSignal.timeout(15_000)]);
@@ -73,7 +76,7 @@ export async function POST(request: Request) {
   signal.throwIfAborted();
   const id = z.uuid().safeParse(saved.data);
   if (saved.error || !id.success) throw new Error('import-unconfirmed');
-  return reply({ id: id.data, ownerId, sourceHash: prepared.campaign.source_hash, report: prepared.report });
+  return reply({ id: id.data, ownerId, importHash, sourceHash: prepared.campaign.source_hash, report: prepared.report });
  } catch {
   return reply({ error: writing ? 'calendar-import-unconfirmed' : 'calendar-import-unavailable' }, 503);
  } finally { retirement.abort(); }

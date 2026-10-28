@@ -64,6 +64,11 @@ export const DialogContent = React.forwardRef<
       }}
       onCloseAutoFocus={(event) => {
         onCloseAutoFocus?.(event);
+        // A completed action can focus its recovery control while the closing
+        // scope is being removed. Preserve that deliberate outside focus.
+        const focused = document.activeElement;
+        if (!event.defaultPrevented && focused instanceof HTMLElement && focused !== document.body && focused.isConnected
+          && event.target instanceof HTMLElement && !event.target.contains(focused)) event.preventDefault();
         if (!event.defaultPrevented && opener.current?.isConnected && opener.current !== document.body) {
           event.preventDefault(); opener.current.focus();
         }
