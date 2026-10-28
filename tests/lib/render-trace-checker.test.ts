@@ -63,7 +63,9 @@ describe('native render trace checker platform boundaries', () => {
 });
 
 describe('render function package boundaries', () => {
-  it.each(['docs/report.md', 'tests/fixture.ts', 'src/private-source.ts', '.env.production', 'package-lock.json'])(
+  it.each(['docs/report.md', 'tests/fixture.ts', 'src/private-source.ts', '.env.production', 'package-lock.json',
+    'test-results/fixture/trace.zip', 'playwright-report/data/fixture.png', 'blob-report/fixture.zip', 'coverage/fixture.json',
+    'playwright/.cache/fixture', 'work/private-fixture.txt', 'out/fixture.html', 'build/fixture.js'])(
     'refuses build-only material even when native assets are complete (%s)', async file => {
       const result = await check('linux-x64', 'linux-x64', 'libvips-cpp.so.8.18.7', false, [file]);
       expect(result.status).toBe(1); expect(result.stderr).toContain('build-only file in runtime package');

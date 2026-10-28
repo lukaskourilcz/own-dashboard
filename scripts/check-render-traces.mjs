@@ -68,7 +68,7 @@ function checkRoute(route) {
   const files = trace.files.map((file) => path.relative(root, path.resolve(path.dirname(tracePath), file)).split(path.sep).join('/'));
   const missingOnDisk = (file) => !existsSync(path.join(root, file));
   const problems = [];
-  const buildOnly = /^(?:(?:docs|tests|e2e|src|services|supabase|media|public|scripts|\.claude|\.agents|\.github|\.vercel|skill-observations)\/|\.env(?:\.|$)|[^/]+\.(?:md|html)$|(?:tsconfig\.tsbuildinfo|vitest\.config\.mts|playwright\.config\.ts|package-lock\.json)$)/;
+  const buildOnly = /^(?:(?:docs|tests|e2e|src|services|supabase|media|public|scripts|test-results|playwright-report|blob-report|coverage|out|build|work|playwright\/\.cache|\.claude|\.agents|\.github|\.vercel|skill-observations)\/|\.env(?:\.|$)|[^/]+\.(?:md|html)$|(?:tsconfig\.tsbuildinfo|vitest\.config\.mts|playwright\.config\.ts|package-lock\.json)$)/;
   for (const file of files) {
     if (file.startsWith('../') || path.isAbsolute(file)) problems.push(`outside project: ${file}`);
     else if (buildOnly.test(file)) problems.push(`build-only file in runtime package: ${file}`);
@@ -106,7 +106,7 @@ for (const route of routes) {
 }
 
 if (failed > 0) {
-  console.error(`check-render-traces: ${failed} of ${routes.length} marketing routes would deploy without what sharp or the studio needs. See docs/marketing-render-preflight.md.`);
+  console.error(`check-render-traces: ${failed} of ${routes.length} marketing routes have unsafe or incomplete runtime packages. See docs/marketing-render-preflight.md.`);
   process.exit(1);
 }
 console.log(`check-render-traces: all ${routes.length} marketing render routes trace libvips, the sharp addon and the studio fonts.`);

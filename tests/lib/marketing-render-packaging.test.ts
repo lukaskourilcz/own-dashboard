@@ -8,13 +8,13 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const libvipsInclude = './node_modules/@img/sharp-libvips-*/lib/**/*';
-async function configuredIncludes() {
+async function configuredIncludes(name: 'outputFileTracingIncludes' | 'outputFileTracingExcludes' = 'outputFileTracingIncludes') {
   // Inspect config syntax only; never evaluate its environment/Sentry branches.
   const source = ts.createSourceFile('next.config.ts', await readFile('next.config.ts', 'utf8'), ts.ScriptTarget.Latest, true);
   let object: ts.ObjectLiteralExpression | undefined;
   const constants = new Map<string, ts.Expression>();
   function visit(node: ts.Node) {
-    if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'outputFileTracingIncludes' && ts.isObjectLiteralExpression(node.initializer)) object = node.initializer;
+    if (ts.isPropertyAssignment(node) && node.name.getText(source) === name && ts.isObjectLiteralExpression(node.initializer)) object = node.initializer;
     if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) constants.set(node.name.text, node.initializer);
     ts.forEachChild(node, visit);
   }
@@ -131,4 +131,16 @@ describe('marketing native JPEG runtime package closure, no provider/source/cred
       expect(probe(temporary)).toEqual({ loaded: true, cjsCallable: true, esmCallable: true, format: 'jpeg', width: 1, height: 1 });
     } finally { await rm(temporary, { recursive: true, force: true }); }
   }, 20000);
+});
+
+
+const ignoredRuntimeInputs = ['test-results/fixture/trace.zip', 'playwright-report/data/fixture.png', 'blob-report/fixture.zip', 'coverage/fixture.json', 'playwright/.cache/fixture', 'work/private-fixture.txt', 'out/fixture.html', 'build/fixture.js'];
+it('excludes local test/export/private preparation outputs from current and future marketing packages', async () => {
+ const exclusions = await configuredIncludes('outputFileTracingExcludes');
+ for (const route of [...routeHandlers().filter(({ file, route }) => route.startsWith('/api/marketing/') && reachesSharp(file)).map(({ route }) => route), '/api/marketing/future-render']) {
+  const patterns = routeIncludes(exclusions, route);
+  const excluded = (file: string) => patterns.some(pattern => picomatch(pattern, { dot: true, contains: true })(`./${file}`));
+  for (const file of ignoredRuntimeInputs) expect(excluded(file), `${route} must exclude ${file}`).toBe(true);
+  for (const file of ['vendor/carousel-studio/fonts/fixture.ttf', 'node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib', 'node_modules/ffmpeg-static/ffmpeg', 'templates/marketing/fonts/fixture.ttf']) expect(excluded(file), `${route} must retain runtime ${file}`).toBe(false);
+ }
 });
