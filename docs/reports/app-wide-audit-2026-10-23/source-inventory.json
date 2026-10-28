@@ -367,10 +367,10 @@
     },
     {
       "path": "src/app/api/marketing/calendars/route.ts",
-      "lines": 40,
+      "lines": 44,
       "sha256": "49bac4efd54515da6e3ae5df3529bd509e1a817bc35bf97401337690d4361ea5",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "2b7cdc552f669eaf8a9acc12f36028bf9cf54aa355ab3027b603502f6129f1db"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 391 verified auth/error precedence and original caller/quota/provider consumer bounds pass; upstream complete body/import contracts remain separate",
+      "reviewedSha256": "928875697c9d37cefe244b289f59a5ff772f349ae8135c094eb08f0953915f79"
     },
     {
       "path": "src/app/api/marketing/campaigns/route.ts",
