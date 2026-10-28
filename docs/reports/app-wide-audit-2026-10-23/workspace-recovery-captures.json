@@ -2,7 +2,7 @@
   "finding": 362,
   "capturedDate": "2026-10-28",
   "applicationCommit": "7be81d77",
-  "state": "Authentic isolated dev-preview initial and cached read failures. Synthetic fixtures; no managed/provider operation. Costs duplicate heading remains next work.",
+  "state": "Authentic isolated dev-preview initial/cached failures. Review crops retain application 7be81d77; costs crops now use 07cd4f48 with one visible title and shared account refresh. Synthetic fixtures only.",
   "components": {
     "src/components/marketing/dneskai/workspace.tsx": "714ba9f6bb553a6aff97cc6a13c84006fb8ab7ca7ae94f15b7d951b594b95aca",
     "src/components/marketing/dneskai/costs-tab.tsx": "bb5cd60f36e44ef11bce59f191a54bf346b3adcc2b27e9d51a964aee15f1739d",
@@ -127,7 +127,7 @@
       "1440": {
         "box": {
           "x": 452.171875,
-          "y": 544,
+          "y": 528,
           "width": 535.65625,
           "height": 44
         },
@@ -151,7 +151,7 @@
       "430": {
         "box": {
           "x": 33.171875,
-          "y": 528,
+          "y": 512,
           "width": 363.65625,
           "height": 76
         },
@@ -185,21 +185,21 @@
           {
             "n": 1,
             "x": 2.05078125,
-            "y": 5.353535353535354,
+            "y": 2.121212121212121,
             "w": 95.8984375,
             "h": 2.0202020202020203
           },
           {
             "n": 2,
             "x": 2.05078125,
-            "y": 2.121212121212121,
-            "w": 93.5546875,
+            "y": 5.757575757575758,
+            "w": 49.88861083984375,
             "h": 2.0202020202020203
           },
           {
             "n": 3,
             "x": 90.27557373046875,
-            "y": 8.98989898989899,
+            "y": 5.757575757575758,
             "w": 7.67364501953125,
             "h": 3.2323232323232323
           }
@@ -216,26 +216,35 @@
           {
             "n": 1,
             "x": 5.172413793103448,
-            "y": 5.353535353535354,
+            "y": 2.121212121212121,
             "w": 89.65517241379311,
             "h": 4.040404040404041
           },
           {
             "n": 2,
             "x": 5.172413793103448,
-            "y": 2.121212121212121,
-            "w": 83.74384236453201,
+            "y": 7.777777777777778,
+            "w": 89.65517241379311,
             "h": 2.0202020202020203
           },
           {
             "n": 3,
             "x": 5.172413793103448,
-            "y": 18.68686868686869,
+            "y": 15.454545454545455,
             "w": 19.354217980295566,
             "h": 4.444444444444445
           }
         ]
       }
     }
+  },
+  "costsApplicationCommit": "07cd4f48",
+  "costsCapturedDate": "2026-10-28",
+  "costsComponents": {
+    "src/components/marketing/dneskai/workspace.tsx": "380bf20be3e2be2e809d5081553cc7e95d7372f34371597bfeff43ef2d0ecd8d",
+    "src/components/marketing/dneskai/costs-tab.tsx": "dca05e34f61e2dfb4bc3a850af68a198bae8e86c6e5a063c3b76519495919ca1",
+    "src/components/marketing/dneskai/overflow-menu.tsx": "82aae4ec57bb431681f83bd2e13df2f4a2f1b4aa457d7fcf26817ea3ad54f76e",
+    "src/components/marketing/dneskai/tab-header.tsx": "1340e5ab00a377fac0cdfc514223c2288e153c21300ca4bf8dd8500489978c1b",
+    "src/lib/i18n/sections/dneskai-workspace.ts": "c08d3a1d416d8c68ed827e9ab23692edbd25c679f676502137495aba6c2b8387"
   }
 }
