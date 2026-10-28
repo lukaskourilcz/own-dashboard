@@ -1052,8 +1052,8 @@
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
       "lines": 251,
       "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
-      "status": "partial; findings 350/355 captured account controls and verification, pending exit/unmount, retained cached recovery, one conflict notice, focus restoration and compact EN/CS fields verified; feedback row density, subscription identity/pagination and final app-wide release remain",
-      "reviewedSha256": "df2f4023ff450db30e1830eb0676845d7357ca50eb3f1860a42ac8d2411e6674"
+      "status": "partial; findings 350/355/356 captured account controls and verification, pending exit/unmount, retained cached recovery, one compact conflict/reload row, focus restoration and compact EN/CS fields verified; subscription identity/pagination and final app-wide release remain",
+      "reviewedSha256": "4b0630b8a74be91234e471705e6345a53dc2c952717c1e34332d39f30552d512"
     },
     {
       "path": "src/components/marketing/dneskai-source-forms.tsx",

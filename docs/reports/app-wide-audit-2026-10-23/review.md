@@ -2989,3 +2989,10 @@ All 2,330 related checks pass across 128 files in 131.74 seconds with one worker
 The ledger has 723 entries/192 partial statuses. Migrations remain 146 canonical/60 prepared and unapplied; no production schema/data/configuration change, real provider/model request, publication, message, subscription, deployment or spend occurs. Feedback density, subscription identity/pagination, SDK JSON consumption, remaining pages/source, canonical rollout, consolidated verification and main merge remain unfinished.
 
 The visual plan now contains 56 authentic desktop/mobile pairs and references committed application `ae1511ae`. Every image decodes in both modes; light/dark 390/1440px artifact reflow and mapped highlights pass without page errors. The new conflict pair retains that actual application provenance and explicitly marks its remaining feedback-row density repair.
+
+
+### Finding 356 — compact verification recovery row
+
+Verification errors and Reload now share one desktop row. Mobile retains a matching full-width message/action stack, and the empty pre-verification live-region wrapper no longer adds an unused vertical gap. The existing one-alert, explicit read-first and focus-restoration behavior remains. The authentic ready, cached-refresh and conflict states are captured in account-density-captures.json; the earlier findings' screenshots retain their dated provenance.
+
+All 29 native desktop checks pass in 3.9 minutes: six widths, EN/CS, both themes, scoped axe, cached recovery, pending exits and both verification conflict flows. Five mobile action/panel/conflict checks pass in 19.0 seconds. The conflict checks measure same-row centred desktop geometry and matching mobile widths. All 49 component/verification-contract checks pass across two files in 2.60 seconds. Targeted ESLint without warnings and whitespace pass; full TypeScript is checked with this commit. The source ledger remains 723 entries/192 partial statuses. This presentation change introduces no SQL, owner/provider write, deployment or spend. Remaining subscription/render/page work, canonical rollout, consolidated release checks and main merge remain unfinished.

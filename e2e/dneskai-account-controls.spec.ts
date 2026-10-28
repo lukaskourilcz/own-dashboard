@@ -95,6 +95,10 @@ for (const lang of ['en','cs'] as const) test(`captured verification conflict ha
   const verify = panel.getByRole('button',{name:t.verify,exact:true}); await verify.focus(); await verify.press('Enter');
   await expect(panel.getByRole('alert')).toHaveCount(1); await expect(panel.getByRole('alert')).toHaveText(t.changed); await expect(verify).toBeDisabled();
   const reload = panel.getByRole('button',{name:t.reload,exact:true}); await expect(reload).toBeFocused();
+  const messageBox = (await panel.getByRole('alert').boundingBox())!, reloadBox = (await reload.boundingBox())!;
+  if(info.project.name==='mobile') { expect(Math.abs(messageBox.x-reloadBox.x)).toBeLessThan(1); expect(Math.abs(messageBox.width-reloadBox.width)).toBeLessThan(1); }
+  else { expect(messageBox.x+messageBox.width).toBeLessThanOrEqual(reloadBox.x); expect(Math.abs(messageBox.y+messageBox.height/2-reloadBox.y-reloadBox.height/2)).toBeLessThan(1); }
+
   const details = panel.locator('summary').filter({hasText:t.details}); await details.click(); await expect(panel.getByText(t.intro,{exact:true})).toBeVisible();
   expect(await panel.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true); await details.click(); await reload.focus();
   expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-more-account"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
