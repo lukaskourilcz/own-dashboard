@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn(), readReceipts: vi.fn(), costRead: vi.fn(), restCap: Infinity }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), tables: {} as Record<string, Array<Record<string, unknown>>>, fail: null as string | null, nullTable: null as string | null, filters: [] as Array<[string, string, string, unknown]>, rpc: vi.fn(), readReceipts: vi.fn(), costRead: vi.fn(), restCap: Infinity }));
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks), rpc: (name: string, args: CostReadArgs) => { if (name !== 'marketing_dneskai_cost_totals') return mocks.readReceipts(name, args); const query = { retry: () => query, abortSignal: () => query, then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(mocks.costRead(args)).then(resolve, reject) }; return query; } }) }));
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, from: table(mocks), rpc: (name: string, args: Record<string, unknown>) => { const query = { retry: () => query, abortSignal: () => query, then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(name === 'marketing_dneskai_cost_totals' ? mocks.costRead(args) : mocks.readReceipts(name, args)).then(resolve, reject) }; return query; } }) }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ rpc: (name: string, args: { p_owner: string }) => {
   const query = { retry: () => query, abortSignal: () => query, then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(mocks.rpc(name, args)).then(resolve, reject) };
   return query;
@@ -29,7 +29,7 @@ function table(state: typeof mocks) {
       retry: () => query, abortSignal: () => query, lte: () => query, gte: () => query, order: () => query,
       limit: (count: number) => { limit = count; return query; },
       maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
-      then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(state.fail === name ? { data: null, error: { message: 'PRIVATE database detail' } } : { data: rows.slice(0, Math.min(limit, state.restCap)), error: null }).then(resolve, reject),
+      then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(state.fail === name ? { data: null, error: { message: 'PRIVATE database detail' } } : { data: state.nullTable === name ? null : rows.slice(0, Math.min(limit, state.restCap)), error: null }).then(resolve, reject),
     };
     return query;
   };
@@ -67,7 +67,7 @@ function costTotalsFixture(args: CostReadArgs) {
   };
 }
 beforeEach(() => {
-  mocks.user.mockResolvedValue({ data: { user: { id: owner } } }); mocks.fail = null; mocks.filters = []; mocks.rpc.mockReset(); mocks.restCap = Infinity; mocks.costRead.mockReset(); mocks.costRead.mockImplementation((args: CostReadArgs) => ({ data: costTotalsFixture(args), error: null }));
+  mocks.user.mockResolvedValue({ data: { user: { id: owner } } }); mocks.fail = null; mocks.nullTable = null; mocks.filters = []; mocks.rpc.mockReset(); mocks.restCap = Infinity; mocks.costRead.mockReset(); mocks.costRead.mockImplementation((args: CostReadArgs) => ({ data: costTotalsFixture(args), error: null }));
   mocks.tables = {
     projects: [{ id: project, user_id: owner, portfolio_key: 'aifirst', repo_full_name: null, previous_repo_full_names: [], parent_id: null }],
     marketing_revisions: [
@@ -320,4 +320,13 @@ describe('slide field limits', () => {
       .toEqual([{ field: 'headline', max: 110 }]);
     expect(dneskaiSlideFieldLimits({ type: 'figure', headline: 'x', images: [{ slot: 'image-1', assetSha256: sha(1) }], alt: 'x' }).map((item) => item.field)).toEqual(['headline', 'body']);
   });
+});
+
+it.each(['marketing_revisions','marketing_accounts','marketing_jobs','marketing_publications','marketing_events','marketing_dneskai_briefs'])('does not treat a missing %s array as a confirmed empty review',async table=>{
+ mocks.nullTable=table;
+ const response=await get(review,`projectId=${project}`);expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'dneskai-workspace-unavailable'});
+});
+it.each(['marketing_dneskai_runs','marketing_jobs','marketing_publications'])('does not treat a missing %s array as confirmed empty cost details',async table=>{
+ mocks.nullTable=table;mocks.rpc.mockResolvedValue({data:0.5,error:null});
+ const response=await get(costs,`projectId=${project}`);expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'dneskai-costs-unavailable'});
 });

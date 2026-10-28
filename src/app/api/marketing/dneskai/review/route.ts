@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     : Response.json({ error: 'dneskai-workspace-unavailable' }, { status: 503 }); }
   try {
     signal.throwIfAborted();
-    const read = await awaitWithSignal(readDneskaiWorkspace(db, ownerId, now, date, { decisionsBefore, capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() }, engagement: dneskaiEngagementWatchEnabled(), topicTitles: dneskaiTopicBriefsEnabled() }), signal);
+    const read = await awaitWithSignal(readDneskaiWorkspace(db, ownerId, now, date, { signal, decisionsBefore, capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() }, engagement: dneskaiEngagementWatchEnabled(), topicTitles: dneskaiTopicBriefsEnabled() }), signal);
     signal.throwIfAborted();
     return Response.json(read, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {

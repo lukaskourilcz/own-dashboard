@@ -1,4 +1,5 @@
 import 'server-only';
+import { awaitWithSignal } from '@/lib/abortable';
 import { z } from 'zod';
 import type { DneskaiReadDatabase } from './dneskai-read-database.generated';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -38,7 +39,7 @@ const money = (value: unknown): number | null => {
   return Number.isFinite(amount) && amount >= 0 && amount <= 10000 ? amount : null;
 };
 const safeCode = (value: unknown): string | null => typeof value === 'string' && /^[a-z][a-z0-9_-]{0,99}$/.test(value) ? value : null;
-const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string): T[] => { if (result.error) throw new Error(failure); return result.data ?? []; };
+const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string): T[] => { if (result.error || !Array.isArray(result.data)) throw new Error(failure); return result.data; };
 
 type Tables = DneskaiReadDatabase['public']['Tables'];
 type RevisionRow = Pick<Tables['marketing_revisions']['Row'], 'id' | 'replaces_id' | 'status' | 'ready' | 'content_hash' | 'created_at' | 'approved_at' | 'feedback' | 'revision' | 'render_report'>;
@@ -86,25 +87,28 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
  * Decisions have their own owner/brand/status-filtered SQL read and can never be evicted by newer receipts.
  * Recent calendar/history context remains bounded to the newest 150 other revisions and the existing date window.
  */
-export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean; decisionsBefore?: DneskaiDecisionCursor } = {}): Promise<DneskaiWorkspaceRead> {
+export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean; decisionsBefore?: DneskaiDecisionCursor; signal?: AbortSignal } = {}): Promise<DneskaiWorkspaceRead> {
   z.uuid().parse(owner); z.iso.date().parse(today);
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(options.signal ? [options.signal] : [])]);
+  signal.throwIfAborted();
   const windowStart = Date.parse(pragueScheduledAt(pragueDayAfter(today, -30), '00:00'));
   const windowEnd = Date.parse(pragueScheduledAt(pragueDayAfter(today, 7), '00:00'));
   const cursor = options.decisionsBefore ? DneskaiDecisionCursorSchema.parse(options.decisionsBefore) : null;
   let decisions = db.from('marketing_revisions').select(REVISION_COLUMNS).eq('user_id', owner).eq('brand', 'dneskai')
     .in('status', ['review', 'returned']).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(DECISION_PAGE_SIZE + 1);
   if (cursor) decisions = decisions.or(`created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`);
-  const [decisionResult, revisionResult, accountResult, jobResult, waitingResult] = await Promise.all([
-    decisions,
+  const [decisionResult, revisionResult, accountResult, jobResult, waitingResult] = await awaitWithSignal(Promise.all([
+    decisions.retry(false).abortSignal(signal),
     db.from('marketing_revisions').select(REVISION_COLUMNS)
-      .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').not('status', 'in', '(review,returned)').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT),
-    db.from('marketing_accounts').select('id,remote_account_id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4),
+      .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').not('status', 'in', '(review,returned)').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT).retry(false).abortSignal(signal),
+    db.from('marketing_accounts').select('id,remote_account_id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4).retry(false).abortSignal(signal),
     db.from('marketing_jobs').select('id,status,error_code,created_at,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,revision_id:request->generation->>revisionId,brand:request->generation->source->>brand')
-      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60),
+      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60).retry(false).abortSignal(signal),
     // Owner decision 9: built briefs of today and tomorrow that wait for the scheduler, with no job yet.
     db.from('marketing_dneskai_briefs').select('id,status,code,job_id,scheduled_at,title:brief->>title').eq('user_id', owner).in('status', ['pending', 'ready'])
-      .in('target_date', [today, pragueDayAfter(today, 1)]).order('scheduled_at').limit(16),
-  ]);
+      .in('target_date', [today, pragueDayAfter(today, 1)]).order('scheduled_at').limit(16).retry(false).abortSignal(signal),
+  ]), signal);
+  signal.throwIfAborted();
   const decisionRows = rows(decisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable');
   const page = decisionRows.slice(0, DECISION_PAGE_SIZE);
   const last = page.at(-1);
@@ -126,15 +130,17 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
   const selected = [0, 1, 2].flatMap((tier) => parsed.filter((item) => rank(item) === tier)).slice(0, POST_LIMIT);
   const ids = selected.map((item) => item.row.id);
   const eventIds = [...new Set(selected.flatMap((item) => item.revision.sources[0]?.sourceId ?? []).filter((id) => /^[a-f0-9]{64}$/.test(id)))];
-  const [publicationResult, eventResult, briefResult, topicResult] = await Promise.all([
-    ids.length ? db.from('marketing_publications').select('id,revision_id,status,scheduled_at,remote_url,error_code,last_checked_at').eq('user_id', owner).in('revision_id', ids).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-    ids.length ? db.from('marketing_events').select('revision_id,created_at').eq('user_id', owner).eq('kind', 'published').in('revision_id', ids).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-    eventIds.length ? db.from('marketing_dneskai_briefs').select('id,event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
+  signal.throwIfAborted();
+  const [publicationResult, eventResult, briefResult, topicResult] = await awaitWithSignal(Promise.all([
+    ids.length ? db.from('marketing_publications').select('id,revision_id,status,scheduled_at,remote_url,error_code,last_checked_at').eq('user_id', owner).in('revision_id', ids).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
+    ids.length ? db.from('marketing_events').select('revision_id,created_at').eq('user_id', owner).eq('kind', 'published').in('revision_id', ids).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
+    eventIds.length ? db.from('marketing_dneskai_briefs').select('id,event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
     // #211: only with the topic bridge on, because marketing_dneskai_topics exists only after 20261023100000.
     options.topicTitles ? db.from('marketing_dneskai_topics').select('brief_id,title_cs,job_id:evidence->>jobId').eq('user_id', owner).in('status', ['enriching', 'briefed', 'generated'])
-      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-  ]);
-  const topicTitles = dneskaiTopicTitles(topicResult.error ? [] : (topicResult.data ?? []) as TopicTitleRow[]);
+      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
+  ]), signal);
+  signal.throwIfAborted();
+  const topicTitles = dneskaiTopicTitles(topicResult.error || !Array.isArray(topicResult.data) ? [] : topicResult.data as TopicTitleRow[]);
   const publications = rows(publicationResult as { data: PublicationRow[] | null; error: unknown }, 'dneskai-workspace-unavailable');
   const published = new Map(rows(eventResult as { data: Array<{ revision_id: string; created_at: string }> | null; error: unknown }, 'dneskai-workspace-unavailable').map((event) => [event.revision_id, iso(event.created_at)]));
   const briefs = rows(briefResult as { data: BriefRow[] | null; error: unknown }, 'dneskai-workspace-unavailable').flatMap((row) => {
@@ -150,7 +156,8 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     return [view.data];
   });
   // #162: only with the watcher on, because its tables exist only after 20261023120000. A failed read leaves them out.
-  const engagementSummary = options.engagement ? await attachEngagementReceipts(db, owner, posts, now) : undefined;
+  const engagementSummary = options.engagement ? await attachEngagementReceipts(db, owner, posts, now, signal) : undefined;
+  signal.throwIfAborted();
   const known = new Set(posts.map((post) => post.id));
   const jobs = rows(jobResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-workspace-unavailable').flatMap((row): DneskaiWorkspaceJob[] => {
     if (row.brand !== 'dneskai' || (typeof row.revision_id === 'string' && known.has(row.revision_id))) return [];
@@ -169,7 +176,7 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
       unreadable += 1; return [];
     });
   // A waiting brief is optional context: a read that fails leaves the list out rather than the whole workspace.
-  const waiting = waitingResult.error ? undefined : ((waitingResult.data ?? []) as Array<Record<string, unknown>>).flatMap((row) => {
+  const waiting = waitingResult.error || !Array.isArray(waitingResult.data) ? undefined : (waitingResult.data as Array<Record<string, unknown>>).flatMap((row) => {
     const topicTitle = typeof row.id === 'string' ? topicTitles.byBrief.get(row.id) : undefined;
     const brief = DneskaiWorkspaceWaitingSchema.safeParse({ briefId: row.id, title: topicTitle ?? (typeof row.title === 'string' && row.title.trim() ? row.title.slice(0, 300) : '—'), scheduledAt: iso(row.scheduled_at), status: row.status, code: safeCode(row.code) });
     return !row.job_id && brief.success && Date.parse(brief.data.scheduledAt) > now.getTime() ? [brief.data] : [];
@@ -184,13 +191,15 @@ const EngagementReadSchema = z.strictObject({
   summary: DneskaiWorkspaceReadSchema.shape.engagementSummary.unwrap(),
 });
 /** One owner/RLS-scoped aggregate: no raw-reply cap, no per-post scans and no dependency on the selected page. */
-async function attachEngagementReceipts(db: Database, owner: string, posts: DneskaiWorkspacePost[], now: Date) {
+async function attachEngagementReceipts(db: Database, owner: string, posts: DneskaiWorkspacePost[], now: Date, signal: AbortSignal) {
   z.uuid().parse(owner);
   const watched = posts.filter(post => post.engagement && post.publication?.status === 'published');
-  const { data, error } = await db.rpc('marketing_dneskai_engagement_receipts', {
+  signal.throwIfAborted();
+  const { data, error } = await awaitWithSignal(db.rpc('marketing_dneskai_engagement_receipts', {
     p_publication_ids: watched.map(post => post.publication!.id),
     p_since: new Date(now.getTime() - ENGAGEMENT_SUMMARY_MS).toISOString(), p_until: now.toISOString(),
-  });
+  }).retry(false).abortSignal(signal), signal);
+  signal.throwIfAborted();
   if (error) return undefined; // Includes a migration not yet applied; never present partial data as zero.
   const parsed = EngagementReadSchema.safeParse(data);
   if (!parsed.success) return undefined;
@@ -235,15 +244,15 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const dayCount = DNESKAI_COST_RANGES.indexOf(z.enum(DNESKAI_COST_RANGES).parse(range)) + 1;
   const today = pragueMarketingDate(now);
   const weekStart = pragueScheduledAt(pragueDayAfter(today, 1 - dayCount), '00:00');
-  const signal = options.signal ?? AbortSignal.timeout(15_000); signal.throwIfAborted();
-  const [runResult, jobResult, publicationResult, totalsResult] = await Promise.all([
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(options.signal ? [options.signal] : [])]); signal.throwIfAborted();
+  const [runResult, jobResult, publicationResult, totalsResult] = await awaitWithSignal(Promise.all([
     db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14).retry(false).abortSignal(signal),
     db.from('marketing_jobs').select('id,status,error_code,created_at,cost_usd:result->usage->>estimatedCostUsd,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,brand:request->generation->source->>brand')
       .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['failed', 'reconciliation']).gte('created_at', weekStart).lte('created_at', now.toISOString()).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(30).retry(false).abortSignal(signal),
     db.from('marketing_publications').select('id,revision_id,status,error_code,scheduled_at,last_checked_at,remote_container_id,remote_media_id,remote_url,lease_until,marketing_revisions!inner(brand,title:revision->>title)')
       .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20).retry(false).abortSignal(signal),
     db.rpc('marketing_dneskai_cost_totals', { p_project: project, p_days: dayCount, p_now: now.toISOString() }).retry(false).abortSignal(signal),
-  ]);
+  ]), signal);
   signal.throwIfAborted();
   const parsedTotals = CostTotalsSchema.safeParse(totalsResult.data);
   if (totalsResult.error || !parsedTotals.success) throw new Error('dneskai-costs-unavailable');

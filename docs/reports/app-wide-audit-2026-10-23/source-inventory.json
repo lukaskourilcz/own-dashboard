@@ -467,8 +467,8 @@
       "path": "src/app/api/marketing/dneskai/review/route.ts",
       "lines": 52,
       "sha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9",
-      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain",
-      "reviewedSha256": "954a1649929bca9477ef4ace608f4120bc2c611d5165dc3dbdbe2dc9d204fcf5"
+      "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain; finding 366 forwards the original route signal through both query phases and engagement receipts",
+      "reviewedSha256": "f90e45094fbf785303de8903cad444f75afef90e5c40c036ecf0255e3801f201"
     },
     {
       "path": "src/app/api/marketing/dneskai/source-list/route.ts",
@@ -3861,10 +3861,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",
-      "lines": 347,
+      "lines": 356,
       "sha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a",
-      "status": "partial; complete source inspection; cost/tick completeness, selected-calendar coverage, malformed optional data and query cancellation remain under review; finding 199 closes complete cost/tick aggregation and cost-read auth/cancellation; remaining workspace read/lifecycle leads open",
-      "reviewedSha256": "0831e83ae6e06712c85a4e77e4d691b9363f35f126d9a92c589703142c87a7a1"
+      "status": "partial; findings 199/366 complete cost/tick aggregate, original fifteen-second review/cost consumers, per-query no-retry/cancellation and missing core-array refusal pass actual SDK/full-chain checks; waiting-context null stays unknown; selected-calendar completeness, optional latency, Topic lifetimes and final release remain",
+      "reviewedSha256": "80020f7eb36f9fbb2358450bbdfa2ae41b95050981df4ea511408b0681e1ad4f"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",
