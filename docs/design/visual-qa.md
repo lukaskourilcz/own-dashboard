@@ -641,3 +641,8 @@ Finding 388's implemented frame/deck repair passes eight EN/CS middle-width case
 ### 28 October — repaired optimized frame/Lab/Work checks
 
 The e07455d6 optimized fixture build passes 88 selected desktop cases in 3.7 minutes and nine selected phone cases in 21.3 seconds, with all 2,096 validation inputs unchanged. These include six-width clean/dirty editing, ordinary input hit targets, fixed outer-frame geometry, Work warning/History parity, retained-calendar recovery, Lab save/pixel/hash/keyboard flows and scoped axe. All four existing Lab viewport PNG comparisons and per-fixture saved stage comparisons pass without changing a golden or threshold. The original checkpoint 101 remains failed; final full release and the separately recorded development warning are still open. This fixture build must not be deployed.
+
+
+### 29 October — progress artifact after the pinned-reader repair
+
+The local plan is rebuilt from source 6213e8c0 and shows the current 726-entry/185-partial ledger. All 67 existing authentic component images decode in desktop and phone modes; 390/1440 light/dark reflow, mapped highlights, view/highlight controls and page-error checks pass. No new UI capture or redesign is claimed for the backend-only finding 393; each image retains its original source/date.
