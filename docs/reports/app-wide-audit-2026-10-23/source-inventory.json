@@ -495,8 +495,8 @@
       "path": "src/app/api/marketing/import/route.ts",
       "lines": 34,
       "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open",
-      "reviewedSha256": "7ece49cd7797c313a72984a36b553ba445cb658a40975ffddcae7ba6defb999b"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open",
+      "reviewedSha256": "7ed433dbd6ec27d0dcc6ab258647ecd06b523dc3ec9f58aa63642b6aaa082777"
     },
     {
       "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
