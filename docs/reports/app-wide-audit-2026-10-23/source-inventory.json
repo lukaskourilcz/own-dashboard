@@ -1,6 +1,6 @@
 {
   "baseline": "dba5fc8",
-  "meaning": "Baseline source inventory plus files added during review (sha256 null for additions). Source review and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
+  "meaning": "Baseline application-source inventory plus reviewed additions (sha256 null for additions), with selected SQL references. Current src TypeScript/TSX/CSS coverage is checked separately; the migration guide catalogs every canonical migration. Source inspection and rendered/release verification are separate; see review.md. Pending entries have not been reviewed.",
   "files": [
     {
       "path": "instrumentation-client.ts",
@@ -3660,8 +3660,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from all 144 canonical migrations; captured account-control API/browser adoption, canonical rollout and final release checks pending",
-      "reviewedSha256": "e04c83918e99e252047424e13bc6e8809a2be5e32d99b2a6a027d229746b7177"
+      "status": "source reviewed; eight-table read port regenerated from all 147 canonical migration files; finite account versions retained; final rollout/release pending",
+      "reviewedSha256": "d03198f525ba3309760223a3cf47b9837db35f98f6391c902c9e57b994cb0382"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
