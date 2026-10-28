@@ -1,0 +1,74 @@
+{
+  "applicationCommit": "b5fd5b90",
+  "capturedDate": "2026-10-28",
+  "fixture": "Authentic /dev-preview with controlled browser clock near the saved slot. The current draft date/caption remain unchanged. Field centred with a verified hit target; broader sticky action overlap remains open.",
+  "components": {
+    "src/components/marketing/dneskai/lab/lab-tab.tsx": "c5286b7b726c22a7bd59c93e95854778b09015a893f7f35cffbbdd4f875aacd5",
+    "src/components/marketing/dneskai/lab/use-draft.ts": "61eaeaa7749558480e226a09d1d75fff7eb176c188b83a34aa1c9943069c8a40",
+    "src/lib/i18n/sections/dneskai-lab.ts": "97a7da7dd58d97896584e90c2ff835dd8e251e972ffbb5085f6bed895177c0c9"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 1060,
+        "y": 505.59375,
+        "width": 336,
+        "height": 89
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 4.49438202247191,
+          "w": 35.026041666666664,
+          "h": 16.853932584269664
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 23.59550561797753,
+          "w": 100,
+          "h": 35.95505617977528
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 64.04494382022472,
+          "w": 100,
+          "h": 35.95505617977528
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 16,
+        "y": 459.5,
+        "width": 398,
+        "height": 101
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 3.9603960396039604,
+          "w": 29.569723618090453,
+          "h": 14.851485148514852
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 20.792079207920793,
+          "w": 100,
+          "h": 43.56435643564357
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 68.31683168316832,
+          "w": 100,
+          "h": 31.683168316831683
+        }
+      ]
+    }
+  }
+}
