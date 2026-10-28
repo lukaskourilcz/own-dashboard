@@ -20,7 +20,7 @@
       "path": "next.config.ts",
       "sha256": "a1fcd8a78a6e709b0d8b0c1cf7203acc660db6150e4f4a5a6b754af9f7a772b1",
       "lines": 130,
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending; finding 386 production app-only type checking with preserved broad root/development coverage, default-heap ordinary build and eight required renderer traces pass; trace bytes and final release remain open; finding 392 excludes dedicated QA outputs and rejects root exports/private preparation through the checker; narrowed policy/CLI/native checks pass; matched dependency/byte comparison and final release remain open",
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending; finding 386 production app-only type checking with preserved broad root/development coverage, default-heap ordinary build and eight required renderer traces pass; trace bytes and final release remain open; finding 392 excludes dedicated QA outputs and rejects root exports/private preparation through the checker; narrowed policy/CLI/native checks and matched cold builds pass with all non-QA trace paths preserved; dynamic-path warnings and final release remain open",
       "reviewedSha256": "67882f1c3605b143d1daa16897dc83b149d1443503b3a680fe848c113469af5e"
     },
     {

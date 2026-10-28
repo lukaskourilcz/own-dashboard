@@ -3476,3 +3476,19 @@ The verified build uses the independent follow-up checkout. A matched cold rebui
 
 
 Finding 392 matched-comparison follow-up: the first primary rebuild keeps all 366 QA fixture hashes unchanged and passes all eight checks, but its graph also loses 133 non-QA dependency paths (92 Sentry, three SWC helpers and 38 Next files). Its apparent total reduction is not accepted as safe packaging evidence. Automatic exclusions are narrowed to dedicated QA directories; generic build/out/work directories remain forbidden by the checker rather than broadly stripped. Positive policy cases include nested Sentry/SWC runtime paths and use the installed Next collector's resolved absolute-path matching. Thirty-seven targeted tests pass in 2.79 seconds, and full TypeScript with the documented local 4GB allowance, targeted lint and whitespace pass. A new cold matched build follows; the reason for the earlier dependency delta is not assumed without that comparison. The public branch retains the corrective commit history; main/Production are unchanged.
+
+
+Finding 392 final matched evidence: the narrowed ordinary cold build of 9725b766 passes application types/build and all eight strengthened traces with all 2,097 frozen inputs unchanged. All 366 original QA fixture hashes remain unchanged. The before/after path comparison removes exactly 359 test-results files from each affected function, adds no paths and retains every other traced path, including all previously missing Sentry/SWC/Next dependencies. No excluded output remains. runtime-package-comparison-392.json records the accepted result; the earlier broader reduction remains rejected.
+
+| Function | Before listed bytes | Accepted listed bytes |
+| --- | ---: | ---: |
+| tick | 161,945,578 | 94,834,934 |
+| revisions | 161,745,019 | 94,634,375 |
+| jobs/execute | 115,888,324 | 48,777,680 |
+| media | 38,015,039 | 38,015,039 |
+| n8n | 161,613,181 | 94,502,537 |
+| offline-import | 115,982,092 | 48,871,448 |
+| render-reel | 159,828,011 | 92,717,367 |
+| audio | 162,120,273 | 95,009,629 |
+
+Each of the seven affected traces loses 67,110,776 QA bytes. The traced next.config.ts grows by 132 bytes, so the net listed-file reduction is 67,110,644 bytes per affected function. Media stays identical. These are local Darwin-arm64 uncompressed listed-file sums with local test outputs present, not compressed upload, deployed Linux, latency or billing evidence; a clean Git/CI build without those files has no such overhead. Thirty-seven final targeted policy/CLI/native cases pass; root types with the documented local 4GB allowance and targeted lint pass. Ordinary runtime checks again pass login 200, production preview and fixture-fit 404, and unauthenticated calendar 401/private-no-store. The three dynamic-filesystem warnings remain visible; this closes known QA-output admission and matched dependency preservation, not all dynamic paths or final deployed verification. Canonical rollout, remaining page/source review, clean final full release and main merge remain open.

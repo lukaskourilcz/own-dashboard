@@ -1,0 +1,100 @@
+{
+  "sourceBefore": "ae5268c8871aa0de0ff9fdbc4dd815720e0feae8",
+  "sourceAfter": "9725b766e213b64e75075949b5bb1a8e5bc8ec7d",
+  "validationInputCount": 2097,
+  "unchangedQaFiles": 366,
+  "metric": "sum of listed regular-file sizes, not compressed upload, billing, deployed size or cold-start measurement",
+  "platform": "darwin-arm64",
+  "routes": [
+    {
+      "route": "/api/marketing/tick",
+      "beforeBytes": 161945578,
+      "afterBytes": 94834934,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/revisions",
+      "beforeBytes": 161745019,
+      "afterBytes": 94634375,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/jobs/[id]/execute",
+      "beforeBytes": 115888324,
+      "afterBytes": 48777680,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/dneskai/media",
+      "beforeBytes": 38015039,
+      "afterBytes": 38015039,
+      "removedQaFiles": 0,
+      "removedQaBytes": 0,
+      "netListedByteReduction": 0,
+      "configurationFileByteGrowth": 0,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/n8n",
+      "beforeBytes": 161613181,
+      "afterBytes": 94502537,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/offline-import",
+      "beforeBytes": 115982092,
+      "afterBytes": 48871448,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/dneskai/render-reel",
+      "beforeBytes": 159828011,
+      "afterBytes": 92717367,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    },
+    {
+      "route": "/api/marketing/dneskai/audio",
+      "beforeBytes": 162120273,
+      "afterBytes": 95009629,
+      "removedQaFiles": 359,
+      "removedQaBytes": 67110776,
+      "netListedByteReduction": 67110644,
+      "configurationFileByteGrowth": 132,
+      "allRemovedPathsAreQa": true,
+      "allOtherTracePathsRetained": true
+    }
+  ],
+  "recordedOn": "2026-10-28",
+  "state": "accepted local QA-only path reduction; no deployed or billing measurement"
+}

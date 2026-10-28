@@ -66,3 +66,6 @@ Finding 392's ordinary cold build finds 67,110,776 bytes of local browser-test o
 
 
 The first matched finding-392 comparison also loses non-QA Sentry/SWC/Next dependency paths. Its total byte reduction is not accepted; the report retains it while a narrowed cold comparison is completed. No package or runtime-cost saving is inferred from that rejected comparison.
+
+
+The accepted narrowed comparison is recorded in [runtime-package-comparison-392.json](reports/app-wide-audit-2026-10-23/runtime-package-comparison-392.json). With all 366 original local QA files unchanged, each of seven traces loses only 359 QA paths; every non-QA path remains, and media is unchanged. Each affected trace removes 67,110,776 QA bytes, offset by 132 bytes of config growth (net 67,110,644 listed bytes). Execute goes from 115,888,324 to 48,777,680 bytes. All 2,097 frozen inputs, the ordinary build, eight strengthened traces, 37 targeted cases, broad types and lint pass. The three compiler warnings remain; deployed Linux behavior and billable cost remain unmeasured.
