@@ -661,10 +661,10 @@
     },
     {
       "path": "src/app/globals.css",
-      "lines": 788,
+      "lines": 793,
       "sha256": "062fc6edf40de128da883dde4729708736b54740215ce37ead4786a582a32f62",
-      "status": "partial; complete CSS source inspected; findings 171\u2013172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate",
-      "reviewedSha256": "1a9f4c86868901c9b8dcc6d61aadb503f33f3bf251056b02937fc8fee7b8a276"
+      "status": "partial; complete CSS source inspected; findings 171\u2013172 focus contrast, forced colors, native themes and print-scheme checks pass; editor font consistency and final shared/invoice verification pending; finding 202 unifies the approved native sans token across body/editor/toasts with six-width EN/CS native and invoice print checks; remaining domain/print functional checks stay separate; finding 388 desktop outer frame refuses programmatic scrolling while the inner content remains scrollable; six-width focus/scroll geometry checked; shared warning/final release remain open",
+      "reviewedSha256": "a8cde08a186535ac7984b73c89371728384e59ae2b9f4e832c795c0d15f43a51"
     },
     {
       "path": "src/app/guest/page.tsx",
@@ -1176,10 +1176,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/stage.tsx",
-      "lines": 169,
+      "lines": 170,
       "sha256": "5a6c3b6f1eab091bbea44d9ebc6a73bacbe525dbd1ed734bd8d3d03efb1bbe06",
-      "status": "partial; saved/draft feed/pixel paths and native radio controls inspected; empty-deck/swipe/profile-draft/error presentation remains; see remaining-review.md",
-      "reviewedSha256": "5a6c3b6f1eab091bbea44d9ebc6a73bacbe525dbd1ed734bd8d3d03efb1bbe06"
+      "status": "partial; saved/draft feed/pixel paths and native radio controls inspected; empty-deck/swipe/profile-draft/error presentation remains; see remaining-review.md; finding 388 loads only the selected saved-deck thumbnails eagerly because approval needs every saved slide; 768/1024px native readiness/field checks pass; prior presentation leads and final release remain open",
+      "reviewedSha256": "106e9557278d986325aa797e89118805d8d655360aa9e47446c502dea469e23d"
     },
     {
       "path": "src/components/marketing/dneskai/lab/topics-list.tsx",

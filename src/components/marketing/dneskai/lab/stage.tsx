@@ -140,7 +140,8 @@ function DeckStrip({ slides, slide, onSlide, lang, onLoaded }: { slides: Dneskai
           className={cn('block w-16 overflow-hidden rounded-md border bg-surface-inset focus-ring md:w-24', item.draft && 'border-dashed border-warning', item.index === slide ? 'border-primary ring-2 ring-primary' : !item.draft && 'border-border')}>
           {item.draft ? <span className="flex aspect-[4/5] flex-col items-center justify-center gap-1 p-1 text-center text-[10px] text-foreground-muted" data-testid="dneskai-strip-draft">
             <span className="tabular text-xs font-semibold text-foreground">{item.index + 1}</span><span className="text-warning">{t.draft[item.draft]}</span></span>
-            : item.render ? <Image unoptimized src={item.render.url} alt="" width={item.render.width} height={item.render.height} sizes="96px" className="block aspect-[4/5] h-auto w-full"
+            // Approval requires every saved slide loaded, including offscreen deck thumbnails.
+            : item.render ? <Image unoptimized loading="eager" src={item.render.url} alt="" width={item.render.width} height={item.render.height} sizes="96px" className="block aspect-[4/5] h-auto w-full"
             onLoad={() => onLoaded(item.render!.url, true)} onError={() => onLoaded(item.render!.url, false)} />
             : <span className="flex aspect-[4/5] items-center justify-center p-1 text-center text-[10px] text-foreground-muted">{item.index + 1}</span>}
         </button>

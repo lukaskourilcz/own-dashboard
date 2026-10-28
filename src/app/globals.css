@@ -356,7 +356,9 @@ body {
     height: 100%;
     min-height: 0;
     margin-inline: auto;
-    overflow: hidden;
+    /* Content owns scrolling. Hidden would still let focus/scrollIntoView move
+       this outer frame and carry its toolbar/sidebar out of view. */
+    overflow: clip;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-window);
   }
