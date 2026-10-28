@@ -28,6 +28,11 @@ const calendar = (extra: Record<string, unknown>) => ({ name: "x", launch: null,
  */
 async function stubCalendars(page: Page, body: unknown, status = 200) {
   let requests = 0;
+  // Every configured source has an explicit outcome, even when a case isolates one readable plan.
+  if (body && typeof body === 'object' && 'sources' in body && Array.isArray(body.sources)) {
+    const sources = body.sources;
+    body = { ...body, sources: [...sources, ...[DEVSHARK, DNESKAI].filter(source => !sources.some(item => item.id === source.id)).map(source => ({ ...source, status: 'disconnected', detail: null, calendar: null }))] };
+  }
   await page.unroute("**/api/marketing/calendars");
   await page.route("**/api/marketing/calendars", (route) => {
     requests += 1;

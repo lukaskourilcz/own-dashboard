@@ -1,5 +1,9 @@
 import { addDays, format, startOfWeek } from "date-fns";
 import { parseDateOnly } from "@/lib/date-keys";
+import { awaitWithSignal } from '@/lib/abortable';
+import { boundedResponseText } from '@/lib/bounded-response';
+import { MAX_CALENDAR_ENTRIES, MAX_PRELAUNCH_ITEMS, MARKETING_CALENDAR_MAX_TEXT as MAX_TEXT, MARKETING_CALENDAR_MAX_TIP_REFS as MAX_TIP_REFS, parseMarketingCalendarsResponse } from '@/lib/marketing-calendar-response';
+export { MAX_CALENDAR_ENTRIES, MAX_PRELAUNCH_ITEMS } from '@/lib/marketing-calendar-response';
 
 /**
  * The marketing calendars OwnDashboard reads but never writes.
@@ -58,10 +62,7 @@ export const MARKETING_CALENDAR_SOURCES = [
 ] as const satisfies readonly MarketingCalendarSource[];
 
 /** Upper bounds on what one document may contribute. */
-export const MAX_CALENDAR_ENTRIES = 1_000;
-export const MAX_PRELAUNCH_ITEMS = 200;
-const MAX_TIP_REFS = 20;
-const MAX_TEXT = 300;
+// Limits are shared with the browser response contract.
 
 export type MarketingEntry = {
   id: string;
@@ -411,16 +412,29 @@ export type MarketingCalendarsResult =
   | { kind: "error" };
 
 /** GET /api/marketing/calendars from the browser. The token stays on the server. */
-export async function loadMarketingCalendars(): Promise<MarketingCalendarsResult> {
+export async function loadMarketingCalendars(parent?: AbortSignal): Promise<MarketingCalendarsResult> {
+  // The server's thirty-second work limit plus transport time, never a new allowance per phase.
+  const signal = AbortSignal.any([AbortSignal.timeout(35_000), ...(parent ? [parent] : [])]);
+  const discard = (reply: Response) => { if (reply.body && !reply.body.locked) void reply.body.cancel().catch(() => undefined); };
+  let response: Response | undefined;
   try {
-    const response = await fetch("/api/marketing/calendars", { cache: "no-store" });
-    if (response.status === 429) return { kind: "rate-limited" };
-    if (response.status === 401) return { kind: "signed-out" };
-    if (!response.ok) return { kind: "error" };
-    const data = (await response.json()) as MarketingCalendarsResponse;
-    if (!data || !Array.isArray(data.sources)) return { kind: "error" };
-    return { kind: "ok", data };
+    signal.throwIfAborted();
+    // A query retired in the same commit must not start a needless authenticated request.
+    await awaitWithSignal(Promise.resolve(), signal);
+    signal.throwIfAborted();
+    const pending = fetch('/api/marketing/calendars', { cache: 'no-store', redirect: 'error', signal });
+    void pending.then(reply => { if (signal.aborted) discard(reply); }, () => undefined);
+    response = await awaitWithSignal(pending, signal);
+    signal.throwIfAborted();
+    if (response.status === 429) return { kind: 'rate-limited' };
+    if (response.status === 401) return { kind: 'signed-out' };
+    if (response.status !== 200 || response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') return { kind: 'error' };
+    const value: unknown = JSON.parse(await boundedResponseText(response, 8 * 1024 * 1024, signal));
+    const data = parseMarketingCalendarsResponse(value, MARKETING_CALENDAR_SOURCES);
+    signal.throwIfAborted();
+    return { kind: 'ok', data };
   } catch {
-    return { kind: "error" };
-  }
+    if (parent?.aborted) throw new DOMException('Calendar read aborted', 'AbortError');
+    return { kind: 'error' };
+  } finally { if (response) discard(response); }
 }

@@ -1308,10 +1308,10 @@
     },
     {
       "path": "src/components/marketing/use-marketing-calendars.ts",
-      "lines": 46,
+      "lines": 56,
       "sha256": "1296d690d0966379c3716d7dc47f32ed1072c5215dfac5e3f8c3e85d1151ebb5",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "79f08f487c6721d4ef7efcfa1d21cb692f17f357c0d9a7b394b07f0befdc849c"
+      "status": "partial; findings 383/385 verify bounded unique parser projections, complete omission counts, strict complete browser DTOs, original response scope/bytes/cancellation and explicit guarded recovery focus; cached failed-refresh presentation, server/import lifetimes, repeated title work and final release remain open",
+      "reviewedSha256": "a223d6f868593fa9f8bb81f942bba4a6fe565223af031106cd58a0bfb9df6dcd"
     },
     {
       "path": "src/components/marketing/use-source-actions.ts",
@@ -3245,10 +3245,10 @@
     },
     {
       "path": "src/lib/marketing-calendars.ts",
-      "lines": 426,
+      "lines": 440,
       "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
-      "status": "partial; complete source inspection; finding 383 verifies bounded prefix processing, complete omission totals, first-valid exact identities and valid/unknown wall times; browser response validation/lifetime, repeated title normalization and other recorded leads remain; legacy read-only calendars retained",
-      "reviewedSha256": "4a0fcf6c990e71bf4c2d4ea3e199d9d25b774a3a4514c49f909f4abd564e4959"
+      "status": "partial; findings 383/385 verify bounded unique parser projections, complete omission counts, strict complete browser DTOs, original response scope/bytes/cancellation and explicit guarded recovery focus; cached failed-refresh presentation, server/import lifetimes, repeated title work and final release remain open",
+      "reviewedSha256": "a83c28a88ae581b0fcf21ccfd82d7c4ab03c951346396a16752f7345f3f16784"
     },
     {
       "path": "src/lib/marketing/account-control-contracts.ts",
@@ -5080,6 +5080,13 @@
       "lines": 63,
       "status": "source reviewed; finding 369 complete stable invoker Calendar snapshot passes full-chain actual SDK/RLS, bounds, unknown dates, DST and drop/recreate checks; canonical production rollout and final release pending",
       "reviewedSha256": "346d68c87e0d2b558954794107bf1f356d5f32f586bc2edd172ad2b5ba64e0dc"
+    },
+    {
+      "path": "src/lib/marketing-calendar-response.ts",
+      "sha256": null,
+      "lines": 36,
+      "status": "source reviewed; finding 385 verifies complete canonical source outcomes, selected browser fields, bounded shape/date/time/identity and parser-limit parity; targeted unit/native checks pass; final release pending",
+      "reviewedSha256": "56f3a3785343c43c385dfdb815671cf1ad483b97476c5d4b47f55f863ec8cc63"
     }
   ],
   "baselineFileCount": 561

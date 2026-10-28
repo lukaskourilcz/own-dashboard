@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useLayoutEffect, useRef, type MouseEvent } from 'react';
 import {
   loadMarketingCalendars,
   type MarketingCalendarsResponse,
@@ -22,15 +23,23 @@ export type MarketingView =
  * public tour and the preview harness pass instead of reading GitHub.
  */
 export function useMarketingCalendars(preview?: MarketingCalendarsResponse) {
+  const refreshOrigin = useRef<HTMLButtonElement | null>(null);
   const query = useQuery({
     queryKey: qk.marketingCalendars,
-    queryFn: loadMarketingCalendars,
+    queryFn: ({ signal }) => loadMarketingCalendars(signal),
     enabled: !preview,
     staleTime: 30 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
+  useLayoutEffect(() => {
+    const original = refreshOrigin.current;
+    if (!original || query.isFetching) return;
+    refreshOrigin.current = null;
+    if (!original.isConnected || (document.activeElement !== document.body && document.activeElement !== original)) return;
+    original.focus();
+  }, [query.isFetching, query.data, query.error]);
   const view: MarketingView = preview
     ? { kind: "ok", data: preview }
     : query.data
@@ -42,6 +51,6 @@ export function useMarketingCalendars(preview?: MarketingCalendarsResponse) {
     view,
     checking: !preview && query.isFetching,
     canCheck: !preview,
-    checkAgain: () => void query.refetch(),
+    checkAgain: (event?: MouseEvent<HTMLButtonElement>) => { refreshOrigin.current = event?.currentTarget ?? null; void query.refetch(); },
   };
 }

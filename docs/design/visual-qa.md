@@ -616,3 +616,8 @@ Finding 382 adds the actual missed-slot recovery component to the local plan, no
 ### 28 October — finding 383 legacy-calendar omission notes
 
 Twelve six-width desktop cases pass in 1.1 minutes (EN light/CS dark); both 430px touch-device cases pass in 6.1 seconds. Work renders the actual parsed fixture's five omitted rows with the updated localized explanation, no horizontal overflow, scoped axe and one stubbed calendar read. No visual redesign/new capture is added; final optimized verification remains open.
+
+
+### 28 October — finding 385 legacy-calendar read recovery
+
+The final combined native run passes 47 with one intentional skip in 2.2 minutes. It covers EN/CS error recovery and intervening keyboard focus, six-width/device omission notices, original one-read/manual-refresh counts and existing Work/IG TIPS/deep-link/inherited labels, with scoped axe and reflow. Four genuine recovery focus failures and the earlier request-admission failures remain in their original logs; no timing or request-count assertion is relaxed. Existing isolated fixtures now give every registered source an explicit outcome. No new visual redesign/capture is added.
