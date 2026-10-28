@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import type { createClient } from '@/lib/supabase/server';
+import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
+import { readKnowledgeBody } from '@/lib/marketing/knowledge-body';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { saveRevision } from '@/lib/marketing/store';
@@ -43,17 +45,28 @@ const approvalReasons:Record<string,string>={'revision not ready':'revision-not-
 const unwired=new Set(['renderer-unwired','media-unwired']);
 export async function POST(request:Request){
  const csrf=rejectCrossOrigin(request);if(csrf)return csrf;
- const db=await createClient();const {data:{user}}=await db.auth.getUser();
- if(!user)return NextResponse.json({error:'unauthorized'},{status:401});
- const feedbackScope=createMarketingOwnerFeedbackScope(db,user.id,request.signal);
+ const signal = AbortSignal.any([request.signal, AbortSignal.timeout(60_000)]);
+ let context: Awaited<ReturnType<typeof readVerifiedServerContext>>;
+ try { context = await readVerifiedServerContext(signal); }
+ catch { return NextResponse.json({ error: 'decision-unavailable' }, { status: 503 }); }
+ if (!context) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+ const { db, ownerId } = context;
+ let input: z.infer<typeof Input>;
+ try {
+  input = Input.parse(JSON.parse(await readKnowledgeBody(request, 131072, signal)));
+  signal.throwIfAborted();
+ } catch (error) {
+  const interrupted = signal.aborted || (error instanceof DOMException && error.name === 'AbortError');
+  return NextResponse.json({ error: interrupted ? 'decision-unavailable' : 'invalid-revision' }, { status: interrupted ? 503 : 400 });
+ }
+ const feedbackScope = createMarketingOwnerFeedbackScope(db, ownerId, signal);
  try{
-  const input=Input.parse(await request.json());
   if(input.action==='approve-many'){
    // One request, but every post goes through the same hash-binding SQL as a single approval, in order. A refusal
    // (hash changed, render blocked, slot expired) is that post's result and never stops the others.
    const results:DneskaiApproveManyResult['results']=[];
    for(const item of input.posts){
-    const {data:original}=await db.from('marketing_revisions').select('revision,content_hash').eq('id',item.id).eq('user_id',user.id).maybeSingle();
+    const {data:original}=await db.from('marketing_revisions').select('revision,content_hash').eq('id',item.id).eq('user_id',ownerId).maybeSingle();
     const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:item.id,p_expected_hash:item.expectedHash});
     if(error){results.push({id:item.id,ok:false,publicationId:null,error:approvalReasons[error.message]??'approval-unavailable'});continue;}
     if(original)await recordMarketingOwnerFeedback({traceId:original.revision.traceId,revisionId:item.id,revisionHash:original.content_hash,decision:'approved'},process.env,feedbackScope);
@@ -61,7 +74,7 @@ export async function POST(request:Request){
    }
    return NextResponse.json({results});
   }
-  const {data:original}=await db.from('marketing_revisions').select('revision,content_hash').eq('id',input.id).eq('user_id',user.id).maybeSingle();
+  const {data:original}=await db.from('marketing_revisions').select('revision,content_hash').eq('id',input.id).eq('user_id',ownerId).maybeSingle();
   if(input.action==='approve'){
    const {data,error}=await db.rpc('marketing_approve_revision',{p_revision_id:input.id,p_expected_hash:input.expectedHash});
    if(error)return NextResponse.json({error:'approval-unavailable',reason:approvalReasons[error.message]??null},{status:409});
@@ -70,29 +83,29 @@ export async function POST(request:Request){
    return NextResponse.json({publicationId:data,scheduling:'tick'});
   }
   if(input.action==='publish-now'||input.action==='approve-at'){
-   const reviewed=await loadReviewed(db,user.id,input.id,input.expectedHash);
+   const reviewed=await loadReviewed(db,ownerId,input.id,input.expectedHash);
    if(reviewed instanceof Response)return reviewed;
    const {row,current}=reviewed;
    let scheduledAt:string;
    if(input.action==='publish-now'){
     // Both switches and the account's own switch: otherwise the tick would only dry-run and the slot would lapse.
-    const {data:target}=await db.from('marketing_accounts').select('verified_at,enabled').eq('user_id',user.id).eq('brand',current.brand).eq('platform',current.account.platform).eq('remote_account_id',current.account.id).maybeSingle();
+    const {data:target}=await db.from('marketing_accounts').select('verified_at,enabled').eq('user_id',ownerId).eq('brand',current.brand).eq('platform',current.account.platform).eq('remote_account_id',current.account.id).maybeSingle();
     if(!marketingPublishingLive(process.env)||!target?.verified_at||!target.enabled)return NextResponse.json({error:'publishing-disabled'},{status:409});
     scheduledAt=new Date(Date.now()+DNESKAI_PUBLISH_NOW_LEAD_MS).toISOString();
    }else{
     // Owner decision 6: only the slot the server finds free itself, and only the one the owner was shown.
     let free:string|null;
-    try{free=await dneskaiServerNextFreeSlot(createAdminClient(),user.id,row.project_id,[current.scheduledAt],new Date());}
+    try{free=await dneskaiServerNextFreeSlot(createAdminClient(),ownerId,row.project_id,[current.scheduledAt],new Date());}
     catch{return NextResponse.json({error:'slot-unavailable'},{status:503});}
     if(!free)return NextResponse.json({error:'slot-none-free'},{status:409});
     if(Date.parse(free)!==Date.parse(input.scheduledAt))return NextResponse.json({error:'slot-unavailable',scheduledAt:free},{status:409});
     scheduledAt=free;
    }
-   return moveAndApprove(db,user.id,input.id,current,row.render_report,scheduledAt,feedbackScope);
+   return moveAndApprove(db,ownerId,input.id,current,row.render_report,scheduledAt,feedbackScope);
   }
   if(input.action==='regenerate'){
    try{
-    const result=await regenerateDneskaiRevision({user:db,admin:createAdminClient(),owner:user.id,id:input.id,expectedHash:input.expectedHash,note:input.note,env:process.env,feedbackScope});
+    const result=await regenerateDneskaiRevision({user:db,admin:createAdminClient(),owner:ownerId,id:input.id,expectedHash:input.expectedHash,note:input.note,env:process.env,feedbackScope});
     return NextResponse.json(result,{status:202});
    }catch(failure){
     if(failure instanceof DneskaiPaidActionError)return NextResponse.json({error:failure.code},{status:failure.status});
@@ -100,7 +113,7 @@ export async function POST(request:Request){
    }
   }
   if(input.action==='edit'){
-   const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt,render_report').eq('id',input.id).eq('user_id',user.id).single();
+   const {data:row,error}=await db.from('marketing_revisions').select('revision,slides,offline_import_receipt,render_report').eq('id',input.id).eq('user_id',ownerId).single();
    if(error||!row)return NextResponse.json({error:'revision-unavailable'},{status:404});
    const scheduled=Date.parse(input.scheduledAt);if(scheduled<=Date.now()||scheduled>Date.now()+6*86400000)return NextResponse.json({error:'schedule-outside-asset-window'},{status:409});
    if(dneskaiCaptionHashtags(input.caption)>DNESKAI_CAPTION_HASHTAG_MAX&&parseContentRevision(row.revision).brand==='dneskai')return NextResponse.json({error:'caption-hashtags-over-limit'},{status:409});
@@ -111,7 +124,7 @@ export async function POST(request:Request){
    }
    let account:ContentRevision['account']=current.account;
    if(input.accountId){
-    const {data:chosen,error:accountError}=await db.from('marketing_accounts').select('brand,platform,remote_account_id,handle,verified_at').eq('id',input.accountId).eq('user_id',user.id).maybeSingle();
+    const {data:chosen,error:accountError}=await db.from('marketing_accounts').select('brand,platform,remote_account_id,handle,verified_at').eq('id',input.accountId).eq('user_id',ownerId).maybeSingle();
     if(accountError||!chosen||chosen.brand!==current.brand||chosen.platform!==current.account.platform||!chosen.verified_at)return NextResponse.json({error:'account-unavailable'},{status:409});
     account={id:chosen.remote_account_id,platform:chosen.platform,handle:chosen.handle};
    }
@@ -122,21 +135,21 @@ export async function POST(request:Request){
    if(input.format==='reel'&&(!current.deck||!dneskaiReelsEnabled()))return NextResponse.json({error:'revision-format-unsupported'},{status:409});
    // #167: a trending Instagram sound needs its own switch, Facebook Login and today's trend list.
    if(input.audioTrackId?.startsWith('ig:')){
-    const {data:trend,error:trendError}=await db.from('marketing_audio_trends').select('audio_id').eq('audio_id',input.audioTrackId.slice(3)).eq('user_id',user.id).maybeSingle();
+    const {data:trend,error:trendError}=await db.from('marketing_audio_trends').select('audio_id').eq('audio_id',input.audioTrackId.slice(3)).eq('user_id',ownerId).maybeSingle();
     if(!dneskaiAudioTrendsEnabled()||trendError||!trend)return NextResponse.json({error:'audio-track-unavailable'},{status:409});
    }else if(input.audioTrackId){
-    const {data:track,error:trackError}=await db.from('marketing_audio_tracks').select('id,enabled,source').eq('id',input.audioTrackId).eq('user_id',user.id).maybeSingle();
+    const {data:track,error:trackError}=await db.from('marketing_audio_tracks').select('id,enabled,source').eq('id',input.audioTrackId).eq('user_id',ownerId).maybeSingle();
     if(trackError||!track||!track.enabled||track.source==='instagram-library')return NextResponse.json({error:'audio-track-unavailable'},{status:409});
    }
    if(current.deck){
-    const edited=await editDneskaiDeck(db,user.id,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,engagement:input.engagement,...(input.audioTrackId!==undefined?{audio:dneskaiAudioFromKey(input.audioTrackId)}:{}),...(input.format?{format:input.format}:{})},feedbackScope);
+    const edited=await editDneskaiDeck(db,ownerId,input.id,current,row.render_report,{caption:input.caption,scheduledAt:input.scheduledAt,account,deck:input.deck,engagement:input.engagement,...(input.audioTrackId!==undefined?{audio:dneskaiAudioFromKey(input.audioTrackId)}:{}),...(input.format?{format:input.format}:{})},feedbackScope);
     if(edited instanceof Response)return edited;
     return NextResponse.json({id:edited.id,ready:edited.ready,contentHash:edited.contentHash,render:{status:edited.report.status,problems:edited.report.problems}});
    }
    if(input.deck)return NextResponse.json({error:'deck-edit-unsupported'},{status:409});
-   const assets=await refreshMarketingAssetUrls(admin,user.id,current.assets);
+   const assets=await refreshMarketingAssetUrls(admin,ownerId,current.assets);
    const revision=parseContentRevision({...row.revision,assets,account,caption:input.caption,scheduledAt:input.scheduledAt});
-   const saved=await saveRevision(admin,user.id,revision,{replacesId:input.id,slides:row.slides});
+   const saved=await saveRevision(admin,ownerId,revision,{replacesId:input.id,slides:row.slides});
    await recordMarketingOwnerFeedback({traceId:revision.traceId,revisionId:saved.id,revisionHash:revisionContentHash(revision),decision:'edited'},process.env,feedbackScope);
    return NextResponse.json(row.offline_import_receipt?{...saved,ready:false,holdCode:'offline-import-review-required'}:saved);
   }

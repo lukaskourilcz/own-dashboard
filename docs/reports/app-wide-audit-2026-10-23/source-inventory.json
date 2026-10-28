@@ -437,10 +437,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/generate/route.ts",
-      "lines": 30,
+      "lines": 38,
       "sha256": "25ac5eaadf4d60d1ffceaf03e4a72cc4d2153b3e90cfcf1bf0afae426af6f20b",
-      "status": "partial; full owner-only paid-action dispatch inspected; explicit consent/budget semantics retained; bounded body, auth errors, request cancellation and paid-action internals remain pending",
-      "reviewedSha256": "25ac5eaadf4d60d1ffceaf03e4a72cc4d2153b3e90cfcf1bf0afae426af6f20b"
+      "status": "partial; finding 374 closes cached-user/auth-error admission, original pre-auth scope and bounded/cancellable body before work; existing own-only decisions, hash approval and lineage retained; later query/admin/mutation/render/paid-action lifetimes, exact result ids and retry recovery remain; optional feedback lifetime closed in finding 207",
+      "reviewedSha256": "89472b29313de2068982415a1ce9f87c0721da90fbfb1b40c768a28c538c577d"
     },
     {
       "path": "src/app/api/marketing/dneskai/media/route.ts",
@@ -556,10 +556,10 @@
     },
     {
       "path": "src/app/api/marketing/revisions/route.ts",
-      "lines": 197,
+      "lines": 211,
       "sha256": "3d6cfcf7621354ae3f899f52fd3a70103691095b2bbb3f332bfe77e2c6b21b04",
-      "status": "partial source review: exact-hash approvals and guarded new-revision lineage retained; auth/body/overall work limits, request cancellation, confirmed result ids, separate feedback deadline and stable retry recovery need verification; no approval/publication was performed; finding 207 bounds optional feedback chain/client work to three seconds, shares a lazy request budget and parent cancellation, verifies returned row ownership and disables SDK read retries; whole action/provider lifecycle remains separate",
-      "reviewedSha256": "4b18960b69e5f2999f67448a2f9b719937638804781aed76eb77816a202575ac"
+      "status": "partial; finding 374 closes cached-user/auth-error admission, original pre-auth scope and bounded/cancellable body before work; existing own-only decisions, hash approval and lineage retained; later query/admin/mutation/render/paid-action lifetimes, exact result ids and retry recovery remain; optional feedback lifetime closed in finding 207",
+      "reviewedSha256": "d0614f0d13597c2625042d65768541901e483d7c3944a0ee3c9276a539f637fe"
     },
     {
       "path": "src/app/api/marketing/state/route.ts",
