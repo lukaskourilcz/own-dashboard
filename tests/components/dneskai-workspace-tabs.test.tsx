@@ -299,10 +299,20 @@ it('stops automatic render polling after a read error until an explicit successf
  }finally{vi.useRealTimers();}
 });
 
+// Costs mounts its account query only after the parent cost read commits.
+// Await that actual query before asserting status or clicking Refresh.
+const settleAccountRead = async () => {
+ const query = client.getQueryCache().find({ queryKey: [...qk.marketingAccounts, 'preview'], exact: true });
+ expect(query).toBeDefined();
+ await act(async () => { await query!.promise?.catch(() => undefined); });
+ await wait(0);
+};
+
 for (const lang of ['en', 'cs'] as const) {
  const mountCosts = async () => {
   act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-costs" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
   await wait(400);
+  await settleAccountRead();
  };
  const refreshCosts = () => [...container.querySelectorAll<HTMLButtonElement>('[data-testid="dneskai-costs"] button')].find(button => button.textContent === dneskaiWorkspace[lang].refresh)!;
  it(`retains confirmed account status on a failed read and retries it with Costs Refresh (${lang})`, async () => {
@@ -337,6 +347,7 @@ for (const lang of ['en', 'cs'] as const) {
 it('keeps Costs Refresh busy until its account read settles and admits one synchronous attempt', async () => {
  const accounts = vi.spyOn(demoDneskaiWorkspaceApi, 'loadAccounts');
  await show('dneskai-costs');
+ await settleAccountRead();
  const confirmed = client.getQueryData<Awaited<ReturnType<typeof demoDneskaiWorkspaceApi.loadAccounts>>>([...qk.marketingAccounts, 'preview'])!;
  let finish!: (value: Awaited<ReturnType<typeof demoDneskaiWorkspaceApi.loadAccounts>>) => void;
  accounts.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));

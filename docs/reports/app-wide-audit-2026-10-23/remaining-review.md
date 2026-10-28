@@ -207,3 +207,5 @@ Finding 279 closes the native Europe-wide remote save→Saved evidence loss and 
 - Checkpoint 101's ongoing frozen browser attempt has flagged Work health clock cases in EN/CS and both Design Lab image comparisons. Keep the original results/diffs; investigate without classifying them as infrastructure, relaxing timing or blindly updating baselines.
 
 - Finding 389 closes the date-dependent Work clock test fixture after an unchanged optimized trace identifies its missing future-dated Career link. Four controlled-date EN/CS/device cases pass. Finding 388's outer-window clip/selected-deck loading repair is still a draft: its affected native/unit failures and interrupted batch must be resolved before acceptance or golden refresh.
+
+- Finding 390 closes the reproduced Costs test mount/read race by awaiting its actual nested account query before status/Refresh assertions; all 69 related unit cases pass. This does not establish an application lifecycle repair. Finding 388's eight EN/CS middle-width native cases pass; its complete affected matrix and final optimized golden review remain pending.
