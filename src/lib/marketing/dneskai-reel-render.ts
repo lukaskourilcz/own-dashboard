@@ -39,10 +39,13 @@ export const DNESKAI_REEL = {
   audioRate: 48000,
   gop: 60,
   maxSlides: 10,
+  decoderThreads: 1,
+  filterThreads: 1,
+  encoderThreads: 2,
 } as const;
 
 /** OwnDashboard's encoding settings above. Part of every reel key: bump on any change so old renders are not reused. */
-export const DNESKAI_REEL_POLICY = "dneskai-reel/1";
+export const DNESKAI_REEL_POLICY = "dneskai-reel/2";
 
 export const DNESKAI_REEL_FAILURE_CODES = ["reel-input-invalid", "reel-ffmpeg-unavailable", "reel-compose-failed", "reel-encode-failed", "reel-timeout"] as const;
 export type DneskaiReelFailureCode = typeof DNESKAI_REEL_FAILURE_CODES[number];
@@ -64,8 +67,6 @@ export type DneskaiReelInput = {
   signal?: AbortSignal;
   /** The ffmpeg binary; defaults to `ffmpeg-static`. */
   ffmpegPath?: string;
-  /** ffmpeg worker threads; 0 lets ffmpeg choose. */
-  threads?: number;
 };
 
 export type DneskaiReelResult = { bytes: Buffer; sha256: string; durationSeconds: number; slideCount: number; silent: boolean };
@@ -129,15 +130,14 @@ export async function composeDneskaiReelFrame(slide: Buffer, parent?: AbortSigna
 }
 
 /** The ffmpeg arguments for frames `frame-<i>.jpg` and an optional `audio` file in `dir`. Pure, for the tests. */
-export function dneskaiReelFfmpegArgs(input: { dir: string; slideCount: number; audioFile: string | null; output: string; threads?: number }): string[] {
+export function dneskaiReelFfmpegArgs(input: { dir: string; slideCount: number; audioFile: string | null; output: string; }): string[] {
   const { fps, width, height, slideSeconds, crossfadeSeconds, zoomTo, audioFadeSeconds } = DNESKAI_REEL;
   const count = input.slideCount;
   const total = dneskaiReelDuration(count);
   const framesPerSlide = Math.round(slideSeconds * fps);
-  const args = ["-hide_banner", "-loglevel", "error", "-nostdin", "-y"];
-  if (input.threads) args.push("-threads", String(input.threads));
+  const args = ["-hide_banner", "-loglevel", "error", "-nostdin", "-y", "-filter_complex_threads", String(DNESKAI_REEL.filterThreads)];
   for (let index = 0; index < count; index++) {
-    args.push("-framerate", String(fps), "-loop", "1", "-t", String(slideSeconds), "-i", path.join(input.dir, `frame-${index}.jpg`));
+    args.push("-framerate", String(fps), "-loop", "1", "-t", String(slideSeconds), "-threads:v", String(DNESKAI_REEL.decoderThreads), "-i", path.join(input.dir, `frame-${index}.jpg`));
   }
   if (input.audioFile) args.push("-stream_loop", "-1", "-i", input.audioFile);
   else args.push("-f", "lavfi", "-t", String(total), "-i", `anullsrc=r=${DNESKAI_REEL.audioRate}:cl=stereo`);
@@ -161,7 +161,7 @@ export function dneskaiReelFfmpegArgs(input: { dir: string; slideCount: number; 
   args.push(
     "-filter_complex", filters.join(";"),
     "-map", "[vout]", "-map", "[aout]",
-    "-c:v", "libx264", "-profile:v", "high", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-r", String(fps),
+    "-c:v", "libx264", "-threads:v", String(DNESKAI_REEL.encoderThreads), "-profile:v", "high", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-r", String(fps),
     "-g", String(DNESKAI_REEL.gop), "-keyint_min", String(DNESKAI_REEL.gop), "-sc_threshold", "0", "-flags", "+cgop",
     "-b:v", DNESKAI_REEL.videoBitrate, "-maxrate", DNESKAI_REEL.videoBitrate, "-bufsize", "16M",
     "-c:a", "aac", "-b:a", DNESKAI_REEL.audioBitrate, "-ar", String(DNESKAI_REEL.audioRate), "-ac", "2",
@@ -270,7 +270,7 @@ export async function renderDneskaiReel(input: DneskaiReelInput): Promise<Dneska
         if (signal.aborted)
             throw new DneskaiReelRenderError('reel-timeout');
         const output = path.join(dir, "reel.mp4");
-        await runFfmpeg(binary, dneskaiReelFfmpegArgs({ dir, slideCount: count, audioFile, output, threads: input.threads }), signal);
+        await runFfmpeg(binary, dneskaiReelFfmpegArgs({ dir, slideCount: count, audioFile, output }), signal);
         if (signal.aborted)
             throw new DneskaiReelRenderError('reel-timeout');
         const bytes = await readDneskaiReelOutput(output, signal);

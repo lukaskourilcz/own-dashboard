@@ -239,6 +239,8 @@ cache in `marketing-assets`, keys the reel by the revision's content hash and th
 `POST /api/marketing/dneskai/render-reel` (body `{ revisionId }`) runs it for the owner or for a signed scheduler
 or publisher call.
 
+The 28 October audit adopts `dneskai-reel/2`: one thread for each image decoder, one for the complex filter graph and two for the H.264 output encoder. These fixed limits are part of physical media identity. The local two-slide sample uses less CPU time and peak memory, with longer wall time; it does not establish production savings. See [the measured resource artifact](reports/app-wide-audit-2026-10-23/reel-thread-resources.json). Existing objects remain immutable.
+
 ### Where it runs: Vercel, not Fly.io
 
 Checked on 22 October 2026 through the Vercel API (read only): team `lukas-kourils-projects` is on the **Pro**
@@ -249,7 +251,7 @@ binary (ffmpeg 6.1.1, release `b6.1.1`) is 79.8 MB on Linux x64 (43.5 MB on macO
 Measured locally on an Apple M2 with the real ffmpeg-static 5.3.0 build: a 7-slide reel (21.5 s, silent) took
 25.3 s with one ffmpeg thread and 26.4 s with ffmpeg's default, and came to 20.5 MB. The filter graph (zoom and
 crossfade) runs on one core, so a Vercel function with one vCPU should take one to three times as long, well inside
-300 s. Decision: the renderer stays in the Vercel route; the Fly.io fallback from the plan is not built. If a real
+300 s. The 28 October audit found that the old thread option applied only to the first input decoder; this historical comparison does not establish a one-thread encoder or filter graph. Decision: the renderer stays in the Vercel route; the Fly.io fallback from the plan is not built. If a real
 render on Vercel ever comes close to the limit, the route's `RENDER_BUDGET_MS` (280 s) stops ffmpeg with
 `reel-timeout` and the Fly.io port can be added behind the same `dneskaiReelForRevision` dependency.
 

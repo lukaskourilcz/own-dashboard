@@ -3688,8 +3688,8 @@
       "path": "src/lib/marketing/dneskai-reel-render.ts",
       "lines": 286,
       "sha256": "e49c6c99a7f1aa216d13708120b2a96eef821ea462eedf5e7f7d8ce45e8e9bd8",
-      "status": "partial source review; findings 190/332\u2013334 verify physical identity, approved JPEG canvas/pixel/channel/byte input, bounded per-frame processing, sequential preparation and fixed native diagnostics; audio/MP4/output/subprocess completion, duplicate admission and final release remain open; finding 335 verifies bounded native file/audio admission and shared MP4 ceiling; disk/subprocess/admission release work remains",
-      "reviewedSha256": "4a810fbe45d60d98077b09883ebb490ce9ce13b797d605ea07f3670c1ea93cfd"
+      "status": "partial; finding 357 fixed per-input decoder, complex graph and output encoder worker limits with real MP4/CPU/RSS evidence; existing approved JPEG and bounded output proof retained; native child cleanup, durable independent admission and final release remain",
+      "reviewedSha256": "04d04892418445a4b501ef2c785ae523f78dcf6db454cd06574a98dd485a6759"
     },
     {
       "path": "src/lib/marketing/dneskai-reel.ts",

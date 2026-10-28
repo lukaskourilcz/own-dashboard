@@ -1,0 +1,44 @@
+{
+  "finding": 357,
+  "date": "2026-10-28",
+  "scope": "Four interleaved local two-slide silent 6.5-second encodes; same prepared frames, installed ffmpeg-static, real ffprobe validation. No production latency or billing claim.",
+  "policy": "dneskai-reel/2",
+  "observations": [
+    {
+      "mode": "previous",
+      "real": 2.03,
+      "user": 5.79,
+      "sys": 0.34,
+      "maxRssBytes": 484868096,
+      "encoderThreads": 12,
+      "bytes": 114182
+    },
+    {
+      "mode": "bounded",
+      "real": 2.91,
+      "user": 4.5,
+      "sys": 0.09,
+      "maxRssBytes": 303513600,
+      "encoderThreads": 2,
+      "bytes": 115270
+    },
+    {
+      "mode": "bounded",
+      "real": 2.81,
+      "user": 4.38,
+      "sys": 0.06,
+      "maxRssBytes": 305659904,
+      "encoderThreads": 2,
+      "bytes": 115270
+    },
+    {
+      "mode": "previous",
+      "real": 1.58,
+      "user": 5.61,
+      "sys": 0.2,
+      "maxRssBytes": 505298944,
+      "encoderThreads": 12,
+      "bytes": 114182
+    }
+  ]
+}
