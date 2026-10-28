@@ -68,6 +68,8 @@ const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/ca
 const sharpLibvips = "./node_modules/@img/sharp-libvips-*/lib/**/*";
 
 const nextConfig: NextConfig = {
+  // Production checks all application inputs. Root validation also checks tests and scripts.
+  typescript: { tsconfigPath: isDev ? 'tsconfig.json' : 'tsconfig.app.json' },
   // Native bindings loaded through platform-suffixed specifiers no bundler can resolve.
   serverExternalPackages: ["sharp", "@resvg/resvg-js", "ffmpeg-static"],
   // Marketing file reads use templates, vendored fonts/kits and generated

@@ -12,6 +12,8 @@ The latest complete validation checkpoint is 98 at application/test/SQL/tool sna
 
 Checkpoint 99 at `af0c6c0c` stops after full units: 8,296 pass, seven fail and one is skipped. Finding 384 updates the seven outdated fixture contracts and passes 37 focused cases; checkpoint 100 at repaired snapshot `d2699978` passes all 8,303 tests (one skip) and full lint, then its ordinary build exhausts the TypeScript worker heap after compilation. Packaging and optimized browser validation remain unrun. Its manifest coverage correction verifies the real Vitest configuration and vendor/tool inputs against the frozen commit, bringing future validation to 2,089 inputs.
 
+Finding 386 selects an application-only TypeScript program for production builds while retaining the broad root Typecheck in CI and development. Its ordinary build passes under the default heap, along with both program checks and all eight required renderer traces. No check is skipped or repository heap limit increased; a new full checkpoint is still required.
+
 Changes after checkpoint 98 require their own focused checks and a clean final optimized release matrix. The current report keeps those results separate from a deployed integration receipt. Do not deploy an E2E fixture build or treat a prepared migration, local source pass or recovered browser run as a completed Production release.
 
 The persistent shell owns one visible page title. Shared navigation guards protect DNESKAi draft exits, including browser history, with Save / Discard / Stay. Pending reviews have independent 30-row keyset pages; recent receipts cannot displace them. Complete engagement aggregates run through the authenticated owner's RLS context.

@@ -19,9 +19,9 @@
     {
       "path": "next.config.ts",
       "sha256": "a1fcd8a78a6e709b0d8b0c1cf7203acc660db6150e4f4a5a6b754af9f7a772b1",
-      "lines": 126,
-      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending",
-      "reviewedSha256": "8911784dc9a80d1cec078188166bc67401392e6b7affa744c9e9b183e9964f8b"
+      "lines": 128,
+      "status": "source reviewed; telemetry targeted and public production checks pass; final app-wide release checks pending; finding 386 production app-only type checking with preserved broad root/development coverage, default-heap ordinary build and eight required renderer traces pass; trace bytes and final release remain open",
+      "reviewedSha256": "fd2727ef5647a4bd9bf953dd7a09888b629bdd0abd7df1e5444159381f136c43"
     },
     {
       "path": "sentry.client.config.ts",
@@ -5087,6 +5087,13 @@
       "lines": 36,
       "status": "source reviewed; finding 385 verifies complete canonical source outcomes, selected browser fields, bounded shape/date/time/identity and parser-limit parity; targeted unit/native checks pass; final release pending",
       "reviewedSha256": "56f3a3785343c43c385dfdb815671cf1ad483b97476c5d4b47f55f863ec8cc63"
+    },
+    {
+      "path": "tsconfig.app.json",
+      "sha256": null,
+      "lines": 18,
+      "status": "source reviewed; finding 386 inherits strict compiler flags, scopes production roots and retains framework/runtime entrypoints and broad CI/editor checks; actual ordinary build, cold app/root type checks and required packaging pass; final release pending",
+      "reviewedSha256": "9cf8788392ff9dd2f66d6474587a19520676d0182ea4fce5667204c837391811"
     }
   ],
   "baselineFileCount": 561

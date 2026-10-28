@@ -199,6 +199,6 @@ Finding 279 closes the native Europe-wide remote save→Saved evidence loss and 
 
 - Finding 382 closes paged Review occupancy for Lab move advice with a due-only complete Calendar read, strict readable/current-day evidence, explicit recovery/focus and shared-cache reuse. Captured confirmation/source/action lifetimes remain open; the server still rechecks the exact candidate.
 
-- Checkpoint 100 passes 8,303 tests/one skip and full lint, but ordinary Next build exhausts the TypeScript worker's roughly 2GB heap. Review a correctly scoped application build configuration while preserving complete test/tool type checks. Three dynamic-filesystem warnings in audio spawn/vendored brand-kit code need actual packaging evidence after the build works; do not merely suppress them.
+- Checkpoint 100 passes 8,303 tests/one skip and full lint, but ordinary Next build exhausts the TypeScript worker's roughly 2GB heap. Finding 386 closes the application build scope with a default-heap successful build and preserved broad test/script type checking. Three dynamic-filesystem warnings in audio spawn/vendored brand-kit code need actual packaging evidence after the build works; do not merely suppress them.
 
 - Finding 385 closes legacy-calendar browser transport/shape and explicit keyboard recovery, including same-turn retirement before HTTP. The hook still replaces confirmed data with an error-result object on failed refresh; review retained data/age and independent error recovery without automatically retrying repository reads.
