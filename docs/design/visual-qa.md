@@ -597,3 +597,5 @@ Finding 379's local plan now has 64 authentic component image pairs. All images 
 ### 28 October — finding 380 unobstructed Lab editing
 
 All 24 native desktop cases pass in 2.9 minutes at six widths (EN light/CS dark). Focused and dirty planned-time fields pass an actual hit-target check after ordinary nearest scrolling; no centred workaround is used. Clean review keeps sticky approval reachable. Values, reflow and scoped axe pass; Czech desktop/phone field crops are inspected. The first touch-device set has nine passes/one initial navigation failure during a logged development memory restart; all four new obstruction and both discard-focus cases pass. The unchanged isolated English-dark case passes in 12.3 seconds; the initial failed run remains recorded. Final optimized runtime verification remains open.
+
+Finding 380 updates the existing scheduling-field entry in the 64-pair local visual plan with ordinary-scroll crops pinned to `3c5a616f`. Both device modes load all 64 images; 390/1440 light/dark reflow, mapped highlights/toggles and page-error checks pass. Earlier centred captures retain their dated manifest as historical evidence.
