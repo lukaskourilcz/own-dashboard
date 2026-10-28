@@ -24,7 +24,10 @@ function database(token: StoredMetaToken | null, options: { readError?: boolean;
     if (name === 'marketing_account_token_metadata') return { data: [{ account_id: account.id, brand: 'dneskai', platform: 'instagram', expires_at: at(5 * day), refreshed_at: at(-55 * day), scopes: ['instagram_business_basic'], login_mode: 'instagram' }], error: null };
     throw new Error(`unexpected rpc ${name}`);
   });
-  return { db: { rpc } as unknown as ReturnType<typeof createAdminClient>, rpc };
+  return { db: { rpc: (...args: [string, Record<string, unknown>]) => {
+    const pending = rpc(...args), query = { retry: () => query, abortSignal: () => query, then: pending.then.bind(pending) };
+    return query;
+  } } as unknown as ReturnType<typeof createAdminClient>, rpc };
 }
 
 describe('Meta token resolution', () => {

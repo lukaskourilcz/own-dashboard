@@ -1,5 +1,8 @@
 import 'server-only';
 import { z } from 'zod';
+import { awaitWithSignal } from '@/lib/abortable';
+import { databaseTimestamp, databaseVersion } from '@/lib/database-version';
+import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import type { MarketingBrand } from './contracts';
 import type { MetaPublisherConfig } from './publisher';
@@ -50,10 +53,11 @@ const scope = z.string().regex(/^[a-z_]{1,64}$/);
 /** The token store accepts at most 20 scopes of this shape; checked before any write or refresh. */
 export const META_SCOPE_LIMIT = 20;
 export function metaScopesStorable(scopes: readonly string[]): boolean {
-  return scopes.length <= META_SCOPE_LIMIT && scopes.every(value => scope.safeParse(value).success);
+  return scopes.length <= META_SCOPE_LIMIT && new Set(scopes).size === scopes.length && scopes.every(value => scope.safeParse(value).success);
 }
-const StoredRowSchema = z.object({ access_token: tokenValue, expires_at: z.string().min(1), refreshed_at: z.string().min(1), scopes: z.array(scope).max(20), login_mode: loginMode });
-const MetadataRowSchema = z.object({ account_id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), expires_at: z.string().min(1), refreshed_at: z.string().min(1), scopes: z.array(scope).max(20), login_mode: loginMode });
+const storedScopes = z.array(scope).max(META_SCOPE_LIMIT).refine(values => new Set(values).size === values.length);
+const StoredRowSchema = z.strictObject({ access_token: tokenValue, expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
+const MetadataRowSchema = z.object({ account_id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
 const RefreshResponseSchema = z.object({ access_token: tokenValue, token_type: z.string().max(20).optional(), expires_in: z.number().int().positive().max(90 * 24 * 60 * 60) });
 
 export class MetaCredentialError extends Error {
@@ -86,10 +90,11 @@ export function metaConfiguration(brand: MarketingBrand, platform: MetaPlatform,
 }
 
 /** Reads the stored token through the service-role function. A store error is never treated as "no token". */
-export async function readStoredMetaToken(db: Database, owner: string, accountId: string): Promise<StoredMetaToken | null> {
+export async function readStoredMetaToken(db: Database, owner: string, accountId: string, parent?: AbortSignal): Promise<StoredMetaToken | null> {
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
   if (!z.uuid().safeParse(owner).success || !z.uuid().safeParse(accountId).success) throw new MetaCredentialError('credential-store-unavailable');
   let response: { data: unknown; error: unknown };
-  try { response = await db.rpc('marketing_read_account_token', { p_owner: owner, p_account: accountId }); }
+  try { signal.throwIfAborted(); response = await awaitWithSignal(db.rpc('marketing_read_account_token', { p_owner: owner, p_account: accountId }).retry(false).abortSignal(signal), signal); signal.throwIfAborted(); }
   catch { throw new MetaCredentialError('credential-store-unavailable'); }
   if (response.error || !Array.isArray(response.data) || response.data.length > 1) throw new MetaCredentialError('credential-store-unavailable');
   if (!response.data.length) return null;
@@ -165,17 +170,25 @@ export async function resolveMetaPublisherConfig(db: Database, owner: string, ac
  */
 export async function refreshInstagramToken(db: Database, owner: string, account: MetaCredentialAccount,
   options: { env?: Environment; now?: Date; fetcher?: typeof fetch; signal?: AbortSignal } = {}): Promise<InstagramTokenRefreshOutcome> {
-  const now = options.now ?? new Date();
-  const outcome = (status: Exclude<InstagramTokenRefreshOutcome['status'], 'refreshed'>, code: string): InstagramTokenRefreshOutcome => ({ status, accountId: account.id, code });
-  if (account.user_id !== owner) return outcome('held', 'credential-owner-mismatch');
-  if (account.platform !== 'instagram') return outcome('held', 'refresh-instagram-only');
+  const now = new Date((options.now ?? new Date()).getTime());
+  const selected = z.strictObject({ id: z.uuid(), user_id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']) }).safeParse(account);
+  const accountId = selected.success ? selected.data.id : account.id;
+  const outcome = (status: Exclude<InstagramTokenRefreshOutcome['status'], 'refreshed'>, code: string): InstagramTokenRefreshOutcome => ({ status, accountId, code });
+  if (!selected.success || !z.uuid().safeParse(owner).success || selected.data.user_id !== owner) return outcome('held', 'credential-owner-mismatch');
+  if (selected.data.platform !== 'instagram') return outcome('held', 'refresh-instagram-only');
+  if (!Number.isFinite(now.getTime())) return outcome('held', 'credential-store-unavailable');
+  const signal = AbortSignal.any([AbortSignal.timeout(25_000), ...(options.signal ? [options.signal] : [])]);
+  if (signal.aborted) return outcome('uncertain', 'refresh-request-uncertain');
+  const env = options.env ?? process.env, original = selected.data;
+  const bootstrap = bootstrapMetaCredential(original.brand, original.platform, env);
+  const appId = env.MARKETING_META_APP_ID ?? '', appSecret = env.MARKETING_META_APP_SECRET ?? '';
+  const version = env[`${metaEnvironmentPrefix(original.brand, original.platform)}_API_VERSION`] ?? '';
+  const fetcher = options.fetcher ?? fetch;
   let stored: StoredMetaToken | null;
-  try { stored = await readStoredMetaToken(db, owner, account.id); }
+  try { stored = await readStoredMetaToken(db, owner, original.id, signal); }
   catch { return outcome('held', 'credential-store-unavailable'); }
-  const bootstrap = bootstrapMetaCredential(account.brand, account.platform, options.env ?? process.env);
+  if (signal.aborted) return outcome('uncertain', 'refresh-request-uncertain');
   const fromEnvironment = bootstrap.accessToken ? { accessToken: bootstrap.accessToken, expiresAt: bootstrap.expiresAt, refreshedAt: null, scopes: bootstrap.scopes, loginMode: bootstrap.loginMode } : null;
-  // The same order as chooseMetaCredential: the stored token while unexpired,
-  // then a live bootstrap, so refresh renews the token the publisher would use.
   const live = (expiresAt: string) => Number.isFinite(instant(expiresAt)) && instant(expiresAt) > now.getTime();
   const current = stored && live(stored.expiresAt) ? stored : fromEnvironment && live(fromEnvironment.expiresAt) ? fromEnvironment : stored ?? fromEnvironment;
   if (!current) return outcome('held', 'access-token-missing');
@@ -183,47 +196,36 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   const expires = instant(current.expiresAt);
   if (!Number.isFinite(expires)) return outcome('held', 'access-token-expiry-unverified');
   if (expires <= now.getTime()) return outcome('held', 'access-token-expired');
-  // The stored refresh time is a lower bound for the token's age. A bootstrap
-  // value only has its expiry, and long-lived tokens are issued for 60 days.
   const issued = current.refreshedAt ? instant(current.refreshedAt) : expires - INSTAGRAM_LONG_LIVED_TOKEN_MS;
   if (!Number.isFinite(issued) || now.getTime() - issued < INSTAGRAM_TOKEN_MIN_AGE_MS) return outcome('skipped', 'access-token-too-new');
-  // A refreshed token that the store would refuse must never be requested.
   if (!metaScopesStorable(current.scopes)) return outcome('held', 'verified-scopes-invalid');
-  const env = options.env ?? process.env;
   let url: URL;
   if (current.loginMode === 'facebook') {
-    // #166: Facebook Login renews a long-lived token by exchanging it with the app's id and secret.
-    const appId = env.MARKETING_META_APP_ID ?? ''; const appSecret = env.MARKETING_META_APP_SECRET ?? '';
-    const version = env[`${metaEnvironmentPrefix(account.brand, account.platform)}_API_VERSION`] ?? '';
     if (!/^\d{1,30}$/.test(appId) || appSecret.length < 16 || !/^v\d+\.\d+$/.test(version)) return outcome('held', 'refresh-app-credentials-missing');
     url = new URL(`${FACEBOOK_TOKEN_ENDPOINT}/${version}/oauth/access_token`);
-    url.searchParams.set('grant_type', 'fb_exchange_token');
-    url.searchParams.set('client_id', appId);
-    url.searchParams.set('client_secret', appSecret);
-    url.searchParams.set('fb_exchange_token', current.accessToken);
+    url.searchParams.set('grant_type', 'fb_exchange_token'); url.searchParams.set('client_id', appId);
+    url.searchParams.set('client_secret', appSecret); url.searchParams.set('fb_exchange_token', current.accessToken);
   } else {
     url = new URL(INSTAGRAM_REFRESH_ENDPOINT);
-    url.searchParams.set('grant_type', 'ig_refresh_token');
-    url.searchParams.set('access_token', current.accessToken);
+    url.searchParams.set('grant_type', 'ig_refresh_token'); url.searchParams.set('access_token', current.accessToken);
   }
-  const timeout = AbortSignal.timeout(15000);
-  let response: Response;
-  try { response = await (options.fetcher ?? fetch)(url.href, { method: 'GET', redirect: 'error', cache: 'no-store', signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout }); }
-  catch { return outcome('uncertain', 'refresh-request-uncertain'); }
-  if (!response.ok) return outcome(response.status >= 500 ? 'uncertain' : 'failed', `refresh-http-${response.status}`);
-  let parsed: z.infer<typeof RefreshResponseSchema>;
+  let reply: Awaited<ReturnType<typeof metaGraphResponse>>;
+  try { reply = await metaGraphResponse(url.href, { method: 'GET' }, signal, fetcher, { readErrors: false }); }
+  catch (error) { return outcome('uncertain', error instanceof MetaGraphRequestError && error.code === 'meta-invalid-response' ? 'refresh-response-invalid' : 'refresh-request-uncertain'); }
+  if (signal.aborted) return outcome('uncertain', 'refresh-request-uncertain');
+  if (reply.status !== 200) return outcome(reply.status >= 500 ? 'uncertain' : 'failed', `refresh-http-${reply.status}`);
+  const body = RefreshResponseSchema.safeParse(reply.body);
+  if (!body.success || reply.body && typeof reply.body === 'object' && 'error' in reply.body || body.data.token_type !== undefined && body.data.token_type.toLowerCase() !== 'bearer') return outcome('uncertain', 'refresh-response-invalid');
+  const expiresAt = new Date(now.getTime() + body.data.expires_in * 1000).toISOString();
   try {
-    const body = RefreshResponseSchema.safeParse(await response.json());
-    if (!body.success || (body.data.token_type !== undefined && body.data.token_type.toLowerCase() !== 'bearer')) return outcome('uncertain', 'refresh-response-invalid');
-    parsed = body.data;
-  } catch { return outcome('uncertain', 'refresh-response-invalid'); }
-  const expiresAt = new Date(now.getTime() + parsed.expires_in * 1000).toISOString();
-  let saved: { data: unknown; error: unknown };
-  try {
-    saved = await db.rpc('marketing_store_account_token', { p_owner: owner, p_account: account.id, p_expected_refreshed_at: stored?.refreshedAt ?? null,
-      p_token: parsed.access_token, p_expires_at: expiresAt, p_scopes: current.scopes, p_login_mode: current.loginMode });
+    signal.throwIfAborted();
+    const saved = await awaitWithSignal(db.rpc('marketing_store_account_token', { p_owner: owner, p_account: original.id, p_expected_refreshed_at: stored?.refreshedAt ?? null,
+      p_token: body.data.access_token, p_expires_at: expiresAt, p_scopes: current.scopes, p_login_mode: current.loginMode }).retry(false).abortSignal(signal), signal);
+    signal.throwIfAborted();
+    const metadata = z.strictObject({ accountId: z.literal(original.id), token: z.strictObject({ expiresAt: databaseTimestamp, refreshedAt: databaseTimestamp, scopes: storedScopes, loginMode }) }).parse(saved.data);
+    if (saved.error || databaseVersion(metadata.token.expiresAt) !== databaseVersion(expiresAt) || metadata.token.loginMode !== current.loginMode
+      || metadata.token.scopes.length !== current.scopes.length || metadata.token.scopes.some((value, index) => value !== current.scopes[index])
+      || stored && databaseVersion(metadata.token.refreshedAt)! <= databaseVersion(stored.refreshedAt)!) throw new Error();
+    return { status: 'refreshed', accountId: original.id, expiresAt: metadata.token.expiresAt, refreshedAt: metadata.token.refreshedAt };
   } catch { return outcome('uncertain', 'refresh-store-failed'); }
-  const metadata = z.object({ token: z.object({ expiresAt: z.string(), refreshedAt: z.string() }) }).safeParse(saved.data);
-  if (saved.error || !metadata.success) return outcome('uncertain', 'refresh-store-failed');
-  return { status: 'refreshed', accountId: account.id, expiresAt: metadata.data.token.expiresAt, refreshedAt: metadata.data.token.refreshedAt };
 }

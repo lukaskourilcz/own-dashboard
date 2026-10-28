@@ -4094,15 +4094,15 @@
       "path": "src/lib/marketing/meta-account.ts",
       "lines": 189,
       "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
-      "status": "partial; findings 352/353/355 original bounded verification, complete unique Page traversal, captured owner/account/version/private credential fingerprint, no-retry canonical transaction and strict exact receipt verified; underlying SDK JSON allocation and final app-wide release remain",
-      "reviewedSha256": "b47c34170b62773ffacba74f74da524136aa8cd7f2d6ec2f27416f8d541ac980"
+      "status": "partial; findings 352/353/355/358 original bounded verification/private token read, complete unique Page traversal, captured owner/account/version/private credential fingerprint, no-retry canonical transaction and strict exact receipt verified; underlying SDK JSON allocation and final app-wide release remain",
+      "reviewedSha256": "d3689cbbc9768633bd1e213d10479ea9a3fe9ca04a07d2fb22a188fe9b05405f"
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",
-      "lines": 229,
+      "lines": 231,
       "sha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d",
-      "status": "partial source review: no ambiguous automatic refresh retry and refreshed_at CAS retained; total cancellation/response bounds, finite clock/metadata, precise stored receipt and owner/login-mode bindings need verification; no credential was read",
-      "reviewedSha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d"
+      "status": "partial; finding 358 original bounded renewal and private read, finite unique metadata, immutable selector/clock/config, no-retry adapters and exact non-secret store acknowledgement verified; captured concurrent account/credential replacement, post-trigger renewal proof, metadata-list completeness/lifetime and underlying SDK JSON remain",
+      "reviewedSha256": "c99ee5624f780ea06ea852bd376012646fe9fc25a25e46422cabb9400d2d9fab"
     },
     {
       "path": "src/lib/marketing/meta-facebook-page.ts",

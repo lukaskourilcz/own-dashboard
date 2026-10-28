@@ -71,7 +71,7 @@ async function storedInstagramToken(db: Database, ownerId: string, brand: Verifi
     if (found.data === null) return { account: null, token: null };
     const row = z.strictObject({ id: z.uuid(), user_id: z.literal(ownerId), brand: z.literal(brand), platform: z.literal('instagram'), updated_at: databaseTimestamp }).safeParse(found.data);
     if (!row.success) return fail('credential-store-unavailable', 503);
-    const token = await awaitWithSignal(readStoredMetaToken(db, ownerId, row.data.id), signal);
+    const token = await awaitWithSignal(readStoredMetaToken(db, ownerId, row.data.id, signal), signal);
     signal.throwIfAborted();
     return { account: { id: row.data.id, updatedAt: row.data.updated_at }, token };
   } catch { return fail('credential-store-unavailable', 503); }
