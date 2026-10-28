@@ -228,7 +228,7 @@ describe("/api/webhooks/uptime-kuma", () => {
           ...(authorization ? { authorization } : {}),
         },
         body: JSON.stringify({
-          heartbeat: { status: 0, msg: "No heartbeat" },
+          heartbeat: { monitorID: 3, status: 0, time: new Date().toISOString().replace('T', ' ').replace('Z', ''), msg: "No heartbeat" },
           monitor: { id: 3, name: "Bank sync" },
         }),
       }),

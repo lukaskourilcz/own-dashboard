@@ -23,6 +23,8 @@ function database(tables: Record<string, Row[]>) {
     const column = (key: string) => key === 'request->generation->source->>brand' ? 'brand' : key;
     const query = {
       select: () => query,
+      retry: (enabled: boolean) => { expect(enabled).toBe(false); return query; },
+      abortSignal: (signal: AbortSignal) => { expect(signal).toBeInstanceOf(AbortSignal); return query; },
       eq: (key: string, value: unknown) => { result = result.filter(r => r[column(key)] === value); return query; },
       neq: (key: string, value: unknown) => { result = result.filter(r => r[key] !== value); return query; },
       in: (key: string, values: unknown[]) => { result = result.filter(r => values.includes(r[key])); return query; },
@@ -38,6 +40,10 @@ function database(tables: Record<string, Row[]>) {
     };
     return query;
   } } as never;
+}
+function scopedReply<T>(value: T) {
+  const pending = Promise.resolve(value);
+  return Object.assign(pending, { retry: (enabled: boolean) => { expect(enabled).toBe(false); return pending; }, abortSignal: (signal: AbortSignal) => { expect(signal).toBeInstanceOf(AbortSignal); return pending; } });
 }
 const row = (n: number, status = 'published'): Row => ({ id: id(n), user_id: owner, brand: 'dneskai', status, ready: true,
   content_hash: 'a'.repeat(64), created_at: '2026-10-23T08:00:00Z', replaces_id: null, approved_at: null, feedback: null, render_report: null,
@@ -79,7 +85,7 @@ describe('DNESKAi audit regressions', () => {
   it('C04: maps complete database counts and keeps failures beyond the top ten codes', async () => {
     const post = row(1);
     post.revision = { ...(post.revision as Row), engagement: { keyword: 'SKILL', replyMessage: 'Synthetic reply.' } };
-    const rpc = vi.fn(async () => ({ error: null, data: {
+    const rpc = vi.fn(() => scopedReply({ error: null, data: {
       receipts: [{ publicationId: id(2), commentsSeen: 6000, keywordMatches: 5001, privateSent: 5001, publicSent: 0, failedCount: 12,
         failures: Array.from({ length: 10 }, (_, n) => ({ code: `failure-${n}`, count: 1 })), lastCheckedAt: null }],
       summary: { posts: 2, commentsSeen: 7000, keywordMatches: 5101, privateSent: 5101, publicSent: 0, failed: 12 },
@@ -95,7 +101,7 @@ describe('DNESKAi audit regressions', () => {
     expect(rpc).toHaveBeenCalledWith('marketing_dneskai_engagement_receipts', expect.objectContaining({ p_publication_ids: [id(2)] }));
   });
   it('C04: exposes unavailable aggregate data rather than reporting zero when the migration is absent', async () => {
-    const db = Object.assign(database({}), { rpc: vi.fn(async () => ({ data: null, error: { code: 'PGRST202' } })) });
+    const db = Object.assign(database({}), { rpc: vi.fn(() => scopedReply({ data: null, error: { code: 'PGRST202' } })) });
     const read = await readDneskaiWorkspace(db, owner, now, undefined, { engagement: true });
     expect(read.engagementSummary).toBeUndefined(); expect(read.engagementStatus).toBe('unavailable');
   });
