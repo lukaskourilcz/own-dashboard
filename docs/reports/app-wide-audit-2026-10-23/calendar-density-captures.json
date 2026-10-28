@@ -1,0 +1,147 @@
+{
+  "applicationCommit": "216e985b",
+  "capturedDate": "2026-10-28",
+  "fixture": "Authentic /dev-preview Calendar; synthetic records and visible keyboard focus only.",
+  "components": {
+    "src/components/marketing/dneskai/calendar-tab.tsx": "193791bacd3b49aed4adb090f9044d2022fe5816b05d131e0b54a23a74038f06",
+    "src/components/marketing/dneskai/code-text.tsx": "22355e91559a1669ed6b419a8698f9dd53265feb22c25b7170c908d2dbd5b14b"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 276,
+        "y": 72,
+        "width": 1120,
+        "height": 468
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 0,
+          "w": 37.706473214285715,
+          "h": 4.273504273504273
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 18.803418803418804,
+          "w": 32.618582589285715,
+          "h": 80.98290598290598
+        },
+        {
+          "n": 3,
+          "x": 6.160714285714286,
+          "y": 39.743589743589745,
+          "w": 25.297154017857142,
+          "h": 8.547008547008547
+        }
+      ],
+      "geometry": [
+        {
+          "width": 365.328125,
+          "height": 379,
+          "blank": 1
+        },
+        {
+          "width": 365.328125,
+          "height": 326,
+          "blank": 1
+        },
+        {
+          "width": 365.34375,
+          "height": 342,
+          "blank": 1
+        },
+        {
+          "width": 365.328125,
+          "height": 374,
+          "blank": 1
+        },
+        {
+          "width": 365.328125,
+          "height": 186,
+          "blank": 1
+        },
+        {
+          "width": 365.34375,
+          "height": 186,
+          "blank": 1
+        },
+        {
+          "width": 365.328125,
+          "height": 186,
+          "blank": 1
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 16,
+        "y": 0,
+        "width": 398,
+        "height": 564
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 0,
+          "w": 100,
+          "h": 3.5460992907801416
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 31.914893617021278,
+          "w": 100,
+          "h": 67.90780141843972
+        },
+        {
+          "n": 3,
+          "x": 17.33668341708543,
+          "y": 49.290780141843975,
+          "w": 79.39698492462311,
+          "h": 7.801418439716312
+        }
+      ],
+      "geometry": [
+        {
+          "width": 398,
+          "height": 383,
+          "blank": 1
+        },
+        {
+          "width": 398,
+          "height": 346,
+          "blank": 1
+        },
+        {
+          "width": 398,
+          "height": 366,
+          "blank": 1
+        },
+        {
+          "width": 398,
+          "height": 378,
+          "blank": 1
+        },
+        {
+          "width": 398,
+          "height": 186,
+          "blank": 1
+        },
+        {
+          "width": 398,
+          "height": 186,
+          "blank": 1
+        },
+        {
+          "width": 398,
+          "height": 186,
+          "blank": 1
+        }
+      ]
+    }
+  }
+}
