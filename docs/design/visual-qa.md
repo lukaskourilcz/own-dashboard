@@ -562,3 +562,7 @@ All sixteen combined EN/CS desktop/touch browser checks pass in 1.1 minutes. Lin
 ### 28 October — finding 369 Calendar occupancy
 
 Four authentic `/dev-preview` EN/CS desktop/phone unknown-occupancy checks pass in 22.3 seconds with scoped axe, reflow, retained warning and no false free-slot claim. Czech 1440/430 crops are visually inspected. The rebuilt local plan has 61 image pairs; both image modes load all 61, 390/1440 light/dark reflow and mapped-highlight toggling pass without page errors. Density remains a separate finding 370 target. The final broader workspace recovery matrix has 59 passes/one pre-mount React warning failure; five unchanged isolated repeats pass without establishing its cause. See the audit report for the full evidence and release limits.
+
+### 28 October — finding 370 Calendar density
+
+Six-width EN/CS/light/dark native Calendar checks pass all 24 cases in 1.1 minutes after an initial 22-pass/two-failure run (development-server restart navigation timeout and recurring React pre-mount warning). Equal-width days fit their own contents; issue causes remain visible and native disclosures expose complete next steps/codes with Enter/Space, retained focus and 44px mobile targets. Reduced-motion, reflow and scoped axe pass. Czech desktop/phone crops are visually inspected. The intermittent warning and consolidated optimized release remain open.

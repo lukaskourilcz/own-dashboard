@@ -1094,15 +1094,15 @@
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
       "lines": 39,
       "sha256": "4153d6c195c48b1c1a88ce115879c96afc484dc2fe5ac22e33121fa05cf71ab1",
-      "status": "partial; finding 369 uses a complete seven-Prague-day snapshot, includes coincident jobs/waiting plans and refuses free-slot claims with unreadable data; density and repeated diagnostics remain for finding 370; final release pending",
-      "reviewedSha256": "155cab9cffcd5510417601493aa80a99bcbe089cea331b7cf93aa4ef7b4a6c01"
+      "status": "source reviewed; findings 369/370 complete seven-day Calendar, conservative occupancy, intrinsic equal-width days and visible-cause native next-step disclosure pass EN/CS/theme six-width keyboard/reflow/axe checks; final consolidated release pending",
+      "reviewedSha256": "193791bacd3b49aed4adb090f9044d2022fe5816b05d131e0b54a23a74038f06"
     },
     {
       "path": "src/components/marketing/dneskai/code-text.tsx",
-      "lines": 33,
+      "lines": 47,
       "sha256": "0dc69a69a064ab90f0fa9965ca6c8eade06dddb2f6132bacfbe7964479c4e86d",
-      "status": "source reviewed; bilingual fixed-code explanations and collapsed wrap-safe technical details inspected; final rendered matrix pending",
-      "reviewedSha256": "0dc69a69a064ab90f0fa9965ca6c8eade06dddb2f6132bacfbe7964479c4e86d"
+      "status": "source reviewed; finding 370 adds native compact disclosure with visible cause, accessible expanded next step/code and retained ordinary explanations; EN/CS/theme six-width keyboard/reflow/axe pass; final consolidated release pending",
+      "reviewedSha256": "22355e91559a1669ed6b419a8698f9dd53265feb22c25b7170c908d2dbd5b14b"
     },
     {
       "path": "src/components/marketing/dneskai/costs-tab.tsx",
