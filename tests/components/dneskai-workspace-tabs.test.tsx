@@ -256,7 +256,7 @@ for (const lang of ['en','cs'] as const) {
  it(`retains the confirmed Calendar subtree after a refresh failure (${lang})`,async()=>{
   await mountRead('dneskai-calendar');const calendar=container.querySelector('[data-testid="dneskai-calendar"]');expect(calendar).not.toBeNull();
   vi.spyOn(demoDneskaiWorkspaceApi,'loadReview').mockRejectedValue(Error('TEST_ONLY_REVIEW_READ_FAILURE'));
-  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});});await wait(20);
+  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).calendar,exact:true});});await wait(20);
   expect(container.querySelector('[data-testid="dneskai-calendar"]')).toBe(calendar);expect(container.querySelector('[role="alert"]')).not.toBeNull();
  });
  it(`offers a local retry when the initial review read fails (${lang})`,async()=>{
@@ -292,9 +292,9 @@ it('stops automatic render polling after a read error until an explicit successf
   const read=vi.spyOn(demoDneskaiWorkspaceApi,'loadReview');
   await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(read).toHaveBeenCalledOnce();
   read.mockRejectedValue(Error('TEST_ONLY_REVIEW_READ_FAILURE'));
-  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});await vi.advanceTimersByTimeAsync(20);});expect(read).toHaveBeenCalledTimes(2);
+  await act(async()=>{await client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).calendar,exact:true});await vi.advanceTimersByTimeAsync(20);});expect(read).toHaveBeenCalledTimes(2);
   await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(read).toHaveBeenCalledTimes(2);
-  read.mockRestore();await act(async()=>{const pending=client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).review,exact:true});await vi.advanceTimersByTimeAsync(200);await pending;});
+  read.mockRestore();await act(async()=>{const pending=client.refetchQueries({queryKey:dneskaiWorkspaceKeys(DEMO_DNESKAI_PROJECT_ID).calendar,exact:true});await vi.advanceTimersByTimeAsync(200);await pending;});
   const resumed=vi.spyOn(demoDneskaiWorkspaceApi,'loadReview');await act(async()=>{await vi.advanceTimersByTimeAsync(31000);});expect(resumed).toHaveBeenCalledOnce();
  }finally{vi.useRealTimers();}
 });
@@ -358,7 +358,7 @@ for (const lang of ['en', 'cs'] as const) {
   const original = demoDneskaiWorkspaceApi.loadReview;
   vi.spyOn(demoDneskaiWorkspaceApi, 'loadReview').mockImplementation(async (project, signal, before) => ({ ...await original(project, signal, before), decisionPage: { nextCursor: before?.createdAt === older.createdAt ? null : before ? older : linked } }));
   try {
-   act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-calendar" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
+   act(() => root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-published" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));
    await wait(400);
    const nav = () => container.querySelector('nav')!;
    expect(nav().textContent).not.toContain(t.decisions.page(2));
@@ -379,3 +379,11 @@ for (const lang of ['en', 'cs'] as const) {
   expect(container.querySelector('[data-testid="dneskai-calendar"]')!.textContent).toContain(dneskaiWorkspace[lang].unreadable(2));
  });
 }
+
+for(const lang of ['en','cs']as const)it(`Calendar keeps unknown occupancy distinct from free slots (${lang})`,async()=>{
+ const original=demoDneskaiWorkspaceApi.loadReview;
+ const read=vi.spyOn(demoDneskaiWorkspaceApi,'loadReview').mockImplementation(async(...args)=>({...await original(...args),calendarComplete:false,unreadable:1}));
+ act(()=>root.render(<QueryClientProvider client={client}><TooltipProvider><DneskaiWorkspaceTab tab="dneskai-calendar" projectId={DEMO_DNESKAI_PROJECT_ID} lang={lang} preview /></TooltipProvider></QueryClientProvider>));await wait(400);
+ const calendar=container.querySelector('[data-testid="dneskai-calendar"]')!;expect(calendar.textContent).toContain(dneskaiWorkspace[lang].calendar.unknown);expect(calendar.textContent).not.toContain(dneskaiWorkspace[lang].calendar.free);expect(calendar.textContent).toContain(dneskaiWorkspace[lang].unreadable(1));
+ expect(read).toHaveBeenCalledWith(DEMO_DNESKAI_PROJECT_ID,expect.any(AbortSignal),undefined,'calendar');
+});

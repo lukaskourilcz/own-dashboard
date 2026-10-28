@@ -77,7 +77,7 @@ export function dneskaiTopicTitles(rows: readonly TopicTitleRow[]): { byBrief: R
   return { byBrief, byJob };
 }
 
-function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBrief | null, publication: PublicationRow | null, publishedAt: string | null, topicTitle?: string): DneskaiWorkspacePost {
+function postView(row: Omit<RevisionRow,'revision'|'render_report'>&{render_report:unknown}, revision: ContentRevision, brief: DneskaiBrief | null, publication: PublicationRow | null, publishedAt: string | null, topicTitle?: string): DneskaiWorkspacePost {
   const report = DneskaiRenderReportSchema.safeParse(row.render_report);
   return {
     id: row.id, replacesId: row.replaces_id, status: row.status as DneskaiWorkspacePost['status'], ready: row.ready, contentHash: row.content_hash,
@@ -223,6 +223,64 @@ async function attachEngagementReceipts(db: Database, owner: string, posts: Dnes
     post.engagementReceipt = receipts.get(post.publication!.id)!;
   }
   return parsed.data.summary;
+}
+
+const CalendarRevisionSchema = z.strictObject({
+  id:z.uuid(),replaces_id:z.uuid().nullable(),status:DneskaiWorkspacePostSchema.shape.status,ready:z.boolean(),content_hash:z.string(),
+  created_at:z.string(),approved_at:z.string().nullable(),feedback:z.string().nullable(),revision:z.unknown(),render_report:z.unknown(),
+  topic_title:z.string().nullable(),publication:z.strictObject({id:z.uuid(),revision_id:z.uuid(),status:z.string(),scheduled_at:z.string(),remote_url:z.string().nullable(),error_code:z.string().nullable(),last_checked_at:z.string().nullable()}).nullable(),
+});
+const CalendarJobSchema = z.strictObject({id:z.uuid(),status:DneskaiWorkspaceJobSchema.shape.status,error_code:z.string().nullable(),created_at:z.string(),title:z.string().nullable(),scheduled_at:z.string(),topic_title:z.string().nullable()});
+const CalendarBriefSchema=z.strictObject({id:z.uuid(),status:DneskaiWorkspaceWaitingSchema.shape.status,code:z.string().nullable(),scheduled_at:z.string(),title:z.string().nullable(),topic_title:z.string().nullable()});
+const CalendarSnapshotSchema = z.strictObject({
+  ownerId:z.uuid(),projectId:z.uuid(),date:z.iso.date(),asOf:z.string(),revisionCount:z.number().int().min(0).max(250),jobCount:z.number().int().min(0).max(250),briefCount:z.number().int().min(0).max(250),
+  unreadable:z.number().int().nonnegative(),revisions:z.array(z.unknown()).max(250),jobs:z.array(z.unknown()).max(250),briefs:z.array(z.unknown()).max(250),
+});
+
+/** One complete own-RLS calendar window, without review/history creation-age limits. */
+export async function readDneskaiCalendar(db:Database,owner:string,project:string,now:Date,today=pragueMarketingDate(now),options:{signal?:AbortSignal;topicTitles?:boolean}={}):Promise<DneskaiWorkspaceRead>{
+  z.uuid().parse(owner);z.uuid().parse(project);z.iso.date().parse(today);
+  const signal=AbortSignal.any([AbortSignal.timeout(15_000),...(options.signal?[options.signal]:[])]),asOf=now.toISOString();
+  signal.throwIfAborted();
+  const result=await awaitWithSignal(db.rpc('read_owned_dneskai_calendar',{p_owner:owner,p_project:project,p_date:today,p_now:asOf,p_topic_titles:options.topicTitles===true}).retry(false).abortSignal(signal),signal);
+  signal.throwIfAborted();
+  const checked=CalendarSnapshotSchema.safeParse(result.data);
+  if(result.error||!checked.success)throw new Error('dneskai-workspace-unavailable');
+  const value=checked.data;
+  if(value.ownerId!==owner||value.projectId!==project||value.date!==today||iso(value.asOf)!==asOf
+    ||value.revisionCount!==value.revisions.length||value.jobCount!==value.jobs.length||value.briefCount!==value.briefs.length||value.revisionCount+value.jobCount+value.briefCount>250)
+    throw new Error('dneskai-workspace-unavailable');
+  let unreadable=value.unreadable;
+  const first=Date.parse(pragueScheduledAt(today,'00:00')),last=Date.parse(pragueScheduledAt(pragueDayAfter(today,7),'00:00'));
+  const inWindow=(at:string)=>Date.parse(at)>=first&&Date.parse(at)<last;
+  const posts=value.revisions.flatMap(raw=>{
+    try{
+      const row=CalendarRevisionSchema.parse(raw),revision=parseContentRevision(row.revision);
+      if(revision.brand!=='dneskai'||['superseded','skipped'].includes(row.status)||row.publication&&row.publication.revision_id!==row.id)throw new Error('calendar-record');
+      const title=row.topic_title?.trim().slice(0,300)||undefined;
+      const post=DneskaiWorkspacePostSchema.parse(postView(row,revision,null,row.publication,null,title));
+      if(!inWindow(post.publication?.scheduledAt??post.scheduledAt))throw new Error('calendar-record');
+      return[post];
+    }catch{unreadable++;return[];}
+  });
+  const jobs=value.jobs.flatMap(raw=>{
+    try{
+      const row=CalendarJobSchema.parse(raw);
+      const job=DneskaiWorkspaceJobSchema.parse({id:row.id,status:row.status,errorCode:marketingJobErrorCode(row.error_code),createdAt:iso(row.created_at),title:(row.topic_title?.trim()||row.title||'').slice(0,300),scheduledAt:iso(row.scheduled_at)});
+      if(!job.scheduledAt||!inWindow(job.scheduledAt))throw new Error('calendar-record');
+      return[job];
+    }catch{unreadable++;return[];}
+  });
+  const waiting=value.briefs.flatMap(raw=>{
+    try{
+      const row=CalendarBriefSchema.parse(raw),brief=DneskaiWorkspaceWaitingSchema.parse({briefId:row.id,status:row.status,code:safeCode(row.code),scheduledAt:iso(row.scheduled_at),title:(row.topic_title?.trim()||row.title?.trim()||'—').slice(0,300)});
+      if(!inWindow(brief.scheduledAt))throw new Error('calendar-record');
+      return[brief];
+    }catch{unreadable++;return[];}
+  });
+  if(new Set(posts.map(post=>post.id)).size!==posts.length||new Set(jobs.map(job=>job.id)).size!==jobs.length||new Set(waiting.map(brief=>brief.briefId)).size!==waiting.length)throw new Error('dneskai-workspace-unavailable');
+  signal.throwIfAborted();
+  return DneskaiWorkspaceReadSchema.parse({schemaVersion:DNESKAI_WORKSPACE_VERSION,today,generatedAt:asOf,slots:[...DNESKAI_BRIEF_SLOTS],accounts:[],posts,jobs,waiting,unreadable,calendarComplete:unreadable===0});
 }
 
 const TickStepSchema = z.object({ category: z.string(), status: z.string(), code: z.string().optional() });

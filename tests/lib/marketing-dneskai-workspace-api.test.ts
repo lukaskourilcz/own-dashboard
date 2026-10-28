@@ -330,3 +330,12 @@ it.each(['marketing_dneskai_runs','marketing_jobs','marketing_publications'])('d
  mocks.nullTable=table;mocks.rpc.mockResolvedValue({data:0.5,error:null});
  const response=await get(costs,`projectId=${project}`);expect(response.status).toBe(503);expect(await response.json()).toEqual({error:'dneskai-costs-unavailable'});
 });
+
+
+it('includes an older-created future plan outside the recent history prefix in the Calendar window',async()=>{
+ const old={...mocks.tables.marketing_revisions![0]!,id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',status:'approved',created_at:'2026-01-01T00:00:00Z',revision:{...revision,title:'Old creation, future plan'}};
+ const history=Array.from({length:160},(_,n)=>({...old,id:`cccccccc-cccc-4ccc-8ccc-${String(n).padStart(12,'0')}`,created_at:new Date().toISOString(),revision:{...revision,scheduledAt:pragueScheduledAt(pragueDayAfter(pragueMarketingDate(new Date()),-1),'08:00')}}));
+ mocks.tables.marketing_revisions=[...history,old];
+ mocks.readReceipts.mockImplementationOnce((name:string,args:{p_now:string})=>{expect(name).toBe('read_owned_dneskai_calendar');const row=Object.fromEntries(Object.entries(old).filter(([key])=>!['user_id','brand'].includes(key)));return{error:null,data:{ownerId:owner,projectId:project,date:pragueMarketingDate(new Date()),asOf:args.p_now,revisionCount:1,jobCount:0,briefCount:0,unreadable:0,revisions:[{...row,publication:null,topic_title:null}],jobs:[],briefs:[]}};});
+ const response=await get(review,`projectId=${project}&view=calendar`);expect(response.status).toBe(200);const read=DneskaiWorkspaceReadSchema.parse(await response.json());expect(read.posts.map(post=>post.id)).toContain(old.id);
+});

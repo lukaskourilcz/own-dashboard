@@ -81,10 +81,23 @@ function useRenderFailed(projectId: string) {
  * read; Errors and costs has its own. In the preview the reads come from the in-memory demo, never from a server.
  */
 export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false, liveMusic = false }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean; liveMusic?: boolean }) {
-  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : <ReviewRead key={projectId} tab={tab} projectId={projectId} lang={lang} preview={preview} liveMusic={liveMusic} />;
+  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : tab==='dneskai-calendar'?<CalendarRead projectId={projectId} lang={lang} preview={preview}/>:<ReviewRead key={projectId} tab={tab} projectId={projectId} lang={lang} preview={preview} liveMusic={liveMusic} />;
 }
 
-function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean; liveMusic: boolean }) {
+function CalendarRead({projectId,lang,preview}:{projectId:string;lang:Lang;preview:boolean}){
+  const t=dneskaiWorkspace[lang];
+  const query=useQuery<DneskaiWorkspaceRead>({queryKey:dneskaiWorkspaceKeys(projectId).calendar,...options,
+    refetchInterval:query=>query.state.status!=='error'&&query.state.data&&dneskaiAwaitingRender(query.state.data)?AWAITING_RENDER_POLL_MS:false,
+    queryFn:async({signal})=>(await dneskaiWorkspaceApi(preview)).loadReview(projectId,signal,undefined,'calendar')});
+  const [renderFailed]=useRenderFailed(projectId),[container,reload]=useReadRecovery(query.data,query.isFetching,()=>query.refetch());
+  if(query.data===undefined)return <div ref={container}>{query.isPending?<p role="status" className="text-sm text-foreground-muted">{t.loading}</p>:<ReadFailure message={t.unavailable} lang={lang} refreshing={query.isFetching} onRefresh={reload}/>}</div>;
+  return <div ref={container} className="min-w-0 space-y-4" data-testid="dneskai-workspace-read">
+    {query.isError&&<p role="alert" className="text-sm text-warning" data-testid="dneskai-cached-read">{t.cachedUnavailable}</p>}
+    <DneskaiCalendarTab read={query.data} lang={lang} preview={preview} refreshing={query.isFetching} onRefresh={reload} renderFailed={renderFailed}/>
+  </div>;
+}
+
+function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'|'dneskai-calendar'>; projectId: string; lang: Lang; preview: boolean; liveMusic: boolean }) {
   const t = dneskaiWorkspace[lang];
   const pathname = usePathname();
   const guest = preview && pathname === '/guest';
@@ -120,7 +133,7 @@ function ReviewRead({ tab, projectId, lang, preview, liveMusic }: { tab: Exclude
       </div><p className="text-xs text-foreground-muted">{t.decisions.context}</p>
     </nav>}
     {tab === 'dneskai-review' ? <ReviewExperience {...props} liveMusic={liveMusic} onSavedRevision={() => changePages([])} guest={guest} projectId={projectId} renderFailed={renderFailed} addRenderFailed={addRenderFailed} />
-      : tab === 'dneskai-calendar' ? <DneskaiCalendarTab {...props} renderFailed={renderFailed} /> : <DneskaiPublishedTab {...props} renderFailed={renderFailed} />}
+      : <DneskaiPublishedTab {...props} renderFailed={renderFailed} />}
   </div>;
 }
 

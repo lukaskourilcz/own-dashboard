@@ -292,3 +292,11 @@ describe('formatDneskaiDay (#173)', () => {
     expect(formatDneskaiDayTime('2026-10-25T07:00:00.000Z')).toBe('25/10 08:00');
   });
 });
+
+it('keeps distinct planned jobs and a waiting brief visible when they share a post slot',()=>{
+ const read=createDneskaiWorkspaceFixture(new Date('2026-10-28T10:00:00Z')),at=pragueScheduledAt(read.today,'12:30');
+ read.posts=[{...read.posts[0]!,scheduledAt:at,publication:null}];
+ read.jobs=[1,2].map(n=>({id:`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`,status:'queued' as const,errorCode:null,createdAt:read.generatedAt,title:'Distinct drafting job '+n,scheduledAt:at}));
+ read.waiting=[{briefId:'00000000-0000-4000-8000-000000000003',title:'Waiting topic',scheduledAt:at,status:'ready',code:null}];
+ expect(dneskaiCalendarDays(read)[0]!.entries.filter(entry=>entry.at===at).map(entry=>entry.kind)).toEqual(['post','job','job','waiting']);
+});

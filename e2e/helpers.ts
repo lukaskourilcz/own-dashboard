@@ -27,6 +27,17 @@ const BENIGN = [
  */
 export function watchConsole(page: Page): string[] {
   const errors: string[] = [];
+  // Opt-in diagnostics preserve the normal error assertion; never filter the warning.
+  if (process.env.AUDIT_REACT_STACK === '1') {
+    void page.context().newCDPSession(page).then(async session => {
+      session.on('Runtime.consoleAPICalled', (event: { args?: Array<{ value?: unknown }>; stackTrace?: { callFrames: Array<{ functionName: string; url: string; lineNumber: number }> } }) => {
+        if (event.args?.some(arg => typeof arg.value === 'string' && arg.value.includes("hasn't mounted yet"))) {
+          console.warn('REACT_PRE_MOUNT_STACK\n' + (event.stackTrace?.callFrames ?? []).map(frame => `${frame.functionName} (${frame.url}:${frame.lineNumber + 1})`).join('\n'));
+        }
+      });
+      await session.send('Runtime.enable');
+    }).catch(() => undefined); // Other browser engines retain the ordinary console check.
+  }
   page.on("console", (msg) => {
     if (msg.type() !== "error") return;
     const text = msg.text();

@@ -42,7 +42,7 @@ export type DneskaiPaidActionResult = z.infer<typeof DneskaiPaidActionResultSche
 export interface DneskaiWorkspaceApi {
   /** True in the deterministic preview: nothing reaches a server. */
   readonly preview: boolean;
-  loadReview(projectId: string, signal?: AbortSignal, before?: DneskaiDecisionCursor): Promise<DneskaiWorkspaceRead>;
+  loadReview(projectId: string, signal?: AbortSignal, before?: DneskaiDecisionCursor, view?: 'calendar'): Promise<DneskaiWorkspaceRead>;
   loadCosts(projectId: string, signal?: AbortSignal): Promise<DneskaiCostsRead>;
   loadMedia(projectId: string, candidateId: string, signal?: AbortSignal): Promise<DneskaiMediaRead>;
   loadAccounts(signal?: AbortSignal): Promise<MarketingAccountStatus[]>;
@@ -99,10 +99,13 @@ async function post(body: unknown, url = '/api/marketing/revisions', signal?: Ab
 
 export const liveDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: false,
-  async loadReview(projectId, signal, before) {
+  async loadReview(projectId, signal, before, view) {
     const params = new URLSearchParams({ projectId });
     if (before) params.set('before', JSON.stringify(before));
-    return DneskaiWorkspaceReadSchema.parse(await getJson(`/api/marketing/dneskai/review?${params}`, signal));
+    if(view)params.set('view',view);
+    const read=DneskaiWorkspaceReadSchema.parse(await getJson(`/api/marketing/dneskai/review?${params}`, signal));
+    if(view==='calendar'?typeof read.calendarComplete!=='boolean':read.calendarComplete!==undefined)throw new DneskaiWorkspaceRequestError('dneskai-workspace-unavailable',502);
+    return read;
   },
   async loadCosts(projectId, signal) {
     return DneskaiCostsReadSchema.parse(await getJson(`/api/marketing/dneskai/costs?projectId=${encodeURIComponent(projectId)}`, signal));
@@ -179,6 +182,7 @@ export function dneskaiWorkspaceApi(preview: boolean): Promise<DneskaiWorkspaceA
 export function dneskaiWorkspaceKeys(projectId: string) {
   return {
     review: [...qk.dneskaiReview, projectId] as const,
+    calendar: [...qk.dneskaiReview, projectId, 'calendar'] as const,
     reviewPage: (before: DneskaiDecisionCursor) => [...qk.dneskaiReview, projectId, before.createdAt, before.id] as const,
     costs: [...qk.dneskaiCosts, projectId] as const,
     media: (candidateId: string) => [...qk.dneskaiMedia, projectId, candidateId] as const,

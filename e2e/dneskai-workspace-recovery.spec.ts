@@ -11,7 +11,17 @@ async function open(page:Page,kind:Kind,lang:'en'|'cs',theme:'light'|'dark',fail
  if(kind==='review'){await page.getByRole('tab',{name:dneskaiWorkspace[lang].tabs.calendar,exact:true}).click();return page.getByTestId('dneskai-workspace-read');}
  await page.getByTestId('dneskai-more').click();await page.getByTestId('dneskai-more-menu').getByRole('button',{name:dneskaiWorkspace[lang].more.costs,exact:true}).click();return page.getByTestId('dneskai-more-costs');
 }
-async function capture(target:Locator,file:string,selectors:string[]){const box=(await target.boundingBox())!,marks=[];for(const [index,selector]of selectors.entries()){const value=(await target.locator(selector).first().boundingBox())!;marks.push({n:index+1,x:100*(value.x-box.x)/box.width,y:100*(value.y-box.y)/box.height,w:100*value.width/box.width,h:100*value.height/box.height});}await target.screenshot({path:file});writeFileSync(file.replace('.png','.json'),JSON.stringify({box,marks},null,2)+'\n');}
+async function capture(target:Locator,file:string,selectors:string[],visiblePage?:Page){
+ if(visiblePage)await target.evaluate(element=>element.scrollIntoView({block:'start'}));
+ const box={...(await target.boundingBox())!},marks=[];
+ if(visiblePage){const day=(await target.getByTestId('dneskai-calendar-day').first().boundingBox())!,viewport=visiblePage.viewportSize()!;box.height=Math.min(box.height,day.y+day.height-box.y+1,viewport.height-box.y-(viewport.width<768?80:0));}
+ for(const [index,selector]of selectors.entries()){
+  const value=(await target.locator(selector).first().boundingBox())!,left=Math.max(box.x,value.x),top=Math.max(box.y,value.y),right=Math.min(box.x+box.width,value.x+value.width),bottom=Math.min(box.y+box.height,value.y+value.height);
+  marks.push({n:index+1,x:100*(left-box.x)/box.width,y:100*(top-box.y)/box.height,w:100*Math.max(0,right-left)/box.width,h:100*Math.max(0,bottom-top)/box.height});
+ }
+ if(visiblePage)await visiblePage.screenshot({path:file,clip:box});else await target.screenshot({path:file});
+ writeFileSync(file.replace('.png','.json'),JSON.stringify({box,marks},null,2)+'\n');
+}
 for(const width of [360,430,768,1024,1440,1728])for(const lang of ['en','cs']as const)for(const theme of ['light','dark']as const)for(const kind of ['review','costs']as const){
  test(`initial ${kind} read has compact accessible keyboard recovery: ${width} ${lang} ${theme}`,async({page},info)=>{
   await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];await open(page,kind,lang,theme,true);
@@ -52,16 +62,25 @@ for(const lang of ['en','cs']as const)for(const cached of [false,true]){
 }
 
 for(const lang of ['en','cs']as const){
- test(`linked review page keeps its unknown depth and returns keyboard focus to Calendar: ${lang}`,async({page},info)=>{
+ test(`linked review page keeps its unknown depth and returns keyboard focus to Posts: ${lang}`,async({page},info)=>{
   const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];
   await gotoPreview(page,{lang,theme:'dark'});
   const cursor={createdAt:'2026-10-20T00:00:00.000Z',id:'11111111-1111-4111-8111-111111111111'};
   await page.goto('/dev-preview?project=dneskai&reviewBefore='+encodeURIComponent(JSON.stringify(cursor)));
-  await page.getByRole('tab',{name:t.tabs.calendar,exact:true}).click();
+  await page.getByRole('tab',{name:t.tabs.published,exact:true}).click();
   const nav=page.getByRole('navigation',{name:t.decisions.label,exact:true});await expect(nav).toBeVisible();await expect(nav).toContainText(t.decisions.continuation);await expect(nav).not.toContainText(t.decisions.page(2));
   expect(await nav.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
   expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-workspace-read"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
   const newer=nav.getByRole('button',{name:t.decisions.newer,exact:true});if(width<768)expect((await newer.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  await newer.focus();await newer.press('Enter');await expect(nav).toHaveCount(0);await expect(page.getByTestId('dneskai-calendar').getByRole('heading',{name:t.calendar.title,exact:true})).toBeFocused();expect(new URL(page.url()).searchParams.has('reviewBefore')).toBe(false);expect(errors).toEqual([]);
+  await newer.focus();await newer.press('Enter');await expect(nav).toHaveCount(0);await expect(page.getByTestId('dneskai-published').getByRole('heading',{name:t.published.title,exact:true})).toBeFocused();expect(new URL(page.url()).searchParams.has('reviewBefore')).toBe(false);expect(errors).toEqual([]);
  });
 }
+
+for(const lang of ['en','cs']as const)test(`Calendar reports unknown occupancy without inventing free slots: ${lang}`,async({page},info)=>{
+ const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];
+ await gotoPreview(page,{lang,theme:'dark'});await page.goto('/dev-preview?project=dneskai&calendarUnknown=1');await page.getByRole('tab',{name:t.tabs.calendar,exact:true}).click();
+ const view=page.getByTestId('dneskai-calendar');await expect(view).toBeVisible();await expect(view).toContainText(t.unreadable(1));await expect(view.getByText(t.calendar.unknown,{exact:true}).first()).toBeVisible();await expect(view.getByText(t.calendar.free,{exact:true})).toHaveCount(0);await expect(page.getByRole('navigation',{name:t.decisions.label,exact:true})).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-workspace-read"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+ if(lang==='cs')await capture(view,info.outputPath(`calendar-unknown-cs-${width}.png`),['h2','p.text-warning','ol'],page);expect(errors).toEqual([]);
+});

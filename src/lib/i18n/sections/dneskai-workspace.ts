@@ -51,7 +51,7 @@ const en = {
     'engagement-message-too-long': 'is longer than 1,000 characters', 'engagement-reply-too-long': 'is longer than 200 characters',
   },
   calendar: {
-    title: 'Next seven days', intro: 'Publishing slots in Europe/Prague and what is planned in each.', free: 'Free slot', dst: 'Clocks change on this day; times are local Prague time.',
+    title: 'Next seven days', intro: 'Publishing slots in Europe/Prague and what is planned in each.', free: 'Free slot', unknown:'Availability unknown', dst: 'Clocks change on this day; times are local Prague time.',
     today: 'Today', job: 'Draft being prepared',
   },
   /** #162: what the comment watcher did. */
@@ -146,7 +146,7 @@ const cs: typeof en = {
     'engagement-message-too-long': 'je delší než 1 000 znaků', 'engagement-reply-too-long': 'je delší než 200 znaků',
   },
   calendar: {
-    title: 'Příštích sedm dní', intro: 'Publikační sloty v čase Europe/Prague a co je v nich naplánované.', free: 'Volný slot', dst: 'Tento den se mění čas; časy jsou místní pražské.',
+    title: 'Příštích sedm dní', intro: 'Publikační sloty v čase Europe/Prague a co je v nich naplánované.', free: 'Volný slot', unknown:'Obsazení není známé', dst: 'Tento den se mění čas; časy jsou místní pražské.',
     today: 'Dnes', job: 'Návrh se připravuje',
   },
   engagementReceipts: {

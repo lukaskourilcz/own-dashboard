@@ -465,10 +465,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/review/route.ts",
-      "lines": 52,
+      "lines": 59,
       "sha256": "1c716b8d31f9dd6cdcef2e9a590b7a183d9204c27010738b7e2c46722e1d22c9",
       "status": "partial; finding 365 shared verified owner/error admission, original caller/25-second response allowance, bounded owned project gate and outage versus absence, late/retired read refusal checked; costs service spend has its own original three-second non-retrying read and retains unknown results; function-level query/signing cancellation, complete workspace/media receipts and final release remain; finding 366 forwards the original route signal through both query phases and engagement receipts",
-      "reviewedSha256": "f90e45094fbf785303de8903cad444f75afef90e5c40c036ecf0255e3801f201"
+      "reviewedSha256": "58475846d2153f540ad750091dbeaafa327583940847bcdbcd40140b49059407"
     },
     {
       "path": "src/app/api/marketing/dneskai/source-list/route.ts",
@@ -1092,10 +1092,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/calendar-tab.tsx",
-      "lines": 38,
+      "lines": 39,
       "sha256": "4153d6c195c48b1c1a88ce115879c96afc484dc2fe5ac22e33121fa05cf71ab1",
-      "status": "partial; finding 364 restores the shared unreadable-record warning; Prague grid inspected; complete post/job context and free-slot availability evidence remain; see remaining-review.md",
-      "reviewedSha256": "1a82d895bdb1d5808858e39f4e972cd801606d777480365707abfe2700db3429"
+      "status": "partial; finding 369 uses a complete seven-Prague-day snapshot, includes coincident jobs/waiting plans and refuses free-slot claims with unreadable data; density and repeated diagnostics remain for finding 370; final release pending",
+      "reviewedSha256": "155cab9cffcd5510417601493aa80a99bcbe089cea331b7cf93aa4ef7b4a6c01"
     },
     {
       "path": "src/components/marketing/dneskai/code-text.tsx",
@@ -1259,10 +1259,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/workspace.tsx",
-      "lines": 169,
+      "lines": 182,
       "sha256": "1b1ff237b8411afbcfe3a7b24e6c1ca115f35b4a9c2b25669ce59381990bb41f",
       "status": "partial; findings 362/363 retain confirmed review/cost/account data and mounted drafts, compact explicit recovery, original keyboard focus and one in-flight refresh; failed render polling pauses until recovery; preview/private clients are independently mounted under OwnerQueryProvider/GuestBoundary, with no mutable mode switch; finding 364 labels directly linked cursors without invented depth, resets known numbering at the first page and restores paging focus; calendar completeness and captured writes remain; final release pending",
-      "reviewedSha256": "0cee822fed85e57737af18750257c95974898305ec79d7aa946707f1a1cd5167"
+      "reviewedSha256": "5b679ef825e60d98566b66a84ad4d7c087bcb1229fab912e4866294a6de7668a"
     },
     {
       "path": "src/components/marketing/job-health.tsx",
@@ -2543,10 +2543,10 @@
     },
     {
       "path": "src/lib/demo/dneskai-workspace-demo.ts",
-      "lines": 249,
+      "lines": 253,
       "sha256": "6602bdb225f0914e12e206ee9d62c6927c40b57cfd50b4f725ded192a7a9fd6b",
       "status": "partial; complete source inspection; outdated reservation/clock policy, asynchronous in-memory edit races and approval parity remain under review; fixture-only routes retained; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 362 initial/refresh error fixtures are restricted to /dev-preview, never /guest",
-      "reviewedSha256": "cc8d91e8defe7baa011a04ca36b94ebf343bc6d85d99871aaac643657bb20b38"
+      "reviewedSha256": "378904e7a880cda567ff1b33969240894a0a83c5187651e63bd0b09bb7188ebb"
     },
     {
       "path": "src/lib/demo/dneskai-workspace-fixtures.ts",
@@ -2827,7 +2827,7 @@
       "lines": 196,
       "sha256": "7e281eca192bf5c908eef8abbfccfbd9efb323b6a862bd33f1bb87defa1cb07f",
       "status": "partial; finding 173 checks caption/alt/message limits, restored keyword counts, diagnostic copy and native keyboard ownership; remaining editor/read/provider lifecycle and final release review pending; finding 362 neutral initial/cached read recovery and costs-specific EN/CS messages; finding 364 linked-page EN/CS labels avoid inventing cursor depth",
-      "reviewedSha256": "31bb0ba360230862ad5de35f32b5db5c9a4298cc7161a1f5e6718a94abf63832"
+      "reviewedSha256": "e874dc761936e17b3ac1dce70ff8a4436c92f10e44756ef52a3f5e52d5e9ae06"
     },
     {
       "path": "src/lib/i18n/sections/finances.ts",
@@ -3661,7 +3661,7 @@
       "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
       "status": "source reviewed; eight-table read port regenerated from all 148 canonical migration files; finite account versions retained; final rollout/release pending",
-      "reviewedSha256": "a8b87dee41eaf1867eb68900b5f28f478328b3104f17bd72bbb2b3064a2d3044"
+      "reviewedSha256": "71f0f8b792d58a28f45d918f461bf0072d285bacc68c24aa12d2599bc73a60b5"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -3854,24 +3854,24 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-client.ts",
-      "lines": 187,
+      "lines": 191,
       "sha256": "7ccf832fb792175e21060d02a2c24ec3ee0c1dd9a936cbdff59607f130a613f4",
-      "status": "partial; complete source inspection; bounded response/work budgets, caller cancellation and exact action receipts remain under review; preview port separation retained",
-      "reviewedSha256": "4282f97ec9e500cba164669dd6225234d34cb36df836405ea08da9c372f29b89"
+      "status": "partial; finding 369 binds Calendar/review response kinds and separate cursor-independent Calendar query; browser response/work budgets, cancellation and exact action receipts remain; preview port separation retained",
+      "reviewedSha256": "182cd231fcae800dfb703f63d1d3f61b558c78af9b5ef1c3a818878cce4d9a6d"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",
-      "lines": 370,
+      "lines": 428,
       "sha256": "4897ac1a960764ac67d97506b34d2659b085bb290652088a89d8f98bb82e305a",
-      "status": "partial; findings 199/366 complete cost/tick aggregate, original fifteen-second review/cost consumers, per-query no-retry/cancellation and missing core-array refusal pass actual SDK/full-chain checks; waiting-context null stays unknown; selected-calendar completeness, finding 368 bounds optional title/engagement reads to three seconds with source-title/unavailable fallback; Topic lifetimes and final release remain",
-      "reviewedSha256": "15e4b84290edd320096a0f4d181e923b03bb77a79e3e1ac4ffcf0ebcb8c72714"
+      "status": "partial; findings 199/366/368 bound original review/cost and optional transports with explicit unknown evidence; finding 369 adds one complete owned Calendar RPC with strict receipt, date/clock, record and byte bounds; Topic and other reader/SDK lifetimes remain; see remaining-review.md",
+      "reviewedSha256": "13976f1418def191264e574e88c8ff06c1a97642197c5e4e9ee42adebb31a56d"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace.ts",
-      "lines": 380,
+      "lines": 386,
       "sha256": "c7171491f1b9385880b3a2462d8b90d1878bfaa564a908c44996b07c733bc157",
       "status": "partial; complete source inspection; calendar completeness/free-slot meaning, current clocks and repeated formatter work remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate",
-      "reviewedSha256": "75c52fec7158a45f78d65c927efe08bc30f543465650474620f685de75a268b6"
+      "reviewedSha256": "0a5d7a94ae5483a73de9929bd3191d28eb15039fb17449699f1948a3312dcb5a"
     },
     {
       "path": "src/lib/marketing/facebook-page-list.ts",
@@ -4085,10 +4085,10 @@
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
-      "lines": 698,
+      "lines": 699,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
       "status": "source reviewed; finding 329 closes emitted audio/TikTok label gaps and adds truthful retained-result EN/CS guidance; known generic admission/completion codes pinned; broader generic-error and final release follow-up pending",
-      "reviewedSha256": "dc7084746a8cc0acb4444e60c315be2080bd67f38953a34a70348502198b8755"
+      "reviewedSha256": "79f942fe90a19d4f903a57a889646fea7d81be10cd15b37ed13bc7c448614305"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",
@@ -5073,6 +5073,13 @@
       "lines": 111,
       "reviewedSha256": "77eb14ae6e77ec6008c9aefdfca0b9c9fdc243e2153f6cb7d56b6b3080e4e233",
       "status": "source reviewed; finding 317 captured paid admission, pinned actor/input, original-intent provider binding and final-row guards pass 605 focused/full-chain SDK/RLS checks plus native concurrency; matching progress, prepared rollout and final release pending"
+    },
+    {
+      "path": "supabase/migrations/20261028154447_complete_dneskai_calendar.sql",
+      "sha256": null,
+      "lines": 63,
+      "status": "source reviewed; finding 369 complete stable invoker Calendar snapshot passes full-chain actual SDK/RLS, bounds, unknown dates, DST and drop/recreate checks; canonical production rollout and final release pending",
+      "reviewedSha256": "346d68c87e0d2b558954794107bf1f356d5f32f586bc2edd172ad2b5ba64e0dc"
     }
   ],
   "baselineFileCount": 561

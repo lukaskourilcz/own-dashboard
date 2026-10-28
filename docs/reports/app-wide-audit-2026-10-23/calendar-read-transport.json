@@ -1,0 +1,26 @@
+{
+  "fixture": "One old future plan, one old future queued job, one assigned waiting brief, and 160 newer past posts. Cold synthetic SDK/database reads; the new Calendar window corrects omitted plans and is not an equal-output or production timing/billing comparison.",
+  "old": {
+    "requests": 7,
+    "databaseResponseBytes": 456627,
+    "browserJsonBytes": 173673,
+    "posts": 60,
+    "jobs": 0,
+    "waiting": 1
+  },
+  "calendar": {
+    "requests": 1,
+    "databaseResponseBytes": 3745,
+    "browserJsonBytes": 3487,
+    "posts": 1,
+    "jobs": 1,
+    "waiting": 1
+  },
+  "capturedAt": "2026-10-28T16:13:12.302705+00:00",
+  "sourceSha256": {
+    "src/lib/marketing/dneskai-workspace-read.ts": "13976f1418def191264e574e88c8ff06c1a97642197c5e4e9ee42adebb31a56d",
+    "src/lib/marketing/dneskai-workspace.ts": "0a5d7a94ae5483a73de9929bd3191d28eb15039fb17449699f1948a3312dcb5a",
+    "supabase/migrations/20261028154447_complete_dneskai_calendar.sql": "346d68c87e0d2b558954794107bf1f356d5f32f586bc2edd172ad2b5ba64e0dc",
+    "tests/lib/dneskai-calendar-snapshot-database.test.ts": "f85b0cea7b3a10d2bdd7597e541ba46e8355415c089a1d5f6752e0ed0e4f77c8"
+  }
+}

@@ -110,7 +110,11 @@ function approveOne(id: string, expectedHash: string): string {
 
 export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: true,
-  async loadReview() { failPreviewRead('review'); await pause(120); return clone(read()); },
+  async loadReview(_projectId,_signal,_before,view) { failPreviewRead('review'); await pause(120);
+    if(view!=='calendar')return clone(read());
+    const unknown=typeof window!=='undefined'&&window.location.pathname==='/dev-preview'&&new URLSearchParams(window.location.search).get('calendarUnknown')==='1';
+    return clone({...read(),calendarComplete:!unknown,unreadable:unknown?1:read().unreadable,decisionPage:undefined});
+  },
   async loadCosts() { failPreviewRead('costs'); await pause(120); const costs = createDneskaiCostsFixture(new Date()); costs.generation.spentUsd = demoSpentUsd; return costs; },
   async loadAccounts() { failPreviewRead('accounts'); await pause(60); return clone(demoAccounts(new Date())); },
   async loadMedia(_projectId, candidateId): Promise<DneskaiMediaRead> {

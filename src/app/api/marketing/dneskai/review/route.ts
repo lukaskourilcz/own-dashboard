@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
 import { awaitWithSignal } from '@/lib/abortable';
 import { requireDneskaiProject } from '@/lib/marketing/dneskai-store';
-import { readDneskaiWorkspace } from '@/lib/marketing/dneskai-workspace-read';
+import { readDneskaiCalendar, readDneskaiWorkspace } from '@/lib/marketing/dneskai-workspace-read';
 import { DneskaiDecisionCursorSchema, pragueDayAfter } from '@/lib/marketing/dneskai-workspace';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
 import { dneskaiPaidActionCapabilities } from '@/lib/marketing/dneskai-paid-switches';
@@ -27,6 +27,8 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const projectId = params.get('projectId');
   if (!z.uuid().safeParse(projectId).success) return Response.json({ error: 'invalid-project' }, { status: 400 });
+  const view=z.enum(['review','calendar']).safeParse(params.get('view')??'review');
+  if(!view.success)return Response.json({error:'invalid-view'},{status:400});
   const now = new Date();
   const today = pragueMarketingDate(now);
   const date = params.get('date') ?? today;
@@ -43,6 +45,11 @@ export async function GET(request: Request) {
     : Response.json({ error: 'dneskai-workspace-unavailable' }, { status: 503 }); }
   try {
     signal.throwIfAborted();
+    if(view.data==='calendar'){
+      const read=await awaitWithSignal(readDneskaiCalendar(db,ownerId,projectId!,now,date,{signal,topicTitles:dneskaiTopicBriefsEnabled()}),signal);
+      signal.throwIfAborted();
+      return Response.json(read,{headers:{'Cache-Control':'private, no-store'}});
+    }
     const read = await awaitWithSignal(readDneskaiWorkspace(db, ownerId, now, date, { signal, decisionsBefore, capabilities: { ...dneskaiPaidActionCapabilities(), engagement: dneskaiEngagementEditorEnabled() }, engagement: dneskaiEngagementWatchEnabled(), topicTitles: dneskaiTopicBriefsEnabled() }), signal);
     signal.throwIfAborted();
     return Response.json(read, { headers: { 'Cache-Control': 'private, no-store' } });

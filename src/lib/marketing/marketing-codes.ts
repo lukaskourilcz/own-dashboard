@@ -384,6 +384,7 @@ const CODES = {
   'publication-not-stranded': ['reload', 'This publication is no longer stuck.', 'Tato publikace už není zaseknutá.'],
   'publication-approval-changed': ['reload', 'The post no longer has its approval, so it cannot be queued again.', 'Příspěvek už nemá své schválení, proto ho nelze znovu zařadit.'],
   'publication-requeue-failed': ['retry', 'Queuing the post again failed.', 'Opětovné zařazení příspěvku selhalo.'],
+  'dneskai-workspace-unavailable': ['retry', 'The requested DNESKAi view could not be confirmed.', 'Požadovaný přehled DNESKAi se nepodařilo ověřit.'],
   'container-identity-mismatch': ['verify', 'Instagram answered for a different post.', 'Instagram odpověděl k jinému příspěvku.'],
   'container-identity-unavailable': ['verify', 'Instagram did not confirm which post it prepared.', 'Instagram nepotvrdil, který příspěvek připravil.'],
   'container-status-unavailable': ['verify', 'Instagram did not report the processing state.', 'Instagram nesdělil stav zpracování.'],
