@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
+import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
+import { awaitWithSignal } from '@/lib/abortable';
+import { readKnowledgeBody } from '@/lib/marketing/knowledge-body';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
@@ -20,30 +22,56 @@ export const maxDuration = 15;
  * revision. Owner-only (the revision is read through the owner's session), rate-limited per owner like the fit route,
  * and bounded by `DNESKAI_PREVIEW_BUDGET_MS` (an abort answers 504 `worker-timeout`).
  */
+const fail = (status: number, error: string) => Response.json({ error }, { status, headers: { 'Cache-Control': 'private, no-store' } });
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
-  const db = await createClient(); const { data: { user } } = await db.auth.getUser();
-  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
-  const limited = await rateLimit(user.id, { key: 'dneskai-preview', limit: 60, windowSec: 60 });
-  if (!limited.ok) return Response.json({ error: 'rate-limited' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
-  let input: DneskaiPreviewRequest;
-  try { const raw = await request.text(); if (raw.length > 40_000) throw new Error('too-large'); input = DneskaiPreviewRequestSchema.parse(JSON.parse(raw)); }
-  catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
-  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(DNESKAI_PREVIEW_BUDGET_MS)]);
-  const { data: row, error } = await db.from('marketing_revisions').select('revision').eq('id', input.id).eq('user_id', user.id).maybeSingle();
-  if (error || !row) return Response.json({ error: 'revision-unavailable' }, { status: 404 });
-  let original;
-  try { original = parseContentRevision(row.revision); } catch { return Response.json({ error: 'revision-unavailable' }, { status: 404 }); }
-  if (!original.deck) return Response.json({ error: 'deck-edit-unsupported' }, { status: 409 });
-  const admin = createAdminClient();
-  let wiring;
-  try { wiring = { loadMedia: getDneskaiMediaLoader(admin, user.id), listBriefAssetHashes: getBriefAssetHashLister(admin, user.id), loadBriefPool: getBriefPoolLoader(admin, user.id) }; }
-  catch (failure) { return Response.json({ error: failure instanceof Error && failure.message === 'media-unwired' ? 'media-unwired' : 'renderer-unavailable' }, { status: 503 }); }
-  let deck;
-  try { deck = await editedDneskaiDeck(original, input.deck, wiring.listBriefAssetHashes, wiring.loadBriefPool); }
-  catch (failure) {
-    if (failure instanceof DneskaiRevisionEditError) return Response.json({ error: failure.code }, { status: 409 });
-    return Response.json({ error: 'media-unavailable' }, { status: 503 });
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(15_000)]);
+  try {
+    const context = await readVerifiedServerContext(signal);
+    if (!context) return fail(401, 'unauthorized');
+    const { db, ownerId } = context;
+    signal.throwIfAborted();
+    const rateSignal = AbortSignal.any([signal, AbortSignal.timeout(3000)]);
+    rateSignal.throwIfAborted();
+    const limited = await awaitWithSignal(rateLimit(ownerId, { key: 'dneskai-preview', limit: 60, windowSec: 60 }), rateSignal);
+    signal.throwIfAborted();
+    if (!limited.ok) return Response.json({ error: 'rate-limited' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter), 'Cache-Control': 'private, no-store' } });
+    let input: DneskaiPreviewRequest;
+    try {
+      const raw = await readKnowledgeBody(request, 160_000, signal);
+      if (raw.length > 40_000) throw new Error('too-large');
+      input = DneskaiPreviewRequestSchema.parse(JSON.parse(raw));
+      signal.throwIfAborted();
+    } catch (error) {
+      const interrupted = signal.aborted || (error instanceof DOMException && error.name === 'AbortError');
+      return fail(interrupted ? 503 : 400, interrupted ? 'render-unavailable' : 'invalid-request');
+    }
+    const { data: row, error } = await awaitWithSignal(db.from('marketing_revisions').select('revision').eq('id', input.id).eq('user_id', ownerId).retry(false).abortSignal(signal).maybeSingle(), signal);
+    signal.throwIfAborted();
+    if (error) return fail(503, 'render-unavailable');
+    if (!row) return fail(404, 'revision-unavailable');
+    let original;
+    try { original = parseContentRevision(row.revision); } catch { return fail(503, 'render-unavailable'); }
+    if (!original.deck) return fail(409, 'deck-edit-unsupported');
+    const admin = createAdminClient(signal);
+    let wiring;
+    try { wiring = { loadMedia: getDneskaiMediaLoader(admin, ownerId), listBriefAssetHashes: getBriefAssetHashLister(admin, ownerId), loadBriefPool: getBriefPoolLoader(admin, ownerId) }; }
+    catch (failure) { return fail(503, failure instanceof Error && failure.message === 'media-unwired' ? 'media-unwired' : 'renderer-unavailable'); }
+    signal.throwIfAborted();
+    let deck;
+    try {
+      deck = await awaitWithSignal(editedDneskaiDeck(original, input.deck, wiring.listBriefAssetHashes, wiring.loadBriefPool), signal);
+      signal.throwIfAborted();
+    } catch (failure) {
+      if (signal.aborted) return fail(503, 'render-unavailable');
+      if (failure instanceof DneskaiRevisionEditError) return fail(409, failure.code);
+      return fail(503, 'media-unavailable');
+    }
+    const renderSignal = AbortSignal.any([signal, AbortSignal.timeout(DNESKAI_PREVIEW_BUDGET_MS)]);
+    renderSignal.throwIfAborted();
+    try { return await awaitWithSignal(dneskaiPreviewResponse(deck, input.slide, wiring.loadMedia, renderSignal), renderSignal); }
+    catch { return fail(renderSignal.aborted ? 504 : 503, renderSignal.aborted ? 'worker-timeout' : 'render-unavailable'); }
+  } catch {
+    return fail(503, 'render-unavailable');
   }
-  return dneskaiPreviewResponse(deck, input.slide, wiring.loadMedia, signal);
 }

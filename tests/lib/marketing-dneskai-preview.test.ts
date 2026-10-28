@@ -43,7 +43,7 @@ const request = (url: string, body: unknown, origin = 'https://own.example') => 
 const previewUrl = 'https://own.example/api/marketing/dneskai/preview';
 const revisionRow = () => ({ revision: parseContentRevision({ ...deckRevision(), deck: fixtureDeck() }) });
 function session(row: unknown = revisionRow(), user: { id: string } | null = { id: owner }) {
-  const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle: vi.fn(async () => ({ data: row, error: null })) };
+  const query = { select: vi.fn(() => query), eq: vi.fn(() => query), retry: vi.fn(() => query), abortSignal: vi.fn(() => query), maybeSingle: vi.fn(async () => ({ data: row, error: null })) };
   const from = vi.fn(() => query);
   mocks.client.mockReturnValue({ auth: { getUser: async () => ({ data: { user } }) }, from });
   return { from, query };

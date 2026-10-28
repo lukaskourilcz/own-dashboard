@@ -572,3 +572,7 @@ Finding 370's final touch-device set passes all six in 17.8 seconds. The local v
 ### 28 October — finding 375 text fitting
 
 All four existing EN/CS desktop/mobile Lab typing flows pass in 38.5 seconds after bounded fit admission/body/result consumption: saved pixels, text-fit feedback, dirty exits and keyboard behavior remain. No layout or new capture is introduced. Next emits a development LCP-image loading notice for a fixture photograph; actual above-fold loading still needs investigation, and this is not a production LCP sample. Consolidated optimized release remains pending.
+
+### 28 October — finding 376 draft preview
+
+Eight existing EN/CS desktop/mobile typing/draft flows have seven passes/one first English desktop fit-feedback failure in 57.1 seconds; all four draft-image flows pass. Three unchanged repetitions of the failed typing case pass in 18.3 seconds. The first flow overlaps development compilation, without a proven cause or changed assertion timing. Czech desktop/phone draft captures are inspected: pixels remain marked unsaved/unapprovable, with retained fields and keyboard controls. The Lab's duplicate dirty-approval messages and long mobile editor remain source-review targets. Existing Next disconnect diagnostics/LCP notices and consolidated optimized verification remain open. No gallery image is replaced by these backend changes.

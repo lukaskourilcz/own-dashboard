@@ -199,10 +199,10 @@
     },
     {
       "path": "src/app/api/dev-preview/dneskai-preview/route.ts",
-      "lines": 34,
+      "lines": 46,
       "sha256": "1b42812bc1f033d3ae5949aeb5af9390331f4d5bbe9c970204ffa887078aff8f",
-      "status": "partial; fixture image hash/allowlist and production/CSRF boundary inspected; bounded body/deadline review remains pending",
-      "reviewedSha256": "1b42812bc1f033d3ae5949aeb5af9390331f4d5bbe9c970204ffa887078aff8f"
+      "status": "source reviewed; finding 376 bounds original fifteen-second preview admission/body/data/preparation and retained eight-second render consumer; strict owned no-retry read/outage classification and fixture allowlist/hash/production gate retained; native draft/typing recovery checked, first cold fit-feedback failure remains documented; underlying SDK/native resources and consolidated release remain separate",
+      "reviewedSha256": "bc217974fcba7c15382d72651f1a1783381e1dc2f1ae6b649b3f0c3d300ff9fc"
     },
     {
       "path": "src/app/api/dev-preview/dneskai-render/route.ts",
@@ -451,10 +451,10 @@
     },
     {
       "path": "src/app/api/marketing/dneskai/preview/route.ts",
-      "lines": 49,
+      "lines": 77,
       "sha256": "2c4b8b7308734b25b238d8bb1962134e82fec1937126110bd7f808030c06e216",
-      "status": "partial; full owner render-only route inspected; actual request byte read, auth errors, rate-limit failure, DB/media deadline and outage classification remain pending",
-      "reviewedSha256": "2c4b8b7308734b25b238d8bb1962134e82fec1937126110bd7f808030c06e216"
+      "status": "source reviewed; finding 376 bounds original fifteen-second preview admission/body/data/preparation and retained eight-second render consumer; strict owned no-retry read/outage classification and fixture allowlist/hash/production gate retained; native draft/typing recovery checked, first cold fit-feedback failure remains documented; underlying SDK/native resources and consolidated release remain separate",
+      "reviewedSha256": "8954e2200cef2651171fd4978f7829f6d618494da11a9fb4ab101fc016f68bf5"
     },
     {
       "path": "src/app/api/marketing/dneskai/render-reel/route.ts",
