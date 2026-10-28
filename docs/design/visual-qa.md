@@ -558,3 +558,7 @@ The combined frozen-source development run has 55 passes and one React pre-mount
 ### 28 October — linked review navigation and unreadable Calendar context (finding 364)
 
 All sixteen combined EN/CS desktop/touch browser checks pass in 1.1 minutes. Linked review pages avoid a fabricated page number; returning to the first page removes the cursor and focuses the Calendar heading even when the pager disappears. Scoped axe, mobile action height and reflow pass. Existing initial retry/account refresh focus stays intact. Mounted tests separately confirm unknown-depth continuation, known numbering after return and Calendar's unreadable-record copy. Calendar completeness remains open, and the earlier intermittent development warning is not considered resolved by this focused clean run.
+
+### 28 October — finding 369 Calendar occupancy
+
+Four authentic `/dev-preview` EN/CS desktop/phone unknown-occupancy checks pass in 22.3 seconds with scoped axe, reflow, retained warning and no false free-slot claim. Czech 1440/430 crops are visually inspected. The rebuilt local plan has 61 image pairs; both image modes load all 61, 390/1440 light/dark reflow and mapped-highlight toggling pass without page errors. Density remains a separate finding 370 target. The final broader workspace recovery matrix has 59 passes/one pre-mount React warning failure; five unchanged isolated repeats pass without establishing its cause. See the audit report for the full evidence and release limits.
