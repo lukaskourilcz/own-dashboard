@@ -11,11 +11,12 @@ import {
 
 /**
  * The Design Lab's read model (design-lab-spec.md, variant-approval-model.md): the review read
- * (`dneskai-workspace/1`) seen as one day's queue of posts, each with its exact revision, its slides and the five
- * kits. Browser-safe and pure; the Lab builds it from the read it already has, so no new server read exists.
+ * (`dneskai-workspace/1`) seen as one day's queue of posts, each with its exact revision, its slides and the available
+ * kits. Browser-safe and pure; the queue uses the review read. Move advice separately needs the complete Calendar
+ * window, because a paged review cannot establish free-slot availability.
  *
  * Kits are per post and variants stay per slide (AGENT-RULES §9). A kit switch is an edit like any other: it saves a
- * new revision with its own assets and hash, and that hash needs its own approval. The vendored studio draws all five
+ * new revision with its own assets and hash, and that hash needs its own approval. The vendored studio draws all registered
  * kits; a tile shows a cover only for the kit the post was saved in, and the stage previews a newly chosen kit.
  */
 export const DNESKAI_KITS = DNESKAI_KIT_IDS;
@@ -97,7 +98,7 @@ export function dneskaiLabDeadline(at: string, now: number): DneskaiLabDeadline 
 }
 
 /**
- * The five kit tiles of a post. The current kit's cover is the first rendered slide; any other kit has a cover only
+ * The available kit tiles of a post. The current kit's cover is the first rendered slide; any other kit has a cover only
  * when one was rendered for it (none can be today, so `cover` is null and `fits` unknown).
  */
 export function dneskaiLabKits(post: Pick<DneskaiWorkspacePost, 'deck' | 'assets' | 'renderReport'>): DneskaiLabKit[] {

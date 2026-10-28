@@ -143,6 +143,9 @@ const en = {
     regenerateFailed: 'The new draft failed:',
     moved: {
       title: 'Moved, approve again',
+      checking: 'Checking complete slot availability…',
+      unavailable: 'Slot availability could not be confirmed. Reload before choosing a free slot.',
+      retry: 'Reload availability',
       help: (old: string, next: string) => `Slot ${old} passed without approval. Approve exactly this version for the next free slot, ${next}.`,
       none: 'No daily slot is free today or tomorrow. Set a time by hand and save.',
       button: (time: string) => `Approve for ${time}`,
@@ -401,6 +404,9 @@ const cs: typeof en = {
     regenerateFailed: 'Nový návrh se nepovedl:',
     moved: {
       title: 'Přesunuto, znovu schválit',
+      checking: 'Ověřuji úplnou obsazenost časů…',
+      unavailable: 'Obsazenost časů se nepodařilo ověřit. Před výběrem volného času ji načtěte znovu.',
+      retry: 'Načíst obsazenost',
       help: (old: string, next: string) => `Čas ${old} vypršel bez schválení. Schvalte přesně tuto verzi na další volný čas, ${next}.`,
       none: 'Dnes ani zítra není volný žádný denní čas. Nastavte čas ručně a uložte.',
       button: (time: string) => `Schválit na ${time}`,

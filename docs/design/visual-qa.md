@@ -604,3 +604,8 @@ Finding 380 updates the existing scheduling-field entry in the 64-pair local vis
 ### 28 October — finding 381 elapsed approval
 
 Four EN/CS desktop/mobile browser cases pass in 16.5 seconds. A stale scheduled-approval click is refused at the actual clock boundary, preserving the time, caption and hash and the existing fixture publishing switch. No private marketing call occurs. EN/CS component checks separately exercise the shared-clock disabled reason and preserve Publish now with a synthetically enabled account. Exact-time queue eligibility and delayed setup have offline regressions. This adds no visual redesign or new capture; final optimized verification remains open.
+
+
+### 28 October — finding 382 complete Lab slot availability
+
+All twelve final desktop cases pass in 57.6 seconds at six widths (EN light/CS dark); both final 430px touch-device cases pass in 9.4 seconds. Unknown occupancy is never described as full or free. Explicit reload restores focus to the candidate action, its confirmation retains the shown time and cancellation makes no approval. The compact notice pairs title/action on a wrapping row above one explanation. Reflow, scoped axe, phone targets and no private marketing calls pass. Final Czech desktop/phone recovery crops are visually inspected. The earlier layout's twelve desktop cases and six focused captures also pass; final optimized release remains open.

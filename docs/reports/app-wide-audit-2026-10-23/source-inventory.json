@@ -1162,10 +1162,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
-      "lines": 396,
+      "lines": 412,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial review; findings 319/377\u2013380 verify retained library recovery, one dirty instruction, discard focus, input-bound fitting, truthful live slot help and unobstructed dirty/focused fields; clean review retains sticky actions; captured actions/receipts, complete next-slot advice, save timing and final release remain open; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions and complete slot advice remain separate",
-      "reviewedSha256": "80bf43c93b94e6e30e91f4732b755a5f335e76dd750c8653c09f2ccdc094b19c"
+      "status": "partial review; findings 319/377\u2013380 verify retained library recovery, one dirty instruction, discard focus, input-bound fitting, truthful live slot help and unobstructed dirty/focused fields; clean review retains sticky actions; captured actions/receipts,  save timing and final release remain open; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions remain separate; finding 382 verifies due-only complete Calendar occupancy, unknown/read recovery, guarded focus and shared cache reuse; captured action/source/confirmation lifetimes remain open",
+      "reviewedSha256": "1b328916a8417a6a9274bab1719c8e8e44abafcd77a3ce84b2533e281a634f75"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
@@ -2803,10 +2803,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
-      "lines": 522,
+      "lines": 528,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open; finding 379 derives saved-slot near-expiry on render without replacing drafts and uses truthful EN/CS editable-field help; sticky mobile action overlap and other recorded leads remain open; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions and complete slot advice remain separate",
-      "reviewedSha256": "f78343d3cfac601abb225f365c3e78b89d540621d14c4feb3833d81dd2f85e1d"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open; finding 379 derives saved-slot near-expiry on render without replacing drafts and uses truthful EN/CS editable-field help; sticky mobile action overlap and other recorded leads remain open; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions remain separate; finding 382 verifies due-only complete Calendar occupancy, unknown/read recovery, guarded focus and shared cache reuse; captured action/source/confirmation lifetimes remain open",
+      "reviewedSha256": "91f76d573b655665c521a283c38e0bb5ada868b0bfd8ae8f8a267a4767eada63"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
@@ -3560,10 +3560,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-lab.ts",
-      "lines": 340,
+      "lines": 341,
       "sha256": "bd5d98a3eba8d4e6e0042815dd09628ce5818f7b35e6ba100d1737498917d798",
-      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions and complete slot advice remain separate",
-      "reviewedSha256": "ebc6a9a146653ac5d3a8b4d9a646e7c708783bd779fe61674ddf42d384f7b569"
+      "status": "partial; complete source inspection; complete slot evidence, exact bulk receipts, current deadlines and repeated formatting remain under review; finding 191 reuses immutable Prague formatters with exact output/DST parity and native foreign-timezone checks; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 381 verifies exact-time queue eligibility, EN/CS single scheduled-approval display and actual clock checks around setup; batch/captured actions remain separate; finding 382 verifies due-only complete Calendar occupancy, unknown/read recovery, guarded focus and shared cache reuse; captured action/source/confirmation lifetimes remain open",
+      "reviewedSha256": "f2e2de20233049fd5f39d8f6e491c9da4ac7aa066a1a669093b4cd3fe3bd9388"
     },
     {
       "path": "src/lib/marketing/dneskai-media-contracts.ts",

@@ -6,7 +6,7 @@ import { useDneskaiDraftPreview } from './use-draft-preview';
 import { DneskaiAudioPicker } from './audio-picker';
 import { DneskaiFormatSwitch } from './format-switch';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiDraftCaption, createDeckDraft, setDraftKit, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX } from '@/lib/marketing/dneskai-deck-editor';
 import { dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
-import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { formatDneskaiDay, formatDneskaiDayTime, pragueDate, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
 import { CountedField } from '../counted-field';
 import { DneskaiCodeText } from '../code-text';
@@ -182,8 +182,21 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const publishBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.publishNowDirty : lab.block ? t.actions.blocked[lab.block] : !account?.enabled ? t.actions.publishNowOff : !allLoaded ? t.actions.imagesLoading : null;
   // Owner decision 6: a post in review whose slot passed moves, as exactly this version, to the next free daily slot.
   const missed = dneskaiMissedSlot(lab);
-  const nextSlot = missed ? dneskaiNextFreeSlot({ today: props.read.today, slots: props.read.slots, taken: dneskaiTakenSlots(props.read, post.id), now }) : null;
-  const moveBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.moved.dirty : lab.block ? t.actions.blocked[lab.block] : !nextSlot ? t.actions.moved.none : !allLoaded ? t.actions.imagesLoading : null;
+  const calendar = useQuery({ queryKey: keys.calendar, enabled: missed && !props.guest, staleTime: 30_000, retry: false, refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) => (await dneskaiWorkspaceApi(props.preview)).loadReview(props.projectId, signal, undefined, 'calendar') });
+  const occupancy = calendar.data;
+  const slotReady = !calendar.isError && !calendar.isFetching && occupancy?.calendarComplete === true && occupancy.unreadable === 0 && occupancy.today === pragueDate(new Date(now).toISOString());
+  const slotToday = occupancy?.today ?? props.read.today;
+  const nextSlot = !props.guest && missed && slotReady && occupancy ? dneskaiNextFreeSlot({ today: occupancy.today, slots: occupancy.slots, taken: dneskaiTakenSlots(occupancy, post.id), now }) : null;
+  const moveBlock = props.guest ? t.publicTour : dirty && !onlyTimeChanged ? t.actions.moved.dirty : lab.block ? t.actions.blocked[lab.block] : !slotReady ? t.actions.moved.unavailable : !nextSlot ? t.actions.moved.none : !allLoaded ? t.actions.imagesLoading : null;
+  const slotRetryFocus = useRef<HTMLButtonElement | null>(null);
+  useLayoutEffect(() => {
+    const original = slotRetryFocus.current;
+    if (!original || calendar.isFetching) return;
+    slotRetryFocus.current = null;
+    if (document.activeElement !== document.body && document.activeElement !== original) return;
+    (rootRef.current?.querySelector<HTMLElement>('[data-testid="dneskai-lab-move"]') ?? rootRef.current?.querySelector<HTMLElement>('[data-testid="dneskai-move-heading"]'))?.focus();
+  }, [calendar.isFetching, nextSlot]);
   // Owner decision 8: a returned post, or one in review, can be drafted again with a note; it never approves anything.
   const regeneratable = (post.status === 'review' || post.status === 'returned') && !!post.deck;
   const regenerateBlock = props.guest ? t.publicTour : !props.read.capabilities?.regenerate ? t.actions.regenerateOff : dirty && !onlyTimeChanged ? t.actions.dirty : null;
@@ -249,10 +262,13 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
       <div className="min-w-0 space-y-3">{missed && <section aria-labelledby={`${id}-moved`} className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-xs" data-testid="dneskai-lab-moved">
-          <h3 id={`${id}-moved`} className="font-semibold text-warning">{t.actions.moved.title}</h3>
-          <p>{nextSlot ? t.actions.moved.help(pragueClock(post.scheduledAt), slotLabel(nextSlot, props.read.today, props.lang)) : t.actions.moved.none}</p>
-          {nextSlot && <><Button size="sm" data-testid="dneskai-lab-move" disabled={busy || !!moveBlock} aria-describedby={moveBlock ? `${id}-move-block` : undefined} onClick={() => { setMoveTarget(nextSlot); setError(null); setDialog('move'); }}>{t.actions.moved.button(slotLabel(nextSlot, props.read.today, props.lang))}</Button>
-            {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 id={`${id}-moved`} tabIndex={-1} data-testid="dneskai-move-heading" className="rounded font-semibold text-warning focus-ring">{t.actions.moved.title}</h3>
+            {!props.guest && !slotReady && <Button size="sm" variant="outline" aria-describedby={`${id}-move-help`} disabled={calendar.isFetching || busy} onClick={(event) => { slotRetryFocus.current = event.currentTarget; void calendar.refetch(); }}>{t.actions.moved.retry}</Button>}
+            {nextSlot && <Button size="sm" data-testid="dneskai-lab-move" disabled={busy || !!moveBlock} aria-describedby={`${id}-move-help${moveBlock ? ` ${id}-move-block` : ''}`} onClick={() => { setMoveTarget(nextSlot); setError(null); setDialog('move'); }}>{t.actions.moved.button(slotLabel(nextSlot, slotToday, props.lang))}</Button>}
+          </div>
+          <p id={`${id}-move-help`} role="status">{props.guest ? t.publicTour : calendar.isFetching ? t.actions.moved.checking : !slotReady ? t.actions.moved.unavailable : nextSlot ? t.actions.moved.help(pragueClock(post.scheduledAt), slotLabel(nextSlot, slotToday, props.lang)) : t.actions.moved.none}</p>
+          {nextSlot && moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}
         </section>}
         <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} onRetryPreview={retryPreview} retryBlocked={retryBlocked} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
@@ -290,7 +306,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
       </div>
     </div>
     <Dialog open={dialog !== null} onOpenChange={(open) => { if (!open && !busy) setDialog(null); }}><DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); rootRef.current?.focus(); }}>
-      <DialogHeader><DialogTitle>{dialog === 'shortcuts' ? t.shortcuts.title : dialog === 'return' ? t.actions.return : dialog === 'publish' ? t.actions.publishNowTitle : dialog === 'move' ? t.actions.moved.dialogTitle(moveTarget ? slotLabel(moveTarget, props.read.today, props.lang) : '') : dialog === 'regenerate' ? t.actions.regenerateTitle : t.actions.skipConfirm}</DialogTitle><DialogDescription>{dialog === 'shortcuts' ? t.shortcuts.description : dialog === 'return' ? t.actions.noteHelp : dialog === 'publish' ? t.actions.publishNowDescription : dialog === 'move' ? t.actions.moved.dialogDescription : dialog === 'regenerate' ? t.actions.regenerateDescription : post.title}</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>{dialog === 'shortcuts' ? t.shortcuts.title : dialog === 'return' ? t.actions.return : dialog === 'publish' ? t.actions.publishNowTitle : dialog === 'move' ? t.actions.moved.dialogTitle(moveTarget ? slotLabel(moveTarget, slotToday, props.lang) : '') : dialog === 'regenerate' ? t.actions.regenerateTitle : t.actions.skipConfirm}</DialogTitle><DialogDescription>{dialog === 'shortcuts' ? t.shortcuts.description : dialog === 'return' ? t.actions.noteHelp : dialog === 'publish' ? t.actions.publishNowDescription : dialog === 'move' ? t.actions.moved.dialogDescription : dialog === 'regenerate' ? t.actions.regenerateDescription : post.title}</DialogDescription></DialogHeader>
       {dialog === 'move' ? <>
         <div className="space-y-2 text-xs" data-testid="dneskai-move-summary">
           <p className="font-medium">{post.title}</p>
