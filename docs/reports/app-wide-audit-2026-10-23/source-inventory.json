@@ -493,10 +493,10 @@
     },
     {
       "path": "src/app/api/marketing/import/route.ts",
-      "lines": 24,
+      "lines": 34,
       "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain",
-      "reviewedSha256": "689029699fd9542aeb0ae8df5749db502e577750186a6cb5f359f68d9ae8ef63"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open",
+      "reviewedSha256": "7ece49cd7797c313a72984a36b553ba445cb658a40975ffddcae7ba6defb999b"
     },
     {
       "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
@@ -3294,10 +3294,10 @@
     },
     {
       "path": "src/lib/marketing/calendar-source.ts",
-      "lines": 20,
+      "lines": 70,
       "sha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505",
-      "status": "partial; full source inspected; pinned commit and file-byte cap checked; commit JSON bounds, total/caller deadline and reader cleanup remain pending",
-      "reviewedSha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505"
+      "status": "source reviewed; finding 393 complete pinned commit/file consumers, byte/deadline/caller bounds, exact brand/schema identity, UTF-8, immutable provenance and reader/late-response cleanup pass; parent importer phases remain separate",
+      "reviewedSha256": "fda19a715354b6ed90c415eda4267046382b3d7b74bc0445ea81d572387c2fe2"
     },
     {
       "path": "src/lib/marketing/campaign-import.ts",
