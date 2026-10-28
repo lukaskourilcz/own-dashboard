@@ -81,7 +81,7 @@ const nextConfig: NextConfig = {
       "./docs/**/*", "./tests/**/*", "./e2e/**/*", "./src/**/*", "./services/**/*",
       "./supabase/**/*", "./media/**/*", "./public/**/*", "./scripts/**/*",
       "./test-results/**/*", "./playwright-report/**/*", "./blob-report/**/*", "./coverage/**/*",
-      "./playwright/.cache/**/*", "./out/**/*", "./build/**/*", "./work/**/*",
+      "./playwright/.cache/**/*",
       "./.claude/**/*", "./.agents/**/*", "./.github/**/*", "./.vercel/**/*",
       "./skill-observations/**/*", "./.env*", "./*.md", "./*.html",
       "./tsconfig.tsbuildinfo", "./vitest.config.mts", "./playwright.config.ts", "./package-lock.json",

@@ -134,13 +134,13 @@ describe('marketing native JPEG runtime package closure, no provider/source/cred
 });
 
 
-const ignoredRuntimeInputs = ['test-results/fixture/trace.zip', 'playwright-report/data/fixture.png', 'blob-report/fixture.zip', 'coverage/fixture.json', 'playwright/.cache/fixture', 'work/private-fixture.txt', 'out/fixture.html', 'build/fixture.js'];
-it('excludes local test/export/private preparation outputs from current and future marketing packages', async () => {
+const ignoredRuntimeInputs = ['test-results/fixture/trace.zip', 'playwright-report/data/fixture.png', 'blob-report/fixture.zip', 'coverage/fixture.json', 'playwright/.cache/fixture'];
+it('excludes local QA outputs from current and future marketing packages', async () => {
  const exclusions = await configuredIncludes('outputFileTracingExcludes');
  for (const route of [...routeHandlers().filter(({ file, route }) => route.startsWith('/api/marketing/') && reachesSharp(file)).map(({ route }) => route), '/api/marketing/future-render']) {
   const patterns = routeIncludes(exclusions, route);
-  const excluded = (file: string) => patterns.some(pattern => picomatch(pattern, { dot: true, contains: true })(`./${file}`));
+  const excluded = (file: string) => patterns.some(pattern => picomatch(path.resolve(pattern), { dot: true, contains: true })(path.resolve(file)));
   for (const file of ignoredRuntimeInputs) expect(excluded(file), `${route} must exclude ${file}`).toBe(true);
-  for (const file of ['vendor/carousel-studio/fonts/fixture.ttf', 'node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib', 'node_modules/ffmpeg-static/ffmpeg', 'templates/marketing/fonts/fixture.ttf']) expect(excluded(file), `${route} must retain runtime ${file}`).toBe(false);
+  for (const file of ['vendor/carousel-studio/fonts/fixture.ttf', 'node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib', 'node_modules/ffmpeg-static/ffmpeg', 'templates/marketing/fonts/fixture.ttf', 'node_modules/@sentry/nextjs/build/cjs/server/index.js', 'node_modules/next/dist/compiled/@swc/helpers/cjs/_async_to_generator.cjs']) expect(excluded(file), `${route} must retain runtime ${file}`).toBe(false);
  }
 });
