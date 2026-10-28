@@ -129,7 +129,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const t = copy[props.lang];
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
-  const { draft, setDraft, fit, setFit, expired, request, editable, dirty, onlyTimeChanged } = useDneskaiDraft(post, account?.id ?? null, props.preview, !!props.guest, onDirty);
+  const { draft, setDraft, fit, expired, request, editable, dirty, onlyTimeChanged } = useDneskaiDraft(post, account?.id ?? null, props.preview, !!props.guest, onDirty);
   const discardFocus = useRef<HTMLButtonElement | null>(null);
   useLayoutEffect(() => {
     const original = discardFocus.current;
@@ -219,7 +219,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   function chooseKit(kit: DneskaiKit) {
     if (props.guest || busy || !editable) return;
     if (!dneskaiKitRenderable(kit)) { setMessage(t.kits.unavailableNotice(t.kits.names[kit])); return; }
-    if (kit !== draft.kit) { setDraft(setDraftKit(draft, kit)); setFit({ status: 'checking', result: null }); }
+    if (kit !== draft.kit) { setDraft(setDraftKit(draft, kit)); }
   }
   function shortcut(event: React.KeyboardEvent) {
     if (event.defaultPrevented || busy || dialog || event.altKey || event.ctrlKey || event.metaKey || (event.target as HTMLElement).closest('input,textarea,select,button,a,summary,[contenteditable=true],[role=dialog],[role=region],[role=slider],[role=tab],[role=radio]')) return;
@@ -254,7 +254,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         <DneskaiKitTiles kits={lab.kits} chosen={draft.kit} onChoose={chooseKit} lang={props.lang} />
         <fieldset disabled={props.guest || busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
           <legend className="sr-only">{t.post.title}</legend>
-          <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
+          <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={setDraft} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} count={caption => dneskaiDraftCaption({ ...draft, caption }).length} help={draft.engagement ? dneskaiWorkspace[props.lang].editor.captionCountHelp : undefined} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview && !props.liveMusic} lang={props.lang} />}
           {props.read.capabilities?.engagement && <DneskaiEngagementEditor id={`${id}-engagement`} draft={draft} onDraft={setDraft} handle={post.account.handle} lang={props.lang} />}
