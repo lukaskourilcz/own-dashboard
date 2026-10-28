@@ -25,7 +25,7 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   await headline.fill(lang === 'cs' ? 'Krátký ověřený titulek' : 'Short checked headline');
   await expect(page.getByTestId('dneskai-fit-summary')).toContainText(t.slide.fitSummaryOk(1));
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
-  await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
+  await expect(lab.getByText(t.actions.dirty, { exact: false })).toHaveCount(1);
   await page.locator('[data-testid="dneskai-lab-queue-post"]:not([aria-current="true"])').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: common[lang].unsaved.stay, exact: true }).click();
@@ -249,7 +249,7 @@ test('Lab switches a post to another kit, previews it unsaved, then saves a vers
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   await page.getByTestId('dneskai-kit-ticker').click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
-  await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
+  await expect(lab.getByText(t.actions.dirty, { exact: false })).toHaveCount(1);
   await expect(page.getByTestId('dneskai-kit-ticker')).toContainText(t.kits.onStage);
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
   await expect(lab.getByText(t.actions.saved)).toBeVisible();

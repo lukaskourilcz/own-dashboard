@@ -576,3 +576,7 @@ All four existing EN/CS desktop/mobile Lab typing flows pass in 38.5 seconds aft
 ### 28 October — finding 376 draft preview
 
 Eight existing EN/CS desktop/mobile typing/draft flows have seven passes/one first English desktop fit-feedback failure in 57.1 seconds; all four draft-image flows pass. Three unchanged repetitions of the failed typing case pass in 18.3 seconds. The first flow overlaps development compilation, without a proven cause or changed assertion timing. Czech desktop/phone draft captures are inspected: pixels remain marked unsaved/unapprovable, with retained fields and keyboard controls. The Lab's duplicate dirty-approval messages and long mobile editor remain source-review targets. Existing Next disconnect diagnostics/LCP notices and consolidated optimized verification remain open. No gallery image is replaced by these backend changes.
+
+### 28 October — finding 377 Lab feedback and focus
+
+All 26 six-width EN/CS/theme desktop cases pass in 2.3 minutes: one instruction beside the named action group, retained draft badge/disabled approval reason, reduced motion, touch targets, reflow, scoped axe and discard focus to Approve or the heading. All six new touch-device cases also pass; Czech action crops are visually inspected. Existing typing passes in EN/CS. Broader kit-save checks retain intermittent five-second saved-message failures despite later passing repetitions/a passing trace; see the audit report for exact results. Those failures are not hidden by the clean targeted UX matrix. Consolidated optimized verification remains open.

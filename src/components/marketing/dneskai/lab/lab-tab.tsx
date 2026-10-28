@@ -5,7 +5,7 @@ import { useDneskaiDraft } from './use-draft';
 import { useDneskaiDraftPreview } from './use-draft-preview';
 import { DneskaiAudioPicker } from './audio-picker';
 import { DneskaiFormatSwitch } from './format-switch';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { RefreshCw } from 'lucide-react';
@@ -130,6 +130,16 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
   const { draft, setDraft, fit, setFit, expired, request, editable, dirty, onlyTimeChanged } = useDneskaiDraft(post, account?.id ?? null, props.preview, !!props.guest, onDirty);
+  const discardFocus = useRef<HTMLButtonElement | null>(null);
+  useLayoutEffect(() => {
+    const original = discardFocus.current;
+    if (!original || dirty) return;
+    discardFocus.current = null;
+    if (document.activeElement !== document.body && document.activeElement !== original) return;
+    const approve = rootRef.current?.querySelector<HTMLButtonElement>('[data-testid="dneskai-lab-approve"]');
+    const target = approve && !approve.disabled ? approve : rootRef.current?.querySelector<HTMLElement>('[data-testid="dneskai-lab-post-title"]');
+    target?.focus();
+  }, [dirty]);
   const [view, setView] = useState<DneskaiStageView>('feed');
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());
   const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
@@ -229,7 +239,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     event.preventDefault();
   }
   return <div ref={rootRef} tabIndex={-1} onKeyDown={shortcut} className="min-w-0 space-y-4 focus:outline-none" data-testid="dneskai-lab-session" aria-busy={busy}>
-    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="min-w-0 text-sm font-semibold">{post.title}</h3><DneskaiStateChip detail={lab.state} lang={props.lang} /></div>
+    <div className="flex flex-wrap items-center justify-between gap-2"><h3 tabIndex={-1} data-testid="dneskai-lab-post-title" className="min-w-0 rounded text-sm font-semibold focus-ring">{post.title}</h3><DneskaiStateChip detail={lab.state} lang={props.lang} /></div>
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
       <div className="min-w-0 space-y-3">{missed && <section aria-labelledby={`${id}-moved`} className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-xs" data-testid="dneskai-lab-moved">
@@ -238,7 +248,6 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           {nextSlot && <><Button size="sm" data-testid="dneskai-lab-move" disabled={busy || !!moveBlock} aria-describedby={moveBlock ? `${id}-move-block` : undefined} onClick={() => { setMoveTarget(nextSlot); setError(null); setDialog('move'); }}>{t.actions.moved.button(slotLabel(nextSlot, props.read.today, props.lang))}</Button>
             {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
         </section>}
-        {dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
         <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} onRetryPreview={retryPreview} retryBlocked={retryBlocked} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
       </div>
       <div className="min-w-0 space-y-5">
@@ -261,13 +270,13 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         {post.brief && <details className="text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.post.sources}</summary><ul className="space-y-2">{post.brief.evidence.map((item) => <li key={item.candidateId}><a href={item.url} target="_blank" rel="noreferrer" className="break-words underline">{item.title}</a></li>)}</ul></details>}
       </div>
     </div>
-    <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 md:bottom-0 space-y-2 border-t border-border bg-surface/95 py-3 backdrop-blur-sm" aria-label={t.actions.label}>
-      {block && <p id={`${id}-block`} className="text-xs text-foreground-muted">{block}</p>}
+    <div role="group" className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 md:bottom-0 space-y-2 border-t border-border bg-surface/95 py-3 backdrop-blur-sm" aria-label={t.actions.label}>
+      {block && <p id={`${id}-block`} role={dirty && !props.guest ? 'status' : undefined} className={cn('text-xs', dirty && !props.guest ? 'text-warning' : 'text-foreground-muted')}>{block}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>
         <Button variant="outline" disabled={props.guest || busy || !['review', 'returned'].includes(post.status) || (!dirty && lab.block !== 'render-attach-failed')} onClick={() => void perform('save')}>{busyAction === 'save' ? t.actions.saving : t.actions.save}</Button>
         {post.status === 'review' && regeneratable && <Button variant="outline" data-testid="dneskai-lab-regenerate" disabled={busy || !!regenerateBlock} title={regenerateBlock ?? undefined} onClick={() => { setError(null); setDialog('regenerate'); }}>{busyAction === 'regenerate' ? t.actions.regenerating : t.actions.regenerate}</Button>}
-        {dirty && <Button variant="ghost" disabled={busy} onClick={() => setDraft(createDeckDraft(post, account?.id ?? null))}>{t.actions.discard}</Button>}
+        {dirty && <Button variant="ghost" disabled={busy} onClick={(event) => { discardFocus.current = event.currentTarget; setDraft(createDeckDraft(post, account?.id ?? null)); }}>{t.actions.discard}</Button>}
         <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3 sm:ml-auto">
         {publishable && <Button variant="outline" data-testid="dneskai-lab-publish-now" disabled={busy || !!publishBlock} title={publishBlock ?? undefined} onClick={() => setDialog('publish')}>{busyAction === 'publish' ? t.actions.approving : t.actions.publishNow}</Button>}
         <Button variant="ghost" disabled={props.guest || busy || dirty || !canReturn} onClick={() => setDialog('return')}>{t.actions.return}</Button><Button variant="ghost" disabled={props.guest || busy || dirty || post.status !== 'review'} onClick={() => setDialog('skip')}>{t.actions.skip}</Button>

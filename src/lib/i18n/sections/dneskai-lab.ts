@@ -8,7 +8,6 @@ const en = {
   title: 'Design Lab',
   publicTour: 'Public tour with demo posts. Editing and approval are available in the private workspace.',
   specimens: { title: 'Kit specimens', help: (kit: string) => `${kit}: six synthetic decks, 24 slides. In Editorial the hatched tile shows a refused low-resolution cover; the other kits frame that picture and accept it.` },
-  savedPreview: 'Changed slides show as an unsaved draft preview. Only a saved version can be approved.',
   channels: { label: 'Channel', instagram: 'Instagram', threads: 'Threads', linkedin: 'LinkedIn', notConnected: 'No account connected yet' },
   queue: {
     label: 'Posts by day',
@@ -266,7 +265,6 @@ const cs: typeof en = {
   title: 'Design Lab',
   publicTour: 'Veřejná ukázka příspěvků. Úpravy a schvalování jsou dostupné v soukromém pracovním prostoru.',
   specimens: { title: 'Ukázky sad', help: (kit: string) => `${kit}: šest syntetických sad, 24 slidů. V sadě Editorial šrafovaný dílek ukazuje odmítnutou obálku s nízkým rozlišením; ostatní sady tento obrázek zarámují a přijmou.` },
-  savedPreview: 'Změněné slidy se ukazují jako neuložený náhled. Schválit lze jen uloženou verzi.',
   channels: { label: 'Kanál', instagram: 'Instagram', threads: 'Threads', linkedin: 'LinkedIn', notConnected: 'Účet zatím není připojen' },
   queue: {
     label: 'Příspěvky podle dne',

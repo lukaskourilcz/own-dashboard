@@ -1162,10 +1162,10 @@
     },
     {
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
-      "lines": 381,
+      "lines": 390,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending",
-      "reviewedSha256": "0af51c82a259464fe0dec355df20ac24bc9adbd4c49f5727ed57bb68fe831702"
+      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open",
+      "reviewedSha256": "e027ac2e84f168a996cb91a868418eb9ea7964bc8905397d49a998bfa1aec50e"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
@@ -2803,10 +2803,10 @@
     },
     {
       "path": "src/lib/i18n/sections/dneskai-lab.ts",
-      "lines": 522,
+      "lines": 520,
       "sha256": "138b52e7647356a34cdc89c14ae43f830992ad39043d7adbecfd0a78915a9cdf",
-      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open",
-      "reviewedSha256": "11b2de616154d182aaa8dd51ab85a8d90d01fa82453b5402c87e29459e029a26"
+      "status": "partial; complete EN/CS source inspection; obsolete disclosure-slide/public-credit copy, unconditional live-reply claims and generation cost/timing guidance require reconciliation; finding 193 closes positional public slide policy and explicit legacy recovery; other recorded lifecycle/semantic leads and final release remain separate; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open; finding 198 aligns shared per-draft limit and preview budget; other recorded leads remain open; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open",
+      "reviewedSha256": "b5bfc6f32410f9d48a46b82cb10642797d233db9632a0a7ac19557ddd1d8e9b2"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-source-list.ts",
