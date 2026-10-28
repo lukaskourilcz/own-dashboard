@@ -1,7 +1,7 @@
 {
   "finding": 355,
   "capturedDate": "2026-10-28",
-  "applicationCommit": null,
+  "applicationCommit": "ae1511ae",
   "state": "Authentic isolated verification conflict and keyboard read recovery. Current source hashes; no owner/provider write.",
   "components": {
     "src/components/marketing/dneskai-instagram-account.tsx": "df2f4023ff450db30e1830eb0676845d7357ca50eb3f1860a42ac8d2411e6674",
