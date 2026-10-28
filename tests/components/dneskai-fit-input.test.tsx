@@ -62,3 +62,11 @@ it('retains an invalid draft without crashing or sending it, then fits its repai
   expect(current.fit).toEqual({ status: 'unavailable', result: null }); expect(current.draft.slides[0]!.slide.headline).toHaveLength(201); await advance(300); expect(m.fit).toHaveBeenCalledOnce();
   await act(async () => current.setDraft(before => setSlideText(before, 0, 'headline', 'Repaired headline'))); expect(current.fit.status).toBe('checking'); await advance(300); expect(current.fit.status).toBe('ready'); expect(m.fit).toHaveBeenCalledTimes(2);
 });
+it('updates original-slot expiry while open without replacing the current private draft', async () => {
+  post = { ...post, scheduledAt: new Date(Date.now() + 120_000).toISOString() };
+  await act(async () => { root.render(<Harness key="future-slot" />); });
+  expect(current.expired).toBe(false); const scheduled = current.draft.scheduledLocal;
+  await act(async () => current.setDraft(before => ({ ...before, caption: 'Retained unsaved caption' })));
+  await advance(61_000); await act(async () => { root.render(<Harness key="future-slot" />); });
+  expect(current.expired).toBe(true); expect(current.draft.scheduledLocal).toBe(scheduled); expect(current.draft.caption).toBe('Retained unsaved caption');
+});

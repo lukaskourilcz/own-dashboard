@@ -586,3 +586,7 @@ Finding 377's rebuilt visual plan contains 63 authentic desktop/phone image pair
 ### 28 October — finding 378 input-bound fit feedback
 
 All four EN/CS desktop/mobile browser cases pass in 34.0 seconds. Focal-point and alternative-text edits keep matching ready feedback without another fit request; changed text produces the next request and dirty approval stays disabled. No private marketing call or visual redesign occurs. Existing application/debounce/test timing is preserved; the local plan keeps its dated `d3e2b18f` feedback captures. Broader save timing and consolidated optimized verification remain open.
+
+### 28 October — finding 379 saved-slot guidance
+
+Twelve native desktop cases pass at six widths (EN light/CS dark) in 59.6 seconds; two 430px touch-device cases pass in 9.1 seconds. Near-expiry help updates on render while the selected date and unsaved caption remain. The input description, scoped axe and reflow pass without private marketing calls. The first phone crop exposes sticky-action overlap; four centred recaptures with an actual input hit-target check pass in 26.0 seconds. Correct Czech crops are inspected. The underlying tall sticky-toolbar obstruction is explicitly still open and is not hidden by selecting a better crop. No automatic draft change/new timer is added.

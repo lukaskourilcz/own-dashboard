@@ -15,7 +15,7 @@ export function useDneskaiDraft(post: DneskaiWorkspacePost, accountId: string | 
   const fitKey = (() => { try { return JSON.stringify({ kit: draft.kit, slides: draft.slides.map((item) => dneskaiFitSlide(item.slide)) }); } catch { return null; } })();
   const [fitted, setFitted] = useState<{ key: string | null; state: DneskaiFitState }>(() => ({ key: fitKey, state: { status: 'idle', result: null } }));
   const fit: DneskaiFitState = fitKey === null ? { status: 'unavailable', result: null } : fitted.key === fitKey ? fitted.state : { status: 'checking', result: null };
-  const [expired] = useState(() => dneskaiScheduleExpired(post));
+  const expired = dneskaiScheduleExpired(post);
   const request = (() => { try { return dneskaiEditRequest(post, draft, draft.accountId !== accountId ? draft.accountId : null); } catch { return null; } })();
   // Only a post that can still be edited has unsaved changes; once approved, the draft is no longer an edit.
   const editable = ['review', 'returned'].includes(post.status);
