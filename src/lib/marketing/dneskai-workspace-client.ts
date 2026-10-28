@@ -8,6 +8,8 @@ import { DneskaiApproveManyResultSchema, DneskaiFitResultSchema, DneskaiPreviewR
 import type { DneskaiDecisionCursor } from './dneskai-workspace';
 import { qk } from '@/lib/queries/keys';
 import { MARKETING_PUBLICATION_REQUEUE_RESULTS, type MarketingPublicationRequeueResult } from './publication-requeue';
+import { awaitWithSignal } from '@/lib/abortable';
+import { boundedResponseText } from '@/lib/bounded-response';
 
 /**
  * The browser side of the DNESKAi workspace (#119). Every read and decision goes through this port, so the
@@ -68,11 +70,15 @@ export interface DneskaiWorkspaceApi {
 }
 
 const codeShape = /^[a-z][a-z0-9_-]{0,99}$/;
-async function failure(response: Response): Promise<DneskaiWorkspaceRequestError> {
-  let code = 'decision-failed';
+async function failure(response: Response, signal?: AbortSignal, fallback = 'decision-failed'): Promise<DneskaiWorkspaceRequestError> {
+  let code = fallback;
   let revisionId: string | null = null;
   try {
-    const body = await response.json() as { error?: unknown; reason?: unknown; id?: unknown };
+    if (response.status === 429) {
+      if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined);
+      throw new Error('rate-limited');
+    }
+    const body = (signal ? JSON.parse(await boundedResponseText(response, 4096, signal)) : await response.json()) as { error?: unknown; reason?: unknown; id?: unknown };
     // An approval refusal names its reason (`render-blocked`, `revision-changed`, …); prefer it over the generic code.
     const reason = typeof body.reason === 'string' && codeShape.test(body.reason) ? body.reason : null;
     code = reason ?? (typeof body.error === 'string' && codeShape.test(body.error) ? body.error : code);
@@ -84,10 +90,27 @@ async function failure(response: Response): Promise<DneskaiWorkspaceRequestError
   const wait = Number.isFinite(seconds) ? seconds : Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : 0;
   return new DneskaiWorkspaceRequestError(response.status === 429 ? 'rate-limited' : code, response.status, revisionId, wait);
 }
-async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const response = await fetch(url, { cache: 'no-store', signal });
-  if (!response.ok) throw await failure(response);
-  return response.json();
+/** One original read allowance covers headers, success and error bodies. No automatic replay. */
+async function getJson(url: string, parent?: AbortSignal): Promise<unknown> {
+  const signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
+  const discard = (response: Response) => { if (response.body && !response.body.locked) void response.body.cancel().catch(() => undefined); };
+  let response: Response | undefined;
+  try {
+    signal.throwIfAborted();
+    const pending = fetch(url, { cache: 'no-store', redirect: 'error', signal });
+    void pending.then(value => { if (signal.aborted) discard(value); }, () => undefined);
+    response = await awaitWithSignal(pending, signal);
+    signal.throwIfAborted();
+    if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json' && response.status !== 429) throw new Error('unavailable');
+    if (response.status !== 200) throw await failure(response, signal, 'dneskai-workspace-unavailable');
+    const value: unknown = JSON.parse(await boundedResponseText(response, 8 * 1024 * 1024, signal));
+    signal.throwIfAborted();
+    return value;
+  } catch (error) {
+    if (response) discard(response);
+    if (parent?.aborted) throw new DOMException('Request aborted', 'AbortError');
+    throw error instanceof DneskaiWorkspaceRequestError ? error : new DneskaiWorkspaceRequestError('dneskai-workspace-unavailable', response?.ok ? 502 : response?.status ?? 0);
+  }
 }
 async function post(body: unknown, url = '/api/marketing/revisions', signal?: AbortSignal): Promise<unknown> {
   let response: Response;

@@ -3854,10 +3854,10 @@
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-client.ts",
-      "lines": 191,
+      "lines": 214,
       "sha256": "7ccf832fb792175e21060d02a2c24ec3ee0c1dd9a936cbdff59607f130a613f4",
-      "status": "partial; finding 369 binds Calendar/review response kinds and separate cursor-independent Calendar query; browser response/work budgets, cancellation and exact action receipts remain; preview port separation retained",
-      "reviewedSha256": "182cd231fcae800dfb703f63d1d3f61b558c78af9b5ef1c3a818878cce4d9a6d"
+      "status": "partial; finding 369 separates and binds Calendar response kinds; finding 371 captures one original thirty-second GET allowance, bounded success/error streams, cancellation, fixed diagnostics and no replay; POST body lifetimes, captured writes and exact action receipts remain",
+      "reviewedSha256": "3e378af3290c9d9895719627bcaef9967c3e6cafc3402a763d9f9544120c30f3"
     },
     {
       "path": "src/lib/marketing/dneskai-workspace-read.ts",
