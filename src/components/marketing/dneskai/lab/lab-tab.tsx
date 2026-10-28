@@ -238,7 +238,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     else return;
     event.preventDefault();
   }
-  return <div ref={rootRef} tabIndex={-1} onKeyDown={shortcut} className="min-w-0 space-y-4 focus:outline-none" data-testid="dneskai-lab-session" aria-busy={busy}>
+  return <div ref={rootRef} tabIndex={-1} onKeyDown={shortcut} className="group/lab-session min-w-0 space-y-4 focus:outline-none" data-testid="dneskai-lab-session" aria-busy={busy}>
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 tabIndex={-1} data-testid="dneskai-lab-post-title" className="min-w-0 rounded text-sm font-semibold focus-ring">{post.title}</h3><DneskaiStateChip detail={lab.state} lang={props.lang} /></div>
     {message && <p role="status" className="text-sm">{message}</p>}{error && <div role="alert"><DneskaiCodeText code={error} lang={props.lang} /></div>}
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)]">
@@ -270,7 +270,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         {post.brief && <details className="text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.post.sources}</summary><ul className="space-y-2">{post.brief.evidence.map((item) => <li key={item.candidateId}><a href={item.url} target="_blank" rel="noreferrer" className="break-words underline">{item.title}</a></li>)}</ul></details>}
       </div>
     </div>
-    <div role="group" className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 md:bottom-0 space-y-2 border-t border-border bg-surface/95 py-3 backdrop-blur-sm" aria-label={t.actions.label}>
+    <div role="group" className={cn('space-y-2 border-t border-border bg-surface/95 py-3', !dirty && 'sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 md:bottom-0 backdrop-blur-sm group-has-[fieldset:focus-within]/lab-session:static')} aria-label={t.actions.label}>
       {block && <p id={`${id}-block`} role={dirty && !props.guest ? 'status' : undefined} className={cn('text-xs', dirty && !props.guest ? 'text-warning' : 'text-foreground-muted')}>{block}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button data-testid="dneskai-lab-approve" disabled={busy || !!block} aria-describedby={block ? `${id}-block` : undefined} onClick={() => void perform('approve')}>{busyAction === 'approve' ? t.actions.approving : t.actions.approve} · <span className="font-mono text-xs">{lab.revision.shortHash}</span></Button>

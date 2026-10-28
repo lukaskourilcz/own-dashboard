@@ -1164,8 +1164,8 @@
       "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
       "lines": 390,
       "sha256": "d8bbab904c7acef860b781a246113c209bf9a1b6ecf4ee244f1d3063abdf3bbd",
-      "status": "partial review; finding 319 cached library and saved-track recovery verified in EN/CS components and native Lab/Music; remaining lifecycle and final release checks pending; finding 377 consolidates dirty-approval feedback beside actions, removes redundant EN/CS policy copy and restores guarded discard focus; six-width/EN/CS/theme native checks pass; save timing and remaining lifecycle/content leads stay open; finding 378 binds fit feedback/debounce/cancellation to its exact pure input, skips crop/alt-only repeats and preserves invalid drafts; dirty relay and remaining captured action lifetimes stay open; finding 379 derives saved-slot near-expiry on render without replacing drafts and uses truthful EN/CS editable-field help; sticky mobile action overlap and other recorded leads remain open",
-      "reviewedSha256": "c5286b7b726c22a7bd59c93e95854778b09015a893f7f35cffbbdd4f875aacd5"
+      "status": "partial review; findings 319/377\u2013380 verify retained library recovery, one dirty instruction, discard focus, input-bound fitting, truthful live slot help and unobstructed dirty/focused fields; clean review retains sticky actions; captured actions/receipts, temporal approval, complete next-slot advice, save timing and final release remain open",
+      "reviewedSha256": "70a652bd819f29ecfa4e999f7151b50290b8fe515340850d20ede505b25f5c5b"
     },
     {
       "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
