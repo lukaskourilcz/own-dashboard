@@ -27,9 +27,9 @@ function admin(result: { data: unknown; error: unknown } = { data: stored, error
     : store.readError ? { data: null, error: { message: 'TEST-ONLY database detail' } } : { data: store.token ? [store.token] : [], error: null });
   const filters: Array<[string, unknown]> = [];
   const query = { select: () => query, eq: (key: string, value: unknown) => { filters.push([key, value]); return query; },
-    abortSignal: () => query, retry: () => query, maybeSingle: async () => ({ data: store.token !== undefined || store.readError ? { id: accountId, user_id: owner, brand: 'dneskai', platform: 'instagram' } : null, error: store.lookupError ? { message: 'TEST-ONLY database detail' } : null }) };
+    abortSignal: () => query, retry: () => query, maybeSingle: async () => ({ data: store.token !== undefined || store.readError ? { id: accountId, user_id: owner, brand: 'dneskai', platform: 'instagram', updated_at: stored.verifiedAt } : null, error: store.lookupError ? { message: 'TEST-ONLY database detail' } : null }) };
   const from = vi.fn(() => query);
-  return { db: { rpc: (...args: unknown[]) => { const pending = { abortSignal: () => pending, retry: () => pending, then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => rpc(...args as [string]).then(resolve, reject) }; return pending; }, from } as unknown as ReturnType<typeof createAdminClient>, rpc, from, filters };
+  return { db: { rpc: (...args: unknown[]) => { const pending = { abortSignal: () => pending, retry: () => pending, then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => rpc(...args as [string]).then(value => { if (args[0] !== 'verify_owned_marketing_account' || value.error) return value; const captured = args[1] as {p_owner:string;p_expected_id:string|null;p_expected_at:string|null}; return { ...value, data: { kind:'verified', ownerId:captured.p_owner, expectedId:captured.p_expected_id, expectedVersion:captured.p_expected_at, id: (value.data as {accountId?:string}|null)?.accountId ?? accountId, updatedAt:'2026-10-20T12:00:00.123457+00:00', result:value.data } }; }).then(resolve, reject) }; return pending; }, from } as unknown as ReturnType<typeof createAdminClient>, rpc, from, filters };
 }
 const storedToken = (patch: Partial<StoredToken> = {}): StoredToken => ({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', expires_at: '2027-01-15T00:00:00+00:00', refreshed_at: '2026-11-16T00:00:00+00:00',
   scopes: ['instagram_business_basic', 'instagram_business_content_publish'], login_mode: 'instagram', ...patch });
@@ -46,7 +46,7 @@ describe('verifyInstagramAccount', () => {
     expect(url).toBe('https://graph.instagram.com/v99.0/me?fields=user_id%2Cusername%2Caccount_type');
     expect(url).not.toContain(token);
     expect(init).toMatchObject({ method: 'GET', redirect: 'error', headers: { Authorization: `Bearer ${token}` } });
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('marketing_verify_account', { p_owner: owner, p_brand: 'dneskai', p_platform: 'instagram', p_remote_account_id: '17841400000000001',
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('verify_owned_marketing_account', { p_owner: owner, p_expected_id:null,p_expected_at:null,p_expected_token:null, p_brand: 'dneskai', p_platform: 'instagram', p_remote_account_id: '17841400000000001',
       p_handle: 'dneskai', p_token: token, p_expires_at: '2026-12-10T00:00:00.000Z', p_scopes: ['instagram_business_basic', 'instagram_business_content_publish'], p_login_mode: 'instagram' });
     expect(JSON.stringify(verified)).not.toContain(token);
   });
@@ -88,7 +88,7 @@ describe('verifyInstagramAccount', () => {
     expect(bearer(fetcher)).toBe('Bearer TEST-ONLY-REFRESHED-TOKEN-0002');
     expect(filters).toEqual([['user_id', owner], ['brand', 'dneskai'], ['platform', 'instagram']]);
     expect(rpc).toHaveBeenCalledWith('marketing_read_account_token', { p_owner: owner, p_account: accountId });
-    expect(rpc).toHaveBeenLastCalledWith('marketing_verify_account', expect.objectContaining({ p_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', p_expires_at: '2027-01-15T00:00:00.000Z' }));
+    expect(rpc).toHaveBeenLastCalledWith('verify_owned_marketing_account', expect.objectContaining({ p_token: 'TEST-ONLY-REFRESHED-TOKEN-0002', p_expires_at: '2027-01-15T00:00:00.000Z' }));
     const missing = fetcherFor(profile());
     await verifyInstagramAccount(admin(undefined, { token: storedToken() }).db, owner, 'dneskai', { env: env({ MARKETING_DNESKAI_INSTAGRAM_ACCESS_TOKEN: undefined }), fetcher: missing, now });
     expect(bearer(missing)).toBe('Bearer TEST-ONLY-REFRESHED-TOKEN-0002');
@@ -97,7 +97,7 @@ describe('verifyInstagramAccount', () => {
     const newer = fetcherFor(profile()); const older = admin(undefined, { token: storedToken({ expires_at: '2026-11-01T00:00:00+00:00' }) });
     await verifyInstagramAccount(older.db, owner, 'dneskai', { env: env(), fetcher: newer, now });
     expect(bearer(newer)).toBe(`Bearer ${token}`);
-    expect(older.rpc).toHaveBeenLastCalledWith('marketing_verify_account', expect.objectContaining({ p_token: token, p_expires_at: '2026-12-10T00:00:00.000Z' }));
+    expect(older.rpc).toHaveBeenLastCalledWith('verify_owned_marketing_account', expect.objectContaining({ p_token: token, p_expires_at: '2026-12-10T00:00:00.000Z' }));
     const refreshed = fetcherFor(profile());
     await verifyInstagramAccount(admin(undefined, { token: storedToken() }).db, owner, 'dneskai', { env: env(), fetcher: refreshed, now });
     expect(bearer(refreshed)).toBe('Bearer TEST-ONLY-REFRESHED-TOKEN-0002');
@@ -110,7 +110,7 @@ describe('verifyInstagramAccount', () => {
     const { db, rpc } = admin(undefined, store); const fetcher = fetcherFor(profile());
     await expect(verifyInstagramAccount(db, owner, 'dneskai', { env: env(patch), fetcher, now })).rejects.toMatchObject({ code, status });
     expect(fetcher).not.toHaveBeenCalled();
-    expect(rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_verify_account');
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain('verify_owned_marketing_account');
   });
   it('reports a failed store without leaking the database error', async () => {
     const { db } = admin({ data: null, error: { message: 'TEST-ONLY database detail' } });
@@ -188,7 +188,7 @@ describe('verifyInstagramAccount with Facebook Login (#166)', () => {
     expect(url).toBe('https://graph.facebook.com/v99.0/me/accounts?fields=id%2Cname%2Cinstagram_business_account%7Bid%2Cusername%7D&limit=25');
     expect(url).not.toContain(token);
     expect(init).toMatchObject({ headers: { Authorization: `Bearer ${token}` } });
-    expect(rpc).toHaveBeenCalledWith('marketing_verify_account', expect.objectContaining({ p_remote_account_id: '17841400000000001', p_handle: 'dneskai', p_login_mode: 'facebook' }));
+    expect(rpc).toHaveBeenCalledWith('verify_owned_marketing_account', expect.objectContaining({ p_remote_account_id: '17841400000000001', p_handle: 'dneskai', p_login_mode: 'facebook' }));
   });
 
   it('reads the Page itself when the token is a Page token', async () => {
@@ -204,6 +204,6 @@ describe('verifyInstagramAccount with Facebook Login (#166)', () => {
   ] as const)('refuses %s and stores nothing', async (_label, body, code) => {
     const { db, rpc } = admin({ data: fbStored, error: null });
     await expect(verifyInstagramAccount(db, owner, 'dneskai', { env: fbEnv(), fetcher: fetcherFor(Response.json(body)), now })).rejects.toMatchObject({ code });
-    expect(rpc.mock.calls.map(([name]) => name)).not.toContain('marketing_verify_account');
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain('verify_owned_marketing_account');
   });
 });

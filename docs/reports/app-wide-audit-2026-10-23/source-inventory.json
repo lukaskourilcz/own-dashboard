@@ -1050,10 +1050,10 @@
     },
     {
       "path": "src/components/marketing/dneskai-instagram-account.tsx",
-      "lines": 238,
+      "lines": 251,
       "sha256": "eeb4adb15ce083097c1931eac48a9868bf957be077e19189a554b73ae49b13ea",
-      "status": "partial; finding 350 captured owner/version controls, pending exit/unmount guard, retained cached account/subscription recovery, shared expiry clock, compact EN/CS layout and exact cache patch verified; complete provider Page/subscription identity/pagination, verification concurrency/store proof and final app-wide release remain; reproduced development warning traced to Next hot refresh, frozen-source matrix clean",
-      "reviewedSha256": "71d7ac68214e0730f3363e93754148a48bd1ee2b9605a5a5636d1291e2e9e32e"
+      "status": "partial; findings 350/355 captured account controls and verification, pending exit/unmount, retained cached recovery, one conflict notice, focus restoration and compact EN/CS fields verified; feedback row density, subscription identity/pagination and final app-wide release remain",
+      "reviewedSha256": "df2f4023ff450db30e1830eb0676845d7357ca50eb3f1860a42ac8d2411e6674"
     },
     {
       "path": "src/components/marketing/dneskai-source-forms.tsx",
@@ -2785,7 +2785,7 @@
       "lines": 122,
       "sha256": "38a79af0d917f424a21ebd1eba9b4c7087d30987b71250220d61618e3f7f50d5",
       "status": "partial source review: typed EN/CS account/reply diagnostics retained; introduction assumes Instagram Login despite supported Facebook Login and misleadingly implies verification always leaves publishing off; reconcile with actual connection state; finding 197 aligns account/recovery/budget/engagement/disclosure copy in EN/CS; remaining lifecycle leads stay open",
-      "reviewedSha256": "131ea6a3183878e0c4762c39904aca5b87fd65874b4f059511a3a9eff0016ab3"
+      "reviewedSha256": "15ba731f2908cbfed03fea0c489093e7d1a4355602fa0b916e8bceb1d30804cf"
     },
     {
       "path": "src/lib/i18n/sections/dneskai-audio.ts",
@@ -3263,6 +3263,13 @@
       "lines": 25,
       "reviewedSha256": "18a8f85d3204c97db8b59fd7117dd9aa2a7dbf04b0695eaf2d604f909ead1d9d",
       "status": "source reviewed; captured intent/receipt boundaries locally verified; finding 349 strict captured control contract and server/browser transport verified; live route/panel adoption and final release remain"
+    },
+    {
+      "path": "src/lib/marketing/account-verification-contracts.ts",
+      "sha256": null,
+      "lines": 40,
+      "status": "source reviewed; finding 355 exact captured verification/changed receipt, full microseconds, identity/mode and advancing version proof targeted; final app-wide release pending",
+      "reviewedSha256": "15a636caf3864c6b1109e79efbf4d58c1f09cb4687bb89785ba7553e9815ccdd"
     },
     {
       "path": "src/lib/marketing/accounts-client.ts",
@@ -4078,17 +4085,17 @@
     },
     {
       "path": "src/lib/marketing/marketing-codes.ts",
-      "lines": 695,
+      "lines": 697,
       "sha256": "5d0ce4c339417ae715af632a27180debaa10b3e199dd7d9aae9e9092032efe72",
       "status": "source reviewed; finding 329 closes emitted audio/TikTok label gaps and adds truthful retained-result EN/CS guidance; known generic admission/completion codes pinned; broader generic-error and final release follow-up pending",
-      "reviewedSha256": "dde2410025af34f3dfa7e028f950e0810a6e86e09f6836e0f424a74de4815269"
+      "reviewedSha256": "ded835bea0641bd55c368b6d3f3f8edeb4c16db6c932d2eb05a803e3fa472523"
     },
     {
       "path": "src/lib/marketing/meta-account.ts",
-      "lines": 182,
+      "lines": 189,
       "sha256": "5aa7eebf03ddcf25c950862fdf5b3fba8cf58f7736774774abb685d638dcbb17",
-      "status": "partial; finding 352 bounds original verification lookup/provider/store consumers, disables lookup/write retries, validates exact owned lookup and finite strict remote-identity receipt; finding 353 complete bounded unique Page lookup and restricted initial fallback verified; concurrent account/credential changes and post-trigger store proof remain; underlying SDK JSON and final app-wide release pending",
-      "reviewedSha256": "97dce8b31ee701eab582401b5b8cbb77cae30c5da7d973f0c690af743a40b7b6"
+      "status": "partial; findings 352/353/355 original bounded verification, complete unique Page traversal, captured owner/account/version/private credential fingerprint, no-retry canonical transaction and strict exact receipt verified; underlying SDK JSON allocation and final app-wide release remain",
+      "reviewedSha256": "b47c34170b62773ffacba74f74da524136aa8cd7f2d6ec2f27416f8d541ac980"
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",

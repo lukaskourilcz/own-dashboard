@@ -16,7 +16,7 @@ it('verifies once through actual SDK and canonical transaction, starting a new a
  const calls: string[] = [], fetcher: typeof fetch = async (input, init) => { calls.push(new URL(String(input)).pathname); return emulator.fetch(input, init); };
  const provider = vi.fn(async () => profile()), result = await verifyInstagramAccount(client(fetcher), owner, 'dneskai', { env, fetcher: provider });
  expect(result).toMatchObject({ brand: 'dneskai', platform: 'instagram', handle: 'dneskai', enabled: false, tokenStored: true }); expect(JSON.stringify(result)).not.toContain('TEST-ONLY'); expect(provider).toHaveBeenCalledOnce();
- expect(calls).toEqual(['/rest/v1/marketing_accounts', '/rest/v1/rpc/marketing_verify_account']);
+ expect(calls).toEqual(['/rest/v1/marketing_accounts', '/rest/v1/rpc/verify_owned_marketing_account']);
  expect((await database.query<{ enabled: boolean; remote_account_id: string }>('select enabled,remote_account_id from public.marketing_accounts where id=$1', [result.accountId])).rows[0]).toEqual({ enabled: false, remote_account_id: remote });
 });
 it('does not replay an unavailable SDK account read or reach the provider', async () => {
@@ -24,7 +24,7 @@ it('does not replay an unavailable SDK account read or reach the provider', asyn
  await expect(verifyInstagramAccount(client(fetcher), owner, 'dneskai', { env, fetcher: provider })).rejects.toMatchObject({ code: 'credential-store-unavailable' }); expect(fetcher).toHaveBeenCalledOnce(); expect(provider).not.toHaveBeenCalled();
 });
 it('keeps a lost write acknowledgement unconfirmed and never automatically repeats the committed transaction', async () => {
- let writes = 0; const fetcher: typeof fetch = async (input, init) => { const reply = await emulator.fetch(input, init); if (new URL(String(input)).pathname.endsWith('/marketing_verify_account')) { writes++; throw new Error('TEST_ONLY_PRIVATE_LOST_ACK'); } return reply; };
+ let writes = 0; const fetcher: typeof fetch = async (input, init) => { const reply = await emulator.fetch(input, init); if (new URL(String(input)).pathname.endsWith('/verify_owned_marketing_account')) { writes++; throw new Error('TEST_ONLY_PRIVATE_LOST_ACK'); } return reply; };
  await expect(verifyInstagramAccount(client(fetcher), owner, 'dneskai', { env, fetcher: async () => profile() })).rejects.toMatchObject({ code: 'account-store-failed' }); expect(writes).toBe(1);
  expect((await database.query('select id,enabled from public.marketing_accounts where user_id=$1', [owner])).rows).toHaveLength(1);
 });

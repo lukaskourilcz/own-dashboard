@@ -86,3 +86,19 @@ test('other More panels still close with Escape and restore focus', async ({ pag
     await expect(page.getByTestId(`dneskai-more-${kind}`)).toBeVisible(); await page.keyboard.press('Escape'); await expect(page.getByTestId(`dneskai-more-${kind}`)).not.toBeVisible(); await expect(page.getByTestId('dneskai-more')).toBeFocused();
   }
 });
+for (const lang of ['en','cs'] as const) test(`captured verification conflict has one message and keyboard recovery: ${lang}`, async ({page},info) => {
+  await page.setViewportSize({width:info.project.name==='mobile'?430:1440,height:1100});
+  let reads = 0, writes = 0;
+  await page.route('**/api/marketing/accounts', route => { reads++; return route.fulfill({json:{accounts:[account()]}}); });
+  await page.route('**/api/marketing/accounts/verify', route => { writes++; return route.fulfill({status:409,json:{error:'account-changed'}}); });
+  const errors = watchConsole(page), panel = await open(page,lang,lang==='cs'?'dark':'light'), before = reads, t = dneskaiAccount[lang];
+  const verify = panel.getByRole('button',{name:t.verify,exact:true}); await verify.focus(); await verify.press('Enter');
+  await expect(panel.getByRole('alert')).toHaveCount(1); await expect(panel.getByRole('alert')).toHaveText(t.changed); await expect(verify).toBeDisabled();
+  const reload = panel.getByRole('button',{name:t.reload,exact:true}); await expect(reload).toBeFocused();
+  const details = panel.locator('summary').filter({hasText:t.details}); await details.click(); await expect(panel.getByText(t.intro,{exact:true})).toBeVisible();
+  expect(await panel.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true); await details.click(); await reload.focus();
+  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-more-account"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  if(lang==='cs') await capture(panel,info.outputPath(`account-verification-conflict-cs-${info.project.name==='mobile'?430:1440}.png`),['[role="alert"]','[data-testid="dneskai-account-recovery"] button','dl']);
+  await reload.press('Enter'); await expect(verify).toBeEnabled(); await expect(verify).toBeFocused(); expect(reads).toBe(before+1); expect(writes).toBe(1);
+  expect(errors.filter(error=>!error.includes('409 (Conflict)'))).toEqual([]);
+});

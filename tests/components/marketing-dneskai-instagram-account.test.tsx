@@ -214,3 +214,13 @@ describe('captured account controls and recovery', () => {
     expect(container.textContent).toContain(dneskaiAccount.en.engagement.webhookOn); expect(container.textContent).toContain(dneskaiAccount.en.operationFailed); expect(container.textContent).not.toContain(dneskaiAccount.en.failed);
   });
 });
+
+it.each(['en','cs'] as const)('keeps one verification conflict message, restores recovery focus and reads before permitting another action (%s)', async lang => {
+  const before = account(); let reads = 0, writes = 0;
+  vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => { if (init?.method === 'POST') { writes++; return Response.json({error:'account-changed'},{status:409}); } reads++; return Response.json({accounts:[before]}); }));
+  render(<DneskaiInstagramAccount lang={lang} now={now}/>); await settle();
+  const verify = container.querySelector<HTMLButtonElement>('button')!; act(() => { verify.focus(); verify.click(); }); await settle();
+  expect(container.querySelectorAll('[role="alert"]')).toHaveLength(1); expect(container.textContent).toContain(dneskaiAccount[lang].changed);
+  const recovery = container.querySelector<HTMLButtonElement>('[data-testid="dneskai-account-recovery"] button')!; expect(document.activeElement).toBe(recovery);
+  await act(async () => recovery.click()); await settle(); expect(document.activeElement).toBe(verify); expect(verify.disabled).toBe(false); expect(reads).toBe(2); expect(writes).toBe(1);
+});

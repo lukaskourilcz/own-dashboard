@@ -1,5 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
+import { confirmAccountVerification, VerifiedAccountRecordSchema } from './account-verification-contracts';
 import { awaitWithSignal } from '@/lib/abortable';
 import { databaseTimestamp } from '@/lib/database-version';
 import { readFacebookPages } from './facebook-page-list';
@@ -34,20 +36,9 @@ export class MarketingAccountVerificationError extends Error {
 const fail = (code: string, status = 409): never => { throw new MarketingAccountVerificationError(code, status); };
 
 const ProfileSchema = z.object({ user_id: z.string().regex(/^\d{1,100}$/), username: z.string().regex(/^[A-Za-z0-9._]{1,30}$/), account_type: z.string().max(40) });
-const StoredSchema = z.strictObject({
-  accountId: z.uuid(),
-  remoteAccountId: z.string().regex(/^\d{1,100}$/),
-  handle: z.string().regex(/^[A-Za-z0-9._]{1,30}$/),
-  verifiedAt: databaseTimestamp,
-  enabled: z.boolean(),
-  tokenStored: z.boolean(),
-  token: z.strictObject({
-    expiresAt: databaseTimestamp,
-    refreshedAt: databaseTimestamp,
-    scopes: z.array(z.string().regex(/^[a-z_]{1,64}$/)).max(20).refine(values => new Set(values).size === values.length),
-    loginMode: z.enum(['instagram', 'facebook', 'threads']),
-  }),
-});
+const PrivateCredentialCapture = VerifiedAccountRecordSchema.shape.token.extend({ tokenHash: z.string().regex(/^[0-9a-f]{64}$/) });
+type VerificationSource = { account: { id: string; updatedAt: string } | null; token: StoredMetaToken | null };
+
 export type VerifiedMarketingAccount = { accountId: string; brand: VerifiableBrand; platform: 'instagram'; handle: string; accountType: string; verifiedAt: string; enabled: boolean;
   tokenStored: boolean; token: { expiresAt: string; refreshedAt: string; scopes: string[]; loginMode: 'instagram' | 'facebook' };
   /** Facebook Login only (#166): the Page @dneskai is linked to. Not stored; shown after verification. */
@@ -71,18 +62,18 @@ export function verificationCredential(stored: StoredMetaToken | null, bootstrap
   if (!tokenShape.test(bootstrap.accessToken)) return { hold: stored ? 'access-token-expired' : 'access-token-missing' };
   return { hold: Number.isFinite(Date.parse(bootstrap.expiresAt)) ? 'access-token-expired' : 'access-token-expiry-unverified' };
 }
-async function storedInstagramToken(db: Database, ownerId: string, brand: VerifiableBrand, signal: AbortSignal): Promise<StoredMetaToken | null> {
+async function storedInstagramToken(db: Database, ownerId: string, brand: VerifiableBrand, signal: AbortSignal): Promise<VerificationSource> {
   try {
     signal.throwIfAborted();
-    const found = await awaitWithSignal(db.from('marketing_accounts').select('id,user_id,brand,platform').eq('user_id', ownerId).eq('brand', brand).eq('platform', 'instagram').abortSignal(signal).retry(false).maybeSingle(), signal);
+    const found = await awaitWithSignal(db.from('marketing_accounts').select('id,user_id,brand,platform,updated_at').eq('user_id', ownerId).eq('brand', brand).eq('platform', 'instagram').abortSignal(signal).retry(false).maybeSingle(), signal);
     signal.throwIfAborted();
     if (found.error) return fail('credential-store-unavailable', 503);
-    if (found.data === null) return null;
-    const row = z.strictObject({ id: z.uuid(), user_id: z.literal(ownerId), brand: z.literal(brand), platform: z.literal('instagram') }).safeParse(found.data);
+    if (found.data === null) return { account: null, token: null };
+    const row = z.strictObject({ id: z.uuid(), user_id: z.literal(ownerId), brand: z.literal(brand), platform: z.literal('instagram'), updated_at: databaseTimestamp }).safeParse(found.data);
     if (!row.success) return fail('credential-store-unavailable', 503);
     const token = await awaitWithSignal(readStoredMetaToken(db, ownerId, row.data.id), signal);
     signal.throwIfAborted();
-    return token;
+    return { account: { id: row.data.id, updatedAt: row.data.updated_at }, token };
   } catch { return fail('credential-store-unavailable', 503); }
 }
 
@@ -104,7 +95,13 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
   if (mode !== 'instagram' && mode !== 'facebook') return fail('instagram-login-required');
   const version = env[`${prefix}_API_VERSION`] ?? '';
   if (!/^v\d+\.\d+$/.test(version)) fail('api-version-unverified');
-  const credential = verificationCredential(await storedInstagramToken(db, ownerId, brand, signal), bootstrap, now, mode);
+  const source = await storedInstagramToken(db, ownerId, brand, signal);
+  let privateCapture: z.infer<typeof PrivateCredentialCapture> | null = null;
+  try {
+    if (source.token) privateCapture = PrivateCredentialCapture.parse({ tokenHash: createHash('sha256').update(source.token.accessToken, 'utf8').digest('hex'),
+      expiresAt: source.token.expiresAt, refreshedAt: source.token.refreshedAt, scopes: source.token.scopes, loginMode: source.token.loginMode });
+  } catch { return fail('credential-store-unavailable', 503); }
+  const credential = verificationCredential(source.token, bootstrap, now, mode);
   if ('hold' in credential) return fail(credential.hold);
   if ((mode === 'facebook' ? FACEBOOK_LOGIN_SCOPES : INSTAGRAM_LOGIN_SCOPES).some(scope => !credential.scopes.includes(scope))) fail('publishing-scopes-unverified');
   // The store refuses more than 20 scopes or a malformed one; refuse here first so nothing is sent or written.
@@ -168,15 +165,25 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
     if (profile.username.toLowerCase() !== expectedHandle) fail('remote-account-handle-mismatch');
   }
 
-  let stored: { data: unknown; error: unknown };
+  const intent = { ownerId, accountId: source.account?.id ?? null, expectedVersion: source.account?.updatedAt ?? null,
+    remoteAccountId: profile.user_id, handle: profile.username, loginMode: mode };
+  let result: z.infer<typeof VerifiedAccountRecordSchema>;
   try {
     signal.throwIfAborted();
-    stored = await awaitWithSignal(db.rpc('marketing_verify_account', { p_owner: ownerId, p_brand: brand, p_platform: 'instagram', p_remote_account_id: profile.user_id, p_handle: profile.username,
-      p_token: credential.accessToken, p_expires_at: new Date(credential.expiresAt).toISOString(), p_scopes: credential.scopes, p_login_mode: mode }).abortSignal(signal).retry(false), signal);
+    const stored = await awaitWithSignal(db.rpc('verify_owned_marketing_account', {
+      p_owner: ownerId, p_expected_id: intent.accountId, p_expected_at: intent.expectedVersion, p_expected_token: privateCapture,
+      p_brand: brand, p_platform: 'instagram', p_remote_account_id: profile.user_id, p_handle: profile.username,
+      p_token: credential.accessToken, p_expires_at: new Date(credential.expiresAt).toISOString(), p_scopes: credential.scopes, p_login_mode: mode,
+    }).abortSignal(signal).retry(false), signal);
     signal.throwIfAborted();
-  } catch { return fail('account-store-failed', 503); }
-  const row = StoredSchema.safeParse(stored?.data);
-  if (stored?.error || !row.success || row.data.token.loginMode !== mode || row.data.remoteAccountId !== profile.user_id || row.data.handle.toLowerCase() !== profile.username.toLowerCase()) return fail('account-store-failed', 503);
-  return { accountId: row.data.accountId, brand, platform: 'instagram', handle: row.data.handle, accountType, verifiedAt: row.data.verifiedAt, enabled: row.data.enabled,
-    tokenStored: row.data.tokenStored, token: { ...row.data.token, loginMode: mode }, ...(page ? { page } : {}) };
+    if (stored?.error) return fail('account-store-failed', 503);
+    const receipt = confirmAccountVerification(stored?.data, intent);
+    if (receipt.kind === 'changed') return fail('account-changed', 409);
+    result = receipt.result;
+  } catch (error) {
+    if (error instanceof MarketingAccountVerificationError && error.code === 'account-changed') throw error;
+    return fail('account-store-failed', 503);
+  }
+  return { accountId: result.accountId, brand, platform: 'instagram', handle: result.handle, accountType, verifiedAt: result.verifiedAt, enabled: result.enabled,
+    tokenStored: result.tokenStored, token: { ...result.token, loginMode: mode }, ...(page ? { page } : {}) };
 }

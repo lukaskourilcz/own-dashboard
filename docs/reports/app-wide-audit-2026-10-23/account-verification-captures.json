@@ -1,0 +1,76 @@
+{
+  "finding": 355,
+  "capturedDate": "2026-10-28",
+  "applicationCommit": null,
+  "state": "Authentic isolated verification conflict and keyboard read recovery. Current source hashes; no owner/provider write.",
+  "components": {
+    "src/components/marketing/dneskai-instagram-account.tsx": "df2f4023ff450db30e1830eb0676845d7357ca50eb3f1860a42ac8d2411e6674",
+    "src/lib/i18n/sections/dneskai-account.ts": "15ba731f2908cbfed03fea0c489093e7d1a4355602fa0b916e8bceb1d30804cf",
+    "src/lib/marketing/meta-account.ts": "b47c34170b62773ffacba74f74da524136aa8cd7f2d6ec2f27416f8d541ac980",
+    "src/lib/marketing/account-verification-contracts.ts": "15a636caf3864c6b1109e79efbf4d58c1f09cb4687bb89785ba7553e9815ccdd"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 432,
+        "y": 174.5,
+        "width": 576,
+        "height": 751
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.6458333333333335,
+          "y": 17.70972037283622,
+          "w": 92.70833333333333,
+          "h": 2.663115845539281
+        },
+        {
+          "n": 2,
+          "x": 68.57638888888889,
+          "y": 24.234354194407455,
+          "w": 27.77777777777778,
+          "h": 5.858854860186418
+        },
+        {
+          "n": 3,
+          "x": 3.6458333333333335,
+          "y": 38.74833555259654,
+          "w": 92.70833333333333,
+          "h": 2.130492676431425
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 12,
+        "y": 68.5,
+        "width": 406,
+        "height": 963
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 13.811007268951194,
+          "w": 89.65517241379311,
+          "h": 4.153686396677051
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 20.976116303219108,
+          "w": 89.65517241379311,
+          "h": 4.569055036344756
+        },
+        {
+          "n": 3,
+          "x": 5.172413793103448,
+          "y": 32.29491173416407,
+          "w": 89.65517241379311,
+          "h": 1.6614745586708204
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import {useNow} from '@/lib/use-now';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -32,13 +32,23 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now: suppliedN
         }
     });
     const account = query.data?.find(value => value.brand === 'dneskai' && value.platform === 'instagram') ?? null;
+    const verifyButton = useRef<HTMLButtonElement>(null), recoveryButton = useRef<HTMLButtonElement>(null), focusAfter = useRef<'verify'|'recovery'|null>(null);
+    useLayoutEffect(() => {
+        if (!focusAfter.current || scope.pending || query.isFetching) return;
+        const active = document.activeElement;
+        if (active !== document.body && active !== verifyButton.current && active !== recoveryButton.current) { focusAfter.current = null; return; }
+        const target = focusAfter.current === 'recovery' || query.isError ? recoveryButton.current : verifyButton.current;
+        if (target && !target.disabled) { focusAfter.current = null; target.focus(); }
+    }, [scope.pending, query.isFetching, query.isError, hold, verification.error]);
     async function reload() {
+        const restoreFocus = document.activeElement === recoveryButton.current;
         const operation = scope.capture();
         if (!operation)
             return;
         setAction('reload');
         try {
             const result = await query.refetch();
+            if (!operation.signal.aborted && restoreFocus) focusAfter.current = result.isError ? 'recovery' : 'verify';
             if (!operation.signal.aborted && !result.isError) {
                 setHold(false);
                 setVerification({});
@@ -52,6 +62,7 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now: suppliedN
     async function verify() {
         if (disabled || hold || query.isError || query.isFetching)
             return;
+        const restoreFocus = document.activeElement === verifyButton.current;
         const operation = scope.capture();
         if (!operation)
             return;
@@ -61,6 +72,7 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now: suppliedN
             const result = await verifyMarketingAccount('dneskai', 'instagram', operation.signal);
             if (operation.signal.aborted)
                 return;
+            if (restoreFocus) focusAfter.current = 'verify';
             setVerification({ data: result });
             await client.cancelQueries({ queryKey: qk.marketingAccounts, exact: true });
             if (!operation.signal.aborted)
@@ -68,6 +80,7 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now: suppliedN
         }
         catch (error) {
             if (!operation.signal.aborted) {
+                if (restoreFocus) focusAfter.current = 'recovery';
                 setVerification({ error });
                 setHold(true);
             }
@@ -78,10 +91,10 @@ export function DneskaiInstagramAccount({ lang, disabled = false, now: suppliedN
     }
     const blocked = disabled || !scope.available || query.isError || query.isFetching || hold || scope.pending;
     return <section aria-labelledby={embedded ? undefined : 'dneskai-account-title'} aria-label={embedded ? t.title : undefined} className="mx-auto min-w-0 w-full max-w-3xl space-y-4" data-testid="dneskai-instagram-account">
-  <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0">{!embedded && <h2 id="dneskai-account-title" className="text-sm font-semibold">{t.title}</h2>}<details className="max-w-3xl text-xs text-foreground-muted"><summary className="min-h-11 cursor-pointer py-3 focus-ring md:min-h-8">{t.details}</summary><p>{t.intro}</p></details></div><Button variant="outline" className="min-h-11 w-40 shrink-0" disabled={blocked} aria-busy={scope.pending} onClick={() => void verify()}>{scope.pending && action==='verify' ? t.verifying : t.verify}</Button></div>
+  <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0">{!embedded && <h2 id="dneskai-account-title" className="text-sm font-semibold">{t.title}</h2>}<details className="max-w-3xl text-xs text-foreground-muted"><summary className="min-h-11 cursor-pointer py-3 focus-ring md:min-h-8">{t.details}</summary><p>{t.intro}</p></details></div><Button ref={verifyButton} variant="outline" className="min-h-11 w-40 shrink-0" disabled={blocked} aria-busy={scope.pending} onClick={() => void verify()}>{scope.pending && action==='verify' ? t.verifying : t.verify}</Button></div>
   <div aria-live="polite">{verification.data ? <p role="status" className="text-sm text-success">{verificationMessage(verification.data, lang)}</p> : verification.error ? <p role="alert" className="text-sm text-risk">{verificationError(verification.error, lang)}</p> : null}</div>
   {disabled ? <p role="status" className="text-sm text-foreground-muted">{t.preview}</p> : <>
-   {(query.isError || hold || !scope.available) && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3" data-testid="dneskai-account-recovery"><p role="alert" className="min-w-0 flex-1 text-sm text-warning">{query.isError ? (query.data ? t.cachedUnavailable : t.unavailable) : t.recovery}</p><Button variant="outline" className="min-h-11 w-full shrink-0 sm:w-40" disabled={!scope.available || scope.pending || query.isFetching} onClick={() => void reload()}>{query.isFetching ? t.reloading : t.reload}</Button></div>}
+   {(query.isError || hold || !scope.available) && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3" data-testid="dneskai-account-recovery">{(query.isError || !verification.error) && <p role="alert" className="min-w-0 flex-1 text-sm text-warning">{query.isError ? (query.data ? t.cachedUnavailable : t.unavailable) : t.recovery}</p>}<Button ref={recoveryButton} variant="outline" className="min-h-11 w-full shrink-0 sm:ml-auto sm:w-40" disabled={!scope.available || scope.pending || query.isFetching} onClick={() => void reload()}>{query.isFetching ? t.reloading : t.reload}</Button></div>}
    {query.isPending && !query.data ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p> : query.data ? <><DneskaiInstagramAccountRecord account={account} lang={lang} now={now}/>{account && <DneskaiPublishingSwitch key={'publishing/' + account.id+'/'+recoveryGeneration} account={account} lang={lang} now={now} disabled={blocked} onHold={() => setHold(true)}/>} {account?.engagement && <DneskaiEngagementSwitch key={'engagement/' + account.id+'/'+recoveryGeneration} account={account} lang={lang} now={now} disabled={blocked} onHold={() => setHold(true)}/>}</> : null}
   </>}
  </section>;
@@ -92,7 +105,7 @@ export function verificationMessage(result: MarketingAccountVerifyResponse, lang
 }
 export function verificationError(error: unknown, lang: Lang) {
     const t = dneskaiAccount[lang], code = error instanceof MarketingAccountRequestError ? error.code : '', http = /^meta-http-(\d{3})$/.exec(code);
-    return http ? t.metaHttp(http[1]!) : t.errors[code] ?? t.failed;
+    return code === 'account-changed' ? t.changed : http ? t.metaHttp(http[1]!) : t.errors[code] ?? t.failed;
 }
 export function DneskaiInstagramAccountRecord({ account, lang, now }: {
     account: MarketingAccountStatus | null;
