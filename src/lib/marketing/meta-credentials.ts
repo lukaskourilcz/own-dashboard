@@ -58,7 +58,7 @@ export function metaScopesStorable(scopes: readonly string[]): boolean {
 }
 const storedScopes = z.array(scope).max(META_SCOPE_LIMIT).refine(values => new Set(values).size === values.length);
 const StoredRowSchema = z.strictObject({ access_token: tokenValue, expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
-const MetadataRowSchema = z.object({ account_id: z.uuid(), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
+const MetadataRowSchema = z.strictObject({ account_id: z.uuid().transform(value => value.toLowerCase()), brand: z.enum(['dneskai', 'devshark']), platform: z.enum(['instagram', 'threads']), expires_at: databaseTimestamp, refreshed_at: databaseTimestamp, scopes: storedScopes, login_mode: loginMode });
 const PrivateInstagramCapture = z.strictObject({ tokenHash: z.string().regex(/^[0-9a-f]{64}$/), expiresAt: databaseTimestamp,
   refreshedAt: databaseTimestamp, scopes: storedScopes, loginMode: z.enum(['instagram', 'facebook']) });
 /** Server-private equality evidence; never include this value in a public receipt or diagnostic. */
@@ -112,12 +112,25 @@ export async function readStoredMetaToken(db: Database, owner: string, accountId
 }
 
 /** Non-secret metadata for every stored token of one owner; the #120 scheduler filters it with instagramTokenRefreshDue. */
-export async function listMetaTokenMetadata(db: Database, owner: string): Promise<MetaTokenMetadata[]> {
-  if (!z.uuid().safeParse(owner).success) throw new MetaCredentialError('credential-store-unavailable');
-  const { data, error } = await db.rpc('marketing_account_token_metadata', { p_owner: owner });
-  const rows = z.array(MetadataRowSchema).max(20).safeParse(data);
-  if (error || !rows.success) throw new MetaCredentialError('credential-store-unavailable');
-  return rows.data.map(row => ({ accountId: row.account_id, brand: row.brand, platform: row.platform, expiresAt: row.expires_at, refreshedAt: row.refreshed_at, scopes: row.scopes, loginMode: row.login_mode }));
+export async function listMetaTokenMetadata(db: Database, owner: string, parent?: AbortSignal): Promise<MetaTokenMetadata[]> {
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(parent ? [parent] : [])]);
+  try {
+    if (!z.uuid().safeParse(owner).success) throw new Error();
+    signal.throwIfAborted();
+    const { data, error } = await awaitWithSignal(db.rpc('read_owned_marketing_token_metadata', { p_owner: owner }).retry(false).abortSignal(signal), signal);
+    signal.throwIfAborted();
+    if (error) throw new Error();
+    const receipt = z.strictObject({ ownerId: z.literal(owner), count: z.number().int().min(0).max(4), tokens: z.array(MetadataRowSchema).max(4) }).parse(data);
+    const ids = new Set<string>(), tuples = new Set<string>();
+    if (receipt.count !== receipt.tokens.length) throw new Error();
+    let previous = '';
+    for (const row of receipt.tokens) {
+      const tuple = `${row.brand}/${row.platform}`;
+      if (ids.has(row.account_id) || tuples.has(tuple) || tuple < previous || (row.platform === 'threads') !== (row.login_mode === 'threads')) throw new Error();
+      ids.add(row.account_id); tuples.add(tuple); previous = tuple;
+    }
+    return receipt.tokens.map(row => ({ accountId: row.account_id, brand: row.brand, platform: row.platform, expiresAt: row.expires_at, refreshedAt: row.refreshed_at, scopes: row.scopes, loginMode: row.login_mode }));
+  } catch { throw new MetaCredentialError('credential-store-unavailable'); }
 }
 
 /**

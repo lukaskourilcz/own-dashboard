@@ -203,7 +203,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       const outcome = await reconcileStoredMarketingPublication(db, owner, publicationId);
       return { status: outcome.status, errorCode: outcome.errorCode ?? null };
     },
-    tokenMetadata: () => listMetaTokenMetadata(db, owner),
+    tokenMetadata: (signal) => listMetaTokenMetadata(db, owner, signal),
     refreshToken: (token, signal) => refreshInstagramToken(db, owner, { id: token.accountId, user_id: owner, brand: token.brand, platform: token.platform }, { signal, env }),
     async renewableRevisions() {
       // Every brand: a devShark revision published through its own workflow needs live URLs just the same.

@@ -3660,8 +3660,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from all 147 canonical migration files; finite account versions retained; final rollout/release pending",
-      "reviewedSha256": "d03198f525ba3309760223a3cf47b9837db35f98f6391c902c9e57b994cb0382"
+      "status": "source reviewed; eight-table read port regenerated from all 148 canonical migration files; finite account versions retained; final rollout/release pending",
+      "reviewedSha256": "a8b87dee41eaf1867eb68900b5f28f478328b3104f17bd72bbb2b3064a2d3044"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -4099,10 +4099,10 @@
     },
     {
       "path": "src/lib/marketing/meta-credentials.ts",
-      "lines": 263,
+      "lines": 276,
       "sha256": "a62f3eb330ab051fe3692fd46f0b9cb467d2fa9bc20b54de85341e11c412093d",
-      "status": "partial; findings 358/360 bounded original renewal, owned account/version/private fingerprint capture, canonical transaction, strict non-secret receipts and lost acknowledgement retained; actual SDK/full-chain races close overwritten account/replacement credentials; metadata-list completeness/lifetime, underlying SDK JSON and final release remain",
-      "reviewedSha256": "dc63def7dee2d63588355e12390fdf103bf971267cb50aaf7a6db17e53bd0420"
+      "status": "partial; findings 358/360/361 bounded original renewal, owned account/version/private fingerprint capture, canonical transaction, strict non-secret receipts and lost acknowledgement retained; actual SDK/full-chain races close overwritten account/replacement credentials; complete original-lifetime four-tuple metadata receipt and canonical identities checked; underlying SDK JSON and final release remain",
+      "reviewedSha256": "8fa4645223c23618070105b967fcf2eb40609ab54198ed00c0e1014a00cbae2a"
     },
     {
       "path": "src/lib/marketing/meta-facebook-page.ts",
@@ -4220,15 +4220,15 @@
       "path": "src/lib/marketing/scheduler-ports.ts",
       "lines": 222,
       "sha256": "f46a2077ebc91af5e4d20873a76236658c6b213fd8658a18db68d3f9532c1d54",
-      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains; finding 340 prioritizes due/continuation outcomes before optional future Reel work and bounds retired preparation",
-      "reviewedSha256": "e019df85c6f71efdbf9596203d95932096668e08a332f328839bb060e1f641a3"
+      "status": "source reviewed; finding 316 dated account-bound TikTok completion, complete bounded progress, measured-cost receipts and rolling proof guards pass 544 focused/full-chain SDK/RLS checks and native concurrency; paid admission/bind and matching progress, prepared rollout and final release pending; finding 337 future/due partition closes the reproduced same-tick duplicate request, bounds original optional preparation and tick retirement; broader queue/admission/lifecycle work remains; finding 340 prioritizes due/continuation outcomes before optional future Reel work and bounds retired preparation; finding 361 passes complete metadata original signal and refuses new work after precheck/lease retirement or consumed admission allowance",
+      "reviewedSha256": "007e0f03324d498e8c92e5ff940145f169166b353cd3093bcff65c1012f0678e"
     },
     {
       "path": "src/lib/marketing/scheduler.ts",
-      "lines": 780,
+      "lines": 782,
       "sha256": "1489a79bfdc76f7252e413f6981b51481f917d2e26807ea5157cd905d7b8bc3f",
-      "status": "partial; full source inspected; no daily audio-trend lease, post-precheck/acquisition cancellation gaps, eager timeout work and unbounded control RPCs need repair; durable publish/refresh ambiguity guards must remain",
-      "reviewedSha256": "1489a79bfdc76f7252e413f6981b51481f917d2e26807ea5157cd905d7b8bc3f"
+      "status": "partial; full source inspected; no daily audio-trend lease, post-precheck/acquisition cancellation gaps, eager timeout work and unbounded control RPCs need repair; durable publish/refresh ambiguity guards must remain; finding 361 passes complete metadata original signal and refuses new work after precheck/lease retirement or consumed admission allowance",
+      "reviewedSha256": "1a4c09e9b6fff9871c35514f69d7ec68787dd46fea8559ae1bf210d957661edb"
     },
     {
       "path": "src/lib/marketing/source-refresh.ts",

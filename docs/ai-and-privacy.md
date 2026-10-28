@@ -29,7 +29,7 @@ Explicit OAuth disconnect confirms a captured-version local removal separately f
 
 ## Prepared task retry metadata
 
-Audit migration 116 adds `dashboard_private.task_create_receipts`: the owner's id, stable task id, request hash and original creation time. It stores no second copy of task text and sends nothing to an external service. Session access is owner-only under RLS and permits only read/insert; this schema is not added to the Data API. Metadata survives task deletion so a delayed create retry cannot recreate the task, and cascades when the owner account is removed. The migration is prepared, not applied; Tasks UI adoption remains in progress.
+Audit migration 116 adds `dashboard_private.task_create_receipts`: the owner's id, stable task id, request hash and original creation time. It stores no second copy of task text and sends nothing to an external service. Session access is owner-only under RLS and permits only read/insert; this schema is not added to the Data API. Metadata survives task deletion so a delayed create retry cannot recreate the task, and cascades when the owner account is removed. The migration remains prepared and unapplied. Findings 176–178 adopt captured Tasks creation, completion and deletion, including stable retry identities and confirmed owner/version receipts; finding 185 adds captured repository-action guards. These code changes still require the complete canonical rollout before deployment.
 
 ## Public tour isolation
 

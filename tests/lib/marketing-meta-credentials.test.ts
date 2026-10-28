@@ -21,7 +21,7 @@ function database(token: StoredMetaToken | null, options: { readError?: boolean;
     if (name === 'marketing_read_account_token') return options.readError ? { data: null, error: { message: 'down' } } : { data: token ? [row(token)] : [], error: null };
     if (name === 'renew_owned_marketing_credential') return options.storeError ? { data: null, error: { message: 'token changed' } }
       : { data: { kind: 'refreshed', ownerId: owner, expectedId: args.p_expected_id, expectedVersion: args.p_expected_at, id: args.p_expected_id, updatedAt: args.p_expected_at, result: { accountId: args.p_expected_id, token: { expiresAt: args.p_expires_at, refreshedAt: now.toISOString(), scopes: args.p_scopes, loginMode: args.p_login_mode } } }, error: null };
-    if (name === 'marketing_account_token_metadata') return { data: [{ account_id: account.id, brand: 'dneskai', platform: 'instagram', expires_at: at(5 * day), refreshed_at: at(-55 * day), scopes: ['instagram_business_basic'], login_mode: 'instagram' }], error: null };
+    if (name === 'read_owned_marketing_token_metadata') return { data: {ownerId:owner,count:1,tokens:[{ account_id: account.id, brand: 'dneskai', platform: 'instagram', expires_at: at(5 * day), refreshed_at: at(-55 * day), scopes: ['instagram_business_basic'], login_mode: 'instagram' }]}, error: null };
     throw new Error(`unexpected rpc ${name}`);
   });
   const lookup = { select: () => lookup, eq: () => lookup, retry: () => lookup, abortSignal: () => lookup, maybeSingle: async () => ({ data: { ...account, updated_at: now.toISOString() }, error: null }) };
