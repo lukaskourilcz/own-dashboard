@@ -201,4 +201,7 @@ Finding 279 closes the native Europe-wide remote save→Saved evidence loss and 
 
 - Checkpoint 100 passes 8,303 tests/one skip and full lint, but ordinary Next build exhausts the TypeScript worker's roughly 2GB heap. Finding 386 closes the application build scope with a default-heap successful build and preserved broad test/script type checking. Three dynamic-filesystem warnings in audio spawn/vendored brand-kit code need actual packaging evidence after the build works; do not merely suppress them.
 
-- Finding 385 closes legacy-calendar browser transport/shape and explicit keyboard recovery, including same-turn retirement before HTTP. The hook still replaces confirmed data with an error-result object on failed refresh; review retained data/age and independent error recovery without automatically retrying repository reads.
+- Finding 385 closes legacy-calendar browser transport/shape and explicit keyboard recovery, including same-turn retirement before HTTP. Finding 387 closes retained snapshot/read time, explicit recovery, selected transient source failures and pure preview recovery.
+
+- Finding 387 retains one previous legacy-calendar snapshot for transient failures, but Work's empty-state wording and IG TIPS' Not yet applied filter/count need conservative wording/admission when a read is incomplete, capped or stale. A wide PlansStatus band still forces short count/notice text into separate rows; inspect the captured desktop/phone geometry before compacting it.
+- Checkpoint 101's ongoing frozen browser attempt has flagged Work health clock cases in EN/CS and both Design Lab image comparisons. Keep the original results/diffs; investigate without classifying them as infrastructure, relaxing timing or blindly updating baselines.

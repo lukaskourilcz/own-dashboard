@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
 import { CalendarSourceNotes } from "@/components/marketing/calendar-source-notes";
-import { useMarketingCalendars, type MarketingView } from "@/components/marketing/use-marketing-calendars";
+import { useMarketingCalendars, type MarketingView, type MarketingRefreshError } from "@/components/marketing/use-marketing-calendars";
 import { TipExportDialog } from "@/components/panels/tip-export-dialog";
 import { Button } from "@/components/ui/button";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
@@ -385,6 +385,7 @@ export function IgTipsPanel({
             </div>
             <PlansStatus
               view={calendars.view}
+              refreshError={calendars.refreshError}
               unmatchedRefs={unmatchedRefs}
               checking={calendars.checking}
               canCheck={calendars.canCheck}
@@ -683,17 +684,19 @@ function TipCard({
 
 /**
  * Which marketing calendars the "Applied in" counts come from, or why they
- * could not be read. Plain text rather than a live region: the tip count
- * above is the section's status.
+ * could not be read. Ordinary counts stay plain text; a failed refresh is announced once.
+ * The tip count above remains the section's status.
  */
 function PlansStatus({
   view,
+  refreshError,
   unmatchedRefs,
   checking,
   canCheck,
   onCheckAgain,
 }: {
   view: MarketingView;
+  refreshError: MarketingRefreshError | null;
   unmatchedRefs: number;
   checking: boolean;
   canCheck: boolean;
@@ -704,6 +707,7 @@ function PlansStatus({
   return (
     <div data-plans-status className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs">
       <div className="min-w-0 space-y-1">
+        {refreshError && <p role="alert" className="text-warning">{refreshError === 'rate-limited' ? m.cachedRateLimited : m.cachedUnavailable}</p>}
         {view.kind === "loading" ? (
           <p className="text-foreground-muted">{m.loading}</p>
         ) : view.kind !== "ok" ? (

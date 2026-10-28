@@ -35,7 +35,7 @@ export function MarketingWeekCard({ preview }: { preview?: MarketingCalendarsRes
   const { lang } = useLang();
   const locale = useDateLocale();
   const now = useNow();
-  const { view, checking, canCheck, checkAgain } = useMarketingCalendars(preview);
+  const { view, checking, canCheck, checkAgain, refreshError } = useMarketingCalendars(preview);
   const [showAll, setShowAll] = useState(false);
   const today = now ? todayKey(now) : null;
   const week = useMemo(
@@ -64,6 +64,7 @@ export function MarketingWeekCard({ preview }: { preview?: MarketingCalendarsRes
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-foreground-muted">{m.weekDescription}</p>
+        {refreshError && <p role="alert" className="text-xs text-warning">{refreshError === 'rate-limited' ? m.cachedRateLimited : m.cachedUnavailable}</p>}
 
         {view.kind === "loading" || (view.kind === "ok" && !week) ? (
           <div aria-live="polite" className="space-y-2">

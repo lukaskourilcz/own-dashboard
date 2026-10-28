@@ -19,6 +19,8 @@ type MarketingStrings = {
   unmatchedRefs: (count: number) => string;
   loading: string;
   loadError: string;
+  cachedUnavailable: string;
+  cachedRateLimited: string;
   rateLimited: string;
   signedOut: string;
   checkAgain: string;
@@ -76,6 +78,8 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     unmatchedRefs: (count) => `${count} tip ${count === 1 ? "title" : "titles"} cited in the plans ${count === 1 ? "matches" : "match"} no tip here.`,
     loading: "Reading the marketing calendars…",
     loadError: "Could not read the marketing calendars. Try again.",
+    cachedUnavailable: 'Could not update the calendars. These are the previous plans.',
+    cachedRateLimited: 'Calendar checks are temporarily limited. These are the previous plans.',
     rateLimited: "Too many checks in a minute. Wait a moment, then try again.",
     signedOut: "Sign in to read the marketing calendars.",
     checkAgain: "Check the calendars again",
@@ -144,6 +148,8 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
         : `${count} ${count >= 2 && count <= 4 ? "názvy" : "názvů"} tipů z plánů ${count >= 2 && count <= 4 ? "neodpovídají" : "neodpovídá"} žádnému tipu zde.`,
     loading: "Čtu marketingové kalendáře…",
     loadError: "Marketingové kalendáře se nepodařilo přečíst. Zkuste to znovu.",
+    cachedUnavailable: 'Kalendáře se nepodařilo aktualizovat. Zůstávají předchozí plány.',
+    cachedRateLimited: 'Kontroly kalendářů jsou dočasně omezené. Zůstávají předchozí plány.',
     rateLimited: "Příliš mnoho kontrol za minutu. Chvíli počkejte a zkuste to znovu.",
     signedOut: "Pro čtení marketingových kalendářů se přihlaste.",
     checkAgain: "Znovu zkontrolovat kalendáře",

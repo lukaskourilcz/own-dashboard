@@ -621,3 +621,8 @@ Twelve six-width desktop cases pass in 1.1 minutes (EN light/CS dark); both 430p
 ### 28 October — finding 385 legacy-calendar read recovery
 
 The final combined native run passes 47 with one intentional skip in 2.2 minutes. It covers EN/CS error recovery and intervening keyboard focus, six-width/device omission notices, original one-read/manual-refresh counts and existing Work/IG TIPS/deep-link/inherited labels, with scoped axe and reflow. Four genuine recovery focus failures and the earlier request-admission failures remain in their original logs; no timing or request-count assertion is relaxed. Existing isolated fixtures now give every registered source an explicit outcome. No new visual redesign/capture is added.
+
+
+### 28 October — finding 387 retained legacy plans
+
+All 24 six-width desktop cases pass in 1.9 minutes (EN light/CS dark, Work and IG TIPS); twelve controlled-clock/device capture cases pass in 1.0 minute. Two entries/×2 usage and the previous Work read time remain after a source error. One stale notice, explicit recovery to three/×3, focus, scoped axe, reflow and exact three-request counts pass. Czech desktop/phone card/status crops are inspected. Partial/stale negative claims and the wide status band's forced text rows remain separate UX leads; no complete cleanup is claimed.
