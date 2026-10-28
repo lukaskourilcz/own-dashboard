@@ -4781,9 +4781,9 @@
     {
       "path": "src/lib/supabase/server-owner.ts",
       "sha256": null,
-      "lines": 38,
-      "status": "source reviewed; strict verified identity, auth-error refusal and ten-second original server lifetime verified through Music/Reel API cases; final app-wide release pending; finding 342 shared verified context refuses auth-error/cached-user admission and bounds original auth/rate waits; account metadata/write/provider/body boundaries remain separate",
-      "reviewedSha256": "578d795d2466fe28f5fe46bff2fd2bdd0459d8ece2ddc31f91a82c5f8a087ef4"
+      "lines": 48,
+      "status": "source reviewed; finding 373 separates the ten-second authentication phase from the verified original request transport, retires failed auth transport and prevents post-setup retired admission; actual SDK and all 20 existing route-consumer files pass; per-action/data/SDK boundaries and consolidated release remain separate",
+      "reviewedSha256": "824f414cf3e54de4f4a3f91d2b65430d62404a781a714ead969f36ef2704da78"
     },
     {
       "path": "src/lib/supabase/server.ts",
