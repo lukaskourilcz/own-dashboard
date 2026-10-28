@@ -636,3 +636,8 @@ Finding 389's four EN/CS desktop/mobile clock cases pass in 22.8 seconds with si
 
 
 Finding 388's implemented frame/deck repair passes eight EN/CS middle-width cases in 59.4 seconds. The complete 26-case desktop set passes 25 in 3.4 minutes; the remaining 1024px English case completes behavior/focus/geometry/axe but fails on the recurring React pre-mount warning. That warning stays unfiltered and under investigation. The inspected Czech probe keeps the frame/header at 16px while only the inner content scrolls. No golden PNG is refreshed; final optimized confirmation is pending.
+
+
+### 28 October — repaired optimized frame/Lab/Work checks
+
+The e07455d6 optimized fixture build passes 88 selected desktop cases in 3.7 minutes and nine selected phone cases in 21.3 seconds, with all 2,096 validation inputs unchanged. These include six-width clean/dirty editing, ordinary input hit targets, fixed outer-frame geometry, Work warning/History parity, retained-calendar recovery, Lab save/pixel/hash/keyboard flows and scoped axe. All four existing Lab viewport PNG comparisons and per-fixture saved stage comparisons pass without changing a golden or threshold. The original checkpoint 101 remains failed; final full release and the separately recorded development warning are still open. This fixture build must not be deployed.
