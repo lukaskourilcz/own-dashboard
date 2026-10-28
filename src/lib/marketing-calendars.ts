@@ -91,7 +91,7 @@ export type MarketingCalendar = {
   periodEnd: string | null;
   entries: MarketingEntry[];
   prelaunch: PrelaunchItem[];
-  /** Entries or pre-launch items left out because a required field was unusable. */
+  /** Invalid, duplicate or over-limit entries/pre-launch items left out of this projection. */
   skipped: number;
 };
 
@@ -129,13 +129,30 @@ export type MarketingCalendarsResponse = {
 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
+const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value.trim().slice(0, MAX_TEXT) : fallback;
+}
+
+/** Identities must remain exact, since they also select an entry in the source calendar. */
+function identifier(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const id = value.trim();
+  return id.length <= MAX_TEXT ? id : '';
+}
+
+function uniqueItems<T extends { id: string }>(values: unknown[], limit: number, parse: (value: unknown) => T | null): T[] {
+  const items: T[] = [], seen = new Set<string>();
+  for (const value of values.slice(0, limit)) {
+    const item = parse(value);
+    if (!item || seen.has(item.id)) continue;
+    seen.add(item.id); items.push(item);
+  }
+  return items;
 }
 
 function date(value: unknown): string | null {
@@ -145,7 +162,7 @@ function date(value: unknown): string | null {
 
 function parseEntry(value: unknown): MarketingEntry | null {
   if (!isRecord(value)) return null;
-  const id = text(value.id);
+  const id = identifier(value.id);
   const day = date(value.date);
   const title = text(value.title);
   if (!id || !day || !title) return null;
@@ -167,7 +184,7 @@ function parseEntry(value: unknown): MarketingEntry | null {
 
 function parsePrelaunch(value: unknown): PrelaunchItem | null {
   if (!isRecord(value)) return null;
-  const id = text(value.id);
+  const id = identifier(value.id);
   const due = date(value.due);
   const title = text(value.title);
   if (!id || !due || !title) return null;
@@ -192,8 +209,8 @@ export type ParsedCalendar =
  * A calendar document, validated and trimmed to what OwnDashboard shows.
  * The document must declare `marketing-calendar/1`, name the expected project
  * and carry an `entries` array; entries and pre-launch items without an id,
- * a date or a title are skipped and counted rather than failing the whole
- * calendar.
+ * a date or a title are skipped and counted, as are repeated identities and
+ * rows beyond the document limits. Invalid optional times remain unknown.
  */
 export function parseMarketingCalendar(raw: string, expectedProject: string): ParsedCalendar {
   let document: unknown;
@@ -208,10 +225,10 @@ export function parseMarketingCalendar(raw: string, expectedProject: string): Pa
   const project = text(document.project);
   if (project !== expectedProject) return { ok: false, status: "wrong-project", detail: project || null };
 
-  const rawEntries = document.entries.slice(0, MAX_CALENDAR_ENTRIES);
-  const rawPrelaunch = Array.isArray(document.prelaunch) ? document.prelaunch.slice(0, MAX_PRELAUNCH_ITEMS) : [];
-  const entries = rawEntries.map(parseEntry).filter((entry): entry is MarketingEntry => entry !== null);
-  const prelaunch = rawPrelaunch.map(parsePrelaunch).filter((item): item is PrelaunchItem => item !== null);
+  const rawEntries = document.entries;
+  const rawPrelaunch = Array.isArray(document.prelaunch) ? document.prelaunch : [];
+  const entries = uniqueItems(rawEntries, MAX_CALENDAR_ENTRIES, parseEntry);
+  const prelaunch = uniqueItems(rawPrelaunch, MAX_PRELAUNCH_ITEMS, parsePrelaunch);
   const period = isRecord(document.period) ? document.period : {};
   return {
     ok: true,

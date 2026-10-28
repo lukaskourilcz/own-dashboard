@@ -2889,8 +2889,8 @@
       "path": "src/lib/i18n/sections/marketing.ts",
       "lines": 189,
       "sha256": "86c9b7da2ac52e88a03243206eaba3e4367c103936bc0a502ebda353f40d89c0",
-      "status": "source reviewed; complete EN/CS dictionary inspection; external calendar failures and unknown plans remain explicit; final rendered/release checks pending",
-      "reviewedSha256": "86c9b7da2ac52e88a03243206eaba3e4367c103936bc0a502ebda353f40d89c0"
+      "status": "source reviewed; complete EN/CS dictionary inspection; external calendar failures and unknown plans remain explicit; final rendered/release checks pending; finding 383 updates EN/CS omission reasons for invalid data, duplicates and limits with six-width native reflow/axe evidence",
+      "reviewedSha256": "4d93c2c76206fef60644f418c88d3a9fd8dd5ec75114c539e85bb731b6bcf756"
     },
     {
       "path": "src/lib/i18n/sections/nav.ts",
@@ -3245,10 +3245,10 @@
     },
     {
       "path": "src/lib/marketing-calendars.ts",
-      "lines": 409,
+      "lines": 426,
       "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
-      "status": "partial; complete source inspection; bounded/validated browser payload, complete caps/duplicate identities, valid times, dictionary labels and repeated title normalization remain under review; legacy read-only calendars retained",
-      "reviewedSha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4"
+      "status": "partial; complete source inspection; finding 383 verifies bounded prefix processing, complete omission totals, first-valid exact identities and valid/unknown wall times; browser response validation/lifetime, repeated title normalization and other recorded leads remain; legacy read-only calendars retained",
+      "reviewedSha256": "4a0fcf6c990e71bf4c2d4ea3e199d9d25b774a3a4514c49f909f4abd564e4959"
     },
     {
       "path": "src/lib/marketing/account-control-contracts.ts",

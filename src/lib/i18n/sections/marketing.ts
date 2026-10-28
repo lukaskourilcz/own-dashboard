@@ -72,7 +72,7 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       "too-large": "the file is larger than 1 MB",
       error: (status) => (status ? `GitHub answered ${status}` : "GitHub did not answer"),
     },
-    skipped: (label, count) => `${label}: ${count} ${count === 1 ? "item" : "items"} without an id, a date or a title left out.`,
+    skipped: (label, count) => `${label}: ${count} ${count === 1 ? "item" : "items"} left out because of invalid data, duplicate IDs or document limits.`,
     unmatchedRefs: (count) => `${count} tip ${count === 1 ? "title" : "titles"} cited in the plans ${count === 1 ? "matches" : "match"} no tip here.`,
     loading: "Reading the marketing calendars…",
     loadError: "Could not read the marketing calendars. Try again.",
@@ -137,7 +137,7 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       error: (status) => (status ? `GitHub odpověděl ${status}` : "GitHub neodpověděl"),
     },
     skipped: (label, count) =>
-      `${label}: vynecháno ${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"} bez id, data nebo názvu.`,
+      `${label}: vynechané položky: ${count} (neplatné údaje, duplicitní ID nebo limit dokumentu).`,
     unmatchedRefs: (count) =>
       count === 1
         ? "1 název tipu z plánů neodpovídá žádnému tipu zde."
