@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       );
     }
     const fetchWithGitHubAuth = createGitHubFetcher(ownerId, signal);
-    const result = await awaitWithSignal(readMarketingCalendars(fetchWithGitHubAuth), signal);
+    const result = await awaitWithSignal(readMarketingCalendars(fetchWithGitHubAuth, undefined, undefined, signal), signal);
     signal.throwIfAborted();
     return NextResponse.json(result, { headers });
   } catch {

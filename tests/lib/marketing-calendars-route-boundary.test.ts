@@ -54,6 +54,7 @@ it('preserves the verified owner, rate policy and private success', async () => 
  expect(response.headers.get('cache-control')).toBe('private, no-store');
  expect(m.rate).toHaveBeenCalledExactlyOnceWith(owner, { key: 'marketing-calendars', limit: 10, windowSec: 60 });
  expect(m.fetcher).toHaveBeenCalledWith(owner, expect.any(AbortSignal));
+ expect(m.read).toHaveBeenCalledWith(m.fetcher.mock.results[0].value, undefined, undefined, m.fetcher.mock.calls[0][1]);
 });
 it('preserves explicit rate recovery without a provider read', async () => {
  m.rate.mockResolvedValue({ ok: false, retryAfter: 31 });

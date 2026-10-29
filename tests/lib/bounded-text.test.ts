@@ -41,3 +41,10 @@ it("keeps an oversized prefix truthful when the producer rejects cancellation", 
  await expect(readTextPrefix(response, 5)).resolves.toEqual({ text: 'abcde', truncated: true });
  expect(response.body!.locked).toBe(false);
 });
+
+it('refuses excessive empty-chunk work instead of accepting a stalled text source as an empty file', async () => {
+ let pulls = 0; const cancel = vi.fn();
+ const response = new Response(new ReadableStream({ pull(controller) { if (++pulls <= 100_000) controller.enqueue(new Uint8Array()); else controller.close(); }, cancel }, { highWaterMark: 0 }));
+ await expect(readTextPrefix(response, 100)).rejects.toThrow('Text stream unavailable');
+ expect(pulls).toBeLessThan(100_000); expect(cancel).toHaveBeenCalledOnce(); expect(response.body?.locked).toBe(false);
+});

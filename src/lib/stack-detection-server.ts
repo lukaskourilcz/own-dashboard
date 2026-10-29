@@ -1,5 +1,7 @@
 import "server-only";
 import { readTextPrefix } from "@/lib/bounded-text";
+import { awaitWithSignal } from "@/lib/abortable";
+import { BoundedStreamError, boundedStreamBytes } from "@/lib/bounded-response";
 import { ABOUT_PROJECT_FILE } from "@/lib/about-project";
 import {
   MAX_DETECTED_REPOSITORIES,
@@ -40,8 +42,19 @@ export type FileRead =
   | { kind: "ok"; text: string; truncated: boolean }
   | { kind: "not-found" }
   | { kind: "disconnected" }
-  | { kind: "error"; status: number | null };
+  | { kind: "error"; status: number | null; reason?: "invalid-encoding" };
 
+const discard = (response?: Response) => {
+  if (response?.body && !response.body.locked) void response.body.cancel().catch(() => undefined);
+};
+async function repositoryResponse(fetcher: GitHubFetch, path: string, signal: AbortSignal, headers?: HeadersInit) {
+  signal.throwIfAborted();
+  const pending = fetcher(path, { signal, ...(headers ? { headers } : {}) });
+  void pending.then(response => { if (signal.aborted) discard(response); }, () => undefined);
+  const response = await awaitWithSignal(pending, signal);
+  if (signal.aborted) { discard(response); signal.throwIfAborted(); }
+  return response;
+}
 /**
  * One text file from a repository's default branch, cut to `maxCharacters`
  * (the cut is reported, so a caller that needs the whole file can refuse it).
@@ -51,31 +64,49 @@ export async function readRepoText(
   repo: string,
   path: string,
   maxCharacters = MAX_FILE_CHARACTERS,
+  options: { signal?: AbortSignal; /** Whole-file consumers may additionally require an actual-byte ceiling and strict UTF-8. */ maxBytes?: number } = {},
 ): Promise<FileRead> {
+  const retirement = new AbortController();
+  const signal = AbortSignal.any([retirement.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...(options.signal ? [options.signal] : [])]);
+  let response: Response | undefined;
   try {
-    const response = await fetcher(`/repos/${repo}/contents/${path}`, {
-      headers: { Accept: "application/vnd.github.raw+json" },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
+    signal.throwIfAborted();
+    if (!Number.isSafeInteger(maxCharacters) || maxCharacters < 1 || (options.maxBytes !== undefined && (!Number.isSafeInteger(options.maxBytes) || options.maxBytes < 1))) throw new Error();
+    response = await repositoryResponse(fetcher, `/repos/${repo}/contents/${path}`, signal, { Accept: "application/vnd.github.raw+json" });
     if (response.status === 401) return { kind: "disconnected" };
     if (response.status === 404) return { kind: "not-found" };
-    if (!response.ok) return { kind: "error", status: response.status };
-    return { kind: "ok", ...await readTextPrefix(response, maxCharacters) };
-  } catch {
+    if (response.status !== 200) return { kind: "error", status: response.status };
+    if (options.maxBytes !== undefined) {
+      const declared = response.headers.get('content-length');
+      if (declared !== null && !/^\d+$/.test(declared)) throw new Error();
+      if (declared !== null && Number(declared) > options.maxBytes) return { kind: 'ok', text: '', truncated: true };
+      const bytes = response.body ? await boundedStreamBytes(response.body, options.maxBytes, signal) : new Uint8Array();
+      signal.throwIfAborted();
+      let text: string;
+      try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+      catch { return { kind: 'error', status: null, reason: 'invalid-encoding' }; }
+      return { kind: 'ok', text: text.slice(0, maxCharacters), truncated: text.length > maxCharacters };
+    }
+    const value = await readTextPrefix(response, maxCharacters, signal); signal.throwIfAborted();
+    return { kind: "ok", ...value };
+  } catch (error) {
+    if (!signal.aborted && error instanceof BoundedStreamError && error.reason === 'size') return { kind: 'ok', text: '', truncated: true };
     return { kind: "error", status: null };
-  }
+  } finally { discard(response); retirement.abort(); }
 }
 
-/** Whether GitHub shows the repository to this token at all. */
-export async function repositoryVisible(fetcher: GitHubFetch, repo: string): Promise<boolean | null> {
+/** Whether GitHub shows the repository to this token at all. Bodies are unused. */
+export async function repositoryVisible(fetcher: GitHubFetch, repo: string, parent?: AbortSignal): Promise<boolean | null> {
+  const retirement = new AbortController();
+  const signal = AbortSignal.any([retirement.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...(parent ? [parent] : [])]);
+  let response: Response | undefined;
   try {
-    const response = await fetcher(`/repos/${repo}`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
-    if (response.ok) return true;
+    response = await repositoryResponse(fetcher, `/repos/${repo}`, signal);
+    if (response.status === 200) return true;
     if (response.status === 404 || response.status === 403) return false;
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
+  finally { discard(response); retirement.abort(); }
 }
 
 type RepoRead =
@@ -112,14 +143,19 @@ async function readRepoStack(fetcher: GitHubFetch, repo: string): Promise<RepoRe
   return { status: visible ? "not-found" : "unreadable" };
 }
 
-export async function mapWithConcurrency<T, R>(items: readonly T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
+export async function mapWithConcurrency<T, R>(items: readonly T[], limit: number, work: (item: T) => Promise<R>, signal?: AbortSignal): Promise<R[]> {
+  if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid concurrency limit');
+  const check = () => { if (signal?.aborted) throw new DOMException('Request aborted', 'AbortError'); };
+  check();
   const results = new Array<R>(items.length);
   let next = 0;
   const worker = async () => {
     while (next < items.length) {
+      check();
       const index = next;
       next += 1;
-      results[index] = await work(items[index]!);
+      results[index] = signal ? await awaitWithSignal(work(items[index]!), signal) : await work(items[index]!);
+      check();
     }
   };
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));

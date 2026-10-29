@@ -369,8 +369,8 @@
       "path": "src/app/api/marketing/calendars/route.ts",
       "lines": 44,
       "sha256": "49bac4efd54515da6e3ae5df3529bd509e1a817bc35bf97401337690d4361ea5",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 391 verified auth/error precedence and original caller/quota/provider consumer bounds pass; upstream complete body/import contracts remain separate",
-      "reviewedSha256": "928875697c9d37cefe244b289f59a5ff772f349ae8135c094eb08f0953915f79"
+      "status": "source reviewed; findings 391/399 verify error-first owner admission, unchanged rate policy, original caller/quota/header/body/fan-out/response consumer bounds, exact parent propagation, cleanup and fixed private/no-store responses; opaque quota producer and final consolidated release remain separate",
+      "reviewedSha256": "a08ed723874839dd89bf0ab2312ff2863b57266ee93764ef56191b0359cd1dd6"
     },
     {
       "path": "src/app/api/marketing/campaigns/route.ts",
@@ -2109,7 +2109,7 @@
       "path": "src/components/work/marketing-week.tsx",
       "lines": 222,
       "sha256": "dc43705296df5bb2641d3aa8c0beef59900399be7aed3f3262eb41cbd28be26e",
-      "status": "partial; complete source inspection; calendar completeness, unknown labels and compact responsive actions remain under review; finding 194 closes inherited labels with EN/CS mounted/native evidence; other recorded leads remain open; finding 387 retained legacy-calendar rows/counts, prior read time and one EN/CS recovery notice verified; conservative negative claims and separate density leads remain open; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate",
+      "status": "source reviewed; complete read-only component review closes through findings 194/383/385/387/398/399: validated bounded projection, inherited labels, documented browser-calendar window, twenty initial rows/explicit show-all, source/read-time/retained recovery, scoped negative results and six-width EN/CS native/axe evidence; final consolidated release pending",
       "reviewedSha256": "c7d47678661275da6bb26603ac826bfb2ba502c796f0cf7089f907344a8ad8ac"
     },
     {
@@ -2243,8 +2243,8 @@
       "lines": 26,
       "sha256": null,
       "addedAfterBaseline": true,
-      "status": "source reviewed; bounded UTF-8 reads and abort behavior verified; finding 184 prevents stalled/rejected producer cancellation from holding or replacing a truncated result; final release checks pending",
-      "reviewedSha256": "997221e1acb6f712751c71204ad1294a8cbd515323f19597f8489dbb35b01392"
+      "status": "source reviewed; bounded UTF-8 prefixes, exact truncation and failed/stalled producer cancellation verified; finding 399 adds finite chunk work, original signal-aware read waits and refused/interrupted reader cleanup with existing shared-consumer checks; no parent deadline inferred for callers that omit a signal; final release pending",
+      "reviewedSha256": "c4f2a18e8bdef75b6c3b63e4ea00606e58de4aa2a651915e7b0cebb2d1164da4"
     },
     {
       "path": "src/lib/brand-icon.tsx",
@@ -3247,8 +3247,8 @@
       "path": "src/lib/marketing-calendars-server.ts",
       "lines": 59,
       "sha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "beda9d73d636d00d656de695c7c50ea872ba942bfcc7c7c62f0020c04e5d0f3d"
+      "status": "source reviewed; finding 399 verifies complete default/parent twenty-second fan-out, file/fallback scopes, actual 1MiB bytes/strict UTF-8 and conservative source outcomes; current immutable cross-file snapshot is not claimed; final release pending",
+      "reviewedSha256": "840d541fefed7c0f1f05c955f158f1d72a70f1b03645fc119723489aa79ae7a7"
     },
     {
       "path": "src/lib/marketing-calendars.ts",
@@ -4740,8 +4740,8 @@
       "path": "src/lib/stack-detection-server.ts",
       "lines": 173,
       "sha256": "669da36b688242c44ee953bb95c08f36d3fa12a4fe1d194c5fcf3374a8a94b8a",
-      "status": "source reviewed; final release checks pending",
-      "reviewedSha256": "f437757255922c343349082b3ff7ef306d12f43db499e7532e09a57766b50614"
+      "status": "source reviewed; finding 399 verifies original eight-second file/visibility phases, parent propagation, unused/refused/late cleanup, strict optional whole-file byte policy and cancellable queued fan-out; default Tools prefix semantics retained; other Tools parent/caller policies remain separate; final release pending",
+      "reviewedSha256": "325388bbd49c0e4fe6175d5223b4c5a6dbaabbf5e1b0bb530d084ec723593608"
     },
     {
       "path": "src/lib/stack-detection.ts",
