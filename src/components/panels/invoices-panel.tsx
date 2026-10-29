@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -22,17 +22,19 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { StatusBadge } from "@/components/invoices/status-badge";
-import { InvoiceForm } from "@/components/invoices/invoice-form";
+import { InvoiceEditor } from "@/components/invoices/invoice-editor";
 import { InvoiceDetail } from "@/components/invoices/invoice-detail";
 import { SupplierSettings } from "@/components/invoices/supplier-settings";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
+import { setInvoicePaymentState, InvoicePaymentChangeError, type InvoicePaymentChange } from "@/lib/invoice-payment-state";
 import { todayKey } from "@/lib/date-keys";
 import { convert } from "@/lib/fx";
 import { computeTotals, effectiveStatus } from "@/lib/invoices";
 import { extractPdfText } from "@/lib/pdf-extract";
 import { parseInvoiceText, type ParsedInvoice } from "@/lib/invoice-parser";
 import { formatCurrency } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 import { useDict } from "@/lib/i18n";
 import type {
   Invoice,
@@ -83,6 +85,7 @@ export function InvoicesPanel({
   /** Read-only: the bank payment that settled a paid invoice, when there is one. */
   transactions: Transaction[];
 }) {
+  const now = useNow();
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
@@ -90,16 +93,20 @@ export function InvoicesPanel({
   const confirm = useConfirmation();
   const [view, setView] = useState<View>({ mode: "list" });
   const [parsing, setParsing] = useState(false);
+  const parsingRef = useRef(false);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const paymentErrorId = useId();
 
   // Drag a PDF onto the list → extract text → parse → open the form prefilled.
   async function handleFile(file: File | undefined) {
-    if (!file) return;
+    if (!file || parsingRef.current || setPaidMutation.isPending || removeMutation.isPending) return;
     if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
       toast.err(t.invoices.notPdf);
       return;
     }
+    if (file.size > 20 * 1024 * 1024) { toast.err(t.invoices.pdfLimits); return; }
+    parsingRef.current = true;
     setParsing(true);
     try {
       const text = await extractPdfText(file);
@@ -108,6 +115,7 @@ export function InvoicesPanel({
     } catch {
       toast.err(t.invoices.parseFailed);
     } finally {
+      parsingRef.current = false;
       setParsing(false);
     }
   }
@@ -119,6 +127,7 @@ export function InvoicesPanel({
   }
   function onDragOver(e: React.DragEvent) {
     e.preventDefault();
+    if (setPaidMutation.isPending || removeMutation.isPending) return;
     if (!dragging) setDragging(true);
   }
   function onDragLeave(e: React.DragEvent) {
@@ -173,7 +182,7 @@ export function InvoicesPanel({
     let overdueCount = 0;
     for (const inv of invoices) {
       const d = totalsById.get(inv.id)?.display ?? 0;
-      const eff = effectiveStatus(inv);
+      const eff = now ? effectiveStatus(inv, now) : inv.status;
       if (eff === "issued" || eff === "overdue") {
         outstanding += d;
         outstandingCount += 1;
@@ -185,75 +194,71 @@ export function InvoicesPanel({
       if (eff === "paid") paid += d;
     }
     return { outstanding, overdue, paid, outstandingCount, overdueCount };
-  }, [invoices, totalsById]);
+  }, [invoices, totalsById, now]);
 
   // Optimistic: flip status in the cache before the await, roll back on error,
   // reconcile via invalidate once settled.
   const setPaidMutation = useMutation({
-    mutationFn: async ({ inv, paid }: { inv: Invoice; paid: boolean }) => {
-      const patch = paid
-        ? { status: "paid" as const, paid_on: todayKey() }
-        : { status: "issued" as const, paid_on: null };
-      const { error } = await supabase
-        .from("invoices")
-        .update({ ...patch, updated_at: new Date().toISOString() })
-        .eq("id", inv.id);
-      if (error) throw error;
-    },
-    onMutate: async ({ inv, paid }) => {
+    mutationFn: (change: InvoicePaymentChange) => setInvoicePaymentState(supabase, change),
+    onMutate: async ({ inv, paid, paidOn }) => {
       await qc.cancelQueries({ queryKey: qk.invoices });
-      const prev = qc.getQueryData<Invoice[]>(qk.invoices);
+      const prev = qc.getQueryData<Invoice[]>(qk.invoices)?.find((item) => item.id === inv.id) ?? inv;
       const patch = paid
-        ? { status: "paid" as const, paid_on: todayKey() }
+        ? { status: "paid" as const, paid_on: paidOn }
         : { status: "issued" as const, paid_on: null };
       setInvoices((old) =>
         old.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)),
       );
       return { prev };
     },
-    onError: (error, _vars, ctx) => {
-      if (ctx?.prev) setInvoices(ctx.prev);
-      toast.err((error as Error).message);
+    onError: (_error, { inv }, ctx) => {
+      if (ctx?.prev) setInvoices((current) => current.map(item => item.id === inv.id ? { ...item, status: ctx.prev.status, paid_on: ctx.prev.paid_on } : item));
     },
-    onSuccess: (_data, { paid }) => {
+    onSuccess: ({ invoice: saved, unlinkedIds }, { paid }) => {
+      setInvoices(current => current.map(item => item.id === saved.id ? saved : item));
+      const released = new Set(unlinkedIds);
+      if (released.size) qc.setQueryData<Transaction[]>(qk.transactions, current => current?.map(tx => released.has(tx.id)
+        ? { ...tx, invoice_id: null, matched_at: null, match_source: null } : tx));
       toast.ok(paid ? t.invoices.markedPaidToast : t.invoices.markedUnpaidToast);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.invoices }),
+    onSettled: () => Promise.all([qc.invalidateQueries({ queryKey: qk.invoices }), qc.invalidateQueries({ queryKey: qk.transactions })]),
   });
 
   function setPaid(inv: Invoice, paid: boolean) {
-    setPaidMutation.mutate({ inv, paid });
+    if (!parsingRef.current && !setPaidMutation.isPending && !removeMutation.isPending) setPaidMutation.mutate({ inv, paid, ownerId: userId, paidOn: paid ? todayKey() : null });
   }
+  const paymentError = setPaidMutation.isError
+    ? setPaidMutation.error instanceof InvoicePaymentChangeError && setPaidMutation.error.conflict ? t.invoices.paymentConflict : t.invoices.paymentChangeErr
+    : null;
 
   // Optimistic delete: drop the invoice and its items from the cache before the
   // await; the DB cascade removes the items server-side.
   const removeMutation = useMutation({
     mutationFn: async (inv: Invoice) => {
-      const { error } = await supabase
-        .from("invoices")
-        .delete()
-        .eq("id", inv.id);
-      if (error) throw error;
+      const { data, error } = await supabase.from("invoices").delete().eq("id", inv.id).eq("updated_at", inv.updated_at).select("id").single();
+      if (error || data?.id !== inv.id) throw new Error("Invoice deletion unconfirmed");
     },
     onMutate: async (inv) => {
       await qc.cancelQueries({ queryKey: qk.invoices });
       await qc.cancelQueries({ queryKey: qk.invoiceItems });
-      const prevInvoices = qc.getQueryData<Invoice[]>(qk.invoices);
-      const prevItems = qc.getQueryData<InvoiceItem[]>(qk.invoiceItems);
+      const prevInvoice = qc.getQueryData<Invoice[]>(qk.invoices)?.find((item) => item.id === inv.id) ?? inv;
+      const prevItems = (qc.getQueryData<InvoiceItem[]>(qk.invoiceItems) ?? items).filter((item) => item.invoice_id === inv.id);
       setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
       setItems((prev) => prev.filter((i) => i.invoice_id !== inv.id));
       setView({ mode: "list" });
-      return { prevInvoices, prevItems };
+      return { prevInvoice, prevItems, prevView: view };
     },
-    onError: (error, _inv, ctx) => {
-      if (ctx?.prevInvoices) setInvoices(ctx.prevInvoices);
-      if (ctx?.prevItems) setItems(ctx.prevItems);
-      toast.err((error as Error).message);
+    onError: (_error, inv, ctx) => {
+      if (ctx?.prevInvoice) setInvoices((current) => current.some((item) => item.id === inv.id) ? current : [ctx.prevInvoice, ...current]);
+      if (ctx?.prevItems) setItems((current) => [...current.filter((item) => item.invoice_id !== inv.id), ...ctx.prevItems]);
+      if (ctx?.prevView) setView(current => current.mode === "list" ? ctx.prevView : current);
+      toast.err(t.invoices.deleteErr);
     },
     onSuccess: () => toast.ok(t.invoices.deletedToast),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.invoices });
       void qc.invalidateQueries({ queryKey: qk.invoiceItems });
+      void qc.invalidateQueries({ queryKey: qk.transactions });
     },
   });
 
@@ -264,7 +269,7 @@ export function InvoicesPanel({
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-    })) removeMutation.mutate(inv);
+    }) && !parsingRef.current && !setPaidMutation.isPending && !removeMutation.isPending) removeMutation.mutate(inv);
   }
 
   // ── Sub-views ────────────────────────────────────────────────────────────
@@ -282,7 +287,7 @@ export function InvoicesPanel({
 
   if (view.mode === "new" || view.mode === "import") {
     return (
-      <InvoiceForm
+      <InvoiceEditor
         mode={view.mode === "import" ? "import" : "create"}
         prefill={view.mode === "import" ? view.prefill : undefined}
         settings={settings}
@@ -294,7 +299,7 @@ export function InvoicesPanel({
         projects={projects}
         onCancel={() => setView({ mode: "list" })}
         onDone={(id) => setView({ mode: "detail", id })}
-        onEditSupplier={() => setView({ mode: "settings" })}
+        onSettingsSaved={setSettings}
       />
     );
   }
@@ -303,7 +308,7 @@ export function InvoicesPanel({
     const src = invoices.find((i) => i.id === view.id);
     if (src) {
       return (
-        <InvoiceForm
+        <InvoiceEditor
           mode={view.mode === "edit" ? "edit" : "duplicate"}
           source={{
             invoice: src,
@@ -318,7 +323,7 @@ export function InvoicesPanel({
           projects={projects}
           onCancel={() => setView({ mode: "list" })}
           onDone={(id) => setView({ mode: "detail", id })}
-          onEditSupplier={() => setView({ mode: "settings" })}
+          onSettingsSaved={setSettings}
         />
       );
     }
@@ -335,6 +340,8 @@ export function InvoicesPanel({
     return (
       <InvoiceDetail
         invoice={detailInvoice}
+        busy={setPaidMutation.isPending || removeMutation.isPending}
+        paymentError={setPaidMutation.variables?.inv.id === detailInvoice.id ? paymentError : null}
         items={items.filter((i) => i.invoice_id === detailInvoice.id)}
         logo={settings?.logo ?? null}
         onBack={() => setView({ mode: "list" })}
@@ -350,8 +357,10 @@ export function InvoicesPanel({
   // ── List ─────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      className="relative"
+    <fieldset
+      disabled={parsing || setPaidMutation.isPending || removeMutation.isPending}
+      aria-label={t.invoices.title}
+      className="relative min-w-0"
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
@@ -397,7 +406,7 @@ export function InvoicesPanel({
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
-        disabled={parsing}
+        disabled={parsing || setPaidMutation.isPending || removeMutation.isPending}
         className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed border-border-strong bg-surface-muted/40 px-4 py-3 text-sm transition-colors hover:border-foreground/30 focus-ring disabled:opacity-60"
       >
         {parsing ? (
@@ -459,18 +468,20 @@ export function InvoicesPanel({
           ) : (
             <ul className="-mx-2 divide-y divide-border">
               {invoices.map((inv) => {
-                const eff = effectiveStatus(inv);
+                const eff = now ? effectiveStatus(inv, now) : inv.status;
                 const own = totalsById.get(inv.id)?.own ?? 0;
                 const payment = paymentByInvoice.get(inv.id);
+                const rowPaymentError = setPaidMutation.variables?.inv.id === inv.id ? paymentError : null;
                 return (
                   <li
                     key={inv.id}
-                    className="group flex items-center gap-3 px-2 py-2.5 row-hover"
+                    className="group flex flex-wrap items-center gap-2 px-2 py-2.5 row-hover sm:gap-3"
                   >
                     <button
                       type="button"
+                      disabled={setPaidMutation.isPending || removeMutation.isPending}
                       onClick={() => setView({ mode: "detail", id: inv.id })}
-                      className="flex flex-1 items-center gap-3 min-w-0 text-left focus-ring rounded-md"
+                      className="flex min-w-0 basis-full items-center gap-3 text-left focus-ring rounded-md sm:flex-1 sm:basis-auto"
                     >
                       <span className="h-8 w-8 shrink-0 rounded-md bg-surface-muted text-foreground-muted inline-flex items-center justify-center">
                         <Receipt className="h-4 w-4" />
@@ -496,20 +507,21 @@ export function InvoicesPanel({
                         )}
                       </div>
                     </button>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
                       <span className="text-sm font-medium tabular whitespace-nowrap">
                         {formatCurrency(own, inv.currency)}
                       </span>
                       <StatusBadge status={eff} />
-                      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                         <Tooltip content={t.invoices.duplicate}>
                           <Button
+                            disabled={setPaidMutation.isPending || removeMutation.isPending}
                             size="icon-sm"
                             variant="ghost"
                             onClick={() =>
                               setView({ mode: "duplicate", id: inv.id })
                             }
-                            aria-label={t.invoices.duplicate}
+                            aria-label={`${t.invoices.duplicate}: ${inv.number}`}
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
@@ -517,10 +529,12 @@ export function InvoicesPanel({
                         {inv.status === "paid" ? (
                           <Tooltip content={t.invoices.markUnpaid}>
                             <Button
-                              size="icon-sm"
+                              disabled={setPaidMutation.isPending || removeMutation.isPending}
+                            size="icon-sm"
                               variant="ghost"
                               onClick={() => setPaid(inv, false)}
-                              aria-label={t.invoices.markUnpaid}
+                              aria-label={`${t.invoices.markUnpaid}: ${inv.number}`}
+                              aria-describedby={rowPaymentError ? paymentErrorId : undefined}
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
                             </Button>
@@ -528,10 +542,12 @@ export function InvoicesPanel({
                         ) : (
                           <Tooltip content={t.invoices.markPaid}>
                             <Button
-                              size="icon-sm"
+                              disabled={setPaidMutation.isPending || removeMutation.isPending}
+                            size="icon-sm"
                               variant="ghost"
                               onClick={() => setPaid(inv, true)}
-                              aria-label={t.invoices.markPaid}
+                              aria-label={`${t.invoices.markPaid}: ${inv.number}`}
+                              aria-describedby={rowPaymentError ? paymentErrorId : undefined}
                             >
                               <Check className="h-3.5 w-3.5 text-success" />
                             </Button>
@@ -539,16 +555,18 @@ export function InvoicesPanel({
                         )}
                         <Tooltip content={t.invoices.delete}>
                           <Button
+                            disabled={setPaidMutation.isPending || removeMutation.isPending}
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => remove(inv)}
-                            aria-label={t.invoices.delete}
+                            aria-label={`${t.invoices.delete}: ${inv.number}`}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         </Tooltip>
                       </div>
                     </div>
+                    {rowPaymentError && <p id={paymentErrorId} role="alert" className="basis-full text-xs text-risk">{rowPaymentError}</p>}
                   </li>
                 );
               })}
@@ -556,7 +574,7 @@ export function InvoicesPanel({
           )}
         </CardContent>
       </Card>
-    </div>
+    </fieldset>
   );
 }
 

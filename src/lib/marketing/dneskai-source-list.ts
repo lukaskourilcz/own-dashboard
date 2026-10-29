@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { DneskaiSourceSchema, type DneskaiSource } from './dneskai-contracts';
 import { dneskaiRegistrySeed } from './dneskai-registry';
+import { databaseTimestamp } from '@/lib/database-version';
+import { safeWebUrl } from '@/lib/web-url';
 
 /**
  * Zdroje as an editable list (#174). Browser-safe: the row shape of marketing_dneskai_sources, the seed taken from the
@@ -15,38 +17,69 @@ export const DNESKAI_ADDABLE_KINDS = ['instagram', 'rss', 'html'] as const;
 export const DNESKAI_SOURCE_LIMIT = 120;
 const HANDLE = /^[a-z0-9._]{1,30}$/;
 const SOURCE_ID = /^[a-z0-9][a-z0-9:._-]{0,79}$/;
+function httpsSource(value: string): boolean {
+  const safe = safeWebUrl(value, 2048);
+  if (!safe || !/^https:\/\/\S+$/.test(value) || value.includes('\\')) return false;
+  return new URL(safe).port === '';
+}
 
 export const DneskaiSourceRowSchema = z.strictObject({
   sourceId: z.string().regex(SOURCE_ID), kind: z.enum(DNESKAI_SOURCE_KINDS), topic: z.enum(DNESKAI_SOURCE_TOPICS),
-  handleOrUrl: z.string().min(1).max(2048), name: z.string().trim().min(1).max(120), tier: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+  handleOrUrl: z.string().min(1).max(2048), name: z.string().min(1).max(120).refine(value => value === value.trim() && !/\p{Cc}/u.test(value)), tier: z.union([z.literal(0), z.literal(1), z.literal(2)]),
   weekdays: z.array(z.number().int().min(0).max(6)).min(1).max(7), maxItems: z.number().int().min(1).max(20), enabled: z.boolean(),
 }).superRefine((row, context) => {
-  if (row.kind === 'instagram' ? !HANDLE.test(row.handleOrUrl) || row.sourceId !== `instagram:${row.handleOrUrl}` : !/^https:\/\/\S+$/.test(row.handleOrUrl)) {
+  if (row.kind === 'instagram' ? !HANDLE.test(row.handleOrUrl) || row.sourceId !== `instagram:${row.handleOrUrl}` : !httpsSource(row.handleOrUrl)) {
     context.addIssue({ code: 'custom', message: 'source-address-invalid', path: ['handleOrUrl'] });
   }
+  if (new Set(row.weekdays).size !== row.weekdays.length) context.addIssue({ code: 'custom', message: 'source-days-invalid', path: ['weekdays'] });
 });
 export type DneskaiSourceRow = z.infer<typeof DneskaiSourceRowSchema>;
+export const DneskaiSourceReceiptSchema = z.strictObject({
+  kind: z.enum(['saved', 'removed', 'conflict']), ownerId: z.uuid(), projectId: z.uuid(), sourceId: z.string().regex(SOURCE_ID),
+  source: DneskaiSourceRowSchema.nullable(),
+}).refine(receipt => (!receipt.source || receipt.source.sourceId === receipt.sourceId)
+  && (receipt.kind !== 'saved' || receipt.source !== null) && (receipt.kind !== 'removed' || receipt.source === null));
+export type DneskaiSourceReceipt = z.infer<typeof DneskaiSourceReceiptSchema>;
 
 /** One row as Zdroje shows it: the stored source and what the last nights read from it. */
 export const DneskaiSourceListItemSchema = z.strictObject({
   row: DneskaiSourceRowSchema,
-  lastReadAt: z.string().nullable(), lastItems: z.number().int().min(0).nullable(), lastErrorCode: z.string().max(100).nullable(),
+  lastReadAt: databaseTimestamp.nullable(), lastItems: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(), lastErrorCode: z.string().max(100).nullable(),
 });
 export const DneskaiSourceListSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_SOURCE_LIST_VERSION),
   /** False while DNESKAI_SOURCES_TABLE_ENABLED is off (or in the preview): the list is the registry file, read-only. */
   editable: z.boolean(),
-  /** Why an owner with the switch on still sees the read-only file: the table is not there yet. */
+  /** Legacy read-only notice. Current unavailable table/history reads return 503 instead of a fallback. */
   notice: z.enum(['sources-table-unavailable']).nullable(),
-  items: z.array(DneskaiSourceListItemSchema).max(DNESKAI_SOURCE_LIMIT + 10),
-});
+  items: z.array(DneskaiSourceListItemSchema).max(DNESKAI_SOURCE_LIMIT),
+}).refine(list => new Set(list.items.map(item => item.row.sourceId)).size === list.items.length);
 export type DneskaiSourceList = z.infer<typeof DneskaiSourceListSchema>;
 
 export const DneskaiSourceActionSchema = z.discriminatedUnion('action', [
-  z.strictObject({ action: z.literal('save'), projectId: z.uuid(), source: DneskaiSourceRowSchema }),
-  z.strictObject({ action: z.literal('remove'), projectId: z.uuid(), sourceId: z.string().regex(SOURCE_ID) }),
-]);
+  z.strictObject({ action: z.literal('save'), projectId: z.uuid(), source: DneskaiSourceRowSchema, expected: DneskaiSourceRowSchema.nullable() }),
+  z.strictObject({ action: z.literal('remove'), projectId: z.uuid(), sourceId: z.string().regex(SOURCE_ID), expected: DneskaiSourceRowSchema }),
+]).refine(action => !action.expected || action.expected.sourceId === (action.action === 'save' ? action.source.sourceId : action.sourceId));
 export type DneskaiSourceAction = z.infer<typeof DneskaiSourceActionSchema>;
+
+export function sameDneskaiSourceRow(a: DneskaiSourceRow | null, b: DneskaiSourceRow | null): boolean {
+  if (!a || !b) return a === b;
+  return a.sourceId === b.sourceId && a.kind === b.kind && a.topic === b.topic && a.handleOrUrl === b.handleOrUrl
+    && a.name === b.name && a.tier === b.tier && a.maxItems === b.maxItems && a.enabled === b.enabled
+    && a.weekdays.length === b.weekdays.length && a.weekdays.every((day, index) => day === b.weekdays[index]);
+}
+/** Shared API/browser confirmation; a shaped object alone is not proof of the requested change. */
+export function confirmDneskaiSourceReceipt(value: unknown, action: DneskaiSourceAction, owner?: string): DneskaiSourceReceipt {
+  const receipt = DneskaiSourceReceiptSchema.parse(value), id = action.action === 'save' ? action.source.sourceId : action.sourceId;
+  if (receipt.projectId !== action.projectId || receipt.sourceId !== id || (owner !== undefined && receipt.ownerId !== owner)
+    || (receipt.kind === 'saved' && (action.action !== 'save' || !sameDneskaiSourceRow(receipt.source, action.source)))
+    || (receipt.kind === 'removed' && action.action !== 'remove')
+    || (receipt.kind === 'conflict' && (sameDneskaiSourceRow(receipt.source, action.expected)
+      || (action.action === 'save' ? sameDneskaiSourceRow(receipt.source, action.source) : receipt.source === null)))) throw new Error('source-save-unconfirmed');
+  return receipt;
+}
+export const DneskaiSourceRefusalSchema = z.enum(['sources-unavailable', 'source-unavailable', 'source-address-changed', 'source-limit', 'invalid-source',
+  'source-changed', 'source-save-unconfirmed', 'unauthorized', 'project-unavailable', 'not-found']);
 
 /** The registry file as the first rows of the table. */
 export function dneskaiSourceSeedRows(): DneskaiSourceRow[] {
@@ -58,12 +91,14 @@ export function dneskaiSourceSeedRows(): DneskaiSourceRow[] {
 
 /** The handle in an Instagram profile URL, lower-cased; null for anything else. */
 export function instagramHandle(value: string): string | null {
+  if (value.length > 2048 || /[\p{Cc}\\]/u.test(value)) return null;
   const trimmed = value.trim().replace(/^@/, '');
   if (HANDLE.test(trimmed.toLowerCase()) && !trimmed.includes('/')) return trimmed.toLowerCase();
   try {
-    const url = new URL(trimmed);
-    if (!/^(www\.)?instagram\.com$/.test(url.hostname)) return null;
-    const handle = url.pathname.split('/').filter(Boolean)[0]?.toLowerCase();
+    const safe = safeWebUrl(trimmed, 2048); if (!safe) return null;
+    const url = new URL(safe);
+    if (!/^(www\.)?instagram\.com$/.test(url.hostname) || url.port) return null;
+    const handle = /^\/([a-z0-9._]{1,30})\/?$/i.exec(url.pathname)?.[1]?.toLowerCase();
     return handle && HANDLE.test(handle) && !['p', 'reel', 'reels', 'explore', 'stories'].includes(handle) ? handle : null;
   } catch { return null; }
 }
@@ -74,16 +109,23 @@ export function instagramHandle(value: string): string | null {
  * .xml) and as a page otherwise. Null when it is neither.
  */
 export function dneskaiDetectSource(input: string): { kind: 'instagram'; handle: string } | { kind: 'rss' | 'html'; url: string; host: string } | null {
+  if (input.length > 2048 || /[\p{Cc}\\]/u.test(input)) return null;
   const value = input.trim();
   if (!value) return null;
-  const handle = instagramHandle(value);
+  // A dotted bare value is a website. @ makes a dotted Instagram handle explicit.
+  const handle = value.startsWith('@') || !/[.:/]/.test(value) ? instagramHandle(value) : null;
   if (handle) return { kind: 'instagram', handle };
   let url: URL;
   try { url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`); } catch { return null; }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+  if (url.port || url.username || url.password) return null;
   url.protocol = 'https:'; url.hash = '';
-  if (!url.hostname.includes('.') || url.username || url.password) return null;
-  const feed = /(rss|atom|feed)|\.xml$/i.test(url.pathname + url.search);
+  if (url.href.length > 2048 || !url.hostname.includes('.') || !httpsSource(url.href)) return null;
+  if (/^(www\.)?instagram\.com$/.test(url.hostname)) {
+    const profile = instagramHandle(url.href);
+    return profile ? { kind: 'instagram', handle: profile } : null;
+  }
+  const feed = /(rss|atom|feed)/i.test(url.pathname + url.search) || /\.xml$/i.test(url.pathname);
   return { kind: feed ? 'rss' : 'html', url: url.href, host: url.hostname.replace(/^www\./, '') };
 }
 
@@ -114,7 +156,7 @@ export function dneskaiSourceLabel(row: Pick<DneskaiSourceRow, 'kind' | 'handleO
   try { return new URL(row.handleOrUrl).hostname.replace(/^www\./, ''); } catch { return row.handleOrUrl; }
 }
 
-/** The list built from the registry file (switch off, preview, or table missing), with what the source states say. */
+/** Registry display for the switch-off/preview paths; an optional legacy notice remains readable. */
 export function dneskaiRegistrySourceList(states: ReadonlyMap<string, { lastReadAt: string | null; lastItems: number | null; lastErrorCode: string | null }> = new Map(),
   notice: DneskaiSourceList['notice'] = null): DneskaiSourceList {
   return { schemaVersion: DNESKAI_SOURCE_LIST_VERSION, editable: false, notice,

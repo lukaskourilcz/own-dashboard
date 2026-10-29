@@ -9,6 +9,17 @@
  */
 export const DNESKAI_AI_DISCLOSURE = 'Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.';
 
+// Explicit audience imperatives, rather than mentions of comments or instructions to follow a product's steps.
+// Bounded clauses keep a distant, unrelated mention from changing the meaning of an ordinary instruction.
+const COMMENT_CALL = /\b(?:o?komentuj(?:te)?\b|(?:napis(?:te)?|pridej(?:te)?|zanech(?:te)?|vloz(?:te)?|rekni|reknete|podel(?:te)?\s+se)\b[^.!?\n]{0,100}\bkomentar\w*|(?:leave|write|add|post)\s+(?:us\s+)?(?:a\s+|your\s+)?comment\b)/u;
+const FOLLOW_CALL = /\b(?:sleduj(?:te)?\s+(?:nas\b|me\b|@|dneskai\b|(?:nas\w*|tento|tuhle|toto)\s+(?:profil|ucet|strank)\w*)|(?:nas|me)\s+sleduj(?:te)?\b|(?:zacni|zacnete|nezapomen(?:te)?)\s+sledovat\s+(?:nas\b|me\b|@|(?:nas\w*|tento)\s+(?:profil|ucet)\w*)|nezapomen(?:te)?\s+(?:nas|me)\s+sledovat\b|(?:dej(?:te)?|dat)\s+(?:(?:nam|mi)\s+)?follow\b|follow\s+(?:us\b|me\b|our\b|@))/u;
+
+/** A deterministic check for explicit Czech/English audience calls; editorial review still checks meaning. */
+export function dneskaiHasAudienceCall(text: string): boolean {
+  const plain = text.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase('cs').replace(/[^\S\n]+/gu, ' ');
+  return COMMENT_CALL.test(plain) || FOLLOW_CALL.test(plain);
+}
+
 /**
  * The one call to comment a DNESKAi caption may carry (#158, owner decision 3): written by code from the approved
  * keyword, never by the model. It carries no hashtag, so it never counts toward the ten-hashtag cap.

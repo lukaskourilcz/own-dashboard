@@ -1,0 +1,401 @@
+{
+  "source": "ae5268c8871aa0de0ff9fdbc4dd815720e0feae8",
+  "mode": "ordinary-cold-NEXT_E2E-unset",
+  "platform": "darwin-arm64",
+  "metric": "sum of listed regular-file sizes, not compressed upload, billing, deployed size or cold-start measurement",
+  "routes": [
+    {
+      "route": "/api/marketing/tick",
+      "tracedEntries": 1024,
+      "regularFiles": 1019,
+      "listedBytes": 161945578,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/ffmpeg-static": 45619279,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 5567216,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259
+      },
+      "largest": [
+        {
+          "path": "node_modules/ffmpeg-static/ffmpeg",
+          "bytes": 45568216
+        },
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/revisions",
+      "tracedEntries": 1026,
+      "regularFiles": 1021,
+      "listedBytes": 161745019,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/ffmpeg-static": 45619279,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 5366657,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259
+      },
+      "largest": [
+        {
+          "path": "node_modules/ffmpeg-static/ffmpeg",
+          "bytes": 45568216
+        },
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/jobs/[id]/execute",
+      "tracedEntries": 998,
+      "regularFiles": 994,
+      "listedBytes": 115888324,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 5129241,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259,
+        "node_modules/@sentry/nextjs": 279106
+      },
+      "largest": [
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        },
+        {
+          "path": "test-results/dneskai-sources-DNESKAi-So-6d54f-ead-only-in-the-preview-cs--mobile/dneskai-source-list-cs.png",
+          "bytes": 2221089
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/dneskai/media",
+      "tracedEntries": 311,
+      "regularFiles": 310,
+      "listedBytes": 38015039,
+      "ignoredOutputFiles": 0,
+      "ignoredOutputBytes": 0,
+      "ignoredExamples": [],
+      "groups": {
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6043438,
+        ".next/server": 1761661,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "node_modules/@img/sharp-darwin-arm64": 281259,
+        "node_modules/@emnapi/runtime": 66477,
+        "node_modules/@img/colour": 46700,
+        "node_modules/@swc/helpers": 28106,
+        "node_modules/detect-libc": 11429,
+        "node_modules/@opentelemetry/api": 2974
+      },
+      "largest": [
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": ".next/server/chunks/[root-of-the-server]__0e6-8acq94eyk._.js",
+          "bytes": 1138723
+        },
+        {
+          "path": "node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js",
+          "bytes": 706984
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/n8n",
+      "tracedEntries": 1017,
+      "regularFiles": 1012,
+      "listedBytes": 161613181,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/ffmpeg-static": 45619279,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 5234819,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259
+      },
+      "largest": [
+        {
+          "path": "node_modules/ffmpeg-static/ffmpeg",
+          "bytes": 45568216
+        },
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/offline-import",
+      "tracedEntries": 1001,
+      "regularFiles": 997,
+      "listedBytes": 115982092,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 5223009,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259,
+        "node_modules/@sentry/nextjs": 279106
+      },
+      "largest": [
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        },
+        {
+          "path": "test-results/dneskai-sources-DNESKAi-So-6d54f-ead-only-in-the-preview-cs--mobile/dneskai-source-list-cs.png",
+          "bytes": 2221089
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/dneskai/render-reel",
+      "tracedEntries": 908,
+      "regularFiles": 905,
+      "listedBytes": 159828011,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/ffmpeg-static": 45619279,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 3765008,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259
+      },
+      "largest": [
+        {
+          "path": "node_modules/ffmpeg-static/ffmpeg",
+          "bytes": 45568216
+        },
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        }
+      ]
+    },
+    {
+      "route": "/api/marketing/dneskai/audio",
+      "tracedEntries": 1029,
+      "regularFiles": 1024,
+      "listedBytes": 162120273,
+      "ignoredOutputFiles": 359,
+      "ignoredOutputBytes": 67110776,
+      "ignoredExamples": [
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.json",
+          "bytes": 408
+        },
+        {
+          "path": "test-results/audio-read-recovery-cs-1440.png",
+          "bytes": 44299
+        }
+      ],
+      "groups": {
+        "test-results": 67110776,
+        "node_modules/ffmpeg-static": 45619279,
+        "node_modules/@img/sharp-libvips-darwin-arm64": 18239169,
+        "node_modules/@img/sharp-wasm32": 9311857,
+        "vendor/carousel-studio": 6846079,
+        ".next/server": 5741911,
+        "node_modules/@resvg/resvg-js-darwin-arm64": 3538630,
+        "templates/marketing": 1959588,
+        "node_modules/next": 1520783,
+        "node_modules/sharp": 700205,
+        "fixtures/marketing-calendars": 483801,
+        "node_modules/@img/sharp-darwin-arm64": 281259
+      },
+      "largest": [
+        {
+          "path": "node_modules/ffmpeg-static/ffmpeg",
+          "bytes": 45568216
+        },
+        {
+          "path": "node_modules/@img/sharp-libvips-darwin-arm64/lib/libvips-cpp.8.18.7.dylib",
+          "bytes": 18231688
+        },
+        {
+          "path": "node_modules/@img/sharp-wasm32/lib/sharp-wasm32-0.35.5.node.wasm",
+          "bytes": 9150351
+        },
+        {
+          "path": "node_modules/@resvg/resvg-js-darwin-arm64/resvgjs.darwin-arm64.node",
+          "bytes": 3537944
+        }
+      ]
+    }
+  ],
+  "recordedOn": "2026-10-28",
+  "state": "before finding 392; retained historical measurement"
+}

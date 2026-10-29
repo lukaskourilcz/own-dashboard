@@ -33,15 +33,32 @@ type ProjectsStrings = {
   freelanceDivider: string;
   nameRequired: string;
   slugRequired: string;
+  preferenceSaveFailed: string;
+  preferenceConflict: string;
+  projectUnavailable: string;
+  detailsInvalid: string;
+  detailsConflict: string;
+  detailsRepositoryUnavailable: string;
+  reloadDetails: string;
+  detailsUnavailable: string;
 
   // Project card.
   active: string;
   inactive: string;
   synced: string;
+  syncFailed: string;
+  orderSaving: string;
+  orderFailed: string;
   syncedHint: string;
   collapse: string;
   expand: string;
   dragHandle: string;
+  dragRole: string;
+  dragInstructions: string;
+  dragPicked: (name: string) => string;
+  dragOver: (name: string, target: string) => string;
+  dragDropped: (name: string, target: string) => string;
+  dragCanceled: (name: string) => string;
   markActive: string;
   markInactive: string;
   monthly: string;
@@ -49,6 +66,8 @@ type ProjectsStrings = {
   open: string;
   deleteProject: string;
   deleteProjectConfirm: string;
+  deleteConflict: string;
+  deleteFailed: string;
   tableProject: string;
   tableClient: string;
   tableHealth: string;
@@ -76,7 +95,14 @@ type ProjectsStrings = {
   notes: string;
   notesPlaceholder: string;
   saveNotes: string;
+  notesLoadFailed: string;
   notesSaved: string;
+  notesUnsaved: string;
+  notesTooLarge: string;
+  notesSaveFailed: string;
+  notesConflict: string;
+  useSavedNotes: string;
+  replaceSavedNotes: string;
   saving: string;
 
   // Crons.
@@ -115,6 +141,9 @@ type ProjectsStrings = {
   heartbeatStale: string;
   heartbeatNever: string;
   heartbeatUnmonitored: string;
+  heartbeatUnknown: string;
+  heartbeatUnknownHint: string;
+  heartbeatEstimate: string;
   heartbeatLastSuccess: (when: string) => string;
   heartbeatNoSuccess: string;
   heartbeatUnmonitoredHint: string;
@@ -159,20 +188,39 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     freelanceDivider: "Freelance",
     nameRequired: "Name is required.",
     slugRequired: "Slug is required.",
+    preferenceSaveFailed: "The project change was not confirmed. Review its current state before trying again.",
+    preferenceConflict: "This project changed elsewhere. Review its current state and try again.",
+    projectUnavailable: "This project is no longer available. Your open note is still here for you to select and copy before leaving. Changes cannot be saved.",
+    detailsInvalid: "Check the name, URL slug, repository name and HTTP(S) URLs before saving.",
+    detailsConflict: "This project changed elsewhere. Your edits are still here. Reload its saved details before editing again.",
+    detailsRepositoryUnavailable: "The repository could not be verified. Check its owner/name and connection, or clear the repository field.",
+    reloadDetails: "Reload saved details",
+    detailsUnavailable: "This project is no longer available. Refresh the project list to continue. Changes cannot be saved.",
 
     active: "active",
     inactive: "inactive",
     synced: "Repository",
+    orderSaving: "Saving project order…",
+    orderFailed: "Project order could not be confirmed. The latest records will reload; try again after reviewing them.",
+    syncFailed: "Project synchronization could not finish. Check Projects before retrying.",
     syncedHint: "Synced automatically from its linked GitHub repository.",
     collapse: "Collapse",
     expand: "Expand",
     dragHandle: "Drag to reorder",
+    dragRole: "sortable project",
+    dragInstructions: "Press Space to pick up a project. Use the arrow keys to move it within its group, Space to drop it, or Escape to cancel.",
+    dragPicked: name => `Picked up ${name}.`,
+    dragOver: (name, target) => `${name} is over ${target}.`,
+    dragDropped: (name, target) => `Dropped ${name} at ${target}. Saving the order.`,
+    dragCanceled: name => `Canceled moving ${name}.`,
     markActive: "Mark active",
     markInactive: "Mark inactive",
     monthly: "Monthly",
     yearly: "Yearly",
     open: "Open",
     deleteProject: "Delete project",
+    deleteConflict: "This project changed or was removed. Review the refreshed list before deleting it.",
+    deleteFailed: "Deletion was not confirmed. The list is refreshing; review it before trying again.",
     deleteProjectConfirm:
       "Delete this project? Its costs and crons are removed too.",
     tableProject: "Project",
@@ -200,7 +248,14 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     notes: "Notes",
     notesPlaceholder: "Quick notes about this project…",
     saveNotes: "Save notes",
+    notesLoadFailed: "Project notes could not be opened. Close and reopen this panel to retry; saved notes are unchanged.",
     notesSaved: "Saved",
+    notesUnsaved: "Unsaved",
+    notesTooLarge: "This note exceeds the 1 MiB limit. Shorten it before saving; your draft is still here.",
+    notesSaveFailed: "Notes could not be saved. Your draft is still here. Try again or load the saved note to discard this draft.",
+    notesConflict: "The saved note changed elsewhere. Your draft is still here. Replace the saved note with this draft, or load it and discard the draft.",
+    useSavedNotes: "Use saved note",
+    replaceSavedNotes: "Replace saved note",
     saving: "Saving…",
 
     crons: "Crons",
@@ -239,6 +294,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     heartbeatStale: "Not reporting",
     heartbeatNever: "No run yet",
     heartbeatUnmonitored: "Unmonitored",
+    heartbeatUnknown: "Not assessed",
+    heartbeatUnknownHint: "The clock or recorded success time cannot be verified.",
+    heartbeatEstimate: "Estimated from the schedule’s longest usual gap or the saved run frequency.",
     heartbeatLastSuccess: (when) => `Last success ${when}`,
     heartbeatNoSuccess: "No successful run recorded yet.",
     heartbeatUnmonitoredHint:
@@ -282,21 +340,40 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     freelanceDivider: "Freelance",
     nameRequired: "Název je povinný.",
     slugRequired: "Identifikátor je povinný.",
+    preferenceSaveFailed: "Změna projektu nebyla potvrzena. Před dalším pokusem zkontrolujte jeho aktuální stav.",
+    preferenceConflict: "Projekt byl mezitím změněn jinde. Zkontrolujte jeho aktuální stav a zkuste to znovu.",
+    projectUnavailable: "Projekt už není dostupný. Otevřená poznámka tu zůstává, abyste ji před odchodem mohli označit a zkopírovat. Změny nelze uložit.",
+    detailsInvalid: "Před uložením zkontrolujte název, identifikátor v URL, název repozitáře a HTTP(S) odkazy.",
+    detailsConflict: "Projekt byl mezitím změněn jinde. Vaše úpravy tu zůstávají. Před další úpravou načtěte uložené údaje.",
+    detailsRepositoryUnavailable: "Repozitář se nepodařilo ověřit. Zkontrolujte vlastníka/název a připojení, nebo pole repozitáře vymažte.",
+    reloadDetails: "Načíst uložené údaje",
+    detailsUnavailable: "Projekt už není dostupný. Pro pokračování obnovte seznam projektů. Změny nelze uložit.",
 
     active: "aktivní",
     inactive: "neaktivní",
     synced: "Repozitář",
+    orderSaving: "Ukládání pořadí projektů…",
+    orderFailed: "Pořadí projektů se nepodařilo potvrdit. Načtou se aktuální záznamy; po jejich kontrole to zkuste znovu.",
+    syncFailed: "Synchronizace projektů se nedokončila. Před dalším pokusem zkontrolujte Projekty.",
     syncedHint:
       "Automaticky synchronizováno z propojeného GitHub repozitáře.",
     collapse: "Sbalit",
     expand: "Rozbalit",
     dragHandle: "Přetáhni pro změnu pořadí",
+    dragRole: "řaditelný projekt",
+    dragInstructions: "Mezerníkem uchopte projekt. Šipkami jej přesuňte v rámci skupiny, mezerníkem pusťte nebo klávesou Escape pohyb zrušte.",
+    dragPicked: name => `Uchopen projekt ${name}.`,
+    dragOver: (name, target) => `${name} je nad projektem ${target}.`,
+    dragDropped: (name, target) => `Projekt ${name} byl puštěn na místo projektu ${target}. Ukládání pořadí.`,
+    dragCanceled: name => `Přesun projektu ${name} byl zrušen.`,
     markActive: "Označit jako aktivní",
     markInactive: "Označit jako neaktivní",
     monthly: "Měsíčně",
     yearly: "Ročně",
     open: "Otevřít",
     deleteProject: "Smazat projekt",
+    deleteConflict: "Projekt se změnil nebo byl odstraněn. Před smazáním zkontrolujte obnovený seznam.",
+    deleteFailed: "Smazání nebylo potvrzeno. Seznam se obnovuje; před dalším pokusem ho zkontrolujte.",
     deleteProjectConfirm:
       "Smazat tento projekt? Odstraní se i jeho náklady a crony.",
     tableProject: "Projekt",
@@ -324,7 +401,14 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     notes: "Poznámky",
     notesPlaceholder: "Rychlé poznámky k projektu…",
     saveNotes: "Uložit poznámky",
+    notesLoadFailed: "Poznámky projektu se nepodařilo otevřít. Zavřete a znovu otevřete panel; uložené poznámky zůstávají beze změny.",
     notesSaved: "Uloženo",
+    notesUnsaved: "Neuloženo",
+    notesTooLarge: "Poznámka překračuje limit 1 MiB. Před uložením ji zkraťte; návrh tu zůstává.",
+    notesSaveFailed: "Poznámky se nepodařilo uložit. Návrh tu zůstává. Zkuste to znovu, nebo načtěte uloženou poznámku a návrh zahoďte.",
+    notesConflict: "Uložená poznámka se mezitím změnila. Návrh tu zůstává. Nahraďte jím uloženou poznámku, nebo ji načtěte a návrh zahoďte.",
+    useSavedNotes: "Použít uloženou poznámku",
+    replaceSavedNotes: "Nahradit uloženou poznámku",
     saving: "Ukládám…",
 
     crons: "Crony",
@@ -363,6 +447,9 @@ export const projects: { en: ProjectsStrings; cs: ProjectsStrings } = {
     heartbeatStale: "Nehlásí se",
     heartbeatNever: "Zatím bez běhu",
     heartbeatUnmonitored: "Bez hlídání",
+    heartbeatUnknown: "Nevyhodnoceno",
+    heartbeatUnknownHint: "Nelze ověřit aktuální čas nebo čas zaznamenaného úspěchu.",
+    heartbeatEstimate: "Odhad podle nejdelší obvyklé mezery v rozvrhu nebo uložené četnosti běhů.",
     heartbeatLastSuccess: (when) => `Poslední úspěch ${when}`,
     heartbeatNoSuccess: "Zatím není zaznamenaný žádný úspěšný běh.",
     heartbeatUnmonitoredHint:

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { safeWebUrl } from '@/lib/web-url';
+import { databaseTimestamp } from '@/lib/database-version';
 
 /**
  * The DNESKAi audio library (#164) as the browser sees it: Zdroje → Hudba and the Lab's audio picker. Browser-safe.
@@ -18,9 +20,11 @@ export type DneskaiAudioType = keyof typeof DNESKAI_AUDIO_TYPES;
 export const DNESKAI_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 /** The Lab and Zdroje play this much of a track as a preview. */
 export const DNESKAI_AUDIO_PREVIEW_SECONDS = 10;
+/** Maximum wait for the browser to acknowledge starting a preview. */
+export const DNESKAI_AUDIO_PREVIEW_STARTUP_MS = 10_000;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
-const httpsUrl = z.url({ protocol: /^https$/ }).max(2048);
+const httpsUrl = z.string().min(1).max(2048).refine(value => /^https:\/\/\S+$/i.test(value) && !value.includes('\\') && !!safeWebUrl(value, 2048));
 const mood = z.array(z.string().trim().toLowerCase().min(1).max(30).regex(/^[\p{L}\p{N} -]+$/u)).max(5);
 
 export const DneskaiAudioTrackSchema = z.strictObject({
@@ -33,7 +37,8 @@ export const DneskaiAudioTrackSchema = z.strictObject({
   durationMs: z.number().int().min(1000).max(900000),
   mood,
   enabled: z.boolean(),
-  createdAt: z.iso.datetime({ offset: true }),
+  updatedAt: databaseTimestamp,
+  createdAt: z.iso.datetime({ offset: true }).max(64),
   /** A signed URL valid for an hour, for the preview player; null for an Instagram library track. */
   previewUrl: httpsUrl.nullable(),
 });
@@ -45,18 +50,23 @@ export const DneskaiAudioTrendSchema = z.strictObject({
   artist: z.string().max(300).nullable(),
   type: z.enum(['music', 'original_sound']),
   durationMs: z.number().int().min(0).max(3_600_000).nullable(),
-  coverUrl: z.url({ protocol: /^https$/ }).max(2048).nullable(),
-  /** 0 for a sound known only from the niche ranking. */
+  coverUrl: httpsUrl.nullable(),
+  /** 0 without confirmed Meta trend history (a niche hint or a dated TikTok search match). */
   daysSeen: z.number().int().min(0),
   /** Distinct reels of the tracked education profiles that used it in the last seven days (#167). */
   nicheCount: z.number().int().min(0),
   tiktok: z.boolean(),
-  /** In Meta's trending list for this account, so Instagram can attach it to a Reel; niche-only sounds are a hint. */
+  /** Current account proof from Meta trends/search; niche-only sounds remain a manual hint. */
   attachable: z.boolean(),
 });
 export type DneskaiAudioTrend = z.infer<typeof DneskaiAudioTrendSchema>;
 /** `trends` only while `DNESKAI_AUDIO_TRENDS_ENABLED` is on. */
-export const DneskaiAudioLibrarySchema = z.strictObject({ tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(50).optional() });
+export const DNESKAI_AUDIO_TRENDS_MAX = 50;
+export const DneskaiAudioTrendsStatusSchema = z.enum(['ready', 'unavailable', 'disabled']);
+export type DneskaiAudioTrendsStatus = z.infer<typeof DneskaiAudioTrendsStatusSchema>;
+export const DneskaiAudioCursorSchema = z.strictObject({id: z.uuid(), createdAt: databaseTimestamp});
+export type DneskaiAudioCursor = z.infer<typeof DneskaiAudioCursorSchema>;
+export const DneskaiAudioLibrarySchema = z.strictObject({ nextCursor: DneskaiAudioCursorSchema.optional(), trendsStatus: DneskaiAudioTrendsStatusSchema.optional(), tracks: z.array(DneskaiAudioTrackSchema).max(200), trends: z.array(DneskaiAudioTrendSchema).max(DNESKAI_AUDIO_TRENDS_MAX).optional(), nextOffset: z.number().int().min(0).max(1_000_000).nullable().optional() }).refine(value => value.trendsStatus === 'ready' ? value.trends !== undefined : !value.trendsStatus || !value.trends?.length);
 export type DneskaiAudioLibrary = z.infer<typeof DneskaiAudioLibrarySchema>;
 
 export const DneskaiAudioPrepareSchema = z.strictObject({
@@ -64,7 +74,7 @@ export const DneskaiAudioPrepareSchema = z.strictObject({
   contentType: z.enum(Object.keys(DNESKAI_AUDIO_TYPES) as [DneskaiAudioType, ...DneskaiAudioType[]]),
   bytes: z.number().int().min(1).max(DNESKAI_AUDIO_MAX_BYTES),
 });
-export const DneskaiAudioPreparedSchema = z.strictObject({ uploadId: z.uuid(), path: z.string().min(1).max(300), token: z.string().min(1).max(4000) });
+export const DneskaiAudioPreparedSchema = z.strictObject({ ownerId: z.uuid(), uploadId: z.uuid(), path: z.string().min(1).max(300), token: z.string().min(1).max(4000) });
 export type DneskaiAudioPrepared = z.infer<typeof DneskaiAudioPreparedSchema>;
 
 export const DneskaiAudioCreateSchema = z.strictObject({
@@ -79,8 +89,18 @@ export const DneskaiAudioCreateSchema = z.strictObject({
   mood,
 });
 export type DneskaiAudioCreate = z.infer<typeof DneskaiAudioCreateSchema>;
-export const DneskaiAudioToggleSchema = z.strictObject({ action: z.literal('toggle'), id: z.uuid(), enabled: z.boolean() });
-export const DneskaiAudioRequestSchema = z.discriminatedUnion('action', [DneskaiAudioPrepareSchema, DneskaiAudioCreateSchema, DneskaiAudioToggleSchema]);
+export const DneskaiAudioToggleSchema = z.strictObject({action:z.literal('toggle'),ownerId:z.uuid(),id:z.uuid(),expectedVersion:databaseTimestamp,enabled:z.boolean()});
+export type DneskaiAudioToggle = z.infer<typeof DneskaiAudioToggleSchema>;
+const toggleReceipt = z.strictObject({ownerId:z.uuid(),id:z.uuid(),expectedVersion:databaseTimestamp,requestedEnabled:z.boolean()});
+export const DneskaiAudioToggleReceiptSchema = z.discriminatedUnion('kind',[
+  toggleReceipt.extend({kind:z.literal('saved'),updatedAt:databaseTimestamp}),
+  toggleReceipt.extend({kind:z.literal('changed'),updatedAt:databaseTimestamp}),
+  toggleReceipt.extend({kind:z.literal('absent'),updatedAt:z.null()}),
+]);
+export type DneskaiAudioToggleReceipt = z.infer<typeof DneskaiAudioToggleReceiptSchema>;
+export const DneskaiAudioPrepareRequestSchema = DneskaiAudioPrepareSchema.extend({ownerId:z.uuid(),uploadId:z.uuid()});
+export const DneskaiAudioCreateRequestSchema = DneskaiAudioCreateSchema.extend({ownerId:z.uuid()});
+export const DneskaiAudioRequestSchema = z.discriminatedUnion('action', [DneskaiAudioPrepareRequestSchema, DneskaiAudioCreateRequestSchema, DneskaiAudioToggleSchema]);
 export type DneskaiAudioRequest = z.infer<typeof DneskaiAudioRequestSchema>;
 
 /**

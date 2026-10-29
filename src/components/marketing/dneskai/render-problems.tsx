@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { describeMarketingCode } from '@/lib/marketing/marketing-codes';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import type { DneskaiRenderReport } from '@/lib/marketing/contracts';
@@ -15,17 +17,18 @@ export function dneskaiFieldLabel(field: string | null | undefined, lang: Lang):
   const source = /^sources\[(\d)\]$/.exec(field);
   if (source) return `${t.fields.sources} ${Number(source[1]) + 1}`;
   if (/^image-\d$/.test(field)) return t.editor.place(field);
-  return (t.fields as Record<string, string>)[field] ?? null;
+  return Object.hasOwn(t.fields, field) ? (t.fields as Record<string, string>)[field] : null;
 }
 
 /** Render problems by slide and field, blocking ones first, each in plain words with its code in Details. */
 export function DneskaiRenderProblems({ problems, lang, className, id }: { problems: readonly Problem[]; lang: Lang; className?: string; id?: string }) {
   const t = dneskaiWorkspace[lang];
+  const [expanded, setExpanded] = useState(false);
   if (!problems.length) return null;
   const ordered = [...problems].sort((a, b) => Number(b.blocking) - Number(a.blocking) || a.slide - b.slide);
   return <section id={id} aria-label={t.card.renderProblems} className={cn('min-w-0 space-y-2', className)}>
     <h4 className="text-xs font-semibold">{t.card.renderProblems}</h4>
-    <ul className="space-y-2">{ordered.slice(0, 20).map((problem, index) => {
+    <ul className="space-y-2">{(expanded ? ordered : ordered.slice(0, 20)).map((problem, index) => {
       const text = describeMarketingCode(problem.code, lang);
       const where = [problem.slide >= 0 ? t.card.problemSlide(problem.slide + 1) : t.card.deckLevel, dneskaiFieldLabel(problem.field, lang)].filter(Boolean).join(' · ');
       return <li key={`${problem.slide}-${problem.code}-${problem.field ?? ''}-${index}`} className={cn('min-w-0 border-l-2 pl-2 text-xs', problem.blocking ? 'border-risk' : 'border-warning')}>
@@ -35,5 +38,6 @@ export function DneskaiRenderProblems({ problems, lang, className, id }: { probl
         <details className="text-foreground-muted"><summary className="inline-flex min-h-11 cursor-pointer items-center rounded focus-ring md:min-h-6">{t.details}</summary><p className="break-all font-mono">{problem.code}</p></details>
       </li>;
     })}</ul>
+    {ordered.length > 20 && <Button type="button" variant="ghost" size="sm" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? t.card.fewerProblems : t.card.allProblems(ordered.length)}</Button>}
   </section>;
 }

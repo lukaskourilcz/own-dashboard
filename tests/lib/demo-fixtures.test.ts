@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { projects } from "@/lib/demo/fixtures";
+import { projects, todos, plans, notes, todayCalendar, weekCalendar } from "@/lib/demo/fixtures";
 import { portfolioEntryFor, projectSummary } from "@/lib/portfolio";
 
 // /guest serves these fixtures to anyone, indexed. They may name the owner's
 // public repositories, never a private one, and never show registry text.
 describe("demo fixtures behind the public tour", () => {
+  it("keeps task, goal, note and calendar examples within the professional scope", () => {
+    const examples = [todos, plans, notes, todayCalendar.ok ? todayCalendar.events : [], weekCalendar.ok ? weekCalendar.events : []];
+    expect(JSON.stringify(examples)).not.toMatch(/dentist|marathon|running shoes|deep-clean flat|grocery list|milk, eggs|"Gym"/i);
+  });
   it("gives every project its own summary, so the tour never reads the registry", () => {
     for (const project of projects) {
       expect(project.summary, project.name).toBeTruthy();

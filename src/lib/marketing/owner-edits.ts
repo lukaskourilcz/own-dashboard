@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ContentRevision } from "./contracts";
-import type { DneskaiDeck, DneskaiSlide } from "./dneskai-slides";
+import { dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 
 /**
  * What the owner changed in a generated post before deciding on it (#122), as counts of edit kinds and never as
@@ -13,18 +13,25 @@ import type { DneskaiDeck, DneskaiSlide } from "./dneskai-slides";
  * - `caption`, `schedule`: the caption or the publication time changed.
  * - `image-swap`: a slot shows another picture; `crop`: the same picture with another crop.
  * - `reorder`: slides moved (the fewest moves that turn the old order into the new one).
- * - `remove-slide`: a slide was dropped.
+ * - `remove-slide`, `insert-slide`: an unmatched slide was dropped or added.
+ * - `title`, `account`, `collaborators`, `format`, `template`, `audio`, `engagement`: one changed publication setting; template includes the deck kit.
  */
-export const OWNER_EDIT_KINDS = ["text-headline", "text-body", "caption", "image-swap", "crop", "reorder", "remove-slide", "schedule"] as const;
+export const OWNER_EDIT_KINDS = ["text-headline", "text-body", "caption", "image-swap", "crop", "reorder", "remove-slide", "insert-slide", "schedule", "title", "account", "collaborators", "format", "template", "audio", "engagement"] as const;
 export type OwnerEditKind = (typeof OWNER_EDIT_KINDS)[number];
 export type OwnerEditCounts = Partial<Record<OwnerEditKind, number>>;
 const count = z.number().int().min(1).max(10000).optional();
 export const OwnerEditCountsSchema = z.strictObject({
-  "text-headline": count, "text-body": count, caption: count, "image-swap": count, crop: count, reorder: count, "remove-slide": count, schedule: count,
+  "text-headline": count, "text-body": count, caption: count, "image-swap": count, crop: count, reorder: count, "remove-slide": count, "insert-slide": count, schedule: count, title: count, account: count, collaborators: count, format: count, template: count, audio: count, engagement: count,
 });
 
 /** The part of a revision an owner edit can change. */
-export type EditedRevision = Pick<ContentRevision, "caption" | "scheduledAt"> & { deck?: Pick<DneskaiDeck, "slides"> | undefined };
+export type EditedRevision = Pick<ContentRevision, "caption" | "scheduledAt"> &
+  Partial<Pick<ContentRevision, "title" | "account" | "collaborators" | "format" | "templateVersion" | "audio" | "engagement">> &
+  { deck?: Pick<DneskaiDeck, "slides"> & Partial<Pick<DneskaiDeck, "kit" | "format">> };
+
+const accountKey = (account: EditedRevision["account"]) => JSON.stringify(account ? [account.id, account.platform, account.handle] : null);
+const audioKey = (audio: EditedRevision["audio"]) => JSON.stringify(audio ? ("trackId" in audio ? ["track", audio.trackId] : ["instagram", audio.instagramAudioId]) : null);
+const engagementKey = (engagement: EditedRevision["engagement"]) => JSON.stringify(engagement ? [engagement.keyword, engagement.replyMessage, engagement.publicReply ?? null] : null);
 
 function add(counts: OwnerEditCounts, kind: OwnerEditKind, by = 1) {
   if (by > 0) counts[kind] = (counts[kind] ?? 0) + by;
@@ -97,14 +104,21 @@ export function ownerEditKinds(before: EditedRevision, after: EditedRevision): O
   const counts: OwnerEditCounts = {};
   if (before.caption !== after.caption) add(counts, "caption");
   if (Date.parse(before.scheduledAt) !== Date.parse(after.scheduledAt)) add(counts, "schedule");
+  if (before.title !== after.title) add(counts, "title");
+  if (accountKey(before.account) !== accountKey(after.account)) add(counts, "account");
+  if (JSON.stringify(before.collaborators ?? []) !== JSON.stringify(after.collaborators ?? [])) add(counts, "collaborators");
+  if (before.format !== after.format || (before.deck?.format !== undefined && after.deck?.format !== undefined && before.deck.format !== after.deck.format)) add(counts, "format");
+  if (before.templateVersion !== after.templateVersion || dneskaiKitOf(before.deck) !== dneskaiKitOf(after.deck)) add(counts, "template");
+  if (audioKey(before.audio) !== audioKey(after.audio)) add(counts, "audio");
+  if (engagementKey(before.engagement) !== engagementKey(after.engagement)) add(counts, "engagement");
   const previous = before.deck?.slides ?? [];
   const next = after.deck?.slides ?? [];
-  if (!previous.length || !next.length) return counts;
   const picks = matchSlides(previous, next);
   const matched = picks.flatMap((pick, index) => pick === null ? [] : [{ before: previous[pick]!, after: next[index]!, pick }]);
   for (const pair of matched) for (const [kind, value] of Object.entries(slideChanges(pair.before, pair.after))) add(counts, kind as OwnerEditKind, value);
   add(counts, "reorder", moves(matched.map((pair) => pair.pick)));
   add(counts, "remove-slide", previous.length - matched.length);
+  add(counts, "insert-slide", next.length - matched.length);
   return counts;
 }
 

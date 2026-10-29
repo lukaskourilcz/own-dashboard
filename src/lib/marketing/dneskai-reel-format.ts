@@ -1,3 +1,6 @@
+/** Private MP4 bucket ceiling, shared with the native output consumer. */
+export const DNESKAI_REEL_MAX_BYTES = 64 * 1024 * 1024;
+
 /**
  * The format a newly generated DNESKAi post starts in (#165, plan C3): education posts as a Reel, news as a carousel.
  * Only while `MARKETING_DNESKAI_REELS_ENABLED=true`; off, every carousel deck stays a carousel as before. Until topics

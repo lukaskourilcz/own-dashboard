@@ -6,6 +6,7 @@ import { OWNER_EDITS_DATASET, buildOwnerEditRecords, parseOwnerEditOptions, runO
 import { createMarketingTracer } from "@/lib/marketing/tracing";
 import { revisionContentHash } from "@/lib/marketing/hashes";
 import type { ContentRevision } from "@/lib/marketing/contracts";
+import { applyDneskaiDeckEdit } from "@/lib/marketing/dneskai-deck-edit";
 import { deckRevision } from "./marketing-dneskai-revision-fixture";
 
 const sdk = vi.hoisted(() => ({ configs: [] as Record<string, unknown>[], hasDataset: vi.fn(), readDataset: vi.fn(), createDataset: vi.fn(), listExamples: vi.fn(), createExamples: vi.fn(), updateExamples: vi.fn() }));
@@ -130,4 +131,16 @@ describe("scripts/langsmith-owner-edits.ts (#122)", () => {
     expect(await tracer.upsertOwnerEditExamples(OWNER_EDITS_DATASET, records.map((record) => record.example))).toBeNull();
     expect(sdk.configs).toHaveLength(2);
   });
+});
+
+it("exports and uploads insertion counts without raw copy or an as-generated score", async () => {
+  const generated = { ...deckRevision(), traceId: trace(9) };
+  const inserted = { ...generated, deck: applyDneskaiDeckEdit(generated.deck!, { slides: [{ from: 0 }, { from: 1 }, { insert: { type: "statement", variant: "accent", headline: "PRIVATE TEST new slide", alt: "PRIVATE TEST new alt", images: [] } }, { from: 2 }] }, { media: [], primaryCandidateId: null }) };
+  const built = buildOwnerEditRecords([row(9, generated, { status: "superseded" }), row(0, inserted, { replaces: 9, status: "approved", approved: true })], { includeText: false });
+  expect(built.records).toHaveLength(1); const example = built.records[0]!.example;
+  expect(example).toMatchObject({ score: 0.5, editKinds: { "insert-slide": 1 }, editCount: 1 }); expect(JSON.stringify(example)).not.toContain("PRIVATE TEST");
+  sdk.hasDataset.mockResolvedValue(true); sdk.readDataset.mockResolvedValue({ id: "99999999-9999-4999-8999-999999999999" }); sdk.listExamples.mockImplementation(async function* () {}); sdk.createExamples.mockResolvedValue([]);
+  const tracer = await createMarketingTracer({ apiKey: "test-only", projectName: "test-only" });
+  expect(await tracer.upsertOwnerEditExamples(OWNER_EDITS_DATASET, [example])).toEqual({ created: 1, updated: 0 });
+  const sent = sdk.createExamples.mock.calls[0]![0]; expect(sent[0].outputs).toMatchObject({ score: 0.5, edit_kinds: { "insert-slide": 1 } }); expect(JSON.stringify(sent)).not.toContain("PRIVATE TEST");
 });

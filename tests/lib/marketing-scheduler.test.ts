@@ -764,3 +764,21 @@ describe('enrichment step (#155)', () => {
     expect(topicBriefs).toHaveBeenCalledTimes(1);
   });
 });
+
+it('starts no renewal or lease after retirement during the token precheck', async () => {
+ const caller=new AbortController(),h=harness({tokenMetadata:async()=>{caller.abort();return [dueToken()];}});
+ await h.tick(on,'minute',tickId(),caller.signal);
+ expect(h.store.acquired).not.toContain('token');expect(h.called('refreshToken')).toHaveLength(0);
+});
+it('starts no renewal after its confirmed lease arrives beyond the original tick lifetime', async () => {
+ const caller=new AbortController(),clock=new Clock(afternoon),store=memoryStore(clock),acquire=store.acquire;
+ store.acquire=async(...args)=>{const result=await acquire(...args);if(args[0]==='token')caller.abort();return result;};
+ const h=harness({tokenMetadata:async()=>[dueToken()]},clock,store);await h.tick(on,'minute',tickId(),caller.signal);
+ expect(h.called('refreshToken')).toHaveLength(0);
+});
+
+it('counts the lease wait against the remaining admission budget before renewal starts',async()=>{
+ const clock=new Clock(afternoon),store=memoryStore(clock),acquire=store.acquire;
+ store.acquire=async(...args)=>{const result=await acquire(...args);if(args[0]==='token')clock.advance(48000);return result;};
+ const h=harness({tokenMetadata:async()=>[dueToken()]},clock,store),result=await h.tick();expect(h.called('refreshToken')).toHaveLength(0);expect(step(result,'token')).toMatchObject({status:'deferred',code:'tick-budget-exhausted',pending:true});
+});

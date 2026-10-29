@@ -191,7 +191,7 @@ export interface MarketingSchedulerPorts {
   nextReconciliation(checkedBefore: string): Promise<string | null>;
   /** Stamps last_checked_at and runs the read-only reconciliation. */
   reconcile(publicationId: string): Promise<{ status: string; errorCode: string | null }>;
-  tokenMetadata(): Promise<MetaTokenMetadata[]>;
+  tokenMetadata(signal?: AbortSignal): Promise<MetaTokenMetadata[]>;
   refreshToken(token: MetaTokenMetadata, signal: AbortSignal): Promise<InstagramTokenRefreshOutcome>;
   /** Approved and ready-for-review revisions of the owner (newest 50) with the signed URLs of their assets. */
   renewableRevisions(): Promise<Array<{ id: string; assetUrls: string[] }>>;
@@ -493,7 +493,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     {
       category: "token", lease: "token",
       async precheck(): Promise<StepOutcome | null> {
-        dueTokens = (await ports.tokenMetadata()).filter((token) => token.platform === "instagram" && instagramTokenRefreshDue(token, clock()));
+        dueTokens = (await ports.tokenMetadata(signal)).filter((token) => token.platform === "instagram" && instagramTokenRefreshDue(token, clock()));
         return dueTokens.length ? null : { status: "noop" };
       },
       async run({ state, signal: abort, now, saveState }): Promise<StepOutcome> {
@@ -724,13 +724,15 @@ async function runStep(step: Step, context: { store: MarketingSchedulerStore; ho
     const early = await step.precheck?.();
     if (early) return record(early);
   } catch (error) { return record({ status: "error", code: schedulerFailureCode(error, step.category) }); }
-  if (remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);
+  if (signal.aborted || remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);
   let lease: SchedulerLeaseResult | null = null;
   if (step.lease) {
     try { lease = await store.acquire(step.lease, holder, MARKETING_TICK_LEASE_SECONDS); }
     catch { return record({ status: "error", code: "scheduler-state-unavailable" }); }
     if (!lease.acquired) return record({ status: lease.reason, code: lease.reason === "busy" ? "lease-held" : "backoff-active", pending: true, detail: { until: lease.until } });
   }
+  // No work has started: a lease received after retirement remains to expire.
+  if (signal.aborted || remaining() < (step.minimumStartMs ?? MINIMUM_START_MS[step.category])) return record(budgetSpent);
   let outcome: StepOutcome;
   const held = step.lease && lease?.acquired ? step.lease : null;
   const saveState = (state: Record<string, unknown>) => held ? store.saveState(held, holder, state) : Promise.resolve(false);

@@ -4,6 +4,10 @@ import { dashboardDataKeysForTab, onDemandDataKeys, serverDataKeysForTab, tabNee
 import { NAV_TABS } from "@/lib/nav-tabs";
 
 describe("dashboard route data boundaries", () => {
+  it("does not load unused relationship families for Marketing or Notes", () => {
+    expect([...dashboardDataKeysForTab("marketing")]).toEqual([]);
+    expect([...dashboardDataKeysForTab("notes")]).toEqual(["notes", "projects"]);
+  });
   it("keeps unrelated financial and career records out of Home", () => {
     const keys = dashboardDataKeysForTab("home");
     expect(keys.has("todos")).toBe(true);
@@ -51,10 +55,15 @@ describe("dashboard route data boundaries", () => {
   });
 
   it("loads invoices only where payments are matched against them", () => {
-    for (const tab of ["accounts", "transactions", "categories"] as const) {
+    for (const tab of ["transactions"] as const) {
       expect(dashboardDataKeysForTab(tab).has("invoices"), tab).toBe(true);
       expect(dashboardDataKeysForTab(tab).has("invoiceItems"), tab).toBe(true);
     }
+    for (const tab of ["accounts", "categories"] as const) {
+      for (const key of ["invoices", "invoiceItems", "projectCosts", "crons", "subscriptionAllocations"] as const) expect(dashboardDataKeysForTab(tab).has(key), `${tab}:${key}`).toBe(false);
+    }
+    expect(dashboardDataKeysForTab("accounts").has("accounts")).toBe(true);
+    expect(dashboardDataKeysForTab("categories").has("accounts")).toBe(false);
     // The Money overview renders development finance only, so it needs neither.
     expect(dashboardDataKeysForTab("money").has("invoices")).toBe(false);
     expect(dashboardDataKeysForTab("money").has("invoiceItems")).toBe(false);

@@ -25,8 +25,8 @@ for (const lang of ["en", "cs"] as const) {
     await expect(page.getByLabel(lang === 'cs' ? 'Připravené soubory pro import' : 'Prepared import files')).toBeDisabled();
     const jobHealth = page.getByRole('region', { name: lang === 'cs' ? 'Příprava návrhů' : 'Draft preparation' });
     await expect(jobHealth).toBeVisible();
-    await expect(jobHealth.getByRole('button', { name: lang === 'cs' ? 'Zkontrolovat stav znovu' : 'Check status again' })).toBeDisabled();
-    await expect(jobHealth.getByText(lang === 'cs' ? 'Pro tuto značku nejsou zaznamenané úlohy přípravy.' : 'No preparation jobs recorded for this brand.')).toBeVisible();
+    await expect(jobHealth.getByRole('button')).toHaveCount(0);
+    await expect(jobHealth.getByText(lang === 'cs' ? 'V načteném vzorku nejsou pro tuto značku žádné úlohy.' : 'No jobs for this brand in the loaded sample.')).toBeVisible();
     await expect(page.locator("#marketing-panel-review article")).toHaveCount(0);
     await expect(page.getByRole("button", { name: copy.approve, exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
@@ -41,7 +41,7 @@ for (const lang of ["en", "cs"] as const) {
         await expect(panel.getByText(copy.noCalendar, { exact: true })).toBeVisible();
         await expect(panel.getByRole("combobox")).toBeDisabled();
         await expect(panel.locator('input[type="date"]')).toBeDisabled();
-        await expect(panel.getByRole("button", { name: lang === "cs" ? "Zkontrolovat přesun" : "Preview migration", exact: true })).toBeDisabled();
+        await expect(panel.getByRole("button", { name: lang === "cs" ? "Zkontrolovat plán" : "Preview plan", exact: true })).toBeDisabled();
       }
       if (key === "knowledge") {
         const knowledge = knowledgeImportCopy[lang];
@@ -53,7 +53,7 @@ for (const lang of ["en", "cs"] as const) {
         await expect(panel.getByRole("button", { name: knowledge.normalize, exact: true })).toBeDisabled();
       }
       if (key === "results") {
-        await expect(panel.getByText(copy.noResults, { exact: true })).toBeVisible();
+        await expect(panel.getByText(lang === 'cs' ? 'Pro tyto plánované termíny nejsou přiřazené záznamy zveřejnění.' : 'No matched publication records for these scheduled slots.', { exact: true })).toHaveCount(1);
         await expect(panel.getByTestId('weekly-results')).toBeVisible();
         await expect(panel.getByRole('heading', { name: lang === 'cs' ? 'Týdenní přehled publikování' : 'Weekly publication review' })).toBeVisible();
         await expect(panel.getByText(lang === 'cs' ? 'Není změřeno' : 'Not collected', { exact: true })).toHaveCount(4);
@@ -89,13 +89,18 @@ test("Marketing tabs expose roving focus and Arrow/Home/End keyboard controls", 
   await expect(page.locator("#marketing-panel-review")).toHaveAttribute("aria-labelledby", "marketing-tab-review");
 });
 
-test("Marketing APIs reject unauthenticated decisions, worker jobs, invalid n8n tokens and the retired collection route without writes", async ({ request }) => {
+test("Marketing APIs reject unauthenticated decisions, worker jobs, invalid n8n tokens and the retired collection route without writes", async ({ request, baseURL }) => {
+  if (!baseURL) throw new Error("preview-base-url-required");
+  const origin = new URL(baseURL).origin;
   const results = await Promise.all([
     request.get("/api/marketing/state"),
-    request.post("/api/marketing/revisions", { headers:{Origin:"http://localhost:3939"}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
-    request.post("/api/marketing/knowledge", { headers:{Origin:"http://localhost:3939"}, data: { action: "preview" } }),
+    request.post("/api/marketing/revisions", { headers:{Origin:origin}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
+    request.post("/api/marketing/knowledge", { headers:{Origin:origin}, data: { action: "preview" } }),
+    request.post("/api/marketing/calendar-entries", { headers:{Origin:origin}, data: {} }),
+    request.post("/api/marketing/campaigns", { headers:{Origin:origin}, data: { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
     request.post("/api/marketing/jobs", { data: {} }),
-    request.post("/api/marketing/offline-import", { headers:{Origin:"http://localhost:3939"}, data: {} }),
+    request.post("/api/marketing/publications", { headers: { Origin: origin }, data: { action: "requeue", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" } }),
+    request.post("/api/marketing/offline-import", { headers:{Origin:origin}, data: {} }),
     request.post("/api/marketing/n8n", { headers: { Authorization: "Bearer test-only-invalid-token" }, data: { operation: "publish", brand: "devshark", dryRun: false } }),
   ]);
   for (const result of results) {

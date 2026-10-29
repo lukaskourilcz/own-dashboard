@@ -1,0 +1,127 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Collapse sidebar" [expanded]:
+  - navigation:
+    - button "Home":
+      - generic: Home
+    - paragraph: Work
+    - button "Work overview":
+      - generic: Work overview
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projects":
+      - generic: Projects
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Competition":
+      - generic: Competition
+    - button "Opportunities":
+      - generic: Opportunities
+    - button "Clients":
+      - generic: Clients
+    - button "Career":
+      - generic: Career
+    - button "Invoices":
+      - generic: Invoices
+    - paragraph: Money
+    - button "Money overview":
+      - generic: Money overview
+    - button "Accounts":
+      - generic: Accounts
+    - button "Transactions":
+      - generic: Transactions
+    - button "Subscriptions":
+      - generic: Subscriptions
+    - button "Categories":
+      - generic: Categories
+    - paragraph: Planning
+    - button "Tasks":
+      - generic: Tasks
+    - button "Calendar":
+      - generic: Calendar
+    - button "Goals":
+      - generic: Goals
+    - button "Dates":
+      - generic: Dates
+    - paragraph: Library
+    - button "Notes":
+      - generic: Notes
+    - button "Prompts":
+      - generic: Prompts
+    - button "Tools":
+      - generic: Tools
+    - button "Links":
+      - generic: Links
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Settings":
+  - button "Switch to dark mode":
+  - button "Sign out":
+- main:
+  - heading "Projects" [level=1]:
+    - button "Projects"
+  - generic: ›
+  - generic: own-dashboard
+  - button "Command palette":
+    - generic: Type a command or search…
+    - text: K
+  - tablist "Project workspace":
+    - tab "Overview"
+    - tab "Tasks & Notes" [active] [selected]
+    - tab "Activity"
+    - tab "Communication"
+    - tab "Repository"
+    - tab "Finance"
+    - tab "Competition"
+    - tab "Knowledge"
+    - tab "Scaling"
+    - tab "Monetization"
+  - text: Tasks
+  - list:
+    - paragraph: Add UPSTASH_REDIS_REST_URL in Vercel
+    - paragraph: Open · 2026-10-28
+    - paragraph: Review dashboard accessibility report
+    - paragraph: Open · 2026-10-26
+    - paragraph: Document the release migration
+    - paragraph: Open · 2026-10-28
+    - paragraph: Verify integration reconnect states
+    - paragraph: Open · 2026-10-29
+  - paragraph: Notes
+  - button "Import MD":
+    - text: Import MD
+  - button "New note":
+    - text: New note
+  - textbox "Search title + content…"
+  - paragraph: No notes yet
+  - paragraph: Click New note to start writing.
+  - paragraph: Select a note
+  - paragraph: Or create a new one to start writing.
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

@@ -65,8 +65,8 @@ describe('marketing_dneskai_sources (20261023110000)', () => {
     const [row] = await sql<{ weekdays: number[] }>("select weekdays from public.marketing_dneskai_sources where source_id='instagram:newprofile'");
     expect(row!.weekdays).toEqual([1, 2]);
     await save({ ...added, weekdays: [0, 1, 2, 3, 4, 5, 6] });
-    await expect(save({ ...added, sourceId: 'instagram:BadCase', handleOrUrl: 'BadCase' })).rejects.toThrow(/check constraint/);
-    await expect(save({ ...added, sourceId: 'web-plain-000000', kind: 'rss', handleOrUrl: 'http://plain.example/feed' })).rejects.toThrow(/check constraint/);
+    await expect(save({ ...added, sourceId: 'instagram:BadCase', handleOrUrl: 'BadCase' })).rejects.toThrow(/source invalid/);
+    await expect(save({ ...added, sourceId: 'web-plain-000000', kind: 'rss', handleOrUrl: 'http://plain.example/feed' })).rejects.toThrow(/source invalid/);
     await expect(save({ ...added, kind: 'rss', handleOrUrl: 'https://example.com/feed' })).rejects.toThrow(/source address changed/);
     await expect(save(added, OTHER)).rejects.toThrow(/source unavailable/);
     // Reads are own-only, and the owner cannot write the table directly.
@@ -112,4 +112,15 @@ describe('marketing_dneskai_sources (20261023110000)', () => {
     expect(stages.length).toBeGreaterThan(0);
     expect(stages.map((stage) => stage.source_id)).not.toContain('instagram:newprofile');
   }, 120_000);
+  it('keeps every removed source absent and starts no collection for an empty owned catalog', async () => {
+    const rows=await as<{source_id:string}>(OWNER,'select source_id from public.marketing_dneskai_sources where project_id=$1',[PROJECT]);
+    for(const row of rows)await as(OWNER,'select public.marketing_dneskai_source_remove($1,$2)',[PROJECT,row.source_id]);
+    const admin=createClient(SUPABASE,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:(input,init)=>emulator.fetch(input,init)}});
+    const catalog=await loadDneskaiSourceCatalog(admin as never,OWNER,PROJECT,env);
+    expect(catalog.due('2026-10-27',{education:true})).toEqual([]);expect(catalog.byId('openai-blog')).toBeUndefined();
+    const before=emulator.requests.length,provider=vi.fn();
+    await expect(tickDneskaiCollection(OWNER,{projectId:PROJECT},{store:createDneskaiCollectionStore(admin as never),env,feed:provider,startInstagram:provider,jev:provider})).rejects.toThrow('collection-no-enabled-sources');
+    expect(provider).not.toHaveBeenCalled();expect(emulator.requests.slice(before).every(request=>request.method==='GET')).toBe(true);
+    expect(await as(OWNER,'select source_id from public.marketing_dneskai_sources where project_id=$1',[PROJECT])).toEqual([]);
+  });
 });

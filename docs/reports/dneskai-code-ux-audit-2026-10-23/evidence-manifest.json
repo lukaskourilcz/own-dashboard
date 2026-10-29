@@ -1,0 +1,3532 @@
+[
+  {
+    "id": "accounts-cs-dark-1440",
+    "image": "evidence/accounts-cs-dark-1440.png",
+    "dom": "evidence/accounts-cs-dark-1440.txt",
+    "metrics": "evidence/accounts-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Účty",
+        "width": 33,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Peníze",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Přehled nákladů",
+        "width": 108.8,
+        "x": 293,
+        "y": 277
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Všechny náklady",
+        "width": 129.6,
+        "x": 293,
+        "y": 318
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Projekty",
+        "width": 69,
+        "x": 663,
+        "y": 318
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Předplatná",
+        "width": 86.4,
+        "x": 1033,
+        "y": 318
+      }
+    ]
+  },
+  {
+    "id": "calendar-cs-dark-1440",
+    "image": "evidence/calendar-cs-dark-1440.png",
+    "dom": "evidence/calendar-cs-dark-1440.txt",
+    "metrics": "evidence/calendar-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Kalendář",
+        "width": 62.5,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "career-cs-dark-1440",
+    "image": "evidence/career-cs-dark-1440.png",
+    "dom": "evidence/career-cs-dark-1440.txt",
+    "metrics": "evidence/career-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Kariéra",
+        "width": 50.1,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Kariéra",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 32,
+        "tag": "H2",
+        "text": "Další krok v Oslu.",
+        "width": 837.3,
+        "x": 301,
+        "y": 205
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Fullstack Engineer",
+        "width": 323.3,
+        "x": 297,
+        "y": 520
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Frontend Engineer",
+        "width": 323.3,
+        "x": 674,
+        "y": 520
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Frontend Developer – Creator Tools",
+        "width": 323.3,
+        "x": 1052,
+        "y": 520
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Software Engineer · Control Center",
+        "width": 323.3,
+        "x": 297,
+        "y": 740
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "AI Integration Engineer",
+        "width": 323.3,
+        "x": 674,
+        "y": 740
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Software Engineer, Content Agent",
+        "width": 323.3,
+        "x": 1052,
+        "y": 740
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Full-Stack Product Engineer",
+        "width": 323.3,
+        "x": 297,
+        "y": 960
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Software Engineer (Home Energy)",
+        "width": 323.3,
+        "x": 674,
+        "y": 960
+      },
+      {
+        "height": 44,
+        "tag": "H3",
+        "text": "Digital Transformation & User Experience Tech Lead",
+        "width": 323.3,
+        "x": 1052,
+        "y": 960
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Software Engineer – IAM",
+        "width": 323.3,
+        "x": 297,
+        "y": 1186
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Fullstack Engineer",
+        "width": 323.3,
+        "x": 674,
+        "y": 1186
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Frontend Engineer",
+        "width": 323.3,
+        "x": 1052,
+        "y": 1186
+      },
+      {
+        "height": 44,
+        "tag": "H3",
+        "text": "Lead Frontend Software Engineer (React/TypeScript)",
+        "width": 323.3,
+        "x": 297,
+        "y": 1406
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Lead Front End Developer",
+        "width": 323.3,
+        "x": 674,
+        "y": 1406
+      }
+    ]
+  },
+  {
+    "id": "career-en-light-360",
+    "image": "evidence/career-en-light-360.png",
+    "dom": "evidence/career-en-light-360.txt",
+    "metrics": "evidence/career-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Career",
+        "width": 47.4,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Career",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      },
+      {
+        "height": 32,
+        "tag": "H2",
+        "text": "Your next role in Oslo.",
+        "width": 286,
+        "x": 37,
+        "y": 434
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Fullstack Engineer",
+        "width": 286,
+        "x": 37,
+        "y": 986
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Frontend Engineer",
+        "width": 286,
+        "x": 37,
+        "y": 1206
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Frontend Developer – Creator Tools",
+        "width": 286,
+        "x": 37,
+        "y": 1426
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Software Engineer · Control Center",
+        "width": 286,
+        "x": 37,
+        "y": 1646
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "AI Integration Engineer",
+        "width": 286,
+        "x": 37,
+        "y": 1866
+      },
+      {
+        "height": 44,
+        "tag": "H3",
+        "text": "Senior Software Engineer, Content Agent",
+        "width": 286,
+        "x": 37,
+        "y": 2086
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Full-Stack Product Engineer",
+        "width": 286,
+        "x": 37,
+        "y": 2312
+      },
+      {
+        "height": 44,
+        "tag": "H3",
+        "text": "Senior Software Engineer (Home Energy)",
+        "width": 286,
+        "x": 37,
+        "y": 2532
+      },
+      {
+        "height": 44,
+        "tag": "H3",
+        "text": "Digital Transformation & User Experience Tech Lead",
+        "width": 286,
+        "x": 37,
+        "y": 2758
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Software Engineer – IAM",
+        "width": 286,
+        "x": 37,
+        "y": 2984
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Fullstack Engineer",
+        "width": 286,
+        "x": 37,
+        "y": 3204
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Senior Frontend Engineer",
+        "width": 286,
+        "x": 37,
+        "y": 3424
+      },
+      {
+        "height": 44,
+        "tag": "H3",
+        "text": "Lead Frontend Software Engineer (React/TypeScript)",
+        "width": 286,
+        "x": 37,
+        "y": 3644
+      },
+      {
+        "height": 22,
+        "tag": "H3",
+        "text": "Lead Front End Developer",
+        "width": 286,
+        "x": 37,
+        "y": 3870
+      }
+    ]
+  },
+  {
+    "id": "career-refreshed-en-light-1440",
+    "image": "evidence/career-refreshed-en-light-1440.png",
+    "dom": "evidence/career-refreshed-en-light-1440.txt",
+    "metrics": "evidence/career-refreshed-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Career",
+        "width": 47.4,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Career",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 28,
+        "tag": "H2",
+        "text": "Senior Frontend Engineer (React)",
+        "width": 620.4,
+        "x": 755,
+        "y": 547
+      },
+      {
+        "height": 21,
+        "tag": "H3",
+        "text": "Job description",
+        "width": 620.4,
+        "x": 755,
+        "y": 880
+      }
+    ]
+  },
+  {
+    "id": "categories-cs-dark-1440",
+    "image": "evidence/categories-cs-dark-1440.png",
+    "dom": "evidence/categories-cs-dark-1440.txt",
+    "metrics": "evidence/categories-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Kategorie",
+        "width": 67.9,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Peníze",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Přehled nákladů",
+        "width": 108.8,
+        "x": 293,
+        "y": 277
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Všechny náklady",
+        "width": 129.6,
+        "x": 293,
+        "y": 318
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Projekty",
+        "width": 69,
+        "x": 663,
+        "y": 318
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Předplatná",
+        "width": 86.4,
+        "x": 1033,
+        "y": 318
+      }
+    ]
+  },
+  {
+    "id": "clients-cs-dark-1440",
+    "image": "evidence/clients-cs-dark-1440.png",
+    "dom": "evidence/clients-cs-dark-1440.txt",
+    "metrics": "evidence/clients-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Klienti",
+        "width": 44.1,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Klienti",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Acme s.r.o.",
+        "width": 75.2,
+        "x": 289,
+        "y": 219
+      }
+    ]
+  },
+  {
+    "id": "command-palette-en-light-1440",
+    "image": "evidence/command-palette-en-light-1440.png",
+    "dom": "evidence/command-palette-en-light-1440.txt",
+    "metrics": "evidence/command-palette-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 58.7,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "competition-cs-dark-1440",
+    "image": "evidence/competition-cs-dark-1440.png",
+    "dom": "evidence/competition-cs-dark-1440.txt",
+    "metrics": "evidence/competition-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Konkurence",
+        "width": 83.8,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Konkurence",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "dates-cs-dark-1440",
+    "image": "evidence/dates-cs-dark-1440.png",
+    "dom": "evidence/dates-cs-dark-1440.txt",
+    "metrics": "evidence/dates-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Termíny",
+        "width": 56.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Významné dny",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "dneskai-account-cs-dark-1440",
+    "image": "evidence/dneskai-account-cs-dark-1440.png",
+    "dom": "evidence/dneskai-account-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-account-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Příspěvky",
+        "width": 448.7,
+        "x": 276,
+        "y": 154
+      }
+    ]
+  },
+  {
+    "id": "dneskai-calendar-cs-dark-1440",
+    "image": "evidence/dneskai-calendar-cs-dark-1440.png",
+    "dom": "evidence/dneskai-calendar-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-calendar-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Příštích sedm dní",
+        "width": 422.3,
+        "x": 276,
+        "y": 154
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "pátek 23/10Dnes",
+        "width": 363.3,
+        "x": 277,
+        "y": 243
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "sobota 24/10",
+        "width": 363.3,
+        "x": 654,
+        "y": 243
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "neděle 25/10",
+        "width": 363.3,
+        "x": 1032,
+        "y": 243
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "pondělí 26/10",
+        "width": 363.3,
+        "x": 277,
+        "y": 650
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "úterý 27/10",
+        "width": 363.3,
+        "x": 654,
+        "y": 650
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "středa 28/10",
+        "width": 363.3,
+        "x": 1032,
+        "y": 650
+      },
+      {
+        "height": 37,
+        "tag": "H3",
+        "text": "čtvrtek 29/10",
+        "width": 363.3,
+        "x": 277,
+        "y": 1064
+      }
+    ]
+  },
+  {
+    "id": "dneskai-costs-cs-dark-1440",
+    "image": "evidence/dneskai-costs-cs-dark-1440.png",
+    "dom": "evidence/dneskai-costs-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-costs-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Příspěvky",
+        "width": 448.7,
+        "x": 276,
+        "y": 154
+      }
+    ]
+  },
+  {
+    "id": "dneskai-editor-cs-dark-1440",
+    "image": "evidence/dneskai-editor-cs-dark-1440.png",
+    "dom": "evidence/dneskai-editor-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-editor-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 4
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 194
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": -577
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": 64
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 607
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 1579
+      }
+    ]
+  },
+  {
+    "id": "dneskai-editor-cs-light-1440-verified",
+    "image": "evidence/dneskai-editor-cs-light-1440-verified.png",
+    "dom": "evidence/dneskai-editor-cs-light-1440-verified.txt",
+    "metrics": "evidence/dneskai-editor-cs-light-1440-verified.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": -223
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": -33
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": -804
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": -163
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 380
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 1352
+      }
+    ]
+  },
+  {
+    "id": "dneskai-editor-cs-light-360",
+    "image": "evidence/dneskai-editor-cs-light-360.png",
+    "dom": "evidence/dneskai-editor-cs-light-360.txt",
+    "metrics": "evidence/dneskai-editor-cs-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 344,
+        "y": 230
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 302,
+        "x": 29,
+        "y": 345
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 328,
+        "x": 16,
+        "y": 1622
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 328,
+        "x": 16,
+        "y": 2070
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 328,
+        "x": 16,
+        "y": 4615
+      }
+    ]
+  },
+  {
+    "id": "dneskai-editor-focused-cs-light-360",
+    "image": "evidence/dneskai-editor-focused-cs-light-360.png",
+    "dom": "evidence/dneskai-editor-focused-cs-light-360.txt",
+    "metrics": "evidence/dneskai-editor-focused-cs-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 12,
+        "y": -3031
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 344,
+        "y": -2817
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 302,
+        "x": 29,
+        "y": -2702
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 328,
+        "x": 16,
+        "y": -1425
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 328,
+        "x": 16,
+        "y": -977
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 328,
+        "x": 16,
+        "y": 1568
+      }
+    ]
+  },
+  {
+    "id": "dneskai-editor-ready-cs-dark-1440",
+    "image": "evidence/dneskai-editor-ready-cs-dark-1440.png",
+    "dom": "evidence/dneskai-editor-ready-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-editor-ready-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 4
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 194
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": -577
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": 64
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 607
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 1583
+      }
+    ]
+  },
+  {
+    "id": "dneskai-lab-cs-dark-1440",
+    "image": "evidence/dneskai-lab-cs-dark-1440.png",
+    "dom": "evidence/dneskai-lab-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-lab-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 222
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": 301
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": 942
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 1485
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 2458
+      }
+    ]
+  },
+  {
+    "id": "dneskai-lab-en-light-1440",
+    "image": "evidence/dneskai-lab-en-light-1440.png",
+    "dom": "evidence/dneskai-lab-en-light-1440.txt",
+    "metrics": "evidence/dneskai-lab-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 222
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Topics",
+        "width": 526.8,
+        "x": 289,
+        "y": 301
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Today",
+        "width": 208,
+        "x": 276,
+        "y": 942
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Tomorrow",
+        "width": 208,
+        "x": 276,
+        "y": 1485
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Comment and message",
+        "width": 336,
+        "x": 1060,
+        "y": 2441
+      }
+    ]
+  },
+  {
+    "id": "dneskai-mix-audio-cs-dark-1440",
+    "image": "evidence/dneskai-mix-audio-cs-dark-1440.png",
+    "dom": "evidence/dneskai-mix-audio-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-mix-audio-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 4
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 1120,
+        "x": 276,
+        "y": -5199
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 1120,
+        "x": 276,
+        "y": -5099
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 1120,
+        "x": 276,
+        "y": -3270
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 1120,
+        "x": 276,
+        "y": 440
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 1120,
+        "x": 276,
+        "y": 756
+      }
+    ]
+  },
+  {
+    "id": "dneskai-mix-cs-light-1024",
+    "image": "evidence/dneskai-mix-cs-light-1024.png",
+    "dom": "evidence/dneskai-mix-cs-light-1024.txt",
+    "metrics": "evidence/dneskai-mix-cs-light-1024.json",
+    "width": 1024,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1024,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": -223
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 704,
+        "x": 276,
+        "y": -951
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 704,
+        "x": 276,
+        "y": -851
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 704,
+        "x": 276,
+        "y": 978
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 704,
+        "x": 276,
+        "y": 4688
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 704,
+        "x": 276,
+        "y": 5004
+      }
+    ]
+  },
+  {
+    "id": "dneskai-mix-cs-light-1728",
+    "image": "evidence/dneskai-mix-cs-light-1728.png",
+    "dom": "evidence/dneskai-mix-cs-light-1728.txt",
+    "metrics": "evidence/dneskai-mix-cs-light-1728.json",
+    "width": 1728,
+    "height": 1050,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1728,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": -223
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 1408,
+        "x": 276,
+        "y": -951
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 1408,
+        "x": 276,
+        "y": -851
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 1408,
+        "x": 276,
+        "y": 978
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 1408,
+        "x": 276,
+        "y": 4688
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 1408,
+        "x": 276,
+        "y": 5004
+      }
+    ]
+  },
+  {
+    "id": "dneskai-mix-cs-light-430",
+    "image": "evidence/dneskai-mix-cs-light-430.png",
+    "dom": "evidence/dneskai-mix-cs-light-430.txt",
+    "metrics": "evidence/dneskai-mix-cs-light-430.json",
+    "width": 430,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 430,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 12,
+        "y": -5445
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 398,
+        "x": 16,
+        "y": -5319
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 398,
+        "x": 16,
+        "y": -5199
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 398,
+        "x": 16,
+        "y": -3370
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 398,
+        "x": 16,
+        "y": 440
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 398,
+        "x": 16,
+        "y": 876
+      }
+    ]
+  },
+  {
+    "id": "dneskai-mix-cs-light-768",
+    "image": "evidence/dneskai-mix-cs-light-768.png",
+    "dom": "evidence/dneskai-mix-cs-light-768.txt",
+    "metrics": "evidence/dneskai-mix-cs-light-768.json",
+    "width": 768,
+    "height": 1024,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 768,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": -223
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 448,
+        "x": 276,
+        "y": -951
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 448,
+        "x": 276,
+        "y": -851
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 448,
+        "x": 276,
+        "y": 978
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 448,
+        "x": 276,
+        "y": 4728
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 448,
+        "x": 276,
+        "y": 5064
+      }
+    ]
+  },
+  {
+    "id": "dneskai-posts-cs-dark-1440",
+    "image": "evidence/dneskai-posts-cs-dark-1440.png",
+    "dom": "evidence/dneskai-posts-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-posts-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Příspěvky",
+        "width": 448.7,
+        "x": 276,
+        "y": 154
+      }
+    ]
+  },
+  {
+    "id": "dneskai-sources-cs-dark-1440",
+    "image": "evidence/dneskai-sources-cs-dark-1440.png",
+    "dom": "evidence/dneskai-sources-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-sources-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 1120,
+        "x": 276,
+        "y": 154
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 1120,
+        "x": 276,
+        "y": 254
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 1120,
+        "x": 276,
+        "y": 2083
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 1120,
+        "x": 276,
+        "y": 5793
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 1120,
+        "x": 276,
+        "y": 6109
+      }
+    ]
+  },
+  {
+    "id": "dneskai-sources-cs-light-430",
+    "image": "evidence/dneskai-sources-cs-light-430.png",
+    "dom": "evidence/dneskai-sources-cs-light-430.txt",
+    "metrics": "evidence/dneskai-sources-cs-light-430.json",
+    "width": 430,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 430,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zdroje",
+        "width": 398,
+        "x": 16,
+        "y": 142
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Instagram profily 20",
+        "width": 398,
+        "x": 16,
+        "y": 262
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Weby 41",
+        "width": 398,
+        "x": 16,
+        "y": 2091
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Denní mix",
+        "width": 398,
+        "x": 16,
+        "y": 5901
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Hudba",
+        "width": 398,
+        "x": 16,
+        "y": 6337
+      }
+    ]
+  },
+  {
+    "id": "dneskai-unsaved-after-cs-dark-1440",
+    "image": "evidence/dneskai-unsaved-after-cs-dark-1440.png",
+    "dom": "evidence/dneskai-unsaved-after-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-unsaved-after-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 222
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": 301
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": 942
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 1485
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 2458
+      }
+    ]
+  },
+  {
+    "id": "dneskai-unsaved-before-cs-dark-1440",
+    "image": "evidence/dneskai-unsaved-before-cs-dark-1440.png",
+    "dom": "evidence/dneskai-unsaved-before-cs-dark-1440.txt",
+    "metrics": "evidence/dneskai-unsaved-before-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 4
+      },
+      {
+        "height": 1,
+        "tag": "H2",
+        "text": "Design Lab",
+        "width": 1,
+        "x": 1396,
+        "y": 194
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Náměty",
+        "width": 544.5,
+        "x": 289,
+        "y": -577
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Dnes",
+        "width": 208,
+        "x": 276,
+        "y": 64
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Zítra",
+        "width": 208,
+        "x": 276,
+        "y": 607
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Komentář a zpráva",
+        "width": 336,
+        "x": 1060,
+        "y": 1563
+      }
+    ]
+  },
+  {
+    "id": "goals-cs-dark-1440",
+    "image": "evidence/goals-cs-dark-1440.png",
+    "dom": "evidence/goals-cs-dark-1440.txt",
+    "metrics": "evidence/goals-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Cíle",
+        "width": 26.6,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Cíle",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "home-cs-dark-1440",
+    "image": "evidence/home-cs-dark-1440.png",
+    "dom": "evidence/home-cs-dark-1440.txt",
+    "metrics": "evidence/home-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Domů",
+        "width": 41.6,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 28,
+        "tag": "H2",
+        "text": "Dobré odpoledne, Jan",
+        "width": 183.4,
+        "x": 298,
+        "y": 158
+      },
+      {
+        "height": 24,
+        "tag": "H2",
+        "text": "Dnešní sedmička",
+        "width": 122.7,
+        "x": 298,
+        "y": 476
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Zahrada dokončení",
+        "width": 129.3,
+        "x": 1172,
+        "y": 553
+      },
+      {
+        "height": 24,
+        "tag": "H2",
+        "text": "Crony",
+        "width": 67.2,
+        "x": 298,
+        "y": 1264
+      }
+    ]
+  },
+  {
+    "id": "home-en-light-360",
+    "image": "evidence/home-en-light-360.png",
+    "dom": "evidence/home-en-light-360.txt",
+    "metrics": "evidence/home-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Home",
+        "width": 41.7,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 28,
+        "tag": "H2",
+        "text": "Good afternoon, Jan",
+        "width": 170.6,
+        "x": 34,
+        "y": 150
+      },
+      {
+        "height": 48,
+        "tag": "H2",
+        "text": "Today's seven",
+        "width": 56.3,
+        "x": 38,
+        "y": 764
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Completion garden",
+        "width": 128.7,
+        "x": 56,
+        "y": 1604
+      },
+      {
+        "height": 24,
+        "tag": "H2",
+        "text": "Crons",
+        "width": 67,
+        "x": 38,
+        "y": 2126
+      }
+    ]
+  },
+  {
+    "id": "ig-tips-cs-dark-1440",
+    "image": "evidence/ig-tips-cs-dark-1440.png",
+    "dom": "evidence/ig-tips-cs-dark-1440.txt",
+    "metrics": "evidence/ig-tips-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "IG TIPS",
+        "width": 51.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "IG TIPS",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Nápady na obsah1 tip",
+        "width": 1120,
+        "x": 276,
+        "y": 296
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Plan a month of posts around two topics",
+        "width": 524,
+        "x": 291,
+        "y": 350
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Formáty a úpravy1 tip",
+        "width": 1120,
+        "x": 276,
+        "y": 597
+      },
+      {
+        "height": 40,
+        "tag": "H3",
+        "text": "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post",
+        "width": 524,
+        "x": 291,
+        "y": 651
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Platformy a dosah1 tip",
+        "width": 1120,
+        "x": 276,
+        "y": 937
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Make the profile say what you offer and what to do next",
+        "width": 524,
+        "x": 291,
+        "y": 991
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Růst a udržení1 tip",
+        "width": 1120,
+        "x": 276,
+        "y": 1210
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Reward readers who bring a friend",
+        "width": 524,
+        "x": 291,
+        "y": 1264
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Bez skupiny1 tip",
+        "width": 1120,
+        "x": 276,
+        "y": 1462
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Check a free resource before relying on it",
+        "width": 524,
+        "x": 291,
+        "y": 1516
+      }
+    ]
+  },
+  {
+    "id": "inbox-en-light-1440",
+    "image": "evidence/inbox-en-light-1440.png",
+    "dom": "evidence/inbox-en-light-1440.txt",
+    "metrics": "evidence/inbox-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Inbox",
+        "width": 38.5,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Inbox",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "invoices-cs-dark-1440",
+    "image": "evidence/invoices-cs-dark-1440.png",
+    "dom": "evidence/invoices-cs-dark-1440.txt",
+    "metrics": "evidence/invoices-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Faktury",
+        "width": 53.2,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Faktury",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "invoices-en-light-360",
+    "image": "evidence/invoices-en-light-360.png",
+    "dom": "evidence/invoices-en-light-360.txt",
+    "metrics": "evidence/invoices-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Invoices",
+        "width": 57.7,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Invoices",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      }
+    ]
+  },
+  {
+    "id": "links-cs-dark-1440",
+    "image": "evidence/links-cs-dark-1440.png",
+    "dom": "evidence/links-cs-dark-1440.txt",
+    "metrics": "evidence/links-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Odkazy",
+        "width": 53.2,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Odkazy",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "login-cs-light-1440",
+    "image": "evidence/login-cs-light-1440.png",
+    "dom": "evidence/login-cs-light-1440.txt",
+    "metrics": "evidence/login-cs-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 180,
+        "tag": "H1",
+        "text": "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti.",
+        "width": 549.4,
+        "x": 200,
+        "y": 347
+      },
+      {
+        "height": 28,
+        "tag": "H2",
+        "text": "Přihlaste se do svého prostoru",
+        "width": 327.6,
+        "x": 887,
+        "y": 369
+      }
+    ]
+  },
+  {
+    "id": "marketing-cs-dark-1440",
+    "image": "evidence/marketing-cs-dark-1440.png",
+    "dom": "evidence/marketing-cs-dark-1440.txt",
+    "metrics": "evidence/marketing-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Marketing",
+        "width": 70.8,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Marketing",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Příprava návrhů",
+        "width": 426.8,
+        "x": 293,
+        "y": 305
+      }
+    ]
+  },
+  {
+    "id": "mobile-more-en-light-360",
+    "image": "evidence/mobile-more-en-light-360.png",
+    "dom": "evidence/mobile-more-en-light-360.txt",
+    "metrics": "evidence/mobile-more-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 58.7,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      }
+    ]
+  },
+  {
+    "id": "money-cs-dark-1440",
+    "image": "evidence/money-cs-dark-1440.png",
+    "dom": "evidence/money-cs-dark-1440.txt",
+    "metrics": "evidence/money-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Přehled peněz",
+        "width": 100.5,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Finance vývoje",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "notes-cs-dark-1440",
+    "image": "evidence/notes-cs-dark-1440.png",
+    "dom": "evidence/notes-cs-dark-1440.txt",
+    "metrics": "evidence/notes-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Poznámky",
+        "width": 72.9,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Poznámky",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "notes-en-light-360",
+    "image": "evidence/notes-en-light-360.png",
+    "dom": "evidence/notes-en-light-360.txt",
+    "metrics": "evidence/notes-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Notes",
+        "width": 41.6,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Notes",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      }
+    ]
+  },
+  {
+    "id": "opportunities-cs-dark-1440",
+    "image": "evidence/opportunities-cs-dark-1440.png",
+    "dom": "evidence/opportunities-cs-dark-1440.txt",
+    "metrics": "evidence/opportunities-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Příležitosti",
+        "width": 74.5,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Příležitosti",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Příležitosti se načtou, až o to požádáte",
+        "width": 1082,
+        "x": 295,
+        "y": 127
+      }
+    ]
+  },
+  {
+    "id": "project-activity-en-light-1440",
+    "image": "evidence/project-activity-en-light-1440.png",
+    "dom": "evidence/project-activity-en-light-1440.txt",
+    "metrics": "evidence/project-activity-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-communication-en-light-1440",
+    "image": "evidence/project-communication-en-light-1440.png",
+    "dom": "evidence/project-communication-en-light-1440.txt",
+    "metrics": "evidence/project-communication-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-competition-en-light-1440",
+    "image": "evidence/project-competition-en-light-1440.png",
+    "dom": "evidence/project-competition-en-light-1440.txt",
+    "metrics": "evidence/project-competition-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-finance-en-light-1440",
+    "image": "evidence/project-finance-en-light-1440.png",
+    "dom": "evidence/project-finance-en-light-1440.txt",
+    "metrics": "evidence/project-finance-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-knowledge-en-light-1440",
+    "image": "evidence/project-knowledge-en-light-1440.png",
+    "dom": "evidence/project-knowledge-en-light-1440.txt",
+    "metrics": "evidence/project-knowledge-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-monetization-en-light-1440",
+    "image": "evidence/project-monetization-en-light-1440.png",
+    "dom": "evidence/project-monetization-en-light-1440.txt",
+    "metrics": "evidence/project-monetization-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-overview-en-light-1440",
+    "image": "evidence/project-overview-en-light-1440.png",
+    "dom": "evidence/project-overview-en-light-1440.txt",
+    "metrics": "evidence/project-overview-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-repository-en-light-1440",
+    "image": "evidence/project-repository-en-light-1440.png",
+    "dom": "evidence/project-repository-en-light-1440.txt",
+    "metrics": "evidence/project-repository-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-scaling-en-light-1440",
+    "image": "evidence/project-scaling-en-light-1440.png",
+    "dom": "evidence/project-scaling-en-light-1440.txt",
+    "metrics": "evidence/project-scaling-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "project-tasks-en-light-1440",
+    "image": "evidence/project-tasks-en-light-1440.png",
+    "dom": "evidence/project-tasks-en-light-1440.txt",
+    "metrics": "evidence/project-tasks-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projects",
+        "width": 57.9,
+        "x": 272,
+        "y": 32
+      }
+    ]
+  },
+  {
+    "id": "projects-cs-dark-1440",
+    "image": "evidence/projects-cs-dark-1440.png",
+    "dom": "evidence/projects-cs-dark-1440.txt",
+    "metrics": "evidence/projects-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 58.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Projekty",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "prompts-cs-dark-1440",
+    "image": "evidence/prompts-cs-dark-1440.png",
+    "dom": "evidence/prompts-cs-dark-1440.txt",
+    "metrics": "evidence/prompts-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Prompty",
+        "width": 60.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Prompty",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 37,
+        "tag": "H2",
+        "text": "Audit projektu1 prompt",
+        "width": 1120,
+        "x": 276,
+        "y": 222
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Code review",
+        "width": 307.3,
+        "x": 289,
+        "y": 284
+      },
+      {
+        "height": 37,
+        "tag": "H2",
+        "text": "Analýza projektu1 prompt",
+        "width": 1120,
+        "x": 276,
+        "y": 434
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Explain code",
+        "width": 307.3,
+        "x": 289,
+        "y": 496
+      },
+      {
+        "height": 37,
+        "tag": "H2",
+        "text": "Dokumentace1 prompt",
+        "width": 1120,
+        "x": 276,
+        "y": 646
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Commit message",
+        "width": 307.3,
+        "x": 289,
+        "y": 708
+      },
+      {
+        "height": 37,
+        "tag": "H2",
+        "text": "SEO1 prompt",
+        "width": 1120,
+        "x": 276,
+        "y": 858
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "SEO check",
+        "width": 242.5,
+        "x": 289,
+        "y": 920
+      },
+      {
+        "height": 37,
+        "tag": "H2",
+        "text": "Marketing1 prompt",
+        "width": 1120,
+        "x": 276,
+        "y": 1070
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Launch announcement",
+        "width": 242.5,
+        "x": 289,
+        "y": 1132
+      }
+    ]
+  },
+  {
+    "id": "references-en-light-1440",
+    "image": "evidence/references-en-light-1440.png",
+    "dom": "evidence/references-en-light-1440.txt",
+    "metrics": "evidence/references-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "References",
+        "width": 79.4,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "References",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 16.5,
+        "tag": "H3",
+        "text": "Git scripts",
+        "width": 76.4,
+        "x": 289,
+        "y": 324
+      },
+      {
+        "height": 16.5,
+        "tag": "H3",
+        "text": "Essential shortcuts (translated)",
+        "width": 238.9,
+        "x": 857,
+        "y": 324
+      },
+      {
+        "height": 16.5,
+        "tag": "H3",
+        "text": "Key substitutions",
+        "width": 424.5,
+        "x": 289,
+        "y": 479
+      }
+    ]
+  },
+  {
+    "id": "settings-cs-dark-1440",
+    "image": "evidence/settings-cs-dark-1440.png",
+    "dom": "evidence/settings-cs-dark-1440.txt",
+    "metrics": "evidence/settings-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Nastavení",
+        "width": 69.6,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Nastavení",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "settings-en-light-1440",
+    "image": "evidence/settings-en-light-1440.png",
+    "dom": "evidence/settings-en-light-1440.txt",
+    "metrics": "evidence/settings-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 58.7,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "settings-en-light-360",
+    "image": "evidence/settings-en-light-360.png",
+    "dom": "evidence/settings-en-light-360.txt",
+    "metrics": "evidence/settings-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 58.7,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      }
+    ]
+  },
+  {
+    "id": "settings-top-cs-light-1440",
+    "image": "evidence/settings-top-cs-light-1440.png",
+    "dom": "evidence/settings-top-cs-light-1440.txt",
+    "metrics": "evidence/settings-top-cs-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Nastavení",
+        "width": 69.6,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Nastavení",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "settings-top-en-light-1440",
+    "image": "evidence/settings-top-en-light-1440.png",
+    "dom": "evidence/settings-top-en-light-1440.txt",
+    "metrics": "evidence/settings-top-en-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 58.7,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Settings",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "settings-verified-cs-light-1440",
+    "image": "evidence/settings-verified-cs-light-1440.png",
+    "dom": "evidence/settings-verified-cs-light-1440.txt",
+    "metrics": "evidence/settings-verified-cs-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Nastavení",
+        "width": 69.6,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Nastavení",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "subscriptions-cs-dark-1440",
+    "image": "evidence/subscriptions-cs-dark-1440.png",
+    "dom": "evidence/subscriptions-cs-dark-1440.txt",
+    "metrics": "evidence/subscriptions-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Předplatná",
+        "width": 76.8,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Předplatná",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "tasks-cs-dark-1440",
+    "image": "evidence/tasks-cs-dark-1440.png",
+    "dom": "evidence/tasks-cs-dark-1440.txt",
+    "metrics": "evidence/tasks-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Úkoly",
+        "width": 39.7,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Úkoly",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      }
+    ]
+  },
+  {
+    "id": "tasks-en-light-360",
+    "image": "evidence/tasks-en-light-360.png",
+    "dom": "evidence/tasks-en-light-360.txt",
+    "metrics": "evidence/tasks-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Tasks",
+        "width": 40,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Tasks",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      }
+    ]
+  },
+  {
+    "id": "tools-cs-dark-1440",
+    "image": "evidence/tools-cs-dark-1440.png",
+    "dom": "evidence/tools-cs-dark-1440.txt",
+    "metrics": "evidence/tools-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Nástroje",
+        "width": 59.3,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Nástroje",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Používá se2 nástroje",
+        "width": 1120,
+        "x": 276,
+        "y": 182
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Supabase",
+        "width": 510,
+        "x": 307,
+        "y": 234
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Vercel",
+        "width": 510,
+        "x": 873,
+        "y": 234
+      },
+      {
+        "height": 29,
+        "tag": "H2",
+        "text": "Zkušební1 nástroj",
+        "width": 1120,
+        "x": 276,
+        "y": 509
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Figma",
+        "width": 510,
+        "x": 307,
+        "y": 561
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Zjištěno z repozitářů8 nástrojů",
+        "width": 768,
+        "x": 276,
+        "y": 769
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Next.js",
+        "width": 47.2,
+        "x": 289,
+        "y": 903
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "React",
+        "width": 38.6,
+        "x": 289,
+        "y": 1006
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Resend",
+        "width": 50.2,
+        "x": 289,
+        "y": 1090
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Sentry",
+        "width": 44.8,
+        "x": 289,
+        "y": 1173
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "sharp",
+        "width": 38.5,
+        "x": 289,
+        "y": 1256
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Stripe",
+        "width": 40.8,
+        "x": 289,
+        "y": 1339
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "TanStack Query",
+        "width": 107,
+        "x": 289,
+        "y": 1423
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Vite",
+        "width": 26.9,
+        "x": 289,
+        "y": 1506
+      }
+    ]
+  },
+  {
+    "id": "transactions-cs-dark-1440",
+    "image": "evidence/transactions-cs-dark-1440.png",
+    "dom": "evidence/transactions-cs-dark-1440.txt",
+    "metrics": "evidence/transactions-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Transakce",
+        "width": 72.2,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Peníze",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Přehled nákladů",
+        "width": 108.8,
+        "x": 293,
+        "y": 277
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Všechny náklady",
+        "width": 129.6,
+        "x": 293,
+        "y": 318
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Projekty",
+        "width": 69,
+        "x": 663,
+        "y": 318
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Předplatná",
+        "width": 86.4,
+        "x": 1033,
+        "y": 318
+      }
+    ]
+  },
+  {
+    "id": "transactions-en-light-360",
+    "image": "evidence/transactions-en-light-360.png",
+    "dom": "evidence/transactions-en-light-360.txt",
+    "metrics": "evidence/transactions-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Transactions",
+        "width": 90.6,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Money",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Cost overview",
+        "width": 95.4,
+        "x": 33,
+        "y": 420
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "All costs",
+        "width": 73.1,
+        "x": 33,
+        "y": 461
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Projects",
+        "width": 68.9,
+        "x": 33,
+        "y": 753
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Subscriptions",
+        "width": 107.3,
+        "x": 33,
+        "y": 985
+      }
+    ]
+  },
+  {
+    "id": "unauth-unknown-route-redirect-login-cs-light-1440",
+    "image": "evidence/unauth-unknown-route-redirect-login-cs-light-1440.png",
+    "dom": "evidence/unauth-unknown-route-redirect-login-cs-light-1440.txt",
+    "metrics": "evidence/unauth-unknown-route-redirect-login-cs-light-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "light",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 180,
+        "tag": "H1",
+        "text": "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti.",
+        "width": 549.4,
+        "x": 200,
+        "y": 348
+      },
+      {
+        "height": 28,
+        "tag": "H2",
+        "text": "Přihlaste se do svého prostoru",
+        "width": 327.6,
+        "x": 887,
+        "y": 371
+      }
+    ]
+  },
+  {
+    "id": "work-cs-dark-1440",
+    "image": "evidence/work-cs-dark-1440.png",
+    "dom": "evidence/work-cs-dark-1440.txt",
+    "metrics": "evidence/work-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Přehled práce",
+        "width": 97.6,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Přehled práce",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Čas podle oblasti",
+        "width": 403.6,
+        "x": 973,
+        "y": 352
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Příprava před spuštěním, termín tento týden",
+        "width": 403.6,
+        "x": 973,
+        "y": 860
+      },
+      {
+        "height": 21,
+        "tag": "H3",
+        "text": "pát 23. 10.",
+        "width": 403.6,
+        "x": 973,
+        "y": 1027
+      },
+      {
+        "height": 21,
+        "tag": "H3",
+        "text": "ned 25. 10.",
+        "width": 403.6,
+        "x": 973,
+        "y": 1177
+      }
+    ]
+  },
+  {
+    "id": "work-en-light-360",
+    "image": "evidence/work-en-light-360.png",
+    "dom": "evidence/work-en-light-360.txt",
+    "metrics": "evidence/work-en-light-360.json",
+    "width": 360,
+    "height": 800,
+    "theme": "light",
+    "lang": "en",
+    "documentWidth": 360,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Work overview",
+        "width": 103.3,
+        "x": 12,
+        "y": 16
+      },
+      {
+        "height": 30,
+        "tag": "H1",
+        "text": "Work overview",
+        "width": 328,
+        "x": 16,
+        "y": 72
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Time by channel",
+        "width": 294,
+        "x": 33,
+        "y": 728
+      },
+      {
+        "height": 16,
+        "tag": "H3",
+        "text": "Pre-launch due this week",
+        "width": 294,
+        "x": 33,
+        "y": 1310
+      },
+      {
+        "height": 21,
+        "tag": "H3",
+        "text": "Fri 23 Oct",
+        "width": 294,
+        "x": 33,
+        "y": 1517
+      },
+      {
+        "height": 21,
+        "tag": "H3",
+        "text": "Sun 25 Oct",
+        "width": 294,
+        "x": 33,
+        "y": 1707
+      }
+    ]
+  },
+  {
+    "id": "workflows-cs-dark-1440",
+    "image": "evidence/workflows-cs-dark-1440.png",
+    "dom": "evidence/workflows-cs-dark-1440.txt",
+    "metrics": "evidence/workflows-cs-dark-1440.json",
+    "width": 1440,
+    "height": 900,
+    "theme": "dark",
+    "lang": "cs",
+    "documentWidth": 1440,
+    "headings": [
+      {
+        "height": 22.5,
+        "tag": "H1",
+        "text": "Workflows",
+        "width": 74,
+        "x": 272,
+        "y": 32
+      },
+      {
+        "height": 0,
+        "tag": "H1",
+        "text": "Workflows",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "height": 24,
+        "tag": "H2",
+        "text": "Jak spolu oblasti souvisejí",
+        "width": 1120,
+        "x": 276,
+        "y": 146
+      },
+      {
+        "height": 24,
+        "tag": "H2",
+        "text": "Vyberte oblast",
+        "width": 1120,
+        "x": 276,
+        "y": 628
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Denní práce a plánování",
+        "width": 210,
+        "x": 276,
+        "y": 685
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Projekty a konkurence",
+        "width": 210,
+        "x": 276,
+        "y": 940
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Příležitosti, klienti a Kariéra",
+        "width": 210,
+        "x": 276,
+        "y": 1195
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Faktury a peníze",
+        "width": 210,
+        "x": 276,
+        "y": 1450
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Znalosti, odkazy a IG TIPS",
+        "width": 210,
+        "x": 276,
+        "y": 1685
+      },
+      {
+        "height": 40,
+        "tag": "H3",
+        "text": "Marketing pro devShark a DNESKAi",
+        "width": 210,
+        "x": 276,
+        "y": 1940
+      },
+      {
+        "height": 20,
+        "tag": "H3",
+        "text": "Nastavení a integrace",
+        "width": 210,
+        "x": 276,
+        "y": 2293
+      },
+      {
+        "height": 24,
+        "tag": "H2",
+        "text": "Od podkladu ke zkontrolovanému příspěvku",
+        "width": 332.1,
+        "x": 276,
+        "y": 2552
+      },
+      {
+        "height": 20,
+        "tag": "H2",
+        "text": "Další krok",
+        "width": 1120,
+        "x": 276,
+        "y": 3745
+      }
+    ]
+  }
+]

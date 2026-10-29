@@ -238,3 +238,43 @@ describe("isOverdue / effectiveStatus", () => {
     expect(effectiveStatus(invoice({ status: "cancelled", due_date: "2026-01-01" }), now)).toBe("cancelled");
   });
 });
+
+describe("payment QR input integrity", () => {
+  const iban = "CZ6508000000192000145399";
+  it.each(["not-an-account", "CZ6508000000192000145398", "CZ6508000000192000145399*AM:999.00"])("refuses an invalid explicit account without silently substituting the domestic account (%s)", value => {
+    expect(resolveIban({ iban: value, bank_account: "19-2000145399/0800" })).toBeNull();
+    expect(buildSpayd({ iban: value, amount: 1 })).toBeNull();
+  });
+  it.each([NaN, Infinity, -Infinity, -1, 0, 10_000_000, 1e21])("does not encode an unpayable or out-of-format amount %s", amount => {
+    expect(buildSpayd({ iban, amount })).toBeNull();
+  });
+  it.each(["CZK*AM:999.00", "CZ", "123", "ZZZ", "CZK\nACC:OTHER"])("refuses malformed currency fields (%s)", currency => {
+    expect(buildSpayd({ iban, amount: 1, currency })).toBeNull();
+  });
+  it.each(["2026-02-29", "2026-04-31", "2026-13-01", "2026-01-00", "20260101", "2026-01-01*AM:999.00"])("refuses an impossible or injected due date (%s)", dueDate => {
+    expect(buildSpayd({ iban, amount: 1, dueDate })).toBeNull();
+  });
+  it("preserves valid amount boundaries, lowercase currency and leap dates", () => {
+    expect(buildSpayd({ iban, amount: 9_999_999.99, currency: "czk", dueDate: "2028-02-29" })).toBe("SPD*1.0*ACC:CZ6508000000192000145399*AM:9999999.99*CC:CZK*DT:20280229");
+    expect(buildSpayd({ iban, amount: 0.01 })).toContain("AM:0.01");
+  });
+  it.each(["1/0100", "18-2000145399/0800", "0/0800", "19-2000145399/0000"])("refuses an invalid domestic checksum or empty account/bank (%s)", value => {
+    expect(czAccountToIban(value)).toBeNull();
+  });
+});
+
+
+it("preserves a published foreign IBAN example without a domestic fallback", () => {
+  expect(resolveIban({ iban: "BE62 5100 0754 7061", bank_account: null })).toBe("BE62510007547061");
+  expect(buildSpayd({ iban: "BE62510007547061", amount: 12, currency: "EUR" })).toBe("SPD*1.0*ACC:BE62510007547061*AM:12.00*CC:EUR");
+});
+it("refuses malformed or excessive optional payment fields without throwing", () => {
+  const base = { iban: "CZ6508000000192000145399", amount: 1 };
+  for (const patch of [{ variableSymbol: 7 }, { constantSymbol: {} }, { message: false }, { currency: null }, { dueDate: 0 }, { variableSymbol: "1".repeat(129) }, { message: "x".repeat(4097) }]) {
+    expect(buildSpayd({ ...base, ...patch } as unknown as Parameters<typeof buildSpayd>[0])).toBeNull();
+  }
+});
+
+it("keeps a recognized legacy currency outside the static FX list", () => {
+  expect(buildSpayd({ iban: "BE62510007547061", amount: 1200, currency: "JPY" })).toContain("CC:JPY");
+});

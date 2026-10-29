@@ -92,10 +92,10 @@ describe('Lab format switch (#165)', () => {
     const onChange = vi.fn();
     render(<DneskaiFormatSwitch value="carousel" onChange={onChange} preview={false} lang={lang} />); await settle();
     const t = dneskaiAudio[lang].format;
-    const radios = [...container.querySelectorAll('[role="radio"]')];
-    expect(radios.map((radio) => [radio.textContent, radio.getAttribute('aria-checked')])).toEqual([[t.carousel, 'true'], [t.reel, 'false']]);
+    const radios = [...container.querySelectorAll('input[type="radio"]')];
+    expect(radios.map((radio) => [radio.parentElement?.textContent, String((radio as HTMLInputElement).checked)])).toEqual([[t.carousel, 'true'], [t.reel, 'false']]);
     expect(container.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe(t.label);
-    act(() => { (radios[1] as HTMLButtonElement).click(); });
+    act(() => { (radios[1] as HTMLInputElement).click(); });
     expect(onChange).toHaveBeenCalledWith('reel');
   });
   it('is hidden while Reels are off and for a post that is not a carousel or Reel', async () => {
@@ -112,7 +112,7 @@ describe('Lab format switch (#165)', () => {
 describe('trending sounds in the picker and in Hudba (#167)', () => {
   const trend = { audioId: '587784541076604', title: 'Trend Song', artist: 'Trend Artist', type: 'music' as const, durationMs: 30_000, coverUrl: null, daysSeen: 3, nicheCount: 0, tiktok: false, attachable: true };
   it('lists trending sounds above the library and says Instagram adds the chosen one', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [track({ id: '11111111-1111-4111-8111-111111111111', title: 'One' })], trends: [trend] })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [track({ id: '11111111-1111-4111-8111-111111111111', title: 'One' })], trendsStatus: 'ready', trends: [trend] })));
     render(<DneskaiAudioPicker value="ig:587784541076604" onChange={() => {}} preview={false} lang="cs" />); await settle();
     const groups = [...container.querySelectorAll('optgroup')].map((group) => group.getAttribute('label'));
     expect(groups).toEqual([dneskaiAudio.cs.trends.title, dneskaiAudio.cs.title]);
@@ -120,7 +120,7 @@ describe('trending sounds in the picker and in Hudba (#167)', () => {
     expect(container.textContent).toContain(dneskaiAudio.cs.trends.attached);
   });
   it.each(['en', 'cs'] as const)('shows the trending list in Hudba with type and days (%s)', async (lang) => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trends: [trend] })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trendsStatus: 'ready', trends: [trend] })));
     render(<DneskaiAudioLibrary lang={lang} />); await settle();
     const t = dneskaiAudio[lang].trends;
     const list = container.querySelector('[data-testid="dneskai-audio-trends"]')!;
@@ -132,7 +132,7 @@ describe('trending sounds in the picker and in Hudba (#167)', () => {
 describe('niche sounds (#167)', () => {
   it('shows niche-only sounds in Hudba as hints and keeps them out of the picker', async () => {
     const hint = { audioId: '9', title: 'Niche Song', artist: null, type: 'music' as const, durationMs: null, coverUrl: null, daysSeen: 0, nicheCount: 2, tiktok: true, attachable: false };
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trends: [hint] })));
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ tracks: [], trendsStatus: 'ready', trends: [hint] })));
     render(<DneskaiAudioLibrary lang="en" />); await settle();
     const t = dneskaiAudio.en.trends;
     expect(container.querySelector('[data-testid="dneskai-audio-trends"]')?.textContent).toContain(`${t.type.music} · ${t.niche(2)} · ${t.tiktok} · ${t.hintOnly}`);
@@ -140,4 +140,35 @@ describe('niche sounds (#167)', () => {
     render(<DneskaiAudioPicker value={null} onChange={() => {}} preview={false} lang="en" />); await settle();
     expect(container.querySelector('option[value="ig:9"]')).toBeNull();
   });
+});
+
+
+it('loads a second music page only when requested and keeps the first page visible', async () => {
+  const fetcher = vi.fn(async (url: string) => Response.json(url.includes('offset=1') ? { tracks: [track({ id: '22222222-2222-4222-8222-222222222222', title: 'Later track' })], nextOffset: null } : { tracks: [track({ title: 'First track' })], nextOffset: 1, nextCursor: {id: track({}).id, createdAt: track({}).createdAt} }));
+  vi.stubGlobal('fetch', fetcher);
+  render(<DneskaiAudioLibrary lang="en" />); await settle();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  const more = [...container.querySelectorAll('button')].find(button => button.textContent === dneskaiAudio.en.loadMore)!;
+  act(() => more.click()); await settle();
+  expect(container.querySelectorAll('[data-testid="dneskai-audio-track"]')).toHaveLength(2);
+  expect(container.textContent).toContain('First track');
+  expect(container.textContent).toContain('Later track');
+  expect([...container.querySelectorAll('button')].some(button => button.textContent === dneskaiAudio.en.loadMore)).toBe(false);
+});
+
+it('resolves a saved disabled selection outside the first page without replacing it with rotation', async () => {
+  const selected = '22222222-2222-4222-8222-222222222222';
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => Response.json(url.includes('trackId=') ? { tracks: [track({ id: selected, title: 'Saved inactive', enabled: false })] } : { tracks: [track({ title: 'First page' })], nextOffset: 1, nextCursor: {id: track({}).id, createdAt: track({}).createdAt} })));
+  const onChange = vi.fn();
+  render(<DneskaiAudioPicker value={selected} onChange={onChange} preview={false} lang="en" />); await settle();
+  expect(container.querySelector('select')?.value).toBe(selected);
+  expect(container.querySelector(`option[value="${selected}"]`)?.textContent).toContain('Saved inactive');
+  expect(onChange).not.toHaveBeenCalled();
+});
+
+
+it('explains disabled Reels on the direct Music destination', async () => {
+  library(null); render(<DneskaiAudioLibrary lang="en" showDisabled />); await settle();
+  expect(container.querySelector('[role="status"]')?.textContent).toBe(dneskaiAudio.en.reelsOff);
+  expect(container.querySelector('form')).toBeNull();
 });

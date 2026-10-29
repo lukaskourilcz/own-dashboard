@@ -436,10 +436,13 @@ it('collects and reads media on the existing schema while rich evidence is disab
     expect(collected.candidates[0]).toMatchObject({ status: 'empty', assets: 0 });
     const rest = pgliteRestClient(pg);
     // No images in this fixture; the other queries execute their real SQL against the old columns.
-    const port = { from: (table: string) => table === 'marketing_media_asset_links' ? {
+    const port = { from: (table: string) => {
+      const query = table === 'marketing_media_asset_links' ? {
       select() { return this; }, eq() { return this; }, in() { return this; }, order() { return this; },
-      limit() { return Promise.resolve({ data: [], error: null }); },
-    } : rest.from(table) };
+      limit() { return this; }, then(resolve: (value: { data: never[]; error: null }) => unknown) { return Promise.resolve({ data: [], error: null }).then(resolve); },
+      } : rest.from(table);
+      return Object.assign(query, { retry() { return query; }, abortSignal() { return query; } });
+    } };
     const read = await readDneskaiMedia(port as unknown as DneskaiMediaDatabase, owner, project, { candidateId: id });
     expect(read.candidates[0].collection?.status).toBe('empty');
     expect(read.candidates[0]).not.toHaveProperty('articleText');

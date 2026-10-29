@@ -17,6 +17,7 @@ type NavStrings = {
   disconnectErr: string;
   networkErr: string;
   signOut: string;
+  signOutFailed: string;
   more: string;
   mobileNavigation: string;
   allAreas: string;
@@ -58,7 +59,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       settings: "Settings",
     },
     groups: { work: "Work", money: "Money", planning: "Planning", library: "Library" },
-    short: { opportunities: "Leads", subscriptions: "Subs", transactions: "Tx", competition: "Compete" },
+    short: { work: "Work", opportunities: "Leads", subscriptions: "Subs", transactions: "Tx", competition: "Compete" },
     theme: "Theme",
     settings: "Settings",
     collapse: "Collapse sidebar",
@@ -68,6 +69,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     disconnectErr: "Could not disconnect Google.",
     networkErr: "Network error.",
     signOut: "Sign out",
+    signOutFailed: "Sign-out could not be confirmed. Try again.",
     more: "More",
     mobileNavigation: "Primary navigation",
     allAreas: "All areas",
@@ -107,7 +109,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
       settings: "Nastavení",
     },
     groups: { work: "Práce", money: "Peníze", planning: "Plánování", library: "Knihovna" },
-    short: { opportunities: "Lead", subscriptions: "Předpl.", transactions: "Trans.", competition: "Konkur." },
+    short: { work: "Práce", opportunities: "Lead", subscriptions: "Předpl.", transactions: "Trans.", competition: "Konkur." },
     theme: "Motiv",
     settings: "Nastavení",
     collapse: "Sbalit panel",
@@ -117,6 +119,7 @@ export const nav: { en: NavStrings; cs: NavStrings } = {
     disconnectErr: "Nepodařilo se odpojit Google.",
     networkErr: "Chyba sítě.",
     signOut: "Odhlásit se",
+    signOutFailed: "Odhlášení se nepodařilo potvrdit. Zkuste to znovu.",
     more: "Více",
     mobileNavigation: "Hlavní navigace",
     allAreas: "Všechny sekce",

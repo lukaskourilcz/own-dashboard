@@ -45,19 +45,20 @@ describe("selectDeadUrls", () => {
     expect(probed).toEqual(["https://a.test/1", "https://b.test/2"]);
   });
 
-  it("stops probing once the time budget is spent and keeps the rest", async () => {
+  it("keeps timely proof but discards a late batch and never starts the next", async () => {
     const probed: string[] = [];
     let clock = 0;
     const dead = await selectDeadUrls(urls, {
       batchSize: 1,
       budgetMs: 10,
-      now: () => (clock += 6), // first batch starts at 6, second checks at 12
+      now: () => clock,
       probe: async (url) => {
         probed.push(url);
+        clock += 6; // Work, rather than observing the clock, consumes the budget.
         return 404;
       },
     });
-    expect(probed).toEqual(["https://a.test/1"]);
+    expect(probed).toEqual(["https://a.test/1", "https://b.test/2"]);
     expect(dead.size).toBe(1);
   });
 

@@ -1,8 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "motion/react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { differenceInCalendarDays, format } from "date-fns";
 import {
   CalendarPlus,
@@ -14,8 +12,10 @@ import {
   Target,
   Trash2,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { collectionPage } from "@/lib/collection-page";
+import { CollectionPagination } from "@/components/ui/collection-pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,15 @@ import { PageHeader, SectionLabel } from "@/components/ui/page-header";
 import { SimpleSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
+import { usePlanActions } from "@/components/plans/use-plan-actions";
+import { PlanRecordError } from "@/lib/plan-records";
+import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
 import { cn } from "@/lib/utils";
 import { useDict, useDateLocale } from "@/lib/i18n";
-import { qk } from "@/lib/queries/keys";
+import { parseDateOnly } from "@/lib/date-keys";
+import { useNow } from "@/lib/use-now";
 import type { Plan, PlanRecurrence, PlanStatus, Updater } from "@/lib/types";
 
 const RECURRENCES: PlanRecurrence[] = ["none", "weekly", "biweekly", "monthly"];
@@ -81,171 +84,38 @@ export function PlansPanel({
   plans: Plan[];
   setPlans: Updater<Plan[]>;
 }) {
-  const supabase = createClient();
-  const qc = useQueryClient();
-  const t = useDict();
-  const confirm = useConfirmation();
-  const [form, setForm] = useState<FormState>(empty);
-  const [error, setError] = useState<string | null>(null);
-  const [calendarNote, setCalendarNote] = useState<string | null>(null);
+  const owner = useOwnerPreferences(), navigate = useGuardedNavigation();
+  const lifetime = useRef(new AbortController());
+  useLayoutEffect(() => { if (lifetime.current.signal.aborted) lifetime.current = new AbortController(); return () => lifetime.current.abort(); }, []);
+  const actions = usePlanActions(setPlans, plans), t = useDict(), now = useNow();
+  const [formOpen, setFormOpen] = useState(false), [form, setForm] = useState<FormState>(empty);
+  const [error, setError] = useState<string | null>(null), [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(0);
   const [view, setView] = useState<"board" | "timeline">("board");
-
-  // CREATE: needs the server-generated row (and the linked calendar event id),
-  // so this stays non-optimistic — apply to the cache in onSuccess. The
-  // calendar-event fetch + follow-up linked_calendar_event_id update are part
-  // of the mutation flow and are left exactly as before.
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const { data: plan, error: planErr } = await supabase
-        .from("plans")
-        .insert({
-          user_id: userId,
-          title: form.title.trim(),
-          target_date: form.target_date || null,
-          status: form.status,
-          recurrence: form.recurrence,
-          notes: form.notes.trim() || null,
-        })
-        .select()
-        .single();
-      if (planErr || !plan) {
-        throw new Error(planErr?.message ?? t.plans.couldNotSavePlan);
-      }
-
-      let saved: Plan = plan;
-      if (form.addToCalendar && form.target_date) {
-        const res = await fetch("/api/calendar/event", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            title: form.title.trim(),
-            date: form.target_date,
-            allDay: true,
-            description: form.notes.trim(),
-            recurrence: "none",
-          }),
-        });
-        if (res.ok) {
-          const ev = await res.json();
-          const { data: updated } = await supabase
-            .from("plans")
-            .update({ linked_calendar_event_id: ev.id })
-            .eq("id", plan.id)
-            .select()
-            .single();
-          if (updated) saved = updated;
-        } else {
-          setCalendarNote(t.plans.calendarEventFailed);
-        }
-      }
-      return saved;
-    },
-    onSuccess: (saved) => {
-      setPlans((prev) => [saved, ...prev]);
-      setForm(empty);
-      void qc.invalidateQueries({ queryKey: qk.plans });
-    },
-    onError: (e) => {
-      // Original returned silently when there was no authenticated user.
-      if (e instanceof Error && e.message === "no-user") return;
-      setError(e instanceof Error ? e.message : t.plans.couldNotSavePlan);
-    },
-  });
-
-  // Optimistic: the status flips in the cache immediately, rolls back on
-  // error, and reconciles with the DB via invalidate once settled.
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ plan, status }: { plan: Plan; status: PlanStatus }) => {
-      const { error } = await supabase
-        .from("plans")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", plan.id);
-      if (error) throw error;
-    },
-    onMutate: async ({ plan, status }) => {
-      await qc.cancelQueries({ queryKey: qk.plans });
-      const prev = qc.getQueryData<Plan[]>(qk.plans);
-      setPlans((old) =>
-        old.map((p) => (p.id === plan.id ? { ...p, status } : p)),
-      );
-      return { prev };
-    },
-    onError: (_e, _vars, ctx) => {
-      if (ctx?.prev) setPlans(ctx.prev);
-    },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.plans }),
-  });
-
-  // DELETE: original removed from state only after a successful delete, so
-  // this applies the cache change in onSuccess (post-success), then fires the
-  // best-effort calendar-event cleanup fetch.
-  const removeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("plans").delete().eq("id", id);
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: (id) => {
-      const plan = plans.find((p) => p.id === id);
-      setPlans((prev) => prev.filter((p) => p.id !== id));
-      // Best-effort: delete the linked Google Calendar event so it doesn't
-      // orphan. Server treats 404/410 as success; failures here are silent.
-      if (plan?.linked_calendar_event_id) {
-        fetch("/api/calendar/event", {
-          method: "DELETE",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: plan.linked_calendar_event_id }),
-        }).catch(() => {
-          /* network blip — event will be left as is in GCal */
-        });
-      }
-      void qc.invalidateQueries({ queryKey: qk.plans });
-    },
-  });
-
-  const saving = addMutation.isPending;
-
-  function addPlan(e: React.FormEvent) {
-    e.preventDefault();
+  const savingRef = useRef(false), creationId = useRef<string | null>(null);
+  const dirty = JSON.stringify(form) !== JSON.stringify(empty);
+  const valid = !!form.title.trim() && form.title.trim().length <= 500 && (!form.addToCalendar || !!form.target_date);
+  const reset = () => { creationId.current = null; setError(null); setForm(empty); setFormOpen(false); };
+  const close = (open: boolean) => { if (open) setFormOpen(true); else if (!savingRef.current) navigate(reset); };
+  async function savePlan(): Promise<boolean> {
+    if (savingRef.current || !formOpen) return false;
+    if (isGuestTour()) { guestReadOnlyError(); return false; }
     setError(null);
-    setCalendarNote(null);
-    if (!form.title.trim()) {
-      setError(t.plans.titleRequired);
-      return;
-    }
-    if (form.addToCalendar && !form.target_date) {
-      setError(t.plans.targetDateRequiredForCalendar);
-      return;
-    }
-    addMutation.mutate();
+    if (!form.title.trim() || form.title.trim().length > 500) { setError(t.plans.titleRequired); return false; }
+    if (form.addToCalendar && !form.target_date) { setError(t.plans.targetDateRequiredForCalendar); return false; }
+    const original = owner?.capture();
+    const captured = original ? { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) } : null;
+    if (!captured || captured.signal.aborted) { setError(t.plans.saveUnconfirmed); return false; }
+    savingRef.current = true; setSaving(true); creationId.current ??= crypto.randomUUID();
+    try {
+      await actions.create(creationId.current, { title: form.title.trim(), target_date: form.target_date || null, status: form.status, recurrence: form.recurrence, notes: form.notes.trim() || null }, form.addToCalendar);
+      captured.signal.throwIfAborted(); setPage(0); reset(); return true;
+    } catch (error) {
+      if (!captured.signal.aborted) setError(error instanceof PlanRecordError && error.reason === 'changed' ? t.plans.planChanged : t.plans.saveUnconfirmed);
+      return false;
+    } finally { savingRef.current = false; if (!captured.signal.aborted) setSaving(false); }
   }
-
-  function updateStatus(plan: Plan, status: PlanStatus) {
-    updateStatusMutation.mutate({ plan, status });
-  }
-
-  async function removePlan(id: string) {
-    if (await confirm({
-      title: t.common.delete,
-      description: t.common.deletePermanentlyConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) removeMutation.mutate(id);
-  }
-
-  const grouped = useMemo(() => {
-    const map: Record<PlanStatus, Plan[]> = {
-      idea: [],
-      active: [],
-      done: [],
-      dropped: [],
-    };
-    for (const p of plans) map[p.status].push(p);
-    return map;
-  }, [plans]);
+  useUnsavedDraft({ dirty: formOpen && dirty, pending: saving, canSave: valid && !saving, save: savePlan, discard: reset });
 
   const timeline = useMemo(
     () =>
@@ -258,60 +128,48 @@ export function PlansPanel({
     [plans],
   );
 
+  const currentPage = useMemo(() => collectionPage(view === 'board' ? plans : timeline, page), [view, plans, timeline, page]);
+  if (page !== currentPage.index) setPage(currentPage.index);
+  const grouped = useMemo(() => {
+    const map: Record<PlanStatus, Plan[]> = { idea: [], active: [], done: [], dropped: [] };
+    for (const plan of currentPage.items) map[plan.status].push(plan);
+    return map;
+  }, [currentPage.items]);
+  const totals = useMemo(() => {
+    const result: Record<PlanStatus, number> = { idea: 0, active: 0, done: 0, dropped: 0 };
+    for (const plan of plans) result[plan.status]++;
+    return result;
+  }, [plans]);
+
   return (
-    <div>
+    <Dialog open={formOpen} onOpenChange={close}>
+    <div className="mx-auto w-full max-w-5xl">
       <PageHeader
         title={t.plans.title}
         description={t.plans.description}
         action={
-          <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setView("board")}
-              className={cn(
-                "px-2.5 py-1 rounded transition-colors",
-                view === "board"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground-muted hover:text-foreground",
-              )}
-            >
-              {t.plans.board}
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("timeline")}
-              className={cn(
-                "px-2.5 py-1 rounded transition-colors",
-                view === "timeline"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground-muted hover:text-foreground",
-              )}
-            >
-              {t.plans.timeline}
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <DialogTrigger asChild><Button ref={button => actions.registerNewControl(button)}><Plus />{t.plans.newPlan}</Button></DialogTrigger>
+            <div className="inline-flex gap-1">
+              <Button variant={view === 'board' ? 'subtle' : 'ghost'} aria-pressed={view === 'board'} onClick={() => { setPage(0); setView('board'); }}>{t.plans.board}</Button>
+              <Button variant={view === 'timeline' ? 'subtle' : 'ghost'} aria-pressed={view === 'timeline'} onClick={() => { setPage(0); setView('timeline'); }}>{t.plans.timeline}</Button>
+            </div>
           </div>
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="inline-flex items-center gap-1.5">
-              <Target className="h-3 w-3" /> {t.plans.newPlan}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addPlan} className="space-y-3">
+      <DialogContent className="max-w-lg" aria-describedby={undefined} aria-busy={saving} showClose={!saving} onEscapeKeyDown={event => { if (savingRef.current) event.preventDefault(); }} onPointerDownOutside={event => { if (savingRef.current) event.preventDefault(); }}><DialogHeader><DialogTitle>{t.plans.newPlan}</DialogTitle></DialogHeader><form onSubmit={event => { event.preventDefault(); void savePlan(); }} className="space-y-3"><fieldset disabled={saving} className="min-w-0 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="plan-title">{t.plans.formTitle}</Label>
                 <Input
                   id="plan-title"
+                  autoFocus maxLength={500}
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder={t.plans.titlePlaceholder}
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5">
                 <Label htmlFor="plan-status">{t.plans.status}</Label>
                 <SimpleSelect
                   id="plan-status"
@@ -353,6 +211,7 @@ export function PlansPanel({
                   }))}
                 />
               </div>
+              </div>
               {form.recurrence === "none" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="plan-date">{t.plans.targetDate}</Label>
@@ -378,7 +237,7 @@ export function PlansPanel({
               </div>
               <label
                 className={cn(
-                  "inline-flex items-center gap-2 text-xs text-foreground-muted",
+                  "inline-flex min-h-11 items-center gap-2 text-xs text-foreground-muted md:min-h-8",
                   form.recurrence !== "none" && "hidden",
                 )}
               >
@@ -393,25 +252,16 @@ export function PlansPanel({
                 <CalendarPlus className="h-3 w-3" />
                 {t.plans.addToCalendar}
               </label>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              {calendarNote && (
-                <p className="text-xs text-warning">{calendarNote}</p>
-              )}
+              {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
               <Button type="submit" disabled={saving} className="w-full">
                 <Plus className="h-3.5 w-3.5" />
                 {saving ? t.plans.saving : t.plans.addPlan}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>
-              {view === "board" ? t.plans.statusBoard : t.plans.timeline}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </fieldset></form></DialogContent>
+      {actions.calendarNotice && <p role="status" className="mb-3 text-sm text-warning">{t.plans[actions.calendarNotice]}</p>}
+      {actions.notice && <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 text-sm text-destructive"><span>{actions.notice === 'changed' ? t.plans.planChanged : t.plans.actionUnconfirmed}</span><Button variant="outline" disabled={actions.reloading || actions.pending.size > 0} onClick={() => void actions.reload()}>{actions.reloading ? t.common.loading : t.common.retry}</Button></div>}
+      <CollectionPagination page={currentPage} onPage={setPage} label={t.plans.pages} range={t.plans.pageRange} previous={t.plans.previous} next={t.plans.next} disabled={actions.pending.size > 0} />
+      <section aria-label={view === "board" ? t.plans.statusBoard : t.plans.timeline}>
             {plans.length === 0 ? (
               <EmptyState
                 icon={Target}
@@ -419,7 +269,7 @@ export function PlansPanel({
                 description={t.plans.noPlansDescription}
               />
             ) : view === "board" ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {STATUSES.map((s) => (
                   <div
                     key={s.key}
@@ -433,7 +283,7 @@ export function PlansPanel({
                         <SectionLabel>{t.plans.statusLabel[s.key]}</SectionLabel>
                       </div>
                       <span className="text-[10px] text-foreground-subtle tabular">
-                        {grouped[s.key].length}
+                        {grouped[s.key].length === totals[s.key] ? totals[s.key] : `${grouped[s.key].length}/${totals[s.key]}`}
                       </span>
                     </div>
                     <ul className="space-y-1.5">
@@ -441,13 +291,16 @@ export function PlansPanel({
                         <PlanCard
                           key={p.id}
                           plan={p}
-                          onStatus={(status) => updateStatus(p, status)}
-                          onDelete={() => removePlan(p.id)}
+                          pending={actions.pending.has(p.id)}
+                          deleteRef={button => actions.deleteControl(p.id, button)}
+                          actionRef={button => actions.actionControl(p.id, button)}
+                          onStatus={(status) => void actions.update(p, { status })}
+                          onDelete={() => void actions.remove(p)}
                         />
                       ))}
                       {grouped[s.key].length === 0 && (
                         <li className="text-[11px] text-foreground-subtle italic px-1">
-                          {t.plans.empty}
+                          {totals[s.key] ? t.plans.noneOnPage : t.plans.empty}
                         </li>
                       )}
                     </ul>
@@ -456,20 +309,23 @@ export function PlansPanel({
               </div>
             ) : (
               <ul className="space-y-2">
-                {timeline.map((p) => (
+                {currentPage.items.map((p) => (
                   <TimelineRow
                     key={p.id}
                     plan={p}
-                    onStatus={(status) => updateStatus(p, status)}
-                    onDelete={() => removePlan(p.id)}
+                    now={now}
+                    pending={actions.pending.has(p.id)}
+                    deleteRef={button => actions.deleteControl(p.id, button)}
+                    actionRef={button => actions.actionControl(p.id, button)}
+                    onStatus={(status) => void actions.update(p, { status })}
+                    onDelete={() => void actions.remove(p)}
                   />
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
-      </div>
+      </section>
     </div>
+    </Dialog>
   );
 }
 
@@ -477,22 +333,24 @@ function PlanCard({
   plan,
   onStatus,
   onDelete,
+  pending, deleteRef, actionRef,
 }: {
   plan: Plan;
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
+  pending: boolean; deleteRef: (button: HTMLButtonElement | null) => void; actionRef: (button: HTMLButtonElement | null) => void;
 }) {
   const t = useDict();
   const [editingStatus, setEditingStatus] = useState(false);
   return (
-    <motion.li
-      layout
-      className="rounded-md bg-surface border border-border p-2 shadow-soft"
+    <li
+      aria-busy={pending}
+      className="rounded-md bg-surface border border-border p-2"
     >
-      <div className="flex items-start gap-1">
+      <div className="flex items-center gap-1">
         <p
           className={cn(
-            "text-xs font-medium flex-1 min-w-0",
+            "text-xs font-medium flex-1 min-w-0 break-words [overflow-wrap:anywhere]",
             plan.status === "done" && "line-through text-foreground-subtle",
             plan.status === "dropped" && "line-through text-foreground-subtle",
           )}
@@ -501,19 +359,22 @@ function PlanCard({
         </p>
         <button
           type="button"
+          disabled={pending}
+          ref={actionRef}
           onClick={() => setEditingStatus((v) => !v)}
-          aria-label={t.plans.changeStatus}
-          className="text-foreground-subtle hover:text-foreground transition-colors"
+          aria-label={`${plan.title}: ${t.plans.changeStatus}`}
+          className="inline-flex min-h-11 min-w-11 md:min-h-7 md:min-w-7 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring disabled:opacity-40 disabled:cursor-wait"
         >
-          <Pencil className="h-2.5 w-2.5" />
+          <Pencil className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
+          ref={deleteRef} disabled={pending}
           onClick={onDelete}
-          aria-label={t.plans.deletePlan}
-          className="text-foreground-subtle hover:text-destructive transition-colors"
+          aria-label={`${plan.title}: ${t.plans.deletePlan}`}
+          className="inline-flex min-h-11 min-w-11 md:min-h-7 md:min-w-7 items-center justify-center text-foreground-subtle hover:text-destructive transition-colors focus-ring disabled:opacity-40 disabled:cursor-wait"
         >
-          <Trash2 className="h-2.5 w-2.5" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
       {(plan.target_date ||
@@ -545,8 +406,9 @@ function PlanCard({
                 onStatus(s.key);
                 setEditingStatus(false);
               }}
+              disabled={pending}
               className={cn(
-                "rounded px-[7px] py-[3px] text-[10px] font-medium uppercase tracking-wide",
+                "min-h-11 min-w-11 md:min-h-8 focus-ring disabled:opacity-40 disabled:cursor-wait rounded px-[7px] py-[3px] text-[10px] font-medium uppercase tracking-wide",
                 s.tone,
               )}
             >
@@ -558,35 +420,40 @@ function PlanCard({
           ))}
         </div>
       )}
-    </motion.li>
+    </li>
   );
 }
 
 function TimelineRow({
   plan,
+  now,
   onStatus,
   onDelete,
+  pending, deleteRef, actionRef,
 }: {
   plan: Plan;
+  now: Date | null;
   onStatus: (status: PlanStatus) => void;
   onDelete: () => void;
+  pending: boolean; deleteRef: (button: HTMLButtonElement | null) => void; actionRef: (button: HTMLButtonElement | null) => void;
 }) {
   const t = useDict();
   const locale = useDateLocale();
   const statusMeta = STATUSES.find((s) => s.key === plan.status)!;
-  const daysOut = plan.target_date
-    ? differenceInCalendarDays(new Date(plan.target_date), new Date())
+  const daysOut = plan.target_date && now
+    ? differenceInCalendarDays(parseDateOnly(plan.target_date), now)
     : null;
   return (
-    <motion.li
-      layout
-      className="group flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 transition-all duration-150 hover:border-border-strong"
+    <li
+      aria-busy={pending}
+      ref={element => actionRef(element?.querySelector<HTMLButtonElement>('button[role="combobox"]') ?? null)}
+      className="group grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[5rem_minmax(0,1fr)_6rem_auto]"
     >
       <div className="w-20 shrink-0 text-xs tabular">
         {plan.target_date ? (
           <>
             <p className="font-medium text-foreground">
-              {format(new Date(plan.target_date), t.plans.timelineDateFormat, {
+              {format(parseDateOnly(plan.target_date), t.plans.timelineDateFormat, {
                 locale,
               })}
             </p>
@@ -611,15 +478,15 @@ function TimelineRow({
           <p className="text-foreground-subtle">{t.plans.noDate}</p>
         )}
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex min-w-0 flex-col gap-1 md:flex-row md:items-center md:gap-4">
         <p
           className={cn(
-            "text-sm font-medium truncate flex items-center gap-1.5",
+            "min-w-0 flex-1 text-sm font-medium flex flex-wrap items-center gap-1.5",
             (plan.status === "done" || plan.status === "dropped") &&
               "line-through text-foreground-subtle",
           )}
         >
-          <span className="truncate">{plan.title}</span>
+          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{plan.title}</span>
           {plan.recurrence !== "none" && (
             <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-[7px] py-[3px] text-[10px] font-medium text-primary no-underline">
               <Repeat className="h-2 w-2" />
@@ -628,15 +495,17 @@ function TimelineRow({
           )}
         </p>
         {plan.notes && (
-          <p className="text-[11px] text-foreground-subtle truncate">
+          <p className="min-w-0 flex-1 break-words text-[11px] text-foreground-subtle [overflow-wrap:anywhere]">
             {plan.notes}
           </p>
         )}
       </div>
       <SimpleSelect
+        aria-label={`${plan.title}: ${t.plans.status}`}
         value={plan.status}
+        disabled={pending}
         onValueChange={(v) => onStatus(v as PlanStatus)}
-        className={cn("h-7 w-24 text-[11px]", statusMeta.tone)}
+        className={cn("col-start-2 row-start-2 w-24 text-[11px] sm:col-start-3 sm:row-start-1", statusMeta.tone)}
         options={STATUSES.map((s) => ({
           value: s.key,
           label: t.plans.statusLabel[s.key],
@@ -644,15 +513,16 @@ function TimelineRow({
       />
       <Tooltip content={t.plans.deletePlan}>
         <Button
-          size="icon-sm"
+          size="icon"
           variant="ghost"
+          ref={deleteRef} disabled={pending}
           onClick={onDelete}
-          aria-label={t.plans.deletePlan}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label={`${plan.title}: ${t.plans.deletePlan}`}
+          className="col-start-3 row-start-1 transition-opacity sm:col-start-4 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Trash2 className="h-3.5 w-3.5 text-destructive" />
         </Button>
       </Tooltip>
-    </motion.li>
+    </li>
   );
 }

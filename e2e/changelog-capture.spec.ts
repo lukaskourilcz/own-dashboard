@@ -73,7 +73,7 @@ const CAPTURES: readonly {
     tab: "IG TIPS",
     panelHeading: "IG TIPS",
     // The chip exists only once the fixture calendars are read.
-    control: "Not yet applied 3",
+    control: "Not referenced in loaded plans 3",
     charts: false,
   },
   {

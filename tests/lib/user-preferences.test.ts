@@ -6,6 +6,7 @@ import {
   PROJECT_WORKSPACE_TABS,
   isDneskaiProjectTab,
   normalizeHiddenProjectTabs,
+  projectTabFromQuery,
 } from "@/lib/project-workspace-tabs";
 
 const sql = readFileSync(
@@ -104,4 +105,10 @@ describe("synchronized user preferences", () => {
       tabCleanupSql.indexOf("add constraint user_preferences_hidden_project_tabs_check"),
     );
   });
+});
+
+it("seeds one canonical project tab without accepting ambiguous URL values", () => {
+  expect(projectTabFromQuery("repository")).toBe("repository");
+  expect(projectTabFromQuery("dneskai-review")).toBe("dneskai-review");
+  for (const value of [undefined, null, ["repository", "overview"], "unknown", " repository", "repository\n"]) expect(projectTabFromQuery(value)).toBe("");
 });

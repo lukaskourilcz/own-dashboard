@@ -1,0 +1,103 @@
+{
+  "finding": 301,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "ab7e3d32",
+  "state": "Actual synthetic uncertain template attempt retained separately from a later edited parent letter. No production data.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "8693546917017c2947a814bf469ac3716659149d7f44d831b3be5fa18ddea994",
+    "src/components/panels/career-templates-dialog.tsx": "10b25133c8e8256609001f31d294776eb57dfc89c596a1e7dace6fec248f5546",
+    "src/components/panels/use-career-template-write.ts": "6ef4df3506f96bd2856d0f552e62eda189dc440ef579508d83152664fe182232",
+    "src/components/panels/use-career-application-draft.ts": "ad4872cf48e707464321fbc46bd5761eba6bb83e4e4b13a2022cfe917cabe676"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1800
+      },
+      "box": {
+        "x": 432,
+        "y": 586.28125,
+        "width": 576,
+        "height": 627.4375
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.6458333333333335,
+          "y": 21.19733041139556,
+          "w": 86.9873046875,
+          "h": 5.1001095726666
+        },
+        {
+          "n": 2,
+          "x": 5.140516493055555,
+          "y": 28.847494770395457,
+          "w": 89.71896701388889,
+          "h": 10.518975993624863
+        },
+        {
+          "n": 3,
+          "x": 3.6458333333333335,
+          "y": 45.26347245741608,
+          "w": 92.70833333333333,
+          "h": 11.74419762924594
+        },
+        {
+          "n": 4,
+          "x": 3.6458333333333335,
+          "y": 59.557724872995315,
+          "w": 92.70833333333333,
+          "h": 23.070026895109073
+        }
+      ],
+      "asset": "career-template-draft-cs-1440.png",
+      "assetSha256": "76fc8a6d11322f2e6927d35948b5ab2e02045bfc50b8daffcec1ef94a2246740"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1800
+      },
+      "box": {
+        "x": 12,
+        "y": 462.5,
+        "width": 406,
+        "height": 875
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 15.2,
+          "w": 89.65517241379311,
+          "h": 16.457142857142856
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 33.48571428571429,
+          "w": 89.65517241379311,
+          "h": 14.857142857142858
+        },
+        {
+          "n": 3,
+          "x": 5.172413793103448,
+          "y": 52.57142857142857,
+          "w": 89.65517241379311,
+          "h": 10.057142857142857
+        },
+        {
+          "n": 4,
+          "x": 5.172413793103448,
+          "y": 64.45714285714286,
+          "w": 89.65517241379311,
+          "h": 19.885714285714286
+        }
+      ],
+      "asset": "career-template-draft-cs-430.png",
+      "assetSha256": "0516a9640f4c99fa7e122bfa75122b6e4f120d5c58e51f4bcde128b4ae329360"
+    }
+  }
+}

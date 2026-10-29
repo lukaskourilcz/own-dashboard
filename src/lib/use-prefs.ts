@@ -1,12 +1,12 @@
 "use client";
 
+import { useOwnerPreferences, unavailablePrivatePreference } from "@/lib/owner-preferences";
+import { useGuestPreferences } from "@/lib/guest-preferences";
 import { useSyncExternalStore } from "react";
-import {
-  LEGACY_ROUTE_ALIASES,
-  NAV_TABS,
-  isHiddenNavTab,
-  type NavTab,
-} from "@/lib/nav-tabs";
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
+import { subscribeStoredPreference } from "@/lib/preference-storage";
+import { normalizeNavPreferenceIds } from "@/lib/navigation-preferences";
+export { normalizeNavPreferenceIds };
 import {
   normalizeHiddenProjectTabs,
   type ProjectTabId,
@@ -28,12 +28,13 @@ const DEFAULT_DISPLAY_CURRENCY = "CZK";
 const CURRENCY_KEY = "displayCurrency";
 const currencyListeners = new Set<() => void>();
 let currencyCache: string | null = null;
+const normalizeCurrency = (value: string | null) => SUPPORTED_CURRENCIES.includes(value as typeof SUPPORTED_CURRENCIES[number]) ? value! : DEFAULT_DISPLAY_CURRENCY;
 
 function readCurrency(): string {
   if (currencyCache != null) return currencyCache;
   if (typeof window === "undefined") return DEFAULT_DISPLAY_CURRENCY;
   try {
-    currencyCache = localStorage.getItem(CURRENCY_KEY) || DEFAULT_DISPLAY_CURRENCY;
+    currencyCache = normalizeCurrency(localStorage.getItem(CURRENCY_KEY));
   } catch {
     currencyCache = DEFAULT_DISPLAY_CURRENCY;
   }
@@ -41,10 +42,7 @@ function readCurrency(): string {
 }
 
 function subscribeCurrency(cb: () => void): () => void {
-  currencyListeners.add(cb);
-  return () => {
-    currencyListeners.delete(cb);
-  };
+  return subscribeStoredPreference(CURRENCY_KEY, currencyListeners, cb, () => { currencyCache = null; });
 }
 
 const getServerCurrency = (): string => DEFAULT_DISPLAY_CURRENCY;
@@ -59,9 +57,9 @@ export function useDisplayCurrency(): {
     getServerCurrency,
   );
   const setCurrency = (next: string): void => {
-    currencyCache = next;
+    currencyCache = normalizeCurrency(next);
     try {
-      localStorage.setItem(CURRENCY_KEY, next);
+      localStorage.setItem(CURRENCY_KEY, currencyCache);
     } catch {
       // ignore
     }
@@ -80,31 +78,6 @@ const navListeners = new Set<() => void>();
 const EMPTY_HIDDEN: readonly string[] = Object.freeze([]);
 let hiddenCache: readonly string[] | null = null;
 
-// Sections a preference may hide or reorder. Home and Settings are always
-// shown; HIDDEN_NAV_TABS never appear in navigation, so they are not options.
-const PREFERENCE_NAV_IDS = new Set<string>(
-  NAV_TABS.filter((id) => id !== "home" && id !== "settings" && !isHiddenNavTab(id)),
-);
-
-/** Map meaningful legacy ids and discard removed/unknown sections. */
-export function normalizeNavPreferenceIds(input: unknown): NavTab[] {
-  if (!Array.isArray(input)) return [];
-  const seen = new Set<NavTab>();
-  const normalized: NavTab[] = [];
-  for (const item of input) {
-    if (typeof item !== "string") continue;
-    const mapped = (
-      item in LEGACY_ROUTE_ALIASES
-        ? LEGACY_ROUTE_ALIASES[item as keyof typeof LEGACY_ROUTE_ALIASES]
-        : item
-    ) as NavTab;
-    if (!PREFERENCE_NAV_IDS.has(mapped) || seen.has(mapped)) continue;
-    seen.add(mapped);
-    normalized.push(mapped);
-  }
-  return normalized;
-}
-
 function readHidden(): readonly string[] {
   if (hiddenCache != null) return hiddenCache;
   if (typeof window === "undefined") return EMPTY_HIDDEN;
@@ -119,10 +92,7 @@ function readHidden(): readonly string[] {
 }
 
 function subscribeHidden(cb: () => void): () => void {
-  navListeners.add(cb);
-  return () => {
-    navListeners.delete(cb);
-  };
+  return subscribeStoredPreference(HIDDEN_NAV_KEY, navListeners, cb, () => { hiddenCache = null; });
 }
 
 const getServerHidden = (): readonly string[] => EMPTY_HIDDEN;
@@ -140,9 +110,9 @@ export function useNavVisibility(): {
     getServerHidden,
   );
   const setHidden = (next: string[]): void => {
-    hiddenCache = Object.freeze([...next]);
+    hiddenCache = Object.freeze(normalizeNavPreferenceIds(next));
     try {
-      localStorage.setItem(HIDDEN_NAV_KEY, JSON.stringify(next));
+      localStorage.setItem(HIDDEN_NAV_KEY, JSON.stringify(hiddenCache));
     } catch {
       // ignore
     }
@@ -187,10 +157,7 @@ function readNavOrder(): readonly string[] {
 }
 
 function subscribeNavOrder(cb: () => void): () => void {
-  navOrderListeners.add(cb);
-  return () => {
-    navOrderListeners.delete(cb);
-  };
+  return subscribeStoredPreference(NAV_ORDER_KEY, navOrderListeners, cb, () => { navOrderCache = null; });
 }
 
 const getServerNavOrder = (): readonly string[] => EMPTY_ORDER;
@@ -206,9 +173,9 @@ export function useNavOrder(): {
     getServerNavOrder,
   );
   const setOrder = (next: string[]): void => {
-    navOrderCache = Object.freeze([...next]);
+    navOrderCache = Object.freeze(normalizeNavPreferenceIds(next));
     try {
-      localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(next));
+      localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(navOrderCache));
     } catch {
       // ignore — quota or privacy mode.
     }
@@ -258,8 +225,7 @@ function readHiddenProjectTabs(): readonly ProjectTabId[] {
 }
 
 function subscribeProjectTabs(cb: () => void): () => void {
-  projectTabListeners.add(cb);
-  return () => projectTabListeners.delete(cb);
+  return subscribeStoredPreference(HIDDEN_PROJECT_TABS_KEY, projectTabListeners, cb, () => { hiddenProjectTabsCache = null; });
 }
 
 export function useProjectTabVisibility(): {
@@ -313,10 +279,7 @@ function readCollapsed(): boolean {
 }
 
 function subscribeCollapsed(cb: () => void): () => void {
-  collapsedListeners.add(cb);
-  return () => {
-    collapsedListeners.delete(cb);
-  };
+  return subscribeStoredPreference(COLLAPSED_KEY, collapsedListeners, cb, () => { collapsedCache = null; });
 }
 
 const getServerCollapsed = (): boolean => false;
@@ -361,8 +324,8 @@ function readTasksPerCategory(): number {
   if (typeof window === "undefined") return DEFAULT_TASKS_PER_CATEGORY;
   try {
     const raw = localStorage.getItem(TASKS_PER_CATEGORY_KEY);
-    const n = raw == null ? NaN : Number(raw);
-    tasksPerCategoryCache = Number.isFinite(n) && n >= 0 ? n : DEFAULT_TASKS_PER_CATEGORY;
+    const n = raw?.trim() ? Number(raw) : NaN;
+    tasksPerCategoryCache = TASKS_PER_CATEGORY_OPTIONS.includes(n as typeof TASKS_PER_CATEGORY_OPTIONS[number]) ? n : DEFAULT_TASKS_PER_CATEGORY;
   } catch {
     tasksPerCategoryCache = DEFAULT_TASKS_PER_CATEGORY;
   }
@@ -370,10 +333,7 @@ function readTasksPerCategory(): number {
 }
 
 function subscribeTasksPerCategory(cb: () => void): () => void {
-  tasksPerCategoryListeners.add(cb);
-  return () => {
-    tasksPerCategoryListeners.delete(cb);
-  };
+  return subscribeStoredPreference(TASKS_PER_CATEGORY_KEY, tasksPerCategoryListeners, cb, () => { tasksPerCategoryCache = null; });
 }
 
 const getServerTasksPerCategory = (): number => DEFAULT_TASKS_PER_CATEGORY;
@@ -388,9 +348,9 @@ export function useTasksPerCategory(): {
     getServerTasksPerCategory,
   );
   const setCount = (next: number): void => {
-    tasksPerCategoryCache = next;
+    tasksPerCategoryCache = TASKS_PER_CATEGORY_OPTIONS.includes(next as typeof TASKS_PER_CATEGORY_OPTIONS[number]) ? next : DEFAULT_TASKS_PER_CATEGORY;
     try {
-      localStorage.setItem(TASKS_PER_CATEGORY_KEY, String(next));
+      localStorage.setItem(TASKS_PER_CATEGORY_KEY, String(tasksPerCategoryCache));
     } catch {
       // ignore
     }
@@ -400,47 +360,9 @@ export function useTasksPerCategory(): {
 }
 
 // ---------------------------------------------------------------------------
-// CV links — the user's Google-Docs CV URLs (Czech + English), surfaced as
-// buttons on the Career page and edited in Settings. Device-local strings;
-// empty = not set (the button is hidden).
+// CV links — owner-scoped drafts; guest edits use their isolated memory store.
 // ---------------------------------------------------------------------------
 
-/** A minimal localStorage-backed string preference following the same
- * cache + listener + useSyncExternalStore pattern as the prefs above. */
-function makeStringPref(key: string) {
-  const listeners = new Set<() => void>();
-  let cache: string | null = null;
-  return {
-    read(): string {
-      if (cache != null) return cache;
-      if (typeof window === "undefined") return "";
-      try {
-        cache = localStorage.getItem(key) ?? "";
-      } catch {
-        cache = "";
-      }
-      return cache;
-    },
-    subscribe(cb: () => void): () => void {
-      listeners.add(cb);
-      return () => {
-        listeners.delete(cb);
-      };
-    },
-    set(next: string): void {
-      cache = next;
-      try {
-        localStorage.setItem(key, next);
-      } catch {
-        // ignore — quota or privacy mode
-      }
-      for (const cb of listeners) cb();
-    },
-  };
-}
-
-const cvCsPref = makeStringPref("cvUrlCs");
-const cvEnPref = makeStringPref("cvUrlEn");
 const getServerCv = (): string => "";
 
 export function useCvLinks(): {
@@ -449,54 +371,34 @@ export function useCvLinks(): {
   setCs: (v: string) => void;
   setEn: (v: string) => void;
 } {
-  const cs = useSyncExternalStore(cvCsPref.subscribe, cvCsPref.read, getServerCv);
-  const en = useSyncExternalStore(cvEnPref.subscribe, cvEnPref.read, getServerCv);
-  return { cs, en, setCs: cvCsPref.set, setEn: cvEnPref.set };
+  const guest = useGuestPreferences(), owner = useOwnerPreferences();
+  const csPref = guest?.cvCs ?? owner?.cvCs ?? unavailablePrivatePreference, enPref = guest?.cvEn ?? owner?.cvEn ?? unavailablePrivatePreference;
+  const cs = useSyncExternalStore(csPref.subscribe, csPref.read, guest ? getServerCv : owner?.cvCs.serverRead ?? getServerCv);
+  const en = useSyncExternalStore(enPref.subscribe, enPref.read, guest ? getServerCv : owner?.cvEn.serverRead ?? getServerCv);
+  return { cs, en, setCs: csPref.set, setEn: enPref.set };
 }
 
 // ---------------------------------------------------------------------------
 // Repository filter — which repo ids stay pinned on the Repositories panel.
 // Persisted device-locally so the saved selection survives reloads even when
 // the server-synced copy (user_preferences.visible_repo_ids) isn't available.
-// `null` means "never set on this device" — callers fall back to the
-// server-provided value in that case. An empty array is meaningful: it means
-// the filter was explicitly cleared ("show all repos").
+// A missing, invalid or blocked device copy uses a confirmed server fallback.
+// The subscribed store exposes availability separately: an unknown selection
+// must not become "show all" for automatic project sync. An explicit empty
+// array still means the owner cleared the filter.
 // ---------------------------------------------------------------------------
 
-const REPO_FILTER_KEY = "visibleRepoIds";
-
-export function readRepoFilter(): string[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(REPO_FILTER_KEY);
-    if (raw == null) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return null;
-    return parsed.filter((x): x is string => typeof x === "string");
-  } catch {
-    return null;
-  }
-}
-
-export function writeRepoFilter(ids: string[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(REPO_FILTER_KEY, JSON.stringify(ids));
-  } catch {
-    // ignore — quota or privacy mode; the server sync is the fallback.
-  }
-}
+export { readRepoFilter, writeRepoFilter, useRepositoryFilter } from "@/lib/repository-filter";
 
 // The Oslo search is the default. This opt-in restores Czech career sources
 // and records without deleting the owner's earlier search history.
-const czechCareerPref = makeStringPref("showCzechCareer");
-const readCzechCareer = () => czechCareerPref.read() === "1";
 const serverCzechCareer = () => false;
-const setCzechCareer = (value: boolean) => czechCareerPref.set(value ? "1" : "0");
 
 export function useCzechCareerVisibility() {
+  const guest = useGuestPreferences(), owner = useOwnerPreferences();
+  const pref = guest?.czechCareer ?? owner?.czechCareer ?? unavailablePrivatePreference;
   const showCzechCareer = useSyncExternalStore(
-    czechCareerPref.subscribe, readCzechCareer, serverCzechCareer,
+    pref.subscribe, () => pref.read() === "1", guest ? serverCzechCareer : () => owner?.czechCareer.serverRead() === "1",
   );
-  return { showCzechCareer, setShowCzechCareer: setCzechCareer };
+  return { showCzechCareer, setShowCzechCareer: (value: boolean) => pref.set(value ? "1" : "0") };
 }

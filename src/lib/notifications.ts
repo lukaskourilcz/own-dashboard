@@ -1,4 +1,5 @@
 import type { AppNotification } from "@/lib/types";
+import { safeWebUrl } from "@/lib/web-url";
 
 export function isActionableNotification(
   notification: AppNotification,
@@ -11,12 +12,14 @@ export function isActionableNotification(
 }
 
 export function safeNotificationUrl(value: string | null): string | null {
-  if (!value) return null;
-  if (value.startsWith("/") && !value.startsWith("//")) return value;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
-  } catch {
-    return null;
+  if (typeof value !== "string" || value.length > 2000 || /\p{Cc}/u.test(value)) return null;
+  const raw = value.trim();
+  if (raw.startsWith("/")) {
+    if (raw.startsWith("//") || raw.includes("\\")) return null;
+    try {
+      const origin = "https://own-dashboard.invalid", target = new URL(raw, origin);
+      return target.origin === origin && !target.username && !target.password ? raw : null;
+    } catch { return null; }
   }
+  return safeWebUrl(raw);
 }

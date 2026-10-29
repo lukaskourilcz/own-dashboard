@@ -53,6 +53,10 @@ describe("the education DM (#158)", () => {
     expect(codes(REPLY.replace("Pozor:", "#lightroom Pozor:"))).toEqual(["caption-hashtag"]);
     expect(codes(REPLY.replace("Pozor:", "Napište do komentáře ANO. Pozor:"))).toEqual(["reply-message-cta"]);
   });
+  it.each(['Sledujte nás.', 'Napište SKILL do komentářů.', 'Komentujte pod příspěvkem.', 'Leave a comment below.'])('refuses an explicit audience call in the private message: %s', call => {
+    const offer = dneskaiBriefOffer(briefFixture(pictures), publishers);
+    expect(validateDneskaiReplyMessage(REPLY.replace('Pozor:', `${call} Pozor:`), offer).map(issue => issue.code)).toContain('reply-message-cta');
+  });
   it("asks the model for nothing new on a news brief: the system prompt keeps the comment ban and the news schema has no DM", () => {
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("no call to follow or comment");
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).not.toContain("replyMessage");
@@ -97,6 +101,16 @@ describe("generating an education post (#158)", () => {
     expect(model.invoke).toHaveBeenCalledTimes(2);
     expect(model.invoke.mock.calls[1]![0].prompt).toContain("replyMessage");
     expect(draft.revision.engagement?.replyMessage).toBe(REPLY);
+  });
+  it('retries a model-written follow call before rendering and keeps code in charge of the keyword line', async () => {
+    const invalid = { ...validCopy(pictures), caption: 'Sledujte nás pro další novinky.', replyMessage: REPLY };
+    const model = fakeModel([invalid, { ...validCopy(pictures), replyMessage: REPLY }]);
+    const draft = await generateMarketingDraft({ ...briefInput(briefPacket(briefFixture(pictures))), education: { keyword: 'SKILL' } }, dependencies(model));
+    expect(model.invoke).toHaveBeenCalledTimes(2);
+    expect(model.invoke.mock.calls[1]![0].prompt).toContain('[audience-call]');
+    expect(clean).toHaveBeenCalledTimes(1);
+    expect(draft.revision.caption).not.toContain('Sledujte nás');
+    expect(draft.revision.caption.split(dneskaiKeywordLine('SKILL'))).toHaveLength(2);
   });
   it("asks a news brief for no DM and writes no keyword line", async () => {
     const model = fakeModel([validCopy(pictures)]);

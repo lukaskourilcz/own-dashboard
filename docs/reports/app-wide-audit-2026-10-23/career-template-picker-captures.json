@@ -1,0 +1,89 @@
+{
+  "finding": 307,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "cf892a72",
+  "state": "Actual synthetic bounded template picker after repairing desktop preview height. No production data.",
+  "components": {
+    "src/components/panels/career-template-picker.tsx": "51d1733fdb5ba581843289cb3c05773c55765421d6928ec2fcb8bc01d500b389",
+    "src/components/panels/jobs-panel.tsx": "2e0401a474ac77db10de90277436a89bd03b409f0a70a0a774b0e9825b6ba522",
+    "src/components/ui/dialog.tsx": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa",
+    "src/lib/i18n/sections/jobs.ts": "a4dc818415c89758fba4315b7e7a6bc621a5d0adf4d572ce9c0a70b8be526356"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "box": {
+        "x": 432,
+        "y": 167,
+        "width": 576,
+        "height": 866
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.6458333333333335,
+          "y": 8.429561200923787,
+          "w": 92.70833333333333,
+          "h": 3.695150115473441
+        },
+        {
+          "n": 2,
+          "x": 3.6458333333333335,
+          "y": 13.51039260969977,
+          "w": 92.70833333333333,
+          "h": 76.21247113163972
+        },
+        {
+          "n": 3,
+          "x": 3.6458333333333335,
+          "y": 92.49422632794457,
+          "w": 92.70833333333333,
+          "h": 3.695150115473441
+        }
+      ],
+      "asset": "career-template-picker-cs-1440.png",
+      "assetSha256": "95c091c12ac928602d2e12617e97e2225dc1803276b612b68c65b2b2bf54bc70"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1200
+      },
+      "box": {
+        "x": 12,
+        "y": 135,
+        "width": 406,
+        "height": 930
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 9.56989247311828,
+          "w": 89.65517241379311,
+          "h": 4.731182795698925
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 15.591397849462366,
+          "w": 89.65517241379311,
+          "h": 70.96774193548387
+        },
+        {
+          "n": 3,
+          "x": 5.172413793103448,
+          "y": 89.13978494623656,
+          "w": 89.65517241379311,
+          "h": 7.311827956989247
+        }
+      ],
+      "asset": "career-template-picker-cs-430.png",
+      "assetSha256": "b19d4a9141a94748005510a1dded0ae081cd694394ef435fd605cc6b65fac754"
+    }
+  }
+}

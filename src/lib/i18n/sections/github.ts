@@ -5,12 +5,19 @@ type GithubStrings = {
   connectTitle: string;
   connectBody: string;
   connect: string;
+  connectErr: string;
   reconnect: string;
   // List
   search: string;
   empty: string;
   emptyHint: string;
   loadErr: string;
+  cachedReadFailed: string;
+  repositoryUnavailable: string;
+  recentPageLimit: (count: number) => string;
+  archivedReadOnly: string;
+  localRecords: string;
+  localRecordsAvailable: string;
   refresh: string;
   // Repo visibility filter (saved allow-list)
   filter: string;
@@ -23,6 +30,13 @@ type GithubStrings = {
   saving: string;
   filterSaved: string;
   filterErr: string;
+  filterLocalOnly: string;
+  filterServerOnly: string;
+  filterUnavailable: string;
+  filterUnlisted: (count: number) => string;
+  filterLimit: string;
+  filterChanged: string;
+  filterReload: string;
   pickAtLeastOne: string;
   filterHidesAll: string;
   showingCount: (shown: number, total: number) => string;
@@ -37,6 +51,7 @@ type GithubStrings = {
   disconnectConfirm: string;
   disconnectOk: string;
   disconnectErr: string;
+  disconnectLocalOnly: string;
   // Write-file dialog
   writeFile: string;
   writeTitle: string;
@@ -60,6 +75,9 @@ type GithubStrings = {
   committing: string;
   committedNew: string;
   committedUpdate: string;
+  alreadySaved: string;
+  fileChanged: string;
+  commitUnconfirmed: string;
   viewCommit: string;
   needPath: string;
   needContent: string;
@@ -96,6 +114,9 @@ type GithubStrings = {
   linkSavedToast: string;
   linkRemovedToast: string;
   linkErr: string;
+  linkLabel: string;
+  linkChanged: string;
+  linkReviewCurrent: string;
   // "Check NEEDED" — combined to-do built from every repo's NEEDED.md
   needed: {
     button: string;
@@ -104,6 +125,7 @@ type GithubStrings = {
     scanning: string;
     allClear: string;
     allClearDesc: string;
+    unavailable: (repos: string) => string;
     reconnect: string;
     checkOff: string;
     itemsCount: (n: number) => string;
@@ -120,12 +142,29 @@ type GithubStrings = {
 
 export const github: { en: GithubStrings; cs: GithubStrings } = {
   en: {
+    localRecords: "Saved records",
+    localRecordsAvailable: "Notes and links saved in OwnDashboard stay editable here.",
+    archivedReadOnly: "This repository is archived and read-only on GitHub.",
+    cachedReadFailed: "Could not refresh GitHub data. Previously loaded values may be out of date.",
+    repositoryUnavailable: "This repository is not visible to the connected GitHub account.",
+    recentPageLimit: count => `Showing the ${count} most recently pushed repositories. Other saved selections are kept; open a project to load its repository directly.`,
+    filterChanged: "Repository selection changed elsewhere. Your open selection has been kept; load the current selection before saving again.",
+    filterReload: "Load current selection",
+    filterLocalOnly: "Filter saved on this device. Cross-device sync was not confirmed.",
+    filterServerOnly: "Filter synchronized. Its offline copy could not be confirmed.",
+    filterUnavailable: "Repository selection is unavailable. Automatic project sync is paused; existing projects remain available.",
+    filterUnlisted: count => `${count} saved selections are outside this result page and will be kept.`,
+    filterLimit: "Choose up to 500 repositories.",
+    linkLabel: "Repository website",
+    linkChanged: "The saved link changed. Review its current value before saving your retained draft.",
+    linkReviewCurrent: "Review current value",
     title: "Repositories",
     subtitle: "Your active GitHub repositories.",
     connectTitle: "Connect GitHub",
     connectBody:
       "Link your GitHub account to manage a project's repository and publish markdown files from its workspace.",
     connect: "Connect GitHub",
+    connectErr: "Could not start the GitHub connection. Try again.",
     reconnect: "Reconnect GitHub",
     search: "Filter repos…",
     empty: "No repositories found.",
@@ -133,16 +172,16 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     loadErr: "Could not load repositories.",
     refresh: "Refresh",
     filter: "Choose repos",
-    filterTitle: "Choose repositories to show",
+    filterTitle: "Repositories for project sync",
     filterDesc:
-      "Only selected repositories are materialized as project workspaces. New repositories stay hidden until selected.",
+      "Choose repositories for automatic project sync. Existing project records stay available. Show all also includes newly found repositories.",
     filterSearch: "Search repositories…",
     selectAll: "Select all",
     showAll: "Show all",
     save: "Save",
     saving: "Saving…",
     filterSaved: "Repository filter saved.",
-    filterErr: "Could not save the filter.",
+    filterErr: "Could not confirm the filter. Your selection is still open.",
     pickAtLeastOne: "Select at least one repository, or choose Show all.",
     filterHidesAll: "Your filter hides every repository.",
     showingCount: (shown, total) => `Showing ${shown} of ${total}`,
@@ -157,6 +196,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     disconnectConfirm: "Disconnect GitHub? You can reconnect any time.",
     disconnectOk: "GitHub disconnected.",
     disconnectErr: "Could not disconnect GitHub.",
+    disconnectLocalOnly: "Disconnected locally. GitHub grant revocation could not be confirmed; review it in GitHub settings.",
     writeFile: "Write file",
     writeTitle: "Write a file to",
     writeHint: "Creates a commit on the chosen branch (defaults to the repo default).",
@@ -177,6 +217,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     commit: "Commit",
     committing: "Committing…",
     committedNew: "File created.",
+    alreadySaved: "The file already contains these contents.",
+    fileChanged: "The file changed on GitHub. Reload it before editing.",
+    commitUnconfirmed: "The save could not be confirmed. Check the repository before trying again.",
     committedUpdate: "File updated.",
     viewCommit: "View commit",
     needPath: "Enter a valid file path.",
@@ -196,7 +239,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     savingNotes: "Saving…",
     notesNothing: "Write a note before saving.",
     notesCommitMessage: "Update project notes",
-    notesSavedFile: (path) => `Saved to ${path} on GitHub.`,
+    notesSavedFile: (path) => `Saved to ${path} on GitHub. Notes remain in this dashboard.`,
     notesSavedCleared: (path) =>
       `${path} created on GitHub — notes cleared from the project workspace.`,
     notesPushErr: "Could not save notes to GitHub.",
@@ -223,6 +266,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       scanning: "Scanning repositories…",
       allClear: "All clear",
       allClearDesc: "No open NEEDED items across your repositories.",
+      unavailable: (repos) => `Lists unavailable: ${repos}. Only readable lists can be imported.`,
       reconnect: "Reconnect GitHub to sync NEEDED files.",
       checkOff: "Check off & remove from NEEDED.md",
       itemsCount: (n) => (n === 1 ? "1 item" : `${n} items`),
@@ -239,12 +283,29 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     },
   },
   cs: {
+    localRecords: "Uložené záznamy",
+    localRecordsAvailable: "Poznámky a odkazy uložené v OwnDashboard tu můžete dál upravovat.",
+    archivedReadOnly: "Tento repozitář je na GitHubu archivovaný a je pouze pro čtení.",
+    cachedReadFailed: "Data z GitHubu se nepodařilo obnovit. Dříve načtené hodnoty mohou být zastaralé.",
+    repositoryUnavailable: "Tento repozitář není dostupný připojenému účtu GitHub.",
+    recentPageLimit: count => `Zobrazuje se ${count} naposledy aktualizovaných repozitářů. Ostatní uložené výběry zůstávají zachovány; repozitář načtete přímo otevřením projektu.`,
+    filterChanged: "Výběr repozitářů se změnil jinde. Otevřený výběr zůstává zachován; před dalším uložením načtěte aktuální výběr.",
+    filterReload: "Načíst aktuální výběr",
+    filterLocalOnly: "Filtr je uložen v tomto zařízení. Synchronizaci mezi zařízeními se nepodařilo potvrdit.",
+    filterServerOnly: "Filtr je synchronizován. Kopii pro práci offline se nepodařilo potvrdit.",
+    filterUnavailable: "Výběr repozitářů není dostupný. Automatická synchronizace projektů je pozastavena; stávající projekty zůstávají dostupné.",
+    filterUnlisted: count => `${count} uložených výběrů není na této stránce výsledků a zůstane zachováno.`,
+    filterLimit: "Vyberte nejvýše 500 repozitářů.",
+    linkLabel: "Web repozitáře",
+    linkChanged: "Uložený odkaz se změnil. Před uložením zachovaného návrhu zkontrolujte jeho aktuální hodnotu.",
+    linkReviewCurrent: "Zkontrolovat aktuální hodnotu",
     title: "Repozitáře",
     subtitle: "Tvoje aktivní GitHub repozitáře.",
     connectTitle: "Připojit GitHub",
     connectBody:
       "Propoj GitHub účet a spravuj repozitář projektu i publikování markdown souborů přímo z jeho pracovního prostoru.",
     connect: "Připojit GitHub",
+    connectErr: "Připojení ke GitHubu se nepodařilo zahájit. Zkuste to znovu.",
     reconnect: "Znovu připojit GitHub",
     search: "Filtrovat repozitáře…",
     empty: "Žádné repozitáře.",
@@ -252,16 +313,16 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     loadErr: "Nepodařilo se načíst repozitáře.",
     refresh: "Obnovit",
     filter: "Vybrat repozitáře",
-    filterTitle: "Vyber repozitáře k zobrazení",
+    filterTitle: "Repozitáře pro synchronizaci projektů",
     filterDesc:
-      "Jen vybrané repozitáře se převedou na pracovní prostory projektů. Nové zůstanou skryté, dokud je nevybereš.",
+      "Vyberte repozitáře pro automatickou synchronizaci projektů. Stávající záznamy projektů zůstávají dostupné. Zobrazit vše zahrne i nově nalezené repozitáře.",
     filterSearch: "Hledat repozitáře…",
     selectAll: "Vybrat vše",
     showAll: "Zobrazit vše",
     save: "Uložit",
     saving: "Ukládám…",
     filterSaved: "Filtr repozitářů uložen.",
-    filterErr: "Nepodařilo se uložit filtr.",
+    filterErr: "Uložení filtru se nepodařilo potvrdit. Výběr zůstává otevřený.",
     pickAtLeastOne: "Vyber aspoň jeden repozitář, nebo zvol Zobrazit vše.",
     filterHidesAll: "Tvůj filtr skrývá všechny repozitáře.",
     showingCount: (shown, total) => `Zobrazeno ${shown} z ${total}`,
@@ -276,6 +337,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     disconnectConfirm: "Odpojit GitHub? Můžeš ho kdykoli připojit znovu.",
     disconnectOk: "GitHub odpojen.",
     disconnectErr: "Nepodařilo se odpojit GitHub.",
+    disconnectLocalOnly: "Místní připojení bylo odebráno. Zrušení oprávnění na GitHubu se nepodařilo potvrdit; zkontrolujte ho v nastavení GitHubu.",
     writeFile: "Zapsat soubor",
     writeTitle: "Zapsat soubor do",
     writeHint: "Vytvoří commit ve zvolené větvi (výchozí je hlavní větev repozitáře).",
@@ -296,6 +358,9 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     commit: "Commitnout",
     committing: "Commituji…",
     committedNew: "Soubor vytvořen.",
+    alreadySaved: "Soubor už obsahuje tento obsah.",
+    fileChanged: "Soubor se na GitHubu změnil. Před úpravou ho načtěte znovu.",
+    commitUnconfirmed: "Uložení se nepodařilo potvrdit. Před dalším pokusem zkontrolujte repozitář.",
     committedUpdate: "Soubor aktualizován.",
     viewCommit: "Zobrazit commit",
     needPath: "Zadej platnou cestu k souboru.",
@@ -315,7 +380,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
     savingNotes: "Ukládání…",
     notesNothing: "Před uložením napiš poznámku.",
     notesCommitMessage: "Aktualizace poznámek projektu",
-    notesSavedFile: (path) => `Uloženo do ${path} na GitHubu.`,
+    notesSavedFile: (path) => `Uloženo do ${path} na GitHubu. Poznámky zůstávají v dashboardu.`,
     notesSavedCleared: (path) =>
       `${path} vytvořen na GitHubu — poznámky z prostoru projektu smazány.`,
     notesPushErr: "Poznámky se nepodařilo uložit na GitHub.",
@@ -342,6 +407,7 @@ export const github: { en: GithubStrings; cs: GithubStrings } = {
       scanning: "Prohledávám repozitáře…",
       allClear: "Hotovo",
       allClearDesc: "Žádné otevřené NEEDED položky v repozitářích.",
+      unavailable: (repos) => `Nedostupné seznamy: ${repos}. Importovat lze jen načtené seznamy.`,
       reconnect: "Připoj znovu GitHub pro synchronizaci NEEDED souborů.",
       checkOff: "Odškrtnout a odebrat z NEEDED.md",
       itemsCount: (n) => {

@@ -1,3 +1,4 @@
+import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { z } from 'zod';
 import { ContentEngagementSchema, DneskaiRenderReportSchema, type DneskaiRenderReport } from './contracts';
 import { DneskaiBriefMediaSchema } from './dneskai-brief';
@@ -41,6 +42,8 @@ const count = z.number().int().nonnegative().max(1_000_000);
 export const DneskaiEngagementReceiptSchema = z.strictObject({
   commentsSeen: count, keywordMatches: count, privateSent: count, publicSent: count,
   failures: z.array(z.strictObject({ code, count })).max(10),
+  /** Complete failure count; the details list shows only the top ten codes. */
+  failedCount: count.optional(),
   lastCheckedAt: timestamp.nullable(),
 });
 export type DneskaiEngagementReceipt = z.infer<typeof DneskaiEngagementReceiptSchema>;
@@ -112,6 +115,9 @@ export const DneskaiWorkspaceWaitingSchema = z.strictObject({
 });
 export type DneskaiWorkspaceWaiting = z.infer<typeof DneskaiWorkspaceWaitingSchema>;
 
+export const DneskaiDecisionCursorSchema = z.strictObject({ createdAt: timestamp, id: uuid });
+export type DneskaiDecisionCursor = z.infer<typeof DneskaiDecisionCursorSchema>;
+
 export const DneskaiWorkspaceReadSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_WORKSPACE_VERSION),
   /** Prague date the read was built for; the calendar starts here. */
@@ -120,22 +126,27 @@ export const DneskaiWorkspaceReadSchema = z.strictObject({
   /** The daily Instagram slots in Europe/Prague. */
   slots: z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)).max(8),
   accounts: z.array(z.strictObject({ id: uuid, remoteId: z.string().min(1).max(200), handle: z.string().min(1).max(100), verified: z.boolean(), enabled: z.boolean() })).max(4),
-  posts: z.array(DneskaiWorkspacePostSchema).max(60),
-  jobs: z.array(DneskaiWorkspaceJobSchema).max(20),
+  posts: z.array(DneskaiWorkspacePostSchema).max(250),
+  /** Calendar-only complete window; false means unknown records prevent proving empty slots. */
+  calendarComplete: z.boolean().optional(),
+  /** Pending decisions are keyset-paged independently of bounded recent history. */
+  decisionPage: z.strictObject({ nextCursor: DneskaiDecisionCursorSchema.nullable() }).optional(),
+  jobs: z.array(DneskaiWorkspaceJobSchema).max(250),
   /**
-   * Topics of today and tomorrow whose brief waits for the scheduler: pending or ready, with no drafting job yet
-   * (owner decision 9, „Generate now“). Absent from older responses.
+   * Assigned briefs without a drafting job. Review includes today/tomorrow (at most eight);
+   * the separate Calendar snapshot includes its complete seven-day window. Absent from older responses.
    */
-  waiting: z.array(DneskaiWorkspaceWaitingSchema).max(8).optional(),
+  waiting: z.array(DneskaiWorkspaceWaitingSchema).max(250).optional(),
   /** Which paid owner actions this deployment offers. Absent from older responses: neither. */
   capabilities: z.strictObject({ regenerate: z.boolean(), generateNow: z.boolean(),
     /** The Lab's keyword and DM editor (#159, DNESKAI_ENGAGEMENT_EDITOR_ENABLED). Absent: off. */
     engagement: z.boolean().optional() }).optional(),
   /** #162: the watcher's totals over posts published in the last seven days. Absent while the watcher is off. */
+  engagementStatus: z.enum(['complete', 'unavailable']).optional(),
   engagementSummary: z.strictObject({ posts: count, commentsSeen: count, keywordMatches: count, privateSent: count, publicSent: count, failed: count }).optional(),
   /** Stored rows (revisions, accounts) that could not be read; shown as a count, never silently dropped. */
   unreadable: z.number().int().nonnegative(),
-});
+}).refine(read => read.calendarComplete === undefined ? read.posts.length <= 60 && read.jobs.length <= 20 && (read.waiting?.length??0)<=8 : read.posts.length + read.jobs.length + (read.waiting?.length??0)<=250);
 export type DneskaiWorkspaceRead = z.infer<typeof DneskaiWorkspaceReadSchema>;
 
 /** What the owner sees for a post or slot, always as colour and text together. */
@@ -192,6 +203,7 @@ export function dneskaiPostState(post: StatePost, context: DneskaiStateContext):
     return { state: 'problem', code: problemCode ?? (post.status === 'reconciliation' || publication?.status === 'reconciliation' ? 'read-only-reconciliation' : 'publishing-failed'), publishing: false };
   }
   if (post.status === 'publishing' || publication?.status === 'claimed') return { state: 'scheduled', code: null, publishing: true };
+  if (post.deck && dneskaiDeckContentBlocked(post.deck) && !['skipped', 'superseded', 'returned'].includes(post.status)) return { state: 'problem', code: 'text-unplaced', publishing: false };
   if (post.status === 'approved') return publication?.status === 'queued' ? { state: 'scheduled', code: null, publishing: false } : { state: 'approved', code: null, publishing: false };
   if (post.status === 'skipped' || post.status === 'superseded') return { state: 'skipped', code: null, publishing: false };
   if (post.status === 'returned') return { state: 'returned', code: null, publishing: false };
@@ -237,11 +249,13 @@ export function pragueDstDay(date: string): boolean {
 export type DneskaiCalendarEntry =
   | { kind: 'post'; at: string; time: string; post: DneskaiWorkspacePost; state: DneskaiPostStateDetail }
   | { kind: 'job'; at: string; time: string; job: DneskaiWorkspaceJob; state: DneskaiPostStateDetail }
+  | { kind: 'waiting'; at: string; time: string; brief: DneskaiWorkspaceWaiting; state: DneskaiPostStateDetail }
   | { kind: 'free'; at: string; time: string };
 export type DneskaiCalendarDay = { date: string; entries: DneskaiCalendarEntry[] };
 
+const pragueTimeFormatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 /** HH:MM in Europe/Prague for a stored instant. */
-export const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+export const pragueTime = (iso: string) => pragueTimeFormatter.format(new Date(iso));
 
 /**
  * The one DNESKAi day format (#173): DD/MM in Europe/Prague, the same in Czech and English. Takes a calendar date
@@ -260,7 +274,7 @@ export const formatDneskaiDayTime = (iso: string) => `${formatDneskaiDay(iso)} $
  * time order. A slot holds the post scheduled at it; posts at other times (an owner-edited time) keep their own row.
  * Superseded revisions never appear; a skipped one frees its slot.
  */
-export function dneskaiCalendarDays(input: { today: string; generatedAt: string; slots: readonly string[]; posts: readonly DneskaiWorkspacePost[]; jobs: readonly DneskaiWorkspaceJob[] }, renderFailed?: ReadonlySet<string>): DneskaiCalendarDay[] {
+export function dneskaiCalendarDays(input: { today: string; generatedAt: string; slots: readonly string[]; posts: readonly DneskaiWorkspacePost[]; jobs: readonly DneskaiWorkspaceJob[]; waiting?:readonly DneskaiWorkspaceWaiting[] }, renderFailed?: ReadonlySet<string>): DneskaiCalendarDay[] {
   const days = Array.from({ length: 7 }, (_, index) => pragueDayAfter(input.today, index));
   const context = dneskaiStateContext(input, renderFailed);
   const visible = input.posts.filter((post) => post.status !== 'superseded' && post.status !== 'skipped');
@@ -271,9 +285,12 @@ export function dneskaiCalendarDays(input: { today: string; generatedAt: string;
       if (pragueDate(at) === date) entries.push({ kind: 'post', at, time: pragueTime(at), post, state: dneskaiPostState(post, context) });
     }
     for (const job of input.jobs) {
-      if (job.scheduledAt && pragueDate(job.scheduledAt) === date && !entries.some((entry) => entry.at === job.scheduledAt)) {
+      if (job.scheduledAt && pragueDate(job.scheduledAt) === date) {
         entries.push({ kind: 'job', at: job.scheduledAt, time: pragueTime(job.scheduledAt), job, state: dneskaiJobState(job) });
       }
+    }
+    for(const brief of input.waiting??[]){
+      if(pragueDate(brief.scheduledAt)===date)entries.push({kind:'waiting',at:brief.scheduledAt,time:pragueTime(brief.scheduledAt),brief,state:{state:'preparing',code:brief.code,publishing:false}});
     }
     for (const slot of input.slots) {
       let at: string;

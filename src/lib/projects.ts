@@ -76,3 +76,25 @@ export function resolveProjectRef<
     projects.find((project) => project.previous_slugs?.includes(ref))
   );
 }
+
+/** Build once for repeated project-scoped reads; keep source references and order. */
+export function indexProjectRecords<T extends { project_id: string }>(rows: readonly T[]): ReadonlyMap<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const group = groups.get(row.project_id);
+    if (group) group.push(row); else groups.set(row.project_id, [row]);
+  }
+  return groups;
+}
+
+/** Cached project snapshots contain primitives and string arrays. Compare
+ * without serializing private note documents; unknown nested values reconcile. */
+export function sameProjectSnapshot(a: Project, b: Project): boolean {
+  if (a === b) return true;
+  if (Object.keys(a).length !== Object.keys(b).length) return false;
+  return Object.entries(a).every(([key, value]) => {
+    const other = b[key as keyof Project];
+    return Object.is(value, other) || Array.isArray(value) && Array.isArray(other)
+      && value.length === other.length && value.every((item, index) => Object.is(item, other[index]));
+  });
+}

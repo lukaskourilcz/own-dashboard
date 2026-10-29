@@ -1,5 +1,6 @@
 const CONTROL_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
-const HTML_TAGS = /<[^>]*>/g;
+// Match an unterminated tail once too; retrying every opening bracket is quadratic.
+const HTML_TAGS = /<[^>]*(?:>|$)/g;
 // Only instruction-shaped phrases count. "tool call", "system prompt" and "developer message" are
 // ordinary vocabulary in AI news (every vLLM or Ollama release mentions tool calls), so on their own
 // they are topic words; they count only as a label that introduces text ("system prompt:").
@@ -17,7 +18,7 @@ export function sanitizeExternalContent(
   maxCharacters = 20_000
 ): SanitizedExternalContent {
   const withoutControls = input.replace(CONTROL_CHARACTERS, "");
-  const withoutHtml = withoutControls.replace(HTML_TAGS, " ");
+  const withoutHtml = withoutControls.replace(HTML_TAGS, tag => tag.endsWith('>') ? ' ' : tag);
   const promptInjectionSignals = [...withoutHtml.matchAll(PROMPT_LIKE)].map(
     (match) => match[0]
   );

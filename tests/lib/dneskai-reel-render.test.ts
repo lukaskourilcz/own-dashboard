@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import ffmpegPath from "ffmpeg-static";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it,vi } from "vitest";
 import {
-  DNESKAI_REEL, DneskaiReelRenderError, dneskaiReelDuration, dneskaiReelFfmpegArgs, dneskaiReelKey, renderDneskaiReel,
+  composeDneskaiReelFrame,DNESKAI_REEL, DneskaiReelRenderError, dneskaiReelDuration, dneskaiReelFfmpegArgs, dneskaiReelKey, renderDneskaiReel,
 } from "@/lib/marketing/dneskai-reel-render";
 
 const ffprobe = process.env.FFPROBE_PATH ?? "ffprobe";
@@ -23,14 +23,22 @@ describe("reel layout", () => {
     expect(dneskaiReelDuration(7)).toBe(21.5);
   });
 
-  it("keys a reel by the revision hash, the audio and the policy", () => {
-    const silent = dneskaiReelKey({ revisionHash: hash, audioId: null });
+  it("keys a reel by ordered JPEG bytes, exact audio bytes and encoding policy", () => {
+    const slides = [hash, 'b'.repeat(64)];
+    const silent = dneskaiReelKey({ slideSha256s: slides, audio: null });
+    const audio = { id: '11111111-1111-4111-8111-111111111111', sha256: 'c'.repeat(64) };
     expect(silent).toMatch(/^[a-f0-9]{64}$/);
-    expect(dneskaiReelKey({ revisionHash: hash, audioId: null })).toBe(silent);
-    expect(dneskaiReelKey({ revisionHash: hash, audioId: "11111111-1111-4111-8111-111111111111" })).not.toBe(silent);
-    expect(dneskaiReelKey({ revisionHash: "b".repeat(64), audioId: null })).not.toBe(silent);
-    expect(() => dneskaiReelKey({ revisionHash: "nope", audioId: null })).toThrow(DneskaiReelRenderError);
-    expect(() => dneskaiReelKey({ revisionHash: hash, audioId: "../x" })).toThrow(DneskaiReelRenderError);
+    expect(dneskaiReelKey({ slideSha256s: [...slides], audio: null })).toBe(silent);
+    expect(dneskaiReelKey({ slideSha256s: [...slides].reverse(), audio: null })).not.toBe(silent);
+    expect(dneskaiReelKey({ slideSha256s: [hash], audio: null })).not.toBe(silent);
+    const audible = dneskaiReelKey({ slideSha256s: slides, audio });
+    expect(audible).not.toBe(silent);
+    expect(dneskaiReelKey({ slideSha256s: slides, audio: { ...audio, sha256: 'd'.repeat(64) } })).not.toBe(audible);
+    expect(() => dneskaiReelKey({ slideSha256s: ['nope'], audio: null })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: [], audio: null })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: Array(11).fill(hash), audio: null })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: slides, audio: { ...audio, id: '../x' } })).toThrow(DneskaiReelRenderError);
+    expect(() => dneskaiReelKey({ slideSha256s: slides, audio: { ...audio, sha256: 'nope' } })).toThrow(DneskaiReelRenderError);
   });
 
   it("crossfades each slide into the next at 3 s steps and encodes to the Reels spec", () => {
@@ -108,3 +116,10 @@ encodeSuite("renderDneskaiReel with ffmpeg-static", () => {
     }, 60_000);
   }
 });
+
+it.each([{width:1080,height:1350,format:'png'},{width:100,height:100,format:'jpeg'},{width:2160,height:2700,format:'jpeg'}] as const)('refuses a frame outside the approved JPEG canvas: %#',async({width,height,format})=>{const slide=await sharp({create:{width,height,channels:3,background:'#2050e0'}}).toFormat(format).toBuffer();await expect(composeDneskaiReelFrame(slide)).rejects.toMatchObject({code:'reel-compose-failed',message:'reel-compose-failed'});});
+
+it('refuses an oversized JPEG buffer before native decoding',async()=>{await expect(composeDneskaiReelFrame(Buffer.alloc(8*1024*1024+1))).rejects.toHaveProperty('code','reel-compose-failed');});
+it('retires native input before decoder or encoder work starts',async()=>{const scope=new AbortController();scope.abort('TEST_ONLY_PRIVATE_REASON');await expect(composeDneskaiReelFrame(Buffer.from('fixture'),scope.signal)).rejects.toMatchObject({code:'reel-timeout',message:'reel-timeout'});await expect(renderDneskaiReel({slides:[Buffer.from('fixture')],audio:null,signal:scope.signal,ffmpegPath:process.execPath})).rejects.toMatchObject({code:'reel-timeout',message:'reel-timeout'});});
+
+it('keeps native failure diagnostics to a fixed event and exit status',async()=>{const slide=await sharp({create:{width:1080,height:1350,channels:3,background:'#2050e0'}}).jpeg().toBuffer(),warning=vi.spyOn(console,'warn').mockImplementation(()=>{});try{await expect(renderDneskaiReel({slides:[slide],audio:null,ffmpegPath:process.execPath})).rejects.toHaveProperty('code','reel-encode-failed');expect(warning.mock.calls.map(([line])=>JSON.parse(String(line)))).toEqual([{event:'dneskai-reel-ffmpeg-failed',code:expect.any(Number)}]);}finally{warning.mockRestore();}});

@@ -1,20 +1,22 @@
+import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
 import { DNESKAI_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import { pragueScheduledAt } from './clock';
 import {
-  dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, renderBlocking,
+  dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, pragueTime, renderBlocking,
   type DneskaiFieldLimit, type DneskaiPostStateDetail, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
 
 /**
  * The Design Lab's read model (design-lab-spec.md, variant-approval-model.md): the review read
- * (`dneskai-workspace/1`) seen as one day's queue of posts, each with its exact revision, its slides and the five
- * kits. Browser-safe and pure; the Lab builds it from the read it already has, so no new server read exists.
+ * (`dneskai-workspace/1`) seen as one day's queue of posts, each with its exact revision, its slides and the available
+ * kits. Browser-safe and pure; the queue uses the review read. Move advice separately needs the complete Calendar
+ * window, because a paged review cannot establish free-slot availability.
  *
  * Kits are per post and variants stay per slide (AGENT-RULES §9). A kit switch is an edit like any other: it saves a
- * new revision with its own assets and hash, and that hash needs its own approval. The vendored studio draws all five
+ * new revision with its own assets and hash, and that hash needs its own approval. The vendored studio draws all registered
  * kits; a tile shows a cover only for the kit the post was saved in, and the stage previews a newly chosen kit.
  */
 export const DNESKAI_KITS = DNESKAI_KIT_IDS;
@@ -89,15 +91,14 @@ export type DneskaiLabDay = {
 export const DNESKAI_LAB_URGENT_MINUTES = 30;
 export const shortHash = (hash: string) => hash.slice(0, 7);
 
-const pragueTime = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
-
 export function dneskaiLabDeadline(at: string, now: number): DneskaiLabDeadline {
   const minutesLeft = Math.floor((Date.parse(at) - now) / 60_000);
-  return { at, time: pragueTime(at), date: pragueDate(at), minutesLeft, urgent: minutesLeft >= 0 && minutesLeft < DNESKAI_LAB_URGENT_MINUTES, passed: minutesLeft < 0 };
+  const passed = !(Date.parse(at) > now);
+  return { at, time: pragueTime(at), date: pragueDate(at), minutesLeft, urgent: !passed && minutesLeft < DNESKAI_LAB_URGENT_MINUTES, passed };
 }
 
 /**
- * The five kit tiles of a post. The current kit's cover is the first rendered slide; any other kit has a cover only
+ * The available kit tiles of a post. The current kit's cover is the first rendered slide; any other kit has a cover only
  * when one was rendered for it (none can be today, so `cover` is null and `fits` unknown).
  */
 export function dneskaiLabKits(post: Pick<DneskaiWorkspacePost, 'deck' | 'assets' | 'renderReport'>): DneskaiLabKit[] {
@@ -129,6 +130,7 @@ export function dneskaiLabApprovalBlock(post: DneskaiWorkspacePost, read: Pick<D
   const context = dneskaiStateContext(read, renderFailed);
   if (post.status !== 'review') return 'status';
   if (!post.deck) return 'deck-missing';
+  if (dneskaiDeckContentBlocked(post.deck)) return 'render-blocked';
   if (renderBlocking(post.renderReport)) return 'render-blocked';
   if (dneskaiRenderAttachFailed(post, context)) return 'render-attach-failed';
   if (!post.ready || dneskaiPostState(post, context).state === 'preparing') return 'preparing';
@@ -169,9 +171,11 @@ export function dneskaiLabDay(read: DneskaiWorkspaceRead, date: string, now: num
   return { date, posts, jobs, approvable, waiting };
 }
 
-/** The days the Lab queue shows: today and tomorrow (the night's collection prepares tomorrow's posts). */
+/** Today and tomorrow first, then any other dates carrying pending decisions on this cursor page. */
 export function dneskaiLabQueue(read: DneskaiWorkspaceRead, now: number, renderFailed?: ReadonlySet<string>): DneskaiLabDay[] {
-  return [read.today, pragueDayAfter(read.today, 1)].map((date) => dneskaiLabDay(read, date, now, renderFailed));
+  const primary = [read.today, pragueDayAfter(read.today, 1)];
+  const other = [...new Set(read.posts.filter(post => post.status === 'review' || post.status === 'returned').map(post => pragueDate(post.scheduledAt)))].filter(date => !primary.includes(date)).sort();
+  return [...primary, ...other].map(date => dneskaiLabDay(read, date, now, renderFailed));
 }
 
 /** Every reviewable post across the queue in order, the J/K and ↑/↓ path. */

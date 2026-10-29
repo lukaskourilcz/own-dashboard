@@ -21,9 +21,12 @@ const NEXT = {
   reload: { en: 'Reload the review and check the current version before you approve.', cs: 'Načtěte kontrolu znovu a před schválením zkontrolujte aktuální verzi.' },
   retry: { en: 'Try again. If it keeps failing, it needs investigation.', cs: 'Zkuste to znovu. Pokud chyba trvá, je potřeba ji prošetřit.' },
   config: { en: 'Check the server configuration. Until then this step does not run.', cs: 'Zkontrolujte nastavení serveru. Do té doby se tento krok nespustí.' },
-  account: { en: 'Verify the @dneskai account in Sources. Publishing waits until then.', cs: 'Ověřte účet @dneskai v záložce Zdroje. Publikování do té doby čeká.' },
+  account: { en: 'Open the Instagram account from the project menu and verify it. Publishing waits until then.', cs: 'V nabídce projektu otevřete účet Instagram a ověřte ho. Publikování do té doby čeká.' },
+  accountReload: { en: 'Reload the account state before trying another action.', cs: 'Před další akcí načtěte aktuální stav účtu.' },
   token: { en: 'Generate a new long-lived Instagram token, install it on the server and verify the account again.', cs: 'Vygenerujte nový dlouhodobý instagramový token, uložte ho na server a účet znovu ověřte.' },
   budget: { en: 'Generation resumes when the spend of the last 24 hours falls below the daily limit.', cs: 'Generování pokračuje, až útrata za posledních 24 hodin klesne pod denní limit.' },
+  tiktokBudget: { en: 'A run can start on a later Prague calendar day when the spend of the last 24 hours permits it.', cs: 'Další běh může začít v dalším dni podle pražského času, pokud to dovolí útrata za posledních 24 hodin.' },
+  tiktokReview: { en: 'Check the existing run and its spend record; keep any uncertain start reserved.', cs: 'Zkontrolujte existující běh a záznam útraty; nejisté spuštění ponechte rezervované.' },
   verify: { en: 'Check the post on Instagram. The next check compares the result; nothing is published twice.', cs: 'Zkontrolujte příspěvek na Instagramu. Další kontrola výsledek porovná; nic se nepublikuje dvakrát.' },
   regenerate: { en: 'No draft was saved. This topic needs a new generation; nothing repeats on its own.', cs: 'Návrh se neuložil. Téma potřebuje nové generování; samo se nic neopakuje.' },
   investigate: { en: 'This needs investigation; nothing is retried automatically.', cs: 'Je potřeba to prošetřit; nic se automaticky neopakuje.' },
@@ -31,6 +34,7 @@ const NEXT = {
   media: { en: 'The picture stays out of the media pool; the other pictures can still be used.', cs: 'Obrázek v zásobníku chybí; ostatní obrázky lze použít dál.' },
   topicLink: { en: 'Add the topic again with a link the post can cite.', cs: 'Přidejte námět znovu s odkazem, ze kterého příspěvek může čerpat.' },
   topicReader: { en: 'The next run reads it again, three times in all. After that, add the topic again with another link.', cs: 'Další běh ho přečte znovu, celkem třikrát. Potom přidejte námět znovu s jiným odkazem.' },
+  sourceSettings: { en: 'To resume collection, add or enable a source in Sources.', cs: 'Chcete-li sběr obnovit, přidejte nebo zapněte zdroj v záložce Zdroje.' },
 } satisfies Record<string, Text>;
 type Next = keyof typeof NEXT;
 type Entry = readonly [Next, string, string];
@@ -46,7 +50,10 @@ const CODES = {
   'account-unverified': ['account', 'The Instagram account is not verified.', 'Instagramový účet není ověřený.'],
   'campaign-inactive': ['investigate', 'The plan this post belongs to is not active, so it will not publish.', 'Plán, do kterého příspěvek patří, není aktivní, proto se nepublikuje.'],
   'sources-unavailable': ['retry', 'The source list could not be read or changed.', 'Seznam zdrojů nešlo načíst ani změnit.'],
-  'collection-source-removed': ['none', 'The source was removed after the night started, so it was not read.', 'Zdroj byl odebrán po začátku noci, proto se nečetl.'],
+  'invalid-source': ['retry', 'Some source settings are invalid. Review the form fields.', 'Některá nastavení zdroje nejsou platná. Zkontrolujte pole formuláře.'],
+  'collection-source-removed': ['none', 'The source was removed or switched off after the night started, so it was not read.', 'Zdroj byl po začátku noci odebrán nebo vypnut, proto se nečetl.'],
+  'collection-no-enabled-sources': ['sourceSettings', 'No enabled sources are due, so collection did not start.', 'Ke čtení nejsou žádné aktivní zdroje, proto sběr nezačal.'],
+  'source-history-unavailable': ['retry', 'Source history could not be read completely.', 'Historii zdrojů se nepodařilo načíst celou.'],
   'approval-unavailable': ['reload', 'The approval was not recorded.', 'Schválení se nezaznamenalo.'],
   'decision-unavailable': ['reload', 'The decision was not recorded; the post may have changed meanwhile.', 'Rozhodnutí se nezaznamenalo; příspěvek se mezitím mohl změnit.'],
   'decision-failed': ['retry', 'The request did not reach the server or was refused.', 'Požadavek se nedostal na server nebo byl odmítnut.'],
@@ -68,6 +75,8 @@ const CODES = {
   'deck-edit-slide-invalid': ['reload', 'A slide in the edit does not exist in this version.', 'Slide z úpravy v této verzi neexistuje.'],
   'deck-edit-invalid': ['edit', 'The edited slides are not valid; check required text and lengths.', 'Upravené slidy nejsou platné; zkontrolujte povinný text a délky.'],
   'deck-edit-unsupported': ['investigate', 'This post has no slide deck, so slides cannot be edited.', 'Tento příspěvek nemá slidy, proto je nelze upravit.'],
+  'refresh-account-changed': ['accountReload', 'The account or its credential changed during renewal.', 'Účet nebo jeho přihlašovací údaje se během obnovení změnily.'],
+  'account-changed': ['accountReload', 'The account or its credentials changed during verification.', 'Účet nebo jeho přihlašovací údaje se během ověřování změnily.'],
   'account-unavailable': ['account', 'The chosen account is not a verified @dneskai Instagram account.', 'Vybraný účet není ověřený instagramový účet @dneskai.'],
   'account-platform-changed': ['edit', 'The post cannot move to another platform.', 'Příspěvek nelze přesunout na jinou platformu.'],
   'revision-edit-invalid': ['edit', 'The edited post is not valid.', 'Upravený příspěvek není platný.'],
@@ -83,6 +92,7 @@ const CODES = {
   'renderer-unavailable': ['retry', 'The slide renderer could not start.', 'Vykreslování slidů se nepodařilo spustit.'],
   'media-unavailable': ['retry', 'The source pictures could not be read.', 'Zdrojové obrázky nelze načíst.'],
   'alt-missing': ['edit', 'A slide has no alt text.', 'Slide nemá alternativní text.'],
+  'alt-too-long': ['edit', 'A slide’s alt text is longer than 1,000 characters.', 'Alternativní text slidu přesahuje 1 000 znaků.'],
   'caption-missing': ['edit', 'The caption is empty.', 'Popisek je prázdný.'],
   'schedule-invalid': ['edit', 'The planned time is not a valid Prague time.', 'Plánovaný čas není platný pražský čas.'],
   'schedule-outside-asset-window': ['edit', 'The time must be in the future and at most six days ahead.', 'Čas musí být v budoucnu a nejvýše šest dní dopředu.'],
@@ -251,6 +261,10 @@ const CODES = {
   'marketing-account-unavailable': ['account', 'No enabled, verified account for this post.', 'Pro tento příspěvek není zapnutý ověřený účet.'],
   'marketing-consent-required': ['config', 'The owner’s marketing consent is not recorded.', 'Souhlas vlastníka s marketingem není zaznamenaný.'],
   'payload-too-large': ['investigate', 'The request was too large.', 'Požadavek byl příliš velký.'],
+  'missing-body': ['investigate', 'The request had no body, so no work was admitted.', 'Požadavek neměl tělo, proto se žádná práce nepřijala.'],
+  'invalid-body': ['investigate', 'The request body could not be read as valid text.', 'Tělo požadavku se nepodařilo načíst jako platný text.'],
+  'request-body-timeout': ['retry', 'The upload did not finish within its time limit; no work was admitted.', 'Nahrání se nedokončilo v časovém limitu; žádná práce se nepřijala.'],
+  'request-body-aborted': ['retry', 'The request disconnected before its body was read; no work was admitted.', 'Požadavek se odpojil před načtením těla; žádná práce se nepřijala.'],
   'private-asset-bucket-required': ['config', 'The image storage is not private.', 'Úložiště obrázků není soukromé.'],
   'calendar-entry-changed': ['source', 'The calendar slot changed after the job was queued.', 'Slot v kalendáři se po zařazení úlohy změnil.'],
   'calendar-entry-rebound': ['source', 'The calendar slot was given another source.', 'Slot v kalendáři dostal jiný zdroj.'],
@@ -370,6 +384,7 @@ const CODES = {
   'publication-not-stranded': ['reload', 'This publication is no longer stuck.', 'Tato publikace už není zaseknutá.'],
   'publication-approval-changed': ['reload', 'The post no longer has its approval, so it cannot be queued again.', 'Příspěvek už nemá své schválení, proto ho nelze znovu zařadit.'],
   'publication-requeue-failed': ['retry', 'Queuing the post again failed.', 'Opětovné zařazení příspěvku selhalo.'],
+  'dneskai-workspace-unavailable': ['retry', 'The requested DNESKAi view could not be confirmed.', 'Požadovaný přehled DNESKAi se nepodařilo ověřit.'],
   'container-identity-mismatch': ['verify', 'Instagram answered for a different post.', 'Instagram odpověděl k jinému příspěvku.'],
   'container-identity-unavailable': ['verify', 'Instagram did not confirm which post it prepared.', 'Instagram nepotvrdil, který příspěvek připravil.'],
   'container-status-unavailable': ['verify', 'Instagram did not report the processing state.', 'Instagram nesdělil stav zpracování.'],
@@ -429,7 +444,7 @@ const CODES = {
   'instagram-login-required': ['token', 'The token is not an Instagram Login token.', 'Token není token Instagram Login.'],
   'professional-account-required': ['account', 'The account is not a professional Instagram account.', 'Účet není profesionální instagramový účet.'],
   'remote-account-handle-mismatch': ['account', 'The token belongs to a different Instagram account.', 'Token patří jinému instagramovému účtu.'],
-  'account-store-failed': ['retry', 'The account could not be saved.', 'Účet se nepodařilo uložit.'],
+  'account-store-failed': ['accountReload', 'The account save could not be confirmed.', 'Uložení účtu se nepodařilo potvrdit.'],
   'credential-store-unavailable': ['retry', 'The stored token could not be read; nothing was sent to Instagram.', 'Uložený token nelze načíst; na Instagram se nic neodeslalo.'],
   'credential-owner-mismatch': ['investigate', 'The stored token belongs to another owner.', 'Uložený token patří jinému vlastníkovi.'],
   'verified-scopes-invalid': ['token', 'The recorded token permissions are malformed.', 'Zaznamenaná oprávnění tokenu mají špatný tvar.'],
@@ -503,6 +518,7 @@ const CODES = {
   'slot-unavailable': ['reload', 'The free slot changed after you opened the post, so nothing was moved or approved.', 'Volný čas se změnil, když jste měli příspěvek otevřený, proto se nic nepřesunulo ani neschválilo.'],
   'slot-none-free': ['edit', 'No daily slot is free today or tomorrow, so nothing was moved.', 'Dnes ani zítra není volný žádný denní čas, proto se nic nepřesunulo.'],
   // Reels (#163): the slideshow video of a rendered post.
+  'reel-request-unavailable': ['retry', 'The Reel request could not be verified. Try again.', 'Požadavek na Reel se nepodařilo ověřit. Zkuste to znovu.'],
   'reel-revision-unavailable': ['reload', 'This version no longer exists or is not yours, so no Reel was made.', 'Tato verze už neexistuje nebo nepatří vám, proto se Reel nevytvořil.'],
   'reel-revision-not-deck': ['investigate', 'This post has no slides to turn into a Reel.', 'Tento příspěvek nemá slidy, ze kterých by šel udělat Reel.'],
   'reel-render-required': ['rerender', 'The slides of this version are not rendered cleanly yet, so no Reel was made.', 'Slidy této verze ještě nejsou čistě vykreslené, proto se Reel nevytvořil.'],
@@ -525,20 +541,39 @@ const CODES = {
   'trending-audio-unavailable': ['edit', 'Instagram refused this trending sound for the account, so nothing was published. Pick a library track and approve again.', 'Instagram tento trendy zvuk pro účet odmítl, proto se nic nepublikovalo. Vyberte skladbu z knihovny a schvalte znovu.'],
   'tiktok-trends-disabled': ['none', 'The TikTok chart is switched off.', 'Žebříček TikToku je vypnutý.'],
   'tiktok-paid-disabled': ['config', 'The TikTok chart needs the Apify and paid switches and the AI consent, so no run was started.', 'Žebříček TikToku potřebuje přepínače Apify a placených kroků a souhlas s AI, proto se běh nespustil.'],
-  'tiktok-budget-exhausted': ['budget', 'The daily TikTok chart budget is used up, so no run was started.', 'Denní rozpočet na žebříček TikToku je vyčerpaný, proto se běh nespustil.'],
+  'tiktok-budget-exhausted': ['tiktokBudget', 'A TikTok run is already reserved for this Prague calendar day, or its spend limit was reached.', 'Pro tento den podle pražského času už je běh TikToku rezervovaný nebo byl dosažen limit útraty.'],
+  'tiktok-input-invalid': ['config', 'The TikTok check has an invalid account, date or API version, so no run was started.', 'Kontrola TikToku má neplatný účet, datum nebo verzi API, proto se běh nespustil.'],
+  'tiktok-budget-invalid': ['config', 'The TikTok chart budget is invalid, so no run was started.', 'Rozpočet na žebříček TikToku je neplatný, proto se běh nespustil.'],
+  'tiktok-cancelled': ['tiktokReview', 'The TikTok check was cancelled. A start already accepted may remain uncertain.', 'Kontrola TikToku byla zrušena. Již přijaté spuštění může zůstat nepotvrzené.'],
+  'tiktok-deadline': ['tiktokReview', 'The TikTok check reached its time limit. Previously accepted work stays reserved.', 'Kontrola TikToku dosáhla časového limitu. Již přijatá práce zůstává rezervovaná.'],
+  'tiktok-response-too-large': ['tiktokReview', 'The chart provider returned more data than this check accepts. The response was not used.', 'Poskytovatel žebříčku vrátil více dat, než tato kontrola přijímá. Odpověď se nepoužila.'],
+  'tiktok-invalid-response': ['tiktokReview', 'The chart provider returned an invalid response. A paid start may remain unconfirmed.', 'Poskytovatel žebříčku vrátil neplatnou odpověď. Placené spuštění může zůstat nepotvrzené.'],
+  'tiktok-request-failed': ['tiktokReview', 'The chart provider could not be reached. A paid start may remain unconfirmed.', 'Poskytovatele žebříčku se nepodařilo zastihnout. Placené spuštění může zůstat nepotvrzené.'],
+  'tiktok-response-unavailable': ['tiktokReview', 'The chart response could not be verified. Any existing reservation is retained.', 'Odpověď žebříčku se nepodařilo ověřit. Případná rezervace zůstává zachovaná.'],
+  'tiktok-audio-unavailable': ['tiktokReview', 'Instagram audio matching could not be verified.', 'Přiřazení zvuku na Instagramu se nepodařilo ověřit.'],
+  'tiktok-run-unavailable': ['tiktokReview', 'The provider run could not be verified. Keep its reservation for review.', 'Běh poskytovatele se nepodařilo ověřit. Ponechte jeho rezervaci ke kontrole.'],
+  'tiktok-cost-unavailable': ['tiktokReview', 'The run cost could not be confirmed. Its reservation remains in place.', 'Útratu běhu se nepodařilo potvrdit. Jeho rezervace zůstává zachovaná.'],
+  'tiktok-bind-unavailable': ['tiktokReview', 'The link between the provider start and its original reservation could not be confirmed.', 'Propojení spuštění poskytovatele s původní rezervací se nepodařilo potvrdit.'],
+  'tiktok-admission-unavailable': ['tiktokReview', 'Admission for a paid run could not be confirmed. Any existing reservation is retained.', 'Povolení placeného běhu se nepodařilo potvrdit. Případná rezervace zůstává zachovaná.'],
+  'tiktok-completion-unavailable': ['tiktokReview', 'The run result and spend could not be confirmed together. Existing evidence is retained.', 'Výsledek a útratu běhu se nepodařilo společně potvrdit. Existující záznamy zůstávají zachované.'],
+  'tiktok-unavailable': ['tiktokReview', 'The TikTok chart check could not finish. Its spend evidence is retained.', 'Kontrola žebříčku TikToku se nedokončila. Záznamy útraty zůstávají zachované.'],
   'tiktok-apify-binding-invalid': ['investigate', 'Apify answered for a different actor, so the TikTok run was not recorded.', 'Apify odpověděl za jiného aktora, proto se běh TikToku nezaznamenal.'],
   'tiktok-budget-unavailable': ['auto', 'The TikTok spend ledger could not be read or written.', 'Záznam útraty za TikTok nešlo načíst ani zapsat.'],
+  'topic-budget-unavailable': ['tiktokReview', 'The paid topic step could not confirm its spend reservation.', 'Placený krok námětu nepotvrdil rezervaci útraty.'],
+  'transcript-budget-invalid': ['config', 'The transcript budget is invalid, so no transcript run was started.', 'Rozpočet na přepis je neplatný, proto se přepis nespustil.'],
   'audio-trends-facebook-login-required': ['none', 'Trending sounds are read only under Facebook Login.', 'Trendy zvuky se čtou jen přes Facebook Login.'],
   'audio-trends-input-invalid': ['config', 'The account or API version for trending sounds is not configured.', 'Účet nebo verze API pro trendy zvuky nejsou nastavené.'],
   'audio-trends-request-failed': ['auto', 'Meta could not be reached for trending sounds.', 'Meta se pro trendy zvuky nepodařilo zastihnout.'],
-  'audio-trends-store-failed': ['auto', 'The trending sounds could not be stored.', 'Trendy zvuky se nepodařilo uložit.'],
+  'audio-trends-store-failed': ['auto', 'The trending sounds could not be read or confirmed.', 'Trendy zvuky se nepodařilo načíst nebo potvrdit.'],
   // Audio library (#164): Zdroje → Hudba.
+  'audio-page-unavailable': ['reload', 'An audio page could not be verified. Reload the library before continuing.', 'Stránku skladeb se nepodařilo ověřit. Před pokračováním obnovte knihovnu.'],
+  'audio-track-changed': ['reload', 'This track changed after it was opened. Reload the library before changing it again.', 'Skladba se po otevření změnila. Před další změnou obnovte knihovnu.'],
   'audio-library-unavailable': ['retry', 'The audio library could not be read or written.', 'Hudební knihovnu nešlo načíst ani uložit.'],
-  'audio-upload-missing': ['retry', 'The uploaded file did not arrive; upload it again.', 'Nahraný soubor nedorazil; nahrajte ho znovu.'],
+  'audio-upload-missing': ['retry', 'The uploaded file could not be confirmed. Keep the draft and try again.', 'Nahraný soubor se nepodařilo ověřit. Ponechte koncept a zkuste to znovu.'],
   'audio-upload-invalid': ['edit', 'The file is not audio between 1 second and 15 minutes long, or it is larger than 20 MB.', 'Soubor není zvuk o délce 1 sekunda až 15 minut, nebo je větší než 20 MB.'],
   'audio-track-unavailable': ['reload', 'This track is no longer in the library.', 'Tato skladba už v knihovně není.'],
-  'audio-track-write-failed': ['retry', 'The track could not be saved.', 'Skladbu se nepodařilo uložit.'],
-  'reel-timeout': ['retry', 'Making the Reel took too long and was stopped.', 'Výroba Reelu trvala příliš dlouho a byla zastavena.'],
+  'audio-track-write-failed': ['reload', 'The saved track could not be confirmed. Reload the library before another change.', 'Uloženou skladbu se nepodařilo potvrdit. Před další změnou obnovte knihovnu.'],
+  'reel-timeout': ['reload', 'The Reel request reached its time limit. Its result is unconfirmed.', 'Požadavek na Reel dosáhl časového limitu. Jeho výsledek je nepotvrzený.'],
   'regenerate-unavailable': ['config', 'Regenerating is switched off on this server, so nothing was generated or spent.', 'Přegenerování je na tomto serveru vypnuté, nic se nevygenerovalo ani neutratilo.'],
   'regenerate-not-reviewable': ['reload', 'Only a post in review or a returned post can be regenerated.', 'Přegenerovat lze jen příspěvek ke kontrole nebo vrácený příspěvek.'],
   'regenerate-unsupported': ['edit', 'This post has no drafting job to repeat. It can be edited by hand.', 'Tento příspěvek nemá úlohu psaní, kterou by šlo zopakovat. Upravit ho jde ručně.'],
@@ -592,6 +627,8 @@ const CODES = {
   'topic-source-unsupported': ['investigate', 'This kind of source cannot become a post yet.', 'Z tohoto druhu zdroje zatím příspěvek nevznikne.'],
   'topic-expiry-failed': ['auto', 'Old news topics could not be moved to expired.', 'Staré zpravodajské náměty se nepodařilo přesunout mezi propadlé.'],
   'daily-mix-unavailable': ['retry', 'The daily mix could not be read or saved.', 'Denní mix se nepodařilo načíst ani uložit.'],
+  'daily-mix-save-unconfirmed': ['retry', 'The daily mix save could not be confirmed; the draft remains available.', 'Uložení denního mixu se nepodařilo potvrdit; návrh zůstává k dispozici.'],
+  'daily-mix-conflict': ['retry', 'The saved daily mix changed. Review the latest settings before saving again.', 'Uložený denní mix se změnil. Před dalším uložením zkontrolujte aktuální nastavení.'],
   'invalid-daily-mix': ['none', 'The mix needs a time for every post.', 'Mix potřebuje pro každý příspěvek vlastní čas.'],
 } as const satisfies Record<string, Entry>;
 
@@ -600,6 +637,7 @@ export const MARKETING_KNOWN_CODES = Object.keys(CODES) as MarketingCode[];
 
 /** Families that carry a variable part: an HTTP status, a remote state or a scheduler category. */
 const PATTERNS: Array<{ test: RegExp; text: (match: RegExpExecArray) => Entry }> = [
+  { test: /^tiktok-http-([1-5]\d{2})$/, text: (m) => ['tiktokReview', `The chart provider returned HTTP ${m[1]}. A paid start may remain unconfirmed.`, `Poskytovatel žebříčku vrátil HTTP ${m[1]}. Placené spuštění může zůstat nepotvrzené.`] },
   { test: /^research-apify-refused-(400|401|402|403|404|413|422)$/, text: (m) => ['investigate', `Apify refused the research start (HTTP ${m[1]}); no run was created.`, `Apify odmítlo spuštění výzkumu (HTTP ${m[1]}); žádný běh nevznikl.`] },
   { test: /^meta-http-(\d{3})$/, text: (m) => ['token', `Instagram rejected the request (HTTP ${m[1]}).`, `Instagram požadavek odmítl (HTTP ${m[1]}).`] },
   { test: /^media-(?:page-)?http-(\d{3})$/, text: (m) => ['media', `The source site refused the picture (HTTP ${m[1]}).`, `Zdrojový web obrázek odmítl (HTTP ${m[1]}).`] },
@@ -627,8 +665,9 @@ export type MarketingCodeDescription = { code: string | null; known: boolean; ha
 
 /** Collection and event codes already have owner text in the Sources tab's dictionary; reuse it instead of a second copy. */
 function sourcesEntry(code: string): Entry | null {
-  const en = dneskaiSources.en.blockers[code] ?? dneskaiSources.en.eventReasons[code];
-  const cs = dneskaiSources.cs.blockers[code] ?? dneskaiSources.cs.eventReasons[code];
+  const ownText = (dictionary: Record<string, string>) => Object.hasOwn(dictionary, code) ? dictionary[code] : undefined;
+  const en = ownText(dneskaiSources.en.blockers) ?? ownText(dneskaiSources.en.eventReasons);
+  const cs = ownText(dneskaiSources.cs.blockers) ?? ownText(dneskaiSources.cs.eventReasons);
   return en && cs ? [code.startsWith('brief-') ? 'source' : 'auto', en, cs] : null;
 }
 

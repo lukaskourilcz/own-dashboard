@@ -89,6 +89,8 @@ export type Todo = {
   // NEEDED.md). Null = ungrouped, shown under the default "Other" section.
   category: string | null;
   created_at: string;
+  /** Monotonic database version for captured writes; legacy fixtures may omit it. */
+  updated_at?: string;
   // NEEDED.md task-card context. All null for a hand-added task.
   source: TodoSource | null;
   // GitHub numeric repo id (as text) — groups tasks into per-repo cards.
@@ -100,6 +102,8 @@ export type Todo = {
   // The exact NEEDED.md source line — lets Refresh detect the item is still
   // present and lets "delete finished" remove precisely from the file.
   needed_raw: string | null;
+  /** Source metadata may put the owner on an indented continuation line. */
+  needed_assignee?: "me" | "ai" | null;
   // When the task was generated. due_date is set to generated_at + 7 days so
   // the dashboard can show a time-to-finish countdown.
   generated_at: string | null;
@@ -145,6 +149,7 @@ export type DailyFocus = {
   generation: number;
   items: DailyFocusItem[];
   garden: DailyFocusDay[];
+  gardenAvailable?: boolean;
 };
 
 export type Account = {
@@ -236,8 +241,8 @@ export type BankConnection = {
   provider_ref: string | null;
   reference: string;
   status: "created" | "linked" | "expired" | "error";
-  /** When the bank consent lapses (PSD2 is 90 days). Null when the provider
-   *  states no expiry, as with a Fio token — never guessed. */
+  /** Provider-reported consent expiry. Null also means unavailable: Fio
+   * statements do not expose their token expiry. Never invent a date. */
   consent_expires_at: string | null;
   /** Short, non-sensitive reason the last sync failed. Null when healthy. */
   last_error: string | null;
@@ -719,6 +724,8 @@ export type JobListing = {
 export type JobUserStateValue = "shortlisted" | "deleted";
 
 export type JobUserState = {
+  /** Nullable until its first versioned update; legacy fixtures may omit it. */
+  updated_at?: string | null;
   id: string;
   user_id: string;
   listing_id: string;
@@ -727,6 +734,8 @@ export type JobUserState = {
 };
 
 export type SavedJobPosition = {
+  /** Snapshot evidence; absent/null remains unknown for legacy/manual records. */
+  remote?: boolean | null;
   cover_letter_url?: string | null;
   readiness?: "draft" | "ready" | "needs_review";
   id: string;
@@ -752,6 +761,8 @@ export type JobApplicationStatus =
   | "withdrawn";
 
 export type JobApplication = {
+  /** Snapshot evidence, independent of later source listing changes. */
+  remote?: boolean | null;
   cover_letter_url?: string | null;
   request_id?: string | null;
   responded_on?: string | null;

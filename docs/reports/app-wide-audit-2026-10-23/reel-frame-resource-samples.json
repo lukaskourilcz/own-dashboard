@@ -1,0 +1,33 @@
+{
+  "before": {
+    "sourceSha256": "735ce7883771b4b6d20a7d3755cd70320bb328a5bbb04cbe4be9c57c5d3c9ea2",
+    "inputSha256": "2525ac3f60e4c291cf73c60fb64a2a70821bc0b234ebb87ed54d4f83ed164c36",
+    "frameSha256": "8d35754ccf777011ee55d8356d6568e4eb8d7ce1fd998736354f845abcb516cc",
+    "frameBytes": 28189,
+    "peakActiveToBuffer": 20,
+    "framePassMs": 889.8952919999999,
+    "maxRSSKiB": 327344,
+    "scope": "synthetic ten-slide composition; Node rejects FFmpeg flags and skips encoding; no external connection"
+  },
+  "firstAfter": {
+    "sourceSha256": "50d75d6983ccc1f24448f48f127be78ec6ff650dba3e1eea2d611706f6dec8c5",
+    "inputSha256": "2525ac3f60e4c291cf73c60fb64a2a70821bc0b234ebb87ed54d4f83ed164c36",
+    "frameSha256": "8d35754ccf777011ee55d8356d6568e4eb8d7ce1fd998736354f845abcb516cc",
+    "frameBytes": 28189,
+    "peakActiveToBuffer": 2,
+    "framePassMs": 1367.948459,
+    "maxRSSKiB": 185616,
+    "scope": "synthetic ten-slide composition; Node rejects FFmpeg flags and skips encoding; no external connection"
+  },
+  "finalSourceAfter": {
+    "sourceSha256": "b870185123295eb016fde6192170bb0e566de12d33e31f073762123c5128a6d1",
+    "inputSha256": "2525ac3f60e4c291cf73c60fb64a2a70821bc0b234ebb87ed54d4f83ed164c36",
+    "frameSha256": "8d35754ccf777011ee55d8356d6568e4eb8d7ce1fd998736354f845abcb516cc",
+    "frameBytes": 28189,
+    "peakActiveToBuffer": 2,
+    "framePassMs": 3377.7322080000004,
+    "maxRSSKiB": 172576,
+    "scope": "synthetic ten-slide composition; Node rejects FFmpeg flags and skips encoding; no external connection"
+  },
+  "interpretation": "Single synthetic observations on a development machine; queue/load differ. Pipeline counts and frame identity are verified; timings/RSS are not production or billing guarantees."
+}

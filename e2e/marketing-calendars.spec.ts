@@ -28,6 +28,11 @@ const calendar = (extra: Record<string, unknown>) => ({ name: "x", launch: null,
  */
 async function stubCalendars(page: Page, body: unknown, status = 200) {
   let requests = 0;
+  // Every configured source has an explicit outcome, even when a case isolates one readable plan.
+  if (body && typeof body === 'object' && 'sources' in body && Array.isArray(body.sources)) {
+    const sources = body.sources;
+    body = { ...body, sources: [...sources, ...[DEVSHARK, DNESKAI].filter(source => !sources.some(item => item.id === source.id)).map(source => ({ ...source, status: 'disconnected', detail: null, calendar: null }))] };
+  }
   await page.unroute("**/api/marketing/calendars");
   await page.route("**/api/marketing/calendars", (route) => {
     requests += 1;
@@ -66,7 +71,7 @@ test("a deep link that names no tip exactly only prefills the search", async ({ 
   await expect(main.locator('[data-tip-card="tip2"]').getByRole("button", { name: `Details: ${TIP_CAROUSEL}` })).toHaveAttribute("aria-expanded", "false");
 });
 
-test("tip cards say which plans apply them, read from the calendars, with a Not yet applied filter", async ({ page }) => {
+test("tip cards show references in loaded plans and filter only the loaded citation set", async ({ page }) => {
   const errors = watchConsole(page);
   await gotoPreview(page);
   const requests = await stubCalendars(page, {
@@ -90,7 +95,7 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
   const main = page.locator("#main-content");
 
   const plan = main.locator('[data-tip-card="tip1"]');
-  await expect(plan.locator("[data-tip-usage]")).toHaveText(/^Applied in\s*devShark ×2/);
+  await expect(plan.locator("[data-tip-usage]")).toHaveText(/^Referenced in\s*devShark ×2/);
   const link = plan.getByRole("link", { name: /devShark ×2/ });
   await expect(link).toHaveAttribute("target", "_blank");
   const href = new URL((await link.getAttribute("href"))!);
@@ -105,7 +110,7 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
   await expect(status).toContainText("Could not read lukaskourilcz/quorum/state/marketing-calendar/caught-up.json: the file is not on the default branch yet.");
   await expect(status).toContainText("1 tip title cited in the plans matches no tip here.");
 
-  const notApplied = main.getByRole("group", { name: "Filter by topic" }).getByRole("button", { name: /^Not yet applied/ });
+  const notApplied = main.getByRole("group", { name: "Filter by topic" }).getByRole("button", { name: /^Not referenced in loaded plans/ });
   await expect(notApplied).toContainText("3");
   await notApplied.click();
   await expect(notApplied).toHaveAttribute("aria-pressed", "true");
@@ -125,7 +130,7 @@ test("IG TIPS says when the calendars cannot be read at all", async ({ page }) =
   await page.goto("/dev-preview?tab=ig-tips&calendars=live");
   const main = page.locator("#main-content");
   await expect(main.locator("[data-plans-status]")).toContainText("Could not read the marketing calendars. Try again.");
-  await expect(main.getByRole("button", { name: /^Not yet applied/ })).toHaveCount(0);
+  await expect(main.getByRole("button", { name: /^Not referenced in loaded plans/ })).toHaveCount(0);
   await expect(main.locator("[data-tip-usage]")).toHaveCount(0);
   await expect(main.locator("[data-tip-card]")).toHaveCount(5);
 });
@@ -224,7 +229,7 @@ test("the Work overview lists the next seven marketing days across calendars, re
     sources: [{ ...DEVSHARK, status: "ok", detail: null, calendar: calendar({ launch: day(-20), entries: [entry("ds-001", -20, "08:00", "Old")] }) }],
   });
   await page.reload();
-  await expect(card).toContainText("Nothing is planned in the next seven days.");
+  await expect(card).toContainText("No entries found in the loaded plans for the next seven days.");
 
   // No calendar readable, then no answer at all.
   await stubCalendars(page, { checkedAt: new Date().toISOString(), sources: [{ ...DEVSHARK, status: "error", detail: "502", calendar: null }] });
@@ -253,6 +258,28 @@ test("the preview shows the fixture calendars in Czech at 360 px without overflo
 
   await page.goto("/dev-preview?tab=ig-tips");
   const usage = page.locator('[data-tip-card="tip1"] [data-tip-usage]');
-  await expect(usage).toContainText("Použito v");
+  await expect(usage).toContainText("Odkazy v");
   await expect(usage.getByRole("link")).toHaveText(["devShark ×3 (otevře se na nové kartě)", "DNESKAi ×1 (otevře se na nové kartě)"]);
+});
+
+for (const lang of ['en', 'cs'] as const) test(`Work keeps inherited calendar labels readable (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page);
+  if (info.project.name === 'mobile') await page.setViewportSize({ width: 360, height: 800 });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  const codes = ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'new-provider-kind'];
+  await stubCalendars(page, { checkedAt: new Date().toISOString(), sources: [{ ...DEVSHARK, status: 'ok', detail: null,
+    calendar: calendar({ entries: codes.map((code, index) => entry(`inherited-${index}`, 0, '12:00', `Imported entry ${index}`, [], code, code, code)),
+      prelaunch: codes.map((code, index) => ({ id: `pre-${index}`, due: day(0), title: `Imported task ${index}`, owner: code, repo: null, issue: null, status: code })) }),
+  }] });
+  await page.goto('/dev-preview?tab=work&calendars=live');
+  const card = page.locator('[data-marketing-week]');
+  await expect(card.locator('[data-marketing-entry]')).toHaveCount(5);
+  await expect(card.locator('[data-marketing-prelaunch]')).toHaveCount(5);
+  for (let index = 0; index < codes.length; index++) await expect(card.locator(`[data-marketing-entry="inherited-${index}"]`)).toContainText(codes[index]);
+  await expect(card).not.toContainText('native code');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.waitForTimeout(600);
+  expect((await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-marketing-week]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
+  await card.screenshot({ path: info.outputPath(`work-calendar-inherited-${lang}.png`) });
+  expect(errors).toEqual([]);
 });

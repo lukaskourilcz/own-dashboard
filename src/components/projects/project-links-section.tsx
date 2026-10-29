@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Copy, ExternalLink, Info, Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,22 +39,26 @@ export function ProjectLinksSection({
   const t = useDict();
   const p = t.professional;
   const toast = useToast();
-  const { upsert, update, remove } = useProjectLinkMutations(setProjectLinks);
+  const { upsert, update, remove, pending } = useProjectLinkMutations(setProjectLinks, projectLinks);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [editingVersion, setEditingVersion] = useState("");
+  const [noteFailed, setNoteFailed] = useState(false);
+  const savingNote = useRef(false);
+  const cancelled = useRef<string | null>(null);
   const entries = linksForProject(project.id, projectLinks, aiLinks);
 
   async function addLinks(ids: string[]) {
     const start = nextProjectLinkOrder(project.id, projectLinks);
-    await upsert(
+    return (await upsert(
       ids.map((id, index) => ({
         project_id: project.id,
         ai_link_id: id,
         role: "uses",
         sort_order: start + index,
-      })),
-    );
+      })), { silent: true },
+    )) !== null;
   }
 
   async function copy(url: string) {
@@ -67,9 +71,14 @@ export function ProjectLinksSection({
   }
 
   async function saveNote(relation: ProjectLink) {
+    if (savingNote.current || cancelled.current === relation.id) return;
     const note = draft.trim();
-    setEditingId(null);
-    if (note !== relation.note) await update(relation.id, { note });
+    if (note === relation.note) { setEditingId(null); return; }
+    savingNote.current = true; setNoteFailed(false);
+    try {
+      if (await update(relation.id, { note }, { silent: true, expectedUpdatedAt: editingVersion })) setEditingId(current => current === relation.id ? null : current);
+      else setNoteFailed(true);
+    } finally { savingNote.current = false; }
   }
 
   return (
@@ -85,7 +94,7 @@ export function ProjectLinksSection({
           </Tooltip>
         </CardTitle>
         {!readOnly && (
-          <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
+          <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)} disabled={pending}>
             <Plus className="h-3.5 w-3.5" />
             {p.addProjectLink}
           </Button>
@@ -124,21 +133,26 @@ export function ProjectLinksSection({
                             void saveNote(relation);
                           }}
                         >
+                          <div className="min-w-0 flex-1 space-y-1">
                           <Input
+                            disabled={pending}
                             autoFocus
                             aria-label={`${p.linkNoteLabel}: ${link.title}`}
                             value={draft}
                             maxLength={500}
                             onChange={(event) => setDraft(event.target.value)}
-                            onBlur={() => void saveNote(relation)}
                             onKeyDown={(event) => {
                               if (event.key === "Escape") {
                                 event.preventDefault();
+                                cancelled.current = relation.id;
                                 setEditingId(null);
                               }
                             }}
-                            className="h-8 text-xs"
+                            className="h-11 text-xs md:h-8"
                           />
+                          {noteFailed && <p role="alert" className="text-xs text-risk">{t.ai.relationFailed}</p>}
+                          </div>
+                          <Button type="submit" size="sm" variant="outline" disabled={pending}>{t.common.save}</Button>
                         </form>
                       ) : (
                         <p className="mt-1 text-xs text-foreground-muted [overflow-wrap:anywhere]">
@@ -166,9 +180,13 @@ export function ProjectLinksSection({
                               size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7"
                               variant="ghost"
                               onClick={() => {
+                                cancelled.current = null;
+                                setNoteFailed(false);
                                 setDraft(relation.note);
+                                setEditingVersion(relation.updated_at);
                                 setEditingId(relation.id);
                               }}
+                              disabled={pending}
                               aria-label={`${p.editLinkNote}: ${link.title}`}
                             >
                               <Pencil />
@@ -179,6 +197,7 @@ export function ProjectLinksSection({
                               size="icon-sm" className="h-11 w-11 sm:h-7 sm:w-7"
                               variant="ghost"
                               onClick={() => void remove([relation.id])}
+                              disabled={pending}
                               aria-label={`${p.removeProjectLink}: ${link.title}`}
                             >
                               <Trash2 className="text-destructive" />

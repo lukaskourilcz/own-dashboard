@@ -14,7 +14,7 @@ Tools lists what the active projects' repositories use (see [the architecture](.
 
 Links and IG TIPS have separate export dialogs. The Links dialog can include all records, selected categories, or individual records, then apply a price filter. JSON supports a detailed flat list, compact flat list, or category-grouped structure; Markdown uses the same selected records. Price filters distinguish free, freemium-only, paid, and unknown records, while the combined free + freemium option remains available. Unknown prices are never inferred to be free.
 
-The IG TIPS dialog (`src/lib/tip-export.ts`, #90 item 1) works by topic instead: it includes all tips, chosen topics (Ungrouped among them) or chosen tips, and has no price filter, because tips carry no pricing. Each item carries `tip_group` and `tip_summary` under their column names, next to the notes, the score and reason, the sources and `usedBy`, and leaves out the library category and the pricing fields. JSON offers a detailed list, a compact list (`title`, `url`, `tip_group`, `tip_summary`) or one group per topic in `TIP_GROUPS` order; Markdown has one section per topic. Neither export includes the owner identifier. Clipboard denial leaves selectable preview text.
+The IG TIPS dialog (`src/lib/tip-export.ts`, #90 item 1) works by topic instead: it includes all tips, chosen topics (Ungrouped among them) or chosen tips, and has no price filter, because tips carry no pricing. Each item carries `tip_group` and `tip_summary` under their column names, next to the notes, the score and reason, the sources and `usedBy`, and leaves out the library category and the pricing fields. JSON offers a detailed list, a compact list (`title`, `url`, `tip_group`, `tip_summary`) or one group per topic in `TIP_GROUPS` order; Markdown has one section per topic. Neither export includes the owner identifier. Clipboard denial leaves selectable preview text. Export data is built only while its dialog is open. The dialogs reset per opening, prevent overlapping clipboard writes and associate copy feedback with the exact preview. Project relations are indexed once for cards and exports, rather than rescanned for every record.
 
 ## IG TIPS
 
@@ -47,7 +47,7 @@ The migration and owner-authorized research import were applied to the live data
 
 The category rows live only in the owner's Supabase project, so this repository holds no list of them and no count that a merge could silently invalidate. Collapsing categories that read as duplicates is therefore an owner action in the running app: the Links section offers a merge control on every category header, and flags name pairs that differ only by accents, case, separators or an English plural. Which of them are genuinely one topic is a judgement the tooling does not make.
 
-Links uses the expandable resource cards. A category that holds only tips does not appear in Links.
+Links uses expandable resource cards. Categories containing only tips remain manageable from Links; filtering hides empty sections. Category merging is one authenticated transaction that checks captured source membership. Failed link/tip edits and category renames retain their text, while pending saves protect fields and dismissal. Deletion reconciles project links, prompt links and Tools without restoring a stale whole-library snapshot. Auto-fill sends only the submitted URL to Jina and cannot replace newer typed text.
 
 ## Evidence limits
 

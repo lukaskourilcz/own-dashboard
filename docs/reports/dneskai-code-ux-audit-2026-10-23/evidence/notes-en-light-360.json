@@ -1,0 +1,228 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card min-h-[60vh] p-0 overflow-hidden",
+      "height": 480,
+      "tag": "DIV",
+      "text": "Project ideasSaved 14:25No projectworkideasAdd tag@media (max-width: 35.99375em) {.mantine-visible-from-xs {display: none !important;}}@medi",
+      "width": 328,
+      "x": 16,
+      "y": 260
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Home",
+      "width": 65.6,
+      "x": 8,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Work overview",
+      "width": 65.6,
+      "x": 78,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 65.6,
+      "x": 147,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 65.6,
+      "x": 217,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "More",
+      "width": 65.6,
+      "x": 286,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Import MD",
+      "width": 109,
+      "x": 16,
+      "y": 138
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "New note",
+      "width": 102.7,
+      "x": 131,
+      "y": 138
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "home",
+      "width": 47.7,
+      "x": 34,
+      "y": 223
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "ideas",
+      "width": 46.6,
+      "x": 88,
+      "y": 223
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "work",
+      "width": 44,
+      "x": 140,
+      "y": 223
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Back",
+      "width": 27.8,
+      "x": 33,
+      "y": 280
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Copy as Markdown",
+      "width": 43.6,
+      "x": 77,
+      "y": 272
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Download as Markdown",
+      "width": 43.6,
+      "x": 128,
+      "y": 272
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Publish to repo",
+      "width": 43.6,
+      "x": 180,
+      "y": 272
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Pin",
+      "width": 43.6,
+      "x": 232,
+      "y": 272
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Delete note",
+      "width": 43.6,
+      "x": 283,
+      "y": 272
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Remove work",
+      "width": 10,
+      "x": 72,
+      "y": 343
+    },
+    {
+      "disabled": false,
+      "height": 10,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Remove ideas",
+      "width": 10,
+      "x": 139,
+      "y": 343
+    },
+    {
+      "disabled": false,
+      "height": 24.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add tag",
+      "width": 73.8,
+      "x": 164,
+      "y": 336
+    }
+  ],
+  "documentWidth": 360,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Notes",
+      "width": 41.6,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "height": 30,
+      "tag": "H1",
+      "text": "Notes",
+      "width": 328,
+      "x": 16,
+      "y": 72
+    }
+  ],
+  "viewport": {
+    "height": 800,
+    "width": 360
+  }
+}

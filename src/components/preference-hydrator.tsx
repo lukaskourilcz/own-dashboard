@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { useLang } from "@/lib/i18n";
 import {
-  useCvLinks,
-  useCzechCareerVisibility,
   useDisplayCurrency,
   useNavCollapsed,
   useNavOrder,
@@ -45,15 +44,14 @@ export function PreferenceHydrator({
   const { setOrder } = useNavOrder();
   const { setCollapsed } = useNavCollapsed();
   const { setCount } = useTasksPerCategory();
-  const { setCs, setEn } = useCvLinks();
-  const { setShowCzechCareer } = useCzechCareerVisibility();
+  const ownerPreferences = useOwnerPreferences();
   const { setLayout } = useDashboardLayout();
   const { setHiddenProjectTabs } = useProjectTabVisibility();
 
   useEffect(() => {
     if (hydrated.current) return;
-    hydrated.current = true;
     if (!preferences.sync_available) return;
+    hydrated.current = true;
     setLang(preferences.language);
     setTheme(preferences.theme);
     setCurrency(preferences.display_currency);
@@ -62,24 +60,20 @@ export function PreferenceHydrator({
     setCollapsed(preferences.navigation_collapsed);
     setLayout(normalizeLayout(preferences.dashboard_layout));
     setCount(preferences.tasks_per_category);
-    setCs(preferences.cv_url_cs);
-    setEn(preferences.cv_url_en);
+    ownerPreferences?.hydrate({ cv_url_cs: preferences.cv_url_cs, cv_url_en: preferences.cv_url_en, show_czech_career: preferences.show_czech_career === true });
     setHiddenProjectTabs(preferences.hidden_project_tabs);
-    setShowCzechCareer(preferences.show_czech_career === true);
   }, [
     preferences,
     setCollapsed,
     setCount,
-    setCs,
     setCurrency,
-    setEn,
     setHidden,
     setLang,
     setLayout,
     setOrder,
     setTheme,
     setHiddenProjectTabs,
-    setShowCzechCareer,
+    ownerPreferences,
   ]);
 
   return null;

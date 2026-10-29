@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,33 +44,41 @@ export function AddToProjectDialog({
   const [role, setRole] = useState<ProjectLinkRole>(fixedRole ?? "uses");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const busyRef = useRef(false);
   const returnFocus = useReturnFocus(open);
   const selectedProject = projects.some((project) => project.id === projectId)
     ? projectId
     : projects[0]?.id ?? "";
 
   function close(next: boolean) {
+    if (busyRef.current) return;
     onOpenChange(next);
     if (!next) {
       setProjectId("");
       setRole(fixedRole ?? "uses");
       setNote("");
-      setBusy(false);
+      setFailed(false);
     }
   }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!selectedProject) return;
-    setBusy(true);
-    const ok = await onSave({ projectId: selectedProject, role: fixedRole ?? role, note: note.trim() });
-    setBusy(false);
-    if (ok) close(false);
+    if (!selectedProject || busyRef.current) return;
+    busyRef.current = true; setBusy(true); setFailed(false);
+    try {
+      const ok = await onSave({ projectId: selectedProject, role: fixedRole ?? role, note: note.trim() });
+      if (ok) {
+        busyRef.current = false;
+        close(false);
+      } else setFailed(true);
+    } catch { setFailed(true); }
+    finally { busyRef.current = false; setBusy(false); }
   }
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-md" onCloseAutoFocus={returnFocus}>
+      <DialogContent showClose={!busy} className="sm:max-w-md" onCloseAutoFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{`${t.ai.addToProject}: ${linkTitle}`}</DialogTitle>
           <DialogDescription>{t.ai.addToProjectDescription}</DialogDescription>
@@ -78,7 +86,8 @@ export function AddToProjectDialog({
         {projects.length === 0 ? (
           <p className="text-sm text-foreground-muted">{t.ai.allProjectsLinked}</p>
         ) : (
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={submit}>
+            <fieldset disabled={busy} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="add-to-project-project">{t.ai.project}</Label>
               <SimpleSelect
@@ -110,6 +119,7 @@ export function AddToProjectDialog({
                 rows={3}
               />
             </div>
+            {failed && <p role="alert" className="text-sm text-risk">{t.ai.relationFailed}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => close(false)}>
                 {t.common.cancel}
@@ -118,6 +128,7 @@ export function AddToProjectDialog({
                 {t.ai.addToProject}
               </Button>
             </DialogFooter>
+            </fieldset>
           </form>
         )}
       </DialogContent>

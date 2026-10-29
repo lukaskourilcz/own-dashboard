@@ -1,9 +1,11 @@
+import {DNESKAI_SLIDE_JPEG} from "./dneskai-slide-format";
+export {DNESKAI_SLIDE_JPEG} from "./dneskai-slide-format";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
-import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
+import { dneskaiPlacedFields, DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 
 /**
@@ -32,10 +34,10 @@ export const DNESKAI_STUDIO = {
   treeSha256: "fdacdb3ff9f6b909b6ca3712279efb63c6b3390385aaa1c7e17532dab688faa1",
 } as const;
 /** OwnDashboard's own rules on top of the studio's: the clip, glyph and placement gates and the JPEG below. Bump on any change. */
-export const DNESKAI_RENDER_POLICY = "dneskai-render/2";
+export const DNESKAI_RENDER_POLICY = "dneskai-render/3";
 export const DNESKAI_RENDERER_VERSION = `carousel-studio/${DNESKAI_STUDIO.version}+${DNESKAI_STUDIO.commit.slice(0, 7)}`;
 /** Instagram portrait: exactly 1080 × 1350, baseline JPEG at quality 92 without chroma subsampling, sRGB, at most 8 MiB. */
-export const DNESKAI_SLIDE_JPEG = { width: 1080, height: 1350, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;
+// DNESKAI_SLIDE_JPEG is re-exported above for existing callers.
 
 export const DNESKAI_RENDER_FAILURE_CODES = ["render-input-invalid", "render-rasterizer-unavailable", "render-rasterization-failed", "render-jpeg-encoding-failed", "asset-too-large", "asset-dimensions-invalid", "asset-storage-failed", "stored-asset-hash-mismatch", "stored-asset-metadata-mismatch", "worker-timeout"] as const;
 export type DneskaiRenderFailureCode = typeof DNESKAI_RENDER_FAILURE_CODES[number];
@@ -145,7 +147,8 @@ async function kitFieldFaces(kit: DneskaiKitId): Promise<FieldFaces> {
 }
 
 function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces: FieldFaces = DNESKAI_FIELD_FACES): DneskaiSlideRenderProblem[] {
-  const placed: readonly DneskaiTextField[] = DNESKAI_PLACED_FIELDS[slide.type];
+  if (slide.type === "sources") return [{ slide: index, code: "text-unplaced", blocking: true, field: "slide", message: "Sources slides are not part of a public DNESKAi post. Keep provenance in the brief and remove this slide." }];
+  const placed = dneskaiPlacedFields(slide, index);
   const written = [
     ...TEXT_FIELDS.flatMap((field) => slide[field]?.trim() ? [{ field, name: field as string, value: slide[field]! }] : []),
     ...(slide.sources ?? []).flatMap((value, line) => value.trim() ? [{ field: "sources" as const, name: `sources[${line}]`, value }] : []),
@@ -153,7 +156,7 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces:
   const problems: DneskaiSlideRenderProblem[] = [];
   for (const { field, name, value } of written) {
     if (!placed.includes(field)) {
-      problems.push({ slide: index, code: "text-unplaced", blocking: true, field: name, message: `A ${slide.type} slide does not draw a ${field}, so this text would be approved but never shown. Remove it or use a slide type that draws it.` });
+      problems.push({ slide: index, code: "text-unplaced", blocking: true, field: name, message: index === 0 ? `The first slide shows only its headline. Remove the ${field} before rendering.` : `A ${slide.type} slide does not draw a ${field}. Remove it or use a slide type that draws it.` });
       continue;
     }
     const face = faces[field];
@@ -168,7 +171,7 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces:
 }
 
 /**
- * The slide as the studio takes it. Code writes the folio, the sources title and the disclosure;
+ * The slide as the studio takes it. The public first slide is headline-only; provenance stays in storage.
  * DNESKAi is Czech-only.
  */
 export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = [], kit: DneskaiKitId = "editorial"): DneskaiSlideInput {
@@ -178,8 +181,8 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
     type: slide.type,
     ...(slide.variant ? { variant: slide.variant } : {}),
     headline: slide.headline,
-    ...(slide.body !== undefined ? { body: slide.body } : {}),
-    ...(slide.kicker !== undefined ? { kicker: slide.kicker } : {}),
+    ...(position.index !== 0 && slide.body !== undefined ? { body: slide.body } : {}),
+    ...(position.index !== 0 && slide.kicker !== undefined ? { kicker: slide.kicker } : {}),
     ...(slide.credit !== undefined ? { credit: slide.credit } : {}),
     ...(slide.sources !== undefined ? { sources: slide.sources } : {}),
     images,

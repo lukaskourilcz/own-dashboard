@@ -12,20 +12,13 @@ import {
   Timer,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDateLocale, useDict } from "@/lib/i18n";
 import type { CronRun } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-async function loadRuns(): Promise<CronRun[]> {
-  const res = await fetch("/api/crons/runs?days=14", { cache: "no-store" });
-  const body = (await res.json().catch(() => ({}))) as {
-    runs?: CronRun[];
-    error?: string;
-  };
-  if (!res.ok) throw new Error(body.error ?? "Could not load cron runs.");
-  return body.runs ?? [];
-}
+import { loadCronRuns } from "@/lib/cron-runs";
+import { useNow } from "@/lib/use-now";
 
 function StatusPill({ status }: { status: CronRun["status"] }) {
   const t = useDict();
@@ -86,11 +79,11 @@ export function CronMonitorPanel({ isPreview = false }: { isPreview?: boolean })
   const c = t.dashboard.crons;
   const query = useQuery({
     queryKey: ["crons", "runs"],
-    queryFn: loadRuns,
+    queryFn: ({ signal }) => loadCronRuns(signal),
     staleTime: 60_000,
     enabled: !isPreview,
   });
-  const runs = useMemo(() => query.data ?? [], [query.data]);
+  const runs = useMemo(() => query.data?.runs ?? [], [query.data]);
 
   const byDate = useMemo(() => {
     const m = new Map<string, CronRun[]>();
@@ -103,17 +96,20 @@ export function CronMonitorPanel({ isPreview = false }: { isPreview?: boolean })
     return m;
   }, [runs]);
 
-  const now = new Date();
-  const todayKey = format(now, "yyyy-MM-dd");
+  const now = useNow();
+  const todayKey = now ? format(now, "yyyy-MM-dd") : "";
   const todays = byDate.get(todayKey) ?? [];
   const ok = todays.filter((r) => r.status === "success").length;
   const fail = todays.filter((r) => r.status === "failure").length;
 
   // History day navigator: 0 = today … up to 13 days back.
   const [offset, setOffset] = useState(0);
-  const selectedDate = subDays(now, offset);
-  const selectedKey = format(selectedDate, "yyyy-MM-dd");
+  const [visibleCount, setVisibleCount] = useState(10);
+  const selectedDate = now ? subDays(now, offset) : null;
+  const selectedKey = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
   const selected = byDate.get(selectedKey) ?? [];
+  const visible = selected.slice(0, visibleCount);
+  const changeDay = (next: number) => { setOffset(Math.min(13, Math.max(0, next))); setVisibleCount(10); };
 
   return (
     <Card className="overflow-hidden">
@@ -133,64 +129,48 @@ export function CronMonitorPanel({ isPreview = false }: { isPreview?: boolean })
         <p className="px-5 py-8 text-center text-sm text-foreground-subtle">
           {c.emptyToday}
         </p>
-      ) : query.isLoading ? (
+      ) : query.isLoading || !now ? (
         <div className="space-y-2 p-5" aria-live="polite">
           {Array.from({ length: 3 }, (_, i) => (
             <div key={i} className="h-10 animate-pulse rounded-md bg-skeleton" />
           ))}
         </div>
-      ) : query.isError ? (
-        <p role="alert" className="px-5 py-8 text-center text-sm text-destructive">
-          {c.unavailable}
-        </p>
+      ) : query.isError && !query.data ? (
+        <div role="alert" className="space-y-3 px-5 py-5 text-center text-sm text-destructive">
+          <p>{c.unavailable}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()} disabled={query.isFetching}>{t.common.retry}</Button>
+        </div>
       ) : (
         <>
-          {/* Today */}
-          <div className="border-b border-border">
-            <p className="px-5 pt-3 text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle">
-              {c.today}
-            </p>
-            {todays.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-foreground-subtle">
-                {c.emptyToday}
-              </p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {todays.map((run) => (
-                  <RunRow key={run.id} run={run} locale={locale} />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Log history with day navigation */}
+          {query.data?.partial && <p role="status" className="px-5 py-3 text-xs text-foreground-muted">{c.partial}</p>}
+          {query.isError && <div role="alert" className="flex flex-wrap items-center gap-2 px-5 py-3 text-xs text-destructive"><p>{c.cachedWarning}</p><Button variant="outline" size="sm" onClick={() => void query.refetch()} disabled={query.isFetching}>{t.common.retry}</Button></div>}
+          {/* One selected day; today's rows are not repeated in a second list. */}
           <div>
             <div className="flex items-center justify-between gap-2 px-5 py-2.5">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle">
-                {c.history}
+                {offset === 0 ? c.today : c.history}
               </p>
               <div className="flex items-center gap-2">
                 <Tooltip content={c.prevDay}>
                   <button
                     type="button"
-                    onClick={() => setOffset((o) => Math.min(13, o + 1))}
+                    onClick={() => changeDay(offset + 1)}
                     disabled={offset >= 13}
                     aria-label={c.prevDay}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-40 focus-ring"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-40 focus-ring md:h-6 md:w-6"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                 </Tooltip>
                 <span className="min-w-[7rem] text-center text-xs tabular text-foreground-muted">
-                  {format(selectedDate, "PPP", { locale })}
+                  {selectedDate && format(selectedDate, "PPP", { locale })}
                 </span>
                 <Tooltip content={c.nextDay}>
                   <button
                     type="button"
-                    onClick={() => setOffset((o) => Math.max(0, o - 1))}
+                    onClick={() => changeDay(offset - 1)}
                     disabled={offset <= 0}
                     aria-label={c.nextDay}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-40 focus-ring"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-40 focus-ring md:h-6 md:w-6"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -199,15 +179,16 @@ export function CronMonitorPanel({ isPreview = false }: { isPreview?: boolean })
             </div>
             {selected.length === 0 ? (
               <p className="px-5 py-4 text-sm text-foreground-subtle">
-                {c.emptyDay}
+                {query.data?.partial ? c.partialEmpty : offset === 0 ? c.emptyToday : c.emptyDay}
               </p>
             ) : (
               <ul className="divide-y divide-border">
-                {selected.map((run) => (
+                {visible.map((run) => (
                   <RunRow key={run.id} run={run} locale={locale} />
                 ))}
               </ul>
             )}
+            {visible.length < selected.length && <div className="px-5 py-3"><Button variant="outline" size="sm" onClick={() => setVisibleCount(count => count + 10)}>{c.showMore(selected.length - visible.length)}</Button></div>}
           </div>
         </>
       )}

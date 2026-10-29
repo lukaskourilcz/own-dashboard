@@ -1,0 +1,52 @@
+{
+  "source": "56430435",
+  "ordinaryProductionBuild": true,
+  "NEXT_E2E": "unset",
+  "syntheticEnvironment": true,
+  "checks": [
+    {
+      "route": "/login",
+      "status": 200
+    },
+    {
+      "route": "/dev-preview?tab=marketing&imports=live&marketingState=live&campaignActivation=live",
+      "status": 404
+    },
+    {
+      "route": "/api/dev-preview/dneskai-fit",
+      "status": 404
+    },
+    {
+      "route": "/api/marketing/calendars",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/import",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/state",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/campaigns",
+      "status": 401,
+      "privateNoStore": true
+    }
+  ],
+  "scope": "Local ordinary runtime admission checks only; no provider/model/publication or managed mutation.",
+  "trackedInputCount": 3048,
+  "trackedManifestSha256": "9c0554c452c4ba484951342d154a1b90c34f10c6432d6e2da8f2726ff9456fc5",
+  "compileSeconds": 9.8,
+  "applicationTypesSeconds": 11.1,
+  "requiredRendererTraces": 8,
+  "dynamicFilesystemWarnings": 3,
+  "trackedInputsUnchanged": true,
+  "reviewBranchPushed": "564304356e9f5106a3ed63723cc1ba1c519e5267",
+  "managedMutation": false,
+  "deployment": false,
+  "mainMerged": false
+}

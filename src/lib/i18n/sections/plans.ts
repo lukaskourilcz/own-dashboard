@@ -5,6 +5,11 @@ type PlansStrings = {
   title: string;
   description: string;
   board: string;
+  pages: string;
+  pageRange: (from: number, to: number, total: number) => string;
+  previous: string;
+  next: string;
+  noneOnPage: string;
   timeline: string;
   newPlan: string;
   formTitle: string;
@@ -32,7 +37,12 @@ type PlansStrings = {
   titleRequired: string;
   targetDateRequiredForCalendar: string;
   couldNotSavePlan: string;
+  saveUnconfirmed: string;
+  actionUnconfirmed: string;
+  planChanged: string;
   calendarEventFailed: string;
+  calendarLinkFailed: string;
+  calendarDeleteFailed: string;
   saving: string;
   addPlan: string;
   statusBoard: string;
@@ -52,9 +62,16 @@ type PlansStrings = {
 
 export const plans: { en: PlansStrings; cs: PlansStrings } = {
   en: {
+    calendarDeleteFailed: "Plan deleted. The calendar event removal was not confirmed; check Calendar before trying again.",
+    calendarLinkFailed: "The plan and calendar event were saved, but their link could not be stored. Check Calendar before adding another event.",
     title: "Goals",
     description: "Outcomes you're working toward.",
     board: "Board",
+    pages: "Plan pages",
+    pageRange: (from, to, total) => `Plans ${from}–${to} of ${total}`,
+    previous: "Previous",
+    next: "Next",
+    noneOnPage: "No plans on this page.",
     timeline: "Timeline",
     newPlan: "New plan",
     formTitle: "Title",
@@ -96,13 +113,16 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     targetDateRequiredForCalendar:
       "Target date is required to add to calendar.",
     couldNotSavePlan: "Could not save plan.",
+    saveUnconfirmed: "Save was not confirmed. Retry the same details or reload Goals before creating another plan.",
+    actionUnconfirmed: "The change was not confirmed. Reload before trying again.",
+    planChanged: "This plan changed. Reload before trying again.",
     calendarEventFailed:
-      "Plan saved, but the calendar event couldn't be created.",
+      "Plan saved. The calendar event was not confirmed; check Calendar before adding another event.",
     saving: "Saving…",
     addPlan: "Add plan",
     statusBoard: "Status board",
     noPlansYet: "No plans yet",
-    noPlansDescription: "Add one on the left to start tracking your goals.",
+    noPlansDescription: "Create a plan to start tracking your goals.",
     empty: "empty",
     changeStatus: "Change status",
     deletePlan: "Delete plan",
@@ -114,9 +134,16 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     noDate: "no date",
   },
   cs: {
+    calendarDeleteFailed: "Plán je smazaný. Odstranění události nebylo potvrzeno; před dalším pokusem zkontrolujte Kalendář.",
+    calendarLinkFailed: "Plán i událost jsou uložené, ale jejich propojení se nepodařilo uložit. Než přidáte další událost, zkontrolujte Kalendář.",
     title: "Cíle",
     description: "Výsledky, ke kterým směřujete.",
     board: "Nástěnka",
+    pages: "Stránky plánů",
+    pageRange: (from, to, total) => `Plány ${from}–${to} z ${total}`,
+    previous: "Předchozí",
+    next: "Další",
+    noneOnPage: "Na této stránce nejsou žádné plány.",
     timeline: "Časová osa",
     newPlan: "Nový plán",
     formTitle: "Název",
@@ -159,13 +186,16 @@ export const plans: { en: PlansStrings; cs: PlansStrings } = {
     targetDateRequiredForCalendar:
       "Pro přidání do kalendáře je nutné cílové datum.",
     couldNotSavePlan: "Plán se nepodařilo uložit.",
+    saveUnconfirmed: "Uložení nebylo potvrzeno. Zkuste stejné údaje znovu nebo před vytvořením dalšího plánu obnovte Cíle.",
+    actionUnconfirmed: "Změna nebyla potvrzena. Před dalším pokusem plán znovu načtěte.",
+    planChanged: "Plán se změnil. Před dalším pokusem ho znovu načtěte.",
     calendarEventFailed:
-      "Plán byl uložen, ale událost v kalendáři se nepodařilo vytvořit.",
+      "Plán je uložený. Událost v kalendáři nebyla potvrzena; než přidáte další, zkontrolujte Kalendář.",
     saving: "Ukládání…",
     addPlan: "Přidat plán",
     statusBoard: "Nástěnka stavů",
     noPlansYet: "Zatím žádné plány",
-    noPlansDescription: "Přidejte plán vlevo a začněte sledovat své cíle.",
+    noPlansDescription: "Vytvořte plán a začněte sledovat své cíle.",
     empty: "prázdné",
     changeStatus: "Změnit stav",
     deletePlan: "Smazat plán",

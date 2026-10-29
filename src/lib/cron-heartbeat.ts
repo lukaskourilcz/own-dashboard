@@ -5,17 +5,18 @@ import type { Cron } from "@/lib/types";
  * success. Pure and deterministic: no clock of its own, no network, no service.
  *
  *   unmonitored — disabled, or nothing to judge it by yet
+ *   unknown     — clock or recorded timestamp cannot be assessed
  *   never       — monitored but it has not reported a single success
  *   ok          — reported within one expected interval (plus slack)
  *   late        — one to three intervals behind
- *   stale       — more than three intervals behind; treat as broken
+ *   stale       — no recorded success for more than three estimated gaps
  */
-export type CronHeartbeatState = "ok" | "late" | "stale" | "never" | "unmonitored";
+export type CronHeartbeatState = "ok" | "late" | "stale" | "never" | "unmonitored" | "unknown";
 
 export type CronHeartbeatResult = {
   state: CronHeartbeatState;
   lastSuccessAt: Date | null;
-  /** Expected gap between two runs, in milliseconds. */
+  /** Conservative usual gap between runs; an estimate, not scheduler proof. */
   intervalMs: number;
   /** How far past the expected interval the last success is; 0 when on time. */
   overdueByMs: number;
@@ -32,10 +33,10 @@ const STALE_INTERVALS = 3;
 const OK_INTERVALS = 1.5;
 
 /**
- * How long we expect to wait between two runs of `schedule`.
+ * The longest usual gap for the supported schedule shapes.
  *
  * This reads the handful of 5-field shapes the cron form actually produces —
- * it is not a cron parser and does not pretend to be one. Anything it does not
+ * it is not a scheduler or timezone oracle. Anything it does not
  * recognize falls back to the row's own `runs_per_month`, which the owner sets
  * for the cost estimate anyway, so an exotic expression degrades to a coarser
  * interval instead of a wrong verdict.
@@ -43,35 +44,42 @@ const OK_INTERVALS = 1.5;
 export function expectedIntervalMs(
   cron: Pick<Cron, "schedule" | "runs_per_month">,
 ): number {
+  const frequency = Number.isFinite(cron.runs_per_month) && cron.runs_per_month > 0 ? cron.runs_per_month : 1;
+  const fallback = Math.max(MINUTE, MONTH / Math.max(1, frequency));
+  if (typeof cron.schedule !== "string" || cron.schedule.length > 256) return fallback;
   const fields = cron.schedule.trim().split(/\s+/);
-  const fallback = MONTH / Math.max(1, Number(cron.runs_per_month) || 1);
   if (fields.length !== 5) return fallback;
 
   const [minute, hour, dayOfMonth, month, dayOfWeek] = fields;
+  const everyDate = dayOfMonth === "*" && month === "*" && dayOfWeek === "*";
 
   // A step in the minute field, e.g. */15 * * * * — every 15 minutes.
   const minuteStep = stepOf(minute);
-  if (minuteStep !== null && hour === "*") return minuteStep * MINUTE;
-  if (minute === "*" && hour === "*") return MINUTE;
+  if (everyDate && minuteStep !== null && minuteStep <= 59 && hour === "*") return minuteStep * MINUTE;
+  if (everyDate && minute === "*" && hour === "*") return MINUTE;
 
   // A step in the hour field, e.g. 0 */4 * * * — every 4 hours.
   const hourStep = stepOf(hour);
-  if (isFixed(minute) && hourStep !== null) return hourStep * HOUR;
-  if (isFixed(minute) && hour === "*") return HOUR;
+  if (everyDate && isFixed(minute) && hourStep !== null && hourStep <= 23) return hourStep * HOUR;
+  if (everyDate && isFixed(minute) && hour === "*") return HOUR;
 
   // From here the time of day is fixed, so the date fields set the period.
-  if (!isFixed(minute) || !isFixed(hour)) return fallback;
+  if (!isFixed(minute) || !isFixed(hour, 0, 23)) return fallback;
   if (month !== "*") return fallback;
 
   // Daily: 0 6 * * *
   if (dayOfMonth === "*" && dayOfWeek === "*") return DAY;
   // Weekly: 0 7 * * 0 — or a list of weekdays, e.g. 0 7 * * 1-5.
   if (dayOfMonth === "*") {
-    const days = countDayOfWeek(dayOfWeek);
-    return days > 0 ? (7 * DAY) / days : fallback;
+    const days = longestWeekdayGap(dayOfWeek);
+    return days > 0 ? days * DAY : fallback;
   }
   // Monthly: 0 7 1 * *
-  if (dayOfWeek === "*" && isFixed(dayOfMonth)) return MONTH;
+  if (dayOfWeek === "*" && isFixed(dayOfMonth, 1, 31)) {
+    const date = Number(dayOfMonth);
+    // Dates 29–31 can skip February/short months. Never use an average here.
+    return (date <= 28 ? 31 : date === 29 ? 59 : date === 30 ? 60 : 61) * DAY;
+  }
 
   return fallback;
 }
@@ -98,6 +106,11 @@ export function cronHeartbeatState(
     return { state: "unmonitored", lastSuccessAt, intervalMs, overdueByMs: 0 };
   }
 
+  const clock = now.getTime();
+  if (!Number.isFinite(clock) || (cron.last_success_at && (!lastSuccessAt || lastSuccessAt.getTime() > clock + 5 * MINUTE))) {
+    return { state: "unknown", lastSuccessAt, intervalMs, overdueByMs: 0 };
+  }
+
   const monitored = cron.heartbeat_url.trim() !== "";
   if (!lastSuccessAt) {
     return {
@@ -108,7 +121,7 @@ export function cronHeartbeatState(
     };
   }
 
-  const ageMs = now.getTime() - lastSuccessAt.getTime();
+  const ageMs = Math.max(0, clock - lastSuccessAt.getTime());
   const overdueByMs = Math.max(0, ageMs - intervalMs);
   if (ageMs <= intervalMs * OK_INTERVALS) {
     return { state: "ok", lastSuccessAt, intervalMs, overdueByMs };
@@ -139,57 +152,42 @@ export function staleCronCount(
 
 /* ---- inbound Uptime Kuma notifications ----------------------------------- */
 
-/** The Kuma webhook body, as far as we rely on it. Every field is optional. */
-export type UptimeKumaPayload = {
-  heartbeat?: { status?: unknown; time?: unknown; msg?: unknown };
-  monitor?: { id?: unknown; name?: unknown };
-  msg?: unknown;
-};
-
+/** Confirmed transition facts from a default Kuma webhook. */
 export type UptimeKumaEvent = {
-  /** The monitor's name, or `Monitor <id>` when it sent no name. */
+  monitorId: number;
   monitor: string;
+  observedAt: string;
   down: boolean;
-  message: string;
 };
 
-/**
- * Read the fields the receiver relies on out of a Kuma notification body.
- *
- * The shape belongs to Kuma, not to us, so this validates rather than trusts:
- * a body with no identifiable monitor returns null and is ignored. A status
- * that is not explicitly "up" counts as down, because the safe failure for an
- * alert is to be heard.
- */
-export function parseUptimeKumaEvent(
-  body: UptimeKumaPayload | null | undefined,
-): UptimeKumaEvent | null {
-  if (!body || typeof body !== "object") return null;
-  const rawName = body.monitor?.name;
-  const rawId = body.monitor?.id;
-  const monitor =
-    typeof rawName === "string" && rawName.trim()
-      ? rawName.trim().slice(0, 200)
-      : typeof rawId === "number" || typeof rawId === "string"
-        ? `Monitor ${rawId}`
-        : "";
-  if (!monitor) return null;
-
-  const status = body.heartbeat?.status;
-  const up = status === 1 || status === "1" || status === true;
-  const rawMessage =
-    typeof body.heartbeat?.msg === "string"
-      ? body.heartbeat.msg
-      : typeof body.msg === "string"
-        ? body.msg
-        : "";
-  return { monitor, down: !up, message: rawMessage.trim().slice(0, 500) };
+/** Default Kuma webhook facts only. Its raw heartbeat time is UTC, while
+ * pending/maintenance/test notifications do not prove either transition.
+ * Never retain the vendor monitor options or free-form diagnostic message. */
+export function parseUptimeKumaEvent(body: unknown, now = Date.now()): UptimeKumaEvent | null {
+  if (!body || typeof body !== "object" || Array.isArray(body) || !Number.isFinite(now)) return null;
+  const payload = body as Record<string, unknown>;
+  if (!payload.monitor || typeof payload.monitor !== "object" || Array.isArray(payload.monitor) ||
+      !payload.heartbeat || typeof payload.heartbeat !== "object" || Array.isArray(payload.heartbeat)) return null;
+  const monitor = payload.monitor as Record<string, unknown>, heartbeat = payload.heartbeat as Record<string, unknown>;
+  const id = monitor.id;
+  if (typeof id !== "number" || !Number.isSafeInteger(id) || id < 1 ||
+      (heartbeat.monitorID !== undefined && heartbeat.monitorID !== id) ||
+      (heartbeat.status !== 0 && heartbeat.status !== 1) || typeof heartbeat.time !== "string") return null;
+  // Kuma serializes YYYY-MM-DD HH:mm:ss.SSS in UTC. Also accept explicit UTC ISO.
+  const time = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\.(\d{1,3}))?(Z)?$/.exec(heartbeat.time);
+  if (!time || time[0] !== heartbeat.time || time[1].startsWith("0000") || (heartbeat.time.includes("T") && !time[4]) || (!heartbeat.time.includes("T") && time[4])) return null;
+  const observedAt = `${time[1]}T${time[2]}.${(time[3] ?? "").padEnd(3, "0")}Z`;
+  const stamp = Date.parse(observedAt);
+  if (!Number.isFinite(stamp) || new Date(stamp).toISOString() !== observedAt || stamp > now + 300_000) return null;
+  const name = typeof monitor.name === "string" ? monitor.name.trim().slice(0, 200).replace(/[\uD800-\uDBFF]$/u, '') : "";
+  if (!name.isWellFormed() || /[\u0000-\u001f\u007f]/u.test(name)) return null;
+  return {monitorId: id, monitor: name || `Monitor ${id}`, observedAt, down: heartbeat.status === 0};
 }
 
 /* ---- field helpers ------------------------------------------------------- */
 
-function isFixed(field: string): boolean {
-  return /^\d+$/.test(field);
+function isFixed(field: string, min = 0, max = 59): boolean {
+  return /^\d+$/.test(field) && Number(field) >= min && Number(field) <= max;
 }
 
 /** The N of a star-slash-N step field, or null when the field is not one. */
@@ -200,20 +198,26 @@ function stepOf(field: string): number | null {
   return Number.isFinite(step) && step > 0 ? step : null;
 }
 
-/** How many weekdays `0`, `1-5` or `1,3,5` selects; 0 when unreadable. */
-function countDayOfWeek(field: string): number {
-  let total = 0;
+/** Largest gap across a selected weekday set, including the week boundary. */
+function longestWeekdayGap(field: string): number {
+  const days = new Set<number>();
   for (const part of field.split(",")) {
     const range = /^(\d+)-(\d+)$/.exec(part);
     if (range) {
       const from = Number(range[1]);
       const to = Number(range[2]);
-      if (to < from) return 0;
-      total += to - from + 1;
+      if (to < from || from < 0 || to > 7) return 0;
+      for (let day = from; day <= to; day++) days.add(day % 7);
       continue;
     }
-    if (!isFixed(part)) return 0;
-    total += 1;
+    if (!isFixed(part, 0, 7)) return 0;
+    days.add(Number(part) % 7);
   }
-  return total;
+  const ordered = [...days].sort((a, b) => a - b);
+  let largest = 0;
+  for (let index = 0; index < ordered.length; index++) {
+    const next = index + 1 < ordered.length ? ordered[index + 1] : ordered[0] + 7;
+    largest = Math.max(largest, next - ordered[index]);
+  }
+  return largest;
 }

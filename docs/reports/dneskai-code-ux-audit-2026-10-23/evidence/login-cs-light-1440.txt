@@ -1,0 +1,19 @@
+- main:
+  - paragraph: OwnDashboard
+  - paragraph: Soukromý profesní operační systém
+  - paragraph: Vítejte zpět
+  - heading "Osobní operační systém pro projekty, klienty, příležitosti, kariéru, finance, plánování a profesní znalosti." [level=1]
+  - paragraph: Projekty · Příležitosti · Klienti · Kariéra · Peníze · Plánování · Znalosti
+  - paragraph: Váš systém, vaše data
+  - paragraph: Jeden vlastník. Výslovné integrace. Žádná volání AI modelů.
+  - heading "Přihlaste se do svého prostoru" [level=2]
+  - paragraph: Soukromý profesní operační systém
+  - button "Pokračovat přes Google":
+    - text: Pokračovat přes Google
+  - paragraph: Žádáme o přístup ke Kalendáři pro vytváření událostí z aplikace OwnDashboard.
+  - paragraph:
+    - link "Prohlídka pro hosty":
+      - /url: /guest
+    - text: Ukázková data. Úpravy se neukládají.
+- button "Open Next.js Dev Tools":
+- alert

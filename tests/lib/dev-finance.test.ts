@@ -4,6 +4,7 @@ import {
   isAmountConfirmed,
   isDevelopmentSubscription,
   isDevelopmentTransaction,
+  indexSubscriptionShares,
   isRunningSubscription,
   monthKeys,
   projectSubscriptionShares,
@@ -83,10 +84,12 @@ describe("development scope", () => {
     expect(isDevelopmentSubscription(personal, allocations)).toBe(false);
     expect(isDevelopmentSubscription(dev, allocations)).toBe(true);
     expect(isDevelopmentSubscription(allocated, allocations)).toBe(true);
+    expect(isDevelopmentSubscription(sub({ category_group: "other", project_id: "p" }), [])).toBe(true);
   });
 
   it("recognizes development transactions by link or category, never income", () => {
-    expect(isDevelopmentTransaction(tx({ subscription_id: "s" }))).toBe(true);
+    expect(isDevelopmentTransaction(tx({ subscription_id: "s" }), new Set(["s"]))).toBe(true);
+    expect(isDevelopmentTransaction(tx({ subscription_id: "other" }), new Set(["s"]))).toBe(false);
     expect(isDevelopmentTransaction(tx({ project_id: "p" }))).toBe(true);
     expect(isDevelopmentTransaction(tx({ category: "Development" }))).toBe(true);
     expect(isDevelopmentTransaction(tx({ category: "Groceries" }))).toBe(false);
@@ -95,6 +98,13 @@ describe("development scope", () => {
 });
 
 describe("subscription shares", () => {
+  it("indexes exact shares without changing recorded allocations or legacy fallback", () => {
+    const subscriptions = [sub({ id: "a" }), sub({ id: "b", project_id: "legacy" })];
+    const allocations = [allocation("a", "p", 0.25), allocation("other", "unused", 1)];
+    const original = structuredClone(allocations), indexed = indexSubscriptionShares(subscriptions, allocations);
+    for (const item of subscriptions) expect(indexed.get(item.id)).toEqual(subscriptionShares(item, allocations));
+    expect(allocations).toEqual(original);
+  });
   it("leaves the remainder unallocated and normalizes over-allocation", () => {
     const s = sub({ id: "s" });
     expect(subscriptionShares(s, [allocation("s", "a", 0.25), allocation("s", "b", 0.25)])).toEqual([
@@ -246,6 +256,30 @@ describe("summarizeDevFinance", () => {
     expect(september.committed).toBeCloseTo(35, 5);
     expect(summary.timeline).toHaveLength(12);
   });
+  it("does not call tomorrow's or next month's transactions paid today", () => {
+    const result = summarizeDevFinance({ subscriptions: [], allocations: [], transactions: [
+      tx({ id: "today", amount: 2, occurred_on: "2026-09-16", project_id: "dash" }),
+      tx({ id: "tomorrow", amount: 100, occurred_on: "2026-09-17", project_id: "dash" }),
+      tx({ id: "future-month", amount: 200, occurred_on: "2026-10-01", project_id: "dash" }),
+    ], projects, projectCosts: [], crons: [], currency: "USD", now: NOW, months: 12 });
+    expect(result.paidLastMonths).toBe(2); expect(result.timeline.at(-1)?.paid).toBe(2); expect(result.developmentTransactions.map(row => row.id)).toEqual(["today"]);
+  });
+  it("includes a legacy project-linked subscription in both project and Money totals", () => {
+    const legacy = sub({ category_group: "other", project_id: "dash", amount: 12 });
+    const result = summarizeDevFinance({ subscriptions: [legacy], allocations: [], transactions: [], projects, projectCosts: [], crons: [], currency: "USD", now: NOW });
+    expect(result.recurringMonthly).toBe(12); expect(result.byProject.find(row => row.project.id === "dash")?.recurringMonthly).toBe(12);
+    expect(sharesMonthly(projectSubscriptionShares([legacy], [], "USD", NOW).get("dash"))).toBe(12);
+  });
+  it("excludes unrelated subscription payments and honors an explicitly recorded transaction project", () => {
+    const result = summarizeDevFinance({ subscriptions, allocations, transactions: [
+      tx({ id: "non-development", amount: 900, subscription_id: "netflix" }),
+      tx({ id: "explicit", amount: 20, subscription_id: "vercel", project_id: "gym" }),
+    ], projects, projectCosts: [], crons: [], currency: "USD", now: NOW });
+    expect(result.paidLastMonths).toBe(20); expect(result.developmentTransactions.map(row => row.id)).toEqual(["explicit"]);
+    expect(result.byProject.find(row => row.project.id === "gym")?.paidTotal).toBe(20);
+    expect(result.byProject.find(row => row.project.id === "gym")?.oneOffTotal).toBe(0);
+    expect(result.byProject.find(row => row.project.id === "dash")?.paidTotal).toBe(0);
+  });
 });
 
 describe("one monthly subscription cost per project", () => {
@@ -281,6 +315,8 @@ describe("one monthly subscription cost per project", () => {
     expect(isRunningSubscription(sub({ ended_on: "2026-10-01" }), NOW)).toBe(true);
     expect(isRunningSubscription(sub({ ended_on: null }), NOW)).toBe(true);
     expect(isRunningSubscription(sub({ is_active: false }), NOW)).toBe(false);
+    expect(isRunningSubscription(sub({ started_on: "2026-09-17" }), NOW)).toBe(false);
+    expect(isRunningSubscription(sub({ started_on: "2026-09-16" }), NOW)).toBe(true);
   });
 });
 

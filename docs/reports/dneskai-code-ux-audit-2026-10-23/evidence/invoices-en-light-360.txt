@@ -1,0 +1,46 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Invoices" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - heading "Invoices" [level=1]
+  - paragraph: Issue invoices in the Czech format.
+  - button "Invoicing settings":
+    - text: Invoicing settings
+  - button "New invoice":
+    - text: New invoice
+  - button "Drop a PDF invoice here or click to choose a file":
+    - generic: Drop a PDF invoice here or click to choose a file
+  - paragraph: Outstanding
+  - paragraph: 38 115,00 Kč
+  - paragraph: 1 · Issued
+  - paragraph: Overdue
+  - paragraph: 0,00 Kč
+  - paragraph: 0 · Overdue
+  - paragraph: Paid
+  - paragraph: 0,00 Kč
+  - paragraph: Paid
+  - list:
+    - button "2026001 · Acme s.r.o. Issued 16. 10. 2026 · Due 30. 10. 2026":
+      - paragraph:
+        - text: "2026001"
+        - generic: · Acme s.r.o.
+      - paragraph: Issued 16. 10. 2026 · Due 30. 10. 2026
+    - generic: 38 115,00 Kč
+    - generic: Issued
+    - button "Duplicate":
+    - button "Mark as paid":
+    - button "Delete":
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

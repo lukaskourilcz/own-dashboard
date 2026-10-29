@@ -1,0 +1,32 @@
+{
+  "runtime": "v22.23.4",
+  "description": "Local synthetic CPU for ten passes over every dated verified alias plus sixty unknown vacancy URLs; research lookup ids are exactly equal. Interleaved samples after warm-up. Not production latency or billed savings.",
+  "urlsPerPass": 111,
+  "passes": 10,
+  "samples": [
+    {
+      "beforeMs": 15.405208000000009,
+      "afterMs": 0.7449170000000009
+    },
+    {
+      "afterMs": 0.6213750000000005,
+      "beforeMs": 15.203709000000003
+    },
+    {
+      "beforeMs": 14.826374999999999,
+      "afterMs": 0.5221659999999986
+    },
+    {
+      "afterMs": 0.5488749999999953,
+      "beforeMs": 15.543500000000009
+    },
+    {
+      "beforeMs": 14.903583999999995,
+      "afterMs": 0.5333750000000066
+    }
+  ],
+  "median": {
+    "beforeMs": 15.203709000000003,
+    "afterMs": 0.5488749999999953
+  }
+}

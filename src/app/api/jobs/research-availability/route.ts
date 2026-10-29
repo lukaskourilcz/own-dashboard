@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     );
   const states = await verifyListings([
     { id: job.id, title: job.title, url: job.url } as JobListing,
-  ]);
+  ], undefined, request.signal);
   return NextResponse.json(
     { state: states[job.id] ?? "unknown", checkedAt: new Date().toISOString() },
     { headers: { "Cache-Control": "private, no-store" } },

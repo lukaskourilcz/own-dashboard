@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -37,6 +37,7 @@ import { vatNameMismatch, vatStatusOf } from "@/lib/tax-registry";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDict } from "@/lib/i18n";
 import type { ParsedInvoice } from "@/lib/invoice-parser";
+import { importedInvoiceLine } from "@/lib/invoice-import";
 import type {
   Invoice,
   InvoiceItem,
@@ -49,6 +50,11 @@ import type {
 
 export type FormMode = "create" | "edit" | "duplicate" | "import";
 export type InvoiceSource = { invoice: Invoice; items: InvoiceItem[] };
+
+type SubmissionErrorCode = "numberTaken" | "saveConflict" | "saveUnconfirmed" | "buyerNameRequired" | "numberRequired" | "itemRequired" | "invalidAmount";
+class InvoiceSaveError extends Error {
+  constructor(readonly code: SubmissionErrorCode) { super(code); }
+}
 
 // Module-level counter for keys of items added at runtime — avoids
 // Date.now()/crypto in the render path (React 19 no-impure-calls).
@@ -111,14 +117,6 @@ type Initial = {
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = ["bank", "cash", "card"];
-
-/** Snap a parsed VAT ratio (vat/base) to the closest supported rate. */
-function snapVatRate(ratio: number): number {
-  const pct = ratio * 100;
-  return VAT_RATES.reduce<number>((best, r) =>
-    Math.abs(r - pct) < Math.abs(best - pct) ? r : best,
-  VAT_RATES[0]);
-}
 
 function emptyBuyer(): Buyer {
   return {
@@ -236,14 +234,7 @@ function buildInitial(
     const isVatPayer = settings?.is_vat_payer ?? false;
     const number =
       prefill?.number?.trim() || suggestInvoiceNumber(existingInvoices);
-    let unitPrice = prefill?.total;
-    let vatRate = isVatPayer ? 21 : 0;
-    if (isVatPayer && prefill?.vatBase) {
-      unitPrice = prefill.vatBase;
-      if (prefill.vatTotal) {
-        vatRate = snapVatRate(prefill.vatTotal / prefill.vatBase);
-      }
-    }
+    const importedLine = importedInvoiceLine(prefill, isVatPayer);
     return {
       isVatPayer,
       number,
@@ -257,7 +248,7 @@ function buildInitial(
       taxDate: (isVatPayer && prefill?.taxableSupplyDate) || "",
       paymentMethod: "bank",
       currency: prefill?.currency || settings?.default_currency || "CZK",
-      roundTotal: true,
+      roundTotal: importedLine.roundTotal,
       note: "",
       organizationId: "",
       projectId: "",
@@ -277,8 +268,8 @@ function buildInitial(
           description: importedItemLabel,
           quantity: "1",
           unit: "ks",
-          unit_price: unitPrice != null ? String(unitPrice) : "",
-          vat_rate: vatRate,
+          unit_price: importedLine.unitPrice != null ? String(importedLine.unitPrice) : "",
+          vat_rate: importedLine.vatRate,
         },
       ],
       supplierSnapshot: null,
@@ -336,7 +327,6 @@ export function InvoiceForm({
   source,
   prefill,
   settings,
-  userId,
   existingInvoices,
   setInvoices,
   setItems,
@@ -360,6 +350,18 @@ export function InvoiceForm({
   onDone: (id: string) => void;
   onEditSupplier: () => void;
 }) {
+  const formId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  const submissionErrorRef = useRef<HTMLParagraphElement>(null);
+  const submissionErrorId = useId();
+  const submitting = useRef(false);
+  const [validationError, setValidationError] = useState<SubmissionErrorCode | null>(null);
+  const requestId = useRef<string | null>(null);
+  const [editSnapshot] = useState(() => mode === "edit" && source ? {
+    id: source.invoice.id,
+    updatedAt: source.invoice.updated_at,
+    itemIds: source.items.map((item) => item.id),
+  } : null);
   const supabase = createClient();
   const qc = useQueryClient();
   const toast = useToast();
@@ -376,7 +378,7 @@ export function InvoiceForm({
       t.invoices.importedItem,
     ),
   );
-  const isVatPayer = init.isVatPayer;
+  const isVatPayer = init.supplierSnapshot?.supplier_is_vat_payer ?? settings?.is_vat_payer ?? false;
 
   const [number, setNumber] = useState(init.number);
   const [variableSymbol, setVariableSymbol] = useState(init.variableSymbol);
@@ -445,124 +447,70 @@ export function InvoiceForm({
     );
   }
 
-  // Error sentinel that carries the toast message the original code would have
-  // shown, so onError can surface it verbatim (incl. the 23505 special-case).
-  class SaveError extends Error {}
-
-  // ── Edit: update header, then replace the line items (one atomic write).
-  // Items need server-generated ids, so this is non-optimistic: cache is
-  // updated in onSuccess, then both keys are invalidated.
-  const saveEditMutation = useMutation({
-    mutationFn: async ({
-      invoiceId,
-      detailFields,
-      buyerFields,
-      itemRows,
-    }: {
-      invoiceId: string;
-      detailFields: Record<string, unknown>;
-      buyerFields: Record<string, unknown>;
-      itemRows: Array<Record<string, unknown>>;
+  // The database commits the header and lines together, retaining this request
+  // identity after a failed or ambiguous response so a retry cannot duplicate it.
+  const saveMutation = useMutation({
+    mutationFn: async ({ header, lines }: {
+      header: Record<string, unknown>;
+      lines: Array<Record<string, unknown>>;
     }) => {
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .update({
-          ...detailFields,
-          ...buyerFields,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", invoiceId)
-        .select()
-        .single();
-      if (error || !inv) {
-        throw new SaveError(
-          error?.code === "23505"
-            ? t.invoices.numberTaken
-            : (error?.message ?? t.invoices.errorToast),
-        );
+      requestId.current ??= crypto.randomUUID();
+      const editing = editSnapshot;
+      const { data, error } = await supabase.rpc("save_invoice_document", {
+        p_id: editing ? editing.id : requestId.current,
+        p_creating: !editing,
+        p_header: header,
+        p_items: lines,
+        p_expected_updated_at: editing ? editing.updatedAt : null,
+        p_expected_item_ids: editing ? editing.itemIds : null,
+      });
+      if (error) throw new InvoiceSaveError(error.code === "23505" ? "numberTaken"
+        : error.code === "40001" || error.code === "P0002" ? "saveConflict"
+        : "saveUnconfirmed");
+      const result = data as { invoice: Invoice; items: InvoiceItem[] } | null;
+      if (!result?.invoice?.id || !Array.isArray(result.items) || result.items.length !== lines.length) {
+        throw new InvoiceSaveError("saveUnconfirmed");
       }
-      await supabase.from("invoice_items").delete().eq("invoice_id", invoiceId);
-      const { data: its, error: itErr } = await supabase
-        .from("invoice_items")
-        .insert(itemRows)
-        .select();
-      if (itErr || !its) {
-        throw new SaveError(itErr?.message ?? t.invoices.errorToast);
-      }
-      return { inv: inv as Invoice, its: its as InvoiceItem[] };
+      return result;
     },
-    onSuccess: ({ inv, its }) => {
-      setInvoices((prev) => prev.map((i) => (i.id === inv.id ? inv : i)));
-      setItems((prev) => [
-        ...its,
-        ...prev.filter((i) => i.invoice_id !== inv.id),
-      ]);
+    onSuccess: ({ invoice, items: savedItems }) => {
+      setInvoices((prev) => [invoice, ...prev.filter((item) => item.id !== invoice.id)]);
+      setItems((prev) => [...savedItems, ...prev.filter((item) => item.invoice_id !== invoice.id)]);
       void qc.invalidateQueries({ queryKey: qk.invoices });
       void qc.invalidateQueries({ queryKey: qk.invoiceItems });
-      toast.ok(t.invoices.updatedToast(inv.number));
-      onDone(inv.id);
+      toast.ok(mode === "edit" ? t.invoices.updatedToast(invoice.number) : t.invoices.createdToast(invoice.number));
+      onDone(invoice.id);
     },
-    onError: (error) => toast.err((error as Error).message),
-  });
-
-  // ── Create / duplicate: insert a brand-new invoice + its items (atomic).
-  // Non-optimistic (needs the server id): cache updated in onSuccess, then
-  // both keys are invalidated.
-  const createMutation = useMutation({
-    mutationFn: async ({
-      invoiceRow,
-      buildItemRows,
-    }: {
-      invoiceRow: Record<string, unknown>;
-      buildItemRows: (invoiceId: string) => Array<Record<string, unknown>>;
-    }) => {
-      const { data: inv, error } = await supabase
-        .from("invoices")
-        .insert(invoiceRow)
-        .select()
-        .single();
-      if (error || !inv) {
-        throw new SaveError(
-          error?.code === "23505"
-            ? t.invoices.numberTaken
-            : (error?.message ?? t.invoices.errorToast),
-        );
-      }
-      const { data: its, error: itErr } = await supabase
-        .from("invoice_items")
-        .insert(buildItemRows(inv.id))
-        .select();
-      if (itErr || !its) {
-        await supabase.from("invoices").delete().eq("id", inv.id);
-        throw new SaveError(itErr?.message ?? t.invoices.errorToast);
-      }
-      return { inv: inv as Invoice, its: its as InvoiceItem[] };
-    },
-    onSuccess: ({ inv, its }) => {
-      setInvoices((prev) => [inv, ...prev]);
-      setItems((prev) => [...its, ...prev]);
+    onError: () => {
       void qc.invalidateQueries({ queryKey: qk.invoices });
       void qc.invalidateQueries({ queryKey: qk.invoiceItems });
-      toast.ok(t.invoices.createdToast(inv.number));
-      onDone(inv.id);
     },
-    onError: (error) => toast.err((error as Error).message),
+    onSettled: () => { submitting.current = false; },
   });
-
-  const saving = saveEditMutation.isPending || createMutation.isPending;
+  const saving = saveMutation.isPending;
+  const submissionError = validationError ?? (saveMutation.isError
+    ? saveMutation.error instanceof InvoiceSaveError ? saveMutation.error.code : "saveUnconfirmed"
+    : null);
+  useEffect(() => {
+    if (submissionError) submissionErrorRef.current?.focus();
+  }, [submissionError, saveMutation.isError]);
 
   function submit(intent: "draft" | "issued" | "keep") {
+    if (submitting.current || saving) return;
+    setValidationError(null);
+    saveMutation.reset();
+    if (!formRef.current?.reportValidity()) return;
     const kept = items.filter((it) => it.description.trim() !== "");
     if (!buyer.buyer_name.trim()) {
-      toast.err(t.invoices.buyerNameRequired);
+      setValidationError("buyerNameRequired");
       return;
     }
     if (!number.trim()) {
-      toast.err(t.invoices.numberRequired);
+      setValidationError("numberRequired");
       return;
     }
     if (kept.length === 0) {
-      toast.err(t.invoices.itemRequired);
+      setValidationError("itemRequired");
       return;
     }
 
@@ -589,35 +537,29 @@ export function InvoiceForm({
       organization_id: organizationId || null,
       project_id: projectId || null,
     };
-    const itemRows = (invoiceId: string) =>
-      kept.map((it, i) => ({
-        invoice_id: invoiceId,
-        user_id: userId,
-        description: it.description.trim(),
-        quantity: Number(it.quantity) || 1,
-        unit: it.unit.trim() || null,
-        unit_price: Number(it.unit_price) || 0,
-        vat_rate: isVatPayer ? Number(it.vat_rate) || 0 : 0,
-        position: i,
-      }));
-
-    // ── Edit: update header, then replace the line items ──────────────────
+    const lines = kept.map((it) => ({
+      description: it.description.trim(),
+      quantity: Number(it.quantity),
+      unit: it.unit.trim() || null,
+      unit_price: Number(it.unit_price),
+      vat_rate: isVatPayer ? Number(it.vat_rate) : 0,
+    }));
+    if (lines.some((it) => !Number.isFinite(it.quantity) || !Number.isFinite(it.unit_price)
+      || !Number.isFinite(it.vat_rate))) {
+      setValidationError("invalidAmount");
+      return;
+    }
+    submitting.current = true;
     if (mode === "edit" && source) {
-      saveEditMutation.mutate({
-        invoiceId: source.invoice.id,
-        detailFields,
-        buyerFields,
-        itemRows: itemRows(source.invoice.id),
-      });
+      saveMutation.mutate({ header: { ...detailFields, ...buyerFields }, lines });
       return;
     }
 
     // ── Create / duplicate: insert a brand-new invoice ────────────────────
     const status = intent === "draft" ? "draft" : "issued";
     const snap = settingsSnapshot(settings);
-    createMutation.mutate({
-      invoiceRow: {
-        user_id: userId,
+    saveMutation.mutate({
+      header: {
         ...detailFields,
         ...buyerFields,
         status,
@@ -633,12 +575,12 @@ export function InvoiceForm({
         iban: snap.iban,
         footer_note: snap.footer_note,
       },
-      buildItemRows: itemRows,
+      lines,
     });
   }
 
   return (
-    <div>
+    <form ref={formRef} onSubmit={(event) => { event.preventDefault(); submit(mode === "edit" ? "keep" : "draft"); }}>
       <PageHeader
         title={
           mode === "edit"
@@ -648,7 +590,7 @@ export function InvoiceForm({
               : t.invoices.formNewTitle
         }
         action={
-          <Button size="sm" variant="outline" onClick={onCancel}>
+          <Button type="button" size="sm" variant="outline" onClick={onCancel} disabled={saving}>
             <ArrowLeft className="h-3.5 w-3.5" /> {t.invoices.back}
           </Button>
         }
@@ -660,7 +602,7 @@ export function InvoiceForm({
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <fieldset disabled={saving} className="grid min-w-0 gap-4 lg:grid-cols-2">
         {/* Supplier (read-only) */}
         <Card>
           <CardHeader>
@@ -703,7 +645,7 @@ export function InvoiceForm({
                 <p className="text-foreground-muted">
                   {t.invoices.supplierMissing}
                 </p>
-                <Button size="sm" variant="outline" onClick={onEditSupplier}>
+                <Button type="button" size="sm" variant="outline" onClick={onEditSupplier}>
                   <Building2 className="h-3.5 w-3.5" /> {t.invoices.editSupplier}
                 </Button>
               </div>
@@ -746,7 +688,7 @@ export function InvoiceForm({
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="b-name">{t.invoices.fieldName}</Label>
               <Input
-                id="b-name"
+                id="b-name" required
                 value={buyer.buyer_name}
                 onChange={(e) =>
                   setBuyer({ ...buyer, buyer_name: e.target.value })
@@ -843,7 +785,7 @@ export function InvoiceForm({
             <div className="space-y-1.5">
               <Label htmlFor="i-number">{t.invoices.fieldNumber}</Label>
               <Input
-                id="i-number"
+                id="i-number" required
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
               />
@@ -867,7 +809,7 @@ export function InvoiceForm({
             <div className="space-y-1.5">
               <Label htmlFor="i-issue">{t.invoices.fieldIssueDate}</Label>
               <Input
-                id="i-issue"
+                id="i-issue" required
                 type="date"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
@@ -876,7 +818,7 @@ export function InvoiceForm({
             <div className="space-y-1.5">
               <Label htmlFor="i-due">{t.invoices.fieldDueDate}</Label>
               <Input
-                id="i-due"
+                id="i-due" required
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -926,7 +868,7 @@ export function InvoiceForm({
             <CardTitle>{t.invoices.sectionItems}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <datalist id="unit-suggestions">
+            <datalist id={`${formId}-unit-suggestions`}>
               {UNIT_SUGGESTIONS.map((u) => (
                 <option key={u} value={u} />
               ))}
@@ -940,55 +882,65 @@ export function InvoiceForm({
                       onChange={(e) =>
                         setItemField(it.key, "description", e.target.value)
                       }
+                      aria-label={t.invoices.itemDescriptionPlaceholder}
                       placeholder={t.invoices.itemDescriptionPlaceholder}
                     />
                     <div className="flex flex-wrap items-end gap-2">
                       <div className="space-y-1 w-20">
-                        <Label>{t.invoices.itemQuantity}</Label>
+                        <Label htmlFor={`${formId}-item-${i}-quantity`}>{t.invoices.itemQuantity}</Label>
                         <Input
+                          id={`${formId}-item-${i}-quantity`}
                           type="number"
                           step="0.001"
                           min={0}
+                          max="99999999999.999"
+                          required={Boolean(it.description.trim())}
                           value={it.quantity}
                           onChange={(e) =>
                             setItemField(it.key, "quantity", e.target.value)
                           }
-                          className="h-8 text-xs"
+                          className="h-11 text-xs md:h-8"
                         />
                       </div>
                       <div className="space-y-1 w-16">
-                        <Label>{t.invoices.itemUnit}</Label>
+                        <Label htmlFor={`${formId}-item-${i}-unit`}>{t.invoices.itemUnit}</Label>
                         <Input
-                          list="unit-suggestions"
+                          id={`${formId}-item-${i}-unit`}
+                          list={`${formId}-unit-suggestions`}
                           value={it.unit}
                           onChange={(e) =>
                             setItemField(it.key, "unit", e.target.value)
                           }
-                          className="h-8 text-xs"
+                          className="h-11 text-xs md:h-8"
                         />
                       </div>
                       <div className="space-y-1 w-28">
-                        <Label>{t.invoices.itemUnitPrice}</Label>
+                        <Label htmlFor={`${formId}-item-${i}-unit_price`}>{t.invoices.itemUnitPrice}</Label>
                         <Input
+                          id={`${formId}-item-${i}-unit_price`}
                           type="number"
                           step="0.01"
+                          min="-999999999999.99"
+                          max="999999999999.99"
+                          required={Boolean(it.description.trim())}
                           value={it.unit_price}
                           onChange={(e) =>
                             setItemField(it.key, "unit_price", e.target.value)
                           }
                           placeholder="0.00"
-                          className="h-8 text-xs"
+                          className="h-11 text-xs md:h-8"
                         />
                       </div>
                       {isVatPayer && (
                         <div className="space-y-1 w-20">
-                          <Label>{t.invoices.itemVat}</Label>
+                          <Label htmlFor={`${formId}-item-${i}-vat_rate`}>{t.invoices.itemVat}</Label>
                           <SimpleSelect
+                          id={`${formId}-item-${i}-vat_rate`}
                             value={String(it.vat_rate)}
                             onValueChange={(v) =>
                               setItemField(it.key, "vat_rate", Number(v))
                             }
-                            className="h-8 text-xs"
+                            className="h-11 text-xs md:h-8"
                             options={VAT_RATES.map((r) => ({
                               value: String(r),
                               label: `${r} %`,
@@ -1008,6 +960,7 @@ export function InvoiceForm({
                   </div>
                   {items.length > 1 && (
                     <Button
+                      type="button"
                       size="icon-sm"
                       variant="ghost"
                       onClick={() => removeItem(it.key)}
@@ -1032,6 +985,7 @@ export function InvoiceForm({
           </CardHeader>
           <CardContent>
             <Textarea
+              aria-label={t.invoices.sectionNote}
               rows={4}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -1091,31 +1045,38 @@ export function InvoiceForm({
         </Card>
 
         {/* Actions */}
-        <div className="lg:col-span-2 flex flex-wrap justify-end gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={saving}>
+        <div className="lg:col-span-2 flex min-w-0 flex-wrap items-center justify-end gap-3" data-testid="invoice-form-actions">
+          {submissionError && <p ref={submissionErrorRef} id={submissionErrorId} role="alert" tabIndex={-1}
+            className="focus-ring min-w-0 flex-1 basis-full rounded-sm text-sm text-risk sm:min-w-48 sm:basis-auto">{t.invoices[submissionError]}</p>}
+          <div className="flex w-full max-w-full flex-wrap justify-end gap-2 sm:w-auto">
+          <Button type="button" variant="outline" className="min-w-max flex-1 sm:flex-none" onClick={onCancel} disabled={saving}>
             {t.invoices.cancel}
           </Button>
           {mode === "edit" ? (
-            <Button onClick={() => submit("keep")} disabled={saving}>
+            <Button type="button" className="min-w-max flex-1 sm:flex-none" onClick={() => submit("keep")} disabled={saving} aria-describedby={submissionError ? submissionErrorId : undefined}>
               <Save className="h-3.5 w-3.5" /> {t.invoices.saveChanges}
             </Button>
           ) : (
             <>
               <Button
+                type="button"
                 variant="outline"
+                className="min-w-max flex-1 sm:flex-none"
                 onClick={() => submit("draft")}
                 disabled={saving}
+                aria-describedby={submissionError ? submissionErrorId : undefined}
               >
                 {t.invoices.saveDraft}
               </Button>
-              <Button onClick={() => submit("issued")} disabled={saving}>
+              <Button type="button" className="min-w-max flex-1 sm:flex-none" onClick={() => submit("issued")} disabled={saving} aria-describedby={submissionError ? submissionErrorId : undefined}>
                 <FileText className="h-3.5 w-3.5" /> {t.invoices.issue}
               </Button>
             </>
           )}
+          </div>
         </div>
-      </div>
-    </div>
+      </fieldset>
+    </form>
   );
 }
 

@@ -1,0 +1,105 @@
+{
+  "finding": 293,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "e5c3bc55",
+  "state": "Actual synthetic captured-source conflict with a retained 300-character title, private letter and explicit reload. Optional guidance is closed for the existing letter. No real owner data or provider.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "61521046880a9728f174628471cec53bdad49ea681c6b54bc93d696c99d4e8e5",
+    "src/components/panels/career-letter-helper.tsx": "1084f3e0f91ca0767df5ad8d7387916771ed27e52e0e681b387d1d60c8aa6f96",
+    "src/components/panels/use-career-application-draft.ts": "4df24c15d60f11853a20e0dbc4f4696734f6e167e596b72c8112d0d3adafdd24",
+    "src/lib/i18n/sections/jobs.ts": "7b503ebcd2733df6ab8b7d4990e2fb574571bb13f957c22ece37b9cfd663dc91"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 2400
+      },
+      "box": {
+        "x": 336,
+        "y": 686.125,
+        "width": 768,
+        "height": 1027.75
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 2.734375,
+          "y": 17.90318657261007,
+          "w": 94.53125,
+          "h": 5.1568961323279
+        },
+        {
+          "n": 2,
+          "x": 2.734375,
+          "y": 55.94745803940647,
+          "w": 94.53125,
+          "h": 14.084164436876673
+        },
+        {
+          "n": 3,
+          "x": 2.734375,
+          "y": 86.08611043541717,
+          "w": 94.53125,
+          "h": 7.20019459985405
+        }
+      ],
+      "extent": {
+        "visible": 1026,
+        "total": 1026
+      },
+      "asset": "assets/career-application-cs-1440.png",
+      "sha256": "136e7ad665c7554e9c0ba04085bdbf53c5e77676043f26861ebf1ffe310e226a",
+      "baselineExtent": {
+        "visible": 2158,
+        "total": 2190
+      }
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 2400
+      },
+      "box": {
+        "x": 16,
+        "y": 422.5,
+        "width": 398,
+        "height": 1555
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.276381909547739,
+          "y": 11.832797427652734,
+          "w": 89.44723618090453,
+          "h": 9.131832797427652
+        },
+        {
+          "n": 2,
+          "x": 5.276381909547739,
+          "y": 57.942122186495176,
+          "w": 89.44723618090453,
+          "h": 11.189710610932476
+        },
+        {
+          "n": 3,
+          "x": 5.276381909547739,
+          "y": 81.54340836012862,
+          "w": 89.44723618090453,
+          "h": 9.646302250803858
+        }
+      ],
+      "extent": {
+        "visible": 1553,
+        "total": 1553
+      },
+      "asset": "assets/career-application-cs-430.png",
+      "sha256": "10606268544c754ec2f48c591a997601c9993ae34a68ff7f38b4c1ced7c3ce8a",
+      "baselineExtent": {
+        "visible": 2158,
+        "total": 3091
+      }
+    }
+  }
+}

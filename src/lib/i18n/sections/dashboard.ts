@@ -12,6 +12,7 @@ type DashboardStrings = {
   remove: string;
   dragToReorder: string;
   editingHint: string;
+  layoutSaveFailed: string;
   emptyTitle: string;
   emptyDescription: string;
   widgetNames: Record<WidgetId, string>;
@@ -28,6 +29,10 @@ type DashboardStrings = {
     statusFailure: string;
     statusRunning: string;
     unavailable: string;
+    partial: string;
+    partialEmpty: string;
+    cachedWarning: string;
+    showMore: (remaining: number) => string;
     summary: (ok: number, fail: number) => string;
   };
 };
@@ -45,6 +50,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     remove: "Remove widget",
     dragToReorder: "Drag to reorder",
     editingHint: "Drag widgets to reorder, or remove them with ×.",
+    layoutSaveFailed: "Layout changed on this device, but could not sync. Make another layout change to retry.",
     emptyTitle: "Your dashboard is empty",
     emptyDescription: "Add a widget to get started.",
     widgetNames: {
@@ -79,6 +85,10 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       statusFailure: "Failed",
       statusRunning: "Running",
       unavailable: "Cron history is unavailable.",
+      partial: "Showing the latest 1,000 runs. Earlier days may be incomplete.",
+      partialEmpty: "No runs for this day in the loaded history.",
+      cachedWarning: "Couldn't refresh the history. Showing the last loaded runs.",
+      showMore: (remaining) => `Show more (${remaining} remaining)`,
       summary: (ok, fail) => `${ok} ok · ${fail} failed`,
     },
   },
@@ -94,6 +104,7 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
     remove: "Odebrat widget",
     dragToReorder: "Přetažením změníte pořadí",
     editingHint: "Přetažením změníte pořadí, křížkem × widget odeberete.",
+    layoutSaveFailed: "Rozložení se změnilo na tomto zařízení, ale nepodařilo se synchronizovat. Další změnou rozložení to zkusíte znovu.",
     emptyTitle: "Nástěnka je prázdná",
     emptyDescription: "Začněte přidáním widgetu.",
     widgetNames: {
@@ -128,6 +139,10 @@ export const dashboard: { en: DashboardStrings; cs: DashboardStrings } = {
       statusFailure: "Selhalo",
       statusRunning: "Běží",
       unavailable: "Historie cronů není dostupná.",
+      partial: "Zobrazuje se posledních 1 000 běhů. Starší dny mohou být neúplné.",
+      partialEmpty: "V načtené historii nejsou pro tento den žádné běhy.",
+      cachedWarning: "Historii se nepodařilo obnovit. Zobrazují se naposledy načtené běhy.",
+      showMore: (remaining) => `Zobrazit další (zbývá ${remaining})`,
       summary: (ok, fail) => `${ok} ok · ${fail} selhalo`,
     },
   },

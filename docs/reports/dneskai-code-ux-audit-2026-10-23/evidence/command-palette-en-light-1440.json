@@ -1,0 +1,1196 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 413.5,
+      "tag": "DIV",
+      "text": "PreferencesLanguage, appearance, currency, task density, and alerts.LanguageČeštinaEnglishAppearanceLightDarkDisplay currencyUSDEURGBPCZKCAD",
+      "width": 1120,
+      "x": 276,
+      "y": 106
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 754.5,
+      "tag": "DIV",
+      "text": "Active projectsOnly active GitHub projects appear in navigation, selectors, daily focus, and operational tables. This selection is synchroni",
+      "width": 552,
+      "x": 276,
+      "y": 536
+    },
+    {
+      "className": "divide-y divide-border rounded-md border border-border",
+      "height": 469,
+      "tag": "UL",
+      "text": "DNESKAilukaskourilcz/aifirstOwnFreelanceown-dashboardlukaskourilcz/own-dashboardOwnFreelancedevSharklukaskourilcz/react-express-appOwnFreela",
+      "width": 514,
+      "x": 295,
+      "y": 665
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 754.5,
+      "tag": "DIV",
+      "text": "Project workspace sectionsChoose which tabs appear inside every project workspace. Overview always stays visible.OverviewAlways visibleTasks",
+      "width": 552,
+      "x": 844,
+      "y": 536
+    },
+    {
+      "className": "divide-y divide-border rounded-md border border-border",
+      "height": 442,
+      "tag": "UL",
+      "text": "OverviewAlways visibleTasksActivityCommunicationRepositoryFinanceCompetitionKnowledgeScalingMonetization",
+      "width": 514,
+      "x": 863,
+      "y": 613
+    },
+    {
+      "className": "divide-y divide-border rounded-md border border-border",
+      "height": 178,
+      "tag": "UL",
+      "text": "For review todayCalendarPostsSources (DNESKAi)",
+      "width": 514,
+      "x": 863,
+      "y": 1095
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 127,
+      "tag": "DIV",
+      "text": "Career searchShow Czech Career contentsCareer focuses on Oslo and work available from Norway. Enable this to also show Czech job boards, com",
+      "width": 1120,
+      "x": 276,
+      "y": 1306
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 147,
+      "tag": "DIV",
+      "text": "CV linksGoogle Docs links to your CVs — shown as buttons on the Career page. Paste the share URL; editing the doc keeps the same link.🇨🇿 C",
+      "width": 1120,
+      "x": 276,
+      "y": 1449
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card lg:col-span-2",
+      "height": 1222,
+      "tag": "DIV",
+      "text": "Navigation sectionsToggle which sections appear in navigation and drag to reorder within each group. Home and Inbox stay pinned.HomeAlways v",
+      "width": 1120,
+      "x": 276,
+      "y": 1612
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 210,
+      "tag": "DIV",
+      "text": "IntegrationsConnection state only. Credentials and provider tokens are never exposed here.Google…GitHub…",
+      "width": 552,
+      "x": 276,
+      "y": 2850
+    },
+    {
+      "className": "flex items-center justify-between gap-3 rounded-md border border-border p-3",
+      "height": 50,
+      "tag": "DIV",
+      "text": "Google…",
+      "width": 514,
+      "x": 295,
+      "y": 2927
+    },
+    {
+      "className": "flex items-center justify-between gap-3 rounded-md border border-border p-3",
+      "height": 50,
+      "tag": "DIV",
+      "text": "GitHub…",
+      "width": 514,
+      "x": 295,
+      "y": 2989
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 210,
+      "tag": "DIV",
+      "text": "Data & exportDownload portable JSON. Legacy personal data remains available after its source tables are removed.Full exportFinancialProfessi",
+      "width": 552,
+      "x": 844,
+      "y": 2850
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Command palette",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Čeština",
+      "width": 67.7,
+      "x": 1241,
+      "y": 206
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "English",
+      "width": 65.9,
+      "x": 1309,
+      "y": 206
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Light",
+      "width": 73.3,
+      "x": 1231,
+      "y": 271
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Dark",
+      "width": 71.1,
+      "x": 1304,
+      "y": 271
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "USD",
+      "width": 51.5,
+      "x": 1098,
+      "y": 334
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "EUR",
+      "width": 50.2,
+      "x": 1156,
+      "y": 334
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "GBP",
+      "width": 50.8,
+      "x": 1212,
+      "y": 334
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "CZK",
+      "width": 50.8,
+      "x": 1269,
+      "y": 334
+    },
+    {
+      "disabled": false,
+      "height": 30,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "CAD",
+      "width": 51.6,
+      "x": 1325,
+      "y": 334
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "3",
+      "width": 31.7,
+      "x": 1235,
+      "y": 399
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "5",
+      "width": 31.6,
+      "x": 1267,
+      "y": 399
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "10",
+      "width": 37.5,
+      "x": 1299,
+      "y": 399
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "All",
+      "width": 38.7,
+      "x": 1336,
+      "y": 399
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Subscription renewal warnings",
+      "width": 36,
+      "x": 1341,
+      "y": 471
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 677
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 677
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "DNESKAi",
+      "width": 36,
+      "x": 760,
+      "y": 681
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 729
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 729
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "own-dashboard",
+      "width": 36,
+      "x": 760,
+      "y": 733
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 781
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 781
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "devShark",
+      "width": 36,
+      "x": 760,
+      "y": 785
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 833
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 833
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "boardlessAI",
+      "width": 36,
+      "x": 760,
+      "y": 837
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 885
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 885
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Design Lab",
+      "width": 36,
+      "x": 760,
+      "y": 889
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 937
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 937
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "GoVIRAL",
+      "width": 36,
+      "x": 760,
+      "y": 941
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 989
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 989
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Recipe box app",
+      "width": 36,
+      "x": 760,
+      "y": 993
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 1041
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 1041
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Acme customer portal",
+      "width": 36,
+      "x": 760,
+      "y": 1045
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Own",
+      "width": 50.1,
+      "x": 615,
+      "y": 1093
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Freelance",
+      "width": 80.5,
+      "x": 666,
+      "y": 1093
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Harbor Bakery website",
+      "width": 36,
+      "x": 760,
+      "y": 1097
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 36,
+      "x": 1328,
+      "y": 669
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Activity",
+      "width": 36,
+      "x": 1328,
+      "y": 713
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Communication",
+      "width": 36,
+      "x": 1328,
+      "y": 757
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Repository",
+      "width": 36,
+      "x": 1328,
+      "y": 801
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Finance",
+      "width": 36,
+      "x": 1328,
+      "y": 845
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Competition",
+      "width": 36,
+      "x": 1328,
+      "y": 889
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Knowledge",
+      "width": 36,
+      "x": 1328,
+      "y": 933
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Scaling",
+      "width": 36,
+      "x": 1328,
+      "y": 977
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Monetization",
+      "width": 36,
+      "x": 1328,
+      "y": 1022
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "For review today (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 1108
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Calendar (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 1152
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Posts (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 1196
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Sources (DNESKAi)",
+      "width": 36,
+      "x": 1328,
+      "y": 1240
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 16,
+      "x": 295,
+      "y": 1355
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "https://docs.google.com/document/d/…",
+      "width": 535,
+      "x": 295,
+      "y": 1547
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "https://docs.google.com/document/d/…",
+      "width": 535,
+      "x": 842,
+      "y": 1547
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 1772
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Work overview",
+      "width": 36,
+      "x": 1333,
+      "y": 1770
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 1812
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Marketing",
+      "width": 36,
+      "x": 1333,
+      "y": 1810
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 1852
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Workflows",
+      "width": 36,
+      "x": 1333,
+      "y": 1850
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 1892
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 36,
+      "x": 1333,
+      "y": 1890
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 1932
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Competition",
+      "width": 36,
+      "x": 1333,
+      "y": 1930
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 1972
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Opportunities",
+      "width": 36,
+      "x": 1333,
+      "y": 1970
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2012
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Clients",
+      "width": 36,
+      "x": 1333,
+      "y": 2010
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2052
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Career",
+      "width": 36,
+      "x": 1333,
+      "y": 2050
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2092
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Invoices",
+      "width": 36,
+      "x": 1333,
+      "y": 2090
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2163
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Money overview",
+      "width": 36,
+      "x": 1333,
+      "y": 2161
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2203
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Accounts",
+      "width": 36,
+      "x": 1333,
+      "y": 2201
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2243
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Transactions",
+      "width": 36,
+      "x": 1333,
+      "y": 2241
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2283
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Subscriptions",
+      "width": 36,
+      "x": 1333,
+      "y": 2281
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2323
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Categories",
+      "width": 36,
+      "x": 1333,
+      "y": 2321
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2394
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 36,
+      "x": 1333,
+      "y": 2392
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2434
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Calendar",
+      "width": 36,
+      "x": 1333,
+      "y": 2432
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2474
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Goals",
+      "width": 36,
+      "x": 1333,
+      "y": 2472
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2514
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Dates",
+      "width": 36,
+      "x": 1333,
+      "y": 2512
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2585
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Notes",
+      "width": 36,
+      "x": 1333,
+      "y": 2583
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2625
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Prompts",
+      "width": 36,
+      "x": 1333,
+      "y": 2623
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2665
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Tools",
+      "width": 36,
+      "x": 1333,
+      "y": 2663
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2705
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "Links",
+      "width": 36,
+      "x": 1333,
+      "y": 2703
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Drag to reorder",
+      "width": 16,
+      "x": 303,
+      "y": 2745
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": "switch",
+      "tag": "BUTTON",
+      "text": "IG TIPS",
+      "width": 36,
+      "x": 1333,
+      "y": 2743
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Reset navigation",
+      "width": 143.9,
+      "x": 295,
+      "y": 2789
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Settings",
+      "width": 58.7,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Settings",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

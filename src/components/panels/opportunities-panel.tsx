@@ -26,6 +26,7 @@ import { statusLabel } from "@/lib/status-presentation";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import type { ClientOpportunity, OpportunitySource, OpportunityStatus, Organization, Project, Updater } from "@/lib/types";
 
 const SOURCES: OpportunitySource[] = ["tugedr", "referral", "direct", "existing_client", "inbound", "other"];
@@ -67,6 +68,7 @@ export function OpportunitiesPanel({
   setOrganizations: Updater<Organization[]>;
   setProjects: Updater<Project[]>;
 }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const p = t.professional;
   const { lang } = useLang();
@@ -106,7 +108,7 @@ export function OpportunitiesPanel({
   const createMutation = useMutation({
     mutationFn: async () => {
       if (isPreview) throw new Error("preview");
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("Not authenticated");
       const { data, error } = await supabase.from("client_opportunities").insert({
         user_id: userId,
@@ -202,7 +204,8 @@ export function OpportunitiesPanel({
   });
 
   const locale = useDateLocale();
-  const lastLoad = useLastLoad("opportunities");
+  const loadScope = isPreview ? "preview:opportunities" : `owner:${userId}:opportunities`;
+  const lastLoad = useLastLoad(loadScope);
   const [checking, setChecking] = useState(false);
   // The only way Opportunities fetches: the pipeline, the platform directory
   // and the metrics, on each press. Nothing refetches on focus or a timer.
@@ -212,12 +215,14 @@ export function OpportunitiesPanel({
       await onActivate();
       const platformRows = isPreview
         ? PREVIEW_PLATFORMS
-        : await qc.fetchQuery({ queryKey: [...qk.freelancePlatforms, userId], queryFn: () => fetchFreelancePlatforms(userId), staleTime: 0 }).catch(() => []);
+        : await qc.fetchQuery({ queryKey: [...qk.freelancePlatforms, userId], queryFn: () => fetchFreelancePlatforms(userId), staleTime: 0 });
       await qc.invalidateQueries({ queryKey: qk.opportunityMetrics });
-      recordLastLoad("opportunities", {
+      recordLastLoad(loadScope, {
         opportunities: (qc.getQueryData<ClientOpportunity[]>(qk.opportunities) ?? opportunities).length,
         platforms: platformRows.length,
       });
+    } catch {
+      toast.err(t.common.dataUnavailable);
     } finally {
       setChecking(false);
     }

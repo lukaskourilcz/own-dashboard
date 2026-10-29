@@ -1,0 +1,307 @@
+{
+  "containers": [
+    {
+      "className": "min-w-0",
+      "height": 457.5,
+      "tag": "SECTION",
+      "text": "Jak spolu oblasti souvisejíPráce pro klienta1Příležitost2Vy ji převedete na projekt3Projekt a klient4Vy připravíte fakturuPřevod vytvoří pro",
+      "width": 1120,
+      "x": 276,
+      "y": 146
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 48,
+      "tag": "DIV",
+      "text": "1Příležitost",
+      "width": 274,
+      "x": 276,
+      "y": 219
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 48,
+      "tag": "DIV",
+      "text": "1Úkoly a kalendář",
+      "width": 368,
+      "x": 276,
+      "y": 364
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 48,
+      "tag": "DIV",
+      "text": "2Denní výběr na Domů",
+      "width": 344,
+      "x": 676,
+      "y": 364
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 48,
+      "tag": "DIV",
+      "text": "3Týdenní plánování v Přehledu práce",
+      "width": 344,
+      "x": 1052,
+      "y": 364
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 48,
+      "tag": "DIV",
+      "text": "1Platný veřejný podklad",
+      "width": 274,
+      "x": 276,
+      "y": 508
+    },
+    {
+      "className": "",
+      "height": 1900,
+      "tag": "SECTION",
+      "text": "Vyberte oblastDenní práce a plánováníFungujeVyberte dnešní práci a hlídejte termíny.VstupVaše úkoly, cíle, termíny a připojené Google kalend",
+      "width": 1120,
+      "x": 276,
+      "y": 628
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 255,
+      "tag": "SECTION",
+      "text": "Denní práce a plánováníFungujeVyberte dnešní práci a hlídejte termíny.VstupVaše úkoly, cíle, termíny a připojené Google kalendáře.Váš krokDo",
+      "width": 1120,
+      "x": 276,
+      "y": 665
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 255,
+      "tag": "SECTION",
+      "text": "Projekty a konkurenceFungujeDržte práci, náklady a průzkum u příslušného projektu.VstupVaše projekty, propojené repozitáře, úkoly, poznámky,",
+      "width": 1120,
+      "x": 276,
+      "y": 920
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 255,
+      "tag": "SECTION",
+      "text": "Příležitosti, klienti a KariéraFungujeSledujte nabídky klientů a pracovní přihlášky až k dalšímu rozhodnutí.VstupPříležitosti z Tugedru, pří",
+      "width": 1120,
+      "x": 276,
+      "y": 1175
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 235.5,
+      "tag": "SECTION",
+      "text": "Faktury a penízeFungujePřipravte české faktury a sledujte výdaje projektů.VstupÚdaje klienta, položky faktur, platby, účty a data obnovy pře",
+      "width": 1120,
+      "x": 276,
+      "y": 1430
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 255,
+      "tag": "SECTION",
+      "text": "Znalosti, odkazy a IG TIPSFungujeUložte užitečné podklady a propojte je s prací, která je potřebuje.VstupVaše poznámky, prompty, nástroje, o",
+      "width": 1120,
+      "x": 276,
+      "y": 1665
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 352.5,
+      "tag": "SECTION",
+      "text": "Marketing pro devShark a DNESKAiPilot / rozpracovánoZkontrolujte přesné návrhy a sledujte jejich plánované zveřejnění.VstupPlatné otázky dev",
+      "width": 1120,
+      "x": 276,
+      "y": 1920
+    },
+    {
+      "className": "grid min-w-0 gap-3 py-5 lg:grid-cols-[210px_minmax(0,1fr)]",
+      "height": 254,
+      "tag": "SECTION",
+      "text": "Nastavení a integraceFungujeUpravte jazyk, vzhled, viditelné sekce a připojení.VstupVaše preference a služby, které se rozhodnete připojit.V",
+      "width": 1120,
+      "x": 276,
+      "y": 2273
+    },
+    {
+      "className": "min-w-0",
+      "height": 1152.5,
+      "tag": "SECTION",
+      "text": "Od podkladu ke zkontrolovanému příspěvkuPilot / rozpracovánoSupabase pg_cron volá OwnDashboard každých pět minut a každé volání udělá v každ",
+      "width": 1120,
+      "x": 276,
+      "y": 2552
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 57,
+      "tag": "DIV",
+      "text": "1Bezplatné zpravodajské feedy po 22:00 v Praze",
+      "width": 274,
+      "x": 276,
+      "y": 2742
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 57,
+      "tag": "DIV",
+      "text": "1Platná otázka nebo aktivní veřejný coding task",
+      "width": 274,
+      "x": 276,
+      "y": 3023
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 57,
+      "tag": "DIV",
+      "text": "1Zkontrolované rady z knihovny, pokud je máme",
+      "width": 274,
+      "x": 276,
+      "y": 3205
+    },
+    {
+      "className": "flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs leading-relaxed text-foreground",
+      "height": 48,
+      "tag": "DIV",
+      "text": "1Čekání na schválený termín",
+      "width": 274,
+      "x": 276,
+      "y": 3427
+    },
+    {
+      "className": "border-t border-border pt-4",
+      "height": 137,
+      "tag": "SECTION",
+      "text": "Další krokV Marketingu zkontrolujte stav návrhů a schválení devSharku; příspěvky DNESKAi najdete v Design Labu na kartě „Dnes ke schválení“ ",
+      "width": 1120,
+      "x": 276,
+      "y": 3728
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Workflows",
+      "width": 74,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Workflows",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 24,
+      "tag": "H2",
+      "text": "Jak spolu oblasti souvisejí",
+      "width": 1120,
+      "x": 276,
+      "y": 146
+    },
+    {
+      "height": 24,
+      "tag": "H2",
+      "text": "Vyberte oblast",
+      "width": 1120,
+      "x": 276,
+      "y": 628
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Denní práce a plánování",
+      "width": 210,
+      "x": 276,
+      "y": 685
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Projekty a konkurence",
+      "width": 210,
+      "x": 276,
+      "y": 940
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Příležitosti, klienti a Kariéra",
+      "width": 210,
+      "x": 276,
+      "y": 1195
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Faktury a peníze",
+      "width": 210,
+      "x": 276,
+      "y": 1450
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Znalosti, odkazy a IG TIPS",
+      "width": 210,
+      "x": 276,
+      "y": 1685
+    },
+    {
+      "height": 40,
+      "tag": "H3",
+      "text": "Marketing pro devShark a DNESKAi",
+      "width": 210,
+      "x": 276,
+      "y": 1940
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Nastavení a integrace",
+      "width": 210,
+      "x": 276,
+      "y": 2293
+    },
+    {
+      "height": 24,
+      "tag": "H2",
+      "text": "Od podkladu ke zkontrolovanému příspěvku",
+      "width": 332.1,
+      "x": 276,
+      "y": 2552
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Další krok",
+      "width": 1120,
+      "x": 276,
+      "y": 3745
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

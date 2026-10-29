@@ -117,11 +117,11 @@ const MANUAL = {
 
 export const todos: Todo[] = [
   { id: "t1", user_id: UID, title: "Submit Q2 invoice", done: false, due_date: ymd(0), category: null, created_at: TS, ...MANUAL, importance: 4 },
-  { id: "t2", user_id: UID, title: "Reply to landlord", done: false, due_date: ymd(-1), category: null, created_at: TS, ...MANUAL, importance: 3 },
-  { id: "t3", user_id: UID, title: "Buy running shoes", done: false, due_date: ymd(2), category: null, created_at: TS, ...MANUAL },
-  { id: "t4", user_id: UID, title: "Book dentist", done: true, due_date: null, category: null, created_at: TS, ...MANUAL },
+  { id: "t2", user_id: UID, title: "Reply to client feedback", done: false, due_date: ymd(-1), category: null, created_at: TS, ...MANUAL, importance: 3 },
+  { id: "t3", user_id: UID, title: "Review deployment costs", done: false, due_date: ymd(2), category: null, created_at: TS, ...MANUAL },
+  { id: "t4", user_id: UID, title: "Review invoice export", done: true, due_date: null, category: null, created_at: TS, ...MANUAL },
   { id: "t5", user_id: UID, title: "Add UPSTASH_REDIS_REST_URL in Vercel", done: false, due_date: ymd(5), category: "own-dashboard", created_at: TS, source: "github", repo_id: "1001", repo_full_name: "lukaskourilcz/own-dashboard", repo_owner: "lukaskourilcz", repo_name: "own-dashboard", repo_url: "https://github.com/lukaskourilcz/own-dashboard", needed_raw: "- [ ] Add UPSTASH_REDIS_REST_URL in Vercel", generated_at: ymd(-2), importance: 3 },
-  { id: "t6", user_id: UID, title: "Generate real app icons with Recraft", done: false, due_date: ymd(1), category: "react-express-app", created_at: TS, source: "github", repo_id: "1002", repo_full_name: "lukaskourilcz/react-express-app", repo_owner: "lukaskourilcz", repo_name: "react-express-app", repo_url: "https://github.com/lukaskourilcz/react-express-app", needed_raw: "- [ ] Generate real app icons with Recraft", generated_at: ymd(-6), importance: 5 },
+  { id: "t6", user_id: UID, title: "Verify app icon exports", done: false, due_date: ymd(1), category: "react-express-app", created_at: TS, source: "github", repo_id: "1002", repo_full_name: "lukaskourilcz/react-express-app", repo_owner: "lukaskourilcz", repo_name: "react-express-app", repo_url: "https://github.com/lukaskourilcz/react-express-app", needed_raw: "- [ ] Verify app icon exports", generated_at: ymd(-6), importance: 5 },
   { id: "t7", user_id: UID, title: "Review the weekly operating plan", done: false, due_date: ymd(0), category: null, created_at: at(8, 0, -12), ...MANUAL, importance: 6, is_global: true },
   { id: "t8", user_id: UID, title: "Verify project deployment", done: false, due_date: ymd(1), category: "DNESKAi", created_at: at(9, 0, -4), ...MANUAL, importance: 4, project_id: "proj-dneskai", is_global: false },
   { id: "t9", user_id: UID, title: "Review dashboard accessibility report", done: false, due_date: ymd(3), category: "own-dashboard", created_at: at(10, 0, -3), ...MANUAL, importance: 2, project_id: "proj-dashboard", is_global: false },
@@ -137,8 +137,8 @@ export const accounts: Account[] = [
 
 export const transactions: Transaction[] = [
   { id: "tx1", user_id: UID, account_id: "a1", kind: "income", amount: 62000, currency: "CZK", category: "Salary", note: "June", occurred_on: ymd(-5), external_id: null, created_at: TS },
-  { id: "tx2", user_id: UID, account_id: "a1", kind: "expense", amount: 14500, currency: "CZK", category: "Rent", note: null, occurred_on: ymd(-4), external_id: null, created_at: TS },
-  { id: "tx3", user_id: UID, account_id: "a1", kind: "expense", amount: 3200, currency: "CZK", category: "Groceries", note: null, occurred_on: ymd(-3), external_id: null, created_at: TS },
+  { id: "tx2", user_id: UID, account_id: "a1", kind: "expense", amount: 14500, currency: "CZK", category: "Office rent", note: null, occurred_on: ymd(-4), external_id: null, created_at: TS },
+  { id: "tx3", user_id: UID, account_id: "a1", kind: "expense", amount: 3200, currency: "CZK", category: "Office supplies", note: null, occurred_on: ymd(-3), external_id: null, created_at: TS },
   { id: "tx4", user_id: UID, account_id: "a1", kind: "expense", amount: 890, currency: "CZK", category: "Transport", note: null, occurred_on: ymd(-2), external_id: null, created_at: TS },
   { id: "tx5", user_id: UID, account_id: "a1", kind: "expense", amount: 1240, currency: "CZK", category: "Dining", note: "Dinner", occurred_on: ymd(-1), external_id: null, created_at: TS },
   { id: "tx6", user_id: UID, account_id: "a2", kind: "income", amount: 5000, currency: "CZK", category: "Interest", note: null, occurred_on: ymd(0), external_id: null, created_at: TS },
@@ -155,15 +155,15 @@ export const transactions: Transaction[] = [
 
 export const plans: Plan[] = [
   { id: "p1", user_id: UID, title: "Launch side project", target_date: ymd(45), status: "active", recurrence: "none", last_completed_at: null, notes: "Ship the MVP first.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-  { id: "p2", user_id: UID, title: "Run a half marathon", target_date: ymd(90), status: "idea", recurrence: "none", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p2", user_id: UID, title: "Complete accessibility review", target_date: ymd(90), status: "idea", recurrence: "none", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
   { id: "p3", user_id: UID, title: "Weekly review", target_date: null, status: "active", recurrence: "weekly", last_completed_at: null, notes: "Plan the week ahead.", linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-  { id: "p4", user_id: UID, title: "Pay rent", target_date: null, status: "active", recurrence: "monthly", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
-  { id: "p5", user_id: UID, title: "Deep-clean flat", target_date: null, status: "active", recurrence: "biweekly", last_completed_at: TS, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p4", user_id: UID, title: "Review project costs", target_date: null, status: "active", recurrence: "monthly", last_completed_at: null, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
+  { id: "p5", user_id: UID, title: "Review client pipeline", target_date: null, status: "active", recurrence: "biweekly", last_completed_at: TS, notes: null, linked_calendar_event_id: null, created_at: TS, updated_at: TS },
 ];
 
 export const notes: Note[] = [
   { id: "n1", user_id: UID, title: "Project ideas", content: [], plain_text: "Brainstorm for the new app", tags: ["work", "ideas"], is_pinned: true, sort_order: 2, created_at: TS, updated_at: TS },
-  { id: "n2", user_id: UID, title: "Grocery list", content: [], plain_text: "Milk, eggs, bread", tags: ["home"], is_pinned: false, sort_order: 1, created_at: TS, updated_at: TS },
+  { id: "n2", user_id: UID, title: "Release checklist", content: [], plain_text: "Validate migration order, smoke-test the deployment, update the handoff.", tags: ["work", "release"], is_pinned: false, sort_order: 1, created_at: TS, updated_at: TS },
 ];
 
 export const prompts: Prompt[] = [
@@ -649,7 +649,7 @@ export const todayCalendar: EventsResult = {
   events: [
     { id: "e1", summary: "Standup", start: { dateTime: at(9, 30) }, end: { dateTime: at(9, 45) } },
     { id: "e2", summary: "Lunch with Petr", start: { dateTime: at(12, 30) }, end: { dateTime: at(13, 30) }, location: "Café" },
-    { id: "e3", summary: "Gym", start: { dateTime: at(18, 0) }, end: { dateTime: at(19, 0) } },
+    { id: "e3", summary: "Project planning", start: { dateTime: at(18, 0) }, end: { dateTime: at(19, 0) } },
   ],
 };
 
@@ -657,7 +657,7 @@ export const weekCalendar: EventsResult = {
   ok: true,
   events: [
     ...todayCalendar.events,
-    { id: "e4", summary: "Dentist", start: { dateTime: at(10, 0, 2) }, end: { dateTime: at(10, 30, 2) } },
+    { id: "e4", summary: "Client handoff", start: { dateTime: at(10, 0, 2) }, end: { dateTime: at(10, 30, 2) } },
     { id: "e5", summary: "Team offsite", start: { date: ymd(3) }, end: { date: ymd(4) } },
   ],
 };

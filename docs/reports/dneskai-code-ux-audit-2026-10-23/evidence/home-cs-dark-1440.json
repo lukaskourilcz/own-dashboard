@@ -1,0 +1,480 @@
+{
+  "containers": [
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 305.5,
+      "tag": "DIV",
+      "text": "Dobré odpoledne, Janpátek 23. října · 14:31DalšíGymza 3 h 28 min📄Contract renewalza 12 dníDnešní události09:30Standup12:30Lunch with Petr18",
+      "width": 1120,
+      "x": 276,
+      "y": 136
+    },
+    {
+      "className": "relative overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-card md:p-5",
+      "height": 303.5,
+      "tag": "SECTION",
+      "text": "Dobré odpoledne, Janpátek 23. října · 14:31DalšíGymza 3 h 28 min📄Contract renewalza 12 dníDnešní události09:30Standup12:30Lunch with Petr18",
+      "width": 1118,
+      "x": 277,
+      "y": 137
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 675.5,
+      "tag": "DIV",
+      "text": "Dnešní sedmičkaHotovo 0 z 7Denní výběr z aktivních projektů, nejvyšší priority mají přednost.Vygenerovat novou sedmičku1Review the weekly op",
+      "width": 1120,
+      "x": 276,
+      "y": 458
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden",
+      "height": 673.5,
+      "tag": "DIV",
+      "text": "Dnešní sedmičkaHotovo 0 z 7Denní výběr z aktivních projektů, nejvyšší priority mají přednost.Vygenerovat novou sedmičku1Review the weekly op",
+      "width": 1118,
+      "x": 277,
+      "y": 459
+    },
+    {
+      "className": "p-4",
+      "height": 594.5,
+      "tag": "SECTION",
+      "text": "Zahrada dokončeníZelený den znamená, že bylo dokončeno všech sedm vybraných úkolů.",
+      "width": 260,
+      "x": 1134,
+      "y": 537
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 81,
+      "tag": "DIV",
+      "text": "Měsíční výdaje1 988,35 KčpředplatnáOtevřené úkoly111 hotovoAktivní projekty9profesní portfolio",
+      "width": 1120,
+      "x": 276,
+      "y": 1149
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 79,
+      "tag": "DIV",
+      "text": "Měsíční výdaje1 988,35 Kčpředplatná",
+      "width": 366,
+      "x": 277,
+      "y": 1150
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 79,
+      "tag": "DIV",
+      "text": "Otevřené úkoly111 hotovo",
+      "width": 366,
+      "x": 653,
+      "y": 1150
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 79,
+      "tag": "DIV",
+      "text": "Aktivní projekty9profesní portfolio",
+      "width": 366,
+      "x": 1029,
+      "y": 1150
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 145,
+      "tag": "DIV",
+      "text": "CronyDnes nebyl zaznamenán žádný běh cronu.",
+      "width": 1120,
+      "x": 276,
+      "y": 1246
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden",
+      "height": 143,
+      "tag": "DIV",
+      "text": "CronyDnes nebyl zaznamenán žádný běh cronu.",
+      "width": 1118,
+      "x": 277,
+      "y": 1247
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 110,
+      "tag": "DIV",
+      "text": "Vyžaduje pozornostPříležitostiAcme customer portalNabídka odeslána",
+      "width": 1120,
+      "x": 276,
+      "y": 1407
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 108,
+      "tag": "DIV",
+      "text": "Vyžaduje pozornostPříležitostiAcme customer portalNabídka odeslána",
+      "width": 1118,
+      "x": 277,
+      "y": 1408
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 539,
+      "tag": "DIV",
+      "text": "Předplatná23 860,19 Kč ročně · 7 aktivních1 988,35 Kč/měsSSupabaseMěsíčně · další 2026-11-04 · za 12 d$25.00VercelMěsíčně · další 2026-11-04",
+      "width": 552,
+      "x": 276,
+      "y": 1533
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 537,
+      "tag": "DIV",
+      "text": "Předplatná23 860,19 Kč ročně · 7 aktivních1 988,35 Kč/měsSSupabaseMěsíčně · další 2026-11-04 · za 12 d$25.00VercelMěsíčně · další 2026-11-04",
+      "width": 550,
+      "x": 277,
+      "y": 1534
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 278,
+      "tag": "DIV",
+      "text": "Nová událost v kalendářiNázevDatumZačátekKonecCelodenníNeopakuje seNeopakuje seDenněTýdněMěsíčněPřidat do Kalendáře Google",
+      "width": 552,
+      "x": 844,
+      "y": 1533
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 276,
+      "tag": "DIV",
+      "text": "Nová událost v kalendářiNázevDatumZačátekKonecCelodenníNeopakuje seNeopakuje seDenněTýdněMěsíčněPřidat do Kalendáře Google",
+      "width": 550,
+      "x": 845,
+      "y": 1534
+    },
+    {
+      "className": "space-y-3",
+      "height": 210,
+      "tag": "FORM",
+      "text": "NázevDatumZačátekKonecCelodenníNeopakuje seNeopakuje seDenněTýdněMěsíčněPřidat do Kalendáře Google",
+      "width": 512,
+      "x": 864,
+      "y": 1583
+    },
+    {
+      "className": "rounded-xl border border-transparent transition-colors",
+      "height": 233,
+      "tag": "DIV",
+      "text": "Opakující se plány2/3Weekly reviewTýdně·zbývají 2 dnyPay rentMěsíčně·zbývá 8 dníDeep-clean flatCo 14 dní·Hotovo",
+      "width": 552,
+      "x": 276,
+      "y": 2088
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 231,
+      "tag": "DIV",
+      "text": "Opakující se plány2/3Weekly reviewTýdně·zbývají 2 dnyPay rentMěsíčně·zbývá 8 dníDeep-clean flatCo 14 dní·Hotovo",
+      "width": 550,
+      "x": 277,
+      "y": 2089
+    },
+    {
+      "className": "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors",
+      "height": 51,
+      "tag": "LI",
+      "text": "Weekly reviewTýdně·zbývají 2 dny",
+      "width": 512,
+      "x": 296,
+      "y": 2138
+    },
+    {
+      "className": "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors",
+      "height": 51,
+      "tag": "LI",
+      "text": "Pay rentMěsíčně·zbývá 8 dní",
+      "width": 512,
+      "x": 296,
+      "y": 2195
+    },
+    {
+      "className": "flex items-center gap-2.5 rounded-md border border-border bg-surface px-2.5 py-2 transition-colors opacity-60",
+      "height": 51,
+      "tag": "LI",
+      "text": "Deep-clean flatCo 14 dní·Hotovo",
+      "width": 512,
+      "x": 296,
+      "y": 2252
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přizpůsobit",
+      "width": 113.8,
+      "x": 1282,
+      "y": 92
+    },
+    {
+      "disabled": true,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vygenerovat novou sedmičku",
+      "width": 217.6,
+      "x": 1156,
+      "y": 476
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the weekly operating plan",
+      "width": 16,
+      "x": 326,
+      "y": 553
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Generate real app icons with Recraft",
+      "width": 16,
+      "x": 326,
+      "y": 637
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Verify project deployment",
+      "width": 16,
+      "x": 326,
+      "y": 722
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Add UPSTASH_REDIS_REST_URL in Vercel",
+      "width": 16,
+      "x": 326,
+      "y": 806
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review the ingestion retry policy",
+      "width": 16,
+      "x": 326,
+      "y": 891
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Review dashboard accessibility report",
+      "width": 16,
+      "x": 326,
+      "y": 975
+    },
+    {
+      "disabled": true,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Document the release migration",
+      "width": 16,
+      "x": 326,
+      "y": 1060
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příležitosti",
+      "width": 57.7,
+      "x": 1318,
+      "y": 1428
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Návštěva zubaře",
+      "width": 512,
+      "x": 864,
+      "y": 1604
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 165.3,
+      "x": 864,
+      "y": 1669
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 165.3,
+      "x": 1037,
+      "y": 1669
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 165.3,
+      "x": 1211,
+      "y": 1669
+    },
+    {
+      "disabled": false,
+      "height": 14,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 14,
+      "x": 864,
+      "y": 1734
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "opakuje se",
+      "width": 128,
+      "x": 959,
+      "y": 1713
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "SELECT",
+      "text": "Neopakuje seDenněTýdněMěsíčně",
+      "width": 1,
+      "x": 958,
+      "y": 1748
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat do Kalendáře Google",
+      "width": 512,
+      "x": 864,
+      "y": 1761
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako hotové",
+      "width": 20,
+      "x": 307,
+      "y": 2154
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako hotové",
+      "width": 20,
+      "x": 307,
+      "y": 2211
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Označit jako nehotové",
+      "width": 20,
+      "x": 307,
+      "y": 2268
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Domů",
+      "width": 41.6,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 28,
+      "tag": "H2",
+      "text": "Dobré odpoledne, Jan",
+      "width": 183.4,
+      "x": 298,
+      "y": 158
+    },
+    {
+      "height": 24,
+      "tag": "H2",
+      "text": "Dnešní sedmička",
+      "width": 122.7,
+      "x": 298,
+      "y": 476
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Zahrada dokončení",
+      "width": 129.3,
+      "x": 1172,
+      "y": 553
+    },
+    {
+      "height": 24,
+      "tag": "H2",
+      "text": "Crony",
+      "width": 67.2,
+      "x": 298,
+      "y": 1264
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

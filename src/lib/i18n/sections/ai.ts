@@ -147,6 +147,7 @@ type AiStrings = {
   pickerSingleDescription: string;
   pickerAdd: (n: number) => string;
   pickerEmpty: string;
+  pickerFailed: string;
   pickerShowMore: (shown: number, total: number) => string;
   pickerResults: (n: number) => string;
   toolBadge: string;
@@ -304,6 +305,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     pickerSingleDescription: "Search the library and choose one link.",
     pickerAdd: (n) => (n > 0 ? `Add ${n}` : "Add"),
     pickerEmpty: "No library links match.",
+    pickerFailed: "Could not add the links. Your selection is still here; try again.",
     pickerShowMore: (shown, total) => `Show more (${shown} of ${total})`,
     pickerResults: (n) => `${n} link${n === 1 ? "" : "s"}`,
     toolBadge: "Tool",
@@ -459,6 +461,7 @@ export const ai: { en: AiStrings; cs: AiStrings } = {
     pickerSingleDescription: "Vyhledejte v knihovně a vyberte jeden odkaz.",
     pickerAdd: (n) => (n > 0 ? `Přidat ${n}` : "Přidat"),
     pickerEmpty: "Žádný odkaz z knihovny neodpovídá.",
+    pickerFailed: "Odkazy se nepodařilo přidat. Výběr zůstal zde; zkuste to znovu.",
     pickerShowMore: (shown, total) => `Zobrazit další (${shown} z ${total})`,
     pickerResults: (n) => `${n} ${n === 1 ? "odkaz" : n < 5 ? "odkazy" : "odkazů"}`,
     toolBadge: "Nástroj",

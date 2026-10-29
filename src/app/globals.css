@@ -9,6 +9,7 @@
    are expressed exclusively through semantic tokens. */
 
 :root {
+  color-scheme: light;
   /* surfaces */
   --background: #f3f4f6;
   --surface: #ffffff;
@@ -49,8 +50,8 @@
   --accent: #e8f2ff;
   --accent-foreground: #0056b3;
 
-  --information: #0064d1;
-  --success: #1f7a35;
+  --information: #005fc7;
+  --success: #196d30;
   --warning: #9a550b;
   --risk: #a13b29;
   --destructive: #a52b2b;
@@ -67,7 +68,7 @@
   --chart-4: #34c759;
   --chart-5: #af52de;
 
-  --ring: rgba(0, 122, 255, 0.28);
+  --ring: var(--information);
 
   /* macOS semantic accents */
   --mac-blue: #007aff;
@@ -98,6 +99,7 @@
   --toolbar-height: 3.5rem;
   --desktop-padding-block: 1rem;
   --desktop-padding-inline: 1.25rem;
+  --mobile-navigation-clearance: calc(5rem + env(safe-area-inset-bottom, 0px));
   --row-dense: 2.375rem;
   --row-regular: 2.875rem;
   --dialog-width: 32rem;
@@ -120,6 +122,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --primary-button: #dbe8fb;
   --background: #101214;
   --surface: #15181b;
@@ -174,7 +177,7 @@
   --chart-4: #70bf8f;
   --chart-5: #d69d8c;
 
-  --ring: rgba(141, 180, 229, 0.4);
+  --ring: var(--information);
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -229,7 +232,7 @@
   --shadow-card: var(--shadow);
   --shadow-elevated: var(--shadow-lg);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: -apple-system, BlinkMacSystemFont, var(--font-geist-sans), "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -240,10 +243,16 @@ html {
   font-feature-settings: "ss01", "ss03", "cv11";
 }
 
+@media (max-width: 767px) {
+  html {
+    scroll-padding-bottom: var(--mobile-navigation-clearance);
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, var(--font-sans), "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-optical-sizing: auto;
   line-height: 1.5;
@@ -347,7 +356,9 @@ body {
     height: 100%;
     min-height: 0;
     margin-inline: auto;
-    overflow: hidden;
+    /* Content owns scrolling. Hidden would still let focus/scrollIntoView move
+       this outer frame and carry its toolbar/sidebar out of view. */
+    overflow: clip;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-window);
   }
@@ -365,9 +376,6 @@ body {
     border-bottom: 0;
   }
 
-  .mac-page-header > div:first-child {
-    display: none;
-  }
 }
 
 button,
@@ -380,6 +388,16 @@ textarea {
 
 @utility page-frame {
   width: min(100%, var(--page-max));
+  margin-inline: auto;
+}
+
+@utility settings-frame {
+  width: min(100%, 56rem);
+  margin-inline: auto;
+}
+
+@utility form-frame {
+  width: min(100%, 60rem);
   margin-inline: auto;
 }
 
@@ -436,6 +454,15 @@ textarea {
   outline: none;
   &:focus-visible {
     box-shadow: 0 0 0 3px var(--ring);
+  }
+}
+
+/* Forced colors suppress box shadows. Keep keyboard focus visible using the
+   owner's system palette, including controls with custom outline resets. */
+@media (forced-colors: active) {
+  :is(.focus-ring, button, a, input, select, textarea, [tabindex], summary):focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
   }
 }
 
@@ -580,6 +607,7 @@ textarea {
     margin: 0;
   }
   body {
+    color-scheme: light;
     background: #fff;
   }
   body * {
@@ -631,7 +659,7 @@ textarea {
 .bn-host {
   /* Spacing matches the rest of the dashboard */
   padding: 0.5rem 0.5rem 2rem;
-  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
 }
 
 .bn-host [data-content-type] {
@@ -663,6 +691,9 @@ textarea {
 }
 
 .bn-host .bn-editor {
+  /* BlockNote sets a direct default family; the container variable alone
+     does not override that declaration. Keep native UI text consistent. */
+  font-family: var(--font-sans);
   background: transparent !important;
 }
 

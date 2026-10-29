@@ -1,0 +1,610 @@
+{
+  "containers": [
+    {
+      "className": "flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5",
+      "height": 138,
+      "tag": "DIV",
+      "text": "OsloOpen positionsSaved0Applications to send1Applied5Cover lettersCareer links",
+      "width": 328,
+      "x": 16,
+      "y": 210
+    },
+    {
+      "className": "space-y-6",
+      "height": 3841.5,
+      "tag": "SECTION",
+      "text": "OSLO · NORWAYYour next role in Oslo.Frontend, fullstack and practical AI integrations. Strong matches first, with senior stretches and concr",
+      "width": 328,
+      "x": 16,
+      "y": 389
+    },
+    {
+      "className": "career-overview grid gap-5 rounded-xl border border-border bg-surface p-5 sm:grid-cols-[1fr_auto] sm:p-6",
+      "height": 317,
+      "tag": "DIV",
+      "text": "OSLO · NORWAYYour next role in Oslo.Frontend, fullstack and practical AI integrations. Strong matches first, with senior stretches and concr",
+      "width": 328,
+      "x": 16,
+      "y": 389
+    },
+    {
+      "className": "flex h-11 items-center justify-between gap-2 rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:h-8 md:text-[13px] hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-foreground-subtle [&>span]:truncate w-full sm:w-64",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Priority matches · 75%+",
+      "width": 328,
+      "x": 16,
+      "y": 782
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "AidnFullstack EngineerReact · Next.js · TypeScriptOslo / anywhere in NorwayEmployer88%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 933
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "FlowcaseSenior Frontend EngineerReact · TypeScript · React QueryOsloThe Hub88%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 1153
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "AttensiFrontend Developer – Creator ToolsTypeScript · SvelteKit · Tailwind CSSOsloThe Hub88%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 1373
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "PexipSoftware Engineer · Control CenterReact · TypeScript · APIsOsloLinkedIn88%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 1593
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "No IsolationAI Integration Engineern8n · APIs · WebhooksOsloThe Hub86%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 1813
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 214,
+      "tag": "BUTTON",
+      "text": "SanitySenior Software Engineer, Content AgentTypeScript · React · AI agentsOsloStretch role86%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 2033
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "The Flex / Base360.aiSenior Full-Stack Product EngineerReact · TypeScript · SupabaseNorway · RemoteStretch role86%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 2259
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 214,
+      "tag": "BUTTON",
+      "text": "EnodeSenior Software Engineer (Home Energy)Node.js · TypeScript · APIsRemote Europe / Oslo officeStretch role85%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 2479
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 214,
+      "tag": "BUTTON",
+      "text": "Euronext Securities OsloDigital Transformation & User Experience Tech LeadReact · Node.js · BFFOslo / PortoStretch role85%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 2705
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "AizeSenior Software Engineer – IAMReact · TypeScript · IAMOsloLinkedIn84%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 2931
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "AidnSenior Fullstack EngineerReact · Next.js · TypeScriptOslo / NorwayLinkedIn84%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 3151
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "Six RoboticsSenior Frontend EngineerReact · TypeScript · Real-timeOsloStretch role79%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 3371
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 214,
+      "tag": "BUTTON",
+      "text": "HalliburtonLead Frontend Software Engineer (React/TypeScript)React · TypeScript · TanStackOsloStretch role77%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 3591
+    },
+    {
+      "className": "career-job-card focus-ring group flex min-h-52 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-card transition-[border-color,box-shadow,transform] hover:border-border-strong hover:shadow-soft active:scale-[0.99]",
+      "height": 208,
+      "tag": "BUTTON",
+      "text": "Tenth Revolution GroupLead Front End DeveloperReact · TypeScript · TanStackOsloStretch role75%profile match",
+      "width": 328,
+      "x": 16,
+      "y": 3817
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface px-4 py-3 text-sm",
+      "height": 46,
+      "tag": "DETAILS",
+      "text": "How scoring and listing age workStack 40 points, experience 25, domain 15, location 10 and language 10. Scores are a manual assessment of do",
+      "width": 328,
+      "x": 16,
+      "y": 4049
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Home",
+      "width": 65.6,
+      "x": 8,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Work overview",
+      "width": 65.6,
+      "x": 78,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 65.6,
+      "x": 147,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tasks",
+      "width": 65.6,
+      "x": 217,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "More",
+      "width": 65.6,
+      "x": 286,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Check for new offers",
+      "width": 180.9,
+      "x": 16,
+      "y": 158
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Oslo",
+      "width": 53.9,
+      "x": 19,
+      "y": 213
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Open positions",
+      "width": 123.4,
+      "x": 73,
+      "y": 213
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Saved0",
+      "width": 81.3,
+      "x": 196,
+      "y": 213
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Applications to send1",
+      "width": 173.3,
+      "x": 19,
+      "y": 257
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Applied5",
+      "width": 91.1,
+      "x": 192,
+      "y": 257
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Cover letters",
+      "width": 108.9,
+      "x": 19,
+      "y": 301
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Career links",
+      "width": 102.2,
+      "x": 128,
+      "y": 301
+    },
+    {
+      "disabled": false,
+      "height": 40,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Search Oslo positions",
+      "width": 328,
+      "x": 16,
+      "y": 730
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Opportunity filter",
+      "width": 328,
+      "x": 16,
+      "y": 782
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Aidn · Fullstack Engineer · 88% match",
+      "width": 328,
+      "x": 16,
+      "y": 933
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Flowcase · Senior Frontend Engineer · 88% match",
+      "width": 328,
+      "x": 16,
+      "y": 1153
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Attensi · Frontend Developer – Creator Tools · 88% match",
+      "width": 328,
+      "x": 16,
+      "y": 1373
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Pexip · Software Engineer · Control Center · 88% match",
+      "width": 328,
+      "x": 16,
+      "y": 1593
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "No Isolation · AI Integration Engineer · 86% match",
+      "width": 328,
+      "x": 16,
+      "y": 1813
+    },
+    {
+      "disabled": false,
+      "height": 214,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Sanity · Senior Software Engineer, Content Agent · 86% match",
+      "width": 328,
+      "x": 16,
+      "y": 2033
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "The Flex / Base360.ai · Senior Full-Stack Product Engineer · 86% match",
+      "width": 328,
+      "x": 16,
+      "y": 2259
+    },
+    {
+      "disabled": false,
+      "height": 214,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Enode · Senior Software Engineer (Home Energy) · 85% match",
+      "width": 328,
+      "x": 16,
+      "y": 2479
+    },
+    {
+      "disabled": false,
+      "height": 214,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Euronext Securities Oslo · Digital Transformation & User Experience Tech Lead · 85% match",
+      "width": 328,
+      "x": 16,
+      "y": 2705
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Aize · Senior Software Engineer – IAM · 84% match",
+      "width": 328,
+      "x": 16,
+      "y": 2931
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Aidn · Senior Fullstack Engineer · 84% match",
+      "width": 328,
+      "x": 16,
+      "y": 3151
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Six Robotics · Senior Frontend Engineer · 79% match",
+      "width": 328,
+      "x": 16,
+      "y": 3371
+    },
+    {
+      "disabled": false,
+      "height": 214,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Halliburton · Lead Frontend Software Engineer (React/TypeScript) · 77% match",
+      "width": 328,
+      "x": 16,
+      "y": 3591
+    },
+    {
+      "disabled": false,
+      "height": 208,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Tenth Revolution Group · Lead Front End Developer · 75% match",
+      "width": 328,
+      "x": 16,
+      "y": 3817
+    }
+  ],
+  "documentWidth": 360,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Career",
+      "width": 47.4,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "height": 30,
+      "tag": "H1",
+      "text": "Career",
+      "width": 328,
+      "x": 16,
+      "y": 72
+    },
+    {
+      "height": 32,
+      "tag": "H2",
+      "text": "Your next role in Oslo.",
+      "width": 286,
+      "x": 37,
+      "y": 434
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Fullstack Engineer",
+      "width": 286,
+      "x": 37,
+      "y": 986
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Senior Frontend Engineer",
+      "width": 286,
+      "x": 37,
+      "y": 1206
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Frontend Developer – Creator Tools",
+      "width": 286,
+      "x": 37,
+      "y": 1426
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Software Engineer · Control Center",
+      "width": 286,
+      "x": 37,
+      "y": 1646
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "AI Integration Engineer",
+      "width": 286,
+      "x": 37,
+      "y": 1866
+    },
+    {
+      "height": 44,
+      "tag": "H3",
+      "text": "Senior Software Engineer, Content Agent",
+      "width": 286,
+      "x": 37,
+      "y": 2086
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Senior Full-Stack Product Engineer",
+      "width": 286,
+      "x": 37,
+      "y": 2312
+    },
+    {
+      "height": 44,
+      "tag": "H3",
+      "text": "Senior Software Engineer (Home Energy)",
+      "width": 286,
+      "x": 37,
+      "y": 2532
+    },
+    {
+      "height": 44,
+      "tag": "H3",
+      "text": "Digital Transformation & User Experience Tech Lead",
+      "width": 286,
+      "x": 37,
+      "y": 2758
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Senior Software Engineer – IAM",
+      "width": 286,
+      "x": 37,
+      "y": 2984
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Senior Fullstack Engineer",
+      "width": 286,
+      "x": 37,
+      "y": 3204
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Senior Frontend Engineer",
+      "width": 286,
+      "x": 37,
+      "y": 3424
+    },
+    {
+      "height": 44,
+      "tag": "H3",
+      "text": "Lead Frontend Software Engineer (React/TypeScript)",
+      "width": 286,
+      "x": 37,
+      "y": 3644
+    },
+    {
+      "height": 22,
+      "tag": "H3",
+      "text": "Lead Front End Developer",
+      "width": 286,
+      "x": 37,
+      "y": 3870
+    }
+  ],
+  "viewport": {
+    "height": 800,
+    "width": 360
+  }
+}

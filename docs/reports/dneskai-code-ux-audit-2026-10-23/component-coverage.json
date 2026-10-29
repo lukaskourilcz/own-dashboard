@@ -1,0 +1,1737 @@
+[
+  {
+    "path": "src/components/brand-mark.tsx",
+    "lines": 23,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/calendar/calendar-picker.tsx",
+    "lines": 167,
+    "family": "Planning",
+    "recommendations": [
+      "U07",
+      "U11"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/calendar/relink-cta.tsx",
+    "lines": 44,
+    "family": "Planning",
+    "recommendations": [
+      "U07",
+      "U11"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/calendar/week-view.tsx",
+    "lines": 169,
+    "family": "Planning",
+    "recommendations": [
+      "U07",
+      "U11"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/category-select.tsx",
+    "lines": 164,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/charts/category-donut.tsx",
+    "lines": 46,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/charts/months-bar-chart.tsx",
+    "lines": 70,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/charts/shared.ts",
+    "lines": 12,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/charts/spend-bar-chart.tsx",
+    "lines": 40,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/command-palette.tsx",
+    "lines": 280,
+    "family": "Shell & navigation",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U12",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/competition/competitor-dialog.tsx",
+    "lines": 247,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/competition/competitor-list.tsx",
+    "lines": 173,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/cost-overview.tsx",
+    "lines": 279,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/dashboard-shell.tsx",
+    "lines": 418,
+    "family": "Shell & navigation",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U12",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/demo-dashboard.tsx",
+    "lines": 123,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/finances/bank-sync.tsx",
+    "lines": 805,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/finances/payment-matches.tsx",
+    "lines": 275,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/finances/transaction-rules.tsx",
+    "lines": 944,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/github/publish-to-repo-dialog.tsx",
+    "lines": 255,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/guest-banner.tsx",
+    "lines": 58,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/guest-locale.tsx",
+    "lines": 23,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/icons/github.tsx",
+    "lines": 29,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/invoices/invoice-detail.tsx",
+    "lines": 469,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/invoices/invoice-form.tsx",
+    "lines": 1130,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/invoices/status-badge.tsx",
+    "lines": 17,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/invoices/supplier-settings.tsx",
+    "lines": 420,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/links/add-to-project-dialog.tsx",
+    "lines": 127,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/links/link-picker-dialog.tsx",
+    "lines": 231,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/links/use-project-links.ts",
+    "lines": 132,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/calendar-import.tsx",
+    "lines": 12,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/calendar-slot.tsx",
+    "lines": 14,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/calendar-source-notes.tsx",
+    "lines": 44,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai-audio-library.tsx",
+    "lines": 143,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai-daily-mix.tsx",
+    "lines": 72,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai-instagram-account.tsx",
+    "lines": 134,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai-source-list.tsx",
+    "lines": 154,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai-sources.tsx",
+    "lines": 181,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/audio-preview.tsx",
+    "lines": 44,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/calendar-tab.tsx",
+    "lines": 39,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/code-text.tsx",
+    "lines": 34,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/costs-tab.tsx",
+    "lines": 184,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/counted-field.tsx",
+    "lines": 28,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/engagement-receipt.tsx",
+    "lines": 36,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/focal-picker.tsx",
+    "lines": 47,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/audio-picker.tsx",
+    "lines": 44,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/engagement-editor.tsx",
+    "lines": 62,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/format-switch.tsx",
+    "lines": 32,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/kit-tiles.tsx",
+    "lines": 38,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/lab-tab.tsx",
+    "lines": 426,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/slide-inspector.tsx",
+    "lines": 195,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/stage.tsx",
+    "lines": 167,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/lab/topics-list.tsx",
+    "lines": 202,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/media-tray.tsx",
+    "lines": 48,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/music-hint.tsx",
+    "lines": 57,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/overflow-menu.tsx",
+    "lines": 93,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/published-tab.tsx",
+    "lines": 74,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/render-problems.tsx",
+    "lines": 40,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/state-chip.tsx",
+    "lines": 31,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/tab-header.tsx",
+    "lines": 22,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/dneskai/workspace.tsx",
+    "lines": 101,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/job-health.tsx",
+    "lines": 45,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/knowledge-import.tsx",
+    "lines": 90,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/knowledge-library.tsx",
+    "lines": 31,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/marketing-diagnostics.tsx",
+    "lines": 108,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/offline-import.tsx",
+    "lines": 57,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/use-marketing-calendars.ts",
+    "lines": 47,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/weekly-calendar.tsx",
+    "lines": 48,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/marketing/weekly-results.tsx",
+    "lines": 109,
+    "family": "DNESKAi & marketing",
+    "recommendations": [
+      "U01",
+      "U02",
+      "U03",
+      "U08",
+      "U09",
+      "U10"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/mobile-fab.tsx",
+    "lines": 142,
+    "family": "Shell & navigation",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U12",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/nav/app-toolbar.tsx",
+    "lines": 77,
+    "family": "Shell & navigation",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U12",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/nav/sidebar.tsx",
+    "lines": 488,
+    "family": "Shell & navigation",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U12",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/notes/note-editor.tsx",
+    "lines": 239,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/notes/parse-markdown.ts",
+    "lines": 31,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/cron-monitor.tsx",
+    "lines": 217,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/customizable-overview.tsx",
+    "lines": 395,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/daily-focus.tsx",
+    "lines": 329,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/kpi-cards.tsx",
+    "lines": 68,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/recurring-plans.tsx",
+    "lines": 176,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/today-hero.tsx",
+    "lines": 396,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/overview/work-attention.tsx",
+    "lines": 20,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/ai-panel.tsx",
+    "lines": 1104,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/calendar-panel.tsx",
+    "lines": 244,
+    "family": "Planning",
+    "recommendations": [
+      "U07",
+      "U11"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/career-board.tsx",
+    "lines": 412,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/career-companies.tsx",
+    "lines": 115,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/career-letter-helper.tsx",
+    "lines": 251,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/career-progress-dialog.tsx",
+    "lines": 90,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/clients-panel.tsx",
+    "lines": 227,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/competition-panel.tsx",
+    "lines": 166,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/dev-finance-panel.tsx",
+    "lines": 294,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/finances-panel.tsx",
+    "lines": 895,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/freelance-platforms.tsx",
+    "lines": 81,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/ig-tips-panel.tsx",
+    "lines": 728,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/important-dates-panel.tsx",
+    "lines": 440,
+    "family": "Planning",
+    "recommendations": [
+      "U07",
+      "U11"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/inbox-panel.tsx",
+    "lines": 130,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/invoices-panel.tsx",
+    "lines": 595,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/job-sources.tsx",
+    "lines": 152,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/jobs-panel.tsx",
+    "lines": 2829,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/link-export-dialog.tsx",
+    "lines": 135,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/link-library-card.tsx",
+    "lines": 91,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/marketing-panel.tsx",
+    "lines": 81,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/needed-checklist.tsx",
+    "lines": 296,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/notes-panel.tsx",
+    "lines": 1353,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/opportunities-panel.tsx",
+    "lines": 305,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/opportunity-detail.tsx",
+    "lines": 84,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/oslo-career-workspace.tsx",
+    "lines": 900,
+    "family": "Business & career",
+    "recommendations": [
+      "U14",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/plans-panel.tsx",
+    "lines": 659,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/projects-panel.tsx",
+    "lines": 2070,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/prompts-panel.tsx",
+    "lines": 796,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/repos-panel.tsx",
+    "lines": 1385,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/settings-panel.tsx",
+    "lines": 824,
+    "family": "Settings",
+    "recommendations": [
+      "U05",
+      "U07",
+      "U08"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/shortcuts-panel.tsx",
+    "lines": 761,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/subscriptions-panel.tsx",
+    "lines": 1118,
+    "family": "Finance & invoices",
+    "recommendations": [
+      "U06",
+      "U15"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/tip-export-dialog.tsx",
+    "lines": 193,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/todos-panel.tsx",
+    "lines": 1459,
+    "family": "Planning",
+    "recommendations": [
+      "U07",
+      "U11"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/tools-panel.tsx",
+    "lines": 567,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/work-overview-panel.tsx",
+    "lines": 240,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/panels/workflows-panel.tsx",
+    "lines": 64,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/posthog-provider.tsx",
+    "lines": 42,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/preference-hydrator.tsx",
+    "lines": 87,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-communication-panel.tsx",
+    "lines": 100,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-competition.tsx",
+    "lines": 46,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-doc-panel.tsx",
+    "lines": 126,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-github-activity.tsx",
+    "lines": 89,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-knowledge-panel.tsx",
+    "lines": 109,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-links-section.tsx",
+    "lines": 209,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-notes-editor.tsx",
+    "lines": 74,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-prompts-card.tsx",
+    "lines": 101,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-traffic.tsx",
+    "lines": 133,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/projects/project-workspace.tsx",
+    "lines": 283,
+    "family": "Projects",
+    "recommendations": [
+      "U14",
+      "U15",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/prompts/prompt-copy-dialog.tsx",
+    "lines": 165,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/subscriptions/subscription-icon.tsx",
+    "lines": 61,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/tasks/task-tags.tsx",
+    "lines": 143,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/theme-toggle.tsx",
+    "lines": 34,
+    "family": "Shared infrastructure",
+    "recommendations": [
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/tools/detected-tools-section.tsx",
+    "lines": 220,
+    "family": "Libraries",
+    "recommendations": [
+      "U13"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/button.tsx",
+    "lines": 58,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/card.tsx",
+    "lines": 56,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/checkbox.tsx",
+    "lines": 30,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/confirmation-dialog.tsx",
+    "lines": 91,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/dialog.tsx",
+    "lines": 121,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/empty-state.tsx",
+    "lines": 42,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/input.tsx",
+    "lines": 24,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/label.tsx",
+    "lines": 18,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/markdown.tsx",
+    "lines": 271,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/metric.tsx",
+    "lines": 29,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/page-header.tsx",
+    "lines": 59,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/progress.tsx",
+    "lines": 33,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/select.tsx",
+    "lines": 207,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/skeleton.tsx",
+    "lines": 14,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/status-badge.tsx",
+    "lines": 31,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/switch.tsx",
+    "lines": 32,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/textarea.tsx",
+    "lines": 23,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/toast.tsx",
+    "lines": 47,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/ui/tooltip.tsx",
+    "lines": 45,
+    "family": "Shared UI",
+    "recommendations": [
+      "U07",
+      "U08",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/work/marketing-week.tsx",
+    "lines": 223,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  },
+  {
+    "path": "src/components/work/weekly-planning.tsx",
+    "lines": 762,
+    "family": "Home & Work",
+    "recommendations": [
+      "U04",
+      "U16"
+    ],
+    "review": "AST source scan; family-level visual review where recorded. Individual dialogs are not implied by family evidence."
+  }
+]

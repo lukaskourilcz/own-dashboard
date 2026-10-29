@@ -1,12 +1,14 @@
 import type { TaskKind, TimeBucketId } from "@/lib/task-meta";
 
 type TodosStrings = {
+  filters: string; clearFilters: string; results: (count: number) => string;
   title: string;
   description: string;
   compactTitle: string;
   openDoneCount: (open: number, done: number) => string;
   allClear: string;
   allClearDescription: string;
+  taskAdded:string; createErr:string; createConflict:string; createAbsent:string; ownerChanged:string; discardDraft:string; reloadPage:string; selectedUnavailable:string; titleLimit:string; minutesLimit:string;
   addTask: string;
   addTaskTitle: string;
   taskLabel: string;
@@ -30,13 +32,19 @@ type TodosStrings = {
   refreshing: string;
   refreshDone: (added: number, removed: number) => string;
   refreshNothing: string;
+  refreshRepoLimit: (count: number) => string;
   refreshDisconnected: string;
   refreshNoRepos: string;
   refreshErr: string;
+  saveErr: string;
+  taskChanged: string; taskMissing: string;
   // Repositories with no NEEDED.md at the root or in docs/, joined by commas.
   refreshMissing: (repos: string) => string;
+  refreshRetained: (count: number) => string;
+  refreshUnavailable: (repos: string) => string;
   showAllCount: (n: number) => string;
   showLess: string;
+  showTaskText: string; hideTaskText: string;
   collapseGroup: string;
   expandGroup: string;
   repoTaskCount: (n: number) => string;
@@ -56,6 +64,7 @@ type TodosStrings = {
   clearFromNeededDone: (n: number) => string;
   clearFromNeededNone: string;
   clearFromNeededErr: string;
+  clearFromNeededIncomplete: (count: number) => string;
   clearFromNeededMissing: (repos: string) => string;
   clearingFromNeeded: string;
   finishedCommitMessage: (n: number) => string;
@@ -96,6 +105,8 @@ type TodosStrings = {
   dailyFocusUnavailableDescription: string;
   dailyFocusRefreshErr: string;
   dailyFocusRetry: string;
+  dailyFocusCachedWarning: string;
+  gardenUnavailable: string;
   waitingFor: (duration: string) => string;
   completionGarden: string;
   completionGardenDescription: string;
@@ -106,12 +117,16 @@ type TodosStrings = {
 
 export const todos: { en: TodosStrings; cs: TodosStrings } = {
   en: {
+    refreshRepoLimit: count => `Checked the ${count} listed repositories. Additional repositories were not scanned; their saved tasks were kept.`,
+    filters: 'Filters', clearFilters: 'Clear filters', results: (count) => `${count} tasks`,
     title: "Tasks",
     description: "What you're working on and what's coming up.",
     compactTitle: "Tasks",
     openDoneCount: (open, done) => `${open} open · ${done} done`,
     allClear: "All clear",
     allClearDescription: "No open tasks. Add one above.",
+    taskChanged:"The task changed elsewhere. Reloaded tasks will show its current state; your change was not applied.",taskMissing:"The task was already removed.",
+    taskAdded:"Task added.",createErr:"The task could not be confirmed. Your draft is kept; retrying will not create a second copy.",createConflict:"The saved task changed. Copy any text you need, then discard this draft before starting another task.",createAbsent:"This task was removed. Discard this draft before starting a new task.",ownerChanged:"The account changed. Copy any text you need, then reload to continue.",discardDraft:"Discard draft",reloadPage:"Discard and reload",selectedUnavailable:"Saved selection unavailable",titleLimit:"Use at most 500 characters for the task title.",minutesLimit:"Enter a whole number from 1 to 100,000 minutes, or leave this empty.",
     addTask: "Add task",
     addTaskTitle: "Add task",
     taskLabel: "Task",
@@ -122,7 +137,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     noProject: "No project",
     noOrganization: "No organization",
     nothingOnPlate: "Nothing on your plate",
-    nothingOnPlateDescription: "Add a task on the left to get started.",
+    nothingOnPlateDescription: "Add a task to get started.",
     quickAddPlaceholder: "Add a task…",
     due: (date) => `due ${date}`,
     dueDateFormat: "d MMM",
@@ -137,10 +152,14 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshDisconnected: "Reconnect GitHub to refresh tasks.",
     refreshNoRepos: "Connect GitHub to sync tasks from NEEDED.md.",
     refreshErr: "Couldn't refresh tasks. Please try again.",
+    saveErr: "Could not save the task change. Check the list before trying again.",
+    refreshUnavailable: (repos) => `Could not read ${repos}. Their tasks were kept.`,
+    refreshRetained: (count) => `Kept ${count} changed or legacy tasks.`,
     refreshMissing: (repos) =>
       `No NEEDED.md at the root or in docs/ of ${repos}. Their tasks were kept.`,
     showAllCount: (n) => `Show all ${n}`,
     showLess: "Show less",
+    showTaskText: "Show full task", hideTaskText: "Collapse task text",
     collapseGroup: "Collapse",
     expandGroup: "Expand",
     repoTaskCount: (n) => (n === 1 ? "1 task" : `${n} tasks`),
@@ -167,7 +186,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     clearFromNeededDone: (n) =>
       `Removed ${n} finished task${n === 1 ? "" : "s"} from NEEDED.md.`,
     clearFromNeededNone: "No finished NEEDED tasks to remove.",
-    clearFromNeededErr: "Couldn't update NEEDED.md. Please try again.",
+    clearFromNeededErr: "Couldn't confirm cleanup. Check the source files and task list before retrying.",
+    clearFromNeededIncomplete: (count) => `Couldn't confirm cleanup of ${count} ${count === 1 ? "task" : "tasks"}. Refresh the list before retrying.`,
     clearFromNeededMissing: (repos) =>
       `No NEEDED.md at the root or in docs/ of ${repos}. Their finished tasks were cleared without a commit.`,
     clearingFromNeeded: "Removing…",
@@ -220,6 +240,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dailyFocusRefreshErr:
       "Tasks were refreshed, but today's seven could not be regenerated.",
     dailyFocusRetry: "Try again",
+    dailyFocusCachedWarning: "The change or refresh could not be confirmed. Your last saved focus is still shown.",
+    gardenUnavailable: "Completion history could not be loaded. Your tasks are still available.",
     waitingFor: (duration) => `Waiting ${duration}`,
     completionGarden: "Completion garden",
     completionGardenDescription:
@@ -229,6 +251,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     deleteTaskConfirm: "This task will be permanently deleted.",
   },
   cs: {
+    refreshRepoLimit: count => `Zkontrolováno ${count} zobrazených repozitářů. Další repozitáře nebyly prohledány; jejich uložené úkoly zůstaly zachovány.`,
+    filters: 'Filtry', clearFilters: 'Zrušit filtry', results: (count) => `${count} úkolů`,
     title: "Úkoly",
     description: "Na čem pracuješ a co tě čeká.",
     compactTitle: "Úkoly",
@@ -241,6 +265,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       )}`,
     allClear: "Hotovo",
     allClearDescription: "Žádné otevřené úkoly. Přidej nějaký výše.",
+    taskChanged:"Úkol se mezitím změnil. Po načtení uvidíte jeho aktuální stav; vaše změna se neprovedla.",taskMissing:"Úkol už byl odstraněn.",
+    taskAdded:"Úkol přidán.",createErr:"Uložení úkolu se nepodařilo potvrdit. Návrh zůstává zachovaný; opakování nevytvoří druhou kopii.",createConflict:"Uložený úkol se změnil. Zkopírujte potřebný text a před vytvořením dalšího úkolu tento návrh zahoďte.",createAbsent:"Tento úkol byl odstraněn. Před vytvořením nového úkolu tento návrh zahoďte.",ownerChanged:"Účet se změnil. Zkopírujte potřebný text a pro pokračování stránku znovu načtěte.",discardDraft:"Zahodit návrh",reloadPage:"Zahodit a znovu načíst",selectedUnavailable:"Uložený výběr není dostupný",titleLimit:"Název úkolu může mít nejvýše 500 znaků.",minutesLimit:"Zadejte celé číslo od 1 do 100 000 minut, nebo nechte pole prázdné.",
     addTask: "Přidat úkol",
     addTaskTitle: "Přidat úkol",
     taskLabel: "Úkol",
@@ -251,7 +277,7 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     noProject: "Bez projektu",
     noOrganization: "Bez organizace",
     nothingOnPlate: "Nemáš nic na práci",
-    nothingOnPlateDescription: "Přidej úkol vlevo a začni.",
+    nothingOnPlateDescription: "Začni přidáním úkolu.",
     quickAddPlaceholder: "Přidat úkol…",
     due: (date) => `termín ${date}`,
     dueDateFormat: "d. MMM",
@@ -266,10 +292,14 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     refreshDisconnected: "Pro obnovení úkolů znovu připoj GitHub.",
     refreshNoRepos: "Připoj GitHub pro synchronizaci úkolů z NEEDED.md.",
     refreshErr: "Úkoly se nepodařilo obnovit. Zkus to znovu.",
+    saveErr: "Změnu úkolu se nepodařilo uložit. Před dalším pokusem zkontrolujte seznam.",
+    refreshUnavailable: (repos) => `Nelze načíst ${repos}. Jejich úkoly zůstaly zachovány.`,
+    refreshRetained: (count) => `Zachováno ${count} změněných nebo starších úkolů.`,
     refreshMissing: (repos) =>
       `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich úkoly zůstaly.`,
     showAllCount: (n) => `Zobrazit vše (${n})`,
     showLess: "Zobrazit méně",
+    showTaskText: "Zobrazit celý úkol", hideTaskText: "Sbalit text úkolu",
     collapseGroup: "Sbalit",
     expandGroup: "Rozbalit",
     repoTaskCount: (n) => {
@@ -306,7 +336,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
       return `Odebráno ${n} hotových úkolů z NEEDED.md.`;
     },
     clearFromNeededNone: "Žádné hotové NEEDED úkoly k odebrání.",
-    clearFromNeededErr: "NEEDED.md se nepodařilo aktualizovat. Zkus to znovu.",
+    clearFromNeededErr: "Odebrání se nepodařilo potvrdit. Před dalším pokusem zkontrolujte zdrojové soubory a seznam úkolů.",
+    clearFromNeededIncomplete: (count) => `Nepodařilo se potvrdit odebrání úkolů: ${count}. Obnovte seznam a zkuste to znovu.`,
     clearFromNeededMissing: (repos) =>
       `NEEDED.md chybí v kořeni i v docs/ repozitáře ${repos}. Jejich hotové úkoly se vyčistily bez commitu.`,
     clearingFromNeeded: "Odebírám…",
@@ -363,6 +394,8 @@ export const todos: { en: TodosStrings; cs: TodosStrings } = {
     dailyFocusRefreshErr:
       "Úkoly byly obnoveny, ale dnešní sedmičku se nepodařilo vygenerovat.",
     dailyFocusRetry: "Zkusit znovu",
+    dailyFocusCachedWarning: "Změna nebo obnovení nebyly potvrzeny. Stále se zobrazuje poslední uložená sedmička.",
+    gardenUnavailable: "Historii dokončení se nepodařilo načíst. Úkoly jsou stále dostupné.",
     waitingFor: (duration) => `Čeká ${duration}`,
     completionGarden: "Zahrada dokončení",
     completionGardenDescription:

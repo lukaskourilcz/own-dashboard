@@ -41,6 +41,7 @@ export function PaymentMatches({
   const qc = useQueryClient();
   const toast = useToast();
   const [choice, setChoice] = useState<Record<string, string>>({});
+  const [visibleCount, setVisibleCount] = useState(50);
 
   // Only bank invoices can be settled by a transfer; cash and card never carry
   // a variable symbol.
@@ -97,13 +98,11 @@ export function PaymentMatches({
     },
     onSuccess: ({ linked }) => {
       toast.ok(linked > 0 ? t.finances.matching.matchDone(linked) : t.finances.matching.matchNothing);
-      if (linked > 0) {
-        void qc.invalidateQueries({ queryKey: qk.transactions });
-        void qc.invalidateQueries({ queryKey: qk.invoices });
-        void qc.invalidateQueries({ queryKey: qk.notifications });
-      }
     },
     onError: () => toast.err(t.finances.matching.matchErr),
+    onSettled: () => {
+      for (const queryKey of [qk.transactions, qk.invoices, qk.notifications]) void qc.invalidateQueries({ queryKey });
+    },
   });
 
   const linkMutation = useMutation({
@@ -122,10 +121,11 @@ export function PaymentMatches({
         delete next[input.transactionId];
         return next;
       });
-      void qc.invalidateQueries({ queryKey: qk.transactions });
-      void qc.invalidateQueries({ queryKey: qk.invoices });
     },
     onError: () => toast.err(t.finances.matching.linkErr),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.transactions }); void qc.invalidateQueries({ queryKey: qk.invoices });
+    },
   });
 
   const invoiceOptions = useMemo(
@@ -141,7 +141,7 @@ export function PaymentMatches({
   );
 
   return (
-    <Card className="lg:col-span-3">
+    <Card className="min-w-0" data-testid="payment-matches">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div>
           <CardTitle className="inline-flex items-center gap-1.5">
@@ -156,7 +156,7 @@ export function PaymentMatches({
           variant="outline"
           className="shrink-0"
           onClick={() => runMutation.mutate()}
-          disabled={runMutation.isPending || openInvoices.length === 0}
+          disabled={runMutation.isPending || linkMutation.isPending || openInvoices.length === 0}
         >
           <Link2 className="h-3.5 w-3.5" />
           {runMutation.isPending ? t.finances.matching.matching : t.finances.matching.matchNow}
@@ -181,7 +181,7 @@ export function PaymentMatches({
               {t.finances.matching.unmatchedCount(unmatched.length)} · {t.finances.matching.scheduleHint}
             </p>
             <ul className="-mx-2 divide-y divide-border">
-              {unmatched.map((payment) => (
+              {unmatched.slice(0, visibleCount).map((payment) => (
                 <UnmatchedRow
                   key={payment.transaction.id}
                   payment={payment}
@@ -193,14 +193,11 @@ export function PaymentMatches({
                   onLink={(invoiceId) =>
                     linkMutation.mutate({ transactionId: payment.transaction.id, invoiceId })
                   }
-                  // Only the row being written is busy; the rest stay usable.
-                  busy={
-                    linkMutation.isPending &&
-                    linkMutation.variables?.transactionId === payment.transaction.id
-                  }
+                  busy={runMutation.isPending || linkMutation.isPending}
                 />
               ))}
             </ul>
+            {unmatched.length > visibleCount && <Button size="sm" variant="outline" onClick={() => setVisibleCount(count => count + 50)}>{t.finances.loadMore}</Button>}
           </>
         )}
       </CardContent>
@@ -252,12 +249,13 @@ function UnmatchedRow({
       {/* Full width below sm so a 320 px viewport wraps instead of overflowing. */}
       <div className="flex w-full items-center gap-1.5 sm:w-auto sm:shrink-0">
         <SimpleSelect
+          disabled={busy}
           value={selected}
           onValueChange={onChange}
           options={options}
           placeholder={t.finances.matching.chooseInvoice}
           aria-label={`${t.finances.matching.chooseInvoice} — ${rowLabel}`}
-          className="h-8 min-w-0 flex-1 text-xs sm:w-[13rem] sm:flex-none"
+          className="h-11 min-w-0 flex-1 text-xs sm:h-8 sm:w-[13rem] sm:flex-none"
         />
         <Button
           size="sm"

@@ -28,7 +28,7 @@ test("prompts are grouped by kind and copy with the project and its links", asyn
     "SEO",
     "Marketing",
   ]);
-  await expect(main.locator('[data-prompt-card="pr4"]').getByText("Public", { exact: true })).toBeVisible();
+  await expect(main.locator('[data-prompt-card="pr4"]').getByText("Curated", { exact: true })).toBeVisible();
 
   // Kind filter chips narrow the list.
   await main.getByRole("group", { name: "Filter by kind" }).getByRole("button", { name: "SEO", exact: true }).click();

@@ -1,7 +1,9 @@
+import { projectTabFromQuery } from "@/lib/project-workspace-tabs";
 import type { Metadata } from "next";
 import { DemoDashboard } from "@/components/demo-dashboard";
 import { GuestBanner } from "@/components/guest-banner";
 import { GuestLocale } from "@/components/guest-locale";
+import { GuestBoundary } from "@/components/guest-boundary";
 import type { Lang } from "@/lib/i18n/lang";
 import { brandConfig } from "@/lib/brand";
 
@@ -16,8 +18,8 @@ import { brandConfig } from "@/lib/brand";
  * Every record the page shows is invented (see `src/lib/demo/fixtures.ts`).
  * Some project names and repositories are the owner's public ones; their
  * summaries come from the fixtures, never from the portfolio registry, and no
- * private repository appears. Writes are not wired: `DemoDashboard` passes
- * `isPreview`, and own-only RLS would reject an anonymous write regardless.
+ * private repository appears. GuestBoundary isolates the query cache and
+ * blocks live API/database traffic even in an already signed-in browser.
  *
  * This is also the surface recorded for the portfolio thumbnail, which is why
  * it must stay logged-out reachable. See
@@ -38,16 +40,16 @@ function toLang(value: string | undefined): Lang {
 export default async function GuestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string; lang?: string }>;
+  searchParams: Promise<{ project?: string; projectTab?: string | string[]; lang?: string }>;
 }) {
-  const { project, lang } = await searchParams;
+  const { project, projectTab, lang } = await searchParams;
   const language = toLang(lang);
 
   return (
-    <>
+    <GuestBoundary>
       <GuestLocale lang={language} />
-      <DemoDashboard projectRef={project} language={language} />
+      <DemoDashboard initialProjectTab={projectTabFromQuery(projectTab)} projectRef={project} language={language} />
       <GuestBanner />
-    </>
+    </GuestBoundary>
   );
 }

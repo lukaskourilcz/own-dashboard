@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-10-29",
+  "managedReadOnly": true,
+  "appliedMigrations": 86,
+  "latestVersion": "20261023130300",
+  "authenticatedCryptoSchema": true,
+  "authenticatedDigestExecute": true,
+  "managedDDL": false,
+  "scope": "Counts and existing crypto privileges only; no credentials, owner record contents or managed mutation."
+}

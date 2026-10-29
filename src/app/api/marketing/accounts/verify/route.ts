@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { readVerifiedServerOwner } from '@/lib/supabase/server-owner';
+import { awaitWithSignal } from '@/lib/abortable';
+import { boundedRequestText, MarketingRequestBodyError } from '@/lib/marketing/http';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
@@ -18,16 +20,26 @@ export const maxDuration = 30;
 const Input = z.strictObject({ brand: z.literal('dneskai'), platform: z.literal('instagram') });
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
-  const db = await createClient(); const { data: { user } } = await db.auth.getUser();
-  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 });
-  const limited = await rateLimit(user.id, { key: 'marketing-account-verify', limit: 5, windowSec: 600 });
-  if (!limited.ok) return Response.json({ error: 'rate-limited' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } });
-  if (!process.env.MARKETING_OWNER_ID || process.env.MARKETING_OWNER_ID !== user.id) return Response.json({ error: 'marketing-owner-required' }, { status: 403 });
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(30000)]);
+  let ownerId: string | null;
+  try { ownerId = await readVerifiedServerOwner(signal); }
+  catch { return Response.json({error:'account-verification-unavailable'},{status:503}); }
+  if (!ownerId) return Response.json({error:'unauthorized'},{status:401});
+  let limited: Awaited<ReturnType<typeof rateLimit>>;
+  try { limited = await awaitWithSignal(rateLimit(ownerId, { key: 'marketing-account-verify', limit: 5, windowSec: 600 }),signal); signal.throwIfAborted(); }
+  catch { return Response.json({error:'account-verification-unavailable'},{status:503}); }
+  if (!limited.ok) return Response.json({error:'rate-limited'},{status:429,headers:{'Retry-After':String(limited.retryAfter)}});
+  if (!process.env.MARKETING_OWNER_ID || process.env.MARKETING_OWNER_ID !== ownerId) return Response.json({ error: 'marketing-owner-required' }, { status: 403 });
   let input: z.infer<typeof Input>;
-  try { const raw = await request.text(); if (raw.length > 1000) throw new Error('too-large'); input = Input.parse(JSON.parse(raw)); }
-  catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
+  try { input = Input.parse(JSON.parse(await boundedRequestText(request,1000,signal))); }
+  catch (error) {
+    if (signal.aborted || error instanceof MarketingRequestBodyError && ['request-body-aborted','request-body-timeout'].includes(error.code))
+      return Response.json({error:'account-verification-unavailable'},{status:503});
+    return Response.json({error:'invalid-request'},{status:400});
+  }
+  if (signal.aborted) return Response.json({error:'account-verification-unavailable'},{status:503});
   try {
-    const verified = await verifyInstagramAccount(createAdminClient(), user.id, input.brand, { signal: request.signal });
+    const verified = await verifyInstagramAccount(createAdminClient(signal), ownerId, input.brand, { signal });
     const body: MarketingAccountVerifyResponse = { accountType: verified.accountType, tokenStored: verified.tokenStored, ...(verified.page ? { page: verified.page } : {}),
       account: { id: verified.accountId, brand: verified.brand, platform: verified.platform, handle: verified.handle, verifiedAt: verified.verifiedAt, enabled: verified.enabled, token: verified.token } };
     return Response.json(body, { headers: { 'Cache-Control': 'private, no-store' } });

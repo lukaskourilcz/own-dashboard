@@ -1,0 +1,22 @@
+{
+  "engine": "PostgreSQL 17.11 (Postgres.app) on aarch64-apple-darwin23.6.0, compiled by Apple clang version 15.0.0 (clang-1500.3.9.4), 64-bit",
+  "database": "audit_calendar_415_1793293080455",
+  "syntheticOnly": true,
+  "canonicalMigrationCount": 153,
+  "workConnections": 2,
+  "observationConnection": true,
+  "secondWaitObserved": true,
+  "confirmed": 1,
+  "staleRefused": 1,
+  "persisted": {
+    "time": "10:00",
+    "source": "33333333-3333-4333-8333-333333333333",
+    "status": "planned",
+    "needsReview": false,
+    "publications": 0,
+    "generationVersion": 2
+  },
+  "migration": "20261029164500_captured_marketing_calendar_release.sql",
+  "migrationSha256": "30740e1cf8293ae36a0a7c731b090828fe9751aefac46cb3f3efabe4ff224792",
+  "scope": "Full isolated canonical chain with service stand-ins; one captured original intent commits and a waiting duplicate refuses. No managed data, provider, publication, deployed latency or billing evidence."
+}

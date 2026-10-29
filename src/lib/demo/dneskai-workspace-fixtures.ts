@@ -1,3 +1,5 @@
+import { MARKETING_DRAFT_MAX_COST_USD } from '@/lib/marketing/generation-limits';
+import { dneskaiSlideFieldLimits as demoFieldLimits } from "@/lib/marketing/dneskai-slide-layout";
 import assets from './dneskai-preview-assets.json';
 import { dneskaiCaptionWithKeyword } from '@/lib/marketing/dneskai-caption';
 import { MARKETING_DECK_CONTENT_VERSION } from '@/lib/marketing/contracts';
@@ -6,7 +8,7 @@ import type { DneskaiBriefMedia } from '@/lib/marketing/dneskai-brief';
 import type { MarketingAccountStatus } from '@/lib/marketing/accounts-client';
 import { pragueScheduledAt } from '@/lib/marketing/clock';
 import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
-import { DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, pragueDayAfter, type DneskaiCostsRead, type DneskaiFieldLimit, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
+import { DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspacePost, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 
 /**
  * Deterministic DNESKAi workspace fixtures for `/dev-preview` and the guest tour (#119). Every post, source, credit
@@ -15,22 +17,14 @@ import { DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, pragueDayAfter, type 
  * Dates are relative to the browser's clock in Europe/Prague, so the calendar always shows the coming week.
  */
 export const DEMO_PROJECT_ID = 'proj-dneskai';
+/** Fixed preview headroom: one current reservation fits and the next is refused. */
+export const DEMO_GENERATION_SPENT_USD = 0.8;
 export const DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO = MARKETING_DECK_CONTENT_VERSION;
 type DeckName = keyof typeof assets.decks;
 export const demoPhotos = assets.photos;
 
 /** The written fields each template draws and their limits (`DNESKAI_PLACED_FIELDS` × `DNESKAI_TEXT_LIMITS`); a test ties them together. */
-export function demoFieldLimits(slide: Pick<DneskaiSlide, 'type' | 'variant' | 'images'>): DneskaiFieldLimit[] {
-  const table: Record<string, Array<[DneskaiFieldLimit['field'], number]>> = {
-    'cover-photo': [['headline', 110]],
-    figure: [['headline', 110], ['body', 260]],
-    split: [['headline', 110], ['body', slide.images.length > 1 ? 320 : 330], ['kicker', 28]],
-    statement: [['headline', 170], ['body', 240]],
-    single: [['headline', slide.variant === 'type' ? 120 : 110]],
-    sources: [],
-  };
-  return (table[slide.type] ?? []).map(([field, max]) => ({ field, max }));
-}
+export { dneskaiSlideFieldLimits as demoFieldLimits } from "@/lib/marketing/dneskai-slide-layout";
 
 const id = (n: number) => `d0e5ca10-0000-4000-8000-${String(n).padStart(12, '0')}`;
 /** A deterministic, varied 64-hex stand-in for a content hash (the demo never hashes real content). */
@@ -139,8 +133,8 @@ export function createDneskaiCostsFixture(now: Date): DneskaiCostsRead {
   const ago = (minutes: number) => new Date(now.getTime() - minutes * 60_000).toISOString();
   return {
     schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(),
-    generation: { spentUsd: 0.5, ceilingUsd: 1, code: null },
-    days: Array.from({ length: 7 }, (_, index) => ({ date: pragueDayAfter(today, -index), collectionUsd: index === 0 ? 0.04 : index % 3 === 0 ? 0 : 0.04, generationUsd: index === 0 ? 0.5 : index === 1 ? 0.37 : 0, generationBookedUsd: index === 1 ? 0.25 : 0, unknown: index === 1 ? 1 : 0 })),
+    generation: { spentUsd: DEMO_GENERATION_SPENT_USD, ceilingUsd: 1, code: null },
+    days: Array.from({ length: 7 }, (_, index) => ({ date: pragueDayAfter(today, -index), collectionUsd: index === 0 ? 0.04 : index % 3 === 0 ? 0 : 0.04, generationUsd: index === 0 ? DEMO_GENERATION_SPENT_USD : index === 1 ? 0.37 : 0, generationBookedUsd: index === 1 ? MARKETING_DRAFT_MAX_COST_USD : 0, unknown: index === 1 ? 1 : 0 })),
     runs: [
       { id: id(301), date: today, targetDate: pragueDayAfter(today, 1), status: 'complete', costUsd: 0.04, errorCode: null, createdAt: ago(120) },
       { id: id(302), date: pragueDayAfter(today, -1), targetDate: today, status: 'partial', costUsd: 0.04, errorCode: 'collection-source-partial', createdAt: ago(1560) },

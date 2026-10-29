@@ -1,0 +1,16 @@
+{
+  "fixture": "marketingshark",
+  "entries": 156,
+  "sourcePackets": 2,
+  "beforeBytes": 346616,
+  "afterBytes": 46224,
+  "displayedFieldsEqual": true,
+  "sdkRequests": 9,
+  "scope": "Three projected families in a local full-migration/actual-SDK fixture; not the full response, production latency or billing evidence.",
+  "sourceSha256": {
+    "src/app/api/marketing/state/route.ts": "7e33e6415691701da78c2c4519ef3d1c2b703c35a2cbc81fa80a1454bf151190",
+    "src/lib/marketing/source-summary.ts": "1392a088c417feba3185ff82edd947f92d81dce132fbd3e400987360ccafaa19",
+    "tests/lib/marketing-state-route.test.ts": "c2dc400c08665b67199260cedbe224181af61fb773f3db75a255ec2a6649f8c6",
+    "fixtures/marketing-calendars/marketingshark.json": "40e720656dd873c2e9a9791512432d4574a0e235431d8c376ea1db9594d87e2c"
+  }
+}

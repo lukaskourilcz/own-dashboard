@@ -120,3 +120,28 @@ describe("parseBankCsv", () => {
     expect(rows[0].amount).toBe(5);
   });
 });
+
+describe("statement integrity",()=>{
+ it.each(["2026-02-30","31.04.2026","2026-13-01","0000-01-01","2026-10-23garbage","2026-10-23T99:00:00Z"])("rejects an impossible or malformed date (%s)",date=>{
+  expect(parseBankCsv(`Date;Amount\n${date};1`).rows).toEqual([]);
+ });
+ it.each(["1e3","0xff","1.234","99999999999999","10.999","1,2,3"])("refuses ambiguous or unsupported money syntax (%s)",amount=>{
+  expect(parseBankCsv(`Date;Amount\n2026-10-23;${amount}`).rows).toEqual([]);
+ });
+ it("keeps quoted multiline notes and detects a delimiter without counting quoted separators",()=>{
+  const parsed=parseBankCsv('Date;Amount;"Description, text, note, detail"\n2026-10-23;10;"First line\nSecond line with ""quotes"""');
+  expect(parsed.rows).toHaveLength(1);expect(parsed.rows[0].note).toBe('First line\nSecond line with "quotes"');expect(parsed.errors).toEqual([]);
+ });
+ it("rejects a broken quote or an over-bound file without importing a partial prefix",()=>{
+  expect(parseBankCsv('Date;Amount;Description\n2026-10-23;1;"unclosed').issues).toEqual([{code:"format"}]);
+  expect(parseBankCsv("Date;Amount\n"+"2026-10-23;1\n".repeat(5001)).rows).toEqual([]);
+ });
+ it("never truncates a currency or an overlong payment symbol into a different one",()=>{
+  expect(parseBankCsv("Date;Amount;Currency\n2026-10-23;1;USDT").issues[0].code).toBe("currency");
+  expect(parseBankCsv("Date;Amount;VS\n2026-10-23;1;12345678901").issues[0].code).toBe("symbol");
+ });
+});
+it("does not split a Unicode character at the retained note boundary",()=>{
+ const result=parseBankCsv(`Date;Amount;Description\n2026-10-23;1;${"a".repeat(499)}😀`);
+ expect(result.rows[0].note).toBe("a".repeat(499));expect(result.rows[0].source_identity).toContain("😀");
+});

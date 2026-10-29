@@ -1,4 +1,5 @@
 import "server-only";
+import { readTextPrefix } from "@/lib/bounded-text";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   deleteProviderSecret,
@@ -22,12 +23,12 @@ import type { BankConnection } from "@/lib/types";
 /**
  * Fio banka's REST API behind the provider interface.
  *
- * Fio is the opposite of GoCardless in every way that matters here: the owner
- * generates a read-only token per account inside internet banking, there is no
- * redirect, no institution picker and no consent that lapses — so nothing about
- * this provider can go dark on a 90-day timer. The cost is a hard rate limit
+ * The owner generates a read-only token per account inside internet banking.
+ * There is no redirect or institution picker. The token has its own validity;
+ * the statement does not return that expiry, so the app never invents a date.
+ * Requests have a hard rate limit
  * (Fio rejects a second call on the same token within 30 seconds), which is why
- * one statement is fetched per sync and reused by all three interface methods.
+ * one request-local statement is fetched per sync and reused by all three interface methods.
  *
  * The token itself is user data: it is read from `bank_provider_credentials`
  * with the service role, kept in a request-scoped variable, and never logged or
@@ -37,8 +38,6 @@ import type { BankConnection } from "@/lib/types";
 
 const BASE = "https://fioapi.fio.cz/v1/rest";
 const REQUEST_TIMEOUT_MS = 12_000;
-/** A statement is reused for this long so one sync makes one Fio call. */
-const CACHE_TTL_MS = 60_000;
 export class FioApiError extends Error {
   readonly status: number;
   constructor(status: number) {
@@ -48,111 +47,103 @@ export class FioApiError extends Error {
   }
 }
 
-type CacheEntry = { at: number; statement: FioStatement | null };
-const cache = new Map<string, CacheEntry>();
-
 async function requestStatement(
   token: string,
   from: string,
-  to: string,
-): Promise<FioStatement | null> {
+  to: string, signal?: AbortSignal,
+): Promise<FioStatement> {
   const url = `${BASE}/periods/${encodeURIComponent(token)}/${from}/${to}/transactions.json`;
   const response = await fetch(url, {
     headers: { accept: "application/json" },
     cache: "no-store",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    redirect: "error",
+    signal: AbortSignal.any([AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...(signal ? [signal] : [])]),
   });
   if (!response.ok) throw new FioApiError(response.status);
-  const payload: unknown = await response.json();
-  return parseFioStatement(payload);
-}
-
-/** One statement per connection per minute, so `getConsent`, `listAccounts` and
- *  `fetchTransactions` inside one sync cost a single upstream call. */
-async function statementFor(
-  conn: BankConnection,
-  cursor: string | null,
-): Promise<FioStatement | null> {
-  const window = fioWindow(cursor, new Date());
-  const key = `${conn.id}:${window.from}:${window.to}`;
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.statement;
-
-  const admin = createAdminClient();
-  const token = await readProviderSecret(admin, conn.user_id, "fio");
-  if (!token) throw new BankProviderNotConfiguredError("fio");
-
-  const statement = await requestStatement(token, window.from, window.to);
-  cache.set(key, { at: Date.now(), statement });
+  const prefix = await readTextPrefix(response, 16 * 1024 * 1024);
+  if (prefix.truncated) throw new Error("Bank statement limit");
+  const payload: unknown = JSON.parse(prefix.text);
+  const statement = parseFioStatement(payload);
+  if (!statement) throw new Error("Bank statement unavailable");
   return statement;
 }
 
-/** Test seam: drop the memoised statements. */
-export function clearFioStatementCache(): void {
-  cache.clear();
+/** One request-local provider session. The three sync steps reuse one promise,
+ * but another request always rechecks the stored credential and upstream data.
+ * No statement or credential survives in the registry between requests.
+ */
+export function createFioProvider(signal?: AbortSignal): BankProvider {
+  const requestedAt = new Date();
+  const statements = new Map<string, Promise<FioStatement>>();
+  async function statementFor(conn: BankConnection, cursor: string | null): Promise<FioStatement> {
+    const window = fioWindow(cursor, requestedAt);
+    const key = `${conn.user_id}:${conn.id}:${window.from}:${window.to}`;
+    let pending = statements.get(key);
+    if (!pending) {
+      pending = (async () => {
+        const token = await readProviderSecret(createAdminClient(signal), conn.user_id, "fio", signal);
+        if (!token) throw new BankProviderNotConfiguredError("fio");
+        return requestStatement(token, window.from, window.to, signal);
+      })();
+      statements.set(key, pending);
+    }
+    return pending;
+  }
+  return {
+    id: "fio",
+    label: "Fio banka",
+    supportsInstitutionPicker: false,
+
+    async isConfigured(userId?: string): Promise<boolean> {
+      if (!userId) return false;
+      return hasProviderSecret(createAdminClient(signal), userId, "fio", signal);
+    },
+
+    async getConsent(conn: BankConnection): Promise<ProviderConsent> {
+      try {
+        await statementFor(conn, conn.sync_cursor);
+        // A valid statement proves this request, not unlimited token validity.
+        return { status: "linked", expiresAt: null, error: null };
+      } catch (error) {
+        if (error instanceof BankProviderNotConfiguredError) {
+          return { status: "error", expiresAt: null, error: "missing-token" };
+        }
+        if (error instanceof FioApiError) {
+          const revoked = error.status === 401 || error.status === 404;
+          return {
+            status: revoked ? "expired" : "error",
+            expiresAt: null,
+            error: revoked ? "token-rejected" : `fio-${error.status}`,
+          };
+        }
+        return { status: "error", expiresAt: null, error: "unreachable" };
+      }
+    },
+
+    async listAccounts(conn: BankConnection): Promise<ProviderAccount[]> {
+      const statement = await statementFor(conn, conn.sync_cursor);
+      return [
+        {
+          ...statement.account,
+          name: conn.institution_name ?? statement.account.name,
+        },
+      ];
+    },
+
+    async fetchTransactions(
+      conn: BankConnection,
+      accountRef: string,
+      since: string | null,
+    ): Promise<ProviderTransaction[]> {
+      const statement = await statementFor(conn, since ?? conn.sync_cursor);
+      if (statement.account.accountRef !== accountRef) throw new Error("Bank account mismatch");
+      return statement.transactions;
+    },
+
+    async revoke(conn: BankConnection): Promise<void> {
+      // Fio tokens are revoked by the owner inside internet banking; what this
+      // app can do is forget the one it holds.
+      await deleteProviderSecret(createAdminClient(), conn.user_id, "fio");
+    },
+  };
 }
-
-export const fioProvider: BankProvider = {
-  id: "fio",
-  label: "Fio banka",
-  supportsInstitutionPicker: false,
-
-  async isConfigured(userId?: string): Promise<boolean> {
-    if (!userId) return false;
-    try {
-      return await hasProviderSecret(createAdminClient(), userId, "fio");
-    } catch {
-      // No service-role key in this environment: report unconfigured rather
-      // than pretending the provider is usable.
-      return false;
-    }
-  },
-
-  async getConsent(conn: BankConnection): Promise<ProviderConsent> {
-    try {
-      await statementFor(conn, conn.sync_cursor);
-      // A token has no expiry — as long as Fio answers, the link is live.
-      return { status: "linked", expiresAt: null, error: null };
-    } catch (error) {
-      if (error instanceof BankProviderNotConfiguredError) {
-        return { status: "error", expiresAt: null, error: "missing-token" };
-      }
-      if (error instanceof FioApiError) {
-        const revoked = error.status === 401 || error.status === 404;
-        return {
-          status: revoked ? "expired" : "error",
-          expiresAt: null,
-          error: revoked ? "token-rejected" : `fio-${error.status}`,
-        };
-      }
-      return { status: "error", expiresAt: null, error: "unreachable" };
-    }
-  },
-
-  async listAccounts(conn: BankConnection): Promise<ProviderAccount[]> {
-    const statement = await statementFor(conn, conn.sync_cursor);
-    if (!statement) return [];
-    return [
-      {
-        ...statement.account,
-        name: conn.institution_name ?? statement.account.name,
-      },
-    ];
-  },
-
-  async fetchTransactions(
-    conn: BankConnection,
-    accountRef: string,
-    since: string | null,
-  ): Promise<ProviderTransaction[]> {
-    const statement = await statementFor(conn, since ?? conn.sync_cursor);
-    if (!statement || statement.account.accountRef !== accountRef) return [];
-    return statement.transactions;
-  },
-
-  async revoke(conn: BankConnection): Promise<void> {
-    // Fio tokens are revoked by the owner inside internet banking; what this
-    // app can do is forget the one it holds.
-    await deleteProviderSecret(createAdminClient(), conn.user_id, "fio");
-  },
-};

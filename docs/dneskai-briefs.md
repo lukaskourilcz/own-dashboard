@@ -371,4 +371,4 @@ With `DNESKAI_DAILY_MIX_ENABLED=true` the owner's mix from Zdroje → Denní mix
 08:00 and 17:00) steers the topic path: the briefs step turns the best three events per wanted news post into news
 topics (none for zero), the bridge commits to a day only as many topics of each kind as the mix asks and moves the
 rest to the next day or keeps them waiting with `topic-daily-mix-full`, and every slot comes from the active times.
-The four times stay one list in code and SQL; the mix only switches some off.
+The four times stay one list in code and SQL; the mix only switches some off. Only a successful read of an absent row uses the default. With the switch on, an unavailable or malformed saved mix stops the relevant scheduling step; it cannot silently restore posts the owner disabled. The prepared migration `20261024170208_confirmed_dneskai_daily_mix.sql` also makes owner edits use captured-version receipts and explicit conflict reload.

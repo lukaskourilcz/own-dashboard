@@ -1,7 +1,7 @@
 "use client";
 
 import { LinkExportDialog } from "./link-export-dialog";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -33,11 +33,12 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { AiCategory, AiLink, AiPricing, Project, ProjectLink, Tool, Updater } from "@/lib/types";
-import { linkIdsUsedByProject, nextProjectLinkOrder, projectsUsingLink } from "@/lib/project-links";
+import { linkIdsUsedByProject, nextProjectLinkOrder, projectLinkUsageByLink } from "@/lib/project-links";
 import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
 
@@ -106,6 +107,7 @@ export function AiPanel({
   focusLinkId = null,
   onFocusHandled,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -118,14 +120,14 @@ export function AiPanel({
   const [sort, setSort] = useState<LinkSort>("name");
   const [projectFilter, setProjectFilter] = useState("all");
   const [addToProjectLink, setAddToProjectLink] = useState<AiLink | null>(null);
-  const relationMutations = useProjectLinkMutations(setProjectLinks);
+  const relationMutations = useProjectLinkMutations(setProjectLinks, projectLinks);
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
   const projectIdsWithLinks = useMemo(() => new Set(projectLinks.map((relation) => relation.project_id)), [projectLinks]);
   const projectLinkIds = useMemo(() => linkIdsUsedByProject(projectFilter, projectLinks), [projectFilter, projectLinks]);
   const toolLinkIds = useMemo(() => new Set(tools.map((tool) => tool.ai_link_id)), [tools]);
   const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
-  const usedByFor = (link: AiLink) =>
-    projectsUsingLink(link.id, projectLinks, projects).map(({ project }) => ({ id: project.id, name: project.name }));
+  const usageByLink = useMemo(() => projectLinkUsageByLink(projectLinks, projects), [projectLinks, projects]);
+  const usedByFor = (link: AiLink) => (usageByLink.get(link.id) ?? []).map(({ project }) => ({ id: project.id, name: project.name }));
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(focusLinkId ? [focusLinkId] : []));
   // Arriving from a Tools card: bring that link's card into view and focus
   // its disclosure. The panel mounts fresh on navigation, so the expanded
@@ -149,6 +151,11 @@ export function AiPanel({
   // Tips use topic groups, but their legacy categories still need management.
   const linkRecords = useMemo(() => aiLinks.filter((link) => link.record_type !== "idea"), [aiLinks]);
   const linkCategories = aiCategories;
+  const categoryCounts = useMemo(() => {
+    const result = new Map<string, number>();
+    for (const link of linkRecords) if (link.category_id) result.set(link.category_id, (result.get(link.category_id) ?? 0) + 1);
+    return result;
+  }, [linkRecords]);
   const hasUnknownPricing = linkRecords.some(link => !link.pricing);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AiLink | null>(null);
@@ -159,6 +166,8 @@ export function AiPanel({
   const [renameValue, setRenameValue] = useState("");
   const [mergeSource, setMergeSource] = useState<AiCategory | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState<string>(UNCATEGORIZED);
+  const [mergeExpectedIds, setMergeExpectedIds] = useState<string[]>([]);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const categoryIds = useMemo(
     () => new Set(aiCategories.map((c) => c.id)),
@@ -192,8 +201,9 @@ export function AiPanel({
   /* ---- link mutations ------------------------------------------------ */
 
   const createLink = useMutation({
+    scope: { id: "library-writes" },
     mutationFn: async (vars: Omit<AiLink, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("ai_links")
@@ -208,15 +218,12 @@ export function AiPanel({
       toast.ok(l.record_type === "idea" ? t.ai.addedToTips : t.ai.linkCreated);
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.ai.signInFirst
-          : t.ai.couldNotSave,
-      ),
+    onError: (e) => setFormError((e as Error)?.message === "no-user" ? t.ai.signInFirst : t.ai.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.aiLinks }); },
   });
 
   const updateLink = useMutation({
+    scope: { id: "library-writes" },
     mutationFn: async (vars: {
       id: string;
       title: string;
@@ -225,6 +232,7 @@ export function AiPanel({
       category_id: string | null;
       pricing: AiPricing | null;
       record_type: "link" | "idea";
+      expectedUpdatedAt: string;
     }) => {
       const { data, error } = await supabase
         .from("ai_links")
@@ -237,7 +245,7 @@ export function AiPanel({
           record_type: vars.record_type,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", vars.id)
+        .eq("id", vars.id).eq("updated_at", vars.expectedUpdatedAt)
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
@@ -248,12 +256,8 @@ export function AiPanel({
       toast.ok(l.record_type === "idea" ? t.ai.movedToTips : t.ai.linkSaved);
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.ai.signInFirst
-          : t.ai.couldNotSave,
-      ),
+    onError: (e) => setFormError((e as Error)?.message === "no-user" ? t.ai.signInFirst : t.ai.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.aiLinks }); },
   });
 
   const deleteLink = useMutation({
@@ -261,24 +265,15 @@ export function AiPanel({
       const { error } = await supabase.from("ai_links").delete().eq("id", id);
       if (error) throw error;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.aiLinks });
-      const prev = qc.getQueryData<AiLink[]>(qk.aiLinks);
-      const prevRelations = qc.getQueryData<ProjectLink[]>(qk.projectLinks);
-      setAiLinks((old) => old.filter((l) => l.id !== id));
-      // project_links rows cascade in the database; mirror that locally.
-      setProjectLinks((old) => old.filter((relation) => relation.ai_link_id !== id));
-      return { prev, prevRelations };
+    scope: { id: "library-writes" },
+    onSuccess: (_data, id) => {
+      setAiLinks(old => old.filter(link => link.id !== id));
+      setProjectLinks(old => old.filter(relation => relation.ai_link_id !== id));
+      toast.ok(t.ai.linkDeleted);
     },
-    onSuccess: () => toast.ok(t.ai.linkDeleted),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setAiLinks(ctx.prev);
-      if (ctx?.prevRelations) setProjectLinks(ctx.prevRelations);
-      toast.err(t.ai.couldNotDelete);
-    },
+    onError: () => toast.err(t.ai.couldNotDelete),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: qk.aiLinks });
-      void qc.invalidateQueries({ queryKey: qk.projectLinks });
+      for (const queryKey of [qk.aiLinks, qk.projectLinks, qk.tools, qk.promptLinks]) void qc.invalidateQueries({ queryKey });
     },
   });
 
@@ -286,7 +281,7 @@ export function AiPanel({
 
   const createCategory = useMutation({
     mutationFn: async (name: string) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const sortOrder =
         Math.max(0, ...aiCategories.map((c) => c.sort_order)) + 1;
@@ -312,98 +307,59 @@ export function AiPanel({
   });
 
   const renameCategory = useMutation({
-    mutationFn: async (vars: { id: string; name: string }) => {
-      const { error } = await supabase
-        .from("ai_categories")
-        .update({ name: vars.name })
-        .eq("id", vars.id);
-      if (error) throw error;
+    scope: { id: "library-writes" },
+    mutationFn: async (vars: { id: string; name: string; previousName: string }) => {
+      const { data, error } = await supabase.from("ai_categories").update({ name: vars.name })
+        .eq("id", vars.id).eq("name", vars.previousName).select().single();
+      if (error || !data || data.id !== vars.id || data.name !== vars.name) throw new Error("Rename not confirmed");
+      return data as AiCategory;
     },
-    onMutate: async ({ id, name }) => {
-      await qc.cancelQueries({ queryKey: qk.aiCategories });
-      const prev = qc.getQueryData<AiCategory[]>(qk.aiCategories);
-      setAiCategories((old) =>
-        old.map((c) => (c.id === id ? { ...c, name } : c)),
-      );
-      return { prev };
+    onSuccess: category => {
+      setAiCategories(rows => rows.map(row => row.id === category.id ? { ...row, name: category.name } : row));
+      setRenamingId(null); setRenameValue(""); setCategoryError(null); toast.ok(t.ai.categoryRenamed);
     },
-    onSuccess: () => toast.ok(t.ai.categoryRenamed),
-    onError: (_e, _vars, ctx) => {
-      if (ctx?.prev) setAiCategories(ctx.prev);
-      toast.err(t.ai.couldNotSave);
-    },
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.aiCategories }),
+    onError: () => setCategoryError(t.ai.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.aiCategories }); },
   });
 
   const deleteCategory = useMutation({
+    scope: { id: "library-writes" },
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("ai_categories")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("ai_categories").delete().eq("id", id);
       if (error) throw error;
-      return id;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.aiCategories });
-      await qc.cancelQueries({ queryKey: qk.aiLinks });
-      const prevCats = qc.getQueryData<AiCategory[]>(qk.aiCategories);
-      const prevLinks = qc.getQueryData<AiLink[]>(qk.aiLinks);
-      setAiCategories((old) => old.filter((c) => c.id !== id));
-      // The FK nulls these server-side (on delete set null); mirror it locally
-      // so the rows fall into Uncategorized rather than vanishing.
-      setAiLinks((old) =>
-        old.map((l) => (l.category_id === id ? { ...l, category_id: null } : l)),
-      );
-      return { prevCats, prevLinks };
+    onSuccess: (_data, id) => {
+      setAiCategories(rows => rows.filter(row => row.id !== id));
+      setAiLinks(rows => rows.map(row => row.category_id === id ? { ...row, category_id: null } : row));
+      toast.ok(t.ai.categoryDeleted);
     },
-    onSuccess: () => toast.ok(t.ai.categoryDeleted),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prevCats) setAiCategories(ctx.prevCats);
-      if (ctx?.prevLinks) setAiLinks(ctx.prevLinks);
-      toast.err(t.ai.couldNotDelete);
-    },
+    onError: () => toast.err(t.ai.couldNotDelete),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: qk.aiCategories });
-      void qc.invalidateQueries({ queryKey: qk.aiLinks });
+      void qc.invalidateQueries({ queryKey: qk.aiCategories }); void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
   });
 
-  // Collapse one category into another: move every record it owns, then drop
-  // the now-empty category. The move runs first, so a failed delete leaves the
-  // records readable under a category that still exists rather than orphaned.
   const mergeCategory = useMutation({
-    mutationFn: async (vars: { sourceId: string; targetId: string | null }) => {
-      const moved = await supabase
-        .from("ai_links")
-        .update({ category_id: vars.targetId })
-        .eq("category_id", vars.sourceId);
-      if (moved.error) throw moved.error;
-      const removed = await supabase
-        .from("ai_categories")
-        .delete()
-        .eq("id", vars.sourceId);
-      if (removed.error) throw removed.error;
+    scope: { id: "library-writes" },
+    mutationFn: async (vars: { sourceId: string; sourceName: string; targetId: string | null; expectedIds: string[] }) => {
+      const { data, error } = await supabase.rpc("merge_library_category", {
+        p_source_id: vars.sourceId, p_target_id: vars.targetId,
+        p_source_name: vars.sourceName, p_expected_link_ids: vars.expectedIds,
+      });
+      if (error || !data || data.source_id !== vars.sourceId || data.target_id !== vars.targetId
+        || !Array.isArray(data.moved_ids) || data.moved_ids.length !== vars.expectedIds.length
+        || vars.expectedIds.some(id => !data.moved_ids.includes(id))) throw new Error("Merge not confirmed");
+      return vars;
     },
-    onMutate: async ({ sourceId, targetId }) => {
-      await qc.cancelQueries({ queryKey: qk.aiCategories });
-      await qc.cancelQueries({ queryKey: qk.aiLinks });
-      const prevCats = qc.getQueryData<AiCategory[]>(qk.aiCategories);
-      const prevLinks = qc.getQueryData<AiLink[]>(qk.aiLinks);
-      const moving = new Set(planCategoryMerge(aiLinks, sourceId, targetId));
-      setAiLinks((old) => old.map((l) => (moving.has(l.id) ? { ...l, category_id: targetId } : l)));
-      setAiCategories((old) => old.filter((c) => c.id !== sourceId));
-      return { prevCats, prevLinks };
+    onSuccess: ({ sourceId, targetId, expectedIds }) => {
+      const moved = new Set(expectedIds);
+      setAiLinks(rows => rows.map(row => moved.has(row.id) ? { ...row, category_id: targetId } : row));
+      setAiCategories(rows => rows.filter(row => row.id !== sourceId));
+      setMergeSource(null); toast.ok(t.ai.categoryMerged);
     },
-    onSuccess: () => toast.ok(t.ai.categoryMerged),
-    onError: (_e, _vars, ctx) => {
-      if (ctx?.prevCats) setAiCategories(ctx.prevCats);
-      if (ctx?.prevLinks) setAiLinks(ctx.prevLinks);
-      toast.err(t.ai.couldNotMerge);
-    },
+    onError: () => setCategoryError(t.ai.couldNotMerge),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: qk.aiCategories });
-      void qc.invalidateQueries({ queryKey: qk.aiLinks });
+      void qc.invalidateQueries({ queryKey: qk.aiCategories }); void qc.invalidateQueries({ queryKey: qk.aiLinks });
     },
   });
 
@@ -434,6 +390,8 @@ export function AiPanel({
 
   function submitForm(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+    setFormError(null);
     const title = form.title.trim();
     if (!title) {
       setFormError(t.ai.nameRequired);
@@ -457,7 +415,7 @@ export function AiPanel({
     const pricing = form.pricing || null;
     if (editing) {
       updateLink.mutate(
-        { id: editing.id, title, url, description, category_id, pricing, record_type: form.recordType },
+        { id: editing.id, title, url, description, category_id, pricing, record_type: form.recordType, expectedUpdatedAt: editing.updated_at },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
@@ -476,14 +434,13 @@ export function AiPanel({
   }
 
   function commitRename() {
-    if (!renamingId) return;
+    if (!renamingId || renameCategory.isPending) return;
     const name = renameValue.trim();
-    const cat = aiCategories.find((c) => c.id === renamingId);
-    if (name && cat && name !== cat.name) {
-      renameCategory.mutate({ id: renamingId, name });
-    }
-    setRenamingId(null);
-    setRenameValue("");
+    const cat = aiCategories.find(c => c.id === renamingId);
+    if (!name || !cat) return;
+    if (name === cat.name) { setRenamingId(null); return; }
+    setCategoryError(null);
+    renameCategory.mutate({ id: renamingId, name, previousName: cat.name });
   }
 
   // Name pairs that read as one topic. A suggestion for the merge dialog, never
@@ -498,6 +455,8 @@ export function AiPanel({
   }
 
   function openMerge(category: AiCategory) {
+    setCategoryError(null);
+    setMergeExpectedIds(planCategoryMerge(aiLinks, category.id, null));
     setMergeSource(category);
     setMergeTargetId(
       suggestedMergeTarget(category)
@@ -508,11 +467,10 @@ export function AiPanel({
 
   function submitMerge(e: React.FormEvent) {
     e.preventDefault();
-    if (!mergeSource) return;
-    mergeCategory.mutate(
-      { sourceId: mergeSource.id, targetId: mergeTargetId === UNCATEGORIZED ? null : mergeTargetId },
-      { onSuccess: () => setMergeSource(null) },
-    );
+    if (!mergeSource || mergeCategory.isPending) return;
+    setCategoryError(null);
+    mergeCategory.mutate({ sourceId: mergeSource.id, sourceName: mergeSource.name,
+      targetId: mergeTargetId === UNCATEGORIZED ? null : mergeTargetId, expectedIds: mergeExpectedIds });
   }
 
   async function removeCategory(c: AiCategory) {
@@ -580,7 +538,7 @@ export function AiPanel({
               <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground-muted" />
               <Input aria-label={t.ai.searchPlaceholder} placeholder={t.ai.searchPlaceholder} value={query} onChange={e => setQuery(e.target.value)} className="pl-8" />
             </div>
-            <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...linkCategories.map(cat => ({value:cat.id,label:`${cat.name} (${linkRecords.filter(link => link.category_id === cat.id).length})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
+            <SimpleSelect aria-label={t.ai.category} value={categoryFilter} onValueChange={setCategoryFilter} options={[{value:"all",label:t.ai.allCategories}, ...linkCategories.map(cat => ({value:cat.id,label:`${cat.name} (${categoryCounts.get(cat.id) ?? 0})`})), {value:UNCATEGORIZED,label:t.ai.uncategorized}]} />
             <SimpleSelect aria-label={t.ai.pricing} value={pricingFilter} onValueChange={value => setPricingFilter(value as PricingFilter)} options={[{value:"all",label:t.ai.allPricing}, ...(["free","freemium","paid"] as const).map(value => ({value,label:t.ai.pricingLabel[value]})), {value:"unknown",label:t.ai.pricingUnknown}]} />
             <SimpleSelect aria-label={t.ai.sort} value={sort} onValueChange={value => setSort(value as LinkSort)} options={[{value:"name",label:t.ai.sortName},{value:"newest",label:t.ai.sortNewest}]} />
             {projectIdsWithLinks.size > 0 && <SimpleSelect aria-label={t.ai.projectFilterLabel} value={projectFilter} onValueChange={setProjectFilter} options={[{value:"all",label:t.ai.allProjects}, ...projects.filter(project => projectIdsWithLinks.has(project.id)).map(project => ({value:project.id,label:project.name}))]} />}
@@ -593,10 +551,11 @@ export function AiPanel({
               <Button variant="outline" size="sm" onClick={() => setExpandedIds(new Set())} disabled={!expandedIds.size}>{t.ai.collapseAll}</Button>
             </div>
           </div>
+          {categoryError && !mergeSource && <p role="alert" className="mb-3 text-xs text-risk">{categoryError}</p>}
           <details className="mb-4 rounded-lg border border-border bg-surface px-3">
             <summary className="focus-ring cursor-pointer py-3 text-xs font-medium">{t.ai.manageCategories}</summary>
             <form onSubmit={addCategory} className="flex max-w-md items-center gap-2 pb-3">
-              <Input aria-label={t.ai.addCategory} value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder={t.ai.addCategoryPlaceholder} className="min-w-0 flex-1" maxLength={40} />
+              <Input disabled={createCategory.isPending} aria-label={t.ai.addCategory} value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder={t.ai.addCategoryPlaceholder} className="min-w-0 flex-1" maxLength={40} />
               <Button type="submit" variant="outline" size="sm" disabled={!newCategory.trim() || createCategory.isPending}><Plus className="h-3.5 w-3.5" />{t.ai.add}</Button>
             </form>
             <p className="pb-3 text-xs text-foreground-muted">{t.ai.manageHint}</p>
@@ -629,6 +588,7 @@ export function AiPanel({
                       renameValue={renameValue}
                       onRenameChange={setRenameValue}
                       onStartRename={() => {
+                        setCategoryError(null);
                         setRenamingId(cat.id);
                         setRenameValue(cat.name);
                       }}
@@ -640,6 +600,7 @@ export function AiPanel({
                       onDelete={() => removeCategory(cat)}
                       onMerge={() => openMerge(cat)}
                       mergeSuggested={suggestedMergeTarget(cat) !== null}
+                      pending={renameCategory.isPending || deleteCategory.isPending || mergeCategory.isPending}
                     >
                       {links.length === 0 ? (
                         <EmptyRow text={t.ai.categoryEmpty} />
@@ -697,7 +658,7 @@ export function AiPanel({
             role,
             note,
             sort_order: nextProjectLinkOrder(projectId, projectLinks),
-          }]);
+          }], { silent: true });
           return saved !== null;
         }}
       />
@@ -709,12 +670,13 @@ export function AiPanel({
         targetId={mergeTargetId}
         setTargetId={setMergeTargetId}
         suggestedTargetId={mergeSource ? suggestedMergeTarget(mergeSource) : null}
-        movingCount={planCategoryMerge(aiLinks, mergeSource?.id ?? "", mergeTargetId === UNCATEGORIZED ? null : mergeTargetId).length}
+        movingCount={mergeExpectedIds.length}
+        error={categoryError}
         merging={mergeCategory.isPending}
         onSubmit={submitMerge}
       />
 
-      <LinkDialog
+      {dialogOpen && <LinkDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editing={editing !== null}
@@ -724,7 +686,7 @@ export function AiPanel({
         error={formError}
         saving={saving}
         onSubmit={submitForm}
-      />
+      />}
     </div>
   );
 }
@@ -744,6 +706,7 @@ function CategoryGroup({
   onDelete,
   onMerge,
   mergeSuggested,
+  pending = false,
   children,
 }: {
   name: string;
@@ -759,6 +722,7 @@ function CategoryGroup({
   onMerge?: () => void;
   /** This category's name reads the same as another one's, so merging is offered first. */
   mergeSuggested?: boolean;
+  pending?: boolean;
   children: React.ReactNode;
 }) {
   const t = useDict();
@@ -767,11 +731,11 @@ function CategoryGroup({
       <div className="flex items-center gap-2 border-b border-border bg-surface-muted/40 px-3 py-2">
         {renaming ? (
           <input
+            disabled={pending}
             autoFocus
             aria-label={`${t.ai.renameCategory}: ${name}`}
             value={renameValue}
             onChange={(e) => onRenameChange?.(e.target.value)}
-            onBlur={onCommitRename}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -782,13 +746,14 @@ function CategoryGroup({
               }
             }}
             maxLength={40}
-            className="h-6 rounded border border-border bg-surface px-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-11 min-w-0 flex-1 sm:h-7 rounded border border-border bg-surface px-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         ) : (
           <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
             {name}
           </span>
         )}
+        {renaming && <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onCommitRename}>{t.ai.save}</Button>}
         <span className="text-[10px] tabular text-foreground-subtle">
           {count}
         </span>
@@ -796,6 +761,7 @@ function CategoryGroup({
           <div className="ml-auto flex items-center gap-0.5">
             <Tooltip content={t.ai.renameCategory}>
               <button
+                disabled={pending}
                 type="button"
                 onClick={onStartRename}
                 aria-label={`${t.ai.renameCategory}: ${name}`}
@@ -807,6 +773,7 @@ function CategoryGroup({
             {onMerge && (
               <Tooltip content={mergeSuggested ? `${t.ai.mergeCategory} · ${t.ai.suggestedMerge}` : t.ai.mergeCategory}>
                 <button
+                  disabled={pending}
                   type="button"
                   onClick={onMerge}
                   aria-label={`${t.ai.mergeCategory}: ${name}`}
@@ -821,6 +788,7 @@ function CategoryGroup({
             )}
             <Tooltip content={t.ai.deleteCategory}>
               <button
+                disabled={pending}
                 type="button"
                 onClick={onDelete}
                 aria-label={`${t.ai.deleteCategory}: ${name}`}
@@ -851,6 +819,7 @@ function MergeCategoryDialog({
   setTargetId,
   suggestedTargetId,
   movingCount,
+  error,
   merging,
   onSubmit,
 }: {
@@ -861,6 +830,7 @@ function MergeCategoryDialog({
   setTargetId: (value: string) => void;
   suggestedTargetId: string | null;
   movingCount: number;
+  error: string | null;
   merging: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }) {
@@ -870,12 +840,13 @@ function MergeCategoryDialog({
       ? t.ai.uncategorized
       : categories.find((c) => c.id === targetId)?.name ?? t.ai.uncategorized;
   return (
-    <Dialog open={source !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-md">
+    <Dialog open={source !== null} onOpenChange={(open) => { if (!open && !merging) onClose(); }}>
+      <DialogContent showClose={!merging} className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t.ai.mergeCategoryTitle(source?.name ?? "")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="mt-3 space-y-3">
+        <form onSubmit={onSubmit}>
+        <fieldset disabled={merging} className="mt-3 space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="ai-merge-target">{t.ai.mergeCategoryInto}</Label>
             <SimpleSelect
@@ -892,6 +863,7 @@ function MergeCategoryDialog({
             <p className="text-xs text-foreground-muted">{t.ai.mergeCategoryRecords(movingCount)}</p>
           </div>
           <p className="text-xs text-foreground-muted">{t.ai.mergeCategoryConfirm(source?.name ?? "", targetName)}</p>
+          {error && <p role="alert" className="text-xs text-risk">{error}</p>}
           <div className="flex items-center justify-end gap-2 pt-1">
             <DialogClose asChild>
               <Button type="button" variant="ghost" size="sm">{t.ai.cancel}</Button>
@@ -901,6 +873,7 @@ function MergeCategoryDialog({
               {merging ? t.ai.saving : t.ai.mergeCategoryAction}
             </Button>
           </div>
+        </fieldset>
         </form>
       </DialogContent>
     </Dialog>
@@ -938,58 +911,64 @@ function LinkDialog({
   const [enriching, setEnriching] = useState(false);
   const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
 
-  // "Auto-fill": read the pasted URL via /api/ai-links/enrich (Jina + optional
-  // Claude) and populate the form. Fills empty fields; always refreshes the
-  // description (that's the point), but never clobbers a category/pricing the
-  // user already chose.
+  const enrichRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => enrichRequest.current?.abort(), []);
+
+  // Only the submitted URL goes to Jina. A late response may fill unchanged
+  // fields of this document, never overwrite newer edits or another dialog.
   async function autoFill() {
-    const url = form.url.trim();
+    if (enrichRequest.current) return;
+    const snapshot = form;
+    const url = normalizeUrl(form.url);
     if (!url) {
       setEnrichMsg(t.ai.enrichNeedsUrl);
       return;
     }
+    const controller = new AbortController();
+    enrichRequest.current = controller;
     setEnriching(true);
     setEnrichMsg(null);
     try {
       const res = await fetch("/api/ai-links/enrich", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-          categories: categories.map((c) => ({ id: c.id, name: c.name })),
-        }),
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20_000)]),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setEnrichMsg(data?.error ?? t.ai.enrichFailed);
-        return;
+      const data: unknown = await res.json();
+      if (controller.signal.aborted) return;
+      if (!res.ok || !data || typeof data !== "object" || !("title" in data) || typeof data.title !== "string"
+        || !("description" in data) || typeof data.description !== "string") {
+        setEnrichMsg(t.ai.enrichFailed); return;
       }
-      setForm((f) => ({
-        ...f,
-        title: f.title.trim() || data.title || f.title,
-        description: data.description || f.description,
-        categoryId: f.categoryId || data.category_id || f.categoryId,
-        pricing: f.pricing || data.pricing || f.pricing,
+      const title = data.title.slice(0, 120), description = data.description.slice(0, 10_000);
+      setForm(current => current.url !== snapshot.url ? current : ({
+        ...current,
+        title: current.title === snapshot.title && !current.title.trim() ? title : current.title,
+        description: current.description === snapshot.description && description ? description : current.description,
       }));
     } catch {
-      setEnrichMsg(t.ai.enrichFailed);
+      if (!controller.signal.aborted) setEnrichMsg(t.ai.enrichFailed);
     } finally {
+      enrichRequest.current = null;
       setEnriching(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={next => { if (!saving) onOpenChange(next); }}>
+      <DialogContent showClose={!saving} className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {editing ? t.ai.editLinkTitle : t.ai.newLinkTitle}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="mt-3 space-y-3">
+        <form onSubmit={onSubmit}>
+          <fieldset disabled={saving} className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="ai-name">{t.ai.name}</Label>
               <Input
+                required
                 id="ai-name"
                 value={form.title}
                 onChange={(e) =>
@@ -1009,6 +988,8 @@ function LinkDialog({
               <Label htmlFor="ai-url">{t.ai.url}</Label>
               <div className="flex items-center gap-2">
                 <Input
+                  required
+                  maxLength={4096}
                   id="ai-url"
                   value={form.url}
                   onChange={(e) => {
@@ -1034,7 +1015,7 @@ function LinkDialog({
                 </Tooltip>
               </div>
               {enrichMsg && (
-                <p className="text-xs text-foreground-subtle">{enrichMsg}</p>
+                <p role="status" className="text-xs text-foreground-muted">{enrichMsg}</p>
               )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1075,6 +1056,7 @@ function LinkDialog({
             <div className="space-y-1.5">
               <Label htmlFor="ai-description">{t.ai.descriptionLabel}</Label>
               <Textarea
+                maxLength={10000}
                 id="ai-description"
                 value={form.description}
                 onChange={(e) =>
@@ -1084,18 +1066,19 @@ function LinkDialog({
                 rows={3}
               />
             </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
             <div className="flex items-center justify-end gap-2 pt-1">
               <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
                   {t.ai.cancel}
                 </Button>
               </DialogClose>
-              <Button type="submit" size="sm" disabled={saving}>
+              <Button type="submit" size="sm" disabled={saving || enriching}>
                 <Check className="h-3.5 w-3.5" />
                 {saving ? t.ai.saving : editing ? t.ai.save : t.ai.create}
               </Button>
             </div>
+          </fieldset>
           </form>
         </DialogContent>
     </Dialog>

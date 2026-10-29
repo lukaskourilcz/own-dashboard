@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rejectCrossOrigin } from "@/lib/csrf";
@@ -22,25 +25,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  let body: { id?: string };
+  let id: string;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid body." }, { status: 400 });
-  }
-  const id = body.id?.trim();
-  if (!id) {
-    return NextResponse.json({ error: "id is required." }, { status: 400 });
-  }
+    const prefix = await readTextPrefix(new Response(request.body), 4096);
+    if (prefix.truncated) return NextResponse.json({ error: "Invalid body." }, { status: 413 });
+    const parsed = z.object({ id: z.uuid() }).strict().safeParse(JSON.parse(prefix.text));
+    if (!parsed.success) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
+    id = parsed.data.id;
+  } catch { return NextResponse.json({ error: "Invalid body." }, { status: 400 }); }
+  const limited = await rateLimit(user.id, { key: "bank-disconnect", limit: 5, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error: readError } = await admin
     .from("bank_connections")
     .select("*")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
 
+  if (readError) return NextResponse.json({ error: "Bank connection unavailable." }, { status: 502 });
   if (!data) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
@@ -48,26 +52,26 @@ export async function POST(request: Request) {
 
   // Best-effort revoke upstream; proceed with local delete regardless, and an
   // unregistered provider value must not strand the row either.
+  let upstreamRevoked = false;
   try {
     const provider = getProvider(conn.provider);
     if (await provider.isConfigured(user.id)) {
       await provider.revoke(conn);
+      upstreamRevoked = true;
     }
-  } catch (err) {
-    console.error("[api/bank/disconnect] revoke failed:", err);
-  }
+  } catch { /* Local disconnect still stops future pulls; report unconfirmed revocation. */ }
 
-  const { error } = await admin
+  const { data: removed, error } = await admin
     .from("bank_connections")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id);
-  if (error) {
+    .eq("user_id", user.id).eq("updated_at", conn.updated_at).select("id").single();
+  if (error || removed?.id !== id) {
     return NextResponse.json(
       { error: "Could not disconnect." },
       { status: 500 },
     );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, upstreamRevoked });
 }

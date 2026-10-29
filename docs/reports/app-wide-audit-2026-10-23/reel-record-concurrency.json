@@ -1,0 +1,12 @@
+{
+  "serverVersion": "17.11 (Postgres.app)",
+  "migrationSha256": "5bdac591d4915e7e46f1975df49d8ce0a6346eb0bdb5d34a3167d6064d77e0a7",
+  "waitingOn": "advisory",
+  "eventCount": 1,
+  "sameEvent": true,
+  "created": [
+    true,
+    false
+  ],
+  "scope": "Two actual PostgreSQL connections; exact migration 141 with minimal synthetic relevant tables, not a full native replay; no Production connection"
+}

@@ -1,57 +1,33 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWithGitHubAuth } from "@/lib/github-token";
+import { createGitHubFetcher } from "@/lib/github-token";
+import { awaitWithSignal } from "@/lib/abortable";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { githubRawRepositorySchema, githubRepositoryFullName } from "@/lib/github-repository-contract";
 
-/** owner/repo, matching what we store in `projects.repo_full_name`. */
-const REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
-
-/**
- * Resolves a repository full name to its GitHub id and current full name.
- *
- *   GET /api/github/repos/lookup?repo=owner/name
- *
- * GitHub redirects a renamed repository's old name to the repository itself,
- * so an old name stored on a project still resolves to the stable id. The
- * Projects auto-sync uses this only before it would create a project, which
- * turns a rename into an update instead of a duplicate. Read-only.
- */
+export const maxDuration = 30;
+const headers = { "cache-control": "private, no-store" };
+/** A request-local provider fetcher follows safe rename redirects. Return the
+ * same narrow identity plus full validated app metadata for scoped workspaces. */
 export async function GET(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
-  const repo = new URL(request.url).searchParams.get("repo")?.trim() ?? "";
-  if (!REPO_RE.test(repo)) {
-    return NextResponse.json({ error: "Invalid repository." }, { status: 400 });
-  }
-
-  const res = await fetchWithGitHubAuth(`/repos/${repo}`);
-  if (res.status === 401) {
-    return NextResponse.json(
-      { error: "GitHub is not connected.", reason: res.statusText === "no-token" ? "no-token" : "expired" },
-      { status: 401 },
-    );
-  }
-  if (res.status === 404) {
-    return NextResponse.json({ error: "Repository not found." }, { status: 404 });
-  }
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "Could not look up the repository." },
-      { status: 502 },
-    );
-  }
-
-  const raw = (await res.json()) as { id?: unknown; full_name?: unknown };
-  if (typeof raw.id !== "number" || typeof raw.full_name !== "string") {
-    return NextResponse.json(
-      { error: "Could not look up the repository." },
-      { status: 502 },
-    );
-  }
-  return NextResponse.json({ id: raw.id, full_name: raw.full_name });
+  const parsed = githubRepositoryFullName.safeParse(new URL(request.url).searchParams.get("repo"));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid repository." }, { status: 400, headers });
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]);
+  try {
+    const supabase = await awaitWithSignal(createClient(signal), signal);
+    const auth = await awaitWithSignal(supabase.auth.getUser(), signal);
+    if (auth.error) throw Error("Authentication unavailable");
+    if (!auth.data.user) return NextResponse.json({ error: "Not authenticated." }, { status: 401, headers });
+    const response = await awaitWithSignal(createGitHubFetcher(auth.data.user.id, signal)(`/repos/${parsed.data}`, { signal }), signal);
+    if (!response.ok) {
+      if (response.body) void response.body.cancel().catch(() => undefined);
+      if (response.status === 401) return NextResponse.json({ error: "GitHub access unavailable.", reason: response.statusText === "no-token" ? "no-token" : "expired" }, { status: 401, headers });
+      if (response.status === 404) return NextResponse.json({ error: "Repository is not visible to this connection." }, { status: 404, headers });
+      throw Error("Repository unavailable");
+    }
+    const prefix = await awaitWithSignal(readTextPrefix(response, 262_144, signal), signal);
+    if (prefix.truncated) throw Error("Repository unavailable");
+    const repo = githubRawRepositorySchema.parse(JSON.parse(prefix.text));
+    return NextResponse.json({ id: repo.id, full_name: repo.full_name, repo }, { headers });
+  } catch { return NextResponse.json({ error: "Could not look up the repository." }, { status: 503, headers }); }
 }

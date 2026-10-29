@@ -1,0 +1,20 @@
+{
+  "finding": 310,
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal native database with exact stock notifications/cron_runs definitions, auth/crons stubs and migration 134; full chain verified separately in PGlite/actual SDK",
+  "concurrentFirstDownsConverge": true,
+  "secondConnectionWaitsBeforeStateRead": true,
+  "staleDownAfterCommittedRecoveryIgnored": true,
+  "outcomes": [
+    "recorded",
+    "recorded",
+    "unchanged",
+    "stale"
+  ],
+  "state": {
+    "alerts": 2,
+    "openDown": 0,
+    "logs": 1,
+    "status": 1
+  }
+}

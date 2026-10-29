@@ -3,6 +3,12 @@
  * No secrets, no server-only imports — safe to pull into client components.
  */
 
+import { MAX_GITHUB_FILE_BYTES, normalizeRepoPath } from "@/lib/github-path";
+import { readTextPrefix } from "@/lib/bounded-text";
+import { awaitWithSignal } from "@/lib/abortable";
+export { normalizeRepoPath };
+export type { CommitInput, GithubCommitResult } from "@/lib/github-file-contract";
+import type { CommitInput, GithubCommitResult } from "@/lib/github-file-contract";
 import type { DetectedToolsResponse } from "@/lib/stack-detection";
 
 /** Trimmed repository shape returned by GET /api/github/repos. */
@@ -25,83 +31,72 @@ export type GithubRepo = {
   updated_at: string | null;
 };
 
-/** Result of a successful commit via POST /api/github/commit. */
-export type GithubCommitResult = {
-  /** Path the file was written to. */
-  path: string;
-  /** Whether the file already existed (update) or was newly created. */
-  updated: boolean;
-  commit: { sha: string; html_url: string };
-  content: { html_url: string };
-};
-
-/**
- * Guard a user-supplied repo path: relative, no traversal, no leading slash,
- * non-empty segments. Returns a normalized path or null if it's unsafe.
- * Shared so the panel can validate before sending and the route can re-check.
- */
-export function normalizeRepoPath(raw: string): string | null {
-  const trimmed = raw.trim().replace(/^\/+/, "");
-  if (!trimmed) return null;
-  const segments = trimmed.split("/");
-  for (const seg of segments) {
-    if (seg === "" || seg === "." || seg === "..") return null;
-  }
-  return segments.join("/");
-}
-
 // ---------------------------------------------------------------------------
 // Client-side data helpers. Plain fetch wrappers around our own API routes,
 // shared by the Repos panel and the "Publish to repo" dialog so both speak the
 // same protocol (and handle the not-connected case identically).
 // ---------------------------------------------------------------------------
 
-export type LoadReposResult =
-  | { kind: "ok"; repos: GithubRepo[] }
+export type LoadReposResult = (
+  | { kind: "ok"; repos: GithubRepo[]; hasMore?: boolean }
   | { kind: "disconnected" }
-  | { kind: "error" };
+  | { kind: "error" }) & { checkedAt?: number };
 
-/** Fetch repos as a plain result (no React state) so callers can apply it
- * inside a deferred callback — keeps setState out of effect bodies. */
-export async function loadReposResult(): Promise<LoadReposResult> {
-  try {
-    const res = await fetch("/api/github/repos");
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as { repos: GithubRepo[] };
-    return { kind: "ok", repos: json.repos };
-  } catch {
-    return { kind: "error" };
-  }
+export type RepositoryLookupResult = (
+  | { kind: "ok"; repo: GithubRepo }
+  | { kind: "not-found" }
+  | { kind: "disconnected" }
+  | { kind: "error" }) & { checkedAt?: number };
+
+function repositoryReadSignal(parent?: AbortSignal) {
+  return AbortSignal.any([AbortSignal.timeout(25_000), ...(parent ? [parent] : [])]);
+}
+async function repositoryJson(response: Response, signal: AbortSignal, bound: number): Promise<unknown> {
+  const prefix = await awaitWithSignal(readTextPrefix(response, bound, signal), signal);
+  if (prefix.truncated) throw Error("Repository result unavailable");
+  return JSON.parse(prefix.text);
+}
+function cancelRepositoryBody(response: Response) {
+  if (response.body) void response.body.cancel().catch(() => undefined);
 }
 
-/** Resolve an owner/name (current or pre-rename) to the repository's id and
- * current full name. Null when GitHub is disconnected or the name is unknown. */
-export async function lookupRepoIdentity(
-  fullName: string,
-): Promise<{ id: number; full_name: string } | null> {
+/** Plain typed results remain useful outside React. Query wrappers throw on
+ * unavailable results so a failed refresh cannot replace confirmed data. */
+export async function loadReposResult(context?: { signal: AbortSignal }): Promise<LoadReposResult> {
+  const signal = repositoryReadSignal(context?.signal);
   try {
-    const res = await fetch(
-      `/api/github/repos/lookup?repo=${encodeURIComponent(fullName)}`,
-    );
-    if (!res.ok) return null;
-    const json = (await res.json()) as { id?: unknown; full_name?: unknown };
-    return typeof json.id === "number" && typeof json.full_name === "string"
-      ? { id: json.id, full_name: json.full_name }
-      : null;
-  } catch {
-    return null;
-  }
+    const response = await awaitWithSignal(fetch("/api/github/repos", { cache: "no-store", signal }), signal);
+    if (!response.ok) { cancelRepositoryBody(response); return { kind: response.status === 401 ? "disconnected" : "error", checkedAt: Date.now() }; }
+    const body = await repositoryJson(response, signal, 1_048_576);
+    const { githubRepositoriesResponse } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
+    const result = githubRepositoriesResponse.parse(body);
+    return { kind: "ok", ...result, checkedAt: Date.now() };
+  } catch { return { kind: "error" }; }
 }
 
-export type CommitInput = {
-  owner: string;
-  repo: string;
-  path: string;
-  content: string;
-  message: string;
-  branch?: string;
-};
+export async function loadRepositoryResult(fullName: string, parent?: AbortSignal, expectedId?: number): Promise<RepositoryLookupResult> {
+  const signal = repositoryReadSignal(parent);
+  try {
+    const { githubRepositoryFullName, githubRepositoryLookupResponse } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
+    const name = githubRepositoryFullName.parse(fullName);
+    if (expectedId !== undefined && (!Number.isSafeInteger(expectedId) || expectedId <= 0)) return { kind: "error" };
+    const response = await awaitWithSignal(fetch(`/api/github/repos/lookup?repo=${encodeURIComponent(name)}`, { cache: "no-store", signal }), signal);
+    if (!response.ok) {
+      cancelRepositoryBody(response);
+      return { kind: response.status === 401 ? "disconnected" : response.status === 404 ? "not-found" : "error", checkedAt: Date.now() };
+    }
+    const result = githubRepositoryLookupResponse.parse(await repositoryJson(response, signal, 65_536));
+    if (expectedId !== undefined && result.id !== expectedId) return { kind: "not-found", checkedAt: Date.now() };
+    return { kind: "ok", repo: result.repo, checkedAt: Date.now() };
+  } catch { return { kind: "error" }; }
+}
+
+/** Legacy narrow caller; availability-aware synchronization uses the complete
+ * result instead of treating an error as proof that a repository is missing. */
+export async function lookupRepoIdentity(fullName: string): Promise<{ id: number; full_name: string } | null> {
+  const result = await loadRepositoryResult(fullName);
+  return result.kind === "ok" ? { id: result.repo.id, full_name: result.repo.full_name } : null;
+}
 
 export type CommitOutcome =
   | { ok: true; result: GithubCommitResult }
@@ -109,29 +104,28 @@ export type CommitOutcome =
 
 /** POST a single-file commit to /api/github/commit and normalize the result.
  * `status === 401` signals GitHub disconnected — callers surface a reconnect. */
-export async function commitFile(input: CommitInput): Promise<CommitOutcome> {
+export async function commitFile(input: CommitInput, parent?: AbortSignal): Promise<CommitOutcome> {
+  const signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
   try {
-    const res = await fetch("/api/github/commit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    const json = (await res.json().catch(() => null)) as
-      | (GithubCommitResult & { error?: string })
-      | null;
-    if (res.ok && json) return { ok: true, result: json as GithubCommitResult };
-    return {
-      ok: false,
-      status: res.status,
-      error: (json as { error?: string } | null)?.error ?? "commit failed",
-    };
-  } catch {
-    return { ok: false, status: 0, error: "network" };
-  }
+    const { githubCommitInput, githubCommitResult } = await awaitWithSignal(import("@/lib/github-file-contract"), signal);
+    const parsed = githubCommitInput.safeParse(input);
+    if (!parsed.success) return { ok: false, status: 400, error: "invalid-input" };
+    if (new TextEncoder().encode(parsed.data.content).byteLength > MAX_GITHUB_FILE_BYTES) return { ok: false, status: 413, error: "too-large" };
+    signal.throwIfAborted();
+    const response = await awaitWithSignal(fetch("/api/github/commit", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data), signal,
+    }), signal);
+    if (!response.ok) return { ok: false, status: response.status, error: "commit-unconfirmed" };
+    const prefix = await awaitWithSignal(readTextPrefix(response, 32_768), signal);
+    if (prefix.truncated) return { ok: false, status: 502, error: "commit-unconfirmed" };
+    const result = githubCommitResult.safeParse(JSON.parse(prefix.text));
+    if (!result.success || result.data.path !== parsed.data.path) return { ok: false, status: 502, error: "commit-unconfirmed" };
+    return { ok: true, result: result.data };
+  } catch { return { ok: false, status: 0, error: "commit-unconfirmed" }; }
 }
 
 export type RepoFileResult =
-  | { kind: "ok"; content: string; htmlUrl: string | null }
+  | { kind: "ok"; content: string; htmlUrl: string | null; sha: string }
   | { kind: "not-found" }
   | { kind: "disconnected" }
   | { kind: "error" };
@@ -143,18 +137,21 @@ export async function loadRepoFile(
   owner: string,
   repo: string,
   path: string,
+  parent?: AbortSignal,
 ): Promise<RepoFileResult> {
   try {
     const qs = new URLSearchParams({ owner, repo, path });
-    const res = await fetch(`/api/github/file?${qs.toString()}`);
+    const signal = AbortSignal.any([AbortSignal.timeout(30_000), ...(parent ? [parent] : [])]);
+    signal.throwIfAborted();
+    const res = await awaitWithSignal(fetch(`/api/github/file?${qs.toString()}`, { signal }), signal);
     if (res.status === 401) return { kind: "disconnected" };
     if (res.status === 404) return { kind: "not-found" };
     if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as {
-      content: string;
-      html_url: string | null;
-    };
-    return { kind: "ok", content: json.content, htmlUrl: json.html_url };
+    const prefix = await awaitWithSignal(readTextPrefix(res, 2_100_000), signal);
+    if (prefix.truncated) return { kind: "error" };
+    const { githubFileResponse } = await awaitWithSignal(import("@/lib/github-file-contract"), signal);
+    const json = githubFileResponse.parse(JSON.parse(prefix.text));
+    return { kind: "ok", content: json.content, htmlUrl: json.html_url, sha: json.sha };
   } catch {
     return { kind: "error" };
   }
@@ -181,79 +178,31 @@ export async function loadDetectedTools(): Promise<DetectedToolsResult> {
   }
 }
 
-/** A single commit surfaced by GET /api/github/commits. */
-type GithubCommit = {
-  sha: string;
-  shortSha: string;
-  message: string;
-  author: string;
-  date: string;
-  url: string;
-};
-
-/** Additions/deletions over a recent window (best-effort; may be null while
- * GitHub is still computing repository statistics). */
-type GithubCodeVolume = {
-  additions: number;
-  deletions: number;
-  weeks: number;
-};
-
+/** Read-only history uses the same bounded/cancellable transport as metadata. */
 export type ProjectCommitsResult =
-  | { kind: "ok"; commits: GithubCommit[]; codeVolume: GithubCodeVolume | null }
-  | { kind: "disconnected" }
-  | { kind: "error" };
-
-/** Load a project repo's recent commits + recent code volume as a plain
- * result, so callers can render change-history without holding a token. */
-export async function loadProjectCommits(
-  repoFullName: string,
-): Promise<ProjectCommitsResult> {
+  | { kind: "ok"; commits: import("@/lib/github-activity-contract").GithubHistoryCommit[]; codeVolume: { additions: number; deletions: number; weeks: number } | null }
+  | { kind: "disconnected" | "not-found" | "error" };
+export async function loadProjectCommits(repoFullName: string, parent?: AbortSignal): Promise<ProjectCommitsResult> {
+  const signal = repositoryReadSignal(parent);
   try {
-    const res = await fetch(
-      `/api/github/commits?repo=${encodeURIComponent(repoFullName)}`,
-    );
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as {
-      commits: GithubCommit[];
-      codeVolume: GithubCodeVolume | null;
-    };
-    return { kind: "ok", commits: json.commits, codeVolume: json.codeVolume };
-  } catch {
-    return { kind: "error" };
-  }
+    const { githubRepositoryFullName } = await awaitWithSignal(import("@/lib/github-repository-contract"), signal);
+    const name = githubRepositoryFullName.parse(repoFullName);
+    const response = await awaitWithSignal(fetch(`/api/github/commits?repo=${encodeURIComponent(name)}`, { cache: "no-store", signal }), signal);
+    if (!response.ok) { cancelRepositoryBody(response); return { kind: response.status === 401 ? "disconnected" : response.status === 404 ? "not-found" : "error" }; }
+    const { githubCommitsResponse } = await awaitWithSignal(import("@/lib/github-activity-contract"), signal);
+    return { kind: "ok", ...githubCommitsResponse.parse(await repositoryJson(response, signal, 131_072)) };
+  } catch { return { kind: "error" }; }
 }
-
-/** One commit in the cross-project feed (GET /api/github/activity). */
-type CrossProjectCommit = {
-  projectId: string;
-  projectName: string;
-  projectSlug: string;
-  repo: string;
-  sha: string;
-  shortSha: string;
-  message: string;
-  author: string;
-  date: string;
-  url: string;
-};
-
 export type CrossProjectActivityResult =
-  | { kind: "ok"; items: CrossProjectCommit[] }
-  | { kind: "disconnected" }
-  | { kind: "error" };
-
-/** Load a merged recent-commit feed across the owner's active project repos. */
-export async function loadCrossProjectActivity(): Promise<CrossProjectActivityResult> {
+  | { kind: "ok"; items: import("@/lib/github-activity-contract").GithubActivityCommit[]; scope: import("@/lib/github-activity-contract").GithubActivityScope }
+  | { kind: "disconnected" | "error" };
+export async function loadCrossProjectActivity(parent?: AbortSignal): Promise<CrossProjectActivityResult> {
+  const signal = repositoryReadSignal(parent);
   try {
-    const res = await fetch("/api/github/activity");
-    if (res.status === 401) return { kind: "disconnected" };
-    if (!res.ok) return { kind: "error" };
-    const json = (await res.json()) as { items: CrossProjectCommit[]; connected: boolean };
-    if (!json.connected) return { kind: "disconnected" };
-    return { kind: "ok", items: json.items };
-  } catch {
-    return { kind: "error" };
-  }
+    const response = await awaitWithSignal(fetch("/api/github/activity", { cache: "no-store", signal }), signal);
+    if (!response.ok) { cancelRepositoryBody(response); return { kind: response.status === 401 ? "disconnected" : "error" }; }
+    const { githubActivityResponse } = await awaitWithSignal(import("@/lib/github-activity-contract"), signal);
+    const result = githubActivityResponse.parse(await repositoryJson(response, signal, 262_144));
+    return result.connected ? { kind: "ok", items: result.items, scope: result.scope } : { kind: "disconnected" };
+  } catch { return { kind: "error" }; }
 }

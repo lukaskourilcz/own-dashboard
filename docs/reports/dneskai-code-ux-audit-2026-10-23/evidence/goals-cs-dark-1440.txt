@@ -1,0 +1,168 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle" [active]:
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Cíle" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Nástěnka"
+  - button "Časová osa"
+  - text: Nový plán
+  - text: Název
+  - textbox "Název":
+    - /placeholder: Dokončit vedlejší projekt
+  - text: Stav
+  - combobox "Stav":
+    - generic: Nápad
+  - combobox
+  - text: Opakování
+  - combobox "Opakování":
+    - generic: Jednorázově
+  - combobox
+  - text: Cílové datum
+  - textbox "Cílové datum"
+  - text: Poznámky
+  - textbox "Poznámky":
+    - /placeholder: Volitelné
+  - checkbox "Přidat jako událost do Kalendáře Google"
+  - text: Přidat jako událost do Kalendáře Google
+  - button "Přidat plán":
+    - text: Přidat plán
+  - generic: Nástěnka stavů
+  - paragraph: Nápad
+  - generic: "1"
+  - list:
+    - paragraph: Run a half marathon
+    - button "Změnit stav":
+    - button "Smazat plán":
+    - paragraph:
+      - generic: 2027-01-21
+  - paragraph: Aktivní
+  - generic: "4"
+  - list:
+    - paragraph: Launch side project
+    - button "Změnit stav":
+    - button "Smazat plán":
+    - paragraph:
+      - generic: 2026-12-07
+    - paragraph: Weekly review
+    - button "Změnit stav":
+    - button "Smazat plán":
+    - paragraph:
+      - text: Týdně
+    - paragraph: Pay rent
+    - button "Změnit stav":
+    - button "Smazat plán":
+    - paragraph:
+      - text: Měsíčně
+    - paragraph: Deep-clean flat
+    - button "Změnit stav":
+    - button "Smazat plán":
+    - paragraph:
+      - text: Co 14 dní
+  - paragraph: Hotovo
+  - generic: "0"
+  - list:
+    - listitem: prázdné
+  - paragraph: Zrušeno
+  - generic: "0"
+  - list:
+    - listitem: prázdné
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

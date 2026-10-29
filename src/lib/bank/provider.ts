@@ -3,9 +3,9 @@
  *
  * Bank sync used to be GoCardless and nothing else: every route asked
  * `isGoCardlessConfigured()` and `syncConnection` called the GoCardless HTTP
- * client directly. GoCardless Bank Account Data no longer accepts new signups
- * and a PSD2 consent lapses after 90 days, so a forced re-authorisation or a
- * provider change was an outage rather than a configuration change.
+ * client directly. Provider access and expiring PSD2 consent meant a forced
+ * re-authorisation or provider change became an outage rather than a
+ * configuration change.
  *
  * This module is the seam. It is deliberately dependency-free and carries no
  * `server-only` marker so it can be imported by tests and by type positions in
@@ -96,7 +96,11 @@ export function bindTransaction(
   userId: string,
   accountId: string | null,
 ): NormalizedTransaction {
-  return { ...tx, user_id: userId, account_id: accountId };
+  return {
+    kind: tx.kind, amount: tx.amount, currency: tx.currency, category: tx.category,
+    note: tx.note, occurred_on: tx.occurred_on, external_id: tx.external_id,
+    variable_symbol: tx.variable_symbol, user_id: userId, account_id: accountId,
+  };
 }
 
 export type BeginLinkInput = {

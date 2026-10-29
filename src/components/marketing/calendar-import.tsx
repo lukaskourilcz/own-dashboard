@@ -1,11 +1,96 @@
 'use client';
-import { useState } from 'react';
+
+import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLang } from '@/lib/i18n';
+import { useNow } from '@/lib/use-now';
+import { useOwnerPreferences } from '@/lib/owner-preferences';
+import { useUnsavedDraft } from '@/components/navigation-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-type Preview={campaign:{brand:string;starts_on:string;ends_on:string;source_hash:string};report:{inputCount:number;outputCount:number;held:number;backlog:number;completed:number;unmatchedTipTitles:string[];ambiguousTipTitles:string[]}};
-export function CalendarImport({onImported,disabled=false}:{onImported:()=>void;disabled?:boolean}){
- const {lang}=useLang();const cs=lang==='cs';const [brand,setBrand]=useState('dneskai');const [start,setStart]=useState('2026-10-18');const [preview,setPreview]=useState<Preview|null>(null);const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');
- async function run(apply:boolean){setBusy(true);setMessage('');try{const response=await fetch('/api/marketing/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'repository',brand,startsOn:start,apply,...(apply&&preview?{expectedHash:preview.campaign.source_hash}:{})})});if(!response.ok)throw new Error();const value=await response.json();if(apply){setMessage(cs?'Plán uložen jako návrh. Publikování zůstává pozastavené.':'Plan saved as a draft. Publishing remains paused.');setPreview(null);onImported();}else setPreview(value);}catch{setMessage(cs?'Plán nelze importovat. Ověř připojení GitHubu, databázi a změny zdrojového plánu.':'Import unavailable. Check GitHub, database setup and changes to the source plan.');}finally{setBusy(false);}}
- return <section className="mb-5 space-y-3 rounded-lg border border-border bg-surface p-4"><h2 className="text-sm font-semibold">{cs?'Převzít plán z BoardlessAI':'Import the BoardlessAI plan'}</h2><p className="text-xs text-foreground-muted">{cs?'Plánujeme sedm dní. Pozdější nápady zůstanou v zásobníku; staré nabídky a zprávy vyžadují nový podklad.':'Plan seven days. Later ideas stay in the backlog; old offers and news need a current source.'}</p><div className="flex flex-wrap items-end gap-3"><label className="text-xs">{cs?'Značka':'Brand'}<select className="mt-1 block h-11 rounded border border-border bg-surface px-3 text-foreground" value={brand} disabled={busy||disabled} onChange={e=>{setBrand(e.target.value);setPreview(null);}}><option value="dneskai">DNESKAi</option><option value="devshark">devShark</option></select></label><label className="text-xs">{cs?'První den':'First day'}<Input type="date" className="mt-1 h-11" value={start} disabled={busy||disabled} onChange={e=>{setStart(e.target.value);setPreview(null);}}/></label><Button variant="outline" disabled={busy||disabled||!start} onClick={()=>void run(false)}>{cs?'Zkontrolovat přesun':'Preview migration'}</Button></div>{preview&&<div className="space-y-2 text-xs"><p>{preview.campaign.starts_on} – {preview.campaign.ends_on} · {preview.report.outputCount}/{preview.report.inputCount} {cs?'záznamů':'entries'} · {preview.report.held} {cs?'čeká na kontrolu':'held for review'} · {preview.report.backlog} {cs?'v zásobníku':'in backlog'}</p><p>{cs?'Nenalezené odkazy na tipy':'Unmatched tip references'}: {preview.report.unmatchedTipTitles.length} · {cs?'Nejednoznačné':'Ambiguous'}: {preview.report.ambiguousTipTitles.length}</p><details><summary className="cursor-pointer">{cs?'Odkazy vyžadující kontrolu':'References to review'}</summary><ul>{[...preview.report.unmatchedTipTitles,...preview.report.ambiguousTipTitles].map(title=><li key={title}>{title}</li>)}</ul></details><Button disabled={busy||disabled} onClick={()=>void run(true)}>{cs?'Uložit návrh plánu':'Save draft plan'}</Button></div>}{message&&<p role="status" className="text-xs">{message}</p>}</section>;
+import { qk } from '@/lib/queries/keys';
+import { pragueMarketingDate } from '@/lib/marketing/weekly-planning';
+import { CalendarImportSelectionSchema } from '@/lib/marketing/calendar-import-contracts';
+import { MARKETING_CALENDAR_SOURCES } from '@/lib/marketing-calendars';
+import { applyCalendarImport, CalendarImportError, previewCalendarImport, type CalendarImportPreview, type CalendarImportScope } from '@/lib/marketing/calendar-import-client';
+
+export function CalendarImport({ onImported, disabled = false }: { onImported: () => void; disabled?: boolean }) {
+  const { lang } = useLang(), cs = lang === 'cs', owner = useOwnerPreferences(), client = useQueryClient(), now = useNow(), id = useId();
+  const [brand, setBrand] = useState<'dneskai' | 'devshark'>('dneskai');
+  const [chosenStart, setStart] = useState<string | null>(null);
+  const start = chosenStart ?? (now ? pragueMarketingDate(now) : '');
+  const validSelection = CalendarImportSelectionSchema.safeParse({ brand, startsOn: start }).success;
+  const [preview, setPreview] = useState<CalendarImportPreview | null>(null);
+  const [busy, setBusy] = useState<'preview' | 'apply' | null>(null), [message, setMessage] = useState(''), [failed, setFailed] = useState(false), [page, setPage] = useState(0);
+  const [sourceNeedsReview, setSourceNeedsReview] = useState(false);
+  const lifetime = useRef(new AbortController()), active = useRef<(CalendarImportScope & { apply: boolean }) | null>(null);
+  const focus = useRef<'preview' | 'apply' | null>(null), previewButton = useRef<HTMLButtonElement>(null), applyButton = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    if (lifetime.current.signal.aborted) lifetime.current = new AbortController();
+    return () => {
+      if (active.current?.apply) void client.invalidateQueries({ queryKey: qk.marketingState, refetchType: 'none' });
+      lifetime.current.abort(); active.current = null;
+    };
+  }, [client]);
+  useLayoutEffect(() => {
+    if (busy || !focus.current) return;
+    (focus.current === 'apply' ? applyButton : previewButton).current?.focus(); focus.current = null;
+  }, [busy, preview]);
+  useUnsavedDraft({ get dirty() { return false; }, get pending() { return active.current?.apply === true; }, canSave: false, save: async () => false });
+  function reset() { setPreview(null); setMessage(''); setFailed(false); setPage(0); setSourceNeedsReview(false); }
+  async function run(apply: boolean) {
+    if (disabled || active.current || !owner || !validSelection || (apply && !preview)) return;
+    const original = owner.capture();
+    const scope = { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]), apply };
+    if (scope.signal.aborted) return;
+    const intent = { brand, startsOn: start }, capturedPreview = preview;
+    active.current = scope; setSourceNeedsReview(false); setBusy(apply ? 'apply' : 'preview'); setFailed(false); setMessage(''); setStart(start);
+    if (!apply) setPreview(null);
+    try {
+      if (apply && capturedPreview) {
+        await applyCalendarImport(scope, intent, capturedPreview); scope.signal.throwIfAborted();
+        setPreview(null); setMessage(cs ? 'Import potvrzen. Plán najdeš v kalendáři.' : 'Import confirmed. Review the plan in the calendar.'); focus.current = 'preview';
+        try { onImported(); } catch { setMessage(cs ? 'Import potvrzen. Obnov kalendář, aby se načetl aktuální plán.' : 'Import confirmed. Refresh the calendar to load the current plan.'); }
+      } else {
+        const result = await previewCalendarImport(scope, intent); scope.signal.throwIfAborted();
+        setPreview(result); setPage(0); focus.current = 'apply';
+      }
+    } catch (error) {
+      if (!scope.signal.aborted) {
+        setPreview(null); setFailed(true); focus.current = 'preview';
+        setSourceNeedsReview(error instanceof CalendarImportError && error.reason === 'invalid-source');
+        setMessage(error instanceof CalendarImportError && error.reason === 'changed'
+          ? cs ? 'Zdroj, přiřazení tipů nebo účet se změnil. Nejdřív znovu zkontroluj plán.' : 'The source, tip matches or account changed. Preview the plan again first.'
+          : error instanceof CalendarImportError && error.reason === 'invalid-source'
+          ? cs ? 'Zdrojový plán potřebuje opravu. Před další kontrolou ověř jeho data, časy a položky.' : 'The source plan needs correction. Review its dates, times and entries before previewing again.'
+          : apply ? cs ? 'Uložení není potvrzené. Před dalším pokusem znovu zkontroluj plán.' : 'Save is unconfirmed. Preview the plan again before retrying.'
+          : cs ? 'Plán nelze načíst. Ověř připojení a zkus kontrolu znovu.' : 'The plan could not be loaded. Check the connection and preview again.');
+      }
+    } finally {
+      if (active.current === scope) { active.current = null; if (!scope.signal.aborted) setBusy(null); }
+    }
+  }
+  const locked = disabled || busy !== null || !owner;
+  const sourceUrl = MARKETING_CALENDAR_SOURCES.find(source => source.project === brand)?.calendarUrl;
+  const references = preview ? [...preview.report.unmatchedTipTitles, ...preview.report.ambiguousTipTitles] : [];
+  return <section aria-labelledby={`${id}-title`} aria-busy={busy !== null} className="mx-auto mb-5 w-full max-w-3xl space-y-3 rounded-lg border border-border bg-surface p-4">
+    <div className="space-y-1"><h2 id={`${id}-title`} className="text-sm font-semibold">{cs ? 'Převzít plán z BoardlessAI' : 'Import the BoardlessAI plan'}</h2>
+      <p className="text-xs text-foreground-muted">{cs ? 'Sedm dní ke kontrole. Pozdější nápady zůstanou v zásobníku; staré nabídky a zprávy potřebují nový podklad.' : 'Seven days for review. Later ideas stay in the backlog; old offers and news need a current source.'}</p></div>
+    <div className="grid items-end gap-3 sm:flex sm:flex-wrap">
+      <label className="min-w-0 text-xs sm:w-36">{cs ? 'Značka' : 'Brand'}<select className="mt-1 block h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-foreground focus-ring md:h-8" value={brand} disabled={locked} onChange={event => { if (active.current) return; setBrand(event.target.value === 'devshark' ? 'devshark' : 'dneskai'); reset(); }}><option value="dneskai">DNESKAi</option><option value="devshark">devShark</option></select></label>
+      <label className="min-w-0 text-xs sm:w-40">{cs ? 'První den' : 'First day'}<Input type="date" min="0001-01-01" max="9999-12-25" aria-invalid={!!start && !validSelection} aria-describedby={start && !validSelection ? `${id}-date-error` : undefined} className="mt-1" value={start} disabled={locked} onChange={event => { if (active.current) return; setStart(event.target.value); reset(); }}/></label>
+      <Button ref={previewButton} variant="outline" disabled={locked || !validSelection} onClick={() => void run(false)}>{busy === 'preview' ? cs ? 'Probíhá kontrola…' : 'Checking…' : cs ? 'Zkontrolovat plán' : 'Preview plan'}</Button>
+    </div>
+    {start && !validSelection && <p id={`${id}-date-error`} role="alert" className="text-xs">{cs ? 'Vyber první den, od kterého lze naplánovat celých sedm dní.' : 'Choose a start date that leaves room for all seven days.'}</p>}
+    {preview && <div className="space-y-3 border-t border-border pt-3 text-xs">
+      <p className="tabular">{preview.campaign.starts_on} – {preview.campaign.ends_on} · {preview.report.outputCount} {cs ? 'záznamů' : 'entries'} · {preview.report.held} {cs ? 'ke kontrole' : 'held for review'} · {preview.report.backlog} {cs ? 'v zásobníku' : 'in backlog'}{preview.report.completed > 0 && ` · ${preview.report.completed} ${cs ? 'hotovo' : 'completed'}`}</p>
+      {references.length > 0 && <details><summary className="cursor-pointer py-2 focus-ring">{cs ? 'Odkazy na tipy ke kontrole' : 'Tip references to review'}: {preview.report.unmatchedTipTitles.length} {cs ? 'nenalezených' : 'unmatched'} · {preview.report.ambiguousTipTitles.length} {cs ? 'nejednoznačných' : 'ambiguous'}</summary>
+        <ul className="list-inside list-disc space-y-1 break-words py-2">{references.slice(page * 50, (page + 1) * 50).map((title, index) => <li key={`${page}-${index}`}>{title}</li>)}</ul>
+        {references.length > 50 && <div className="flex flex-wrap items-center gap-2"><Button variant="outline" disabled={page === 0} onClick={() => setPage(value => value - 1)}>{cs ? 'Předchozí' : 'Previous'}</Button><span className="tabular">{page * 50 + 1}–{Math.min((page + 1) * 50, references.length)} / {references.length}</span><Button variant="outline" disabled={(page + 1) * 50 >= references.length} onClick={() => setPage(value => value + 1)}>{cs ? 'Další' : 'Next'}</Button></div>}
+      </details>}
+      <Button ref={applyButton} className="w-full sm:w-auto" disabled={locked} onClick={() => void run(true)}>{busy === 'apply' ? cs ? 'Importuji…' : 'Importing…' : cs ? 'Importovat plán' : 'Import plan'}</Button>
+    </div>}
+    {message && <p role={failed ? 'alert' : 'status'} className="text-xs">{message}</p>}
+    {sourceNeedsReview && sourceUrl && <Button asChild variant="outline" className="w-full sm:w-auto"><a href={sourceUrl} target="_blank" rel="noreferrer">{cs ? 'Otevřít zdrojový plán' : 'Open source plan'}</a></Button>}
+  </section>;
 }

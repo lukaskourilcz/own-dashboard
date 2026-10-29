@@ -1,4 +1,6 @@
 import 'server-only';
+import { awaitWithSignal } from '@/lib/abortable';
+import { readKnowledgeBody } from './knowledge-body';
 import { characterCount } from './dneskai-deck-editor';
 import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiSlide } from './dneskai-slides';
 import { dneskaiSlideTextProblems } from './dneskai-render';
@@ -32,8 +34,8 @@ export async function fitDneskaiDeck(input: DneskaiFitRequest): Promise<DneskaiF
   const format = slides.length === 1 && slides[0]!.type === 'single' ? 'single-image' : 'carousel';
   if (!DneskaiDeckSchema.safeParse({ schemaVersion: DNESKAI_SLIDES_VERSION, format, slides }).success) throw new DneskaiFitError('fit-input-invalid');
   const fitted = await Promise.all(slides.map(async (slide, index) => {
-    const problems = slide.type === 'sources' ? [] : await dneskaiSlideTextProblems(slide, { index, count: slides.length }, input.kit);
-    const fields: DneskaiFitField[] = dneskaiSlideFieldLimits(slide).map(({ field, max }) => {
+    const problems = await dneskaiSlideTextProblems(slide, { index, count: slides.length }, input.kit);
+    const fields: DneskaiFitField[] = dneskaiSlideFieldLimits(slide, index).map(({ field, max }) => {
       const characters = characterCount((slide[field] ?? '').trim());
       const own = problems.filter((problem) => problem.field === field);
       return {
@@ -52,12 +54,22 @@ export async function fitDneskaiDeck(input: DneskaiFitRequest): Promise<DneskaiF
 }
 
 /** The HTTP answer shared by the owner's route and the fixture-only preview route: parse, fit, answer with codes only. */
-export async function dneskaiFitResponse(request: Request): Promise<Response> {
+export async function dneskaiFitResponse(request: Request, parent?: AbortSignal): Promise<Response> {
+  const signal = AbortSignal.any([request.signal, parent ?? AbortSignal.timeout(10_000)]);
   let input: DneskaiFitRequest;
-  try { const raw = await request.text(); if (raw.length > 20_000) throw new Error('too-large'); input = DneskaiFitRequestSchema.parse(JSON.parse(raw)); }
-  catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
   try {
-    return Response.json(await fitDneskaiDeck(input), { headers: { 'Cache-Control': 'private, no-store' } });
+    const raw = await readKnowledgeBody(request, 80_000, signal);
+    if (raw.length > 20_000) throw new Error('too-large');
+    input = DneskaiFitRequestSchema.parse(JSON.parse(raw));
+    signal.throwIfAborted();
+  } catch (error) {
+    const interrupted = signal.aborted || (error instanceof DOMException && error.name === 'AbortError');
+    return Response.json({ error: interrupted ? 'fit-unavailable' : 'invalid-request' }, { status: interrupted ? 503 : 400 });
+  }
+  try {
+    const result = await awaitWithSignal(fitDneskaiDeck(input), signal);
+    signal.throwIfAborted();
+    return Response.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     if (error instanceof DneskaiFitError) return Response.json({ error: error.code }, { status: error.code === 'kit-unavailable' ? 409 : 400 });
     return Response.json({ error: 'fit-unavailable' }, { status: 503 });

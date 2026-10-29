@@ -155,3 +155,12 @@ describe("upcomingRenewals", () => {
     ]);
   });
 });
+
+it("updates a renewal window from an explicit day without changing the stored renewal",async()=>{
+ const {daysUntilRenewal}=await import("@/lib/subscriptions");
+ const subscription=sub({next_billing_date:"2026-11-24"});
+ expect(upcomingRenewals([subscription],30,new Date(2026,9,24))).toEqual([]);
+ expect(upcomingRenewals([subscription],30,new Date(2026,9,25))).toEqual([subscription]);
+ expect(daysUntilRenewal(subscription,new Date(2026,10,25))).toBe(-1);
+ expect(subscription.next_billing_date).toBe("2026-11-24");
+});

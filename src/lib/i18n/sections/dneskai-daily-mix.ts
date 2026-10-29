@@ -1,6 +1,6 @@
 /** Zdroje → Denní mix (#156). Every string exists in English and Czech with the same meaning. */
 const en = {
-  title: 'Daily mix',
+  title: 'Daily mix', loading: 'Loading the daily mix…', disabled: 'Daily mix settings are not enabled for this workspace.', retry: 'Retry',
   intro: 'How many posts a day, and at which times. The night proposes three topics for each post, and an approved topic takes the nearest free active time.',
   news: 'News posts a day',
   education: 'Education posts a day',
@@ -10,12 +10,14 @@ const en = {
   save: 'Save mix',
   saving: 'Saving…',
   saved: 'Mix saved.',
-  failed: 'The mix was not saved. Check the numbers and try again.',
+  failed: 'The save could not be confirmed. Your draft is still here; check the latest settings before retrying.',
+  changed: 'The saved mix changed. Your draft is still here. Reload the latest settings before saving.',
+  reload: 'Discard draft and reload',
   preview: 'Preview: the mix shows the default and saves nothing.',
   unavailable: 'The daily mix could not be loaded.',
 };
 const cs: typeof en = {
-  title: 'Denní mix',
+  title: 'Denní mix', loading: 'Načítám denní mix…', disabled: 'Nastavení denního mixu není pro tento projekt zapnuté.', retry: 'Zkusit znovu',
   intro: 'Kolik příspěvků denně a v kolik hodin. Noc navrhne ke každému příspěvku tři náměty a schválený námět dostane nejbližší volný aktivní čas.',
   news: 'Zpravodajských příspěvků denně',
   education: 'Vzdělávacích příspěvků denně',
@@ -25,7 +27,9 @@ const cs: typeof en = {
   save: 'Uložit mix',
   saving: 'Ukládám…',
   saved: 'Mix je uložený.',
-  failed: 'Mix se neuložil. Zkontrolujte čísla a zkuste to znovu.',
+  failed: 'Uložení se nepodařilo potvrdit. Návrh zůstává tady; před dalším pokusem zkontrolujte aktuální nastavení.',
+  changed: 'Uložený mix se změnil. Návrh zůstává tady. Před uložením načtěte aktuální nastavení.',
+  reload: 'Zahodit návrh a načíst znovu',
   preview: 'Ukázka: mix ukazuje výchozí nastavení a nic neukládá.',
   unavailable: 'Denní mix se nepodařilo načíst.',
 };

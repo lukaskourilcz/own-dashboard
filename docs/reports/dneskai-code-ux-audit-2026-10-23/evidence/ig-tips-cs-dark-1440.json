@@ -1,0 +1,459 @@
+{
+  "containers": [
+    {
+      "className": "",
+      "height": 268.5,
+      "tag": "SECTION",
+      "text": "Nápady na obsah1 tipPlan a month of posts around two topicsPick two topics your audience keeps asking about and outline a month of posts in ",
+      "width": 1120,
+      "x": 276,
+      "y": 296
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 227.5,
+      "tag": "LI",
+      "text": "Plan a month of posts around two topicsPick two topics your audience keeps asking about and outline a month of posts in one sitting. Record ",
+      "width": 554,
+      "x": 276,
+      "y": 337
+    },
+    {
+      "className": "",
+      "height": 308.5,
+      "tag": "SECTION",
+      "text": "Formáty a úpravy1 tipDesign every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the postInstagram applies on",
+      "width": 1120,
+      "x": 276,
+      "y": 597
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 267.5,
+      "tag": "LI",
+      "text": "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the postInstagram applies one orientation to ever",
+      "width": 554,
+      "x": 276,
+      "y": 638
+    },
+    {
+      "className": "",
+      "height": 240.5,
+      "tag": "SECTION",
+      "text": "Platformy a dosah1 tipMake the profile say what you offer and what to do nextPut your service and a searchable specialty in the name and bio",
+      "width": 1120,
+      "x": 276,
+      "y": 937
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 199.5,
+      "tag": "LI",
+      "text": "Make the profile say what you offer and what to do nextPut your service and a searchable specialty in the name and bio, say who you help and",
+      "width": 554,
+      "x": 276,
+      "y": 978
+    },
+    {
+      "className": "",
+      "height": 220.5,
+      "tag": "SECTION",
+      "text": "Růst a udržení1 tipReward readers who bring a friendGive readers a real perk, such as early delivery or an ad-free edition, when a friend th",
+      "width": 1120,
+      "x": 276,
+      "y": 1210
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 179.5,
+      "tag": "LI",
+      "text": "Reward readers who bring a friendGive readers a real perk, such as early delivery or an ad-free edition, when a friend they invite subscribe",
+      "width": 554,
+      "x": 276,
+      "y": 1251
+    },
+    {
+      "className": "",
+      "height": 200.5,
+      "tag": "SECTION",
+      "text": "Bez skupiny1 tipCheck a free resource before relying on itOpen the provider's own page, tell a free resource from a trial or a paid export, ",
+      "width": 1120,
+      "x": 276,
+      "y": 1462
+    },
+    {
+      "className": "flex min-w-0 flex-col rounded-lg border border-border bg-surface",
+      "height": 159.5,
+      "tag": "LI",
+      "text": "Check a free resource before relying on itOpen the provider's own page, tell a free resource from a trial or a paid export, and note the dat",
+      "width": 554,
+      "x": 276,
+      "y": 1503
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Kopírovat IG tipy do JSON / Markdown",
+      "width": 245.7,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat tip",
+      "width": 79,
+      "x": 530,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Hledat tipy…",
+      "width": 384,
+      "x": 276,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Všechna témata",
+      "width": 114.7,
+      "x": 276,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Nápady na obsah",
+      "width": 122,
+      "x": 397,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Formáty a úpravy",
+      "width": 122.5,
+      "x": 525,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Platformy a dosah",
+      "width": 126.4,
+      "x": 653,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Růst a udržení",
+      "width": 104.6,
+      "x": 786,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Bez skupiny",
+      "width": 91.5,
+      "x": 896,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zatím nepoužité3",
+      "width": 129.3,
+      "x": 1002,
+      "y": 178
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Podrobnosti: Plan a month of posts around two topics",
+      "width": 86.1,
+      "x": 283,
+      "y": 528
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Plan a month of posts around two topics",
+      "width": 58.1,
+      "x": 702,
+      "y": 528
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat: Plan a month of posts around two topics",
+      "width": 59.2,
+      "x": 764,
+      "y": 528
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Podrobnosti: Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide",
+      "width": 86.1,
+      "x": 283,
+      "y": 868
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of ",
+      "width": 58.1,
+      "x": 702,
+      "y": 868
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat: Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of t",
+      "width": 59.2,
+      "x": 764,
+      "y": 868
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Podrobnosti: Make the profile say what you offer and what to do next",
+      "width": 86.1,
+      "x": 283,
+      "y": 1141
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Make the profile say what you offer and what to do next",
+      "width": 58.1,
+      "x": 702,
+      "y": 1141
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat: Make the profile say what you offer and what to do next",
+      "width": 59.2,
+      "x": 764,
+      "y": 1141
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Podrobnosti: Reward readers who bring a friend",
+      "width": 86.1,
+      "x": 283,
+      "y": 1393
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Reward readers who bring a friend",
+      "width": 58.1,
+      "x": 702,
+      "y": 1393
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat: Reward readers who bring a friend",
+      "width": 59.2,
+      "x": 764,
+      "y": 1393
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Podrobnosti: Check a free resource before relying on it",
+      "width": 86.1,
+      "x": 283,
+      "y": 1626
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit: Check a free resource before relying on it",
+      "width": 58.1,
+      "x": 702,
+      "y": 1626
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat: Check a free resource before relying on it",
+      "width": 59.2,
+      "x": 764,
+      "y": 1626
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "IG TIPS",
+      "width": 51.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "IG TIPS",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Nápady na obsah1 tip",
+      "width": 1120,
+      "x": 276,
+      "y": 296
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Plan a month of posts around two topics",
+      "width": 524,
+      "x": 291,
+      "y": 350
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Formáty a úpravy1 tip",
+      "width": 1120,
+      "x": 276,
+      "y": 597
+    },
+    {
+      "height": 40,
+      "tag": "H3",
+      "text": "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post",
+      "width": 524,
+      "x": 291,
+      "y": 651
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Platformy a dosah1 tip",
+      "width": 1120,
+      "x": 276,
+      "y": 937
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Make the profile say what you offer and what to do next",
+      "width": 524,
+      "x": 291,
+      "y": 991
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Růst a udržení1 tip",
+      "width": 1120,
+      "x": 276,
+      "y": 1210
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Reward readers who bring a friend",
+      "width": 524,
+      "x": 291,
+      "y": 1264
+    },
+    {
+      "height": 29,
+      "tag": "H2",
+      "text": "Bez skupiny1 tip",
+      "width": 1120,
+      "x": 276,
+      "y": 1462
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Check a free resource before relying on it",
+      "width": 524,
+      "x": 291,
+      "y": 1516
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

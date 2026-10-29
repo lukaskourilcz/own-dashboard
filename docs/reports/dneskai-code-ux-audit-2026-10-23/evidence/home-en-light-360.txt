@@ -1,0 +1,274 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- main:
+  - heading "Home" [level=1]
+  - navigation "Primary navigation":
+    - button "Home":
+      - text: Home
+    - button "Work overview":
+      - text: Work overview
+    - button "Projects":
+      - text: Projects
+    - button "Tasks":
+      - text: Tasks
+    - button "More":
+      - text: More
+  - button "Customize":
+    - text: Customize
+  - heading "Good afternoon, Jan" [level=2]
+  - paragraph: Friday, October 23 · 14:42
+  - generic: Next
+  - generic: Gym
+  - generic: in 3h 17m
+  - paragraph:
+    - generic: 📄
+    - generic: Contract renewal
+    - generic: in 12 days
+  - paragraph:
+    - text: Today's events
+  - list:
+    - generic: 09:30
+    - generic: Standup
+    - generic: 12:30
+    - generic: Lunch with Petr
+    - generic: 18:00
+    - generic: Gym
+  - paragraph:
+    - text: Due soon
+  - list:
+    - generic: 1d late
+    - generic: Reply to landlord
+    - generic: today
+    - generic: Submit Q2 invoice
+    - generic: today
+    - generic: Review the weekly operating plan
+    - generic: 1d
+    - generic: Generate real app icons with Recraft
+  - paragraph:
+    - text: Follow-ups
+  - list:
+    - generic: Job
+    - generic: Senior React Engineer · Harbour Systems
+    - generic: 2026-10-20
+    - generic: Deal
+    - generic: Acme customer portal
+    - generic: 2026-10-24
+  - heading "Today's seven" [level=2]
+  - generic: 0 of 7 completed
+  - paragraph: A daily focus drawn from active projects, highest priority first.
+  - button "Generate a new seven" [disabled]:
+    - text: Generate a new seven
+  - progressbar "0 of 7 completed"
+  - list:
+    - generic: "1"
+    - checkbox "Review the weekly operating plan" [disabled]
+    - paragraph: Review the weekly operating plan
+    - paragraph:
+      - generic: Waiting 12 days
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: GLOBAL
+    - generic: "2"
+    - checkbox "Generate real app icons with Recraft" [disabled]
+    - paragraph: Generate real app icons with Recraft
+    - paragraph:
+      - generic: react-express-app
+      - generic: Waiting 7 days
+    - generic "Importance 5/6":
+      - text: "5"
+    - generic: "3"
+    - checkbox "Verify project deployment" [disabled]
+    - paragraph: Verify project deployment
+    - paragraph:
+      - generic: DNESKAi
+      - generic: Waiting 4 days
+    - generic "Importance 4/6":
+      - text: "4"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: "4"
+    - checkbox "Add UPSTASH_REDIS_REST_URL in Vercel" [disabled]
+    - paragraph: Add UPSTASH_REDIS_REST_URL in Vercel
+    - paragraph:
+      - generic: own-dashboard
+      - generic: Waiting 3 days
+    - generic "Importance 3/6":
+      - text: "3"
+    - generic: "5"
+    - checkbox "Review the ingestion retry policy" [disabled]
+    - paragraph: Review the ingestion retry policy
+    - paragraph:
+      - generic: DNESKAi
+      - generic: Waiting 5 days
+    - generic "Importance 3/6":
+      - text: "3"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: "6"
+    - checkbox "Review dashboard accessibility report" [disabled]
+    - paragraph: Review dashboard accessibility report
+    - paragraph:
+      - generic: own-dashboard
+      - generic: Waiting 3 days
+    - generic "Importance 2/6":
+      - text: "2"
+    - 'generic "For: Me"':
+      - text: Me
+    - generic: "7"
+    - checkbox "Document the release migration" [disabled]
+    - paragraph: Document the release migration
+    - paragraph:
+      - generic: own-dashboard
+      - generic: Waiting 7 days
+    - generic "Importance 2/6":
+      - text: "2"
+    - 'generic "For: Me"':
+      - text: Me
+  - region "Completion garden":
+    - heading "Completion garden" [level=3]
+    - paragraph: A green day means all seven selected tasks were completed.
+    - list:
+      - 'listitem "September 5th, 2026: Daily focus not completed"'
+      - 'listitem "September 6th, 2026: Daily focus not completed"'
+      - 'listitem "September 7th, 2026: Daily focus not completed"'
+      - 'listitem "September 8th, 2026: Daily focus not completed"'
+      - 'listitem "September 9th, 2026: Daily focus not completed"'
+      - 'listitem "September 10th, 2026: Daily focus not completed"'
+      - 'listitem "September 11th, 2026: Daily focus not completed"'
+      - 'listitem "September 12th, 2026: Daily focus not completed"'
+      - 'listitem "September 13th, 2026: Daily focus not completed"'
+      - 'listitem "September 14th, 2026: Daily focus not completed"'
+      - 'listitem "September 15th, 2026: Daily focus not completed"'
+      - 'listitem "September 16th, 2026: Daily focus not completed"'
+      - 'listitem "September 17th, 2026: Daily focus not completed"'
+      - 'listitem "September 18th, 2026: Daily focus not completed"'
+      - 'listitem "September 19th, 2026: Daily focus not completed"'
+      - 'listitem "September 20th, 2026: Daily focus not completed"'
+      - 'listitem "September 21st, 2026: Daily focus not completed"'
+      - 'listitem "September 22nd, 2026: Daily focus not completed"'
+      - 'listitem "September 23rd, 2026: Daily focus not completed"'
+      - 'listitem "September 24th, 2026: Daily focus not completed"'
+      - 'listitem "September 25th, 2026: Daily focus not completed"'
+      - 'listitem "September 26th, 2026: Daily focus not completed"'
+      - 'listitem "September 27th, 2026: Daily focus not completed"'
+      - 'listitem "September 28th, 2026: Daily focus not completed"'
+      - 'listitem "September 29th, 2026: Daily focus not completed"'
+      - 'listitem "September 30th, 2026: Daily focus not completed"'
+      - 'listitem "October 1st, 2026: Daily focus not completed"'
+      - 'listitem "October 2nd, 2026: Daily focus not completed"'
+      - 'listitem "October 3rd, 2026: Daily focus not completed"'
+      - 'listitem "October 4th, 2026: Daily focus not completed"'
+      - 'listitem "October 5th, 2026: Daily focus not completed"'
+      - 'listitem "October 6th, 2026: Daily focus not completed"'
+      - 'listitem "October 7th, 2026: Daily focus not completed"'
+      - 'listitem "October 8th, 2026: Daily focus not completed"'
+      - 'listitem "October 9th, 2026: Daily focus not completed"'
+      - 'listitem "October 10th, 2026: Daily focus not completed"'
+      - 'listitem "October 11th, 2026: Daily focus not completed"'
+      - 'listitem "October 12th, 2026: Daily focus not completed"'
+      - 'listitem "October 13th, 2026: Daily focus not completed"'
+      - 'listitem "October 14th, 2026: Daily focus not completed"'
+      - 'listitem "October 15th, 2026: Daily focus not completed"'
+      - 'listitem "October 16th, 2026: Daily focus not completed"'
+      - 'listitem "October 17th, 2026: Daily focus not completed"'
+      - 'listitem "October 18th, 2026: Daily focus not completed"'
+      - 'listitem "October 19th, 2026: Daily focus not completed"'
+      - 'listitem "October 20th, 2026: Daily focus not completed"'
+      - 'listitem "October 21st, 2026: Daily focus not completed"'
+      - 'listitem "October 22nd, 2026: Daily focus not completed"'
+      - 'listitem "October 23rd, 2026: Daily focus not completed"'
+  - generic: Monthly recurring
+  - paragraph: 1 988,35 Kč
+  - paragraph: subscriptions
+  - generic: Open tasks
+  - paragraph: "11"
+  - paragraph: 1 done
+  - generic: Active projects
+  - paragraph: "9"
+  - paragraph: professional portfolio
+  - heading "Crons" [level=2]:
+    - text: Crons
+  - paragraph: No cron runs recorded today.
+  - text: Needs attention
+  - button "Opportunities"
+  - list:
+    - generic: Acme customer portal
+    - generic: Proposal sent
+  - text: Subscriptions
+  - generic: 23 860,19 Kč per year · 7 active
+  - paragraph: 1 988,35 Kč/mo
+  - list:
+    - generic: S
+    - paragraph: Supabase
+    - paragraph: Monthly · next 2026-11-04 · in 12d
+    - paragraph: $25.00
+    - paragraph: Vercel
+    - paragraph: Monthly · next 2026-11-04 · in 12d
+    - paragraph: $20.00
+    - generic: M
+    - paragraph: Mobbin
+    - paragraph: Quarterly · next 2027-01-01 · in 70d
+    - paragraph: $45.00
+    - paragraph: ≈ 348,84 Kč/mo
+    - paragraph: Netflix
+    - paragraph: Monthly · next 2026-10-31 · in 8d
+    - paragraph: 279,00 Kč
+    - paragraph: Spotify
+    - paragraph: Monthly · next 2026-10-26 · in 3d
+    - paragraph: 169,00 Kč
+    - paragraph: Figma
+    - paragraph: Yearly · next 2027-02-20 · in 120d
+    - paragraph: 1 440,00 Kč
+    - paragraph: ≈ 120,00 Kč/mo
+    - paragraph: iCloud+
+    - paragraph: Monthly · next 2026-11-12 · in 20d
+    - paragraph: 25,00 Kč
+    - generic: U
+    - paragraph: UptimeRobot
+    - paragraph: Monthly · next payment missing
+    - paragraph: 9,68 €
+  - text: New calendar event
+  - text: Title
+  - textbox "Title":
+    - /placeholder: Dentist appointment
+  - text: Date
+  - textbox "Date": 2026-10-23
+  - text: Start
+  - textbox "Start": 09:00
+  - text: End
+  - textbox "End": 10:00
+  - checkbox "All day"
+  - text: All day
+  - combobox "repeats":
+    - generic: Doesn't repeat
+  - combobox
+  - button "Add to Google Calendar"
+  - text: Recurring plans
+  - generic: 2/3
+  - list:
+    - button "Mark done"
+    - paragraph: Weekly review
+    - paragraph:
+      - text: Weekly
+      - generic: ·
+      - generic: 2 days left
+    - button "Mark done"
+    - paragraph: Pay rent
+    - paragraph:
+      - text: Monthly
+      - generic: ·
+      - generic: 8 days left
+    - button "Mark not done" [pressed]:
+    - paragraph: Deep-clean flat
+    - paragraph:
+      - text: Biweekly
+      - generic: ·
+      - generic: Done
+  - status
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+  - text: Compiling
+  - generic: .
+  - generic: .
+  - generic: .
+- alert

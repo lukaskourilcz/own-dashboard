@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,17 +46,7 @@ function rememberProject(promptId: string, projectId: string) {
  * the last choice per prompt for the browser session. The preview is the
  * exact clipboard text built by `composePromptCopy`.
  */
-export function PromptCopyDialog({
-  prompt,
-  open,
-  onOpenChange,
-  projects,
-  promptLinks,
-  projectLinks,
-  aiLinks,
-  aiCategories,
-  fixedProjectId,
-}: {
+type Props = {
   prompt: Prompt | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -67,11 +57,31 @@ export function PromptCopyDialog({
   aiCategories: AiCategory[];
   /** Workspace use: the project is preselected and cannot be cleared. */
   fixedProjectId?: string;
-}) {
+};
+
+export function PromptCopyDialog(props: Props) {
+  return props.open && props.prompt
+    ? <PromptCopyContent key={props.prompt.id} {...props} prompt={props.prompt} /> : null;
+}
+
+function PromptCopyContent({
+  prompt,
+  open,
+  onOpenChange,
+  projects,
+  promptLinks,
+  projectLinks,
+  aiLinks,
+  aiCategories,
+  fixedProjectId,
+}: Omit<Props, "prompt"> & { prompt: Prompt }) {
   const t = useDict().prompts;
   const toast = useToast();
   const [choice, setChoice] = useState<{ promptId: string; projectId: string } | null>(null);
   const [status, setStatus] = useState("");
+  const [copying, setCopying] = useState(false);
+  const mounted = useRef(true);
+  useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const returnFocus = useReturnFocus(open && prompt !== null);
 
   const projectId = useMemo(() => {
@@ -95,14 +105,21 @@ export function PromptCopyDialog({
     });
   }, [prompt, project, promptLinks, projectLinks, aiLinks, aiCategories]);
 
+  function close() { mounted.current = false; onOpenChange(false); }
+
   async function copy() {
+    if (copying || !mounted.current) return;
+    setCopying(true);
+    setStatus("");
     try {
       await navigator.clipboard.writeText(text);
+      if (!mounted.current) return;
       toast.ok(t.copied);
-      setStatus(t.copied);
-      onOpenChange(false);
+      close();
     } catch {
-      setStatus(t.couldNotCopyManual);
+      if (mounted.current) setStatus(t.couldNotCopyManual);
+    } finally {
+      if (mounted.current) setCopying(false);
     }
   }
 
@@ -110,8 +127,7 @@ export function PromptCopyDialog({
     <Dialog
       open={open && prompt !== null}
       onOpenChange={(next) => {
-        onOpenChange(next);
-        if (!next) setStatus("");
+        if (!next) close(); else onOpenChange(next);
       }}
     >
       <DialogContent className="flex max-h-[90vh] flex-col gap-3 sm:max-w-2xl" onCloseAutoFocus={returnFocus}>
@@ -124,6 +140,7 @@ export function PromptCopyDialog({
             <Label htmlFor="prompt-copy-project">{t.copyProject}</Label>
             <SimpleSelect
               id="prompt-copy-project"
+              disabled={copying}
               value={projectId}
               onValueChange={(value) => {
                 if (!prompt) return;
@@ -150,10 +167,10 @@ export function PromptCopyDialog({
         </div>
         <p role="status" className="min-h-4 text-xs text-foreground-muted">{status}</p>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={close}>
             {t.cancel}
           </Button>
-          <Button type="button" onClick={() => void copy()}>
+          <Button type="button" disabled={copying} aria-busy={copying} onClick={() => void copy()}>
             <Copy className="h-3.5 w-3.5" />
             {t.copyAction}
           </Button>

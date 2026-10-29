@@ -49,10 +49,11 @@ function carousel(asset: (name: "bleed" | "wide" | "tall" | "pairOne" | "pairTwo
     { type: "split", kicker: "Smyšlené srovnání", headline: "Dva obrázky nad sebou", body: "Levý sloupec nese vysvětlení.", images: [{ slot: "image-1", assetSha256: asset("pairOne") }, { slot: "image-2", assetSha256: asset("pairTwo") }], alt: "Dvě smyšlená schémata." },
     { type: "statement", headline: "„Smyšlený výrok na modré ploše.“", body: "Tišší poznámka pod výrokem.", images: [], alt: "Smyšlený výrok." },
     { type: "statement", variant: "ink", headline: "Tentýž výrok na inkoustové ploše.", images: [], alt: "Smyšlený výrok na tmavé ploše." },
-    // No new post carries a sources slide (owner rule, 22 October 2026); the studio still draws one for a deck saved before it.
-    { type: "sources", headline: "", sources: ["Smyšlený blog: Smyšlený článek (20. 10. 2026)", "Obrázky: smyšlený zdroj"], images: [{ slot: "image-1", assetSha256: asset("wide") }, { slot: "image-2", assetSha256: asset("tall") }], alt: "Seznam smyšlených zdrojů." },
+
   ] });
 }
+
+const legacySources = (asset: Parameters<typeof carousel>[0]): DneskaiDeck["slides"][number] => ({ type: "sources", headline: "", sources: ["Smyšlený blog: Smyšlený článek (20. 10. 2026)", "Obrázky: smyšlený zdroj"], images: [{ slot: "image-1", assetSha256: asset("wide") }, { slot: "image-2", assetSha256: asset("tall") }], alt: "Seznam smyšlených zdrojů." });
 
 function memoryStorage() {
   const objects = new Map<string, { bytes: Buffer; stored: StoredDneskaiSlide }>();
@@ -73,7 +74,7 @@ async function render(deck: DneskaiDeck, storage: DneskaiSlideStorage, loadMedia
 }
 
 describe("DNESKAi deck renderer on the vendored studio", () => {
-  it("renders one slide of every type to an Instagram JPEG in slide order", async () => {
+  it("renders every public slide type to an Instagram JPEG in slide order", async () => {
     const { asset, loadMedia } = await fixtures();
     const deck = carousel(asset);
     const single = DneskaiDeckSchema.parse({ schemaVersion: "dneskai-slides/1", format: "single-image", slides: [{ type: "single", variant: "photo", headline: "Jeden obrázek a jedna věta", images: [{ slot: "image-1", assetSha256: asset("bleed") }], alt: "Smyšlené oznámení s fotkou." }] });
@@ -82,7 +83,7 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     const results = [await render(deck, storage, loadMedia), await render(single, storage, loadMedia), await render(typeOnly, storage, loadMedia)];
     expect(results.map((result) => [result.status, result.problems.filter((problem) => problem.blocking)])).toEqual([["rendered", []], ["rendered", []], ["rendered", []]]);
     const decks = [deck, single, typeOnly];
-    expect(new Set(decks.flatMap((entry) => entry.slides.map((slide) => slide.type)))).toEqual(new Set(["cover-photo", "figure", "split", "statement", "sources", "single"]));
+    expect(new Set(decks.flatMap((entry) => entry.slides.map((slide) => slide.type)))).toEqual(new Set(["cover-photo", "figure", "split", "statement", "single"]));
     for (const [deckIndex, result] of results.entries()) {
       if (result.status !== "rendered") throw new Error("refused");
       expect(result.assets).toHaveLength(decks[deckIndex].slides.length);
@@ -130,7 +131,7 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     const edited = structuredClone(deck); edited.slides[4].headline = "„Jiný smyšlený výrok.“";
     const edit = await render(edited, storage, loadMedia);
     expect(storage.put).toHaveBeenCalledTimes(1);
-    expect(edit.renderKeys.map((key, index) => key === first.renderKeys[index])).toEqual([true, true, true, true, false, true, true]);
+    expect(edit.renderKeys.map((key, index) => key === first.renderKeys[index])).toEqual([true, true, true, true, false, true]);
     expect(loadMedia).not.toHaveBeenCalled();
 
     const recropped = structuredClone(deck); recropped.slides[0].images[0].crop = { focal: { x: 0.5, y: 0.5 }, zoom: 1.2 };
@@ -181,13 +182,13 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     const deck = carousel(asset);
     // The studio draws these as boxes and reports nothing; the gate names each one.
     deck.slides[4].headline = "Žraloci 🦈 a modely 中文";
-    deck.slides[6].sources = ["Smyšlený blog: Smyšlený článek (20. 10. 2026)", "Ověřeno ✓"];
+    deck.slides[5].body = "Ověřeno ✓";
     deck.slides[2].kicker = "Smyšlené téma · 20. 10. 2026";
     const { storage } = memoryStorage();
     const result = await render(deck, storage, loadMedia);
     expect(result).toEqual({ status: "refused", assets: [], renderKeys: [], problems: [
       { slide: 4, code: "unsupported-glyph", blocking: true, field: "headline", message: expect.stringContaining("🦈 (U+1F988), 中 (U+4E2D), 文 (U+6587)") },
-      { slide: 6, code: "unsupported-glyph", blocking: true, field: "sources[1]", message: expect.stringContaining("✓ (U+2713)") },
+      { slide: 5, code: "unsupported-glyph", blocking: true, field: "body", message: expect.stringContaining("✓ (U+2713)") },
     ] });
     expect(result.problems[0]!.message).toContain("Space Grotesk");
     expect(storage.put).not.toHaveBeenCalled();
@@ -209,7 +210,7 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     deck.slides[0].kicker = "Smyšlené téma";
     deck.slides[1].credit = "Graf: smyšlený zdroj";
     deck.slides[4].credit = "Výrok: smyšlený zdroj";
-    deck.slides[6].headline = "Zdroje k vydání";
+    deck.slides.push({ ...legacySources(asset), headline: "Zdroje k vydání" });
     deck.slides[5].sources = ["Smyšlený zdroj na výroku"];
     const { storage } = memoryStorage();
     const result = await render(deck, storage, loadMedia);
@@ -220,7 +221,7 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
       { slide: 1, code: "text-unplaced", blocking: true, field: "credit" },
       { slide: 4, code: "text-unplaced", blocking: true, field: "credit" },
       { slide: 5, code: "text-unplaced", blocking: true, field: "sources[0]" },
-      { slide: 6, code: "text-unplaced", blocking: true, field: "headline" },
+      { slide: 6, code: "text-unplaced", blocking: true, field: "slide" },
     ]);
     expect(storage.put).not.toHaveBeenCalled();
     // Blank text is no text: whitespace in a field the slide does not draw is not a problem.
@@ -233,8 +234,9 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     const deck = carousel(asset);
     const encoder = await dneskaiEncoderIdentity();
     const key = (slide: DneskaiDeck["slides"][number], index: number) => dneskaiRenderKey(slide, { index, count: 7 }, encoder);
+    const legacy = legacySources(asset);
     expect(key({ ...deck.slides[1], headline: `  ${deck.slides[1].headline}\n`, body: ` ${deck.slides[1].body} ` }, 1)).toBe(key(deck.slides[1], 1));
-    expect(key({ ...deck.slides[6], sources: ["  ", ...deck.slides[6].sources!, " "] }, 6)).toBe(key(deck.slides[6], 6));
+    expect(key({ ...legacy, sources: ["  ", ...legacy.sources!, " "] }, 6)).toBe(key(legacy, 6));
     expect(key({ ...deck.slides[4], body: undefined }, 4)).toBe(key({ ...deck.slides[4], body: "  " }, 4));
     expect(key({ ...deck.slides[1], headline: `${deck.slides[1].headline}!` }, 1)).not.toBe(key(deck.slides[1], 1));
   });

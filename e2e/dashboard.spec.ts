@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { gotoPreview, watchConsole } from "./helpers";
+import { task } from "./task-fixtures";
 
 // Section labels in English (gotoPreview forces lang=en).
 const TABS = [
@@ -323,7 +324,12 @@ test.describe("dashboard sections", () => {
   test("destructive confirmation opens at a stable viewport center", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "covered once on desktop");
     await gotoPreview(page);
-    await page.locator("aside nav").getByRole("button", { name: "Tasks" }).click();
+    let writes = 0;
+    const row = task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'TEST_ONLY centered confirmation');
+    await page.route('**/rest/v1/rpc/read_owned_collection', route => { expect(route.request().postDataJSON().p_entity).toBe('todos'); return route.fulfill({ json: [row] }); });
+    await page.route('**/rest/v1/rpc/write_task', route => { writes++; return route.fulfill({ status: 503, json: {} }); });
+    await page.goto('/dev-preview?tab=tasks&tasks=live');
+    await expect(page.getByRole('checkbox', { name: row.title, exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Delete", exact: true }).first().click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
@@ -343,6 +349,9 @@ test.describe("dashboard sections", () => {
           (viewport?.width ?? 0) / 2,
       ),
     ).toBeLessThan(2);
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    expect(writes).toBe(0);
+    await expect(page.getByRole('checkbox', { name: row.title, exact: true })).toBeVisible();
   });
 
   test("Career exposes job details and writing tools", async ({ page }, testInfo) => {

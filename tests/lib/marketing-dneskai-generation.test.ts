@@ -36,12 +36,30 @@ const clean = vi.fn(async (): Promise<DneskaiSlideRenderProblem[]> => []);
 const admit = vi.fn(async (input: { attempt: number; maxCostUsd: number }) => { void input; });
 beforeEach(() => { vi.clearAllMocks(); });
 
-describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)", () => {
+describe("model-written audience calls", () => {
+  const calls = ['Sledujte nás pro další novinky.', 'Sleduj @dneskai.', 'Pro další tipy nás sledujte.', 'Začněte sledovat náš profil.', 'Dejte nám follow.', 'Napište SKILL do komentáře.', 'Napiš do komentářů, co si myslíš.', 'Podělte se o názor v komentářích.', 'Komentujte pod příspěvkem.', 'Leave a comment below.', 'Follow us for more.', 'Nezapomeňte nás sledovat.', 'SLEDUJTE NÁS.'];
+  it.each(calls)('refuses an explicit audience call in model copy: %s', call => {
+    const copy = validCopy(pictures); copy.caption = call;
+    const issues = validateDneskaiCopy(copy, offerFor());
+    expect(issues).toContainEqual(expect.objectContaining({ code: 'audience-call', slide: null, field: 'caption' }));
+    expect(dneskaiRetryFeedback(issues, copy, 100000)).toContain('code writes');
+  });
+  it('checks slide text and alt text as well as the caption', () => {
+    const copy = validCopy(pictures); copy.slides[0]!.headline = 'Sledujte nás'; copy.slides[1]!.body = 'Napište názor do komentářů.'; copy.slides[2]!.alt = 'Follow us.';
+    expect(validateDneskaiCopy(copy, offerFor()).filter(issue => issue.code === 'audience-call').map(issue => [issue.slide, issue.field])).toEqual([[0, 'headline'], [1, 'body'], [2, 'alt']]);
+  });
+  it.each(['Model sleduje změny v dokumentu.', 'Sledujte průběh úlohy v konzoli.', 'Napište příkaz do terminálu.', 'Otevřete panel Komentáře.', 'Follow the instructions in the editor.', 'Nástroj umožňuje sledovat náš účet.', 'Sledujte nasazené změny v konzoli.'])('keeps ordinary descriptions and product instructions: %s', text => {
+    const copy = validCopy(pictures); copy.caption = text;
+    expect(validateDneskaiCopy(copy, offerFor()).filter(issue => issue.code === 'audience-call')).toEqual([]);
+  });
+});
+
+describe("marketing-copy/8 prompt (#116, #158, owner rules of 22 October 2026)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
-    expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/7");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("c90c8972b23e7df0f01e0759f76c9f0182e951ff6554872379175d6694f6be7e");
-    expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/7+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
+    expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/8");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("2c9da567772c46f8ec09f311fac3da37d65b6e750bcdb13d17944c38933f1ec5");
+    expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/8+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
     for (const rule of ["Cover hook: the headline of the first slide", "most concrete and surprising true fact", "exactly as strong as the evidence states it", "Never a question, an exclamation, a teaser that withholds the subject",
@@ -98,7 +116,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
     expect(offer.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
     expect(offer.media).toEqual([]);
     const statements: DneskaiCopy = { ...validCopy(pictures), slides: [
-      { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", body: "Rychlá akce Open Eyes je v aplikaci pro iOS i Android.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
+      { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
       { type: "statement", headline: "Zdarma jsou 2 použití, pak je potřeba předplatné.", images: [], alt: "Textový slide o tom, kolik funkce stojí." },
       { type: "statement", variant: "ink", headline: "Jak funkce zvládá skupinové fotky, Adobe neuvedlo.", images: [], alt: "Textový slide o tom, co zůstává otevřené." },
       { type: "statement", headline: "Účet @technology akci vyzkoušel na portrétu.", images: [], alt: "Textový slide o vyzkoušení funkce na Instagramu." },
@@ -126,7 +144,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
   });
 });
 
-describe("marketing-copy/7 schema", () => {
+describe("marketing-copy/8 schema", () => {
   it("sends the SDK-transformed schema: enums and limits as descriptions, no unsupported constraints", () => {
     const wire = dneskaiCopyWireSchema() as { properties: Record<string, Record<string, unknown>> & { slides: { items: { properties: Record<string, Record<string, unknown>> } } } };
     expect(wire.properties.slides.items.properties.type!.description).toBe('{enum: ["cover-photo","figure","split","statement","single"]}');
@@ -205,9 +223,10 @@ describe("deterministic gates before render", () => {
   });
   it("starts a carousel with a cover photo when a full-bleed picture exists, otherwise with a figure or statement", () => {
     const copy = validCopy(pictures); copy.slides = [copy.slides[1]!, copy.slides[0]!, copy.slides[2]!, copy.slides[3]!];
-    expect(codes(copy)).toEqual(["1:cover-not-first", "0:first-slide-invalid"]);
+    expect(codes(copy)).toEqual(["0:text-unplaced", "1:cover-not-first", "0:first-slide-invalid"]);
     const framed = dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })) }), publishers);
     const statementFirst = validCopy(pictures); statementFirst.slides = [statementFirst.slides[2]!, statementFirst.slides[1]!, statementFirst.slides[3]!];
+    delete statementFirst.slides[0]!.body;
     expect(codes(statementFirst, framed)).toEqual([]);
   });
   it("uses only fields the slide type places, within the template's ceiling, and an alt text that is not the headline", () => {

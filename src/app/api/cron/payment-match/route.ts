@@ -41,16 +41,11 @@ export async function GET(request: Request) {
     });
   }
 
-  const { data, error } = await admin
-    .from("invoices")
-    .select("user_id")
-    .eq("status", "issued")
-    .eq("payment_method", "bank");
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, error } = await admin.rpc("payment_matching_owners");
+  if (error || !Array.isArray(data) || data.length > 50 || data.some(owner => typeof owner !== "string")) {
+    return NextResponse.json({ error: "Could not read matching owners." }, { status: 500 });
   }
-
-  const owners = [...new Set((data ?? []).map((row) => row.user_id as string))];
+  const owners = [...new Set(data as string[])];
   let scanned = 0;
   let linked = 0;
   let unmatched = 0;
@@ -62,9 +57,9 @@ export async function GET(request: Request) {
       scanned += result.scanned;
       linked += result.linked;
       unmatched += result.unmatched.length;
-    } catch (err) {
+    } catch {
       failed++;
-      console.error("[cron/payment-match] owner failed:", owner, err);
+      console.error("[cron/payment-match] owner matching failed");
     }
   }
 

@@ -1,0 +1,25 @@
+{
+  "finding": 359,
+  "date": "2026-10-28",
+  "postgresVersion": "17.11 (Postgres.app)",
+  "scope": "Two actual native PostgreSQL connections; exact relevant credential/control/renewal migrations on minimal synthetic account/auth tables, not a full native migration replay.",
+  "migration": "20261028123118_captured_marketing_credential_renewal.sql",
+  "migrationSha256": "4a1d0fe01986af9246e28125a229ecaac649cf22da3345f4ff867f5707b82b8b",
+  "cases": [
+    {
+      "kind": "account edit",
+      "wait": "transactionid",
+      "outcome": "changed"
+    },
+    {
+      "kind": "credential refresh",
+      "wait": "transactionid",
+      "outcome": "changed; replacement retained"
+    },
+    {
+      "kind": "competing renewal",
+      "wait": "advisory",
+      "outcome": "changed; first renewal retained"
+    }
+  ]
+}

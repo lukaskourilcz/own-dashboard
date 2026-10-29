@@ -55,12 +55,15 @@ export function parseCzAmount(raw: string): number | undefined {
 /** Parse a Czech date ("1. 6. 2026", "01.06.2026") or ISO date to yyyy-MM-dd. */
 export function parseCzDate(raw: string): string | undefined {
   let m = raw.match(/(\d{1,2})\s*\.\s*(\d{1,2})\s*\.\s*(\d{4})/);
-  if (m) {
-    return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-  }
+  if (m) return validDateKey(`${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`);
   m = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  if (m) return validDateKey(`${m[1]}-${m[2]}-${m[3]}`);
   return undefined;
+}
+
+function validDateKey(key: string): string | undefined {
+  const date = new Date(`${key}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === key ? key : undefined;
 }
 
 const LINES = (text: string) => text.split(/\r?\n/);

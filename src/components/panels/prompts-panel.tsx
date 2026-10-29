@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
@@ -20,7 +20,7 @@ import {
   Pencil,
   Plus,
   Search,
-  Sparkles,
+  ListPlus,
   Trash2,
   X,
 } from "lucide-react";
@@ -41,7 +41,6 @@ import { LinkPickerDialog } from "@/components/links/link-picker-dialog";
 import { PricingDot } from "@/components/panels/link-library-card";
 import { PromptCopyDialog } from "@/components/prompts/prompt-copy-dialog";
 import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import { CURATED_PROMPTS } from "@/lib/curated-prompts";
@@ -54,8 +53,7 @@ import {
   type PromptKind,
 } from "@/lib/prompt-kinds";
 import {
-  planPromptLinkSync,
-  promptLinkDrafts,
+  promptLinkDraftsForEdit,
   suggestedLinkIds,
   type PromptLinkDraft,
 } from "@/lib/prompt-links";
@@ -101,7 +99,7 @@ const emptyForm: PromptForm = {
   links: [],
 };
 
-type PromptVars = Omit<PromptForm, "links"> & { id?: string; links: PromptLinkDraft[] };
+type PromptVars = PromptForm & { id?: string; expectedUpdatedAt: string | null; expectedLinkIds: string[] | null };
 
 export function PromptsPanel({
   prompts,
@@ -128,6 +126,8 @@ export function PromptsPanel({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerKey, setPickerKey] = useState(0);
   const [copyPrompt, setCopyPrompt] = useState<Prompt | null>(null);
+  const requestId = useRef<string | null>(null);
+  const [sourceLinkIds, setSourceLinkIds] = useState<string[]>([]);
 
   const linkById = useMemo(() => new Map(aiLinks.map((link) => [link.id, link])), [aiLinks]);
   const projectName = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
@@ -152,6 +152,9 @@ export function PromptsPanel({
   const availableKinds = useMemo(() => groupPromptsByKind(prompts).map((group) => group.kind), [prompts]);
 
   function openCreate() {
+    if (busy) return;
+    requestId.current = null;
+    setSourceLinkIds([]);
     setEditing(null);
     setForm(emptyForm);
     setFormError(null);
@@ -159,6 +162,9 @@ export function PromptsPanel({
   }
 
   function openEdit(p: Prompt) {
+    if (busy) return;
+    requestId.current = p.id;
+    setSourceLinkIds(promptLinks.filter(row => row.prompt_id === p.id).map(row => row.id));
     setEditing(p);
     setForm({
       name: p.name,
@@ -167,89 +173,50 @@ export function PromptsPanel({
       kind: promptKind(p),
       project_id: p.project_id ?? "",
       is_public: p.is_public ?? false,
-      links: promptLinkDrafts(p.id, promptLinks, aiLinks),
+      links: promptLinkDraftsForEdit(p.id, promptLinks),
     });
     setFormError(null);
     setDialogOpen(true);
   }
 
-  /** Bring the prompt's stored links in line with the editor's list. */
-  async function syncLinks(promptId: string, userId: string, links: PromptLinkDraft[]) {
-    const plan = planPromptLinkSync(promptId, promptLinks, links);
-    if (plan.removeIds.length > 0) {
-      const { error } = await supabase.from("prompt_links").delete().in("id", plan.removeIds);
-      if (error) throw error;
-    }
-    let saved: PromptLink[] = [];
-    if (plan.upserts.length > 0) {
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from("prompt_links")
-        .upsert(
-          plan.upserts.map((row) => ({ ...row, user_id: userId, prompt_id: promptId, updated_at: now })),
-          { onConflict: "prompt_id,ai_link_id" },
-        )
-        .select();
-      if (error) throw error;
-      saved = (data ?? []) as PromptLink[];
-    }
-    const removed = new Set(plan.removeIds);
-    setPromptLinks((previous) => [
-      ...previous.filter(
-        (row) =>
-          !removed.has(row.id) &&
-          !saved.some((next) => next.prompt_id === row.prompt_id && next.ai_link_id === row.ai_link_id),
-      ),
-      ...saved,
-    ]);
-    void qc.invalidateQueries({ queryKey: qk.promptLinks });
-  }
-
-  // Create or update the prompt, then its links. A failed link write keeps
-  // the saved prompt and says so, rather than rolling the prompt back.
+  // Header and links commit together. The request id survives a failed or
+  // ambiguous response; source identity stays fixed while the editor is open.
   const saveMutation = useMutation({
     mutationFn: async (vars: PromptVars) => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const row = {
-        name: vars.name,
-        description: vars.description,
-        body: vars.body,
-        kind: vars.kind,
-        project_id: vars.project_id || null,
-        is_public: vars.is_public,
-      };
-      const { data, error } = vars.id
-        ? await supabase
-            .from("prompts")
-            .update({ ...row, updated_at: new Date().toISOString() })
-            .eq("id", vars.id)
-            .select()
-            .single()
-        : await supabase.from("prompts").insert({ ...row, user_id: userId }).select().single();
-      if (error || !data) throw error ?? new Error("no-data");
-      const saved = data as Prompt;
-      let linksOk = true;
-      try {
-        await syncLinks(saved.id, userId, vars.links);
-      } catch {
-        linksOk = false;
+      requestId.current ??= crypto.randomUUID();
+      const id = vars.id ?? requestId.current;
+      const { data, error } = await supabase.rpc("save_prompt_document", {
+        p_id: id, p_creating: !vars.id,
+        p_header: { name: vars.name, description: vars.description, body: vars.body,
+          kind: vars.kind, project_id: vars.project_id || null, is_public: vars.is_public },
+        p_links: vars.links,
+        p_expected_updated_at: vars.expectedUpdatedAt,
+        p_expected_link_ids: vars.expectedLinkIds,
+      });
+      if (error) throw new Error(error.code === "40001" || error.code === "P0002" ? t.prompts.saveConflict : t.prompts.couldNotSave);
+      const result = data as { prompt: Prompt; links: PromptLink[] } | null;
+      if (result?.prompt?.id !== id || typeof result.prompt.name !== "string" || typeof result.prompt.body !== "string"
+        || !Number.isFinite(Date.parse(result.prompt.updated_at)) || !Array.isArray(result.links) || result.links.length !== vars.links.length
+        || new Set(result.links.map(row => row.ai_link_id)).size !== vars.links.length
+        || result.links.some(row => typeof row.id !== "string" || row.prompt_id !== id || !vars.links.some(link => link.ai_link_id === row.ai_link_id))) {
+        throw new Error(t.prompts.couldNotSave);
       }
-      return { saved, created: !vars.id, linksOk };
+      return { saved: result.prompt, links: result.links, created: !vars.id };
     },
-    onSuccess: ({ saved, created, linksOk }) => {
-      setPrompts((prev) => (created ? [saved, ...prev] : prev.map((x) => (x.id === saved.id ? saved : x))));
-      if (linksOk) toast.ok(created ? t.prompts.createdToast : t.prompts.savedToast);
-      else toast.err(t.prompts.linksSaveFailed);
+    onSuccess: ({ saved, links, created }) => {
+      setPrompts(previous => previous.some(prompt => prompt.id === saved.id)
+        ? previous.map(prompt => prompt.id === saved.id ? saved : prompt) : [saved, ...previous]);
+      setPromptLinks(previous => [...previous.filter(row => row.prompt_id !== saved.id), ...links]);
       void qc.invalidateQueries({ queryKey: qk.prompts });
+      void qc.invalidateQueries({ queryKey: qk.promptLinks });
+      toast.ok(created ? t.prompts.createdToast : t.prompts.savedToast);
       setDialogOpen(false);
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.prompts.signInFirst
-          : t.prompts.couldNotSave,
-      ),
+    onError: (error) => {
+      setFormError(error.message);
+      void qc.invalidateQueries({ queryKey: qk.prompts });
+      void qc.invalidateQueries({ queryKey: qk.promptLinks });
+    },
   });
 
   // DELETE — optimistic, rolls back on error. prompt_links cascade.
@@ -259,17 +226,18 @@ export function PromptsPanel({
       if (error) throw error;
     },
     onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.prompts });
-      const prev = qc.getQueryData<Prompt[]>(qk.prompts);
-      const prevLinks = qc.getQueryData<PromptLink[]>(qk.promptLinks);
+      await Promise.all([qc.cancelQueries({ queryKey: qk.prompts }), qc.cancelQueries({ queryKey: qk.promptLinks })]);
+      const prev = (qc.getQueryData<Prompt[]>(qk.prompts) ?? prompts).find(prompt => prompt.id === id);
+      const prevLinks = (qc.getQueryData<PromptLink[]>(qk.promptLinks) ?? promptLinks).filter(row => row.prompt_id === id);
       setPrompts((old) => old.filter((p) => p.id !== id));
       setPromptLinks((old) => old.filter((row) => row.prompt_id !== id));
       return { prev, prevLinks };
     },
     onSuccess: () => toast.ok(t.prompts.deletedToast),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setPrompts(ctx.prev);
-      if (ctx?.prevLinks) setPromptLinks(ctx.prevLinks);
+    onError: (_error, id, ctx) => {
+      const previous = ctx?.prev;
+      if (previous) setPrompts(current => current.some(prompt => prompt.id === id) ? current : [previous, ...current]);
+      if (ctx?.prevLinks) setPromptLinks(current => [...current.filter(row => row.prompt_id !== id), ...ctx.prevLinks]);
       toast.err(t.prompts.couldNotDelete);
     },
     onSettled: () => {
@@ -278,52 +246,33 @@ export function PromptsPanel({
     },
   });
 
-  // Seed the curated prompts, skipping any already in the library (by name),
-  // so a repeat click never duplicates. Owned by the user, flagged public.
+  // The server compares every owned name and serializes simultaneous imports.
   const addCuratedMutation = useMutation({
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const have = new Set(prompts.map((p) => p.name.trim().toLowerCase()));
-      const toAdd = CURATED_PROMPTS.filter(
-        (c) => !have.has(c.name.trim().toLowerCase()),
-      );
-      if (toAdd.length === 0) return [] as Prompt[];
-      const { data, error } = await supabase
-        .from("prompts")
-        .insert(
-          toAdd.map((c) => ({
-            user_id: userId,
-            name: c.name,
-            description: c.description,
-            body: c.body,
-            kind: c.kind,
-            is_public: true,
-          })),
-        )
-        .select();
-      if (error) throw error;
-      return (data ?? []) as Prompt[];
+      const { data, error } = await supabase.rpc("add_curated_prompts", {
+        p_templates: CURATED_PROMPTS.map(({ name, description, body, kind }) => ({ name, description, body, kind })),
+      });
+      if (error || !Array.isArray(data) || data.some(row => typeof row?.id !== "string" || typeof row.name !== "string")) {
+        throw new Error(t.prompts.couldNotSave);
+      }
+      return data as Prompt[];
     },
     onSuccess: (rows) => {
-      if (rows.length === 0) {
-        toast.ok(t.prompts.curatedNoneNew);
-        return;
-      }
-      setPrompts((prev) => [...rows, ...prev]);
-      toast.ok(t.prompts.curatedAdded(rows.length));
+      // A repeated import may confirm an earlier request whose HTTP response
+      // was lost; refresh even when the server has nothing left to insert.
       void qc.invalidateQueries({ queryKey: qk.prompts });
+      if (rows.length === 0) { toast.ok(t.prompts.curatedNoneNew); return; }
+      const added = new Set(rows.map(row => row.id));
+      setPrompts(previous => [...rows, ...previous.filter(row => !added.has(row.id))]);
+      toast.ok(t.prompts.curatedAdded(rows.length));
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.prompts.signInFirst
-          : t.prompts.couldNotSave,
-      ),
+    onError: () => { toast.err(t.prompts.couldNotSave); void qc.invalidateQueries({ queryKey: qk.prompts }); },
   });
 
   function submitForm(e: React.FormEvent) {
     e.preventDefault();
+    if (saveMutation.isPending) return;
+    setFormError(null);
     const name = form.name.trim();
     const body = form.body.trim();
     if (!name) {
@@ -334,9 +283,12 @@ export function PromptsPanel({
       setFormError(t.prompts.bodyRequired);
       return;
     }
+    if (form.links.length > 1000) { setFormError(t.prompts.tooManyLinks); return; }
     saveMutation.mutate({
       ...form,
       id: editing?.id,
+      expectedUpdatedAt: editing?.updated_at ?? null,
+      expectedLinkIds: editing ? sourceLinkIds : null,
       name,
       body,
       description: form.description.trim(),
@@ -369,14 +321,15 @@ export function PromptsPanel({
     );
   }, [aiLinks, aiCategories, form.links, form.name, form.kind]);
 
+  const busy = saveMutation.isPending || deleteMutation.isPending || addCuratedMutation.isPending;
   const addCuratedButton = (
     <Button
       size="sm"
       variant="outline"
       onClick={() => addCuratedMutation.mutate()}
-      disabled={addCuratedMutation.isPending}
+      disabled={busy}
     >
-      <Sparkles className="h-3.5 w-3.5" />
+      <ListPlus className="h-3.5 w-3.5" />
       {addCuratedMutation.isPending ? t.prompts.addingCurated : t.prompts.addCurated}
     </Button>
   );
@@ -390,7 +343,7 @@ export function PromptsPanel({
         action={
           <div className="flex flex-wrap gap-2">
             {prompts.length > 0 && addCuratedButton}
-            <Button size="sm" onClick={openCreate}>
+            <Button size="sm" onClick={openCreate} disabled={busy}>
               <Plus className="h-3.5 w-3.5" />
               {t.prompts.newPrompt}
             </Button>
@@ -407,7 +360,7 @@ export function PromptsPanel({
               placeholder={t.prompts.searchPlaceholder}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="h-9 pl-8 text-sm"
+              className="h-11 pl-8 text-sm md:h-8"
             />
           </div>
           <div role="group" aria-label={t.prompts.kindFilter} className="flex flex-wrap gap-1.5">
@@ -439,7 +392,7 @@ export function PromptsPanel({
             description={t.prompts.noPromptsDescription}
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button size="sm" onClick={openCreate}>
+                <Button size="sm" onClick={openCreate} disabled={busy}>
                   <Plus className="h-3.5 w-3.5" />
                   {t.prompts.newPrompt}
                 </Button>
@@ -457,12 +410,12 @@ export function PromptsPanel({
           className="py-16"
         />
       ) : (
-        <div className="space-y-6">
+        <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
           {groups.map((group) => {
             const open = searching || !collapsed.has(group.kind);
             const regionId = `prompt-kind-${group.kind}`;
             return (
-              <section key={group.kind} aria-labelledby={`${regionId}-heading`}>
+              <section key={group.kind} className="mb-5 break-inside-avoid" aria-labelledby={`${regionId}-heading`}>
                 <h2 id={`${regionId}-heading`} className="mb-3 border-b border-border pb-2">
                   <button
                     type="button"
@@ -476,7 +429,7 @@ export function PromptsPanel({
                         return next;
                       })
                     }
-                    className="inline-flex min-h-9 items-center gap-2 rounded text-sm font-semibold text-foreground focus-ring sm:min-h-7"
+                    className="inline-flex min-h-11 items-center gap-2 rounded text-sm font-semibold text-foreground focus-ring md:min-h-8"
                   >
                     <ChevronDown aria-hidden="true" className={cn("h-3.5 w-3.5 text-foreground-muted transition-transform motion-reduce:transition-none", !open && "-rotate-90")} />
                     {t.prompts.kindLabel[group.kind]}
@@ -485,13 +438,14 @@ export function PromptsPanel({
                     </span>
                   </button>
                 </h2>
-                <div id={regionId} hidden={!open} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div id={regionId} hidden={!open} className="space-y-3">
                   {group.prompts.map((p) => (
                     <PromptCard
                       key={p.id}
                       prompt={p}
                       projectName={p.project_id ? projectName.get(p.project_id) : undefined}
                       linkCount={linkCount.get(p.id) ?? 0}
+                      busy={busy}
                       onCopy={() => setCopyPrompt(p)}
                       onEdit={() => openEdit(p)}
                       onDelete={() => removePrompt(p)}
@@ -515,19 +469,21 @@ export function PromptsPanel({
         aiCategories={aiCategories}
       />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!saveMutation.isPending) setDialogOpen(open); }}>
+        <DialogContent showClose={!saveMutation.isPending} className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editing ? t.prompts.editTitle : t.prompts.newTitle}
             </DialogTitle>
             <DialogDescription className="sr-only">{t.prompts.description}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={submitForm} className="mt-3 space-y-3">
+          <form onSubmit={submitForm} className="mt-3">
+            <fieldset disabled={saveMutation.isPending} className="min-w-0 space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="prompt-name">{t.prompts.name}</Label>
               <Input
                 id="prompt-name"
+                required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder={t.prompts.namePlaceholder}
@@ -558,6 +514,8 @@ export function PromptsPanel({
               <Label htmlFor="prompt-body">{t.prompts.promptText}</Label>
               <Textarea
                 id="prompt-body"
+                required
+                maxLength={1_000_000}
                 value={form.body}
                 onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
                 placeholder={t.prompts.promptPlaceholder}
@@ -594,14 +552,14 @@ export function PromptsPanel({
                 <ul aria-labelledby="prompt-links-label" className="divide-y divide-border rounded-md border border-border">
                   {form.links.map((draft, index) => {
                     const link = linkById.get(draft.ai_link_id);
-                    if (!link) return null;
+                    const title = link?.title ?? t.prompts.unavailableLink(index + 1);
                     return (
                       <li key={draft.ai_link_id} className="flex items-center gap-2 px-2.5 py-2">
-                        <PricingDot pricing={link.pricing} />
+                        <PricingDot pricing={link?.pricing ?? null} />
                         <div className="min-w-0 flex-1 space-y-1">
-                          <p className="truncate text-xs font-medium" title={link.url}>{link.title}</p>
+                          <p className="truncate text-xs font-medium" title={link?.url}>{title}</p>
                           <Input
-                            aria-label={`${t.prompts.linkNote}: ${link.title}`}
+                            aria-label={`${t.prompts.linkNote} ${index + 1}: ${title}`}
                             value={draft.note}
                             maxLength={300}
                             placeholder={t.prompts.linkNotePlaceholder}
@@ -611,7 +569,7 @@ export function PromptsPanel({
                                 links: f.links.map((item, itemIndex) => (itemIndex === index ? { ...item, note: e.target.value } : item)),
                               }))
                             }
-                            className="h-8 text-xs"
+                            className="h-11 text-xs md:h-8"
                           />
                         </div>
                         <Tooltip content={t.prompts.removeLink}>
@@ -620,7 +578,7 @@ export function PromptsPanel({
                             size="icon-sm"
                             variant="ghost"
                             className="h-11 w-11 sm:h-7 sm:w-7"
-                            aria-label={`${t.prompts.removeLink}: ${link.title}`}
+                            aria-label={`${t.prompts.removeLink}: ${title}`}
                             onClick={() => setForm((f) => ({ ...f, links: f.links.filter((item) => item.ai_link_id !== draft.ai_link_id) }))}
                           >
                             <X />
@@ -658,7 +616,7 @@ export function PromptsPanel({
                 onCheckedChange={(is_public) => setForm((f) => ({ ...f, is_public }))}
               />
             </div>
-            {formError && <p className="text-xs text-destructive">{formError}</p>}
+            {formError && <p role="alert" className="text-xs text-destructive">{formError}</p>}
             <div className="flex items-center justify-end gap-2 pt-1">
               <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
@@ -674,6 +632,7 @@ export function PromptsPanel({
                     : t.prompts.create}
               </Button>
             </div>
+            </fieldset>
           </form>
         </DialogContent>
       </Dialog>
@@ -705,8 +664,10 @@ function PromptCard({
   onCopy,
   onEdit,
   onDelete,
+  busy,
 }: {
   prompt: Prompt;
+  busy: boolean;
   projectName?: string;
   linkCount: number;
   onCopy: () => void;
@@ -720,7 +681,7 @@ function PromptCard({
       data-prompt-card={prompt.id}
       className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft transition-colors hover:border-border-strong"
     >
-      <div className="flex items-center gap-2 border-b border-border bg-surface-muted px-3 py-2">
+      <div className="flex min-h-12 items-center gap-2 border-b border-border bg-surface-muted px-3 py-2">
         <h3
           className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground"
           title={prompt.name}
@@ -732,20 +693,16 @@ function PromptCard({
           <button
             type="button"
             onClick={onCopy}
+            disabled={busy}
             aria-label={`${t.prompts.copyWithContext}: ${prompt.name}`}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring sm:h-6 sm:w-6"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring md:h-8 md:w-8"
           >
             <Copy className="h-3.5 w-3.5" />
           </button>
         </Tooltip>
       </div>
 
-      <button
-        type="button"
-        onClick={onCopy}
-        aria-label={`${t.prompts.copyWithContext}: ${prompt.name}`}
-        className="min-h-[64px] flex-1 cursor-copy px-3 pb-2 pt-2 text-left focus-ring"
-      >
+      <div className="min-h-16 flex-1 px-3 pb-2 pt-2">
         {prompt.description?.trim() ? (
           <p className="line-clamp-3 text-[11px] leading-[15px] text-foreground-muted">
             {prompt.description}
@@ -759,7 +716,7 @@ function PromptCard({
             {t.prompts.noDescription}
           </p>
         )}
-      </button>
+            </div>
 
       <div className="flex items-center gap-2 px-3 pb-2 text-[11px] text-foreground-muted">
         <span className="inline-flex min-w-0 items-center gap-1 truncate">
@@ -772,8 +729,9 @@ function PromptCard({
             <button
               type="button"
               onClick={onEdit}
+              disabled={busy}
               aria-label={`${t.prompts.edit}: ${prompt.name}`}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring sm:h-6 sm:w-6"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring md:h-8 md:w-8"
             >
               <Pencil className="h-3 w-3" />
             </button>
@@ -782,8 +740,9 @@ function PromptCard({
             <button
               type="button"
               onClick={onDelete}
+              disabled={busy}
               aria-label={`${t.prompts.deletePrompt}: ${prompt.name}`}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring sm:h-6 sm:w-6"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-destructive focus-ring md:h-8 md:w-8"
             >
               <Trash2 className="h-3 w-3" />
             </button>

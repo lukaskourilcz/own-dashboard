@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "motion/react";
 import {
   ChevronDown,
   ChevronRight,
@@ -23,38 +21,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { SimpleSelect } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tooltip } from "@/components/ui/tooltip";
-import { Switch } from "@/components/ui/switch";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { useToast } from "@/components/ui/toast";
 import { GithubIcon } from "@/components/icons/github";
-import { createClient } from "@/lib/supabase/client";
-import { currentUserId } from "@/lib/supabase/user";
 import { useTasksPerCategory } from "@/lib/use-prefs";
 import { useDict, useDateLocale, type Dict } from "@/lib/i18n";
 import { daysUntilDate, parseDateOnly } from "@/lib/date-keys";
-import { qk } from "@/lib/queries/keys";
-import { useReposQuery } from "@/lib/github-queries";
-import { commitFile } from "@/lib/github";
-import { findProjectForTask } from "@/lib/project-match";
+import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { assigneeForTodo, type Assignee } from "@/lib/needed";
-import {
-  diffNeededTodos,
-  removeFinishedFromNeeded,
-  scanNeededRepos,
-} from "@/lib/needed-sync";
+import { useTaskRepositories } from "@/components/tasks/use-task-repositories";
+import { useTaskActions } from "@/components/tasks/use-task-actions";
+import { TaskTitle } from "@/components/tasks/task-title";
+import { TaskComposer } from "@/components/tasks/task-composer";
 import { TaskTags } from "@/components/tasks/task-tags";
 import {
   TASK_KINDS,
@@ -65,32 +52,25 @@ import {
 import type { Locale } from "date-fns";
 import type { Organization, Project, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 
 export function TodosPanel({
+  taskIndex,
   todos,
+  ownerId,
   projects = [],
   organizations = [],
   compact = false,
 }: {
   todos: Todo[];
+  ownerId: string;
+  taskIndex?: ProjectTaskIndex;
   projects?: Project[];
   organizations?: Organization[];
   compact?: boolean;
 }) {
-  const supabase = createClient();
-  const qc = useQueryClient();
   const t = useDict();
   const locale = useDateLocale();
-  const toast = useToast();
-  const confirm = useConfirmation();
-  const [title, setTitle] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [newImportance, setNewImportance] = useState("");
-  const [newMinutes, setNewMinutes] = useState("");
-  const [newKind, setNewKind] = useState<"" | TaskKind>("");
-  const [projectId, setProjectId] = useState("");
-  const [organizationId, setOrganizationId] = useState("");
-  const [isGlobal, setIsGlobal] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   // Tasks filter: 0 = show all (scored + unscored); 1–5 = only tasks whose
@@ -106,242 +86,10 @@ export function TodosPanel({
   const { count: tasksPerCategory } = useTasksPerCategory();
   // Repos are only needed for the full view's Refresh / NEEDED sync — keep the
   // query off in the compact dashboard widget.
-  const reposQuery = useReposQuery(!compact);
+  const repositories = useTaskRepositories(ownerId, todos, !compact);
+  const projectByTodo = useMemo(() => (taskIndex ?? buildProjectTaskIndex(projects, todos)).byTodo, [taskIndex, todos, projects]);
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("no-user");
-      const { data, error } = await supabase
-        .from("todos")
-        .insert({
-          title: title.trim(),
-          due_date: dueDate || null,
-          importance: newImportance ? Number(newImportance) : null,
-          estimated_minutes: newMinutes ? Number(newMinutes) : null,
-          task_kind: newKind || null,
-          is_global: isGlobal,
-          project_id: isGlobal ? null : projectId || null,
-          organization_id: organizationId || null,
-          user_id: userId,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Todo;
-    },
-    onSuccess: (todo) => {
-      qc.setQueryData<Todo[]>(qk.todos, (prev = []) => [todo, ...prev]);
-      setTitle("");
-      setDueDate("");
-      setNewImportance("");
-      setNewMinutes("");
-      setNewKind("");
-      setProjectId("");
-      setOrganizationId("");
-      setIsGlobal(false);
-      setAddOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.todos });
-      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
-    },
-  });
-
-  // Optimistic toggle: flip in the cache immediately, roll back on error,
-  // reconcile with the DB via invalidate once settled.
-  const toggleMutation = useMutation({
-    mutationFn: async (td: Todo) => {
-      const { error } = await supabase
-        .from("todos")
-        .update({ done: !td.done })
-        .eq("id", td.id);
-      if (error) throw error;
-    },
-    onMutate: async (td) => {
-      await qc.cancelQueries({ queryKey: qk.todos });
-      const prev = qc.getQueryData<Todo[]>(qk.todos);
-      qc.setQueryData<Todo[]>(qk.todos, (old = []) =>
-        old.map((x) => (x.id === td.id ? { ...x, done: !td.done } : x)),
-      );
-      return { prev };
-    },
-    onError: (_e, _td, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
-    },
-    onSettled: () =>
-      Promise.all([
-        qc.invalidateQueries({ queryKey: qk.todos }),
-        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
-      ]),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("todos").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.todos });
-      const prev = qc.getQueryData<Todo[]>(qk.todos);
-      qc.setQueryData<Todo[]>(qk.todos, (old = []) =>
-        old.filter((td) => td.id !== id),
-      );
-      return { prev };
-    },
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.todos, ctx.prev);
-    },
-    onSettled: () =>
-      Promise.all([
-        qc.invalidateQueries({ queryKey: qk.todos }),
-        qc.invalidateQueries({ queryKey: qk.dailyFocus }),
-      ]),
-  });
-
-  // Refresh: re-scan every repo's NEEDED.md (root, then docs/), add newly
-  // listed tasks and drop open GitHub tasks whose source line is gone. A repo
-  // whose file failed to load or was found at no path keeps its tasks: a
-  // missing file is unavailable, not an empty list.
-  const refresh = useMutation({
-    mutationFn: async () => {
-      const reposData = reposQuery.data;
-      if (!reposData || reposData.kind !== "ok") {
-        throw new Error(
-          reposData?.kind === "disconnected" ? "disconnected" : "no-repos",
-        );
-      }
-      const userId = await currentUserId(supabase);
-      if (!userId) throw new Error("disconnected");
-
-      const nowIso = new Date().toISOString();
-      const { scanned, freshRows, missing } = await scanNeededRepos(
-        userId,
-        reposData.repos,
-        nowIso,
-      );
-
-      const { data: existing } = await supabase
-        .from("todos")
-        .select("*")
-        .eq("user_id", userId);
-      const { toInsert, toDeleteIds } = diffNeededTodos(
-        scanned,
-        freshRows,
-        (existing ?? []) as Todo[],
-      );
-
-      if (toDeleteIds.length) {
-        const { error } = await supabase
-          .from("todos")
-          .delete()
-          .in("id", toDeleteIds);
-        if (error) throw error;
-      }
-      if (toInsert.length) {
-        const { error } = await supabase.from("todos").insert(toInsert);
-        if (error) throw error;
-      }
-      const focusResponse = await fetch("/api/daily-focus", {
-        method: "POST",
-      });
-      return {
-        added: toInsert.length,
-        removed: toDeleteIds.length,
-        missing,
-        dailyFocusUpdated: focusResponse.ok,
-      };
-    },
-    onSuccess: async ({ added, removed, missing, dailyFocusUpdated }) => {
-      toast.ok(
-        added === 0 && removed === 0
-          ? t.todos.refreshNothing
-          : t.todos.refreshDone(added, removed),
-      );
-      // A repository that lost its NEEDED.md keeps its tasks; say which, so
-      // the rows that stay are explained.
-      if (missing.length > 0) toast.info(t.todos.refreshMissing(missing.join(", ")));
-      await qc.invalidateQueries({ queryKey: qk.todos });
-      await qc.invalidateQueries({ queryKey: qk.dailyFocus });
-      if (!dailyFocusUpdated) toast.err(t.todos.dailyFocusRefreshErr);
-    },
-    onError: (e) => {
-      const m = (e as Error).message;
-      toast.err(
-        m === "disconnected"
-          ? t.todos.refreshDisconnected
-          : m === "no-repos"
-            ? t.todos.refreshNoRepos
-            : t.todos.refreshErr,
-      );
-    },
-  });
-
-  // Delete finished NEEDED tasks from their repos' NEEDED.md (one commit per
-  // repo, to the path the file was found at), then clear the finished rows.
-  // Repos whose file failed to load or whose commit fails keep their rows so
-  // the action can be retried; a repo with no NEEDED.md left has nothing to
-  // edit, so its finished rows are cleared and it is named in a notice.
-  const clearFinished = useMutation({
-    mutationFn: async () => {
-      const { cleared: idsToDelete, missing } = await removeFinishedFromNeeded(
-        todos,
-        ({ owner, repo, path, content, count }) =>
-          commitFile({
-            owner,
-            repo,
-            path,
-            content,
-            message: t.todos.finishedCommitMessage(count),
-          }),
-      );
-
-      if (idsToDelete.length) {
-        const { error } = await supabase
-          .from("todos")
-          .delete()
-          .in("id", idsToDelete);
-        if (error) throw error;
-      }
-      return { removed: idsToDelete.length, missing };
-    },
-    onSuccess: ({ removed, missing }) => {
-      toast.ok(
-        removed === 0
-          ? t.todos.clearFromNeededNone
-          : t.todos.clearFromNeededDone(removed),
-      );
-      if (missing.length > 0) toast.info(t.todos.clearFromNeededMissing(missing.join(", ")));
-      void qc.invalidateQueries({ queryKey: qk.todos });
-      void qc.invalidateQueries({ queryKey: qk.dailyFocus });
-      // Drop cached NEEDED file contents so the Repos checklist reflects it.
-      void qc.invalidateQueries({ queryKey: ["github", "file"] });
-    },
-    onError: (e) => {
-      toast.err(
-        (e as Error).message === "disconnected"
-          ? t.todos.refreshDisconnected
-          : t.todos.clearFromNeededErr,
-      );
-    },
-  });
-
-  const saving = addMutation.isPending;
-
-  function addTodo(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) return;
-    addMutation.mutate();
-  }
-
-  const toggle = (td: Todo) => toggleMutation.mutate(td);
-  const remove = async (id: string) => {
-    if (await confirm({
-      title: t.common.delete,
-      description: t.todos.deleteTaskConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) removeMutation.mutate(id);
-  };
+  const { toggle, remove, pendingIds } = useTaskActions(ownerId);
 
   const open = todos.filter((td) => !td.done);
   const done = todos.filter((td) => td.done);
@@ -357,13 +105,7 @@ export function TodosPanel({
           </span>
         </CardHeader>
         <CardContent>
-          <QuickAddForm
-            t={t}
-            title={title}
-            setTitle={setTitle}
-            saving={saving}
-            onSubmit={addTodo}
-          />
+          <TaskComposer ownerId={ownerId} projects={projects} organizations={organizations} compact open={false} onOpenChange={() => {}} />
           {visible.length === 0 ? (
             <EmptyState
               icon={ListTodo}
@@ -376,6 +118,7 @@ export function TodosPanel({
               t={t}
               locale={locale}
               items={visible}
+              pendingIds={pendingIds}
               onToggle={toggle}
               compact
             />
@@ -385,7 +128,7 @@ export function TodosPanel({
     );
   }
 
-  // Full view: open GitHub tasks become per-repo cards with a subcard each;
+  // Full view: task groups use shared row dividers;
   // hand-added tasks collect in a "Personal" card. The importance filter (0 =
   // all) narrows to tasks scoring at least `minImportance`; unscored tasks
   // (null) count as 0, so any active filter hides them.
@@ -395,7 +138,7 @@ export function TodosPanel({
   // Hand-added tasks (no source line) count as "me" — they're the user's own.
   const passesAssignee = (td: Todo) => {
     if (assigneeFilter === "all") return true;
-    return assigneeForTodo(td.needed_raw) === assigneeFilter;
+    return assigneeForTodo(td.needed_raw, td.needed_assignee) === assigneeFilter;
   };
   // Time: keep tasks whose estimate fits within the chosen ceiling. Unestimated
   // tasks are hidden while a time filter is active (like unscored + importance).
@@ -422,11 +165,12 @@ export function TodosPanel({
     .filter((td) => td.is_global)
     .sort(byImportanceThenDue);
 
-  const projectForTodo = (todo: Todo) => findProjectForTask(todo, projects);
+  const projectForTodo = (todo: Todo) => projectByTodo.get(todo.id);
 
   const taskGroupMap = new Map<
     string,
     {
+      id: string;
       name: string;
       fullName: string | null;
       url: string | null;
@@ -444,6 +188,7 @@ export function TodosPanel({
     if (g) g.items.push(td);
     else
       taskGroupMap.set(key, {
+        id: key,
         name: project?.name ?? td.repo_name ?? td.category ?? key,
         fullName: project?.repo_full_name ?? td.repo_full_name,
         url:
@@ -484,16 +229,16 @@ export function TodosPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => refresh.mutate()}
-                disabled={refresh.isPending || reposQuery.isPending}
+                onClick={() => { void repositories.refresh(); }}
+                disabled={repositories.pending !== null || repositories.repositoriesPending}
               >
                 <RefreshCw
                   className={cn(
                     "h-3.5 w-3.5",
-                    refresh.isPending && "animate-spin",
+                    repositories.pending === "refresh" && "animate-spin",
                   )}
                 />
-                {refresh.isPending ? t.todos.refreshing : t.todos.refresh}
+                {repositories.pending === "refresh" ? t.todos.refreshing : t.todos.refresh}
               </Button>
             </Tooltip>
             <Tooltip content={t.todos.addTask}>
@@ -501,6 +246,7 @@ export function TodosPanel({
                 size="icon"
                 onClick={() => setAddOpen(true)}
                 aria-label={t.todos.addTask}
+                data-task-focus-fallback
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -521,6 +267,7 @@ export function TodosPanel({
               assignee={assigneeFilter}
               onAssigneeChange={setAssigneeFilter}
               hidden={hiddenByFilter}
+              total={open.length}
             />
           )}
           {open.length === 0 ? (
@@ -544,13 +291,15 @@ export function TodosPanel({
               </CardContent>
             </Card>
           ) : (
-            <div className="columns-1 gap-4 lg:columns-2">
+            <div className={cn("columns-1 gap-4", Number(openGlobal.length > 0) + taskGroups.length + Number(openPersonal.length > 0) > 1 ? "lg:columns-2" : "mx-auto max-w-2xl")}>
               {openGlobal.length > 0 && (
                 <TaskGroupCard
                   t={t}
                   locale={locale}
+                  label={t.todos.globalGroup}
                   items={openGlobal}
                   limit={tasksPerCategory}
+                  pendingIds={pendingIds}
                   onToggle={toggle}
                   onRemove={remove}
                   header={
@@ -563,11 +312,13 @@ export function TodosPanel({
               )}
               {taskGroups.map((g) => (
                 <TaskGroupCard
-                  key={g.fullName ?? g.name}
+                  key={g.id}
                   t={t}
                   locale={locale}
+                  label={g.name}
                   items={g.items}
                   limit={tasksPerCategory}
+                  pendingIds={pendingIds}
                   onToggle={toggle}
                   onRemove={remove}
                   header={
@@ -584,7 +335,7 @@ export function TodosPanel({
                         ) : (
                           <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
                         )}
-                        <span className="truncate">{g.name}</span>
+                        <span className="break-words [overflow-wrap:anywhere]">{g.name}</span>
                         <ExternalLink className="h-3 w-3 shrink-0 text-foreground-subtle" />
                       </a>
                     ) : (
@@ -594,7 +345,7 @@ export function TodosPanel({
                         ) : (
                           <GithubIcon className="h-4 w-4 shrink-0 text-foreground-muted" />
                         )}
-                        <span className="truncate">{g.name}</span>
+                        <span className="break-words [overflow-wrap:anywhere]">{g.name}</span>
                       </span>
                     )
                   }
@@ -604,8 +355,10 @@ export function TodosPanel({
                 <TaskGroupCard
                   t={t}
                   locale={locale}
+                  label={t.todos.personalGroup}
                   items={openPersonal}
                   limit={tasksPerCategory}
+                  pendingIds={pendingIds}
                   onToggle={toggle}
                   onRemove={remove}
                   header={
@@ -620,57 +373,27 @@ export function TodosPanel({
           )}
 
           {done.length > 0 && (
+            <div className={Number(openGlobal.length > 0) + taskGroups.length + Number(openPersonal.length > 0) <= 1 ? "mx-auto max-w-2xl" : undefined}>
             <FinishedSection
               t={t}
               locale={locale}
               items={done}
               open={showFinished}
               onToggleOpen={() => setShowFinished((v) => !v)}
+              pendingIds={pendingIds}
               onReopen={toggle}
               onRemove={remove}
               canClearNeeded={finishedNeeded > 0}
-              clearing={clearFinished.isPending}
-              onClearNeeded={() => {
-                void confirm({
-                  title: t.todos.clearFromNeeded,
-                  description: t.todos.clearFromNeededConfirm,
-                  confirmLabel: t.common.delete,
-                  cancelLabel: t.common.cancel,
-                  destructive: true,
-                }).then((approved) => {
-                  if (approved) clearFinished.mutate();
-                });
-              }}
+              cleanupDisabled={repositories.pending !== null}
+              clearing={repositories.pending === "clear"}
+              onClearNeeded={() => { void repositories.clear(); }}
             />
+            </div>
           )}
 
       </div>
 
-      <AddTaskDialog
-        t={t}
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        title={title}
-        setTitle={setTitle}
-        dueDate={dueDate}
-        setDueDate={setDueDate}
-        newImportance={newImportance}
-        setNewImportance={setNewImportance}
-        newMinutes={newMinutes}
-        setNewMinutes={setNewMinutes}
-        newKind={newKind}
-        setNewKind={setNewKind}
-        projectId={projectId}
-        setProjectId={setProjectId}
-        organizationId={organizationId}
-        setOrganizationId={setOrganizationId}
-        isGlobal={isGlobal}
-        setIsGlobal={setIsGlobal}
-        projects={projects}
-        organizations={organizations}
-        saving={saving}
-        onSubmit={addTodo}
-      />
+      <TaskComposer ownerId={ownerId} projects={projects} organizations={organizations} open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
@@ -695,22 +418,27 @@ function byImportanceThenDue(a: Todo, b: Todo): number {
  * body can be collapsed from the header. Tasks arrive pre-sorted by importance.
  */
 function TaskGroupCard({
+  pendingIds,
   t,
   locale,
   header,
+  label,
   items,
   limit,
   onToggle,
   onRemove,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   header: React.ReactNode;
+  label: string;
   items: Todo[];
   limit: number;
   onToggle: (td: Todo) => void;
-  onRemove: (id: string) => void;
+  onRemove: (td: Todo) => void;
 }) {
+  const listId = useId();
   const [collapsed, setCollapsed] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const total = items.length;
@@ -725,8 +453,9 @@ function TaskGroupCard({
           type="button"
           onClick={() => setCollapsed((v) => !v)}
           aria-expanded={!collapsed}
-          aria-label={collapsed ? t.todos.expandGroup : t.todos.collapseGroup}
-          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+          aria-controls={listId}
+          aria-label={`${collapsed ? t.todos.expandGroup : t.todos.collapseGroup}: ${label}`}
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring md:size-8"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -741,25 +470,26 @@ function TaskGroupCard({
       </div>
       {!collapsed && (
         <>
-          <ul className="space-y-2 p-3">
-            <AnimatePresence initial={false}>
+          <ul id={listId} className="divide-y divide-border/60">
               {shown.map((td) => (
-                <TaskSubcard
+                <TaskRow
                   key={td.id}
                   t={t}
                   locale={locale}
                   td={td}
+                  pendingIds={pendingIds}
                   onToggle={onToggle}
                   onRemove={onRemove}
                 />
               ))}
-            </AnimatePresence>
           </ul>
           {canExpand && (
             <button
               type="button"
               onClick={() => setShowAll((v) => !v)}
-              className="w-full border-t border-border/60 px-4 py-2 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+              aria-expanded={showAll}
+              aria-controls={listId}
+              className="min-h-11 w-full border-t border-border/60 px-4 py-2 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
             >
               {showAll ? t.todos.showLess : t.todos.showAllCount(total)}
             </button>
@@ -770,48 +500,42 @@ function TaskGroupCard({
   );
 }
 
-/** One task, rendered as a bordered subcard with its generated date + timer. */
-function TaskSubcard({
+/** One task row; metadata shares a wrapping line instead of stacking nested cards. */
+function TaskRow({
+  pendingIds,
   t,
   locale,
   td,
   onToggle,
   onRemove,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   td: Todo;
   onToggle: (td: Todo) => void;
-  onRemove: (id: string) => void;
+  onRemove: (td: Todo) => void;
 }) {
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-      transition={{ duration: 0.15 }}
-      className="group flex items-start gap-2.5 rounded-md border border-border bg-surface-muted/30 px-3 py-2"
-    >
+    <li data-task-id={td.id} className="group flex items-start gap-2 px-3 py-2">
       <Checkbox
+        disabled={pendingIds.has(td.id)}
+        aria-busy={pendingIds.has(td.id)}
         checked={td.done}
         onCheckedChange={() => onToggle(td)}
         aria-label={td.title}
-        className="mt-0.5"
       />
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-3 break-words text-sm leading-5 text-foreground">
-          {td.title}
-        </p>
+      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">
+        <TaskTitle title={td.title} className="min-w-[min(100%,14rem)] flex-1" />
+        <div className="flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
         <TaskTags
           t={t}
           importance={td.importance}
           kind={td.task_kind}
           minutes={td.estimated_minutes}
-          assignee={assigneeForTodo(td.needed_raw)}
-          className="mt-1.5"
+          assignee={assigneeForTodo(td.needed_raw, td.needed_assignee)}
+          className="contents"
         />
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
           {td.generated_at && (
             <span className="tabular">
               {t.todos.generatedOn(
@@ -827,20 +551,24 @@ function TaskSubcard({
       <Tooltip content={t.common.delete}>
         <button
           type="button"
-          onClick={() => onRemove(td.id)}
+          disabled={pendingIds.has(td.id)}
+          aria-busy={pendingIds.has(td.id)}
+          onClick={() => onRemove(td)}
           aria-label={t.common.delete}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-destructive focus-ring disabled:opacity-50 md:size-8"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </Tooltip>
-    </motion.li>
+    </li>
   );
 }
 
 /** The "time to finish" chip — colour shifts as the 7-day timer runs down. */
 function TimeChip({ t, due }: { t: Dict; due: string }) {
-  const left = daysUntilDate(due);
+  const now = useNow();
+  if (!now) return null;
+  const left = daysUntilDate(due, now);
   return (
     <span
       className={cn(
@@ -860,6 +588,7 @@ function TimeChip({ t, due }: { t: Dict; due: string }) {
 /* ------------------------------- Finished -------------------------------- */
 
 function FinishedSection({
+  pendingIds,
   t,
   locale,
   items,
@@ -868,27 +597,33 @@ function FinishedSection({
   onReopen,
   onRemove,
   canClearNeeded,
+  cleanupDisabled,
   clearing,
   onClearNeeded,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   items: Todo[];
   open: boolean;
   onToggleOpen: () => void;
   onReopen: (td: Todo) => void;
-  onRemove: (id: string) => void;
+  onRemove: (td: Todo) => void;
   canClearNeeded: boolean;
+  cleanupDisabled: boolean;
   clearing: boolean;
   onClearNeeded: () => void;
 }) {
+  const listId = useId();
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-muted/40 px-4 py-2.5">
         <button
           type="button"
           onClick={onToggleOpen}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-foreground focus-ring rounded"
+          aria-expanded={open}
+          aria-controls={listId}
+          className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-foreground focus-ring md:min-h-8"
         >
           {t.todos.finishedTitle}
           <span className="rounded-full bg-surface px-2 py-[3px] text-[10px] font-semibold tabular text-foreground-muted">
@@ -905,7 +640,7 @@ function FinishedSection({
               size="sm"
               className="ml-auto"
               onClick={onClearNeeded}
-              disabled={clearing}
+              disabled={cleanupDisabled}
             >
               {clearing ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -918,25 +653,24 @@ function FinishedSection({
         )}
       </div>
       {open && (
-        <ul className="divide-y divide-border/60">
+        <ul id={listId} className="divide-y divide-border/60">
           {items.map((td) => (
             <li
               key={td.id}
-              className="group flex items-center gap-3 px-4 py-2"
+              data-task-id={td.id}
+              className="group flex items-start gap-2 px-3 py-2"
             >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-foreground-subtle line-through">
-                  {td.title}
-                </p>
+              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">
+                <TaskTitle title={td.title} done className="min-w-[min(100%,14rem)] flex-1" />
+                <div className="flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-subtle">
                 <TaskTags
                   t={t}
                   importance={td.importance}
                   kind={td.task_kind}
                   minutes={td.estimated_minutes}
-                  assignee={assigneeForTodo(td.needed_raw)}
-                  className="mt-1"
+                  assignee={assigneeForTodo(td.needed_raw, td.needed_assignee)}
+                  className="contents"
                 />
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-foreground-subtle">
                   {td.repo_name && <span className="truncate">{td.repo_name}</span>}
                   {td.due_date && (
                     <span className="tabular">
@@ -952,9 +686,11 @@ function FinishedSection({
               <Tooltip content={t.todos.reopen}>
                 <button
                   type="button"
+                  disabled={pendingIds.has(td.id)}
+                  aria-busy={pendingIds.has(td.id)}
                   onClick={() => onReopen(td)}
                   aria-label={t.todos.reopen}
-                  className="p-1 rounded text-foreground-subtle hover:text-foreground focus-ring"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring disabled:opacity-50 md:size-8"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
@@ -962,9 +698,11 @@ function FinishedSection({
               <Tooltip content={t.common.delete}>
                 <button
                   type="button"
-                  onClick={() => onRemove(td.id)}
+                  disabled={pendingIds.has(td.id)}
+                  aria-busy={pendingIds.has(td.id)}
+                  onClick={() => onRemove(td)}
                   aria-label={t.common.delete}
-                  className="p-1 rounded text-foreground-subtle hover:text-destructive focus-ring"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-destructive focus-ring disabled:opacity-50 md:size-8"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -1077,7 +815,7 @@ function TaskFilterBar({
   onKindChange,
   assignee,
   onAssigneeChange,
-  hidden,
+  hidden, total,
 }: {
   t: Dict;
   importance: number;
@@ -1088,9 +826,12 @@ function TaskFilterBar({
   onKindChange: (v: "all" | TaskKind) => void;
   assignee: "all" | Assignee;
   onAssigneeChange: (v: "all" | Assignee) => void;
-  hidden: number;
+  hidden: number; total: number;
 }) {
-  return (
+  const [open, setOpen] = useState(false);
+  const active = Number(importance > 0) + Number(time !== 'all') + Number(kind !== 'all') + Number(assignee !== 'all');
+  const clear = () => { onImportanceChange(0); onTimeChange('all'); onKindChange('all'); onAssigneeChange('all'); };
+  const filters = (
     <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-secondary px-3 py-2">
       <FilterField icon={Flag} label={t.todos.importanceFilterLabel}>
         <SegmentedFilter
@@ -1144,6 +885,7 @@ function TaskFilterBar({
           ]}
         />
       </FilterField>
+      {active > 0 && <Button variant="ghost" size="sm" onClick={clear}>{t.todos.clearFilters}</Button>}
       {hidden > 0 && (
         <span className="shrink-0 whitespace-nowrap text-[11px] tabular text-foreground-subtle">
           {t.todos.filterHidden(hidden)}
@@ -1151,242 +893,21 @@ function TaskFilterBar({
       )}
     </div>
   );
-}
-
-/* ------------------------------ Add dialog ------------------------------- */
-
-/** Add-task form in a popup, opened by the header "+". Kept out of the page
- * body so the full width can show current tasks — this form is rarely used
- * (most tasks are generated from repos' NEEDED.md). */
-function AddTaskDialog({
-  t,
-  open,
-  onOpenChange,
-  title,
-  setTitle,
-  dueDate,
-  setDueDate,
-  newImportance,
-  setNewImportance,
-  newMinutes,
-  setNewMinutes,
-  newKind,
-  setNewKind,
-  projectId,
-  setProjectId,
-  organizationId,
-  setOrganizationId,
-  isGlobal,
-  setIsGlobal,
-  projects,
-  organizations,
-  saving,
-  onSubmit,
-}: {
-  t: Dict;
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  title: string;
-  setTitle: (v: string) => void;
-  dueDate: string;
-  setDueDate: (v: string) => void;
-  newImportance: string;
-  setNewImportance: (v: string) => void;
-  newMinutes: string;
-  setNewMinutes: (v: string) => void;
-  newKind: "" | TaskKind;
-  setNewKind: (v: "" | TaskKind) => void;
-  projectId: string;
-  setProjectId: (v: string) => void;
-  organizationId: string;
-  setOrganizationId: (v: string) => void;
-  isGlobal: boolean;
-  setIsGlobal: (v: boolean) => void;
-  projects: Project[];
-  organizations: Organization[];
-  saving: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t.todos.addTaskTitle}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="mt-3 space-y-3">
-            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface-inset px-3 py-2.5">
-              <div>
-                <Label htmlFor="todo-add-global">{t.todos.globalTask}</Label>
-                <p className="mt-0.5 text-[11px] text-foreground-subtle">
-                  {t.todos.globalGroup} · {t.todos.importanceOption(6)}
-                </p>
-              </div>
-              <Switch
-                id="todo-add-global"
-                checked={isGlobal}
-                onCheckedChange={(checked) => {
-                  setIsGlobal(checked);
-                  if (checked) {
-                    setNewImportance("6");
-                    setProjectId("");
-                  } else if (newImportance === "6") {
-                    setNewImportance("");
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="todo-add-title">{t.todos.taskLabel}</Label>
-              <Input
-                id="todo-add-title"
-                placeholder={t.todos.whatNeedsDoing}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-due">{t.todos.dueDate}</Label>
-                <Input
-                  id="todo-add-due"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-importance">
-                  {t.todos.importanceLabel}
-                </Label>
-                <SimpleSelect
-                  id="todo-add-importance"
-                  value={newImportance}
-                  onValueChange={setNewImportance}
-                  disabled={isGlobal}
-                  options={[
-                    { value: "", label: t.todos.importanceNone },
-                    ...[5, 4, 3, 2, 1].map((n) => ({
-                      value: String(n),
-                      label: t.todos.importanceOption(n),
-                    })),
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-time">{t.todos.timeLabel}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="todo-add-time"
-                    type="number"
-                    min={1}
-                    inputMode="numeric"
-                    placeholder="30"
-                    value={newMinutes}
-                    onChange={(e) => setNewMinutes(e.target.value)}
-                  />
-                  <span className="shrink-0 text-xs text-foreground-subtle">
-                    {t.todos.timeMinutesUnit}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-kind">{t.todos.categoryLabel}</Label>
-                <SimpleSelect
-                  id="todo-add-kind"
-                  value={newKind}
-                  onValueChange={(v) => setNewKind(v as "" | TaskKind)}
-                  options={[
-                    { value: "", label: t.todos.categoryNone },
-                    ...TASK_KINDS.map((k) => ({
-                      value: k,
-                      label: t.todos.taskKindLabel(k),
-                    })),
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-project">{t.todos.project}</Label>
-                <SimpleSelect
-                  id="todo-add-project"
-                  value={projectId}
-                  onValueChange={setProjectId}
-                  disabled={isGlobal}
-                  options={[
-                    { value: "", label: t.todos.noProject },
-                    ...projects.map((project) => ({ value: project.id, label: project.name })),
-                  ]}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="todo-add-organization">{t.todos.organization}</Label>
-                <SimpleSelect
-                  id="todo-add-organization"
-                  value={organizationId}
-                  onValueChange={setOrganizationId}
-                  options={[
-                    { value: "", label: t.todos.noOrganization },
-                    ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  {t.common.cancel}
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={saving || !title.trim()}>
-                <Plus className="h-3.5 w-3.5" />
-                {t.todos.addTask}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-    </Dialog>
-  );
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <div className="flex items-center justify-between gap-2 md:hidden">
+      <DialogTrigger asChild><Button variant="outline">{t.todos.filters}{active > 0 ? ` (${active})` : ''}</Button></DialogTrigger>
+      {active > 0 && <Button variant="ghost" size="sm" onClick={clear}>{t.todos.clearFilters}</Button>}
+      <span role="status" className="text-xs text-foreground-muted tabular">{t.todos.results(total - hidden)}</span>
+    </div>
+    <div className="hidden md:block">{filters}</div>
+    <DialogContent className="max-w-xl" aria-describedby={undefined}><DialogHeader><DialogTitle>{t.todos.filters}</DialogTitle></DialogHeader>{filters}</DialogContent>
+  </Dialog>;
 }
 
 /* ------------------------------- Shared UI ------------------------------- */
 
-function QuickAddForm({
-  t,
-  title,
-  setTitle,
-  saving,
-  onSubmit,
-}: {
-  t: Dict;
-  title: string;
-  setTitle: (v: string) => void;
-  saving: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-}) {
-  return (
-    <form onSubmit={onSubmit} className="flex gap-2 mb-3">
-      <Input
-        placeholder={t.todos.quickAddPlaceholder}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <Button
-        type="submit"
-        disabled={saving}
-        size="sm"
-        aria-label={t.todos.addTask}
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </Button>
-    </form>
-  );
-}
-
 function TodoList({
+  pendingIds,
   t,
   locale,
   items,
@@ -1394,40 +915,27 @@ function TodoList({
   onRemove,
   compact,
 }: {
+  pendingIds: ReadonlySet<string>;
   t: Dict;
   locale: Locale;
   items: Todo[];
   onToggle: (todo: Todo) => void;
-  onRemove?: (id: string) => void;
+  onRemove?: (td: Todo) => void;
   compact?: boolean;
 }) {
   return (
     <ul className="-mx-2">
-      <AnimatePresence initial={false}>
         {items.map((td) => (
-          <motion.li
-            key={td.id}
-            layout
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-            transition={{ duration: 0.15 }}
-            className="group flex items-center gap-3 rounded-md px-2 py-1.5 row-hover"
-          >
+          <li key={td.id} data-task-id={td.id} className="group flex items-start gap-2 rounded-md px-2 py-1.5 row-hover">
             <Checkbox
+              disabled={pendingIds.has(td.id)}
+              aria-busy={pendingIds.has(td.id)}
               checked={td.done}
               onCheckedChange={() => onToggle(td)}
               aria-label={td.title}
             />
             <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "line-clamp-3 text-sm leading-5 transition-colors",
-                  td.done && "line-through text-foreground-subtle",
-                )}
-              >
-                {td.title}
-              </p>
+              <TaskTitle title={td.title} done={td.done} />
               {td.due_date && (
                 <p className="text-[11px] text-foreground-subtle tabular">
                   {t.todos.due(
@@ -1442,17 +950,18 @@ function TodoList({
               <Tooltip content={t.common.delete}>
                 <button
                   type="button"
-                  onClick={() => onRemove(td.id)}
+                  disabled={pendingIds.has(td.id)}
+                  aria-busy={pendingIds.has(td.id)}
+                  onClick={() => onRemove(td)}
                   aria-label={t.common.delete}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-foreground-subtle hover:text-destructive"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-destructive focus-ring disabled:opacity-50 md:size-8"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </Tooltip>
             )}
-          </motion.li>
+          </li>
         ))}
-      </AnimatePresence>
     </ul>
   );
 }

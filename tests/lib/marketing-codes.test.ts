@@ -69,6 +69,7 @@ describe('marketing code texts (#119)', () => {
       'account-unavailable', 'meta-http-400', 'access-token-expired', 'remote-account-handle-mismatch',
       'source-disabled', 'reader-disabled', 'empty-source', 'collection-timeout', 'source-rate-limited', 'fetch-failed',
       'yield-to-publication', 'tick-budget-exhausted', 'publishing-failed', 'collection-failed', 'container-error', 'remote-container-in_progress'];
+    named.push('reel-request-unavailable','audio-page-unavailable','audio-track-changed','tiktok-admission-unavailable','tiktok-completion-unavailable','tiktok-input-invalid', 'tiktok-budget-invalid', 'tiktok-cancelled', 'tiktok-deadline', 'tiktok-response-too-large', 'tiktok-invalid-response', 'tiktok-request-failed', 'tiktok-unavailable', 'tiktok-http-503');
     expect(named.filter((code) => !marketingCodeKnown(code))).toEqual([]);
   });
 
@@ -93,4 +94,28 @@ describe('marketing code texts (#119)', () => {
     const [row] = safeMarketingJobs([{ id: '00000000-0000-4000-8000-000000000001', status: 'failed', error_code: 'brief-deck-invalid', brand: 'dneskai', created_at: '2026-10-20T12:00:00Z' }]);
     expect(row?.errorCode).toBe('brief-deck-invalid');
   });
+  it('does not treat inherited dictionary properties as localized code text', () => {
+    for (const code of ['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty']) {
+      expect(marketingCodeKnown(code)).toBe(false);
+      for (const lang of ['en', 'cs'] as const) {
+        const description = describeMarketingCode(code, lang);
+        expect(description.known).toBe(false); expect(typeof description.happened).toBe('string');
+        expect(description.happened).toBe(lang === 'cs' ? 'Něco neproběhlo podle očekávání.' : 'Something did not finish as expected.');
+      }
+    }
+  });
+});
+
+it.each(['en', 'cs'] as const)('keeps TikTok uncertainty and daily admission guidance specific in %s', lang => {
+ for (const code of ['tiktok-cancelled', 'tiktok-deadline', 'tiktok-response-too-large', 'tiktok-invalid-response', 'tiktok-request-failed', 'tiktok-http-503', 'topic-budget-unavailable']) {
+  const result = describeMarketingCode(code, lang);
+  expect(result.known, code).toBe(true);
+  expect(result.next, code).toMatch(lang === 'en' ? /uncertain.*reserved/ : /nejisté.*rezervované/);
+  expect(result.happened, code).not.toContain(code);
+ }
+ const budget = describeMarketingCode('tiktok-budget-exhausted', lang);
+ expect(budget.next).toMatch(lang === 'en' ? /Prague.*24 hours/ : /pražského.*24 hodin/);
+ expect(budget.next).not.toMatch(/Generation|Generování/);
+ expect(describeMarketingCode('tiktok-http-503', lang).happened).toContain('503');
+ expect(marketingCodeKnown('tiktok-http-503-extra')).toBe(false);
 });

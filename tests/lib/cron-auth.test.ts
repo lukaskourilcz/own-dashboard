@@ -167,17 +167,18 @@ describe("/api/crons registry and log", () => {
 
   it("registry refuses a wrong token and the old ?token= form", async () => {
     process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
     expect((await registry("?project=dneskai")).status).toBe(403);
     expect((await registry("?project=dneskai", "Bearer wrong")).status).toBe(403);
     expect((await registry("?project=dneskai&token=registry-token")).status).toBe(403);
   });
 
-  it("registry serves the right token privately", async () => {
+  it("registry reports unavailable service configuration privately", async () => {
     process.env.CRON_REGISTRY_TOKEN = "registry-token";
+    process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
     const res = await registry("?project=dneskai", "Bearer registry-token");
-    // The admin stand-in throws, which the route answers as an empty registry.
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ project: "dneskai", crons: [] });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "Cron registry unavailable." });
     expect(res.headers.get("cache-control")).toBe("private, no-store");
   });
 
@@ -187,15 +188,15 @@ describe("/api/crons registry and log", () => {
     expect((await log("Bearer registry-token")).status).toBe(503);
   });
 
-  it("log refuses a wrong token and accepts the right one", async () => {
+  it("log refuses a wrong token and does not acknowledge unavailable recording", async () => {
     process.env.CRON_REGISTRY_TOKEN = "registry-token";
     process.env.DASHBOARD_OWNER_ID = "00000000-0000-4000-8000-000000000001";
     expect((await log()).status).toBe(403);
     expect((await log("Bearer wrong")).status).toBe(403);
     expect((await log("registry-token")).status).toBe(403);
     const res = await log("Bearer registry-token");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "Run recording unconfirmed." });
   });
 });
 
@@ -227,7 +228,7 @@ describe("/api/webhooks/uptime-kuma", () => {
           ...(authorization ? { authorization } : {}),
         },
         body: JSON.stringify({
-          heartbeat: { status: 0, msg: "No heartbeat" },
+          heartbeat: { monitorID: 3, status: 0, time: new Date().toISOString().replace('T', ' ').replace('Z', ''), msg: "No heartbeat" },
           monitor: { id: 3, name: "Bank sync" },
         }),
       }),

@@ -1,0 +1,121 @@
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing" [active]:
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Marketing" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Obnovit" [disabled]
+  - tablist "Marketing":
+    - tab "Ke schválení" [selected]
+    - tab "Kalendář"
+    - tab "Znalosti"
+    - tab "Výsledky"
+  - generic: Cílový účet
+  - combobox "Cílový účet":
+    - option "Obě značky" [selected]
+    - option "DNESKAi"
+    - option "devShark"
+  - paragraph: Pouze náhled. Změny jsou vypnuté.
+  - tabpanel "Ke schválení":
+    - generic "Převzít připravené návrhy"
+    - region "Příprava návrhů":
+      - heading "Příprava návrhů" [level=2]
+      - paragraph: Posledních 10 úloh. Stav ověřte ručně; kontrola stavu nespouští generování.
+      - button "Zkontrolovat stav znovu" [disabled]
+      - paragraph: Pro tuto značku nejsou zaznamenané úlohy přípravy.
+    - paragraph: Žádné příspěvky ke schválení
+    - paragraph: Příspěvky se zde objeví po kontrole podkladů a finální grafiky.
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

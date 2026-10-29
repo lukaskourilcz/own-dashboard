@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -18,6 +18,9 @@ import { format } from "date-fns";
 import { CalendarClock, GripVertical, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CareerPagination } from "@/components/panels/career-pagination";
+import { collectionPage } from "@/lib/collection-page";
+import { careerPositionKey } from "@/lib/jobs/oslo-research";
 import { SimpleSelect } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
@@ -37,6 +40,7 @@ import type {
   SavedJobPosition,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { safeWebUrl } from "@/lib/web-url";
 
 /** The columns a card can actually be dropped on. "saved" is never one. */
 const DROP_COLUMNS = BOARD_COLUMNS.filter(
@@ -95,30 +99,87 @@ const boardKeyboardCoordinates: KeyboardCoordinateGetter = (
 export function CareerBoard({
   applications,
   savedPositions,
+  allApplications = applications,
   statusLabel,
   statuses,
   onStatus,
   onProgress,
   onPrepare,
+  disabled = false,
 }: {
   applications: JobApplication[];
   savedPositions: SavedJobPosition[];
+  allApplications?: JobApplication[];
   statusLabel: Record<JobApplicationStatus, string>;
   statuses: JobApplicationStatus[];
-  onStatus: (app: JobApplication, status: JobApplicationStatus) => void;
+  onStatus: (app: JobApplication, status: JobApplicationStatus) => Promise<unknown>;
   onProgress: (app: JobApplication) => void;
   onPrepare: (position: SavedJobPosition) => void;
+  disabled?: boolean;
 }) {
   const t = useDict();
+  const dragContextId = useId();
   const cs = useLang().lang === "cs";
   const groups = useMemo(
-    () => groupApplicationsByColumn(applications, savedPositions),
-    [applications, savedPositions],
+    () => groupApplicationsByColumn(applications, savedPositions, { allApplications, positionKey: careerPositionKey }),
+    [applications, savedPositions, allApplications],
   );
   const byId = useMemo(
     () => new Map(applications.map((app) => [app.id, app])),
     [applications],
   );
+
+  const boardNode = useRef<HTMLDivElement>(null);
+  const lifetime = useRef(new AbortController());
+  const pending = useRef(new Set<string>());
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [pageIndices, setPageIndices] = useState<Record<BoardColumn, number>>({ saved: 0, applied: 0, interviewing: 0, offer: 0, closed: 0 });
+  const [reveal, setReveal] = useState<{ id: string; column: BoardColumn; focus: 'stage' | 'drag' } | null>(null);
+  const focusPending = useRef(false);
+  const interaction = useRef(0);
+  useLayoutEffect(() => {
+    if (lifetime.current.signal.aborted) lifetime.current = new AbortController();
+    return () => lifetime.current.abort();
+  }, []);
+  useLayoutEffect(() => {
+    if (!reveal || !focusPending.current || !boardNode.current) return;
+    if (document.activeElement && document.activeElement !== document.body && !boardNode.current.contains(document.activeElement)) {
+      focusPending.current = false;
+      return;
+    }
+    const card = [...boardNode.current.querySelectorAll<HTMLElement>('[data-career-board-application]')]
+      .find(node => node.dataset.careerBoardApplication === reveal.id && node.closest('[data-career-board-column]')?.getAttribute('data-career-board-column') === reveal.column);
+    const control = card?.querySelector<HTMLElement>(reveal.focus === 'stage' ? '[role="combobox"]' : '[data-career-board-handle]');
+    if (control) {
+      focusPending.current = false;
+      control.focus({ preventScroll: true });
+      control.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [reveal, groups]);
+  async function move(app: JobApplication, status: JobApplicationStatus, focus: 'stage' | 'drag') {
+    if (disabled || pending.current.size>0 || app.status === status) return;
+    const signal = lifetime.current.signal;
+    if (signal.aborted) return;
+    const intent = ++interaction.current;
+    pending.current.add(app.id); setPendingIds(new Set(pending.current));
+    try {
+      await onStatus(app, status);
+      if (signal.aborted || intent !== interaction.current) return;
+      focusPending.current = true;
+      setReveal({ id: app.id, column: columnForApplication({ ...app, status }), focus });
+    } catch {
+      // Preserve the original control after a refused move, unless the owner
+      // has already used another control. The enclosing mutation owns copy.
+      if (!signal.aborted && intent === interaction.current) {
+        focusPending.current = true;
+        setReveal({ id: app.id, column: columnForApplication(app), focus });
+      }
+    }
+    finally {
+      pending.current.delete(app.id);
+      if (!signal.aborted) setPendingIds(new Set(pending.current));
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -140,52 +201,41 @@ export function CareerBoard({
     if (!app || columnForApplication(app) === overId) return;
     const status = statusForColumn(overId);
     if (!status) return;
-    onStatus(app, status);
+    void move(app, status, "drag");
   }
 
   return (
     <div>
       <p className="mb-3 text-sm text-foreground-muted">{t.jobs.boardHint}</p>
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext id={dragContextId} sensors={sensors} onDragEnd={handleDragEnd}>
         <div
           // The board is the only horizontal scroller on the page, so the
           // document itself never overflows. It is focusable and labelled
           // because a scrollable region must be reachable by keyboard.
+          ref={boardNode}
+          onPointerDownCapture={() => { interaction.current++; }}
+          onKeyDownCapture={() => { interaction.current++; }}
           role="region"
           aria-label={t.jobs.boardRegion}
           tabIndex={0}
           className="flex min-w-0 snap-x gap-3 overflow-x-auto p-1 focus-ring"
         >
-          {BOARD_COLUMNS.map((column) => (
-            <BoardColumnPanel
-              key={column}
-              column={column}
-              title={columnTitle[column]}
-              count={groups[column].length}
-              emptyLabel={t.jobs.boardColumnEmpty}
-            >
-              {column === "saved"
-                ? groups.saved.map((position) => (
-                    <SavedCard
-                      key={position.id}
-                      position={position}
-                      cs={cs}
-                      onPrepare={() => onPrepare(position)}
-                    />
-                  ))
-                : groups[column].map((app) => (
-                    <ApplicationCard
-                      key={app.id}
-                      app={app}
-                      cs={cs}
-                      statusLabel={statusLabel}
-                      statuses={statuses}
-                      onStatus={(status) => onStatus(app, status)}
-                      onProgress={() => onProgress(app)}
-                    />
-                  ))}
-            </BoardColumnPanel>
-          ))}
+          {BOARD_COLUMNS.map(column => {
+            const revealedIndex = reveal?.column === column ? groups[column].findIndex(row => row.id === reveal.id) : -1;
+            const page = collectionPage<SavedJobPosition | JobApplication>(groups[column], revealedIndex >= 0 ? Math.floor(revealedIndex / 10) : pageIndices[column], 10);
+            return <BoardColumnPanel key={column} column={column} title={columnTitle[column]}
+              count={groups[column].length} emptyLabel={t.jobs.boardColumnEmpty}>
+              <CareerPagination page={page} label={t.jobs.boardPages(columnTitle[column])} stacked onPage={index => {
+                interaction.current++; focusPending.current = false; setReveal(null);
+                setPageIndices(current => ({ ...current, [column]: index }));
+              }} />
+              {page.items.map(item => 'saved_at' in item
+                ? <SavedCard key={item.id} position={item} cs={cs} onPrepare={() => { interaction.current++; onPrepare(item); }} />
+                : <ApplicationCard key={item.id} app={item} cs={cs} statusLabel={statusLabel} statuses={statuses}
+                    pending={disabled||pendingIds.size>0} onStatus={status => void move(item, status, 'stage')}
+                    onProgress={() => { interaction.current++; onProgress(item); }} />)}
+            </BoardColumnPanel>;
+          })}
         </div>
       </DndContext>
     </div>
@@ -216,6 +266,7 @@ function BoardColumnPanel({
     // landmarks inside the board would bury the page's real ones.
     <div
       ref={setNodeRef}
+      data-career-board-column={column}
       className={cn(
         "flex w-64 shrink-0 snap-start flex-col rounded-lg border bg-surface-secondary",
         isOver ? "border-primary bg-surface-hover" : "border-border",
@@ -245,6 +296,7 @@ function ApplicationCard({
   statuses,
   onStatus,
   onProgress,
+  pending,
 }: {
   app: JobApplication;
   cs: boolean;
@@ -252,16 +304,19 @@ function ApplicationCard({
   statuses: JobApplicationStatus[];
   onStatus: (status: JobApplicationStatus) => void;
   onProgress: () => void;
+  pending: boolean;
 }) {
   const t = useDict();
   const locale = useDateLocale();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
-    useDraggable({ id: app.id });
+    useDraggable({ id: app.id, disabled: pending });
   const due = isFollowUpDue(app);
+  const link=safeWebUrl(app.url,2048);
 
   return (
     <div
       ref={setNodeRef}
+      data-career-board-application={app.id}
       style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
       className={cn("relative", isDragging ? "z-10" : "z-0")}
     >
@@ -272,18 +327,20 @@ function ApplicationCard({
           // Only the handle carries the drag listeners; the card's text stays
           // selectable and its links and controls stay ordinary controls.
           ref={setActivatorNodeRef}
+          data-career-board-handle
+          disabled={pending}
           {...attributes}
           {...listeners}
           aria-label={t.jobs.boardMoveCard(app.title)}
           style={{ touchAction: "none" }}
-          className="-ml-1 inline-flex h-11 w-6 shrink-0 cursor-grab items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
+          className="-ml-1 inline-flex h-11 w-11 shrink-0 cursor-grab items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring"
         >
           <GripVertical className="h-3.5 w-3.5" aria-hidden />
         </button>
         <div className="min-w-0 flex-1">
-          {app.url ? (
+          {link ? (
             <a
-              href={app.url}
+              href={link}
               target="_blank"
               rel="noopener noreferrer"
               className="block break-words text-sm font-medium hover:underline focus-ring rounded-sm"
@@ -342,15 +399,16 @@ function ApplicationCard({
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
         <SimpleSelect
           value={app.status}
+          disabled={pending}
           onValueChange={(value) => onStatus(value as JobApplicationStatus)}
-          className="h-9 w-auto min-w-28 text-[11px]"
+          className="min-h-11 w-auto min-w-28 text-[11px] md:min-h-9"
           aria-label={`${t.jobs.statusLabel} — ${app.title}`}
           options={statuses.map((status) => ({
             value: status,
             label: statusLabel[status],
           }))}
         />
-        <Button size="sm" variant="outline" onClick={onProgress}>
+        <Button size="sm" variant="outline" onClick={onProgress} disabled={pending}>
           {cs ? "Odpověď / další postup" : "Response / follow-up"}
         </Button>
       </div>
@@ -369,17 +427,18 @@ function SavedCard({
   onPrepare: () => void;
 }) {
   const t = useDict();
+  const link=safeWebUrl(position.url,2048);
 
   return (
     <Card className="p-2.5 shadow-none">
-      <a
-        href={position.url}
+      {link?<a
+        href={link}
         target="_blank"
         rel="noopener noreferrer"
         className="block break-words text-sm font-medium hover:underline focus-ring rounded-sm"
       >
         {position.title}
-      </a>
+      </a>:<p className="break-words text-sm font-medium">{position.title}</p>}
       {position.company && (
         <p className="mt-0.5 break-words text-xs text-foreground-muted">
           {position.company}

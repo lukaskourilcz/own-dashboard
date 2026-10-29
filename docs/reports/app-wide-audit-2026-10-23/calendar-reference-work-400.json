@@ -1,0 +1,25 @@
+{
+  "before": {
+    "fixture": "100 entries, twenty distinct references each",
+    "entries": 100,
+    "references": 2000,
+    "normalizationCalls": 23000,
+    "authoredReferenceTitles": 23,
+    "authoredIndexSha256": "1d9d66d61df27a02288da78f4beed8c912e9c847f7a01301c95888140f7112b6",
+    "scope": "Synthetic operation counts and exact authored-fixture index parity; not production latency or billing evidence."
+  },
+  "after": {
+    "fixture": "100 entries, twenty distinct references each",
+    "entries": 100,
+    "references": 2000,
+    "normalizationCalls": 2000,
+    "authoredReferenceTitles": 23,
+    "authoredIndexSha256": "1d9d66d61df27a02288da78f4beed8c912e9c847f7a01301c95888140f7112b6",
+    "scope": "Synthetic operation counts and exact authored-fixture index parity; not production latency or billing evidence."
+  },
+  "normalizationCallsRemoved": 21000,
+  "ratio": 11.5,
+  "authoredIndexEqual": true,
+  "browser": "Both device checks keep the NFC title count unchanged through search, local reference filtering and Clear filters; exactly one calendar read.",
+  "limitations": "Synthetic operation counts and equal authored-fixture index identity. No production latency, traffic or billing saving claimed."
+}

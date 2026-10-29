@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   BriefcaseBusiness,
@@ -36,6 +36,7 @@ import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useSignOut } from "@/lib/use-sign-out";
 import { useDict } from "@/lib/i18n";
 import {
   useNavCollapsed,
@@ -46,7 +47,7 @@ import {
 import { cn } from "@/lib/utils";
 import { brandConfig } from "@/lib/brand";
 import { groupProjectsByEngagement } from "@/lib/projects";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { useSaveUserPreferences } from "@/lib/preference-client";
 import { isHiddenNavTab, type NavTab } from "@/lib/nav-tabs";
 import type { Project } from "@/lib/types";
 
@@ -143,6 +144,8 @@ export function Sidebar({
   onOpenProject?: (project: SidebarProject) => void;
 }) {
   const t = useDict();
+  const saveUserPreferences = useSaveUserPreferences();
+  const signOut = useSignOut();
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
   const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
@@ -382,17 +385,19 @@ export function Sidebar({
           <Tooltip content={t.nav.theme} side={collapsed ? "right" : "top"}>
             <span><ThemeToggle syncPreferences={syncPreferences} /></span>
           </Tooltip>
-          <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
-            <form action="/auth/signout" method="post">
+          {syncPreferences && <Tooltip content={t.nav.signOut} side={collapsed ? "right" : "top"}>
+            <form action="/auth/signout" method="post" onSubmit={event => { event.preventDefault(); void signOut.run(); }}>
               <button
                 type="submit"
+                disabled={signOut.pending}
+                aria-busy={signOut.pending}
                 aria-label={t.nav.signOut}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-foreground)] focus-ring"
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>
             </form>
-          </Tooltip>
+          </Tooltip>}
         </div>
       </div>
     </aside>
@@ -409,6 +414,7 @@ export function MobileNav({
 }) {
   const t = useDict();
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreButton = useRef<HTMLButtonElement>(null);
   const { isHidden } = useNavVisibility();
   const { order } = useNavOrder();
   // Four pinned destinations plus More. Inbox is hidden from navigation, so
@@ -436,20 +442,22 @@ export function MobileNav({
               key={it.value}
               type="button"
               onClick={() => setTab(it.value)}
+              aria-label={t.nav.sections[it.value]}
               className={cn(
-                "inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[10px] font-medium transition-colors focus-ring",
+                "inline-flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[10px] font-medium transition-colors focus-ring",
                 active
                   ? "bg-surface-selected text-accent-foreground"
                   : "text-foreground-muted hover:text-foreground",
               )}
             >
               <it.icon className="h-4 w-4" />
-              {t.nav.short[it.value] ?? t.nav.sections[it.value]}
+              <span className="max-w-full truncate whitespace-nowrap">{t.nav.short[it.value] ?? t.nav.sections[it.value]}</span>
             </button>
           );
         })}
         <button
           type="button"
+          ref={moreButton}
           onClick={() => setMoreOpen(true)}
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
@@ -466,7 +474,7 @@ export function MobileNav({
       </div>
       </nav>
       <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
-        <DialogContent className="sheet-dialog !bottom-0 !left-0 !right-0 !top-auto !w-full !max-w-none !translate-x-0 !translate-y-0 rounded-b-none rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 md:hidden">
+        <DialogContent onCloseAutoFocus={(event) => { event.preventDefault(); moreButton.current?.focus(); }} className="sheet-dialog !bottom-0 !left-0 !right-0 !top-auto !w-full !max-w-none !translate-x-0 !translate-y-0 rounded-b-none rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 md:hidden">
           <DialogHeader>
             <DialogTitle>{t.nav.allAreas}</DialogTitle>
             <DialogDescription>{t.nav.allAreasDescription}</DialogDescription>

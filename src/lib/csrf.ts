@@ -1,13 +1,13 @@
 import "server-only";
 
 /**
- * Cookie-based auth (Supabase SSR uses HTTP-only cookies) is vulnerable to
+ * Cookie-based session auth is vulnerable to
  * CSRF without explicit Origin/Referer validation. SameSite=Lax helps for
  * top-level POSTs but is not enough for fetch() from arbitrary origins on
  * older browsers and certain Safari/PWA edge cases.
  *
  * Defense: reject any non-GET request whose Origin (or Referer, as fallback)
- * doesn't match our own host. The host derives from the request's own URL,
+ * doesn't match our own origin. The origin derives from the request's own URL,
  * so this works for prod + preview + localhost without extra config.
  *
  * Returns null when the request is allowed, or a Response to short-circuit.
@@ -17,7 +17,7 @@ export function rejectCrossOrigin(request: Request): Response | null {
   // GET/HEAD/OPTIONS are not state-changing.
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return null;
 
-  const expectedHost = new URL(request.url).host;
+  const expectedOrigin = new URL(request.url).origin;
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
 
@@ -32,9 +32,11 @@ export function rejectCrossOrigin(request: Request): Response | null {
     );
   }
 
-  let sourceHost: string;
+  let sourceOrigin: string;
   try {
-    sourceHost = new URL(sourceUrl).host;
+    const parsed = new URL(sourceUrl);
+    if (parsed.username || parsed.password) throw new Error("Invalid origin");
+    sourceOrigin = parsed.origin;
   } catch {
     return new Response(
       JSON.stringify({ error: "Invalid Origin header." }),
@@ -42,7 +44,7 @@ export function rejectCrossOrigin(request: Request): Response | null {
     );
   }
 
-  if (sourceHost !== expectedHost) {
+  if (sourceOrigin !== expectedOrigin) {
     return new Response(
       JSON.stringify({ error: "Cross-origin request rejected." }),
       { status: 403, headers: { "Content-Type": "application/json" } },

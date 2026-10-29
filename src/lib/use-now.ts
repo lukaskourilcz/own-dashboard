@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 // Module-singleton clock store. Returns null until hydration (server and client
 // then render identical markup) and ticks every 30s — enough granularity for
@@ -14,11 +14,20 @@ function notifyAll(): void {
   for (const cb of subscribers) cb();
 }
 
+function refreshVisibleClock(): void {
+  if (document.visibilityState === "hidden") return;
+  snapshot = Date.now();
+  notifyAll();
+}
+
 function subscribe(cb: () => void): () => void {
+  const resuming = subscribers.size === 0;
   subscribers.add(cb);
-  if (snapshot === 0) {
+  if (resuming) {
     snapshot = Date.now();
     queueMicrotask(notifyAll);
+    window.addEventListener("focus", refreshVisibleClock);
+    document.addEventListener("visibilitychange", refreshVisibleClock);
   }
   if (!timerId) {
     timerId = setInterval(() => {
@@ -31,6 +40,8 @@ function subscribe(cb: () => void): () => void {
     if (subscribers.size === 0 && timerId) {
       clearInterval(timerId);
       timerId = null;
+      window.removeEventListener("focus", refreshVisibleClock);
+      document.removeEventListener("visibilitychange", refreshVisibleClock);
     }
   };
 }
@@ -40,5 +51,5 @@ const getServerSnapshot = (): number => 0;
 
 export function useNow(): Date | null {
   const tick = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  return tick === 0 ? null : new Date(tick);
+  return useMemo(() => tick === 0 ? null : new Date(tick), [tick]);
 }

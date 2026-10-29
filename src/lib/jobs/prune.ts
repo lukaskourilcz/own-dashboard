@@ -1,4 +1,5 @@
 import { isJobUrl } from "./availability";
+import { awaitWithSignal } from "@/lib/abortable";
 /**
  * Deciding which stored listings are gone.
  *
@@ -18,7 +19,7 @@ import { isJobUrl } from "./availability";
 /** Statuses that prove the posting is gone rather than merely unreachable. */
 const GONE_STATUSES = new Set([404, 410]);
 
-type LivenessProbe = (url: string) => Promise<number | null>;
+type LivenessProbe = (url: string, signal?: AbortSignal) => Promise<number | null>;
 
 export type LivenessOptions = {
   /** Concurrent requests. Boards are third parties, so stay polite. */
@@ -31,6 +32,8 @@ export type LivenessOptions = {
   probe?: LivenessProbe;
   /** Injected for tests. */
   now?: () => number;
+  /** Retire the whole pass; cancellation never becomes closure evidence. */
+  signal?: AbortSignal;
 };
 
 /**
@@ -47,13 +50,16 @@ const PROBE_TIMEOUT_MS = 8_000;
  * HEAD the posting, falling back to GET when a board rejects HEAD (405/501).
  * Returns the status, or null when the request could not be completed at all.
  */
-async function probeUrl(url: string): Promise<number | null> {
+async function probeUrl(url: string, parent?: AbortSignal): Promise<number | null> {
   if (!isJobUrl(url)) return null;
-  const request = (method: "HEAD" | "GET") =>
-    fetch(url, {
+  const lifetime = new AbortController(), timer = setTimeout(() => lifetime.abort(), PROBE_TIMEOUT_MS);
+  const signal = AbortSignal.any([lifetime.signal, ...(parent ? [parent] : [])]);
+  const request = async (method: "HEAD" | "GET") => {
+    signal.throwIfAborted();
+    const pending = fetch(url, {
       method,
       redirect: "manual",
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+      signal,
       cache: "no-store",
       headers: {
         "user-agent":
@@ -61,16 +67,23 @@ async function probeUrl(url: string): Promise<number | null> {
         accept: "*/*",
       },
     });
+    void pending.then(response => { if (signal.aborted) void response.body?.cancel().catch(() => undefined); }).catch(() => undefined);
+    const response = await awaitWithSignal(pending, signal);
+    // Only the status matters, including on HEAD-refused GET fallback.
+    void response.body?.cancel().catch(() => undefined);
+    signal.throwIfAborted();
+    return response.status;
+  };
 
   try {
     const head = await request("HEAD");
-    if (head.status === 405 || head.status === 501) {
-      return (await request("GET")).status;
+    if (head === 405 || head === 501) {
+      return await request("GET");
     }
-    return head.status;
+    return head;
   } catch {
     return null;
-  }
+  } finally { clearTimeout(timer); lifetime.abort(); }
 }
 
 /**
@@ -89,21 +102,40 @@ export async function selectDeadUrls(
     budgetMs = 15_000,
     maxChecks = 150,
     probe = probeUrl,
-    now = () => Date.now(),
+    now = () => performance.now(),
+    signal: parent,
   } = options;
 
   const dead = new Set<string>();
-  const queue = urls.slice(0, maxChecks);
+  // Refuse invalid internal options rather than entering a non-advancing or unbounded loop.
+  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 10 || !Number.isInteger(maxChecks) || maxChecks < 0 || maxChecks > 150
+    || !Number.isFinite(budgetMs) || budgetMs <= 0 || budgetMs > 15_000) return dead;
+  if (parent?.aborted) throw new DOMException("Request aborted", "AbortError");
+  const queue = [...new Set(urls.slice(0, maxChecks))];
   const startedAt = now();
-
-  for (let i = 0; i < queue.length; i += batchSize) {
-    if (now() - startedAt >= budgetMs) break;
-    const batch = queue.slice(i, i + batchSize);
-    const statuses = await Promise.all(batch.map((url) => probe(url)));
-    statuses.forEach((status, index) => {
-      if (isGone(status)) dead.add(batch[index]);
-    });
-  }
-
-  return dead;
+  if (!Number.isFinite(startedAt) || !queue.length) return dead;
+  const lifetime = new AbortController(), timer = setTimeout(() => lifetime.abort(), budgetMs);
+  const signal = AbortSignal.any([lifetime.signal, ...(parent ? [parent] : [])]);
+  let observed = startedAt;
+  const expired = () => {
+    const current = now(), invalid = !Number.isFinite(current) || current < observed;
+    observed = current;
+    return invalid || current - startedAt >= budgetMs || signal.aborted;
+  };
+  try {
+    for (let i = 0; i < queue.length; i += batchSize) {
+      if (expired()) break;
+      const batch = queue.slice(i, i + batchSize);
+      let statuses: (number | null)[];
+      try {
+        statuses = await awaitWithSignal(Promise.all(batch.map(url => Promise.resolve().then(() => {
+          signal.throwIfAborted(); return probe(url, signal);
+        }).catch(() => null))), signal);
+      } catch { break; }
+      if (expired()) break;
+      statuses.forEach((status, index) => { if (isGone(status)) dead.add(batch[index]); });
+    }
+    if (parent?.aborted) throw new DOMException("Request aborted", "AbortError");
+    return dead;
+  } finally { clearTimeout(timer); lifetime.abort(); }
 }

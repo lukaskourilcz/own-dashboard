@@ -47,6 +47,13 @@ describe("bank provider registry guard", () => {
   });
 });
 
+it("never invents a zero balance or mixes a different currency into the account balance", () => {
+  expect(pickBalance([{ balanceAmount: { amount: "", currency: "CZK" } }])).toBeNull();
+  const balances = [{ balanceAmount: { amount: "10", currency: "EUR" } }, { balanceAmount: { amount: "200", currency: "CZK" } }];
+  expect(pickBalance(balances, "CZK")).toEqual({ amount: 200, currency: "CZK" });
+  expect(pickBalance(balances, "USD")).toBeNull();
+});
+
 describe("bindTransaction", () => {
   const tx: ProviderTransaction = {
     kind: "expense",

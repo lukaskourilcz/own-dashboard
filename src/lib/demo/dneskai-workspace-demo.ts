@@ -1,8 +1,10 @@
 'use client';
 
+import { MARKETING_DRAFT_MAX_COST_USD } from '@/lib/marketing/generation-limits';
+
 import { dneskaiAudioChoiceKey, dneskaiAudioFromKey } from '@/lib/marketing/dneskai-audio-contracts';
 import { DNESKAI_DECK_CONTENT_VERSION_FOR_DEMO, demoPhotos } from './dneskai-workspace-fixtures';
-import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID } from './dneskai-workspace-fixtures';
+import { createDneskaiWorkspaceFixture, createDneskaiCostsFixture, demoAccounts, demoFieldLimits, DEMO_PROJECT_ID, DEMO_GENERATION_SPENT_USD } from './dneskai-workspace-fixtures';
 import { DneskaiWorkspaceRequestError, fitAt, previewAt, type DneskaiEditResult, type DneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import { DNESKAI_PUBLISH_NOW_LEAD_MS, type DneskaiEditRequest } from '@/lib/marketing/dneskai-deck-editor';
 import { applyDneskaiDeckEdit, DneskaiRevisionEditError } from '@/lib/marketing/dneskai-deck-edit';
@@ -18,6 +20,12 @@ import { dneskaiNextFreeSlot, dneskaiTakenSlots } from '@/lib/marketing/dneskai-
  * server does, with the same refusal codes. Edits render through a fixture-only route using committed synthetic images. No owner data, paid provider,
  * storage or publication endpoint is used; all post changes stay in memory.
  */
+/** Isolated read-failure fixtures; the public guest tour never uses this control. */
+function failPreviewRead(kind: 'review' | 'costs' | 'accounts') {
+  if (typeof window === 'undefined' || window.location.pathname !== '/dev-preview') return;
+  const failure = new URLSearchParams(window.location.search).get('workspaceReadFailure');
+  if (failure === kind || failure === 'all') throw new Error('Fixture read unavailable');
+}
 let store: DneskaiWorkspaceRead | null = null;
 const read = () => (store ??= createDneskaiWorkspaceFixture(new Date()));
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -80,15 +88,14 @@ function demoProblems(post: DneskaiWorkspacePost, slides: DneskaiSlide[]) {
 }
 
 /**
- * The preview's stand-in for the daily generation ceiling: $1, of which the fixture has spent $0.60. Each admitted
- * demo job counts at its whole $0.25 reservation, as an unsettled job does, so the second paid action of one page
- * is refused exactly as the server refuses it. Nothing is called and nothing is spent.
+ * The preview's $1 stand-in starts at $0.80 so one current job reservation fits and the next is refused.
+ * It shares the production per-draft maximum and reports the reserved budget without calling a provider.
  */
-const DEMO_CEILING_USD = 1, DEMO_RESERVATION_USD = 0.25;
-let demoSpentUsd = 0.6;
+const DEMO_CEILING_USD = 1;
+let demoSpentUsd = DEMO_GENERATION_SPENT_USD;
 function reserveDemoJob() {
-  if (demoSpentUsd + DEMO_RESERVATION_USD > DEMO_CEILING_USD + 1e-9) throw new DneskaiWorkspaceRequestError('dneskai-daily-generation-budget-exhausted', 409);
-  demoSpentUsd += DEMO_RESERVATION_USD;
+  if (demoSpentUsd + MARKETING_DRAFT_MAX_COST_USD > DEMO_CEILING_USD + 1e-9) throw new DneskaiWorkspaceRequestError('dneskai-daily-generation-budget-exhausted', 409);
+  demoSpentUsd += MARKETING_DRAFT_MAX_COST_USD;
 }
 
 /** The approval the server's SQL makes, with its refusals: the exact hash, a ready version still in review. */
@@ -103,9 +110,13 @@ function approveOne(id: string, expectedHash: string): string {
 
 export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   preview: true,
-  async loadReview() { await pause(120); return clone(read()); },
-  async loadCosts() { await pause(120); return createDneskaiCostsFixture(new Date()); },
-  async loadAccounts() { await pause(60); return clone(demoAccounts(new Date())); },
+  async loadReview(_projectId,_signal,_before,view) { failPreviewRead('review'); await pause(120);
+    if(view!=='calendar')return clone(read());
+    const unknown=typeof window!=='undefined'&&window.location.pathname==='/dev-preview'&&new URLSearchParams(window.location.search).get('calendarUnknown')==='1';
+    return clone({...read(),calendarComplete:!unknown,unreadable:unknown?1:read().unreadable,decisionPage:undefined});
+  },
+  async loadCosts() { failPreviewRead('costs'); await pause(120); const costs = createDneskaiCostsFixture(new Date()); costs.generation.spentUsd = demoSpentUsd; return costs; },
+  async loadAccounts() { failPreviewRead('accounts'); await pause(60); return clone(demoAccounts(new Date())); },
   async loadMedia(_projectId, candidateId): Promise<DneskaiMediaRead> {
     await pause(80);
     const media = read().posts.flatMap((post) => post.brief?.media ?? []).filter((item, index, all) => item.candidateId === candidateId && all.findIndex((other) => other.assetSha256 === item.assetSha256) === index);
@@ -190,8 +201,9 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async decide(id, action, feedback) {
     await pause(200);
     const post = find(id);
-    if (post.status !== 'review' && post.status !== 'returned') throw new DneskaiWorkspaceRequestError('decision-unavailable', 409);
-    post.status = action; post.feedback = action === 'returned' ? feedback?.trim() || null : post.feedback;
+    if (!['review', 'approved', 'returned', 'failed'].includes(post.status) || ['claimed', 'published', 'reconciliation'].includes(post.publication?.status ?? '')) throw new DneskaiWorkspaceRequestError('decision-unavailable', 409);
+    post.status = action; post.approvedAt = null; post.feedback = action === 'returned' ? feedback?.trim() || null : post.feedback;
+    if (post.publication?.status === 'queued') post.publication.status = 'cancelled';
   },
   async edit(request): Promise<DneskaiEditResult> {
     await pause(900);
@@ -238,4 +250,4 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
 /** Only the preview harness's project id has fixture posts. */
 export const DEMO_DNESKAI_PROJECT_ID = DEMO_PROJECT_ID;
 /** Restores the fixtures (component tests). */
-export function resetDemoDneskaiWorkspace() { store = null; demoSpentUsd = 0.6; }
+export function resetDemoDneskaiWorkspace() { store = null; demoSpentUsd = DEMO_GENERATION_SPENT_USD; }

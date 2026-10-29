@@ -3,7 +3,7 @@ const mocks = vi.hoisted(() => ({ user: vi.fn(), admin: vi.fn(), render: vi.fn()
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => mocks.user() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => mocks.admin() }));
-vi.mock("@/lib/marketing/owner-feedback", () => ({ recordMarketingOwnerFeedback: mocks.feedback }));
+vi.mock("@/lib/marketing/owner-feedback", () => ({ createMarketingOwnerFeedbackScope: (db: unknown, ownerId: string, signal: AbortSignal) => ({ db, ownerId, signal }), recordMarketingOwnerFeedback: mocks.feedback }));
 vi.mock("@/lib/marketing/asset-urls", () => ({ refreshMarketingAssetUrls: mocks.refresh }));
 vi.mock("@/lib/marketing/dneskai-wiring", () => ({ getRenderDneskaiDeck: () => mocks.render(), getDneskaiMediaLoader: (...args: unknown[]) => mocks.media(...args), getBriefAssetHashLister: (...args: unknown[]) => mocks.lister(...args), getBriefPoolLoader: () => async () => ({ media: [], primaryCandidateId: null }) }));
 vi.mock("@/lib/marketing/dneskai-move", () => ({ dneskaiServerNextFreeSlot: mocks.freeSlot }));

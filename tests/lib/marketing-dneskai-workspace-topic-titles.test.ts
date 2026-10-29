@@ -25,7 +25,7 @@ function fakeDb(tables: Record<string, Result[]>) {
     const index = used[table] = (used[table] ?? -1) + 1;
     const result = tables[table]?.[index] ?? { data: [], error: null };
     const builder: Record<string, unknown> = {};
-    for (const method of ['select', 'eq', 'neq', 'in', 'not', 'gte', 'order', 'limit']) builder[method] = (...args: unknown[]) => { chain.push([method, args]); return builder; };
+    for (const method of ['select', 'eq', 'neq', 'in', 'not', 'gte', 'order', 'limit', 'retry', 'abortSignal']) builder[method] = (...args: unknown[]) => { chain.push([method, args]); return builder; };
     builder.then = (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(result).then(resolve, reject);
     return builder;
   };

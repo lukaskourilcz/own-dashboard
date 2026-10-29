@@ -1,3 +1,5 @@
+import { resourceKey } from "@/lib/link-library";
+
 /** Public-source research only. Personal letters live in owner-only Supabase
  * rows, never in this public repository. Dates are observations, not promises
  * that an employer will keep a vacancy open. */
@@ -944,17 +946,21 @@ export function canonicalJobUrl(value: string | null | undefined): string {
     return value ?? "";
   }
 }
+// The dated public evidence is immutable in this module. Preserve the first match for shared aliases.
+const researchByUrl = new Map<string, ResearchJob>();
+for (const job of OSLO_JOBS) for (const url of [job.url, ...job.aliases]) {
+  const key = canonicalJobUrl(url);
+  if (!researchByUrl.has(key)) researchByUrl.set(key, job);
+}
 export function researchForUrl(
   url: string | null | undefined,
 ): ResearchJob | undefined {
-  const key = canonicalJobUrl(url);
-  return OSLO_JOBS.find((job) =>
-    [job.url, ...job.aliases].some((value) => canonicalJobUrl(value) === key),
-  );
+  return researchByUrl.get(canonicalJobUrl(url));
 }
 
 export function careerPositionKey(url: string | null | undefined): string {
-  return researchForUrl(url)?.id ?? canonicalJobUrl(url);
+  // Only verified aliases may merge different postings. Unknown portals can identify a vacancy in the query.
+  return researchForUrl(url)?.id ?? resourceKey(url ?? "") ?? url ?? "";
 }
 export function researchIsStale(job: ResearchJob, now = new Date()): boolean {
   return (

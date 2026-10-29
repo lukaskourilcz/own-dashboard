@@ -31,25 +31,32 @@ export function linksForProject(
     });
 }
 
-export type LinkUsage<P extends Pick<Project, "id" | "name" | "slug">> = {
+export type LinkUsage<P extends Pick<Project, "id" | "name">> = {
   relation: ProjectLink;
   project: P;
 };
 
+/** Build once for a library/export instead of scanning all relations per link. */
+export function projectLinkUsageByLink<P extends Pick<Project, "id" | "name">>(
+  relations: readonly ProjectLink[], projects: readonly P[],
+): Map<string, LinkUsage<P>[]> {
+  const projectsById = new Map(projects.map(project => [project.id, project]));
+  const result = new Map<string, LinkUsage<P>[]>();
+  for (const relation of relations) {
+    const project = projectsById.get(relation.project_id);
+    if (!project) continue;
+    const entries = result.get(relation.ai_link_id) ?? [];
+    entries.push({ relation, project }); result.set(relation.ai_link_id, entries);
+  }
+  for (const entries of result.values()) entries.sort((a, b) => a.project.name.localeCompare(b.project.name));
+  return result;
+}
+
 /** The projects that use one link, ordered by project name. */
 export function projectsUsingLink<P extends Pick<Project, "id" | "name" | "slug">>(
-  linkId: string,
-  relations: readonly ProjectLink[],
-  projects: readonly P[],
+  linkId: string, relations: readonly ProjectLink[], projects: readonly P[],
 ): LinkUsage<P>[] {
-  const byId = new Map(projects.map((project) => [project.id, project]));
-  return relations
-    .filter((relation) => relation.ai_link_id === linkId)
-    .flatMap((relation) => {
-      const project = byId.get(relation.project_id);
-      return project ? [{ relation, project }] : [];
-    })
-    .sort((a, b) => a.project.name.localeCompare(b.project.name));
+  return projectLinkUsageByLink(relations, projects).get(linkId) ?? [];
 }
 
 /** At most `max` chips, plus how many are hidden behind a "+n" count. */

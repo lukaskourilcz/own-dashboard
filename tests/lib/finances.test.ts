@@ -5,7 +5,7 @@ import {
   monthlyTotals,
   netWorth,
 } from "@/lib/finances";
-import type { Account, Subscription, Transaction } from "@/lib/types";
+import type { Account, Transaction } from "@/lib/types";
 
 const FROZEN = new Date(2026, 4, 12);
 
@@ -44,23 +44,6 @@ function tx(overrides: Partial<Transaction> = {}): Transaction {
     occurred_on: "2026-05-12",
     external_id: null,
     created_at: "",
-    ...overrides,
-  };
-}
-
-function sub(overrides: Partial<Subscription> = {}): Subscription {
-  return {
-    id: "x",
-    user_id: "u",
-    name: "Netflix",
-    amount: 10,
-    currency: "USD",
-    billing_cycle: "monthly",
-    category: null,
-    next_billing_date: null,
-    is_active: true,
-    created_at: "",
-    updated_at: "",
     ...overrides,
   };
 }
@@ -116,43 +99,31 @@ describe("expenseByCategory", () => {
       // wrong month — should be excluded.
       tx({ amount: 99, category: "Food", occurred_on: "2026-04-10" }),
     ];
-    const slices = expenseByCategory(txs, "USD", [], "2026-05");
+    const slices = expenseByCategory(txs, "USD", "2026-05");
     expect(slices.find((s) => s.name === "Food")?.value).toBe(30);
     expect(slices.find((s) => s.name === "Transport")?.value).toBe(30);
   });
 
   it("buckets uncategorized expenses under 'Uncategorized'", () => {
     const txs = [tx({ amount: 5, category: null, occurred_on: "2026-05-01" })];
-    expect(expenseByCategory(txs, "USD", [], "2026-05")[0].name).toBe(
+    expect(expenseByCategory(txs, "USD", "2026-05")[0].name).toBe(
       "Uncategorized",
     );
   });
 
-  it("folds active subscriptions into a 'Subscriptions' slice", () => {
-    const subs: Subscription[] = [sub({ amount: 10 })];
-    expect(
-      expenseByCategory([], "USD", subs, "2026-05").find(
-        (s) => s.name === "Subscriptions",
-      )?.value,
-    ).toBe(10);
-  });
-
-  it("skips cancelled subscriptions in the synthetic slice", () => {
-    const subs: Subscription[] = [
-      sub({ amount: 10, is_active: false }),
-    ];
-    expect(
-      expenseByCategory([], "USD", subs, "2026-05").find(
-        (s) => s.name === "Subscriptions",
-      ),
-    ).toBeUndefined();
+  it("matches recorded expense totals without adding a second planned subscription charge", () => {
+    const rows = [tx({ amount: 120, category: "Subscriptions", subscription_id: "annual-plan" }), tx({ amount: 5, category: "Development" })];
+    const slices = expenseByCategory(rows, "USD", "2026-05");
+    expect(slices.find(slice => slice.name === "Subscriptions")?.value).toBe(120);
+    expect(slices.reduce((sum, slice) => sum + slice.value, 0)).toBe(monthlyTotals(rows, "USD").at(-1)?.expense);
+    expect(expenseByCategory([], "USD", "2026-05")).toEqual([]);
   });
 
   it("ignores income rows", () => {
     const txs = [
       tx({ kind: "income", amount: 1000, occurred_on: "2026-05-01" }),
     ];
-    expect(expenseByCategory(txs, "USD", [], "2026-05").length).toBe(0);
+    expect(expenseByCategory(txs, "USD", "2026-05").length).toBe(0);
   });
 
   it("sorts slices by value descending", () => {
@@ -161,7 +132,7 @@ describe("expenseByCategory", () => {
       tx({ amount: 50, category: "B", occurred_on: "2026-05-02" }),
       tx({ amount: 20, category: "C", occurred_on: "2026-05-03" }),
     ];
-    expect(expenseByCategory(txs, "USD", [], "2026-05").map((s) => s.name)).toEqual(
+    expect(expenseByCategory(txs, "USD", "2026-05").map((s) => s.name)).toEqual(
       ["B", "C", "A"],
     );
   });
@@ -171,4 +142,10 @@ describe("currentMonthKey", () => {
   it("returns yyyy-MM for the frozen day", () => {
     expect(currentMonthKey()).toBe("2026-05");
   });
+});
+
+
+it("uses an injected month rather than the module-load date", () => {
+  expect(monthlyTotals([], "USD", 2, new Date(2026, 9, 1)).map(month => month.month)).toEqual(["2026-09", "2026-10"]);
+  expect(currentMonthKey(new Date(2026, 10, 2))).toBe("2026-11");
 });

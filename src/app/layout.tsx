@@ -37,8 +37,8 @@ export const metadata: Metadata = {
 
 export const viewport: import("next").Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f4ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#101214" },
+    { media: "(prefers-color-scheme: light)", color: brandConfig.metadataColors.background },
+    { media: "(prefers-color-scheme: dark)", color: brandConfig.metadataColors.darkBackground },
   ],
   width: "device-width",
   initialScale: 1,
@@ -47,7 +47,7 @@ export const viewport: import("next").Viewport = {
 
 // Runs before React hydration to avoid a flash of incorrect theme/language.
 // Theme → `dark` class; language → `lang` attribute (read back by useLang).
-const themeBootstrap = `(function(){try{var s=localStorage.getItem("theme");var d=s==="dark"||(s==null&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");var l=localStorage.getItem("lang");document.documentElement.lang=l==="en"?"en":"cs";}catch(e){}})();`;
+const themeBootstrap = `(function(){var s=null,l=null;try{s=localStorage.getItem("theme");l=localStorage.getItem("lang");}catch(e){}var d=s==="dark";try{if(s!=="dark"&&s!=="light")d=window.matchMedia("(prefers-color-scheme: dark)").matches;}catch(e){}document.documentElement.classList.toggle("dark",d);document.documentElement.lang=l==="en"?"en":"cs";})();`;
 
 export default function RootLayout({
   children,

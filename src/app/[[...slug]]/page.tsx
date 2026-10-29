@@ -1,34 +1,78 @@
+import { z } from 'zod';
+import { awaitWithSignal, fetchWithSignal } from '@/lib/abortable';
+import { parseStoredUiPreferences } from '@/lib/ui-preferences-contract';
+import { projectTabFromQuery } from "@/lib/project-workspace-tabs";
 import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DashboardDataUnavailable } from "@/components/dashboard-data-unavailable";
 import { fetchTodayWindowEvents, fetchUpcomingWeekEvents } from "@/lib/calendar-server";
 import { serverDataKeysForTab, type DashboardDataKey } from "@/lib/dashboard-data";
 import { isDashboardSlug, isLegacyRouteSegment, tabFromSlug, tabToPath } from "@/lib/nav-tabs";
 import { tipDeepLinkQuery } from "@/lib/marketing-calendars";
+import { readCareerRecords } from '@/lib/career-records';
+import { readPlanRecords } from "@/lib/plan-records";
+import { readCompetitorRecords } from "@/lib/competitor-records";
+import { readOrganizationRecords } from "@/lib/organization-records";
+import { readOwnedCollection } from "@/lib/owned-records";
 import { resolveProjectRef } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { loadUserPreferences } from "@/lib/user-prefs";
+import { safeWebUrl } from "@/lib/web-url";
 
-export default async function DashboardPage({
-  params,
-  searchParams,
-}: {
+const displayNameSchema = z.string().trim().min(1).max(200);
+
+type DashboardPageInput = {
   params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<{ q?: string | string[] }>;
-}) {
-  const { slug } = await params;
+  searchParams: Promise<{ q?: string | string[]; projectTab?: string | string[] }>;
+};
+export default async function DashboardPage(input: DashboardPageInput) {
+  const lifetime = new AbortController();
+  const total = AbortSignal.any([lifetime.signal, AbortSignal.timeout(30_000)]);
+  try { return await loadDashboardPage(input, total); }
+  finally { lifetime.abort(); }
+}
+async function loadDashboardPage({ params, searchParams }: DashboardPageInput, total: AbortSignal) {
+  const route = await awaitWithSignal(params, total).catch(() => null);
+  if (!route) return <DashboardDataUnavailable lang="cs" />;
+  const { slug } = route;
   if (!isDashboardSlug(slug)) notFound();
   const initialTab = tabFromSlug(slug);
   if (slug?.[0] && isLegacyRouteSegment(slug[0])) redirect(tabToPath(initialTab));
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  let phase = AbortSignal.any([total, AbortSignal.timeout(8_000)]);
+  const phaseFetch: typeof fetch = (input, init) => fetchWithSignal(phase)(input, init);
+  const verified = await (async () => {
+    try {
+      const db = await awaitWithSignal(createClient(total, phaseFetch), phase);
+      const auth = await awaitWithSignal(db.auth.getUser(), phase);
+      phase.throwIfAborted(); return { db, auth };
+    } catch { return null; }
+  })();
+  if (!verified) return <DashboardDataUnavailable lang="cs" />;
+  const { db: supabase, auth } = verified;
+  const user = auth.data.user;
+  if (auth.error || !user || !z.uuid().safeParse(user.id).success) redirect("/login");
+  phase = AbortSignal.any([total, AbortSignal.timeout(20_000)]);
+  const readSignal = phase;
 
   // Client-only keys (last week's calendar) are neither loaded nor seeded
   // here: the shell fetches them in the browser's timezone.
   const requiredData = serverDataKeysForTab(initialTab);
+  const failedReads = new Set<DashboardDataKey>();
   async function loadWhen<T>(key: DashboardDataKey, load: () => PromiseLike<T>): Promise<T | null> {
-    return requiredData.has(key) ? await load() : null;
+    if (!requiredData.has(key)) return null;
+    try {
+      readSignal.throwIfAborted();
+      const result = await awaitWithSignal(load(), readSignal);
+      if (result && typeof result === "object" && "error" in result && result.error) {
+        failedReads.add(key);
+        return null;
+      }
+      return result;
+    } catch {
+      failedReads.add(key);
+      return null;
+    }
   }
 
   const [
@@ -42,55 +86,61 @@ export default async function DashboardPage({
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
     todayCalendar, weekCalendar, prefs, navigationProjectsRes,
   ] = await Promise.all([
-    loadWhen("subscriptions", () => supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("todos", () => supabase.from("todos").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("accounts", () => supabase.from("accounts").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("transactions", () => supabase.from("transactions").select("*").eq("user_id", user.id).order("occurred_on", { ascending: false }).limit(500)),
-    loadWhen("plans", () => supabase.from("plans").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("notes", () => supabase.from("notes").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })),
-    loadWhen("prompts", () => supabase.from("prompts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("promptLinks", () => supabase.from("prompt_links").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(2000)),
-    loadWhen("repoNotes", () => supabase.from("repo_notes").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true })),
-    loadWhen("repoLinks", () => supabase.from("repo_links").select("*").eq("user_id", user.id)),
-    loadWhen("aiLinks", () => supabase.from("ai_links").select("*").eq("user_id", user.id).order("created_at", { ascending: false })),
-    loadWhen("aiCategories", () => supabase.from("ai_categories").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
-    loadWhen("projectLinks", () => supabase.from("project_links").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(2000)),
-    loadWhen("tools", () => supabase.from("tools").select("*").eq("user_id", user.id).order("created_at", { ascending: true }).limit(500)),
-    loadWhen("shortcuts", () => supabase.from("shortcuts").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
-    loadWhen("referenceRows", () => supabase.from("reference_rows").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
-    loadWhen("importantDates", () => supabase.from("important_dates").select("*").eq("user_id", user.id).order("the_date", { ascending: true })),
-    loadWhen("invoices", () => supabase.from("invoices").select("*").eq("user_id", user.id).order("issue_date", { ascending: false })),
-    loadWhen("invoiceItems", () => supabase.from("invoice_items").select("*").eq("user_id", user.id).limit(2000)),
-    loadWhen("invoiceSettings", () => supabase.from("invoice_settings").select("*").eq("user_id", user.id).maybeSingle()),
-    loadWhen("projects", () => supabase.from("projects").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
-    loadWhen("projectCommunications", () => supabase.from("project_communications").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(500)),
-    loadWhen("projectCosts", () => supabase.from("project_costs").select("*").eq("user_id", user.id).order("sort_order", { ascending: true })),
-    loadWhen("crons", () => supabase.from("crons").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("subscriptionAllocations", () => supabase.from("subscription_allocations").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("competitors", () => supabase.from("competitors").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(1000)),
-    loadWhen("organizations", () => supabase.from("organizations").select("*").eq("user_id", user.id).order("name", { ascending: true })),
-    loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)),
-    loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
-    loadWhen("notifications", () => supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)),
-    loadWhen("weeklyReviews", () => supabase.from("weekly_reviews").select("*").eq("user_id", user.id).order("week_start", { ascending: false }).limit(12)),
-    loadWhen("jobListings", () => supabase.from("job_listings").select("*").order("first_seen_at", { ascending: false }).limit(500)),
-    loadWhen("jobUserStates", () => supabase.from("job_user_state").select("*").eq("user_id", user.id)),
-    loadWhen("savedJobPositions", () => supabase.from("saved_job_positions").select("*").eq("user_id", user.id).order("saved_at", { ascending: false })),
-    loadWhen("jobApplications", () => supabase.from("job_applications").select("*").eq("user_id", user.id).order("applied_on", { ascending: false })),
-    loadWhen("jobApplicationEvents", () => supabase.from("job_application_events").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000)),
-    loadWhen("coverLetterTemplates", () => supabase.from("cover_letter_templates").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
-    loadWhen("jobLastRun", () => supabase.from("job_scrape_runs").select("*").order("started_at", { ascending: false }).limit(1).maybeSingle()),
-    loadWhen("todayCalendar", fetchTodayWindowEvents),
-    loadWhen("weekCalendar", fetchUpcomingWeekEvents),
-    loadUserPreferences(user.id),
-    supabase
+    loadWhen("subscriptions", () => supabase.from("subscriptions").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false })),
+    loadWhen("todos", () => readOwnedCollection(supabase, "todos", user.id)),
+    loadWhen("accounts", () => supabase.from("accounts").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: true })),
+    loadWhen("transactions", () => readOwnedCollection(supabase, "transactions", user.id)),
+    loadWhen("plans", () => readPlanRecords(supabase, { ownerId: user.id, signal: readSignal })),
+    loadWhen("notes", () => supabase.from("notes").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("updated_at", { ascending: false })),
+    loadWhen("prompts", () => readOwnedCollection(supabase, "prompts", user.id)),
+    loadWhen("promptLinks", () => readOwnedCollection(supabase, "prompt_links", user.id)),
+    loadWhen("repoNotes", () => readOwnedCollection(supabase, "repo_notes", user.id)),
+    loadWhen("repoLinks", () => readOwnedCollection(supabase, "repo_links", user.id)),
+    loadWhen("aiLinks", () => readOwnedCollection(supabase, "ai_links", user.id)),
+    loadWhen("aiCategories", () => readOwnedCollection(supabase, "ai_categories", user.id)),
+    loadWhen("projectLinks", () => readOwnedCollection(supabase, "project_links", user.id)),
+    loadWhen("tools", () => supabase.from("tools").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: true }).limit(500)),
+    loadWhen("shortcuts", () => supabase.from("shortcuts").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("sort_order", { ascending: true })),
+    loadWhen("referenceRows", () => supabase.from("reference_rows").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("sort_order", { ascending: true })),
+    loadWhen("importantDates", () => supabase.from("important_dates").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("the_date", { ascending: true })),
+    loadWhen("invoices", () => readOwnedCollection(supabase, "invoices", user.id)),
+    loadWhen("invoiceItems", () => readOwnedCollection(supabase, "invoice_items", user.id)),
+    loadWhen("invoiceSettings", () => supabase.from("invoice_settings").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).maybeSingle()),
+    loadWhen("projects", () => readOwnedCollection(supabase, "projects", user.id)),
+    loadWhen("projectCommunications", () => supabase.from("project_communications").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(500)),
+    loadWhen("projectCosts", () => readOwnedCollection(supabase, "project_costs", user.id)),
+    loadWhen("crons", () => readOwnedCollection(supabase, "crons", user.id)),
+    loadWhen("subscriptionAllocations", () => supabase.from("subscription_allocations").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: true })),
+    loadWhen("competitors", () => readCompetitorRecords(supabase, { ownerId: user.id, signal: AbortSignal.timeout(15_000) })),
+    loadWhen("organizations", () => readOrganizationRecords(supabase, { ownerId: user.id, signal: AbortSignal.timeout(15_000) })),
+    loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)),
+    loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
+    loadWhen("notifications", () => supabase.from("notifications").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)),
+    loadWhen("weeklyReviews", () => supabase.from("weekly_reviews").select("*").retry(false).abortSignal(readSignal).eq("user_id", user.id).order("week_start", { ascending: false }).limit(12)),
+    loadWhen("jobListings", () => readCareerRecords(supabase,"job_listings",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobUserStates", () => readCareerRecords(supabase,"job_user_state",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("savedJobPositions", () => readCareerRecords(supabase,"saved_job_positions",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobApplications", () => readCareerRecords(supabase,"job_applications",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobApplicationEvents", () => readCareerRecords(supabase,"job_application_events",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("coverLetterTemplates", () => readCareerRecords(supabase,"cover_letter_templates",{ ownerId: user.id,signal: readSignal })),
+    loadWhen("jobLastRun", async () => { const result = await readCareerRecords(supabase,"job_scrape_runs",{ ownerId: user.id,signal: readSignal }); return { ...result,data: result.data[0] ?? null }; }),
+    loadWhen("todayCalendar", () => fetchTodayWindowEvents({ userId: user.id, signal: readSignal })),
+    loadWhen("weekCalendar", () => fetchUpcomingWeekEvents({ userId: user.id, signal: readSignal })),
+    awaitWithSignal(loadUserPreferences(user.id, readSignal), readSignal)
+      .catch(() => ({ ...parseStoredUiPreferences(null), sync_available: false })),
+    // The full project read already supplies the lightweight navigation data.
+    requiredData.has("projects") ? null : awaitWithSignal(supabase
       .from("projects")
-      .select("id, name, slug, is_active, engagement")
+      .select("id, name, slug, is_active, engagement").retry(false).abortSignal(readSignal)
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-      .limit(50),
+      .limit(50), readSignal).then(result => result, () => ({ data: null, error: true })),
   ]);
+
+  if (failedReads.size > 0 || navigationProjectsRes?.error) {
+    return <DashboardDataUnavailable lang={prefs.language} />;
+  }
 
   const requestedRef = slug?.[0] === "projects" && slug[1] ? slug[1] : null;
   const requestedProject = requestedRef
@@ -105,14 +155,21 @@ export default async function DashboardPage({
 
   // `/ig-tips?q=<title>` (linked from the marketing calendars) opens IG TIPS
   // searching for that tip, with its card expanded.
-  const initialTipQuery = initialTab === "ig-tips" ? tipDeepLinkQuery((await searchParams).q) : null;
+  const query = await awaitWithSignal(searchParams, total).catch(() => null);
+  if (!query) return <DashboardDataUnavailable lang={prefs.language} />;
+  const initialTipQuery = initialTab === "ig-tips" ? tipDeepLinkQuery(query.q) : null;
 
+  // Verified identity does not make the owner's editable display metadata a string.
+  const displayName = displayNameSchema.safeParse(user.user_metadata?.full_name);
+  const avatarUrl = safeWebUrl(user.user_metadata?.avatar_url, 2048);
   return <DashboardShell
     initialTab={initialTab}
+    initialTimezone={prefs.timezone}
     initialTipQuery={initialTipQuery}
     initialProjectId={requestedProject?.id}
+    initialProjectTab={projectTabFromQuery(query.projectTab)}
     initialDataKeys={[...requiredData]}
-    user={{ id: user.id, email: user.email ?? "", name: (user.user_metadata?.full_name as string | undefined) ?? null, avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null }}
+    user={{ id: user.id, email: typeof user.email === "string" ? user.email : "", name: displayName.success ? displayName.data : null, avatar_url: avatarUrl?.startsWith("https://") ? avatarUrl : null }}
     initialSubscriptions={subscriptionsRes?.data ?? []}
     initialTodos={todosRes?.data ?? []}
     initialAccounts={accountsRes?.data ?? []}
@@ -134,7 +191,7 @@ export default async function DashboardPage({
     initialInvoiceItems={invoiceItemsRes?.data ?? []}
     initialInvoiceSettings={invoiceSettingsRes?.data ?? null}
     initialProjects={projectsRes?.data ?? []}
-    initialNavigationProjects={navigationProjectsRes.data ?? []}
+    initialNavigationProjects={navigationProjectsRes?.data ?? (projectsRes?.data ?? []).filter(project => project.is_active).slice(0, 50)}
     initialProjectCommunications={projectCommunicationsRes?.data ?? []}
     initialProjectCosts={projectCostsRes?.data ?? []}
     initialCrons={cronsRes?.data ?? []}

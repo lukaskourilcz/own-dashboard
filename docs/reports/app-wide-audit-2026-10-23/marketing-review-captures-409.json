@@ -1,0 +1,77 @@
+{
+  "finding": 409,
+  "applicationCommit": "34888a36",
+  "capturedAt": "2026-10-29",
+  "sourceHashes": {
+    "src/components/panels/marketing-panel.tsx": "20d13f3f0618eb513cf0bc7a36a8b68cf76e5eb4d6c89ed0b93961a85b6aad5c",
+    "e2e/marketing-review-layout.spec.ts": "00a3d80354b0432d66ceaf71b0e6e9841e4b6d472f364f0b21a8deb86d5f8f7b",
+    "tests/components/marketing-state-read.test.tsx": "5b1c4e5f114b893b27ae7a3add7bc962475b9412a421d5a6bd97c72577c63646"
+  },
+  "captures": {
+    "desktop": {
+      "image": "marketing-text-review-409-cs-1440.png",
+      "clip": {
+        "x": 452,
+        "y": 296,
+        "width": 768,
+        "height": 364
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 2.213541666666667,
+          "y": 7.967032967032966,
+          "w": 24.473063151041664,
+          "h": 5.4945054945054945
+        },
+        {
+          "n": 2,
+          "x": 0.13020833333333331,
+          "y": 17.032967032967033,
+          "w": 99.73958333333334,
+          "h": 67.03296703296702
+        },
+        {
+          "n": 3,
+          "x": 0.13020833333333331,
+          "y": 84.06593406593407,
+          "w": 99.73958333333334,
+          "h": 15.659340659340659
+        }
+      ]
+    },
+    "mobile": {
+      "image": "marketing-text-review-409-cs-430.png",
+      "clip": {
+        "x": 16,
+        "y": 176,
+        "width": 398,
+        "height": 468
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 4.271356783919598,
+          "y": 6.196581196581197,
+          "w": 47.22440326633166,
+          "h": 4.273504273504273
+        },
+        {
+          "n": 2,
+          "x": 0.25125628140703515,
+          "y": 13.247863247863249,
+          "w": 99.49748743718592,
+          "h": 60.68376068376068
+        },
+        {
+          "n": 3,
+          "x": 0.25125628140703515,
+          "y": 73.93162393162393,
+          "w": 99.49748743718592,
+          "h": 25.85470085470086
+        }
+      ]
+    }
+  },
+  "meaning": "Actual isolated dev-preview, Czech dark, viewport crops; synthetic owner/revisions, one mocked read, no write/provider/publication. Image branch uses an existing checked-in photograph."
+}

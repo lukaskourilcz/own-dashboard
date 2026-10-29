@@ -1,0 +1,22 @@
+{
+  "engine": "PostgreSQL 17.11 (Postgres.app) on aarch64-apple-darwin23.6.0, compiled by Apple clang version 15.0.0 (clang-1500.3.9.4), 64-bit",
+  "syntheticOnly": true,
+  "workConnections": 2,
+  "observationConnection": true,
+  "authenticatedRole": true,
+  "advisoryWaitObserved": true,
+  "active": 1,
+  "selectedStatus": "active",
+  "previousStatus": "archived",
+  "publications": 0,
+  "migration": "20261029010744_confirmed_marketing_campaign_activation.sql",
+  "migrationSha256": "ab8bb2ab7a5c86a47cfd47c61e0897365978beaa5fb5071a68c200c2e20d9860",
+  "scope": "Isolated exact relevant migrations and two authenticated work connections with an observed advisory wait; not managed Production, a full-chain native replay or performance evidence.",
+  "advisors": {
+    "cli": "2.122.0",
+    "connection": "isolated local Unix socket",
+    "scope": "exact relevant migrations; not full-chain or managed",
+    "results": [],
+    "message": "db advisors"
+  }
+}

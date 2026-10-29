@@ -10,6 +10,8 @@ Never introduce a raw hex or framework color utility in a production component w
 
 ## Typography roles
 
+The shared `--font-sans` token uses `-apple-system`, BlinkMacSystemFont, Geist, Segoe UI and the sans-serif fallback in that order. Body copy, BlockNote editor text and toast controls use this same stack. Keep Geist Mono for technical values and preserve separate artwork/document font contracts.
+
 | Role | Implementation intent |
 | --- | --- |
 | Login/display | 28–40 px, compact leading, only on the private auth surface |
@@ -34,9 +36,10 @@ Home and login may breathe. Work, Projects, Opportunities, Career, Money, and In
 
 ## Components
 
+- The shell toolbar owns the single visible page title. `PageHeader` renders its title when standalone; inside `ShellTitleProvider` it retains only descriptions, eyebrows and actions. Do not hide heading containers through positional breakpoint selectors.
 - `PageHeader` supports regular and compact density plus an optional contextual eyebrow.
 - `Card` is a compact white contained module with a hairline border, 14 px radius, 16–18 px padding, and one restrained surface shadow.
-- `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations.
+- `Button`, fields, selects, dialogs, tooltips, toasts, and empty states retain their single shared implementations. Shared checkbox/switch buttons provide actual 44 px mobile and 32 px desktop targets while their inner marks stay compact; preserve Radix labels, hidden form inputs and keyboard behavior.
 - `ConfirmationProvider` and `useConfirmation` are the only destructive-confirmation surface. Deletions use the branded Radix dialog with a named consequence and explicit destructive action; browser-native confirmation dialogs are reserved for non-destructive consent until migrated.
 - `StatusBadge` is the canonical label/marker/tone presentation for shared project, opportunity, organization, inbox, invoice, and health states.
 - `EntityBadge` shows relationships without pretending they are statuses.
@@ -52,7 +55,7 @@ New generic abstractions require two real consumers. Search before creating. Exi
 
 ## Tables, rows, and cards
 
-Transactions, invoices, listings, projects, references, and other comparable entities are rows/tables. Desktop data text is 12–12.5 px and primary tables are sized to fit the 13-inch window content area before horizontal scrolling. Activity and notifications are chronological rows. Opportunities may use a board only when stage movement is the action; a dense list remains available. Static summary cards in one row share height. Dynamic category collections use masonry columns with `break-inside: avoid`. Task titles wrap to at most three lines. Cards summarize, contain a focused object, or elevate a workflow. A card inside a card is normally a signal to use a section line or inset band.
+Transactions, invoices, listings, projects, references, and other comparable entities are rows/tables. Desktop data text is 12–12.5 px and primary tables are sized to fit the 13-inch window content area before horizontal scrolling. Activity and notifications are chronological rows. Opportunities may use a board only when stage movement is the action; a dense list remains available. Static summary cards in one row share height. Dynamic category collections use masonry columns with `break-inside: avoid`. Task titles use at most three lines by default, with a measured keyboard-accessible disclosure when text actually clips. Task groups use row dividers; one open group and its finished list share a centered bounded width. Titles and metadata share a row when they fit and wrap below each other on narrow screens. Cards summarize, contain a focused object, or elevate a workflow. A card inside a card is normally a signal to use a section line or inset band.
 
 Sortable containers expose one dedicated drag handle. Attach dnd-kit activator listeners and `touch-action: none` only to that handle; keep row/card text selectable and leave ordinary links and actions outside the drag target.
 
@@ -60,8 +63,9 @@ Unequal Library groups use masonry-style CSS columns with `break-inside: avoid`;
 
 ## Responsive transformations
 
-- Mobile primary navigation is Home, Inbox, Work, Projects, More. More must expose all visible owner destinations and Settings.
+- Mobile primary navigation is Home, Work, Projects, Tasks, More. More must expose all visible owner destinations and Settings.
 - Tables become structured rows when comparison remains clear; wide operational, legal, or financial column sets may scroll inside a width-contained region without creating document-level overflow.
+- Command palette destinations derive from the shared sidebar registry and owner visibility preferences. Dialogs restore their opener when dismissed.
 - Filters wrap or stack; no control becomes hover-only.
 - Project workspace tabs remain horizontally scrollable with an obvious active state.
 - Split panes and form grids stack; dialogs become near-full-width with safe margins.
@@ -70,7 +74,7 @@ Unequal Library groups use masonry-style CSS columns with `break-inside: avoid`;
 
 ## Accessibility
 
-Target WCAG 2.2 AA. Preserve visible focus, logical focus order, Radix focus traps, Escape behavior, labels/error associations, semantic headings/landmarks/tables, reduced motion, zoom/reflow, touch targets, and non-color statuses. Loading and generation need names or live status. Decorative media uses empty alt/hidden semantics; explanatory media needs localized alternatives. Never put essential copy in an image.
+Target WCAG 2.2 AA. Preserve visible focus, logical focus order, Radix focus traps, Escape behavior, labels/error associations, semantic headings/landmarks/tables, reduced motion, zoom/reflow, touch targets, and non-color statuses. The root declares the selected app color scheme explicitly so native date/time glyphs, checkboxes and scrollbars follow the app theme even when the OS preference differs. Print keeps a light native scheme. The shared focus token uses the opaque semantic information color; do not lower its opacity below 3:1 against adjacent surfaces. Forced colors must retain a system-color outline because shadows can disappear. Loading and generation need names or live status. Decorative media uses empty alt/hidden semantics; explanatory media needs localized alternatives. Never put essential copy in an image.
 
 ## UX writing and states
 
@@ -83,3 +87,8 @@ Reject gradients used as default decoration, glows, glass, giant display type, d
 ## Apple interaction update (2026-10-16)
 
 Applied the requested [apple-design skill](https://github.com/emilkowalski/skills/blob/main/skills/apple-design/SKILL.md): system typography with optical sizing, restrained shared modules, semantic material hierarchy and immediate press feedback. Replaced inert traffic-light decoration with the product name. Dialogs keep Radix focus/escape behavior and symmetric scale paths; Tailwind 4 owns the centering translation, so keyframes never translate the surface a second time. All icon buttons have 44 px mobile targets. Reduced motion removes spatial movement; reduced transparency and increased contrast independently produce solid readable chrome. Page actions wrap below wide-desktop widths.
+
+
+### Invoice review, 23 October 2026
+
+The light information foreground is `#005fc7`; the previous `#0064d1` measured 4.45:1 on the issued badge over the desktop content surface. Invoice paper labels use neutral 500 or darker against white. Paper remains white with fixed print colours in both themes; line tables scroll inside the document on narrow screens and remain visible for A4 printing. Payment QR codes expose the localized payment title. Controls use the shared mobile target sizes and remain visible to touch and keyboard users.

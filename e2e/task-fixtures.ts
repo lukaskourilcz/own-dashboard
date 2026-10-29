@@ -1,0 +1,3 @@
+// Complete owned versions for the explicit fake-backend task reader. No production writes.
+export const owner = '11111111-1111-4111-8111-111111111111';
+export const task = (id: string, title: string) => ({ id, user_id: owner, title, done: false, due_date: null, category: null, created_at: '2026-10-25T00:00:00.000000Z', updated_at: '2026-10-25T00:00:00.000001Z', source: null, repo_id: null, repo_full_name: null, repo_owner: null, repo_name: null, repo_url: null, needed_raw: null, needed_assignee: null, generated_at: null, importance: null, estimated_minutes: null, task_kind: null, is_global: false, project_id: null, organization_id: null, opportunity_id: null, job_application_id: null });

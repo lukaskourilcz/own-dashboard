@@ -15,7 +15,7 @@ import {
   promptKind,
 } from "@/lib/prompt-kinds";
 import {
-  planPromptLinkSync,
+  promptLinkDraftsForEdit,
   projectComposerLinks,
   promptComposerLinks,
   promptLinkDrafts,
@@ -166,13 +166,10 @@ describe("prompt links", () => {
     ]);
   });
 
-  it("plans the writes that make stored links match the editor", () => {
-    const plan = planPromptLinkSync("p1", promptLinks, [
-      { ai_link_id: "sc", note: "" },
-      { ai_link_id: "vercel", note: " deploy logs " },
+  it("retains unavailable resource identities while editing instead of silently deleting them", () => {
+    expect(promptLinkDraftsForEdit("p1", promptLinks)).toEqual([
+      { ai_link_id: "sc", note: "" }, { ai_link_id: "ps", note: "Today first" }, { ai_link_id: "gone", note: "" },
     ]);
-    expect(plan.removeIds.sort()).toEqual(["a", "c"]);
-    expect(plan.upserts).toEqual([{ ai_link_id: "vercel", note: "deploy logs", sort_order: 1 }]);
   });
 
   it("suggests library links (never ideas) from matching categories", () => {

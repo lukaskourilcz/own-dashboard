@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { chartTooltipStyle } from "./shared";
+import { useReducedMotion } from "motion/react";
 
 /** Committed (subscriptions) vs paid (invoices) development spend per month. Lazily loaded (recharts). */
 export function SpendBarChart({
@@ -24,6 +25,7 @@ export function SpendBarChart({
   committedLabel: string;
   paidLabel: string;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barCategoryGap="25%">
@@ -31,8 +33,8 @@ export function SpendBarChart({
         <YAxis tickLine={false} axisLine={false} fontSize={11} width={56} stroke="var(--foreground-subtle)" />
         <Tooltip cursor={{ fill: "var(--surface-hover)" }} formatter={(value) => formatCurrency(Number(value), currency)} contentStyle={chartTooltipStyle} />
         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-        <Bar dataKey="committed" fill="var(--chart-1)" name={committedLabel} radius={[3, 3, 0, 0]} />
-        <Bar dataKey="paid" fill="var(--chart-3)" name={paidLabel} radius={[3, 3, 0, 0]} />
+        <Bar dataKey="committed" fill="var(--chart-1)" name={committedLabel} radius={[3, 3, 0, 0]} isAnimationActive={reducedMotion === false} />
+        <Bar dataKey="paid" fill="var(--chart-3)" name={paidLabel} radius={[3, 3, 0, 0]} isAnimationActive={reducedMotion === false} />
       </BarChart>
     </ResponsiveContainer>
   );

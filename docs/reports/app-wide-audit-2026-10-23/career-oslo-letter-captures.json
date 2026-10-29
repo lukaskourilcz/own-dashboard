@@ -1,0 +1,88 @@
+{
+  "finding": 302,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "bf0a9def",
+  "state": "Actual synthetic retained Oslo letter after a captured-version conflict. No production data.",
+  "components": {
+    "src/components/panels/oslo-career-workspace.tsx": "3507e8e207f79a4556142f155a99e1c29f062a1f7470e01fd85928a2ad13574a",
+    "src/components/panels/use-career-saved-letter-draft.ts": "51a8c7781294a3478f79f7c5e53610f4b073511385045b288ee59f53aa552bf0",
+    "src/lib/career-saved-records.ts": "81b25a888e3564f42c0e0cffcf288a685fe3dfa49f3dfcdffc61df8c1583a654"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1800
+      },
+      "box": {
+        "x": 273,
+        "y": 853,
+        "width": 894,
+        "height": 613
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.131991051454139,
+          "y": 9.298531810766722,
+          "w": 93.73601789709173,
+          "h": 30.34257748776509
+        },
+        {
+          "n": 2,
+          "x": 3.131991051454139,
+          "y": 46.98205546492659,
+          "w": 93.73601789709173,
+          "h": 11.745513866231647
+        },
+        {
+          "n": 3,
+          "x": 8.721336689038031,
+          "y": 69.16802610114192,
+          "w": 82.5555788590604,
+          "h": 10.766721044045678
+        }
+      ],
+      "asset": "career-oslo-letter-cs-1440.png",
+      "assetSha256": "41d25fa4715a7a59619ec63c41bbb48bdadeaa79c53b5b49bd19375a3ae668b7"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1800
+      },
+      "box": {
+        "x": 13,
+        "y": 920.75,
+        "width": 404,
+        "height": 788.5
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 4.9504950495049505,
+          "y": 7.228915662650603,
+          "w": 90.0990099009901,
+          "h": 23.589093214965125
+        },
+        {
+          "n": 2,
+          "x": 4.9504950495049505,
+          "y": 36.52504755865568,
+          "w": 90.0990099009901,
+          "h": 11.160431198478124
+        },
+        {
+          "n": 3,
+          "x": 4.9504950495049505,
+          "y": 57.32403297400127,
+          "w": 90.0990099009901,
+          "h": 16.487000634115407
+        }
+      ],
+      "asset": "career-oslo-letter-cs-430.png",
+      "assetSha256": "35b305477fa2cf6e4e85240bafb9203305d216cd0c6901f39955684c2b2d117f"
+    }
+  }
+}

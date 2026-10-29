@@ -1,3 +1,4 @@
+import { dneskaiDeckContentBlocked } from "./dneskai-slide-layout";
 import { z } from "zod";
 import { DneskaiDeckSchema } from "./dneskai-slides";
 import { DneskaiBriefSchema } from "./dneskai-brief";
@@ -231,6 +232,7 @@ export function revisionReadiness(revision: ContentRevision): string[] {
   }
   if (revision.account.platform === "threads" && revision.caption.length > 500) issues.push("threads-caption-too-long");
   if (revision.deck) {
+    if (dneskaiDeckContentBlocked(revision.deck)) issues.push("text-unplaced");
     // One rendered 4:5 JPEG per slide, in slide order; an unrendered deck cannot be approved.
     if (!revision.assets.length) issues.push("deck-render-required");
     else if (revision.assets.length !== revision.deck.slides.length) issues.push("deck-assets-mismatch");

@@ -1,0 +1,18 @@
+{
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal Career tables, exact source 125/126, capture 129 and triage 130 SQL plus the shared version function from 128; full-chain checks separate",
+  "concurrency": {
+    "staleClearRefused": true,
+    "permanentMarkerRetained": true,
+    "versionAdvanced": true
+  },
+  "legacyDeleteRefused": true,
+  "legacyInFlightDeleteRefused": true,
+  "globalListingCascadeRefused": true,
+  "ownerDeletionCascade": {
+    "owners": 0,
+    "foreignMarkers": 0,
+    "markers": 2,
+    "listings": 1
+  }
+}

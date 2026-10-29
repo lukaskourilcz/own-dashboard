@@ -5,14 +5,14 @@
  * The publisher's only durable intent is written after the numeric parent container ID is stored and before the
  * single media_publish request. A publication without a numeric container ID, a media ID, a URL or a recorded
  * publish intent therefore never reached media_publish and may go back to `queued` with its approval and bytes
- * unchanged. `marketing_requeue_publication` (migration 20261022110000, unapplied) enforces the same rule in SQL;
+ * unchanged. `marketing_requeue_publication` (migration 20261022110000) enforces the same rule in SQL;
  * this copy only decides whether the panel offers the action.
  */
 export const MARKETING_PUBLICATION_REQUEUE_FLAG = 'MARKETING_PUBLICATION_REQUEUE_ENABLED';
 export const MARKETING_PUBLICATION_REQUEUE_RESULTS = ['queued', 'queued-window-passed'] as const;
 export type MarketingPublicationRequeueResult = (typeof MARKETING_PUBLICATION_REQUEUE_RESULTS)[number];
 
-/** Server-only switch, off by default: it stays off until the owner applies the migration. */
+/** Server-only switch, off by default; enable only after the migration is deployed. */
 export function marketingPublicationRequeueEnabled(env: Record<string, string | undefined>): boolean {
   return env[MARKETING_PUBLICATION_REQUEUE_FLAG] === 'true';
 }

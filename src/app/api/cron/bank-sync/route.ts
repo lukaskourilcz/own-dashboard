@@ -1,3 +1,5 @@
+import { awaitWithSignal } from "@/lib/abortable";
+import { bankSyncSignal } from "@/lib/bank/sync-budget";
 import { NextResponse } from "next/server";
 import { rejectUnlessCron } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
@@ -30,67 +32,75 @@ export async function GET(request: Request) {
   const rejected = rejectUnlessCron(request);
   if (rejected) return rejected;
 
-  const admin = createAdminClient();
+  const signal = bankSyncSignal(request);
+  const admin = createAdminClient(signal);
+  try {
 
-  // A consent that has already passed its stated expiry is expired, whatever
-  // the last sync thought. Doing this first keeps the pull below honest.
-  const { data: lapsedRows } = await admin
-    .from("bank_connections")
-    .update({ status: "expired", last_error: "consent-expired" })
-    .eq("status", "linked")
-    .not("consent_expires_at", "is", null)
-    .lt("consent_expires_at", new Date().toISOString())
-    .select("id");
-  const lapsed = (lapsedRows ?? []).length;
+    // A consent that has already passed its stated expiry is expired, whatever
+    // the last sync thought. Doing this first keeps the pull below honest.
+    const expiryQuery = admin
+      .from("bank_connections")
+      .update({ status: "expired", last_error: "consent-expired" }, { count: "exact" })
+      .eq("status", "linked")
+      .not("consent_expires_at", "is", null)
+      .lt("consent_expires_at", new Date().toISOString())
+      .select("id").abortSignal(signal);
+    const { count: lapsed, error: expiryError } = await awaitWithSignal(expiryQuery, signal);
+    if (expiryError || typeof lapsed !== "number" || !Number.isSafeInteger(lapsed) || lapsed < 0) return NextResponse.json({ error: "Bank expiry check unavailable." }, { status: 500 });
 
-  const { data, error } = await admin
-    .from("bank_connections")
-    .select("*")
-    .eq("status", "linked");
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const connections = (data ?? []) as BankConnection[];
-  let inserted = 0;
-  let banks = 0;
-  let failed = 0;
-  let skipped = 0;
-  for (const conn of connections) {
-    try {
-      const provider = getProvider(conn.provider);
-      if (!(await provider.isConfigured(conn.user_id))) {
-        skipped++;
-        continue;
-      }
-      const res = await syncConnection(admin, conn);
-      inserted += res.inserted;
-      if (res.status === "linked") banks++;
-    } catch (err) {
-      failed++;
-      console.error("[cron/bank-sync] connection failed:", conn.id, err);
+    const query = admin.from("bank_connections").select("*", { count: "exact" })
+      .eq("status", "linked").limit(51).abortSignal(signal);
+    const { data, count, error } = await awaitWithSignal(query, signal);
+    if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count !== data.length || data.length > 50) {
+      return NextResponse.json({ error: "Bank connections unavailable." }, { status: 500 });
     }
-  }
 
-  // A connection that threw is a real failure signal: the heartbeat stays
-  // silent so the monitor can alert, and the run is logged as failed the same
-  // way payment matching logs a partial pass.
-  if (failed === 0) {
-    await pingHeartbeat(heartbeatUrlForJob("bank-sync"));
+    const connections = (data ?? []) as BankConnection[];
+    let inserted = 0;
+    let banks = 0;
+    let failed = 0;
+    let skipped = 0;
+    for (let index = 0; index < connections.length; index++) {
+      if (signal.aborted) { failed += connections.length - index; break; }
+      const conn = connections[index];
+      try {
+        const provider = getProvider(conn.provider, signal);
+        if (!(await awaitWithSignal(provider.isConfigured(conn.user_id), signal))) {
+          skipped++;
+          continue;
+        }
+        const res = await awaitWithSignal(syncConnection(admin, conn, signal), signal);
+        inserted += res.inserted;
+        if (res.status === "linked") banks++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+
+    // A connection that threw is a real failure signal: the heartbeat stays
+    // silent so the monitor can alert, and the run is logged as failed the same
+    // way payment matching logs a partial pass.
+    if (failed === 0) {
+      await pingHeartbeat(heartbeatUrlForJob("bank-sync"));
+    }
+    const logSignal = AbortSignal.timeout(5_000);
+    await awaitWithSignal(logCronRun({
+      name: "Bank sync",
+      endpoint: "/api/cron/bank-sync",
+      source: "vercel",
+      status: failed > 0 ? "failure" : "success",
+      detail: `inserted ${inserted}, failed ${failed}, skipped ${skipped}, expired ${lapsed}`,
+    }, logSignal), logSignal).catch(() => undefined);
+    return NextResponse.json({
+      ok: failed === 0,
+      banks,
+      inserted,
+      failed,
+      skipped,
+      expired: lapsed,
+    }, { status: failed > 0 ? 502 : 200 });
+  } catch {
+    return NextResponse.json({ error: "Bank sync could not be confirmed." }, { status: 502 });
   }
-  await logCronRun({
-    name: "Bank sync",
-    endpoint: "/api/cron/bank-sync",
-    source: "vercel",
-    status: failed > 0 ? "failure" : "success",
-    detail: `inserted ${inserted}, failed ${failed}, skipped ${skipped}, expired ${lapsed}`,
-  });
-  return NextResponse.json({
-    ok: true,
-    banks,
-    inserted,
-    failed,
-    skipped,
-    expired: lapsed,
-  });
 }

@@ -316,7 +316,6 @@ async function verifyRecordedStory(input: PublishMarketingInput, media: string):
 export const RECONCILE_LOOKBACK_MS = 5 * 60_000;
 /** A publish intent is accepted at most 15 minutes after the slot; the extra 5 minutes cover the request deadline. */
 export const RECONCILE_LOOKAHEAD_MS = 20 * 60_000;
-const RECONCILE_CAPTION_PREFIX = 100;
 const RECONCILE_PAGE_SIZE = 50;
 const normalizedCaption = (value: string) => value.normalize('NFC').replace(/\s+/g, ' ').trim();
 const metaInstant = (value: unknown) => typeof value === 'string' ? Date.parse(value.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')) : Number.NaN;
@@ -327,14 +326,14 @@ type MediaMatch = { kind: 'match'; id: string; permalink: string | null } | { ki
 /**
  * After an ambiguous `media_publish`, the owned account's own media list is
  * the only evidence used to recover the media ID: the same media type, a
- * timestamp inside the slot window and the approved caption as a prefix.
+ * timestamp inside the slot window and the complete normalized approved caption.
  * Exactly one match is required. This is a read; it never publishes.
  */
 async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<MediaMatch> {
   const revision = input.revisionRow.revision;
   const type = expectedMediaType(revision.format); const scheduled = Date.parse(revision.scheduledAt);
   if (!type || !Number.isFinite(scheduled)) return { kind: 'unavailable' };
-  const prefix = normalizedCaption(revision.caption).slice(0, RECONCILE_CAPTION_PREFIX);
+  const expectedCaption = normalizedCaption(revision.caption);
   const from = scheduled - RECONCILE_LOOKBACK_MS; const until = Math.min(scheduled + RECONCILE_LOOKAHEAD_MS, (input.now ?? new Date()).getTime() + 60_000);
   let data: Record<string, unknown>;
   try { data = await graph(input, `${input.account.remote_account_id}/media`, 'GET', { fields: 'id,caption,timestamp,permalink,media_type',
@@ -344,11 +343,11 @@ async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<Med
   const items = data.data.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
   if (items.length !== data.data.length) return { kind: 'unavailable' };
   const matches = items.filter(item => typeof item.id === 'string' && idValid(item.id) && mediaTypeMatches(revision.format, item.media_type) && typeof item.caption === 'string' &&
-    normalizedCaption(item.caption).startsWith(prefix) && metaInstant(item.timestamp) >= from && metaInstant(item.timestamp) <= until);
+    normalizedCaption(item.caption) === expectedCaption && metaInstant(item.timestamp) >= from && metaInstant(item.timestamp) <= until);
   if (matches.length > 1) return { kind: 'ambiguous' };
-  // A full page with a next link can hide a second match inside the window, so one match there is not unique.
+  // Any continuation can hide a second match, including when the provider returns fewer than requested.
   const paging = data.paging as { next?: unknown } | undefined;
-  if (items.length === RECONCILE_PAGE_SIZE && paging?.next) return { kind: 'incomplete' };
+  if (paging?.next) return { kind: 'incomplete' };
   if (!matches.length) return { kind: 'none' };
   const match = matches[0]!; let permalink: string | null = null;
   try { const url = typeof match.permalink === 'string' ? new URL(match.permalink) : null; permalink = url && url.protocol === 'https:' && !url.username && !url.password ? url.href : null; } catch { permalink = null; }

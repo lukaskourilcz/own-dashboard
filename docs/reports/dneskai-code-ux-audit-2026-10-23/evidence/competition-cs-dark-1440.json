@@ -1,0 +1,323 @@
+{
+  "containers": [
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 113,
+      "tag": "DIV",
+      "text": "own-dashboardDvojjazyčný osobní operační systém pro jednoho freelance vývojáře: projekty, klienti, kariéra, faktury, peníze, plánování a zna",
+      "width": 1120,
+      "x": 276,
+      "y": 214
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 137,
+      "tag": "DIV",
+      "text": "DNESKAiČeský denní přehled toho podstatného z AI a technologií. Statická Next.js čtečka plněná redakční linkou boardlessAI.1 konkurentTLDR A",
+      "width": 1120,
+      "x": 276,
+      "y": 343
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 113,
+      "tag": "DIV",
+      "text": "devSharkBezplatný anglický produkt pro výuku vývojářů: programovací úlohy hodnocené na serveru a ručně psané nápovědy s odkazy do dokumentac",
+      "width": 1120,
+      "x": 276,
+      "y": 496
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 113,
+      "tag": "DIV",
+      "text": "boardlessAIAutonomní AI rada (VIZE, FORGE, PULSE, AUDIT), která v gitu řídí portfolio ventures pod pevným měsíčním provozním stropem.0 konku",
+      "width": 1120,
+      "x": 276,
+      "y": 625
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 117,
+      "tag": "DIV",
+      "text": "Design LabSoučást boardlessAIDeterministický renderer karuselů a coverů s prověřenou knihovnou originálních, znovupoužitelných layoutů pro m",
+      "width": 1120,
+      "x": 276,
+      "y": 754
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card overflow-hidden p-0",
+      "height": 145,
+      "tag": "DIV",
+      "text": "GoVIRALSoučást boardlessAITýdenní trendový brief a hodnocený inventář marketingových tahů pro každý venture, sledovaný s nulovým reklamním r",
+      "width": 1120,
+      "x": 276,
+      "y": 887
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta",
+      "width": 150.7,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "INPUT",
+      "text": "Hledat konkurenty…",
+      "width": 348.3,
+      "x": 276,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Projekt",
+      "width": 224,
+      "x": 632,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Typ",
+      "width": 160,
+      "x": 864,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "combobox",
+      "tag": "BUTTON",
+      "text": "Ověření",
+      "width": 176,
+      "x": 1032,
+      "y": 134
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "own-dashboard",
+      "width": 104.9,
+      "x": 295,
+      "y": 231
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta: own-dashboard",
+      "width": 42,
+      "x": 1335,
+      "y": 236
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "DNESKAi",
+      "width": 60.3,
+      "x": 295,
+      "y": 360
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta: DNESKAi",
+      "width": 42,
+      "x": 1335,
+      "y": 365
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "TLDR AIPřímý",
+      "width": 1022,
+      "x": 289,
+      "y": 419
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit konkurenta: TLDR AI",
+      "width": 32,
+      "x": 1319,
+      "y": 429
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat konkurenta: TLDR AI",
+      "width": 32,
+      "x": 1351,
+      "y": 429
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "devShark",
+      "width": 62.7,
+      "x": 295,
+      "y": 513
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta: devShark",
+      "width": 42,
+      "x": 1335,
+      "y": 518
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "boardlessAI",
+      "width": 78.5,
+      "x": 295,
+      "y": 642
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta: boardlessAI",
+      "width": 42,
+      "x": 1335,
+      "y": 647
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Design Lab",
+      "width": 73.7,
+      "x": 295,
+      "y": 773
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta: Design Lab",
+      "width": 42,
+      "x": 1335,
+      "y": 778
+    },
+    {
+      "disabled": false,
+      "height": 20,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "GoVIRAL",
+      "width": 58.1,
+      "x": 295,
+      "y": 906
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat konkurenta: GoVIRAL",
+      "width": 42,
+      "x": 1335,
+      "y": 911
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Exploding TopicsInspirace",
+      "width": 1022,
+      "x": 289,
+      "y": 967
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Upravit konkurenta: Exploding Topics",
+      "width": 32,
+      "x": 1319,
+      "y": 979
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Smazat konkurenta: Exploding Topics",
+      "width": 32,
+      "x": 1351,
+      "y": 979
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Konkurence",
+      "width": 83.8,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 0,
+      "tag": "H1",
+      "text": "Konkurence",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "method": "Synthetic 24,006-character input within the 100,000-character raw description bound; equal 12,000-character output; median of five isolated cleaner calls after one warmup. Concurrent local verification may affect timings.",
+  "node": "v22.23.4",
+  "inputCharacters": 24006,
+  "outputCharacters": 12000,
+  "legacyMilliseconds": 353.7478749999999,
+  "linearMilliseconds": 0.032290999999986525,
+  "limitation": "This compares only the exact legacy/replacement cleanup expressions. It does not measure the complete normalizer, network, production latency or billing."
+}

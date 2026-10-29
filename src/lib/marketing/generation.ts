@@ -1,3 +1,4 @@
+import { MARKETING_DRAFT_MAX_COST_USD } from './generation-limits';
 import { dneskaiDefaultRevisionFormat } from "./dneskai-reel-format";
 import { z } from "zod";
 import { ContentEngagementSchema, ENGAGEMENT_KEYWORD_PATTERN, MARKETING_DECK_CONTENT_VERSION, parseContentRevision, parseSourcePacket, sourceUsable, type ContentRevision, type SourcePacket } from "./contracts";
@@ -93,7 +94,7 @@ export const DNESKAI_INPUT_BYTES_PER_TOKEN = 2;
  * ledger reserve this amount per job; ledger rows written at $0.25 before the change keep it.
  */
 export const DEFAULT_GENERATION_BUDGET: GenerationBudget = {
-  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: 0.13, maxLatencyMs: 60000,
+  maxAttempts: 2, maxInputTokens: 20000, maxOutputTokens: 2500, maxCostUsd: MARKETING_DRAFT_MAX_COST_USD, maxLatencyMs: 60000,
 };
 /** Failures thrown by `createClaudeMarketingModel` before it sends any request. */
 const MARKETING_UNSENT_CALL_CODES: ReadonlySet<string> = new Set(["unsafe-native-tracing-enabled", "provider-sdk-setup-failed"]);
@@ -262,7 +263,7 @@ export type GenerationDependencies = {
   onUsage?(usage: GeneratedMarketingDraft["usage"]): void;
   /** Brief generation (#116): the stored source media (#114). Required for a brief; nothing is invoked without it. */
   loadDneskaiMedia?: LoadDneskaiMediaBytes;
-  /** Brief generation: the publisher names of the source lines. Defaults to the Instagram account or the host. */
+  /** Internal evidence labels for actor attribution, never post source lines/credits; defaults to account or host. */
   evidencePublishers?: DneskaiEvidencePublishers;
   /** Brief generation: the studio's deck gate. Defaults to `validateDneskaiDeck` from dneskai-render.ts. */
   validateDneskaiDeck?: (deck: DneskaiDeck, loadMedia: LoadDneskaiMediaBytes, signal?: AbortSignal) => Promise<DneskaiSlideRenderProblem[]>;

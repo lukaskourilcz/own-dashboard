@@ -3,31 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Eye, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDict } from "@/lib/i18n";
+import { useDict, useLang } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { qk } from "@/lib/queries/keys";
+import { loadProjectTraffic } from "@/lib/project-traffic-client";
 
-type TrafficResponse =
-  | { kind: "unconfigured" }
-  | { kind: "not-found" }
-  | { kind: "error" }
-  | {
-      kind: "ok";
-      projectId: string;
-      lifetime: { pageviews: number; visitors: number };
-      last30: { pageviews: number; visitors: number };
-      daily: { date: string; pageviews: number; visitors: number }[];
-    };
-
-async function loadTraffic(repo: string, repoId: number | null): Promise<TrafficResponse> {
-  const params = new URLSearchParams({ repo });
-  if (repoId != null) params.set("repoId", String(repoId));
-  const res = await fetch(`/api/vercel/analytics?${params.toString()}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return { kind: "error" };
-  return (await res.json()) as TrafficResponse;
-}
-
-const nf = new Intl.NumberFormat();
+const formats = { en: new Intl.NumberFormat("en-US"), cs: new Intl.NumberFormat("cs-CZ") };
 
 /** A minimal visitors sparkline (inline SVG) over the last 30 days. */
 function Sparkline({ values }: { values: number[] }) {
@@ -58,14 +40,14 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-function Metric({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: number }) {
+function Metric({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border bg-surface-inset px-3 py-2">
+    <div className="min-w-0 rounded-md border border-border bg-surface-inset px-3 py-2">
       <p className="inline-flex items-center gap-1.5 text-[11px] text-foreground-subtle">
         <Icon className="h-3 w-3" />
         {label}
       </p>
-      <p className="mt-0.5 text-lg font-semibold tabular">{nf.format(value)}</p>
+      <p className="mt-0.5 break-all text-lg font-semibold tabular">{value}</p>
     </div>
   );
 }
@@ -74,22 +56,29 @@ export function ProjectTraffic({
   repoFullName,
   repoId = null,
   enabled = true,
+  preview = false,
 }: {
   repoFullName: string;
   /** GitHub repository id; matches the Vercel project across renames. */
   repoId?: number | null;
   enabled?: boolean;
+  preview?: boolean;
 }) {
-  const p = useDict().professional;
+  const t = useDict(), p = t.professional, { lang } = useLang(), owner = useOwnerPreferences();
+  const ownerId = owner?.ownerId ?? "unavailable";
+  const active = enabled && !preview && !!owner && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId);
   const query = useQuery({
-    queryKey: ["vercel", "traffic", repoFullName, repoId],
-    queryFn: () => loadTraffic(repoFullName, repoId),
-    enabled,
-    staleTime: 5 * 60_000,
+    queryKey: [...qk.projectTraffic, ownerId, repoFullName, repoId],
+    queryFn: ({ signal }) => {
+      if (!owner) throw new Error("Traffic unavailable");
+      const captured = owner.capture();
+      return loadProjectTraffic(captured.ownerId, repoFullName, repoId, AbortSignal.any([signal, captured.signal]));
+    },
+    enabled: active, retry: false, staleTime: 5 * 60_000,
   });
-  const data = query.data;
-  // Existing analytics remain available; an absent integration is not a setup task.
-  if (data?.kind === "unconfigured") return null;
+  const data = query.data, nf = formats[lang];
+  if (!active || data?.kind === "unconfigured") return null;
+  const retry = () => { void query.refetch({ cancelRefetch: false }); };
 
   return (
     <Card>
@@ -101,10 +90,11 @@ export function ProjectTraffic({
         <p className="mt-1 text-xs text-foreground-subtle">{p.trafficDescription}</p>
       </CardHeader>
       <CardContent>
+        {query.isError && data && <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 text-sm text-risk"><p>{p.trafficError}</p><Button variant="outline" disabled={query.isFetching} onClick={retry}>{t.common.retry}</Button></div>}
         {query.isPending ? (
           <p className="text-sm text-foreground-muted">{p.trafficLoading}</p>
-        ) : !data || data.kind === "error" ? (
-          <p className="text-sm text-foreground-muted">{p.trafficError}</p>
+        ) : !data ? (
+          <div role="alert" className="space-y-2"><p className="text-sm text-foreground-muted">{p.trafficError}</p><Button variant="outline" disabled={query.isFetching} onClick={retry}>{t.common.retry}</Button></div>
         ) : data.kind === "not-found" ? (
           <p className="text-sm text-foreground-muted">{p.trafficNotFound}</p>
         ) : (
@@ -113,13 +103,13 @@ export function ProjectTraffic({
               {p.trafficLast30}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Metric icon={Users} label={p.trafficVisitors} value={data.last30.visitors} />
-              <Metric icon={Eye} label={p.trafficPageviews} value={data.last30.pageviews} />
+              <Metric icon={Users} label={p.trafficVisitors} value={nf.format(data.last30.visitors)} />
+              <Metric icon={Eye} label={p.trafficPageviews} value={nf.format(data.last30.pageviews)} />
             </div>
             <Sparkline values={data.daily.map((d) => d.visitors)} />
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-foreground-muted">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border pt-2 text-xs text-foreground-muted">
               <span>{p.trafficLifetime}</span>
-              <span className="tabular">
+              <span className="min-w-0 break-words tabular">
                 {nf.format(data.lifetime.visitors)} {p.trafficVisitors.toLowerCase()} ·{" "}
                 {nf.format(data.lifetime.pageviews)} {p.trafficPageviews.toLowerCase()}
               </span>

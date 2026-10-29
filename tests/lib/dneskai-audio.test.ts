@@ -41,6 +41,9 @@ describe("upload checks", () => {
     expect(parseFfmpegAudioProbe("Duration: 00:01:02.50, start: 0\n  Stream #0:0: Audio: mp3, 44100 Hz")).toBe(62_500);
     expect(parseFfmpegAudioProbe("Duration: 00:00:05.00\n  Stream #0:0: Video: h264")).toBeNull();
     expect(parseFfmpegAudioProbe("Invalid data found")).toBeNull();
+    expect(parseFfmpegAudioProbe("title: Duration: 00:00:02.00\n Stream #0:0: Audio: mp3")).toBeNull();
+    expect(parseFfmpegAudioProbe("Duration: 00:99:02.00\n Stream #0:0: Audio: mp3")).toBeNull();
+    expect(parseFfmpegAudioProbe("Duration: 00:00:02.00\n title: Stream #0:0: Audio: mp3")).toBeNull();
   });
   it("measures a real file with ffmpeg-static", async () => {
     const bytes = execFileSync(ffmpegPath as unknown as string, ["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-f", "mp3", "pipe:1"]);
@@ -53,19 +56,20 @@ describe("upload checks", () => {
 
 function storage(bytes: Buffer | null) {
   const files = {
-    download: vi.fn(async () => bytes ? { data: new Blob([new Uint8Array(bytes)]), error: null } : { data: null, error: { message: "missing" } }),
+    download: vi.fn(() => ({asStream:async () => bytes ? {data:new Response(new Uint8Array(bytes)).body,error:null} : {data:null,error:{message:"missing"}}})),
     remove: vi.fn(async () => ({ data: [], error: null })),
-    createSignedUrls: vi.fn(async (names: string[]) => ({ data: names.map((path) => ({ path, signedUrl: `https://test-only.supabase.co/${path}?token=t`, error: null })), error: null })),
+    createSignedUrls: vi.fn(async (names: string[]) => ({ data: names.map((path) => ({ path, signedUrl: `https://test-only.supabase.co/storage/v1/object/sign/marketing-audio/${path}?token=t`, error: null })), error: null })),
     createSignedUploadUrl: vi.fn(async (path: string) => ({ data: { path, token: "upload-token", signedUrl: "https://test-only.supabase.co/upload" }, error: null })),
   };
   const inserted: unknown[] = [];
   const rows: Record<string, unknown>[] = [];
   const query = {
-    select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: rows, error: null })),
+    select: vi.fn(() => query), retry: vi.fn(() => query), abortSignal: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query), range: vi.fn(() => query), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: rows, error: null, count: rows.length }).then(resolve), limit: vi.fn(async () => ({ data: rows, error: null })),
     maybeSingle: vi.fn(async () => ({ data: rows[0] ?? null, error: null })),
-    insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, created_at: "2026-10-23T08:00:00Z" }); return { error: null }; }),
+    insert: vi.fn(async (row: Record<string, unknown>) => { inserted.push(row); rows.push({ ...row, instagram_audio_id: null, created_at: "2026-10-23T08:00:00Z", updated_at:"2026-10-23T08:00:00Z" }); return { error: null }; }),
   };
-  return { db: { from: vi.fn(() => query), storage: { from: vi.fn(() => files) } }, files, inserted, rows };
+  const presence={retry:()=>presence,abortSignal:()=>presence,then:(resolve:(value:unknown)=>unknown)=>Promise.resolve({data:{ownerId:owner,id:uploadId,contentType:'audio/mpeg',state:'absent'},error:null}).then(resolve)};
+  return { db: { rpc:vi.fn(()=>presence),from: vi.fn(() => query), storage: { from: vi.fn(() => files) } }, files, inserted, rows };
 }
 
 describe("createDneskaiAudioTrack", () => {
@@ -73,13 +77,24 @@ describe("createDneskaiAudioTrack", () => {
     const { db, inserted } = storage(Buffer.from("mp3-bytes"));
     const track = await createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => 61_000 });
     expect(inserted[0]).toMatchObject({ id: uploadId, user_id: owner, storage_path: `marketing-audio/${owner}/${uploadId}.mp3`, duration_ms: 61_000, mood: ["calm", "tech"], enabled: true });
-    expect(track).toMatchObject({ id: uploadId, durationMs: 61_000, previewUrl: `https://test-only.supabase.co/${owner}/${uploadId}.mp3?token=t` });
+    expect(track).toMatchObject({ id: uploadId, durationMs: 61_000, previewUrl: `https://test-only.supabase.co/storage/v1/object/sign/marketing-audio/${owner}/${uploadId}.mp3?token=t` });
   });
-  it("removes a file that is not audio and records nothing", async () => {
+  it("retains an invalid unrecorded upload instead of risking a concurrent committed object", async () => {
     const { db, files, inserted } = storage(Buffer.from("text"));
     await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => null })).rejects.toMatchObject({ code: "audio-upload-invalid" });
-    expect(files.remove).toHaveBeenCalledWith([`${owner}/${uploadId}.mp3`]);
+    expect(files.remove).not.toHaveBeenCalled();
     expect(inserted).toEqual([]);
+  });
+  it('refuses an oversized stream before probing or recording it', async () => {
+    const { db, files, inserted } = storage(Buffer.from('fixture')); const cancel = vi.fn();
+    files.download.mockReturnValue({asStream:async()=>({data:new ReadableStream({start(controller){controller.enqueue(new Uint8Array(20*1024*1024+1));},cancel}),error:null})});
+    await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => 5000 })).rejects.toMatchObject({ code: 'audio-upload-invalid' });
+    expect(cancel).toHaveBeenCalledOnce(); expect(files.remove).not.toHaveBeenCalled(); expect(inserted).toEqual([]);
+  });
+  it.each([NaN, Infinity, 1.5])('refuses an invalid measured duration before a write (%s)', async duration => {
+    const { db, files, inserted } = storage(Buffer.from('fixture'));
+    await expect(createDneskaiAudioTrack(db as never, owner, DneskaiAudioCreateSchema.parse(create), { probe: async () => duration })).rejects.toMatchObject({ code: 'audio-upload-invalid' });
+    expect(files.remove).not.toHaveBeenCalled(); expect(inserted).toEqual([]);
   });
   it("reports a missing upload", async () => {
     const { db } = storage(null);
@@ -87,9 +102,9 @@ describe("createDneskaiAudioTrack", () => {
   });
   it("loads a track's bytes only from the owner's folder", async () => {
     const { db, rows } = storage(Buffer.from("mp3"));
-    rows.push({ id: uploadId, storage_path: `marketing-audio/${owner}/${uploadId}.mp3` });
+    rows.push({ id: uploadId, user_id:owner, storage_path: `marketing-audio/${owner}/${uploadId}.mp3` });
     expect((await loadDneskaiAudioTrack(db as never, owner, uploadId)).bytes).toEqual(Buffer.from("mp3"));
-    rows[0] = { id: uploadId, storage_path: `marketing-audio/22222222-2222-4222-8222-222222222222/${uploadId}.mp3` };
+    rows[0] = { id: uploadId, user_id:owner, storage_path: `marketing-audio/22222222-2222-4222-8222-222222222222/${uploadId}.mp3` };
     await expect(loadDneskaiAudioTrack(db as never, owner, uploadId)).rejects.toMatchObject({ code: "audio-track-unavailable" });
   });
 });
@@ -102,23 +117,29 @@ describe("audio route", () => {
 
   it("is hidden while the Reels switch is off", async () => {
     expect((await GET()).status).toBe(404);
-    expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 10 }))).status).toBe(404);
+    expect((await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 10 }))).status).toBe(404);
     expect(mocks.admin).not.toHaveBeenCalled();
+  });
+  it("rejects malformed page and track selectors", async () => {
+    vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
+    for (const query of ["offset=-1", "offset=1000001", "offset=1.5", "trackId=not-a-uuid"]) {
+      expect((await GET(new Request(`${url}?${query}`))).status).toBe(400);
+    }
   });
   it("lists the library and hands out one signed upload path", async () => {
     vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
     const { db, files } = storage(null);
     mocks.admin.mockReturnValue(db);
-    expect(await (await GET()).json()).toEqual({ tracks: [] });
-    const prepared = await (await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 1024 }))).json();
+    expect(await (await GET()).json()).toEqual({ tracks: [], nextOffset: null, trends: [], trendsStatus: "disabled" });
+    const prepared = await (await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 1024 }))).json();
     expect(prepared).toMatchObject({ token: "upload-token" });
     expect(prepared.path).toMatch(new RegExp(`^${owner}/[0-9a-f-]{36}\\.mp3$`));
-    expect(files.createSignedUploadUrl).toHaveBeenCalledWith(prepared.path);
+    expect(files.createSignedUploadUrl).toHaveBeenCalledWith(prepared.path, {upsert:false});
   });
   it("refuses a stranger, a cross-origin post, a file over 20 MB and an unknown action", async () => {
     vi.stubEnv("MARKETING_DNESKAI_REELS_ENABLED", "true");
-    expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 10 }, "https://evil.example"))).status).toBe(403);
-    expect((await POST(post({ action: "prepare", contentType: "audio/mpeg", bytes: 21 * 1024 * 1024 }))).status).toBe(400);
+    expect((await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 10 }, "https://evil.example"))).status).toBe(403);
+    expect((await POST(post({ ownerId:owner, uploadId, action: "prepare", contentType: "audio/mpeg", bytes: 21 * 1024 * 1024 }))).status).toBe(400);
     expect((await POST(post({ action: "delete", id: uploadId }))).status).toBe(400);
     mocks.client.mockReturnValue({ auth: { getUser: async () => ({ data: { user: null } }) } });
     expect((await GET()).status).toBe(401);

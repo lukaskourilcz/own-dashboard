@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-10-28T10:48:36.184Z",
+  "serverVersion": "17.11 (Postgres.app)",
+  "migrationSha256": "48fd2500bb0ba56096323fb907fedaa104e8831ce8964f809344216ea15ad715",
+  "credentialMigrationSha256": "598eb3b9e4a75376db2b66f9624e2b2a5a0bb065e936941debc72f5ee2e58bb2",
+  "controlMigrationSha256": "4c73b627418de7a94d08be7ea256f361f32ab8471fd91c3ad2c9c2504c55f467",
+  "accountWait": "transactionid",
+  "accountOutcome": "changed",
+  "credentialWait": "transactionid",
+  "credentialOutcome": "changed",
+  "rotatedCredentialRetained": true,
+  "absenceWait": "advisory",
+  "absenceOutcome": "changed",
+  "finalAccounts": 1,
+  "scope": "Two actual PostgreSQL connections, exact credential/control/verification migrations, minimal synthetic relevant account/auth tables; not a full native replay and no Production connection"
+}

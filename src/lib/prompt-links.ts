@@ -22,17 +22,23 @@ function toComposerLink(
   };
 }
 
-/** A prompt's links in order, as editor drafts. Missing links are skipped. */
+/** The complete stored list for editing, including unavailable resources.
+ * Omitting an off-page/missing resource here would silently delete its link.
+ */
+export function promptLinkDraftsForEdit(promptId: string, promptLinks: readonly PromptLink[]): PromptLinkDraft[] {
+  return promptLinks.filter(row => row.prompt_id === promptId)
+    .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
+    .map(row => ({ ai_link_id: row.ai_link_id, note: row.note }));
+}
+
+/** A prompt's resolvable links for composing clipboard text. */
 export function promptLinkDrafts(
   promptId: string,
   promptLinks: readonly PromptLink[],
   links: readonly AiLink[],
 ): PromptLinkDraft[] {
   const known = new Set(links.map((link) => link.id));
-  return promptLinks
-    .filter((row) => row.prompt_id === promptId && known.has(row.ai_link_id))
-    .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
-    .map((row) => ({ ai_link_id: row.ai_link_id, note: row.note }));
+  return promptLinkDraftsForEdit(promptId, promptLinks).filter(row => known.has(row.ai_link_id));
 }
 
 /** The prompt's own links for the copy composer. */
@@ -66,25 +72,6 @@ export function projectComposerLinks(
       const link = byId.get(row.ai_link_id);
       return link ? [toComposerLink(link, row.note, names)] : [];
     });
-}
-
-/**
- * The writes that make a prompt's stored links equal the editor's list:
- * rows to delete, and rows to upsert with their new note and position.
- */
-export function planPromptLinkSync(
-  promptId: string,
-  existing: readonly PromptLink[],
-  desired: readonly PromptLinkDraft[],
-): { removeIds: string[]; upserts: { ai_link_id: string; note: string; sort_order: number }[] } {
-  const current = existing.filter((row) => row.prompt_id === promptId);
-  const wanted = new Map(desired.map((draft, index) => [draft.ai_link_id, { ...draft, sort_order: index }]));
-  const removeIds = current.filter((row) => !wanted.has(row.ai_link_id)).map((row) => row.id);
-  const upserts = [...wanted.values()].filter((draft) => {
-    const row = current.find((item) => item.ai_link_id === draft.ai_link_id);
-    return !row || row.note !== draft.note.trim() || row.sort_order !== draft.sort_order;
-  }).map((draft) => ({ ai_link_id: draft.ai_link_id, note: draft.note.trim(), sort_order: draft.sort_order }));
-  return { removeIds, upserts };
 }
 
 /** Library links in the given categories, for pre-selecting the picker. */

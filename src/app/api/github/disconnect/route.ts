@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { revokeGitHubAccess } from "@/lib/github-token";
+import { rateLimit } from "@/lib/rate-limit";
 import { rejectCrossOrigin } from "@/lib/csrf";
 
 /**
@@ -20,15 +21,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
+  const limited = await rateLimit(user.id, { key: "github-disconnect", limit: 5, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
   try {
-    await revokeGitHubAccess(user.id);
-  } catch (err) {
-    console.error("[api/github/disconnect] revoke failed:", err);
+    const receipt = await revokeGitHubAccess(user.id);
+    return NextResponse.json({ ok: true, ...receipt }, { headers: { "cache-control": "private, no-store" } });
+  } catch {
     return NextResponse.json(
       { error: "Could not disconnect GitHub." },
       { status: 500 },
     );
   }
-
-  return NextResponse.json({ ok: true });
 }

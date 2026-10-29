@@ -35,6 +35,7 @@ const editorSchema = BlockNoteSchema.create({
 export type NoteEditorHandle = {
   toMarkdown: () => Promise<string>;
   insertNoteLink: (noteId: string, title: string) => void;
+  getDocument: () => { title: string; content: Block[]; plainText: string };
 };
 
 /** Internal href format for an in-app note link. Parsed by the click
@@ -49,7 +50,12 @@ type Props = {
     content: Block[];
     plainText: string;
   }) => void;
+  /** Project notes need the same captured document even while refs detach on unmount. */
+  onMarkdownChange?: (markdown: string) => void;
+  /** Cheap immediate notification; persistence still uses the debounce. */
+  onDirtyChange?: () => void;
   handleRef?: React.RefObject<NoteEditorHandle | null>;
+  editable?: boolean;
   /** Called when the user picks the "Link to note" slash menu item. The
    * parent is expected to open a notes picker and then call
    * `handle.insertNoteLink(id, title)` once a note is chosen. */
@@ -75,7 +81,10 @@ function extractTitle(doc: Block[], fallback: string): string {
 export function NoteEditor({
   initialContent,
   onChange,
+  onMarkdownChange,
+  onDirtyChange,
   handleRef,
+  editable = true,
   onRequestNoteLink,
   onNavigateToNote,
 }: Props) {
@@ -116,20 +125,27 @@ export function NoteEditor({
     const host = hostRef.current;
     if (!host) return;
     const applyLabel = () => {
-      const editable = host.querySelector<HTMLElement>(".tiptap");
-      if (editable?.getAttribute("aria-label") !== t.notes.editorLabel) {
-        editable?.setAttribute("aria-label", t.notes.editorLabel);
+      const input = host.querySelector<HTMLElement>(".tiptap");
+      if (input?.getAttribute("aria-label") !== t.notes.editorLabel) {
+        input?.setAttribute("aria-label", t.notes.editorLabel);
       }
+      input?.setAttribute("aria-readonly", String(!editable));
+      if (input && !editable) input.tabIndex = 0;
+      input?.classList.toggle("focus-ring", !editable);
     };
     applyLabel();
     const observer = new MutationObserver(applyLabel);
     observer.observe(host, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [editor, t.notes.editorLabel]);
+  }, [editor, editable, t.notes.editorLabel]);
 
   useImperativeHandle(
     handleRef ?? { current: null },
     () => ({
+      getDocument: () => {
+        const content = editor.document as Block[];
+        return { title: extractTitle(content, t.notes.untitled), content, plainText: blocksToPlainText(content) };
+      },
       toMarkdown: async () => {
         return await editor.blocksToMarkdownLossy(editor.document as Block[]);
       },
@@ -147,25 +163,30 @@ export function NoteEditor({
         editor.focus();
       },
     }),
-    [editor],
+    [editor, t.notes.untitled],
   );
 
   // Debounced onChange — fire 600ms after the last edit.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const changedRef = useRef(false);
   const onChangeRef = useRef(onChange);
+  const onMarkdownChangeRef = useRef(onMarkdownChange);
+  const onDirtyChangeRef = useRef(onDirtyChange);
   const onLinkRef = useRef(onRequestNoteLink);
   const titleFallbackRef = useRef(t.notes.untitled);
   useEffect(() => {
     onChangeRef.current = onChange;
+    onMarkdownChangeRef.current = onMarkdownChange;
+    onDirtyChangeRef.current = onDirtyChange;
     onLinkRef.current = onRequestNoteLink;
     titleFallbackRef.current = t.notes.untitled;
-  }, [onChange, onRequestNoteLink, t]);
+  }, [onChange, onMarkdownChange, onDirtyChange, onRequestNoteLink, t]);
 
   useEffect(() => {
     if (!editor) return;
     const unsubscribe = editor.onChange(() => {
       changedRef.current = true;
+      onDirtyChangeRef.current?.();
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         const doc = editor.document as Block[];
@@ -174,6 +195,7 @@ export function NoteEditor({
           content: doc,
           plainText: blocksToPlainText(doc),
         });
+        onMarkdownChangeRef.current?.(editor.blocksToMarkdownLossy(doc));
         changedRef.current = false;
         timerRef.current = null;
       }, 600);
@@ -187,6 +209,7 @@ export function NoteEditor({
           content: doc,
           plainText: blocksToPlainText(doc),
         });
+        onMarkdownChangeRef.current?.(editor.blocksToMarkdownLossy(doc));
       }
       if (typeof unsubscribe === "function") unsubscribe();
     };
@@ -207,8 +230,15 @@ export function NoteEditor({
   }
 
   return (
-    <div ref={hostRef} className="bn-host" onClickCapture={onClickCapture}>
+    <div ref={hostRef} className="bn-host" onClickCapture={onClickCapture} onKeyDownCapture={event => {
+      if (editable || !(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== "a") return;
+      const input = hostRef.current?.querySelector<HTMLElement>(".tiptap");
+      if (!input || !input.contains(event.target as Node)) return;
+      const selection = input.ownerDocument.getSelection();
+      if (selection) { event.preventDefault(); selection.selectAllChildren(input); }
+    }}>
       <BlockNoteView
+        editable={editable}
         editor={editor}
         theme={theme === "dark" ? "dark" : "light"}
         slashMenu={false}

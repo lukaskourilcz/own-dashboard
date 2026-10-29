@@ -1,3 +1,4 @@
+import { projectLinkUsageByLink } from "@/lib/project-links";
 import type { AiCategory, AiLink, Project, ProjectLink } from "@/lib/types";
 
 /** Older descriptions embedded a score; the structured review supersedes it. */
@@ -69,15 +70,10 @@ export function buildLinkExport(
   const names = new Map(categories.map((category) => [category.id, category.name]));
   const scope = options.scope ?? "all";
   const selection = options.selection ?? "all";
-  const projectsById = new Map((options.relations?.projects ?? []).map((project) => [project.id, project]));
-  const usedBy = (linkId: string) =>
-    (options.relations?.projectLinks ?? [])
-      .filter((relation) => relation.ai_link_id === linkId && projectsById.has(relation.project_id))
-      .map((relation) => {
-        const project = projectsById.get(relation.project_id)!;
-        return { project: project.name, slug: project.slug, role: relation.role, note: relation.note };
-      })
-      .sort((a, b) => a.project.localeCompare(b.project));
+  const usage = projectLinkUsageByLink(options.relations?.projectLinks ?? [], options.relations?.projects ?? []);
+  const usedBy = (linkId: string) => (usage.get(linkId) ?? []).map(({ project, relation }) => ({
+    project: project.name, slug: project.slug, role: relation.role, note: relation.note,
+  }));
   return {
     // 3 added `usedBy`: the projects that use each link (project_links).
     // 4 adds `group` and `summary`: an IG tip's topic and its card text.
@@ -123,7 +119,7 @@ export function shapeLinkExport(data: LinkExportData, shape: LinkExportShape) {
     const groups = new Map<string, LinkExportData["items"]>();
     for (const item of data.items) {
       const category = item.category ?? "Uncategorized";
-      groups.set(category, [...(groups.get(category) ?? []), item]);
+      const items = groups.get(category) ?? []; items.push(item); groups.set(category, items);
     }
     return {
       version: data.version,

@@ -80,3 +80,21 @@ describe('DNESKAi workspace client: decisions 6, 8 and 9', () => {
     await expect(liveDneskaiWorkspaceApi.generateNow(id)).rejects.toMatchObject({ code: 'dneskai-daily-generation-budget-exhausted' });
   });
 });
+
+
+it('preserves numeric and HTTP-date Retry-After cooldowns without exposing response text', async () => {
+  stub(Response.json({ error: 'rate-limited' }, { status: 429, headers: { 'Retry-After': '15' } }));
+  await expect(liveDneskaiWorkspaceApi.decide('00000000-0000-4000-8000-000000000002', 'skipped')).rejects.toMatchObject({ retryAfterMs: 15000 });
+  const deadline = new Date(Date.now() + 30000).toUTCString();
+  stub(new Response('', { status: 503, headers: { 'Retry-After': deadline } }));
+  try { await liveDneskaiWorkspaceApi.decide('00000000-0000-4000-8000-000000000002', 'skipped'); }
+  catch (error) { expect((error as DneskaiWorkspaceRequestError).retryAfterMs).toBeGreaterThan(28000); }
+});
+
+it('binds the Calendar response contract to its requested complete view',async()=>{
+ const base=createDneskaiWorkspaceFixture(new Date('2026-10-28T10:00:00Z')),project='22222222-2222-4222-8222-222222222222';
+ let calls=stub(Response.json({...base,calendarComplete:true}));
+ expect((await liveDneskaiWorkspaceApi.loadReview(project,undefined,undefined,'calendar')).calendarComplete).toBe(true);expect(new URL(calls[0]!.url,'https://own.example').searchParams.get('view')).toBe('calendar');
+ stub(Response.json(base));await expect(liveDneskaiWorkspaceApi.loadReview(project,undefined,undefined,'calendar')).rejects.toMatchObject({code:'dneskai-workspace-unavailable'});
+ calls=stub(Response.json({...base,calendarComplete:true}));await expect(liveDneskaiWorkspaceApi.loadReview(project)).rejects.toMatchObject({code:'dneskai-workspace-unavailable'});expect(new URL(calls[0]!.url,'https://own.example').searchParams.has('view')).toBe(false);
+});

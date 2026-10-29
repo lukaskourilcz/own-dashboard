@@ -1,0 +1,22 @@
+{
+  "engine": "PostgreSQL 17.11 (Postgres.app) on aarch64-apple-darwin23.6.0, compiled by Apple clang version 15.0.0 (clang-1500.3.9.4), 64-bit",
+  "database": "audit_workspace_412_1793289845641",
+  "syntheticOnly": true,
+  "canonicalMigrationCount": 152,
+  "workConnections": 2,
+  "observationConnection": true,
+  "readerWaitObserved": true,
+  "first": {
+    "name": "before",
+    "title": "before",
+    "complete": true
+  },
+  "next": {
+    "name": "after",
+    "title": "after",
+    "complete": true
+  },
+  "migration": "20261029155500_marketing_workspace_snapshot.sql",
+  "migrationSha256": "be72c4ae0aed5698a449b06c089189d114ecac10abef7a8dd52a2c6c43a3f5ae",
+  "scope": "Full local canonical chain with service stand-ins; observed concurrent commit across one stable authenticated statement and a subsequent statement. Not managed Production, deployed latency or billing evidence."
+}

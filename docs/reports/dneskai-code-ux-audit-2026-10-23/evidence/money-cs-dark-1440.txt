@@ -1,0 +1,346 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz" [active]:
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Přehled peněz" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - generic: Zobrazit v
+  - combobox "Zobrazit v":
+    - generic: CZK
+  - button "Spravovat předplatná":
+    - text: Spravovat předplatná
+  - paragraph: Opakované měsíčně
+  - paragraph: 2 806,05 Kč
+  - paragraph: "Opakované ročně: 33 672,56 Kč · Zaplaceno za posledních 12 měsíců: 2 899,53 Kč"
+  - paragraph: 468,84 Kč měsíčně u 2 předplatných, kde částka nebyla porovnána s fakturou.
+  - generic: Vlastní projekty
+  - paragraph: 2 255,81 Kč
+  - paragraph: 80%
+  - generic: Klientská práce
+  - paragraph: 430,23 Kč
+  - paragraph: 15%
+  - generic: Nepřiřazeno
+  - paragraph: 120,00 Kč
+  - paragraph: 4%
+  - generic: Měsíční výdaje na vývoj
+  - paragraph: Závazky = předplatná aktivní v daném měsíci přepočtená na měsíc. Zaplaceno = faktury a jednorázové nákupy zaznamenané jako transakce.
+  - list:
+    - img "Zaplaceno legend icon"
+    - text: Zaplaceno
+    - img "Závazky legend icon"
+    - text: Závazky
+  - application:
+    - generic: lis
+    - generic: pro
+    - generic: led
+    - generic: úno
+    - generic: bře
+    - generic: dub
+    - generic: kvě
+    - generic: čvn
+    - generic: čvc
+    - generic: srp
+    - generic: zář
+    - generic: říj
+    - generic: "0"
+    - generic: "450"
+    - generic: "900"
+    - generic: "1350"
+    - generic: "1800"
+  - generic: Podle projektu
+  - application
+  - list:
+    - generic: DNESKAi
+    - generic: 1 476,74 Kč
+    - generic: Acme customer portal
+    - generic: 430,23 Kč
+    - generic: own-dashboard
+    - generic: 430,23 Kč
+    - generic: Design Lab
+    - generic: 348,84 Kč
+    - generic: Nepřiřazeno
+    - generic: 120,00 Kč
+  - generic: Podle dodavatele
+  - application
+  - list:
+    - generic: Supabase
+    - generic: 581,40 Kč
+    - generic: Vercel
+    - generic: 465,12 Kč
+    - generic: Mobbin
+    - generic: 348,84 Kč
+    - generic: Figma
+    - generic: 120,00 Kč
+  - generic: Podle projektu
+  - paragraph: Přiřazené podíly se řídí předplatným; zaplacené faktury dědí stejné rozdělení.
+  - table:
+    - rowgroup:
+      - row "Projekt Typ spolupráce Měsíčně Ročně Jednorázově (12 měs.) Zaplaceno (12 měs.) Podíl":
+        - columnheader "Projekt"
+        - columnheader "Typ spolupráce"
+        - columnheader "Měsíčně"
+        - columnheader "Ročně"
+        - columnheader "Jednorázově (12 měs.)"
+        - columnheader "Zaplaceno (12 měs.)"
+        - columnheader "Podíl"
+    - rowgroup:
+      - row "DNESKAi Vlastní 1 476,74 Kč 17 720,93 Kč 0,00 Kč 834,23 Kč 53%":
+        - cell "DNESKAi":
+          - button "DNESKAi"
+        - cell "Vlastní":
+          - generic: Vlastní
+        - cell "1 476,74 Kč"
+        - cell "17 720,93 Kč"
+        - cell "0,00 Kč"
+        - cell "834,23 Kč"
+        - cell "53%"
+      - row "Acme customer portal Freelance 430,23 Kč 5 162,79 Kč 0,00 Kč 916,37 Kč 15%":
+        - cell "Acme customer portal":
+          - button "Acme customer portal"
+        - cell "Freelance":
+          - generic: Freelance
+        - cell "430,23 Kč"
+        - cell "5 162,79 Kč"
+        - cell "0,00 Kč"
+        - cell "916,37 Kč"
+        - cell "15%"
+      - row "own-dashboard Vlastní 430,23 Kč 5 162,79 Kč 0,00 Kč 916,37 Kč 15%":
+        - cell "own-dashboard":
+          - button "own-dashboard"
+        - cell "Vlastní":
+          - generic: Vlastní
+        - cell "430,23 Kč"
+        - cell "5 162,79 Kč"
+        - cell "0,00 Kč"
+        - cell "916,37 Kč"
+        - cell "15%"
+      - row "Design Lab Součást boardlessAI Vlastní 348,84 Kč 4 186,05 Kč 0,00 Kč 0,00 Kč 12%":
+        - cell "Design Lab Součást boardlessAI":
+          - button "Design Lab"
+          - text: Součást boardlessAI
+        - cell "Vlastní":
+          - generic: Vlastní
+        - cell "348,84 Kč"
+        - cell "4 186,05 Kč"
+        - cell "0,00 Kč"
+        - cell "0,00 Kč"
+        - cell "12%"
+      - row "boardlessAI Vlastní 0,00 Kč 0,00 Kč 232,56 Kč 232,56 Kč 0%":
+        - cell "boardlessAI":
+          - button "boardlessAI"
+        - cell "Vlastní":
+          - generic: Vlastní
+        - cell "0,00 Kč"
+        - cell "0,00 Kč"
+        - cell "232,56 Kč"
+        - cell "232,56 Kč"
+        - cell "0%"
+      - row "Nepřiřazeno 120,00 Kč 1 440,00 Kč 4%":
+        - cell "Nepřiřazeno"
+        - cell "120,00 Kč"
+        - cell "1 440,00 Kč"
+        - cell
+        - cell "4%"
+  - generic: Podle dodavatele
+  - paragraph: Částka převzatá z oznámení o obnovení nebo ze změny ceny je odhad, dokud se neotevře faktura. Ověřte ji v Předplatných; pozdější změna částky ověření zruší.
+  - table:
+    - rowgroup:
+      - row "Dodavatel Plán Částka Měsíčně Od Další platba Přiřazeno Stav":
+        - columnheader "Dodavatel"
+        - columnheader "Plán"
+        - columnheader "Částka"
+        - columnheader "Měsíčně"
+        - columnheader "Od"
+        - columnheader "Další platba"
+        - columnheader "Přiřazeno"
+        - columnheader "Stav"
+    - rowgroup:
+      - row "Supabase Pro $25.00 · Měsíčně Částka ověřena 2026-09-06 581,40 Kč 2026-08-24 2026-11-04 own-dashboard · 50% Acme customer portal · 50% Běží":
+        - cell "Supabase":
+          - generic: S
+          - generic: Supabase
+        - cell "Pro"
+        - cell "$25.00 · Měsíčně Částka ověřena 2026-09-06":
+          - text: $25.00 · Měsíčně
+          - generic: Částka ověřena 2026-09-06
+        - cell "581,40 Kč"
+        - cell "2026-08-24"
+        - cell "2026-11-04"
+        - cell "own-dashboard · 50% Acme customer portal · 50%":
+          - generic: own-dashboard · 50%
+          - generic: Acme customer portal · 50%
+        - cell "Běží":
+          - generic: Běží
+      - row "Vercel Shared by every deployed project. Pro $20.00 · Měsíčně Částka ověřena 2026-10-05 465,12 Kč 2026-08-24 2026-11-04 DNESKAi · 40% own-dashboard · 30% Acme customer portal · 30% Běží":
+        - cell "Vercel Shared by every deployed project.":
+          - text: Vercel
+          - generic: Shared by every deployed project.
+        - cell "Pro"
+        - cell "$20.00 · Měsíčně Částka ověřena 2026-10-05":
+          - text: $20.00 · Měsíčně
+          - generic: Částka ověřena 2026-10-05
+        - cell "465,12 Kč"
+        - cell "2026-08-24"
+        - cell "2026-11-04"
+        - cell "DNESKAi · 40% own-dashboard · 30% Acme customer portal · 30%":
+          - generic: DNESKAi · 40%
+          - generic: own-dashboard · 30%
+          - generic: Acme customer portal · 30%
+        - cell "Běží":
+          - generic: Běží
+      - row "Mobbin Quarterly invoice; the amount comes from the renewal notice, not from the receipt. Pro $45.00 · Čtvrtletně Částka neověřena 348,84 Kč 2026-10-03 2027-01-01 Design Lab · 100% Běží":
+        - cell "Mobbin Quarterly invoice; the amount comes from the renewal notice, not from the receipt.":
+          - generic: M
+          - text: Mobbin
+          - generic: Quarterly invoice; the amount comes from the renewal notice, not from the receipt.
+        - cell "Pro"
+        - cell "$45.00 · Čtvrtletně Částka neověřena":
+          - text: $45.00 · Čtvrtletně
+          - generic: Částka neověřena
+        - cell "348,84 Kč"
+        - cell "2026-10-03"
+        - cell "2027-01-01"
+        - cell "Design Lab · 100%":
+          - generic: Design Lab · 100%
+        - cell "Běží":
+          - generic: Běží
+      - row "Figma Professional 1 440,00 Kč · Ročně Částka neověřena 120,00 Kč 2026-02-20 2027-02-20 Nepřiřazeno Běží":
+        - cell "Figma":
+          - generic: Figma
+        - cell "Professional"
+        - cell "1 440,00 Kč · Ročně Částka neověřena":
+          - text: 1 440,00 Kč · Ročně
+          - generic: Částka neověřena
+        - cell "120,00 Kč"
+        - cell "2026-02-20"
+        - cell "2027-02-20"
+        - cell "Nepřiřazeno":
+          - generic: Nepřiřazeno
+        - cell "Běží":
+          - generic: Běží
+      - row "UptimeRobot Downgraded to the free plan. Solo 9,68 € · Měsíčně 243,13 Kč 2026-06-25 – 2026-10-04 2026-10-04 Nepřiřazeno Ukončeno":
+        - cell "UptimeRobot Downgraded to the free plan.":
+          - generic: U
+          - text: UptimeRobot
+          - generic: Downgraded to the free plan.
+        - cell "Solo"
+        - cell "9,68 € · Měsíčně"
+        - cell "243,13 Kč"
+        - cell "2026-06-25 – 2026-10-04"
+        - cell "2026-10-04"
+        - cell "Nepřiřazeno":
+          - generic: Nepřiřazeno
+        - cell "Ukončeno":
+          - generic: Ukončeno
+  - paragraph: "Ruční nákladové položky a automatizace: 1 290,70 Kč"
+  - text: Platby za vývoj
+  - list:
+    - generic: 2026-10-05
+    - paragraph: Vercel Pro + usage invoice
+    - paragraph: Hradí Vercel
+    - generic: $65.48
+    - generic: 2026-09-23
+    - paragraph: fal.ai credit top-up
+    - paragraph: boardlessAI
+    - generic: $10.00
+    - generic: 2026-09-06
+    - paragraph: Supabase Pro invoice
+    - paragraph: Hradí Supabase
+    - generic: $25.00
+    - generic: 2026-09-05
+    - paragraph: Vercel Pro invoice
+    - paragraph: Hradí Vercel
+    - generic: $24.20
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert
+- generic: "0"

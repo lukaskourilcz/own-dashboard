@@ -260,13 +260,16 @@ export class SupabaseEmulator {
     const single = (request.headers.get('accept') ?? '').includes('application/vnd.pgrst.object+json');
     const method = request.method.toUpperCase();
     const body = method === 'GET' || method === 'HEAD' || method === 'DELETE' ? null : await request.text();
+    let exactCount: number | undefined;
     const rows = await this.serialized(role, async (tx) => {
       const builder = new SqlBuilder();
       if (method === 'GET' || method === 'HEAD') {
         const object = await this.objectSql(tx, builder, table, 't0', items, filters, 0);
         const where = [...filterSql(builder, 't0', filters.own), ...object.inner];
         const limit = url.searchParams.get('limit'), offset = url.searchParams.get('offset');
-        const sql = `select ${object.sql} as row from public.${ident(table)} t0${where.length ? ` where ${where.join(' and ')}` : ''}${this.orderSql('t0', url.searchParams.get('order'))}`
+        const base = `select ${object.sql} as row from public.${ident(table)} t0${where.length ? ` where ${where.join(' and ')}` : ''}`;
+        if (/(?:^|,)\s*count=exact(?:,|$)/.test(prefer)) exactCount = Number((await tx.query<{ total: string }>(`select count(*) total from (${base}) counted`, builder.params)).rows[0]!.total);
+        const sql = base + this.orderSql('t0', url.searchParams.get('order'))
           + `${limit !== null ? ` limit ${Number.parseInt(limit, 10)}` : ''}${offset !== null ? ` offset ${Number.parseInt(offset, 10)}` : ''}`;
         return (await tx.query<{ row: unknown }>(sql, builder.params)).rows.map((row) => row.row);
       }
@@ -305,7 +308,8 @@ export class SupabaseEmulator {
       if (rows.length !== 1) throw new PostgrestHttpError(406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned', details: `The result contains ${rows.length} rows`, hint: null });
       return Response.json(rows[0], { status: method === 'POST' ? 201 : 200 });
     }
-    return Response.json(rows, { status: method === 'POST' ? 201 : 200 });
+    const offset = Number.parseInt(url.searchParams.get('offset') ?? '0', 10);
+    return Response.json(rows, { status: method === 'POST' ? 201 : 200, ...(exactCount === undefined ? {} : { headers: { 'Content-Range': `${rows.length ? `${offset}-${offset+rows.length-1}` : '*'}/${exactCount}` } }) });
   }
 
   private async rpc(request: Request, role: Role, name: string): Promise<Response> {
@@ -322,7 +326,7 @@ export class SupabaseEmulator {
         const value = args[key];
         const bound = value === null || value === undefined ? null
           : type === 'json' || type === 'jsonb' ? JSON.stringify(value)
-            : type.endsWith('[]') ? (Array.isArray(value) ? `{${value.map((item) => `"${String(item).replace(/(["\\])/g, '\\$1')}"`).join(',')}}` : String(value))
+            : type.endsWith('[]') ? (Array.isArray(value) ? `{${value.map((item) => item === null ? 'NULL' : `"${String(item).replace(/(["\\])/g, '\\$1')}"`).join(',')}}` : String(value))
               : typeof value === 'object' ? JSON.stringify(value) : String(value);
         return `${ident(key)} => ${builder.bind(bound)}::${type}`;
       }).join(', ')})`;

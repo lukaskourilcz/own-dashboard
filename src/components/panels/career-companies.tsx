@@ -55,8 +55,8 @@ export function CareerCompanies({ userId, isPreview = false }: { userId: string;
     <section className="space-y-4">
       <p className="max-w-3xl text-sm text-foreground-muted">
         {cs
-          ? `${companies.length} přímých kariérních odkazů pro Oslo a Norsko. Jde o adresář firem, ne seznam aktuálních vhodných pozic. Odkazy prověřeny 16. 10. 2026; nabídky, stack a jazyk ověřte u konkrétní role.`
-          : `${companies.length} direct career destinations for Oslo and Norway. This is an employer directory, not a list of matching live vacancies. Links checked October 16, 2026; verify each role’s stack and language.`}
+          ? `${companies.length} přímých kariérních odkazů. Jde o adresář firem, ne seznam aktuálních vhodných pozic. Veřejná norská část vychází z průzkumu 16. 10. 2026; nabídky, stack a jazyk ověřte u konkrétní role.`
+          : `${companies.length} direct employer career links. This is a directory, not a list of matching live vacancies. The public Norway directory was researched October 16, 2026; verify each role’s stack and language.`}
       </p>
       {!isPreview && directory.isPending && <p role="status">{cs ? "Načítám firmy…" : "Loading companies…"}</p>}
       {!isPreview && directory.isError && <div role="alert"><p>{cs ? "Firmy se nepodařilo načíst." : "Could not load companies."}</p><Button variant="outline" onClick={() => directory.refetch()}>{cs ? "Zkusit znovu" : "Retry"}</Button></div>}

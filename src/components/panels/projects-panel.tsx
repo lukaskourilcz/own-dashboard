@@ -1,18 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistance } from "date-fns";
 import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
+  useDndContext,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
+  type DragOverEvent,
+  type DragCancelEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -25,12 +29,12 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   AlertTriangle,
   Check,
-  ChevronDown,
   CircleDashed,
   Clock,
   ExternalLink,
   FolderKanban,
   GripVertical,
+  ListFilter,
   Pencil,
   Plus,
   Power,
@@ -55,28 +59,42 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
-import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { useGuardedNavigation, useUnsavedDraft } from "@/components/navigation-guard";
+import { applyProjectOrder, reorderOwnedProjects } from "@/lib/project-order";
 import { GithubIcon } from "@/components/icons/github";
+import { useProjectNotesAutosave } from "@/components/projects/use-project-notes-autosave";
+import { useProjectPreferencesSave } from "@/components/projects/use-project-preferences-save";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { useProjectDeletion } from "@/components/projects/use-project-deletion";
+import { useProjectDetailsForm, automaticProjectSlug, projectSlug as slugify } from "@/components/projects/use-project-details-form";
+import type { NoteEditorHandle } from "@/components/notes/note-editor";
 import { ProjectNotesEditor } from "@/components/projects/project-notes-editor";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Markdown } from "@/components/ui/markdown";
-import { NEW_PROJECT_GUIDE } from "@/lib/new-project-guide";
+import { NEW_PROJECT_GUIDE, NEW_PROJECT_GUIDE_CS } from "@/lib/new-project-guide";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { qk } from "@/lib/queries/keys";
+import { useNow } from "@/lib/use-now";
+import { buildOccurrences } from "@/lib/important-dates";
+import { todayKey } from "@/lib/date-keys";
 import { useReposQuery } from "@/lib/github-queries";
+import { RepositoryFilterDialog } from "@/components/github/repository-filter-dialog";
+import { useRepositoryFilterSave } from "@/components/github/use-repository-filter-save";
 import {
-  readRepoFilter,
+  useRepositoryFilter,
 } from "@/lib/use-prefs";
 import { cronSeedsForProject } from "@/lib/project-cron-seeds";
 import {
   planRepositorySync,
   repositoryIdentityUpdate,
-  taskBelongsToProject,
+  buildProjectTaskIndex,
+  type ProjectTaskIndex,
   unresolvedRepositoryProjects,
   type ProjectRepoUpdate,
 } from "@/lib/project-match";
@@ -96,6 +114,7 @@ import {
   groupProjectsByEngagement,
   projectEngagement,
   projectMonthlyIn,
+  indexProjectRecords,
 } from "@/lib/projects";
 import type {
   AiCategory,
@@ -112,7 +131,6 @@ import type {
   Project,
   ProjectCommunication,
   ProjectCost,
-  ProjectEngagement,
   ProjectLink,
   Prompt,
   PromptLink,
@@ -131,36 +149,9 @@ const CategoryDonut = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-full w-full" /> },
 );
 
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-type ProjectForm = {
-  id?: string;
-  name: string;
-  slug: string;
-  repo_full_name: string;
-  url: string;
-  dev_url: string;
-  engagement: ProjectEngagement;
-  organization_id: string;
-};
-
-const emptyProjectForm: ProjectForm = {
-  name: "",
-  slug: "",
-  repo_full_name: "",
-  url: "",
-  dev_url: "",
-  engagement: "own",
-  organization_id: "",
-};
-
 type ProjectsPanelProps = {
+  taskIndex?: ProjectTaskIndex;
+  initialProjectTab?: string;
   projects: Project[];
   setProjects: Updater<Project[]>;
   costs: ProjectCost[];
@@ -170,6 +161,7 @@ type ProjectsPanelProps = {
   displayCurrency: string;
   setDisplayCurrency?: (next: string) => void;
   initialVisibleIds?: string[];
+  repositoryPreferencesAvailable?: boolean;
   selectedProjectId?: string;
   onOpenProject: (project: Project) => void;
   todos: Todo[];
@@ -197,8 +189,13 @@ type ProjectsPanelProps = {
   setProjectLinks: Updater<ProjectLink[]>;
   promptLinks: PromptLink[];
   competitors: Competitor[];
+  competitorsRefreshFailed?: boolean;
   setCompetitors: Updater<Competitor[]>;
   syncRepositories?: boolean;
+  /** Isolated fake-backend harness only; other marketing actions stay in preview. */
+  previewSourceSettingsIntegration?: boolean;
+  previewMusicIntegration?: boolean;
+  previewAccountIntegration?: boolean;
   /** Fixture previews never write; the registry sync is skipped there. */
   isPreview?: boolean;
 };
@@ -209,11 +206,16 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     : null;
   if (selected) {
     return <ProjectWorkspace
+      initialProjectTab={props.initialProjectTab}
+      previewMusicIntegration={props.previewMusicIntegration}
+      previewAccountIntegration={props.previewAccountIntegration}
+      previewSourceSettingsIntegration={props.previewSourceSettingsIntegration}
       project={selected}
       allProjects={props.projects}
       costs={props.costs.filter((item) => item.project_id === selected.id)}
       crons={props.crons.filter((item) => item.project_id === selected.id)}
       todos={props.todos}
+      taskIndex={props.taskIndex}
       notes={props.notes}
       setNotes={props.setNotes}
       invoices={props.invoices}
@@ -237,6 +239,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       projectLinks={props.projectLinks}
       setProjectLinks={props.setProjectLinks}
       promptLinks={props.promptLinks}
+      competitorsRefreshFailed={props.competitorsRefreshFailed}
       competitors={props.competitors}
       setCompetitors={props.setCompetitors}
       onOpenProject={props.onOpenProject}
@@ -249,6 +252,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
 }
 
 function ProjectsListPanel({
+  taskIndex,
   projects,
   setProjects,
   costs,
@@ -257,7 +261,8 @@ function ProjectsListPanel({
   setCrons,
   displayCurrency,
   setDisplayCurrency,
-  initialVisibleIds = [],
+  initialVisibleIds,
+  repositoryPreferencesAvailable = true,
   syncRepositories = true,
   isPreview = false,
   todos,
@@ -268,34 +273,45 @@ function ProjectsListPanel({
   onOpenProject,
   setProjectLinks,
 }: ProjectsPanelProps) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
+  const projectPreferences = useProjectPreferencesSave(setProjects);
   const t = useDict();
+  const dragContextId = useId();
   const { lang } = useLang();
   const toast = useToast();
-  const confirm = useConfirmation();
-  const [form, setForm] = useState<ProjectForm>(emptyProjectForm);
-  const [formOpen, setFormOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [manageProjectId, setManageProjectId] = useState<string | null>(null);
+  const orderingRef = useRef(false);
+  const [ordering, setOrdering] = useState(false);
+  useUnsavedDraft({ dirty: false, pending: ordering, canSave: false, save: async () => false });
+  const requestNavigation = useGuardedNavigation();
+  const [managedProject, setManagedProject] = useState<Project | null>(null);
+  const details = useProjectDetailsForm(projects, setProjects, () => setManagedProject(null));
+  const { form, setForm, formOpen, saving, reloading, error, formConflict, valid, submitProject, openNewProject, startEditProject, reloadProjectDetails, closeForm } = details;
+  const currentManagedProject = projects.find(project => project.id === managedProject?.id && project.user_id === managedProject.user_id);
+  // Retain the latest confirmed snapshot when an external removal arrives.
+  // Keeping the same keyed operations/editor instance preserves its draft.
+  if (currentManagedProject && currentManagedProject !== managedProject) setManagedProject(currentManagedProject);
+  const now = useNow();
+  const costDay = now ? todayKey(now) : null;
+  const projectTasks = useMemo(() => taskIndex ?? buildProjectTaskIndex(projects, todos), [taskIndex, projects, todos]);
 
   // --- Sync active Repositories → Projects -------------------------------
-  // The active repos are the shared Repositories allow-list applied to the live
-  // repo list (empty allow-list = all repos) — the same set the Repositories
-  // and Costs sections show. Every active repo automatically gets a project so
-  // it can carry costs, crons and notes. Removing a repo from the allow-list
-  // leaves its project (and data) in place — we only ever add, never delete.
-  const { data: reposData } = useReposQuery(syncRepositories);
-  const [visibleIds] = useState<string[]>(
-    () => readRepoFilter() ?? initialVisibleIds,
-  );
+  // A known repository selection controls automatic linkage/materialization.
+  // An explicit empty selection includes all returned repos. This is separate
+  // from each project's active flag and financial history. Changing the
+  // selection preserves every existing project and its related records.
+  const { data: reposData, isError: reposFailed, isFetching: reposFetching, refetch: refetchRepos } = useReposQuery(syncRepositories);
+  const [repoFilterOpen, setRepoFilterOpen] = useState(false);
+  const repoFilterMutation = useRepositoryFilterSave(() => setRepoFilterOpen(false));
+  const { ids: visibleIds, available: filterAvailable } = useRepositoryFilter(initialVisibleIds, repositoryPreferencesAvailable);
   const activeRepos = useMemo<GithubRepo[]>(() => {
+    if (!filterAvailable) return [];
     const repos = reposData?.kind === "ok" ? reposData.repos : [];
     if (visibleIds.length === 0) return repos;
     const set = new Set(visibleIds);
     return repos.filter((r) => set.has(String(r.id)));
-  }, [reposData, visibleIds]);
+  }, [reposData, visibleIds, filterAvailable]);
 
   // Full names of the currently-active repos, so a card can show it is synced
   // from GitHub (rather than being a manually added project).
@@ -321,6 +337,7 @@ function ProjectsListPanel({
   const lookedUpProjects = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    if (isPreview || !syncRepositories || !filterAvailable || reposFailed) return;
     // Plan only against loaded projects: an unfetched placeholder list would
     // make every repository look missing.
     if (!qc.getQueryState(qk.projects)?.dataUpdatedAt) return;
@@ -329,7 +346,7 @@ function ProjectsListPanel({
       const seeds = cronSeedsForProject(project);
       if (seeds.length === 0 || seededProjectIds.current.has(project.id)) return;
       seededProjectIds.current.add(project.id);
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) return;
       const rows = seeds.map((s) => ({
         user_id: userId,
@@ -380,8 +397,9 @@ function ProjectsListPanel({
 
       let plan = planRepositorySync(activeRepos, current);
       for (const { project, update } of plan.updates) {
-        replace(await applyUpdate(project, update));
-        changed = true;
+        const saved = await applyUpdate(project, update);
+        replace(saved);
+        changed ||= saved !== project;
       }
 
       // Before creating anything, resolve projects that still carry only a
@@ -397,8 +415,9 @@ function ProjectsListPanel({
           if (!identity) continue;
           const update = repositoryIdentityUpdate(project, identity);
           if (update) {
-            replace(await applyUpdate(project, update));
-            changed = true;
+            const saved = await applyUpdate(project, update);
+            replace(saved);
+            changed ||= saved !== project;
           }
         }
         plan = planRepositorySync(activeRepos, current);
@@ -421,7 +440,7 @@ function ProjectsListPanel({
         (repo) => !creatingRepos.current.has(repo.id),
       );
       if (missing.length > 0) {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (userId) {
           // Allocate unique slugs against existing ones and within this batch.
           const usedSlugs = new Set(current.map((p) => p.slug));
@@ -474,11 +493,11 @@ function ProjectsListPanel({
       if (changed) void qc.invalidateQueries({ queryKey: qk.projects });
     }
 
-    void sync();
+    void sync().catch(() => toast.err(t.projects.syncFailed));
     // Re-run when the active repo set or the loaded projects change. Writes
     // already in flight are skipped by the guards above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRepos, projects]);
+  }, [activeRepos, projects, filterAvailable, reposFailed]);
 
   // --- Registry → Projects ------------------------------------------------
   // The code-level registry (src/lib/portfolio.ts) materializes the daily
@@ -499,7 +518,7 @@ function ProjectsListPanel({
     (async () => {
       let changed = false;
       try {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (!userId) return;
         const usedSlugs = new Set(projects.flatMap((p) => [p.slug, ...(p.previous_slugs ?? [])]));
         let sortBase = projects.length;
@@ -544,6 +563,8 @@ function ProjectsListPanel({
           changed = true;
           setProjects((prev) => [...prev, data as Project]);
         }
+      } catch {
+        toast.err(t.projects.syncFailed);
       } finally {
         registrySyncing.current = false;
         // Cache writes above go to the shared query client, so they stay
@@ -555,27 +576,18 @@ function ProjectsListPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, isPreview]);
 
-  const costsByProject = useMemo(() => {
-    const map = new Map<string, ProjectCost[]>();
-    for (const c of costs) {
-      const arr = map.get(c.project_id);
-      if (arr) arr.push(c);
-      else map.set(c.project_id, [c]);
-    }
-    return map;
-  }, [costs]);
+  const costsByProject = useMemo(() => indexProjectRecords(costs), [costs]);
+  const cronsByProject = useMemo(() => indexProjectRecords(crons), [crons]);
 
-  const cronsByProject = useMemo(() => {
-    const map = new Map<string, Cron[]>();
-    for (const c of crons) {
-      const arr = map.get(c.project_id);
-      if (arr) arr.push(c);
-      else map.set(c.project_id, [c]);
+  const active = useMemo(() => projects.filter((p) => p.is_active), [projects]);
+  const nextDateByProject = useMemo(() => {
+    const result = new Map<string, string>();
+    if (now) for (const occurrence of buildOccurrences(importantDates, now)) {
+      const id = occurrence.date.project_id;
+      if (id && occurrence.daysUntil >= 0 && !result.has(id)) result.set(id, todayKey(occurrence.next));
     }
-    return map;
-  }, [crons]);
-
-  const active = projects.filter((p) => p.is_active);
+    return result;
+  }, [importantDates, now]);
 
   // Manual order — the card list is driven purely by sort_order (drag updates
   // it), with created_at as a stable tie-breaker for equal orders.
@@ -584,7 +596,7 @@ function ProjectsListPanel({
       [...projects].sort(
         (a, b) =>
           a.sort_order - b.sort_order ||
-          a.created_at.localeCompare(b.created_at),
+          a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
       ),
     [projects],
   );
@@ -610,9 +622,9 @@ function ProjectsListPanel({
     [projectGroups],
   );
 
-  // Drag-to-reorder. sort_order is an integer column, so we resequence the
-  // whole list to 0..n-1 on drop (no fractional indexing) and persist the rows
-  // that actually moved. Optimistic, with a snapshot rollback on failure.
+  // A group reorders in one captured-version transaction. Keep confirmed
+  // rows visible until its complete receipt arrives; never roll back a list
+  // snapshot over unrelated writes after a partial/ambiguous response.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
@@ -620,8 +632,22 @@ function ProjectsListPanel({
     }),
   );
 
+  const dragAccessibility = useMemo(() => {
+    const names = new Map(projects.map(project => [project.id, project.name]));
+    const name = (id: string | number) => names.get(String(id)) ?? t.projects.tableProject;
+    return {
+      screenReaderInstructions: { draggable: t.projects.dragInstructions },
+      announcements: {
+        onDragStart: ({ active }: DragStartEvent) => t.projects.dragPicked(name(active.id)),
+        onDragOver: ({ active, over }: DragOverEvent) => over ? t.projects.dragOver(name(active.id), name(over.id)) : undefined,
+        onDragEnd: ({ active, over }: DragEndEvent) => over && active.id !== over.id ? t.projects.dragDropped(name(active.id), name(over.id)) : t.projects.dragCanceled(name(active.id)),
+        onDragCancel: ({ active }: DragCancelEvent) => t.projects.dragCanceled(name(active.id)),
+      },
+    };
+  }, [projects, t.projects]);
+
   async function handleDragEnd(e: DragEndEvent) {
-    if (!e.over || e.active.id === e.over.id) return;
+    if (orderingRef.current || !e.over || e.active.id === e.over.id) return;
     // Reordering works within a group; own and client projects never swap.
     const activeProject = visibleProjects.find((p) => p.id === e.active.id);
     const overProject = visibleProjects.find((p) => p.id === e.over!.id);
@@ -634,36 +660,17 @@ function ProjectsListPanel({
     if (oldIndex < 0 || newIndex < 0) return;
 
     const moved = arrayMove(groupItems, oldIndex, newIndex);
-    const resequenced =
-      group === "own"
-        ? [...moved, ...projectGroups.client]
-        : [...projectGroups.own, ...moved];
-    const orderById = new Map(resequenced.map((p, i) => [p.id, i]));
-    const changed = resequenced.filter((p, i) => p.sort_order !== i);
-    if (changed.length === 0) return;
-
-    const snapshot = projects;
-    setProjects((prev) =>
-      prev.map((p) =>
-        orderById.has(p.id) ? { ...p, sort_order: orderById.get(p.id)! } : p,
-      ),
-    );
+    orderingRef.current = true; setOrdering(true);
     try {
-      const now = new Date().toISOString();
-      const results = await Promise.all(
-        changed.map((p) =>
-          supabase
-            .from("projects")
-            .update({ sort_order: orderById.get(p.id)!, updated_at: now })
-            .eq("id", p.id),
-        ),
-      );
-      const failed = results.find((r) => r.error);
-      if (failed?.error) throw failed.error;
+      const receipt = await reorderOwnedProjects(supabase, groupItems, moved.map(project => project.id));
+      await qc.cancelQueries({ queryKey: qk.projects });
+      setProjects(current => applyProjectOrder(current, groupItems, receipt));
+    } catch {
+      toast.err(t.projects.orderFailed);
+    } finally {
+      orderingRef.current = false; setOrdering(false);
+      // Also reconcile an ambiguous receipt; the transaction may have committed.
       void qc.invalidateQueries({ queryKey: qk.projects });
-    } catch (err) {
-      setProjects(snapshot);
-      toast.err((err as Error).message);
     }
   }
 
@@ -671,9 +678,9 @@ function ProjectsListPanel({
   // running development subscriptions, by the rule the Money overview and the
   // project workspace use, so all three show the same figure.
   const subscriptionMonthly = useMemo(() => {
-    const shares = projectSubscriptionShares(subscriptions, subscriptionAllocations, displayCurrency);
+    const shares = projectSubscriptionShares(subscriptions, subscriptionAllocations, displayCurrency, costDay ? new Date(`${costDay}T12:00:00`) : undefined);
     return new Map([...shares].map(([projectId, list]) => [projectId, sharesMonthly(list)]));
-  }, [subscriptions, subscriptionAllocations, displayCurrency]);
+  }, [subscriptions, subscriptionAllocations, displayCurrency, costDay]);
   const monthlyOf = useCallback(
     (project: Project) =>
       projectMonthlyIn(
@@ -699,112 +706,21 @@ function ProjectsListPanel({
   );
   const grandYearly = grandMonthly * 12;
 
-  async function submitProject(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!form.name.trim()) return setError(t.projects.nameRequired);
-    const slug = slugify(form.slug || form.name);
-    if (!slug) return setError(t.projects.slugRequired);
-    const payload = {
-      name: form.name.trim(),
-      slug,
-      repo_full_name: form.repo_full_name.trim() || null,
-      url: form.url.trim() || null,
-      dev_url: form.dev_url.trim() || null,
-      engagement: form.engagement,
-      organization_id: form.organization_id || null,
-    };
-    setSaving(true);
-    try {
-      if (form.id) {
-        const { data, error } = await supabase
-          .from("projects")
-          .update({ ...payload, updated_at: new Date().toISOString() })
-          .eq("id", form.id)
-          .select()
-          .single();
-        if (error) throw error;
-        setProjects((prev) =>
-          prev.map((p) => (p.id === form.id ? (data as Project) : p)),
-        );
-      } else {
-        const userId = await currentUserId(supabase);
-        if (!userId) throw new Error(t.common.signInFirst);
-        const { data, error } = await supabase
-          .from("projects")
-          .insert({ ...payload, user_id: userId, sort_order: projects.length })
-          .select()
-          .single();
-        if (error) throw error;
-        setProjects((prev) => [...prev, data as Project]);
-      }
-      setForm(emptyProjectForm);
-      setFormOpen(false);
-      void qc.invalidateQueries({ queryKey: qk.projects });
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function openNewProject() {
-    setForm(emptyProjectForm);
-    setError(null);
-    setFormOpen(true);
-  }
-
   async function toggleProjectActive(p: Project) {
-    const next = !p.is_active;
-    setProjects((prev) =>
-      prev.map((x) => (x.id === p.id ? { ...x, is_active: next } : x)),
-    );
-    const { error } = await supabase
-      .from("projects")
-      .update({ is_active: next, updated_at: new Date().toISOString() })
-      .eq("id", p.id);
-    if (error) {
-      setProjects((prev) =>
-        prev.map((x) => (x.id === p.id ? { ...x, is_active: !next } : x)),
-      );
-      toast.err(error.message);
-    }
+    const result = await projectPreferences.save(p, { is_active: !p.is_active });
+    if (result === "conflict") toast.err(t.projects.preferenceConflict);
+    else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   }
 
-  async function deleteProject(p: Project) {
-    if (!await confirm({
-      title: t.projects.deleteProject,
-      description: t.projects.deleteProjectConfirm,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    })) return;
-    const { error } = await supabase.from("projects").delete().eq("id", p.id);
-    if (error) return toast.err(error.message);
-    setProjects((prev) => prev.filter((x) => x.id !== p.id));
-    // Costs and crons cascade-delete in the DB; drop them from the cache too.
-    setCosts((prev) => prev.filter((c) => c.project_id !== p.id));
-    setCrons((prev) => prev.filter((c) => c.project_id !== p.id));
-    setProjectLinks((prev) => prev.filter((relation) => relation.project_id !== p.id));
-    void qc.invalidateQueries({ queryKey: qk.projectLinks });
-    if (form.id === p.id) setForm(emptyProjectForm);
-    void qc.invalidateQueries({ queryKey: qk.projects });
-  }
+  const deletion = useProjectDeletion(source => {
+    setProjects(prev => prev.filter(row => row.id !== source.id || row.user_id !== source.user_id));
+    setManagedProject(current => current?.id === source.id ? null : current);
+    setCosts(prev => prev.filter(row => row.project_id !== source.id));
+    setCrons(prev => prev.filter(row => row.project_id !== source.id));
+    setProjectLinks(prev => prev.filter(row => row.project_id !== source.id));
+    details.forgetDeleted(source.id);
+  });
 
-  function startEditProject(p: Project) {
-    setForm({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      repo_full_name: p.repo_full_name ?? "",
-      url: p.url ?? "",
-      dev_url: p.dev_url ?? "",
-      engagement: projectEngagement(p),
-      organization_id: p.organization_id ?? "",
-    });
-    setError(null);
-    setFormOpen(true);
-  }
 
   return (
     <div>
@@ -812,7 +728,9 @@ function ProjectsListPanel({
         title={t.projects.title}
         description={t.projects.description}
         action={
-          <div className="inline-flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {ordering && <span role="status" className="text-xs text-foreground-muted">{t.projects.orderSaving}</span>}
+            {syncRepositories && <Button variant="outline" size="sm" disabled={reposData?.kind !== "ok"} onClick={() => setRepoFilterOpen(true)}><ListFilter />{t.github.filter}</Button>}
             {setDisplayCurrency && (
               <>
                 <Label className="hidden text-foreground-subtle sm:inline">
@@ -822,7 +740,7 @@ function ProjectsListPanel({
                   value={displayCurrency}
                   onValueChange={(v) => setDisplayCurrency(v)}
                   aria-label={t.projects.displayIn}
-                  className="h-8 w-20 text-xs"
+                  className="h-11 w-20 text-xs md:h-8"
                   options={SUPPORTED_CURRENCIES.map((c) => ({
                     value: c,
                     label: c,
@@ -845,9 +763,15 @@ function ProjectsListPanel({
           {t.projects.newProjectGuide}
         </summary>
         <div className="border-t border-border px-4 py-3">
-          <Markdown source={NEW_PROJECT_GUIDE} className="max-w-3xl" />
+          <Markdown tableLabel={t.common.documentTable} codeLabel={t.common.documentCode} source={lang === "cs" ? NEW_PROJECT_GUIDE_CS : NEW_PROJECT_GUIDE} className="max-w-3xl" />
         </div>
       </details>
+
+      {syncRepositories && reposFailed && <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-foreground-muted"><p>{reposData?.kind === "ok" ? t.github.cachedReadFailed : t.github.loadErr}</p><Button variant="outline" size="sm" disabled={reposFetching} onClick={() => void refetchRepos()}>{t.github.refresh}</Button></div>}
+      {syncRepositories && reposData?.kind === "ok" && reposData.hasMore && <p role="status" className="mb-4 text-xs text-foreground-muted">{t.github.recentPageLimit(reposData.repos.length)}</p>}
+      {syncRepositories && !filterAvailable && <p role="status" className="mb-4 text-sm text-foreground-muted">{t.github.filterUnavailable}</p>}
+
+      {repoFilterOpen && reposData?.kind === "ok" && <RepositoryFilterDialog repos={reposData.repos} initialVisibleIds={visibleIds} saving={repoFilterMutation.isPending} onSave={repoFilterMutation.save} onClose={() => setRepoFilterOpen(false)} />}
 
       {/* Totals + chart (full width — the form now lives in a dialog) */}
       {chartData.length > 0 && (
@@ -906,18 +830,20 @@ function ProjectsListPanel({
       )}
 
       {/* Add / edit project — dialog keeps the page free for the projects. */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}>
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md" aria-busy={saving}>
           <DialogHeader>
             <DialogTitle>
               {form.id ? t.projects.editProject : t.projects.addProject}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submitProject} className="space-y-3">
+            <fieldset disabled={saving} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="proj-name">{t.projects.name}</Label>
               <Input
                 id="proj-name"
+                maxLength={200}
                 autoFocus
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -928,10 +854,11 @@ function ProjectsListPanel({
               <Label htmlFor="proj-slug">{t.projects.slug}</Label>
               <Input
                 id="proj-slug"
+                maxLength={100}
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: e.target.value })}
                 placeholder={
-                  form.name ? slugify(form.name) : t.projects.slugPlaceholder
+                  form.name ? automaticProjectSlug(form.name) : t.projects.slugPlaceholder
                 }
               />
               <p className="text-[11px] text-foreground-subtle">
@@ -942,6 +869,7 @@ function ProjectsListPanel({
               <Label htmlFor="proj-repo">{t.projects.repo}</Label>
               <Input
                 id="proj-repo"
+                maxLength={201}
                 value={form.repo_full_name}
                 onChange={(e) =>
                   setForm({ ...form, repo_full_name: e.target.value })
@@ -953,6 +881,9 @@ function ProjectsListPanel({
               <Label htmlFor="proj-url">{t.projects.url}</Label>
               <Input
                 id="proj-url"
+                maxLength={2000}
+                type="url"
+                pattern="https?://.*"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
                 placeholder={t.projects.urlPlaceholder}
@@ -990,24 +921,29 @@ function ProjectsListPanel({
               <Label htmlFor="proj-dev-url">{t.projects.devUrl}</Label>
               <Input
                 id="proj-dev-url"
+                maxLength={2000}
+                type="url"
+                pattern="https?://.*"
                 value={form.dev_url}
                 onChange={(e) => setForm({ ...form, dev_url: e.target.value })}
                 placeholder={t.projects.devUrlPlaceholder}
               />
             </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {(error || form.name.trim() && !valid) && <p role="alert" className="text-xs text-destructive">{error ?? t.projects.detailsInvalid}</p>}
+            {formConflict && <Button type="button" size="sm" variant="outline" disabled={reloading} aria-busy={reloading} onClick={() => { void reloadProjectDetails(); }}>{t.projects.reloadDetails}</Button>}
             <div className="flex justify-end gap-2 pt-1">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setFormOpen(false)}
+                onClick={closeForm}
               >
                 {t.common.cancel}
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving || formConflict || !valid}>
                 {form.id ? t.common.save : t.common.add}
               </Button>
             </div>
+            </fieldset>
           </form>
         </DialogContent>
       </Dialog>
@@ -1034,6 +970,8 @@ function ProjectsListPanel({
         </div>
       ) : (
         <DndContext
+          id={dragContextId}
+          accessibility={dragAccessibility}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -1041,8 +979,9 @@ function ProjectsListPanel({
             <Card className="mt-4 overflow-hidden p-0">
               {/* relative: contains the sr-only header labels, which are
                   absolutely positioned and would otherwise widen the page. */}
-              <div className="relative overflow-x-auto">
+              <div className="relative overflow-x-auto" role="region" aria-label={t.projects.title} aria-busy={ordering} tabIndex={0}>
                 <table className="w-full min-w-[900px] text-left">
+                  <caption className="sr-only">{t.projects.title}</caption>
                   <thead className="border-b border-border bg-surface-secondary text-[11px] text-foreground-muted"><tr><th scope="col" className="w-10 px-2 py-2.5"><span className="sr-only">{t.projects.dragHandle}</span></th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableProject}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableClient}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableHealth}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableRepository}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableMonthlyCost}</th><th scope="col" className="px-3 py-2.5 text-right font-medium">{t.projects.tableTasks}</th><th scope="col" className="px-3 py-2.5 font-medium">{t.projects.tableNextDate}</th><th scope="col" className="px-3 py-2.5 text-right"><span className="sr-only">{t.projects.tableActions}</span></th></tr></thead>
                   {(["own", "client"] as const).map((group) => projectGroups[group].length === 0 ? null : (
                   <SortableContext
@@ -1063,26 +1002,29 @@ function ProjectsListPanel({
                 </tr>
               )}
               {projectGroups[group].flatMap((top) => [top, ...childProjects(projects, top.id).filter((child) => child.is_active)]).map((p) => {
-                const projectTodos = todos.filter((item) => taskBelongsToProject(item, p));
-                const projectDates = importantDates.filter((item) => item.project_id === p.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
+                const projectTodos = projectTasks.byProject.get(p.id) ?? [];
                 const organization = organizations.find((item) => item.id === p.organization_id);
                 return <SortableProjectRow
                   key={p.id}
                   project={p}
                   subsection={!!p.parent_id && projectIds.has(p.parent_id)}
+                  ordering={ordering || deletion.pendingId !== null}
+                  deleting={deletion.pendingId === p.id}
+                  deleteError={deletion.failure?.id === p.id ? deletion.failure.message : null}
+                  preferencePending={projectPreferences.pending.has(p.id)}
                   summary={projectSummary(p, lang, { preview: isPreview })}
                   monthlyCost={monthlyOf(p)}
                   displayCurrency={displayCurrency}
                   synced={isSynced(p)}
                   onEdit={() => startEditProject(p)}
                   onToggleActive={() => toggleProjectActive(p)}
-                  onDelete={() => deleteProject(p)}
-                  onManage={() => setManageProjectId(p.id)}
+                  onDelete={() => deletion.remove(p)}
+                  onManage={() => setManagedProject(p)}
                   onOpen={() => onOpenProject(p)}
-                  health={assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? []).health}
+                  health={now ? assessProjectHealth(p, projectTodos, costsByProject.get(p.id) ?? [], cronsByProject.get(p.id) ?? [], now).health : null}
                   openTaskCount={projectTodos.filter((item) => !item.done).length}
                   organizationName={organization?.name}
-                  nextDate={projectDates[0]?.the_date}
+                  nextDate={nextDateByProject.get(p.id)}
                 />
               })}
                   </tbody>
@@ -1094,14 +1036,13 @@ function ProjectsListPanel({
         </DndContext>
       )}
 
-      <Dialog open={manageProjectId !== null} onOpenChange={(open) => !open && setManageProjectId(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+      <Dialog open={managedProject !== null} onOpenChange={(open) => !open && requestNavigation(() => setManagedProject(null))}>
+        <DialogContent aria-describedby={undefined} className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader><DialogTitle>{t.projects.manage}</DialogTitle></DialogHeader>
-          {ordered.find((project) => project.id === manageProjectId) && (() => {
-            const project = ordered.find((item) => item.id === manageProjectId)!;
-            const projectTodos = todos.filter((item) => taskBelongsToProject(item, project));
-            const projectDates = importantDates.filter((item) => item.project_id === project.id && item.the_date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.the_date.localeCompare(b.the_date));
-            return <ProjectCard project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} editing={form.id === project.id} synced={isSynced(project)} collapsed={false} collapsible={false} onToggleCollapsed={() => undefined} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deleteProject(project)} health={assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? []).health} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={projectDates[0]?.the_date} />;
+          {managedProject && (() => {
+            const project = currentManagedProject ?? managedProject;
+            const projectTodos = projectTasks.byProject.get(project.id) ?? [];
+            return <ProjectOperations deleting={deletion.pendingId === project.id} deleteError={deletion.failure?.id === project.id ? deletion.failure.message : null} key={project.id} available={!!currentManagedProject} preferencePending={projectPreferences.pending.has(project.id)} project={project} costs={costsByProject.get(project.id) ?? []} crons={cronsByProject.get(project.id) ?? []} subscriptionMonthly={subscriptionMonthly.get(project.id) ?? 0} setCosts={setCosts} setCrons={setCrons} setProjects={setProjects} displayCurrency={displayCurrency} synced={isSynced(project)} onOpen={() => onOpenProject(project)} onEdit={() => startEditProject(project)} onToggleActive={() => toggleProjectActive(project)} onDelete={() => deletion.remove(project)} health={now ? assessProjectHealth(project, projectTodos, costsByProject.get(project.id) ?? [], cronsByProject.get(project.id) ?? [], now).health : null} openTaskCount={projectTodos.filter((item) => !item.done).length} organizationName={organizations.find((item) => item.id === project.organization_id)?.name} nextDate={nextDateByProject.get(project.id)} />;
           })()}
         </DialogContent>
       </Dialog>
@@ -1110,11 +1051,13 @@ function ProjectsListPanel({
 }
 
 // ---------------------------------------------------------------------------
-// Project card: totals, cost lines, notes, crons.
+// Project operations: totals, cost lines, notes, crons.
 // ---------------------------------------------------------------------------
 
-type ProjectCardProps = {
+type ProjectOperationsProps = {
   project: Project;
+  deleting: boolean;
+  deleteError: string | null;
   costs: ProjectCost[];
   crons: Cron[];
   /** The project's share of running development subscriptions, per month. */
@@ -1123,17 +1066,15 @@ type ProjectCardProps = {
   setCrons: Updater<Cron[]>;
   setProjects: Updater<Project[]>;
   displayCurrency: string;
-  editing: boolean;
   /** True when this project mirrors a currently-active Repository. */
   synced: boolean;
-  collapsed: boolean;
-  collapsible?: boolean;
-  onToggleCollapsed: () => void;
+  preferencePending: boolean;
+  available: boolean;
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
   onOpen: () => void;
-  health: ProjectHealth;
+  health: ProjectHealth | null;
   openTaskCount: number;
   organizationName?: string;
   nextDate?: string;
@@ -1141,7 +1082,11 @@ type ProjectCardProps = {
 
 function SortableProjectRow({
   project,
+  deleting,
+  deleteError,
   subsection = false,
+  ordering = false,
+  preferencePending = false,
   summary,
   monthlyCost,
   displayCurrency,
@@ -1157,13 +1102,17 @@ function SortableProjectRow({
   onOpen,
 }: {
   project: Project;
+  deleting: boolean;
+  deleteError: string | null;
   /** A venture subsection rendered under its parent; it has no drag handle. */
   subsection?: boolean;
+  ordering?: boolean;
+  preferencePending?: boolean;
   summary?: string;
   monthlyCost: number;
   displayCurrency: string;
   synced: boolean;
-  health: ProjectHealth;
+  health: ProjectHealth | null;
   openTaskCount: number;
   organizationName?: string;
   nextDate?: string;
@@ -1174,6 +1123,10 @@ function SortableProjectRow({
   onOpen: () => void;
 }) {
   const t = useDict();
+  const { active } = useDndContext();
+  const group = projectEngagement(project);
+  const sortableData = useMemo(() => ({ projectGroup: group }), [group]);
+  const outsideGroup = !!active && active.data.current?.projectGroup !== group;
   const {
     attributes,
     listeners,
@@ -1182,7 +1135,7 @@ function SortableProjectRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: project.id });
+  } = useSortable({ id: project.id, data: sortableData, attributes: { roleDescription: t.projects.dragRole }, disabled: { draggable: subsection || ordering, droppable: subsection || ordering || outsideGroup } });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -1193,28 +1146,30 @@ function SortableProjectRow({
       style={style}
       className={cn("group align-middle hover:bg-surface-hover", !project.is_active && "opacity-60", isDragging && "relative z-10 bg-surface-elevated shadow-elevated")}
     >
-      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={t.projects.dragHandle} className="inline-flex h-8 w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
-      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
+      <td className="px-2 py-2.5">{subsection ? <span className="inline-flex h-8 w-8 items-center justify-center text-foreground-subtle" aria-hidden>↳</span> : <button ref={setActivatorNodeRef} type="button" aria-label={`${t.projects.dragHandle}: ${project.name}`} className="aria-disabled:opacity-50 inline-flex h-11 w-11 md:h-8 md:w-8 touch-none select-none items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-hover hover:text-foreground focus-ring active:cursor-grabbing md:cursor-grab" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button>}</td>
+      <td className={cn("px-3 py-2.5", subsection && "pl-6")}><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} className="font-medium text-foreground hover:underline focus-ring">{project.name}</Link>{summary && <p className="mt-0.5 max-w-md truncate text-[11px] text-foreground-subtle" title={summary}>{summary}</p>}{deleteError && <p role="alert" className="mb-1 max-w-sm text-xs text-risk">{deleteError}</p>}<div className="mt-1 flex flex-wrap gap-1"><StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />{synced && <EntityBadge><GithubIcon className="mr-1 h-3 w-3" />{t.projects.synced}</EntityBadge>}{subsection && <EntityBadge>{t.portfolio.subsection}</EntityBadge>}</div></td>
       <td className="px-3 py-2.5 text-xs text-foreground-muted">{organizationName ?? "—"}</td>
-      <td className="px-3 py-2.5"><StatusBadge value={health} /></td>
+      <td className="px-3 py-2.5">{health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}</td>
       <td className="max-w-44 px-3 py-2.5 font-mono text-xs text-foreground-muted">{project.repo_full_name ? <a href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer" className="hover:underline">{project.repo_full_name}</a> : "—"}</td>
       <td className="px-3 py-2.5 text-right font-medium tabular">{formatCurrency(monthlyCost, displayCurrency)}</td>
       <td className="px-3 py-2.5 text-right tabular text-foreground-muted">{openTaskCount}</td>
       <td className="px-3 py-2.5 text-xs tabular text-foreground-muted">{nextDate ?? "—"}</td>
       <td className="px-3 py-2.5"><div className="flex justify-end gap-1">
         {project.dev_url && <Tooltip content={t.projects.development}><Button asChild size="icon-sm" variant="ghost"><a href={project.dev_url} target="_blank" rel="noreferrer" aria-label={t.projects.development}><ExternalLink /></a></Button></Tooltip>}
-        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onClick={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
+        <Tooltip content={t.projects.workspace}><Button asChild size="icon-sm" variant="ghost"><Link href={`/projects/${encodeURIComponent(project.slug)}`} prefetch={false} onNavigate={(event) => { event.preventDefault(); onOpen(); }} aria-label={t.projects.workspace}><FolderKanban /></Link></Button></Tooltip>
         <Tooltip content={t.projects.manage}><Button size="icon-sm" variant="ghost" onClick={onManage} aria-label={t.projects.manage}><Cpu /></Button></Tooltip>
-        <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
-        <Tooltip content={project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
-        <Tooltip content={t.projects.deleteProject}><Button size="icon-sm" variant="ghost" onClick={onDelete} aria-label={t.projects.deleteProject}><Trash2 className="text-destructive" /></Button></Tooltip>
+        <Tooltip content={t.common.edit}><Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={deleting} aria-label={t.common.edit}><Pencil /></Button></Tooltip>
+        <Tooltip content={preferencePending ? t.projects.saving : project.is_active ? t.projects.markInactive : t.projects.markActive}><Button size="icon-sm" variant="ghost" disabled={preferencePending || deleting} aria-busy={preferencePending} onClick={onToggleActive} aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}><Power /></Button></Tooltip>
+        <Tooltip content={t.projects.deleteProject}><Button size="icon-sm" variant="ghost" onClick={onDelete} disabled={deleting || preferencePending} aria-busy={deleting} aria-label={t.projects.deleteProject}><Trash2 className="text-destructive" /></Button></Tooltip>
       </div></td>
     </tr>
   );
 }
 
-function ProjectCard({
+function ProjectOperations({
   project,
+  deleting,
+  deleteError,
   costs,
   crons,
   subscriptionMonthly = 0,
@@ -1222,11 +1177,9 @@ function ProjectCard({
   setCrons,
   setProjects,
   displayCurrency,
-  editing,
   synced,
-  collapsed,
-  collapsible = true,
-  onToggleCollapsed,
+  preferencePending,
+  available,
   onEdit,
   onToggleActive,
   onDelete,
@@ -1235,40 +1188,23 @@ function ProjectCard({
   openTaskCount,
   organizationName,
   nextDate,
-  isDragging,
-  dragHandleProps,
-}: ProjectCardProps & {
-  isDragging?: boolean;
-  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
-}) {
+}: ProjectOperationsProps) {
   const t = useDict();
   const monthly = projectMonthlyIn(costs, crons, displayCurrency) + subscriptionMonthly;
   const yearly = monthly * 12;
 
   return (
-    <Card
-      className={cn(
-        editing && "ring-1 ring-ring",
-        !project.is_active && "opacity-70",
-        isDragging && "shadow-elevated ring-1 ring-border-strong",
-      )}
-    >
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div className="flex min-w-0 items-start gap-1.5">
-          <button
-            type="button"
-            aria-label={t.projects.dragHandle}
-            className="mt-0.5 shrink-0 cursor-grab touch-none rounded text-foreground-subtle transition-colors hover:text-foreground focus-ring active:cursor-grabbing"
-            {...dragHandleProps}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
+    <section aria-label={project.name} className="min-w-0">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 px-0 pt-0 sm:px-0 sm:pt-0">
+        <div className="min-w-0 flex-1 basis-64">
           <div className="min-w-0">
-            <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-              <FolderKanban className="h-4 w-4 shrink-0 text-foreground-subtle" />
-              <span className="truncate">{project.name}</span>
+            <CardTitle role="heading" aria-level={3} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-base">
+              <span className="inline-flex min-w-0 max-w-full items-start gap-2">
+                <FolderKanban className="mt-0.5 h-4 w-4 shrink-0 text-foreground-subtle" aria-hidden />
+                <span className="min-w-0 [overflow-wrap:anywhere]">{project.name}</span>
+              </span>
               <StatusBadge value={project.status ?? (project.is_active ? "active" : "archived")} />
-              <StatusBadge value={health} />
+              {health ? <StatusBadge value={health} /> : <span aria-hidden>—</span>}
               {!project.is_active && (
                 <SectionLabel className="inline">{t.projects.inactive}</SectionLabel>
               )}
@@ -1281,8 +1217,7 @@ function ProjectCard({
                 </Tooltip>
               )}
             </CardTitle>
-            {!collapsed && (
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-subtle">
                 {organizationName && <EntityBadge>{organizationName}</EntityBadge>}
                 <span className="tabular">{t.professional.openTasks}: {openTaskCount}</span>
                 {nextDate && <span className="tabular">{t.nav.sections.dates}: {nextDate}</span>}
@@ -1291,7 +1226,7 @@ function ProjectCard({
                     href={`https://github.com/${project.repo_full_name}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                    className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded focus-ring hover:text-foreground [overflow-wrap:anywhere] md:min-h-0"
                   >
                     <GithubIcon className="h-3 w-3" />
                     {project.repo_full_name}
@@ -1302,31 +1237,30 @@ function ProjectCard({
                     href={project.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                    className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded focus-ring hover:text-foreground [overflow-wrap:anywhere] md:min-h-0"
                   >
                     <ExternalLink className="h-3 w-3" />
                     {t.projects.open}
                   </a>
                 )}
-                <Link
+                {available && <Link
                   href={`/projects/${encodeURIComponent(project.slug)}`}
                   prefetch={false}
-                  onClick={(event) => {
+                  onNavigate={(event) => {
                     event.preventDefault();
                     onOpen();
                   }}
-                  className="inline-flex items-center gap-1 hover:text-foreground focus-ring rounded"
+                  className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded focus-ring hover:text-foreground [overflow-wrap:anywhere] md:min-h-0"
                 >
                   <FolderKanban className="h-3 w-3" />
                   {t.professional.projectWorkspace}
-                </Link>
-              </div>
-            )}
+                </Link>}
+            </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="text-right">
-            <p className="text-lg font-semibold tabular leading-none">
+        <div className="flex min-w-0 max-w-full flex-auto flex-wrap items-center justify-between gap-3 sm:flex-none sm:justify-end">
+          <div className="min-w-0 text-left sm:text-right">
+            <p className="break-words text-lg font-semibold tabular leading-none">
               {formatCurrency(monthly, displayCurrency)}
               <span className="text-xs font-normal text-foreground-subtle">
                 {t.projects.perMo}
@@ -1337,24 +1271,8 @@ function ProjectCard({
             </p>
           </div>
           <div className="flex gap-0.5">
-            {collapsible && <Tooltip content={collapsed ? t.projects.expand : t.projects.collapse}>
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                onClick={onToggleCollapsed}
-                aria-label={collapsed ? t.projects.expand : t.projects.collapse}
-                aria-expanded={!collapsed}
-              >
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    collapsed && "-rotate-90",
-                  )}
-                />
-              </Button>
-            </Tooltip>}
             <Tooltip content={t.common.edit}>
-              <Button size="icon-sm" variant="ghost" onClick={onEdit} aria-label={t.common.edit}>
+              <Button size="icon-sm" variant="ghost" onClick={onEdit} disabled={!available || deleting} aria-label={t.common.edit}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </Tooltip>
@@ -1365,6 +1283,8 @@ function ProjectCard({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onToggleActive}
+                disabled={!available || preferencePending || deleting}
+                aria-busy={preferencePending}
                 aria-label={project.is_active ? t.projects.markInactive : t.projects.markActive}
               >
                 <Power
@@ -1380,6 +1300,8 @@ function ProjectCard({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onDelete}
+                aria-busy={deleting}
+                disabled={!available || deleting || preferencePending}
                 aria-label={t.projects.deleteProject}
               >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -1388,24 +1310,28 @@ function ProjectCard({
           </div>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="space-y-5">
+      <CardContent className="space-y-5 px-0 pb-0 sm:px-0 sm:pb-0">
+          {deleteError && <p role="alert" className="text-sm text-risk">{deleteError}</p>}
+          {!available && <p role="alert" className="text-sm text-risk">{t.projects.projectUnavailable}</p>}
+          <fieldset disabled={!available || deleting} aria-label={t.projects.costs}>
           <CostsSection
             project={project}
             costs={costs}
             setCosts={setCosts}
             displayCurrency={displayCurrency}
           />
-          <NotesSection project={project} setProjects={setProjects} />
+          </fieldset>
+          <NotesSection project={project} setProjects={setProjects} available={available} />
+          <fieldset disabled={!available || deleting} aria-label={t.projects.crons}>
           <CronsSection
             project={project}
             crons={crons}
             setCrons={setCrons}
             displayCurrency={displayCurrency}
           />
-        </CardContent>
-      )}
-    </Card>
+          </fieldset>
+      </CardContent>
+    </section>
   );
 }
 
@@ -1424,6 +1350,7 @@ function CostsSection({
   setCosts: Updater<ProjectCost[]>;
   displayCurrency: string;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
@@ -1438,10 +1365,10 @@ function CostsSection({
 
   async function addCost(e: React.FormEvent) {
     e.preventDefault();
-    if (!label.trim() || !amount) return;
+    if (busy || !label.trim() || !amount) return;
     setBusy(true);
     try {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error(t.common.signInFirst);
       const { data, error } = await supabase
         .from("project_costs")
@@ -1514,7 +1441,7 @@ function CostsSection({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                className="shrink-0 opacity-0 group-hover:opacity-100"
+                className="shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                 onClick={() => removeCost(c.id)}
                 aria-label={t.projects.deleteCost}
               >
@@ -1524,12 +1451,12 @@ function CostsSection({
           ))}
         </ul>
       )}
-      <form onSubmit={addCost} className="mt-2 flex flex-wrap items-end gap-2">
+      <form onSubmit={addCost} className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[minmax(8rem,1fr)_6rem_auto] md:grid-cols-[minmax(6rem,1fr)_6rem_6rem_minmax(8rem,1fr)_auto]">
         <Input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder={t.projects.costLabelPlaceholder}
-          className="h-8 w-32 text-sm"
+          className="col-span-2 min-w-0 w-full text-sm sm:col-span-1"
           aria-label={t.projects.costLabel}
         />
         <Input
@@ -1538,24 +1465,24 @@ function CostsSection({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
-          className="h-8 w-24 text-sm"
+          className="min-w-0 w-full text-sm"
           aria-label={t.projects.amount}
         />
         <SimpleSelect
           value={currency}
           onValueChange={setCurrency}
           aria-label={t.projects.currency}
-          className="h-8 w-20 text-xs"
+          className="h-11 min-w-0 w-full text-xs md:h-8"
           options={SUPPORTED_CURRENCIES.map((c) => ({ value: c, label: c }))}
         />
         <Input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={t.projects.costNotePlaceholder}
-          className="h-8 min-w-0 flex-1 text-sm"
+          className="min-w-0 w-full text-sm sm:col-span-2 md:col-span-1"
           aria-label={t.projects.costNotePlaceholder}
         />
-        <Button type="submit" size="sm" variant="outline" disabled={busy}>
+        <Button type="submit" size="sm" variant="outline" className="justify-self-end" disabled={busy}>
           <Plus className="h-3.5 w-3.5" />
           {t.projects.addCost}
         </Button>
@@ -1571,61 +1498,42 @@ function CostsSection({
 function NotesSection({
   project,
   setProjects,
+  available,
 }: {
   project: Project;
   setProjects: Updater<Project[]>;
+  available: boolean;
 }) {
-  const supabase = createClient();
   const t = useDict();
-  const toast = useToast();
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
-  // Last value we persisted, so a lossy markdown round-trip on mount doesn't
-  // trigger a spurious write.
-  const lastSavedRef = useRef(project.notes ?? "");
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Realtime autosave — the editor debounces, this persists. No save button.
-  async function saveMarkdown(md: string) {
-    const next = md.trim();
-    if (next === (lastSavedRef.current ?? "").trim()) return;
-    setStatus("saving");
-    const { error } = await supabase
-      .from("projects")
-      .update({ notes: next, updated_at: new Date().toISOString() })
-      .eq("id", project.id);
-    if (error) {
-      setStatus("idle");
-      toast.err(error.message);
-      return;
-    }
-    lastSavedRef.current = next;
-    setProjects((prev) =>
-      prev.map((p) => (p.id === project.id ? { ...p, notes: next } : p)),
-    );
-    setStatus("saved");
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-    savedTimer.current = setTimeout(() => setStatus("idle"), 1500);
-  }
+  const editorRef = useRef<NoteEditorHandle | null>(null);
+  const autosave = useProjectNotesAutosave(project, setProjects, editorRef, available);
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <SectionLabel>{t.projects.notes}</SectionLabel>
         <span className="text-[11px] text-foreground-subtle">
-          {status === "saving"
-            ? t.projects.saving
-            : status === "saved"
-              ? t.projects.notesSaved
-              : ""}
+          {autosave.pending ? t.projects.saving : autosave.saved ? t.projects.notesSaved : autosave.dirty ? t.projects.notesUnsaved : ""}
         </span>
       </div>
       <div className="project-notes mt-2 min-h-[96px] rounded-md border border-border bg-surface py-1">
         <ProjectNotesEditor
+          key={autosave.generation}
           projectId={project.id}
-          initialMarkdown={project.notes ?? ""}
-          onSaveMarkdown={saveMarkdown}
+          editorRef={editorRef}
+          editable={available}
+          initialMarkdown={autosave.seed}
+          onDirtyChange={autosave.markDirty}
+          onSaveMarkdown={autosave.save}
         />
       </div>
+      {autosave.failed && <div role="alert" className="mt-2 space-y-2 text-xs text-risk">
+        <p>{autosave.tooLarge ? t.projects.notesTooLarge : autosave.conflict ? t.projects.notesConflict : t.projects.notesSaveFailed}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={!available || autosave.pending || autosave.tooLarge} onClick={() => { void autosave.flush(!!autosave.conflict); }}>{autosave.conflict ? t.projects.replaceSavedNotes : t.common.retry}</Button>
+          <Button size="sm" variant="ghost" disabled={!available || autosave.pending} onClick={() => { void autosave.reloadSaved(); }}>{t.projects.useSavedNotes}</Button>
+        </div>
+      </div>}
     </div>
   );
 }
@@ -1669,7 +1577,8 @@ function emptyCronForm(currency: string): CronForm {
 function HeartbeatPill({ cron }: { cron: Cron }) {
   const t = useDict();
   const locale = useDateLocale();
-  const { state, lastSuccessAt } = cronHeartbeatState(cron);
+  const now = useNow();
+  const { state, lastSuccessAt } = cronHeartbeatState(cron, now ?? new Date(NaN));
   const map: Record<
     CronHeartbeatState,
     { label: string; cls: string; Icon: typeof Check }
@@ -1694,6 +1603,11 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
       cls: "border-border bg-surface-muted text-foreground-muted",
       Icon: Clock,
     },
+    unknown: {
+      label: t.projects.heartbeatUnknown,
+      cls: "border-border bg-surface-muted text-foreground-muted",
+      Icon: CircleDashed,
+    },
     unmonitored: {
       label: t.projects.heartbeatUnmonitored,
       cls: "border-border bg-surface-muted text-foreground-muted",
@@ -1701,15 +1615,15 @@ function HeartbeatPill({ cron }: { cron: Cron }) {
     },
   };
   const entry = map[state];
-  const detail = lastSuccessAt
+  const detail = state === "unknown" ? t.projects.heartbeatUnknownHint : lastSuccessAt
     ? t.projects.heartbeatLastSuccess(
-        formatDistanceToNow(lastSuccessAt, { addSuffix: true, locale }),
+        now ? formatDistance(lastSuccessAt, now, { addSuffix: true, locale }) : "—",
       )
     : state === "unmonitored"
       ? t.projects.heartbeatUnmonitoredHint
       : t.projects.heartbeatNoSuccess;
   return (
-    <Tooltip content={detail}>
+    <Tooltip content={<div className="max-w-xs space-y-1"><p>{detail}</p>{(state === "ok" || state === "late" || state === "stale") && <p>{t.projects.heartbeatEstimate}</p>}</div>}>
       {/* Focusable so the detail is reachable by keyboard, not hover only. */}
       <span
         tabIndex={0}
@@ -1737,6 +1651,7 @@ function CronsSection({
   setCrons: Updater<Cron[]>;
   displayCurrency: string;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const t = useDict();
   const toast = useToast();
@@ -1750,7 +1665,7 @@ function CronsSection({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (busy || !form.name.trim()) return;
     setBusy(true);
     const payload = {
       name: form.name.trim(),
@@ -1774,7 +1689,7 @@ function CronsSection({
         if (error) throw error;
         setCrons((prev) => prev.map((c) => (c.id === form.id ? (data as Cron) : c)));
       } else {
-        const userId = await currentUserId(supabase);
+        const userId = await currentUserId(supabase, ownerScope?.capture());
         if (!userId) throw new Error(t.common.signInFirst);
         const { data, error } = await supabase
           .from("crons")
@@ -1904,7 +1819,7 @@ function CronsSection({
                     />
                   </span>
                 </Tooltip>
-                <div className="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100">
+                <div className="flex shrink-0 gap-0.5 opacity-100 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                   <Button
                     size="icon-sm"
                     variant="ghost"
@@ -1937,6 +1852,7 @@ function CronsSection({
             <div className="space-y-1">
               <Label className="text-xs">{t.projects.cronName}</Label>
               <Input
+                aria-label={t.projects.cronName}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder={t.projects.cronNamePlaceholder}
@@ -1946,6 +1862,7 @@ function CronsSection({
             <div className="space-y-1">
               <Label className="text-xs">{t.projects.schedule}</Label>
               <Input
+                aria-label={t.projects.schedule}
                 value={form.schedule}
                 onChange={(e) => setForm({ ...form, schedule: e.target.value })}
                 placeholder={t.projects.schedulePlaceholder}
@@ -1956,7 +1873,8 @@ function CronsSection({
           <div className="space-y-1">
             <Label className="text-xs">{t.projects.endpoint}</Label>
             <Input
-              value={form.endpoint}
+              aria-label={t.projects.endpoint}
+                value={form.endpoint}
               onChange={(e) => setForm({ ...form, endpoint: e.target.value })}
               placeholder={t.projects.endpointPlaceholder}
               className="h-8 text-sm font-mono"
@@ -1965,7 +1883,8 @@ function CronsSection({
           <div className="space-y-1">
             <Label className="text-xs">{t.projects.cronDescription}</Label>
             <Input
-              value={form.description}
+              aria-label={t.projects.cronDescription}
+                value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder={t.projects.cronDescriptionPlaceholder}
               className="h-8 text-sm"
@@ -2015,7 +1934,8 @@ function CronsSection({
                 <Input
                   type="number"
                   step="0.0001"
-                  value={form.cost_per_run}
+                  aria-label={t.projects.costPerRun}
+                value={form.cost_per_run}
                   onChange={(e) =>
                     setForm({ ...form, cost_per_run: e.target.value })
                   }
@@ -2026,6 +1946,7 @@ function CronsSection({
               <div className="space-y-1">
                 <Label className="text-xs">{t.projects.currency}</Label>
                 <SimpleSelect
+                  aria-label={t.projects.currency}
                   value={form.currency}
                   onValueChange={(v) => setForm({ ...form, currency: v })}
                   className="h-8 text-xs"
@@ -2036,7 +1957,8 @@ function CronsSection({
                 <Label className="text-xs">{t.projects.runsPerMonth}</Label>
                 <Input
                   type="number"
-                  value={form.runs_per_month}
+                  aria-label={t.projects.runsPerMonth}
+                value={form.runs_per_month}
                   onChange={(e) =>
                     setForm({ ...form, runs_per_month: e.target.value })
                   }

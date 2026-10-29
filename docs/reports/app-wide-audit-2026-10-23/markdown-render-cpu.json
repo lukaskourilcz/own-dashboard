@@ -1,0 +1,120 @@
+{
+  "baseline": "1886429",
+  "measuredAt": "2026-10-24T15:28:13.627Z",
+  "node": "v26.8.2",
+  "platform": "darwin",
+  "scope": "Local warmed server-render CPU for invented unclosed bracket runs; no deployed latency or billing measurement.",
+  "textEqual": true,
+  "before": [
+    {
+      "sample": 1,
+      "characters": 10000,
+      "milliseconds": 59.665,
+      "textHash": "e8b845a11dec94b0ee9919fe0104f8b0cda59f7fba546a385682b434c353df6c"
+    },
+    {
+      "sample": 1,
+      "characters": 20000,
+      "milliseconds": 216.421,
+      "textHash": "a988994a238d1438aef8c86085ca6a67451dda9c65a19319baf63249dca60b0a"
+    },
+    {
+      "sample": 1,
+      "characters": 30000,
+      "milliseconds": 787.21,
+      "textHash": "0c26d380a0ccc0de2d40d311c86a6320bdecdba0e20012f9ea82e20b6d4c2678"
+    },
+    {
+      "sample": 2,
+      "characters": 10000,
+      "milliseconds": 53.147,
+      "textHash": "e8b845a11dec94b0ee9919fe0104f8b0cda59f7fba546a385682b434c353df6c"
+    },
+    {
+      "sample": 2,
+      "characters": 20000,
+      "milliseconds": 299.246,
+      "textHash": "a988994a238d1438aef8c86085ca6a67451dda9c65a19319baf63249dca60b0a"
+    },
+    {
+      "sample": 2,
+      "characters": 30000,
+      "milliseconds": 442.281,
+      "textHash": "0c26d380a0ccc0de2d40d311c86a6320bdecdba0e20012f9ea82e20b6d4c2678"
+    },
+    {
+      "sample": 3,
+      "characters": 10000,
+      "milliseconds": 47.821,
+      "textHash": "e8b845a11dec94b0ee9919fe0104f8b0cda59f7fba546a385682b434c353df6c"
+    },
+    {
+      "sample": 3,
+      "characters": 20000,
+      "milliseconds": 205.919,
+      "textHash": "a988994a238d1438aef8c86085ca6a67451dda9c65a19319baf63249dca60b0a"
+    },
+    {
+      "sample": 3,
+      "characters": 30000,
+      "milliseconds": 447.407,
+      "textHash": "0c26d380a0ccc0de2d40d311c86a6320bdecdba0e20012f9ea82e20b6d4c2678"
+    }
+  ],
+  "after": [
+    {
+      "sample": 1,
+      "characters": 10000,
+      "milliseconds": 0.245,
+      "textHash": "e8b845a11dec94b0ee9919fe0104f8b0cda59f7fba546a385682b434c353df6c"
+    },
+    {
+      "sample": 1,
+      "characters": 20000,
+      "milliseconds": 0.26,
+      "textHash": "a988994a238d1438aef8c86085ca6a67451dda9c65a19319baf63249dca60b0a"
+    },
+    {
+      "sample": 1,
+      "characters": 30000,
+      "milliseconds": 0.643,
+      "textHash": "0c26d380a0ccc0de2d40d311c86a6320bdecdba0e20012f9ea82e20b6d4c2678"
+    },
+    {
+      "sample": 2,
+      "characters": 10000,
+      "milliseconds": 0.269,
+      "textHash": "e8b845a11dec94b0ee9919fe0104f8b0cda59f7fba546a385682b434c353df6c"
+    },
+    {
+      "sample": 2,
+      "characters": 20000,
+      "milliseconds": 0.259,
+      "textHash": "a988994a238d1438aef8c86085ca6a67451dda9c65a19319baf63249dca60b0a"
+    },
+    {
+      "sample": 2,
+      "characters": 30000,
+      "milliseconds": 0.341,
+      "textHash": "0c26d380a0ccc0de2d40d311c86a6320bdecdba0e20012f9ea82e20b6d4c2678"
+    },
+    {
+      "sample": 3,
+      "characters": 10000,
+      "milliseconds": 0.151,
+      "textHash": "e8b845a11dec94b0ee9919fe0104f8b0cda59f7fba546a385682b434c353df6c"
+    },
+    {
+      "sample": 3,
+      "characters": 20000,
+      "milliseconds": 0.405,
+      "textHash": "a988994a238d1438aef8c86085ca6a67451dda9c65a19319baf63249dca60b0a"
+    },
+    {
+      "sample": 3,
+      "characters": 30000,
+      "milliseconds": 0.589,
+      "textHash": "0c26d380a0ccc0de2d40d311c86a6320bdecdba0e20012f9ea82e20b6d4c2678"
+    }
+  ]
+}

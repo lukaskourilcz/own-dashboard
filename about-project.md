@@ -8,9 +8,10 @@ weekly reviews. The owner-authorized Marketing workspace alone can use Claude th
 
 ## Tech stack
 
-- **Next.js 16 (App Router) and TypeScript** — the authenticated shell and API routes
+- **Node.js 22 LTS** — local/CI security patch pinned in `.nvmrc`; Vercel receives managed Node 22 patch updates
+- **Next.js 16.4.3 (App Router), React 19.2.4 and TypeScript** — the authenticated shell and API routes
 - **Tailwind CSS 4, Radix primitives, Recharts, BlockNote, dnd-kit** — UI, charts, notes editor, drag handles
-- **Supabase and TanStack Query** — Postgres, Auth, owner-only RLS, route-scoped loading
+- **Supabase and TanStack Query** — Postgres, Auth, owner-only RLS, route-scoped loading; signed file transfers use a separate cancellable Storage transport
 - **Marketing** — a Supabase pg_cron tick that drives DNESKAi from collection to publishing, n8n Cloud for devShark and knowledge only, deterministic carousels (devShark from a Claude Design-derived layout, DNESKAi through the vendored Quorum carousel studio in `vendor/carousel-studio`), Reels encoded with `ffmpeg-static`, LangChain and redacted EU LangSmith diagnostics
 - **Vitest, Playwright, axe-core** — unit, end-to-end and accessibility tests
 

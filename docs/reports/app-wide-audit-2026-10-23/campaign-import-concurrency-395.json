@@ -1,0 +1,13 @@
+{
+  "engine": "PostgreSQL 17.11 (Postgres.app) on aarch64-apple-darwin23.6.0, compiled by Apple clang version 15.0.0 (clang-1500.3.9.4), 64-bit",
+  "syntheticOnly": true,
+  "connections": 2,
+  "serviceRole": true,
+  "sameCampaignId": true,
+  "campaigns": 1,
+  "entries": 1,
+  "publications": 0,
+  "migration": "20261028233906_confirmed_marketing_campaign_import.sql",
+  "migrationSha256": "3b1179c64e5961685dd53aaa1c59c74fff12cab63029f226697d06060f940c19",
+  "scope": "Isolated two-connection PostgreSQL import concurrency; not managed production, full-chain native or performance evidence."
+}

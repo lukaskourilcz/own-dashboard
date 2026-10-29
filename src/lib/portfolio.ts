@@ -6,9 +6,10 @@ import type { Project } from "@/lib/types";
  * The GitHub sync only materializes repositories on the saved allow-list, so a
  * repository created after that list was saved (phone-app) never reached the
  * Projects table. This registry is the second, deterministic source: every
- * entry is materialized as a `projects` row bound by `portfolio_key`, whether
- * or not GitHub is connected, and venture subsections (Design Lab, GoVIRAL)
- * become child rows of their repository project.
+ * unambiguous entry is materialized as a `projects` row bound by `portfolio_key`,
+ * whether or not GitHub is connected. Conflicting identities leave owned rows
+ * untouched. Venture subsections (Design Lab, GoVIRAL) become child rows of
+ * their repository project.
  *
  * Every entry is the owner's own product (`engagement = 'own'`). Whether a
  * project is client work is `projects.engagement` alone; the registry never
@@ -123,6 +124,7 @@ export const PORTFOLIO: PortfolioEntry[] = [
 ];
 
 const BY_KEY = new Map(PORTFOLIO.map((entry) => [entry.key, entry]));
+const REGISTRY_ORDER = new Map(PORTFOLIO.map((entry, index) => [entry.key, index]));
 const BY_REPO = new Map(
   PORTFOLIO.filter((entry) => entry.repo).map((entry) => [entry.repo!.toLowerCase(), entry]),
 );
@@ -132,9 +134,9 @@ type RepoIdentity = Pick<Project, "repo_full_name" | "previous_repo_full_names" 
 /** Current and earlier repository names of a top-level project, lowercased. */
 function repoNames(project: RepoIdentity): string[] {
   if (project.parent_id) return [];
-  return [project.repo_full_name, ...(project.previous_repo_full_names ?? [])]
-    .filter((name): name is string => !!name)
-    .map((name) => name.toLowerCase());
+  return [...new Set([project.repo_full_name, ...(project.previous_repo_full_names ?? [])]
+    .map(name => name?.trim().toLowerCase())
+    .filter((name): name is string => !!name))];
 }
 
 export function portfolioEntry(key: string | null | undefined): PortfolioEntry | undefined {
@@ -143,19 +145,21 @@ export function portfolioEntry(key: string | null | undefined): PortfolioEntry |
 
 /**
  * Registry entry for a project row: by key first, then, for a top-level row,
- * by its current or an earlier repository name, so a renamed repository keeps
- * its entry.
+ * by its unique current or historical repository identity. A future/unknown
+ * explicit key stays unknown; conflicting historical names imply no entry.
  */
 export function portfolioEntryFor(
   project: Pick<Project, "portfolio_key" | "repo_full_name" | "parent_id"> & Partial<Pick<Project, "previous_repo_full_names">>,
 ): PortfolioEntry | undefined {
-  const byKey = portfolioEntry(project.portfolio_key);
-  if (byKey) return byKey;
-  for (const name of repoNames(project)) {
-    const entry = BY_REPO.get(name);
-    if (entry) return entry;
-  }
-  return undefined;
+  if (project.portfolio_key) return portfolioEntry(project.portfolio_key);
+  if (project.parent_id) return undefined;
+  const current = project.repo_full_name?.trim().toLowerCase();
+  const byCurrent = current ? BY_REPO.get(current) : undefined;
+  if (byCurrent) return byCurrent;
+  const history = new Set(repoNames(project).flatMap(name => {
+    const entry = BY_REPO.get(name); return entry ? [entry] : [];
+  }));
+  return history.size === 1 ? history.values().next().value : undefined;
 }
 
 /**
@@ -182,22 +186,20 @@ export function isPortfolioProject(
 
 /** Group projects by registry category, registry order first, then any other project. */
 export function groupPortfolio(projects: Project[]): { category: PortfolioCategory | "other"; projects: Project[] }[] {
-  const byId = new Map(projects.map((project) => [project.id, project]));
+  const byId = new Set(projects.map((project) => project.id));
   const groups = new Map<PortfolioCategory | "other", Project[]>();
   const push = (category: PortfolioCategory | "other", project: Project) => {
     const list = groups.get(category);
     if (list) list.push(project);
     else groups.set(category, [project]);
   };
-  const registryOrder = new Map(PORTFOLIO.map((entry, index) => [entry.key, index]));
-  const ordered = [...projects].sort((a, b) => {
-    const ia = registryOrder.get(portfolioEntryFor(a)?.key ?? "") ?? Number.MAX_SAFE_INTEGER;
-    const ib = registryOrder.get(portfolioEntryFor(b)?.key ?? "") ?? Number.MAX_SAFE_INTEGER;
-    return ia - ib || a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at);
-  });
-  for (const project of ordered) {
-    if (project.parent_id && byId.has(project.parent_id)) continue; // listed under its parent
+  // Classify once per row, not repeatedly inside the sort comparator.
+  const ordered = projects.map(project => {
     const entry = portfolioEntryFor(project);
+    return { project, entry, order: REGISTRY_ORDER.get(entry?.key ?? "") ?? Number.MAX_SAFE_INTEGER };
+  }).sort((a, b) => a.order - b.order || a.project.sort_order - b.project.sort_order || a.project.created_at.localeCompare(b.project.created_at));
+  for (const { project, entry } of ordered) {
+    if (project.parent_id && byId.has(project.parent_id)) continue;
     push(entry?.category ?? "other", project);
   }
   const order: (PortfolioCategory | "other")[] = [...PORTFOLIO_CATEGORY_ORDER, "other"];
@@ -209,9 +211,9 @@ export function childProjects(projects: Project[], parentId: string): Project[] 
   return projects
     .filter((project) => project.parent_id === parentId)
     .sort((a, b) => {
-      const ia = PORTFOLIO.findIndex((entry) => entry.key === a.portfolio_key);
-      const ib = PORTFOLIO.findIndex((entry) => entry.key === b.portfolio_key);
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.sort_order - b.sort_order;
+      const ia = REGISTRY_ORDER.get(a.portfolio_key ?? "") ?? Number.MAX_SAFE_INTEGER;
+      const ib = REGISTRY_ORDER.get(b.portfolio_key ?? "") ?? Number.MAX_SAFE_INTEGER;
+      return ia - ib || a.sort_order - b.sort_order;
     });
 }
 
@@ -219,29 +221,71 @@ export type PortfolioPlanStep =
   | { kind: "insert"; entry: PortfolioEntry; parentId: string | null }
   | { kind: "update"; project: Project; patch: Pick<Partial<Project>, "portfolio_key" | "parent_id"> };
 
-/**
- * What the registry sync has to write so every entry has exactly one row with
- * the right key and parent. Pure, so the Projects panel can run it in an
- * effect and tests can check it never touches a row that is already correct.
- * It writes `portfolio_key` and `parent_id` only; a row's name, slug and
- * engagement belong to the owner. Subsections whose parent does not exist yet
- * are planned on the next pass.
- */
+/** Resolve identity for the whole registry before planning writes. Existing
+ * keys win, then unique current names, then unique history. A row can claim
+ * only one entry; ambiguous or already-bound aliases are not new projects. */
+function portfolioRows(projects: readonly Project[]) {
+  const keyed = new Map<string, Project[]>();
+  const add = (map: Map<string, Project[]>, key: string, project: Project) => {
+    const rows = map.get(key); if (rows) rows.push(project); else map.set(key, [project]);
+  };
+  const claimed = new Set<string>(), resolved = new Map<string, Project>(), blocked = new Set<string>();
+  for (const project of projects) {
+    if (project.portfolio_key) { add(keyed, project.portfolio_key, project); claimed.add(project.id); }
+  }
+  for (const [key, candidates] of keyed) {
+    if (candidates.length === 1) resolved.set(key, candidates[0]); else blocked.add(key);
+  }
+  // Most passes already have every key. Parent repairs need no name/history scan.
+  if (PORTFOLIO.every(entry => resolved.has(entry.key) || blocked.has(entry.key))) return { resolved, blocked };
+  const current = new Map<string, Project[]>(), history = new Map<string, Project[]>();
+  for (const project of projects) {
+    if (project.parent_id) continue;
+    const name = project.repo_full_name?.trim().toLowerCase(), entry = name ? BY_REPO.get(name) : undefined;
+    if (entry) add(current, entry.key, project);
+    const previousKeys = new Set<string>();
+    for (const previous of project.previous_repo_full_names ?? []) {
+      const entry = previous ? BY_REPO.get(previous.trim().toLowerCase()) : undefined;
+      if (entry) previousKeys.add(entry.key);
+    }
+    for (const key of previousKeys) add(history, key, project);
+  }
+  const eligible = (project: Project) => !project.portfolio_key && !claimed.has(project.id);
+  // Resolve current names globally before a historical alias can claim one.
+  for (const entry of PORTFOLIO) {
+    if (resolved.has(entry.key) || blocked.has(entry.key) || !entry.repo) continue;
+    const candidates = current.get(entry.key) ?? [];
+    if (candidates.length === 1 && eligible(candidates[0])) { resolved.set(entry.key, candidates[0]); claimed.add(candidates[0].id); }
+    else if (candidates.length) blocked.add(entry.key);
+  }
+  const aliases = new Map<string, Project>(), aliasClaims = new Map<string, number>();
+  for (const entry of PORTFOLIO) {
+    if (resolved.has(entry.key) || blocked.has(entry.key) || !entry.repo) continue;
+    const candidates = history.get(entry.key) ?? [];
+    if (candidates.length === 1 && eligible(candidates[0])) {
+      aliases.set(entry.key, candidates[0]); aliasClaims.set(candidates[0].id, (aliasClaims.get(candidates[0].id) ?? 0) + 1);
+    } else if (candidates.length) blocked.add(entry.key);
+  }
+  for (const [key, project] of aliases) {
+    if (aliasClaims.get(project.id) === 1) resolved.set(key, project); else blocked.add(key);
+  }
+  return { resolved, blocked };
+}
+
+/** Plan only unambiguous registry writes. Owner names/slugs/engagement stay
+ * intact. A subsection waits for an existing resolved parent; a known or
+ * unknown existing key is never replaced through a repository-name fallback. */
 export function planPortfolioSync(projects: Project[]): PortfolioPlanStep[] {
   const steps: PortfolioPlanStep[] = [];
-  const byKey = new Map<string, Project>();
-  for (const project of projects) if (project.portfolio_key) byKey.set(project.portfolio_key, project);
-  const findByRepo = (repo: string) =>
-    projects.find((project) => repoNames(project).includes(repo.toLowerCase()));
-  const rowFor = (entry: PortfolioEntry) =>
-    byKey.get(entry.key) ?? (entry.repo ? findByRepo(entry.repo) : undefined);
+  const { resolved, blocked } = portfolioRows(projects);
 
   for (const entry of PORTFOLIO) {
     const parentEntry = entry.parentKey ? portfolioEntry(entry.parentKey) : undefined;
-    const parent = parentEntry ? rowFor(parentEntry) : undefined;
+    const parent = parentEntry ? resolved.get(parentEntry.key) : undefined;
     if (entry.parentKey && !parent) continue;
-    const existing = rowFor(entry);
+    const existing = resolved.get(entry.key);
     if (!existing) {
+      if (blocked.has(entry.key)) continue;
       steps.push({ kind: "insert", entry, parentId: parent?.id ?? null });
       continue;
     }

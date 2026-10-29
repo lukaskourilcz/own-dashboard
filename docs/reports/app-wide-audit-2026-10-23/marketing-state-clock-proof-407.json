@@ -1,0 +1,10 @@
+{
+  "scope": "One failing synthetic mobile clock-control observation; no application timestamp rewrite inferred",
+  "beforeRefreshDateNow": 1793268000678,
+  "cachedCheckedAt": "2026-10-29T10:00:00.584Z",
+  "afterFastForwardDateNow": 1793268000812,
+  "requestedFastForwardMilliseconds": 60000,
+  "observedCachedAgeMilliseconds": 228,
+  "originalFailureRetained": "test-results/audit-407-final-native/marketing-state-recovery-c-4395d-r-through-one-explicit-read-mobile/trace.zip",
+  "testChange": "Use documented Date-only setFixedTime and positively assert the exact clock value before the refused refresh; retain the full minute-age assertion."
+}

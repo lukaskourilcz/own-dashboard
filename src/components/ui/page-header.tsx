@@ -1,4 +1,13 @@
+"use client";
+
+import { createContext, useContext } from "react";
 import { cn } from "@/lib/utils";
+
+const ShellTitleContext = createContext(false);
+/** The toolbar owns the sole page title inside the persistent dashboard shell. */
+export function ShellTitleProvider({ children }: { children: React.ReactNode }) {
+  return <ShellTitleContext.Provider value>{children}</ShellTitleContext.Provider>;
+}
 
 export function PageHeader({
   title,
@@ -15,6 +24,8 @@ export function PageHeader({
   density?: "regular" | "compact";
   className?: string;
 }) {
+  const shellOwnsTitle = useContext(ShellTitleContext);
+  if (shellOwnsTitle && !description && !eyebrow && !action) return null;
   return (
     <div
       data-page-header
@@ -24,15 +35,15 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="min-w-0">
+      {(!shellOwnsTitle || description || eyebrow) && <div className="min-w-0">
         {eyebrow && <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand">{eyebrow}</p>}
-        <h1 className="text-2xl font-semibold leading-tight tracking-[-0.025em] text-foreground">
+        {!shellOwnsTitle && <h1 className="text-2xl font-semibold leading-tight tracking-[-0.025em] text-foreground">
           {title}
-        </h1>
+        </h1>}
         {description && (
           <p className="mt-1 text-sm text-foreground-muted">{description}</p>
         )}
-      </div>
+      </div>}
       {action && <div className="min-w-0 max-w-full">{action}</div>}
     </div>
   );

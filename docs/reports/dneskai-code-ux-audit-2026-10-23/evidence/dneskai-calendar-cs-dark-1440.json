@@ -1,0 +1,246 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 46,
+      "tag": "DIV",
+      "text": "Dnes ke schváleníKalendářPříspěvkyZdroje (DNESKAi)",
+      "width": 1120,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "className": "min-w-0 space-y-5",
+      "height": 1095,
+      "tag": "SECTION",
+      "text": "Příštích sedm dníPublikační sloty v čase Europe/Prague a co je v nich naplánované.ObnovitNáhled s ukázkovými příspěvky. Úpravy překreslí syn",
+      "width": 1120,
+      "x": 276,
+      "y": 154
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 395,
+      "tag": "LI",
+      "text": "pátek 23/10Dnes08:00Kdy ověřit odpověď modeluChyba nebo nejasný výsledekCo se stalo: Instagram neodpověděl včas; příspěvek možná existuje, m",
+      "width": 365.3,
+      "x": 276,
+      "y": 242
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 395,
+      "tag": "LI",
+      "text": "sobota 24/1008:00Benchmark není žebříčekČeká na kontrolu12:30Tip dne: kontext místo prosebČeká na kontrolu17:00Proč verzovat promptyChyba ne",
+      "width": 365.3,
+      "x": 653,
+      "y": 242
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 395,
+      "tag": "LI",
+      "text": "neděle 25/10Tento den se mění čas; časy jsou místní pražské.08:00Tři zkratky pro terminálVráceno12:30Kdy stačí menší modelNaplánováno17:00Co",
+      "width": 365.3,
+      "x": 1031,
+      "y": 242
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 402,
+      "tag": "LI",
+      "text": "pondělí 26/1008:00Schválený příspěvek bez zařazeníSchváleno12:30Co stojí jeden dotazChyba nebo nejasný výsledekCo se stalo: Nová verze se ul",
+      "width": 365.3,
+      "x": 276,
+      "y": 649
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 402,
+      "tag": "LI",
+      "text": "úterý 27/1008:00Volný slot12:30Volný slot17:00Volný slot20:00Volný slot",
+      "width": 365.3,
+      "x": 653,
+      "y": 649
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 402,
+      "tag": "LI",
+      "text": "středa 28/1008:00Volný slot12:30Volný slot17:00Volný slot20:00Volný slot",
+      "width": 365.3,
+      "x": 1031,
+      "y": 649
+    },
+    {
+      "className": "min-w-0 rounded-lg border border-border bg-surface",
+      "height": 186,
+      "tag": "LI",
+      "text": "čtvrtek 29/1008:00Volný slot12:30Volný slot17:00Volný slot20:00Volný slot",
+      "width": 365.3,
+      "x": 276,
+      "y": 1063
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Příkazová paleta",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Dnes ke schválení",
+      "width": 127.4,
+      "x": 281,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Kalendář",
+      "width": 75.2,
+      "x": 412,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Příspěvky",
+      "width": 80.7,
+      "x": 492,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Zdroje (DNESKAi)",
+      "width": 126.5,
+      "x": 576,
+      "y": 99
+    },
+    {
+      "disabled": false,
+      "height": 36,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Více",
+      "width": 36,
+      "x": 1355,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit",
+      "width": 78.6,
+      "x": 1317,
+      "y": 154
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "height": 20,
+      "tag": "H2",
+      "text": "Příštích sedm dní",
+      "width": 422.3,
+      "x": 276,
+      "y": 154
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "pátek 23/10Dnes",
+      "width": 363.3,
+      "x": 277,
+      "y": 243
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "sobota 24/10",
+      "width": 363.3,
+      "x": 654,
+      "y": 243
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "neděle 25/10",
+      "width": 363.3,
+      "x": 1032,
+      "y": 243
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "pondělí 26/10",
+      "width": 363.3,
+      "x": 277,
+      "y": 650
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "úterý 27/10",
+      "width": 363.3,
+      "x": 654,
+      "y": 650
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "středa 28/10",
+      "width": 363.3,
+      "x": 1032,
+      "y": 650
+    },
+    {
+      "height": 37,
+      "tag": "H3",
+      "text": "čtvrtek 29/10",
+      "width": 363.3,
+      "x": 277,
+      "y": 1064
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

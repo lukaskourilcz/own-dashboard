@@ -45,3 +45,6 @@ export type ScrapeSummary = {
   pruned: number;
   sources: Record<string, SourceOutcome>;
 };
+
+/** Source observation survives even when no eligible rows remain. */
+export type ScrapedJobSnapshot = { jobs: ScrapedJob[]; observedAt: string };

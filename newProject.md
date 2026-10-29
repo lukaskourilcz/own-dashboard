@@ -38,7 +38,7 @@ Mirror the common tooling the other repos share where it fits: a design-system s
 
 ## Git workflow (every session)
 
-- **Commit frequently** in small, coherent steps — never batch a whole session into one commit.
-- **At the end of every session, push and merge to `main`**. Projects whose Vercel Git integration deploys `main` redeploy immediately; boardlessAI does not (its `site/vercel.json` sets `git.deploymentEnabled: false`).
-- **Delete the merged / old branch** (local and remote) after merging, to keep the repo clean. Never leave stale branches behind.
-
+- **Read the destination repository's instructions first.** Its authorization and release rules govern that repository.
+- **Commit frequently** in small, meaningful steps, with relevant validation and current documentation.
+- **Push and merge only when the owner has authorized it.** Existing authorization remains valid; do not ask again for work already approved. Complete required migrations and release checks before merging. A merge can deploy production when its Git integration is enabled.
+- **Clean up branches only within the authorized scope.** Preserve unrelated work and branches; follow the repository's retention policy.

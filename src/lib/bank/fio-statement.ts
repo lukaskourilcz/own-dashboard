@@ -11,6 +11,8 @@
  * Pure and network-free on purpose: the HTTP call lives in `fio-adapter.ts`,
  * everything that decides what a row means lives here and is unit-tested.
  */
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
+import { z } from "zod";
 import type { ProviderAccount, ProviderTransaction } from "@/lib/bank/provider";
 import { extractVariableSymbol, normalizeSymbol } from "@/lib/payment-matching";
 
@@ -44,25 +46,37 @@ function columnValue(row: Record<string, unknown>, id: number): unknown {
 }
 
 function text(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" && !(typeof value === "number" && Number.isSafeInteger(value))) return null;
   const s = String(value).trim();
   return s.length > 0 ? s : null;
 }
 
-/** Fio dates arrive as "2026-01-05+0100"; only the calendar day is stored. */
+const fioDayFormatter = new Intl.DateTimeFormat("en", { timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit" });
+/** Fio documents date+offset strings and epoch milliseconds. Preserve its
+ * banking calendar day; the server's timezone must not move it backwards.
+ */
 function isoDate(value: unknown): string | null {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) return null;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return null;
+    const parts = fioDayFormatter.formatToParts(date);
+    const key = ["year", "month", "day"].map(type => parts.find(part => part.type === type)!.value).join("-");
+    return z.iso.date().safeParse(key).success ? key : null;
+  }
   const raw = text(value);
-  if (!raw) return null;
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return match ? match[0] : null;
+  if (!raw || !/^\d{4}-\d{2}-\d{2}(?:[+-]\d{4})?$/.test(raw)) return null;
+  const key = raw.slice(0, 10);
+  return z.iso.date().safeParse(key).success ? key : null;
 }
 
 function amount(value: unknown): number | null {
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "number") return Number.isFinite(value) && Math.round(value * 100) / 100 === value && Math.abs(value) <= 999999999999.99 ? value : null;
   const raw = text(value);
   if (!raw) return null;
   // A string amount may be Czech-formatted ("1 234,56").
   const cleaned = raw.replace(/\s/g, "").replace(",", ".");
+  if (!/^[+-]?\d+(?:\.\d{1,2})?$/.test(cleaned)) return null;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -71,7 +85,10 @@ function amount(value: unknown): number | null {
  *  scanned out of the free-text fields the same way the GoCardless mapper does. */
 function variableSymbol(row: Record<string, unknown>): string | null {
   const explicit = text(columnValue(row, 5));
-  if (explicit && /^\d{1,10}$/.test(explicit)) return normalizeSymbol(explicit);
+  if (explicit) {
+    if (!/^\d{1,10}$/.test(explicit)) throw new Error("Invalid bank reference");
+    return normalizeSymbol(explicit);
+  }
   const candidates = [
     text(columnValue(row, 16)),
     text(columnValue(row, 7)),
@@ -107,11 +124,11 @@ function note(row: Record<string, unknown>): string | null {
     return true;
   });
   if (unique.length === 0) return null;
-  return unique.join(" · ").slice(0, 500);
+  return [...unique.join(" · ")].slice(0, 500).join("");
 }
 
-/** One `transactionList.transaction[]` entry → a provider transaction, or null
- *  when the entry lacks the two fields a row cannot exist without. */
+/** One documented movement. A null result makes the full statement fail;
+ * malformed booked payments must never be silently dropped. */
 export function parseFioTransaction(
   entry: unknown,
   fallbackCurrency: string,
@@ -121,12 +138,15 @@ export function parseFioTransaction(
   const movementId = text(columnValue(row, 22));
   const occurredOn = isoDate(columnValue(row, 0));
   const raw = amount(columnValue(row, 1));
-  if (!movementId || !occurredOn || raw === null) return null;
+  const currency = text(columnValue(row, 14)) ?? fallbackCurrency;
+  if (!movementId || !/^\d{1,20}$/.test(movementId) || !occurredOn || raw === null
+    || Math.round(raw * 100) / 100 !== raw || Math.abs(raw) > 999999999999.99
+    || !(SUPPORTED_CURRENCIES as readonly string[]).includes(currency)) return null;
   return {
     kind: raw < 0 ? "expense" : "income",
     // The database enforces amount >= 0; direction lives in `kind`.
     amount: Math.abs(raw),
-    currency: text(columnValue(row, 14)) ?? fallbackCurrency,
+    currency,
     category: null,
     note: note(row),
     occurred_on: occurredOn,
@@ -137,8 +157,8 @@ export function parseFioTransaction(
 
 /**
  * A whole `transactions.json` payload. Returns null when the document is not a
- * Fio statement at all; a statement whose transaction list is empty or missing
- * is a valid, quiet result.
+ * Fio statement at all; an explicitly null/empty transaction list is a valid,
+ * quiet result. A missing or malformed list cannot prove a complete pull.
  */
 export function parseFioStatement(
   payload: unknown,
@@ -153,19 +173,29 @@ export function parseFioStatement(
   const infoRow = info as Record<string, unknown>;
   const accountId = text(infoRow.accountId);
   if (!accountId) return null;
-  const currency = text(infoRow.currency) ?? "CZK";
+  if (accountId.length > 64) throw new Error("Invalid bank account");
+  const currency = text(infoRow.currency);
+  if (!currency || !(SUPPORTED_CURRENCIES as readonly string[]).includes(currency)) throw new Error("Bank currency unavailable");
   const closing = amount(infoRow.closingBalance);
+  if (infoRow.closingBalance != null && closing === null) throw new Error("Invalid bank balance");
 
   const listHolder = (statement as Record<string, unknown>).transactionList;
+  if (!Object.hasOwn(statement, "transactionList") || (listHolder != null && !Object.hasOwn(listHolder, "transaction"))) throw new Error("Invalid bank statement");
   const rawList =
     listHolder && typeof listHolder === "object"
       ? (listHolder as Record<string, unknown>).transaction
       : null;
-  const entries = Array.isArray(rawList) ? rawList : [];
-
-  const transactions = entries
-    .map((entry) => parseFioTransaction(entry, currency))
-    .filter((tx): tx is ProviderTransaction => tx !== null);
+  if (listHolder != null && (typeof listHolder !== "object" || Array.isArray(listHolder))) throw new Error("Invalid bank statement");
+  if (rawList != null && !Array.isArray(rawList)) throw new Error("Invalid bank statement");
+  const entries = rawList ?? [];
+  if (entries.length > 20_000) throw new Error("Bank statement limit");
+  const ids = new Set<string>();
+  const transactions = entries.map((entry: unknown) => {
+    const tx = parseFioTransaction(entry, currency);
+    if (!tx || ids.has(tx.external_id)) throw new Error("Invalid bank transaction");
+    ids.add(tx.external_id);
+    return tx;
+  });
 
   const account: ProviderAccount = {
     accountRef: fioAccountRef(accountId),

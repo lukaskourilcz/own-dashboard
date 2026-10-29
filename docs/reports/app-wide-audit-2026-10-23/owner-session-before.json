@@ -1,0 +1,11 @@
+{
+  "source": "e07a445",
+  "actualSdk": "@supabase/ssr 0.10.3 / supabase-js 2.105.4",
+  "syntheticOnly": true,
+  "initialVisible": true,
+  "replacementVerified": true,
+  "peerVerifiedOther": true,
+  "replacementVisible": true,
+  "signedOut": true,
+  "signedOutVisible": true
+}

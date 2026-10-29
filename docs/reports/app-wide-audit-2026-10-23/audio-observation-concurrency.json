@@ -1,0 +1,25 @@
+{
+  "finding": 314,
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal native database with exact stock marketing_accounts/audio_trends definitions and migration 136; full 136-file chain verified separately in PGlite/actual SDK",
+  "delayedOlderObservationIgnored": true,
+  "sameDayCountIncrementedOnce": true,
+  "concurrentFirstObservationsConverge": true,
+  "secondConnectionWaitsBeforeStateRead": true,
+  "outcomes": [
+    "stored",
+    "stored",
+    "superseded",
+    "stored"
+  ],
+  "state": {
+    "title": "Newer",
+    "daysSeen": 3,
+    "lastSeen": "2026-10-27",
+    "proof": "2026-10-27T05:54:14.948585+01:00"
+  },
+  "first": {
+    "rows": 1,
+    "days": 1
+  }
+}

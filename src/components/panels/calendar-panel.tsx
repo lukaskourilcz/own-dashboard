@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/queries/keys";
 import { CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/select";
@@ -11,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { todayKey } from "@/lib/date-keys";
 import { useDict } from "@/lib/i18n";
+import { CalendarWriteError, createOwnedCalendarEvent } from "@/lib/calendar-event-client";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { guestReadOnlyError, isGuestTour } from "@/lib/guest-requests";
+import { useUnsavedDraft } from "@/components/navigation-guard";
 
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
@@ -26,7 +32,7 @@ type FormState = {
 
 const empty: FormState = {
   title: "",
-  date: todayKey(),
+  date: "",
   startTime: "09:00",
   endTime: "10:00",
   description: "",
@@ -46,73 +52,92 @@ export function CalendarPanel({
   compact?: boolean;
   initialTitle?: string;
 }) {
-  const t = useDict();
+  const t = useDict(), owner = useOwnerPreferences();
+  const lifetime = useRef(new AbortController());
+  useLayoutEffect(() => { if (lifetime.current.signal.aborted) lifetime.current = new AbortController(); return () => lifetime.current.abort(); }, []);
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const pending = useRef(false);
+  const qc = useQueryClient();
+  const [defaultDate, setDefaultDate] = useState(todayKey);
   const [form, setForm] = useState<FormState>(() =>
-    initialTitle ? { ...empty, title: initialTitle } : empty,
+    ({ ...empty, date: defaultDate, ...(initialTitle ? { title: initialTitle } : {}) }),
   );
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Submission | null>(null);
+  const [baseline, setBaseline] = useState(() => JSON.stringify(form));
+  useUnsavedDraft({ pending: submitting, dirty: submitting || JSON.stringify(form) !== baseline, canSave: !submitting && !!form.title.trim() && !!form.date && (form.allDay || (!!form.startTime && form.endTime > form.startTime)), save: saveEvent });
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveEvent(): Promise<boolean> {
+    if (pending.current) return false;
+    if (isGuestTour()) { guestReadOnlyError(); return false; }
     setResult(null);
     if (!form.title.trim() || !form.date) {
       setResult({ kind: "error", message: t.calendar.titleAndDateRequired });
-      return;
+      return false;
     }
     if (!form.allDay && (!form.startTime || !form.endTime)) {
       setResult({ kind: "error", message: t.calendar.startAndEndRequired });
-      return;
+      return false;
     }
+    if (!form.allDay && form.endTime <= form.startTime) {
+      setResult({ kind: "error", message: t.calendar.endAfterStart });
+      return false;
+    }
+    const original = owner?.capture();
+    if (!original) { setResult({ kind: "error", message: t.calendar.couldNotCreateEvent }); return false; }
+    const scope = { ownerId: original.ownerId, signal: AbortSignal.any([original.signal, lifetime.current.signal]) };
+    if (scope.signal.aborted) return false;
+    pending.current = true;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/calendar/event", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          date: form.date,
-          startTime: form.allDay ? undefined : form.startTime,
-          endTime: form.allDay ? undefined : form.endTime,
-          description: form.description.trim(),
-          allDay: form.allDay,
-          recurrence: form.recurrence,
-        }),
+      const receipt = await createOwnedCalendarEvent(scope, {
+        title: form.title.trim(), date: form.date,
+        startTime: form.allDay ? undefined : form.startTime,
+        endTime: form.allDay ? undefined : form.endTime,
+        description: form.description.trim(), allDay: form.allDay, recurrence: form.recurrence,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
-      const json = await res.json();
-      if (res.status === 401 && json.reason) {
-        setResult({ kind: "expired" });
-        return;
-      }
-      if (!res.ok) {
-        setResult({
-          kind: "error",
-          message: json.error ?? t.calendar.couldNotCreateEvent,
-        });
-        return;
-      }
-      setResult({ kind: "ok", link: json.htmlLink });
-      setForm({ ...empty, date: form.date });
-    } catch (err) {
-      setResult({ kind: "error", message: (err as Error).message });
+      scope.signal.throwIfAborted();
+      setResult({ kind: "ok", link: receipt.htmlLink });
+      const next = { ...empty, date: form.date };
+      setBaseline(JSON.stringify(next));
+      setForm(next);
+      return true;
+    } catch (error) {
+      if (scope.signal.aborted) return false;
+      setResult(error instanceof CalendarWriteError && error.reason === 'expired' ? { kind: "expired" } : { kind: "error", message: t.calendar.resultUnconfirmed });
+      return false;
     } finally {
-      setSubmitting(false);
+      pending.current = false;
+      if (!scope.signal.aborted) {
+        setSubmitting(false);
+        for (const queryKey of [qk.calendarToday, qk.calendarWeek, qk.calendarLastWeek]) void qc.invalidateQueries({ queryKey });
+      }
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="inline-flex items-center gap-1.5">
+    <Dialog open={open} onOpenChange={next => {
+      if (pending.current) return;
+      setOpen(next);
+      if (!next) return;
+      const date = todayKey();
+      if (JSON.stringify(form) === baseline && form.date === defaultDate) setBaseline(JSON.stringify({ ...form, date }));
+      setForm(previous => ({ ...previous, date: previous.date === defaultDate ? date : previous.date }));
+      setDefaultDate(date);
+    }}><DialogTrigger asChild><Button variant="outline"><CalendarPlus />{t.calendar.newEvent}</Button></DialogTrigger><DialogContent aria-describedby={undefined} showClose={!submitting} onEscapeKeyDown={event => { if (pending.current) event.preventDefault(); }} onPointerDownOutside={event => { if (pending.current) event.preventDefault(); }}><DialogHeader>
+        <DialogTitle className="inline-flex items-center gap-1.5">
           <CalendarPlus className="h-3 w-3" /> {t.calendar.newEvent}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="space-y-3">
+        </DialogTitle>
+      </DialogHeader>
+        <form onSubmit={event => { event.preventDefault(); void saveEvent(); }} className="space-y-3">
+          <fieldset disabled={submitting} className="min-w-0 space-y-3 border-0 p-0" aria-busy={submitting}>
           <div className="space-y-1.5">
-            <Label htmlFor="cal-title">{t.calendar.title}</Label>
+            <Label htmlFor={`${id}-title`}>{t.calendar.title}</Label>
             <Input
-              id="cal-title"
+              id={`${id}-title`}
+              maxLength={500}
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder={t.calendar.titlePlaceholder}
@@ -125,9 +150,9 @@ export function CalendarPanel({
             }
           >
             <div className="space-y-1.5">
-              <Label htmlFor="cal-date">{t.calendar.date}</Label>
+              <Label htmlFor={`${id}-date`}>{t.calendar.date}</Label>
               <Input
-                id="cal-date"
+                id={`${id}-date`}
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -136,9 +161,9 @@ export function CalendarPanel({
             {!form.allDay && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cal-start">{t.calendar.start}</Label>
+                  <Label htmlFor={`${id}-start`}>{t.calendar.start}</Label>
                   <Input
-                    id="cal-start"
+                    id={`${id}-start`}
                     type="time"
                     value={form.startTime}
                     onChange={(e) =>
@@ -147,9 +172,9 @@ export function CalendarPanel({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cal-end">{t.calendar.end}</Label>
+                  <Label htmlFor={`${id}-end`}>{t.calendar.end}</Label>
                   <Input
-                    id="cal-end"
+                    id={`${id}-end`}
                     type="time"
                     value={form.endTime}
                     onChange={(e) =>
@@ -161,7 +186,7 @@ export function CalendarPanel({
             )}
           </div>
           <div className="flex flex-wrap gap-4 items-end">
-            <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
+            <label className="inline-flex min-h-11 md:min-h-8 items-center gap-2 text-xs text-foreground-muted">
               <input
                 type="checkbox"
                 className="h-3.5 w-3.5 rounded border-border-strong"
@@ -182,7 +207,7 @@ export function CalendarPanel({
                     recurrence: v as Recurrence,
                   })
                 }
-                className="h-7 w-32 text-xs"
+                className="h-11 md:h-7 w-32 text-xs"
                 options={[
                   { value: "none", label: t.calendar.recurrence.none },
                   { value: "daily", label: t.calendar.recurrence.daily },
@@ -194,9 +219,10 @@ export function CalendarPanel({
           </div>
           {!compact && (
             <div className="space-y-1.5">
-              <Label htmlFor="cal-desc">{t.calendar.description}</Label>
+              <Label htmlFor={`${id}-desc`}>{t.calendar.description}</Label>
               <Textarea
-                id="cal-desc"
+                id={`${id}-desc`}
+                maxLength={10_000}
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
@@ -207,7 +233,7 @@ export function CalendarPanel({
             </div>
           )}
           {result?.kind === "error" && (
-            <p className="text-xs text-destructive">{result.message}</p>
+            <p role="alert" className="text-xs text-destructive">{result.message}</p>
           )}
           {result?.kind === "expired" && (
             <div className="space-y-2 rounded-md border border-warning/30 bg-warning/5 p-3">
@@ -236,8 +262,8 @@ export function CalendarPanel({
           <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? t.calendar.adding : t.calendar.addToGoogleCalendar}
           </Button>
+          </fieldset>
         </form>
-      </CardContent>
-    </Card>
+    </DialogContent></Dialog>
   );
 }

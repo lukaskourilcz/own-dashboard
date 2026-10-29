@@ -5,13 +5,8 @@ import {
 } from "@/lib/github";
 import { isTaskKind, parseTimeToMinutes, type TaskKind } from "@/lib/task-meta";
 
-/**
- * Where a repository keeps its open action items, tried in this order. The
- * root is the convention; quorum moved its list to `docs/NEEDED.md` on
- * 2026-08-08, and a root-only reader imported nothing from it.
- */
-export const NEEDED_FILE_PATHS = ["NEEDED.md", "docs/NEEDED.md"] as const;
-export type NeededFilePath = (typeof NEEDED_FILE_PATHS)[number];
+import { NEEDED_FILE_PATHS, type NeededFilePath } from "@/lib/needed-paths";
+export { NEEDED_FILE_PATHS, type NeededFilePath };
 
 /**
  * A repository's NEEDED.md as read from GitHub, with the path it was found
@@ -24,6 +19,7 @@ export type NeededFileResult =
       kind: "ok";
       path: NeededFilePath;
       content: string;
+      sha: string;
       htmlUrl: string | null;
     }
   | { kind: "not-found" }
@@ -43,12 +39,15 @@ export async function loadNeededFile(
     owner: string,
     repo: string,
     path: string,
+    signal?: AbortSignal,
   ) => Promise<RepoFileResult> = loadRepoFile,
+  signal?: AbortSignal,
 ): Promise<NeededFileResult> {
   for (const path of NEEDED_FILE_PATHS) {
-    const res = await load(owner, repo, path);
+    if (signal?.aborted) return { kind: "error" };
+    const res = signal ? await load(owner, repo, path, signal) : await load(owner, repo, path);
     if (res.kind === "ok") {
-      return { kind: "ok", path, content: res.content, htmlUrl: res.htmlUrl };
+      return { kind: "ok", path, content: res.content, htmlUrl: res.htmlUrl, sha: res.sha };
     }
     if (res.kind !== "not-found") return res;
   }
@@ -123,10 +122,28 @@ function extractAssignee(text: string | null | undefined): Assignee | null {
  * Returns null for a GitHub task whose line carries no owner marker. */
 export function assigneeForTodo(
   neededRaw: string | null | undefined,
+  captured?: Assignee | null,
 ): Assignee | null {
+  if (captured === "me" || captured === "ai") return captured;
   const who = extractAssignee(neededRaw);
   if (who) return who;
   return neededRaw ? null : "me";
+}
+
+/** Examples in fenced code blocks are not actionable Markdown list items. */
+function neededLines(content: string) {
+  const lines = content.split(/\r?\n/), excluded = new Set<number>();
+  let fence: { character: string; length: number } | null = null;
+  for (let index = 0; index < lines.length; index++) {
+    const marker = /^[ \t]*(`{3,}|~{3,})(.*)$/.exec(lines[index]);
+    if (fence) {
+      excluded.add(index);
+      if (marker && marker[1][0] === fence.character && marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+    } else if (marker && (marker[1][0] !== "`" || !marker[2].includes("`"))) {
+      excluded.add(index); fence = { character: marker[1][0], length: marker[1].length };
+    }
+  }
+  return { lines, excluded };
 }
 
 /** Pull the `[time:…]` marker out of a task line, returning whole minutes (or
@@ -158,8 +175,9 @@ export function parseNeeded(
 ): NeededItem[] {
   const items: NeededItem[] = [];
   const seen = new Set<string>();
-  const lines = content.split(/\r?\n/);
+  const { lines, excluded } = neededLines(content);
   for (let i = 0; i < lines.length; i++) {
+    if (excluded.has(i)) continue;
     const raw = lines[i];
     const m = ITEM_RE.exec(raw);
     if (!m) continue;
@@ -189,6 +207,7 @@ export function parseNeeded(
       kind === null
     ) {
       for (let j = i + 1; j < lines.length; j++) {
+        if (excluded.has(j)) break;
         const cont = lines[j];
         if (cont.trim() === "") break; // blank line ends the item
         if (ITEM_RE.test(cont)) break; // the next list item
@@ -264,22 +283,35 @@ export function neededTodoItems(
 ): NeededItem[] {
   const all = parseNeeded(content, repo, htmlUrl);
   const CHECKBOX_RE = /^\s*(?:[-*+]|\d+\.)\s+\[[ xX]?\]/;
-  const usesCheckboxes = all.some((it) => CHECKBOX_RE.test(it.raw));
+  const { lines, excluded } = neededLines(content);
+  const usesCheckboxes = lines.some((line, index) => !excluded.has(index) && CHECKBOX_RE.test(line));
   const chosen = usesCheckboxes
     ? all.filter((it) => CHECKBOX_RE.test(it.raw))
     : all;
-  return chosen.map((it) => ({ ...it, text: cleanNeededText(it.text) }));
+  return chosen.map((it) => ({ ...it, text: cleanNeededText(it.text) })).filter(item => item.text.length > 0);
 }
 
-/** Remove the first line exactly equal to `raw` from `content`. Returns the new
- * content plus whether a line was removed (false = it was already gone). */
-export function removeNeededLine(
-  content: string,
-  raw: string,
-): { next: string; removed: boolean } {
-  const lines = content.split(/\r?\n/);
-  const idx = lines.findIndex((l) => l === raw);
-  if (idx === -1) return { next: content, removed: false };
-  lines.splice(idx, 1);
-  return { next: lines.join("\n"), removed: true };
+/** Remove captured source lines in one pass, retaining untouched line endings.
+ * Fenced examples are never targets. Repeated requests remove at most that
+ * many identical actionable lines. */
+export function removeNeededLines(content: string, rawLines: readonly string[]): { next: string; removed: number } {
+  const requested = new Map<string, number>();
+  for (const raw of rawLines) if (raw.trim()) requested.set(raw, (requested.get(raw) ?? 0) + 1);
+  if (!requested.size) return { next: content, removed: 0 };
+  const { lines, excluded } = neededLines(content);
+  const retained: string[] = []; let start = 0, removed = 0;
+  for (let index = 0; index < lines.length; index++) {
+    const newline = content.indexOf("\n", start), end = newline < 0 ? content.length : newline + 1;
+    const remaining = requested.get(lines[index]) ?? 0;
+    if (remaining && !excluded.has(index)) { requested.set(lines[index], remaining - 1); removed++; }
+    else retained.push(content.slice(start, end));
+    start = end;
+  }
+  return { next: removed ? retained.join("") : content, removed };
+}
+
+/** Remove the first matching actionable line, preserving other bytes. */
+export function removeNeededLine(content: string, raw: string): { next: string; removed: boolean } {
+  const result = removeNeededLines(content, [raw]);
+  return { next: result.next, removed: result.removed > 0 };
 }

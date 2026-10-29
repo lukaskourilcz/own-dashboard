@@ -36,7 +36,7 @@ export function AppToolbar({
               <button
                 type="button"
                 onClick={onBack}
-                className="rounded hover:underline focus-ring"
+                className="inline-flex min-h-11 min-w-11 items-center rounded hover:underline focus-ring md:min-h-8 md:min-w-8"
                 data-testid="toolbar-back"
               >
                 {title}
@@ -61,7 +61,7 @@ export function AppToolbar({
       <button
         type="button"
         onClick={openCommandPalette}
-        className="hidden h-7 min-w-40 max-w-[340px] flex-[0_1_340px] items-center gap-2 rounded-md border border-border-strong bg-surface/90 px-2 text-left text-xs text-foreground-subtle shadow-soft transition-colors hover:bg-surface focus-ring sm:flex"
+        className="hidden h-11 min-w-40 max-w-[340px] flex-[0_1_340px] items-center gap-2 rounded-md border border-border-strong bg-surface/90 px-2 text-left text-xs text-foreground-subtle shadow-soft transition-colors hover:bg-surface focus-ring sm:flex md:h-8"
         aria-label={t.app.commandPalette}
       >
         <Search className="h-3.5 w-3.5 shrink-0" />

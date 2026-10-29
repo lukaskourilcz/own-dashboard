@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { ChevronDown, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useDict } from "@/lib/i18n";
+import { useDict, useLang } from "@/lib/i18n";
 import { competitorReviewState, sortCompetitors } from "@/lib/competition";
-import { resourceKey } from "@/lib/link-library";
+import { safeWebUrl } from "@/lib/web-url";
 import { cn } from "@/lib/utils";
 import type { Competitor, CompetitorCategory } from "@/lib/types";
 
@@ -36,15 +36,16 @@ export function ScoreDots({ score, label }: { score: number | null; label: strin
   );
 }
 
+const reviewDates = { en: new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }), cs: new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) };
 function LinkList({ urls }: { urls: string[] }) {
-  const safe = urls.filter((url) => resourceKey(url));
+  const safe = urls.flatMap(value => { const href = safeWebUrl(value); return href ? [{ value, href }] : []; });
   if (safe.length === 0) return null;
   return (
     <ul className="mt-1 space-y-1 break-all">
-      {safe.map((url) => (
-        <li key={url}>
-          <a href={url} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-8 items-center gap-1 rounded underline sm:min-h-6">
-            {url}
+      {safe.map(({ value, href }, index) => (
+        <li key={`${index}-${value}`}>
+          <a href={href} target="_blank" rel="noreferrer" className="focus-ring flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded underline md:min-h-6">
+            <span className="min-w-0 [overflow-wrap:anywhere]">{value}</span>
             <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />
           </a>
         </li>
@@ -53,18 +54,21 @@ function LinkList({ urls }: { urls: string[] }) {
   );
 }
 
-export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
+export function CompetitorRow({ competitor, now, onEdit, onDelete, disabled, deleteRef }: {
   competitor: Competitor;
   /** Hydration-safe clock from the owning panel; null before hydration, when no freshness is shown. */
   now: Date | null;
   onEdit: () => void;
   onDelete: () => void;
+  disabled?: boolean;
+  deleteRef?: Ref<HTMLButtonElement>;
 }) {
   const t = useDict();
   const p = t.portfolio;
+  const { lang } = useLang();
   const [expanded, setExpanded] = useState(false);
   const review = now ? competitorReviewState(competitor.reviewed_at, now) : null;
-  const safeUrl = competitor.url && resourceKey(competitor.url) ? competitor.url : null;
+  const safeUrl = safeWebUrl(competitor.url);
   const detailsId = `competitor-${competitor.id}`;
   return (
     <li className="min-w-0" data-competitor={competitor.id}>
@@ -75,7 +79,7 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
             aria-controls={detailsId}
-            className="focus-ring flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md text-left sm:min-h-8"
+            className="focus-ring flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md text-left md:min-h-8"
           >
             <span className="min-w-0 truncate text-sm font-medium">{competitor.name}</span>
             <StatusBadge value={competitor.category} label={p.categories[competitor.category]} tone={CATEGORY_TONE[competitor.category]} />
@@ -83,7 +87,7 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
           </button>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground-muted">
             {safeUrl && (
-              <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${p.visit}: ${competitor.name}`} className="focus-ring inline-flex min-h-7 items-center gap-1 rounded hover:text-foreground hover:underline sm:min-h-5">
+              <a href={safeUrl} target="_blank" rel="noreferrer" aria-label={`${p.visit}: ${competitor.name}`} className="focus-ring inline-flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded hover:text-foreground hover:underline md:min-h-6">
                 <span className="truncate">{hostOf(safeUrl)}</span>
                 <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />
               </a>
@@ -95,18 +99,18 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
             {review && review !== "fresh" && (
               <StatusBadge value={`review-${review}`} label={review === "never" ? p.reviewNever : p.reviewStale} tone="warning" />
             )}
-            {competitor.reviewed_at && <span className="tabular">{p.reviewedAt} {competitor.reviewed_at}</span>}
+            {competitor.reviewed_at && <span className="tabular">{p.reviewedAt} <time dateTime={competitor.reviewed_at}>{reviewDates[lang].format(new Date(`${competitor.reviewed_at}T00:00:00Z`))}</time></span>}
             {competitor.pricing_model && <span className="hidden truncate sm:inline">{competitor.pricing_model.length > 90 ? `${competitor.pricing_model.slice(0, 90)}…` : competitor.pricing_model}</span>}
           </div>
         </div>
         <div className="flex shrink-0">
           <Tooltip content={p.editCompetitor}>
-            <button type="button" onClick={onEdit} aria-label={`${p.editCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground sm:h-8 sm:w-8">
+            <button type="button" disabled={disabled} onClick={onEdit} aria-label={`${p.editCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground md:h-8 md:w-8">
               <Pencil aria-hidden className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
           <Tooltip content={p.deleteCompetitor}>
-            <button type="button" onClick={onDelete} aria-label={`${p.deleteCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-destructive sm:h-8 sm:w-8">
+            <button ref={deleteRef} type="button" disabled={disabled} onClick={onDelete} aria-label={`${p.deleteCompetitor}: ${competitor.name}`} className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-destructive md:h-8 md:w-8">
               <Trash2 aria-hidden className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
@@ -118,13 +122,13 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
           {competitor.useful_features.length > 0 && (
             <div>
               <p className="font-medium text-foreground">{p.usefulFeatures}</p>
-              <ul className="mt-1 list-disc space-y-0.5 pl-4">{competitor.useful_features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4 [overflow-wrap:anywhere]">{competitor.useful_features.map((feature, index) => <li key={`${index}-${feature}`}>{feature}</li>)}</ul>
             </div>
           )}
-          {competitor.social_content && (
+          {(competitor.social_content || competitor.social_links.length > 0) && (
             <div>
               <p className="font-medium text-foreground">{p.socialContent}</p>
-              <p className="mt-1 whitespace-pre-line [overflow-wrap:anywhere]">{competitor.social_content}</p>
+              {competitor.social_content && <p className="mt-1 whitespace-pre-line [overflow-wrap:anywhere]">{competitor.social_content}</p>}
               <LinkList urls={competitor.social_links} />
             </div>
           )}
@@ -141,10 +145,10 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
             </div>
           )}
         </div>
-        {competitor.score_rationale && <p><span className="font-medium text-foreground">{p.scoreRationale}:</span> {competitor.score_rationale}</p>}
+        {competitor.score_rationale && <p className="[overflow-wrap:anywhere]"><span className="font-medium text-foreground">{p.scoreRationale}:</span> {competitor.score_rationale}</p>}
         {competitor.source_urls.length > 0 && (
           <details>
-            <summary className="focus-ring cursor-pointer rounded">{p.sourceUrls}</summary>
+            <summary className="focus-ring inline-flex min-h-11 cursor-pointer items-center rounded md:min-h-6">{p.sourceUrls}</summary>
             <LinkList urls={competitor.source_urls} />
           </details>
         )}
@@ -153,19 +157,21 @@ export function CompetitorRow({ competitor, now, onEdit, onDelete }: {
   );
 }
 
-export function CompetitorList({ competitors, now, onEdit, onDelete, empty }: {
+export function CompetitorList({ competitors, now, onEdit, onDelete, empty, pending, deleteControl }: {
   competitors: Competitor[];
   /** Resolved once per panel with `useNow()` and handed down, so a long list opens one clock subscription, not one per row. */
   now: Date | null;
   onEdit: (competitor: Competitor) => void;
   onDelete: (competitor: Competitor) => void;
   empty: string;
+  pending?: ReadonlySet<string>;
+  deleteControl?: (id: string, button: HTMLButtonElement | null) => void;
 }) {
   if (competitors.length === 0) return <p className="px-3 py-3 text-sm text-foreground-muted">{empty}</p>;
   return (
     <ul className="divide-y divide-border">
       {sortCompetitors(competitors).map((competitor) => (
-        <CompetitorRow key={competitor.id} competitor={competitor} now={now} onEdit={() => onEdit(competitor)} onDelete={() => onDelete(competitor)} />
+        <CompetitorRow deleteRef={button => deleteControl?.(competitor.id, button)} disabled={pending?.has(competitor.id)} key={competitor.id} competitor={competitor} now={now} onEdit={() => onEdit(competitor)} onDelete={() => onDelete(competitor)} />
       ))}
     </ul>
   );

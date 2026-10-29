@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { subscribeStoredPreference } from "@/lib/preference-storage";
 
 export type Theme = "light" | "dark";
 
@@ -12,10 +13,13 @@ function readTheme(): Theme {
 }
 
 function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => {
-    listeners.delete(cb);
-  };
+  return subscribeStoredPreference("theme", listeners, cb, () => {
+    try {
+      const value = localStorage.getItem("theme");
+      const dark = value === "dark" || (value !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", dark);
+    } catch { /* Keep the current in-memory theme when storage is blocked. */ }
+  });
 }
 
 const getSnapshot = (): Theme => readTheme();

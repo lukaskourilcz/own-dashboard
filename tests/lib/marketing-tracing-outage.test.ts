@@ -72,7 +72,7 @@ describe("a tracing outage never stops an owner decision (#122)", () => {
   const revision = { ...deckRevision(), traceId: "55555555-5555-4555-8555-555555555555" };
   const request = (body: unknown) => new Request("https://own.example/api/marketing/revisions", { method: "POST", headers: { Origin: "https://own.example", "Content-Type": "application/json" }, body: JSON.stringify(body) });
   function userDb() {
-    const query = { select: () => query, eq: () => query, maybeSingle: async () => ({ data: { id: current, revision, content_hash: revisionContentHash(revision), replaces_id: null }, error: null }) };
+    const query = { retry: () => query, abortSignal: () => query, select: () => query, eq: () => query, maybeSingle: async () => ({ data: { id: current, user_id: "11111111-1111-4111-8111-111111111111", revision, content_hash: revisionContentHash(revision), replaces_id: null }, error: null }) };
     const rpc = vi.fn(async (name: string) => name === "marketing_approve_revision" ? { data: "88888888-8888-4888-8888-888888888888", error: null } : { data: null, error: null });
     return { auth: { getUser: async () => ({ data: { user: { id: "11111111-1111-4111-8111-111111111111" } } }) }, from: () => query, rpc };
   }
@@ -104,10 +104,10 @@ describe("a tracing outage never stops an owner decision (#122)", () => {
         const attach = calls.find((call) => call.name === "marketing_attach_revision_render")!.args;
         return { id: saved, revision: { ...(save.p_revision as ContentRevision), assets: deckRevision().assets }, content_hash: attach.p_hash, replaces_id: current };
       };
-      const rows = (id: unknown) => id === current ? { id: current, revision, content_hash: revisionContentHash(revision), replaces_id: null } : id === saved ? replacement() : null;
+      const rows = (id: unknown) => id === current ? { id: current, user_id: "11111111-1111-4111-8111-111111111111", revision, content_hash: revisionContentHash(revision), replaces_id: null } : id === saved ? { ...replacement(), user_id: "11111111-1111-4111-8111-111111111111" } : null;
       const from = () => {
         const filters: Record<string, unknown> = {};
-        const query = { select: () => query, eq: (column: string, value: unknown) => { filters[column] = value; return query; },
+        const query = { retry: () => query, abortSignal: () => query, select: () => query, eq: (column: string, value: unknown) => { filters[column] = value; return query; },
           maybeSingle: async () => ({ data: rows(filters.id), error: null }), single: async () => ({ data: { revision, slides: [], offline_import_receipt: null }, error: null }) };
         return query;
       };

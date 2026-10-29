@@ -1,0 +1,97 @@
+{
+  "finding": 286,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "fd20ca3",
+  "state": "Actual retained manual draft and recovered existing private Saved record after synthetic collision and failed/confirmed reload. Long synthetic title, no real owner record or provider.",
+  "components": {
+    "src/components/panels/career-saved-positions.tsx": "0666ff32195bebda83f9d3b6ab422002097c64d9ef9d4406fa6db798ebe29094",
+    "src/components/panels/jobs-panel.tsx": "7c3d4c8eb6ebadd9e618bcccdf4c8cc22e6e8974329959b266cea41e002ac6aa",
+    "src/components/panels/career-action-notice.tsx": "9c5838ae6f9d2b6aacde4002e46a2a16d947ad7e679197911f9c704529a77d5f",
+    "src/lib/i18n/sections/jobs.ts": "1cb83fdaf4a7fb6c86e5d45550bb7685fe58426c424fd41ffa956f086e248297"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 2000
+      },
+      "box": {
+        "x": 452,
+        "y": 240,
+        "width": 768,
+        "height": 749.6875
+      },
+      "marks": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 100,
+          "h": 55.98165902459358,
+          "n": 1
+        },
+        {
+          "x": 2.2135416666666665,
+          "y": 49.44560233430596,
+          "w": 95.57291666666667,
+          "h": 4.268445185493956,
+          "n": 2
+        },
+        {
+          "x": 0.13020833333333334,
+          "y": 64.65193830762819,
+          "w": 99.73958333333333,
+          "h": 35.21467278032514,
+          "n": 3
+        }
+      ],
+      "png": {
+        "width": 768,
+        "height": 750,
+        "bytes": 81457,
+        "sha256": "7c1569f4b2b83e26283ea6a797932124e0fbd4d6dafc95da67966114a2fcfe1f"
+      }
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 2000
+      },
+      "box": {
+        "x": 16,
+        "y": 359,
+        "width": 398,
+        "height": 1085
+      },
+      "marks": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 100,
+          "h": 58.15668202764977,
+          "n": 1
+        },
+        {
+          "x": 4.271356783919598,
+          "y": 52.534562211981566,
+          "w": 91.4572864321608,
+          "h": 4.055299539170507,
+          "n": 2
+        },
+        {
+          "x": 0.25125628140703515,
+          "y": 65.25345622119816,
+          "w": 99.49748743718592,
+          "h": 34.654377880184335,
+          "n": 3
+        }
+      ],
+      "png": {
+        "width": 1095,
+        "height": 2984,
+        "bytes": 263536,
+        "sha256": "57bcd68751b10e8f3d4f5f6daf1cff43651107f455a884ff6936e8e31af23ad4"
+      }
+    }
+  }
+}

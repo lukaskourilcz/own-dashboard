@@ -3,7 +3,7 @@ import type { JobListing, JobRole } from "@/lib/types";
 /**
  * Fit scoring for job listings — compares Lukáš's real tech stack (mirrored
  * from the nxt-portfolio "stack" section) against each posting's text so the
- * Jobs panel can rank openings by where he has the biggest chance.
+ * Jobs panel can rank openings by detected technology overlap. It does not predict hiring outcomes.
  *
  * Pure and dependency-free: it takes a listing's already-scraped fields
  * (title + tags + seniority + description snippet) and returns a match

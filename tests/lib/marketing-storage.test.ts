@@ -74,13 +74,14 @@ describe("private marketing asset bucket", () => {
     const metadata = { revisionId, templateSha256, designExportSha256: "b".repeat(64), svgSha256: "c".repeat(64), rendererVersion: "test-only" };
     const proof = { ...metadata, sha256, ownerId: owner };
     const files = { upload: vi.fn(async () => ({ error: null })), info: vi.fn(async () => ({ data: { size: bytes.length, contentType: "image/jpeg", metadata: proof }, error: null })),
-      download: vi.fn(async () => ({ data: new Blob([bytes]), error: null })), createSignedUrl: vi.fn(async () => ({ data: { signedUrl: "https://example.test/private-signed" }, error: null })) };
+      download: vi.fn(() => ({ asStream: async () => ({ data: new Blob([bytes]).stream(), error: null }) })), createSignedUrl: vi.fn(async () => ({ data: { signedUrl: "https://example.test/private-signed" }, error: null })) };
     const facade = { storage: { getBucket: vi.fn(async () => ({ data: { public: false }, error: null })), from: vi.fn(() => files) } };
     const storage = createMarketingAssetStorage(facade as unknown as Parameters<typeof createMarketingAssetStorage>[0], owner, "2026-10-14T12:00:00Z", { now: () => new Date("2026-10-13T12:00:00Z") });
     const key = `marketing/devshark/${revisionId}/${templateSha256}/1-${sha256}.jpg`;
     await storage.put({ key, bytes, sha256, contentType: "image/jpeg", metadata });
     expect(facade.storage.from).toHaveBeenCalledWith("marketing-assets");
     expect(files.upload).toHaveBeenCalledWith(`${owner}/${key}`, bytes, { upsert: false, contentType: "image/jpeg", cacheControl: "3600", metadata: proof });
+    expect(files.download).toHaveBeenCalledWith(`${owner}/${key}`, {}, { signal: expect.any(AbortSignal) });
     files.info.mockResolvedValueOnce({ data: { size: bytes.length, contentType: "image/jpeg", metadata: { ...proof, ownerId: other } }, error: null });
     await expect(storage.put({ key, bytes, sha256, contentType: "image/jpeg", metadata })).rejects.toThrow("stored-asset-metadata-mismatch");
     expect(files.createSignedUrl).toHaveBeenCalledTimes(1);

@@ -124,6 +124,7 @@ type InvoicesStrings = {
   // Import (PDF)
   formImportTitle: string;
   importedHint: string;
+  pdfLimits: string;
   importedItem: string;
   dropTitle: string;
   dropHint: string;
@@ -160,7 +161,13 @@ type InvoicesStrings = {
   numberRequired: string;
   itemRequired: string;
   numberTaken: string;
+  saveConflict: string;
+  invalidAmount: string;
   errorToast: string;
+  saveUnconfirmed: string;
+  paymentConflict: string;
+  paymentChangeErr: string;
+  deleteErr: string;
   savedSettingsToast: string;
   deletedToast: string;
   markedPaidToast: string;
@@ -239,7 +246,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     qrTitle: "QR payment",
     qrHint: "Scan it in your banking app.",
     qrMissing:
-      "Add a bank account in invoicing settings to generate a payment QR.",
+      "Payment QR is unavailable. Check the invoice’s account, amount, currency and due date.",
 
     formNewTitle: "New invoice",
     formEditTitle: "Edit invoice",
@@ -296,7 +303,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
 
     formImportTitle: "Invoice from PDF",
     importedHint:
-      "We prefilled these fields from your PDF — review them and save.",
+      "Review the fields extracted from your PDF. Uncertain tax amounts are left blank; confirm the prices and VAT rates before saving.",
+    pdfLimits: "Choose a PDF up to 20 MiB and 100 pages.",
     importedItem: "As per the attached invoice",
     dropTitle: "Drop a PDF invoice here",
     dropHint: "or click to choose a file",
@@ -332,7 +340,13 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     numberRequired: "Enter an invoice number.",
     itemRequired: "Add at least one item with a description and price.",
     numberTaken: "An invoice with this number already exists.",
+    saveConflict: "This invoice changed or its lines were not fully loaded. Your changes are kept here; reopen the invoice before trying again.",
+    invalidAmount: "Enter valid quantities and prices before saving.",
     errorToast: "Something went wrong.",
+    saveUnconfirmed: "The invoice save could not be confirmed. Your draft is kept.",
+    paymentConflict: "Invoice changed. Review it and try again.",
+    paymentChangeErr: "The payment change could not be confirmed. Refresh before retrying.",
+    deleteErr: "Deletion could not be confirmed. Refresh before retrying.",
     savedSettingsToast: "Settings saved.",
     deletedToast: "Invoice deleted.",
     markedPaidToast: "Invoice marked as paid.",
@@ -409,7 +423,7 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     qrTitle: "QR platba",
     qrHint: "Naskenujte v mobilní bankovní aplikaci.",
     qrMissing:
-      "Pro QR platbu vyplňte číslo účtu v nastavení fakturace.",
+      "QR platba není k dispozici. Zkontrolujte účet, částku, měnu a datum splatnosti faktury.",
 
     formNewTitle: "Nová faktura",
     formEditTitle: "Upravit fakturu",
@@ -466,7 +480,8 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
 
     formImportTitle: "Faktura z PDF",
     importedHint:
-      "Údaje jsme předvyplnili z PDF — zkontrolujte je a uložte.",
+      "Zkontrolujte údaje načtené z PDF. Nejisté částky daně zůstaly prázdné; před uložením ověřte ceny a sazby DPH.",
+    pdfLimits: "Vyberte PDF do 20 MiB a 100 stran.",
     importedItem: "Dle přiložené faktury",
     dropTitle: "Přetáhněte sem PDF fakturu",
     dropHint: "nebo klikněte pro výběr souboru",
@@ -502,7 +517,13 @@ export const invoices: { en: InvoicesStrings; cs: InvoicesStrings } = {
     numberRequired: "Vyplňte číslo faktury.",
     itemRequired: "Přidejte alespoň jednu položku s popisem a cenou.",
     numberTaken: "Faktura s tímto číslem už existuje.",
+    saveConflict: "Faktura se změnila nebo se nenačetly všechny položky. Vaše změny zůstaly zde; před dalším pokusem fakturu znovu otevřete.",
+    invalidAmount: "Před uložením zadejte platná množství a ceny.",
     errorToast: "Něco se pokazilo.",
+    saveUnconfirmed: "Uložení faktury se nepodařilo potvrdit. Koncept zůstává zachovaný.",
+    paymentConflict: "Faktura se změnila. Zkontroluj ji a zkus to znovu.",
+    paymentChangeErr: "Změna úhrady nebyla potvrzena. Před dalším pokusem obnov stránku.",
+    deleteErr: "Smazání nebylo potvrzeno. Před dalším pokusem obnov stránku.",
     savedSettingsToast: "Nastavení uloženo.",
     deletedToast: "Faktura smazána.",
     markedPaidToast: "Faktura označena jako uhrazená.",

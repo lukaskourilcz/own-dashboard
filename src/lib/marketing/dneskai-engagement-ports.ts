@@ -1,5 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
+import { awaitWithSignal } from '@/lib/abortable';
+import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { ContentEngagementSchema } from './contracts';
 import { resolveMetaPublisherConfig } from './meta-credentials';
@@ -83,26 +85,37 @@ export function createDneskaiEngagementStore(db: Database, owner: string): Engag
  * (`GET` / `POST /<IG_ID>/subscribed_apps`, field `comments`). Called only from the owner's account panel.
  */
 export async function instagramCommentSubscription(db: Database, owner: string, account: { id: string; remoteAccountId: string }, action: 'status' | 'subscribe',
-  env: Environment = process.env, fetcher: typeof fetch = fetch): Promise<{ subscribed: boolean }> {
-  const settings = await resolveMetaPublisherConfig(db, owner, { id: account.id, user_id: owner, brand: 'dneskai', platform: 'instagram' }, env);
+  env: Environment = process.env, fetcher: typeof fetch = fetch, parent?: AbortSignal): Promise<{ subscribed: boolean }> {
+  const signal = AbortSignal.any([AbortSignal.timeout(25_000), ...(parent ? [parent] : [])]);
+  const captured = z.strictObject({ id: z.uuid(), remoteAccountId: numericId }).safeParse(account);
+  if (!captured.success || !z.uuid().safeParse(owner).success || !['status', 'subscribe'].includes(action)) throw new EngagementGraphError('account-unavailable', 'definite', 'run');
+  const selected = captured.data;
+  let settings: MetaPublisherConfig;
+  try {
+    signal.throwIfAborted();
+    settings = await awaitWithSignal(resolveMetaPublisherConfig(db, owner, { id: selected.id, user_id: owner, brand: 'dneskai', platform: 'instagram' }, env), signal);
+    signal.throwIfAborted();
+  } catch { throw new EngagementGraphError('meta-request-uncertain', 'uncertain', 'run'); }
   if (settings.credentialHold) throw new EngagementGraphError(settings.credentialHold, 'definite', 'run');
   if ((settings.loginMode !== 'instagram' && settings.loginMode !== 'facebook') || !/^v\d+\.\d+$/.test(settings.apiVersion)) throw new EngagementGraphError('api-version-unverified', 'definite', 'run');
-  if (!numericId.safeParse(account.remoteAccountId).success) throw new EngagementGraphError('account-unavailable', 'definite', 'run');
+  if (!numericId.safeParse(selected.remoteAccountId).success) throw new EngagementGraphError('account-unavailable', 'definite', 'run');
   // Instagram Login subscribes the Instagram account on graph.instagram.com; Facebook Login (#216) subscribes the linked
   // Page on graph.facebook.com with the Page token.
-  let node = account.remoteAccountId, host = 'graph.instagram.com', token = settings.accessToken;
+  let node = selected.remoteAccountId, host = 'graph.instagram.com', token = settings.accessToken;
   if (settings.loginMode === 'facebook') {
-    const page = await facebookPage(settings, account.remoteAccountId, fetcher);
+    const page = await facebookPage(settings, selected.remoteAccountId, fetcher, signal);
     node = page.pageId; host = 'graph.facebook.com'; token = page.pageToken;
   }
   const url = new URL(`https://${host}/${settings.apiVersion}/${node}/subscribed_apps`);
   if (action === 'subscribe') url.searchParams.set('subscribed_fields', 'comments');
-  let response: Response;
-  try { response = await fetcher(url.href, { method: action === 'subscribe' ? 'POST' : 'GET', headers: { Authorization: `Bearer ${token}` }, redirect: 'error', signal: AbortSignal.timeout(10_000) }); }
-  catch { throw new EngagementGraphError('meta-request-uncertain', 'uncertain'); }
-  let body: unknown = null;
-  try { body = await response.json(); } catch { body = null; }
-  if (!response.ok || (body && typeof body === 'object' && 'error' in body)) throw engagementGraphError(response.status, body);
+  let reply: Awaited<ReturnType<typeof metaGraphResponse>>;
+  try {
+    reply = await metaGraphResponse(url.href, { method: action === 'subscribe' ? 'POST' : 'GET', headers: { Authorization: `Bearer ${token}` } }, signal, fetcher);
+  } catch (error) {
+    throw new EngagementGraphError(error instanceof MetaGraphRequestError && error.code === 'meta-invalid-response' ? 'meta-invalid-response' : 'meta-request-uncertain', 'uncertain');
+  }
+  const { status, body } = reply;
+  if (status !== 200 || (body && typeof body === 'object' && 'error' in body)) throw engagementGraphError(status, body);
   if (action === 'subscribe') {
     if (!z.object({ success: z.literal(true) }).safeParse(body).success) throw new EngagementGraphError('meta-invalid-response', 'uncertain');
     return { subscribed: true };

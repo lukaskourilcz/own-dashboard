@@ -1,0 +1,698 @@
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- main:
+  - heading "Projekty" [level=1]:
+    - button "Projekty"
+  - generic: ›
+  - generic: DNESKAi
+  - navigation "Hlavní navigace":
+    - button "Domů":
+      - text: Domů
+    - button "Přehled práce":
+      - text: Přehled práce
+    - button "Projekty":
+      - text: Projekty
+    - button "Úkoly":
+      - text: Úkoly
+    - button "Více":
+      - text: Více
+  - tablist "Projektový prostor":
+    - tab "Dnes ke schválení"
+    - tab "Kalendář"
+    - tab "Příspěvky"
+    - tab "Zdroje (DNESKAi)" [active] [selected]
+  - button "Více":
+  - region "Zdroje":
+    - heading "Zdroje" [level=2]
+    - paragraph: Co DNESKAi čte každý večer ve 22:00 a jak dopadlo poslední čtení.
+    - paragraph: "Náhled: zdroje zapsané v kódu. Nic se neukládá."
+    - region "Instagram profily 20":
+      - heading "Instagram profily 20" [level=3]
+      - list:
+        - generic: m
+        - paragraph:
+          - generic: "@mosseri"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst @mosseri" [checked] [disabled]
+        - generic: m
+        - paragraph:
+          - generic: "@meta.ai"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst @meta.ai" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: "@technology"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Po Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst @technology" [checked] [disabled]
+        - generic: i
+        - paragraph:
+          - generic: "@insidertech"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Po Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst @insidertech" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: "@activeprogrammer"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst @activeprogrammer" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: "@tiffintech"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst @tiffintech" [checked] [disabled]
+        - generic: r
+        - paragraph:
+          - generic: "@robotic"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: St So
+        - paragraph: Zatím nečteno
+        - switch "Číst @robotic" [checked] [disabled]
+        - generic: e
+        - paragraph:
+          - generic: "@evolving.ai"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: St
+        - paragraph: Zatím nečteno
+        - switch "Číst @evolving.ai" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: "@techcrunch"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Čt Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst @techcrunch" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: "@theapplehub"
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: So Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst @theapplehub" [checked] [disabled]
+        - generic: i
+        - paragraph:
+          - generic: "@itstundeanthony"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Po Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst @itstundeanthony" [checked] [disabled]
+        - generic: g
+        - paragraph:
+          - generic: "@godofprompt"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst @godofprompt" [checked] [disabled]
+        - generic: r
+        - paragraph:
+          - generic: "@rowancheung"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: St So
+        - paragraph: Zatím nečteno
+        - switch "Číst @rowancheung" [checked] [disabled]
+        - generic: m
+        - paragraph:
+          - generic: "@mreflow"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: St Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst @mreflow" [checked] [disabled]
+        - generic: b
+        - paragraph:
+          - generic: "@bensbites"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Po Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst @bensbites" [checked] [disabled]
+        - generic: f
+        - paragraph:
+          - generic: "@futurepedia"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út So
+        - paragraph: Zatím nečteno
+        - switch "Číst @futurepedia" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: "@therundownai"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Čt Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst @therundownai" [checked] [disabled]
+        - generic: c
+        - paragraph:
+          - generic: "@czechcrunch"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Po St
+        - paragraph: Zatím nečteno
+        - switch "Číst @czechcrunch" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: "@aimanie"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst @aimanie" [disabled]
+        - generic: d
+        - paragraph:
+          - generic: "@digitalnihumanista"
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst @digitalnihumanista" [disabled]
+    - region "Weby 41":
+      - heading "Weby 41" [level=3]
+      - list:
+        - generic: "4"
+        - paragraph:
+          - generic: 404media.co
+          - generic: 404 Media
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst 404media.co" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: anthropic.com
+          - generic: Anthropic
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst anthropic.com" [checked] [disabled]
+        - generic: f
+        - paragraph:
+          - generic: feeds.arstechnica.com
+          - generic: Ars Technica
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Po
+        - paragraph: Zatím nečteno
+        - switch "Číst feeds.arstechnica.com" [checked] [disabled]
+        - generic: e
+        - paragraph:
+          - generic: export.arxiv.org
+          - generic: arXiv cs.AI
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: St
+        - paragraph: Zatím nečteno
+        - switch "Číst export.arxiv.org" [checked] [disabled]
+        - generic: e
+        - paragraph:
+          - generic: export.arxiv.org
+          - generic: arXiv cs.LG
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: St
+        - paragraph: Zatím nečteno
+        - switch "Číst export.arxiv.org" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: api.bsky.app
+          - generic: Bluesky · language models
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst api.bsky.app" [checked] [disabled]
+        - generic: d
+        - paragraph:
+          - generic: deepmind.google
+          - generic: Google DeepMind
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst deepmind.google" [checked] [disabled]
+        - generic: d
+        - paragraph:
+          - generic: digiday.com
+          - generic: Digiday
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: So
+        - paragraph: Zatím nečteno
+        - switch "Číst digiday.com" [checked] [disabled]
+        - generic: g
+        - paragraph:
+          - generic: github.com
+          - generic: GitHub · AI releases
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst github.com" [checked] [disabled]
+        - generic: r
+        - paragraph:
+          - generic: research.google
+          - generic: Google Research
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: St
+        - paragraph: Zatím nečteno
+        - switch "Číst research.google" [checked] [disabled]
+        - generic: h
+        - paragraph:
+          - generic: huggingface.co
+          - generic: Hugging Face
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst huggingface.co" [checked] [disabled]
+        - generic: h
+        - paragraph:
+          - generic: hacker-news.firebaseio.com
+          - generic: Hacker News (front page)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst hacker-news.firebaseio.com" [checked] [disabled]
+        - generic: j
+        - paragraph:
+          - generic: jack-clark.net
+          - generic: Import AI (Jack Clark)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Pá Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst jack-clark.net" [checked] [disabled]
+        - generic: i
+        - paragraph:
+          - generic: interconnects.ai
+          - generic: Interconnects (Nathan Lambert)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Pá Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst interconnects.ai" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: ai.meta.com
+          - generic: Meta AI
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: St
+        - paragraph: Zatím nečteno
+        - switch "Číst ai.meta.com" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: technologyreview.com
+          - generic: MIT Technology Review
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst technologyreview.com" [checked] [disabled]
+        - generic: "n"
+        - paragraph:
+          - generic: niemanlab.org
+          - generic: Nieman Lab
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst niemanlab.org" [checked] [disabled]
+        - generic: o
+        - paragraph:
+          - generic: openai.com
+          - generic: OpenAI
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst openai.com" [checked] [disabled]
+        - generic: p
+        - paragraph:
+          - generic: platformer.news
+          - generic: Platformer (Casey Newton)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Pá Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst platformer.news" [checked] [disabled]
+        - generic: r
+        - paragraph:
+          - generic: restofworld.org
+          - generic: Rest of World
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Út
+        - paragraph: Zatím nečteno
+        - switch "Číst restofworld.org" [checked] [disabled]
+        - generic: s
+        - paragraph:
+          - generic: simonwillison.net
+          - generic: Simon Willison
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Út
+        - paragraph: Zatím nečteno
+        - switch "Číst simonwillison.net" [checked] [disabled]
+        - generic: s
+        - paragraph:
+          - generic: socialmediatoday.com
+          - generic: Social Media Today
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: So
+        - paragraph: Zatím nečteno
+        - switch "Číst socialmediatoday.com" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: api.spaceflightnewsapi.net
+          - generic: Spaceflight News
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: So
+        - paragraph: Zatím nečteno
+        - switch "Číst api.spaceflightnewsapi.net" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: api.stackexchange.com
+          - generic: Stack Overflow · machine-learning
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst api.stackexchange.com" [checked] [disabled]
+        - generic: s
+        - paragraph:
+          - generic: stratechery.com
+          - generic: Stratechery (Ben Thompson)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Pá Ne
+        - paragraph: Zatím nečteno
+        - switch "Číst stratechery.com" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: techcrunch.com
+          - generic: TechCrunch AI
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst techcrunch.com" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: tensorfeed.ai
+          - generic: TensorFeed (AI news)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: So
+        - paragraph: Zatím nečteno
+        - switch "Číst tensorfeed.ai" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: theregister.com
+          - generic: The Register
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst theregister.com" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: theverge.com
+          - generic: The Verge
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Po
+        - paragraph: Zatím nečteno
+        - switch "Číst theverge.com" [checked] [disabled]
+        - generic: t
+        - paragraph:
+          - generic: tubefilter.com
+          - generic: Tubefilter
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: So
+        - paragraph: Zatím nečteno
+        - switch "Číst tubefilter.com" [checked] [disabled]
+        - generic: v
+        - paragraph:
+          - generic: variety.com
+          - generic: Variety
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst variety.com" [checked] [disabled]
+        - generic: w
+        - paragraph:
+          - generic: wired.com
+          - generic: Wired (AI)
+        - paragraph:
+          - generic: Zprávy
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Po
+        - paragraph: Zatím nečteno
+        - switch "Číst wired.com" [checked] [disabled]
+        - generic: c
+        - paragraph:
+          - generic: code.claude.com
+          - generic: Claude Code · what's new
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst code.claude.com" [checked] [disabled]
+        - generic: p
+        - paragraph:
+          - generic: producthunt.com
+          - generic: Product Hunt
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst producthunt.com" [checked] [disabled]
+        - generic: h
+        - paragraph:
+          - generic: hn.algolia.com
+          - generic: Show HN (over 200 points)
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst hn.algolia.com" [checked] [disabled]
+        - generic: b
+        - paragraph:
+          - generic: bensbites.com
+          - generic: Ben's Bites
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst bensbites.com" [checked] [disabled]
+        - generic: a
+        - paragraph:
+          - generic: aisdg.substack.com
+          - generic: AISDG digest
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: Po Čt
+        - paragraph: Zatím nečteno
+        - switch "Číst aisdg.substack.com" [checked] [disabled]
+        - generic: p
+        - paragraph:
+          - generic: perplexity.ai
+          - generic: Perplexity changelog
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Původní
+          - generic: Út Pá
+        - paragraph: Zatím nečteno
+        - switch "Číst perplexity.ai" [checked] [disabled]
+        - generic: d
+        - paragraph:
+          - generic: dev.to
+          - generic: dev.to · GitHub
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Agregátor
+          - generic: St
+        - paragraph: Zatím nečteno
+        - switch "Číst dev.to" [checked] [disabled]
+        - generic: w
+        - paragraph:
+          - generic: webcrew.cz
+          - generic: WebCrew
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Po
+        - paragraph: Zatím nečteno
+        - switch "Číst webcrew.cz" [checked] [disabled]
+        - generic: c
+        - paragraph:
+          - generic: cc.cz
+          - generic: CzechCrunch · AI
+        - paragraph:
+          - generic: Vzdělávání
+          - 'generic "Původní: samotná laboratoř, firma nebo autor. Redakce: vlastní zpravodajství. Agregátor: přeposílá nebo shrnuje."': Redakce
+          - generic: Každý den
+        - paragraph: Zatím nečteno
+        - switch "Číst cc.cz" [checked] [disabled]
+  - region "Denní mix":
+    - heading "Denní mix" [level=2]
+    - paragraph: Kolik příspěvků denně a v kolik hodin. Noc navrhne ke každému příspěvku tři náměty a schválený námět dostane nejbližší volný aktivní čas.
+    - paragraph: "Ukázka: mix ukazuje výchozí nastavení a nic neukládá."
+    - generic: Zpravodajských příspěvků denně
+    - combobox "Zpravodajských příspěvků denně":
+      - option "0"
+      - option "1" [selected]
+      - option "2"
+      - option "3"
+      - option "4"
+    - generic: Vzdělávacích příspěvků denně
+    - combobox "Vzdělávacích příspěvků denně":
+      - option "0"
+      - option "1" [selected]
+      - option "2"
+      - option "3"
+      - option "4"
+    - group "Aktivní časy":
+      - generic: Aktivní časy
+      - checkbox "08:00" [checked]:
+      - checkbox [checked]
+      - text: 08:00
+      - checkbox "12:30"
+      - checkbox
+      - text: 12:30
+      - checkbox "17:00" [checked]:
+      - checkbox [checked]
+      - text: 17:00
+      - checkbox "20:00"
+      - checkbox
+      - text: 20:00
+    - button "Uložit mix" [disabled]
+  - region "Hudba":
+    - heading "Hudba" [level=2]
+    - paragraph: Skladby, které může Reel hrát. Používejte jen stažené skladby z Meta Sound Collection, které jsou pro Instagram schválené, hudbu z Pixabay pod licencí Pixabay Content License, nebo vlastní nahrávky. U každého souboru zapište, odkud pochází.
+    - status: Jen náhled. Jsou to ukázkové skladby; nic se nenahrává ani nepřehrává.
+    - list "Skladby v knihovně":
+      - button "Není co přehrát" [disabled]:
+      - paragraph:
+        - text: Quiet Circuit
+        - generic: · Sample artist
+      - generic: V rotaci
+      - generic: Pixabay Music
+      - generic "Délka 1:12": 1:12
+      - generic: "Nálada: calm, tech"
+      - paragraph:
+        - text: "Licence: Pixabay Content License (sample) ·"
+        - link "Zdrojová stránka":
+          - /url: https://pixabay.com/music/
+      - switch "Používat Quiet Circuit v Reelech" [checked] [disabled]
+      - button "Není co přehrát" [disabled]:
+      - paragraph:
+        - text: Morning Signal
+        - generic: · Sample artist
+      - generic: Vypnutá
+      - generic: Meta Sound Collection
+      - generic "Délka 0:45": 0:45
+      - generic: "Nálada: upbeat"
+      - paragraph:
+        - text: "Licence: Meta Sound Collection, cleared for Instagram (sample) ·"
+        - link "Zdrojová stránka":
+          - /url: https://www.facebook.com/sound/collection/
+      - switch "Používat Morning Signal v Reelech" [disabled]
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

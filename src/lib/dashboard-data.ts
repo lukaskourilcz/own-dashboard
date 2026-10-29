@@ -85,7 +85,8 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     // destination reads a finished week.
     "lastWeekCalendar",
   ],
-  marketing: ["projects", "aiLinks", "projectLinks"],
+  // Marketing owns its bounded API queries; it reads none of the shell entities.
+  marketing: [],
   workflows: [],
   // A project workspace renders every related record, including the
   // subscription allocations behind its Finance tab and the competitor
@@ -147,15 +148,15 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "projectCosts",
     "crons",
   ],
-  accounts: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "invoices", "invoiceItems", "projects", "projectCosts", "crons"],
-  transactions: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "invoices", "invoiceItems", "projects", "projectCosts", "crons"],
+  accounts: ["subscriptions", "accounts", "transactions", "projects"],
+  transactions: ["subscriptions", "accounts", "transactions", "invoices", "invoiceItems", "projects"],
   subscriptions: ["subscriptions", "subscriptionAllocations", "projects"],
-  categories: ["subscriptions", "subscriptionAllocations", "accounts", "transactions", "invoices", "invoiceItems", "projects", "projectCosts", "crons"],
+  categories: ["subscriptions", "transactions", "projects"],
   tasks: ["todos", "projects", "organizations"],
   calendar: ["weekCalendar"],
   goals: ["plans"],
   dates: ["importantDates", "projects", "organizations"],
-  notes: ["notes", "projects", "organizations", "opportunities", "jobApplications"],
+  notes: ["notes", "projects"],
   prompts: ["prompts", "promptLinks", "projects", "aiLinks", "aiCategories", "projectLinks"],
   tools: ["tools", "aiLinks", "aiCategories", "projects", "projectLinks", "subscriptions"],
   links: ["aiLinks", "aiCategories", "projectLinks", "projects", "tools"],

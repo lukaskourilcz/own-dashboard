@@ -3,7 +3,6 @@
 import {
   Bell,
   Coins,
-  Download,
   FileText,
   FolderKanban,
   GripVertical,
@@ -14,11 +13,10 @@ import {
   Palette,
   Plug,
   RotateCcw,
-  Shield,
   SlidersHorizontal,
   Sun,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -36,7 +34,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,19 +60,22 @@ import { useTheme } from "@/lib/use-theme";
 import { SUPPORTED_CURRENCIES } from "@/lib/fx";
 import { NAV_GROUPS, PRIMARY_NAV_ITEMS } from "@/components/nav/sidebar";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { useProjectPreferencesSave } from "@/components/projects/use-project-preferences-save";
 import { projectEngagement } from "@/lib/projects";
 import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import type { Project, ProjectEngagement, Updater } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
-import { saveUserPreferences } from "@/lib/preference-client";
+import { fetchIntegrationStatus } from "@/lib/integration-status";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
+import { fetchUserPreferences, useSaveUserPreferences } from "@/lib/preference-client";
 import {
   DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
   isDneskaiProjectTab,
   type ProjectTabId,
 } from "@/lib/project-workspace-tabs";
+import { SettingsDataExport } from "@/components/settings-data-export";
 import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
 
 // Settings lists the tabs only the DNESKAi project shows under their own
@@ -115,7 +116,7 @@ function Segmented<T extends string>({
             aria-pressed={active}
             disabled={disabled}
             className={cn(
-              "inline-flex min-h-11 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0",
+              "inline-flex min-h-11 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors focus-ring disabled:cursor-not-allowed disabled:opacity-60 md:min-h-8",
               active
                 ? "bg-surface text-foreground shadow-soft"
                 : "text-foreground-muted hover:text-foreground",
@@ -130,13 +131,14 @@ function Segmented<T extends string>({
   );
 }
 
-export function SettingsPanel({
+export function SettingsPanel({ exportsAvailable = true,
   projects = [],
   setProjects = () => undefined,
   projectsStatus = { ready: true, failed: false },
   syncPreferences = true,
   preferencesSyncAvailable = true,
 }: {
+  exportsAvailable?: boolean;
   projects?: Project[];
   setProjects?: Updater<Project[]>;
   /** Whether `projects` holds loaded records yet (see `useEntityStore`). */
@@ -147,9 +149,10 @@ export function SettingsPanel({
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();
-  const supabase = createClient();
-  // Projects whose own/freelance change is still being written.
-  const [savingEngagement, setSavingEngagement] = useState<ReadonlySet<string>>(() => new Set());
+  const ownerPreferences = useOwnerPreferences();
+  const preferenceQueryKey = [...qk.userPreferences, ownerPreferences?.ownerId ?? "unavailable"];
+  const saveUserPreferences = useSaveUserPreferences();
+  const projectPreferences = useProjectPreferencesSave(setProjects);
   const { lang, setLang } = useLang();
   const { currency, setCurrency } = useDisplayCurrency();
   const {
@@ -160,11 +163,21 @@ export function SettingsPanel({
   } = useNavVisibility();
   const { order, setOrder, reset: resetOrder } = useNavOrder();
   const { theme, setTheme } = useTheme();
-  const [renewalNotifications, setRenewalNotifications] = useState(true);
+  const [renewalDraft, setRenewalDraft] = useState<boolean | null>(null);
+  const renewalSaving = useRef(false);
+  const preferencesQuery = useQuery({
+    queryKey: preferenceQueryKey, queryFn: ({ signal }) => fetchUserPreferences({ signal, ownerId: ownerPreferences!.ownerId }),
+    enabled: syncPreferences && !!ownerPreferences && renewalDraft === null, retry: false, staleTime: 30_000,
+  });
+  const renewalNotifications = renewalDraft ?? preferencesQuery.data?.notifications_renewals ?? (!syncPreferences ? true : undefined);
   // Inactive projects (often dozens of old repos) stay collapsed behind a toggle
   // so the card isn't a wall of switches for projects that will never be active.
   const [showInactive, setShowInactive] = useState(false);
-  const [integrations, setIntegrations] = useState<null | Record<string, { connected?: boolean; configured: boolean; last_synced_at?: string | null; providers?: { id: string; label: string; configured: boolean; connected: boolean }[] }>>(null);
+  const integrationsQuery = useQuery({
+    queryKey: qk.integrationStatus, queryFn: fetchIntegrationStatus,
+    enabled: syncPreferences, retry: false, staleTime: 60_000,
+  });
+  const integrations = syncPreferences ? integrationsQuery.data : undefined;
   const saveErrorShown = useRef(false);
   const savePreferences = (patch: Record<string, unknown>) => {
     if (!syncPreferences) return;
@@ -174,80 +187,35 @@ export function SettingsPanel({
       toast.err(t.settings.preferenceSaveFailed);
     });
   };
-  useEffect(() => {
+  const patchRenewalNotifications = async (notifications_renewals: boolean) => {
+    if (renewalSaving.current || renewalNotifications === undefined) return;
+    setRenewalDraft(notifications_renewals);
     if (!syncPreferences) return;
-    void fetch("/api/user/preferences", { cache: "no-store" })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (data) {
-          setRenewalNotifications(data.notifications_renewals ?? true);
-        }
-      });
-  }, [syncPreferences]);
-  useEffect(() => {
-    if (!syncPreferences) return;
-    void fetch("/api/integrations/status", { cache: "no-store" })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data) setIntegrations(data); });
-  }, [syncPreferences]);
-  const patchRenewalNotifications = (notifications_renewals: boolean) => {
-    setRenewalNotifications(notifications_renewals);
-    if (syncPreferences) {
-      savePreferences({ notifications_renewals });
+    renewalSaving.current = true;
+    try {
+      await qc.cancelQueries({ queryKey: preferenceQueryKey });
+      await saveUserPreferences({ notifications_renewals });
+      qc.setQueryData(preferenceQueryKey, (previous: Awaited<ReturnType<typeof fetchUserPreferences>> | undefined) => previous ? { ...previous, notifications_renewals } : previous);
+    } catch {
+      toast.err(t.settings.preferenceSaveFailed);
+      void qc.invalidateQueries({ queryKey: preferenceQueryKey });
+    } finally {
+      renewalSaving.current = false;
+      setRenewalDraft(null);
     }
   };
   const toggleProject = async (project: Project) => {
-    const next = !project.is_active;
-    setProjects((current) =>
-      current.map((item) =>
-        item.id === project.id ? { ...item, is_active: next } : item,
-      ),
-    );
-    const { error } = await supabase
-      .from("projects")
-      .update({ is_active: next, updated_at: new Date().toISOString() })
-      .eq("id", project.id);
-    if (error) {
-      setProjects((current) =>
-        current.map((item) =>
-          item.id === project.id
-            ? { ...item, is_active: project.is_active }
-            : item,
-        ),
-      );
-      toast.err(t.settings.projectUpdateFailed);
-    }
+    const result = await projectPreferences.save(project, { is_active: !project.is_active });
+    if (result === "conflict") toast.err(t.projects.preferenceConflict);
+    else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   };
-  // Own or freelance: `projects.engagement` is the one field every grouping
-  // reads (sidebar divider, Projects table, Money), so the shared projects
-  // store updates first and every surface moves the project at once. The
-  // write goes through the owner's own session; RLS checks the row.
+  // All project groupings move together after a confirmed owner-only receipt.
   const setEngagement = async (project: Project, engagement: ProjectEngagement) => {
-    const previous = projectEngagement(project);
-    if (previous === engagement || savingEngagement.has(project.id)) return;
-    setSavingEngagement((current) => new Set(current).add(project.id));
-    setProjects((current) =>
-      current.map((item) => (item.id === project.id ? { ...item, engagement } : item)),
-    );
-    const { error } = await supabase
-      .from("projects")
-      .update({ engagement, updated_at: new Date().toISOString() })
-      .eq("id", project.id);
-    setSavingEngagement((current) => {
-      const next = new Set(current);
-      next.delete(project.id);
-      return next;
-    });
-    if (error) {
-      setProjects((current) =>
-        current.map((item) => (item.id === project.id ? { ...item, engagement: previous } : item)),
-      );
-      toast.err(t.settings.engagementUpdateFailed(project.name));
-      return;
-    }
-    toast.ok(t.settings.engagementSaved(project.name, engagement));
-    // The fixture preview has no database to refetch from.
-    if (syncPreferences) void qc.invalidateQueries({ queryKey: qk.projects });
+    if (projectEngagement(project) === engagement) return;
+    const result = await projectPreferences.save(project, { engagement });
+    if (result === "saved") toast.ok(t.settings.engagementSaved(project.name, engagement));
+    else if (result === "conflict") toast.err(t.projects.preferenceConflict);
+    else if (result === "failed") toast.err(t.projects.preferenceSaveFailed);
   };
 
   const sensors = useSensors(
@@ -346,7 +314,7 @@ export function SettingsPanel({
   // Active projects are the ones in the sidebar, so they carry the own or
   // freelance choice that places them above or below its divider.
   const projectRow = (project: Project) => {
-    const saving = savingEngagement.has(project.id);
+    const saving = projectPreferences.pending.has(project.id);
     return (
       <li
         key={project.id}
@@ -379,6 +347,7 @@ export function SettingsPanel({
           )}
           <Switch
             checked={project.is_active}
+            disabled={saving}
             onCheckedChange={() => void toggleProject(project)}
             aria-label={project.name}
           />
@@ -388,7 +357,7 @@ export function SettingsPanel({
   };
 
   return (
-    <div>
+    <div className="settings-frame">
       <PageHeader title={t.settings.title} description={t.settings.description} />
 
       {!preferencesSyncAvailable && (
@@ -400,9 +369,12 @@ export function SettingsPanel({
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <nav aria-label={t.settings.title} className="mb-5 flex gap-1 overflow-x-auto pb-1">
+        {[["preferences", t.settings.preferences], ["projects", t.settings.activeProjects], ["project-sections", t.settings.projectSections], ["career", t.settings.careerMarket], ["cv", t.settings.cv], ["navigation", t.settings.navigation], ["integrations", t.settings.integrations], ["export", t.settings.dataExport]].map(([key, label]) => <a key={key} href={`#settings-${key}`} className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs text-foreground-muted hover:bg-surface-hover focus-ring md:min-h-8">{label}</a>)}
+      </nav>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         {/* Preferences — language, appearance, currency, task density, alerts */}
-        <Card className="lg:col-span-2">
+        <Card id="settings-preferences" className="scroll-mt-4 lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <SlidersHorizontal className="h-3 w-3" /> {t.settings.preferences}
@@ -438,7 +410,7 @@ export function SettingsPanel({
                 ]}
               />
             </PrefRow>
-            <PrefRow icon={Coins} label={t.settings.currency}>
+            <PrefRow icon={Coins} label={t.settings.currency} stacked>
               <div className="inline-flex flex-wrap justify-end gap-1.5">
                 {SUPPORTED_CURRENCIES.map((c) => (
                   <button
@@ -450,7 +422,7 @@ export function SettingsPanel({
                     }}
                     aria-pressed={currency === c}
                     className={cn(
-                      "rounded-md border px-3 py-1.5 text-xs font-medium tabular transition-colors focus-ring",
+                      "min-h-11 rounded-md border px-3 py-1.5 text-xs font-medium tabular md:min-h-8 transition-colors focus-ring",
                       currency === c
                         ? "border-foreground/40 bg-accent text-foreground"
                         : "border-border text-foreground-muted hover:text-foreground hover:border-border-strong",
@@ -480,16 +452,22 @@ export function SettingsPanel({
               label={t.settings.renewalNotifications}
               desc={t.settings.renewalNotificationsDesc}
             >
+              <div className="flex flex-wrap items-center justify-end gap-2">
+              {syncPreferences && preferencesQuery.isError && <Button variant="ghost" size="sm" onClick={() => void preferencesQuery.refetch()} disabled={preferencesQuery.isFetching || renewalDraft !== null}>{t.settings.preferenceRetry}</Button>}
+              {renewalNotifications === undefined && <span role="status" className="text-xs text-foreground-muted">{preferencesQuery.isError ? t.settings.preferenceLoadFailed : t.settings.preferenceLoading}</span>}
               <Switch
                 aria-label={t.settings.renewalNotifications}
-                checked={renewalNotifications}
+                checked={renewalNotifications ?? false}
+                disabled={renewalNotifications === undefined || (syncPreferences && renewalDraft !== null)}
+                aria-busy={syncPreferences && renewalDraft !== null}
                 onCheckedChange={patchRenewalNotifications}
               />
+              </div>
             </PrefRow>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-projects" className="scroll-mt-4">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FolderKanban className="h-3 w-3" />
@@ -517,7 +495,7 @@ export function SettingsPanel({
             </div>
             <p role="status" className="sr-only">
               {projects
-                .filter((project) => savingEngagement.has(project.id))
+                .filter((project) => projectPreferences.pending.has(project.id))
                 .map((project) => `${project.name}: ${t.settings.engagementSaving}`)
                 .join(" ")}
             </p>
@@ -566,7 +544,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-project-sections" className="scroll-mt-4">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FolderKanban className="h-3 w-3" />
@@ -598,7 +576,7 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card id="settings-career" className="scroll-mt-4 lg:col-span-2">
           <CardHeader><CardTitle>{t.settings.careerMarket}</CardTitle></CardHeader>
           <CardContent>
             <div className="flex items-start gap-3">
@@ -617,7 +595,7 @@ export function SettingsPanel({
         </Card>
 
         {/* CV links */}
-        <Card className="lg:col-span-2">
+        <Card id="settings-cv" className="scroll-mt-4 lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <FileText className="h-3 w-3" /> {t.settings.cv}
@@ -635,7 +613,7 @@ export function SettingsPanel({
                   placeholder={t.settings.cvPlaceholder}
                   value={cvCs}
                   onChange={(e) => setCvCs(e.target.value.trim())}
-                  onBlur={() => savePreferences({ cv_url_cs: cvCs })}
+                  onBlur={() => { if (ownerPreferences?.cvCs.isDirty()) savePreferences({ cv_url_cs: cvCs }); }}
                 />
               </div>
               <div className="space-y-1.5">
@@ -647,7 +625,7 @@ export function SettingsPanel({
                   placeholder={t.settings.cvPlaceholder}
                   value={cvEn}
                   onChange={(e) => setCvEn(e.target.value.trim())}
-                  onBlur={() => savePreferences({ cv_url_en: cvEn })}
+                  onBlur={() => { if (ownerPreferences?.cvEn.isDirty()) savePreferences({ cv_url_en: cvEn }); }}
                 />
               </div>
             </div>
@@ -655,7 +633,7 @@ export function SettingsPanel({
         </Card>
 
         {/* Navigation sections */}
-        <Card className="lg:col-span-2">
+        <Card id="settings-navigation" className="scroll-mt-4 lg:col-span-2">
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-1.5">
               <PanelLeft className="h-3 w-3" /> {t.settings.navigation}
@@ -676,6 +654,7 @@ export function SettingsPanel({
                     {t.nav.groups[g.id]}
                   </p>
                   <DndContext
+                    id={`settings-navigation-${g.id}`}
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={(e) => handleGroupDragEnd(g.id, e)}
@@ -715,25 +694,38 @@ export function SettingsPanel({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="settings-integrations" className="scroll-mt-4">
           <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Plug className="h-3 w-3" />{t.settings.integrations}</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>{[["Google", integrations?.google], ["GitHub", integrations?.github], [t.settings.bankSync, integrations?.bank], [t.settings.emailDelivery, integrations?.email]].filter(([label, raw]) => label === "Google" || label === "GitHub" || (raw as { configured?: boolean; connected?: boolean } | undefined)?.configured || (raw as { connected?: boolean } | undefined)?.connected).map(([label, raw]) => { const state = raw as { connected?: boolean; configured: boolean; last_synced_at?: string | null } | undefined; const value = !state ? "pending" : state.connected === true ? "connected" : state.connected === false ? "not_connected" : state.configured ? "configured" : "not_configured"; const status = !state ? "…" : state.connected === true ? t.settings.connected : state.connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured; return <div key={String(label)} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><div><p className="text-sm font-medium">{String(label)}</p>{state?.last_synced_at && <p className="mt-1 text-xs text-foreground-subtle">{t.settings.lastSync}: {state.last_synced_at.slice(0, 10)}</p>}</div><StatusBadge value={value} label={status} /></div>; })}
-            {/* Bank sync is the one integration with several providers behind it, so it names each one and its own state. Booleans only — the endpoint carries no token or secret. */}
-            {(integrations?.bank?.providers ?? []).filter(provider => provider.configured || provider.connected).map((provider) => (
-              <div key={provider.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
-                <p className="text-sm font-medium">{t.settings.bankSync}: {provider.label}</p>
-                <StatusBadge
-                  value={provider.connected ? "connected" : provider.configured ? "configured" : "not_configured"}
-                  label={provider.connected ? t.settings.connected : provider.configured ? t.settings.configured : t.settings.notConfigured}
-                />
+          <CardContent className="space-y-3">
+            <p className="text-xs text-foreground-subtle">{t.settings.integrationsDesc}</p>
+            {syncPreferences && integrationsQuery.isError && (
+              <div className="space-y-2">
+                <p role="alert" className="text-sm text-destructive">{t.settings.integrationsLoadFailed}</p>
+                <Button variant="outline" size="sm" disabled={integrationsQuery.isFetching} onClick={() => void integrationsQuery.refetch()}>{t.common.retry}</Button>
               </div>
-            ))}</CardContent>
+            )}
+            {!integrations && !integrationsQuery.isError && <p role="status" className="text-xs text-foreground-muted">{syncPreferences ? t.settings.integrationsLoading : t.settings.integrationsPreview}</p>}
+            {integrations && [
+              { label: "Google", state: integrations.google },
+              { label: "GitHub", state: integrations.github },
+              ...(integrations.email.configured ? [{ label: t.settings.emailDelivery, state: integrations.email }] : []),
+            ].map(({ label, state }) => {
+              const connected = "connected" in state ? state.connected : undefined;
+              const value = connected === true ? "connected" : connected === false ? "not_connected" : state.configured ? "configured" : "not_configured";
+              const status = connected === true ? t.settings.connected : connected === false ? t.settings.notConnected : state.configured ? t.settings.configured : t.settings.notConfigured;
+              return <div key={label} className="flex items-center justify-between gap-3 rounded-md border border-border p-3"><p className="text-sm font-medium">{label}</p><StatusBadge value={value} label={status} /></div>;
+            })}
+            {(integrations?.bank.providers ?? []).filter(provider => provider.configured || provider.connected).map(provider => (
+              <div key={provider.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+                <p className="min-w-0 text-sm font-medium">{t.settings.bankSync}: {provider.label}</p>
+                <StatusBadge value={provider.connected ? "connected" : "configured"} label={provider.connected ? t.settings.connected : t.settings.configured} />
+              </div>
+            ))}
+            {integrations?.bank.last_synced_at && <p className="text-xs text-foreground-subtle">{t.settings.lastSync}: {integrations.bank.last_synced_at.slice(0, 10)}</p>}
+          </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="inline-flex items-center gap-1.5"><Shield className="h-3 w-3" />{t.settings.dataExport}</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><p className="text-xs text-foreground-subtle">{t.settings.dataExportDesc}</p><div className="flex flex-wrap gap-2">{[["/api/export/full", t.settings.exportFull], ["/api/export/financial", t.settings.exportFinancial], ["/api/export/professional", t.settings.exportProfessional], ["/api/export/knowledge", t.settings.exportKnowledge], ["/api/export/projects", t.settings.exportProjects], ["/api/export/notes", t.settings.exportNotes], ["/api/export/prompts", t.settings.exportPrompts], ["/api/export/career", t.settings.exportCareer], ["/api/export/financial?format=csv&table=transactions", t.settings.exportTransactionsCsv], ["/api/export/legacy", t.settings.exportLegacy]].map(([href, label]) => <Button key={href} variant="outline" size="sm" asChild><a href={href} download><Download />{label}</a></Button>)}</div></CardContent>
-        </Card>
+        <SettingsDataExport available={exportsAvailable} />
       </div>
     </div>
   );
@@ -745,15 +737,15 @@ function PrefRow({
   icon: Icon,
   label,
   desc,
-  children,
+  children, stacked = false,
 }: {
   icon: typeof Sun;
   label: string;
   desc?: string;
-  children: ReactNode;
+  children: ReactNode; stacked?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+    <div className={cn("grid items-center gap-3 border-t border-border pt-4 sm:grid-cols-[14rem_minmax(0,1fr)]", !stacked && "grid-cols-[minmax(0,1fr)_auto]")}>
       <div className="min-w-0">
         <p className="inline-flex items-center gap-1.5 text-sm font-medium">
           <Icon className="h-3.5 w-3.5 text-foreground-muted" />
@@ -761,7 +753,7 @@ function PrefRow({
         </p>
         {desc && <p className="mt-0.5 text-xs text-foreground-subtle">{desc}</p>}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="min-w-0 justify-self-start">{children}</div>
     </div>
   );
 }

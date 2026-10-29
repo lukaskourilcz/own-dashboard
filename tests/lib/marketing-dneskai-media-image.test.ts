@@ -23,6 +23,14 @@ describe('DNESKAi source picture inspection', () => {
     expect((await inspectDneskaiImage(await scene(1, 1200, 900).jpeg().toBuffer())).embeddedCredits).toEqual([]);
   });
 
+  it.each(['&#1114112;', '&#x110000;', '&#999999999999999999999999999999999999999999;', '&#55296;', '&#xDFFF;'])('retains a malformed numeric credit literally instead of rejecting a valid picture (%s)', async (reference) => {
+    const xmp = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" photoshop:Credit="Reuters ${reference} &#x1F4F7;"/></rdf:RDF></x:xmpmeta>`;
+    const expected = [`Reuters ${reference} 📷`];
+    expect(dneskaiEmbeddedCredits({ xmp: Buffer.from(xmp) })).toEqual(expected);
+    const bytes = await scene(1, 1200, 900).jpeg().withXmp(xmp).toBuffer();
+    expect(await inspectDneskaiImage(bytes)).toMatchObject({ format: 'jpeg', width: 1200, height: 900, embeddedCredits: expected });
+  });
+
   it('reads IPTC credit, source, by-line and copyright records, skipping the rest', () => {
     const record = (dataset: number, value: string) => { const bytes = Buffer.from(value, 'utf8'); return Buffer.concat([Buffer.from([0x1c, 0x02, dataset, bytes.length >> 8, bytes.length & 0xff]), bytes]); };
     // Inside a Photoshop 8BIM resource, as JPEG APP13 carries it: the IIM records are found wherever they sit.

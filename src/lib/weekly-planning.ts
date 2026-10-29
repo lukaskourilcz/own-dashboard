@@ -1,4 +1,5 @@
 import { eventEnd, eventStart, type GcalEvent } from "@/lib/calendar";
+import { projectEngagement } from "@/lib/projects";
 import type {
   DailyFocusItem,
   Organization,
@@ -169,8 +170,8 @@ export function organizationNeedles(name: string): string[] {
  * A client organization named in the title, location or description is client
  * work; an employer is not, because an interview is not delivery.
  * A project is client work when it is a client engagement
- * (`engagement === "client"`) or belongs to an organization, and own-project
- * work otherwise. Anything that
+ * (`engagement === "client"`). An organization link alone does not change the
+ * owner’s explicit classification. Anything that
  * names neither is admin — the honest default, not a guess, which is why the
  * unmatched count is shown next to the result.
  */
@@ -178,27 +179,38 @@ export function classifyEvent(
   event: GcalEvent,
   refs: ChannelRefs,
 ): { channel: WorkChannel; matched: string | null } {
-  const haystack = normalize(
-    [event.summary, event.location, event.description].filter(Boolean).join(" "),
-  );
+  return classifyPreparedEvent(event, prepareChannelRefs(refs));
+}
+
+type PreparedChannelRefs = {
+  organizations: Array<{ name: string; needles: string[] }>;
+  projects: Array<{ name: string; needles: string[]; channel: WorkChannel }>;
+};
+
+/** Reference normalization is independent of the event. Build it once for a
+ * weekly batch, preserving client-name precedence and the source match order. */
+function prepareChannelRefs(refs: ChannelRefs): PreparedChannelRefs {
+  return {
+    organizations: refs.organizations.filter(organization => CLIENT_ORGANIZATION_TYPES.has(organization.type))
+      .map(organization => ({ name: organization.name, needles: organizationNeedles(organization.name) })),
+    projects: refs.projects.map(project => ({
+      name: project.name,
+      // Earlier slugs keep calendar entries attached after a project rename.
+      needles: [project.name, project.slug, ...(project.previous_slugs ?? [])].filter(Boolean).map(normalize),
+      channel: projectEngagement(project) === "client" ? "client" : "project",
+    })),
+  };
+}
+
+function classifyPreparedEvent(event: GcalEvent, refs: PreparedChannelRefs): { channel: WorkChannel; matched: string | null } {
+  const haystack = normalize([event.summary, event.location, event.description].filter(Boolean).join(" "));
   if (!haystack) return { channel: "admin", matched: null };
-
   for (const organization of refs.organizations) {
-    if (!CLIENT_ORGANIZATION_TYPES.has(organization.type)) continue;
-    if (organizationNeedles(organization.name).some((needle) => containsWord(haystack, needle))) {
-      return { channel: "client", matched: organization.name };
-    }
+    if (organization.needles.some(needle => containsWord(haystack, needle))) return { channel: "client", matched: organization.name };
   }
-
   for (const project of refs.projects) {
-    // Earlier slugs count too: a calendar still says "aifirst" after the
-    // project became DNESKAi (#76).
-    const needles = [project.name, project.slug, ...(project.previous_slugs ?? [])].filter(Boolean);
-    if (!needles.some((needle) => containsWord(haystack, normalize(needle)))) continue;
-    const isClientWork = project.engagement === "client" || Boolean(project.organization_id);
-    return { channel: isClientWork ? "client" : "project", matched: project.name };
+    if (project.needles.some(needle => containsWord(haystack, needle))) return { channel: project.channel, matched: project.name };
   }
-
   return { channel: "admin", matched: null };
 }
 
@@ -224,6 +236,8 @@ export function summarizeTimeByChannel(
   let matchedEvents = 0;
   let unmatchedEvents = 0;
   let skippedAllDay = 0;
+  let prepared: PreparedChannelRefs | null = null;
+  const rangeStart = range.start.getTime(), rangeEnd = range.endExclusive.getTime();
 
   for (const event of events) {
     if (isAllDay(event)) {
@@ -234,12 +248,12 @@ export function summarizeTimeByChannel(
     const end = eventEnd(event);
     if (!start || !end) continue;
 
-    const from = Math.max(start.getTime(), range.start.getTime());
-    const to = Math.min(end.getTime(), range.endExclusive.getTime());
+    const from = Math.max(start.getTime(), rangeStart);
+    const to = Math.min(end.getTime(), rangeEnd);
     const span = to - from;
     if (span <= 0) continue;
 
-    const { channel, matched } = classifyEvent(event, refs);
+    const { channel, matched } = classifyPreparedEvent(event, prepared ??= prepareChannelRefs(refs));
     minutes[channel] += Math.round(span / 60_000);
     if (matched) matchedEvents++;
     else unmatchedEvents++;

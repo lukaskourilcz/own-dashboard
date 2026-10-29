@@ -1,0 +1,124 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury" [active]:
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Faktury" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Nastavení fakturace":
+    - text: Nastavení fakturace
+  - button "Nová faktura":
+    - text: Nová faktura
+  - button "Přetáhněte sem PDF fakturu nebo klikněte pro výběr souboru":
+    - generic: Přetáhněte sem PDF fakturu nebo klikněte pro výběr souboru
+  - paragraph: Nezaplaceno
+  - paragraph: 38 115,00 Kč
+  - paragraph: 1 · Vystaveno
+  - paragraph: Po splatnosti
+  - paragraph: 0,00 Kč
+  - paragraph: 0 · Po splatnosti
+  - paragraph: Uhrazeno
+  - paragraph: 0,00 Kč
+  - paragraph: Uhrazeno
+  - list:
+    - button "2026001 · Acme s.r.o. Vystaveno 16. 10. 2026 · Splatnost 30. 10. 2026":
+      - paragraph:
+        - text: "2026001"
+        - generic: · Acme s.r.o.
+      - paragraph: Vystaveno 16. 10. 2026 · Splatnost 30. 10. 2026
+    - generic: 38 115,00 Kč
+    - generic: Vystaveno
+    - button "Duplikovat":
+    - button "Označit jako uhrazenou":
+    - button "Smazat":
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

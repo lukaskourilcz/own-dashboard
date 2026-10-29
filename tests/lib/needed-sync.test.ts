@@ -185,12 +185,14 @@ describe("Tasks refresh across NEEDED.md locations", () => {
   const files: Record<string, NeededFileResult> = {
     "react-express-app": {
       kind: "ok",
+      sha: "a".repeat(40),
       path: "NEEDED.md",
       content: "- [ ] Root task `[imp:3]`",
       htmlUrl: null,
     },
     quorum: {
       kind: "ok",
+      sha: "a".repeat(40),
       path: "docs/NEEDED.md",
       content: "- [ ] Kept quorum task\n- [ ] New quorum task `[owner:ai]`",
       htmlUrl: null,
@@ -221,6 +223,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     );
     expect([...scan.scanned].sort()).toEqual(["1", "2"]);
     expect(scan.missing).toEqual(["me/archived-notes"]);
+    expect(scan.unavailable).toEqual([flakyRepo.full_name]);
     expect(scan.freshRows.map((r) => r.needed_raw)).toEqual([
       "- [ ] Root task `[imp:3]`",
       "- [ ] Kept quorum task",
@@ -273,9 +276,11 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     );
     expect(commits).toEqual([
       {
+        expectedRepositoryId: docsRepo.id,
         owner: "me",
         repo: "quorum",
         path: "docs/NEEDED.md",
+        expectedSha: "a".repeat(40),
         content: "- [ ] New quorum task `[owner:ai]`",
         count: 1,
       },
@@ -283,7 +288,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
     // Open tasks are never cleared, and an unreadable file keeps its rows. A
     // file found at no path took its lines with it: those rows are cleared
     // without a commit and the repository is reported.
-    expect(cleared).toEqual({ cleared: ["q-done", "gone-done"], missing: ["me/archived-notes"] });
+    expect(cleared).toEqual({ cleared: ["q-done", "gone-done"], missing: ["me/archived-notes"], kept: 1, disconnected: false });
   });
 
   it("keeps the rows when the commit fails", async () => {
@@ -292,7 +297,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
       async () => ({ ok: false, status: 409, error: "conflict" }),
       load,
     );
-    expect(cleared).toEqual({ cleared: [], missing: [] });
+    expect(cleared).toEqual({ cleared: [], missing: [], kept: 1, disconnected: false });
   });
 
   it("clears rows whose line is already gone without committing", async () => {
@@ -304,7 +309,7 @@ describe("Tasks refresh across NEEDED.md locations", () => {
       commit,
       load,
     );
-    expect(cleared).toEqual({ cleared: ["r-old"], missing: [] });
+    expect(cleared).toEqual({ cleared: ["r-old"], missing: [], kept: 0, disconnected: false });
   });
 
   it("clears the finished rows of a repository whose NEEDED.md is gone and names it", async () => {
@@ -317,6 +322,40 @@ describe("Tasks refresh across NEEDED.md locations", () => {
       imported(goneRepo, "gone-open", "- [ ] Still open"),
     ];
     const removal = await removeFinishedFromNeeded(tasks, commit, load);
-    expect(removal).toEqual({ cleared: ["gone-1", "gone-2"], missing: ["me/archived-notes"] });
+    expect(removal).toEqual({ cleared: ["gone-1", "gone-2"], missing: ["me/archived-notes"], kept: 0, disconnected: false });
   });
+});
+
+describe("complete owner task snapshot", () => {
+  it("reads beyond the REST row cap before calculating the import diff", async () => {
+    const { readNeededTodoSnapshot } = await import("@/lib/needed-sync");
+    const rows=Array.from({length:1201},(_,i) => todo({id:String(i),source:"github",repo_id:"42",needed_raw:i===1200?"- [ ] First task":`- [ ] Older ${i}`}));
+    const ranges:number[][]=[];
+    const snapshot=await readNeededTodoSnapshot(async (from,to) => {ranges.push([from,to]);return {data:rows.slice(from,to+1),error:null};});
+    expect(ranges).toEqual([[0,499],[500,999],[1000,1499]]);
+    expect(snapshot).toHaveLength(1201);
+    const fresh=buildNeededRows("u",repo,NEEDED,repo.html_url,"2026-10-23T10:00:00Z");
+    expect(diffNeededTodos(new Set(["42"]),fresh,snapshot).toInsert.map(row => row.title)).toEqual(["Second task"]);
+  });
+  it("aborts on a later read failure rather than returning a partial snapshot", async () => {
+    const { readNeededTodoSnapshot } = await import("@/lib/needed-sync");
+    let calls=0;
+    await expect(readNeededTodoSnapshot(async () => ++calls===1?{data:Array.from({length:500},() => todo({})),error:null}:{data:null,error:new Error("offline")})).rejects.toThrow("Could not read existing tasks");
+    expect(calls).toBe(2);
+  });
+  it("keeps an actual empty list distinct from a failed read", async () => {
+    const { readNeededTodoSnapshot } = await import("@/lib/needed-sync");
+    expect(await readNeededTodoSnapshot(async () => ({data:[],error:null}))).toEqual([]);
+    await expect(readNeededTodoSnapshot(async () => ({data:null,error:null}))).rejects.toThrow();
+  });
+});
+
+it('captures repository scan identities and cancels a held source before any later read', async () => {
+ const controller = new AbortController(); let release!: (value: NeededFileResult) => void;
+ const input = [{ ...repo }, { ...repo, id: 43, name: 'second', full_name: 'me/second' }];
+ const calls: string[] = [];
+ const pending = scanNeededRepos('u', input, '2026-10-25T00:00:00Z', async (owner, name) => { calls.push(`${owner}/${name}`); return new Promise(resolve => { release = resolve; }); }, { signal: controller.signal });
+ const failed = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+ input[1].name = 'renamed'; controller.abort(); release({ kind: 'not-found' }); await failed;
+ expect(calls).toEqual(['me/own-dashboard']);
 });

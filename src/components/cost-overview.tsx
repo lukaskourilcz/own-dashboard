@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNow } from "@/lib/use-now";
 import { useDict } from "@/lib/i18n";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ export function CostOverview({
   className?: string;
 }) {
   const t = useDict();
+  const now = useNow();
   const [period, setPeriod] = useState<"monthly" | "yearly">("monthly");
   const factor = period === "yearly" ? 12 : 1;
 
@@ -182,8 +184,8 @@ export function CostOverview({
         <div className="border-t border-border px-4 py-3">
           <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
             {importantSubscriptions.map((subscription) => {
-              const days = daysUntilRenewal(subscription);
-              const renewal = days === null
+              const days = now ? daysUntilRenewal(subscription, now) : null;
+              const renewal = !now ? "—" : days === null
                 ? t.subscriptions.renewalMissing
                 : days < 0
                   ? t.subscriptions.overdueByDays(Math.abs(days))

@@ -19,6 +19,14 @@ shows arrows between steps. There is no HTML injection, external diagram service
 or diagram script evaluation. Destination links retain real URLs and modified-click
 behavior while ordinary navigation uses the existing shell.
 
+## Current guide update — 24 October 2026
+
+The guide now reflects the verified 23 October setup in [the Astra handoff](astra-handoff.md#verified-browser-status-23-october-2026): account publishing and the prepared source/publication recovery actions were enabled. The page describes the current gates rather than hard-coding publishing as disabled or asking for those already-applied migrations again. It is static guidance, not a live switch reader. The later app-audit migrations are separate and remain prepared until their recorded rollout.
+
+The first library-music Reel was published through native Instagram under the owner's explicit delegation. It does not verify automatic OwnDashboard Reel publication. The intended Facebook Page/Login, live keyword-DM prerequisites and optional spend/activation decisions remain as recorded in the handoff. Existing consent, spending limits and exact-version approval still apply. Older dated sections below preserve their original observations; they do not override this update.
+
+Navigation checks enter Workflows through another destination before asserting canonical `/workflows`, Back and Forward. Selecting the already-active destination intentionally creates no redundant history entry. Project classification checks now use invented owned UUID records and the current captured-version save RPC, preserving sidebar/table consistency and failed-write assertions without accepting a direct table write.
+
 ## State represented on 14 October 2026
 
 Core professional areas and Workflows are deployed. Production is READY at merge

@@ -1,0 +1,114 @@
+{
+  "releaseChecksPassed": true,
+  "measuredAt": "2026-10-23",
+  "applicationCommit": "e7eead8",
+  "applicationBuildCommit": "e7eead8",
+  "branch": "codex/dneskai-audit-implementation",
+  "environment": {
+    "node": "v26.8.2",
+    "platform": "darwin arm64",
+    "server": "Optimized Next.js fixture build, localhost:3939, NEXT_E2E=1",
+    "backend": "Synthetic browser fixtures and isolated migrated PGlite; placeholder public configuration only",
+    "browser": "Isolated Playwright Chromium, desktop and Pixel 5; signed-in Chrome extension unavailable"
+  },
+  "checks": [
+    {
+      "name": "Lint",
+      "command": "npm run lint",
+      "result": "Passed"
+    },
+    {
+      "name": "Type checking",
+      "command": "npx tsc --noEmit",
+      "result": "Passed"
+    },
+    {
+      "name": "Unit / integration",
+      "command": "npm run test",
+      "result": "2779 passed, 1 skipped; 273 files passed, 1 skipped; 185.27 s"
+    },
+    {
+      "name": "Optimized build",
+      "command": "npm run build",
+      "result": "Passed with fixture-only NEXT_E2E=1"
+    },
+    {
+      "name": "Browser regression",
+      "command": "npm run test:e2e",
+      "result": "247 passed, 79 project-specific skips; 8.2 min; desktop and mobile"
+    },
+    {
+      "name": "Responsive matrix",
+      "result": "25 visible destinations \u00d7 6 widths = 150 states; one visible title and no document overflow"
+    },
+    {
+      "name": "Visual baselines",
+      "command": "npx playwright test e2e/dneskai-lab-visual.spec.ts --update-snapshots",
+      "result": "6 tests passed; 24 macOS baselines, 2 changed and 10 new PNGs visually reviewed"
+    }
+  ],
+  "coverage": {
+    "widths": [
+      360,
+      430,
+      768,
+      1024,
+      1440,
+      1728
+    ],
+    "languages": [
+      "en",
+      "cs"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "parity": "Sampled combinations, not all destinations in all four language/theme combinations",
+    "pendingReviewPagination": "75 decisions, tied timestamps, 3 pages; pending outside recent history",
+    "aggregate": "5013 matching replies, 12 failure codes, off-page recent publications, owner/brand isolation and grants across the complete migration chain",
+    "audio": "401 tracks with 200 older disabled; 201 eligible rotation population, stable ties and saved off-page selection",
+    "keyboard": "Palette trap/opener, mobile More, on-demand dialogs, draft Save/Discard/Stay and canonical browser Back/Forward",
+    "invoice": "Czech fixture, white print surface, QR present and exactly one A4 page in dark mode",
+    "visualBaselines": 24,
+    "reviewedNewOrChangedBaselines": 12,
+    "implementationCaptureCount": 22,
+    "nestedOverflow": "Subscription card bounds and internal scroll width after chart readiness, at all six widths; renewal dates and amounts remain visible."
+  },
+  "limits": [
+    "No Production schema, data, settings, publishing or provider calls changed during this implementation.",
+    "Apply 20261023135551_dneskai_engagement_receipts.sql before deploying this branch; earlier feature migrations are already applied.",
+    "No manual screen-reader audit, real 200\u2013400% browser zoom check or signed-in Chrome verification is claimed. Width reflow and automated axe/keyboard checks are local evidence.",
+    "The existing opt-in independent-session PostgreSQL pilot contention test is skipped because its local container is not configured; migrated PGlite tests ran.",
+    "Warm local fixture payload, derivative and query-plan measurements are not Production latency/cardinality benchmarks. Summary/detail reads, private derivatives and a new index were not rolled out.",
+    "Visual baselines use macOS system fonts; their existing Linux skip policy remains.",
+    "Local commits only: not pushed, merged or deployed."
+  ],
+  "developmentFailuresResolved": [
+    "Real canonical Back navigation exposed passive listener ordering; layout registration now protects the dirty editor before shell subscriptions.",
+    "Mobile Notes status was cramped; title/status now have their own row with wrapped secondary controls.",
+    "Actual light-theme success contrast was 4.44:1 on the composed canvas; darker semantic text passed the affected axe checks.",
+    "Old browser selectors assumed only two Lab dates or the old local discard action; they now scope the intended day or shared navigation dialog.",
+    "The concurrent unit run failed two timing assumptions. State polling and fixture module imports corrected them; the full rerun passed.",
+    "A development documentation run found premature links to the not-yet-generated comparison; links were removed until the artifact exists.",
+    "Five migration-documentation contracts still asserted historical unapplied status. They now require the recorded rollout date, retaining all security assertions; final documentation and full unit runs passed.",
+    "Ready-content captures exposed subscription card intrinsic-width overflow hidden by the shell. Zero-minimum grid/cards, mobile renewal wrapping and nested geometry checks correct it; cancelled labels also use valid paragraph nesting."
+  ],
+  "sourceNote": "Application source and optimized build match e7eead8; later commits affect documentation, its contract tests and verification artifacts.",
+  "documentationVerification": {
+    "command": "npx vitest run tests/lib/documentation.test.ts tests/lib/migration-contracts.test.ts",
+    "result": "26 passed; applied dates updated without removing ownership/privacy assertions"
+  },
+  "artifactVerification": {
+    "command": "node docs/reports/dneskai-code-ux-audit-2026-10-23/verify-implementation.mjs",
+    "result": "22 hashed application captures, 7 comparisons, 77 local references; PNG pixels and CSS viewport dimensions verified separately",
+    "browser": "1440px dark and 360px light; all 36 images loaded, no missing assets or document overflow, zero axe violations, anchor navigation passed",
+    "proof": [
+      "implementation-page-proof/report-1440-dark.png",
+      "implementation-page-proof/report-360-light.png"
+    ],
+    "captureCommand": "npm run test:e2e",
+    "captureResult": "22 application captures from the final passing full browser run. Notes editor and stable chart paths awaited; subscription card bounds/internal overflow checked at six widths.",
+    "browserCommand": "node docs/reports/dneskai-code-ux-audit-2026-10-23/verify-implementation-browser.mjs"
+  }
+}

@@ -14,6 +14,8 @@ type JobsStrings = {
   checking: string;
   refreshOk: string;
   refreshErr: string;
+  refreshLoadErr: string;
+  refreshReload: string;
   refreshRateLimited: string;
   sourceErrors: string;
   // Data sources
@@ -61,6 +63,14 @@ type JobsStrings = {
   savedBadge: string;
   savePosition: string;
   positionSaved: string;
+  saveUnconfirmed: string;
+  saveListingChanged: string;
+  triageUnconfirmed: string;
+  triageChanged: string;
+  triageLimit: string;
+  triageReloadFailed: string;
+  triageReload: string;
+  clearSelection: string;
   saveByUrl: string;
   saveByUrlDescription: string;
   importFromUrl: string;
@@ -85,6 +95,12 @@ type JobsStrings = {
   noMatches: string;
   noMatchesDescription: string;
   listingsShown: string;
+  listingPages: string;
+  savedPages: string;
+  applicationPages: string;
+  previousPage: string;
+  nextPage: string;
+  pageRange: (from: number, to: number, total: number) => string;
   tableActions: string;
   // Apply dialog / application form
   applyTitle: string;
@@ -96,6 +112,7 @@ type JobsStrings = {
   link: string;
   appliedOn: string;
   coverLetter: string;
+  letterGuidance: string;
   coverLetterPlaceholder: string;
   loadTemplate: string;
   builtinTemplatesGroup: string;
@@ -142,6 +159,7 @@ type JobsStrings = {
   listView: string;
   boardView: string;
   boardRegion: string;
+  boardPages: (column: string) => string;
   boardHint: string;
   boardColumnClosed: string;
   boardColumnEmpty: string;
@@ -152,8 +170,6 @@ type JobsStrings = {
   contactLabel: string;
   contactName: string;
   contactEmail: string;
-  contactMigrationPending: string;
-  contactSaveFailed: string;
   // Templates manager
   manageTemplates: string;
   templatesTitle: string;
@@ -161,6 +177,10 @@ type JobsStrings = {
   newTemplate: string;
   editTemplate: string;
   templateName: string;
+  templateSearch: string;
+  untitledTemplate: string;
+  emptyTemplate: string;
+  noMatchingTemplates: string;
   templateNamePlaceholder: string;
   templateBody: string;
   templateBodyPlaceholder: string;
@@ -191,7 +211,9 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     never: "never",
     checking: "Checking…",
     refreshOk: "Job boards checked.",
-    refreshErr: "Could not check the job boards. Please try again.",
+    refreshErr: "Could not confirm the job-board check. Please try again.",
+    refreshLoadErr: "Job boards were checked, but Career could not reload.",
+    refreshReload: "Reload saved Career",
     refreshRateLimited: "Too many refreshes — try again in a few minutes.",
     sourceErrors: "Some boards failed on the last check",
     sourcesTitle: "Where these offers come from",
@@ -241,8 +263,16 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     savedBadge: "Saved",
     savePosition: "Save position",
     positionSaved: "Position saved.",
+    saveUnconfirmed: "Saving this position was not confirmed.",
+    saveListingChanged: "This offer changed. Check for new offers before saving it.",
+    triageUnconfirmed: "The change was not confirmed.",
+    triageChanged: "These offers changed. Reload current offers and select them again.",
+    triageLimit: "Select at most 1,000 offers per change.",
+    triageReloadFailed: "Could not reload current offers.",
+    triageReload: "Reload offers",
+    clearSelection: "Clear selection",
     saveByUrl: "Save a position from a link",
-    saveByUrlDescription: "Paste a job URL. The title, company and description will be filled when the page allows it; you can correct every field before saving.",
+    saveByUrlDescription: "Paste a job URL, then choose Fill from URL or enter the details manually.",
     importFromUrl: "Fill from URL",
     importing: "Reading page…",
     urlImportFailed: "The page could not be read. Enter the position details manually.",
@@ -267,6 +297,12 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noMatches: "Nothing matches",
     noMatchesDescription: "Try different filters or clear the search.",
     listingsShown: "positions",
+    listingPages: "Listing pages",
+    savedPages: "Saved position pages",
+    applicationPages: "Application pages",
+    previousPage: "Previous",
+    nextPage: "Next",
+    pageRange: (from, to, total) => `${from}–${to} of ${total}`,
     tableActions: "Actions",
     applyTitle: "Prepare this application",
     logManualTitle: "Log an application",
@@ -277,6 +313,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     link: "Link",
     appliedOn: "Applied on",
     coverLetter: "Cover letter",
+    letterGuidance: "Draft assistance",
     coverLetterPlaceholder:
       "Write your cover letter here, or load one of your templates…",
     loadTemplate: "Load template",
@@ -325,6 +362,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     listView: "List",
     boardView: "Board",
     boardRegion: "Application stages",
+    boardPages: column => `${column} pages`,
     boardHint:
       "Drag a card to another stage, or use the stage menu on the card. A saved position becomes an application through Review / mark as sent, which records the real date you applied.",
     boardColumnClosed: "Closed",
@@ -336,9 +374,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     contactLabel: "Contact at the company",
     contactName: "Contact name",
     contactEmail: "Contact email",
-    contactMigrationPending:
-      "Contact fields appear once supabase/migrations/20260916141348_job_application_contacts.sql has been applied.",
-    contactSaveFailed: "The stage and notes were saved; the contact could not be.",
     manageTemplates: "Templates",
     templatesTitle: "Cover letter templates",
     templatesDescription:
@@ -346,6 +381,10 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     newTemplate: "New template",
     editTemplate: "Edit template",
     templateName: "Name",
+    templateSearch: "Search template names",
+    untitledTemplate: "Untitled template",
+    emptyTemplate: "Empty template",
+    noMatchingTemplates: "No templates match this search.",
     templateNamePlaceholder: "e.g. Frontend — English",
     templateBody: "Template text",
     templateBodyPlaceholder: "Dear Hiring Manager…",
@@ -375,7 +414,9 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     never: "nikdy",
     checking: "Kontroluji…",
     refreshOk: "Pracovní portály zkontrolovány.",
-    refreshErr: "Portály se nepodařilo zkontrolovat. Zkuste to znovu.",
+    refreshErr: "Kontrolu portálů se nepodařilo potvrdit. Zkuste to znovu.",
+    refreshLoadErr: "Portály byly zkontrolovány, ale Kariéra se nenačetla.",
+    refreshReload: "Načíst uloženou Kariéru",
     refreshRateLimited: "Příliš mnoho kontrol — zkuste to za pár minut.",
     sourceErrors: "Některé portály při poslední kontrole selhaly",
     sourcesTitle: "Odkud nabídky pocházejí",
@@ -425,8 +466,16 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     savedBadge: "Uloženo",
     savePosition: "Uložit pozici",
     positionSaved: "Pozice byla uložena.",
+    saveUnconfirmed: "Uložení pozice není potvrzené.",
+    saveListingChanged: "Tato nabídka se změnila. Před uložením znovu ověřte aktuální nabídky.",
+    triageUnconfirmed: "Změnu se nepodařilo potvrdit.",
+    triageChanged: "Nabídky se změnily. Načtěte aktuální nabídky a vyberte je znovu.",
+    triageLimit: "Pro jednu změnu vyberte nejvýše 1 000 nabídek.",
+    triageReloadFailed: "Aktuální nabídky se nepodařilo načíst.",
+    triageReload: "Načíst nabídky",
+    clearSelection: "Zrušit výběr",
     saveByUrl: "Uložit pozici z odkazu",
-    saveByUrlDescription: "Vložte URL inzerátu. Pokud to stránka dovolí, doplní se název, firma a popis; před uložením můžete všechna pole upravit.",
+    saveByUrlDescription: "Vložte URL inzerátu. Pak zvolte Doplnit z URL, nebo údaje vyplňte ručně.",
     importFromUrl: "Doplnit z URL",
     importing: "Načítám stránku…",
     urlImportFailed: "Stránku se nepodařilo načíst. Vyplňte údaje o pozici ručně.",
@@ -451,6 +500,12 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     noMatches: "Nic neodpovídá",
     noMatchesDescription: "Zkuste jiné filtry nebo smažte hledání.",
     listingsShown: "pozic",
+    listingPages: "Stránky nabídek",
+    savedPages: "Stránky uložených pozic",
+    applicationPages: "Stránky přihlášek",
+    previousPage: "Předchozí",
+    nextPage: "Další",
+    pageRange: (from, to, total) => `${from}–${to} z ${total}`,
     tableActions: "Akce",
     applyTitle: "Připravit žádost",
     logManualTitle: "Zaznamenat přihlášku",
@@ -461,6 +516,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     link: "Odkaz",
     appliedOn: "Datum přihlášení",
     coverLetter: "Motivační dopis",
+    letterGuidance: "Pomoc s návrhem dopisu",
     coverLetterPlaceholder:
       "Napište motivační dopis, nebo načtěte některou ze šablon…",
     loadTemplate: "Načíst šablonu",
@@ -508,6 +564,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     listView: "Seznam",
     boardView: "Tabule",
     boardRegion: "Fáze přihlášek",
+    boardPages: column => `${column}: stránky`,
     boardHint:
       "Kartu přetáhněte do jiné fáze, nebo použijte nabídku fáze přímo na kartě. Z uložené pozice se přihláška stane přes Zkontrolovat / označit odeslání, kde se zapíše skutečné datum odeslání.",
     boardColumnClosed: "Uzavřeno",
@@ -519,9 +576,6 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     contactLabel: "Kontakt ve firmě",
     contactName: "Jméno kontaktu",
     contactEmail: "E-mail kontaktu",
-    contactMigrationPending:
-      "Pole kontaktu se objeví, až bude nasazena migrace supabase/migrations/20260916141348_job_application_contacts.sql.",
-    contactSaveFailed: "Fáze a poznámky se uložily, kontakt se uložit nepodařilo.",
     manageTemplates: "Šablony",
     templatesTitle: "Šablony motivačních dopisů",
     templatesDescription:
@@ -529,6 +583,10 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
     newTemplate: "Nová šablona",
     editTemplate: "Upravit šablonu",
     templateName: "Název",
+    templateSearch: "Hledat v názvech šablon",
+    untitledTemplate: "Šablona bez názvu",
+    emptyTemplate: "Prázdná šablona",
+    noMatchingTemplates: "Žádná šablona neodpovídá hledání.",
     templateNamePlaceholder: "např. Frontend — anglicky",
     templateBody: "Text šablony",
     templateBodyPlaceholder: "Dobrý den…",

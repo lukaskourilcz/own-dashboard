@@ -7,7 +7,7 @@ Career now stores the company directory in Supabase and connects saved positions
 Career displays public Oslo research immediately. Opening a role or saved/workflow tab loads private records on demand; **Check for new offers / Zkontrolovat nové nabídky** also refreshes feeds and availability. The prepared queue accepts explicit ready text-only drafts as well as Google Docs links. See [current Oslo workflow](career-workspace.md).
 
 1. Save a position or open an imported one. Attach its Google Docs or Drive file URL and review the posting, letter and eligibility notes. Readiness is explicit: draft, ready or needs review.
-2. Open **Applications to send / Přihlášky k odeslání**. The list includes every saved position with a letter link, including visibly marked items needing review. Search by company or role.
+2. Open **Applications to send / Přihlášky k odeslání**. The Ready list includes explicitly ready drafts, including text-only letters, and valid Google letter links unless marked needs review. Drafts and items needing review stay in the other saved-position view. Search by company or role.
 3. Apply through the employer's own site. Return to the review dialog, choose the actual date and select **Record sent application**. This records an action the owner has already taken; it does not contact an employer.
 4. Open **Applied** and record the first substantive response separately from the hiring stage. An automated receipt does not count as a reply. Record a follow-up date, the contact at the company and the next step; the contact has its own two fields and the notes hold the rest.
 5. Filter the sent cohort by application date and company/role. The response filter changes the visible list while the metric denominator remains the whole selected sent cohort.
@@ -25,12 +25,13 @@ Interviewing, Offer and Closed.
   date, so a card there cannot be dragged into Applied — it carries the same
   **Review / mark as sent** button the prepared list uses, which opens the
   review dialog and records the date the owner actually applied through
-  `record_job_application`. A drag that skipped it would invent that date.
-- Dragging a card calls the same `update_job_application_progress` RPC the list
-  uses, passing the existing response, follow-up and notes back unchanged: the
-  function is a whole-row update, so an omitted argument would erase the value.
-  The RPC appends a `status` history row only when the stage really changed, so
-  the board's moves land in the same timeline as everything else.
+  `record_captured_job_application`, using the original Saved identity/version. A drag that skipped review would invent that date.
+- Dragging a card calls `update_captured_job_application` through the same
+  bounded writer as the response dialog. It captures the original owner and
+  complete application version, then sends only the changed status. Omitted
+  response, follow-up, notes and contact fields remain unchanged. A stale
+  version refuses the write; an uncertain result offers explicit recovery.
+  Only an actual stage change adds a status event, in the same transaction.
 - Every drag has a keyboard and touch equivalent. Each card carries a stage
   menu, which is the complete path without dragging; the drag handle is the
   only element with drag listeners and `touch-action: none`, so card text stays
@@ -80,10 +81,12 @@ A direct link is sufficient for this workflow and creates no extra background AP
 ## Data and consistency
 
 - `career_companies` stores the owner, company name, URL, category, country, research notes and last check date. The directory loads only when its Career subtab is open, with a user-scoped React Query key and a 1,000-row bound. Public Oslo career destinations are available in production and merge with owner links; Czech destinations require the Settings opt-in.
-- `saved_job_positions` adds `cover_letter_url` and `readiness`. Existing saved positions keep their identities and drafts. The prepared list uses the presence of a letter link; readiness is a review flag, not a second application status.
-- `job_applications` adds the letter URL, idempotent request ID, first-response date and response kind. Existing status and follow-up columns remain authoritative. A later migration adds the contact pair; the progress RPC does not take it, so the contact is a separate own-only update guarded by the same RLS policies and reported separately when it fails.
-- `record_job_application` records the application, adds its initial event and consumes the saved position in one transaction. An owner/request unique key and transaction lock make retries return the original record. A manually saved position retains a null listing foreign key instead of incorrectly using its saved-row UUID.
-- `update_job_application_progress` updates the stage, response and follow-up together, adding history only when values change. Response dates cannot precede sending or lie in the future through the RPC.
+- `saved_job_positions` adds `cover_letter_url` and `readiness`. Existing saved positions keep their identities and drafts. The Ready view uses the shared readiness rule: explicit ready text-only drafts or valid Google letter links not marked needs review. Readiness stays distinct from a sent application status.
+- `job_applications` stores the letter URL, request identity, first-response date, response kind and contacts. Status and follow-up columns remain authoritative. The captured progress RPC commits submitted contact and progress changes together; a contact-only change adds no event.
+- `record_captured_job_application` verifies the expected owner and original Saved version, records the reviewed application and initial event, and consumes that exact Saved row in one transaction. Source metadata comes from its private Saved snapshot. Explicit retry of the same captured intent returns the original application without overwriting later progress; changed or foreign intents are refused. A manually saved position keeps its null listing foreign key.
+- `update_captured_job_application` accepts a bounded seven-field patch with the captured owner/id/version. It commits progress, contacts and the relevant changed history atomically; unchanged values cause no rewrite/event. Dates retain the owner-day validation. The older RPCs remain in canonical SQL for compatibility and are not the current board/dialog write path.
+
+The captured writers depend on prepared migrations 132 (`20261026182155_captured_career_application.sql`) and 133 (`20261026195100_captured_career_progress.sql`). Apply the complete audit chain 87–141 in order before deploying these callers; see the [current migration guide](migration-guide.md). This source description does not imply those files are already applied in Production.
 
 The functions use `SECURITY INVOKER`, an empty search path and explicit owner checks, following [Supabase's function guidance](https://supabase.com/docs/guides/database/functions). Directory access has explicit authenticated grants and [own-only RLS policies](https://supabase.com/docs/guides/database/postgres/row-level-security). [PostgreSQL transaction and row locks](https://www.postgresql.org/docs/current/explicit-locking.html) keep the sent transition atomic. Anonymous callers cannot read the directory or execute these functions.
 
@@ -94,7 +97,7 @@ Career and professional exports include the new directory; existing saved/applic
 | Metric | Definition |
 | --- | --- |
 | Sent | Number of recorded applications in the selected cohort |
-| Last 7 / 30 days | Sent dates within those rolling windows; future dates excluded |
+| Last 7 / 30 days | Seven or thirty calendar dates including today in the saved owner timezone (Europe/Prague by default); future dates excluded |
 | Active | Applied or interviewing |
 | Responses | Applications with an explicitly recorded response kind and valid date |
 | Response rate | Responses divided by sent applications in the selected cohort; blank for zero applications |
@@ -102,6 +105,12 @@ Career and professional exports include the new directory; existing saved/applic
 | Follow-ups due | Active applications — applied or interviewing — whose next follow-up timestamp has arrived. A malformed timestamp is skipped, not guessed at. |
 
 A recent cohort has had less time to receive replies, so its response rate should not be compared directly with a mature cohort. The median describes received replies, not the expected response time of silent companies. Rejections can be recorded as negative replies; a status change alone does not imply a reply.
+
+## October 2026 audit changes
+
+Prepared migration `20261023183345_career_owner_day.sql` aligns both transactional date checks with the owner timezone. It adds an authenticated, security-invoker date helper and preserves request idempotency and history. Apply it before deploying the timezone-aware form; it is still unapplied while the app-wide audit is in progress. An invalid legacy timezone falls back to Europe/Prague.
+
+A delayed URL enrichment cannot replace a newer URL or manually edited fields. URLs containing credentials or malformed values are rejected. Failed application deletion restores the application and its history; an optional contact-write failure preserves confirmed progress and the unsaved contact fields. Draft saving and recording a sent application cannot run together. The Strong fit filter uses the same level as its badge (75% or higher). Public research remains dated evidence and does not imply current vacancy availability or a completed relocation.
 
 ## Validation and deployment
 
@@ -112,3 +121,12 @@ The security advisor reported no new Career finding. It also reported existing u
 The Vercel project is already linked to this repository. [Vercel's GitHub integration](https://vercel.com/docs/git/vercel-for-github) builds branch previews and deploys the production branch. The additive database migration is compatible with the previous frontend, allowing the code to be reviewed before switching the interface.
 
 Local verification passed lint, TypeScript and the production build, plus 276 unit tests. The full E2E run passed 45 checks and skipped 33 project duplicates; its two remaining stale/external-dependency test failures were corrected and both passed the targeted rerun, leaving all 47 executed checks covered. Details and visual limitations are recorded in `docs/design/visual-qa.md`.
+
+
+### Direct availability checks
+
+Direct public-page verification admits at most 100 listings in batches of 15. Its in-flight work shares a 22-second budget; each listing has one 15-second allowance across redirects and body download, capped at 1.5 MB. Caller cancellation reaches these requests. In-flight failures become unknown, and unstarted rows receive no invented state. This bound covers the direct verifier, not preceding route auth/database or native-board fetches.
+
+Structured expiry uses only a JSON-LD `JobPosting` whose normalized title and URL match the registered listing; query identities stay distinct. Unrelated types/recommendations and arbitrary script fields cannot close that job or independently establish it open. Conflicting or malformed dates, oversized graph traversal, challenge pages and mixed apply/closed copy remain unknown. A date without a timezone waits until that calendar date ends in UTC−12, a conservative application policy rather than a provider guarantee. Datetimes require an explicit offset. This follows the per-listing meaning of [JobPosting](https://schema.org/JobPosting) and [Google's job-posting guidance](https://developers.google.com/search/docs/appearance/structured-data/job-posting); the strict local identity and ambiguity rules are OwnDashboard safeguards.
+
+Page classification scans complete bounded markup without whole-page backtracking expressions. It ignores comments and script/style text, consumes real attributes with quoted/unquoted values, and refuses unfinished/excessive markup as unknown. Limits are 1.5 million decoded characters, 10,000 tags, 4,096 characters per tag, forty JSON-LD scripts and five hundred structured nodes, in addition to the download byte ceiling. [Offline CPU evidence](reports/app-wide-audit-2026-10-23/career-html-cpu.json) records the malformed-input repair; it does not estimate production bills.

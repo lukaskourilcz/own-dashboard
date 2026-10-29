@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assessProjectHealth } from "@/lib/project-health";
+import { assessProjectHealth, localizeProjectHealthReason } from "@/lib/project-health";
 import type { Cron, Project } from "@/lib/types";
 
 const project: Project = {
@@ -51,4 +51,26 @@ describe("assessProjectHealth", () => {
     expect(result.health).toBe("attention");
     expect(result.reasons).toContain("Running costs without recorded revenue");
   });
+});
+
+it("counts imported repository tasks across renames and honors an explicit different project", () => {
+ const linked={...project,repo_id:42,repo_full_name:"owner/new-name",previous_repo_full_names:["owner/old-name"]};
+ const base={id:"a",user_id:"u1",title:"Release",done:false,due_date:"2026-10-01",category:null,created_at:"",source:"github" as const,repo_id:"42",repo_full_name:"owner/old-name",repo_owner:"owner",repo_name:"old-name",repo_url:null,needed_raw:null,generated_at:null,importance:3,project_id:null};
+ const result=assessProjectHealth(linked,[base,{...base,id:"b",repo_id:null},{...base,id:"foreign",project_id:"another-project"}],[],[],new Date("2026-10-23T12:00:00Z"));
+ expect(result.health).toBe("at_risk");expect(result.reasons).toEqual(["2 overdue tasks"]);
+});
+
+
+it("keeps a task due throughout its last fractional second and becomes overdue at local midnight", () => {
+  const todo = { id: "boundary", user_id: "u1", title: "Boundary", done: false, due_date: "2026-10-23", category: null, created_at: "", source: "manual" as const, repo_id: null, repo_full_name: null, repo_owner: null, repo_name: null, repo_url: null, needed_raw: null, generated_at: null, importance: 3, project_id: project.id };
+  expect(assessProjectHealth(project, [todo], [], [], new Date(2026, 9, 23, 23, 59, 59, 999)).health).toBe("healthy");
+  expect(assessProjectHealth(project, [todo], [], [], new Date(2026, 9, 24)).reasons).toEqual(["1 overdue task"]);
+});
+it("shares localized heartbeat singular/plural and all known reasons without changing unknown text", async () => {
+  const { professional } = await import("@/lib/i18n/sections/professional");
+  for (const copy of [professional.en, professional.cs]) {
+    const examples = [["Project is on hold", copy.projectOnHold], ["Running costs without recorded revenue", copy.costsWithoutRevenue], ["1 overdue task", `${copy.overdueTasks}: 1`], ["2 disabled automations", `${copy.disabledAutomations}: 2`], ["1 automation missed its heartbeat", `${copy.missedHeartbeat}: 1`], ["3 automations missed their heartbeat", `${copy.missedHeartbeat}: 3`]];
+    for (const [reason, expected] of examples) expect(localizeProjectHealthReason(reason, copy)).toBe(expected);
+    expect(localizeProjectHealthReason("Unexpected warning", copy)).toBe("Unexpected warning");
+  }
 });

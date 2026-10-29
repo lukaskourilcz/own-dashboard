@@ -1,0 +1,10 @@
+{
+  "sourceSha256": "b870185123295eb016fde6192170bb0e566de12d33e31f073762123c5128a6d1",
+  "inputSha256": "2525ac3f60e4c291cf73c60fb64a2a70821bc0b234ebb87ed54d4f83ed164c36",
+  "frameSha256": "8d35754ccf777011ee55d8356d6568e4eb8d7ce1fd998736354f845abcb516cc",
+  "frameBytes": 28189,
+  "peakActiveToBuffer": 2,
+  "framePassMs": 3377.7322080000004,
+  "maxRSSKiB": 172576,
+  "scope": "synthetic ten-slide composition; Node rejects FFmpeg flags and skips encoding; no external connection"
+}

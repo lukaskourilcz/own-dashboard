@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { awaitWithSignal } from "@/lib/abortable";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { tickDneskaiCollection } from "./dneskai-collection";
 import { createDneskaiCollectionStore, requireDneskaiProject } from "./dneskai-store";
@@ -19,7 +20,7 @@ import { sendDneskaiReviewReminders } from "./dneskai-reminders";
 import { runDneskaiEngagementWatch } from "./dneskai-engagement-watch";
 import { createDneskaiEngagementGraph, createDneskaiEngagementStore } from "./dneskai-engagement-ports";
 import { scoutDneskaiTopics } from "./dneskai-scouting";
-import { ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
+import { DneskaiAudioAccountSchema, ingestDneskaiAudioTrends } from "./dneskai-audio-trends";
 import { advanceDneskaiTikTokChart, dneskaiTikTokTrendsEnabled } from "./dneskai-audio-tiktok";
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
@@ -111,15 +112,23 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     engagementWatch: ({ signal, now, remainingMs }) => runDneskaiEngagementWatch({ store: createDneskaiEngagementStore(db, owner), graph: createDneskaiEngagementGraph(db, owner, env), now, signal, remainingMs }),
     scoutTopics: (project, now) => scoutDneskaiTopics(db, owner, project, now),
     async audioTrends(now, signal) {
-      const { data: account, error } = await db.from("marketing_accounts").select("*").eq("user_id", owner).eq("brand", "dneskai").eq("platform", "instagram").not("verified_at", "is", null).maybeSingle();
+      const clock = new Date(now.getTime()), today = pragueMarketingDate(clock);
+      signal?.throwIfAborted();
+      const budget = AbortSignal.any([AbortSignal.timeout(15_000), ...(signal ? [signal] : [])]);
+      const { data: rawAccount, error } = await awaitWithSignal(db.from("marketing_accounts").select("id,user_id,brand,platform,remote_account_id,verified_at,enabled").eq("user_id", owner).eq("brand", "dneskai").eq("platform", "instagram").not("verified_at", "is", null).abortSignal(budget).maybeSingle().retry(false), budget);
+      budget.throwIfAborted();
+      const account = rawAccount ? DneskaiAudioAccountSchema.parse(rawAccount) : null;
+      if (account && account.user_id !== owner) throw new Error("account-unavailable");
       if (error) throw new Error("account-unavailable");
       if (!account) return { status: "skipped", code: "account-unverified", stored: 0 };
-      const config = await resolveMetaPublisherConfig(db, owner, account as MetaCredentialAccount, env);
-      const igUserId = String((account as { remote_account_id: string }).remote_account_id), today = pragueMarketingDate(now);
-      const trends = await ingestDneskaiAudioTrends(db, owner, { config, remoteAccountId: igUserId, today, signal });
+      const config = await awaitWithSignal(resolveMetaPublisherConfig(db, owner, account as MetaCredentialAccount, env), budget);
+      budget.throwIfAborted();
+      const igUserId = account.remote_account_id;
+      const trends = await ingestDneskaiAudioTrends(db, owner, { config, account, remoteAccountId: igUserId, today, signal: budget, now: clock });
       // #167: the TikTok CZ chart, its own switch and daily cap; a failure there never hides Meta's list.
-      if (!dneskaiTikTokTrendsEnabled(env)) return trends;
-      const tiktok = await advanceDneskaiTikTokChart(db, owner, { config, igUserId, today, env, signal, now }).catch((failure: unknown) =>
+      if (!dneskaiTikTokTrendsEnabled(env) || ["audio-trends-input-invalid", "audio-trends-account-changed", "audio-trends-day-changed"].includes(trends.code ?? "")) return trends;
+      signal?.throwIfAborted();
+      const tiktok = await advanceDneskaiTikTokChart(db, owner, { config, account, igUserId, today, env, signal, now: clock }).catch((failure: unknown) =>
         ({ status: "skipped" as const, code: failure instanceof Error && /^[a-z][a-z0-9-]{1,79}$/.test(failure.message) ? failure.message : "tiktok-unavailable", started: false, read: 0, matched: 0 }));
       return { ...trends, tiktok: { started: tiktok.started, read: tiktok.read, matched: tiktok.matched, ...(tiktok.code ? { code: tiktok.code } : {}) } };
     },
@@ -164,9 +173,15 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       return due || pending || reel;
     },
     async publishDue(dryRun, signal) {
-      // #165: start the render of a Reel due within 45 minutes, so its MP4 waits at the slot. Best effort, $0.
-      if (!dryRun && options.origin) await prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS).catch(() => null);
-      const result = options.origin ? await publishDueMarketing(db, owner, "dneskai", dryRun, signal, undefined, { origin: options.origin }) : await publishDueMarketing(db, owner, "dneskai", dryRun, signal);
+      const check=()=>{if(signal.aborted)throw new DOMException('Request aborted','AbortError');};check();
+      const pending=options.origin?publishDueMarketing(db,owner,"dneskai",dryRun,signal,undefined,{origin:options.origin}):publishDueMarketing(db,owner,"dneskai",dryRun,signal);
+      const result=await awaitWithSignal(pending,signal);
+      check();
+      // Due/continuation work owns this step. Prepare a future Reel only when that step was quiet.
+      if (!dryRun && options.origin && result.outcomes.length === 0) {
+        await awaitWithSignal(prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS,signal),signal).catch(() => null);
+        check();
+      }
       return { outcomes: result.outcomes.map((outcome) => ({ publicationId: outcome.publicationId, status: outcome.status, errorCode: outcome.errorCode ?? null })) };
     },
     async nextReconciliation(checkedBefore) {
@@ -188,7 +203,7 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       const outcome = await reconcileStoredMarketingPublication(db, owner, publicationId);
       return { status: outcome.status, errorCode: outcome.errorCode ?? null };
     },
-    tokenMetadata: () => listMetaTokenMetadata(db, owner),
+    tokenMetadata: (signal) => listMetaTokenMetadata(db, owner, signal),
     refreshToken: (token, signal) => refreshInstagramToken(db, owner, { id: token.accountId, user_id: owner, brand: token.brand, platform: token.platform }, { signal, env }),
     async renewableRevisions() {
       // Every brand: a devShark revision published through its own workflow needs live URLs just the same.

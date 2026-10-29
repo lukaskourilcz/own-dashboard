@@ -1,0 +1,155 @@
+{
+  "applicationBase": "03f604fb",
+  "capturedDate": "2026-10-29",
+  "sourceState": "Application components unchanged from the committed source; mapped QA captures use the exact component hashes below.",
+  "fixture": "Registered synthetic partial/over-limit/complete/stale source phases and a controlled 28 October clock; no real GitHub or owner data.",
+  "components": {
+    "src/components/panels/ig-tips-panel.tsx": "3d1c5533b3be550d6024e0aaa550c0af31b95724eb233efbf14814790c294a45",
+    "src/components/work/marketing-week.tsx": "c7d47678661275da6bb26603ac826bfb2ba502c796f0cf7089f907344a8ad8ac",
+    "src/lib/i18n/sections/marketing.ts": "a2424988c671733f305ee395f10fc89608cc41339ea20b93f6e7c7010dcb2ad5",
+    "src/components/marketing/calendar-source-notes.tsx": "2e4ad565ce379edfa632bf08ea6078cf05348a2e090ad9a121508aa283697eb5"
+  },
+  "captures": {
+    "work": {
+      "430": {
+        "path": "assets/calendar-evidence-work-398-cs-430.png",
+        "width": 398,
+        "height": 289,
+        "box": {
+          "x": 16,
+          "y": 263,
+          "width": 398,
+          "height": 289
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 4.271356783919598,
+            "y": 31.4878892733564,
+            "w": 91.4572864321608,
+            "h": 5.536332179930795
+          },
+          {
+            "n": 2,
+            "x": 4.271356783919598,
+            "y": 41.1764705882353,
+            "w": 91.4572864321608,
+            "h": 13.84083044982699
+          },
+          {
+            "n": 3,
+            "x": 46.27041457286432,
+            "y": 78.89273356401384,
+            "w": 49.45822864321608,
+            "h": 15.22491349480969
+          }
+        ]
+      },
+      "1440": {
+        "path": "assets/calendar-evidence-work-398-cs-1440.png",
+        "width": 442,
+        "height": 227,
+        "box": {
+          "x": 954.390625,
+          "y": 279,
+          "width": 441.609375,
+          "height": 227
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 4.302444892615787,
+            "y": 40.969162995594715,
+            "w": 91.39511021476842,
+            "h": 7.048458149779735
+          },
+          {
+            "n": 2,
+            "x": 4.302444892615787,
+            "y": 53.30396475770925,
+            "w": 91.39511021476842,
+            "h": 8.810572687224669
+          },
+          {
+            "n": 3,
+            "x": 51.123376853129535,
+            "y": 80.1762114537445,
+            "w": 44.574178254254676,
+            "h": 12.334801762114537
+          }
+        ]
+      }
+    },
+    "ig-tips": {
+      "430": {
+        "path": "assets/calendar-evidence-ig-tips-398-cs-430.png",
+        "width": 398,
+        "height": 106,
+        "box": {
+          "x": 16,
+          "y": 445,
+          "width": 398,
+          "height": 106
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 3.2663316582914574,
+            "y": 8.49056603773585,
+            "w": 90.625,
+            "h": 15.09433962264151
+          },
+          {
+            "n": 2,
+            "x": 3.2663316582914574,
+            "y": 27.358490566037737,
+            "w": 90.72314698492463,
+            "h": 15.09433962264151
+          },
+          {
+            "n": 3,
+            "x": 3.2663316582914574,
+            "y": 50,
+            "w": 93.46733668341709,
+            "h": 41.509433962264154
+          }
+        ]
+      },
+      "1440": {
+        "path": "assets/calendar-evidence-ig-tips-398-cs-1440.png",
+        "width": 1120,
+        "height": 46,
+        "box": {
+          "x": 276,
+          "y": 254,
+          "width": 1120,
+          "height": 46
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 1.1607142857142858,
+            "y": 32.608695652173914,
+            "w": 32.20424107142857,
+            "h": 34.78260869565217
+          },
+          {
+            "n": 2,
+            "x": 34.43638392857143,
+            "y": 32.608695652173914,
+            "w": 32.23911830357143,
+            "h": 34.78260869565217
+          },
+          {
+            "n": 3,
+            "x": 81.44252232142857,
+            "y": 19.565217391304348,
+            "w": 17.396763392857142,
+            "h": 60.869565217391305
+          }
+        ]
+      }
+    }
+  },
+  "applicationCommit": "a8250b11"
+}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   ExternalLink,
@@ -17,109 +17,76 @@ import { useToast } from "@/components/ui/toast";
 import { useDict } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { commitFile, type GithubRepo } from "@/lib/github";
 import {
   loadNeededFile,
-  parseNeeded,
+  neededTodoItems,
   removeNeededLine,
   type NeededFileResult,
   type NeededItem,
 } from "@/lib/needed";
-import { buildNeededRows, neededKey } from "@/lib/needed-sync";
-import type { Todo } from "@/lib/types";
-
-// Under ["github", "file"] so the Tasks panel's clear-finished invalidation
-// reaches it. The file may live at NEEDED.md or docs/NEEDED.md.
-function fileQueryKey(repoId: string) {
-  return ["github", "file", repoId, "needed"] as const;
-}
+import { buildNeededRows } from "@/lib/needed-sync";
+import { setReposDisconnected } from "@/lib/github-queries";
+import { syncNeededTasks } from "@/lib/needed-task-store";
+import { loadNeededBatch, neededBatchQueryKey, type NeededBatchResult } from "@/lib/needed-batch-client";
 
 export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const toast = useToast();
   const qc = useQueryClient();
   const supabase = createClient();
 
-  // Sync every repo's NEEDED.md (root, then docs/), 5-min freshness.
-  const results = useQueries({
-    queries: repos.map((repo) => ({
-      queryKey: fileQueryKey(String(repo.id)),
-      queryFn: () => loadNeededFile(repo.owner, repo.name),
-      staleTime: 5 * 60_000,
-    })),
-  });
-
-  const loading = results.some((r) => r.isPending);
-  const disconnected = results.some(
-    (r) => r.data?.kind === "disconnected",
-  );
-
-  const groups = useMemo(() => {
-    return repos
-      .map((repo, i) => {
-        const res = results[i]?.data;
-        if (!res || res.kind !== "ok") return null;
-        const items = parseNeeded(res.content, repo, res.htmlUrl);
-        if (items.length === 0) return null;
-        return { repo, items, htmlUrl: res.htmlUrl };
-      })
-      .filter((g): g is NonNullable<typeof g> => g !== null);
-  }, [repos, results]);
+  const queryKey = neededBatchQueryKey(repos);
+  const batch = useQuery({ queryKey, queryFn: ({ signal }) => loadNeededBatch(repos, signal), staleTime: 5 * 60_000, refetchOnWindowFocus: false });
+  const files = useMemo(() => new Map(batch.data?.kind === "ok" ? batch.data.files.map(file => [file.repoId, file.result]) : []), [batch.data]);
+  const loading = batch.isPending, disconnected = batch.data?.kind === "disconnected";
+  useEffect(() => { if (disconnected) void setReposDisconnected(qc); }, [disconnected, qc]);
+  const unavailable = repos.filter(repo => files.get(String(repo.id))?.kind !== "ok");
+  function mergeSources(expected: Map<string, NeededFileResult>, update: NeededBatchResult) {
+    qc.setQueryData<NeededBatchResult>(queryKey, current => {
+      if (current?.kind !== "ok") return current;
+      if (update.kind === "disconnected") return update;
+      const changes = new Map(update.files.map(file => [file.repoId, file.result]));
+      return { kind: "ok", files: current.files.map(file => changes.has(file.repoId) && file.result === expected.get(file.repoId) ? { ...file, result: changes.get(file.repoId)! } : file) };
+    });
+  }
+  const retrySources = useMutation({ gcTime: 0, mutationFn: async () => {
+    const expected = new Map(files);
+    mergeSources(expected, await loadNeededBatch(unavailable));
+  } });
+  const groups = useMemo(() => repos.flatMap(repo => {
+    const res = files.get(String(repo.id));
+    if (res?.kind !== "ok") return [];
+    const items = neededTodoItems(res.content, repo, res.htmlUrl);
+    return items.length ? [{ repo, items, htmlUrl: res.htmlUrl }] : [];
+  }), [repos, files]);
 
   const totalItems = groups.reduce((n, g) => n + g.items.length, 0);
 
-  // Items to import as todos — prefers each file's task checkboxes, markdown
-  // stripped. Kept separate from the on-screen `groups` (which shows everything).
-  const importCount = useMemo(() => {
-    return repos.reduce((n, repo, i) => {
-      const res = results[i]?.data;
-      if (!res || res.kind !== "ok") return n;
-      return n + parseNeeded(res.content, repo, res.htmlUrl).length;
-    }, 0);
-  }, [repos, results]);
+  const importCount = totalItems;
 
   // Create categorized todos from every repo's NEEDED.md. Each task's category
   // is the repo name; existing tasks (same category + title) are skipped so
   // re-clicking never duplicates.
   const importTodos = useMutation({
+    gcTime: 0,
     mutationFn: async () => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
 
       const nowIso = new Date().toISOString();
-      const candidates = repos.flatMap((repo, i) => {
-        const res = results[i]?.data;
+      const candidates = repos.flatMap(repo => {
+        const res = files.get(String(repo.id));
         if (!res || res.kind !== "ok") return [];
         return buildNeededRows(userId, repo, res.content, res.htmlUrl, nowIso);
       });
       if (candidates.length === 0) return { inserted: 0, repos: 0 };
 
-      const { data: existing } = await supabase
-        .from("todos")
-        .select("title, category, repo_id, needed_raw")
-        .eq("user_id", userId);
-      const seen = new Set(
-        (existing ?? []).map((e) =>
-          neededKey(
-            (e as Partial<Todo>).repo_id ?? null,
-            (e as Partial<Todo>).needed_raw ?? null,
-            e.title ?? "",
-          ),
-        ),
-      );
-
-      const rows = candidates.filter((c) => {
-        const k = neededKey(c.repo_id, c.needed_raw, c.title);
-        if (seen.has(k)) return false; // already imported
-        seen.add(k);
-        return true;
-      });
-      if (rows.length === 0) return { inserted: 0, repos: 0 };
-
-      const { error } = await supabase.from("todos").insert(rows);
-      if (error) throw error;
-      return { inserted: rows.length, repos: new Set(rows.map((r) => r.category)).size };
+      const result = await syncNeededTasks(supabase, candidates);
+      return { inserted: result.added, repos: result.repos };
     },
     onSuccess: (res) => {
       toast.ok(
@@ -130,6 +97,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
       void qc.invalidateQueries({ queryKey: qk.todos });
     },
     onError: (e) => {
+      void qc.invalidateQueries({ queryKey: qk.todos });
       toast.err(
         (e as Error).message === "no-user"
           ? t.github.needed.reconnect
@@ -139,14 +107,16 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
   });
 
   const checkOff = useMutation({
+    gcTime: 0,
     mutationFn: async (item: NeededItem) => {
-      const cached = qc.getQueryData<NeededFileResult>(
-        fileQueryKey(item.repoId),
-      );
+      await qc.cancelQueries({ queryKey });
+      const current = qc.getQueryData<NeededBatchResult>(queryKey);
+      const cached = current?.kind === "ok" ? current.files.find(file => file.repoId === item.repoId)?.result : undefined;
       if (!cached || cached.kind !== "ok") throw new Error("stale");
       const { next, removed } = removeNeededLine(cached.content, item.raw);
       if (!removed) throw new Error("gone"); // already removed elsewhere
       const outcome = await commitFile({
+        intent: "edit", expectedSha: cached.sha,
         owner: item.owner,
         repo: item.repo,
         path: cached.path,
@@ -154,17 +124,19 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
         message: t.github.needed.commitMessage(item.text.slice(0, 64)),
       });
       if (!outcome.ok) throw outcome;
+      mergeSources(new Map([[item.repoId, cached]]), { kind: "ok", files: [{ repoId: item.repoId, result: { kind: "ok", path: cached.path, content: next, sha: outcome.result.content.sha, htmlUrl: outcome.result.content.html_url } }] });
       return { item, path: cached.path };
     },
-    onSuccess: ({ item, path }) => {
-      toast.ok(t.github.needed.removedFrom(item.repo, path));
-      void qc.invalidateQueries({ queryKey: fileQueryKey(item.repoId) });
-    },
-    onError: (e) => {
+    onSuccess: ({ item, path }) => { toast.ok(t.github.needed.removedFrom(item.repo, path)); },
+    onError: async (e, item) => {
       const status = (e as { status?: number }).status;
-      toast.err(
-        status === 401 ? t.github.needed.reconnect : t.github.needed.updateErr,
-      );
+      toast.err(status === 401 ? t.github.needed.reconnect : status === 409 ? t.github.fileChanged : t.github.needed.updateErr);
+      if (status === 401) { await setReposDisconnected(qc); return; }
+      const current = qc.getQueryData<NeededBatchResult>(queryKey);
+      if (current?.kind !== "ok") return;
+      const expected = new Map(current.files.map(file => [file.repoId, file.result]));
+      const result = await loadNeededFile(item.owner, item.repo);
+      mergeSources(expected, result.kind === "disconnected" ? { kind: "disconnected" } : { kind: "ok", files: [{ repoId: item.repoId, result }] });
     },
   });
 
@@ -173,9 +145,9 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
 
   return (
     <Card className="mb-4 overflow-hidden p-0">
-      <div className="flex items-start gap-2.5 border-b border-border bg-surface-muted/40 px-4 py-3">
+      <div className="flex flex-wrap items-start gap-2.5 border-b border-border bg-surface-muted/40 px-4 py-3">
         <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-foreground-muted" />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-40">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">
               {t.github.needed.title}
@@ -197,7 +169,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
               variant="outline"
               onClick={() => importTodos.mutate()}
               disabled={importTodos.isPending}
-              className="shrink-0"
+              className="ml-auto shrink-0"
             >
               {importTodos.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -210,6 +182,10 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
         )}
       </div>
 
+      {!loading && !disconnected && unavailable.length > 0 && <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <p className="min-w-0 flex-1 break-words text-xs text-foreground-muted">{t.github.needed.unavailable(unavailable.map(repo => repo.full_name).join(", "))}</p>
+        <Button size="sm" variant="outline" onClick={() => retrySources.mutate()} disabled={retrySources.isPending || batch.isFetching || checkOff.isPending}>{t.common.retry}</Button>
+      </div>}
       {loading ? (
         <div className="space-y-2 p-4">
           <p className="text-xs text-foreground-subtle">
@@ -223,7 +199,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
         <p className="px-4 py-6 text-center text-sm text-foreground-muted">
           {t.github.needed.reconnect}
         </p>
-      ) : totalItems === 0 ? (
+      ) : totalItems === 0 && unavailable.length > 0 ? null : totalItems === 0 ? (
         <div className="flex flex-col items-center px-4 py-8 text-center">
           <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted text-foreground-subtle">
             <Check className="h-4 w-4" />
@@ -244,10 +220,10 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
                   href={g.htmlUrl ?? g.repo.html_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted hover:text-foreground"
+                  className="inline-flex min-w-0 max-w-full items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted hover:text-foreground"
                   title={g.repo.full_name}
                 >
-                  {g.repo.name}
+                  <span className="min-w-0 truncate">{g.repo.name}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 <span className="text-[10px] tabular text-foreground-subtle">
@@ -265,7 +241,7 @@ export function NeededChecklist({ repos }: { repos: GithubRepo[] }) {
                           onClick={() => checkOff.mutate(item)}
                           disabled={checkOff.isPending}
                           aria-label={t.github.needed.checkOff + ": " + item.text}
-                          className="group flex w-full items-start gap-2.5 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface-hover focus-ring disabled:opacity-60"
+                          className="group flex min-h-11 w-full items-start md:min-h-0 gap-2.5 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface-hover focus-ring disabled:opacity-60"
                         >
                           <span
                             aria-hidden

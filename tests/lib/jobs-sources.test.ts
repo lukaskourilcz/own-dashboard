@@ -24,6 +24,16 @@ describe("unescapeHtml", () => {
   });
 });
 
+describe('malformed numeric references in public job data', () => {
+  it.each(['&#1114112;', '&#x110000;', '&#999999999999999999999999999999999999999999;', '&#55296;', '&#xDFFF;'])('retains the literal reference and continues parsing the feed (%s)', (reference) => {
+    expect(unescapeHtml(`Český &#x1F4F7; ${reference} &amp; tým`)).toBe(`Český 📷 ${reference} & tým`);
+    const xml = `<rss><channel><item><title>Acme ${reference}: Frontend Engineer</title><link>https://example.com/jobs/one</link><region>Anywhere in the World</region></item><item><title>Other: Backend Engineer</title><link>https://example.com/jobs/two</link><region>Anywhere in the World</region></item></channel></rss>`;
+    const jobs = parseWwrItems(xml);
+    expect(jobs.map(job => job.company)).toEqual([`Acme ${reference}`, 'Other']);
+    expect(jobs.map(job => job.title)).toEqual(['Frontend Engineer', 'Backend Engineer']);
+  });
+});
+
 describe("parseCzechDate", () => {
   it("parses day-month genitives within the current year", () => {
     expect(parseCzechDate("19. června", NOW)).toBe(

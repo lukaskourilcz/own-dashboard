@@ -35,12 +35,15 @@ export function mapRequisitionStatus(code: string): ProviderConsentStatus {
 /** Pick the most "current balance"-like figure from a GoCardless balances list. */
 export function pickBalance(
   balances: readonly GoCardlessBalance[] | null | undefined,
+  preferredCurrency?: string,
 ): { amount: number; currency: string } | null {
-  if (!balances?.length) return null;
+  const eligible = preferredCurrency ? balances?.filter(balance => balance.balanceAmount.currency === preferredCurrency) : balances;
+  if (!eligible?.length) return null;
   const order = ["closingBooked", "interimBooked", "interimAvailable", "expected"];
   const chosen =
-    order.map((t) => balances.find((b) => b.balanceType === t)).find(Boolean) ??
-    balances[0];
+    order.map((t) => eligible.find((b) => b.balanceType === t)).find(Boolean) ??
+    eligible[0];
+  if (typeof chosen.balanceAmount.amount !== "string" || !/^[+-]?\d+(?:\.\d{1,2})?$/.test(chosen.balanceAmount.amount)) return null;
   const amount = Number(chosen.balanceAmount.amount);
   if (!Number.isFinite(amount)) return null;
   return { amount, currency: chosen.balanceAmount.currency };

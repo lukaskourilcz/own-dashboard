@@ -1,0 +1,148 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Collapse sidebar" [expanded]:
+  - navigation:
+    - button "Home":
+      - generic: Home
+    - paragraph: Work
+    - button "Work overview":
+      - generic: Work overview
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projects":
+      - generic: Projects
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard" [active]:
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Competition":
+      - generic: Competition
+    - button "Opportunities":
+      - generic: Opportunities
+    - button "Clients":
+      - generic: Clients
+    - button "Career":
+      - generic: Career
+    - button "Invoices":
+      - generic: Invoices
+    - paragraph: Money
+    - button "Money overview":
+      - generic: Money overview
+    - button "Accounts":
+      - generic: Accounts
+    - button "Transactions":
+      - generic: Transactions
+    - button "Subscriptions":
+      - generic: Subscriptions
+    - button "Categories":
+      - generic: Categories
+    - paragraph: Planning
+    - button "Tasks":
+      - generic: Tasks
+    - button "Calendar":
+      - generic: Calendar
+    - button "Goals":
+      - generic: Goals
+    - button "Dates":
+      - generic: Dates
+    - paragraph: Library
+    - button "Notes":
+      - generic: Notes
+    - button "Prompts":
+      - generic: Prompts
+    - button "Tools":
+      - generic: Tools
+    - button "Links":
+      - generic: Links
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Settings":
+  - button "Switch to dark mode":
+  - button "Sign out":
+- main:
+  - heading "Projects" [level=1]:
+    - button "Projects"
+  - generic: ›
+  - generic: own-dashboard
+  - button "Command palette":
+    - generic: Type a command or search…
+    - text: K
+  - tablist "Project workspace":
+    - tab "Overview" [selected]
+    - tab "Tasks & Notes"
+    - tab "Activity"
+    - tab "Communication"
+    - tab "Repository"
+    - tab "Finance"
+    - tab "Competition"
+    - tab "Knowledge"
+    - tab "Scaling"
+    - tab "Monetization"
+  - generic: Health
+  - paragraph: Healthy
+  - generic: Open tasks
+  - paragraph: "4"
+  - generic: Monthly cost
+  - paragraph: 430,23 Kč
+  - generic: Outstanding amount
+  - paragraph: 0,00 Kč
+  - generic: Project summary
+  - paragraph: The operating dashboard this tour shows.
+  - paragraph: Linked organization
+  - paragraph: No organization linked
+  - generic: Needs attention
+  - paragraph: Nothing urgent is waiting.
+  - text: Traffic
+  - paragraph: Visitors from Vercel Web Analytics.
+  - paragraph: Could not load Vercel analytics.
+  - text: Links
+  - button "Add link":
+    - text: Add link
+  - list "Links":
+    - img "Free tier + paid"
+    - link "Supabase":
+      - /url: https://supabase.com
+    - generic: Tool
+    - paragraph: Stores every record behind own-only RLS.
+    - 'link "Open link: Supabase"':
+      - /url: https://supabase.com
+    - 'button "Copy URL: Supabase"':
+    - 'button "Edit note: Supabase"':
+    - 'button "Remove from project: Supabase"':
+    - img "Fully free"
+    - link "Plan a month of posts around two topics":
+      - /url: https://www.instagram.com/p/EXAMPLE0001/
+    - generic: Reference
+    - paragraph: Plan the build-in-public posts.
+    - 'link "Open link: Plan a month of posts around two topics"':
+      - /url: https://www.instagram.com/p/EXAMPLE0001/
+    - 'button "Copy URL: Plan a month of posts around two topics"':
+    - 'button "Edit note: Plan a month of posts around two topics"':
+    - 'button "Remove from project: Plan a month of posts around two topics"':
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

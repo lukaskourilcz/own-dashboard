@@ -1,0 +1,97 @@
+{
+  "finding": 326,
+  "capturedDate": "2026-10-27",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "d72aaae4",
+  "state": "Actual synthetic uncertain upload: original fields retained and selectable, one captured retry and memory-only discard. No production record.",
+  "components": {
+    "src/components/marketing/dneskai-audio-library.tsx": "1639606b78bb117644816eae7338839100e2d6a81c871872a4812e0ccea53298",
+    "src/lib/marketing/dneskai-audio-client.ts": "34682c4374106475567fa382f1cfaaa53f5a80923f34a116d7b2c49df0ede2bd",
+    "src/lib/marketing/dneskai-audio-contracts.ts": "69a9faf3dc22ec77c2add66d5565e87cd698aa91fcda6c24bb22baf255868aaa",
+    "src/lib/i18n/sections/dneskai-audio.ts": "87e2b4cc2a21d22a44fcc39837ed97f37caddf51675f443b47ed855d0aff7fa9"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "box": {
+        "x": 384,
+        "y": 357,
+        "width": 672,
+        "height": 486
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.125,
+          "y": 31.069958847736626,
+          "w": 45.982142857142854,
+          "h": 9.053497942386832
+        },
+        {
+          "n": 2,
+          "x": 3.125,
+          "y": 86.62551440329219,
+          "w": 31.105840773809526,
+          "h": 9.053497942386832
+        },
+        {
+          "n": 3,
+          "x": 35.421316964285715,
+          "y": 86.62551440329219,
+          "w": 31.105840773809526,
+          "h": 9.053497942386832
+        }
+      ],
+      "asset": "assets/audio-upload-recovery-cs-1440.png",
+      "sha256": "b96e3b2e8cf44d4bd1c4136e64f46491232b8e781c055b1b1455a4bc38ab504a",
+      "pixels": {
+        "width": 672,
+        "height": 486
+      }
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1200
+      },
+      "box": {
+        "x": 12,
+        "y": 197,
+        "width": 406,
+        "height": 806
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 21.33995037220844,
+          "w": 89.65517241379311,
+          "h": 5.459057071960298
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 85.48387096774194,
+          "w": 89.65517241379311,
+          "h": 5.459057071960298
+        },
+        {
+          "n": 3,
+          "x": 5.172413793103448,
+          "y": 91.93548387096774,
+          "w": 89.65517241379311,
+          "h": 5.459057071960298
+        }
+      ],
+      "asset": "assets/audio-upload-recovery-cs-430.png",
+      "sha256": "aff016b89575d06b6179c84176a94f74c82430b19196802c29624b2a92f3d4a7",
+      "pixels": {
+        "width": 1117,
+        "height": 2217
+      }
+    }
+  }
+}

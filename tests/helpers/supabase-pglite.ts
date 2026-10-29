@@ -59,13 +59,14 @@ export const setDatabaseTime = (db: PGlite, instant: Date | string) =>
 export const MIGRATION_FILES = readdirSync('supabase/migrations').filter((file) => file.endsWith('.sql')).sort();
 
 /** Baseline, the single owner, then every migration in filename order. Returns the open database. */
-export async function createMigratedDatabase(options: { owner: string; email?: string; instant: Date | string }): Promise<PGlite> {
+export async function createMigratedDatabase(options: { owner: string; email?: string; instant: Date | string; /** Exclusive boundary for testing a real migration upgrade. */ beforeMigration?: string }): Promise<PGlite> {
   const db = new PGlite({ extensions: { pgcrypto } });
   await db.exec(SUPABASE_STANDINS);
   await setDatabaseTime(db, options.instant);
   await db.query('insert into auth.users(id,email) values($1,$2)', [options.owner, options.email ?? 'owner@example.test']);
   await db.exec(readFileSync('supabase/schema.sql', 'utf8'));
   for (const file of MIGRATION_FILES) {
+    if (options.beforeMigration && file >= options.beforeMigration) break;
     try { await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8')); }
     catch (error) { throw new Error(`migration ${file} failed: ${error instanceof Error ? error.message : String(error)}`); }
   }

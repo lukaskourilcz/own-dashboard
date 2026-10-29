@@ -39,6 +39,22 @@ type PortfolioStrings = {
   searchCompetitors: string;
   competitorsCount: (n: number) => string;
   nameAndProjectRequired: string;
+  competitorPages: string;
+  competitorPageRange: (from: number, to: number, total: number) => string;
+  competitorPrevious: string;
+  competitorNext: string;
+  competitorNoMatches: string;
+  competitorNoMatchesHint: string;
+  competitorClearFilters: string;
+  competitorProjectUnavailable: string;
+  competitorNameInvalid: string;
+  competitorUrlInvalid: string;
+  competitorSaveUnconfirmed: string;
+  competitorActionUnconfirmed: string;
+  competitorChanged: string;
+  competitorDraftChanged: string;
+  competitorReload: string;
+  competitorReadUnavailable: string;
   notScored: string;
   projectCompetitionTab: string;
   visit: string;
@@ -58,6 +74,9 @@ type PortfolioStrings = {
     paid: string;
     byProjectTitle: string;
     byVendorTitle: string;
+    projectDetails: string;
+    subscriptionDetails: string;
+    notStarted: string;
     projectColumn: string;
     monthlyColumn: string;
     yearlyColumn: string;
@@ -106,6 +125,7 @@ type PortfolioStrings = {
     quarterly: string;
     lifecycle: (started: string, ended: string | null) => string;
     confirmationResets: string;
+    allocationsSaveFailed: string;
   };
 };
 
@@ -114,7 +134,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     subsection: "Subsection",
     subsectionOf: (parent) => `Part of ${parent}`,
     competitionTitle: "Competition",
-    competitionDescription: "Who else solves the same problem for each project: their most useful features, how they show up on social media, how they charge, and what to take from it.",
+    competitionDescription: "Competitor research by project: features, pricing, social content and lessons.",
     addCompetitor: "Add competitor",
     editCompetitor: "Edit competitor",
     deleteCompetitor: "Delete competitor",
@@ -151,6 +171,22 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     searchCompetitors: "Search competitors…",
     competitorsCount: (n) => `${n} ${n === 1 ? "competitor" : "competitors"}`,
     nameAndProjectRequired: "A name and a project are required.",
+    competitorPages: "Competition pages",
+    competitorPrevious: "Previous",
+    competitorNext: "Next",
+    competitorNoMatches: "No matching competitors",
+    competitorNoMatchesHint: "Try a different search or clear the filters.",
+    competitorClearFilters: "Clear filters",
+    competitorProjectUnavailable: "Project unavailable",
+    competitorPageRange: (from, to, total) => `${from}–${to} of ${total}`,
+    competitorNameInvalid: "Enter a name up to 120 characters.",
+    competitorUrlInvalid: "Use HTTP or HTTPS addresses without sign-in details, up to 2,000 characters each.",
+    competitorSaveUnconfirmed: "The save could not be confirmed. Your draft is kept. Try saving again.",
+    competitorActionUnconfirmed: "The change could not be confirmed. Reload the list before trying again.",
+    competitorChanged: "This entry changed or is no longer available. Reload the list before trying again.",
+    competitorDraftChanged: "This entry changed or is no longer available. Copy any draft changes before closing and reloading the list.",
+    competitorReload: "Reload competition",
+    competitorReadUnavailable: "Competition could not be refreshed. Last confirmed data may be out of date.",
     notScored: "Not scored",
     projectCompetitionTab: "Competition",
     visit: "Visit",
@@ -165,11 +201,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       unallocated: "Unallocated",
       unallocatedHint: "Shared subscriptions without a project split. Allocate them in Subscriptions to move this amount onto projects.",
       timelineTitle: "Monthly development spend",
-      timelineHint: "Committed = subscriptions active in that month, normalized to monthly. Paid = invoices and one-off purchases recorded as transactions.",
+      timelineHint: "Committed estimates past months using today's subscription prices and recorded activity dates; manual project costs are excluded. Paid includes transactions dated through today.",
       committed: "Committed",
       paid: "Paid",
       byProjectTitle: "By project",
       byVendorTitle: "By vendor",
+      projectDetails: "Project allocations",
+      subscriptionDetails: "Subscription details",
+      notStarted: "Not started",
       projectColumn: "Project",
       monthlyColumn: "Monthly",
       yearlyColumn: "Yearly",
@@ -190,7 +229,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       ended: "Ended",
       manageSubscriptions: "Manage subscriptions",
       settles: (name) => `Settles ${name}`,
-      allocationsHint: "Allocated shares follow the subscription; paid invoices inherit the same split.",
+      allocationsHint: "An explicit transaction project takes precedence. Other subscription payments use the current shares, not a historical allocation ledger.",
       unallocatedShort: "Unallocated",
       manualCosts: "Manual cost lines and automations",
       amountConfirmed: (date) => `Amount confirmed ${date}`,
@@ -220,13 +259,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       quarterly: "Quarterly",
       lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `since ${started}`),
       confirmationResets: "Changing the amount, currency or billing cycle clears the confirmation.",
+      allocationsSaveFailed: "Subscription saved. Project allocations could not be confirmed; review them before saving again. This form now updates the saved subscription.",
     },
   },
   cs: {
     subsection: "Podsekce",
     subsectionOf: (parent) => `Součást ${parent}`,
     competitionTitle: "Konkurence",
-    competitionDescription: "Kdo další řeší stejný problém u každého projektu: jejich nejužitečnější funkce, jak vystupují na sociálních sítích, jak účtují a co si z toho vzít.",
+    competitionDescription: "Průzkum konkurence podle projektů: funkce, ceny, obsah na sítích a poučení.",
     addCompetitor: "Přidat konkurenta",
     editCompetitor: "Upravit konkurenta",
     deleteCompetitor: "Smazat konkurenta",
@@ -263,6 +303,22 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
     searchCompetitors: "Hledat konkurenty…",
     competitorsCount: (n) => `${n} ${n === 1 ? "konkurent" : n < 5 ? "konkurenti" : "konkurentů"}`,
     nameAndProjectRequired: "Název a projekt jsou povinné.",
+    competitorPages: "Stránky konkurence",
+    competitorPrevious: "Předchozí",
+    competitorNext: "Další",
+    competitorNoMatches: "Žádní odpovídající konkurenti",
+    competitorNoMatchesHint: "Zkuste jiné hledání nebo zrušte filtry.",
+    competitorClearFilters: "Zrušit filtry",
+    competitorProjectUnavailable: "Projekt není dostupný",
+    competitorPageRange: (from, to, total) => `${from}–${to} z ${total}`,
+    competitorNameInvalid: "Zadejte název o délce nejvýše 120 znaků.",
+    competitorUrlInvalid: "Použijte adresy HTTP nebo HTTPS bez přihlašovacích údajů, každou nejvýše o 2 000 znacích.",
+    competitorSaveUnconfirmed: "Uložení se nepodařilo potvrdit. Koncept zůstává zachovaný. Zkuste ho uložit znovu.",
+    competitorActionUnconfirmed: "Změnu se nepodařilo potvrdit. Před dalším pokusem znovu načtěte seznam.",
+    competitorChanged: "Záznam se změnil nebo už není dostupný. Před dalším pokusem znovu načtěte seznam.",
+    competitorDraftChanged: "Záznam se změnil nebo už není dostupný. Před zavřením a novým načtením seznamu si zkopírujte změny z konceptu.",
+    competitorReload: "Načíst konkurenci znovu",
+    competitorReadUnavailable: "Konkurenci se nepodařilo obnovit. Poslední potvrzené údaje mohou být zastaralé.",
     notScored: "Bez hodnocení",
     projectCompetitionTab: "Konkurence",
     visit: "Otevřít",
@@ -277,11 +333,14 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       unallocated: "Nepřiřazeno",
       unallocatedHint: "Sdílená předplatná bez rozdělení na projekty. Rozdělte je v Předplatných, aby se částka přesunula na projekty.",
       timelineTitle: "Měsíční výdaje na vývoj",
-      timelineHint: "Závazky = předplatná aktivní v daném měsíci přepočtená na měsíc. Zaplaceno = faktury a jednorázové nákupy zaznamenané jako transakce.",
+      timelineHint: "Závazky odhadují minulá období z dnešních cen předplatných a zadaných dat aktivity; ruční náklady projektů nezahrnují. Zaplaceno zahrnuje transakce s datem nejpozději dnes.",
       committed: "Závazky",
       paid: "Zaplaceno",
       byProjectTitle: "Podle projektu",
       byVendorTitle: "Podle dodavatele",
+      projectDetails: "Přiřazení k projektům",
+      subscriptionDetails: "Podrobnosti předplatných",
+      notStarted: "Ještě nezačalo",
       projectColumn: "Projekt",
       monthlyColumn: "Měsíčně",
       yearlyColumn: "Ročně",
@@ -302,7 +361,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       ended: "Ukončeno",
       manageSubscriptions: "Spravovat předplatná",
       settles: (name) => `Hradí ${name}`,
-      allocationsHint: "Přiřazené podíly se řídí předplatným; zaplacené faktury dědí stejné rozdělení.",
+      allocationsHint: "Výslovné přiřazení transakce k projektu má přednost. Ostatní platby předplatných používají aktuální podíly, nikoli historickou evidenci přiřazení.",
       unallocatedShort: "Nepřiřazeno",
       manualCosts: "Ruční nákladové položky a automatizace",
       amountConfirmed: (date) => `Částka ověřena ${date}`,
@@ -332,6 +391,7 @@ export const portfolio: { en: PortfolioStrings; cs: PortfolioStrings } = {
       quarterly: "Čtvrtletně",
       lifecycle: (started, ended) => (ended ? `${started} – ${ended}` : `od ${started}`),
       confirmationResets: "Změna částky, měny nebo fakturačního období ověření zruší.",
+      allocationsSaveFailed: "Předplatné je uložené. Rozdělení mezi projekty nebylo potvrzeno; před dalším uložením je zkontrolujte. Formulář nyní upravuje uložené předplatné.",
     },
   },
 };

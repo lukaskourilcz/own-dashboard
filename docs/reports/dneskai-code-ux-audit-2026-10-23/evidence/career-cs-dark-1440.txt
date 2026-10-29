@@ -1,0 +1,250 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra" [active]:
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Kariéra" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Zkontrolovat nové nabídky":
+    - text: Zkontrolovat nové nabídky
+  - button "Oslo"
+  - button "Otevřené pozice"
+  - button "Uložené0"
+  - button "Přihlášky k odeslání1"
+  - button "Odeslané přihlášky5"
+  - button "Dopisy"
+  - button "Kariérní odkazy"
+  - region "Pracovní příležitosti v Oslu":
+    - paragraph: OSLO · NORWAY
+    - heading "Další krok v Oslu." [level=2]
+    - paragraph: Frontend, fullstack a praktické AI integrace. Silné shody nahoře, seniornější příležitosti i konkrétní mezery v detailu.
+    - paragraph:
+      - text: Oslo a okolí · remote pozice slučitelné s prací z Norska
+    - term: Prioritní shody
+    - definition: "14"
+    - term: Prověřené role
+    - definition: "33"
+    - textbox "Hledat pozici v Oslu":
+      - /placeholder: Firma, pozice nebo technologie
+    - combobox "Výběr příležitostí":
+      - generic: Prioritní shody · 75 % a více
+    - paragraph: Procenta vyjadřují shodu s profilem, nikoli pravděpodobnost přijetí. Výzkum k 2026-10-16. Dostupnost a podmínky před podáním znovu ověřte.
+    - button "Aidn · Fullstack Engineer · 88% shoda":
+      - generic: Aidn
+      - heading "Fullstack Engineer" [level=3]
+      - paragraph: React · Next.js · TypeScript
+      - text: Oslo / anywhere in Norway
+      - generic: Zaměstnavatel
+      - strong: 88%
+      - generic: shoda s profilem
+    - button "Flowcase · Senior Frontend Engineer · 88% shoda":
+      - generic: Flowcase
+      - heading "Senior Frontend Engineer" [level=3]
+      - paragraph: React · TypeScript · React Query
+      - text: Oslo
+      - generic: The Hub
+      - strong: 88%
+      - generic: shoda s profilem
+    - button "Attensi · Frontend Developer – Creator Tools · 88% shoda":
+      - generic: Attensi
+      - heading "Frontend Developer – Creator Tools" [level=3]
+      - paragraph: TypeScript · SvelteKit · Tailwind CSS
+      - text: Oslo
+      - generic: The Hub
+      - strong: 88%
+      - generic: shoda s profilem
+    - button "Pexip · Software Engineer · Control Center · 88% shoda":
+      - generic: Pexip
+      - heading "Software Engineer · Control Center" [level=3]
+      - paragraph: React · TypeScript · APIs
+      - text: Oslo
+      - generic: LinkedIn
+      - strong: 88%
+      - generic: shoda s profilem
+    - button "No Isolation · AI Integration Engineer · 86% shoda":
+      - generic: No Isolation
+      - heading "AI Integration Engineer" [level=3]
+      - paragraph: n8n · APIs · Webhooks
+      - text: Oslo
+      - generic: The Hub
+      - strong: 86%
+      - generic: shoda s profilem
+    - button "Sanity · Senior Software Engineer, Content Agent · 86% shoda":
+      - generic: Sanity
+      - heading "Senior Software Engineer, Content Agent" [level=3]
+      - paragraph: TypeScript · React · AI agents
+      - text: Oslo
+      - generic: Seniornější role
+      - strong: 86%
+      - generic: shoda s profilem
+    - button "The Flex / Base360.ai · Senior Full-Stack Product Engineer · 86% shoda":
+      - generic: The Flex / Base360.ai
+      - heading "Senior Full-Stack Product Engineer" [level=3]
+      - paragraph: React · TypeScript · Supabase
+      - text: Norway · Remote
+      - generic: Seniornější role
+      - strong: 86%
+      - generic: shoda s profilem
+    - button "Enode · Senior Software Engineer (Home Energy) · 85% shoda":
+      - generic: Enode
+      - heading "Senior Software Engineer (Home Energy)" [level=3]
+      - paragraph: Node.js · TypeScript · APIs
+      - text: Remote Europe / Oslo office
+      - generic: Seniornější role
+      - strong: 85%
+      - generic: shoda s profilem
+    - button "Euronext Securities Oslo · Digital Transformation & User Experience Tech Lead · 85% shoda":
+      - generic: Euronext Securities Oslo
+      - heading "Digital Transformation & User Experience Tech Lead" [level=3]
+      - paragraph: React · Node.js · BFF
+      - text: Oslo / Porto
+      - generic: Seniornější role
+      - strong: 85%
+      - generic: shoda s profilem
+    - button "Aize · Senior Software Engineer – IAM · 84% shoda":
+      - generic: Aize
+      - heading "Senior Software Engineer – IAM" [level=3]
+      - paragraph: React · TypeScript · IAM
+      - text: Oslo
+      - generic: LinkedIn
+      - strong: 84%
+      - generic: shoda s profilem
+    - button "Aidn · Senior Fullstack Engineer · 84% shoda":
+      - generic: Aidn
+      - heading "Senior Fullstack Engineer" [level=3]
+      - paragraph: React · Next.js · TypeScript
+      - text: Oslo / Norway
+      - generic: LinkedIn
+      - strong: 84%
+      - generic: shoda s profilem
+    - button "Six Robotics · Senior Frontend Engineer · 79% shoda":
+      - generic: Six Robotics
+      - heading "Senior Frontend Engineer" [level=3]
+      - paragraph: React · TypeScript · Real-time
+      - text: Oslo
+      - generic: Seniornější role
+      - strong: 79%
+      - generic: shoda s profilem
+    - button "Halliburton · Lead Frontend Software Engineer (React/TypeScript) · 77% shoda":
+      - generic: Halliburton
+      - heading "Lead Frontend Software Engineer (React/TypeScript)" [level=3]
+      - paragraph: React · TypeScript · TanStack
+      - text: Oslo
+      - generic: Seniornější role
+      - strong: 77%
+      - generic: shoda s profilem
+    - button "Tenth Revolution Group · Lead Front End Developer · 75% shoda":
+      - generic: Tenth Revolution Group
+      - heading "Lead Front End Developer" [level=3]
+      - paragraph: React · TypeScript · TanStack
+      - text: Oslo
+      - generic: Seniornější role
+      - strong: 75%
+      - generic: shoda s profilem
+    - generic "Jak vzniká skóre a co znamená stáří nabídky"
+    - link "LinkedIn · ≤ 5 týdnů":
+      - /url: https://www.linkedin.com/jobs/search/?keywords=frontend%20fullstack%20typescript&location=Oslo%2C%20Norway&f_TPR=r3024000
+      - text: LinkedIn · ≤ 5 týdnů
+    - link "Uložené na The Hub":
+      - /url: https://thehub.io/client/my-jobs
+      - text: Uložené na The Hub
+    - link "FINN · Oslo":
+      - /url: https://www.finn.no/job/search?location=1.20001.20061&q=react
+      - text: FINN · Oslo
+    - link "NAV · Arbeidsplassen":
+      - /url: https://arbeidsplassen.nav.no/stillinger
+      - text: NAV · Arbeidsplassen
+    - link "Startuplab · Jobs":
+      - /url: https://jobs.startuplab.no/jobs
+      - text: Startuplab · Jobs
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- alert

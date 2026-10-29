@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { boundedRequestText } from '@/lib/marketing/http';
+import { boundedRequestText, MarketingRequestBodyError } from '@/lib/marketing/http';
 import { authenticateAutomation } from '@/lib/marketing/automation-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ingestSource,saveRevision } from '@/lib/marketing/store';
@@ -11,7 +11,12 @@ const RequestSchema=z.discriminatedUnion('action',[
 
 ]);
 export async function POST(request:Request) {
- let raw:string;try{raw=await boundedRequestText(request,1024*1024);}catch{return NextResponse.json({error:'payload-too-large'},{status:413});}
+ let raw:string;
+ try { raw=await boundedRequestText(request,1024*1024); }
+ catch (error) {
+  const code=error instanceof MarketingRequestBodyError ? error.code : 'invalid-body';
+  return NextResponse.json({error:code},{status:code==='payload-too-large'?413:code==='request-body-timeout'?408:400,headers:{'Cache-Control':'no-store'}});
+ }
  const principal=authenticateAutomation(request,raw);
  if(!principal) return NextResponse.json({error:'unauthorized'},{status:401});
  try{

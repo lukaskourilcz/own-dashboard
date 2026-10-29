@@ -1,32 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { useDict } from "@/lib/i18n";
 import { qk } from "@/lib/queries/keys";
-import { saveUserPreferences } from "@/lib/preference-client";
-import type { GcalCalendarEntry } from "@/app/api/calendar/list/route";
-
-async function fetchCalendars(): Promise<GcalCalendarEntry[]> {
-  const r = await fetch("/api/calendar/list");
-  if (!r.ok) throw new Error(`status ${r.status}`);
-  const d = (await r.json()) as { calendars: GcalCalendarEntry[] };
-  return d.calendars;
-}
+import { useSaveUserPreferences } from "@/lib/preference-client";
+import { fetchCalendarList } from "@/lib/calendar-client";
+import { useUnsavedDraft } from "@/components/navigation-guard";
 
 export function CalendarPicker({
   initialSelected,
 }: {
   initialSelected: string[];
 }) {
+  const saveUserPreferences = useSaveUserPreferences();
   const t = useDict();
   const toast = useToast();
+  const qc = useQueryClient();
+  const pending = useRef(false);
   const [open, setOpen] = useState(false);
+  const [confirmed, setConfirmed] = useState<string[]>(initialSelected.length ? initialSelected : ["primary"]);
   const [selected, setSelected] = useState<Set<string>>(
     new Set(initialSelected.length > 0 ? initialSelected : ["primary"]),
   );
@@ -37,25 +35,45 @@ export function CalendarPicker({
     data: calendars,
     isLoading,
     isError,
+    isFetching,
+    refetch,
   } = useQuery({
     queryKey: qk.calendarList,
-    queryFn: fetchCalendars,
+    queryFn: fetchCalendarList,
     enabled: open,
     staleTime: 5 * 60_000,
+    retry: false,
   });
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      await saveUserPreferences({ selected_calendar_ids: [...selected] });
+    mutationFn: async (captured: string[]) => {
+      await saveUserPreferences({ selected_calendar_ids: captured });
     },
-    onSuccess: () => {
+    onSuccess: (_result, captured) => {
+      setConfirmed(captured);
+      for (const queryKey of [qk.calendarToday, qk.calendarWeek, qk.calendarLastWeek, qk.userPreferences]) void qc.invalidateQueries({ queryKey });
       toast.ok(t.calendar.selectionSaved);
       setOpen(false);
     },
     onError: () => toast.err(t.calendar.couldNotSaveSelection),
+    onSettled: () => { pending.current = false; },
+  });
+  async function saveSelection(): Promise<boolean> {
+    if (pending.current || !calendars || isError) return false;
+    pending.current = true;
+    try { await saveMutation.mutateAsync([...selected]); return true; } catch { return false; }
+  }
+  useUnsavedDraft({
+    pending: saveMutation.isPending,
+    dirty: saveMutation.isPending || (open && (selected.size !== confirmed.length || confirmed.some(id => !selected.has(id)))),
+    canSave: !saveMutation.isPending && !!calendars && !isError,
+    save: saveSelection,
+    discard: () => { setOpen(false); setSelected(new Set(confirmed)); },
   });
 
   function toggle(id: string) {
+    if (pending.current) return;
+    if (!selected.has(id) && selected.size >= 20) { toast.err(t.calendar.selectionLimit); return; }
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -67,16 +85,16 @@ export function CalendarPicker({
   }
 
   const label =
-    selected.size === 1 && selected.has("primary")
+    confirmed.length === 1 && confirmed[0] === "primary"
       ? t.calendar.primaryLabel
-      : t.calendar.countSelected(selected.size);
+      : t.calendar.countSelected(confirmed.length);
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root open={open} onOpenChange={next => { if (pending.current) return; if (next) setSelected(new Set(confirmed)); setOpen(next); }}>
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-foreground-muted hover:text-foreground hover:border-border-strong transition-colors focus-ring"
+          className="inline-flex min-h-11 md:min-h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-foreground-muted hover:text-foreground hover:border-border-strong transition-colors focus-ring"
         >
           <Layers className="h-3 w-3" />
           {label}
@@ -85,9 +103,11 @@ export function CalendarPicker({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          onEscapeKeyDown={event => { if (pending.current) event.preventDefault(); }}
+          onInteractOutside={event => { if (pending.current) event.preventDefault(); }}
           align="end"
           sideOffset={6}
-          className="z-40 w-72 rounded-lg border border-border bg-surface p-1.5 shadow-elevated"
+          className="z-40 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-border bg-surface p-1.5 shadow-elevated"
         >
           <p className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-foreground-subtle">
             {t.calendar.calendarsToShow}
@@ -98,9 +118,7 @@ export function CalendarPicker({
             </p>
           )}
           {isError && (
-            <p className="px-3 py-3 text-xs text-foreground-subtle">
-              {t.calendar.couldNotLoadCalendars}
-            </p>
+            <div role="alert" className="px-3 py-3 space-y-2 text-xs text-foreground-muted"><p>{t.calendar.couldNotLoadCalendars}</p><Button size="sm" variant="outline" disabled={isFetching || saveMutation.isPending} onClick={() => void refetch()}>{t.calendar.retry}</Button></div>
           )}
           {!isLoading && !isError && calendars?.length === 0 && (
             <p className="px-3 py-3 text-xs text-foreground-subtle">
@@ -108,7 +126,7 @@ export function CalendarPicker({
             </p>
           )}
           {!isLoading && calendars && calendars.length > 0 && (
-            <ul className="max-h-72 overflow-y-auto">
+            <ul className="max-h-72 overflow-y-auto" aria-label={t.calendar.calendarsToShow} tabIndex={0}>
               {calendars.map((c) => {
                 const isOn = selected.has(c.primary ? "primary" : c.id);
                 const key = c.primary ? "primary" : c.id;
@@ -117,8 +135,10 @@ export function CalendarPicker({
                     <button
                       type="button"
                       onClick={() => toggle(key)}
+                      aria-pressed={isOn}
+                      disabled={saveMutation.isPending}
                       className={cn(
-                        "w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors",
+                        "w-full min-h-11 md:min-h-8 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors focus-ring disabled:opacity-60",
                         isOn
                           ? "text-foreground"
                           : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
@@ -148,13 +168,13 @@ export function CalendarPicker({
             </ul>
           )}
           <div className="flex items-center justify-end gap-1.5 border-t border-border mt-1 pt-1.5 px-1.5 pb-0.5">
-            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+            <Button size="sm" variant="ghost" disabled={saveMutation.isPending} onClick={() => setOpen(false)}>
               {t.calendar.cancel}
             </Button>
             <Button
               size="sm"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
+              onClick={() => void saveSelection()}
+              disabled={saveMutation.isPending || !calendars || isError}
             >
               {saveMutation.isPending ? t.calendar.saving : t.calendar.save}
             </Button>

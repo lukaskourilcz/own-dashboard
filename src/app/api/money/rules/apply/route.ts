@@ -1,225 +1,66 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
-import {
-  parseActions,
-  parseConditions,
-  parseRules,
-  ruleChanges,
-  ruleMatches,
-  usableRules,
-  type OwnedIds,
-  type RuleStage,
-  type TransactionRule,
-} from "@/lib/transaction-rules";
-
-/**
- * Count or apply transaction rules across the owner's whole ledger.
- *
- * The Money editor can only see the bounded window the dashboard loads, so a
- * "matches N transactions" figure computed in the browser would be a half-truth
- * for anyone with more history than that. This route pages through every
- * transaction with the user's own session — own-only RLS is the scope boundary,
- * so there is no service-role client here — and returns honest counts, or
- * performs the retroactive update.
- *
- * Body:
- *   mode    "preview" (default) or "apply"
- *   ruleId  evaluate only this saved rule
- *   draft   preview only: an unsaved rule from the editor
- *   neither: the whole enabled rule set, folded in evaluation order
- */
-
-const PAGE_SIZE = 1000;
-// 60 pages ≈ 60k transactions. A personal ledger is far smaller; the cap keeps
-// a pathological account from holding the request open indefinitely.
-const MAX_PAGES = 60;
-const UPDATE_CHUNK = 200;
+import { readTextPrefix } from "@/lib/bounded-text";
+import { rateLimit } from "@/lib/rate-limit";
+import { parseRule, usableRules, type TransactionRule } from "@/lib/transaction-rules";
+import { evaluateRuleApplication, parseRuleApplicationReceipt, parseRuleApplicationSnapshot } from "@/lib/transaction-rule-application";
 
 export const dynamic = "force-dynamic";
+const bodySchema = z.object({
+  mode: z.enum(["preview", "apply"]).default("preview"), ruleId: z.uuid().optional(),
+  expectedRulesVersion: z.string().regex(/^[0-9a-f]{32}$/).optional(),
+  draft: z.object({ stage: z.string().optional(), conditions: z.array(z.unknown()), actions: z.record(z.string(), z.unknown()) }).strict().optional(),
+}).strict().refine(body => !(body.draft && body.ruleId) && !(body.mode === "apply" && body.draft)
+  && (body.mode !== "apply" || Boolean(body.expectedRulesVersion)));
+const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
 
-type TransactionRow = {
-  id: string;
-  note: string | null;
-  account_id: string | null;
-  amount: number | string | null;
-  occurred_on: string | null;
-  kind: string | null;
-  category: string | null;
-  project_id: string | null;
-  subscription_id: string | null;
-};
-
-const SELECT =
-  "id, note, account_id, amount, occurred_on, kind, category, project_id, subscription_id";
-
-type Body = {
-  mode?: "preview" | "apply";
-  ruleId?: string;
-  draft?: {
-    stage?: string;
-    conditions?: unknown;
-    actions?: unknown;
-  };
-};
-
-function draftRule(draft: NonNullable<Body["draft"]>): TransactionRule {
-  const stage =
-    draft.stage === "pre" || draft.stage === "post" ? (draft.stage as RuleStage) : "default";
-  return {
-    id: "draft",
-    user_id: "",
-    name: "",
-    stage,
-    conditions: parseConditions(draft.conditions),
-    actions: parseActions(draft.actions),
-    sort_order: 0,
-    enabled: true,
-    created_at: "",
-    updated_at: "",
-  };
-}
-
+/** Complete owner snapshot → one prepared evaluation → one atomic confirmed
+ * metadata update. Never count a capped read or an unconfirmed write. */
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request);
   if (csrf) return csrf;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
-  let body: Body;
+  const client = await createClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return fail(401, "Not authenticated.");
+  let body: z.infer<typeof bodySchema>;
   try {
-    body = (await request.json()) as Body;
-  } catch {
-    return NextResponse.json({ error: "Invalid body." }, { status: 400 });
-  }
-
-  const mode = body.mode === "apply" ? "apply" : "preview";
-  if (mode === "apply" && body.draft) {
-    return NextResponse.json(
-      { error: "Save the rule before applying it." },
-      { status: 400 },
-    );
-  }
-
-  // Which rules to evaluate.
-  let candidates: TransactionRule[];
+    const prefix = await readTextPrefix(new Response(request.body), 64 * 1024);
+    if (prefix.truncated) return fail(413, "Body too large.");
+    const parsed = bodySchema.safeParse(JSON.parse(prefix.text));
+    if (!parsed.success) return fail(400, "Invalid body.");
+    body = parsed.data;
+  } catch { return fail(400, "Invalid body."); }
+  let draft: TransactionRule | null = null;
   if (body.draft) {
-    candidates = [draftRule(body.draft)];
-  } else {
-    const query = supabase.from("transaction_rules").select("*").eq("user_id", user.id);
-    const { data, error } = body.ruleId
-      ? await query.eq("id", body.ruleId)
-      : await query
-          .order("stage", { ascending: true })
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true });
-    if (error) {
-      return NextResponse.json({ error: "Could not read rules." }, { status: 500 });
-    }
-    if (body.ruleId && (data ?? []).length === 0) {
-      return NextResponse.json({ error: "Not found." }, { status: 404 });
-    }
-    candidates = parseRules(data ?? []).rules;
+    draft = parseRule({ id: "draft", user_id: user.id, name: "", stage: body.draft.stage ?? "default",
+      conditions: body.draft.conditions, actions: body.draft.actions, enabled: true });
+    if (!draft || !draft.conditions.length) return fail(400, "Invalid rule.");
   }
-
-  // Applying only ever runs rules that are enabled and actually do something.
-  // A preview of one named rule counts its matches even while it is switched
-  // off or still missing an action, which is what the editor asks about.
-  const single = Boolean(body.draft || body.ruleId);
-  const rules =
-    mode === "apply"
-      ? usableRules(candidates)
-      : single
-        ? candidates.map((rule) => ({ ...rule, enabled: true }))
-        : usableRules(candidates);
-
-  if (rules.length === 0) {
-    return NextResponse.json({ scanned: 0, matched: 0, changed: 0, updated: 0 });
-  }
-
-  const owned = await ownedIds(supabase, user.id);
-
-  let scanned = 0;
-  let matched = 0;
-  let truncated = false;
-  // Grouped by the exact change so one update covers every row that needs it.
-  const byChange = new Map<string, string[]>();
-
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const from = page * PAGE_SIZE;
-    const { data, error } = await supabase
-      .from("transactions")
-      .select(SELECT)
-      .eq("user_id", user.id)
-      .order("occurred_on", { ascending: false })
-      .order("id", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) {
-      return NextResponse.json({ error: "Could not read transactions." }, { status: 500 });
-    }
-    const rows = (data ?? []) as TransactionRow[];
-    scanned += rows.length;
-
-    for (const row of rows) {
-      if (!rules.some((rule) => ruleMatches(row, rule))) continue;
-      matched++;
-      const changes = ruleChanges(row, rules, owned);
-      if (Object.keys(changes).length === 0) continue;
-      const key = JSON.stringify(changes);
-      const ids = byChange.get(key);
-      if (ids) ids.push(row.id);
-      else byChange.set(key, [row.id]);
-    }
-
-    if (rows.length < PAGE_SIZE) break;
-    if (page === MAX_PAGES - 1) truncated = true;
-  }
-
-  const changed = [...byChange.values()].reduce((total, ids) => total + ids.length, 0);
-
-  if (mode === "preview") {
-    return NextResponse.json({ scanned, matched, changed, updated: 0, truncated });
-  }
-
-  let updated = 0;
-  for (const [key, ids] of byChange) {
-    const patch = JSON.parse(key) as Record<string, string | null>;
-    for (let index = 0; index < ids.length; index += UPDATE_CHUNK) {
-      const chunk = ids.slice(index, index + UPDATE_CHUNK);
-      const { error } = await supabase
-        .from("transactions")
-        .update(patch)
-        .eq("user_id", user.id)
-        .in("id", chunk);
-      // A rejected chunk (for example a relationship the policies refuse) must
-      // not abort the rest; it is simply not counted as updated.
-      if (!error) updated += chunk.length;
-    }
-  }
-
-  return NextResponse.json({ scanned, matched, changed, updated, truncated });
-}
-
-/** The owner's own project and subscription ids, so a rule action can never
- * write a foreign or stale relationship the transaction policies would reject. */
-async function ownedIds(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-): Promise<OwnedIds> {
-  const [projects, subscriptions] = await Promise.all([
-    supabase.from("projects").select("id").eq("user_id", userId),
-    supabase.from("subscriptions").select("id").eq("user_id", userId),
-  ]);
-  const ids = (rows: { id: string }[] | null) =>
-    new Set<string>((rows ?? []).map((row) => row.id));
-  return {
-    projectIds: ids(projects.data as { id: string }[] | null),
-    subscriptionIds: ids(subscriptions.data as { id: string }[] | null),
-  };
+  const limited = await rateLimit(user.id, { key: `rule-${body.mode}`, limit: body.mode === "apply" ? 5 : 20, windowSec: 60 });
+  if (!limited.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Retry-After": String(limited.retryAfter) } });
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]);
+  let snapshot: ReturnType<typeof parseRuleApplicationSnapshot>;
+  try {
+    const { data, error } = await client.rpc("transaction_rule_snapshot").abortSignal(signal);
+    if (error) throw error;
+    snapshot = parseRuleApplicationSnapshot(data, user.id);
+  } catch { return fail(503, "Complete rule snapshot unavailable."); }
+  if (body.mode === "apply" && body.expectedRulesVersion !== snapshot.context.rulesVersion) return fail(409, "Rules changed. Reload before applying.");
+  const candidates = draft ? [draft] : body.ruleId ? snapshot.context.rules.filter(rule => rule.id === body.ruleId) : snapshot.context.rules;
+  if (body.ruleId && !candidates.length) return fail(404, "Rule not found.");
+  const rules = body.mode === "preview" && (draft || body.ruleId) ? candidates.map(rule => ({ ...rule, enabled: true })) : usableRules(candidates);
+  let evaluated: ReturnType<typeof evaluateRuleApplication>;
+  try { evaluated = evaluateRuleApplication(snapshot, rules); }
+  catch { return fail(422, "Rule evaluation exceeds the complete processing bound."); }
+  const { scanned, matched, changed, plan } = evaluated;
+  if (body.mode === "preview") return NextResponse.json({ scanned, matched, changed, updated: 0, truncated: false });
+  // Even an empty plan checks the captured rule version under the owner lock.
+  try {
+    const { data, error } = await client.rpc("apply_transaction_rule_plan", { p_rules_version: snapshot.context.rulesVersion, p_plan: plan }).abortSignal(signal);
+    if (error) return fail(error.code === "40001" ? 409 : 503, "Rule application not confirmed.");
+    const updated = parseRuleApplicationReceipt(data, plan.map(row => row.id));
+    return NextResponse.json({ scanned, matched, changed, updated, truncated: false });
+  } catch { return fail(503, "Rule application not confirmed."); }
 }

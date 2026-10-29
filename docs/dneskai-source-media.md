@@ -239,6 +239,8 @@ cache in `marketing-assets`, keys the reel by the revision's content hash and th
 `POST /api/marketing/dneskai/render-reel` (body `{ revisionId }`) runs it for the owner or for a signed scheduler
 or publisher call.
 
+The 28 October audit adopts `dneskai-reel/2`: one thread for each image decoder, one for the complex filter graph and two for the H.264 output encoder. These fixed limits are part of physical media identity. The local two-slide sample uses less CPU time and peak memory, with longer wall time; it does not establish production savings. See [the measured resource artifact](reports/app-wide-audit-2026-10-23/reel-thread-resources.json). Existing objects remain immutable.
+
 ### Where it runs: Vercel, not Fly.io
 
 Checked on 22 October 2026 through the Vercel API (read only): team `lukas-kourils-projects` is on the **Pro**
@@ -249,7 +251,7 @@ binary (ffmpeg 6.1.1, release `b6.1.1`) is 79.8 MB on Linux x64 (43.5 MB on macO
 Measured locally on an Apple M2 with the real ffmpeg-static 5.3.0 build: a 7-slide reel (21.5 s, silent) took
 25.3 s with one ffmpeg thread and 26.4 s with ffmpeg's default, and came to 20.5 MB. The filter graph (zoom and
 crossfade) runs on one core, so a Vercel function with one vCPU should take one to three times as long, well inside
-300 s. Decision: the renderer stays in the Vercel route; the Fly.io fallback from the plan is not built. If a real
+300 s. The 28 October audit found that the old thread option applied only to the first input decoder; this historical comparison does not establish a one-thread encoder or filter graph. Decision: the renderer stays in the Vercel route; the Fly.io fallback from the plan is not built. If a real
 render on Vercel ever comes close to the limit, the route's `RENDER_BUDGET_MS` (280 s) stops ffmpeg with
 `reel-timeout` and the Fly.io port can be added behind the same `dneskaiReelForRevision` dependency.
 
@@ -336,13 +338,44 @@ re-render with a library track is not built: it would publish a sound the owner 
 original or muted) and its plays on the stored report, in the same scraper run and under the same per-profile caps.
 `loadDneskaiNicheSounds` ranks the reusable sounds (not original, not muted) the education profiles used in the last
 seven days: distinct reels times the logarithm of their plays. It costs nothing and is read when Zdroje → Hudba opens:
-Meta's sounds show how many tracked reels used them, and the niche's own top 15 follow as hints that Instagram may not
-attach. The Lab picker offers only attachable sounds; the manual music badge (#168) suggests the niche's sounds first.
+Meta's sounds show how many tracked reels used them. Up to fifteen niche-only hints fill remaining recommendation
+slots after Meta's list; the combined result never exceeds fifty. Equal ranks use audio-id ordering, and a hint
+does not establish a licence or attachment availability. The Lab picker offers only attachable sounds; the manual music badge (#168) suggests the niche's sounds first.
 
 **TikTok CZ chart.** With `DNESKAI_TIKTOK_TRENDS_ENABLED=true` (and the Apify, paid and consent switches) the daily step
-reserves one `clockworks/tiktok-trends-scraper` run (Czech songs, surging leaderboard, 25 results, $0.10 charge cap,
-about $0.08 at $0.003 a result) in the topic spend ledger under `MARKETING_DNESKAI_TIKTOK_DAILY_USD` (default $0.10,
-migration `20261023130300`). The next daily tick reads that chart, settles its measured cost (an unknown cost counts in
+reserves a `clockworks/tiktok-trends-scraper` run (Czech songs, surging leaderboard, 25 results, $0.10 charge cap)
+in the topic spend ledger under `MARKETING_DNESKAI_TIKTOK_DAILY_USD` (default $0.10,
+migration `20261023130300`). The [25 October primary pricing table](https://apify.com/clockworks/tiktok-trends-scraper/pricing)
+lists $3.70 per 1,000 results on Free, $3.00 on Starter, plus $0.001 per start: 25 results estimate $0.0935 or $0.076
+respectively, within the unchanged $0.10 cap. These are estimates, not measured owner charges. The
+[Actor page](https://apify.com/clockworks/tiktok-trends-scraper) currently marks it under maintenance. The
+[run API](https://docs.apify.com/api/v2/actors-runs-post) documents `maxTotalChargeUsd` as the charge cap;
+`maxItems` limits charged items for pay-per-result Actors and does not guarantee output length. The next daily tick reads that chart, settles its measured cost (an unknown cost counts in
 full), looks each title up in Meta's audio search for @dneskai and marks matching sounds "roste na TikToku CZ". Under
 Instagram Login nothing runs and nothing is spent. It has never been run live; the spend waits for the owner's
 approval (NEEDED.md).
+
+The current twenty-hour application check and spend-only database lock do not enforce one run per Prague calendar
+day. An [isolated baseline](reports/app-wide-audit-2026-10-23/tiktok-daily-before.json) admits a second same-day
+reservation after a zero-cost settlement; [two real PostgreSQL connections](reports/app-wide-audit-2026-10-23/tiktok-daily-concurrent-before.json)
+also admit two when their existing rolling budget permits both. Prepared migration 124 (`20261025184649_tiktok_prague_daily_admission.sql`) now enforces that day boundary atomically under the existing lock, preserving the rolling spend ceiling and all reservation history. It remains unapplied.
+Keep this optional spend disabled until migration 124 deploys, the provider is usable and the owner decides.
+
+The application now compares captured Prague dates for its early skip. It validates the supplied day/clock/account
+and run evidence before paid admission, retains the original account and switches across waits and checks caller
+cancellation between stages. A late accepted reservation remains charged; cancellation cannot prove that a remote
+call did not start. A twelve-second pass deadline now bounds all waits and reaches the database/provider transports. Provider JSON
+reads refuse truncation beyond 262,144 UTF-16 characters and release unread/late bodies. This is a structured-text
+limit, not a guaranteed network-byte ceiling. Database calls in this pass disable SDK retries, including spend
+reservation/settlement; uncertain accepted work remains charged. Complete run progress, matching and exact
+trend/settlement receipts remain under review.
+
+Recommendation reads validate the owner, real day, yesterday/today freshness, unique sound ids and bounded metadata.
+The query has a stable tie-breaker, no SDK retry and a fifteen-second bound inside the request's remaining lifetime.
+Invalid or uncertain metadata does not become a successful cast. The route still needs an explicit trend-outage
+state distinct from an empty list; the uploaded-library result and this bounded recommendation list remain separate.
+
+TikTok validation, cancellation, deadlines, oversized/invalid responses and HTTP statuses have EN/CS diagnostic
+text. Day/spend refusal distinguishes an already reserved Prague day from the rolling budget, without suggesting
+a cap increase. Uncertain starts retain their reservation; the next step is to inspect the existing run and ledger.
+The adapter uses the shared provider-error class so static code-text coverage checks its machine codes.

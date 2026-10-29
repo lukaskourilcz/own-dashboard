@@ -19,6 +19,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return Response.json(await executeMarketingJob(db, principal.ownerId, body.jobId, { signal: request.signal, refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, principal.ownerId) }));
   } catch (error) {
     const code = error instanceof MarketingWorkerRuntimeError ? error.code : "job-execute-failed";
-    return Response.json({ error: code }, { status: code === "payload-too-large" ? 413 : error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 409 });
+    return Response.json({ error: code }, { status: code === "payload-too-large" ? 413 : code === "request-body-timeout" ? 408 : error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 409 });
   }
 }

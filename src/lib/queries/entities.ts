@@ -9,11 +9,12 @@ import type { Updater } from "@/lib/types";
  *
  * `ready` is false while the value is still the empty placeholder an unseeded
  * destination starts from; `failed` is true when that first fetch gave up.
+ * `refreshFailed` distinguishes a later failure while confirmed data remains.
  * Anything that writes a whole record back from what it read (a form, a flow
  * that upserts) must wait for `ready`, or it saves the placeholder over the
  * owner's data.
  */
-export type EntityStatus = { ready: boolean; failed: boolean };
+export type EntityStatus = { ready: boolean; failed: boolean; refreshFailed?: true };
 
 /**
  * React Query as a client-side store for route-scoped dashboard data.
@@ -37,6 +38,8 @@ export function useEntityStore<T>(
     /** On-demand data (Career, Opportunities) never goes stale by itself:
      * only the owner's "Check for new offers" fetches it again. */
     onDemand?: boolean;
+    /** Disable hidden retries for a captured complete read. */
+    retry?: false;
   },
 ): [T, Updater<T>, EntityStatus] {
   const qc = useQueryClient();
@@ -50,7 +53,12 @@ export function useEntityStore<T>(
     // immediately while preserving server-seeded data for five minutes.
     initialDataUpdatedAt: seeded ? undefined : 0,
     enabled: options?.enabled ?? true,
-    staleTime: options?.onDemand ? Infinity : 5 * 60 * 1000,
+    ...(options?.retry === false ? { retry: false } : {}),
+    // An epoch-dated placeholder is still missing data. Infinity must only
+    // retain confirmed records, otherwise an unseeded destination never loads.
+    staleTime: options?.onDemand
+      ? (query) => query.state.dataUpdatedAt > 0 ? Infinity : 0
+      : 5 * 60 * 1000,
     refetchOnWindowFocus: options?.onDemand ? false : undefined,
     gcTime: Infinity,
   });
@@ -70,7 +78,7 @@ export function useEntityStore<T>(
   // and a cache write all carry a real timestamp.
   const ready = dataUpdatedAt > 0;
   const status = useMemo<EntityStatus>(
-    () => ({ ready, failed: !ready && isError }),
+    () => ({ ready, failed: !ready && isError, ...(ready && isError ? { refreshFailed: true as const } : {}) }),
     [ready, isError],
   );
 

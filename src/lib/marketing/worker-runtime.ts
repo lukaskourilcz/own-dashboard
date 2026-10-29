@@ -1,4 +1,8 @@
 import "server-only";
+import { boundedStreamBytes, BoundedStreamError } from "@/lib/bounded-response";
+import {awaitWithSignal} from "@/lib/abortable";
+import {readDneskaiCacheObjectPresence} from "./dneskai-object-presence";
+import { marketingStorageAbsenceCandidate } from "./storage-errors";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,6 +20,7 @@ import { marketingPilotConfiguration, MarketingPilotError, MARKETING_PILOT_JOB_R
 import { resolveTrustedMarketingTemplate, MarketingTemplateApprovalError } from "./template-registry";
 import { createDneskaiDeckRenderer, type DneskaiSlideStorage } from "./dneskai-render";
 import type { LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
+import { boundedRequestText, MarketingRequestBodyError } from "./http";
 
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
@@ -157,10 +162,10 @@ export async function readMarketingJob(db: Database, ownerId: string, jobId: str
   // A failed job may record the usage it spent (#116); only a job in review has a result to read.
   return { jobId: z.uuid().parse(data.id), status: z.enum(["queued", "running", "review", "failed", "reconciliation"]).parse(expired ? "reconciliation" : data.status), ...(data.result && data.status === "review" && !expired ? { result: data.result as MarketingWorkerResult } : {}), ...(expired || data.error_code ? { errorCode: expired ? "worker-lease-expired" : String(data.error_code) } : {}) };
 }
-const MARKETING_ASSET_MAX_BYTES = 8 * 1024 * 1024;
+export const MARKETING_ASSET_MAX_BYTES = 8 * 1024 * 1024;
 async function privateAssetFiles(db: Database) {
   const { data: bucket, error: bucketError } = await db.storage.getBucket(MARKETING_ASSET_BUCKET);
-  if (bucketError || !bucket || bucket.public) throw new MarketingWorkerRuntimeError("private-asset-bucket-required");
+  if (bucketError || !bucket || bucket.public!==false) throw new MarketingWorkerRuntimeError("private-asset-bucket-required");
   return db.storage.from(MARKETING_ASSET_BUCKET);
 }
 type AssetFiles = Awaited<ReturnType<typeof privateAssetFiles>>;
@@ -170,16 +175,43 @@ async function signedAssetUrl(files: AssetFiles, key: string, signal?: AbortSign
   if (signed.error || !signed.data?.signedUrl || !signed.data.signedUrl.startsWith("https://")) throw new MarketingWorkerRuntimeError("asset-signing-failed");
   return signed.data.signedUrl;
 }
-/** Upload once, then prove size, type, metadata and bytes before signing. Never rewrites an object. */
-async function storeVerifiedJpeg(files: AssetFiles, key: string, bytes: Buffer, sha256: string, metadata: Record<string, string>, signal?: AbortSignal): Promise<string> {
-  // Never rewrite. A retry may reuse an existing object only after byte and metadata verification.
-  if (signal?.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
-  const uploaded = await files.upload(key, bytes, { upsert: false, contentType: "image/jpeg", cacheControl: "3600", metadata });
-  const info = await files.info(key);
-  if (info.error || !info.data || info.data.size !== bytes.length || info.data.contentType !== "image/jpeg" || !Object.entries(metadata).every(([field, value]) => info.data.metadata?.[field] === value)) throw new MarketingWorkerRuntimeError("stored-asset-metadata-mismatch");
-  const downloaded = await files.download(key);
-  if (downloaded.error || !downloaded.data || createHash("sha256").update(Buffer.from(await downloaded.data.arrayBuffer())).digest("hex") !== sha256) throw new MarketingWorkerRuntimeError(uploaded.error ? "existing-asset-conflict" : "stored-asset-hash-mismatch");
-  return signedAssetUrl(files, key, signal);
+/** Collect only the exact verified size. A retired late response is discarded. */
+async function readAssetBytes(files: AssetFiles, key: string, size: number, signal: AbortSignal): Promise<Buffer> {
+  signal.throwIfAborted();
+  const discard = (stream: ReadableStream | null) => { if (stream && !stream.locked) void stream.cancel().catch(() => undefined); };
+  const pending = Promise.resolve(files.download(key, {}, { signal }).asStream());
+  void pending.then(result => { if (signal.aborted) discard(result.data); }, () => undefined);
+  const result = await awaitWithSignal(pending, signal);
+  if (signal.aborted) { discard(result.data); signal.throwIfAborted(); }
+  if (result.error || !result.data) { discard(result.data); throw new MarketingWorkerRuntimeError("asset-storage-failed"); }
+  const collected = await boundedStreamBytes(result.data, size, signal, size);
+  signal.throwIfAborted();
+  return Buffer.from(collected.buffer, collected.byteOffset, collected.byteLength);
+}
+/** Upload without overwrite, then prove size, type, metadata and bytes before signing. */
+async function storeVerifiedJpeg(fileSource: AssetFiles | Promise<AssetFiles>, key: string, bytes: Buffer, sha256: string, metadata: Record<string, string>, parent?: AbortSignal): Promise<string> {
+  const signal = AbortSignal.any([AbortSignal.timeout(55000), ...(parent ? [parent] : [])]);
+  let conflict = false;
+  try {
+    signal.throwIfAborted();
+    const files = await awaitWithSignal(Promise.resolve(fileSource), signal);
+    signal.throwIfAborted();
+    const uploaded = await awaitWithSignal(files.upload(key, bytes, { upsert: false, contentType: "image/jpeg", cacheControl: "3600", metadata }), signal);
+    signal.throwIfAborted();
+    conflict = !!uploaded.error;
+    const info = await awaitWithSignal(files.info(key), signal);
+    signal.throwIfAborted();
+    if (info.error || !info.data || info.data.size !== bytes.length || info.data.contentType !== "image/jpeg" || !Object.entries(metadata).every(([field, value]) => info.data.metadata?.[field] === value)) throw new MarketingWorkerRuntimeError("stored-asset-metadata-mismatch");
+    const downloaded = await readAssetBytes(files, key, bytes.length, signal);
+    if (createHash("sha256").update(downloaded).digest("hex") !== sha256) throw new MarketingWorkerRuntimeError(conflict ? "existing-asset-conflict" : "stored-asset-hash-mismatch");
+    const url = await awaitWithSignal(signedAssetUrl(files, key, signal), signal);
+    signal.throwIfAborted();
+    return url;
+  } catch (error) {
+    if (signal.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
+    if (error instanceof BoundedStreamError && error.reason === "size") throw new MarketingWorkerRuntimeError(conflict ? "existing-asset-conflict" : "stored-asset-hash-mismatch");
+    throw error instanceof MarketingWorkerRuntimeError ? error : new MarketingWorkerRuntimeError("asset-storage-failed");
+  }
 }
 export function createMarketingAssetStorage(db: Database, ownerId: string, scheduledAt: string, options: { now?: () => Date; signal?: AbortSignal } = {}): MarketingAssetStorage {
   assertOwner(ownerId);
@@ -188,8 +220,8 @@ export function createMarketingAssetStorage(db: Database, ownerId: string, sched
     async put(input) {
       if (options.signal?.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
       assertSchedule(scheduledAt, (options.now ?? (() => new Date()))());
-      if (!/^marketing\/devshark\/[a-f0-9-]{36}\/[a-f0-9]{64}\/[1-5]-[a-f0-9]{64}\.jpg$/.test(input.key) || input.contentType !== "image/jpeg" || input.bytes.length > MARKETING_ASSET_MAX_BYTES || createHash("sha256").update(input.bytes).digest("hex") !== input.sha256) throw new MarketingWorkerRuntimeError("asset-input-invalid");
-      const files = await privateAssetFiles(db);
+      if (!/^marketing\/devshark\/[a-f0-9-]{36}\/[a-f0-9]{64}\/[1-5]-[a-f0-9]{64}\.jpg$/.test(input.key) || input.contentType !== "image/jpeg" || input.bytes.length < 1 || input.bytes.length > MARKETING_ASSET_MAX_BYTES || createHash("sha256").update(input.bytes).digest("hex") !== input.sha256) throw new MarketingWorkerRuntimeError("asset-input-invalid");
+      const files = privateAssetFiles(db);
       const url = await storeVerifiedJpeg(files, `${ownerId}/${input.key}`, input.bytes, input.sha256, { ...input.metadata, sha256: input.sha256, ownerId }, options.signal);
       return { url, sha256: input.sha256 };
     },
@@ -204,37 +236,65 @@ export function dneskaiSlideObjectKey(ownerId: string, renderKey: string): strin
 /**
  * The DNESKAi render cache in the private `marketing-assets` bucket: the same upload, metadata,
  * re-download and signing path as `createMarketingAssetStorage`, keyed by render key instead of
- * revision so an unchanged slide is never rendered twice. Signed URLs last seven days.
+ * revision so a verified cached slide can be reused. Concurrent rendering admission is separate. Signed URLs last seven days.
  */
-export function createDneskaiSlideStorage(db: Database, ownerId: string, options: { signal?: AbortSignal } = {}): DneskaiSlideStorage {
-  assertOwner(ownerId);
-  let bucket: Promise<AssetFiles> | null = null;
-  const files = () => { bucket ??= privateAssetFiles(db); return bucket; };
-  return {
-    async find(renderKey) {
-      const key = dneskaiSlideObjectKey(ownerId, renderKey);
-      const store = await files();
-      if (options.signal?.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
-      const info = await store.info(key);
-      if (info.error || !info.data) return null;
-      const metadata: Record<string, unknown> = info.data.metadata ?? {};
-      const recorded = typeof metadata.sha256 === "string" ? metadata.sha256 : "";
-      if (!/^[a-f0-9]{64}$/.test(recorded) || metadata.ownerId !== ownerId || metadata.renderKey !== renderKey || info.data.contentType !== "image/jpeg"
-        || !Number.isInteger(info.data.size) || !info.data.size || info.data.size > MARKETING_ASSET_MAX_BYTES) throw new MarketingWorkerRuntimeError("stored-asset-metadata-mismatch");
-      const downloaded = await store.download(key);
-      if (downloaded.error || !downloaded.data) throw new MarketingWorkerRuntimeError("asset-storage-failed");
-      if (createHash("sha256").update(Buffer.from(await downloaded.data.arrayBuffer())).digest("hex") !== recorded) throw new MarketingWorkerRuntimeError("stored-asset-hash-mismatch");
-      const url = await signedAssetUrl(store, key, options.signal);
-      return { url, sha256: recorded, metadata: Object.fromEntries(Object.entries(metadata).map(([field, value]) => [field, String(value)])) };
-    },
-    async put(input) {
-      const key = dneskaiSlideObjectKey(ownerId, input.renderKey);
-      if (input.bytes.length > MARKETING_ASSET_MAX_BYTES || createHash("sha256").update(input.bytes).digest("hex") !== input.sha256) throw new MarketingWorkerRuntimeError("asset-input-invalid");
-      const metadata = { ...input.metadata, renderKey: input.renderKey, sha256: input.sha256, ownerId };
-      const url = await storeVerifiedJpeg(await files(), key, input.bytes, input.sha256, metadata, options.signal);
-      return { url, sha256: input.sha256, metadata };
-    },
-  };
+export function createDneskaiSlideStorage(db: Database, ownerId: string, options: {
+    signal?: AbortSignal;
+} = {}): DneskaiSlideStorage {
+    assertOwner(ownerId);
+    let bucket: Promise<AssetFiles> | null = null;
+    const files = () => {
+        bucket ??= privateAssetFiles(db);
+        return bucket;
+    };
+    return {
+        async find(renderKey) {
+            const scope = AbortSignal.any([AbortSignal.timeout(15000), ...(options.signal ? [options.signal] : [])]);
+            try {
+                scope.throwIfAborted();
+                const key = dneskaiSlideObjectKey(ownerId, renderKey);
+                const store = await awaitWithSignal(files(), scope);
+                scope.throwIfAborted();
+                if (options.signal?.aborted)
+                    throw new MarketingWorkerRuntimeError("worker-timeout");
+                const info = await awaitWithSignal(store.info(key), scope);
+                scope.throwIfAborted();
+                if (info.error) {
+                    if (marketingStorageAbsenceCandidate(info.error) && await readDneskaiCacheObjectPresence(db, ownerId, 'slide', renderKey, scope) === 'absent')
+                        return null;
+                    throw new MarketingWorkerRuntimeError("asset-storage-failed");
+                }
+                if (!info.data)
+                    throw new MarketingWorkerRuntimeError("asset-storage-failed");
+                const metadata: Record<string, unknown> = info.data.metadata ?? {};
+                const recorded = typeof metadata.sha256 === "string" ? metadata.sha256 : "";
+                if (!/^[a-f0-9]{64}$/.test(recorded) || metadata.ownerId !== ownerId || metadata.renderKey !== renderKey || info.data.contentType !== "image/jpeg"
+                    || typeof info.data.size !== "number" || !Number.isSafeInteger(info.data.size) || info.data.size < 1 || info.data.size > MARKETING_ASSET_MAX_BYTES)
+                    throw new MarketingWorkerRuntimeError("stored-asset-metadata-mismatch");
+                const bytes = await readAssetBytes(store, key, info.data.size, scope);
+                if (createHash("sha256").update(bytes).digest("hex") !== recorded)
+                    throw new MarketingWorkerRuntimeError('stored-asset-hash-mismatch');
+                const url = await awaitWithSignal(signedAssetUrl(store, key, scope), scope);
+                scope.throwIfAborted();
+                return { url, sha256: recorded, metadata: Object.fromEntries(Object.entries(metadata).map(([field, value]) => [field, String(value)])) };
+            }
+            catch (error) {
+                if (options.signal?.aborted)
+                    throw new MarketingWorkerRuntimeError('worker-timeout');
+                if (error instanceof BoundedStreamError && error.reason === 'size') throw new MarketingWorkerRuntimeError('stored-asset-hash-mismatch');
+                throw error instanceof MarketingWorkerRuntimeError ? error : new MarketingWorkerRuntimeError('asset-storage-failed');
+            }
+        },
+        async put(input) {
+            if (options.signal?.aborted) throw new MarketingWorkerRuntimeError("worker-timeout");
+            const key = dneskaiSlideObjectKey(ownerId, input.renderKey);
+            if (input.bytes.length < 1 || input.bytes.length > MARKETING_ASSET_MAX_BYTES || createHash("sha256").update(input.bytes).digest("hex") !== input.sha256)
+                throw new MarketingWorkerRuntimeError("asset-input-invalid");
+            const metadata = { ...input.metadata, renderKey: input.renderKey, sha256: input.sha256, ownerId };
+            const url = await storeVerifiedJpeg(files(), key, input.bytes, input.sha256, metadata, options.signal);
+            return { url, sha256: input.sha256, metadata };
+        },
+    };
 }
 const DneskaiFailureProblemSchema = z.strictObject({ slide: z.number().int().min(-1).max(9), code: z.string().regex(/^[a-z0-9-]{1,64}$/), blocking: z.boolean(), field: z.string().max(80).nullable(), message: z.string().max(600) });
 /** At most 40 problems of a refused deck, each in the renderer's shape; anything else is dropped. */
@@ -386,14 +446,7 @@ export async function marketingJobsHttpHandler(request: Request) {
   return createMarketingWorkerHandler({ authenticate: async () => true, queue, resolveTemplate: resolveMarketingTemplate })(new Request(request.url, { method: request.method, headers: request.headers, ...(request.method === "POST" ? { body: raw } : {}) }));
 }
 export async function readBoundedMarketingJobBody(request: Request): Promise<string> {
-  const reader = request.body?.getReader();
-  if (!reader) return "";
-  const chunks: Uint8Array[] = []; let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read(); if (done) break;
-    size += value.length;
-    if (size > 200000) { await reader.cancel(); throw new MarketingWorkerRuntimeError("payload-too-large"); }
-    chunks.push(value);
-  }
-  return Buffer.concat(chunks).toString("utf8");
+  if (!request.body && !request.signal.aborted) return "";
+  try { return await boundedRequestText(request); }
+  catch (error) { throw new MarketingWorkerRuntimeError(error instanceof MarketingRequestBodyError ? error.code : "invalid-body"); }
 }

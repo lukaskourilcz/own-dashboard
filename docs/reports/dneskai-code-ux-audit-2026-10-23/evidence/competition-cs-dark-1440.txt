@@ -1,0 +1,168 @@
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence" [active]:
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS":
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "Konkurence" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Přidat konkurenta":
+    - text: Přidat konkurenta
+  - textbox "Hledat konkurenty…"
+  - combobox "Projekt":
+    - generic: Všechny projekty
+  - combobox "Typ":
+    - generic: Všechny typy
+  - combobox "Ověření":
+    - generic: Jakékoli ověření
+  - generic: 2 konkurenti · 1 čeká na ověření
+  - paragraph: Označí se, když je poslední ověření staré 90 dní a víc. Otevřete konkurenta, zkontrolujte, co se změnilo, a uložte nové datum ověření.
+  - button "own-dashboard"
+  - paragraph: "Dvojjazyčný osobní operační systém pro jednoho freelance vývojáře: projekty, klienti, kariéra, faktury, peníze, plánování a znalosti."
+  - paragraph: 0 konkurenti
+  - 'button "Přidat konkurenta: own-dashboard"':
+  - paragraph: U tohoto projektu nejsou zaznamenaní žádní konkurenti.
+  - button "DNESKAi"
+  - paragraph: Český denní přehled toho podstatného z AI a technologií. Statická Next.js čtečka plněná redakční linkou boardlessAI.
+  - paragraph: 1 konkurent
+  - 'button "Přidat konkurenta: DNESKAi"':
+  - list:
+    - button "TLDR AI Přímý":
+      - generic: TLDR AI
+      - generic: Přímý
+    - 'link "Otevřít: TLDR AI"':
+      - /url: https://tldr.tech/ai
+      - generic: tldr.tech
+    - 'img "Relevance: 5/5"':
+      - generic: 5/5
+    - generic: Ověřeno dne 2026-10-20
+    - generic: Free for readers; sponsorship sold per send.
+    - 'button "Upravit konkurenta: TLDR AI"':
+    - 'button "Smazat konkurenta: TLDR AI"':
+  - button "devShark"
+  - paragraph: "Bezplatný anglický produkt pro výuku vývojářů: programovací úlohy hodnocené na serveru a ručně psané nápovědy s odkazy do dokumentace."
+  - paragraph: 0 konkurenti
+  - 'button "Přidat konkurenta: devShark"':
+  - paragraph: U tohoto projektu nejsou zaznamenaní žádní konkurenti.
+  - button "boardlessAI"
+  - paragraph: Autonomní AI rada (VIZE, FORGE, PULSE, AUDIT), která v gitu řídí portfolio ventures pod pevným měsíčním provozním stropem.
+  - paragraph: 0 konkurenti
+  - 'button "Přidat konkurenta: boardlessAI"':
+  - paragraph: U tohoto projektu nejsou zaznamenaní žádní konkurenti.
+  - button "Design Lab"
+  - generic: Součást boardlessAI
+  - paragraph: Deterministický renderer karuselů a coverů s prověřenou knihovnou originálních, znovupoužitelných layoutů pro magazíny portfolia.
+  - paragraph: 0 konkurenti
+  - 'button "Přidat konkurenta: Design Lab"':
+  - paragraph: U tohoto projektu nejsou zaznamenaní žádní konkurenti.
+  - button "GoVIRAL"
+  - generic: Součást boardlessAI
+  - paragraph: Týdenní trendový brief a hodnocený inventář marketingových tahů pro každý venture, sledovaný s nulovým reklamním rozpočtem.
+  - paragraph: 1 konkurent · 1 čeká na ověření
+  - 'button "Přidat konkurenta: GoVIRAL"':
+  - list:
+    - button "Exploding Topics Inspirace":
+      - generic: Exploding Topics
+      - generic: Inspirace
+    - 'link "Otevřít: Exploding Topics"':
+      - /url: https://explodingtopics.com
+      - generic: explodingtopics.com
+    - 'img "Relevance: 4/5"':
+      - generic: 4/5
+    - generic: K ověření
+    - generic: Ověřeno dne 2026-04-06
+    - generic: Free browse; Pro from $39 per month.
+    - 'button "Upravit konkurenta: Exploding Topics"':
+    - 'button "Smazat konkurenta: Exploding Topics"':
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

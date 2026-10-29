@@ -1,6 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { awaitWithSignal } from '@/lib/abortable';
 
 /**
  * The topic spend ledger of 20261023100100 (#152): reserve before a paid topic call, settle after it. Transcripts
@@ -23,10 +24,12 @@ export function dneskaiTranscriptDailyCeiling(env: Environment = process.env): n
 
 const DecisionSchema = z.object({ admitted: z.boolean(), id: z.uuid().optional() });
 /** Reserves one call; returns the ledger row id, or null when the ceiling would be passed. */
-export async function reserveDneskaiTopicSpend(db: Database, owner: string, kind: DneskaiTopicSpendKind, ref: string, reservationUsd: number, ceilingUsd: number): Promise<string | null> {
+export async function reserveDneskaiTopicSpend(db: Database, owner: string, kind: DneskaiTopicSpendKind, ref: string, reservationUsd: number, ceilingUsd: number, signal?: AbortSignal): Promise<string | null> {
   let decision: z.infer<typeof DecisionSchema>;
   try {
-    const { data, error } = await db.rpc('marketing_reserve_dneskai_topic_spend', { p_owner: owner, p_kind: kind, p_ref: ref.slice(0, 300), p_reservation: reservationUsd, p_ceiling: ceilingUsd });
+    if (signal?.aborted) throw new Error('topic-budget-unavailable');
+    const query = db.rpc('marketing_reserve_dneskai_topic_spend', { p_owner: owner, p_kind: kind, p_ref: ref.slice(0, 300), p_reservation: reservationUsd, p_ceiling: ceilingUsd });
+    const { data, error } = await awaitWithSignal(signal ? query.retry(false).abortSignal(signal) : query, signal);
     if (error) throw error;
     decision = DecisionSchema.parse(data);
   } catch { throw new Error('topic-budget-unavailable'); }
@@ -36,9 +39,11 @@ export async function reserveDneskaiTopicSpend(db: Database, owner: string, kind
 }
 
 /** Records the measured cost once. A failure leaves the reservation counting at its full amount. */
-export async function settleDneskaiTopicSpend(db: Database, owner: string, id: string, costUsd: number): Promise<boolean> {
+export async function settleDneskaiTopicSpend(db: Database, owner: string, id: string, costUsd: number, signal?: AbortSignal): Promise<boolean> {
   try {
-    const { data, error } = await db.rpc('marketing_settle_dneskai_topic_spend', { p_owner: owner, p_id: id, p_cost: Math.max(0, Math.round(costUsd * 10_000) / 10_000) });
+    if (signal?.aborted) return false;
+    const query = db.rpc('marketing_settle_dneskai_topic_spend', { p_owner: owner, p_id: id, p_cost: Math.max(0, Math.round(costUsd * 10_000) / 10_000) });
+    const { data, error } = await awaitWithSignal(signal ? query.retry(false).abortSignal(signal) : query, signal);
     return !error && data === true;
   } catch { return false; }
 }

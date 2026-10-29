@@ -1,0 +1,86 @@
+import { writeFileSync } from 'node:fs';
+import { test, expect, type Page, type Locator } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { gotoPreview, watchConsole } from './helpers';
+import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
+type Kind='review'|'costs';
+async function fail(page:Page,kind:Kind|'accounts'|null){await page.evaluate(value=>{const url=new URL(location.href);if(value)url.searchParams.set('workspaceReadFailure',value);else url.searchParams.delete('workspaceReadFailure');history.replaceState(history.state,'',url);},kind);}
+async function open(page:Page,kind:Kind,lang:'en'|'cs',theme:'light'|'dark',failed:boolean|'accounts'=false){
+ await page.route('**/api/vercel/analytics?**',route=>route.fulfill({json:{kind:'unconfigured'}}));
+ await gotoPreview(page,{lang,theme});await page.goto('/dev-preview?project=dneskai'+(failed?'&workspaceReadFailure='+(failed==='accounts'?'accounts':kind):''));
+ if(kind==='review'){await page.getByRole('tab',{name:dneskaiWorkspace[lang].tabs.calendar,exact:true}).click();return page.getByTestId('dneskai-workspace-read');}
+ await page.getByTestId('dneskai-more').click();await page.getByTestId('dneskai-more-menu').getByRole('button',{name:dneskaiWorkspace[lang].more.costs,exact:true}).click();return page.getByTestId('dneskai-more-costs');
+}
+async function capture(target:Locator,file:string,selectors:string[],visiblePage?:Page){
+ if(visiblePage)await target.evaluate(element=>element.scrollIntoView({block:'start'}));
+ const box={...(await target.boundingBox())!},marks=[];
+ if(visiblePage){const day=(await target.getByTestId('dneskai-calendar-day').first().boundingBox())!,viewport=visiblePage.viewportSize()!;box.height=Math.min(box.height,day.y+day.height-box.y+1,viewport.height-box.y-(viewport.width<768?80:0));}
+ for(const [index,selector]of selectors.entries()){
+  const value=(await target.locator(selector).first().boundingBox())!,left=Math.max(box.x,value.x),top=Math.max(box.y,value.y),right=Math.min(box.x+box.width,value.x+value.width),bottom=Math.min(box.y+box.height,value.y+value.height);
+  marks.push({n:index+1,x:100*(left-box.x)/box.width,y:100*(top-box.y)/box.height,w:100*Math.max(0,right-left)/box.width,h:100*Math.max(0,bottom-top)/box.height});
+ }
+ if(visiblePage)await visiblePage.screenshot({path:file,clip:box});else await target.screenshot({path:file});
+ writeFileSync(file.replace('.png','.json'),JSON.stringify({box,marks},null,2)+'\n');
+}
+for(const width of [360,430,768,1024,1440,1728])for(const lang of ['en','cs']as const)for(const theme of ['light','dark']as const)for(const kind of ['review','costs']as const){
+ test(`initial ${kind} read has compact accessible keyboard recovery: ${width} ${lang} ${theme}`,async({page},info)=>{
+  await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];await open(page,kind,lang,theme,true);
+  const row=page.getByTestId('dneskai-read-recovery'),button=row.getByRole('button',{name:t.refresh,exact:true});await expect(row).toBeVisible();await expect(button).toBeEnabled();
+  await expect(row.getByRole('alert')).toHaveText(kind==='review'?t.unavailable:t.costs.unavailable);
+  expect(await row.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  const message=(await row.getByRole('alert').boundingBox())!,action=(await button.boundingBox())!;expect(action.height).toBeGreaterThanOrEqual(44);
+  if(width>=640)expect(message.x+message.width).toBeLessThanOrEqual(action.x+1);else expect(Math.abs(message.width-action.width)).toBeLessThan(1);
+  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-read-recovery"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  if(lang==='cs'&&theme==='dark'&&[430,1440].includes(width))await capture(row,info.outputPath(`workspace-${kind}-initial-cs-${width}.png`),['[role="alert"]','button']);
+  await fail(page,null);await button.focus();await button.press('Enter');const view=page.getByTestId(kind==='review'?'dneskai-calendar':'dneskai-costs');await expect(view).toBeVisible();await expect(view.getByRole('heading',{name:kind==='review'?t.calendar.title:t.costs.title,exact:true})).toBeFocused();if(kind==='costs'){await expect(page.getByRole('heading',{name:t.costs.title,exact:true})).toHaveCount(1);await expect(page.getByRole('dialog',{name:t.costs.title,exact:true})).toBeVisible();}expect(errors).toEqual([]);
+ });
+}
+for(const kind of ['review','costs']as const)for(const lang of ['en','cs']as const){
+ test(`failed ${kind} refresh retains confirmed content with one existing refresh control: ${lang}`,async({page},info)=>{
+  const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang],panel=await open(page,kind,lang,'dark');
+  const view=page.getByTestId(kind==='review'?'dneskai-calendar':'dneskai-costs');await expect(view).toBeVisible();const before=await view.getByRole('heading').allTextContents();
+  if(kind==='costs')await expect(panel.getByRole('heading',{name:t.costs.title,exact:true})).toHaveCount(1);
+  await fail(page,kind);await view.getByRole('button',{name:t.refresh,exact:true}).click();const notice=page.getByTestId('dneskai-cached-read');await expect(notice).toHaveText(t.cachedUnavailable);await expect(view).toBeVisible();expect(await view.getByRole('heading').allTextContents()).toEqual(before);await expect(view.getByRole('button',{name:t.refresh,exact:true})).toHaveCount(1);await expect(page.getByTestId('dneskai-read-recovery')).toHaveCount(0);
+  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include(kind==='review'?'[data-testid="dneskai-workspace-read"]':'[data-testid="dneskai-more-costs"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  if(lang==='cs')await capture(kind==='review'?page.getByTestId('dneskai-workspace-read'):panel,info.outputPath(`workspace-${kind}-cached-cs-${width}.png`),['[data-testid="dneskai-cached-read"]','h2','button']);
+  await fail(page,null);await view.getByRole('button',{name:t.refresh,exact:true}).click();await expect(notice).toHaveCount(0);expect(errors).toEqual([]);
+ });
+}
+for(const lang of ['en','cs']as const)for(const cached of [false,true]){
+ test(`account status ${cached?'retains confirmed data':'initial failure'} uses the single Costs Refresh: ${lang}`,async({page},info)=>{
+  const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang],panel=await open(page,'costs',lang,'dark',cached?false:'accounts');
+  const section=panel.locator('section[aria-labelledby="dneskai-token-title"]'),refresh=panel.getByRole('button',{name:t.refresh,exact:true});
+  await expect(section).toBeVisible();await expect(refresh).toBeEnabled();
+  if(cached){await expect(section.locator('time')).toBeVisible();await section.locator('time').evaluate(node=>node.setAttribute('data-confirmed-time','true'));await fail(page,'accounts');await refresh.click();}
+  await expect(section.getByRole('alert')).toHaveText(cached?t.costs.tokenCachedUnavailable:t.costs.tokenUnavailable);
+  if(cached)await expect(section.locator('time[data-confirmed-time="true"]')).toBeVisible();else await expect(section.locator('time')).toHaveCount(0);
+  await expect(panel.getByRole('button',{name:t.refresh,exact:true})).toHaveCount(1);await expect(panel.getByRole('heading',{name:t.costs.title,exact:true})).toHaveCount(1);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-more-costs"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  await fail(page,null);await refresh.focus();await refresh.press('Enter');await expect(section.getByRole('alert')).toHaveCount(0);await expect(section.locator('time')).toBeVisible();await expect(refresh).toBeFocused();expect(errors).toEqual([]);
+ });
+}
+
+for(const lang of ['en','cs']as const){
+ test(`linked review page keeps its unknown depth and returns keyboard focus to Posts: ${lang}`,async({page},info)=>{
+  const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];
+  await gotoPreview(page,{lang,theme:'dark'});
+  const cursor={createdAt:'2026-10-20T00:00:00.000Z',id:'11111111-1111-4111-8111-111111111111'};
+  await page.goto('/dev-preview?project=dneskai&reviewBefore='+encodeURIComponent(JSON.stringify(cursor)));
+  await page.getByRole('tab',{name:t.tabs.published,exact:true}).click();
+  const nav=page.getByRole('navigation',{name:t.decisions.label,exact:true});await expect(nav).toBeVisible();await expect(nav).toContainText(t.decisions.continuation);await expect(nav).not.toContainText(t.decisions.page(2));
+  expect(await nav.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+  expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-workspace-read"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  const newer=nav.getByRole('button',{name:t.decisions.newer,exact:true});if(width<768)expect((await newer.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await newer.focus();await newer.press('Enter');await expect(nav).toHaveCount(0);await expect(page.getByTestId('dneskai-published').getByRole('heading',{name:t.published.title,exact:true})).toBeFocused();expect(new URL(page.url()).searchParams.has('reviewBefore')).toBe(false);expect(errors).toEqual([]);
+ });
+}
+
+for(const lang of ['en','cs']as const)test(`Calendar reports unknown occupancy without inventing free slots: ${lang}`,async({page},info)=>{
+ const width=info.project.name==='mobile'?430:1440;await page.setViewportSize({width,height:1100});const errors=watchConsole(page),t=dneskaiWorkspace[lang];
+ await gotoPreview(page,{lang,theme:'dark'});await page.goto('/dev-preview?project=dneskai&calendarUnknown=1');await page.getByRole('tab',{name:t.tabs.calendar,exact:true}).click();
+ const view=page.getByTestId('dneskai-calendar');await expect(view).toBeVisible();await expect(view).toContainText(t.unreadable(1));await expect(view.getByText(t.calendar.unknown,{exact:true}).first()).toBeVisible();await expect(view.getByText(t.calendar.free,{exact:true})).toHaveCount(0);await expect(page.getByRole('navigation',{name:t.decisions.label,exact:true})).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ expect((await new AxeBuilder({page:page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page']}).include('[data-testid="dneskai-workspace-read"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+ if(lang==='cs')await capture(view,info.outputPath(`calendar-unknown-cs-${width}.png`),['h2','p.text-warning','ol'],page);expect(errors).toEqual([]);
+});

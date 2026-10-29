@@ -1,4 +1,5 @@
 import "server-only";
+import { awaitWithSignal } from "@/lib/abortable";
 
 /**
  * Ping an external push monitor (Uptime Kuma, Better Stack, UptimeRobot) after
@@ -14,16 +15,22 @@ import "server-only";
  */
 export async function pingHeartbeat(
   url: string | null | undefined,
+  parent?: AbortSignal,
 ): Promise<boolean> {
   const target = url?.trim();
   if (!target) return false;
-  if (!/^https?:\/\//i.test(target)) return false;
   try {
-    await fetch(target, {
+    const parsed = new URL(target);
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) return false;
+    const signal = AbortSignal.any([AbortSignal.timeout(10_000), ...(parent ? [parent] : [])]);
+    signal.throwIfAborted();
+    const response = await awaitWithSignal(fetch(target, {
       cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
-    });
-    return true;
+      signal,
+    }), signal);
+    // Only the status matters; don't retain a monitor's response body.
+    if (response.body) void response.body.cancel().catch(() => undefined);
+    return response.ok;
   } catch {
     // Swallow — the heartbeat reports on the cron, it is not part of it.
     return false;

@@ -1,7 +1,6 @@
 import { format } from "date-fns";
 import { convert } from "@/lib/fx";
-import { totalMonthlyIn } from "@/lib/subscriptions";
-import type { Account, Subscription, Transaction } from "@/lib/types";
+import type { Account, Transaction } from "@/lib/types";
 
 export function netWorth(accounts: Account[], displayCurrency: string): number {
   return accounts.reduce(
@@ -21,8 +20,8 @@ export function monthlyTotals(
   transactions: Transaction[],
   displayCurrency: string,
   monthsBack = 6,
+  now: Date = new Date(),
 ): MonthBucket[] {
-  const now = new Date();
   const buckets = new Map<string, MonthBucket>();
   for (let i = monthsBack - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -45,10 +44,6 @@ export type CategorySlice = { name: string; value: number };
 export function expenseByCategory(
   transactions: Transaction[],
   displayCurrency: string,
-  // Pass active subscriptions to fold their monthly equivalent into the chart
-  // as a synthetic "Subscriptions" slice the rest of the dashboard already
-  // tracks separately.
-  subscriptions: Subscription[],
   monthKey: string,
 ): CategorySlice[] {
   const totals = new Map<string, number>();
@@ -61,15 +56,11 @@ export function expenseByCategory(
       (totals.get(key) ?? 0) + convert(t.amount, t.currency, displayCurrency),
     );
   }
-  const subsTotal = totalMonthlyIn(subscriptions, displayCurrency);
-  if (subsTotal > 0) {
-    totals.set("Subscriptions", (totals.get("Subscriptions") ?? 0) + subsTotal);
-  }
   return [...totals.entries()]
     .map(([name, value]) => ({ name, value: Number(value.toFixed(2)) }))
     .sort((a, b) => b.value - a.value);
 }
 
-export function currentMonthKey(): string {
-  return format(new Date(), "yyyy-MM");
+export function currentMonthKey(now: Date = new Date()): string {
+  return format(now, "yyyy-MM");
 }

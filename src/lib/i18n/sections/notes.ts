@@ -1,14 +1,19 @@
 type NotesStrings = {
+  retrySave: string;
   title: string;
   description: string;
   loadingEditor: string;
   editorLabel: string;
   newNote: string;
+  unsavedChanges: string;
+  unsupportedContent: string;
+  downloadOriginal: string;
   importMd: string;
   untitled: string;
   signInFirst: string;
   couldNotCreateNote: string;
   couldNotSaveNote: string;
+  couldNotDeleteNote: string;
   deleteConfirm: string;
   copiedAsMarkdown: string;
   couldNotCopy: string;
@@ -30,6 +35,8 @@ type NotesStrings = {
   /** Date-fns format string for the saved-at time (locale-aware). */
   savedTimeFormat: string;
   copyAsMarkdown: string;
+  copyContext: string;
+  copiedContext: string;
   downloadMd: string;
   downloadAsMarkdown: string;
   unpin: string;
@@ -63,16 +70,21 @@ type NotesStrings = {
 
 export const notes: { en: NotesStrings; cs: NotesStrings } = {
   en: {
+    retrySave: 'Retry save',
     title: "Notes",
     description: "A quiet place for thoughts, prompts, and drafts.",
     loadingEditor: "Loading editor…",
     editorLabel: "Note content",
     newNote: "New note",
+    unsavedChanges: "Unsaved changes",
+    unsupportedContent: "This saved note uses a format the editor cannot read. The original content is preserved; download it for recovery.",
+    downloadOriginal: "Download original data",
     importMd: "Import MD",
     untitled: "Untitled",
     signInFirst: "Sign in first.",
     couldNotCreateNote: "Could not create note.",
     couldNotSaveNote: "Could not save note.",
+    couldNotDeleteNote: "Could not delete note. Your document is still here.",
     deleteConfirm: "Delete this note? This cannot be undone.",
     copiedAsMarkdown: "Copied as Markdown.",
     couldNotCopy: "Could not copy.",
@@ -92,6 +104,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     savedAt: (time) => `Saved ${time}`,
     savedTimeFormat: "HH:mm",
     copyAsMarkdown: "Copy as Markdown",
+    copyContext: "Copy note context",
+    copiedContext: "Note context copied.",
     downloadMd: "Download .md",
     downloadAsMarkdown: "Download as Markdown",
     unpin: "Unpin",
@@ -123,16 +137,21 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     linkToNoteSubtext: "Reference another note",
   },
   cs: {
+    retrySave: 'Zkusit uložit znovu',
     title: "Poznámky",
     description: "Klidné místo pro myšlenky, nápady a koncepty.",
     loadingEditor: "Načítání editoru…",
     editorLabel: "Obsah poznámky",
     newNote: "Nová poznámka",
+    unsavedChanges: "Neuložené změny",
+    unsupportedContent: "Uložená poznámka má formát, který editor neumí přečíst. Původní obsah zůstal zachován; stáhněte jej pro obnovení.",
+    downloadOriginal: "Stáhnout původní data",
     importMd: "Importovat MD",
     untitled: "Bez názvu",
     signInFirst: "Nejprve se přihlaste.",
     couldNotCreateNote: "Poznámku se nepodařilo vytvořit.",
     couldNotSaveNote: "Poznámku se nepodařilo uložit.",
+    couldNotDeleteNote: "Poznámku se nepodařilo smazat. Dokument zůstal zde.",
     deleteConfirm: "Smazat tuto poznámku? Tuto akci nelze vrátit zpět.",
     copiedAsMarkdown: "Zkopírováno jako Markdown.",
     couldNotCopy: "Nepodařilo se zkopírovat.",
@@ -152,6 +171,8 @@ export const notes: { en: NotesStrings; cs: NotesStrings } = {
     savedAt: (time) => `Uloženo ${time}`,
     savedTimeFormat: "HH:mm",
     copyAsMarkdown: "Kopírovat jako Markdown",
+    copyContext: "Kopírovat kontext poznámky",
+    copiedContext: "Kontext poznámky zkopírován.",
     downloadMd: "Stáhnout .md",
     downloadAsMarkdown: "Stáhnout jako Markdown",
     unpin: "Odepnout",

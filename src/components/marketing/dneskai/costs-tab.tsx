@@ -8,14 +8,15 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiAccount } from '@/lib/i18n/sections/dneskai-account';
 import { marketingTokenState } from '@/lib/marketing/accounts-client';
-import { dneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
-import { qk } from '@/lib/queries/keys';
+import { dneskaiWorkspaceAccountKey, dneskaiWorkspaceApi } from '@/lib/marketing/dneskai-workspace-client';
 import { dneskaiNeedsReview, dneskaiPostState, dneskaiStateContext, formatDneskaiDay, formatDneskaiDayTime, type DneskaiCostsRead, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiCodeText } from './code-text';
 import { DneskaiStateChip } from './state-chip';
 import { TabHeader } from './tab-header';
 
 type Lang = 'en' | 'cs';
+const usdOptions: Intl.NumberFormatOptions = { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 };
+const usdFormatters = { en: new Intl.NumberFormat('en-US', usdOptions), cs: new Intl.NumberFormat('cs-CZ', usdOptions) };
 
 /**
  * „Chyby a náklady“ (#119): the 24-hour generation spend against the daily limit, the Instagram token, cost per day,
@@ -27,12 +28,12 @@ export function DneskaiCostsTab({ read, review = 'loading', renderFailed, lang, 
   read: DneskaiCostsRead; review?: DneskaiWorkspaceRead | 'loading' | 'unavailable'; renderFailed?: ReadonlySet<string>; lang: Lang; preview: boolean; refreshing: boolean; onRefresh: () => void; now?: Date;
 }) {
   const t = dneskaiWorkspace[lang];
-  const usd = (value: number) => new Intl.NumberFormat(lang === 'cs' ? 'cs-CZ' : 'en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  const usd = usdFormatters[lang].format;
   const { spentUsd, ceilingUsd, code } = read.generation;
   const share = spentUsd !== null && ceilingUsd ? Math.min(100, Math.round((spentUsd / ceilingUsd) * 100)) : 0;
   const tone = (status: string) => status === 'complete' ? 'success' as const : status === 'failed' ? 'risk' as const : status === 'running' ? 'information' as const : 'warning' as const;
   return <section aria-labelledby="dneskai-costs-title" className="min-w-0 space-y-6" data-testid="dneskai-costs">
-    <TabHeader id="dneskai-costs-title" title={t.costs.title} intro={t.costs.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
+    <TabHeader focusable id="dneskai-costs-title" title={t.costs.title} intro={t.costs.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
     <div className="grid min-w-0 gap-4 md:grid-cols-2">
       <section aria-labelledby="dneskai-budget-title" className="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-4">
         <h3 id="dneskai-budget-title" className="text-sm font-semibold">{t.costs.budget}</h3>
@@ -165,14 +166,14 @@ function TokenSection({ lang, preview, now }: { lang: Lang; preview: boolean; no
   const t = dneskaiWorkspace[lang];
   const account = dneskaiAccount[lang];
   // The preview's demo account stays under its own key, so the Sources tab's account panel never shows it.
-  const query = useQuery({ queryKey: preview ? [...qk.marketingAccounts, 'preview'] : qk.marketingAccounts, retry: false, staleTime: 30_000, refetchOnWindowFocus: false,
+  const query = useQuery({ queryKey: dneskaiWorkspaceAccountKey(preview), retry: false, staleTime: 30_000, refetchOnWindowFocus: false,
     queryFn: async ({ signal }) => (await dneskaiWorkspaceApi(preview)).loadAccounts(signal) });
   const record = query.data?.find((item) => item.brand === 'dneskai' && item.platform === 'instagram') ?? null;
   const state = record ? marketingTokenState(record.token, now) : null;
   return <section aria-labelledby="dneskai-token-title" className="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-4">
     <h3 id="dneskai-token-title" className="text-sm font-semibold">{t.costs.token}</h3>
-    {query.isPending ? <p role="status" className="text-xs text-foreground-muted">{t.costs.tokenLoading}</p>
-      : query.isError ? <p role="alert" className="text-xs text-risk">{t.costs.tokenUnavailable}</p>
+    {query.isError && <p role="alert" className="text-xs text-warning">{query.data === undefined ? t.costs.tokenUnavailable : t.costs.tokenCachedUnavailable}</p>}
+    {query.data === undefined ? query.isPending && <p role="status" className="text-xs text-foreground-muted">{t.costs.tokenLoading}</p>
         : !record || !state ? <p className="text-xs text-foreground-muted">{t.costs.noAccount}</p>
           : <>
             <StatusBadge value={`token-${state}`} label={account.token[state]} tone={state === 'valid' ? 'success' : state === 'expiring' ? 'warning' : state === 'expired' ? 'risk' : 'neutral'} />

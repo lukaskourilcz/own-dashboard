@@ -1,5 +1,7 @@
 import 'server-only';
+import { awaitWithSignal } from '@/lib/abortable';
 import { z } from 'zod';
+import type { DneskaiReadDatabase } from './dneskai-read-database.generated';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiRenderReportSchema, parseContentRevision, type ContentRevision } from './contracts';
 import { DneskaiBriefSchema, type DneskaiBrief } from './dneskai-brief';
@@ -10,7 +12,7 @@ import { marketingPublicationRequeueable } from './publication-requeue';
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import {
-  DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiEngagementReceiptSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
+  DneskaiDecisionCursorSchema, type DneskaiDecisionCursor, DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiEngagementReceiptSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
   DneskaiWorkspaceReadSchema, DneskaiWorkspaceWaitingSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
 import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_OWNER_CODES, DNESKAI_TOPICS_VERSION, type DneskaiTopicOwnerCode, DneskaiTopicSchema, DneskaiTopicsReadSchema, emptyDneskaiTopicGroups, type DneskaiTopic, type DneskaiTopicsRead } from './dneskai-topics';
@@ -21,11 +23,12 @@ import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_OWNER_CODES, DNESKAI_TOP
  * function `authenticated` cannot execute) is made by the route for the authenticated owner only. Results are bounded
  * and validated against the browser schemas; a row that does not parse is counted, not shown.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
-type Database = Pick<SupabaseClient<any>, 'from'>;
+type Database = Pick<SupabaseClient<DneskaiReadDatabase>, 'from' | 'rpc'>;
 
 const POST_LIMIT = 60;
 const REVISION_READ_LIMIT = 150;
+const DECISION_PAGE_SIZE = 30;
+const REVISION_COLUMNS = 'id,replaces_id,status,ready,content_hash,created_at,approved_at,feedback,revision,render_report';
 
 /** The written fields a slide's template draws, with the most characters its layer holds (browser-safe in `dneskai-slide-layout.ts`). */
 export { dneskaiSlideFieldLimits };
@@ -36,11 +39,26 @@ const money = (value: unknown): number | null => {
   return Number.isFinite(amount) && amount >= 0 && amount <= 10000 ? amount : null;
 };
 const safeCode = (value: unknown): string | null => typeof value === 'string' && /^[a-z][a-z0-9_-]{0,99}$/.test(value) ? value : null;
-const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string): T[] => { if (result.error) throw new Error(failure); return result.data ?? []; };
+const rows = <T>(result: { data: T[] | null; error: unknown }, failure: string): T[] => { if (result.error || !Array.isArray(result.data)) throw new Error(failure); return result.data; };
 
-type RevisionRow = { id: string; replaces_id: string | null; status: string; ready: boolean; content_hash: string; created_at: string; approved_at: string | null; feedback: string | null; revision: unknown; render_report: unknown };
-type PublicationRow = { id: string; revision_id: string; status: string; scheduled_at: string; remote_url: string | null; error_code: string | null; last_checked_at: string | null };
-type BriefRow = { id: string; event_id: string; member_hash: string; brief: unknown };
+/** Optional titles/diagnostics must not consume the whole workspace allowance. */
+async function optionalRead<T>(parent: AbortSignal, request: (signal: AbortSignal) => PromiseLike<{ data: T; error: unknown }>): Promise<{ data: T | null; error: unknown }> {
+  parent.throwIfAborted();
+  const signal = AbortSignal.any([parent, AbortSignal.timeout(3_000)]);
+  try {
+    const result = await awaitWithSignal(request(signal), signal);
+    signal.throwIfAborted();
+    return result;
+  } catch {
+    parent.throwIfAborted();
+    return { data: null, error: true };
+  }
+}
+
+type Tables = DneskaiReadDatabase['public']['Tables'];
+type RevisionRow = Pick<Tables['marketing_revisions']['Row'], 'id' | 'replaces_id' | 'status' | 'ready' | 'content_hash' | 'created_at' | 'approved_at' | 'feedback' | 'revision' | 'render_report'>;
+type PublicationRow = Pick<Tables['marketing_publications']['Row'], 'id' | 'revision_id' | 'status' | 'scheduled_at' | 'remote_url' | 'error_code' | 'last_checked_at'>;
+type BriefRow = Pick<Tables['marketing_dneskai_briefs']['Row'], 'id' | 'event_id' | 'member_hash' | 'brief'>;
 type TopicTitleRow = { brief_id: string | null; title_cs: string; job_id: string | null };
 
 /**
@@ -59,7 +77,7 @@ export function dneskaiTopicTitles(rows: readonly TopicTitleRow[]): { byBrief: R
   return { byBrief, byJob };
 }
 
-function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBrief | null, publication: PublicationRow | null, publishedAt: string | null, topicTitle?: string): DneskaiWorkspacePost {
+function postView(row: Omit<RevisionRow,'revision'|'render_report'>&{render_report:unknown}, revision: ContentRevision, brief: DneskaiBrief | null, publication: PublicationRow | null, publishedAt: string | null, topicTitle?: string): DneskaiWorkspacePost {
   const report = DneskaiRenderReportSchema.safeParse(row.render_report);
   return {
     id: row.id, replacesId: row.replaces_id, status: row.status as DneskaiWorkspacePost['status'], ready: row.ready, contentHash: row.content_hash,
@@ -79,29 +97,39 @@ function postView(row: RevisionRow, revision: ContentRevision, brief: DneskaiBri
   };
 }
 
-/**
- * The workspace read for one Prague day, from the 150 newest DNESKAi revisions that are not superseded: posts still
- * waiting for a decision, then posts planned from today through the next seven days, then receipts of the last 30
- * days, newest first, up to 60 posts in all. At four posts a day that keeps every undecided post and the coming week
- * and leaves room for roughly the last week of receipts; older receipts drop off first.
+/** Read 30 undecided revisions per cursor page, then fill the 60-post budget from recent history.
+ * Decisions have their own owner/brand/status-filtered SQL read and can never be evicted by newer receipts.
+ * Recent calendar/history context remains bounded to the newest 150 other revisions and the existing date window.
  */
-export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean } = {}): Promise<DneskaiWorkspaceRead> {
+export async function readDneskaiWorkspace(db: Database, owner: string, now: Date, today = pragueMarketingDate(now), options: { capabilities?: DneskaiWorkspaceRead['capabilities']; engagement?: boolean; topicTitles?: boolean; decisionsBefore?: DneskaiDecisionCursor; signal?: AbortSignal } = {}): Promise<DneskaiWorkspaceRead> {
   z.uuid().parse(owner); z.iso.date().parse(today);
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(options.signal ? [options.signal] : [])]);
+  signal.throwIfAborted();
   const windowStart = Date.parse(pragueScheduledAt(pragueDayAfter(today, -30), '00:00'));
   const windowEnd = Date.parse(pragueScheduledAt(pragueDayAfter(today, 7), '00:00'));
-  const [revisionResult, accountResult, jobResult, waitingResult] = await Promise.all([
-    db.from('marketing_revisions').select('id,replaces_id,status,ready,content_hash,created_at,approved_at,feedback,revision,render_report')
-      .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT),
-    db.from('marketing_accounts').select('id,remote_account_id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4),
+  const cursor = options.decisionsBefore ? DneskaiDecisionCursorSchema.parse(options.decisionsBefore) : null;
+  let decisions = db.from('marketing_revisions').select(REVISION_COLUMNS).eq('user_id', owner).eq('brand', 'dneskai')
+    .in('status', ['review', 'returned']).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(DECISION_PAGE_SIZE + 1);
+  if (cursor) decisions = decisions.or(`created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`);
+  const [decisionResult, revisionResult, accountResult, jobResult, waitingResult] = await awaitWithSignal(Promise.all([
+    decisions.retry(false).abortSignal(signal),
+    db.from('marketing_revisions').select(REVISION_COLUMNS)
+      .eq('user_id', owner).eq('brand', 'dneskai').neq('status', 'superseded').not('status', 'in', '(review,returned)').order('created_at', { ascending: false }).limit(REVISION_READ_LIMIT).retry(false).abortSignal(signal),
+    db.from('marketing_accounts').select('id,remote_account_id,handle,verified_at,enabled').eq('user_id', owner).eq('brand', 'dneskai').eq('platform', 'instagram').limit(4).retry(false).abortSignal(signal),
     db.from('marketing_jobs').select('id,status,error_code,created_at,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,revision_id:request->generation->>revisionId,brand:request->generation->source->>brand')
-      .eq('user_id', owner).in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60),
+      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['queued', 'running', 'failed', 'reconciliation']).gte('created_at', new Date(now.getTime() - 3 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(60).retry(false).abortSignal(signal),
     // Owner decision 9: built briefs of today and tomorrow that wait for the scheduler, with no job yet.
     db.from('marketing_dneskai_briefs').select('id,status,code,job_id,scheduled_at,title:brief->>title').eq('user_id', owner).in('status', ['pending', 'ready'])
-      .in('target_date', [today, pragueDayAfter(today, 1)]).order('scheduled_at').limit(16),
-  ]);
+      .in('target_date', [today, pragueDayAfter(today, 1)]).order('scheduled_at').limit(16).retry(false).abortSignal(signal),
+  ]), signal);
+  signal.throwIfAborted();
+  const decisionRows = rows(decisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable');
+  const page = decisionRows.slice(0, DECISION_PAGE_SIZE);
+  const last = page.at(-1);
+  const nextCursor = decisionRows.length > DECISION_PAGE_SIZE && last ? DneskaiDecisionCursorSchema.parse({ createdAt: last.created_at, id: last.id }) : null;
   let unreadable = 0;
   const parsed: Array<{ row: RevisionRow; revision: ContentRevision }> = [];
-  for (const row of rows(revisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable')) {
+  for (const row of [...page, ...rows(revisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable')]) {
     try {
       const revision = parseContentRevision(row.revision);
       if (revision.brand !== 'dneskai') continue;
@@ -116,15 +144,17 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
   const selected = [0, 1, 2].flatMap((tier) => parsed.filter((item) => rank(item) === tier)).slice(0, POST_LIMIT);
   const ids = selected.map((item) => item.row.id);
   const eventIds = [...new Set(selected.flatMap((item) => item.revision.sources[0]?.sourceId ?? []).filter((id) => /^[a-f0-9]{64}$/.test(id)))];
-  const [publicationResult, eventResult, briefResult, topicResult] = await Promise.all([
-    ids.length ? db.from('marketing_publications').select('id,revision_id,status,scheduled_at,remote_url,error_code,last_checked_at').eq('user_id', owner).in('revision_id', ids).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-    ids.length ? db.from('marketing_events').select('revision_id,created_at').eq('user_id', owner).eq('kind', 'published').in('revision_id', ids).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-    eventIds.length ? db.from('marketing_dneskai_briefs').select('id,event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
+  signal.throwIfAborted();
+  const [publicationResult, eventResult, briefResult, topicResult] = await awaitWithSignal(Promise.all([
+    ids.length ? db.from('marketing_publications').select('id,revision_id,status,scheduled_at,remote_url,error_code,last_checked_at').eq('user_id', owner).in('revision_id', ids).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
+    ids.length ? db.from('marketing_events').select('revision_id,created_at').eq('user_id', owner).eq('kind', 'published').in('revision_id', ids).limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
+    eventIds.length ? db.from('marketing_dneskai_briefs').select('id,event_id,member_hash,brief').eq('user_id', owner).in('event_id', eventIds).neq('status', 'skipped').limit(POST_LIMIT * 2).retry(false).abortSignal(signal) : Promise.resolve({ data: [], error: null }),
     // #211: only with the topic bridge on, because marketing_dneskai_topics exists only after 20261023100000.
-    options.topicTitles ? db.from('marketing_dneskai_topics').select('brief_id,title_cs,job_id:evidence->>jobId').eq('user_id', owner).in('status', ['enriching', 'briefed', 'generated'])
-      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2) : Promise.resolve({ data: [], error: null }),
-  ]);
-  const topicTitles = dneskaiTopicTitles(topicResult.error ? [] : (topicResult.data ?? []) as TopicTitleRow[]);
+    options.topicTitles ? optionalRead(signal, phase => db.from('marketing_dneskai_topics').select('brief_id,title_cs,job_id:evidence->>jobId').eq('user_id', owner).in('status', ['enriching', 'briefed', 'generated'])
+      .not('brief_id', 'is', null).order('updated_at', { ascending: false }).limit(POST_LIMIT * 2).retry(false).abortSignal(phase)) : Promise.resolve({ data: [], error: null }),
+  ]), signal);
+  signal.throwIfAborted();
+  const topicTitles = dneskaiTopicTitles(topicResult.error || !Array.isArray(topicResult.data) ? [] : topicResult.data as TopicTitleRow[]);
   const publications = rows(publicationResult as { data: PublicationRow[] | null; error: unknown }, 'dneskai-workspace-unavailable');
   const published = new Map(rows(eventResult as { data: Array<{ revision_id: string; created_at: string }> | null; error: unknown }, 'dneskai-workspace-unavailable').map((event) => [event.revision_id, iso(event.created_at)]));
   const briefs = rows(briefResult as { data: BriefRow[] | null; error: unknown }, 'dneskai-workspace-unavailable').flatMap((row) => {
@@ -140,7 +170,8 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
     return [view.data];
   });
   // #162: only with the watcher on, because its tables exist only after 20261023120000. A failed read leaves them out.
-  const engagementSummary = options.engagement ? await attachEngagementReceipts(db, owner, posts, now) : undefined;
+  const engagementSummary = options.engagement ? await attachEngagementReceipts(db, owner, posts, now, signal) : undefined;
+  signal.throwIfAborted();
   const known = new Set(posts.map((post) => post.id));
   const jobs = rows(jobResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-workspace-unavailable').flatMap((row): DneskaiWorkspaceJob[] => {
     if (row.brand !== 'dneskai' || (typeof row.revision_id === 'string' && known.has(row.revision_id))) return [];
@@ -159,59 +190,108 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
       unreadable += 1; return [];
     });
   // A waiting brief is optional context: a read that fails leaves the list out rather than the whole workspace.
-  const waiting = waitingResult.error ? undefined : ((waitingResult.data ?? []) as Array<Record<string, unknown>>).flatMap((row) => {
+  const waiting = waitingResult.error || !Array.isArray(waitingResult.data) ? undefined : (waitingResult.data as Array<Record<string, unknown>>).flatMap((row) => {
     const topicTitle = typeof row.id === 'string' ? topicTitles.byBrief.get(row.id) : undefined;
     const brief = DneskaiWorkspaceWaitingSchema.safeParse({ briefId: row.id, title: topicTitle ?? (typeof row.title === 'string' && row.title.trim() ? row.title.slice(0, 300) : '—'), scheduledAt: iso(row.scheduled_at), status: row.status, code: safeCode(row.code) });
     return !row.job_id && brief.success && Date.parse(brief.data.scheduledAt) > now.getTime() ? [brief.data] : [];
   }).slice(0, 8);
-  return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs,
-    ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), ...(engagementSummary ? { engagementSummary } : {}), unreadable });
+  return DneskaiWorkspaceReadSchema.parse({ schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: [...DNESKAI_BRIEF_SLOTS], accounts, posts, jobs, decisionPage: { nextCursor },
+    ...(waiting ? { waiting } : {}), ...(options.capabilities ? { capabilities: options.capabilities } : {}), ...(engagementSummary ? { engagementSummary } : {}), ...(options.engagement ? { engagementStatus: engagementSummary ? 'complete' : 'unavailable' } : {}), unreadable });
 }
 
 const ENGAGEMENT_SUMMARY_MS = 7 * 86_400_000;
-/**
- * Adds the comment watcher's receipt to each published post with a keyword and returns the seven-day totals.
- * Counts come from `marketing_instagram_comment_checks` (comments read in the last finished pass, or the pass in
- * progress when none finished yet) and `marketing_instagram_comment_replies` (matches, replies, failures by code).
- */
-async function attachEngagementReceipts(db: Database, owner: string, posts: DneskaiWorkspacePost[], now: Date) {
-  const watched = posts.filter((post) => post.engagement && post.publication?.status === 'published');
-  const publicationIds = watched.map((post) => post.publication!.id);
-  if (!publicationIds.length) return { posts: 0, commentsSeen: 0, keywordMatches: 0, privateSent: 0, publicSent: 0, failed: 0 };
-  const [checks, replies] = await Promise.all([
-    db.from('marketing_instagram_comment_checks').select('publication_id,comments_seen,pass_seen,last_checked_at').eq('user_id', owner).in('publication_id', publicationIds),
-    db.from('marketing_instagram_comment_replies').select('publication_id,status,public_status,error_code').eq('user_id', owner).in('publication_id', publicationIds).limit(5000),
-  ]);
-  if (checks.error || replies.error) return undefined;
-  const checkRows = (checks.data ?? []) as Array<{ publication_id: string; comments_seen: number; pass_seen: number; last_checked_at: string | null }>;
-  const replyRows = (replies.data ?? []) as Array<{ publication_id: string; status: string; public_status: string; error_code: string | null }>;
-  const summary = { posts: 0, commentsSeen: 0, keywordMatches: 0, privateSent: 0, publicSent: 0, failed: 0 };
+const EngagementReadSchema = z.strictObject({
+  receipts: z.array(DneskaiEngagementReceiptSchema.extend({ publicationId: z.uuid() })).max(60),
+  summary: DneskaiWorkspaceReadSchema.shape.engagementSummary.unwrap(),
+});
+/** One owner/RLS-scoped aggregate: no raw-reply cap, no per-post scans and no dependency on the selected page. */
+async function attachEngagementReceipts(db: Database, owner: string, posts: DneskaiWorkspacePost[], now: Date, signal: AbortSignal) {
+  z.uuid().parse(owner);
+  const watched = posts.filter(post => post.engagement && post.publication?.status === 'published');
+  signal.throwIfAborted();
+  const { data, error } = await optionalRead(signal, phase => db.rpc('marketing_dneskai_engagement_receipts', {
+    p_publication_ids: watched.map(post => post.publication!.id),
+    p_since: new Date(now.getTime() - ENGAGEMENT_SUMMARY_MS).toISOString(), p_until: now.toISOString(),
+  }).retry(false).abortSignal(phase));
+  signal.throwIfAborted();
+  if (error) return undefined; // Includes a migration not yet applied; never present partial data as zero.
+  const parsed = EngagementReadSchema.safeParse(data);
+  if (!parsed.success) return undefined;
+  const receipts = new Map(parsed.data.receipts.map(({ publicationId, ...receipt }) => [publicationId, receipt]));
+  if (receipts.size !== parsed.data.receipts.length || watched.some(post => !receipts.has(post.publication!.id))) return undefined;
   for (const post of watched) {
-    const id = post.publication!.id;
-    const check = checkRows.find((row) => row.publication_id === id);
-    const own = replyRows.filter((row) => row.publication_id === id);
-    const failures = new Map<string, number>();
-    for (const row of own) if (row.status === 'failed' || row.status === 'uncertain' || row.public_status === 'failed' || row.public_status === 'uncertain') {
-      const code = safeCode(row.error_code) ?? 'reply-uncertain';
-      failures.set(code, (failures.get(code) ?? 0) + 1);
-    }
-    const receipt = DneskaiEngagementReceiptSchema.parse({
-      commentsSeen: check ? Math.max(check.comments_seen, check.pass_seen) : 0, keywordMatches: own.length,
-      privateSent: own.filter((row) => row.status === 'sent').length, publicSent: own.filter((row) => row.public_status === 'sent').length,
-      failures: [...failures].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([code, count]) => ({ code, count })), lastCheckedAt: iso(check?.last_checked_at ?? null),
-    });
-    post.engagementReceipt = receipt;
-    const publishedAt = Date.parse(post.publication!.publishedAt ?? post.scheduledAt);
-    if (now.getTime() - publishedAt <= ENGAGEMENT_SUMMARY_MS) {
-      summary.posts += 1; summary.commentsSeen += receipt.commentsSeen; summary.keywordMatches += receipt.keywordMatches;
-      summary.privateSent += receipt.privateSent; summary.publicSent += receipt.publicSent; summary.failed += receipt.failures.reduce((sum: number, item: { count: number }) => sum + item.count, 0);
-    }
+    post.engagementReceipt = receipts.get(post.publication!.id)!;
   }
-  return summary;
+  return parsed.data.summary;
+}
+
+const CalendarRevisionSchema = z.strictObject({
+  id:z.uuid(),replaces_id:z.uuid().nullable(),status:DneskaiWorkspacePostSchema.shape.status,ready:z.boolean(),content_hash:z.string(),
+  created_at:z.string(),approved_at:z.string().nullable(),feedback:z.string().nullable(),revision:z.unknown(),render_report:z.unknown(),
+  topic_title:z.string().nullable(),publication:z.strictObject({id:z.uuid(),revision_id:z.uuid(),status:z.string(),scheduled_at:z.string(),remote_url:z.string().nullable(),error_code:z.string().nullable(),last_checked_at:z.string().nullable()}).nullable(),
+});
+const CalendarJobSchema = z.strictObject({id:z.uuid(),status:DneskaiWorkspaceJobSchema.shape.status,error_code:z.string().nullable(),created_at:z.string(),title:z.string().nullable(),scheduled_at:z.string(),topic_title:z.string().nullable()});
+const CalendarBriefSchema=z.strictObject({id:z.uuid(),status:DneskaiWorkspaceWaitingSchema.shape.status,code:z.string().nullable(),scheduled_at:z.string(),title:z.string().nullable(),topic_title:z.string().nullable()});
+const CalendarSnapshotSchema = z.strictObject({
+  ownerId:z.uuid(),projectId:z.uuid(),date:z.iso.date(),asOf:z.string(),revisionCount:z.number().int().min(0).max(250),jobCount:z.number().int().min(0).max(250),briefCount:z.number().int().min(0).max(250),
+  unreadable:z.number().int().nonnegative(),revisions:z.array(z.unknown()).max(250),jobs:z.array(z.unknown()).max(250),briefs:z.array(z.unknown()).max(250),
+});
+
+/** One complete own-RLS calendar window, without review/history creation-age limits. */
+export async function readDneskaiCalendar(db:Database,owner:string,project:string,now:Date,today=pragueMarketingDate(now),options:{signal?:AbortSignal;topicTitles?:boolean}={}):Promise<DneskaiWorkspaceRead>{
+  z.uuid().parse(owner);z.uuid().parse(project);z.iso.date().parse(today);
+  const signal=AbortSignal.any([AbortSignal.timeout(15_000),...(options.signal?[options.signal]:[])]),asOf=now.toISOString();
+  signal.throwIfAborted();
+  const result=await awaitWithSignal(db.rpc('read_owned_dneskai_calendar',{p_owner:owner,p_project:project,p_date:today,p_now:asOf,p_topic_titles:options.topicTitles===true}).retry(false).abortSignal(signal),signal);
+  signal.throwIfAborted();
+  const checked=CalendarSnapshotSchema.safeParse(result.data);
+  if(result.error||!checked.success)throw new Error('dneskai-workspace-unavailable');
+  const value=checked.data;
+  if(value.ownerId!==owner||value.projectId!==project||value.date!==today||iso(value.asOf)!==asOf
+    ||value.revisionCount!==value.revisions.length||value.jobCount!==value.jobs.length||value.briefCount!==value.briefs.length||value.revisionCount+value.jobCount+value.briefCount>250)
+    throw new Error('dneskai-workspace-unavailable');
+  let unreadable=value.unreadable;
+  const first=Date.parse(pragueScheduledAt(today,'00:00')),last=Date.parse(pragueScheduledAt(pragueDayAfter(today,7),'00:00'));
+  const inWindow=(at:string)=>Date.parse(at)>=first&&Date.parse(at)<last;
+  const posts=value.revisions.flatMap(raw=>{
+    try{
+      const row=CalendarRevisionSchema.parse(raw),revision=parseContentRevision(row.revision);
+      if(revision.brand!=='dneskai'||['superseded','skipped'].includes(row.status)||row.publication&&row.publication.revision_id!==row.id)throw new Error('calendar-record');
+      const title=row.topic_title?.trim().slice(0,300)||undefined;
+      const post=DneskaiWorkspacePostSchema.parse(postView(row,revision,null,row.publication,null,title));
+      if(!inWindow(post.publication?.scheduledAt??post.scheduledAt))throw new Error('calendar-record');
+      return[post];
+    }catch{unreadable++;return[];}
+  });
+  const jobs=value.jobs.flatMap(raw=>{
+    try{
+      const row=CalendarJobSchema.parse(raw);
+      const job=DneskaiWorkspaceJobSchema.parse({id:row.id,status:row.status,errorCode:marketingJobErrorCode(row.error_code),createdAt:iso(row.created_at),title:(row.topic_title?.trim()||row.title||'').slice(0,300),scheduledAt:iso(row.scheduled_at)});
+      if(!job.scheduledAt||!inWindow(job.scheduledAt))throw new Error('calendar-record');
+      return[job];
+    }catch{unreadable++;return[];}
+  });
+  const waiting=value.briefs.flatMap(raw=>{
+    try{
+      const row=CalendarBriefSchema.parse(raw),brief=DneskaiWorkspaceWaitingSchema.parse({briefId:row.id,status:row.status,code:safeCode(row.code),scheduledAt:iso(row.scheduled_at),title:(row.topic_title?.trim()||row.title?.trim()||'—').slice(0,300)});
+      if(!inWindow(brief.scheduledAt))throw new Error('calendar-record');
+      return[brief];
+    }catch{unreadable++;return[];}
+  });
+  if(new Set(posts.map(post=>post.id)).size!==posts.length||new Set(jobs.map(job=>job.id)).size!==jobs.length||new Set(waiting.map(brief=>brief.briefId)).size!==waiting.length)throw new Error('dneskai-workspace-unavailable');
+  signal.throwIfAborted();
+  return DneskaiWorkspaceReadSchema.parse({schemaVersion:DNESKAI_WORKSPACE_VERSION,today,generatedAt:asOf,slots:[...DNESKAI_BRIEF_SLOTS],accounts:[],posts,jobs,waiting,unreadable,calendarComplete:unreadable===0});
 }
 
 const TickStepSchema = z.object({ category: z.string(), status: z.string(), code: z.string().optional() });
 const TickErrorSchema = z.object({ category: z.string(), code: z.string() });
+
+/** The aggregate stamps its source/window; a partial or mismatched result is unavailable, never zero. */
+const CostTotalsSchema = z.strictObject({
+  ownerId: z.uuid(), projectId: z.uuid(), dayCount: z.number().int().min(1).max(7), asOf: DneskaiCostsReadSchema.shape.generatedAt,
+  days: DneskaiCostsReadSchema.shape.days,
+  ticks: DneskaiCostsReadSchema.shape.ticks.omit({ recent: true }).extend({ meaningfulCount: z.number().int().nonnegative(), recent: z.array(z.record(z.string(), z.unknown())).max(20) }),
+});
 
 /** The cost ranges GET /api/marketing/dneskai/costs accepts: one to seven Prague days, today included. */
 export const DNESKAI_COST_RANGES = ['1d', '2d', '3d', '4d', '5d', '6d', '7d'] as const;
@@ -223,7 +303,7 @@ export type DneskaiCostRange = (typeof DNESKAI_COST_RANGES)[number];
  * spend. `range` sets how many Prague days the cost table and the job list cover (default seven).
  */
 export async function readDneskaiCosts(db: Database, owner: string, project: string, now: Date, generation: DneskaiCostsRead['generation'], range: DneskaiCostRange = '7d',
-  options: { requeueEnabled?: boolean } = {}): Promise<DneskaiCostsRead> {
+  options: { requeueEnabled?: boolean; signal?: AbortSignal } = {}): Promise<DneskaiCostsRead> {
   z.uuid().parse(owner); z.uuid().parse(project);
   // Rows are checked one at a time: a malformed run, job, publication or tick is counted, never a failed read.
   let unreadable = 0;
@@ -236,15 +316,26 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const dayCount = DNESKAI_COST_RANGES.indexOf(z.enum(DNESKAI_COST_RANGES).parse(range)) + 1;
   const today = pragueMarketingDate(now);
   const weekStart = pragueScheduledAt(pragueDayAfter(today, 1 - dayCount), '00:00');
-  const dayAgo = new Date(now.getTime() - 86_400_000).toISOString();
-  const [runResult, jobResult, publicationResult, tickResult] = await Promise.all([
-    db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14),
+  const signal = AbortSignal.any([AbortSignal.timeout(15_000), ...(options.signal ? [options.signal] : [])]); signal.throwIfAborted();
+  const [runResult, jobResult, publicationResult, totalsResult] = await awaitWithSignal(Promise.all([
+    db.from('marketing_dneskai_runs').select('id,date,target_date,status,cost_usd,error_code,created_at').eq('user_id', owner).eq('project_id', project).order('date', { ascending: false }).limit(14).retry(false).abortSignal(signal),
     db.from('marketing_jobs').select('id,status,error_code,created_at,cost_usd:result->usage->>estimatedCostUsd,title:request->generation->source->content->>title,scheduled_at:request->generation->>scheduledAt,brand:request->generation->source->>brand')
-      .eq('user_id', owner).gte('created_at', weekStart).order('created_at', { ascending: false }).limit(100),
+      .eq('user_id', owner).eq('request->generation->source->>brand', 'dneskai').in('status', ['failed', 'reconciliation']).gte('created_at', weekStart).lte('created_at', now.toISOString()).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(30).retry(false).abortSignal(signal),
     db.from('marketing_publications').select('id,revision_id,status,error_code,scheduled_at,last_checked_at,remote_container_id,remote_media_id,remote_url,lease_until,marketing_revisions!inner(brand,title:revision->>title)')
-      .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20),
-    db.from('marketing_ticks').select('id,kind,started_at,finished_at,did,errors').eq('user_id', owner).gte('started_at', dayAgo).order('started_at', { ascending: false }).limit(1500),
-  ]);
+      .eq('user_id', owner).eq('marketing_revisions.brand', 'dneskai').in('status', ['failed', 'reconciliation', 'claimed']).order('scheduled_at', { ascending: false }).limit(20).retry(false).abortSignal(signal),
+    db.rpc('marketing_dneskai_cost_totals', { p_project: project, p_days: dayCount, p_now: now.toISOString() }).retry(false).abortSignal(signal),
+  ]), signal);
+  signal.throwIfAborted();
+  const parsedTotals = CostTotalsSchema.safeParse(totalsResult.data);
+  if (totalsResult.error || !parsedTotals.success) throw new Error('dneskai-costs-unavailable');
+  const totals = parsedTotals.data;
+  const expectedDays = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index));
+  if (totals.ownerId !== owner || totals.projectId !== project || totals.dayCount !== dayCount || iso(totals.asOf) !== now.toISOString()
+    || JSON.stringify(totals.days.map(day => day.date)) !== JSON.stringify(expectedDays)
+    || totals.ticks.withErrors > totals.ticks.total || totals.ticks.generationDeferred > totals.ticks.total
+    || totals.ticks.meaningfulCount > totals.ticks.total || totals.ticks.recent.length !== Math.min(20, totals.ticks.meaningfulCount) || (totals.ticks.total === 0) !== (totals.ticks.lastStartedAt === null)
+    || (totals.ticks.lastStartedAt !== null && (Date.parse(totals.ticks.lastStartedAt) > now.getTime() || Date.parse(totals.ticks.lastStartedAt) < now.getTime() - 86_400_000))
+    || new Set(totals.ticks.recent.map(tick => tick.id)).size !== totals.ticks.recent.length) throw new Error('dneskai-costs-unavailable');
   const runs = keep(shape.runs.element, rows(runResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => ({
     // A running run's cost column is a placeholder 0 until finish settles it: not recorded yet, never a measured zero.
     id: row.id, date: row.date, targetDate: row.target_date, status: row.status, costUsd: row.status === 'running' ? null : money(row.cost_usd), errorCode: safeCode(row.error_code), createdAt: iso(row.created_at),
@@ -254,18 +345,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     id: row.id, status: row.status, errorCode: marketingJobErrorCode(row.error_code), createdAt: iso(row.created_at), costUsd: money(row.cost_usd),
     title: typeof row.title === 'string' ? row.title.slice(0, 300) : '', scheduledAt: iso(row.scheduled_at),
   })));
-  const days = Array.from({ length: dayCount }, (_, index) => pragueDayAfter(today, -index)).map((date) => {
-    const dayRuns = runs.filter((run) => run.date === date);
-    const dayJobs = allJobs.filter((row) => typeof row.created_at === 'string' && pragueMarketingDate(new Date(row.created_at)) === date && row.status !== 'queued');
-    // Measured: a job that produced a draft recorded the provider's own usage for every call. Booked: a failed job's
-    // figure, which is its reserved maximum when a call's billing was ambiguous (cost-16).
-    const jobCosts = dayJobs.map((row) => ({ settled: row.status === 'review', cost: money(row.cost_usd) }));
-    const runCosts = dayRuns.map((run) => run.costUsd);
-    const sum = (values: ReadonlyArray<number | null>) => values.reduce<number>((total, cost) => total + (cost ?? 0), 0);
-    return { date, collectionUsd: sum(runCosts), generationUsd: sum(jobCosts.filter((job) => job.settled).map((job) => job.cost)),
-      generationBookedUsd: sum(jobCosts.filter((job) => !job.settled).map((job) => job.cost)),
-      unknown: [...runCosts, ...jobCosts.map((job) => job.cost)].filter((cost) => cost === null).length };
-  });
+  const days = totals.days;
   const text = (value: unknown) => typeof value === 'string' ? value : null;
   const publications = keep(shape.publications.element, rows(publicationResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').flatMap((row) => {
     const revision = (Array.isArray(row.marketing_revisions) ? row.marketing_revisions[0] : row.marketing_revisions) as { title?: unknown } | undefined;
@@ -278,7 +358,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
     return [{ id: row.id, revisionId: row.revision_id, status: expired ? 'reconciliation' : row.status, errorCode: expired ? 'lease-expired' : safeCode(row.error_code), scheduledAt: iso(row.scheduled_at),
       lastCheckedAt: iso(row.last_checked_at), title: typeof revision?.title === 'string' ? revision.title.slice(0, 300) : '', ...(requeueable ? { requeueable } : {}) }];
   }));
-  const ticks = keep(shape.ticks.shape.recent.element, rows(tickResult as { data: Array<Record<string, unknown>> | null; error: unknown }, 'dneskai-costs-unavailable').map((row) => {
+  const ticks = keep(shape.ticks.shape.recent.element, totals.ticks.recent.map((row) => {
     const did = z.array(TickStepSchema).safeParse(row.did); const errors = z.array(TickErrorSchema).safeParse(row.errors);
     return {
       id: row.id, kind: row.kind, startedAt: iso(row.started_at), finishedAt: iso(row.finished_at),
@@ -292,7 +372,7 @@ export async function readDneskaiCosts(db: Database, owner: string, project: str
   const recent = ticks.filter((tick) => tick.errors.length || generationDeferred(tick) || tick.did.some((step) => step.status === 'done' || step.status === 'error')).slice(0, 20);
   return DneskaiCostsReadSchema.parse({
     schemaVersion: DNESKAI_COSTS_VERSION, generatedAt: now.toISOString(), generation, days, runs, jobs, publications, unreadable,
-    ticks: { total: ticks.length, withErrors: ticks.filter((tick) => tick.errors.length).length, generationDeferred: ticks.filter(generationDeferred).length, lastStartedAt: ticks[0]?.startedAt ?? null, recent },
+    ticks: { total: totals.ticks.total, withErrors: totals.ticks.withErrors, generationDeferred: totals.ticks.generationDeferred, lastStartedAt: totals.ticks.lastStartedAt, recent },
   });
 }
 

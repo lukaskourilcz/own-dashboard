@@ -20,6 +20,7 @@ import { dueFollowUps } from "@/lib/jobs/board";
 import type { ClientOpportunity, ImportantDate, JobApplication, Todo } from "@/lib/types";
 import {
   eventDateKey,
+  calendarDescriptionSnippet,
   eventEnd,
   eventStart,
   eventTimeLabel,
@@ -69,10 +70,12 @@ export function TodayHero({
   const display = now ?? new Date(0);
   const greeting = now ? greetingFor(now, t) : null;
   const firstName = (userName?.trim() || userEmail).split(/[\s@]/)[0];
-  const today = todayKey();
+  // The server cannot know the browser's time zone. Keep event times out of
+  // the hydration snapshot, then resolve the local day from the shared clock.
+  const today = now ? todayKey(now) : null;
 
   const todayEvents = useMemo(() => {
-    if (!calendar.ok) return [];
+    if (!calendar.ok || !today) return [];
     return calendar.events
       .filter((ev) => eventDateKey(ev) === today)
       .sort((a, b) => {
@@ -214,7 +217,7 @@ export function TodayHero({
           tone="red"
           label={t.overview.todaysEvents}
           empty={
-            !calendar.ok
+            calendar.ok && !now ? t.common.loading : !calendar.ok
               ? calendar.reason === "unauthorized"
                 ? t.overview.calendarTokenExpired
                 : calendar.reason === "no-token"
@@ -241,9 +244,9 @@ export function TodayHero({
           {calendar.ok && (
             <ul className="space-y-1.5">
               {todayEvents.slice(0, 4).map((ev) => {
-                const isOngoing = ongoing?.id === ev.id;
+                const isOngoing = ongoing?.id === ev.id && ongoing?.sourceCalendarId === ev.sourceCalendarId;
                 return (
-                  <li key={ev.id} className="flex items-start gap-2 text-sm">
+                  <li key={`${ev.sourceCalendarId ?? "primary"}:${ev.id}`} className="flex items-start gap-2 text-sm">
                     <span
                       className={cn(
                         "tabular text-xs w-12 shrink-0 pt-0.5",
@@ -265,7 +268,7 @@ export function TodayHero({
                       </span>
                       {ev.description && (
                         <span className="block truncate text-[10px] text-foreground-subtle">
-                          {ev.description.replace(/<[^>]*>/g, "").slice(0, 80)}
+                          {calendarDescriptionSnippet(ev.description, 80)}
                         </span>
                       )}
                     </span>
@@ -274,7 +277,7 @@ export function TodayHero({
                         href={ev.htmlLink}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-foreground-subtle hover:text-foreground transition-colors"
+                        className="inline-flex min-h-11 min-w-11 md:min-h-6 md:min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors focus-ring"
                         aria-label={t.overview.openInGoogleCalendar}
                       >
                         <ExternalLink className="h-3 w-3" />

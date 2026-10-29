@@ -1,4 +1,8 @@
+import type { CsvIssueCode } from "@/lib/bank-csv";
+
 type FinancesStrings = {
+  allKinds: string; allAccounts: string; filterAll: string; accountsDescription: string; transactionsDescription: string; categoriesDescription: string;
+  searchTransactions: string; transactionKind: string; filteredEmpty: string; loadMore: string; importAndMatch: string;
   title: string;
   description: string;
   netWorth: string;
@@ -94,6 +98,12 @@ type BankStrings = {
   linkErrToast: string;
   disconnect: string;
   disconnectConfirm: string;
+  disconnectErr: string;
+  revokeUnconfirmed: string;
+  connectionsLoadErr: string;
+  providersLoadErr: string;
+  balanceUnavailable: string;
+  lastSyncFailed: string;
   lastSynced: (date: string) => string;
   neverSynced: string;
   statusLinked: string;
@@ -110,6 +120,12 @@ type BankStrings = {
   importDone: (added: number, dup: number) => string;
   importErr: string;
   csvParseErr: string;
+  csvReading: string;
+  csvRulesLoading: string;
+  csvLegacyConflict: string;
+  csvRuleLimit: string;
+  csvIssue: Record<CsvIssueCode, string>;
+  csvRowIssue: (row: number, message: string) => string;
   nothingToImport: string;
   // Provider choice, per-connection sync and consent expiry (issue #64).
   providerStep: string;
@@ -124,6 +140,9 @@ type BankStrings = {
   fioSaving: string;
   fioSaved: string;
   fioErr: string;
+  fioInvalid: string;
+  fioSyncErr: string;
+  credentialsLoadErr: string;
   fioStored: string;
   syncThis: string;
   consentExpires: (date: string) => string;
@@ -182,6 +201,8 @@ type RulesStrings = {
   actionNote: string;
   actionNotePlaceholder: string;
   actionsNone: string;
+  actionsHint: string;
+  clearValue: string;
   matchesLoaded: (matched: number, loaded: number) => string;
   checkAll: string;
   checking: string;
@@ -192,6 +213,7 @@ type RulesStrings = {
   applyDone: (n: number) => string;
   applyNothing: string;
   applyErr: string;
+  applyConflict: string;
   applyConfirmTitle: string;
   applyConfirmBody: string;
   applyConfirmLabel: string;
@@ -206,6 +228,9 @@ type RulesStrings = {
 
 export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
   en: {
+    allKinds: 'All kinds', allAccounts: 'All accounts', filterAll: 'All',
+    accountsDescription: 'Balances and bank connections.', transactionsDescription: 'Find, record and reconcile transactions.', categoriesDescription: 'Categorisation rules and this month’s spending.',
+    searchTransactions: 'Search transactions', transactionKind: 'Transaction kind', filteredEmpty: 'No transactions match these filters.', loadMore: 'Load more transactions', importAndMatch: 'Import and reconcile',
     title: "Money",
     description: "Accounts, transactions, and trends.",
     netWorth: "Net worth",
@@ -242,8 +267,8 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categorySubscriptions: "Subscriptions",
     monthFormat: "MMM",
     bank: {
-      title: "Statement import and bank sync",
-      subtitle: "Import a CSV statement or refresh an existing bank connection.",
+      title: "Bank connections",
+      subtitle: "Read-only sync and CSV statements.",
       connect: "Connect bank",
       connecting: "Connecting…",
       pickBank: "Choose your bank",
@@ -263,6 +288,12 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       linkedToast: "Bank linked — syncing…",
       linkErrToast: "Bank connection failed.",
       disconnect: "Disconnect",
+      lastSyncFailed: "The last sync was not confirmed.",
+      disconnectErr: "The disconnect could not be confirmed. Refresh and try again.",
+      revokeUnconfirmed: "Disconnected here. Bank access could not be revoked; remove it in your bank's connected apps.",
+      connectionsLoadErr: "Couldn't load your bank connections.",
+      providersLoadErr: "Couldn't check available bank providers.",
+      balanceUnavailable: "The bank did not report an opening balance. Try syncing again when it is available.",
       disconnectConfirm:
         "Disconnect this bank? Transactions already imported will stay.",
       lastSynced: (date) => `synced ${date}`,
@@ -273,7 +304,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       statusError: "Error",
       importTitle: "Import from CSV",
       csvHint:
-        "Export a statement from internet banking (CSV) and drop it here.",
+        "Choose a CSV statement exported from internet banking.",
       chooseFile: "Choose CSV file",
       csvReady: (rows, skipped) =>
         `${rows} row${rows === 1 ? "" : "s"} ready${
@@ -285,8 +316,14 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importing: "Importing…",
       importDone: (added, dup) =>
         `Imported ${added}${dup ? `, skipped ${dup} duplicate${dup === 1 ? "" : "s"}` : ""}.`,
-      importErr: "Import failed. Please try again.",
+      importErr: "Could not confirm the complete import. Try this file again; confirmed rows will not be inserted twice.",
       csvParseErr: "Couldn't read that file.",
+      csvRuleLimit: "These rules exceed the import processing limit. Simplify the rules or use a smaller file.",
+      csvReading: "Reading statement…",
+      csvRulesLoading: "Loading classification rules…",
+      csvLegacyConflict: "An older import has different payment fields. Review that record before importing this file.",
+      csvIssue: { empty: "The file has no data rows.", headers: "Choose a statement with date and amount columns.", format: "A quoted field is not closed.", limit: "Use a CSV up to 2 MiB with at most 5,000 transactions.", row: "Check the date and amount (at most two decimal places).", currency: "Supported currencies are USD, EUR, GBP, CZK and CAD.", symbol: "The payment reference must contain at most ten digits." },
+      csvRowIssue: (row, message) => `Row ${row}: ${message}`,
       nothingToImport: "No new transactions to import.",
       providerStep: "How do you want to connect?",
       providerStepDesc:
@@ -301,8 +338,11 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       fioPlaceholder: "Paste the token",
       fioSave: "Save token",
       fioSaving: "Saving…",
-      fioSaved: "Token saved — syncing…",
-      fioErr: "That token was not accepted.",
+      fioSaved: "Token saved and sync confirmed.",
+      fioErr: "The token save could not be confirmed. Refresh before retrying.",
+      fioInvalid: "Enter a token between 16 and 512 characters.",
+      fioSyncErr: "Token saved. The first sync failed; retry the sync below.",
+      credentialsLoadErr: "Could not check whether a token is stored.",
       fioStored: "A token is already stored.",
       syncThis: "Sync this bank",
       consentExpires: (date) => `consent expires ${date}`,
@@ -331,7 +371,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       conditions: "Conditions",
       addCondition: "Add condition",
       removeCondition: "Remove condition",
-      needsCondition: "Add at least one condition.",
+      needsCondition: "Complete every condition, or remove the unused row.",
       needsAction: "Set at least one action.",
       field: "Field",
       operator: "Operator",
@@ -354,13 +394,15 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       oneOfHint: "Separate values with commas.",
       betweenFrom: "From",
       betweenTo: "To",
-      regexInvalid: "That pattern can't be read, so it matches nothing.",
+      regexInvalid: "Use a supported RE2 pattern (up to 200 characters). Lookarounds and backreferences are not supported.",
       actions: "Actions",
       actionCategory: "Category",
       actionProject: "Project",
       actionSubscription: "Subscription",
       actionNote: "Rewrite description",
-      actionNotePlaceholder: "Leave empty to keep the original",
+      actionNotePlaceholder: "Leave empty to clear the description",
+      actionsHint: "Select the fields to change. An empty selected field clears it; unselected fields stay as they are.",
+      clearValue: "Clear",
       actionsNone: "No action set",
       matchesLoaded: (matched, loaded) =>
         `${matched} of the ${loaded} loaded transactions`,
@@ -375,6 +417,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
         n === 1 ? "Updated 1 transaction." : `Updated ${n} transactions.`,
       applyNothing: "Nothing to change.",
       applyErr: "Couldn't apply the rules. Please try again.",
+      applyConflict: "Rules or transactions changed. Review the refreshed data and try again.",
       applyConfirmTitle: "Apply to existing transactions?",
       applyConfirmBody:
         "Every matching transaction is rewritten with this rule's actions. Previous values are not kept.",
@@ -425,6 +468,9 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     },
   },
   cs: {
+    allKinds: 'Všechny druhy', allAccounts: 'Všechny účty', filterAll: 'Vše',
+    accountsDescription: 'Zůstatky a bankovní připojení.', transactionsDescription: 'Vyhledejte, zapište a spárujte transakce.', categoriesDescription: 'Pravidla kategorií a výdaje tohoto měsíce.',
+    searchTransactions: 'Hledat transakce', transactionKind: 'Druh transakce', filteredEmpty: 'Těmto filtrům neodpovídají žádné transakce.', loadMore: 'Načíst další transakce', importAndMatch: 'Import a párování',
     title: "Peníze",
     description: "Účty, transakce a trendy.",
     netWorth: "Čisté jmění",
@@ -461,8 +507,8 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
     categorySubscriptions: "Předplatná",
     monthFormat: "LLL",
     bank: {
-      title: "Import výpisů a bankovní synchronizace",
-      subtitle: "Importuj CSV výpis nebo obnov existující bankovní připojení.",
+      title: "Bankovní připojení",
+      subtitle: "Synchronizace pro čtení a výpisy CSV.",
       connect: "Připojit banku",
       connecting: "Připojuji…",
       pickBank: "Vyber svou banku",
@@ -485,6 +531,12 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       linkedToast: "Banka propojena — synchronizuji…",
       linkErrToast: "Napojení banky selhalo.",
       disconnect: "Odpojit",
+      lastSyncFailed: "Poslední synchronizace nebyla potvrzena.",
+      disconnectErr: "Odpojení se nepodařilo potvrdit. Obnov seznam a zkus to znovu.",
+      revokeUnconfirmed: "Zde odpojeno. Odebrání přístupu v bance se nepodařilo potvrdit; odeber ho v připojených aplikacích své banky.",
+      connectionsLoadErr: "Nepodařilo se načíst tvá bankovní připojení.",
+      providersLoadErr: "Nepodařilo se ověřit dostupná bankovní napojení.",
+      balanceUnavailable: "Banka neposkytla počáteční zůstatek. Až bude dostupný, zkus synchronizaci znovu.",
       disconnectConfirm:
         "Odpojit tuto banku? Už naimportované transakce zůstanou.",
       lastSynced: (date) => `synchronizováno ${date}`,
@@ -495,7 +547,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       statusError: "Chyba",
       importTitle: "Import z CSV",
       csvHint:
-        "Exportuj výpis z internetového bankovnictví (CSV) a nahraj ho sem.",
+        "Vyber výpis CSV exportovaný z internetového bankovnictví.",
       chooseFile: "Vybrat CSV soubor",
       csvReady: (rows, skipped) => {
         const r =
@@ -512,8 +564,14 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       importing: "Importuji…",
       importDone: (added, dup) =>
         `Naimportováno ${added}${dup ? `, přeskočeno ${dup} duplicit` : ""}.`,
-      importErr: "Import selhal. Zkus to znovu.",
+      importErr: "Celý import se nepodařilo potvrdit. Zkuste soubor znovu; potvrzené řádky se nevloží dvakrát.",
       csvParseErr: "Soubor se nepodařilo přečíst.",
+      csvRuleLimit: "Pravidla překračují limit zpracování importu. Zjednodušte pravidla nebo použijte menší soubor.",
+      csvReading: "Čtu výpis…",
+      csvRulesLoading: "Načítám pravidla pro zařazení…",
+      csvLegacyConflict: "Starší import má jiné platební údaje. Před importem tohoto souboru zkontrolujte původní záznam.",
+      csvIssue: { empty: "Soubor neobsahuje žádné datové řádky.", headers: "Vyberte výpis se sloupci pro datum a částku.", format: "Pole v uvozovkách není uzavřené.", limit: "Použijte CSV do 2 MiB s nejvýše 5 000 transakcemi.", row: "Zkontrolujte datum a částku (nejvýše dvě desetinná místa).", currency: "Podporované měny jsou USD, EUR, GBP, CZK a CAD.", symbol: "Platební symbol musí obsahovat nejvýše deset číslic." },
+      csvRowIssue: (row, message) => `Řádek ${row}: ${message}`,
       nothingToImport: "Žádné nové transakce k importu.",
       providerStep: "Jak se chceš připojit?",
       providerStepDesc:
@@ -528,8 +586,11 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       fioPlaceholder: "Vlož token",
       fioSave: "Uložit token",
       fioSaving: "Ukládám…",
-      fioSaved: "Token uložen — synchronizuji…",
-      fioErr: "Token nebyl přijat.",
+      fioSaved: "Token uložen a synchronizace potvrzena.",
+      fioErr: "Uložení tokenu nebylo potvrzeno. Před dalším pokusem obnov stránku.",
+      fioInvalid: "Vlož token o délce 16 až 512 znaků.",
+      fioSyncErr: "Token uložen. První synchronizace selhala; zkus ji znovu níže.",
+      credentialsLoadErr: "Nepodařilo se ověřit, zda je token uložený.",
       fioStored: "Token už je uložený.",
       syncThis: "Synchronizovat tuhle banku",
       consentExpires: (date) => `souhlas platí do ${date}`,
@@ -558,7 +619,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       conditions: "Podmínky",
       addCondition: "Přidat podmínku",
       removeCondition: "Odebrat podmínku",
-      needsCondition: "Přidej alespoň jednu podmínku.",
+      needsCondition: "Vyplň všechny podmínky nebo odstraň nevyužitý řádek.",
       needsAction: "Nastav alespoň jednu akci.",
       field: "Pole",
       operator: "Operátor",
@@ -581,13 +642,15 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       oneOfHint: "Hodnoty odděl čárkou.",
       betweenFrom: "Od",
       betweenTo: "Do",
-      regexInvalid: "Tenhle vzor se nedá přečíst, takže neodpovídá ničemu.",
+      regexInvalid: "Použij podporovaný vzor RE2 (nejvýše 200 znaků). Zpětné odkazy ani lookaround nejsou podporované.",
       actions: "Akce",
       actionCategory: "Kategorie",
       actionProject: "Projekt",
       actionSubscription: "Předplatné",
       actionNote: "Přepsat popis",
-      actionNotePlaceholder: "Prázdné ponechá původní popis",
+      actionNotePlaceholder: "Prázdné vymaže popis",
+      actionsHint: "Vyber pole ke změně. Vybrané prázdné pole se vymaže, nevybraná pole zůstanou beze změny.",
+      clearValue: "Vymazat",
       actionsNone: "Žádná akce",
       matchesLoaded: (matched, loaded) =>
         `${matched} z ${loaded} načtených transakcí`,
@@ -605,6 +668,7 @@ export const finances: { en: FinancesStrings; cs: FinancesStrings } = {
       },
       applyNothing: "Nebylo co změnit.",
       applyErr: "Pravidla se nepodařilo použít. Zkus to znovu.",
+      applyConflict: "Pravidla nebo transakce se změnily. Zkontroluj obnovená data a zkus to znovu.",
       applyConfirmTitle: "Použít na existující transakce?",
       applyConfirmBody:
         "Každá odpovídající transakce se přepíše akcemi tohoto pravidla. Původní hodnoty se neuchovávají.",

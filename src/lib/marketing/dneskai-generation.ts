@@ -3,10 +3,10 @@ import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema
 import { contentHash } from "./hashes";
 import type { DneskaiBrief, DneskaiBriefMedia } from "./dneskai-brief";
 import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
-import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
-import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
+import { DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
+import { dneskaiPlacedFields, DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
-import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
+import { DNESKAI_AI_DISCLOSURE, dneskaiHasAudienceCall, dneskaiKeywordLine } from "./dneskai-caption";
 
 /**
  * Generation v5 for DNESKAi (#116): one structured Claude call turns a research brief (#115) into the
@@ -18,7 +18,7 @@ import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
  * given is checked here before anything is rendered, and the studio's own gate (`validateDneskaiDeck`)
  * then decides whether the words fit. This module has no I/O; `generation.ts` runs the call.
  */
-export const MARKETING_BRIEF_PROMPT_VERSION = "marketing-copy/7";
+export const MARKETING_BRIEF_PROMPT_VERSION = "marketing-copy/8";
 /** The `templateVersion` of a DNESKAi deck job and revision: the vendored studio renderer it targets. */
 export const DNESKAI_DECK_TEMPLATE_VERSION = DNESKAI_RENDERER_VERSION;
 /** A carousel carries at most this many slides, all written by the model; no sources slide is appended. */
@@ -130,6 +130,7 @@ const SYSTEM_RULES = [
   "Cover hook: the headline of the first slide (of the single slide in a single-image post) states the most concrete and surprising true fact of the story as a plain declarative sentence: a number, a date, a named actor or a precise change, exactly as strong as the evidence states it. The next slide or the caption backs it up from the evidence. Never a question, an exclamation, a teaser that withholds the subject, a superlative, \"first\" or \"breaking\" unless the evidence says so, or anything the evidence does not carry. Every other slide stays calm and plain.",
   "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. fullBleedCapable, insetCapable and singlePhotoCapable say which slides a picture and its credit fit. Use each picture at most once. Omit crop: the editor sets the focal point.",
   "Formats: a carousel has 4 to 7 slides you write and nothing else; there is no sources slide. A single-image post is exactly one slide of type single. Use only the formats the rules allow.",
+  "The first slide shows only its headline for every type, including figure, split and statement. Omit body, kicker, credit and labels there. Optional body or kicker below is for later slides only.",
   "Slide types, with character targets (the renderer refuses text that does not fit). No slide shows a picture credit or a page number; never write one.",
   `- cover-photo: the first slide of a carousel only. images: image-1, one picture with fullBleedCapable true, drawn to every edge. headline only, up to ${target(DNESKAI_TEXT_LIMITS["dneskai-cover-photo"].headline)}. No kicker, no body: the first slide carries its headline and nothing else.`,
   `- figure: images: image-1, one picture with insetCapable true, framed. headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-figure"].headline)}; optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-figure"].body)}. No kicker.`,
@@ -198,8 +199,9 @@ export function czechDate(value: string): string | null {
 const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "web"; } };
 
 /**
- * The publisher a source line names when no registry is at hand: the Instagram account of an `instagram:<profile>`
- * source, otherwise the page's host. The worker passes the registry's names (`dneskai-publishers.ts`) instead.
+ * The publisher label for internal model evidence when no registry is at hand:
+ * an Instagram account or page host. The worker supplies registry names instead.
+ * These labels do not create source lines or credits in the post.
  */
 export function dneskaiFallbackPublisher(item: Pick<DneskaiBrief["evidence"][number], "sourceId" | "url">): string {
   const profile = /^instagram:([A-Za-z0-9._]{1,30})$/.exec(item.sourceId)?.[1];
@@ -399,7 +401,7 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
     if (copy.format === "carousel" && index > 0 && slide.type === "cover-photo") issues.push(issue("cover-not-first", index, "type", "cover-photo is only the first slide."));
     if (slide.type === "single" && slide.variant !== offer.rules.singleVariant) issues.push(issue("single-variant", index, "variant", `rules.singleVariant is ${offer.rules.singleVariant}.`));
     const template = dneskaiTemplateId(slide);
-    const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+    const placed = dneskaiPlacedFields(slide, index);
     const limits: Partial<Record<string, number>> = DNESKAI_TEXT_LIMITS[template];
     for (const field of ["headline", "body", "kicker"] as const) {
       const value = slide[field];
@@ -424,6 +426,7 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
   ];
   for (const entry of prose) {
     if (UNSAFE_TEXT.test(entry.value)) issues.push(issue("unsafe-text", entry.slide, entry.field, "Remove URLs, markup, control characters and emoji."));
+    if (dneskaiHasAudienceCall(entry.value)) issues.push(issue("audience-call", entry.slide, entry.field, "Remove the call to follow or comment; code writes the approved keyword line in the caption."));
     const unsupported = dneskaiUnsupportedNumbers(entry.value, offer.corpus);
     if (unsupported.length) issues.push(issue("unsupported-number", entry.slide, entry.field, `${unsupported.length === 1 ? "A number does" : `${unsupported.length} numbers do`} not appear in the evidence; remove ${unsupported.length === 1 ? "it" : "them"} or use only numbers the evidence states.`));
   }
@@ -455,7 +458,7 @@ export function validateDneskaiReplyMessage(value: string, offer: DneskaiBriefOf
   if (dneskaiUnsupportedNumbers(prose.replace(/^[ \t]*[1-9]\.[ \t]+/gmu, ""), offer.corpus).length) issues.push(issue("unsupported-number", null, field, "A number in the replyMessage does not appear in the evidence; remove it or use only numbers the evidence states."));
   if (dneskaiTalksAboutSources(prose)) issues.push(issue("source-talk", null, field, "Remove the sentence about sources, confirmation or verification."));
   if (/(^|\s)#[\p{L}\p{N}]/u.test(prose)) issues.push(issue("caption-hashtag", null, field, "The replyMessage carries no hashtags."));
-  if (/napi(?:š|s)te\s+do\s+komentář/iu.test(prose)) issues.push(issue("reply-message-cta", null, field, "Do not ask for a comment; code writes that line in the caption."));
+  if (dneskaiHasAudienceCall(prose)) issues.push(issue("reply-message-cta", null, field, "Do not ask for a follow or comment; code writes the approved keyword line in the caption."));
   return issues;
 }
 
@@ -503,8 +506,8 @@ export function dneskaiHashtags(proposed: readonly string[]): string[] {
  */
 export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): DneskaiDeck {
   void offer;
-  const slides: DneskaiSlide[] = copy.slides.map((slide) => {
-    const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+  const slides: DneskaiSlide[] = copy.slides.map((slide, index) => {
+    const placed = dneskaiPlacedFields(slide, index);
     return {
       type: slide.type,
       ...(slide.variant ? { variant: slide.variant } : {}),

@@ -1,0 +1,301 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 42,
+      "tag": "DIV",
+      "text": "OverviewTasks & NotesActivityCommunicationRepositoryFinanceCompetitionKnowledgeScalingMonetization",
+      "width": 1120,
+      "x": 276,
+      "y": 92
+    },
+    {
+      "className": "grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4",
+      "height": 78.5,
+      "tag": "DIV",
+      "text": "HealthHealthyOpen tasks4Monthly cost430,23 KčOutstanding amount0,00 Kč",
+      "width": 1120,
+      "x": 276,
+      "y": 150
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 60.5,
+      "tag": "DIV",
+      "text": "HealthHealthy",
+      "width": 269.5,
+      "x": 285,
+      "y": 159
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 60.5,
+      "tag": "DIV",
+      "text": "Open tasks4",
+      "width": 269.5,
+      "x": 563,
+      "y": 159
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 60.5,
+      "tag": "DIV",
+      "text": "Monthly cost430,23 Kč",
+      "width": 269.5,
+      "x": 840,
+      "y": 159
+    },
+    {
+      "className": "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card",
+      "height": 60.5,
+      "tag": "DIV",
+      "text": "Outstanding amount0,00 Kč",
+      "width": 269.5,
+      "x": 1118,
+      "y": 159
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 137.7,
+      "tag": "DIV",
+      "text": "Project summaryThe operating dashboard this tour shows.Linked organizationNo organization linked",
+      "width": 552,
+      "x": 276,
+      "y": 245
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 137.7,
+      "tag": "DIV",
+      "text": "Needs attentionNothing urgent is waiting.",
+      "width": 552,
+      "x": 844,
+      "y": 245
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 110,
+      "tag": "DIV",
+      "text": "TrafficVisitors from Vercel Web Analytics.Could not load Vercel analytics.",
+      "width": 552,
+      "x": 276,
+      "y": 398
+    },
+    {
+      "className": "rounded-lg border border-border bg-surface text-foreground shadow-card",
+      "height": 204,
+      "tag": "DIV",
+      "text": "LinksAdd linkSupabaseToolStores every record behind own-only RLS.Plan a month of posts around two topicsReferencePlan the build-in-public po",
+      "width": 1120,
+      "x": 276,
+      "y": 524
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projects",
+      "width": 57.9,
+      "x": 272,
+      "y": 32
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Command palette",
+      "width": 340,
+      "x": 1060,
+      "y": 30
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Overview",
+      "width": 77.9,
+      "x": 281,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Tasks & Notes",
+      "width": 106.1,
+      "x": 363,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Activity",
+      "width": 67.7,
+      "x": 473,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Communication",
+      "width": 114.4,
+      "x": 545,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Repository",
+      "width": 86.3,
+      "x": 663,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Finance",
+      "width": 69,
+      "x": 753,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Competition",
+      "width": 94.8,
+      "x": 826,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Knowledge",
+      "width": 88,
+      "x": 925,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Scaling",
+      "width": 66.4,
+      "x": 1017,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Monetization",
+      "width": 99.1,
+      "x": 1088,
+      "y": 97
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Add link",
+      "width": 94.5,
+      "x": 1282,
+      "y": 541
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Copy URL: Supabase",
+      "width": 28,
+      "x": 1293,
+      "y": 591
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit note: Supabase",
+      "width": 28,
+      "x": 1321,
+      "y": 591
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Remove from project: Supabase",
+      "width": 28,
+      "x": 1349,
+      "y": 591
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Copy URL: Plan a month of posts around two topics",
+      "width": 28,
+      "x": 1293,
+      "y": 657
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Edit note: Plan a month of posts around two topics",
+      "width": 28,
+      "x": 1321,
+      "y": 657
+    },
+    {
+      "disabled": false,
+      "height": 28,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Remove from project: Plan a month of posts around two topics",
+      "width": 28,
+      "x": 1349,
+      "y": 657
+    }
+  ],
+  "documentWidth": 1440,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projects",
+      "width": 57.9,
+      "x": 272,
+      "y": 32
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "width": 1440
+  }
+}

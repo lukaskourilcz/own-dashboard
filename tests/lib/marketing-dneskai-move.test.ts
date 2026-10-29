@@ -1,3 +1,4 @@
+import { DEFAULT_GENERATION_BUDGET } from '@/lib/marketing/generation';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DNESKAI_MOVE_LEAD_MINUTES, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots } from '@/lib/marketing/dneskai-lab';
 import { createDneskaiWorkspaceFixture } from '@/lib/demo/dneskai-workspace-fixtures';
@@ -61,6 +62,21 @@ describe('preview stand-ins for decisions 6, 8 and 9', () => {
     expect(('value' in after ? after.value : null)!.posts.find((post) => post.id === missed.id)).toMatchObject({ status: 'approved', scheduledAt: at('2026-10-22', '12:30') });
   });
 
+  it('shows the same per-job budget reservation in the preview costs as the production generation limit', async () => {
+    const before = await settle(demoDneskaiWorkspaceApi.loadCosts('p'));
+    const budget = ('value' in before ? before.value : null)!.generation;
+    expect(budget.spentUsd).toBe(0.8);
+    const review = await settle(demoDneskaiWorkspaceApi.loadReview('p'));
+    const returned = ('value' in review ? review.value : null)!.posts.find(post => post.status === 'returned')!;
+    expect(await settle(demoDneskaiWorkspaceApi.regenerate(returned.id, returned.contentHash, 'Kratší titulek'))).toMatchObject({ value: { status: 'queued' } });
+    const after = await settle(demoDneskaiWorkspaceApi.loadCosts('p'));
+    expect(('value' in after ? after.value : null)!.generation.spentUsd! - budget.spentUsd!).toBeCloseTo(DEFAULT_GENERATION_BUDGET.maxCostUsd, 8);
+    expect(('value' in after ? after.value : null)!.generation.spentUsd).toBeCloseTo(0.93, 8);
+    expect(await settle(demoDneskaiWorkspaceApi.generateNow('d0e5ca10-0000-4000-8000-000000000501'))).toMatchObject({ error: { code: 'dneskai-daily-generation-budget-exhausted' } });
+    resetDemoDneskaiWorkspace();
+    const reset = await settle(demoDneskaiWorkspaceApi.loadCosts('p'));
+    expect(('value' in reset ? reset.value : null)!.generation.spentUsd).toBe(0.8);
+  });
   it('turns a regeneration and a waiting topic into drafting jobs and refuses the paid action past the daily ceiling', async () => {
     const read = await settle(demoDneskaiWorkspaceApi.loadReview('p'));
     const returned = ('value' in read ? read.value : null)!.posts.find((post) => post.status === 'returned')!;

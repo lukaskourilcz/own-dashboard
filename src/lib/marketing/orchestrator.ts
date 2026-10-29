@@ -1,4 +1,7 @@
 import 'server-only';
+import {z} from 'zod';
+import {databaseTimestamp,databaseVersion} from '@/lib/database-version';
+import {awaitWithSignal} from '@/lib/abortable';
 import { createHash } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { parseContentRevision,parseSourcePacket,publishedStoryReceipt,sourceUsable,type MarketingBrand,type MarketingRevisionRow,type PublicationRow,type SourcePacket } from './contracts';
@@ -17,32 +20,68 @@ import { nextDneskaiAudioTrackId } from './dneskai-audio';
  * render is requested (rotation track when the owner chose none) and the publication stays queued for the next tick.
  * Returns the stored Reel, or the hold code that keeps the publication queued.
  */
-async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,options:{dryRun:boolean;origin?:string}):Promise<{reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;hold:string|null}>{
+async function prepareDneskaiReel(db:Database,owner:string,state:PublisherState,options:{dryRun:boolean;origin?:string;signal?:AbortSignal}):Promise<{reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;hold:string|null}>{
  const revision=state.revisionRow.revision;
  if(!deckReel(revision))return {reel:null,hold:null};
  if(!dneskaiReelsEnabled())return {reel:null,hold:'reels-disabled'};
- const reel=await findDneskaiReelForRevision(db,owner,state.revisionRow.id,state.revisionRow.content_hash).catch(()=>null);
+ let reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>;
+ try{const lookupSignal=AbortSignal.any([AbortSignal.timeout(15000),...(options.signal?[options.signal]:[])]);lookupSignal.throwIfAborted();reel=await awaitWithSignal(findDneskaiReelForRevision(db,owner,state.revisionRow.id,state.revisionRow.content_hash,undefined,lookupSignal),lookupSignal);lookupSignal.throwIfAborted();}
+ catch{return {reel:null,hold:options.signal?.aborted?'reel-render-unavailable':'reel-storage-failed'};}
  if(reel)return {reel,hold:null};
  if(options.dryRun)return {reel:null,hold:'reel-render-pending'};
  if(!options.origin)return {reel:null,hold:'reel-render-unavailable'};
- const audioTrackId=revision.audio?null:await nextDneskaiAudioTrackId(db,owner,await lastDneskaiReelAudio(db,owner,state.revisionRow.id).catch(()=>null)).catch(()=>null);
- const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,audioTrackId});
+ let audioTrackId:string|null=null;
+ if(!revision.audio){
+  try{
+   const audioSignal=AbortSignal.any([AbortSignal.timeout(15000),...(options.signal?[options.signal]:[])]);
+   audioSignal.throwIfAborted();const previous=await lastDneskaiReelAudio(db,owner,state.revisionRow.id,audioSignal);audioSignal.throwIfAborted();
+   audioTrackId=await nextDneskaiAudioTrackId(db,owner,previous,audioSignal);audioSignal.throwIfAborted();
+  }
+  catch{return {reel:null,hold:'reel-audio-unavailable'};}
+ }
+ if(options.signal?.aborted)return {reel:null,hold:'reel-render-unavailable'};
+ const requested=await requestDneskaiReelRender({origin:options.origin,revisionId:state.revisionRow.id,revisionHash:state.revisionRow.content_hash,audioTrackId,...(options.signal?{signal:options.signal}:{})});
  return {reel:null,hold:requested?'reel-render-pending':'reel-render-unavailable'};
 }
-/** Starts the Reel render of approved posts due within `aheadMs`, one per call, so the MP4 is ready at the slot. */
-export async function prepareUpcomingDneskaiReels(db:Database,owner:string,origin:string,aheadMs=45*60000){
- if(!dneskaiReelsEnabled())return null;
- const now=Date.now();
- const {data,error}=await db.from('marketing_publications').select('revision_id,marketing_revisions!inner(brand,revision)').eq('user_id',owner).eq('status','queued')
-  .eq('marketing_revisions.brand','dneskai').eq('marketing_revisions.revision->>format','reel').gte('scheduled_at',new Date(now-15*60000).toISOString()).lte('scheduled_at',new Date(now+aheadMs).toISOString()).order('scheduled_at').limit(3);
- if(error)return null;
- for(const row of data??[]){
-  const state=await publishingState(db,owner,(row as {revision_id:string}).revision_id,false).catch(()=>null);
-  if(!state)continue;
-  const prepared=await prepareDneskaiReel(db,owner,state,{dryRun:false,origin});
-  if(prepared.hold)return prepared.hold;
- }
- return null;
+/** Prepare only strictly future approved Reels; due work belongs to the same tick's publisher. */
+export async function prepareUpcomingDneskaiReels(db: Database, owner: string, origin: string, aheadMs = 45 * 60000, parent?: AbortSignal) {
+    if (!dneskaiReelsEnabled())
+        return null;
+    const signal = AbortSignal.any([AbortSignal.timeout(15000), ...(parent ? [parent] : [])]);
+    try {
+        z.uuid().parse(owner);
+        signal.throwIfAborted();
+        const now = Date.now(), until = now + aheadMs;
+        if (!Number.isSafeInteger(aheadMs) || aheadMs < 1 || !Number.isFinite(new Date(until).getTime()))
+            return null;
+        const { data, error } = await awaitWithSignal(db.from('marketing_publications').select('id,user_id,revision_id,status,scheduled_at,marketing_revisions!inner(brand)').eq('user_id', owner).eq('status', 'queued').eq('marketing_revisions.brand', 'dneskai').eq('marketing_revisions.revision->>format', 'reel').eq('marketing_revisions.status', 'approved').eq('marketing_revisions.ready', true).gt('scheduled_at', new Date(now).toISOString()).lte('scheduled_at', new Date(until).toISOString()).order('scheduled_at').order('id').limit(3).retry(false).abortSignal(signal), signal);
+        signal.throwIfAborted();
+        if (error)
+            return null;
+        const rows = z.array(z.strictObject({ id: z.uuid(), user_id: z.uuid(), revision_id: z.uuid(), status: z.literal('queued'), scheduled_at: databaseTimestamp, marketing_revisions: z.strictObject({ brand: z.literal('dneskai') }) })).max(3).parse(data);
+        const seen = new Set<string>();
+        for (const row of rows) {
+            const at = databaseVersion(row.scheduled_at);
+            if (row.user_id !== owner || !at || at <= BigInt(now) * BigInt(1000) || at > BigInt(until) * BigInt(1000) || seen.has(row.id))
+                return null;
+            seen.add(row.id);
+        }
+        for (const row of rows) {
+            signal.throwIfAborted();
+            const state = await awaitWithSignal(publishingState(db, owner, row.revision_id, false, signal), signal).catch(() => null);
+            signal.throwIfAborted();
+            if (!state || state.revisionRow.user_id !== owner || state.revisionRow.id !== row.revision_id || state.revisionRow.status !== 'approved' || !state.revisionRow.ready || state.revisionRow.approved_hash !== state.revisionRow.content_hash)
+                continue;
+            const prepared = await awaitWithSignal(prepareDneskaiReel(db, owner, state, { dryRun: false, origin, signal }), signal);
+            signal.throwIfAborted();
+            if (prepared.hold)
+                return prepared.hold;
+        }
+        return null;
+    }
+    catch {
+        return null;
+    }
 }
 export { metaConfiguration } from './meta-credentials';
 type Database=ReturnType<typeof createAdminClient>;
@@ -142,7 +181,7 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
  let reelHold:{publicationId:string;code:string}|null=null;
  for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand){await publishingState(db,owner,publication.revision_id,true,signal);
   // #165: a Reel without its stored MP4 is never claimed; the claim would turn the hold into a failure.
-  if(!reelHold){const prepared=await prepareDneskaiReel(db,owner,state,{dryRun,origin:options.origin});if(prepared.hold)reelHold={publicationId:publication.id,code:prepared.hold};}
+  if(!reelHold){const prepared=await prepareDneskaiReel(db,owner,state,{dryRun,origin:options.origin,signal});if(prepared.hold)reelHold={publicationId:publication.id,code:prepared.hold};}
   if(!dryRun&&!credentialHold){const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);if(config.credentialHold)credentialHold={publicationId:publication.id,code:config.credentialHold};}}}
  let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').in('error_code',['container-pending',CONTAINER_RETRY_CODE]).gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
  if(pending.error)throw new Error('publication-state-unavailable');
@@ -158,7 +197,12 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
   let container=publication.remote_container_id,code=publication.error_code;
   // The stored account token wins over the environment bootstrap; a held credential stops at the gate.
   const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);
-  const reel=deckReel(state.revisionRow.revision)?await findDneskaiReelForRevision(db,owner,publication.revision_id,state.revisionRow.content_hash).catch(()=>null):null;
+  let reel:Awaited<ReturnType<typeof findDneskaiReelForRevision>>=null;
+  if(deckReel(state.revisionRow.revision)){
+   try{reel=await findDneskaiReelForRevision(db,owner,publication.revision_id,state.revisionRow.content_hash,undefined,signal);}
+   catch{outcomes.push({publicationId:publication.id,status:'held' as const,errorCode:'reel-storage-failed',remoteContainerId:container,remoteMediaId:publication.remote_media_id,remoteUrl:publication.remote_url});continue;}
+   if(!reel){outcomes.push({publicationId:publication.id,status:'held' as const,errorCode:'reel-render-pending',remoteContainerId:container,remoteMediaId:publication.remote_media_id,remoteUrl:publication.remote_url});continue;}
+  }
   const outcome=await publishMarketingRevision({...state,reel,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
    if(checkpoint.stage==='outcome'){
     const {error:receiptError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:publication.id,p_expected_container:container,p_expected_error:code,p_status:checkpoint.status,p_container:checkpoint.remoteContainerId,p_media:checkpoint.remoteMediaId,p_url:checkpoint.remoteUrl,p_error:checkpoint.errorCode});

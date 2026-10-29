@@ -37,11 +37,11 @@ export function ProjectDocPanel({
   const [owner, repo] = repoFullName?.split("/") ?? [];
   const query = useQuery({
     queryKey: ["github", "project-doc", owner, repo, file],
-    queryFn: async () => {
-      const primary = await loadRepoFile(owner, repo, file);
-      if (primary.kind === "not-found" && fallbackFile) {
-        const legacy = await loadRepoFile(owner, repo, fallbackFile);
-        if (legacy.kind === "ok") return legacy;
+    queryFn: async ({ signal }) => {
+      const primary = await loadRepoFile(owner, repo, file, signal);
+      if (primary.kind === "not-found" && fallbackFile && !signal.aborted) {
+        const legacy = await loadRepoFile(owner, repo, fallbackFile, signal);
+        return legacy;
       }
       return primary;
     },
@@ -52,10 +52,10 @@ export function ProjectDocPanel({
   const result = query.data;
 
   return (
-    <Card className="lg:col-span-2">
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div>
-          <CardTitle className="flex items-center gap-2">
+    <Card className="w-full min-w-0 max-w-3xl justify-self-center">
+      <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <CardTitle role="heading" aria-level={2} className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             {title}
           </CardTitle>
@@ -63,9 +63,10 @@ export function ProjectDocPanel({
         </div>
         <Button
           size="sm"
+          className="shrink-0"
           variant="outline"
           onClick={() => void query.refetch()}
-          disabled={!repoFullName || query.isFetching}
+          disabled={!enabled || !owner || !repo || query.isFetching}
         >
           <RefreshCw
             className={cn("h-3.5 w-3.5", query.isFetching && "animate-spin")}
@@ -109,8 +110,8 @@ export function ProjectDocPanel({
             </div>
           </div>
         ) : result?.kind === "ok" && result.content.trim() ? (
-          <div className="rounded-md border border-border bg-surface-inset p-4">
-            <Markdown source={result.content} className="max-w-3xl" />
+          <div className="min-w-0">
+            <Markdown headingStart={3} tableLabel={t.common.documentTable} codeLabel={t.common.documentCode} source={result.content} className="max-w-3xl" />
           </div>
         ) : (
           <EmptyState

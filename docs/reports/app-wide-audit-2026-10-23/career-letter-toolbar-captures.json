@@ -1,0 +1,111 @@
+{
+  "finding": 298,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "7f91e36f",
+  "state": "Actual synthetic retained letter conflict after removing the repeated visible heading and aligning template controls. Prior finding 297 captures remain unchanged.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "abc725571de05f2d5ac7cbe3b8527bfd9115cc15cea79038c10e038e531a3bea",
+    "src/components/ui/button.tsx": "713fb407cbc34708a07da410243ee1984b97f0f7bdec3db8d359dc0cd542d4ba",
+    "src/components/ui/input.tsx": "723ebe9b92f7059504a276b973adfb4498617effbb0bf2a4017ca6beb0fc6e87",
+    "src/components/ui/select.tsx": "ccfbe842b210fd99195a3f9be128a8a959ff9a4f11abc1a1e2a9ed6c300d75b9"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1800
+      },
+      "box": {
+        "x": 432,
+        "y": 627.625,
+        "width": 576,
+        "height": 544.75
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.6458333333333335,
+          "y": 24.414869206057826,
+          "w": 86.9873046875,
+          "h": 5.8742542450665445
+        },
+        {
+          "n": 2,
+          "x": 3.6458333333333335,
+          "y": 33.226250573657644,
+          "w": 92.70833333333333,
+          "h": 26.571821936668197
+        },
+        {
+          "n": 3,
+          "x": 3.6458333333333335,
+          "y": 70.8122992198256,
+          "w": 92.70833333333333,
+          "h": 17.255621844882974
+        }
+      ],
+      "asset": "assets/career-letter-toolbar-cs-1440.png",
+      "sha256": "d3f801b40f55e1ce623c09ae3fd2e6969ec3d0161f64da3928932089d7101227"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1800
+      },
+      "box": {
+        "x": 12,
+        "y": 525,
+        "width": 406,
+        "height": 750
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 17.733333333333334,
+          "w": 89.65517241379311,
+          "h": 19.2
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 39.06666666666667,
+          "w": 89.65517241379311,
+          "h": 23.2
+        },
+        {
+          "n": 3,
+          "x": 5.172413793103448,
+          "y": 71.86666666666666,
+          "w": 89.65517241379311,
+          "h": 17.333333333333332
+        }
+      ],
+      "asset": "assets/career-letter-toolbar-cs-430.png",
+      "sha256": "4c3f0f8eb909782f2e39fedd5e86250e170da494ddc20203f3f92f3eac5c5647"
+    }
+  },
+  "initialReflowSample": {
+    "width": 768,
+    "initialHeights": [
+      44,
+      44,
+      32
+    ],
+    "transitions": [
+      {
+        "height": "32px",
+        "transition": "1e-05s cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      {
+        "height": "32px",
+        "transition": "1e-05s cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      {
+        "height": "32px",
+        "transition": "background 1e-05s cubic-bezier(0.16, 1, 0.3, 1), color 1e-05s cubic-bezier(0.16, 1, 0.3, 1), border-color 1e-05s cubic-bezier(0.16, 1, 0.3, 1), filter 1e-05s cubic-bezier(0.16, 1, 0.3, 1), transform 1e-05s cubic-bezier(0.16, 1, 0.3, 1)"
+      }
+    ]
+  }
+}

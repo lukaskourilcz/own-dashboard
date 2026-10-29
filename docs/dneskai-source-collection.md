@@ -8,26 +8,42 @@ jsou pod ⋯ → **Obnova témat**, účet pod ⋯ → **Účet Instagram**.
 ## Zdroje jako seznam (#174, 23. října 2026)
 
 Zdroje mají dva seznamy, **Instagram profily** a **Weby**. Řádek ukazuje účet nebo
-doménu, druh (Zprávy / Vzdělávání), úroveň (Původní / Redakce / Agregátor), dny
+doménu, téma (Zprávy / Vzdělávání), úroveň (Původní / Redakce / Agregátor), dny
 čtení, kdy se zdroj naposledy četl a kolik položek přinesl (z
 `marketing_dneskai_source_states`), poslední chybu a přepínač.
 
 Dokud `DNESKAI_SOURCES_TABLE_ENABLED` není `true`, seznam ukazuje soubor
 `dneskai-registry.ts` jen pro čtení a sběr i scouting čtou soubor. Po nasazení
-migrace `20261023110000_dneskai_sources_table.sql` a zapnutí přepínače první
-otevření Zdrojů zapíše soubor jako první řádky `marketing_dneskai_sources`
-(jednou; odebraný zdroj se už nevrátí). Profily @aimanie a @digitalnihumanista
-jsou vypnuté, dokud je neprověří Astra ([#185](https://github.com/lukaskourilcz/own-dashboard/issues/185)).
+migrace `20261023110000_dneskai_sources_table.sql` a zapnutí přepínače seznam
+čte pouze uložené řádky `marketing_dneskai_sources`. Otevření nic nezapisuje.
+Prázdný seznam zůstává prázdný; odebrané zdroje se automaticky neobnoví. Starší
+výslovná inicializace souboru přes `marketing_dneskai_sources_seed` zůstává
+samostatnou operací, ne součástí načtení stránky. Profily @aimanie a
+@digitalnihumanista jsou v původním souboru vypnuté; stav ověření účtů je v
+[#185](https://github.com/lukaskourilcz/own-dashboard/issues/185).
 Od té chvíle vlastník přidává zdroj zadáním @účtu, profilu na instagram.com nebo
 adresy (adresa s `rss`, `atom`, `feed` nebo `.xml` se čte jako feed, jiná jako
-stránka; Atom čte stejný adaptér jako RSS), upravuje název, druh, úroveň, dny a
+stránka; Atom čte stejný adaptér jako RSS), upravuje název, téma, úroveň, dny a
 počet položek a zdroj odebírá po potvrzení. Adresa zdroje se nemění: nová adresa
-je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy).
+je nový zdroj. Nejvýš 120 zdrojů; za noc se přijme nejvýš 42 (nejdřív zprávy). Doména bez protokolu (například `example.com`) znamená web. Instagramový účet s tečkou zadávejte jako `@meta.ai` nebo úplnou profilovou adresou. Odkaz na konkrétní Reel, příspěvek či přihlašovací stránku není profil. Vstup odmítá přihlašovací údaje v adrese, řídicí znaky, neočekávané porty a příliš dlouhé hodnoty; vlastní stažení dál podléhá serverovým kontrolám URL a DNS.
+
+Aktualizovaný editor před nasazením potřebuje také připravenou migraci
+`20261024174247_confirmed_dneskai_sources.sql`. Uložení i odebrání posílá zachycené
+nastavení a úspěch potvrzuje až odpověď uloženého řádku. Souběžná změna se nepřepíše.
+Neúspěšné přidání ponechá adresu, neplatný počet se nezaokrouhlí a otevřený koncept
+přežije obnovu i výpadek seznamu. Aktuální hodnoty se do něj převezmou jen tlačítkem
+**Zahodit koncept a obnovit**; při neúspěšném obnovení koncept zůstane. Odchod s
+rozepsanými údaji je hlídaný, během zápisu nejde spustit opakovaný zápis ani zahodit
+čekající požadavek. Potvrzená změna upraví mezipaměť bez dalšího načtení celého seznamu;
+nejistá odpověď vyvolá ověření seznamu.
 
 Sběr i scouting čtou zdroje přes jeden katalog (`dneskai-source-catalog.ts`):
-řádky vlastníka, jsou-li přepínač zapnutý a řádky existují, jinak soubor. Chyba
-čtení tabulky vrátí soubor, takže chybějící tabulka noc nezastaví. Zdroj odebraný
-během běžící noci skončí jako `collection-source-removed` bez čtení. Přidané weby
+řádky vlastníka se zapnutým přepínačem, soubor pouze s vypnutým. Chyba,
+neúplná odpověď nebo neplatný řádek zastaví nové načítání; nic se nenahrazuje
+souborem. Bez aktivních zdrojů se nový běh ani neposílá k přijetí. Odebraný či
+vypnutý zdroj během běžící noci skončí jako `collection-source-removed` bez
+čtení. Přehled historie načítá jen aktuálně zobrazené zdroje a chybu neoznačí
+jako „dosud nečteno“. Přidané weby
 mají ID `web-<doména>-<6 hex>` a čte je jen nativní poskytovatel feedů
 (`MARKETING_DNESKAI_FEED_PROVIDER=native`); kontroly URL a adres adaptérů platí dál.
 Instagram profil se čte přes Apify jako ostatní, jen se zapnutým

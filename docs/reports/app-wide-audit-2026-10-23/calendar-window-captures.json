@@ -1,0 +1,74 @@
+{
+  "applicationCommit": "7be96226",
+  "capturedDate": "2026-10-28",
+  "fixture": "Authentic /dev-preview unknown-occupancy fixture; synthetic rows only. Density still queued for finding 370.",
+  "components": {
+    "src/components/marketing/dneskai/calendar-tab.tsx": "155cab9cffcd5510417601493aa80a99bcbe089cea331b7cf93aa4ef7b4a6c01",
+    "src/components/marketing/dneskai/workspace.tsx": "5b679ef825e60d98566b66a84ad4d7c087bcb1229fab912e4866294a6de7668a",
+    "src/lib/i18n/sections/dneskai-workspace.ts": "e874dc761936e17b3ac1dce70ff8a4436c92f10e44756ef52a3f5e52d5e9ae06"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 276,
+        "y": 72,
+        "width": 1120,
+        "height": 567
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 0,
+          "w": 37.706473214285715,
+          "h": 3.527336860670194
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 13.403880070546737,
+          "w": 100,
+          "h": 2.821869488536155
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 19.753086419753085,
+          "w": 100,
+          "h": 80.24691358024691
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 16,
+        "y": 0,
+        "width": 398,
+        "height": 676
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 0,
+          "w": 100,
+          "h": 2.9585798816568047
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 24.85207100591716,
+          "w": 100,
+          "h": 2.366863905325444
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 30.17751479289941,
+          "w": 100,
+          "h": 69.8224852071006
+        }
+      ]
+    }
+  }
+}

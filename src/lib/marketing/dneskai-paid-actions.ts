@@ -7,7 +7,7 @@ import { parseContentRevision } from './contracts';
 import { getCreateDneskaiBriefs } from './dneskai-wiring';
 import { createDneskaiMediaLoader } from './dneskai-media';
 import { DEFAULT_GENERATION_BUDGET, MarketingGenerationError } from './generation';
-import { recordMarketingOwnerFeedback } from './owner-feedback';
+import { recordMarketingOwnerFeedback,type MarketingOwnerFeedbackScope } from './owner-feedback';
 import { createMarketingSchedulerStore } from './scheduler';
 import { dneskaiPaidActionCapabilities } from './dneskai-paid-switches';
 
@@ -105,7 +105,7 @@ const enqueueCode = (failure: unknown) => failure instanceof MarketingWorkerRunt
  * slot) under a new key, adds `ownerNote` and `replacesRevisionId`, and is enqueued and run as above. A post still in
  * review is returned with the note first, so the version being replaced cannot be approved meanwhile.
  */
-export async function regenerateDneskaiRevision(input: { user: UserDb; admin: Admin; owner: string; id: string; expectedHash: string; note: string; env: Environment; now?: () => number }) {
+export async function regenerateDneskaiRevision(input: { user: UserDb; admin: Admin; owner: string; id: string; expectedHash: string; note: string; env: Environment; feedbackScope?: MarketingOwnerFeedbackScope; now?: () => number }) {
   const clock = input.now ?? Date.now;
   const startedAt = clock();
   if (!dneskaiPaidActionCapabilities(input.env).regenerate) throw new DneskaiPaidActionError('regenerate-unavailable');
@@ -135,7 +135,7 @@ export async function regenerateDneskaiRevision(input: { user: UserDb; admin: Ad
   if (row.status === 'review') {
     // The note is stored as the owner's return feedback on the version it replaces; tracing gets only the decision.
     const decided = await input.user.rpc('marketing_decide_revision', { p_revision_id: input.id, p_action: 'returned', p_feedback: note });
-    if (!decided.error) await recordMarketingOwnerFeedback({ traceId: current.traceId, revisionId: input.id, revisionHash: row.content_hash, decision: 'returned' }, input.env, { db: input.admin, ownerId: input.owner });
+    if (!decided.error) await recordMarketingOwnerFeedback({ traceId: current.traceId, revisionId: input.id, revisionHash: row.content_hash, decision: 'returned' }, input.env, input.feedbackScope ?? { db: input.admin, ownerId: input.owner });
   }
   if (job.status !== 'queued') return { jobId: job.jobId, status: job.status === 'review' ? 'review' as const : 'queued' as const, duplicate: job.duplicate, ...(job.status === 'review' ? { revisionId: key } : { scheduling: 'tick' as const }) };
   return { jobId: job.jobId, duplicate: job.duplicate, ...await runDneskaiJobNow(input.admin, input.owner, job.jobId, input.env, startedAt, clock) };

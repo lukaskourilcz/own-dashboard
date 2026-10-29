@@ -9,7 +9,7 @@ import { POST } from '@/app/api/marketing/accounts/webhook/route';
 
 /** #161: the owner's comment-subscription read and request. Synthetic values only; Graph is a local stand-in. */
 const owner = '11111111-1111-4111-8111-111111111111', accountId = '33333333-3333-4333-8333-333333333333';
-const db = { from: () => { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { id: accountId, brand: 'dneskai', platform: 'instagram', remote_account_id: '17841400000000001' }, error: null }) }; return chain; } };
+const db = { from: () => { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { id: accountId, user_id: owner, brand: 'dneskai', platform: 'instagram', remote_account_id: '17841400000000001' }, error: null }) }; return chain; } };
 const post = (body: unknown) => new Request('https://own.example/api/marketing/accounts/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://own.example' }, body: JSON.stringify(body) });
 const graph = vi.fn();
 

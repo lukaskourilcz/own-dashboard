@@ -1,0 +1,73 @@
+{
+  "applicationCommit": "687accca",
+  "capturedDate": "2026-10-28",
+  "fixture": "Authentic /dev-preview at a controlled Prague morning with a missed post and calendarUnknown=1. The incomplete Calendar fixture cannot prove a free slot; explicit keyboard reload restores complete evidence and the bound candidate without approving.",
+  "components": {
+    "src/components/marketing/dneskai/lab/lab-tab.tsx": "1b328916a8417a6a9274bab1719c8e8e44abafcd77a3ce84b2533e281a634f75",
+    "src/lib/i18n/sections/dneskai-lab.ts": "91f76d573b655665c521a283c38e0bb5ada868b0bfd8ae8f8a267a4767eada63"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 500,
+        "y": 320,
+        "width": 540,
+        "height": 78
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 2.4074074074074074,
+          "y": 24.358974358974358,
+          "w": 28.10763888888889,
+          "h": 20.512820512820515
+        },
+        {
+          "n": 2,
+          "x": 2.4074074074074074,
+          "y": 62.82051282051282,
+          "w": 95.18518518518519,
+          "h": 20.512820512820515
+        },
+        {
+          "n": 3,
+          "x": 73.02372685185185,
+          "y": 16.666666666666668,
+          "w": 24.56886574074074,
+          "h": 35.8974358974359
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 16,
+        "y": 405,
+        "width": 398,
+        "height": 110
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.2663316582914574,
+          "y": 24.545454545454547,
+          "w": 38.135992462311556,
+          "h": 14.545454545454545
+        },
+        {
+          "n": 2,
+          "x": 3.2663316582914574,
+          "y": 59.09090909090909,
+          "w": 93.46733668341709,
+          "h": 29.09090909090909
+        },
+        {
+          "n": 3,
+          "x": 63.39902638190955,
+          "y": 11.818181818181818,
+          "w": 33.334641959798994,
+          "h": 40
+        }
+      ]
+    }
+  }
+}

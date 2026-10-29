@@ -1,11 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { DNESKAI_EDUCATION_SOURCES, DNESKAI_SOURCES, dueDneskaiSources } from '@/lib/marketing/dneskai-registry';
-import { dneskaiDetectSource, dneskaiSourceFromRow, dneskaiSourceLabel, dneskaiSourceSeedRows, dneskaiWebSourceId, instagramHandle } from '@/lib/marketing/dneskai-source-list';
+import { DneskaiSourceRowSchema, dneskaiDetectSource, dneskaiSourceFromRow, dneskaiSourceLabel, dneskaiSourceSeedRows, dneskaiWebSourceId, instagramHandle } from '@/lib/marketing/dneskai-source-list';
 import { DNESKAI_REGISTRY_CATALOG, dneskaiTableCatalog, loadDneskaiSourceCatalog } from '@/lib/marketing/dneskai-source-catalog';
 import { dneskaiNativeSourceConfig } from '@/lib/marketing/dneskai-native-feed';
 
 describe('Zdroje source rows (#174)', () => {
+  it('distinguishes bare websites from explicit dotted Instagram handles', () => {
+    expect(dneskaiDetectSource('example.com')).toEqual({kind:'html',url:'https://example.com/',host:'example.com'});
+    expect(dneskaiDetectSource('https://example.com/articles.xml?lang=cs')).toMatchObject({kind:'rss'});
+    expect(dneskaiDetectSource('@meta.ai')).toEqual({kind:'instagram',handle:'meta.ai'});
+    expect(dneskaiDetectSource('instagram.com/meta.ai/')).toEqual({kind:'instagram',handle:'meta.ai'});
+    expect(dneskaiDetectSource('https://EXAMPLE.COM/feed.xml#section')).toEqual({kind:'rss',url:'https://example.com/feed.xml',host:'example.com'});
+  });
+  it.each(['https://instagram.com/profile/reels/','https://instagram.com/p/ABC/','https://instagram.com/reel/ABC/','https://instagram.com/accounts/login/',
+    'ftp://instagram.com/profile','javascript://instagram.com/profile','https://user:fixture-only@instagram.com/profile','https://instagram.com:8443/profile','https://instagram.com//profile/',
+    'https://user:fixture-only@example.com/feed','https://example.com:8443/feed','https://example.com/\nfeed','https://example.com/\\feed','https://[]','x'.repeat(2049)])('refuses malformed or non-profile addresses (%#)',value=>{
+    expect(dneskaiDetectSource(value)).toBeNull();
+  });
+  it('refuses bad stored URL/day/name fields instead of normalizing their identity',()=>{
+    const row=dneskaiSourceSeedRows().find(row=>row.kind==='rss')!;
+    for(const patch of [{handleOrUrl:'https://[]'},{handleOrUrl:'https://fixture-only@example.com/feed'},{handleOrUrl:'https://example.com:8443/feed'},{handleOrUrl:'https://example.com/\u0000feed'},{weekdays:[1,1]},{name:' Leading space'},{name:'Two\nlines'}])expect(DneskaiSourceRowSchema.safeParse({...row,...patch}).success).toBe(false);
+  });
   it('seeds every registry source with its tier and topic, and the two unchecked profiles switched off', () => {
     const seed = dneskaiSourceSeedRows();
     expect(seed.filter((row) => row.enabled).map(dneskaiSourceFromRow)).toEqual([...DNESKAI_SOURCES, ...DNESKAI_EDUCATION_SOURCES]);
@@ -34,7 +50,7 @@ describe('Zdroje source rows (#174)', () => {
     expect(dneskaiNativeSourceConfig(id)).toBeUndefined();
   });
 
-  it('a table catalog keeps news first, skips disabled rows and still resolves registry ids', () => {
+  it('a table catalog keeps news first and refuses disabled or removed sources', () => {
     const seed = dneskaiSourceSeedRows();
     const catalog = dneskaiTableCatalog([...seed, { sourceId: 'web-example-org-abcdef', kind: 'rss', topic: 'education', handleOrUrl: 'https://example.org/feed', name: 'Example', tier: 1, weekdays: [1], maxItems: 10, enabled: true }]);
     const due = catalog.due('2026-10-26', { education: true }).map((source) => source.id);
@@ -44,20 +60,23 @@ describe('Zdroje source rows (#174)', () => {
     expect(catalog.due('2026-10-26').map((source) => source.id)).toEqual(dueDneskaiSources('2026-10-26').map((source) => source.id));
     expect(catalog.isEducation('web-example-org-abcdef')).toBe(true);
     expect(catalog.byId('openai-blog')?.name).toBe('OpenAI');
-    expect(dneskaiTableCatalog(seed.filter((row) => row.sourceId !== 'openai-blog')).byId('openai-blog')?.name).toBe('OpenAI');
+    expect(dneskaiTableCatalog(seed.filter((row) => row.sourceId !== 'openai-blog')).byId('openai-blog')).toBeUndefined();
+    expect(catalog.byId('instagram:aimanie')).toBeUndefined();
+    expect(catalog.educationIds()).not.toContain('instagram:aimanie');
   });
 
-  it('falls back to the registry while the switch is off, on a read error and before the first rows', async () => {
+  it('uses the registry only while the switch is off, preserves empty settings and refuses read errors', async () => {
     const db = (data: unknown[] | null, error: unknown = null) => {
       const builder: Record<string, unknown> = {};
-      for (const method of ['select', 'eq', 'order']) builder[method] = () => builder;
-      builder.limit = async () => ({ data, error });
+      for (const method of ['select', 'eq', 'order', 'retry', 'abortSignal']) builder[method] = () => builder;
+      builder.limit = async () => ({ data, error, count: data?.length ?? null });
       return { from: () => builder };
     };
     const owner = '11111111-1111-4111-8111-111111111111', project = '22222222-2222-4222-8222-222222222222';
     expect(await loadDneskaiSourceCatalog(db([]), owner, project, {})).toBe(DNESKAI_REGISTRY_CATALOG);
-    expect(await loadDneskaiSourceCatalog(db([]), owner, project, { DNESKAI_SOURCES_TABLE_ENABLED: 'true' })).toBe(DNESKAI_REGISTRY_CATALOG);
-    expect(await loadDneskaiSourceCatalog(db(null, { message: 'relation does not exist' }), owner, project, { DNESKAI_SOURCES_TABLE_ENABLED: 'true' })).toBe(DNESKAI_REGISTRY_CATALOG);
+    const empty=await loadDneskaiSourceCatalog(db([]), owner, project, { DNESKAI_SOURCES_TABLE_ENABLED: 'true' });
+    expect(empty.origin).toBe('table');expect(empty.due('2026-10-26',{education:true})).toEqual([]);expect(empty.byId('openai-blog')).toBeUndefined();expect(empty.educationIds()).toEqual([]);
+    await expect(loadDneskaiSourceCatalog(db(null, { message: 'relation does not exist' }), owner, project, { DNESKAI_SOURCES_TABLE_ENABLED: 'true' })).rejects.toThrow('sources-unavailable');
     const rows = [{ source_id: 'instagram:mosseri', kind: 'instagram', topic: 'news', handle_or_url: 'mosseri', name: 'mosseri', tier: 0, weekdays: [1], max_items: 10, enabled: true }];
     expect((await loadDneskaiSourceCatalog(db(rows), owner, project, { DNESKAI_SOURCES_TABLE_ENABLED: 'true' })).origin).toBe('table');
   });

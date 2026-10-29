@@ -1,0 +1,267 @@
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- main:
+  - heading "Projekty" [level=1]:
+    - button "Projekty"
+  - generic: ›
+  - generic: DNESKAi
+  - navigation "Hlavní navigace":
+    - button "Domů":
+      - text: Domů
+    - button "Přehled práce":
+      - text: Přehled práce
+    - button "Projekty":
+      - text: Projekty
+    - button "Úkoly":
+      - text: Úkoly
+    - button "Více":
+      - text: Více
+  - tablist "Projektový prostor":
+    - tab "Dnes ke schválení" [selected]
+    - tab "Kalendář"
+    - tab "Příspěvky"
+    - tab "Zdroje (DNESKAi)"
+  - button "Více":
+  - group "Kanál":
+    - button "Instagram" [pressed]
+    - button "Threads" [disabled]
+    - button "LinkedIn" [disabled]
+  - heading "Design Lab" [level=2]
+  - button "Obnovit":
+  - paragraph: Náhled s ukázkovými příspěvky. Úpravy překreslí syntetické ukázkové slidy. Nic se nepublikuje ani neukládá.
+  - region "Náměty":
+    - heading "Náměty" [level=3]
+    - paragraph: Pracovní titulky dalších příspěvků. Nic se nedohledává ani negeneruje, dokud titulek neschválíte.
+    - paragraph: Šipky přecházejí mezi náměty. A schválí, Z zamítne.
+    - heading "Zprávy 3" [level=4]
+    - 'list "Zprávy: navržené náměty"':
+      - 'listitem "Ukázka: nový model zvládne delší kontext za stejnou cenu"':
+        - 'checkbox "Vybrat: Ukázka: nový model zvládne delší kontext za stejnou cenu"'
+        - paragraph: "Ukázka: nový model zvládne delší kontext za stejnou cenu"
+        - generic: Zprávy
+        - link "example.com":
+          - /url: https://www.example.com/clanek/1
+        - button "Přidat klíčové slovo"
+        - 'button "Schválit: Ukázka: nový model zvládne delší kontext za stejnou cenu"': Schválit
+        - 'button "Zamítnout: Ukázka: nový model zvládne delší kontext za stejnou cenu"': Zamítnout
+      - 'listitem "Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"':
+        - 'checkbox "Vybrat: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"'
+        - paragraph: "Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"
+        - generic: Zprávy
+        - link "example.org":
+          - /url: https://example.org/zpravy/ai-pravidla
+        - button "Přidat klíčové slovo"
+        - 'button "Schválit: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"': Schválit
+        - 'button "Zamítnout: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích"': Zamítnout
+      - 'listitem "Ukázka: open-source nástroj na přepis schůzek offline"':
+        - paragraph: "Ukázka: open-source nástroj na přepis schůzek offline"
+        - generic: Zprávy
+        - generic: Přidáno ručně
+        - generic: Schváleno
+        - button "Přidat klíčové slovo"
+        - paragraph:
+          - generic: "Co se stalo:"
+          - text: Námět nemá odkaz, takže chybí zdroj, ze kterého psát.
+        - paragraph:
+          - generic: "Co bude dál:"
+          - text: Přidejte námět znovu s odkazem, ze kterého příspěvek může čerpat.
+        - generic "Podrobnosti"
+        - 'button "Zamítnout: Ukázka: open-source nástroj na přepis schůzek offline"': Zamítnout
+    - heading "Vzdělávání 3" [level=4]
+    - 'list "Vzdělávání: navržené náměty"':
+      - listitem "Jak si nastavit vlastní příkazy v editoru kódu":
+        - 'checkbox "Vybrat: Jak si nastavit vlastní příkazy v editoru kódu"'
+        - paragraph: Jak si nastavit vlastní příkazy v editoru kódu
+        - generic: Vzdělávání
+        - link "@ukazkovy.tvurce":
+          - /url: https://www.example.com/reel/ukazka-4
+        - generic: Fact
+        - button "Slovo do komentáře PRIKAZY, upravit":
+          - generic: Slovo do komentáře
+          - generic: PRIKAZY
+        - 'button "Schválit: Jak si nastavit vlastní příkazy v editoru kódu"': Schválit
+        - 'button "Zamítnout: Jak si nastavit vlastní příkazy v editoru kódu"': Zamítnout
+      - listitem "Tři způsoby, jak zkrátit prompt bez ztráty kvality":
+        - 'checkbox "Vybrat: Tři způsoby, jak zkrátit prompt bez ztráty kvality"'
+        - paragraph: Tři způsoby, jak zkrátit prompt bez ztráty kvality
+        - generic: Vzdělávání
+        - link "example.com":
+          - /url: https://www.example.com/clanek/5
+        - button "Slovo do komentáře Prompt, upravit":
+          - generic: Slovo do komentáře
+          - generic: Prompt
+        - 'button "Schválit: Tři způsoby, jak zkrátit prompt bez ztráty kvality"': Schválit
+        - 'button "Zamítnout: Tři způsoby, jak zkrátit prompt bez ztráty kvality"': Zamítnout
+      - listitem "Aplikace, která z fotky tabule udělá poznámky":
+        - 'checkbox "Vybrat: Aplikace, která z fotky tabule udělá poznámky"'
+        - paragraph: Aplikace, která z fotky tabule udělá poznámky
+        - generic: Vzdělávání
+        - link "@ukazkovy.tvurce":
+          - /url: https://www.example.com/reel/ukazka-6
+        - generic: Nejasné
+        - button "Slovo do komentáře Tabule, upravit":
+          - generic: Slovo do komentáře
+          - generic: Tabule
+        - 'button "Schválit: Aplikace, která z fotky tabule udělá poznámky"': Schválit
+        - 'button "Zamítnout: Aplikace, která z fotky tabule udělá poznámky"': Zamítnout
+    - generic "Zobrazit zamítnuté a propadlé (2)"
+  - navigation "Příspěvky podle dne":
+    - heading "Dnes" [level=3]
+    - list:
+      - button "08:00 Kdy ověřit odpověď modelu, Čas vypršel, Chyba nebo nejasný výsledek":
+        - generic: 08:00
+        - generic: Kdy ověřit odpověď modelu
+        - generic: Čas vypršel
+      - button "14:08 Malý model bez připojení, Přesunuto, znovu schválit, Čeká na kontrolu":
+        - generic: 14:08
+        - generic: Malý model bez připojení
+        - generic: Přesunuto, znovu schválit
+    - list:
+      - paragraph: 17:00 · Čeká na plánovač
+      - paragraph: Jak číst kartu modelu
+      - 'button "Vygenerovat hned: Jak číst kartu modelu"': Vygenerovat hned
+      - paragraph: 20:00 · Čeká na plánovač
+      - paragraph: Kdy pomůže vyhledávání v dokumentech
+      - 'button "Vygenerovat hned: Kdy pomůže vyhledávání v dokumentech"': Vygenerovat hned
+    - paragraph: Napíše téma hned, ne až při dalším běhu plánovače do 5 minut. Jeden návrh stojí asi 0,02 $ a počítá se do denního limitu 1 $.
+    - status
+    - button "Schválit celý den (čeká 0)" [disabled]
+    - heading "Zítra" [level=3]
+    - list:
+      - button "08:00 Benchmark není žebříček, za 17 h 31 min, Čeká na kontrolu":
+        - generic: 08:00
+        - generic: Benchmark není žebříček
+        - generic: za 17 h 31 min
+      - 'button "12:30 Tip dne: kontext místo proseb, za 22 h 1 min, Čeká na kontrolu"':
+        - generic: 12:30
+        - generic: "Tip dne: kontext místo proseb"
+        - generic: za 22 h 1 min
+      - button "17:00 Proč verzovat prompty, za 26 h 31 min, Chyba nebo nejasný výsledek":
+        - generic: 17:00
+        - generic: Proč verzovat prompty
+        - generic: za 26 h 31 min
+    - paragraph: 20:00 · Připravuje se
+    - button "Schválit celý den (čeká 2)"
+  - generic: Čeká na kontrolu
+  - region "Benchmark není žebříček":
+    - group "Zobrazení":
+      - generic: Zobrazení
+      - radio "Feed" [checked]
+      - text: Feed
+      - radio "Profil"
+      - text: Profil
+      - radio "1:1"
+      - text: 1:1
+    - figure "Slide 1 z 4 Slidy přepnete přejetím doleva nebo doprava.":
+      - generic: dneskai
+      - img "Ukázková rozostřená fotografie s titulkem o čtení benchmarků."
+      - paragraph: "dneskai Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn. Než podle výsledku vyberete model, zjistěte, co test měří, porovnávejte stejné podmínky a ověřte rozptyl mezi běhy. Text připravil jazykový model. Výběr a schválení: redakce DNESKAi. #dneskai #ai #umelainteligence"
+      - generic: Slide 1 z 4
+      - generic: Slidy přepnete přejetím doleva nebo doprava.
+    - navigation "Všechny slidy":
+      - button "Předchozí slide" [disabled]:
+      - list:
+        - button "Zobrazit slide 1 · Titulní slide"
+        - button "Zobrazit slide 2 · Obrázek"
+        - button "Zobrazit slide 3 · Půlený"
+        - button "Zobrazit slide 4 · Výrok"
+      - button "Další slide":
+  - group "Sada":
+    - generic: Sada
+    - radio "1 Editorial, Současná" [checked]
+    - generic: 1 Editorial
+    - generic: vejde se
+    - radio "2 Bold"
+    - generic: Vyberte pro náhled
+    - generic: 2 Bold
+    - radio "3 Explainer"
+    - generic: Vyberte pro náhled
+    - generic: 3 Explainer
+    - radio "4 Magazine"
+    - generic: Vyberte pro náhled
+    - generic: 4 Magazine
+    - radio "5 Ticker"
+    - generic: Vyberte pro náhled
+    - generic: 5 Ticker
+    - radio "6 Spotlight"
+    - generic: Vyberte pro náhled
+    - generic: 6 Spotlight
+  - group "Příspěvek":
+    - generic: Příspěvek
+    - region "Slide 1 · Titulní slide":
+      - heading "Slide 1 · Titulní slide" [level=4]
+      - text: Typ slidu
+      - combobox "Typ slidu":
+        - option "Titulní" [selected]
+        - option "Obrázek"
+        - option "Půlený"
+      - paragraph: Nabízí se jen typy, které obrázky slidu dovolí. Změna potřebuje nové schválení.
+      - generic: Titulek
+      - generic: 46 / 110
+      - textbox "Titulek": Benchmark není žebříček. Jak ho číst bez omylu
+      - generic "Alternativní text"
+      - status: Kontrola textu tu není k dispozici. Počítadla dál ukazují limity; uložení text zkontroluje znovu.
+      - heading "Obrázky" [level=5]
+      - paragraph:
+        - text: Obrázek 1
+        - generic: 1600 × 1200
+      - 'group "Obrázek 1: Ohnisko"'
+      - paragraph: Klikněte nebo ťukněte do obrázku, nebo použijte šipky (2 % na stisk, Home vycentruje).
+      - status: "Ohnisko: 42 % zleva, 55 % shora"
+      - generic: Přiblížení
+      - slider "Přiblížení": "1"
+      - status: 1.00×
+      - 'img "Skutečný ořez: Obrázek 1"'
+      - paragraph: Skutečný ořez
+      - paragraph: Zvýrazněná oblast je přesně to, co slide ukáže.
+      - paragraph: Zvětšeno 1.13×
+      - button "Vyměnit obrázek":
+        - text: Vyměnit obrázek
+      - generic "Přidat slide za tento"
+      - option "Obrázek" [selected]
+      - option "Půlený"
+      - option "Výrok · akcent"
+      - option "Výrok · tmavý"
+    - generic: Popisek
+    - generic: 311 / 2200
+    - textbox "Popisek": "Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn. Než podle výsledku vyberete model, zjistěte, co test měří, porovnávejte stejné podmínky a ověřte rozptyl mezi běhy. Text připravil jazykový model. Výběr a schválení: redakce DNESKAi. #dneskai #ai #umelainteligence"
+    - group "Formát":
+      - generic: Formát
+      - radiogroup "Formát":
+        - radio "Karusel" [checked]
+        - radio "Reel"
+      - paragraph: Reel jsou tyto slidy jako video s hudbou, každý 3,5 sekundy. Změna formátu vytvoří novou verzi, kterou je třeba znovu schválit.
+    - region "Komentář a zpráva":
+      - heading "Komentář a zpráva" [level=3]
+      - paragraph: Tento příspěvek nemá klíčové slovo. Zprávy ho obvykle nemají.
+      - button "Přidat klíčové slovo"
+    - text: Hudba Reelu
+    - combobox "Hudba Reelu":
+      - 'option "Automaticky: další v pořadí" [selected]'
+      - option "Quiet Circuit · Sample artist · 1:12"
+    - paragraph: Použije se, když příspěvek vyjde jako Reel. Karusel hudbu nemá.
+    - generic: Čas · Europe/Prague
+    - textbox "Čas · Europe/Prague": 2026-10-24T08:00
+  - heading "Označení AI" [level=4]
+  - paragraph: Tato sada nemá slide s označením AI.
+  - generic "Zdroje"
+  - generic "Akce příspěvku":
+    - button "Schválit · fc4a3b2":
+      - text: Schválit ·
+      - generic: fc4a3b2
+    - button "Uložit a vykreslit" [disabled]
+    - button "Publikovat hned" [disabled]
+    - button "Přegenerovat s poznámkou (≈ 0,02 $)"
+    - button "Vrátit s poznámkou"
+    - button "Přeskočit"
+  - generic "Ukázky sad"
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

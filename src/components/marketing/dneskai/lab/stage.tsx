@@ -20,7 +20,7 @@ export type DneskaiStageView = 'feed' | 'profile' | 'pixels';
  */
 export type DneskaiStageSlide = { index: number; type: DneskaiSlideType; render: DneskaiLabAsset | null; problems: DneskaiLabPost['slides'][number]['problems']; draft: 'changed' | 'added' | null; alt: string };
 /** The render-only preview of the current draft slide: real pixels, never stored, never approvable. */
-export type DneskaiStagePreview = { slide: number; status: 'loading' | 'rendered' | 'refused' | 'unavailable'; image: string | null; code: string | null };
+export type DneskaiStagePreview = { slide: number; status: 'loading' | 'rendered' | 'refused' | 'unavailable'; image: string | null; code: string | null; retryAt?: number };
 
 export function dneskaiStageSlides(lab: DneskaiLabPost): DneskaiStageSlide[] {
   return lab.slides.map((item) => ({ index: item.index, type: item.type, render: item.render, problems: item.problems, draft: null, alt: item.render?.alt ?? '' }));
@@ -34,11 +34,11 @@ export const DNESKAI_PHONE_WIDTH = 390;
  * The phone chrome is decorative and hidden from assistive technology; the slide image carries the alt text. A slide
  * without a render shows its state and problem in words, never a stand-in picture.
  */
-export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCovers, onLoaded, caption, lang, slides: given, preview = null }: {
+export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCovers, onLoaded, caption, lang, slides: given, preview = null, onRetryPreview, retryBlocked = false }: {
   lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; view: DneskaiStageView; onView: (view: DneskaiStageView) => void;
   profileCovers: readonly DneskaiLabAsset[]; onLoaded: (url: string, ok: boolean) => void; caption: string; lang: Lang;
   /** The draft's slides while editing; the saved revision's otherwise. */
-  slides?: DneskaiStageSlide[]; preview?: DneskaiStagePreview | null;
+  slides?: DneskaiStageSlide[]; preview?: DneskaiStagePreview | null; onRetryPreview?: () => void; retryBlocked?: boolean;
 }) {
   const t = dneskaiLab[lang];
   const id = useId();
@@ -119,6 +119,9 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
       </div>
     </div> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noRender}</p>)}
 
+    {view !== 'profile' && draftPreview?.status === 'unavailable' && onRetryPreview && <div className="flex justify-center">
+      <Button variant="outline" size="sm" disabled={retryBlocked} onClick={onRetryPreview}>{retryBlocked ? t.draft.retryWait : t.draft.retry}</Button>
+    </div>}
     <DeckStrip slides={slides} slide={slide} onSlide={onSlide} lang={lang} onLoaded={onLoaded} />
   </section>;
 }
@@ -137,7 +140,8 @@ function DeckStrip({ slides, slide, onSlide, lang, onLoaded }: { slides: Dneskai
           className={cn('block w-16 overflow-hidden rounded-md border bg-surface-inset focus-ring md:w-24', item.draft && 'border-dashed border-warning', item.index === slide ? 'border-primary ring-2 ring-primary' : !item.draft && 'border-border')}>
           {item.draft ? <span className="flex aspect-[4/5] flex-col items-center justify-center gap-1 p-1 text-center text-[10px] text-foreground-muted" data-testid="dneskai-strip-draft">
             <span className="tabular text-xs font-semibold text-foreground">{item.index + 1}</span><span className="text-warning">{t.draft[item.draft]}</span></span>
-            : item.render ? <Image unoptimized src={item.render.url} alt="" width={item.render.width} height={item.render.height} sizes="96px" className="block aspect-[4/5] h-auto w-full"
+            // Approval requires every saved slide loaded, including offscreen deck thumbnails.
+            : item.render ? <Image unoptimized loading="eager" src={item.render.url} alt="" width={item.render.width} height={item.render.height} sizes="96px" className="block aspect-[4/5] h-auto w-full"
             onLoad={() => onLoaded(item.render!.url, true)} onError={() => onLoaded(item.render!.url, false)} />
             : <span className="flex aspect-[4/5] items-center justify-center p-1 text-center text-[10px] text-foreground-muted">{item.index + 1}</span>}
         </button>

@@ -1,8 +1,15 @@
 "use client";
 
+import type { CareerCollection, CareerRecords, CareerScope } from "@/lib/career-records";
+
+import { readSpendCategoryRecords, type SpendCategoryScope } from "@/lib/spend-category-records";
+import { readPlanRecords, type PlanScope } from "@/lib/plan-records";
+import { readCompetitorRecords, type CompetitorScope } from "@/lib/competitor-records";
+import { readOrganizationRecords, type OrganizationScope } from "@/lib/organization-records";
+import { readOwnedCollection } from "@/lib/owned-records";
 import { previousMondayKey, weekRange } from "@/lib/date-keys";
 import { createClient } from "@/lib/supabase/client";
-import { parseRules, type TransactionRuleSet } from "@/lib/transaction-rules";
+import type { TransactionRuleContext } from "@/lib/transaction-rule-data";
 import type {
   Account,
   AiCategory,
@@ -47,26 +54,23 @@ import type {
   Transaction,
 } from "@/lib/types";
 import type { EventsResult } from "@/lib/calendar";
+import { fetchCalendarEvents } from "@/lib/calendar-client";
 
 async function fetchCalendarWindow(
   window: "today" | "week" | "last-week",
   extra?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<EventsResult> {
   const query = new URLSearchParams({ window, ...extra });
-  const response = await fetch(`/api/calendar/events?${query}`, {
-    signal: AbortSignal.timeout(15_000),
-  });
-  const data = (await response.json().catch(() => null)) as EventsResult | null;
-  if (!response.ok || !data) throw new Error("Could not load calendar events.");
-  return data;
+  return fetchCalendarEvents(query, signal);
 }
 
-export function fetchTodayCalendar(): Promise<EventsResult> {
-  return fetchCalendarWindow("today");
+export function fetchTodayCalendar(context?: { signal: AbortSignal }): Promise<EventsResult> {
+  return fetchCalendarWindow("today", undefined, context?.signal);
 }
 
-export function fetchWeekCalendar(): Promise<EventsResult> {
-  return fetchCalendarWindow("week");
+export function fetchWeekCalendar(context?: { signal: AbortSignal }): Promise<EventsResult> {
+  return fetchCalendarWindow("week", undefined, context?.signal);
 }
 
 /**
@@ -74,12 +78,12 @@ export function fetchWeekCalendar(): Promise<EventsResult> {
  * two instants of Monday 00:00 in this browser's timezone. The flow clips
  * events to the same `weekRange`, so the fetched and the summed week agree.
  */
-export function fetchLastWeekCalendar(): Promise<EventsResult> {
+export function fetchLastWeekCalendar(context?: { signal: AbortSignal }): Promise<EventsResult> {
   const { start, endExclusive } = weekRange(previousMondayKey());
   return fetchCalendarWindow("last-week", {
     start: start.toISOString(),
     end: endExclusive.toISOString(),
-  });
+  }, context?.signal);
 }
 
 /**
@@ -91,13 +95,8 @@ export function fetchLastWeekCalendar(): Promise<EventsResult> {
  */
 
 export async function fetchTodos(): Promise<Todo[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("todos")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Todo[];
+  const { data } = await readOwnedCollection(createClient(), "todos");
+  return data;
 }
 
 export async function fetchSubscriptions(): Promise<Subscription[]> {
@@ -133,24 +132,18 @@ export async function fetchAccounts(): Promise<Account[]> {
 }
 
 export async function fetchTransactions(): Promise<Transaction[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("*")
-    .order("occurred_on", { ascending: false })
-    .limit(500);
-  if (error) throw error;
-  return (data ?? []) as Transaction[];
+  const { data } = await readOwnedCollection(createClient(), "transactions");
+  return data;
 }
 
 export async function fetchBankConnections(): Promise<BankConnection[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("bank_connections")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as BankConnection[];
+  const { data, count, error } = await supabase.from("bank_connections").select("*", { count: "exact" })
+    .order("created_at", { ascending: true }).limit(51).retry(false).abortSignal(AbortSignal.timeout(15000));
+  if (error || !Array.isArray(data) || count !== data.length || data.length > 50
+    || data.some(row => !row || typeof row.id !== "string" || typeof row.user_id !== "string")
+    || new Set(data.map(row => row.id)).size !== data.length) throw new Error("Bank connections unavailable");
+  return data as BankConnection[];
 }
 
 export async function fetchCategoryRules(): Promise<CategoryRule[]> {
@@ -168,36 +161,24 @@ export async function fetchCategoryRules(): Promise<CategoryRule[]> {
  * goes through the engine's parser; rows it refuses are counted as `dropped`
  * and reported in the editor instead of disappearing silently.
  */
-export async function fetchTransactionRules(): Promise<TransactionRuleSet> {
+export async function fetchTransactionRules(): Promise<TransactionRuleContext> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("transaction_rules")
-    .select("*")
-    .order("stage", { ascending: true })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return parseRules(data ?? []);
+  // Keep Finance's matcher/validators out of shared Home fetchers. Load them
+  // alongside the complete read rather than adding a request waterfall.
+  const [{ data, error }, { parseTransactionRuleContext }] = await Promise.all([
+    supabase.rpc("transaction_rule_context", { p_user_id: null }),
+    import("@/lib/transaction-rule-data"),
+  ]);
+  if (error) throw new Error("Rule context unavailable");
+  return parseTransactionRuleContext(data);
 }
 
-export async function fetchPlans(): Promise<Plan[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("plans")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Plan[];
+export async function fetchPlans(scope: PlanScope): Promise<Plan[]> {
+  return (await readPlanRecords(createClient(), scope)).data;
 }
 
-export async function fetchOrganizations(): Promise<Organization[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("organizations")
-    .select("*")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Organization[];
+export async function fetchOrganizations(scope: OrganizationScope): Promise<Organization[]> {
+  return (await readOrganizationRecords(createClient(), scope)).data;
 }
 
 export async function fetchOpportunities(): Promise<ClientOpportunity[]> {
@@ -263,24 +244,13 @@ export async function fetchNotes(): Promise<Note[]> {
 }
 
 export async function fetchInvoices(): Promise<Invoice[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("*")
-    .order("issue_date", { ascending: false })
-    .order("number", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Invoice[];
+  const { data } = await readOwnedCollection(createClient(), "invoices");
+  return data;
 }
 
 export async function fetchInvoiceItems(): Promise<InvoiceItem[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("invoice_items")
-    .select("*")
-    .limit(2000);
-  if (error) throw error;
-  return (data ?? []) as InvoiceItem[];
+  const { data } = await readOwnedCollection(createClient(), "invoice_items");
+  return data;
 }
 
 export async function fetchInvoiceSettings(): Promise<InvoiceSettings | null> {
@@ -294,75 +264,38 @@ export async function fetchInvoiceSettings(): Promise<InvoiceSettings | null> {
 }
 
 export async function fetchPrompts(): Promise<Prompt[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("prompts")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Prompt[];
+  const { data } = await readOwnedCollection(createClient(), "prompts");
+  return data;
 }
 
 export async function fetchPromptLinks(): Promise<PromptLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("prompt_links")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(2000);
-  if (error) throw error;
-  return (data ?? []) as PromptLink[];
+  const { data } = await readOwnedCollection(createClient(), "prompt_links");
+  return data;
 }
 
 export async function fetchRepoNotes(): Promise<RepoNote[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("repo_notes")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as RepoNote[];
+  const { data } = await readOwnedCollection(createClient(), "repo_notes");
+  return data;
 }
 
 export async function fetchRepoLinks(): Promise<RepoLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("repo_links").select("*");
-  if (error) throw error;
-  return (data ?? []) as RepoLink[];
+  const { data } = await readOwnedCollection(createClient(), "repo_links");
+  return data;
 }
 
 export async function fetchProjects(): Promise<Project[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Project[];
+  const { data } = await readOwnedCollection(createClient(), "projects");
+  return data;
 }
 
 export async function fetchProjectCosts(): Promise<ProjectCost[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("project_costs")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as ProjectCost[];
+  const { data } = await readOwnedCollection(createClient(), "project_costs");
+  return data;
 }
 
 export async function fetchCrons(): Promise<Cron[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("crons")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Cron[];
+  const { data } = await readOwnedCollection(createClient(), "crons");
+  return data;
 }
 
 export async function fetchSubscriptionAllocations(): Promise<SubscriptionAllocation[]> {
@@ -375,48 +308,23 @@ export async function fetchSubscriptionAllocations(): Promise<SubscriptionAlloca
   return (data ?? []) as SubscriptionAllocation[];
 }
 
-export async function fetchCompetitors(): Promise<Competitor[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("competitors")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Competitor[];
+export async function fetchCompetitors(scope: CompetitorScope): Promise<Competitor[]> {
+  return (await readCompetitorRecords(createClient(), scope)).data;
 }
 
 export async function fetchAiLinks(): Promise<AiLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("ai_links")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as AiLink[];
+  const { data } = await readOwnedCollection(createClient(), "ai_links");
+  return data;
 }
 
 export async function fetchAiCategories(): Promise<AiCategory[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("ai_categories")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as AiCategory[];
+  const { data } = await readOwnedCollection(createClient(), "ai_categories");
+  return data;
 }
 
 export async function fetchProjectLinks(): Promise<ProjectLink[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("project_links")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(2000);
-  if (error) throw error;
-  return (data ?? []) as ProjectLink[];
+  const { data } = await readOwnedCollection(createClient(), "project_links");
+  return data;
 }
 
 export async function fetchTools(): Promise<Tool[]> {
@@ -430,15 +338,8 @@ export async function fetchTools(): Promise<Tool[]> {
   return (data ?? []) as Tool[];
 }
 
-export async function fetchSpendCategories(): Promise<SpendCategory[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("spend_categories")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as SpendCategory[];
+export async function fetchSpendCategories(scope: SpendCategoryScope): Promise<SpendCategory[]> {
+  return readSpendCategoryRecords(createClient(), scope);
 }
 
 export async function fetchShortcuts(): Promise<Shortcut[]> {
@@ -465,78 +366,19 @@ export async function fetchReferenceRows(): Promise<ReferenceRow[]> {
 
 // Listings are global rows (RLS: any signed-in user reads; only the scraper
 // writes), so there's no user filter — mirrors the server load.
-export async function fetchJobListings(): Promise<JobListing[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_listings")
-    .select("*")
-    .order("first_seen_at", { ascending: false })
-    .limit(500);
-  if (error) throw error;
-  return (data ?? []) as JobListing[];
+async function fetchCareer<K extends CareerCollection>(entity: K, scope: CareerScope): Promise<CareerRecords[K]> {
+  const captured = { ownerId: scope.ownerId, signal: scope.signal };
+  captured.signal.throwIfAborted();
+  const { readCareerRecords } = await import('@/lib/career-records');
+  captured.signal.throwIfAborted();
+  return (await readCareerRecords(createClient(),entity,captured)).data;
 }
-
-export async function fetchJobUserStates(): Promise<JobUserState[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("job_user_state").select("*");
-  if (error) throw error;
-  return (data ?? []) as JobUserState[];
-}
-
-export async function fetchSavedJobPositions(): Promise<SavedJobPosition[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("saved_job_positions")
-    .select("*")
-    .order("saved_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as SavedJobPosition[];
-}
-
-export async function fetchJobApplications(): Promise<JobApplication[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_applications")
-    .select("*")
-    .order("applied_on", { ascending: false })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as JobApplication[];
-}
-
-export async function fetchJobApplicationEvents(): Promise<
-  JobApplicationEvent[]
-> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_application_events")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  if (error) throw error;
-  return (data ?? []) as JobApplicationEvent[];
-}
-
-export async function fetchCoverLetterTemplates(): Promise<
-  CoverLetterTemplate[]
-> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("cover_letter_templates")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as CoverLetterTemplate[];
-}
-
-export async function fetchJobLastRun(): Promise<JobScrapeRun | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("job_scrape_runs")
-    .select("*")
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return (data ?? null) as JobScrapeRun | null;
+export const fetchJobListings = (scope: CareerScope): Promise<JobListing[]> => fetchCareer('job_listings',scope);
+export const fetchJobUserStates = (scope: CareerScope): Promise<JobUserState[]> => fetchCareer('job_user_state',scope);
+export const fetchSavedJobPositions = (scope: CareerScope): Promise<SavedJobPosition[]> => fetchCareer('saved_job_positions',scope);
+export const fetchJobApplications = (scope: CareerScope): Promise<JobApplication[]> => fetchCareer('job_applications',scope);
+export const fetchJobApplicationEvents = (scope: CareerScope): Promise<JobApplicationEvent[]> => fetchCareer('job_application_events',scope);
+export const fetchCoverLetterTemplates = (scope: CareerScope): Promise<CoverLetterTemplate[]> => fetchCareer('cover_letter_templates',scope);
+export async function fetchJobLastRun(scope: CareerScope): Promise<JobScrapeRun | null> {
+  return (await fetchCareer('job_scrape_runs',scope))[0] ?? null;
 }

@@ -1,8 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
+import { common } from '../src/lib/i18n/sections/common';
 import { dneskaiLab } from '../src/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '../src/lib/i18n/sections/dneskai-workspace';
+import assets from '../src/lib/demo/dneskai-preview-assets.json';
 import { describeMarketingCode } from '../src/lib/marketing/marketing-codes';
 
 test.beforeEach(async ({ page }) => {
@@ -23,10 +25,10 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   await headline.fill(lang === 'cs' ? 'Krátký ověřený titulek' : 'Short checked headline');
   await expect(page.getByTestId('dneskai-fit-summary')).toContainText(t.slide.fitSummaryOk(1));
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
-  await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
+  await expect(lab.getByText(t.actions.dirty, { exact: false })).toHaveCount(1);
   await page.locator('[data-testid="dneskai-lab-queue-post"]:not([aria-current="true"])').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('dialog').getByRole('button', { name: t.actions.cancel, exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: common[lang].unsaved.stay, exact: true }).click();
   await lab.getByRole('button', { name: t.actions.discard, exact: true }).click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   const session = page.getByTestId('dneskai-lab-session'); await session.focus();
@@ -67,7 +69,7 @@ test('Lab saves a new version, shows new pixels, then approves only its hash', a
 
 test('Approve the day shows exact versions and per-item results', async ({ page }) => {
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
-  await page.getByTestId('dneskai-lab-queue').getByRole('button', { name: /Approve the day/ }).last().click();
+  await page.getByTestId('dneskai-lab-queue').locator('button:enabled').filter({ hasText: /Approve the day/ }).last().click();
   const dialog = page.getByTestId('dneskai-approve-day');
   await expect(dialog).toContainText('Each post below');
   const approve = dialog.getByRole('button', { name: /^Approve \d/ });
@@ -142,12 +144,12 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await expect(inspector.getByRole('textbox', { name: t.slide.fields.kicker, exact: true })).toHaveCount(0);
   await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
   // The cover's picture also fits a frame, so it may become a picture slide; with only a headline nothing is dropped,
-  // and the picture slide offers a body.
+  // and its first-slide position continues to allow only the headline.
   const shape = inspector.getByTestId('dneskai-slide-shape');
   await expect(shape.locator('option')).toHaveText([t.slide.shapes['cover-photo'], t.slide.shapes.figure, t.slide.shapes.split]);
   await shape.selectOption('figure');
   await expect(inspector.getByTestId('dneskai-inspector-notice')).toHaveText('');
-  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toBeVisible();
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
   await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
   await shape.selectOption('cover-photo');
   // A statement switches colour only.
@@ -179,6 +181,61 @@ test('Lab changes a slide type, inserts a slide from the pool, saves and approve
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
 });
 
+for (const lang of ['en', 'cs'] as const) test(`Lab reuses a swapped-out picture without repeating the replacement (${lang})`, async ({ page }) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang], tw = dneskaiWorkspace[lang];
+  const calls: string[] = [];
+  page.on('request', request => { if (request.url().includes('/api/marketing/')) calls.push(request.url()); });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labSlide=1');
+  const inspector = page.getByTestId('dneskai-slide-inspector');
+  await inspector.getByRole('button', { name: tw.editor.swap, exact: true }).click();
+  await inspector.getByTestId('dneskai-media-tray').getByRole('button', { name: `${tw.editor.choose}: ${tw.editor.origin(2, 2)}`, exact: true }).click();
+  const insert = inspector.getByTestId('dneskai-insert-slide');
+  await insert.locator('summary').click();
+  const released = insert.locator(`input[type="radio"][value="${assets.photos.p3.sha256}"]`);
+  await expect(released).toHaveCount(1);
+  await expect(insert.locator(`input[type="radio"][value="${assets.photos.p6.sha256}"]`)).toHaveCount(0);
+  await released.check();
+  await insert.getByTestId('dneskai-insert-add').click();
+  await inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true }).fill('Náhradní obrázek');
+  await inspector.locator('summary', { hasText: tw.fields.alt }).click();
+  await inspector.getByRole('textbox', { name: tw.fields.alt, exact: true }).fill('Popis náhradního obrázku');
+  await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('dneskai-lab').getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
+  expect(errors).toEqual([]);
+  expect(calls).toEqual([]);
+});
+
+for (const lang of ['en', 'cs'] as const) test(`Lab returns a legacy approval and keeps only its first headline in a new version (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang];
+  const ownerCalls: string[] = [];
+  page.on('request', request => { if (request.url().includes('/api/marketing/')) ownerCalls.push(request.url()); });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review&labPost=d0e5ca10-0000-4000-8000-000000000005');
+  const lab = page.getByTestId('dneskai-lab'), inspector = page.getByTestId('dneskai-slide-inspector');
+  await expect(inspector.getByTestId('dneskai-unplaced-text')).toContainText(t.slide.firstSlideHelp);
+  await expect(inspector.getByRole('button', { name: t.slide.keepHeadline, exact: true })).toBeDisabled();
+  await lab.getByRole('button', { name: t.actions.return, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel(t.actions.note, { exact: true }).fill('Keep the first slide headline only.');
+  await dialog.getByRole('button', { name: t.actions.sendReturn, exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await inspector.getByTestId('dneskai-unplaced-text').screenshot({ path: info.outputPath(`legacy-cleanup-${lang}.png`) });
+  await inspector.getByRole('button', { name: t.slide.keepHeadline, exact: true }).click();
+  await expect(inspector.getByTestId('dneskai-unplaced-text')).toHaveCount(0);
+  await expect(inspector.getByRole('textbox', { name: t.slide.fields.body, exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+  await expect(page.getByTestId('dneskai-stage-draft-image')).toBeVisible({ timeout: 20_000 });
+  const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-lab"]').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: info.outputPath(`legacy-headline-${lang}.png`), fullPage: true });
+  await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled({ timeout: 20_000 });
+  expect(errors).toEqual([]); expect(ownerCalls).toEqual([]);
+});
+
 test('Publish now stays off while the account does not publish, and says why', async ({ page }) => {
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const publish = page.getByTestId('dneskai-lab-publish-now');
@@ -192,7 +249,7 @@ test('Lab switches a post to another kit, previews it unsaved, then saves a vers
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   await page.getByTestId('dneskai-kit-ticker').click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
-  await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
+  await expect(lab.getByText(t.actions.dirty, { exact: false })).toHaveCount(1);
   await expect(page.getByTestId('dneskai-kit-ticker')).toContainText(t.kits.onStage);
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
   await expect(lab.getByText(t.actions.saved)).toBeVisible();
@@ -327,7 +384,7 @@ for (const lang of ['en', 'cs'] as const) test(`a waiting topic is generated now
   await first.focus(); await page.keyboard.press('Enter');
   await expect(waiting.getByRole('status')).toContainText(t.queue.generateNowQueued);
   await expect(waiting.getByText(t.queue.waiting)).toHaveCount(1);
-  await expect(page.getByTestId('dneskai-lab-queue').getByText(`17:00 · ${t.queue.preparing}`)).toBeVisible();
+  await expect(waiting.locator('..').getByText(`17:00 · ${t.queue.preparing}`)).toBeVisible();
   await waiting.getByRole('button', { name: t.queue.generateNowName('Kdy pomůže vyhledávání v dokumentech') }).click();
   await expect(waiting.getByRole('status')).toContainText(lang === 'cs' ? 'Denní limit generování DNESKAi je vyčerpaný.' : 'The DNESKAi daily generation limit is reached.');
   await expect(waiting.getByText(t.queue.waiting)).toHaveCount(1);
@@ -376,4 +433,26 @@ for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360
   await topics.getByTestId('dneskai-topics-archive').getByRole('button', { name: t.restore }).first().click();
   await expect(topics.getByRole('status')).toHaveText(t.done.restore(1));
   expect(errors).toEqual([]); expect(writes).toEqual([]);
+});
+
+for (const lang of ['en', 'cs'] as const) test(`Lab disclosure follows the edited caption (${lang})`, async ({ page }, info) => {
+  const errors = watchConsole(page), t = dneskaiLab[lang], requests: string[] = [];
+  if (info.project.name === 'mobile') await page.setViewportSize({ width: 360, height: 800 });
+  page.on('request', request => { if (request.url().includes('/api/marketing/')) requests.push(request.url()); });
+  await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const lab = page.getByTestId('dneskai-lab-session');
+  const caption = lab.getByRole('textbox', { name: t.post.caption, exact: true });
+  const saved = await caption.inputValue();
+  await expect(lab.getByText(t.post.disclosureText, { exact: true })).toBeVisible();
+  await expect(lab.getByText(t.post.disclosureMissing, { exact: true })).toHaveCount(0);
+  await caption.fill('Ukázkový popisek bez označení.');
+  await expect(lab.getByText(t.post.disclosureMissing, { exact: true })).toBeVisible();
+  await expect(lab.getByText(t.post.disclosureText, { exact: true })).toHaveCount(0);
+  await caption.fill(saved);
+  await expect(lab.getByText(t.post.disclosureText, { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.waitForTimeout(600);
+  expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include('[data-testid="dneskai-lab-session"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
+  expect(errors).toEqual([]); expect(requests).toEqual([]);
 });

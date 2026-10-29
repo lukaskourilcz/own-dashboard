@@ -4,7 +4,8 @@ import { rejectCrossOrigin } from '@/lib/csrf';
 import { requireDneskaiProject } from '@/lib/marketing/dneskai-store';
 import { dneskaiDailyMixEnabled } from '@/lib/marketing/dneskai-evidence-rollout';
 import { readDneskaiDailyMix, saveDneskaiDailyMix } from '@/lib/marketing/dneskai-daily-mix-read';
-import { DneskaiDailyMixSchema } from '@/lib/marketing/dneskai-daily-mix';
+import { DneskaiDailyMixSaveSchema } from '@/lib/marketing/dneskai-daily-mix';
+import { boundedRequestText } from '@/lib/marketing/http';
 export const runtime = 'nodejs';
 
 /**
@@ -25,16 +26,21 @@ async function owner(request: Request) {
 export async function GET(request: Request): Promise<Response> {
   if (!dneskaiDailyMixEnabled()) return Response.json({ error: 'not-found' }, { status: 404 });
   const context = await owner(request); if (!context.ok) return context.response;
-  return Response.json(await readDneskaiDailyMix(context.db, context.userId, context.projectId, { enabled: true }), { headers });
+  try { return Response.json(await readDneskaiDailyMix(context.db, context.userId, context.projectId, { enabled: true }), { headers }); }
+  catch { return Response.json({ error: 'daily-mix-unavailable' }, { status: 503, headers }); }
 }
 
 export async function PUT(request: Request): Promise<Response> {
   if (!dneskaiDailyMixEnabled()) return Response.json({ error: 'not-found' }, { status: 404 });
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
   const context = await owner(request); if (!context.ok) return context.response;
-  const mix = DneskaiDailyMixSchema.safeParse(await request.json().catch(() => null));
-  if (!mix.success) return Response.json({ error: 'invalid-daily-mix' }, { status: 400 });
-  try { await saveDneskaiDailyMix(context.db, context.userId, context.projectId, mix.data); }
-  catch { return Response.json({ error: 'daily-mix-unavailable' }, { status: 503 }); }
-  return Response.json({ mix: mix.data, stored: true }, { headers });
+  let raw: unknown;
+  try { raw = JSON.parse(await boundedRequestText(request, 2048)); }
+  catch { return Response.json({ error: 'invalid-daily-mix' }, { status: 400, headers }); }
+  const input = DneskaiDailyMixSaveSchema.safeParse(raw);
+  if (!input.success) return Response.json({ error: 'invalid-daily-mix' }, { status: 400, headers });
+  try {
+    const receipt = await saveDneskaiDailyMix(context.db, context.userId, context.projectId, input.data.mix, input.data.expectedVersion);
+    return Response.json(receipt, { status: receipt.kind === 'conflict' ? 409 : 200, headers });
+  } catch { return Response.json({ error: 'daily-mix-unavailable' }, { status: 503, headers }); }
 }

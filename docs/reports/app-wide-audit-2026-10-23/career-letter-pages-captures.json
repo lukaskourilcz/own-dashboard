@@ -1,0 +1,182 @@
+{
+  "finding": 305,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "b8f9589c",
+  "state": "Actual synthetic complete local history/previous-letter pages. No production data.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "ab054178033bc3a15de47e2abb7e5687fdaf9d0a3e4802d9ea49c0ca02227b96",
+    "src/components/panels/career-pagination.tsx": "17127e66476f64fafba8e6423c141cf6c3048c9051446a5d92d6c86fdf6e9d96",
+    "src/lib/collection-page.ts": "b14c94fdc6d8c5ce312fa140355f137159ed67d632c5b6d3cdb1753687c2e419"
+  },
+  "pairs": {
+    "career-history": {
+      "1440": {
+        "viewport": {
+          "width": 1440,
+          "height": 1800
+        },
+        "box": {
+          "x": 277,
+          "y": 629,
+          "width": 1118,
+          "height": 447
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 1.4311270125223614,
+            "y": 2.684563758389262,
+            "w": 16.07921511627907,
+            "h": 4.47427293064877
+          },
+          {
+            "n": 2,
+            "x": 1.4311270125223614,
+            "y": 26.062639821029084,
+            "w": 97.13774597495528,
+            "h": 58.7248322147651
+          },
+          {
+            "n": 3,
+            "x": 1.4311270125223614,
+            "y": 87.47203579418344,
+            "w": 97.13774597495528,
+            "h": 7.158836689038031
+          }
+        ],
+        "asset": "career-history-cs-1440.png",
+        "assetSha256": "357c64697d10d0e42da3e075873de658d393bcf8f617539fc74aae085a33de9c"
+      },
+      "430": {
+        "viewport": {
+          "width": 430,
+          "height": 1800
+        },
+        "box": {
+          "x": 17,
+          "y": 1057.5,
+          "width": 396,
+          "height": 579
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 4.040404040404041,
+            "y": 2.0725388601036268,
+            "w": 45.39535984848485,
+            "h": 3.454231433506045
+          },
+          {
+            "n": 2,
+            "x": 4.040404040404041,
+            "y": 36.70120898100173,
+            "w": 91.91919191919192,
+            "h": 45.33678756476684
+          },
+          {
+            "n": 3,
+            "x": 4.040404040404041,
+            "y": 84.1105354058722,
+            "w": 91.91919191919192,
+            "h": 11.744386873920552
+          }
+        ],
+        "asset": "career-history-cs-430.png",
+        "assetSha256": "104cf6d36384b3436ccb7ad89efb69620450ed27d209271ac4dce6f5365ed6cf"
+      }
+    },
+    "career-previous-letters": {
+      "1440": {
+        "viewport": {
+          "width": 1440,
+          "height": 1800
+        },
+        "box": {
+          "x": 1122,
+          "y": 574.75,
+          "width": 274,
+          "height": 275.75
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 0,
+            "y": 0,
+            "w": 100,
+            "h": 8.703535811423391
+          },
+          {
+            "n": 2,
+            "x": 0,
+            "y": 14.505893019038984,
+            "w": 100,
+            "h": 55.031731640979146
+          },
+          {
+            "n": 3,
+            "x": 0,
+            "y": 75.33998186763372,
+            "w": 100,
+            "h": 20.30825022665458
+          }
+        ],
+        "asset": "career-previous-letters-cs-1440.png",
+        "assetSha256": "abc28e074a38b84a9327efd5eae630c877289cf5985ad9b7c255fa473b98ca2c"
+      },
+      "430": {
+        "viewport": {
+          "width": 430,
+          "height": 1800
+        },
+        "box": {
+          "x": 16,
+          "y": 1423.75,
+          "width": 398,
+          "height": 279.75
+        },
+        "marks": [
+          {
+            "n": 1,
+            "x": 0,
+            "y": 0,
+            "w": 100,
+            "h": 8.579088471849866
+          },
+          {
+            "n": 2,
+            "x": 0,
+            "y": 14.298480786416443,
+            "w": 100,
+            "h": 51.385165326184094
+          },
+          {
+            "n": 3,
+            "x": 0,
+            "y": 71.40303842716712,
+            "w": 100,
+            "h": 24.307417336907953
+          }
+        ],
+        "asset": "career-previous-letters-cs-430.png",
+        "assetSha256": "982525f54d4ef835a03be18caddc0a665a144ca394af58020e827dd8f0b28cce"
+      }
+    }
+  },
+  "sidebarComparison": {
+    "beforeSourceState": "Initial paging working tree based on 63d8b264, before self-start and stacked pager repair",
+    "beforeBox": {
+      "x": 1122,
+      "y": 574.75,
+      "width": 274,
+      "height": 844.4375
+    },
+    "afterBox": {
+      "x": 1122,
+      "y": 574.75,
+      "width": 274,
+      "height": 275.75
+    },
+    "meaning": "Same synthetic content and viewport; local layout extent, not production timing."
+  }
+}

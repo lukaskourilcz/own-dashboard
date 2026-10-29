@@ -1,0 +1,51 @@
+{
+  "baseline": "1002cc1",
+  "sourceHashes": {
+    "beforePanel": "279183b75e25a2295a9ba1387d59ca9156f1f0ab0abcd2f79f0cc31ca980c037",
+    "afterPanel": "5f2f0c6c34028d6aef8161b74f13076c75e65159bd839d83fa907f38229f06b8",
+    "afterDomain": "2e9d3efbf30235af01fc06d38196e593ac8816c7f17dd4bc6d07e370789b15d8"
+  },
+  "synthetic": {
+    "projects": 5000,
+    "competitors": 10000,
+    "queries": 20
+  },
+  "parity": {
+    "projectIds": 5000,
+    "allProjectIdsExact": true,
+    "allTwentyQueryResultsExact": true
+  },
+  "projectOrderMs": {
+    "before": [
+      134.335,
+      102.643,
+      116.106,
+      115.831,
+      116.372
+    ],
+    "after": [
+      2.633,
+      2.327,
+      2.495,
+      2.369,
+      1.844
+    ]
+  },
+  "twentySearchesIncludingIndexMs": {
+    "before": [
+      937.49,
+      970.638,
+      949.401,
+      939.498,
+      941.08
+    ],
+    "after": [
+      75.053,
+      74.672,
+      74.54,
+      75.112,
+      75.842
+    ]
+  },
+  "limits": "Local JavaScript expression timings with synthetic data. Not production latency, database cost or provider savings."
+}

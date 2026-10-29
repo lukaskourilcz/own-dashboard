@@ -15,25 +15,30 @@ function getPdfjs(): Promise<Pdfjs> {
         import.meta.url,
       ).toString();
       return pdfjs;
-    });
+    }).catch((error) => { pdfjsPromise = null; throw error; });
   }
   return pdfjsPromise;
 }
 
 /** Extract the text of a PDF, one line per row (using pdf.js EOL hints). */
 export async function extractPdfText(file: File): Promise<string> {
+  if (file.size > 20 * 1024 * 1024) throw new Error("PDF exceeds 20 MiB");
   const pdfjs = await getPdfjs();
   const data = new Uint8Array(await file.arrayBuffer());
   const loadingTask = pdfjs.getDocument({ data });
-  const doc = await loadingTask.promise;
   const lines: string[] = [];
+  let characters = 0;
   try {
+    const doc = await loadingTask.promise;
+    if (doc.numPages > 100) throw new Error("PDF exceeds 100 pages");
     for (let p = 1; p <= doc.numPages; p++) {
       const page = await doc.getPage(p);
       const content = await page.getTextContent();
       let line = "";
       for (const item of content.items) {
         if (!("str" in item)) continue;
+        characters += item.str.length;
+        if (characters > 1_000_000) throw new Error("PDF text exceeds import limit");
         line += item.str;
         if (item.hasEOL) {
           lines.push(line);

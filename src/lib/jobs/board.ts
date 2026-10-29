@@ -3,6 +3,7 @@ import type {
   JobApplicationStatus,
   SavedJobPosition,
 } from "@/lib/types";
+import { resourceKey } from "@/lib/link-library";
 
 // Stage board for Career → Applied. Pure and clock-injected so the board, the
 // "Follow-ups due" metric and the Home/Work surfaces can never disagree about
@@ -81,9 +82,15 @@ function bySavedDesc(a: SavedJobPosition, b: SavedJobPosition): number {
 export function groupApplicationsByColumn(
   applications: JobApplication[],
   savedPositions: SavedJobPosition[] = [],
+  options?: { allApplications?: JobApplication[]; positionKey?: (url: string) => string },
 ): BoardGroups {
+  const allApplications = options?.allApplications ?? applications;
+  const positionKey = options?.positionKey ?? ((url: string) => resourceKey(url) ?? url);
+  const appliedIds = new Set(allApplications.map(app => app.listing_id).filter(Boolean));
+  const appliedUrls = new Set(allApplications.filter(app => app.url).map(app => positionKey(app.url!)));
   const groups: BoardGroups = {
-    saved: [...savedPositions].sort(bySavedDesc),
+    saved: savedPositions.filter(position => !(position.listing_id && appliedIds.has(position.listing_id))
+      && !appliedUrls.has(positionKey(position.url))).sort(bySavedDesc),
     applied: [],
     interviewing: [],
     offer: [],

@@ -1,3 +1,5 @@
+import { SUPPORTED_CURRENCIES } from "@/lib/fx";
+
 /**
  * Bank statement CSV → transaction rows. The manual fallback for when a live
  * GoCardless link isn't set up: export a CSV from internet banking
@@ -15,14 +17,23 @@ type ParsedTxRow = {
   amount: number; // absolute value, always >= 0
   currency: string;
   note: string | null;
-  external_id: string; // "csv:<hash>" — deterministic, for dedupe
+  external_id: string; // legacy key here; prepareBankCsv upgrades it to csv:v2 SHA-256
   // Czech payment reference (variabilní symbol), digits only, when the
   // statement carries a column for it. Null otherwise — the payment matcher
   // then falls back to reading the note.
   variable_symbol: string | null;
+  /** Client-only source identity; never spread into a database write. */
+  source_identity: string;
+  source_row: number;
+  legacy_comparable: boolean;
+  legacy_external_id?: string;
 };
 
+export const MAX_CSV_BYTES = 2 * 1024 * 1024;
+export const MAX_CSV_ROWS = 5000;
+export type CsvIssueCode = "empty" | "headers" | "format" | "limit" | "row" | "currency" | "symbol";
 export type ParseResult = {
+  issues: { code: CsvIssueCode; row?: number }[];
   rows: ParsedTxRow[];
   errors: string[];
   /** Which header cells were matched, for a friendlier "we read X as date" UI. */
@@ -114,7 +125,7 @@ function splitLine(line: string, delim: string): string[] {
 function sniffDelimiter(headerLine: string): string {
   const counts = [";", ",", "\t"].map((d) => ({
     d,
-    n: headerLine.split(d).length,
+    n: splitLine(headerLine, d).length,
   }));
   counts.sort((a, b) => b.n - a.n);
   return counts[0].n > 1 ? counts[0].d : ",";
@@ -133,21 +144,20 @@ function parseAmount(raw: string): number {
   } else if (hasComma) {
     s = s.replace(",", ".");
   }
-  return Number(s);
+  return /^[+-]?(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(s) && Math.abs(Number(s)) <= 999999999999.99 ? Number(s) : NaN;
 }
 
 /** Normalise a date cell to yyyy-MM-dd. Accepts ISO, dd.mm.yyyy, dd/mm/yyyy. */
 function parseDate(raw: string): string | null {
   const s = raw.trim();
-  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const dmy = /^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/.exec(s);
-  if (dmy) {
-    const d = dmy[1].padStart(2, "0");
-    const m = dmy[2].padStart(2, "0");
-    return `${dmy[3]}-${m}-${d}`;
-  }
-  return null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/.exec(s);
+  const dmy = /^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/.exec(s);
+  const key = iso ? `${iso[1]}-${iso[2]}-${iso[3]}` : dmy ? `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}` : null;
+  if (!key || key.startsWith("0000-")) return null;
+  const time = /[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(s);
+  if (time && (Number(time[1]) > 23 || Number(time[2]) > 59 || Number(time[3] ?? 0) > 59)) return null;
+  const date = new Date(`${key}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === key ? key : null;
 }
 
 /** Stable FNV-1a hash → hex, so the same statement row always yields the same id. */
@@ -162,8 +172,26 @@ function hash(input: string): string {
 
 /** Digits only, capped at the ten a Czech variable symbol may carry. */
 function symbolDigits(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "").slice(0, 10);
-  return digits.length > 0 ? digits : null;
+  const digits = raw.replace(/\s/g, "");
+  return /^\d{1,10}$/.test(digits) ? digits : null;
+}
+
+/** Logical records preserve quoted newlines and escaped quotes. */
+function records(text: string): string[] | null {
+  const result: string[] = [];
+  let quoted = false, start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '"') {
+      if (quoted && text[i + 1] === '"') { i++; continue; }
+      quoted = !quoted;
+    } else if (text[i] === "\n" && !quoted) {
+      if (text.slice(start, i).trim()) result.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  if (quoted) return null;
+  if (text.slice(start).trim()) result.push(text.slice(start));
+  return result;
 }
 
 function findColumn(header: string[], aliases: readonly string[]): number {
@@ -185,19 +213,13 @@ export function parseBankCsv(
   fallbackCurrency = "CZK",
 ): ParseResult {
   const errors: string[] = [];
-  // Tolerate BOM + CRLF; drop blank lines.
-  const lines = text
-    .replace(/^﻿/, "")
-    .split(/\r?\n/)
-    .filter((l) => l.trim().length > 0);
-
-  if (lines.length < 2) {
-    return {
-      rows: [],
-      errors: ["The file has no data rows."],
-      columns: { date: null, amount: null, currency: null, note: null, variableSymbol: null },
-    };
-  }
+  const issues: ParseResult["issues"] = [];
+  const blank = { date: null, amount: null, currency: null, note: null, variableSymbol: null };
+  if (text.length > MAX_CSV_BYTES || new TextEncoder().encode(text).byteLength > MAX_CSV_BYTES) return { rows: [], errors: ["The CSV exceeds the import bound."], issues: [{ code: "limit" }], columns: blank };
+  const lines = records(text.replace(/^﻿/, "").replace(/\r\n?/g, "\n"));
+  if (lines === null) return { rows: [], errors: ["A quoted field is not closed."], issues: [{ code: "format" }], columns: blank };
+  if (lines.length < 2) return { rows: [], errors: ["The file has no data rows."], issues: [{ code: "empty" }], columns: blank };
+  if (lines.length > MAX_CSV_ROWS + 1) return { rows: [], errors: ["The CSV exceeds the import bound."], issues: [{ code: "limit" }], columns: blank };
 
   const delim = sniffDelimiter(lines[0]);
   const header = splitLine(lines[0], delim);
@@ -219,10 +241,11 @@ export function parseBankCsv(
     errors.push(
       "Couldn't find a date and amount column. Expected headers like “Datum” and “Částka”.",
     );
-    return { rows: [], errors, columns };
+    return { rows: [], errors, issues: [{ code: "headers" }], columns };
   }
 
   const rows: ParsedTxRow[] = [];
+  const occurrences = new Map<string, number>();
   for (let i = 1; i < lines.length; i++) {
     const cells = splitLine(lines[i], delim);
     const dateRaw = cells[iDate] ?? "";
@@ -231,23 +254,84 @@ export function parseBankCsv(
     const amount = parseAmount(amountRaw);
     if (!occurred_on || !Number.isFinite(amount)) {
       errors.push(`Row ${i + 1}: skipped (couldn't read date or amount).`);
+      issues.push({ code: "row", row: i + 1 });
       continue;
     }
-    const currency = (iCurrency >= 0 ? cells[iCurrency] : "")?.trim() || fallbackCurrency;
+    const legacyCurrency = (iCurrency >= 0 ? cells[iCurrency] : "")?.trim() || fallbackCurrency;
+    const currency = legacyCurrency.toUpperCase();
+    if (!(SUPPORTED_CURRENCIES as readonly string[]).includes(currency)) {
+      errors.push(`Row ${i + 1}: unsupported currency.`); issues.push({ code: "currency", row: i + 1 }); continue;
+    }
+    const rawSymbol = iVs >= 0 ? (cells[iVs] ?? "").trim() : "";
+    const variable_symbol = symbolDigits(rawSymbol);
+    if (rawSymbol && !variable_symbol) { errors.push(`Row ${i + 1}: invalid payment reference.`); issues.push({ code: "symbol", row: i + 1 }); continue; }
     const note = iNote >= 0 ? (cells[iNote] ?? "").trim() || null : null;
-    const external_id = `csv:${hash(
-      `${occurred_on}|${amount.toFixed(2)}|${currency}|${note ?? ""}`,
-    )}`;
+    const base = `csv:${hash(`${occurred_on}|${amount.toFixed(2)}|${legacyCurrency}|${note ?? ""}`)}`;
+    const occurrence = (occurrences.get(base) ?? 0) + 1; occurrences.set(base, occurrence);
+    const external_id = occurrence === 1 ? base : `${base}:${occurrence}`;
     rows.push({
       occurred_on,
       kind: amount < 0 ? "expense" : "income",
       amount: Math.abs(amount),
-      currency: currency.toUpperCase().slice(0, 3),
-      note: note ? note.slice(0, 500) : null,
+      currency,
+      note: note ? note.slice(0, 500).replace(/[\uD800-\uDBFF]$/, "") : null,
       external_id,
-      variable_symbol: iVs >= 0 ? symbolDigits(cells[iVs] ?? "") : null,
+      variable_symbol,
+      source_row: i + 1,
+      source_identity: JSON.stringify([occurred_on, amount.toFixed(2), currency, note ?? "", variable_symbol ?? ""]),
+      legacy_comparable: (note?.length ?? 0) <= 500,
     });
   }
 
-  return { rows, errors, columns };
+  return { rows, errors, issues, columns };
+}
+
+/** Strong identities for new imports; keep the old key only for verified legacy
+ * deduplication. Occurrences preserve two identical purchases in one statement.
+ * Without a bank-provided id, overlap between partial identical-row exports
+ * remains ambiguous; never claim these fingerprints prove bank identity.
+ */
+export async function prepareBankCsv(text: string, fallbackCurrency = "CZK"): Promise<ParseResult> {
+  const parsed = parseBankCsv(text, fallbackCurrency);
+  const occurrences = new Map<string, number>();
+  const identities = parsed.rows.map(row => {
+    const n = (occurrences.get(row.source_identity) ?? 0) + 1;
+    occurrences.set(row.source_identity, n);
+    return JSON.stringify([row.source_identity, n]);
+  });
+  const rows: ParsedTxRow[] = [];
+  for (let offset = 0; offset < parsed.rows.length; offset += 64) {
+    rows.push(...await Promise.all(parsed.rows.slice(offset, offset + 64).map(async (row, index) => {
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identities[offset + index]));
+      const hex = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+      return { ...row, legacy_external_id: row.external_id, external_id: `csv:v2:${hex}` };
+    })));
+  }
+  return { ...parsed, rows };
+}
+
+export class CsvLegacyConflict extends Error {
+  constructor(readonly row: number) { super("csv-legacy-conflict"); this.name = "CsvLegacyConflict"; }
+}
+
+/** Existing v2 keys retain later owner edits. Legacy hashes are accepted only
+ * when the retained payment fields still verify the source; otherwise require
+ * review instead of silently skipping a conflicting financial record.
+ */
+export function csvRowsToImport(rows: ParseResult["rows"], existing: readonly {
+  external_id: string | null; kind: string; amount: number; currency: string;
+  occurred_on: string; note: string | null; variable_symbol?: string | null;
+}[]): ParseResult["rows"] {
+  const byId = new Map(existing.filter(row => row.external_id).map(row => [row.external_id!, row]));
+  return rows.filter(row => {
+    if (!/^csv:v2:[a-f0-9]{64}$/.test(row.external_id)) throw new Error("CSV identities not prepared");
+    if (byId.has(row.external_id)) return false;
+    const legacy = row.legacy_external_id ? byId.get(row.legacy_external_id) : undefined;
+    if (!legacy) return true;
+    if (!row.legacy_comparable || legacy.kind !== row.kind || Number(legacy.amount) !== row.amount
+      || legacy.currency.toUpperCase() !== row.currency || legacy.occurred_on !== row.occurred_on
+      || (legacy.note ?? "").trim() !== (row.note ?? "").trim()
+      || (legacy.variable_symbol ?? null) !== row.variable_symbol) throw new CsvLegacyConflict(row.source_row);
+    return false;
+  });
 }

@@ -18,12 +18,13 @@ function bucket(state: { public?: boolean; stored?: { bytes: Buffer; metadata: R
       stored = { bytes: body, metadata: options.metadata };
       return { data: { path: _key }, error: null };
     }),
-    info: vi.fn(async () => stored ? { data: { size: stored.bytes.length, contentType: "image/jpeg", metadata: stored.metadata }, error: null } : { data: null, error: { message: "Object not found" } }),
-    download: vi.fn(async () => stored ? { data: new Blob([new Uint8Array(stored.bytes)]), error: null } : { data: null, error: { message: "Object not found" } }),
+    info: vi.fn(async () => stored ? { data: { size: stored.bytes.length, contentType: "image/jpeg", metadata: stored.metadata }, error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }),
+    download: vi.fn(() => ({asStream: async () => stored ? { data: new Blob([new Uint8Array(stored.bytes)]).stream(), error: null } : { data: null, error: { message: "Object not found", status: 404, statusCode: "NoSuchKey" } }})),
     createSignedUrl: vi.fn(async (key: string) => ({ data: { signedUrl: `https://example.supabase.co/storage/v1/object/sign/marketing-assets/${key}?token=test-only` }, error: null })),
   };
   const getBucket = vi.fn(async () => ({ data: { public: state.public ?? false }, error: null }));
-  const db = { storage: { getBucket, from: vi.fn(() => files) } } as unknown as ReturnType<typeof createAdminClient>;
+  const rpc=vi.fn((_name:string,args:{p_key:string})=>{const query={retry:()=>query,abortSignal:async()=>({data:{ownerId:owner,kind:'slide',key:args.p_key,state:stored?'present':'absent'},error:null})};return query;});
+  const db = {rpc, storage: { getBucket, from: vi.fn(() => files) } } as unknown as ReturnType<typeof createAdminClient>;
   return { db, files, getBucket };
 }
 
@@ -47,6 +48,21 @@ describe("DNESKAi render cache in the private marketing-assets bucket", () => {
     expect(files.upload).toHaveBeenCalledTimes(1);
     expect(getBucket).toHaveBeenCalledTimes(1);
   });
+  it.each([{ status: 503, statusCode: 'SlowDown' }, { status: 403, statusCode: 'AccessDenied' }, { status: 404, statusCode: 'NoSuchBucket' }, { status: 404, statusCode: 'TenantNotFound' }, { status: 404, statusCode: 'Unexpected' }, null])('refuses an unavailable slide cache instead of declaring a miss (%s)', async (error) => {
+    const { db, files } = bucket();
+    const storage = createDneskaiSlideStorage(db, owner);
+    files.info.mockResolvedValueOnce({ data: null, error } as never);
+    await expect(storage.find(renderKey)).rejects.toMatchObject({ code: 'asset-storage-failed' });
+    expect(files.upload).not.toHaveBeenCalled();
+    expect(files.createSignedUrl).not.toHaveBeenCalled();
+  });
+  it.each([{ status: 404, statusCode: 'NoSuchKey' }, { status: 404, statusCode: 'not_found' }, { status: 404, statusCode: '404' }, { status: 400, statusCode: '404' }])('confirms owned absence after a typed candidate in the slide cache (%s)', async (error) => {
+    const { db, files } = bucket();
+    const storage = createDneskaiSlideStorage(db, owner);
+    files.info.mockResolvedValueOnce({ data: null, error } as never);
+    expect(await storage.find(renderKey)).toBeNull();
+    expect(files.createSignedUrl).not.toHaveBeenCalled();
+  });
   it("refuses a public bucket, foreign or mismatched metadata and bytes that do not hash to the record", async () => {
     await expect(createDneskaiSlideStorage(bucket({ public: true }).db, owner).find(renderKey)).rejects.toThrow("private-asset-bucket-required");
     for (const metadata of [{ renderKey, sha256, ownerId: "11111111-1111-4111-8111-111111111111" }, { renderKey: "c".repeat(64), sha256, ownerId: owner }, { renderKey, sha256: "not-a-hash", ownerId: owner }]) {
@@ -66,3 +82,5 @@ describe("DNESKAi render cache in the private marketing-assets bucket", () => {
     await expect(createDneskaiSlideStorage(db, owner).put({ renderKey, bytes: Buffer.from("x"), sha256, metadata: {} })).rejects.toThrow("asset-input-invalid");
   });
 });
+
+it.each([{}, {public:null}, {public:0}])('refuses unknown private slide bucket metadata: %#',async value=>{const {db,getBucket,files}=bucket();getBucket.mockResolvedValueOnce({data:value,error:null} as never);await expect(createDneskaiSlideStorage(db,owner).find(renderKey)).rejects.toHaveProperty('code','private-asset-bucket-required');expect(files.info).not.toHaveBeenCalled();});

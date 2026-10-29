@@ -1,0 +1,74 @@
+{
+  "finding": 297,
+  "capturedDate": "2026-10-26",
+  "timezone": "Europe/Prague",
+  "applicationCommit": "c7186322",
+  "state": "Actual synthetic existing-letter conflict with the typed letter retained before explicit reload. The repeated label and template toolbar are separate pending density work. No real owner data or provider.",
+  "components": {
+    "src/components/panels/jobs-panel.tsx": "924d137ba364c2f2442f2e544136265b51c3dd2211f64d6f3162db063a68a91a",
+    "src/components/panels/use-career-application-record-write.ts": "1be160f3dea9fae756a3b685953d8ac1c33cecd71ea50cd6d5d73578a40c614d",
+    "src/components/panels/career-action-notice.tsx": "9c5838ae6f9d2b6aacde4002e46a2a16d947ad7e679197911f9c704529a77d5f"
+  },
+  "captures": {
+    "1440": {
+      "viewport": {
+        "width": 1440,
+        "height": 1800
+      },
+      "box": {
+        "x": 432,
+        "y": 592.625,
+        "width": 576,
+        "height": 614.75
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 3.6458333333333335,
+          "y": 40.82960553070354,
+          "w": 92.70833333333333,
+          "h": 23.54615697437983
+        },
+        {
+          "n": 2,
+          "x": 3.6458333333333335,
+          "y": 74.13582757218381,
+          "w": 92.70833333333333,
+          "h": 15.290768605124034
+        }
+      ],
+      "asset": "assets/career-letter-cs-1440.png",
+      "sha256": "a3e5b636d136c894fa30a46f9bcb5f8725e3b78a87044b4a925da0836e8339b7"
+    },
+    "430": {
+      "viewport": {
+        "width": 430,
+        "height": 1800
+      },
+      "box": {
+        "x": 12,
+        "y": 523,
+        "width": 406,
+        "height": 754
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 39.389920424403186,
+          "w": 89.65517241379311,
+          "h": 23.076923076923077
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 72.0159151193634,
+          "w": 89.65517241379311,
+          "h": 17.24137931034483
+        }
+      ],
+      "asset": "assets/career-letter-cs-430.png",
+      "sha256": "497a0a60405bf40ecd45014ecb14e0736c5e991286997f14ea606c9ae84022ce"
+    }
+  }
+}

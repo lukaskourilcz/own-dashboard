@@ -16,13 +16,14 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeader, SectionLabel } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import { qk } from "@/lib/queries/keys";
 import { useDict } from "@/lib/i18n";
 import type {
@@ -50,6 +51,7 @@ export function ShortcutsPanel({
   referenceRows,
   setReferenceRows,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -85,8 +87,9 @@ export function ShortcutsPanel({
   }
 
   const createMutation = useMutation({
+    scope: { id: "shortcut-writes" },
     mutationFn: async (vars: { command: string; description: string | null }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const sortOrder =
         Math.max(0, ...shortcuts.map((s) => s.sort_order)) + 1;
@@ -108,17 +111,15 @@ export function ShortcutsPanel({
       toast.ok(t.shortcuts.createdToast);
       void qc.invalidateQueries({ queryKey: qk.shortcuts });
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.shortcuts.signInFirst
-          : t.shortcuts.couldNotSave,
-      ),
+    onError: e => setFormError((e as Error)?.message === "no-user" ? t.shortcuts.signInFirst : t.shortcuts.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.shortcuts }); },
   });
 
   const updateMutation = useMutation({
+    scope: { id: "shortcut-writes" },
     mutationFn: async (vars: {
       id: string;
+      expectedUpdatedAt: string;
       command: string;
       description: string | null;
     }) => {
@@ -129,7 +130,7 @@ export function ShortcutsPanel({
           description: vars.description,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", vars.id)
+        .eq("id", vars.id).eq("updated_at", vars.expectedUpdatedAt)
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
@@ -140,30 +141,18 @@ export function ShortcutsPanel({
       toast.ok(t.shortcuts.savedToast);
       void qc.invalidateQueries({ queryKey: qk.shortcuts });
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.shortcuts.signInFirst
-          : t.shortcuts.couldNotSave,
-      ),
+    onError: e => setFormError((e as Error)?.message === "no-user" ? t.shortcuts.signInFirst : t.shortcuts.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.shortcuts }); },
   });
 
   const deleteMutation = useMutation({
+    scope: { id: "shortcut-writes" },
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("shortcuts").delete().eq("id", id);
       if (error) throw error;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.shortcuts });
-      const prev = qc.getQueryData<Shortcut[]>(qk.shortcuts);
-      setShortcuts((old) => old.filter((s) => s.id !== id));
-      return { prev };
-    },
-    onSuccess: () => toast.ok(t.shortcuts.deletedToast),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setShortcuts(ctx.prev);
-      toast.err(t.shortcuts.couldNotDelete);
-    },
+    onSuccess: (_data, id) => { setShortcuts(rows => rows.filter(row => row.id !== id)); toast.ok(t.shortcuts.deletedToast); },
+    onError: () => toast.err(t.shortcuts.couldNotDelete),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.shortcuts }),
   });
 
@@ -171,6 +160,8 @@ export function ShortcutsPanel({
 
   function submitForm(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+    setFormError(null);
     const command = form.command.trim();
     if (!command) {
       setFormError(t.shortcuts.commandRequired);
@@ -179,7 +170,7 @@ export function ShortcutsPanel({
     const description = form.description.trim() || null;
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, command, description },
+        { id: editing.id, command, description, expectedUpdatedAt: editing.updated_at },
         { onSuccess: () => setDialogOpen(false) },
       );
     } else {
@@ -227,16 +218,17 @@ export function ShortcutsPanel({
         }
       />
 
-      <SectionLabel className="mb-2">{t.shortcuts.myShortcuts}</SectionLabel>
+      <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{t.shortcuts.myShortcuts}</h2>
 
       {shortcuts.length > 0 && (
         <div className="relative mb-4 max-w-sm">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-subtle" />
           <Input
+            aria-label={t.shortcuts.searchPlaceholder}
             placeholder={t.shortcuts.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-9 pl-8 text-sm"
+            className="h-11 pl-8 text-sm sm:h-9"
           />
         </div>
       )}
@@ -264,7 +256,7 @@ export function ShortcutsPanel({
           className="py-16"
         />
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((s) => (
             <ShortcutCell
               key={s.id}
@@ -314,17 +306,19 @@ export function ShortcutsPanel({
         />
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={dialogOpen} onOpenChange={next => { if (!saving) setDialogOpen(next); }}>
+        <DialogContent showClose={!saving} className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editing ? t.shortcuts.editTitle : t.shortcuts.newTitle}
             </DialogTitle>
           </DialogHeader>
-            <form onSubmit={submitForm} className="mt-3 space-y-3">
+            <form onSubmit={submitForm}>
+            <fieldset disabled={saving} className="mt-3 space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="shortcut-command">{t.shortcuts.command}</Label>
                 <Textarea
+                  maxLength={10000}
                   id="shortcut-command"
                   value={form.command}
                   onChange={(e) =>
@@ -341,6 +335,7 @@ export function ShortcutsPanel({
                   {t.shortcuts.descriptionLabel}
                 </Label>
                 <Input
+                  maxLength={1000}
                   id="shortcut-description"
                   value={form.description}
                   onChange={(e) =>
@@ -350,7 +345,7 @@ export function ShortcutsPanel({
                 />
               </div>
               {formError && (
-                <p className="text-xs text-destructive">{formError}</p>
+                <p role="alert" className="text-xs text-destructive">{formError}</p>
               )}
               <div className="flex items-center justify-end gap-2 pt-1">
                 <DialogClose asChild>
@@ -367,6 +362,7 @@ export function ShortcutsPanel({
                       : t.shortcuts.create}
                 </Button>
               </div>
+            </fieldset>
             </form>
         </DialogContent>
       </Dialog>
@@ -389,13 +385,13 @@ function ShortcutCell({
 }) {
   const t = useDict();
   return (
-    <motion.div layout className="group relative">
+    <motion.div layout className="flex min-w-0 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-soft">
       <Tooltip content={shortcut.description || shortcut.command}>
         <button
           type="button"
           onClick={onCopy}
           aria-label={`${t.shortcuts.copy}: ${shortcut.command}`}
-          className="flex h-full w-full cursor-copy items-start gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 pr-7 text-left shadow-soft transition-colors hover:border-border-strong hover:bg-surface-hover focus-ring"
+          className="flex min-h-11 w-full flex-1 cursor-copy items-start gap-1.5 px-2.5 py-2 text-left transition-colors hover:bg-surface-hover focus-ring"
         >
           <span className="mt-px shrink-0">
             {copied ? (
@@ -409,15 +405,14 @@ function ShortcutCell({
           </code>
         </button>
       </Tooltip>
-      {/* Edit / delete — revealed on hover, on top of the copy button. */}
-      <div className="absolute right-1 top-1 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex justify-end gap-1 border-t border-border px-1 py-0.5">
         <Tooltip content={t.shortcuts.edit}>
           <button
             type="button"
             onClick={onEdit}
-            aria-label={t.shortcuts.edit}
+            aria-label={`${t.shortcuts.edit}: ${shortcut.command}`}
             className={cn(
-              "inline-flex h-5 w-5 items-center justify-center rounded bg-surface/80 text-foreground-subtle backdrop-blur transition-colors hover:bg-surface-hover hover:text-foreground focus-ring",
+              "inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface/80 text-foreground-subtle backdrop-blur transition-colors hover:bg-surface-hover hover:text-foreground focus-ring",
             )}
           >
             <Pencil className="h-3 w-3" />
@@ -427,8 +422,8 @@ function ShortcutCell({
           <button
             type="button"
             onClick={onDelete}
-            aria-label={t.shortcuts.deleteShortcut}
-            className="inline-flex h-5 w-5 items-center justify-center rounded bg-surface/80 text-foreground-subtle backdrop-blur transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+            aria-label={`${t.shortcuts.deleteShortcut}: ${shortcut.command}`}
+            className="inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface/80 text-foreground-subtle backdrop-blur transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -464,6 +459,7 @@ function EditableTable({
   rows: ReferenceRow[];
   setReferenceRows: Updater<ReferenceRow[]>;
 }) {
+  const ownerScope = useOwnerPreferences();
   const supabase = createClient();
   const qc = useQueryClient();
   const t = useDict();
@@ -482,8 +478,9 @@ function EditableTable({
   const hasC3 = columns.some((c) => c.field === "c3");
 
   const createMut = useMutation({
+    scope: { id: "reference-writes" },
     mutationFn: async (vars: { c1: string; c2: string; c3: string | null }) => {
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const sortOrder = Math.max(0, ...mine.map((r) => r.sort_order)) + 1;
       const { data, error } = await supabase
@@ -506,17 +503,15 @@ function EditableTable({
       toast.ok(t.shortcuts.rowAdded);
       void qc.invalidateQueries({ queryKey: qk.referenceRows });
     },
-    onError: (e) =>
-      toast.err(
-        (e as Error)?.message === "no-user"
-          ? t.shortcuts.signInFirst
-          : t.shortcuts.couldNotSaveRow,
-      ),
+    onError: e => setError((e as Error)?.message === "no-user" ? t.shortcuts.signInFirst : t.shortcuts.couldNotSaveRow),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.referenceRows }); },
   });
 
   const updateMut = useMutation({
+    scope: { id: "reference-writes" },
     mutationFn: async (vars: {
       id: string;
+      expectedUpdatedAt: string;
       c1: string;
       c2: string;
       c3: string | null;
@@ -529,7 +524,7 @@ function EditableTable({
           c3: vars.c3,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", vars.id)
+        .eq("id", vars.id).eq("updated_at", vars.expectedUpdatedAt)
         .select()
         .single();
       if (error || !data) throw error ?? new Error("no-data");
@@ -540,10 +535,12 @@ function EditableTable({
       toast.ok(t.shortcuts.rowSaved);
       void qc.invalidateQueries({ queryKey: qk.referenceRows });
     },
-    onError: () => toast.err(t.shortcuts.couldNotSaveRow),
+    onError: () => setError(t.shortcuts.couldNotSaveRow),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.referenceRows }); },
   });
 
   const deleteMut = useMutation({
+    scope: { id: "reference-writes" },
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("reference_rows")
@@ -551,17 +548,8 @@ function EditableTable({
         .eq("id", id);
       if (error) throw error;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.referenceRows });
-      const prev = qc.getQueryData<ReferenceRow[]>(qk.referenceRows);
-      setReferenceRows((old) => old.filter((r) => r.id !== id));
-      return { prev };
-    },
-    onSuccess: () => toast.ok(t.shortcuts.rowDeleted),
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) setReferenceRows(ctx.prev);
-      toast.err(t.shortcuts.couldNotDeleteRow);
-    },
+    onSuccess: (_data, id) => { setReferenceRows(rows => rows.filter(row => row.id !== id)); toast.ok(t.shortcuts.rowDeleted); },
+    onError: () => toast.err(t.shortcuts.couldNotDeleteRow),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.referenceRows }),
   });
 
@@ -581,6 +569,8 @@ function EditableTable({
   }
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
+    setError(null);
     const c1 = form.c1.trim();
     if (!c1) {
       setError(t.shortcuts.rowRequired);
@@ -590,7 +580,7 @@ function EditableTable({
     const c3 = hasC3 ? form.c3.trim() || null : null;
     if (editing) {
       updateMut.mutate(
-        { id: editing.id, c1, c2, c3 },
+        { id: editing.id, c1, c2, c3, expectedUpdatedAt: editing.updated_at },
         { onSuccess: () => setOpen(false) },
       );
     } else {
@@ -611,9 +601,9 @@ function EditableTable({
     <Card className="overflow-hidden p-0">
       <div className="flex items-start justify-between gap-2 border-b border-border bg-surface-muted px-3 py-2">
         <div className="min-w-0">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
             {title}
-          </h3>
+          </h2>
           {note && (
             <p className="mt-0.5 text-[11px] text-foreground-subtle">{note}</p>
           )}
@@ -629,8 +619,8 @@ function EditableTable({
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div role="region" aria-label={title} tabIndex={0} className="overflow-x-auto focus-ring">
+        <table aria-label={title} className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
               {columns.map((col) => (
@@ -684,13 +674,13 @@ function EditableTable({
                     );
                   })}
                   <td className="w-0 whitespace-nowrap px-2 py-1 align-top">
-                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="flex items-center gap-1">
                       <Tooltip content={t.shortcuts.edit}>
                         <button
                           type="button"
                           onClick={() => openEdit(row)}
-                          aria-label={t.shortcuts.edit}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
+                          aria-label={`${t.shortcuts.edit}: ${row.c1}`}
+                          className="inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground focus-ring"
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
@@ -699,8 +689,8 @@ function EditableTable({
                         <button
                           type="button"
                           onClick={() => removeRow(row)}
-                          aria-label={t.shortcuts.delete}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
+                          aria-label={`${t.shortcuts.delete}: ${row.c1}`}
+                          className="inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-destructive focus-ring"
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
@@ -714,18 +704,20 @@ function EditableTable({
         </table>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog open={open} onOpenChange={next => { if (!saving) setOpen(next); }}>
+        <DialogContent showClose={!saving} className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {editing ? t.shortcuts.editRowTitle : t.shortcuts.addRow}
             </DialogTitle>
           </DialogHeader>
-            <form onSubmit={submit} className="mt-3 space-y-3">
+            <form onSubmit={submit}>
+            <fieldset disabled={saving} className="mt-3 space-y-3">
               {columns.map((col) => (
                 <div key={col.field} className="space-y-1.5">
                   <Label htmlFor={`rr-${kind}-${col.field}`}>{col.label}</Label>
                   <Input
+                    maxLength={10000}
                     id={`rr-${kind}-${col.field}`}
                     value={form[col.field]}
                     onChange={(e) =>
@@ -736,7 +728,7 @@ function EditableTable({
                   />
                 </div>
               ))}
-              {error && <p className="text-xs text-destructive">{error}</p>}
+              {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
               <div className="flex items-center justify-end gap-2 pt-1">
                 <DialogClose asChild>
                   <Button type="button" variant="ghost" size="sm">
@@ -752,6 +744,7 @@ function EditableTable({
                       : t.shortcuts.create}
                 </Button>
               </div>
+            </fieldset>
             </form>
         </DialogContent>
       </Dialog>

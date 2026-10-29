@@ -1,0 +1,35 @@
+{
+  "runtime": "v22.23.4",
+  "description": "Three projections of the actual seven-day calendar and Lab queue over sixty synthetic posts, with exact JSON parity. Five interleaved samples after warm-up. Not production latency or billed savings.",
+  "posts": 60,
+  "passes": 3,
+  "dstInstantParityCases": 194,
+  "dstWallClockParityCases": 8,
+  "ambiguousOrMissingSlotRejections": 2,
+  "samples": [
+    {
+      "beforeMs": 119.190833,
+      "afterMs": 6.914666999999952
+    },
+    {
+      "afterMs": 5.938041999999996,
+      "beforeMs": 123.22229199999998
+    },
+    {
+      "beforeMs": 121.58662500000003,
+      "afterMs": 5.995791999999938
+    },
+    {
+      "afterMs": 5.434542000000079,
+      "beforeMs": 110.81279199999994
+    },
+    {
+      "beforeMs": 110.00687500000004,
+      "afterMs": 7.137124999999969
+    }
+  ],
+  "median": {
+    "beforeMs": 119.190833,
+    "afterMs": 5.995791999999938
+  }
+}

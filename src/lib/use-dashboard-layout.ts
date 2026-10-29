@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { subscribeStoredPreference } from "@/lib/preference-storage";
 import {
   DEFAULT_LAYOUT,
   normalizeLayout,
@@ -34,10 +35,7 @@ function read(): readonly WidgetId[] {
 }
 
 function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => {
-    listeners.delete(cb);
-  };
+  return subscribeStoredPreference(LAYOUT_KEY, listeners, cb, () => { cache = null; });
 }
 
 const getServerSnapshot = (): readonly WidgetId[] => SERVER_SNAPSHOT;

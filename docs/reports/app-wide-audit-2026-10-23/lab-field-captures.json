@@ -1,0 +1,72 @@
+{
+  "applicationCommit": "3c5a616f",
+  "capturedDate": "2026-10-28",
+  "fixture": "Authentic /dev-preview with controlled near-expiry clock and retained caption/date. Ordinary nearest scrolling, not centred capture, passes the actual input hit-target check. Dirty/focused actions use normal flow; clean review remains sticky.",
+  "components": {
+    "src/components/marketing/dneskai/lab/lab-tab.tsx": "70a652bd819f29ecfa4e999f7151b50290b8fe515340850d20ede505b25f5c5b"
+  },
+  "captures": {
+    "1440": {
+      "box": {
+        "x": 1060,
+        "y": 533.59375,
+        "width": 336,
+        "height": 89
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 4.49438202247191,
+          "w": 35.026041666666664,
+          "h": 16.853932584269664
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 23.59550561797753,
+          "w": 100,
+          "h": 35.95505617977528
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 64.04494382022472,
+          "w": 100,
+          "h": 35.95505617977528
+        }
+      ]
+    },
+    "430": {
+      "box": {
+        "x": 16,
+        "y": 844.5,
+        "width": 398,
+        "height": 101
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 3.9603960396039604,
+          "w": 29.569723618090453,
+          "h": 14.851485148514852
+        },
+        {
+          "n": 2,
+          "x": 0,
+          "y": 20.792079207920793,
+          "w": 100,
+          "h": 43.56435643564357
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 68.31683168316832,
+          "w": 100,
+          "h": 31.683168316831683
+        }
+      ]
+    }
+  }
+}

@@ -50,7 +50,7 @@ function words(value: string): string[] {
   return value
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
-    .toLocaleLowerCase()
+    .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
 }
@@ -71,8 +71,14 @@ export function categoryMatchesKind(categoryName: string | null | undefined, kin
 export function groupPromptsByKind<T extends Pick<Prompt, "kind">>(
   prompts: readonly T[],
 ): { kind: PromptKind; prompts: T[] }[] {
-  return PROMPT_KINDS.map((kind) => ({
-    kind,
-    prompts: prompts.filter((prompt) => promptKind(prompt) === kind),
-  })).filter((group) => group.prompts.length > 0);
+  const groups = new Map<PromptKind, T[]>();
+  for (const prompt of prompts) {
+    const kind = promptKind(prompt);
+    const group = groups.get(kind);
+    if (group) group.push(prompt); else groups.set(kind, [prompt]);
+  }
+  return PROMPT_KINDS.flatMap(kind => {
+    const grouped = groups.get(kind);
+    return grouped ? [{ kind, prompts: grouped }] : [];
+  });
 }

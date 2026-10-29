@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-25",
+  "scope": "Offline synthetic pageAvailability worker probes; no remote/provider calls",
+  "baselineApplicationCommit": "56f4314",
+  "afterSourceSha256": "beb72fedab15dfc46fd32f2d3dd7e0ed95ee0417b12e8ed3b8271d0d71071155",
+  "method": "Separate Node workers, one classification per input. 500 ms wall cutoff includes startup; elapsedInsideWorkerMs measures the local synchronous classifier after import. Timed-out workers are terminated. One sample per case, not a production latency, billing or statistical savings claim.",
+  "before": [
+    {
+      "name": "plain",
+      "bytes": 24,
+      "state": "open",
+      "elapsedInsideWorkerMs": 1.108083999999991
+    },
+    {
+      "name": "unterminated-tags",
+      "bytes": 100000,
+      "exceededWallMs": 500
+    },
+    {
+      "name": "unterminated-scripts",
+      "bytes": 175000,
+      "exceededWallMs": 500
+    }
+  ],
+  "after": [
+    {
+      "name": "plain",
+      "bytes": 24,
+      "state": "open",
+      "elapsedInsideWorkerMs": 0.5839999999999961
+    },
+    {
+      "name": "unterminated-tags",
+      "bytes": 100000,
+      "state": "unknown",
+      "elapsedInsideWorkerMs": 3.963415999999995
+    },
+    {
+      "name": "unterminated-scripts",
+      "bytes": 175000,
+      "state": "unknown",
+      "elapsedInsideWorkerMs": 0.32441699999999685
+    }
+  ]
+}

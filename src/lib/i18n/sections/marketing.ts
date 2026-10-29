@@ -19,6 +19,8 @@ type MarketingStrings = {
   unmatchedRefs: (count: number) => string;
   loading: string;
   loadError: string;
+  cachedUnavailable: string;
+  cachedRateLimited: string;
   rateLimited: string;
   signedOut: string;
   checkAgain: string;
@@ -56,9 +58,9 @@ const platform = {
 
 export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
   en: {
-    appliedIn: "Applied in",
+    appliedIn: "Referenced in",
     usageLink: (label, count) => `${label} ×${count}`,
-    notYetApplied: "Not yet applied",
+    notYetApplied: "Not referenced in loaded plans",
     plansRead: (summary) => `Marketing plans: ${summary}`,
     calendarEntries: (label, count) => `${label} (${count} ${count === 1 ? "entry" : "entries"})`,
     couldNotRead: (location, reason) => `Could not read ${location}: ${reason}.`,
@@ -72,10 +74,12 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       "too-large": "the file is larger than 1 MB",
       error: (status) => (status ? `GitHub answered ${status}` : "GitHub did not answer"),
     },
-    skipped: (label, count) => `${label}: ${count} ${count === 1 ? "item" : "items"} without an id, a date or a title left out.`,
+    skipped: (label, count) => `${label}: ${count} ${count === 1 ? "item" : "items"} left out because of invalid data, duplicate IDs or document limits.`,
     unmatchedRefs: (count) => `${count} tip ${count === 1 ? "title" : "titles"} cited in the plans ${count === 1 ? "matches" : "match"} no tip here.`,
     loading: "Reading the marketing calendars…",
     loadError: "Could not read the marketing calendars. Try again.",
+    cachedUnavailable: 'Could not update the calendars. These are the previous plans.',
+    cachedRateLimited: 'Calendar checks are temporarily limited. These are the previous plans.',
     rateLimited: "Too many checks in a minute. Wait a moment, then try again.",
     signedOut: "Sign in to read the marketing calendars.",
     checkAgain: "Check the calendars again",
@@ -89,8 +93,8 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     prelaunchTitle: "Pre-launch due this week",
     prelaunchOverdue: "Overdue",
     prelaunchOwner: { owner: "Owner", agent: "Agent" },
-    noEntries: "Nothing is planned in the next seven days.",
-    noPrelaunch: "No pre-launch item is due in the next seven days.",
+    noEntries: "No entries found in the loaded plans for the next seven days.",
+    noPrelaunch: "No pre-launch tasks found in the loaded plans for the next seven days.",
     nothingRead: "No marketing calendar could be read, so the week's plan is unknown.",
     openCalendar: (label) => `Open the ${label} calendar`,
     showAll: (count) => `Show all ${count}`,
@@ -119,9 +123,9 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     platform: { ...platform, newsletter: "Newsletter", web: "Web" },
   },
   cs: {
-    appliedIn: "Použito v",
+    appliedIn: "Odkazy v",
     usageLink: (label, count) => `${label} ×${count}`,
-    notYetApplied: "Zatím nepoužité",
+    notYetApplied: "Bez odkazu v načtených plánech",
     plansRead: (summary) => `Marketingové plány: ${summary}`,
     calendarEntries: (label, count) =>
       `${label} (${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"})`,
@@ -137,13 +141,15 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       error: (status) => (status ? `GitHub odpověděl ${status}` : "GitHub neodpověděl"),
     },
     skipped: (label, count) =>
-      `${label}: vynecháno ${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"} bez id, data nebo názvu.`,
+      `${label}: vynechané položky: ${count} (neplatné údaje, duplicitní ID nebo limit dokumentu).`,
     unmatchedRefs: (count) =>
       count === 1
         ? "1 název tipu z plánů neodpovídá žádnému tipu zde."
         : `${count} ${count >= 2 && count <= 4 ? "názvy" : "názvů"} tipů z plánů ${count >= 2 && count <= 4 ? "neodpovídají" : "neodpovídá"} žádnému tipu zde.`,
     loading: "Čtu marketingové kalendáře…",
     loadError: "Marketingové kalendáře se nepodařilo přečíst. Zkuste to znovu.",
+    cachedUnavailable: 'Kalendáře se nepodařilo aktualizovat. Zůstávají předchozí plány.',
+    cachedRateLimited: 'Kontroly kalendářů jsou dočasně omezené. Zůstávají předchozí plány.',
     rateLimited: "Příliš mnoho kontrol za minutu. Chvíli počkejte a zkuste to znovu.",
     signedOut: "Pro čtení marketingových kalendářů se přihlaste.",
     checkAgain: "Znovu zkontrolovat kalendáře",
@@ -157,8 +163,8 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     prelaunchTitle: "Příprava před spuštěním, termín tento týden",
     prelaunchOverdue: "Po termínu",
     prelaunchOwner: { owner: "Vlastník", agent: "Agent" },
-    noEntries: "Na příštích sedm dní není nic naplánováno.",
-    noPrelaunch: "Na příštích sedm dní nepřipadá žádný úkol přípravy.",
+    noEntries: "V načtených plánech nejsou záznamy na příštích sedm dní.",
+    noPrelaunch: "V načtených plánech nejsou úkoly přípravy na příštích sedm dní.",
     nothingRead: "Žádný marketingový kalendář se nepodařilo přečíst, takže plán týdne není známý.",
     openCalendar: (label) => `Otevřít kalendář ${label}`,
     showAll: (count) => `Zobrazit všech ${count}`,

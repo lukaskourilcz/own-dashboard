@@ -27,7 +27,9 @@ export async function tickDneskaiCollection(owner:string,value:unknown,dependenc
  if(env.MARKETING_DNESKAI_COLLECTION_ENABLED!=='true')throw new Error('collection-disabled');
  const date=pragueMarketingDate(now);if(!input.runId&&new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Prague',hour:'2-digit',hourCycle:'h23'}).format(now)<'22')throw new Error('collection-not-due');
  const catalog=dependencies.catalog??(store.catalog?await store.catalog(owner,input.projectId,env):DNESKAI_REGISTRY_CATALOG);
- const original=input.runId?{id:input.runId}:await store.admit(owner,input.projectId,date,catalog.due(date,{education:dneskaiScoutingEnabled(env)}));if(input.runId&&original.id!==input.runId)throw new Error('collection-run-unavailable');const fence=randomUUID(),run=await store.claim(owner,original.id,fence);
+ const due=input.runId?null:catalog.due(date,{education:dneskaiScoutingEnabled(env)});
+ if(due&&due.length===0)throw new Error('collection-no-enabled-sources');
+ const original=input.runId?{id:input.runId}:await store.admit(owner,input.projectId,date,due!);if(input.runId&&original.id!==input.runId)throw new Error('collection-run-unavailable');const fence=randomUUID(),run=await store.claim(owner,original.id,fence);
  if(!run)throw new Error('collection-run-unavailable');
  if(run.project_id!==input.projectId||run.user_id!==owner||run.collection_pilot_owner)throw new Error('collection-run-unavailable'); // A retained pilot run is never ticked.
  if(run.status!=='running'||run.fence!==fence)return{runId:run.id,status:run.status,continue:false};

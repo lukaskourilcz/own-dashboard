@@ -10,14 +10,14 @@ import type { Project, Todo } from "./types";
  */
 
 export type ProjectRepoIdentity = Pick<Project, "id" | "repo_full_name"> &
-  Partial<Pick<Project, "repo_id" | "previous_repo_full_names">>;
+  Partial<Pick<Project, "repo_id" | "previous_repo_full_names" | "sort_order" | "created_at">>;
 
 export type TaskRepoIdentity = Pick<Todo, "repo_id" | "repo_full_name"> &
   Partial<Pick<Todo, "project_id">>;
 
 function lower(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
-  return trimmed ? trimmed.toLocaleLowerCase() : null;
+  return trimmed ? trimmed.toLowerCase() : null;
 }
 
 /** Current and previous repository names of a project, lowercased. */
@@ -42,26 +42,61 @@ export function taskBelongsToProject(
   project: ProjectRepoIdentity,
 ): boolean {
   if (task.project_id) return task.project_id === project.id;
-  if (
-    project.repo_id != null &&
-    task.repo_id != null &&
-    String(project.repo_id) === String(task.repo_id)
-  ) {
-    return true;
+  if (project.repo_id != null && task.repo_id != null) {
+    return String(project.repo_id) === String(task.repo_id);
   }
   const taskRepo = lower(task.repo_full_name);
   return taskRepo != null && projectRepoNames(project).includes(taskRepo);
 }
 
-/** The project a task belongs to, preferring an explicit `project_id`. */
-export function findProjectForTask<P extends ProjectRepoIdentity>(
-  task: TaskRepoIdentity,
-  projects: readonly P[],
-): P | undefined {
-  if (task.project_id) {
-    return projects.find((project) => project.id === task.project_id);
+/** Build once for a collection. A known repository id wins globally over a
+ * legacy name-only candidate; mismatched known ids never fall back to names.
+ * Legacy name ties follow stored sort order, creation time and id, including
+ * after an in-place cache update. Minimal identity-only lists keep their order. */
+export function createProjectTaskMatcher<P extends ProjectRepoIdentity>(projects: readonly P[]) {
+  const byId = new Map<string, P>(), byRepo = new Map<string, P>(), byName = new Map<string, P>(), legacyByName = new Map<string, P>();
+  const ordered = projects.some(project => project.sort_order != null || project.created_at != null)
+    ? [...projects].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+      || (a.created_at ?? "").localeCompare(b.created_at ?? "") || a.id.localeCompare(b.id))
+    : projects;
+  for (const project of ordered) {
+    if (!byId.has(project.id)) byId.set(project.id, project);
+    if (project.repo_id != null && !byRepo.has(String(project.repo_id))) byRepo.set(String(project.repo_id), project);
+    for (const name of projectRepoNames(project)) {
+      if (!byName.has(name)) byName.set(name, project);
+      if (project.repo_id == null && !legacyByName.has(name)) legacyByName.set(name, project);
+    }
   }
-  return projects.find((project) => taskBelongsToProject(task, project));
+  return (task: TaskRepoIdentity): P | undefined => {
+    if (task.project_id) return byId.get(task.project_id);
+    if (task.repo_id != null) {
+      const known = byRepo.get(String(task.repo_id)); if (known) return known;
+    }
+    const name = lower(task.repo_full_name);
+    return name ? (task.repo_id == null ? byName : legacyByName).get(name) : undefined;
+  };
+}
+
+/** For single lookups; bulk callers share the matcher or grouped index. */
+export function findProjectForTask<P extends ProjectRepoIdentity>(task: TaskRepoIdentity, projects: readonly P[]): P | undefined {
+  return createProjectTaskMatcher(projects)(task);
+}
+
+export type ProjectTaskIndex<P extends ProjectRepoIdentity = Project, T extends TaskRepoIdentity & { id: string } = Todo> = {
+  byTodo: ReadonlyMap<string, P>;
+  byProject: ReadonlyMap<string, T[]>;
+};
+
+/** Derive associations without adding inferred project ids to stored tasks.
+ * Building the shared maps replaces repeated project-by-task scans. */
+export function buildProjectTaskIndex<P extends ProjectRepoIdentity, T extends TaskRepoIdentity & { id: string }>(projects: readonly P[], tasks: readonly T[]): ProjectTaskIndex<P, T> {
+  const match = createProjectTaskMatcher(projects), byTodo = new Map<string, P>(), byProject = new Map<string, T[]>();
+  for (const task of tasks) {
+    const project = match(task); if (!project) continue;
+    byTodo.set(task.id, project);
+    const rows = byProject.get(project.id); if (rows) rows.push(task); else byProject.set(project.id, [task]);
+  }
+  return { byTodo, byProject };
 }
 
 export type RepoIdentity = Pick<GithubRepo, "id" | "full_name">;

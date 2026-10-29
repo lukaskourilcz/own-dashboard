@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { chartTooltipStyle } from "./shared";
+import { useReducedMotion } from "motion/react";
 
 /** Income vs. expense bars over recent months. Lazily loaded (recharts). */
 export function MonthsBarChart({
@@ -24,6 +25,7 @@ export function MonthsBarChart({
   incomeLabel: string;
   expenseLabel: string;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       <BarChart
@@ -56,12 +58,14 @@ export function MonthsBarChart({
           fill="var(--success)"
           name={incomeLabel}
           radius={[3, 3, 0, 0]}
+          isAnimationActive={reducedMotion === false}
         />
         <Bar
           dataKey="expense"
           fill="var(--destructive)"
           name={expenseLabel}
           radius={[3, 3, 0, 0]}
+          isAnimationActive={reducedMotion === false}
         />
       </BarChart>
     </ResponsiveContainer>

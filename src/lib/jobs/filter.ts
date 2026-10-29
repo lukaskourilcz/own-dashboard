@@ -98,11 +98,15 @@ export function isOsloRelevant(job: Pick<CareerCandidate, "location" | "remote">
   return isOslo(job.location) || (job.remote && isNorwayRemote(job.location));
 }
 
-/** Snapshots do not have a remote flag. Only explicit text or a remote-only
- * source establishes it; a Norway office in another city is insufficient. */
-export function isOsloSnapshot(job: { location: string | null; source: string | null }): boolean {
-  const remoteSource = ["remotive","remoteok","jobicy","weworkremotely"].includes(job.source ?? "");
-  return isOsloRelevant({location:job.location,remote:remoteSource || /remote/i.test(job.location ?? "")});
+/** Explicit snapshot evidence takes precedence. Unknown legacy snapshots retain
+ * the remote-only-source/text fallback; geography alone establishes nothing. */
+export function snapshotRemote(job: { location: string | null; source: string | null; remote?: boolean | null }): boolean {
+  if (typeof job.remote === "boolean") return job.remote;
+  return ["remotive", "remoteok", "jobicy", "weworkremotely"].includes(job.source ?? "") || /remote/i.test(job.location ?? "");
+}
+
+export function isOsloSnapshot(job: { location: string | null; source: string | null; remote?: boolean | null }): boolean {
+  return isOsloRelevant({ location: job.location, remote: snapshotRemote(job) });
 }
 
 export function isCzechRemote(location: string | null | undefined): boolean {

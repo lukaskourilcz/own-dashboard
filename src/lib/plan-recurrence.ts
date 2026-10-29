@@ -26,8 +26,6 @@ export type PlanPeriod = { start: Date; end: Date };
 // A Monday (2024-01-01 was a Monday) used as the fortnight anchor for biweekly.
 const BIWEEKLY_EPOCH = new Date(2024, 0, 1);
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 /** Midnight (local) of the given date. */
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -56,10 +54,8 @@ export function currentPeriod(
     }
     case "biweekly": {
       const weekStart = startOfWeekMonday(now);
-      const weeksSinceEpoch = Math.floor(
-        (startOfDay(weekStart).getTime() - BIWEEKLY_EPOCH.getTime()) /
-          (7 * MS_PER_DAY),
-      );
+      // Calendar weeks keep their identity across daylight-saving changes.
+      const weeksSinceEpoch = Math.floor(differenceInCalendarDays(weekStart, BIWEEKLY_EPOCH) / 7);
       // Snap back to the start of the even-indexed week so fortnights tile cleanly.
       const blocksBack = ((weeksSinceEpoch % 2) + 2) % 2;
       const start = addDays(weekStart, -7 * blocksBack);

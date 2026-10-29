@@ -27,8 +27,8 @@ const FALLBACKS: Record<keyof TemplateVars, string> = {
 export function fillTemplate(body: string, vars: TemplateVars): string {
   return body.replace(/\{\{\s*([a-zA-Z]+)\s*\}\}/g, (raw, name: string) => {
     const key = name.toLowerCase() as keyof TemplateVars;
-    if (!(key in FALLBACKS)) return raw;
-    const value = vars[key];
+    if (!Object.hasOwn(FALLBACKS, key)) return raw;
+    const value = Object.hasOwn(vars, key) ? vars[key] : undefined;
     return value && value.trim() ? value.trim() : FALLBACKS[key];
   });
 }

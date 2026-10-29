@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Czech and EU tax-registry helpers for organizations.
  *
@@ -27,6 +29,7 @@ export const VIES_CHECK_ENDPOINT =
 export const VAT_CHECK_FRESH_DAYS = 30;
 
 const DAY_MS = 86_400_000;
+const registryTimestamp = z.iso.datetime({ offset: true });
 
 /**
  * EU VAT country codes VIES answers for. Greece files under `EL`, not `GR`;
@@ -59,8 +62,9 @@ function asText(value: unknown): string {
 /* -- IČO ------------------------------------------------------------------- */
 
 /** Digits only, left-padded to the canonical eight characters. */
-export function normalizeIco(raw: string | null | undefined): string {
-  const digits = (raw ?? "").replace(/\D/g, "");
+export function normalizeIco(raw: unknown): string {
+  if (typeof raw !== "string" || raw.length > 64) return "";
+  const digits = raw.replace(/\D/g, "");
   if (!digits) return "";
   return digits.length < 8 ? digits.padStart(8, "0") : digits;
 }
@@ -83,12 +87,16 @@ export function isValidIco(raw: string | null | undefined): boolean {
 export type ParsedVatId = { countryCode: string; number: string };
 
 /** `CZ 270-743 58` → `{ countryCode: "CZ", number: "27074358" }`. */
-export function parseVatId(raw: string | null | undefined): ParsedVatId | null {
-  const value = (raw ?? "").replace(/[^0-9a-z]/gi, "").toUpperCase();
-  const match = /^([A-Z]{2})([0-9A-Z]{2,12})$/.exec(value);
-  if (!match) return null;
-  const [, countryCode = "", number = ""] = match;
-  if (!countryCode || !number) return null;
+export function parseVatId(raw: unknown): ParsedVatId | null {
+  if (typeof raw !== "string" || raw.length > 64) return null;
+  const value = raw.replace(/[\s-]/g, "").toUpperCase();
+  const prefix = /^([A-Z]{2})(.*)$/.exec(value);
+  if (!prefix) return null;
+  const countryCode = prefix[1];
+  // Czech DIČ is numeric: dots retain their established human-formatting role.
+  // Elsewhere the VIES contract permits dots, plus and asterisks in the id.
+  const number = countryCode === "CZ" ? prefix[2].replace(/\./g, "") : prefix[2];
+  if (!/^[0-9A-Z+*.]{2,12}$/.test(number)) return null;
   return { countryCode, number };
 }
 
@@ -254,9 +262,10 @@ export function vatCheckIsFresh(
   if (status !== "valid" && status !== "invalid") return false;
   const current = normalizeVatId(organization?.vat_id);
   if (!current || current !== normalizeVatId(organization?.vat_verified_id)) return false;
-  const checkedAt = Date.parse(organization?.vat_verified_at ?? "");
-  if (Number.isNaN(checkedAt)) return false;
-  return now.getTime() - checkedAt <= days * DAY_MS;
+  const timestamp = organization?.vat_verified_at;
+  if (typeof timestamp !== "string" || timestamp.length > 64 || !registryTimestamp.safeParse(timestamp).success) return false;
+  const checkedAt = Date.parse(timestamp), age = now.getTime() - checkedAt, window = days * DAY_MS;
+  return Number.isFinite(age) && age >= 0 && Number.isFinite(window) && window >= 0 && age <= window;
 }
 
 export type VatVerificationPatch = {
@@ -309,3 +318,15 @@ export function vatNameMismatch(
   if (!left || !right) return false;
   return left !== right;
 }
+
+
+/** Bounded projected browser receipts; no raw register metadata is exposed. */
+export const AresLookupSchema = z.object({
+  ownerId: z.uuid(), ico: z.string().regex(/^\d{8}$/), name: z.string().max(2000),
+  address: z.string().max(2048), city: z.string().max(256), zip: z.string().max(32),
+  country: z.string().max(256), vatId: z.string().max(64), checkedAt: registryTimestamp,
+}).strict();
+export const ViesLookupSchema = z.object({
+  ownerId: z.uuid(), vatId: z.string().min(4).max(64), status: z.enum(["valid", "invalid", "unavailable"]),
+  name: z.string().max(2000), address: z.string().max(4096), checkedAt: registryTimestamp,
+}).strict();

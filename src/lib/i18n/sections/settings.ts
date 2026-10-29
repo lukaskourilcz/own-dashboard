@@ -8,6 +8,8 @@ type SettingsStrings = {
   appearance: string;
   light: string;
   dark: string;
+  switchToLight: string;
+  switchToDark: string;
   navigation: string;
   navigationDesc: string;
   alwaysVisible: string;
@@ -29,6 +31,14 @@ type SettingsStrings = {
   dataExport: string;
   dataExportDesc: string;
   exportFull: string;
+  exportDataset: string;
+  exportJson: string;
+  exportPending: string;
+  exportStarted: string;
+  exportFailed: string;
+  exportTooLarge: string;
+  exportAccountChanged: string;
+  exportPreview: string;
   exportFinancial: string;
   exportProfessional: string;
   exportKnowledge: string;
@@ -40,6 +50,9 @@ type SettingsStrings = {
   exportTransactionsCsv: string;
   integrations: string;
   integrationsDesc: string;
+  integrationsLoading: string;
+  integrationsLoadFailed: string;
+  integrationsPreview: string;
   bankProviderNote: string;
   connected: string;
   notConnected: string;
@@ -59,6 +72,9 @@ type SettingsStrings = {
   projectUpdateFailed: string;
   preferenceSaveFailed: string;
   preferenceSyncUnavailable: string;
+  preferenceLoading: string;
+  preferenceLoadFailed: string;
+  preferenceRetry: string;
   projectSections: string;
   projectSectionsDesc: string;
   projectSectionsDneskai: string;
@@ -77,6 +93,9 @@ type SettingsStrings = {
 
 export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
   en: {
+    preferenceLoading: "Loading preference…",
+    preferenceLoadFailed: "Could not load this preference.",
+    preferenceRetry: "Retry",
     title: "Settings",
     description: "Personalize your dashboard.",
     language: "Language",
@@ -86,9 +105,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     appearance: "Appearance",
     light: "Light",
     dark: "Dark",
+    switchToLight: "Switch to light mode",
+    switchToDark: "Switch to dark mode",
     navigation: "Navigation sections",
     navigationDesc:
-      "Toggle which sections appear in navigation and drag to reorder within each group. Home and Inbox stay pinned.",
+      "Choose navigation sections and drag to reorder within each group. Home and Settings remain available.",
     alwaysVisible: "Always visible",
     reorder: "Drag to reorder",
     tasks: "Tasks",
@@ -107,8 +128,16 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     renewalNotifications: "Subscription renewal warnings",
     renewalNotificationsDesc: "Allow scheduled email warnings for active subscriptions renewing today or in three days.",
     dataExport: "Data & export",
-    dataExportDesc: "Download portable JSON. Legacy personal data remains available after its source tables are removed.",
-    exportFull: "Full export",
+    dataExportDesc: "Combined data contains account, financial, professional and knowledge records. Marketing, daily focus and uploaded files are outside this download. The legacy archive is separate.",
+    exportFull: "Combined data",
+    exportDataset: "Dataset",
+    exportJson: "Download JSON",
+    exportPending: "Preparing download…",
+    exportStarted: "Download started. Check your browser’s downloads.",
+    exportFailed: "Could not prepare the download. Try again.",
+    exportTooLarge: "This download is too large. Choose a smaller dataset.",
+    exportAccountChanged: "Your account needs verification. Reload before downloading.",
+    exportPreview: "Sign in to download your own data.",
     exportFinancial: "Financial",
     exportProfessional: "Professional",
     exportKnowledge: "Knowledge",
@@ -119,6 +148,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     exportCareer: "Career",
     exportTransactionsCsv: "Transactions CSV",
     integrations: "Integrations",
+    integrationsLoading: "Loading connection status…",
+    integrationsLoadFailed: "Could not refresh connection status. Previously loaded values may be out of date.",
+    integrationsPreview: "Connection status is available after signing in.",
     integrationsDesc: "Connection state only. Credentials and provider tokens are never exposed here.",
     bankProviderNote: "Bank sync can use more than one provider. A provider token you supply is stored server-side and read only while a sync runs.",
     connected: "Connected",
@@ -161,6 +193,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     noProjects: "No projects yet. Add one in Projects.",
   },
   cs: {
+    preferenceLoading: "Načítání nastavení…",
+    preferenceLoadFailed: "Toto nastavení se nepodařilo načíst.",
+    preferenceRetry: "Zkusit znovu",
     title: "Nastavení",
     description: "Přizpůsobte si svůj přehled.",
     language: "Jazyk",
@@ -170,9 +205,11 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     appearance: "Vzhled",
     light: "Světlý",
     dark: "Tmavý",
+    switchToLight: "Přepnout do světlého režimu",
+    switchToDark: "Přepnout do tmavého režimu",
     navigation: "Sekce navigace",
     navigationDesc:
-      "Zapněte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Inbox zůstávají připnuté.",
+      "Vyberte sekce navigace a přetažením změňte jejich pořadí ve skupině. Domů a Nastavení zůstávají dostupné.",
     alwaysVisible: "Vždy viditelné",
     reorder: "Přetáhni pro změnu pořadí",
     tasks: "Úkoly",
@@ -191,8 +228,16 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     renewalNotifications: "Upozornění na obnovení předplatného",
     renewalNotificationsDesc: "Povolte plánované e-mailové upozornění pro aktivní předplatná obnovovaná dnes nebo za tři dny.",
     dataExport: "Data a export",
-    dataExportDesc: "Stáhněte přenositelný JSON. Starší osobní data zůstávají dostupná i po odstranění zdrojových tabulek.",
-    exportFull: "Úplný export",
+    dataExportDesc: "Sloučená data obsahují účet, finance, profesní a znalostní záznamy. Marketing, denní plánování a nahrané soubory jsou mimo tento export. Starší archiv se stahuje samostatně.",
+    exportFull: "Sloučená data",
+    exportDataset: "Sada dat",
+    exportJson: "Stáhnout JSON",
+    exportPending: "Připravuje se stažení…",
+    exportStarted: "Stahování zahájeno. Zkontrolujte stažené soubory v prohlížeči.",
+    exportFailed: "Stažení se nepodařilo připravit. Zkuste to znovu.",
+    exportTooLarge: "Export je příliš velký. Vyberte menší sadu dat.",
+    exportAccountChanged: "Účet vyžaduje ověření. Před stažením obnovte stránku.",
+    exportPreview: "Pro stažení vlastních dat se přihlaste.",
     exportFinancial: "Finance",
     exportProfessional: "Profesní",
     exportKnowledge: "Znalosti",
@@ -203,6 +248,9 @@ export const settings: { en: SettingsStrings; cs: SettingsStrings } = {
     exportCareer: "Kariéra",
     exportTransactionsCsv: "Transakce CSV",
     integrations: "Integrace",
+    integrationsLoading: "Načítání stavu připojení…",
+    integrationsLoadFailed: "Stav připojení se nepodařilo obnovit. Dříve načtené údaje mohou být zastaralé.",
+    integrationsPreview: "Stav připojení je dostupný po přihlášení.",
     integrationsDesc: "Zobrazuje se pouze stav připojení. Přihlašovací údaje ani tokeny poskytovatelů se zde nikdy neodhalují.",
     bankProviderNote: "Napojení banky může používat víc poskytovatelů. Token, který zadáš, se ukládá na serveru a čte se jen během synchronizace.",
     connected: "Připojeno",

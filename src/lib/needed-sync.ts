@@ -1,9 +1,10 @@
+import { awaitWithSignal } from "@/lib/abortable";
 import { addDays, format } from "date-fns";
+import { loadNeededBatch } from "@/lib/needed-batch-client";
 import type { CommitOutcome, GithubRepo } from "./github";
 import {
-  loadNeededFile,
   neededTodoItems,
-  removeNeededLine,
+  removeNeededLines,
   type NeededFileResult,
   type NeededFilePath,
 } from "./needed";
@@ -21,6 +22,24 @@ import type { Todo } from "./types";
 /** Every generated task gets this many days before it's due. */
 export const TASK_TIMER_DAYS = 7;
 
+export type NeededTodoSnapshot = Pick<Todo, "id" | "source" | "repo_id" | "needed_raw" | "title" | "done">;
+export const NEEDED_SNAPSHOT_PAGE_SIZE = 500;
+
+/** Never diff a truncated or failed owner read as an empty task list. */
+export async function readNeededTodoSnapshot(
+  loadPage: (from: number, to: number) => PromiseLike<{ data: NeededTodoSnapshot[] | null; error: unknown }>,
+): Promise<NeededTodoSnapshot[]> {
+  const rows: NeededTodoSnapshot[] = [];
+  for (let page = 0; page < 100; page++) {
+    const from = page * NEEDED_SNAPSHOT_PAGE_SIZE;
+    const { data, error } = await loadPage(from, from + NEEDED_SNAPSHOT_PAGE_SIZE - 1);
+    if (error || !data) throw new Error("Could not read existing tasks.");
+    rows.push(...data);
+    if (data.length < NEEDED_SNAPSHOT_PAGE_SIZE) return rows;
+  }
+  throw new Error("Task snapshot limit reached; no synchronization was performed.");
+}
+
 /** The insert shape for a NEEDED-sourced task (before the DB fills id/created). */
 export type NeededTodoRow = {
   user_id: string;
@@ -34,6 +53,7 @@ export type NeededTodoRow = {
   repo_name: string;
   repo_url: string;
   needed_raw: string;
+  needed_assignee: "me" | "ai" | null;
   generated_at: string;
   due_date: string;
   /** Importance 1–5 (5 = highest) from the task's `[imp:N]` marker, else null. */
@@ -87,6 +107,7 @@ export function buildNeededRows(
     repo_name: repo.name,
     repo_url: htmlUrl ?? repo.html_url,
     needed_raw: it.raw,
+    needed_assignee: it.assignee,
     generated_at: nowIso,
     due_date: dueDate,
     importance: it.importance,
@@ -107,7 +128,7 @@ export function buildNeededRows(
 export function diffNeededTodos(
   scannedRepoIds: Set<string>,
   freshRows: NeededTodoRow[],
-  existing: Todo[],
+  existing: NeededTodoSnapshot[],
 ): { toInsert: NeededTodoRow[]; toDeleteIds: string[] } {
   const freshKeys = new Set(
     freshRows.map((r) => neededKey(r.repo_id, r.needed_raw, r.title)),
@@ -132,7 +153,7 @@ export function diffNeededTodos(
   return { toInsert, toDeleteIds };
 }
 
-/** Reads one repository's NEEDED.md; `loadNeededFile` in the app. */
+/** Optional injected loader for isolated callers/tests; the app uses the identified batch reader. */
 export type NeededFileLoader = (
   owner: string,
   repo: string,
@@ -146,6 +167,8 @@ export type NeededScan = {
   freshRows: NeededTodoRow[];
   /** Repositories with no NEEDED.md at any known path. Their tasks are kept. */
   missing: string[];
+  /** Repositories that failed to read; their existing tasks are retained. */
+  unavailable: string[];
 };
 
 /**
@@ -160,13 +183,22 @@ export async function scanNeededRepos(
   userId: string,
   repos: GithubRepo[],
   nowIso: string,
-  load: NeededFileLoader = loadNeededFile,
+  load?: NeededFileLoader,
+  options: { signal?: AbortSignal } = {},
 ): Promise<NeededScan> {
+  const signal = AbortSignal.any([AbortSignal.timeout(60_000), ...(options.signal ? [options.signal] : [])]);
+  signal.throwIfAborted();
+  repos = structuredClone(repos);
+  const batch = load ? null : await awaitWithSignal(loadNeededBatch(repos, signal), signal);
+  if (batch?.kind === "disconnected") throw new Error("disconnected");
+  const files = new Map(batch?.kind === "ok" ? batch.files.map(file => [file.repoId, file.result]) : []);
   const scanned = new Set<string>();
   const freshRows: NeededTodoRow[] = [];
   const missing: string[] = [];
+  const unavailable: string[] = [];
   for (const repo of repos) {
-    const res = await load(repo.owner, repo.name);
+    signal.throwIfAborted();
+    const res = load ? await awaitWithSignal(load(repo.owner, repo.name), signal) : files.get(String(repo.id)) ?? { kind: "error" as const };
     if (res.kind === "disconnected") throw new Error("disconnected");
     if (res.kind === "ok") {
       scanned.add(String(repo.id));
@@ -175,19 +207,21 @@ export async function scanNeededRepos(
       );
     } else if (res.kind === "not-found") {
       missing.push(repo.full_name);
-    }
+    } else { unavailable.push(repo.full_name); }
   }
-  return { scanned, freshRows, missing };
+  return { scanned, freshRows, missing, unavailable };
 }
 
 /** Commits new NEEDED.md content; `commitFile` in the app. */
 export type NeededCommit = (input: {
+  expectedRepositoryId: number;
   owner: string;
   repo: string;
   path: NeededFilePath;
+  expectedSha: string;
   content: string;
   count: number;
-}) => Promise<CommitOutcome>;
+}, signal?: AbortSignal) => Promise<CommitOutcome>;
 
 /** What "Delete from NEEDED.md" did. */
 export type FinishedRemoval = {
@@ -197,6 +231,9 @@ export type FinishedRemoval = {
    *  are in `cleared` too: the lines left with the file, so nothing was
    *  committed there. */
   missing: string[];
+  /** Eligible finished tasks whose cleanup could not be confirmed. */
+  kept: number;
+  disconnected: boolean;
 };
 
 /**
@@ -207,19 +244,22 @@ export type FinishedRemoval = {
  * no line survives in a file the dashboard still tracks. A repository with no
  * file at any known path has nothing left to edit: its finished rows are
  * cleared and it is named in `missing`, so the owner learns why no commit
- * happened. A disconnected token aborts with Error("disconnected").
+ * happened. Work is bounded to 100 source groups and 60 seconds. Confirmed
+ * source changes and an unavailable/disconnected remainder are separate outcomes.
  */
 export async function removeFinishedFromNeeded(
   todos: Todo[],
   commit: NeededCommit,
-  load: NeededFileLoader = loadNeededFile,
+  load?: NeededFileLoader,
+  options: { signal?: AbortSignal } = {},
 ): Promise<FinishedRemoval> {
+  todos = structuredClone(todos);
   const byRepo = new Map<string, Todo[]>();
   for (const td of todos) {
     if (
       !td.done ||
       td.source !== "github" ||
-      !td.needed_raw ||
+      !td.needed_raw?.trim() ||
       !td.repo_owner ||
       !td.repo_name
     ) {
@@ -231,39 +271,42 @@ export async function removeFinishedFromNeeded(
     else byRepo.set(key, [td]);
   }
 
-  const cleared: string[] = [];
-  const missing: string[] = [];
-  for (const tasks of byRepo.values()) {
-    const owner = tasks[0].repo_owner!;
-    const name = tasks[0].repo_name!;
-    const res = await load(owner, name);
-    if (res.kind === "disconnected") throw new Error("disconnected");
-    if (res.kind === "not-found") {
-      missing.push(`${owner}/${name}`);
-      cleared.push(...tasks.map((td) => td.id));
-      continue;
-    }
-    if (res.kind !== "ok") continue;
-
-    let content = res.content;
-    for (const td of tasks) {
-      const { next, removed } = removeNeededLine(content, td.needed_raw!);
-      if (removed) content = next;
-    }
-    if (content !== res.content) {
-      const outcome = await commit({
-        owner,
-        repo: name,
-        path: res.path,
-        content,
-        count: tasks.length,
-      });
-      if (!outcome.ok) {
-        if (outcome.status === 401) throw new Error("disconnected");
-        continue;
-      }
-    }
-    cleared.push(...tasks.map((td) => td.id));
+  const groups = [...byRepo.values()], selected = groups.slice(0, 100);
+  const eligibleCount = groups.reduce((count, tasks) => count + tasks.length, 0);
+  const cleared: string[] = [], missing: string[] = [];
+  const signal = AbortSignal.any([AbortSignal.timeout(60_000), ...(options.signal ? [options.signal] : [])]);
+  let disconnected = false;
+  const finish = (): FinishedRemoval => ({ cleared, missing, kept: eligibleCount - cleared.length, disconnected });
+  if (!eligibleCount || signal.aborted) return finish();
+  const batchRepos = selected.flatMap(tasks => {
+    const task = tasks[0], id = Number(task.repo_id);
+    return Number.isSafeInteger(id) && id > 0 ? [{ id, owner: task.repo_owner!, name: task.repo_name! }] : [];
+  });
+  let files = new Map<string, NeededFileResult>();
+  if (!load) {
+    try {
+      const batch = await awaitWithSignal(loadNeededBatch(batchRepos, signal), signal);
+      if (batch.kind === "disconnected") { disconnected = true; return finish(); }
+      files = new Map(batch.files.map(file => [file.repoId, file.result]));
+    } catch { return finish(); }
   }
-  return { cleared, missing };
+  for (const tasks of selected) {
+    if (signal.aborted) break;
+    const owner = tasks[0].repo_owner!, name = tasks[0].repo_name!, repositoryId = Number(tasks[0].repo_id);
+    if (!Number.isSafeInteger(repositoryId) || repositoryId <= 0 || String(repositoryId) !== tasks[0].repo_id || tasks.some(task => task.repo_id !== tasks[0].repo_id || task.repo_owner !== owner || task.repo_name !== name)) continue;
+    try {
+      const cached = files.get(String(Number(tasks[0].repo_id)));
+      const res = await awaitWithSignal(load ? load(owner, name) : Promise.resolve(cached ?? { kind: "error" as const }), signal);
+      if (res.kind === "disconnected") { disconnected = true; break; }
+      if (res.kind === "not-found") { missing.push(`${owner}/${name}`); cleared.push(...tasks.map(task => task.id)); continue; }
+      if (res.kind !== "ok") continue;
+      const { next: content, removed } = removeNeededLines(res.content, tasks.map(task => task.needed_raw!));
+      if (content !== res.content) {
+        const outcome = await awaitWithSignal(commit({ expectedRepositoryId: repositoryId, owner, repo: name, path: res.path, expectedSha: res.sha, content, count: removed }, signal), signal);
+        if (!outcome.ok) { if (outcome.status === 401) { disconnected = true; break; } continue; }
+      }
+      cleared.push(...tasks.map(task => task.id));
+    } catch { if (signal.aborted) break; }
+  }
+  return finish();
 }

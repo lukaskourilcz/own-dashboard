@@ -1,5 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
+import { readFacebookPages, type FacebookPageList } from './facebook-page-list';
+import { metaGraphResponse, MetaGraphRequestError } from './meta-graph-response';
 import type { MetaPublisherConfig } from './publisher';
 
 /**
@@ -20,34 +22,40 @@ const PageSchema = z.object({ id: numericId, access_token: tokenValue.optional()
 
 export async function resolveFacebookPage(config: Pick<MetaPublisherConfig, 'apiVersion' | 'accessToken' | 'loginMode'>, igUserId: string,
   options: { fetcher?: typeof fetch; signal?: AbortSignal } = {}): Promise<FacebookPage> {
+  config = { apiVersion: config.apiVersion, accessToken: config.accessToken, loginMode: config.loginMode };
   if (config.loginMode !== 'facebook') throw new FacebookPageError('login-mode-mismatch');
   if (!/^v\d+\.\d+$/.test(config.apiVersion)) throw new FacebookPageError('api-version-unverified');
   if (!numericId.safeParse(igUserId).success || !config.accessToken) throw new FacebookPageError('account-unavailable');
-  const get = async (path: string, fields: string) => {
-    const url = new URL(`https://graph.facebook.com/${config.apiVersion}/${path}`);
-    url.searchParams.set('fields', fields);
-    const timeout = AbortSignal.timeout(10_000);
-    let response: Response;
-    try { response = await (options.fetcher ?? fetch)(url.href, { method: 'GET', redirect: 'error', cache: 'no-store', headers: { Authorization: `Bearer ${config.accessToken}` },
-      signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout }); }
-    catch { throw new FacebookPageError('meta-request-uncertain', true); }
-    let body: unknown = null;
-    try { body = await response.json(); } catch { body = null; }
-    return { ok: response.ok, status: response.status, body };
-  };
-  const listed = await get('me/accounts', 'id,access_token,instagram_business_account{id}');
-  if (listed.ok) {
-    const pages = z.object({ data: z.array(PageSchema).max(100) }).safeParse(listed.body);
-    if (pages.success) {
-      const page = pages.data.data.find((item) => item.instagram_business_account?.id === igUserId);
-      if (!page) throw new FacebookPageError('facebook-page-link-required');
-      if (!page.access_token) throw new FacebookPageError('facebook-page-token-unavailable');
-      return { pageId: page.id, pageToken: page.access_token };
+  const signal = AbortSignal.any([AbortSignal.timeout(20_000), ...(options.signal ? [options.signal] : [])]);
+  const get = async (url: URL) => {
+    try {
+      return await metaGraphResponse(url.href, { method: 'GET', headers: { Authorization: `Bearer ${config.accessToken}` } }, signal, options.fetcher, { maximum: 131_072 });
+    } catch (error) {
+      throw new FacebookPageError(error instanceof MetaGraphRequestError && error.code === 'meta-invalid-response' ? 'meta-invalid-response' : 'meta-request-uncertain', true);
     }
+  };
+  const accounts = new URL(`https://graph.facebook.com/${config.apiVersion}/me/accounts`);
+  accounts.searchParams.set('fields', 'id,access_token,instagram_business_account{id}');
+  let listed: FacebookPageList<z.infer<typeof PageSchema>>;
+  try { listed = await readFacebookPages(accounts, PageSchema, get, signal); }
+  catch (error) {
+    if (error instanceof FacebookPageError) throw error;
+    throw new FacebookPageError(error instanceof MetaGraphRequestError ? error.code : 'meta-request-uncertain', true);
   }
-  // A Page token cannot list Pages: it is the Page.
-  const me = await get('me', 'id,instagram_business_account{id}');
-  if (!me.ok) throw new FacebookPageError(`meta-http-${me.status}`);
+  if (listed.kind === 'complete') {
+    const matches = listed.pages.filter(item => item.instagram_business_account?.id === igUserId);
+    if (matches.length > 1) throw new FacebookPageError('meta-invalid-response', true);
+    const page = matches[0];
+    if (!page) throw new FacebookPageError('facebook-page-link-required');
+    if (!page.access_token) throw new FacebookPageError('facebook-page-token-unavailable');
+    return { pageId: page.id, pageToken: page.access_token };
+  }
+  if (!listed.first || listed.status !== 400) throw new FacebookPageError(`meta-http-${listed.status}`, listed.status === 429 || listed.status >= 500);
+  // A Page token cannot list Pages: only the first unsupported list request may fall back to /me.
+  const url = new URL(`https://graph.facebook.com/${config.apiVersion}/me`);
+  url.searchParams.set('fields', 'id,instagram_business_account{id}');
+  const me = await get(url);
+  if (me.status !== 200) throw new FacebookPageError(`meta-http-${me.status}`, me.status === 429 || me.status >= 500);
   const page = PageSchema.safeParse(me.body);
   if (!page.success) throw new FacebookPageError('meta-invalid-response');
   if (page.data.instagram_business_account?.id !== igUserId) throw new FacebookPageError('facebook-page-link-required');

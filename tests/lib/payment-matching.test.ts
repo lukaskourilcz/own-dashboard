@@ -54,11 +54,21 @@ describe("extractVariableSymbol", () => {
 });
 
 describe("normalizeSymbol", () => {
-  it("keeps digits only and caps at the ten SPAYD allows", () => {
+  it("keeps digits only and refuses an overlong reference", () => {
     expect(normalizeSymbol(" 2026-001 ")).toBe("2026001");
-    expect(normalizeSymbol("123456789012")).toBe("1234567890");
+    expect(normalizeSymbol("123456789012")).toBeNull();
     expect(normalizeSymbol("FV/A")).toBeNull();
   });
+});
+
+it.each(["VS: 12345678901", "variabilní symbol 12345678901", "/VS/12345678901/SS/0", "VS 12345678901"])("never extracts the prefix of an overlong reference (%s)", note => {
+  expect(extractVariableSymbol(note)).toBeNull();
+  expect(matchPayments({ invoices: [invoice({ variable_symbol: "1234567890" })], transactions: [payment({ variable_symbol: null, note })], totals: totals([["inv1", 38115]]) }).matched).toEqual([]);
+});
+it("an invalid explicit reference cannot fall back to another field and settle an invoice", () => {
+  expect(transactionSymbol(payment({ variable_symbol: "12345678901", note: "VS: 1234567890" }))).toBeNull();
+  expect(invoiceSymbol(invoice({ variable_symbol: "12345678901", number: "1234567890" }))).toBeNull();
+  expect(matchPayments({ invoices: [invoice({ variable_symbol: "1234567890" })], transactions: [payment({ variable_symbol: "12345678901" })], totals: totals([["inv1", 38115]]) }).matched).toEqual([]);
 });
 
 describe("symbol resolution", () => {
@@ -239,4 +249,17 @@ describe("matchPayments", () => {
     });
     expect(result.matched).toHaveLength(1);
   });
+});
+
+describe("numeric settlement guards",()=>{
+ it.each([NaN,Infinity,-1,0])("does not settle a malformed or nonpositive payment (%s)",amount=>{
+  expect(matchPayments({invoices:[invoice()],totals:totals([["inv1",38115]]),transactions:[payment({amount})]}).matched).toEqual([]);
+ });
+ it.each([NaN,Infinity,-1,0])("does not settle an unavailable or nonpositive total (%s)",total=>{
+  expect(matchPayments({invoices:[invoice()],totals:totals([["inv1",total]]),transactions:[payment()]}).matched).toEqual([]);
+ });
+ it("compares integer cents at the existing one-cent tolerance",()=>{
+  expect(matchPayments({invoices:[invoice({round_total:false})],totals:totals([["inv1",100.99]]),transactions:[payment({amount:101})]}).matched).toHaveLength(1);
+  expect(matchPayments({invoices:[invoice({round_total:false})],totals:totals([["inv1",100.99]]),transactions:[payment({amount:101.01})]}).matched).toHaveLength(0);
+ });
 });

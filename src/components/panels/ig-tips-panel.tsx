@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddToProjectDialog } from "@/components/links/add-to-project-dialog";
 import { useProjectLinkMutations } from "@/components/links/use-project-links";
 import { CalendarSourceNotes } from "@/components/marketing/calendar-source-notes";
-import { useMarketingCalendars, type MarketingView } from "@/components/marketing/use-marketing-calendars";
+import { useMarketingCalendars, type MarketingView, type MarketingRefreshError } from "@/components/marketing/use-marketing-calendars";
 import { TipExportDialog } from "@/components/panels/tip-export-dialog";
 import { Button } from "@/components/ui/button";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
@@ -48,11 +48,12 @@ import {
   type TipUsage,
 } from "@/lib/marketing-calendars";
 import { resourceKey } from "@/lib/link-library";
-import { nextProjectLinkOrder, projectsUsingLink } from "@/lib/project-links";
+import { nextProjectLinkOrder, projectLinkUsageByLink } from "@/lib/project-links";
 import type { EntityStatus } from "@/lib/queries/entities";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
+import { useOwnerPreferences } from "@/lib/owner-preferences";
 import type { AiLink, Project, ProjectLink, Updater } from "@/lib/types";
 import { useReturnFocus } from "@/lib/use-return-focus";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,7 @@ export function IgTipsPanel({
   initialQuery = null,
   onDeepLinkHandled,
 }: Props) {
+  const ownerScope = useOwnerPreferences();
   const t = useDict();
   const tt = t.tips;
   const m = t.marketing;
@@ -124,10 +126,10 @@ export function IgTipsPanel({
   const qc = useQueryClient();
   const toast = useToast();
   const confirm = useConfirmation();
-  const relations = useProjectLinkMutations(setProjectLinks);
+  const relations = useProjectLinkMutations(setProjectLinks, projectLinks);
   const [query, setQuery] = useState(initialQuery ?? "");
   const [groupFilter, setGroupFilter] = useState<TipGroupKey | "all">("all");
-  const [notApplied, setNotApplied] = useState(false);
+  const [withoutPlanReferences, setWithoutPlanReferences] = useState(false);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => {
     const target = tipForDeepLink(initialQuery, aiLinks.filter(isTip));
     return new Set(target ? [target.id] : []);
@@ -144,6 +146,7 @@ export function IgTipsPanel({
   const calendarSources = calendars.view.kind === "ok" ? calendars.view.data.sources : null;
   const usage = useMemo(() => (calendarSources ? aggregateTipUsage(calendarSources) : null), [calendarSources]);
   const usageRead = usage !== null && usage.readSources.length > 0;
+  const usageByTip = useMemo(() => new Map(tips.map(tip => [tip.id, usage ? usageForTip(usage, tip.title) : NO_USAGE])), [tips, usage]);
   const unmatchedRefs = useMemo(() => (usage ? unmatchedTipRefs(usage, tips.map((tip) => tip.title)) : 0), [usage, tips]);
   const groupLabel = (group: TipGroupKey) => tt.groupLabel[group];
   const searched = useMemo(() => searchTips(tips, query, (group) => tt.groupLabel[group]), [tips, query, tt.groupLabel]);
@@ -152,19 +155,20 @@ export function IgTipsPanel({
       searched.filter(
         (tip) =>
           (groupFilter === "all" || tipGroupKey(tip) === groupFilter) &&
-          (!notApplied || !usageRead || usageForTip(usage!, tip.title).length === 0),
+          (!withoutPlanReferences || !usageRead || usageByTip.get(tip.id)!.length === 0),
       ),
-    [searched, groupFilter, notApplied, usage, usageRead],
+    [searched, groupFilter, withoutPlanReferences, usageByTip, usageRead],
   );
-  const notAppliedCount = useMemo(
-    () => (usageRead ? tips.filter((tip) => usageForTip(usage!, tip.title).length === 0).length : 0),
-    [tips, usage, usageRead],
+  const withoutPlanReferenceCount = useMemo(
+    () => (usageRead ? tips.filter((tip) => usageByTip.get(tip.id)!.length === 0).length : 0),
+    [tips, usageByTip, usageRead],
   );
   const groups = useMemo(() => groupTips(filtered), [filtered]);
   const availableGroups = useMemo(() => groupTips(tips).map((entry) => entry.group), [tips]);
   const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
+  const projectUsage = useMemo(() => projectLinkUsageByLink(projectLinks, projects), [projectLinks, projects]);
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
-  const searching = query.trim().length > 0 || groupFilter !== "all" || (notApplied && usageRead);
+  const searching = query.trim().length > 0 || groupFilter !== "all" || (withoutPlanReferences && usageRead);
 
   // Arriving through `/ig-tips?q=<title>`: once the tips are loaded, open the
   // card whose title is the query and bring it into view. Runs once; the
@@ -199,19 +203,20 @@ export function IgTipsPanel({
     });
 
   const saveTip = useMutation({
-    mutationFn: async (vars: { id?: string; record_type: "link" | "idea"; title: string; url: string; tip_group: TipGroup | null; tip_summary: string | null; description: string | null }) => {
-      const { id, ...values } = vars;
+    scope: { id: "library-writes" },
+    mutationFn: async (vars: { id?: string; expectedUpdatedAt?: string; record_type: "link" | "idea"; title: string; url: string; tip_group: TipGroup | null; tip_summary: string | null; description: string | null }) => {
+      const { id, expectedUpdatedAt, ...values } = vars;
       if (id) {
         const { data, error } = await supabase
           .from("ai_links")
           .update({ ...values, updated_at: new Date().toISOString() })
-          .eq("id", id)
+          .eq("id", id).eq("updated_at", expectedUpdatedAt!)
           .select()
           .single();
         if (error || !data) throw error ?? new Error("no-data");
         return { saved: data as AiLink, created: false };
       }
-      const userId = await currentUserId(supabase);
+      const userId = await currentUserId(supabase, ownerScope?.capture());
       if (!userId) throw new Error("no-user");
       const { data, error } = await supabase
         .from("ai_links")
@@ -227,32 +232,25 @@ export function IgTipsPanel({
       void qc.invalidateQueries({ queryKey: qk.aiLinks });
       setDialogOpen(false);
     },
-    onError: (error) => toast.err((error as Error)?.message === "no-user" ? tt.signInFirst : tt.couldNotSave),
+    onError: (error) => setFormError((error as Error)?.message === "no-user" ? tt.signInFirst : tt.couldNotSave),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: qk.aiLinks }); },
   });
 
-  // Optimistic, with a rollback; project_links rows cascade in the database.
+  // Apply confirmed deletions only; all dependent lists reconcile after the write.
   const deleteTip = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ai_links").delete().eq("id", id);
       if (error) throw error;
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.aiLinks });
-      const previousLinks = qc.getQueryData<AiLink[]>(qk.aiLinks);
-      const previousRelations = qc.getQueryData<ProjectLink[]>(qk.projectLinks);
-      setAiLinks((old) => old.filter((link) => link.id !== id));
-      setProjectLinks((old) => old.filter((relation) => relation.ai_link_id !== id));
-      return { previousLinks, previousRelations };
+    scope: { id: "library-writes" },
+    onSuccess: (_data, id) => {
+      setAiLinks(rows => rows.filter(row => row.id !== id));
+      setProjectLinks(rows => rows.filter(row => row.ai_link_id !== id));
+      toast.ok(tt.deleted);
     },
-    onSuccess: () => toast.ok(tt.deleted),
-    onError: (_error, _id, context) => {
-      if (context?.previousLinks) setAiLinks(context.previousLinks);
-      if (context?.previousRelations) setProjectLinks(context.previousRelations);
-      toast.err(tt.couldNotDelete);
-    },
+    onError: () => toast.err(tt.couldNotDelete),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: qk.aiLinks });
-      void qc.invalidateQueries({ queryKey: qk.projectLinks });
+      for (const queryKey of [qk.aiLinks, qk.projectLinks, qk.tools, qk.promptLinks]) void qc.invalidateQueries({ queryKey });
     },
   });
 
@@ -280,6 +278,8 @@ export function IgTipsPanel({
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (saveTip.isPending) return;
+    setFormError(null);
     const title = form.title.trim();
     if (!title) return setFormError(tt.titleRequired);
     if (!form.url.trim()) return setFormError(tt.urlRequired);
@@ -290,6 +290,7 @@ export function IgTipsPanel({
     }
     saveTip.mutate({
       id: editing?.id,
+      expectedUpdatedAt: editing?.updated_at,
       record_type: form.recordType,
       title,
       url,
@@ -357,7 +358,7 @@ export function IgTipsPanel({
               placeholder={tt.searchPlaceholder}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-9 w-full max-w-sm"
+              className="h-11 w-full sm:h-9 sm:max-w-sm"
             />
             <div role="group" aria-label={tt.groupFilter} className="flex flex-wrap gap-1.5">
               {(["all", ...availableGroups] as const).map((group) => (
@@ -374,17 +375,18 @@ export function IgTipsPanel({
               {usageRead && (
                 <button
                   type="button"
-                  aria-pressed={notApplied}
-                  onClick={() => setNotApplied((value) => !value)}
-                  className={cn(chip, "sm:ml-2", notApplied ? chipOn : chipOff)}
+                  aria-pressed={withoutPlanReferences}
+                  onClick={() => setWithoutPlanReferences((value) => !value)}
+                  className={cn(chip, "sm:ml-2", withoutPlanReferences ? chipOn : chipOff)}
                 >
                   {m.notYetApplied}
-                  <span className="ml-1.5 tabular text-foreground-subtle">{notAppliedCount}</span>
+                  <span className="ml-1.5 tabular text-foreground-subtle">{withoutPlanReferenceCount}</span>
                 </button>
               )}
             </div>
             <PlansStatus
               view={calendars.view}
+              refreshError={calendars.refreshError}
               unmatchedRefs={unmatchedRefs}
               checking={calendars.checking}
               canCheck={calendars.canCheck}
@@ -399,7 +401,7 @@ export function IgTipsPanel({
                   onClick={() => {
                     setQuery("");
                     setGroupFilter("all");
-                    setNotApplied(false);
+                    setWithoutPlanReferences(false);
                   }}
                 >
                   {tt.clearFilters}
@@ -423,8 +425,8 @@ export function IgTipsPanel({
                       <TipCard
                         key={tip.id}
                         tip={tip}
-                        forProjects={projectsUsingLink(tip.id, projectLinks, projects).map(({ project }) => project.name)}
-                        usage={usage ? usageForTip(usage, tip.title) : NO_USAGE}
+                        forProjects={(projectUsage.get(tip.id) ?? []).map(({ project }) => project.name)}
+                        usage={usageByTip.get(tip.id) ?? NO_USAGE}
                         expanded={expanded.has(tip.id)}
                         onToggle={() => toggle(tip.id)}
                         onEdit={() => openEdit(tip)}
@@ -440,13 +442,14 @@ export function IgTipsPanel({
         </>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={returnFocus}>
+      <Dialog open={dialogOpen} onOpenChange={next => { if (!saveTip.isPending) setDialogOpen(next); }}>
+        <DialogContent showClose={!saveTip.isPending} className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={returnFocus}>
           <DialogHeader>
             <DialogTitle>{editing ? tt.editTitle : tt.newTitle}</DialogTitle>
             <DialogDescription className="sr-only">{tt.description}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={submit} className="mt-3 space-y-3">
+          <form onSubmit={submit}>
+            <fieldset disabled={saveTip.isPending} className="mt-3 space-y-3">
             {editing && <div className="space-y-1.5">
               <Label htmlFor="tip-record-type">{t.ai.recordType}</Label>
               <SimpleSelect id="tip-record-type" value={form.recordType}
@@ -455,11 +458,11 @@ export function IgTipsPanel({
             </div>}
             <div className="space-y-1.5">
               <Label htmlFor="tip-title">{tt.titleLabel}</Label>
-              <Input id="tip-title" value={form.title} maxLength={200} autoFocus onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
+              <Input required id="tip-title" value={form.title} maxLength={200} autoFocus onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tip-url">{tt.urlLabel}</Label>
-              <Input id="tip-url" value={form.url} inputMode="url" placeholder="https://…" onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))} />
+              <Input required maxLength={4096} id="tip-url" value={form.url} inputMode="url" placeholder="https://…" onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tip-group">{tt.groupField}</Label>
@@ -485,6 +488,7 @@ export function IgTipsPanel({
             <div className="space-y-1.5">
               <Label htmlFor="tip-notes">{tt.notesLabel}</Label>
               <Textarea
+                maxLength={10000}
                 id="tip-notes"
                 value={form.notes}
                 rows={4}
@@ -502,6 +506,7 @@ export function IgTipsPanel({
                 {saveTip.isPending ? tt.saving : editing ? tt.save : tt.create}
               </Button>
             </div>
+            </fieldset>
           </form>
         </DialogContent>
       </Dialog>
@@ -515,7 +520,7 @@ export function IgTipsPanel({
           if (!addToProjectTip) return false;
           const saved = await relations.upsert([
             { project_id: projectId, ai_link_id: addToProjectTip.id, role, note, sort_order: nextProjectLinkOrder(projectId, projectLinks) },
-          ]);
+          ], { silent: true });
           return saved !== null;
         }}
       />
@@ -679,18 +684,20 @@ function TipCard({
 }
 
 /**
- * Which marketing calendars the "Applied in" counts come from, or why they
- * could not be read. Plain text rather than a live region: the tip count
- * above is the section's status.
+ * Which marketing calendars the "Referenced in" counts come from, or why they
+ * could not be read. Ordinary counts stay plain text; a failed refresh is announced once.
+ * The tip count above remains the section's status.
  */
 function PlansStatus({
   view,
+  refreshError,
   unmatchedRefs,
   checking,
   canCheck,
   onCheckAgain,
 }: {
   view: MarketingView;
+  refreshError: MarketingRefreshError | null;
   unmatchedRefs: number;
   checking: boolean;
   canCheck: boolean;
@@ -699,8 +706,9 @@ function PlansStatus({
   const m = useDict().marketing;
   const read = view.kind === "ok" ? view.data.sources.filter((source) => source.status === "ok") : [];
   return (
-    <div data-plans-status className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs">
-      <div className="min-w-0 space-y-1">
+    <div data-plans-status className="flex flex-col gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs lg:flex-row lg:items-center lg:justify-between lg:gap-x-3">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+        {refreshError && <p role="alert" className="text-warning">{refreshError === 'rate-limited' ? m.cachedRateLimited : m.cachedUnavailable}</p>}
         {view.kind === "loading" ? (
           <p className="text-foreground-muted">{m.loading}</p>
         ) : view.kind !== "ok" ? (
@@ -712,13 +720,13 @@ function PlansStatus({
                 {m.plansRead(read.map((source) => m.calendarEntries(source.label, source.calendar?.entries.length ?? 0)).join(", "))}
               </p>
             )}
-            <CalendarSourceNotes sources={view.data.sources} />
+            <CalendarSourceNotes sources={view.data.sources} className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 space-y-0" />
             {unmatchedRefs > 0 && <p className="text-foreground-muted">{m.unmatchedRefs(unmatchedRefs)}</p>}
           </>
         )}
       </div>
       {canCheck && (
-        <Button size="sm" variant="ghost" onClick={onCheckAgain} disabled={checking} className="min-h-11 sm:min-h-0">
+        <Button size="sm" variant="ghost" onClick={onCheckAgain} disabled={checking} className="w-full shrink-0 lg:w-auto">
           {checking ? m.checking : m.checkAgain}
         </Button>
       )}

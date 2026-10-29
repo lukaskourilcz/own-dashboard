@@ -1,0 +1,25 @@
+{
+  "finding": 316,
+  "engine": "17.11 (Postgres.app)",
+  "fixture": "isolated minimal native database with exact stock marketing_accounts/audio_trends/topic-spend definitions and migrations 136–137; full 137-file chain verified separately in PGlite/actual SDK",
+  "olderConcurrentProofSuperseded": true,
+  "exactConcurrentCompletionReplays": true,
+  "atomicCostAndProof": true,
+  "outcomes": [
+    "stored",
+    "stored",
+    "superseded",
+    "stored"
+  ],
+  "state": {
+    "title": "Newer",
+    "spendId": "70fc2d57-afdd-4a6d-b5c7-4c42a1328be3",
+    "sourceDay": "2026-10-26",
+    "observedAt": "2026-10-27T06:40:36.096699+01:00"
+  },
+  "first": {
+    "rows": 1,
+    "completed": 3,
+    "settledCost": 0.228
+  }
+}

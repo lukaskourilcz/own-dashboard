@@ -1,0 +1,37 @@
+{
+  "source": "b5211478",
+  "ordinaryProductionBuild": true,
+  "NEXT_E2E": "unset",
+  "syntheticEnvironment": true,
+  "checks": [
+    {
+      "route": "/login",
+      "status": 200
+    },
+    {
+      "route": "/dev-preview?tab=marketing&imports=live",
+      "status": 404
+    },
+    {
+      "route": "/api/dev-preview/dneskai-fit",
+      "status": 404
+    },
+    {
+      "route": "/api/marketing/calendars",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/import",
+      "status": 401,
+      "privateNoStore": true
+    }
+  ],
+  "scope": "Local ordinary runtime admission checks only; no provider/model/publication or managed mutation.",
+  "validationInputs": 2107,
+  "inputsUnchanged": true,
+  "renderTraceChecks": 8,
+  "dynamicFilesystemWarnings": 3,
+  "build": "Ordinary default-heap application build; separate broad types use the documented local 4GB allowance.",
+  "initialProbe": "Raw 127.0.0.1-origin import probe receives 403 under the existing origin guard. The canonical localhost probe produces the expected 401; no origin guard change or bypass."
+}

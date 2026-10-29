@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays, ExternalLink, MapPin, Repeat } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   eventStart,
+  calendarDescriptionSnippet,
   eventTimeLabel,
   type EventsResult,
   type GcalEvent,
@@ -14,6 +15,10 @@ import {
 import { RelinkGoogleButton } from "@/components/calendar/relink-cta";
 import { CalendarPicker } from "@/components/calendar/calendar-picker";
 import { useDict, useDateLocale } from "@/lib/i18n";
+import { useNow } from "@/lib/use-now";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { qk } from "@/lib/queries/keys";
 
 type DayBucket = { key: string; date: Date; events: GcalEvent[] };
 
@@ -50,22 +55,38 @@ export function WeekView({
   selectedCalendarIds: string[];
 }) {
   const t = useDict();
+  const qc = useQueryClient();
   const locale = useDateLocale();
+  const now = useNow();
+  const hydrated = now !== null;
+  const [visibleCount, setVisibleCount] = useState(50);
   const buckets = useMemo(
-    () => (calendar.ok ? bucketByDay(calendar.events) : []),
-    [calendar],
+    () => (hydrated && calendar.ok ? bucketByDay(calendar.events) : []),
+    [calendar, hydrated],
   );
+  const visibleBuckets = useMemo(() => {
+    let remaining = visibleCount;
+    const visible: DayBucket[] = [];
+    for (const bucket of buckets) {
+      if (remaining <= 0) break;
+      const events = bucket.events.slice(0, remaining);
+      remaining -= events.length;
+      if (events.length) visible.push({ ...bucket, events });
+    }
+    return visible;
+  }, [buckets, visibleCount]);
+  const total = calendar.ok ? calendar.events.length : 0;
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="inline-flex items-center gap-1.5">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+        <CardTitle role="heading" aria-level={2} className="inline-flex items-center gap-1.5">
           <CalendarDays className="h-3 w-3" /> {t.calendar.next7Days}
         </CardTitle>
         <CalendarPicker initialSelected={selectedCalendarIds} />
       </CardHeader>
       <CardContent>
-        {!calendar.ok ? (
+        {!hydrated ? <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p> : !calendar.ok ? (
           <div className="space-y-3">
             <p className="text-sm text-foreground-muted">
               {calendar.reason === "unauthorized"
@@ -74,11 +95,11 @@ export function WeekView({
                   ? t.calendar.errNoToken
                   : t.calendar.errLoad}
             </p>
-            <RelinkGoogleButton
+            {calendar.reason === "error" ? <Button variant="outline" size="sm" onClick={() => void qc.invalidateQueries({ queryKey: qk.calendarWeek })}>{t.calendar.retry}</Button> : <RelinkGoogleButton
               reason={
                 calendar.reason === "unauthorized" ? "expired" : "calendar-access"
               }
-            />
+            />}
           </div>
         ) : buckets.length === 0 ? (
           <EmptyState
@@ -87,9 +108,10 @@ export function WeekView({
             description={t.calendar.weekWideOpen}
           />
         ) : (
+          <div className="space-y-3">
           <ul className="space-y-5">
-            {buckets.map((b) => {
-              const today = isSameDay(b.date, new Date());
+            {visibleBuckets.map((b) => {
+              const today = isSameDay(b.date, now!);
               return (
                 <li key={b.key}>
                   <p
@@ -107,7 +129,7 @@ export function WeekView({
                   <ul className="space-y-1.5">
                     {b.events.map((ev) => (
                       <li
-                        key={ev.id}
+                        key={`${ev.sourceCalendarId ?? "primary"}:${ev.id}`}
                         className="group flex items-start gap-2 text-sm rounded-md -mx-1.5 px-1.5 py-1 row-hover"
                       >
                         <span className="font-mono text-[11px] text-foreground-subtle w-12 shrink-0 pt-0.5 tabular">
@@ -121,7 +143,7 @@ export function WeekView({
                           </span>
                           {ev.description && (
                             <span className="block truncate text-[11px] text-foreground-subtle mt-0.5">
-                              {ev.description.replace(/<[^>]*>/g, "").slice(0, 120)}
+                              {calendarDescriptionSnippet(ev.description, 120)}
                             </span>
                           )}
                           {(ev.location || ev.recurringEventId) && (
@@ -148,7 +170,7 @@ export function WeekView({
                             href={ev.htmlLink}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-foreground-subtle hover:text-foreground transition-colors pt-0.5 opacity-0 group-hover:opacity-100"
+                            className="inline-flex min-h-11 min-w-11 md:min-h-6 md:min-w-6 items-center justify-center text-foreground-subtle hover:text-foreground transition-colors md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 focus-ring"
                             aria-label={t.calendar.openInGoogleCalendar}
                           >
                             <ExternalLink className="h-3 w-3" />
@@ -161,6 +183,8 @@ export function WeekView({
               );
             })}
           </ul>
+          {total > 50 && <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-foreground-muted" role="status">{t.calendar.showingEvents(Math.min(total, visibleCount), total)}</p>{visibleCount < total && <Button variant="outline" size="sm" onClick={() => setVisibleCount(count => count + 50)}>{t.calendar.showMore}</Button>}</div>}
+          </div>
         )}
       </CardContent>
     </Card>

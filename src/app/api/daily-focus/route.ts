@@ -34,7 +34,7 @@ async function loadDailyFocus(regenerate: boolean): Promise<
     return { error: "Could not load today's focus.", status: 500 };
   }
 
-  const [{ data: items, error: itemsError }, { data: recentSets }] =
+  const [{ data: items, error: itemsError }, { data: gardenRows, error: gardenError }] =
     await Promise.all([
       supabase
         .from("daily_focus_items")
@@ -43,43 +43,19 @@ async function loadDailyFocus(regenerate: boolean): Promise<
         )
         .eq("set_id", setId)
         .order("position"),
-      supabase
-        .from("daily_focus_sets")
-        .select(
-          "id, focus_date, generation, daily_focus_items(id, completed_at)",
-        )
-        .eq("user_id", user.id)
-        .order("focus_date", { ascending: false })
-        .order("generation", { ascending: false })
-        .limit(350),
+      supabase.rpc("daily_focus_garden", { p_until: String(set.focus_date) }),
     ]);
 
   if (itemsError) {
     return { error: "Could not load today's tasks.", status: 500 };
   }
 
-  const byDate = new Map<string, DailyFocusDay>();
-  for (const row of recentSets ?? []) {
-    const date = String(row.focus_date);
-    const nested = Array.isArray(row.daily_focus_items)
-      ? row.daily_focus_items
-      : [];
-    const completedCount = nested.filter((item) => item.completed_at).length;
-    const completed = nested.length === 7 && completedCount === 7;
-    const current = byDate.get(date);
-    if (
-      !current ||
-      completed ||
-      (!current.completed && completedCount > current.completedCount)
-    ) {
-      byDate.set(date, {
-        date,
-        completed,
-        completedCount,
-        total: nested.length,
-      });
-    }
-  }
+  const gardenAvailable = !gardenError && Array.isArray(gardenRows);
+  const rows = (gardenAvailable ? gardenRows : []) as Array<{ focus_date: string; completed: boolean; completed_count: number; total: number }>;
+  const garden: DailyFocusDay[] = rows.map(row => ({
+    date: String(row.focus_date), completed: row.completed === true,
+    completedCount: Number(row.completed_count), total: Number(row.total),
+  }));
 
   return {
     data: {
@@ -87,9 +63,8 @@ async function loadDailyFocus(regenerate: boolean): Promise<
       date: String(set.focus_date),
       generation: Number(set.generation),
       items: (items ?? []) as DailyFocusItem[],
-      garden: [...byDate.values()]
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-49),
+      garden,
+      gardenAvailable,
     },
   };
 }

@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -22,6 +22,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
+  "media-src 'self' https://*.supabase.co",
   [
     "connect-src 'self'",
     "https://*.supabase.co wss://*.supabase.co",
@@ -67,8 +68,25 @@ const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/ca
 const sharpLibvips = "./node_modules/@img/sharp-libvips-*/lib/**/*";
 
 const nextConfig: NextConfig = {
+  // Production checks all application inputs. Root validation also checks tests and scripts.
+  typescript: { tsconfigPath: isDev ? 'tsconfig.json' : 'tsconfig.app.json' },
   // Native bindings loaded through platform-suffixed specifiers no bundler can resolve.
   serverExternalPackages: ["sharp", "@resvg/resvg-js", "ffmpeg-static"],
+  // Marketing file reads use templates, vendored fonts/kits and generated
+  // temporary files. The compiler can conservatively trace the repository for
+  // dynamic paths; build/test/source files are not runtime assets. Keep the
+  // fixture-only dev-preview routes separate: they read public demo images.
+  outputFileTracingExcludes: {
+    "/api/marketing/**": [
+      "./docs/**/*", "./tests/**/*", "./e2e/**/*", "./src/**/*", "./services/**/*",
+      "./supabase/**/*", "./media/**/*", "./public/**/*", "./scripts/**/*",
+      "./test-results/**/*", "./playwright-report/**/*", "./blob-report/**/*", "./coverage/**/*",
+      "./playwright/.cache/**/*",
+      "./.claude/**/*", "./.agents/**/*", "./.github/**/*", "./.vercel/**/*",
+      "./skill-observations/**/*", "./.env*", "./*.md", "./*.html",
+      "./tsconfig.tsbuildinfo", "./vitest.config.mts", "./playwright.config.ts", "./package-lock.json",
+    ],
+  },
   outputFileTracingIncludes: {
     "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
@@ -91,12 +109,11 @@ const nextConfig: NextConfig = {
   ...(process.env.NEXT_E2E ? { devIndicators: false as const } : {}),
 };
 
-// withSentryConfig is no-op when SENTRY_DSN is missing at runtime, but
-// it does require SENTRY_ORG / SENTRY_PROJECT for source-map upload at
-// build-time. We only wrap when those are set so local builds without
-// Sentry stay fast.
+// Runtime initialization is optional in the native instrumentation files.
+// The build wrapper adds source-map/instrumentation support when configured;
+// import its config-only entry so reading Next config does not load the runtime SDK.
 const wantsSentry =
-  !!process.env.SENTRY_DSN &&
+  !!(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN) &&
   !!process.env.SENTRY_ORG &&
   !!process.env.SENTRY_PROJECT;
 
@@ -106,7 +123,8 @@ export default wantsSentry
       project: process.env.SENTRY_PROJECT,
       silent: true,
       widenClientFileUpload: true,
-      tunnelRoute: "/monitoring",
-      disableLogger: true,
+      // Direct ingestion is already allowed by CSP; avoid a Vercel relay and auth redirect.
+      telemetry: false,
+      webpack: { treeshake: { removeDebugLogging: true } },
     })
   : nextConfig;

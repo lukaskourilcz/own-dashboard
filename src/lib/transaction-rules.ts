@@ -1,3 +1,5 @@
+import { RE2JS } from "re2js";
+
 /**
  * The transaction rule engine.
  *
@@ -14,8 +16,8 @@
  * given transaction and rule set always produce the same result.
  *
  * `conditions` and `actions` are jsonb columns filled by the owner's editor, so
- * every reader goes through {@link parseConditions} / {@link parseActions},
- * which drop malformed entries rather than trusting the column.
+ * stored readers go through {@link parseRule}, which refuses the entire rule
+ * if a condition cannot be trusted. Dropping one condition could broaden it.
  */
 
 export const RULE_FIELDS = ["note", "account", "amount", "date", "kind"] as const;
@@ -176,7 +178,7 @@ export function parseCondition(raw: unknown): RuleCondition | null {
 
   if (typedOp === "between") {
     const list = asArray(rawValue);
-    if (!list || list.length < 2) return null;
+    if (!list || list.length !== 2) return null;
     const low = finiteNumber(list[0]);
     const high = finiteNumber(list[1]);
     if (low === null || high === null) return null;
@@ -190,7 +192,7 @@ export function parseCondition(raw: unknown): RuleCondition | null {
   if (!SCALAR_OPS.has(typedOp)) return null;
 
   if (typeof rawValue === "number") {
-    if (!Number.isFinite(rawValue)) return null;
+    if (!Number.isFinite(rawValue) || typedOp === "regex") return null;
     return { field: typedField, op: typedOp, value: rawValue };
   }
   if (typeof rawValue !== "string") return null;
@@ -240,15 +242,23 @@ export function parseRule(raw: unknown): TransactionRule | null {
   const id = record.id;
   const userId = record.user_id;
   if (typeof id !== "string" || typeof userId !== "string") return null;
-  const stage = typeof record.stage === "string" && STAGE_SET.has(record.stage)
-    ? (record.stage as RuleStage)
-    : "default";
+  if (record.stage != null && (typeof record.stage !== "string" || !STAGE_SET.has(record.stage))) return null;
+  const stage = (record.stage ?? "default") as RuleStage;
+  const rawConditions = asArray(record.conditions);
+  if (!rawConditions) return null;
+  const conditions = parseConditions(rawConditions);
+  if (conditions.length !== rawConditions.length) return null;
+  const rawActions = asRecord(record.actions);
+  if (!rawActions || Object.keys(rawActions).some(key =>
+    !RULE_ACTION_KEYS.includes(key as RuleActionKey) || (rawActions[key] !== null && typeof rawActions[key] !== "string")
+  )) return null;
+  if (record.enabled != null && typeof record.enabled !== "boolean") return null;
   return {
     id,
     user_id: userId,
     name: typeof record.name === "string" ? record.name : "",
     stage,
-    conditions: parseConditions(record.conditions),
+    conditions,
     actions: parseActions(record.actions),
     sort_order: finiteNumber(record.sort_order) ?? 0,
     enabled: record.enabled !== false,
@@ -277,25 +287,28 @@ export function parseRules(rows: readonly unknown[] | null | undefined): Transac
 /* -------------------------------- matching -------------------------------- */
 
 const MAX_PATTERN_LENGTH = 200;
-const regexCache = new Map<string, RegExp | null>();
+const MAX_CACHED_PATTERNS = 32;
+const regexCache = new Map<string, RE2JS | null>();
 
 /**
- * A case-insensitive RegExp for an owner-authored pattern, or null when the
- * pattern is invalid or absurdly long. Memoised, because the editor's live
- * match count re-evaluates the same pattern across every loaded transaction.
+ * Case-insensitive, non-backtracking RE2 matching for owner-authored patterns.
+ * Unsupported syntax fails closed; never fall back to native RegExp matching.
+ * The small LRU bounds retained compiled patterns during long editing sessions.
  */
-export function safeRegex(pattern: string): RegExp | null {
+export function safeRegex(pattern: string): RE2JS | null {
   if (pattern.length === 0 || pattern.length > MAX_PATTERN_LENGTH) return null;
   const cached = regexCache.get(pattern);
-  if (cached !== undefined) return cached;
-  let compiled: RegExp | null = null;
+  if (cached !== undefined) {
+    regexCache.delete(pattern); regexCache.set(pattern, cached);
+    return cached;
+  }
+  let compiled: RE2JS | null = null;
   try {
-    compiled = new RegExp(pattern, "i");
+    compiled = RE2JS.compile(RE2JS.translateRegExp(pattern), RE2JS.CASE_INSENSITIVE);
   } catch {
     compiled = null;
   }
-  // Bound the cache so a long editing session cannot grow it without limit.
-  if (regexCache.size > 200) regexCache.clear();
+  if (regexCache.size >= MAX_CACHED_PATTERNS) regexCache.delete(regexCache.keys().next().value!);
   regexCache.set(pattern, compiled);
   return compiled;
 }
@@ -478,15 +491,7 @@ export function resolveRuleActions(
   rules: readonly TransactionRule[],
   owned?: OwnedIds,
 ): RuleActions {
-  const resolved: RuleActions = {};
-  for (const rule of sortRules(rules)) {
-    if (!ruleMatches(tx, rule)) continue;
-    const actions = sanitizeActions(rule.actions, owned);
-    for (const key of RULE_ACTION_KEYS) {
-      if (key in actions) resolved[key] = actions[key] ?? null;
-    }
-  }
-  return resolved;
+  return createRuleEvaluator(rules, owned).resolve(tx);
 }
 
 /** A transaction that already carries the columns a rule can write, so a
@@ -512,14 +517,7 @@ export function ruleChanges(
   rules: readonly TransactionRule[],
   owned?: OwnedIds,
 ): RuleActions {
-  const resolved = resolveRuleActions(tx, rules, owned);
-  const changes: RuleActions = {};
-  for (const key of RULE_ACTION_KEYS) {
-    if (!(key in resolved)) continue;
-    const next = resolved[key] ?? null;
-    if (next !== currentValue(tx, key)) changes[key] = next;
-  }
-  return changes;
+  return createRuleEvaluator(rules, owned).changes(tx);
 }
 
 /**
@@ -533,15 +531,7 @@ export function ruleColumnsForInsert(
   rules: readonly TransactionRule[],
   owned?: OwnedIds,
 ): Required<RuleActions> {
-  const resolved = resolveRuleActions(tx, rules, owned);
-  const pick = (key: RuleActionKey): string | null =>
-    key in resolved ? (resolved[key] ?? null) : currentValue(tx, key);
-  return {
-    category: pick("category"),
-    note: pick("note"),
-    project_id: pick("project_id"),
-    subscription_id: pick("subscription_id"),
-  };
+  return createRuleEvaluator(rules, owned).columnsForInsert(tx);
 }
 
 /**
@@ -565,4 +555,65 @@ export function usableRules(rules: readonly TransactionRule[]): TransactionRule[
       rule.conditions.length > 0 &&
       RULE_ACTION_KEYS.some((key) => key in rule.actions),
   );
+}
+
+export class RuleEvaluationLimitError extends Error {
+  constructor() { super("Rule evaluation bound exceeded"); this.name = "RuleEvaluationLimitError"; }
+}
+
+/** Refuse excessive work before a complete preview/import starts. The text
+ * bound weights conditions and list/pattern sizes; it is not a timing estimate. */
+export function assertRuleEvaluationBounds(rows: readonly RuleTarget[], rules: readonly TransactionRule[]) {
+  let conditions = 0, textWork = 0;
+  for (const rule of rules) for (const condition of rule.conditions) {
+    conditions++;
+    textWork += Array.isArray(condition.value)
+      ? condition.value.reduce<number>((sum, value) => sum + String(value).length + 1, 0)
+      : String(condition.value).length + 1;
+  }
+  const inputChars = rows.reduce((sum, row) => sum + (row.note?.length ?? 0) + (row.account_id?.length ?? 0) + 64, 0);
+  if (rows.length * conditions > 2_000_000 || inputChars * textWork > 100_000_000) throw new RuleEvaluationLimitError();
+}
+
+/** Prepare one rule order and ownership filter for an entire batch.
+ * Conditions always inspect the original transaction, including when an
+ * earlier rule changes the note. No credentials or global owner cache. */
+export function createRuleEvaluator(rules: readonly TransactionRule[], owned?: OwnedIds) {
+  const prepared = sortRules(rules).map(rule => ({
+    ...rule, actions: sanitizeActions(rule.actions, owned),
+  }));
+  function resolveWithMatch(tx: RuleTarget) {
+    const actions: RuleActions = {};
+    let matched = false;
+    for (const rule of prepared) {
+      if (!ruleMatches(tx, rule)) continue;
+      matched = true;
+      for (const key of RULE_ACTION_KEYS) {
+        if (key in rule.actions) actions[key] = rule.actions[key] ?? null;
+      }
+    }
+    return { matched, actions };
+  }
+  function changedColumns(tx: RuleApplyTarget, actions: RuleActions): RuleActions {
+    const changes: RuleActions = {};
+    for (const key of RULE_ACTION_KEYS) {
+      if (key in actions && (actions[key] ?? null) !== currentValue(tx, key)) changes[key] = actions[key] ?? null;
+    }
+    return changes;
+  }
+  function columnsForInsert(tx: RuleApplyTarget): Required<RuleActions> {
+    const { actions } = resolveWithMatch(tx);
+    const pick = (key: RuleActionKey) => key in actions ? (actions[key] ?? null) : currentValue(tx, key);
+    return { category: pick("category"), note: pick("note"), project_id: pick("project_id"), subscription_id: pick("subscription_id") };
+  }
+  return {
+    resolve: (tx: RuleTarget) => resolveWithMatch(tx).actions,
+    changes: (tx: RuleApplyTarget) => changedColumns(tx, resolveWithMatch(tx).actions),
+    evaluate: (tx: RuleApplyTarget) => {
+      const { matched, actions } = resolveWithMatch(tx);
+      return { matched, changes: changedColumns(tx, actions) };
+    },
+    columnsForInsert,
+    applyToRow: <T extends RuleApplyTarget>(row: T): T & Required<RuleActions> => ({ ...row, ...columnsForInsert(row) }),
+  };
 }

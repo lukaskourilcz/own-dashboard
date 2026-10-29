@@ -1,0 +1,126 @@
+{
+  "finding": 210,
+  "date": "2026-10-25",
+  "sourceSha256": {
+    "src/lib/invoices.ts": "2bf6291ae5979ebdce55833b3403595ab261c956b5c6a1c20a5d5e1d78a74804",
+    "src/components/invoices/invoice-detail.tsx": "8c93f8d27a99c6a2f44d5c236542b159e5334def58916ebed65555e84415b8f4",
+    "src/lib/i18n/sections/invoices.ts": "68c24afb39a52aa8c55c54ab088bb8ce0d79d542bf6870de876ed19743846d90"
+  },
+  "unit": {
+    "passed": 131,
+    "files": 6,
+    "seconds": 2.01
+  },
+  "native": {
+    "method": "Native macOS Vision decoding of actual dev-preview invoice QR screenshots; synthetic documentation account only; no payment or real data.",
+    "results": [
+      {
+        "lang": "en",
+        "width": 360,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "en",
+        "width": 430,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "en",
+        "width": 768,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "en",
+        "width": 1024,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "en",
+        "width": 1440,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "en",
+        "width": 1728,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "cs",
+        "width": 360,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "cs",
+        "width": 430,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "cs",
+        "width": 768,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "cs",
+        "width": 1024,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "cs",
+        "width": 1440,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      },
+      {
+        "lang": "cs",
+        "width": 1728,
+        "decoded": true,
+        "amount": "38115.00",
+        "currency": "CZK",
+        "dueDate": "20261101"
+      }
+    ]
+  },
+  "print": {
+    "casesPassed": 2,
+    "seconds": 5.7,
+    "scope": "Existing native installable-resource and one-page Czech A4/dark-print checks; printed PDF barcode is not independently decoded."
+  },
+  "limits": [
+    "All records and the documentation bank account are synthetic. No payment, bank request, registry lookup or owner-record change occurs.",
+    "Account checks cover bounded structure and mod97, plus Czech shape and national mod11 parts. They do not query a bank/country registry or establish ownership.",
+    "The accepted currency set comes from the runtime canonical currency list, preserving recognized currencies outside the static FX list.",
+    "The separate legacy nonpayer/VAT document-consistency lead and final complete release checks remain open."
+  ]
+}

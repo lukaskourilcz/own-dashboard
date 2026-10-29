@@ -67,3 +67,8 @@ export function normalizeHiddenProjectTabs(value: unknown): ProjectTabId[] {
     ),
   );
 }
+
+/** Only a single canonical URL selection seeds server and client rendering. */
+export function projectTabFromQuery(value: unknown): ProjectTabId | "" {
+  return typeof value === "string" && PROJECT_TAB_ID_SET.has(value) ? value as ProjectTabId : "";
+}

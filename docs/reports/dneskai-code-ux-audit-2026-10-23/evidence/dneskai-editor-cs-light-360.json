@@ -1,0 +1,1105 @@
+{
+  "containers": [
+    {
+      "className": "mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1",
+      "height": 54,
+      "tag": "DIV",
+      "text": "Dnes ke schváleníKalendářPříspěvkyZdroje (DNESKAi)",
+      "width": 328,
+      "x": 16,
+      "y": 72
+    },
+    {
+      "className": "space-y-4",
+      "height": 5158.5,
+      "tag": "SECTION",
+      "text": "Design LabNáhled s ukázkovými příspěvky. Úpravy překreslí syntetické ukázkové slidy. Nic se nepublikuje ani neukládá.NámětyPracovní titulky ",
+      "width": 328,
+      "x": 16,
+      "y": 208
+    },
+    {
+      "className": "space-y-3 rounded-md border border-border bg-surface p-3",
+      "height": 1274,
+      "tag": "SECTION",
+      "text": "NámětyPracovní titulky dalších příspěvků. Nic se nedohledává ani negeneruje, dokud titulek neschválíte.Šipky přecházejí mezi náměty. A schvá",
+      "width": 328,
+      "x": 16,
+      "y": 332
+    },
+    {
+      "className": "space-y-2",
+      "height": 432,
+      "tag": "SECTION",
+      "text": "Dnes08:00Kdy ověřit odpověď modeluČas vypršel14:08Malý model bez připojeníPřesunuto, znovu schválit17:00 · Čeká na plánovačJak číst kartu mo",
+      "width": 328,
+      "x": 16,
+      "y": 1622
+    },
+    {
+      "className": "space-y-1 rounded-md border border-dashed border-border p-2 text-xs",
+      "height": 102,
+      "tag": "LI",
+      "text": "17:00 · Čeká na plánovačJak číst kartu modeluVygenerovat hned",
+      "width": 328,
+      "x": 16,
+      "y": 1733
+    },
+    {
+      "className": "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-[background,color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none focus-ring disabled:pointer-events-none disabled:opacity-40 [&>svg]:shrink-0 [&>svg]:size-4 border border-border bg-surface text-foreground hover:bg-surface-hover hover:border-border-strong h-11 px-3 text-xs md:h-7 min-h-11 w-full",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Vygenerovat hned",
+      "width": 310,
+      "x": 25,
+      "y": 1782
+    },
+    {
+      "className": "space-y-1 rounded-md border border-dashed border-border p-2 text-xs",
+      "height": 102,
+      "tag": "LI",
+      "text": "20:00 · Čeká na plánovačKdy pomůže vyhledávání v dokumentechVygenerovat hned",
+      "width": 328,
+      "x": 16,
+      "y": 1843
+    },
+    {
+      "className": "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-[background,color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none focus-ring disabled:pointer-events-none disabled:opacity-40 [&>svg]:shrink-0 [&>svg]:size-4 border border-border bg-surface text-foreground hover:bg-surface-hover hover:border-border-strong h-11 px-3 text-xs md:h-7 min-h-11 w-full",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Vygenerovat hned",
+      "width": 310,
+      "x": 25,
+      "y": 1892
+    },
+    {
+      "className": "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-[background,color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none focus-ring disabled:pointer-events-none disabled:opacity-40 [&>svg]:shrink-0 [&>svg]:size-4 border border-border bg-surface text-foreground hover:bg-surface-hover hover:border-border-strong h-11 px-3 text-xs md:h-7 w-full",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Schválit celý den (čeká 0)",
+      "width": 328,
+      "x": 16,
+      "y": 2010
+    },
+    {
+      "className": "space-y-2",
+      "height": 196.5,
+      "tag": "SECTION",
+      "text": "Zítra08:00Benchmark není žebříčekza 17 h 31 min12:30Tip dne: kontext místo prosebza 22 h 1 min17:00Proč verzovat promptyza 26 h 31 min20:00 ",
+      "width": 328,
+      "x": 16,
+      "y": 2070
+    },
+    {
+      "className": "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-[background,color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none focus-ring disabled:pointer-events-none disabled:opacity-40 [&>svg]:shrink-0 [&>svg]:size-4 border border-border bg-surface text-foreground hover:bg-surface-hover hover:border-border-strong h-11 px-3 text-xs md:h-7 w-full",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Schválit celý den (čeká 2)",
+      "width": 328,
+      "x": 16,
+      "y": 2223
+    },
+    {
+      "className": "min-w-0 space-y-3",
+      "height": 731,
+      "tag": "SECTION",
+      "text": "ZobrazeníFeedProfil1:1dneskaidneskai Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn.\n\nNež pod",
+      "width": 328,
+      "x": 16,
+      "y": 2323
+    },
+    {
+      "className": "overflow-hidden rounded-[14px] border border-border bg-surface shadow-soft",
+      "height": 545.5,
+      "tag": "DIV",
+      "text": "dneskaidneskai Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn.\n\nNež podle výsledku vyberete m",
+      "width": 328,
+      "x": 16,
+      "y": 2385
+    },
+    {
+      "className": "min-w-0 space-y-3",
+      "height": 1020.5,
+      "tag": "SECTION",
+      "text": "Slide 1 · Titulní slideTyp sliduTitulníObrázekPůlenýNabízí se jen typy, které obrázky slidu dovolí. Změna potřebuje nové schválení.Titulek46",
+      "width": 328,
+      "x": 16,
+      "y": 3256
+    },
+    {
+      "className": "min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring disabled:opacity-70",
+      "height": 44,
+      "tag": "SELECT",
+      "text": "TitulníObrázekPůlený",
+      "width": 328,
+      "x": 16,
+      "y": 3305
+    },
+    {
+      "className": "flex w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none min-h-0 md:min-h-0",
+      "height": 58,
+      "tag": "TEXTAREA",
+      "text": "Benchmark není žebříček. Jak ho číst bez omylu",
+      "width": 328,
+      "x": 16,
+      "y": 3418
+    },
+    {
+      "className": "flex w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none min-h-0 md:min-h-0",
+      "height": 73.7,
+      "tag": "TEXTAREA",
+      "text": "Ukázková rozostřená fotografie s titulkem o čtení benchmarků.",
+      "width": 328,
+      "x": 16,
+      "y": 3553
+    },
+    {
+      "className": "relative w-full max-w-sm cursor-crosshair touch-manipulation overflow-hidden rounded-md border border-border bg-surface-inset focus-ring",
+      "height": 246.5,
+      "tag": "DIV",
+      "text": "",
+      "width": 328,
+      "x": 16,
+      "y": 3653
+    },
+    {
+      "className": "min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring",
+      "height": 44,
+      "tag": "SELECT",
+      "text": "ObrázekPůlenýVýrok · akcentVýrok · tmavý",
+      "width": 328,
+      "x": 16,
+      "y": 4342
+    },
+    {
+      "className": "flex min-h-11 cursor-pointer items-center gap-2 rounded-md border p-2 text-xs focus-within:ring-2 focus-within:ring-ring border-primary bg-surface-selected",
+      "height": 66,
+      "tag": "LABEL",
+      "text": "Foto: ukázkový zdroj 2Na celou plochu1440 × 1080",
+      "width": 328,
+      "x": 16,
+      "y": 4422
+    },
+    {
+      "className": "flex min-h-11 cursor-pointer items-center gap-2 rounded-md border p-2 text-xs focus-within:ring-2 focus-within:ring-ring border-border",
+      "height": 66,
+      "tag": "LABEL",
+      "text": "Foto: ukázkový zdroj 2Na celou plochu1200 × 1500",
+      "width": 328,
+      "x": 16,
+      "y": 4496
+    },
+    {
+      "className": "flex w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none min-h-0 md:min-h-0",
+      "height": 118,
+      "tag": "TEXTAREA",
+      "text": "Benchmark není žebříček. Jedno číslo shrnuje stovky úloh a často skrývá, jak byl test spuštěn.\n\nNež podle výsledku vyberete model, zjistěte,",
+      "width": 328,
+      "x": 16,
+      "y": 4318
+    },
+    {
+      "className": "min-w-0 space-y-3 border-t border-border pt-4",
+      "height": 129,
+      "tag": "SECTION",
+      "text": "Komentář a zprávaTento příspěvek nemá klíčové slovo. Zprávy ho obvykle nemají.Přidat klíčové slovo",
+      "width": 328,
+      "x": 16,
+      "y": 4598
+    },
+    {
+      "className": "min-h-11 w-full min-w-0 rounded-md border border-border bg-surface px-2 text-sm focus-ring",
+      "height": 44,
+      "tag": "SELECT",
+      "text": "Automaticky: další v pořadíQuiet Circuit · Sample artist · 1:12",
+      "width": 328,
+      "x": 16,
+      "y": 4768
+    },
+    {
+      "className": "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground shadow-soft transition-all duration-150 ease-out md:h-8 md:text-[13px] placeholder:text-foreground-subtle hover:border-border-strong focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 tabular",
+      "height": 44,
+      "tag": "INPUT",
+      "text": "",
+      "width": 328,
+      "x": 16,
+      "y": 4889
+    },
+    {
+      "className": "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-[13px] font-medium transition-[background,color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none focus-ring disabled:pointer-events-none disabled:opacity-40 [&>svg]:shrink-0 [&>svg]:size-4 border border-border bg-surface text-foreground hover:bg-surface-hover hover:border-border-strong h-11 px-3.5 md:h-8",
+      "height": 44,
+      "tag": "BUTTON",
+      "text": "Přegenerovat s poznámkou (≈ 0,02 $)",
+      "width": 262.9,
+      "x": 16,
+      "y": 2400
+    }
+  ],
+  "controls": [
+    {
+      "disabled": false,
+      "height": 22.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Domů",
+      "width": 65.6,
+      "x": 8,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přehled práce",
+      "width": 65.6,
+      "x": 78,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Projekty",
+      "width": 65.6,
+      "x": 147,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Úkoly",
+      "width": 65.6,
+      "x": 217,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 58,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Více",
+      "width": 65.6,
+      "x": 286,
+      "y": 734
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Dnes ke schválení",
+      "width": 127.4,
+      "x": 21,
+      "y": 83
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Kalendář",
+      "width": 75.2,
+      "x": 152,
+      "y": 83
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Příspěvky",
+      "width": 80.7,
+      "x": 232,
+      "y": 83
+    },
+    {
+      "disabled": false,
+      "height": 32,
+      "role": "tab",
+      "tag": "BUTTON",
+      "text": "Zdroje (DNESKAi)",
+      "width": 126.5,
+      "x": 316,
+      "y": 83
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Více",
+      "width": 44,
+      "x": 295,
+      "y": 77
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Instagram",
+      "width": 82,
+      "x": 19,
+      "y": 145
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Threads",
+      "width": 71.3,
+      "x": 101,
+      "y": 145
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "LinkedIn",
+      "width": 72.7,
+      "x": 172,
+      "y": 145
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit",
+      "width": 44,
+      "x": 300,
+      "y": 208
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Vybrat: Ukázka: nový model zvládne delší kontext za stejnou cenu",
+      "width": 16,
+      "x": 29,
+      "y": 483
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat klíčové slovo",
+      "width": 119.2,
+      "x": 194,
+      "y": 525
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit: Ukázka: nový model zvládne delší kontext za stejnou cenu",
+      "width": 71.8,
+      "x": 53,
+      "y": 557
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zamítnout: Ukázka: nový model zvládne delší kontext za stejnou cenu",
+      "width": 85.3,
+      "x": 133,
+      "y": 557
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Vybrat: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích",
+      "width": 16,
+      "x": 29,
+      "y": 620
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat klíčové slovo",
+      "width": 119.2,
+      "x": 189,
+      "y": 662
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích",
+      "width": 71.8,
+      "x": 53,
+      "y": 694
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zamítnout: Ukázka: evropský úřad zveřejnil pravidla pro AI v nemocnicích",
+      "width": 85.3,
+      "x": 133,
+      "y": 694
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat klíčové slovo",
+      "width": 119.2,
+      "x": 53,
+      "y": 829
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zamítnout: Ukázka: open-source nástroj na přepis schůzek offline",
+      "width": 85.3,
+      "x": 53,
+      "y": 981
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Vybrat: Jak si nastavit vlastní příkazy v editoru kódu",
+      "width": 16,
+      "x": 29,
+      "y": 1075
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Slovo do komentáře PRIKAZY, upravit",
+      "width": 172,
+      "x": 53,
+      "y": 1147
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit: Jak si nastavit vlastní příkazy v editoru kódu",
+      "width": 71.8,
+      "x": 53,
+      "y": 1179
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zamítnout: Jak si nastavit vlastní příkazy v editoru kódu",
+      "width": 85.3,
+      "x": 133,
+      "y": 1179
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Vybrat: Tři způsoby, jak zkrátit prompt bez ztráty kvality",
+      "width": 16,
+      "x": 29,
+      "y": 1242
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Slovo do komentáře Prompt, upravit",
+      "width": 165.4,
+      "x": 53,
+      "y": 1314
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit: Tři způsoby, jak zkrátit prompt bez ztráty kvality",
+      "width": 71.8,
+      "x": 53,
+      "y": 1346
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zamítnout: Tři způsoby, jak zkrátit prompt bez ztráty kvality",
+      "width": 85.3,
+      "x": 133,
+      "y": 1346
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": "checkbox",
+      "tag": "BUTTON",
+      "text": "Vybrat: Aplikace, která z fotky tabule udělá poznámky",
+      "width": 16,
+      "x": 29,
+      "y": 1409
+    },
+    {
+      "disabled": false,
+      "height": 24,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Slovo do komentáře Tabule, upravit",
+      "width": 165.4,
+      "x": 53,
+      "y": 1481
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit: Aplikace, která z fotky tabule udělá poznámky",
+      "width": 71.8,
+      "x": 53,
+      "y": 1513
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zamítnout: Aplikace, která z fotky tabule udělá poznámky",
+      "width": 85.3,
+      "x": 133,
+      "y": 1513
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit: Ukázka: starší zpráva, která propadla po 48 hodinách",
+      "width": 71.3,
+      "x": 260,
+      "y": 1627
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Obnovit: Ukázka: zamítnutý návod na automatické odpovědi",
+      "width": 71.3,
+      "x": 260,
+      "y": 1724
+    },
+    {
+      "disabled": false,
+      "height": 74.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "08:00 Kdy ověřit odpověď modelu, Čas vypršel, Chyba nebo nejasný výsledek",
+      "width": 224,
+      "x": 16,
+      "y": 1646
+    },
+    {
+      "disabled": false,
+      "height": 74.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "14:08 Malý model bez připojení, Přesunuto, znovu schválit, Čeká na kontrolu",
+      "width": 224,
+      "x": 248,
+      "y": 1646
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vygenerovat hned: Jak číst kartu modelu",
+      "width": 310,
+      "x": 25,
+      "y": 1782
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vygenerovat hned: Kdy pomůže vyhledávání v dokumentech",
+      "width": 310,
+      "x": 25,
+      "y": 1892
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit celý den (čeká 0)",
+      "width": 328,
+      "x": 16,
+      "y": 2010
+    },
+    {
+      "disabled": false,
+      "height": 74.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "08:00 Benchmark není žebříček, za 17 h 31 min, Čeká na kontrolu",
+      "width": 224,
+      "x": 16,
+      "y": 2094
+    },
+    {
+      "disabled": false,
+      "height": 74.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "12:30 Tip dne: kontext místo proseb, za 22 h 1 min, Čeká na kontrolu",
+      "width": 224,
+      "x": 248,
+      "y": 2094
+    },
+    {
+      "disabled": false,
+      "height": 74.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "17:00 Proč verzovat prompty, za 26 h 31 min, Chyba nebo nejasný výsledek",
+      "width": 224,
+      "x": 480,
+      "y": 2094
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit celý den (čeká 2)",
+      "width": 328,
+      "x": 16,
+      "y": 2223
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 1,
+      "x": 216,
+      "y": 2347
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 1,
+      "x": 269,
+      "y": 2347
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 1,
+      "x": 319,
+      "y": 2347
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Předchozí slide",
+      "width": 44,
+      "x": 16,
+      "y": 2988
+    },
+    {
+      "disabled": false,
+      "height": 79.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit slide 1 · Titulní slide",
+      "width": 64,
+      "x": 68,
+      "y": 2970
+    },
+    {
+      "disabled": false,
+      "height": 79.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit slide 2 · Obrázek",
+      "width": 64,
+      "x": 140,
+      "y": 2970
+    },
+    {
+      "disabled": false,
+      "height": 79.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit slide 3 · Půlený",
+      "width": 64,
+      "x": 212,
+      "y": 2970
+    },
+    {
+      "disabled": false,
+      "height": 79.5,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Zobrazit slide 4 · Výrok",
+      "width": 64,
+      "x": 284,
+      "y": 2970
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Další slide",
+      "width": 44,
+      "x": 300,
+      "y": 2988
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "1 Editorial, Současná",
+      "width": 1,
+      "x": 20,
+      "y": 3078
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "2 Bold",
+      "width": 1,
+      "x": 124,
+      "y": 3078
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "3 Explainer",
+      "width": 1,
+      "x": 228,
+      "y": 3078
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "4 Magazine",
+      "width": 1,
+      "x": 332,
+      "y": 3078
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "5 Ticker",
+      "width": 1,
+      "x": 436,
+      "y": 3078
+    },
+    {
+      "disabled": false,
+      "height": 1,
+      "role": null,
+      "tag": "INPUT",
+      "text": "6 Spotlight",
+      "width": 1,
+      "x": 540,
+      "y": 3078
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "SELECT",
+      "text": "TitulníObrázekPůlený",
+      "width": 328,
+      "x": 16,
+      "y": 3305
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 202.8,
+      "x": 81,
+      "y": 3972
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vyměnit obrázek",
+      "width": 145,
+      "x": 16,
+      "y": 4172
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "SELECT",
+      "text": "ObrázekPůlenýVýrok · akcentVýrok · tmavý",
+      "width": 328,
+      "x": 16,
+      "y": 4342
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 16,
+      "x": 25,
+      "y": 4447
+    },
+    {
+      "disabled": false,
+      "height": 16,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 16,
+      "x": 25,
+      "y": 4521
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat slide",
+      "width": 91.1,
+      "x": 16,
+      "y": 4574
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": "radio",
+      "tag": "BUTTON",
+      "text": "Karusel",
+      "width": 96,
+      "x": 19,
+      "y": 4479
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": "radio",
+      "tag": "BUTTON",
+      "text": "Reel",
+      "width": 96,
+      "x": 115,
+      "y": 4479
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přidat klíčové slovo",
+      "width": 137.6,
+      "x": 16,
+      "y": 4683
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "SELECT",
+      "text": "Automaticky: další v pořadíQuiet Circuit · Sample artist · 1:12",
+      "width": 328,
+      "x": 16,
+      "y": 4768
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "INPUT",
+      "text": "",
+      "width": 328,
+      "x": 16,
+      "y": 4889
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Schválit · fc4a3b2",
+      "width": 142.9,
+      "x": 16,
+      "y": 2296
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Uložit a vykreslit",
+      "width": 132.5,
+      "x": 167,
+      "y": 2296
+    },
+    {
+      "disabled": true,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Publikovat hned",
+      "width": 128.7,
+      "x": 16,
+      "y": 2348
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přegenerovat s poznámkou (≈ 0,02 $)",
+      "width": 262.9,
+      "x": 16,
+      "y": 2400
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Vrátit s poznámkou",
+      "width": 147.1,
+      "x": 16,
+      "y": 2452
+    },
+    {
+      "disabled": false,
+      "height": 44,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Přeskočit",
+      "width": 85.8,
+      "x": 171,
+      "y": 2452
+    }
+  ],
+  "documentWidth": 360,
+  "headings": [
+    {
+      "height": 22.5,
+      "tag": "H1",
+      "text": "Projekty",
+      "width": 58.3,
+      "x": 12,
+      "y": 16
+    },
+    {
+      "height": 1,
+      "tag": "H2",
+      "text": "Design Lab",
+      "width": 1,
+      "x": 344,
+      "y": 230
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Náměty",
+      "width": 302,
+      "x": 29,
+      "y": 345
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Dnes",
+      "width": 328,
+      "x": 16,
+      "y": 1622
+    },
+    {
+      "height": 16,
+      "tag": "H3",
+      "text": "Zítra",
+      "width": 328,
+      "x": 16,
+      "y": 2070
+    },
+    {
+      "height": 20,
+      "tag": "H3",
+      "text": "Komentář a zpráva",
+      "width": 328,
+      "x": 16,
+      "y": 4615
+    }
+  ],
+  "viewport": {
+    "height": 800,
+    "width": 360
+  }
+}

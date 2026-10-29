@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { format, parseISO } from "date-fns";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -22,12 +23,14 @@ import {
   resolveIban,
 } from "@/lib/invoices";
 import { formatCurrency } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
 import { useDict } from "@/lib/i18n";
 import type { Invoice, InvoiceItem } from "@/lib/types";
 
 function fmtDate(key: string | null): string {
-  if (!key) return "—";
-  return format(parseISO(key), "d. M. yyyy");
+  if (typeof key !== "string" || !key) return "—";
+  const date = parseISO(key);
+  return Number.isFinite(date.getTime()) ? format(date, "d. M. yyyy") : "—";
 }
 
 export function InvoiceDetail({
@@ -40,6 +43,8 @@ export function InvoiceDetail({
   onMarkPaid,
   onMarkUnpaid,
   onDelete,
+  busy = false,
+  paymentError,
 }: {
   invoice: Invoice;
   items: InvoiceItem[];
@@ -50,8 +55,12 @@ export function InvoiceDetail({
   onMarkPaid: () => void;
   onMarkUnpaid: () => void;
   onDelete: () => void;
+  busy?: boolean;
+  paymentError?: string | null;
 }) {
   const t = useDict();
+  const paymentErrorId = useId();
+  const now = useNow();
   const isVatPayer = invoice.supplier_is_vat_payer;
   const sorted = [...items].sort((a, b) => a.position - b.position);
   const parsed = sorted.map((it) => ({
@@ -63,7 +72,7 @@ export function InvoiceDetail({
     roundTotal: invoice.round_total,
     currency: invoice.currency,
   });
-  const eff = effectiveStatus(invoice);
+  const eff = now ? effectiveStatus(invoice, now) : invoice.status;
   const iban = resolveIban(invoice);
   const spayd = iban
     ? buildSpayd({
@@ -84,32 +93,33 @@ export function InvoiceDetail({
   return (
     <div>
       {/* Toolbar — not printed */}
-      <div className="no-print flex flex-wrap items-center gap-2 mb-4">
-        <Button size="sm" variant="outline" onClick={onBack}>
+      <div className="no-print flex flex-wrap items-center gap-2 mb-4" aria-busy={busy}>
+        <Button size="sm" variant="outline" disabled={busy} onClick={onBack}>
           <ArrowLeft className="h-3.5 w-3.5" /> {t.invoices.back}
         </Button>
         <StatusBadge status={eff} />
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={onEdit}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" /> {t.invoices.edit}
           </Button>
-          <Button size="sm" variant="outline" onClick={onDuplicate}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={onDuplicate}>
             <Copy className="h-3.5 w-3.5" /> {t.invoices.duplicate}
           </Button>
           {invoice.status === "paid" ? (
-            <Button size="sm" variant="outline" onClick={onMarkUnpaid}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkUnpaid} aria-describedby={paymentError ? paymentErrorId : undefined}>
               <RotateCcw className="h-3.5 w-3.5" /> {t.invoices.markUnpaid}
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={onMarkPaid}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMarkPaid} aria-describedby={paymentError ? paymentErrorId : undefined}>
               <Check className="h-3.5 w-3.5" /> {t.invoices.markPaid}
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => window.print()}>
             <Printer className="h-3.5 w-3.5" /> {t.invoices.print}
           </Button>
           <Button
             size="sm"
+            disabled={busy}
             variant="ghost"
             onClick={onDelete}
             aria-label={t.invoices.delete}
@@ -119,6 +129,7 @@ export function InvoiceDetail({
         </div>
       </div>
 
+      {paymentError && <p id={paymentErrorId} role="alert" className="no-print mb-4 text-sm text-risk">{paymentError}</p>}
       {!spayd && (
         <p className="no-print -mt-2 mb-4 text-xs text-foreground-subtle">
           {t.invoices.qrMissing}
@@ -128,9 +139,9 @@ export function InvoiceDetail({
       {/* The document — fixed "paper" colours so it reads the same in dark mode
           and prints cleanly. */}
       <div className="invoice-print-area mx-auto max-w-3xl rounded-lg border border-neutral-200 bg-white text-neutral-900">
-        <div className="p-8 sm:p-12">
+        <div className="p-4 sm:p-12 [overflow-wrap:anywhere]">
           {/* Header */}
-          <div className="flex items-start justify-between gap-6 border-b border-neutral-200 pb-8">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:gap-6 border-b border-neutral-200 pb-8">
             <div className="min-w-0">
               {logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -145,8 +156,8 @@ export function InvoiceDetail({
                 </p>
               )}
             </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
+            <div className="min-w-0 sm:text-right">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
                 {isVatPayer ? t.invoices.taxDocTitle : t.invoices.plainTitle}
               </p>
               <p className="mt-1.5 text-3xl font-bold tabular tracking-tight">
@@ -231,9 +242,10 @@ export function InvoiceDetail({
           </div>
 
           {/* Items */}
-          <table className="mt-10 w-full text-sm">
+          <div className="mt-10 overflow-x-auto print:overflow-visible" role="region" aria-label={t.invoices.sectionItems} tabIndex={0}>
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 text-left text-[11px] uppercase tracking-wider text-neutral-400">
+              <tr className="border-b border-neutral-200 text-left text-[11px] uppercase tracking-wider text-neutral-500">
                 <th className="py-2 pr-2 font-medium">
                   {t.invoices.thDescription}
                 </th>
@@ -275,6 +287,7 @@ export function InvoiceDetail({
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* Totals + VAT recap */}
           <div className="mt-6 flex flex-col items-end gap-4">
@@ -351,6 +364,7 @@ export function InvoiceDetail({
               <div className="rounded-lg border border-neutral-200 bg-white p-3">
                 <QRCodeSVG
                   value={spayd}
+                  title={t.invoices.qrTitle}
                   size={132}
                   level="M"
                   marginSize={0}
@@ -422,7 +436,7 @@ function Party({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wider text-neutral-400 mb-1">
+      <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">
         {label}
       </p>
       <p className="font-semibold">{name || "—"}</p>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useSyncExternalStore } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useGuardedNavigation } from "@/components/navigation-guard";
 import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import {
@@ -34,15 +35,19 @@ import { convert } from "@/lib/fx";
 import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
 import { childProjects, projectSummary } from "@/lib/portfolio";
 import { computeTotals } from "@/lib/invoices";
-import { assessProjectHealth } from "@/lib/project-health";
-import { taskBelongsToProject } from "@/lib/project-match";
+import { assessProjectHealth, localizeProjectHealthReason } from "@/lib/project-health";
+import { buildProjectTaskIndex, type ProjectTaskIndex } from "@/lib/project-match";
 import { projectMonthlyIn } from "@/lib/projects";
 import { statusLabel } from "@/lib/status-presentation";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useNow } from "@/lib/use-now";
+import { buildOccurrences } from "@/lib/important-dates";
+import { todayKey } from "@/lib/date-keys";
 import {
   DNESKAI_WORKSPACE_TAB_ORDER,
   PROJECT_WORKSPACE_TABS,
   isDneskaiProjectTab,
+  projectTabFromQuery,
   type DneskaiProjectTab,
   type ProjectTabId,
   type ProjectWorkspaceTab,
@@ -78,23 +83,20 @@ import type {
   Updater,
 } from "@/lib/types";
 
-// Zdroje (#174): the source lists; the account panel and the recovery records open from the ⋯ menu.
-const DneskaiSourceList = dynamic(() => import('@/components/marketing/dneskai-source-list').then(module => module.DneskaiSourceList), {
-  loading: function SourcesLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
-});
-const DneskaiAudioLibrary = dynamic(() => import('@/components/marketing/dneskai-audio-library').then(module => module.DneskaiAudioLibrary));
-const DneskaiDailyMixPanel = dynamic(() => import('@/components/marketing/dneskai-daily-mix').then(module => module.DneskaiDailyMixPanel));
 // The DNESKAi workspace tabs (#119) load their code and their reads only when one of them opens.
+const DneskaiSourceSettings = dynamic(() => import('@/components/marketing/dneskai/source-settings').then(module => module.DneskaiSourceSettings));
 const DneskaiWorkspaceTab = dynamic(() => import('@/components/marketing/dneskai/workspace').then(module => module.DneskaiWorkspaceTab), {
   loading: function WorkspaceLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
 });
 
 type Props = {
+  initialProjectTab?: string;
   project: Project;
   allProjects: Project[];
   costs: ProjectCost[];
   crons: Cron[];
   todos: Todo[];
+  taskIndex?: ProjectTaskIndex;
   notes: Note[];
   setNotes: Updater<Note[]>;
   invoices: Invoice[];
@@ -119,17 +121,21 @@ type Props = {
   setProjectLinks: Updater<ProjectLink[]>;
   promptLinks: PromptLink[];
   competitors: Competitor[];
+  competitorsRefreshFailed?: boolean;
   setCompetitors: Updater<Competitor[]>;
   onOpenProject: (project: Project) => void;
   displayCurrency: string;
   repositoryIntegrationEnabled: boolean;
   /** The public tour: registry descriptions are not shown there. */
   isPreview?: boolean;
+  previewSourceSettingsIntegration?: boolean;
+  previewMusicIntegration?: boolean;
+  previewAccountIntegration?: boolean;
 };
 
 function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
   return computeTotals(
-    items.filter((item) => item.invoice_id === invoice.id).map((item) => ({
+    items.map((item) => ({
       quantity: Number(item.quantity) || 0,
       unit_price: Number(item.unit_price) || 0,
       vat_rate: Number(item.vat_rate) || 0,
@@ -139,15 +145,19 @@ function invoiceTotal(invoice: Invoice, items: InvoiceItem[]): number {
 }
 
 export function ProjectWorkspace(props: Props) {
+  const requestNavigation = useGuardedNavigation();
   const { project, displayCurrency } = props;
   const t = useDict();
   const { lang } = useLang();
   const p = t.professional;
-  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => '');
-  const setTab = (tab: ProjectTabId) => {
+  const now = useNow();
+  const costDay = now ? todayKey(now) : null;
+  const tabId = useId();
+  const selectedTab = useSyncExternalStore(subscribeProjectTab, readProjectTab, () => projectTabFromQuery(props.initialProjectTab));
+  const setTab = (tab: ProjectTabId) => requestNavigation(() => {
     const url = new URL(window.location.href); url.searchParams.set('projectTab', tab);
     window.history.replaceState(window.history.state, '', url); window.dispatchEvent(new Event('project-tab'));
-  };
+  });
   const tablist = useRef<HTMLDivElement>(null);
   // Sources sends the owner to the final review; focus moves to the selected tab instead of being lost with the panel.
   const openDneskaiReview = () => { flushSync(() => setTab("dneskai-review")); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); };
@@ -155,21 +165,28 @@ export function ProjectWorkspace(props: Props) {
 
   // Repo-sourced tasks (from NEEDED.md) resolve through the shared matcher:
   // repository id first, then the current or any previous repository name.
-  const projectTodos = props.todos.filter((todo) =>
-    taskBelongsToProject(todo, project),
-  );
+  const taskGroups = useMemo(() => props.taskIndex ?? buildProjectTaskIndex(props.allProjects, props.todos), [props.taskIndex, props.allProjects, props.todos]);
+  const projectTodos = taskGroups.byProject.get(project.id) ?? [];
   const projectNotes = props.notes.filter((note) => note.project_id === project.id);
   const projectInvoices = props.invoices.filter((invoice) => invoice.project_id === project.id);
+  const invoiceTotals = useMemo(() => {
+    const items = new Map<string, InvoiceItem[]>();
+    for (const item of props.invoiceItems) {
+      const group = items.get(item.invoice_id);
+      if (group) group.push(item); else items.set(item.invoice_id, [item]);
+    }
+    return new Map(props.invoices.filter(invoice => invoice.project_id === project.id).map(invoice => [invoice.id, invoiceTotal(invoice, items.get(invoice.id) ?? [])]));
+  }, [props.invoices, props.invoiceItems, project.id]);
   // A subscription reaches a project either through the legacy single link or
   // through an allocation share; the Finance tab shows the share it carries.
   // Only running development subscriptions count, by the same rule as the
   // Money overview and the Projects list.
-  const projectSubscriptions = projectSubscriptionShares(props.subscriptions, props.subscriptionAllocations, displayCurrency).get(project.id) ?? [];
+  const projectSubscriptions = useMemo(() => projectSubscriptionShares(props.subscriptions, props.subscriptionAllocations, displayCurrency, costDay ? new Date(`${costDay}T12:00:00`) : undefined).get(project.id) ?? [], [props.subscriptions, props.subscriptionAllocations, displayCurrency, project.id, costDay]);
   const allocatedMonthly = sharesMonthly(projectSubscriptions);
   const subsections = childProjects(props.allProjects, project.id);
   const projectTransactions = props.transactions.filter((transaction) => transaction.project_id === project.id);
   const projectOpportunities = props.opportunities.filter((opportunity) => opportunity.project_id === project.id);
-  const projectDates = props.importantDates.filter((date) => date.project_id === project.id);
+  const projectDates = useMemo(() => now ? buildOccurrences(props.importantDates.filter(date => date.project_id === project.id), now).filter(occurrence => occurrence.daysUntil >= 0).slice(0, 5) : [], [props.importantDates, project.id, now]);
   const projectCommunications = props.communications.filter((item) => item.project_id === project.id);
   const organization = props.organizations.find((item) => item.id === project.organization_id);
   const monthlyCost = projectMonthlyIn(props.costs, props.crons, displayCurrency) + allocatedMonthly;
@@ -177,8 +194,8 @@ export function ProjectWorkspace(props: Props) {
   const revenue = convert(Number(project.revenue ?? 0), project.revenue_currency ?? "CZK", displayCurrency);
   const outstanding = projectInvoices
     .filter((invoice) => invoice.status === "issued")
-    .reduce((sum, invoice) => sum + convert(invoiceTotal(invoice, props.invoiceItems), invoice.currency, displayCurrency), 0);
-  const health = assessProjectHealth(project, projectTodos, props.costs, props.crons);
+    .reduce((sum, invoice) => sum + convert(invoiceTotals.get(invoice.id) ?? 0, invoice.currency, displayCurrency), 0);
+  const health = now ? assessProjectHealth(project, projectTodos, props.costs, props.crons, now) : null;
 
   const activity = [
     ...projectNotes.map((item) => ({ id: `note-${item.id}`, at: item.updated_at, label: `${t.nav.sections.notes}: ${item.title}` })),
@@ -223,51 +240,74 @@ export function ProjectWorkspace(props: Props) {
   // A tab hidden in Settings, or one this project does not have, opens the first tab instead.
   const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : (tabs[0]?.id ?? "overview");
 
-  const healthLabel = health.health === "healthy" ? p.healthy : health.health === "attention" ? p.attentionStatus : p.atRisk;
-  const localHealthReason = (reason: string) => {
-    if (reason === "Project is on hold") return p.projectOnHold;
-    if (reason === "Running costs without recorded revenue") return p.costsWithoutRevenue;
-    if (reason.includes("overdue task")) return `${p.overdueTasks}: ${reason.match(/^\d+/)?.[0] ?? ""}`;
-    if (reason.includes("disabled automation")) return `${p.disabledAutomations}: ${reason.match(/^\d+/)?.[0] ?? ""}`;
-    return reason;
-  };
+  const visibleTabIds = tabs.map(item => item.id).join(",");
+  useLayoutEffect(() => {
+    const list = tablist.current;
+    if (!list) return;
+    const reveal = () => {
+      const selected = list.querySelector<HTMLElement>('[aria-selected="true"]');
+      if (!selected) return;
+      const viewport = list.getBoundingClientRect(), item = selected.getBoundingClientRect();
+      // Only move this horizontal strip. scrollIntoView would also move the
+      // document or workspace, and focusing would steal keyboard position.
+      if (item.left < viewport.left || item.width > viewport.width) list.scrollLeft += item.left - viewport.left;
+      else if (item.right > viewport.right) list.scrollLeft += item.right - viewport.right;
+    };
+    reveal();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(reveal); observer.observe(list);
+    return () => observer.disconnect();
+  }, [tab, lang, project.id, visibleTabIds]);
+
+  const healthLabel = !health ? t.common.loading : health.health === "healthy" ? p.healthy : health?.health === "attention" ? p.attentionStatus : p.atRisk;
+
 
   return <div>
     <div className="mb-4 flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
-      <div ref={tablist} className="flex min-w-0 flex-1 gap-1 overflow-x-auto" role="tablist" aria-label={p.projectWorkspace}>
-        {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
+      <div ref={tablist} className="flex min-w-0 flex-1 gap-1 overflow-x-auto" role="tablist" aria-label={p.projectWorkspace} onKeyDown={event => {
+        const controls = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+        const index = controls.indexOf(event.target as HTMLButtonElement);
+        if (index < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? controls.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + controls.length) % controls.length;
+        controls[next]?.focus();
+      }}>
+        {tabs.map((item) => <button key={item.id} type="button" id={`${tabId}-${item.id}`} role="tab" tabIndex={tab === item.id ? 0 : -1} aria-controls={`${tabId}-panel`} aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("min-h-11 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium focus-ring md:min-h-8", tab === item.id ? "bg-accent text-foreground" : "text-foreground-muted hover:text-foreground")}>{item.label}</button>)}
       </div>
-      {dneskai && <DneskaiOverflowMenu projectId={project.id} lang={lang} preview={!!props.isPreview} sections={dneskaiSections} activeSection={openSection?.id ?? null}
+      {dneskai && <DneskaiOverflowMenu projectId={project.id} lang={lang} preview={!!props.isPreview} liveAccount={props.previewAccountIntegration} sections={dneskaiSections} activeSection={openSection?.id ?? null}
         onSection={(id) => { flushSync(() => setTab(id)); tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(); }} onOpenReview={openDneskaiReview} />}
     </div>
 
+    <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${tab}`} tabIndex={0} className="focus-ring rounded-lg">
+
     {tab === "overview" && <div className="space-y-4">
       <div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4">
-        <OperationalMetric label={p.health} value={healthLabel} icon={Activity} tone={health.health === "at_risk" ? "risk" : health.health === "attention" ? "attention" : "default"} />
+        <OperationalMetric label={p.health} value={healthLabel} icon={Activity} tone={health?.health === "at_risk" ? "risk" : health?.health === "attention" ? "attention" : "default"} />
         <OperationalMetric label={p.openTasks} value={String(projectTodos.filter((item) => !item.done).length)} icon={ListTodo} />
         <OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} />
         <OperationalMetric label={p.outstandingAmount} value={formatCurrency(outstanding, displayCurrency)} icon={BriefcaseBusiness} tone={outstanding > 0 ? "attention" : "default"} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p>{(project.dev_url || project.url) && <div className="flex flex-wrap gap-2">{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}<div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.slice(0, 5).map((date) => <li key={date.id} className="flex justify-between gap-3 py-1.5"><span>{date.title}</span><span className="tabular text-foreground-muted">{date.the_date}</span></li>)}</ul></div>}</CardContent></Card>
-        <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localHealthReason(reason)}</li>)}</ul>}</CardContent></Card>
-        {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} />}
+        <Card><CardHeader><CardTitle>{p.projectSummary}</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><p>{project.summary || project.notes || p.noRelatedRecords}</p>{(project.dev_url || project.url) && <div className="flex flex-wrap gap-2">{project.dev_url && <Button size="sm" variant="outline" asChild><a href={project.dev_url} target="_blank" rel="noreferrer"><ExternalLink />{p.developmentProject}</a></Button>}{project.url && <Button size="sm" variant="outline" asChild><a href={project.url} target="_blank" rel="noreferrer"><ExternalLink />{p.externalProject}</a></Button>}</div>}<div><SectionLabel>{p.linkedOrganization}</SectionLabel><p className="mt-1">{organization ? <EntityBadge>{organization.name}</EntityBadge> : p.noLinkedOrganization}</p></div>{projectDates.length > 0 && <div><SectionLabel>{t.nav.sections.dates}</SectionLabel><ul className="mt-1 divide-y divide-border">{projectDates.map((date) => <li key={date.date.id} className="flex justify-between gap-3 py-1.5"><span>{date.date.title}</span><span className="tabular text-foreground-muted">{todayKey(date.next)}</span></li>)}</ul></div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>{p.attention}</CardTitle></CardHeader><CardContent>{!health ? <p className="text-sm text-foreground-muted">{t.common.loading}</p> : health.reasons.length === 0 ? <p className="text-sm text-foreground-muted">{p.attentionEmpty}</p> : <ul className="space-y-2 text-sm">{health.reasons.map((reason) => <li key={reason} className="rounded-md border border-border p-2">{localizeProjectHealthReason(reason, p)}</li>)}</ul>}</CardContent></Card>
+        {project.repo_full_name && <ProjectTraffic repoFullName={project.repo_full_name} repoId={project.repo_id ?? null} preview={!!props.isPreview} />}
         {subsections.length > 0 && <Card><CardHeader><CardTitle>{t.portfolio.subsection}</CardTitle></CardHeader><CardContent><ul className="divide-y divide-border">{subsections.map((child) => <li key={child.id} className="flex items-center justify-between gap-3 py-2"><button type="button" onClick={() => props.onOpenProject(child)} className="focus-ring rounded text-sm font-medium hover:underline">{child.name}</button><span className="text-xs text-foreground-muted">{projectSummary(child, lang, { preview: props.isPreview })}</span></li>)}</ul></CardContent></Card>}
       </div>
       <ProjectLinksSection project={project} aiLinks={props.aiLinks} aiCategories={props.aiCategories} projectLinks={props.projectLinks} setProjectLinks={props.setProjectLinks} />
     </div>}
 
     {tab === "tasks" && <div className="space-y-4"><RecordCard title={p.projectTasks} icon={ListTodo} info={p.tasksFromNeededInfo} empty={p.noRelatedRecords} items={projectTodos.map((item) => ({ id: item.id, primary: item.title, secondary: `${item.done ? p.completed : p.open}${item.due_date ? ` · ${item.due_date}` : ""}` }))} /><div><div className="mb-2 flex items-center gap-1.5"><SectionLabel>{p.projectNotes}</SectionLabel><Tooltip content={p.notesInfo}><span className="inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip></div><NotesPanel notes={props.notes} setNotes={props.setNotes} projects={[project]} projectId={project.id} embedded /></div></div>}
-    {tab === "activity" && <div className="space-y-4">{project.repo_full_name && <ProjectGithubActivity repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} />}<RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} /></div>}
+    {tab === "activity" && <div className="mx-auto max-w-3xl space-y-4">{project.repo_full_name && <ProjectGithubActivity repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} preview={!!props.isPreview && !props.repositoryIntegrationEnabled} />}<RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} /></div>}
     {tab === "communication" && <ProjectCommunicationPanel projectId={project.id} communications={projectCommunications} setCommunications={props.setCommunications} />}
-    {isDneskaiProjectTab(tab) && dneskai && <DneskaiWorkspaceTab tab={tab} projectId={project.id} lang={lang} preview={props.isPreview} />}
-    {tab === "sources" && isDneskaiProject(project) && <div className="space-y-8"><DneskaiSourceList projectId={project.id} lang={lang} preview={props.isPreview} /><DneskaiDailyMixPanel projectId={project.id} lang={lang} preview={props.isPreview} /><DneskaiAudioLibrary lang={lang} preview={props.isPreview} /></div>}
-    {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
-    {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.monthlyCost} icon={CircleDollarSign} info={p.costsInfo} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.invoices} icon={FileText} info={p.invoicesInfo} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotal(item, props.invoiceItems), item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} info={p.subscriptionsInfo} empty={p.noRelatedRecords} items={projectSubscriptions.map(({ subscription, share, monthly }) => ({ id: subscription.id, primary: subscription.name, secondary: `${formatCurrency(subscription.amount, subscription.currency)} · ${t.subscriptions.cycle[subscription.billing_cycle]} · ${Math.round(share * 100)}% → ${formatCurrency(monthly, displayCurrency)}${t.subscriptions.perMo}` }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} info={p.transactionsInfo} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /></div></div>}
-    {tab === "competition" && <ProjectCompetition project={project} competitors={props.competitors} setCompetitors={props.setCompetitors} />}
+    {isDneskaiProjectTab(tab) && dneskai && <DneskaiWorkspaceTab tab={tab} projectId={project.id} lang={lang} preview={props.isPreview} liveMusic={props.previewMusicIntegration} />}
+    {tab === "sources" && isDneskaiProject(project) && <DneskaiSourceSettings projectId={project.id} lang={lang} preview={props.isPreview} liveSettings={props.previewSourceSettingsIntegration} liveMusic={props.previewMusicIntegration} />}
+    {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoId={project.repo_id} previousRepoNames={project.previous_repo_full_names} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}
+    {tab === "finance" && <div className="space-y-4"><div className="grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-4"><OperationalMetric label={p.monthlyCost} value={formatCurrency(monthlyCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.annualCost} value={formatCurrency(annualCost, displayCurrency)} icon={CircleDollarSign} /><OperationalMetric label={p.revenue} value={formatCurrency(revenue, displayCurrency)} icon={BriefcaseBusiness} /><OperationalMetric label={p.estimatedProfit} value={formatCurrency(revenue - annualCost, displayCurrency)} icon={Activity} tone={revenue - annualCost < 0 ? "risk" : "default"} /></div><div className="grid gap-4 lg:grid-cols-2"><RecordCard title={p.monthlyCost} icon={CircleDollarSign} info={p.costsInfo} empty={p.noRelatedRecords} items={props.costs.map((item) => ({ id: item.id, primary: item.label, secondary: formatCurrency(item.amount, item.currency) }))} /><RecordCard title={t.nav.sections.invoices} icon={FileText} info={p.invoicesInfo} empty={p.noRelatedRecords} items={projectInvoices.map((item) => ({ id: item.id, primary: item.number, secondary: `${statusLabel(item.status, lang)} · ${formatCurrency(invoiceTotals.get(item.id) ?? 0, item.currency)}` }))} /><RecordCard title={t.nav.sections.subscriptions} icon={CircleDollarSign} info={p.subscriptionsInfo} empty={p.noRelatedRecords} items={projectSubscriptions.map(({ subscription, share, monthly }) => ({ id: subscription.id, primary: subscription.name, secondary: `${formatCurrency(subscription.amount, subscription.currency)} · ${t.subscriptions.cycle[subscription.billing_cycle]} · ${Math.round(share * 100)}% → ${formatCurrency(monthly, displayCurrency)}${t.subscriptions.perMo}` }))} /><RecordCard title={t.nav.sections.transactions} icon={CircleDollarSign} info={p.transactionsInfo} empty={p.noRelatedRecords} items={projectTransactions.map((item) => ({ id: item.id, primary: item.note || item.category || statusLabel(item.kind, lang), secondary: `${item.occurred_on} · ${formatCurrency(item.amount, item.currency)}` }))} /></div></div>}
+    {tab === "competition" && <ProjectCompetition key={project.id} refreshFailed={props.competitorsRefreshFailed} project={project} competitors={props.competitors} setCompetitors={props.setCompetitors} />}
     {tab === "knowledge" && <div className="grid gap-4 lg:grid-cols-2"><ProjectKnowledgePanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} /><RecordCard title={t.nav.sections.notes} icon={FileText} empty={p.noRelatedRecords} items={projectNotes.map((item) => ({ id: item.id, primary: item.title, secondary: item.plain_text.slice(0, 120) }))} /><ProjectPromptsCard project={project} prompts={props.prompts} promptLinks={props.promptLinks} projectLinks={props.projectLinks} aiLinks={props.aiLinks} aiCategories={props.aiCategories} /></div>}
     {tab === "scaling" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="scaling.md" fallbackFile="stack-and-scaling.md" title={p.projectScaling} description={p.scalingDescription} /></div>}
     {tab === "monetization" && <div className="grid gap-4"><ProjectDocPanel repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} file="monetization.md" title={p.projectMonetization} description={p.monetizationDescription} /></div>}
+    </div>
   </div>;
 }
 
@@ -275,7 +315,7 @@ function RecordCard({ title, icon: Icon, empty, items, info }: { title: string; 
   return <Card><CardHeader><CardTitle className="flex items-center gap-2"><Icon className="h-4 w-4" />{title}{info && <Tooltip content={info}><span className="ml-0.5 inline-flex cursor-help text-foreground-subtle hover:text-foreground"><Info className="h-3.5 w-3.5" /></span></Tooltip>}</CardTitle></CardHeader><CardContent>{items.length === 0 ? <p className="text-sm text-foreground-muted">{empty}</p> : <ul className="divide-y divide-border">{items.map((item) => <li key={item.id} className="py-2.5"><p className="text-sm font-medium">{item.primary}</p>{item.secondary && <p className="mt-1 text-xs text-foreground-muted">{item.secondary}</p>}</li>)}</ul>}</CardContent></Card>;
 }
 
-function readProjectTab(): string { return new URLSearchParams(window.location.search).get('projectTab') ?? ''; }
+function readProjectTab(): string { const values = new URLSearchParams(window.location.search).getAll('projectTab'); return values.length === 1 ? projectTabFromQuery(values[0]) : ''; }
 function subscribeProjectTab(onChange: () => void) {
   window.addEventListener('popstate', onChange); window.addEventListener('project-tab', onChange);
   return () => { window.removeEventListener('popstate', onChange); window.removeEventListener('project-tab', onChange); };

@@ -25,4 +25,10 @@ describe("notification visibility and actions", () => {
     expect(safeNotificationUrl("javascript:alert(1)")).toBeNull();
     expect(safeNotificationUrl("//example.com/action")).toBeNull();
   });
+  it("rejects normalized external relative paths, credentials, controls and oversized actions", () => {
+    for (const value of ["/\\example.com/action", "/\\\\example.com/action", "//example.com/action", "/\n/example.com/action", "/invoices\t", "https://user:password@example.com/action", "https://example.com/\npath", "/" + "x".repeat(2000)]) expect(safeNotificationUrl(value)).toBeNull();
+    expect(safeNotificationUrl(" /projects/fixture?tab=tasks#open ")).toBe("/projects/fixture?tab=tasks#open");
+    expect(safeNotificationUrl("http://localhost:3939/invoices")).toBe("http://localhost:3939/invoices");
+    expect(safeNotificationUrl("/projects/%2Fexample.com")).toBe("/projects/%2Fexample.com");
+  });
 });

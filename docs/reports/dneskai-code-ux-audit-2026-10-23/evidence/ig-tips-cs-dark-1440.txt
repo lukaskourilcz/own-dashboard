@@ -1,0 +1,212 @@
+- paragraph: Nainstalovat OwnDashboard
+- paragraph: Přidejte na plochu pro přístup jedním klepnutím.
+- button "Nainstalovat"
+- button "Teď ne"
+- button "Zavřít":
+- link "Přejít na obsah":
+  - /url: "#main-content"
+- complementary:
+  - generic: OwnDashboard
+  - button "Sbalit panel" [expanded]:
+  - navigation:
+    - button "Domů":
+      - generic: Domů
+    - paragraph: Práce
+    - button "Přehled práce":
+      - generic: Přehled práce
+    - button "Marketing":
+      - generic: Marketing
+    - button "Workflows":
+      - generic: Workflows
+    - button "Projekty":
+      - generic: Projekty
+    - list:
+      - link "DNESKAi":
+        - /url: /projects/dneskai
+      - link "own-dashboard":
+        - /url: /projects/own-dashboard
+      - link "devShark":
+        - /url: /projects/devshark
+      - link "boardlessAI":
+        - /url: /projects/boardlessai
+      - link "Design Lab":
+        - /url: /projects/design-lab
+      - link "GoVIRAL":
+        - /url: /projects/goviral
+      - link "Recipe box app":
+        - /url: /projects/recipe-box
+    - paragraph: Freelance
+    - list "Freelance":
+      - link "Acme customer portal":
+        - /url: /projects/acme-portal
+      - link "Harbor Bakery website":
+        - /url: /projects/harbor-bakery
+    - button "Konkurence":
+      - generic: Konkurence
+    - button "Příležitosti":
+      - generic: Příležitosti
+    - button "Klienti":
+      - generic: Klienti
+    - button "Kariéra":
+      - generic: Kariéra
+    - button "Faktury":
+      - generic: Faktury
+    - paragraph: Peníze
+    - button "Přehled peněz":
+      - generic: Přehled peněz
+    - button "Účty":
+      - generic: Účty
+    - button "Transakce":
+      - generic: Transakce
+    - button "Předplatná":
+      - generic: Předplatná
+    - button "Kategorie":
+      - generic: Kategorie
+    - paragraph: Plánování
+    - button "Úkoly":
+      - generic: Úkoly
+    - button "Kalendář":
+      - generic: Kalendář
+    - button "Cíle":
+      - generic: Cíle
+    - button "Termíny":
+      - generic: Termíny
+    - paragraph: Knihovna
+    - button "Poznámky":
+      - generic: Poznámky
+    - button "Prompty":
+      - generic: Prompty
+    - button "Nástroje":
+      - generic: Nástroje
+    - button "Odkazy":
+      - generic: Odkazy
+    - button "IG TIPS" [active]:
+      - generic: IG TIPS
+  - generic: JA
+  - paragraph: Jan Novák
+  - paragraph: jan.novak@example.com
+  - button "Nastavení":
+  - button "Switch to light mode":
+  - button "Odhlásit se":
+- main:
+  - heading "IG TIPS" [level=1]
+  - button "Příkazová paleta":
+    - generic: Zadejte příkaz nebo hledejte…
+    - text: K
+  - button "Kopírovat IG tipy do JSON / Markdown"
+  - button "Přidat tip"
+  - textbox "Hledat tipy…"
+  - group "Filtrovat podle tématu":
+    - button "Všechna témata" [pressed]
+    - button "Nápady na obsah"
+    - button "Formáty a úpravy"
+    - button "Platformy a dosah"
+    - button "Růst a udržení"
+    - button "Bez skupiny"
+    - button "Zatím nepoužité 3":
+      - text: Zatím nepoužité
+      - generic: "3"
+  - paragraph: "Marketingové plány: devShark (5 položek), DNESKAi (1 položka)"
+  - status: 5 z 5 tipů
+  - region "Nápady na obsah 1 tip":
+    - heading "Nápady na obsah 1 tip" [level=2]:
+      - text: Nápady na obsah
+      - generic: 1 tip
+    - list:
+      - heading "Plan a month of posts around two topics" [level=3]
+      - paragraph: Pick two topics your audience keeps asking about and outline a month of posts in one sitting. Record short examples from work you are doing anyway, so every post shows something real. Judge the plan by the enquiries it brings, not by views, before posting more often.
+      - paragraph: Z Reelu na Instagramu · Pro own-dashboard
+      - paragraph:
+        - generic: Použito v
+        - link "devShark ×3 (otevře se na nové kartě)":
+          - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&q=Plan+a+month+of+posts+around+two+topics
+          - text: devShark ×3
+          - generic: (otevře se na nové kartě)
+        - text: ","
+        - link "DNESKAi ×1 (otevře se na nové kartě)":
+          - /url: https://boardless-ai.vercel.app/admin/calendar?venture=caught-up&q=Plan+a+month+of+posts+around+two+topics
+          - text: DNESKAi ×1
+          - generic: (otevře se na nové kartě)
+      - 'button "Podrobnosti: Plan a month of posts around two topics"': Podrobnosti
+      - 'link "Otevřít originál (otevře se na nové kartě): Plan a month of posts around two topics"':
+        - /url: https://www.instagram.com/p/EXAMPLE0001/
+        - text: Otevřít originál
+        - generic: "(otevře se na nové kartě): Plan a month of posts around two topics"
+      - 'button "Upravit: Plan a month of posts around two topics"': Upravit
+      - 'button "Smazat: Plan a month of posts around two topics"': Smazat
+  - region "Formáty a úpravy 1 tip":
+    - heading "Formáty a úpravy 1 tip" [level=2]:
+      - text: Formáty a úpravy
+      - generic: 1 tip
+    - list:
+      - heading "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post" [level=3]
+      - paragraph: Instagram applies one orientation to every slide of a carousel, so a deck that mixes square and portrait slides gets cropped. Design at 1080 × 1350 pixels and make a square version only when a layout really needs one. Check the ratio before exporting, because a crop you notice after posting cannot be fixed without deleting the post. The same pages can go to LinkedIn as a PDF document.
+      - paragraph: Z example.com
+      - paragraph:
+        - generic: Použito v
+        - link "devShark ×1 (otevře se na nové kartě)":
+          - /url: https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark&q=Design+every+carousel+at+the+4%3A5+portrait+ratio+and+keep+that+one+ratio+for+every+slide+of+the+post
+          - text: devShark ×1
+          - generic: (otevře se na nové kartě)
+      - 'button "Podrobnosti: Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post"': Podrobnosti
+      - 'link "Otevřít originál (otevře se na nové kartě): Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post"':
+        - /url: https://example.com/guides/carousel-sizes
+        - text: Otevřít originál
+        - generic: "(otevře se na nové kartě): Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post"
+      - 'button "Upravit: Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post"': Upravit
+      - 'button "Smazat: Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post"': Smazat
+  - region "Platformy a dosah 1 tip":
+    - heading "Platformy a dosah 1 tip" [level=2]:
+      - text: Platformy a dosah
+      - generic: 1 tip
+    - list:
+      - heading "Make the profile say what you offer and what to do next" [level=3]
+      - paragraph: "Put your service and a searchable specialty in the name and bio, say who you help and with what result, and give one clear next step. Pin three posts: what you offer, a work story and real proof. Measure visits from the profile to your site rather than the creator's claims."
+      - paragraph: Z 2 Reelů na Instagramu
+      - 'button "Podrobnosti: Make the profile say what you offer and what to do next"': Podrobnosti
+      - 'link "Otevřít originál (otevře se na nové kartě): Make the profile say what you offer and what to do next"':
+        - /url: https://www.instagram.com/p/EXAMPLE0002/
+        - text: Otevřít originál
+        - generic: "(otevře se na nové kartě): Make the profile say what you offer and what to do next"
+      - 'button "Upravit: Make the profile say what you offer and what to do next"': Upravit
+      - 'button "Smazat: Make the profile say what you offer and what to do next"': Smazat
+  - region "Růst a udržení 1 tip":
+    - heading "Růst a udržení 1 tip" [level=2]:
+      - text: Růst a udržení
+      - generic: 1 tip
+    - list:
+      - heading "Reward readers who bring a friend" [level=3]
+      - paragraph: Give readers a real perk, such as early delivery or an ad-free edition, when a friend they invite subscribes. It only works once there is an email list, so start it after the newsletter launch.
+      - paragraph: Z example.com · Pro DNESKAi
+      - 'button "Podrobnosti: Reward readers who bring a friend"': Podrobnosti
+      - 'link "Otevřít originál (otevře se na nové kartě): Reward readers who bring a friend"':
+        - /url: https://example.com/newsletters/referrals
+        - text: Otevřít originál
+        - generic: "(otevře se na nové kartě): Reward readers who bring a friend"
+      - 'button "Upravit: Reward readers who bring a friend"': Upravit
+      - 'button "Smazat: Reward readers who bring a friend"': Smazat
+  - region "Bez skupiny 1 tip":
+    - heading "Bez skupiny 1 tip" [level=2]:
+      - text: Bez skupiny
+      - generic: 1 tip
+    - list:
+      - heading "Check a free resource before relying on it" [level=3]
+      - paragraph: Open the provider's own page, tell a free resource from a trial or a paid export, and note the date you checked.
+      - paragraph: Z Reelu na Instagramu
+      - 'button "Podrobnosti: Check a free resource before relying on it"': Podrobnosti
+      - 'link "Otevřít originál (otevře se na nové kartě): Check a free resource before relying on it"':
+        - /url: https://www.instagram.com/p/EXAMPLE0004/
+        - text: Otevřít originál
+        - generic: "(otevře se na nové kartě): Check a free resource before relying on it"
+      - 'button "Upravit: Check a free resource before relying on it"': Upravit
+      - 'button "Smazat: Check a free resource before relying on it"': Smazat
+- region "Notifications alt+T"
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "1"
+  - generic: "2"
+  - text: Issue
+  - generic: s
+- button "Collapse issues badge":
+- alert
+- generic: "30000"

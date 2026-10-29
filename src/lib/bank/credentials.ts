@@ -18,15 +18,16 @@ const TABLE = "bank_provider_credentials";
 export async function readProviderSecret(
   admin: SupabaseClient,
   userId: string,
-  provider: BankProviderId,
+  provider: BankProviderId, signal?: AbortSignal,
 ): Promise<string | null> {
-  const { data, error } = await admin
+  const query = admin
     .from(TABLE)
     .select("secret")
     .eq("user_id", userId)
-    .eq("provider", provider)
-    .maybeSingle();
-  if (error || !data) return null;
+    .eq("provider", provider);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
+  if (error) throw new Error("Bank credential read failed");
+  if (!data) return null;
   const secret = (data as { secret: string | null }).secret;
   return secret && secret.length > 0 ? secret : null;
 }
@@ -34,33 +35,16 @@ export async function readProviderSecret(
 export async function hasProviderSecret(
   admin: SupabaseClient,
   userId: string,
-  provider: BankProviderId,
+  provider: BankProviderId, signal?: AbortSignal,
 ): Promise<boolean> {
-  const { data, error } = await admin
+  const query = admin
     .from(TABLE)
     .select("user_id")
     .eq("user_id", userId)
-    .eq("provider", provider)
-    .maybeSingle();
-  return !error && Boolean(data);
-}
-
-export async function writeProviderSecret(
-  admin: SupabaseClient,
-  userId: string,
-  provider: BankProviderId,
-  secret: string,
-): Promise<void> {
-  const { error } = await admin.from(TABLE).upsert(
-    {
-      user_id: userId,
-      provider,
-      secret,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,provider" },
-  );
-  if (error) throw error;
+    .eq("provider", provider);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
+  if (error) throw new Error("Bank credential status unavailable");
+  return Boolean(data);
 }
 
 export async function deleteProviderSecret(

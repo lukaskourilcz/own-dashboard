@@ -1,3 +1,4 @@
+import { focusDayKey } from "@/lib/date-keys";
 import { dueFollowUps } from "@/lib/jobs/board";
 import type { JobApplication, JobApplicationStatus } from "@/lib/types";
 
@@ -28,6 +29,7 @@ const EMPTY_BY_STATUS: Record<JobApplicationStatus, number> = {
 export function applicationStats(
   apps: JobApplication[],
   now: Date = new Date(),
+  timeZone = "Europe/Prague",
 ): ApplicationStats {
   const byStatus = { ...EMPTY_BY_STATUS };
   let last7 = 0;
@@ -38,19 +40,18 @@ export function applicationStats(
   const overdueFollowUps = dueFollowUps(apps, now).length;
 
   const DAY = 24 * 60 * 60 * 1000;
-  const nowMs = now.getTime();
+  const todayMs = Date.parse(`${focusDayKey(now, timeZone)}T00:00:00Z`);
 
   for (const app of apps) {
     byStatus[app.status] = (byStatus[app.status] ?? 0) + 1;
-    // applied_on is a plain date (YYYY-MM-DD); parse as UTC midnight so the
-    // window math doesn't wobble with the server timezone.
+    // Compare date-only values to the configured owner day; elapsed hours and DST do not change a window.
     const applied = Date.parse(`${app.applied_on}T00:00:00Z`);
     if (Number.isNaN(applied)) continue;
-    const age = nowMs - applied;
-    if (age >= 0 && age <= 7 * DAY) last7++;
-    if (age >= 0 && age <= 30 * DAY) last30++;
+    const age = todayMs - applied;
+    if (age >= 0 && age < 7 * DAY) last7++;
+    if (age >= 0 && age < 30 * DAY) last30++;
     const responded = app.responded_on ? Date.parse(`${app.responded_on}T00:00:00Z`) : NaN;
-    if (app.response_kind && responded >= applied && responded <= nowMs) responseDays.push((responded-applied)/DAY);
+    if (app.response_kind && responded >= applied && responded <= todayMs) responseDays.push((responded-applied)/DAY);
   }
   responseDays.sort((a,b)=>a-b);
   const middle = Math.floor(responseDays.length/2);

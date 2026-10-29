@@ -33,7 +33,8 @@ export function DneskaiPublishedTab({ read, lang, preview, refreshing, onRefresh
   const all = dneskaiPostList(read, renderFailed);
   const posts = all.filter((item) => dneskaiPostMatches(item.state.state, filter));
   return <section aria-labelledby="dneskai-published-title" className="min-w-0 space-y-5" data-testid="dneskai-published">
-    <TabHeader id="dneskai-published-title" title={t.published.title} intro={t.published.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
+    <TabHeader focusable id="dneskai-published-title" title={t.published.title} intro={t.published.intro} lang={lang} refreshing={refreshing} onRefresh={onRefresh} preview={preview} unreadable={read.unreadable} />
+    {read.engagementStatus === 'unavailable' && <p role="alert" className="text-sm text-risk">{t.engagementReceipts.unavailable}</p>}
     {read.engagementSummary && read.engagementSummary.posts > 0 && <DneskaiEngagementSummary summary={read.engagementSummary} lang={lang} />}
     <div role="group" aria-label={t.published.filters.label} className="flex flex-wrap gap-1" data-testid="dneskai-post-filters">
       {DNESKAI_POST_FILTERS.map((key) => {

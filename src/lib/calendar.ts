@@ -16,33 +16,47 @@ export type GcalEvent = {
   location?: string;
   recurrence?: string[];
   recurringEventId?: string;
+  sourceCalendarId?: string;
 };
 
 export type EventsResult =
   | { ok: true; events: GcalEvent[] }
   | { ok: false; reason: "no-token" | "unauthorized" | "error"; message?: string };
 
+/** A bounded, linear scan: malformed repeated '<' characters must not make
+ * a short calendar preview scan the same suffix repeatedly. Render as text. */
+export function calendarDescriptionSnippet(value: string, limit: number): string {
+  let text = "", inTag = false;
+  for (const character of value) {
+    if (character === "<") { inTag = true; continue; }
+    if (character === ">" && inTag) { inTag = false; continue; }
+    if (!inTag) { text += character; if (text.length >= limit) break; }
+  }
+  return text.slice(0, limit);
+}
+
 export function eventStart(ev: GcalEvent): Date | null {
-  if (ev.start.dateTime) return new Date(ev.start.dateTime);
-  if (ev.start.date) return new Date(`${ev.start.date}T00:00:00`);
-  return null;
+  const value = ev.start.dateTime ?? (ev.start.date ? `${ev.start.date}T00:00:00` : null);
+  const date = value ? new Date(value) : null;
+  return date && Number.isFinite(date.getTime()) ? date : null;
 }
 
 export function eventEnd(ev: GcalEvent): Date | null {
-  if (ev.end.dateTime) return new Date(ev.end.dateTime);
-  if (ev.end.date) return new Date(`${ev.end.date}T23:59:59`);
-  return null;
+  const value = ev.end.dateTime ?? (ev.end.date ? `${ev.end.date}T00:00:00` : null);
+  const date = value ? new Date(value) : null;
+  return date && Number.isFinite(date.getTime()) ? date : null;
 }
 
 export function eventTimeLabel(ev: GcalEvent): string {
   if (ev.start.date && !ev.start.dateTime) return "all day";
-  if (ev.start.dateTime) return format(new Date(ev.start.dateTime), "HH:mm");
+  const start = eventStart(ev);
+  if (start && ev.start.dateTime) return format(start, "HH:mm");
   return "";
 }
 
 export function eventDateKey(ev: GcalEvent): string | null {
-  if (ev.start.dateTime) return format(new Date(ev.start.dateTime), "yyyy-MM-dd");
-  if (ev.start.date) return ev.start.date;
+  const start = eventStart(ev);
+  if (start) return format(start, "yyyy-MM-dd");
   return null;
 }
 

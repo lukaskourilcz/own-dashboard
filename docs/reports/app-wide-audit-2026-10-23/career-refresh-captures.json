@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-25",
+  "source": "src/components/panels/jobs-panel.tsx",
+  "sha256": "069f74a8d3982728ea2d8942110e96b21dbe31b22c26016b2dd84b6bd7b949ce",
+  "basedOn": "b4b1096 with finding 267 layout changes",
+  "synthetic": true,
+  "records": [
+    {
+      "width": 1440,
+      "box": {
+        "x": 452,
+        "y": 240,
+        "width": 768,
+        "height": 66
+      },
+      "marks": [
+        {
+          "x": 2.21,
+          "y": 34.85,
+          "w": 79.71,
+          "h": 30.3,
+          "n": 1
+        },
+        {
+          "x": 83.48,
+          "y": 25.76,
+          "w": 14.3,
+          "h": 48.48,
+          "n": 2
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "box": {
+        "x": 16,
+        "y": 359,
+        "width": 398,
+        "height": 130
+      },
+      "marks": [
+        {
+          "x": 4.27,
+          "y": 13.08,
+          "w": 91.46,
+          "h": 30.77,
+          "n": 1
+        },
+        {
+          "x": 4.27,
+          "y": 53.08,
+          "w": 91.46,
+          "h": 33.85,
+          "n": 2
+        }
+      ]
+    }
+  ]
+}

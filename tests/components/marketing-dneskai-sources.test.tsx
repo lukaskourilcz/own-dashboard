@@ -41,6 +41,40 @@ describe('read-only DNESKAi source checks', () => {
     for (const instant of ['2026-10-12T11:59:59Z', '2026-10-12T20:05:00Z', '2026-10-11T20:00:00Z']) expect(container.querySelector(`time[datetime="${instant}"]`), instant).not.toBeNull();
     expect(container.querySelector('time[datetime="2026-10-10T20:05:00Z"]')).toBeNull();
   });
+  it.each(['en', 'cs'] as const)('uses safe localized fallbacks for inherited and unknown diagnostic codes (%s)', lang => {
+    const value = state(); const t = dneskaiSources[lang];
+    const codes = ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'unrecognized-service-code'];
+    value.blockers = codes;
+    value.sources = codes.map((code, index) => ({ ...value.sources[0], id: `source-${index}`, name: `SOURCE-${index}` }));
+    value.sourceStates = codes.map((code, index) => ({ ...value.sourceStates[0], sourceId: `source-${index}`, errorCode: code }));
+    value.runs = codes.map((code, index) => ({ ...value.runs[0], id: `run-${index}`, errorCode: code }));
+    value.events = codes.flatMap((code, index) => [
+      { eventId: String(index).padStart(64, 'a'), targetDate: null, status: 'held' as const, reason: code, brief: null, members: [{ candidateId: `held-${index}`, sourceId: 'source-0', title: `HELD-${index}`, url: 'https://example.invalid/a', status: 'held' as const, reason: code, role: 'primary' as const }] },
+      { eventId: String(index).padStart(64, 'b'), targetDate: '2026-10-14', status: 'selected' as const, reason: null, brief: { id: `ready-${index}`, rank: index, status: 'ready' as const, code, scheduledAt: null, suggestedFormat: 'carousel' as const, evidenceCount: 1, mediaCount: 1, jobId: null }, members: [{ candidateId: `ready-${index}`, sourceId: 'source-0', title: `READY-${index}`, url: 'https://example.invalid/b', status: 'selected' as const, reason: null, role: 'primary' as const }] },
+    ]);
+    render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
+    expect(container.querySelectorAll('li').length).toBeGreaterThan(10);
+    expect(container.textContent).toContain(t.reasonUnknown);
+    expect(container.textContent?.split(t.errorDetail).length).toBe(11);
+    expect(container.textContent).not.toMatch(/function |native code|\[object Object\]/);
+    for (const code of codes) expect(container.textContent).not.toContain(code);
+  });
+  it.each(['en', 'cs'] as const)('keeps independent newest-publication/import evidence and the first estimated row on a date tie (%s)', lang => {
+    const value = state(); const first = value.candidates[0]; const t = dneskaiSources[lang];
+    value.candidates = [
+      { ...first, id: 'import-only', publishedAt: null, fetchedAt: '2026-10-13T14:00:00Z' },
+      { ...first, id: 'first-published', publishedAt: '2026-10-12T13:00:00+02:00', dateEstimated: true, fetchedAt: '2026-10-13T12:00:00Z' },
+      { ...first, id: 'tied-published', publishedAt: '2026-10-12T11:00:00Z', fetchedAt: '2026-10-13T11:00:00Z' },
+      { ...first, id: 'foreign-source', sourceId: 'other-source', publishedAt: '2026-10-13T15:00:00Z', fetchedAt: '2026-10-13T16:00:00Z' },
+    ];
+    render(<DneskaiSourceRecords state={value} lang={lang} now={now} />);
+    const registry = container.querySelector('[aria-labelledby="dneskai-registry-title"]')!;
+    const fact = (label: string) => [...registry.querySelectorAll('dt')].find(node => node.textContent === label)?.parentElement?.querySelector('dd');
+    expect(fact(t.newestPublished)?.textContent).toContain(`(${t.estimated})`);
+    expect(fact(t.newestPublished)?.querySelector('time')?.dateTime).toBe('2026-10-12T13:00:00+02:00');
+    expect(fact(t.lastImport)?.querySelector('time')?.dateTime).toBe('2026-10-13T14:00:00Z');
+    expect(registry.querySelector('time[datetime="2026-10-13T16:00:00Z"]')).toBeNull();
+  });
   it('shows missing configuration and no scheduled checks without inventing a successful empty run', () => {
     const value = state(); value.enabled = false; value.blockers = ['collection-bridge-unconfigured']; value.sourceStates = []; value.candidates = []; value.runs = [];
     render(<DneskaiSourceRecords state={value} lang="en" now={now} />);
@@ -229,6 +263,14 @@ describe('owner recovery in Sources (C3, briefs-07)', () => {
     await act(async () => { button(`${t.recovery.retry}: READY-EVENT`)!.click(); await new Promise(done => setTimeout(done, 10)); });
     expect(container.querySelector('p.text-risk[role="status"]')?.textContent).toBe(t.recovery.reasons['account-unavailable']);
     expect(container.textContent).not.toContain('PRIVATE-DETAIL');
+  });
+  it.each(['en', 'cs'] as const)('keeps an inherited recovery error code out of the rendered message (%s)', async lang => {
+    const t = dneskaiSources[lang];
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: '__proto__' }, { status: 409 })));
+    render(<DneskaiSourceRecords state={recoveryState(ON)} lang={lang} now={recoveryNow} recovery={{ projectId: 'qa-project' }} />);
+    await act(async () => { button(`${t.recovery.retry}: READY-EVENT`)!.click(); await new Promise(done => setTimeout(done, 10)); });
+    expect(container.querySelector('p.text-risk[role="status"]')?.textContent).toBe(t.recovery.reasons['recovery-unavailable']);
+    expect(container.textContent).not.toContain('__proto__');
   });
   it('stays read-only without the recovery prop', () => {
     render(<DneskaiSourceRecords state={recoveryState(ON)} lang="en" now={recoveryNow} />);

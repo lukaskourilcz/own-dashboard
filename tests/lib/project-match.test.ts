@@ -3,6 +3,8 @@ import { buildNeededRows } from "@/lib/needed-sync";
 import { cronSeedsForProject } from "@/lib/project-cron-seeds";
 import {
   findProjectForTask,
+  createProjectTaskMatcher,
+  buildProjectTaskIndex,
   planRepositorySync,
   projectRepoNames,
   repositoryIdentityUpdate,
@@ -180,5 +182,49 @@ describe("cron seeds", () => {
     // A project still on its pre-rename slug keeps the seeds through previous_slugs.
     expect(cronSeedsForProject({ slug: "other", previous_slugs: ["dneskai"] }).length).toBeGreaterThan(0);
     expect(cronSeedsForProject({ slug: "lukaskourilcz/aifirst" })).toEqual([]);
+  });
+});
+
+
+describe("stable task project assignment", () => {
+  const renamed = { ...dneskai, repo_full_name: "owner/new", previous_repo_full_names: ["owner/reused"] };
+  const actual = { id: "actual", repo_id: 999, repo_full_name: "owner/reused" };
+  const legacy = { id: "legacy", repo_id: null, repo_full_name: "owner/reused" };
+  it("does not override conflicting known ids with a current or historical name", () => {
+    for (const name of ["owner/new", "owner/reused"]) expect(taskBelongsToProject(task({ repo_id: "999", repo_full_name: name }), renamed)).toBe(false);
+    expect(taskBelongsToProject(task({ repo_id: "101", repo_full_name: "owner/reused" }), renamed)).toBe(true);
+  });
+  it("uses stored canonical order after cached positions change without rearranging the array", () => {
+    const first = { ...renamed, sort_order: 1, created_at: "2026-10-24T09:00:00Z" }, second = { ...legacy, sort_order: 0, created_at: first.created_at };
+    const input = task({ repo_full_name: "owner/reused" });
+    expect(createProjectTaskMatcher([first, second])(input)).toBe(second);
+    expect(createProjectTaskMatcher([{ ...first, sort_order: -1 }, second])(input)?.id).toBe(first.id);
+    expect(createProjectTaskMatcher([{ ...second, sort_order: 1 }, first])(input)?.id).toBe(second.id);
+  });
+  it("prefers a known repository globally over an earlier name-only candidate", () => {
+    const rows = [legacy, renamed, actual], input = task({ repo_id: "999", repo_full_name: "owner/reused" });
+    expect(createProjectTaskMatcher(rows)(input)).toBe(actual); expect(findProjectForTask(input, rows)).toBe(actual);
+  });
+  it("keeps explicit project bindings, including missing and inactive projects", () => {
+    const inactive = { ...actual, is_active: false }, rows = [renamed, inactive];
+    const match = createProjectTaskMatcher(rows);
+    expect(match(task({ project_id: renamed.id, repo_id: "999", repo_full_name: "owner/reused" }))).toBe(renamed);
+    expect(match(task({ project_id: "missing", repo_id: "999" }))).toBeUndefined();
+    expect(match(task({ repo_id: "999" }))).toBe(inactive);
+  });
+  it("uses normalized legacy names only when an id is missing, retaining canonical tie order", () => {
+    expect(createProjectTaskMatcher([renamed])(task({ repo_full_name: " OWNER/REUSED " }))).toBe(renamed);
+    expect(createProjectTaskMatcher([legacy, renamed])(task({ repo_id: "888", repo_full_name: "owner/reused" }))).toBe(legacy);
+    expect(createProjectTaskMatcher([renamed])(task({ repo_id: "888", repo_full_name: "owner/reused" }))).toBeUndefined();
+    expect(createProjectTaskMatcher([renamed, legacy])(task({ repo_full_name: "owner/reused" }))).toBe(renamed);
+    expect(createProjectTaskMatcher([legacy])(task({ repo_full_name: " " }))).toBeUndefined();
+  });
+  it("groups each task once without persisting an inferred foreign key or mutating records", () => {
+    const known = { id: "known-task", ...task({ repo_id: "999", repo_full_name: "owner/reused" }) }, unknown = { id: "unknown-task", ...task({ repo_id: "12345" }) };
+    Object.freeze(known); Object.freeze(actual); Object.freeze(legacy);
+    const index = buildProjectTaskIndex([legacy, actual], [known, unknown]);
+    expect(index.byTodo.get(known.id)).toBe(actual); expect(index.byTodo.get(unknown.id)).toBeUndefined();
+    expect(index.byProject.get(actual.id)).toEqual([known]); expect(index.byProject.get(legacy.id)).toBeUndefined();
+    expect(index.byProject.get(actual.id)![0]).toBe(known); expect(known.project_id).toBeNull();
   });
 });

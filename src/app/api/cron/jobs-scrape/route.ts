@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { awaitWithSignal } from "@/lib/abortable";
 import { rejectUnlessCron } from "@/lib/cron-auth";
 import { logCronRun } from "@/lib/cron-log";
 import { heartbeatUrlForJob, pingHeartbeat } from "@/lib/heartbeat";
@@ -20,32 +21,31 @@ import { runJobScrape } from "@/lib/jobs/scrape";
  * without env vars still boots.
  */
 
-// Several boards are fetched (with a 12s per-source timeout); allow the
-// function more than the default runtime budget.
+// The complete on-demand pass has its own bounded lifetime.
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
   const rejected = rejectUnlessCron(request);
   if (rejected) return rejected;
 
-  let admin;
+  const lifetime = new AbortController();
+  const signal = AbortSignal.any([request.signal, lifetime.signal, AbortSignal.timeout(55_000)]);
+  const headers = { "Cache-Control": "private, no-store" };
   try {
-    admin = createAdminClient();
-  } catch {
-    return NextResponse.json({
-      ok: true,
-      skipped: "SUPABASE_SERVICE_ROLE_KEY not set; scrape skipped.",
-    });
-  }
-
-  const summary = await runJobScrape(admin);
-  // Only a clean pass pings; a failed scrape lets the monitor notice.
-  if (summary.ok) await pingHeartbeat(heartbeatUrlForJob("jobs-scrape"));
-  await logCronRun({
-    name: "Jobs scrape",
-    endpoint: "/api/cron/jobs-scrape",
-    source: "vercel",
-    status: summary.ok ? "success" : "failure",
-  });
-  return NextResponse.json(summary, { status: summary.ok ? 200 : 500 });
+    signal.throwIfAborted();
+    let admin;
+    try { admin = createAdminClient(signal); }
+    catch { return NextResponse.json({ ok: true, skipped: "SUPABASE_SERVICE_ROLE_KEY not set; scrape skipped." }, { headers }); }
+    const summary = await awaitWithSignal(runJobScrape(admin, { signal }), signal);
+    signal.throwIfAborted();
+    const logged = await awaitWithSignal(logCronRun({ name: "Jobs scrape", endpoint: "/api/cron/jobs-scrape", source: "vercel", status: summary.ok ? "success" : "failure" }, signal), signal);
+    signal.throwIfAborted();
+    if (!logged.recorded) throw new Error("jobs-scrape-unavailable");
+    // A healthy ping follows a confirmed source pass and recorded run. The
+    // existing environment heartbeat remains distinct from an owned monitor.
+    if (summary.ok) await awaitWithSignal(pingHeartbeat(heartbeatUrlForJob("jobs-scrape"), signal), signal);
+    signal.throwIfAborted();
+    return NextResponse.json(summary, { status: summary.ok ? 200 : 500, headers });
+  } catch { return NextResponse.json({ ok: false, error: "jobs-scrape-unavailable" }, { status: 503, headers }); }
+  finally { lifetime.abort(); }
 }

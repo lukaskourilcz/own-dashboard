@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   COMPETITOR_REVIEW_STALE_DAYS,
+  competitorPage,
+  competitionProjectOrder,
   competitorReviewState,
   isCompetitorReviewStale,
   sortCompetitors,
   staleCompetitorCount,
 } from "@/lib/competition";
-import type { Competitor } from "@/lib/types";
+import { projects } from "@/lib/demo/fixtures";
+import type { Competitor, Project } from "@/lib/types";
 
 const now = new Date("2026-09-16T09:00:00");
 
@@ -66,6 +69,11 @@ describe("competitor review freshness", () => {
     // A review dated in the future (a planned re-check) is never stale.
     expect(competitorReviewState("2026-12-01", now)).toBe("fresh");
   });
+  it("rejects impossible Gregorian dates instead of normalizing them into a fresh review", () => {
+    for (const date of ["2026-02-29", "2026-02-31", "2026-04-31", "1900-02-29", "2026-00-12", "2026-13-01", "2026-01-00", "2026-01-32", "2026-2-01", "2026-02-01T00:00:00Z"]) expect(competitorReviewState(date, now)).toBe("never");
+    expect(competitorReviewState("2000-02-29", new Date("2000-03-01T00:01:00"))).toBe("fresh");
+    expect(competitorReviewState("2024-02-29", now)).toBe("stale");
+  });
 
   it("counts the rows a refresh filter would show", () => {
     const list = [
@@ -91,4 +99,24 @@ describe("sortCompetitors", () => {
     expect(sortCompetitors(list).map((item) => item.id)).toEqual(["4", "3", "5", "1", "2"]);
     expect(list.map((item) => item.id)).toEqual(["1", "2", "3", "4", "5"]);
   });
+});
+
+describe("complete collection paging", () => {
+  it.each([0, 1, 49, 50, 51, 100, 101, 1201])("keeps every record reachable exactly once for %i records", total => {
+    const rows = Array.from({ length: total }, (_, id) => ({ id }));
+    const first = competitorPage(rows, 0), traversed = Array.from({ length: first.pages }, (_, page) => competitorPage(rows, page).items).flat();
+    expect(traversed).toEqual(rows); expect(first.items.length).toBeLessThanOrEqual(50);
+    for (const requested of [-1, 2.5, NaN, Infinity]) expect(competitorPage(rows, requested).index).toBe(0);
+    const last = competitorPage(rows, 99999); expect(last.index).toBe(first.pages - 1); expect(last.to).toBe(total);
+    expect(rows).toEqual(Array.from({ length: total }, (_, id) => ({ id })));
+  });
+  it("clamps a shortened collection without losing its previous page", () => {
+    const rows = Array.from({ length: 100 }, (_, id) => id); const page = competitorPage(rows, 2);
+    expect(page.index).toBe(1); expect(page.items).toEqual(rows.slice(50)); expect([page.from, page.to, page.total]).toEqual([51, 100, 100]);
+  });
+});
+it("retains canonical parent/child order and inactive researched projects without mutating inputs", () => {
+ const base=projects[1]!,root:Project={...base,id:'root',parent_id:null,portfolio_key:'own-dashboard',repo_full_name:null,is_active:true},child:Project={...base,id:'child',parent_id:'root',portfolio_key:null,repo_full_name:null,is_active:false},client:Project={...base,id:'client',parent_id:null,portfolio_key:null,repo_full_name:null,engagement:'client',is_active:true},archived:Project={...client,id:'archived',is_active:false};
+ const input=[archived,client,child,root],before=structuredClone(input),research=[competitor({project_id:'archived'})];
+ expect(competitionProjectOrder(input,research).map(project=>project.id)).toEqual(['root','child','client','archived']);expect(input).toEqual(before);
 });

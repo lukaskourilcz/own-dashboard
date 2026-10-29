@@ -1,5 +1,9 @@
 import { addDays, format, startOfWeek } from "date-fns";
 import { parseDateOnly } from "@/lib/date-keys";
+import { awaitWithSignal } from '@/lib/abortable';
+import { boundedResponseText } from '@/lib/bounded-response';
+import { MAX_CALENDAR_ENTRIES, MAX_PRELAUNCH_ITEMS, MARKETING_CALENDAR_MAX_TEXT as MAX_TEXT, MARKETING_CALENDAR_MAX_TIP_REFS as MAX_TIP_REFS, parseMarketingCalendarsResponse } from '@/lib/marketing-calendar-response';
+export { MAX_CALENDAR_ENTRIES, MAX_PRELAUNCH_ITEMS } from '@/lib/marketing-calendar-response';
 
 /**
  * The marketing calendars OwnDashboard reads but never writes.
@@ -58,10 +62,7 @@ export const MARKETING_CALENDAR_SOURCES = [
 ] as const satisfies readonly MarketingCalendarSource[];
 
 /** Upper bounds on what one document may contribute. */
-export const MAX_CALENDAR_ENTRIES = 1_000;
-export const MAX_PRELAUNCH_ITEMS = 200;
-const MAX_TIP_REFS = 20;
-const MAX_TEXT = 300;
+// Limits are shared with the browser response contract.
 
 export type MarketingEntry = {
   id: string;
@@ -91,7 +92,7 @@ export type MarketingCalendar = {
   periodEnd: string | null;
   entries: MarketingEntry[];
   prelaunch: PrelaunchItem[];
-  /** Entries or pre-launch items left out because a required field was unusable. */
+  /** Invalid, duplicate or over-limit entries/pre-launch items left out of this projection. */
   skipped: number;
 };
 
@@ -129,13 +130,30 @@ export type MarketingCalendarsResponse = {
 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
+const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value.trim().slice(0, MAX_TEXT) : fallback;
+}
+
+/** Identities must remain exact, since they also select an entry in the source calendar. */
+function identifier(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const id = value.trim();
+  return id.length <= MAX_TEXT ? id : '';
+}
+
+function uniqueItems<T extends { id: string }>(values: unknown[], limit: number, parse: (value: unknown) => T | null): T[] {
+  const items: T[] = [], seen = new Set<string>();
+  for (const value of values.slice(0, limit)) {
+    const item = parse(value);
+    if (!item || seen.has(item.id)) continue;
+    seen.add(item.id); items.push(item);
+  }
+  return items;
 }
 
 function date(value: unknown): string | null {
@@ -145,7 +163,7 @@ function date(value: unknown): string | null {
 
 function parseEntry(value: unknown): MarketingEntry | null {
   if (!isRecord(value)) return null;
-  const id = text(value.id);
+  const id = identifier(value.id);
   const day = date(value.date);
   const title = text(value.title);
   if (!id || !day || !title) return null;
@@ -167,7 +185,7 @@ function parseEntry(value: unknown): MarketingEntry | null {
 
 function parsePrelaunch(value: unknown): PrelaunchItem | null {
   if (!isRecord(value)) return null;
-  const id = text(value.id);
+  const id = identifier(value.id);
   const due = date(value.due);
   const title = text(value.title);
   if (!id || !due || !title) return null;
@@ -192,8 +210,8 @@ export type ParsedCalendar =
  * A calendar document, validated and trimmed to what OwnDashboard shows.
  * The document must declare `marketing-calendar/1`, name the expected project
  * and carry an `entries` array; entries and pre-launch items without an id,
- * a date or a title are skipped and counted rather than failing the whole
- * calendar.
+ * a date or a title are skipped and counted, as are repeated identities and
+ * rows beyond the document limits. Invalid optional times remain unknown.
  */
 export function parseMarketingCalendar(raw: string, expectedProject: string): ParsedCalendar {
   let document: unknown;
@@ -208,10 +226,10 @@ export function parseMarketingCalendar(raw: string, expectedProject: string): Pa
   const project = text(document.project);
   if (project !== expectedProject) return { ok: false, status: "wrong-project", detail: project || null };
 
-  const rawEntries = document.entries.slice(0, MAX_CALENDAR_ENTRIES);
-  const rawPrelaunch = Array.isArray(document.prelaunch) ? document.prelaunch.slice(0, MAX_PRELAUNCH_ITEMS) : [];
-  const entries = rawEntries.map(parseEntry).filter((entry): entry is MarketingEntry => entry !== null);
-  const prelaunch = rawPrelaunch.map(parsePrelaunch).filter((item): item is PrelaunchItem => item !== null);
+  const rawEntries = document.entries;
+  const rawPrelaunch = Array.isArray(document.prelaunch) ? document.prelaunch : [];
+  const entries = uniqueItems(rawEntries, MAX_CALENDAR_ENTRIES, parseEntry);
+  const prelaunch = uniqueItems(rawPrelaunch, MAX_PRELAUNCH_ITEMS, parsePrelaunch);
   const period = isRecord(document.period) ? document.period : {};
   return {
     ok: true,
@@ -241,7 +259,7 @@ export function tipTitleKey(title: string): string {
 export type TipUsage = {
   sourceId: string;
   label: string;
-  /** Entries in that calendar that apply the tip. */
+  /** Entries in that loaded calendar that cite the tip. */
   count: number;
   /** The calendar filtered to this tip. */
   url: string;
@@ -274,10 +292,14 @@ export function aggregateTipUsage(sources: readonly MarketingSourceResult[]): Ti
     readSources.push(source.id);
     const counts = new Map<string, { title: string; count: number }>();
     for (const entry of source.calendar.entries) {
-      for (const key of new Set(entry.tipRefs.map(tipTitleKey))) {
-        if (!key) continue;
+      const seen = new Set<string>();
+      for (const title of entry.tipRefs) {
+        const key = tipTitleKey(title);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
         const current = counts.get(key);
-        counts.set(key, { title: current?.title ?? entry.tipRefs.find((ref) => tipTitleKey(ref) === key)!, count: (current?.count ?? 0) + 1 });
+        if (current) current.count++;
+        else counts.set(key, { title, count: 1 });
       }
     }
     for (const [key, { title, count }] of counts) {
@@ -394,16 +416,29 @@ export type MarketingCalendarsResult =
   | { kind: "error" };
 
 /** GET /api/marketing/calendars from the browser. The token stays on the server. */
-export async function loadMarketingCalendars(): Promise<MarketingCalendarsResult> {
+export async function loadMarketingCalendars(parent?: AbortSignal): Promise<MarketingCalendarsResult> {
+  // The server's thirty-second work limit plus transport time, never a new allowance per phase.
+  const signal = AbortSignal.any([AbortSignal.timeout(35_000), ...(parent ? [parent] : [])]);
+  const discard = (reply: Response) => { if (reply.body && !reply.body.locked) void reply.body.cancel().catch(() => undefined); };
+  let response: Response | undefined;
   try {
-    const response = await fetch("/api/marketing/calendars", { cache: "no-store" });
-    if (response.status === 429) return { kind: "rate-limited" };
-    if (response.status === 401) return { kind: "signed-out" };
-    if (!response.ok) return { kind: "error" };
-    const data = (await response.json()) as MarketingCalendarsResponse;
-    if (!data || !Array.isArray(data.sources)) return { kind: "error" };
-    return { kind: "ok", data };
+    signal.throwIfAborted();
+    // A query retired in the same commit must not start a needless authenticated request.
+    await awaitWithSignal(Promise.resolve(), signal);
+    signal.throwIfAborted();
+    const pending = fetch('/api/marketing/calendars', { cache: 'no-store', redirect: 'error', signal });
+    void pending.then(reply => { if (signal.aborted) discard(reply); }, () => undefined);
+    response = await awaitWithSignal(pending, signal);
+    signal.throwIfAborted();
+    if (response.status === 429) return { kind: 'rate-limited' };
+    if (response.status === 401) return { kind: 'signed-out' };
+    if (response.status !== 200 || response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') return { kind: 'error' };
+    const value: unknown = JSON.parse(await boundedResponseText(response, 8 * 1024 * 1024, signal));
+    const data = parseMarketingCalendarsResponse(value, MARKETING_CALENDAR_SOURCES);
+    signal.throwIfAborted();
+    return { kind: 'ok', data };
   } catch {
-    return { kind: "error" };
-  }
+    if (parent?.aborted) throw new DOMException('Calendar read aborted', 'AbortError');
+    return { kind: 'error' };
+  } finally { if (response) discard(response); }
 }
