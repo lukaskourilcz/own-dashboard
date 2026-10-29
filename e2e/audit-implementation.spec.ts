@@ -45,8 +45,11 @@ for (const lang of ['en', 'cs'] as const) test(`dirty draft survives tab cancell
 
 test('command palette traps focus, includes Competition and restores its opener', async ({ page }, info) => {
   await gotoPreview(page);
+  await expect(page.locator('[data-dashboard-ready="true"]')).toBeVisible();
+  await expect(page.locator('[data-dashboard-ready="true"]')).not.toHaveAttribute('inert', '');
   const opener = info.project.name === 'mobile' ? page.getByTestId('mobile-nav').getByRole('button', { name: 'More', exact: true }) : page.locator('.mac-toolbar button[aria-label]').last();
   await opener.focus();
+  await expect(opener).toBeFocused();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();

@@ -1,0 +1,25 @@
+{
+  "applicationSource": "357b18d6, unchanged by this finding",
+  "baseline": "Desktop palette restoration fails in the secondary, isolated and original-dialog checks.",
+  "traceObservation": {
+    "afterFocusSnapshot": {
+      "data-dashboard-ready": "false",
+      "inert": "",
+      "aria-busy": "true"
+    },
+    "actualFocusAfterAttempt": "BODY",
+    "openerVisible": true,
+    "openerConnected": true,
+    "openerReplaced": false,
+    "viewport": 1440
+  },
+  "cause": "The test invokes locator.focus before hydration. Inert correctly refuses focus; the later shortcut captures BODY.",
+  "repair": "Await the ready shell and assert actual opener focus before the shortcut. Preserve the application hydration and restoration code.",
+  "verification": {
+    "relatedNativePasses": 14,
+    "relatedSeconds": 25.0,
+    "finalPositiveReadinessPasses": 2,
+    "finalSeconds": 4.9
+  },
+  "scope": "Local synthetic preview and trace evidence. No production session or data operation."
+}

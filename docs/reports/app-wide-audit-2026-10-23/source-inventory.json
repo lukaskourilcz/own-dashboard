@@ -789,7 +789,7 @@
       "path": "src/components/command-palette.tsx",
       "lines": 209,
       "sha256": "39287e1084d25bb24589c2099deddfd18c8c665eb097203e514e665ace4c4ba9",
-      "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains",
+      "status": "partial source review; confirmed/draft-guarded sign-out, keyboard matrix and tour block checked; full navigation/preferences review remains; finding 397 proves its captured opener/trap/return after real hydration in both devices; the initial BODY restoration is a test-admission issue, not source failure",
       "reviewedSha256": "7c0bd3ee238ca9b0c63b46a9319ce6c785f165352832a07123d6b2659e5faf23"
     },
     {
@@ -2004,7 +2004,7 @@
       "path": "src/components/ui/dialog.tsx",
       "lines": 132,
       "sha256": "0721842af9afcea6b5acc8643c57652d485de78f82a927593f0a28e82001caaa",
-      "status": "source reviewed; final release checks pending; finding 396 preserves deliberately moved external recovery focus during late close restoration; Goals Escape/Close/outside dismissal checks pass; command-palette custom restoration separately reproduces with the old dialog too and remains open",
+      "status": "source reviewed; final release checks pending; finding 396 preserves deliberately moved external recovery focus during late close restoration; Goals Escape/Close/outside dismissal checks pass; command-palette custom restoration separately reproduces with the old dialog too and remains open; finding 397 closes that palette false lead as a pre-hydration fixture focus attempt, with actual trace and fourteen related native passes; no product restoration change needed",
       "reviewedSha256": "12ffe96cdb180a9045021653256447d35277a8f5c327ddde39b53c3dd1961ddb"
     },
     {
