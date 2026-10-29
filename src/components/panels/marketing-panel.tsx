@@ -1,5 +1,5 @@
 'use client';
-import { useState,useSyncExternalStore } from 'react';
+import { useLayoutEffect,useRef,useState,useSyncExternalStore } from 'react';
 import { OfflineDraftImport } from '@/components/marketing/offline-import';
 import Image from 'next/image';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { MarketingJobHealthSummary } from '@/components/marketing/job-health';
 import { KnowledgeLibrary } from '@/components/marketing/knowledge-library';
 import { KnowledgeImport } from '@/components/marketing/knowledge-import';
 import { CalendarImport } from '@/components/marketing/calendar-import';
-import { useGuardedNavigation } from '@/components/navigation-guard';
+import { useGuardedNavigation,useUnsavedDraft } from '@/components/navigation-guard';
 import { useOwnerPreferences } from '@/lib/owner-preferences';
 import { pragueScheduledAt,pragueLocalInput } from '@/lib/marketing/clock';
 import { PageHeader } from '@/components/ui/page-header';
@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { qk } from '@/lib/queries/keys';
 import { EMPTY_MARKETING_STATE,loadMarketingState,marketingDecision } from '@/lib/marketing/client';
+import { activateMarketingCampaign,CampaignActivationError,type CampaignActivationScope } from '@/lib/marketing/campaign-activation';
 import { revisionReadiness, type MarketingRevisionRow } from '@/lib/marketing/contracts';
 
 const assetLoadKey=(row:MarketingRevisionRow,asset:MarketingRevisionRow['revision']['assets'][number])=>JSON.stringify([row.id,row.content_hash,asset.sha256,asset.url]);
@@ -28,13 +29,18 @@ const subscribeUrl=(notify:()=>void)=>{window.addEventListener('popstate',notify
 const urlSnapshot=()=>window.location.search;
 const serverUrlSnapshot=()=>'';
 
-export function MarketingPanel({isPreview=false,liveCalendarImport=false,liveState=false,onOpenKnowledge}:{isPreview?:boolean;liveCalendarImport?:boolean;liveState?:boolean;onOpenKnowledge:()=>void}){
+export function MarketingPanel({isPreview=false,liveCalendarImport=false,liveState=false,liveCampaignActivation=false,onOpenKnowledge}:{isPreview?:boolean;liveCalendarImport?:boolean;liveState?:boolean;liveCampaignActivation?:boolean;onOpenKnowledge:()=>void}){
  const navigate=useGuardedNavigation();const t=useDict().marketingWorkspace;const {lang}=useLang();const qc=useQueryClient();const owner=useOwnerPreferences();
  const [view,setView]=useState<'review'|'calendar'|'knowledge'|'results'>('review');
  const queryString=useSyncExternalStore(subscribeUrl,urlSnapshot,serverUrlSnapshot);
  const requestedBrand=new URLSearchParams(queryString).get('brand');
  const [selectedBrand,setBrand]=useState<'all'|'dneskai'|'devshark'|null>(null);
  const brand=selectedBrand??(requestedBrand==='dneskai'||requestedBrand==='devshark'?requestedBrand:'all');const [busy,setBusy]=useState<string|null>(null);const [message,setMessage]=useState('');
+ const lifetime=useRef(new AbortController()),activation=useRef<CampaignActivationScope|null>(null),refreshing=useRef(false),refreshButton=useRef<HTMLButtonElement>(null),activationFocus=useRef(false);
+ const [activationProblem,setActivationProblem]=useState<'changed'|'unconfirmed'|null>(null);
+ useLayoutEffect(()=>{if(lifetime.current.signal.aborted)lifetime.current=new AbortController();return()=>{if(activation.current)void qc.invalidateQueries({queryKey:qk.marketingState,refetchType:'none'});lifetime.current.abort();activation.current=null;};},[qc]);
+ useLayoutEffect(()=>{if(activationFocus.current&&busy===null&&activationProblem){activationFocus.current=false;refreshButton.current?.focus();}},[busy,activationProblem]);
+ useUnsavedDraft({get dirty(){return false;},get pending(){return activation.current!==null;},canSave:false,save:async()=>false});
  const [loadedAssets,setLoadedAssets]=useState<Set<string>>(()=>new Set());
  const [editMode,setEditMode]=useState<'edit'|'returned'>('edit');
  const [editing,setEditing]=useState<MarketingRevisionRow|null>(null);const [caption,setCaption]=useState('');const [schedule,setSchedule]=useState('');const [feedback,setFeedback]=useState('');
@@ -42,21 +48,36 @@ export function MarketingPanel({isPreview=false,liveCalendarImport=false,liveSta
  const query=useQuery({queryKey:qk.marketingState,queryFn:({signal})=>{if(!owner)throw new Error('marketing-unavailable');const original=owner.capture();return loadMarketingState(AbortSignal.any([signal,original.signal]),original.ownerId);},enabled:readEnabled&&!!owner,initialData:readEnabled?undefined:EMPTY_MARKETING_STATE,staleTime:30000,refetchOnWindowFocus:false,retry:false});
  const data=query.data??EMPTY_MARKETING_STATE;
  const revisions=data.revisions.filter(r=>brand==='all'||r.revision.brand===brand);
- const mutationsDisabled=isPreview||query.isError||query.isFetching||!owner;
+ const mutationsDisabled=isPreview||query.isError||query.isFetching||!owner||busy!==null||activationProblem!==null;
+ const activationDisabled=(isPreview&&!liveCampaignActivation)||query.isError||query.isFetching||!owner||busy!==null||activationProblem!==null;
  const publicationRevisions=view==='results'?new Map(revisions.map(row=>[row.id,row])):null;
  const publications=publicationRevisions?data.publications.filter(row=>publicationRevisions.has(row.revision_id)):[];
  const statuses:Record<string,string>={review:t.reviewState,approved:t.approved,published:t.published,returned:t.returned,skipped:t.skipped,superseded:t.superseded,publishing:t.publishing,claimed:t.publishing,reconciliation:t.reconciliation,failed:t.errorState,queued:t.queued,cancelled:t.cancelled};
  const status=(key:string)=>Object.hasOwn(statuses,key)?statuses[key]:t.needsReview;
  async function decide(input:unknown,id:string){if(mutationsDisabled)return;setBusy(id);setMessage('');try{await marketingDecision(input);await qc.invalidateQueries({queryKey:qk.marketingState});setEditing(null);setMessage(t.saved);}catch{setMessage(t.failed);}finally{setBusy(null);}}
+ async function refresh(){
+  if(!readEnabled||!owner||refreshing.current||query.isFetching||busy!==null||activation.current)return;
+  const original=owner.capture(),scope=AbortSignal.any([original.signal,lifetime.current.signal]);if(scope.aborted)return;refreshing.current=true;
+  try{const result=await query.refetch({cancelRefetch:false});if(!scope.aborted&&!result.isError){setActivationProblem(null);setMessage('');}}finally{refreshing.current=false;}
+ }
+ async function activate(campaign:typeof data.campaigns[number]){
+  if(activationDisabled||activation.current||!owner)return;
+  const original=owner.capture(),scope={ownerId:original.ownerId,signal:AbortSignal.any([original.signal,lifetime.current.signal])};if(scope.signal.aborted)return;
+  const focused=document.activeElement;activation.current=scope;setBusy(campaign.id);setMessage('');
+  try{await activateMarketingCampaign(scope,{id:campaign.id,expectedHash:campaign.source_hash});scope.signal.throwIfAborted();await qc.invalidateQueries({queryKey:qk.marketingState});scope.signal.throwIfAborted();setMessage(t.activationSaved);}
+  catch(error){if(!scope.signal.aborted){void qc.invalidateQueries({queryKey:qk.marketingState,refetchType:'none'});setActivationProblem(error instanceof CampaignActivationError&&error.reason==='changed'?'changed':'unconfirmed');activationFocus.current=document.activeElement===focused||document.activeElement===document.body;}}
+  finally{if(activation.current===scope){activation.current=null;if(!scope.signal.aborted)setBusy(null);}}
+ }
  return <div data-testid="marketing-workspace">
-  <PageHeader title={t.title} description={t.description} action={<Button variant="outline" className="min-w-24" aria-busy={query.isFetching} disabled={!readEnabled||query.isFetching||!owner} onClick={()=>void query.refetch()}>{query.isFetching?t.refreshing:t.refresh}</Button>}/>
+  <PageHeader title={t.title} description={t.description} action={<Button ref={refreshButton} variant="outline" className="min-w-24" aria-busy={query.isFetching} disabled={!readEnabled||query.isFetching||!owner||busy!==null} onClick={()=>void refresh()}>{query.isFetching?t.refreshing:t.refresh}</Button>}/>
   <div className="mb-4 flex flex-wrap items-center gap-2">
    <div role="tablist" aria-label={t.title} className="flex max-w-full gap-1 overflow-x-auto">
     {(['review','calendar','knowledge','results'] as const).map(key=><Button key={key} id={`marketing-tab-${key}`} role="tab" aria-controls={`marketing-panel-${key}`} tabIndex={view===key?0:-1} aria-selected={view===key} onKeyDown={e=>{const keys=['review','calendar','knowledge','results'] as const;let next=keys.indexOf(key);if(e.key==='ArrowRight')next=(next+1)%4;else if(e.key==='ArrowLeft')next=(next+3)%4;else if(e.key==='Home')next=0;else if(e.key==='End')next=3;else return;e.preventDefault();navigate(()=>{setView(keys[next]);document.getElementById(`marketing-tab-${keys[next]}`)?.focus();});}} variant={view===key?'default':'ghost'} onClick={()=>navigate(()=>setView(key))}>{t[key]}</Button>)}
    </div>
-   <label className="ml-auto text-xs text-foreground-muted"><span className="sr-only">{t.account}</span><select className="h-11 rounded-md border border-border bg-surface px-3 text-foreground md:h-8" value={brand} onChange={e=>setBrand(e.target.value==='dneskai'||e.target.value==='devshark'?e.target.value:'all')}><option value="all">{t.all}</option><option value="dneskai">DNESKAi</option><option value="devshark">devShark</option></select></label>
+   <label className="ml-auto text-xs text-foreground-muted"><span className="sr-only">{t.account}</span><select className="h-11 rounded-md border border-border bg-surface px-3 text-foreground md:h-8" value={brand} disabled={busy!==null} onChange={e=>setBrand(e.target.value==='dneskai'||e.target.value==='devshark'?e.target.value:'all')}><option value="all">{t.all}</option><option value="dneskai">DNESKAi</option><option value="devshark">devShark</option></select></label>
   </div>
   {isPreview&&<p className="mb-3 text-xs text-foreground-muted">{t.preview}</p>}
+  {activationProblem&&<p role="alert" className="mb-4 text-sm">{activationProblem==='changed'?t.activationChanged:t.activationUnconfirmed}</p>}
   {message&&<p role="status" className="mb-4 text-sm">{message}</p>}
   {readEnabled&&!owner?<p role="alert">{t.unavailable}</p>:<>
   {query.isError&&<p role="alert" className="mb-4 rounded-md border border-border bg-surface p-3 text-xs">{query.data?t.retainedState:t.unavailable}{query.data&&<span className="mt-1 block text-foreground-muted">{t.lastChecked}: <time dateTime={new Date(query.dataUpdatedAt).toISOString()}>{new Intl.DateTimeFormat(lang==='cs'?'cs-CZ':'en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Prague'}).format(new Date(query.dataUpdatedAt))}</time></span>}</p>}
@@ -75,7 +96,7 @@ export function MarketingPanel({isPreview=false,liveCalendarImport=false,liveSta
    </article>;
   })}</div>)}
   {view==='calendar'&&<CalendarImport disabled={(isPreview&&!liveCalendarImport)||query.isError||query.isFetching||!owner} onImported={()=>void qc.invalidateQueries({queryKey:qk.marketingState})}/>}
-  {view==='calendar'&&(data.campaigns.length===0?<EmptyState title={t.noCalendar}/>:<WeeklyMarketingCalendar state={data} brand={brand} lang={lang} disabled={mutationsDisabled} busy={busy} onChanged={()=>void qc.invalidateQueries({queryKey:qk.marketingState})} onActivate={async c=>{if(mutationsDisabled)return;setBusy(c.id);try{const response=await fetch('/api/marketing/campaigns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:c.id,expectedHash:c.source_hash})});if(!response.ok)throw new Error();await qc.invalidateQueries({queryKey:qk.marketingState});setMessage(t.saved);}catch{setMessage(t.failed);}finally{setBusy(null);}}}/>)}
+  {view==='calendar'&&(data.campaigns.length===0?<EmptyState title={t.noCalendar}/>:<WeeklyMarketingCalendar state={data} brand={brand} lang={lang} disabled={mutationsDisabled} activationDisabled={activationDisabled} busy={busy} onChanged={()=>void qc.invalidateQueries({queryKey:qk.marketingState})} onActivate={activate}/>)}
   {view==='knowledge'&&<div className="space-y-4"><KnowledgeImport disabled={mutationsDisabled} onImported={()=>{void qc.invalidateQueries({queryKey:qk.marketingState});void qc.invalidateQueries({queryKey:qk.marketingKnowledge});}}/><KnowledgeLibrary disabled={mutationsDisabled}/><Button variant="outline" onClick={onOpenKnowledge}>{t.openKnowledge}</Button></div>}
   {view==='results'&&<WeeklyResults revisions={data.revisions} publications={data.publications} brand={brand} lang={lang}/>}
   {view==='results'&&<MarketingDiagnostics state={data} lang={lang}/>}

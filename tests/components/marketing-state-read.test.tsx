@@ -144,3 +144,35 @@ it('does not reuse a loaded hash for another row or changed asset URL', async ()
  await act(async () => { button(marketingWorkspace.en.refresh).click(); await client.getQueryCache().find({ queryKey: qk.marketingState })!.promise; });
  expect(approvals().map(element => element.disabled)).toEqual([true, true]);
 });
+
+for (const lang of ['en', 'cs'] as const) {
+ it(`${lang}: an unconfirmed activation has one captured attempt and needs an explicit successful read`, async () => {
+  m.lang = lang; const t = marketingWorkspace[lang], value = marketingStateFixture(), refreshed = structuredClone(value); refreshed.campaigns[0].status = 'active';
+  let gets = 0; const posts: RequestInit[] = [];
+  vi.stubGlobal('fetch', vi.fn(async (url, options?: RequestInit) => { if (url === '/api/marketing/campaigns') { posts.push(options!); return Response.json({ ok: true }); } return Response.json(++gets === 1 ? value : refreshed); }));
+  render(); await displayed('Reviewed draft'); act(() => host.querySelector<HTMLButtonElement>('#marketing-tab-calendar')!.click()); await displayed('Reviewed plan');
+  await act(async () => { const activate = button(lang === 'cs' ? 'Použít tento plán' : 'Use this plan'); activate.focus(); activate.click(); activate.click(); await vi.waitFor(() => expect(client.getQueryState(qk.marketingState)?.isInvalidated).toBe(true)); });
+  expect(posts).toHaveLength(1); expect(posts[0].headers).toEqual({ 'Content-Type': 'application/json', 'x-own-dashboard-owner': stateOwner }); expect(JSON.parse(posts[0].body as string)).toEqual({ id: value.campaigns[0].id, expectedHash: value.campaigns[0].source_hash });
+  expect(host.textContent).toContain(t.activationUnconfirmed); expect(host.textContent).not.toContain(t.activationSaved); expect(gets).toBe(1);
+  expect(button(lang === 'cs' ? 'Použít tento plán' : 'Use this plan').disabled).toBe(true); expect(document.activeElement).toBe(button(t.refresh));
+  await act(async () => { button(t.refresh).click(); button(t.refresh).click(); await client.getQueryCache().find({ queryKey: qk.marketingState })!.promise; });
+  expect(gets).toBe(2); expect(posts).toHaveLength(1); expect(host.textContent).not.toContain(t.activationUnconfirmed); expect(button(lang === 'cs' ? 'Použít tento plán' : 'Use this plan')).toBeUndefined();
+ });
+ it(`${lang}: confirms the exact activation and reloads its current plan once`, async () => {
+  m.lang = lang; const t = marketingWorkspace[lang], value = marketingStateFixture(), refreshed = structuredClone(value); refreshed.campaigns[0].status = 'active'; let gets = 0, posts = 0;
+  vi.stubGlobal('fetch', vi.fn(async url => { if (url === '/api/marketing/campaigns') { posts++; return Response.json({ ownerId: stateOwner, campaignId: value.campaigns[0].id, sourceHash: value.campaigns[0].source_hash, status: 'active' }); } return Response.json(++gets === 1 ? value : refreshed); }));
+  render(); await displayed('Reviewed draft'); act(() => host.querySelector<HTMLButtonElement>('#marketing-tab-calendar')!.click());
+  await act(async () => { button(lang === 'cs' ? 'Použít tento plán' : 'Use this plan').click(); await vi.waitFor(() => expect(gets).toBe(2)); await client.getQueryCache().find({ queryKey: qk.marketingState })!.promise; });
+  await displayed(t.activationSaved); expect(posts).toBe(1); expect(host.textContent).not.toContain(t.activationUnconfirmed);
+ });
+}
+it('retires an in-flight activation on unmount and leaves its cache stale without a replay', async () => {
+ const value = marketingStateFixture(); let scope: AbortSignal | undefined, finish!: (response: Response) => void;
+ const fetcher = vi.fn((url, options?: RequestInit) => url === '/api/marketing/campaigns' ? new Promise<Response>(resolve => { scope = options?.signal as AbortSignal; finish = resolve; }) : Promise.resolve(Response.json(value))); vi.stubGlobal('fetch', fetcher);
+ render(); await displayed('Reviewed draft'); act(() => host.querySelector<HTMLButtonElement>('#marketing-tab-calendar')!.click());
+ act(() => button('Use this plan').click()); await act(async () => { await vi.waitFor(() => expect(scope).toBeDefined()); });
+ const exit = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(exit); expect(exit.defaultPrevented).toBe(true);
+ act(() => root.render(null)); expect(scope?.aborted).toBe(true); expect(client.getQueryState(qk.marketingState)?.isInvalidated).toBe(true);
+ await act(async () => { finish(Response.json({ ownerId: stateOwner, campaignId: value.campaigns[0].id, sourceHash: value.campaigns[0].source_hash, status: 'active' })); await Promise.resolve(); });
+ expect(fetcher).toHaveBeenCalledTimes(2); expect(host.textContent).toBe('');
+});

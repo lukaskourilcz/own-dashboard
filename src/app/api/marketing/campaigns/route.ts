@@ -3,9 +3,9 @@ import { awaitWithSignal } from '@/lib/abortable';
 import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { readKnowledgeBody } from '@/lib/marketing/knowledge-body';
+import { CampaignActivationInputSchema as Input } from '@/lib/marketing/campaign-activation';
 
 export const maxDuration = 30;
-const Input = z.strictObject({ id: z.uuid(), expectedHash: z.string().regex(/^[a-f0-9]{64}$/) });
 const reply = (body: object, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'private, no-store' } });
 
 export async function POST(request: Request) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   signal.throwIfAborted();
   if (result.error?.code === 'P0001') return reply({ error: 'campaign-unavailable' }, 409);
   if (result.error || result.data !== null) throw new Error('activation-unconfirmed');
-  return reply({ ok: true });
+  return reply({ ownerId: context.ownerId, campaignId: input.id, sourceHash: input.expectedHash, status: 'active' });
  } catch {
   return reply({ error: writing ? 'campaign-unconfirmed' : 'campaign-unavailable' }, 503);
  } finally {

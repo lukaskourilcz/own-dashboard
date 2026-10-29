@@ -34,7 +34,7 @@ function controlledClock() {
 it('activates only through the verified original session with no automatic RPC retry', async () => {
  const original = request({ headers: { 'x-own-dashboard-owner': owner } });
  const response = await POST(original);
- expect(response.status).toBe(200); expect(await response.json()).toEqual({ ok: true });
+ expect(response.status).toBe(200); expect(await response.json()).toEqual({ ownerId: owner, campaignId: id, sourceHash: input.expectedHash, status: 'active' });
  expect(m.rpc).toHaveBeenCalledExactlyOnceWith('marketing_activate_campaign', { p_campaign: id, p_hash: input.expectedHash });
  expect(m.retry).toHaveBeenCalledExactlyOnceWith(false);
  expect(m.client).toHaveBeenCalledWith(expect.any(AbortSignal)); expect(m.signal).toHaveBeenCalledWith(expect.any(AbortSignal));
@@ -133,7 +133,7 @@ it('uses the actual SDK and authenticated grants for one void RPC without touchi
    vi.spyOn(sdk.auth, 'getUser').mockImplementation(() => m.auth()); return sdk;
   });
   const response = await POST(request({ headers: { 'x-own-dashboard-owner': owner } }));
-  expect(response.status).toBe(200); expect(await response.json()).toEqual({ ok: true }); expect(emulator.requests).toHaveLength(1);
+  expect(response.status).toBe(200); expect(await response.json()).toEqual({ ownerId: owner, campaignId: id, sourceHash: input.expectedHash, status: 'active' }); expect(emulator.requests).toHaveLength(1);
   expect((await db.query('select name,status from marketing_campaigns order by name')).rows).toEqual([{ name: 'Other brand', status: 'active' }, { name: 'Other owner', status: 'active' }, { name: 'Previous', status: 'archived' }, { name: 'Selected', status: 'active' }]);
   const changed = await POST(request({ body: JSON.stringify({ ...input, expectedHash: 'b'.repeat(64) }) }));
   expect(changed.status).toBe(409); expect(await changed.json()).toEqual({ error: 'campaign-unavailable' }); expect(emulator.requests).toHaveLength(2);

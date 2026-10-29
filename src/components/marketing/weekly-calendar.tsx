@@ -7,8 +7,8 @@ import { calendarImportEndDate } from '@/lib/marketing/calendar-import-contracts
 import type { MarketingState } from '@/lib/marketing/client';
 
 /** The current seven days and the retained idea bank are separate views, never a silent date shift. */
-export function WeeklyMarketingCalendar({ state, brand, lang, disabled, busy, onActivate, onChanged }: {
-  state: MarketingState; brand: string; lang: string; disabled: boolean; busy: string | null;
+export function WeeklyMarketingCalendar({ state, brand, lang, disabled, activationDisabled = disabled, busy, onActivate, onChanged }: {
+  state: MarketingState; brand: string; lang: string; disabled: boolean; activationDisabled?: boolean; busy: string | null;
   onActivate: (campaign: MarketingState['campaigns'][number]) => void; onChanged: () => void;
 }) {
   const cs = lang === 'cs';
@@ -32,7 +32,7 @@ export function WeeklyMarketingCalendar({ state, brand, lang, disabled, busy, on
       const visible = showBacklog ? backlog : week;
       return <section key={campaign.id} aria-label={`${campaign.name} ${showBacklog ? 'backlog' : window.startDate}`}>
         <div className="mb-2 flex flex-wrap items-center gap-3"><h2 className="text-sm font-semibold">{campaign.name} · {showBacklog ? (cs ? 'Zásobník' : 'Backlog') : `${window.startDate} – ${window.endDateInclusive}`}</h2>
-          {!showBacklog && campaign.status === 'draft' && <Button variant="outline" disabled={disabled || busy === campaign.id} onClick={() => onActivate(campaign)}>{cs ? 'Použít tento plán' : 'Use this plan'}</Button>}
+          {!showBacklog && campaign.status === 'draft' && <Button variant="outline" disabled={activationDisabled || busy === campaign.id} onClick={() => onActivate(campaign)}>{cs ? 'Použít tento plán' : 'Use this plan'}</Button>}
         </div>
         <p className="mb-3 text-xs text-foreground-muted">{cs ? `${week.length} v týdnu · ${backlog.length} nápadů v zásobníku · ${archived.length} vyřazených zadání` : `${week.length} this week · ${backlog.length} backlog ideas · ${archived.length} retired briefs`}</p>
         {showBacklog && <p className="mb-3 text-xs text-foreground-muted">{cs ? 'Původní data ukazují starý plán, ne nový termín publikace. Nápad znovu vybereme a upravíme podle výsledků týdne a platného zdroje.' : 'Original dates belong to the old plan, not a new publication schedule. Reconsider each idea using weekly results and a current source.'}</p>}

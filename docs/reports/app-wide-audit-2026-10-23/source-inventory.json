@@ -376,8 +376,8 @@
       "path": "src/app/api/marketing/campaigns/route.ts",
       "lines": 44,
       "sha256": "45e390a471814beffc8e24d3d947532d99ca4464ecab057d5944fa10b92e90f2",
-      "status": "partial; full route and activation SQL inspected; unbounded JSON, auth errors, request deadlines/cancellation and persisted confirmation still need repair; finding 403 closes verified original-session admission, optional captured-owner mismatch, complete 4KiB/five-second upload, thirty-second original/fifteen-second RPC consumer, no retry and honest fixed uncertainty; actual authenticated SDK/void RPC and isolated brand/owner checks pass; post-trigger activation proof, captured browser confirmation and general SDK JSON resource behavior remain separate; finding 404 prepares post-trigger captured owner/brand/hash/status confirmation in the existing void RPC (migration 151, unapplied); browser capture and SDK JSON remain separate",
-      "reviewedSha256": "42b1978d3b0c2284a7d102922dac43ac53f32b7412490ab504526c388dbe9dbd"
+      "status": "partial; full route and activation SQL inspected; unbounded JSON, auth errors, request deadlines/cancellation and persisted confirmation still need repair; finding 403 closes verified original-session admission, optional captured-owner mismatch, complete 4KiB/five-second upload, thirty-second original/fifteen-second RPC consumer, no retry and honest fixed uncertainty; actual authenticated SDK/void RPC and isolated brand/owner checks pass; post-trigger activation proof, captured browser confirmation and general SDK JSON resource behavior remain separate; finding 404 prepares post-trigger captured owner/brand/hash/status confirmation in the existing void RPC (migration 151, unapplied); browser capture and SDK JSON remain separate; finding 411 returns exact owner/plan/source-hash/active receipt after the confirmed void RPC; browser confirmation is adopted and tested; generic SDK JSON remains separate",
+      "reviewedSha256": "6416e88415ba0a8e73728ad26278dfe8494d61aedc8cfcd890e859348018839a"
     },
     {
       "path": "src/app/api/marketing/diagnostics/[id]/route.ts",
@@ -654,10 +654,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 65,
+      "lines": 66,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 adds a read-only state fixture flag only under the existing nonexistent-backend guard; production and public-tour writes remain disabled",
-      "reviewedSha256": "2a56d5e56e46732ace96b05e5b1529d459e2b556dbc3d4a3bb07a685099f8082"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 adds a read-only state fixture flag only under the existing nonexistent-backend guard; production and public-tour writes remain disabled; finding 411 wires isolated fake-backend activation QA without enabling preview revision/slot/publication controls; public-tour defaults and production 404 remain",
+      "reviewedSha256": "8bf8628488b65b9495d8fa7a1d00e7f92ab83b78412991250e5a692870f6a988"
     },
     {
       "path": "src/app/globals.css",
@@ -852,17 +852,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 584,
+      "lines": 585,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 forwards only the guarded read-state fixture flag without changing the catch-all/private query shell",
-      "reviewedSha256": "c20e663954319782c48aedcd7e3acf992b34c8023d57c859d0cf1fccb17f8558"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 forwards only the guarded read-state fixture flag without changing the catch-all/private query shell; finding 411 wires isolated fake-backend activation QA without enabling preview revision/slot/publication controls; public-tour defaults and production 404 remain",
+      "reviewedSha256": "d0d043d4310b5cfbc066a7fc9ab77cbdd70af9ea04df328603f4420f6f9679d6"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 211,
+      "lines": 214,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 forwards the isolated read-only state flag and synthetic owner; ordinary public tour keeps it disabled",
-      "reviewedSha256": "def732fac024262e0b08842829dfe63ff16edc54d289813ad947b83728429623"
+      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 forwards the isolated read-only state flag and synthetic owner; ordinary public tour keeps it disabled; finding 411 wires isolated fake-backend activation QA without enabling preview revision/slot/publication controls; public-tour defaults and production 404 remain",
+      "reviewedSha256": "34330e2e3bac03cdd7ffabea7f86efb7f4333de908b8657df4deae27cd0114f8"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1324,8 +1324,8 @@
       "path": "src/components/marketing/weekly-calendar.tsx",
       "lines": 48,
       "sha256": "234ef5f4cc0cbd37546cb91a933c48b53a8864e35aaa158cfc7e8b6d306f97ff",
-      "status": "partial; retained backlog/completed semantics inspected; outdated source/cadence copy, captured activation and repeated per-campaign scans remain; see remaining-review.md; finding 402 separates read-only inclusive date grouping from publish-clock resolution, including first/last representable imported weeks; activation/slot mutation lifecycle remains separate",
-      "reviewedSha256": "ada204f9411df499f3c69727812a31de6b6295a585f65f9f9fcac57c7e46e3ba"
+      "status": "partial; retained backlog/completed semantics inspected; outdated source/cadence copy, captured activation and repeated per-campaign scans remain; see remaining-review.md; finding 402 separates read-only inclusive date grouping from publish-clock resolution, including first/last representable imported weeks; activation/slot mutation lifecycle remains separate; finding 411 adopts independently disabled captured activation while retaining read-only preview slot controls; slot transport, complete entries, cadence copy and per-campaign scans remain",
+      "reviewedSha256": "afb7ce739f5bfd286460299e9b34915b56010c4f13f0f927e2a2fb0cb7322740"
     },
     {
       "path": "src/components/marketing/weekly-results.tsx",
@@ -1617,10 +1617,10 @@
     },
     {
       "path": "src/components/panels/marketing-panel.tsx",
-      "lines": 91,
+      "lines": 112,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate; finding 408 keeps page Refresh as the sole workspace/job-status read control; finding 409 bounds and centres asset-free cards, omits their empty media column, derives missing-artwork warning from existing readiness and equalizes review action cells; actual EN/CS/theme/six-width layout checks pass; MP4 rendering and loaded-asset identity remain open; finding 410 uses paused native MP4 controls with decoded-data admission and revision/content/file/URL-specific loaded identities; actual Chrome codec/keyboard checks pass; loaded-key retention and captured action/source lifetimes remain",
-      "reviewedSha256": "990738e34cde93fb76056f83002fc701ea1f76afe4fcfe3a9d962099b9fe11b7"
+      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate; finding 408 keeps page Refresh as the sole workspace/job-status read control; finding 409 bounds and centres asset-free cards, omits their empty media column, derives missing-artwork warning from existing readiness and equalizes review action cells; actual EN/CS/theme/six-width layout checks pass; MP4 rendering and loaded-asset identity remain open; finding 410 uses paused native MP4 controls with decoded-data admission and revision/content/file/URL-specific loaded identities; actual Chrome codec/keyboard checks pass; loaded-key retention and captured action/source lifetimes remain; finding 411 captures original owner/plan/hash activation, synchronously prevents overlap, guards pending exits/unmount, validates exact bounded receipt and requires explicit fresh read after unknown/changed outcomes; revision/slot actions and editor dirty protection remain separate",
+      "reviewedSha256": "e113a73807ff065cb6ae7cd9fdcd00c8ff557d9e517aa1d67e17d7e13f0459d8"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
@@ -2880,10 +2880,10 @@
     },
     {
       "path": "src/lib/i18n/sections/marketing-workspace.ts",
-      "lines": 117,
+      "lines": 123,
       "sha256": "c16479b4a0808d86cbedcccd1987fc344b0b2659080879841d9d65e52d413e1a",
-      "status": "source reviewed; complete EN/CS workspace vocabulary and parity inspected; final app-wide validation pending; finding 407 gives EN/CS neutral refresh recovery and scoped empty messages, removes the unused duplicate noResults string, adds accurate publication labels and formats both dictionaries for paired review",
-      "reviewedSha256": "372918cebf78fccc9d63653d0aa15f1557c345b0a99c5f61b313ec371b4275cd"
+      "status": "source reviewed; complete EN/CS workspace vocabulary and parity inspected; final app-wide validation pending; finding 407 gives EN/CS neutral refresh recovery and scoped empty messages, removes the unused duplicate noResults string, adds accurate publication labels and formats both dictionaries for paired review; finding 411 wires isolated fake-backend activation QA without enabling preview revision/slot/publication controls; public-tour defaults and production 404 remain",
+      "reviewedSha256": "c31fc58d0fc22374b5ac042368ef78b95a22df2e285cf0b474049c60d00d955b"
     },
     {
       "path": "src/lib/i18n/sections/marketing.ts",
@@ -5122,6 +5122,13 @@
       "lines": 63,
       "status": "source reviewed; finding 406 defines the complete bounded recent-list DTO, original revision owner, canonical dates/time/URLs, per-family identity uniqueness, source agreement, finite diagnostics/costs and exact health-prefix consistency; actual SDK/route/browser/mounted and exact/excess byte tests pass; completeness/history/resource limits remain explicit in callers; final release pending",
       "reviewedSha256": "0e67a4e0bd9d054d140aee34be6b8dffc2c21eacfa9756f95cfde39784845d59"
+    },
+    {
+      "path": "src/lib/marketing/campaign-activation.ts",
+      "sha256": null,
+      "lines": 36,
+      "status": "source reviewed; finding 411 strict owner/plan/hash receipt and one captured 35-second attempt with bounded success/error bodies, retirement and no replay; units/native/actual SDK checks pass; final release pending",
+      "reviewedSha256": "923967a5b81da0784bf4c0e8fee19b87fab33f22ba8161b5779d34792c11f5d3"
     }
   ],
   "baselineFileCount": 561
