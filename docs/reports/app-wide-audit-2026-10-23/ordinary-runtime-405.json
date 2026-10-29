@@ -1,0 +1,54 @@
+{
+  "source": "529f771e",
+  "ordinaryProductionBuild": true,
+  "NEXT_E2E": "unset",
+  "syntheticEnvironment": true,
+  "checks": [
+    {
+      "route": "/login",
+      "status": 200
+    },
+    {
+      "route": "/dev-preview?tab=marketing&imports=live",
+      "status": 404
+    },
+    {
+      "route": "/api/dev-preview/dneskai-fit",
+      "status": 404
+    },
+    {
+      "route": "/api/marketing/calendars",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/import",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/state",
+      "status": 401,
+      "privateNoStore": true
+    },
+    {
+      "route": "/api/marketing/campaigns",
+      "status": 401,
+      "privateNoStore": true
+    }
+  ],
+  "scope": "Local ordinary runtime admission checks only; no provider/model/publication or managed mutation.",
+  "frozenInputs": {
+    "scope": "All tracked files, including root fixtures and documentation",
+    "count": 3030,
+    "unchangedAfterBuildAndRuntime": true,
+    "manifestSha256": "a637ccfed8d53d80f4f370d3581c65d59c326090ca5ccc55fe9df4790410fd62"
+  },
+  "renderTraces": {
+    "passed": 8,
+    "platform": "Darwin arm64",
+    "fonts": 46,
+    "qaPathsRefused": true
+  },
+  "compilerDynamicFilesystemWarnings": 3
+}
