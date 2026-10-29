@@ -1,4 +1,5 @@
-import type { MarketingRevisionRow, PublicationRow, SourcePacket } from './contracts';
+import type { MarketingRevisionRow, PublicationRow } from './contracts';
+import type { MarketingSourceSummary } from './source-summary';
 import { MARKETING_JOB_HEALTH_LIMIT, MarketingJobHealthSchema, type MarketingJobHealth } from './job-health';
 export type MarketingState={
  revisions:Array<MarketingRevisionRow & {ready:boolean;offline_import_receipt?:{schemaVersion?:string;holdCode?:string}|null}>;
@@ -6,8 +7,8 @@ export type MarketingState={
  entries:Array<{id:string;campaign_id:string;date:string;local_time:string|null;bound_source_id:string|null;brand?:string;title:string;kind:string;platform:string;status:string;needs_review:boolean}>;
  publications:Array<PublicationRow & {revision_id:string}>;
  accounts:Array<{brand:string;platform:string;remote_account_id:string;handle:string;enabled:boolean;verified_at:string|null}>;
- sources:Array<{id:string;brand:string;source_id:string;packet:SourcePacket;eligible:boolean}>;
- sourceHistory:SourcePacket[];
+ sources:Array<{id:string;brand:string;source_id:string;packet:MarketingSourceSummary;eligible:boolean}>;
+ sourceHistory:MarketingSourceSummary[];
  jobs:Array<{id:string;status:string;errorCode:string|null;createdAt:string;brand:string|null;costUsd:number|null}>;
  jobHealth?:MarketingJobHealth[];
  diagnostics:{sampleSize:number;firstApprovalRate:number|null};

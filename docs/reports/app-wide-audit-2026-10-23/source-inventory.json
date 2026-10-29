@@ -563,10 +563,10 @@
     },
     {
       "path": "src/app/api/marketing/state/route.ts",
-      "lines": 24,
+      "lines": 64,
       "sha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f",
-      "status": "partial; full nine-query owner boundary inspected; incomplete caps, last-100 event first-approval bias, runtime validation and request cancellation remain pending; accounts inspected and contain no credential columns",
-      "reviewedSha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f"
+      "status": "partial; full nine-query owner boundary inspected; incomplete caps, last-100 event first-approval bias, runtime validation and request cancellation remain pending; accounts inspected and contain no credential columns; finding 405 verifies original session/optional captured owner and all returned row ownership, bounds original/parallel query consumers with retries disabled, refuses failed/null/malformed/oversized families and projects explicit fields/source summaries; recent-list caps/completeness, browser capture/full DTO and SDK JSON remain separate",
+      "reviewedSha256": "7e33e6415691701da78c2c4519ef3d1c2b703c35a2cbc81fa80a1454bf151190"
     },
     {
       "path": "src/app/api/marketing/tick/route.ts",
@@ -3329,10 +3329,10 @@
     },
     {
       "path": "src/lib/marketing/client.ts",
-      "lines": 26,
+      "lines": 27,
       "sha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af",
-      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending",
-      "reviewedSha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af"
+      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending; finding 405 narrows source metadata types to the actual title/evidence/identity/expiry fields and removes unused full-body expectations; browser transport/full DTO validation and captured action lifecycles remain open",
+      "reviewedSha256": "e56fe1fd3d15deddfbf215d8dd39a9cc0ec1989ca44451224eea47ede0cdc1dd"
     },
     {
       "path": "src/lib/marketing/clock.ts",
@@ -5108,6 +5108,13 @@
       "status": "source reviewed; finding 401 shares client/server four-digit nonzero-year dates, inclusive seven-day limits, bounded strict preview/report/save DTOs and source-work constants; positive exact ceilings and invalid receipt/date cases pass; final release remains",
       "reviewedSha256": "db61c1377b23096b9509d4c41081beb2cb9933b9ed8df95c2dc50ffddb08cdc7",
       "lines": 24
+    },
+    {
+      "path": "src/lib/marketing/source-summary.ts",
+      "sha256": null,
+      "lines": 30,
+      "status": "source reviewed; finding 405 validates a strict bounded attribution/expiry/identity projection, selects only those nested packet fields and checks current root identity/hash agreement; actual SDK/full-migration parity and unchanged displayed evidence pass; no authored content is deleted; final release remains",
+      "reviewedSha256": "1392a088c417feba3185ff82edd947f92d81dce132fbd3e400987360ccafaa19"
     }
   ],
   "baselineFileCount": 561
