@@ -78,3 +78,21 @@ it('distinguishes a refused changed preview from an uncertain save', async () =>
  fetcher.mockResolvedValueOnce(Response.json({ error: 'TEST_ONLY_PRIVATE' }, { status: 503 }));
  await expect(applyCalendarImport(scope(), intent, importPreview())).rejects.toMatchObject({ reason: 'unconfirmed', message: 'Calendar import unavailable' }); expect(fetcher).toHaveBeenCalledTimes(2);
 });
+
+it.each([false, true])('explains a positively refused invalid source without treating apply=%s as a network problem', async apply => {
+ const fetcher = vi.fn(async () => Response.json({ error: 'calendar-import-plan-invalid' }, { status: 400 })); vi.stubGlobal('fetch', fetcher);
+ await expect(apply ? applyCalendarImport(scope(), intent, importPreview()) : previewCalendarImport(scope(), intent)).rejects.toMatchObject({ reason: 'invalid-source' }); expect(fetcher).toHaveBeenCalledOnce();
+});
+it('accepts the inclusive last seven-day window without requiring an unrepresentable eighth day', async () => {
+ const value = importPreview(); value.campaign.starts_on = '9999-12-25'; value.campaign.ends_on = '9999-12-31';
+ vi.stubGlobal('fetch', vi.fn(async () => Response.json(value)));
+ expect(await previewCalendarImport(scope(), { brand: 'dneskai', startsOn: '9999-12-25' })).toEqual(value);
+});
+it('refuses year zero or an overflowing chosen week before any request', () => {
+ const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
+ for (const startsOn of ['0000-01-01', '9999-12-31']) expect(() => previewCalendarImport(scope(), { brand: 'dneskai', startsOn })).toThrow(); expect(fetcher).not.toHaveBeenCalled();
+});
+it('does not display empty review references from a malformed reply', async () => {
+ const value = importPreview(); value.report.unmatchedTipTitles = ['   ']; vi.stubGlobal('fetch', vi.fn(async () => Response.json(value)));
+ await expect(previewCalendarImport(scope(), intent)).rejects.toMatchObject({ reason: 'unavailable' });
+});

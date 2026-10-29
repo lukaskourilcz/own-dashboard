@@ -96,3 +96,17 @@ it('allows navigation away from a read-only preview while cancelling its late re
  const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload); expect(unload.defaultPrevented).toBe(false);
  act(() => root.render(null)); finish(Response.json(importPreview())); await settle(); expect(imported).not.toHaveBeenCalled();
 });
+
+it.each(['en', 'cs'])('%s: offers source correction after an invalid plan without a save or automatic retry', async lang => {
+ m.lang = lang; const fetcher = vi.fn(async () => Response.json({ error: 'calendar-import-plan-invalid' }, { status: 400 })); vi.stubGlobal('fetch', fetcher);
+ render(); await preview();
+ expect(host.querySelector('[role=alert]')?.textContent).toContain(lang === 'cs' ? 'Zdrojový plán potřebuje opravu' : 'The source plan needs correction');
+ const link = host.querySelector<HTMLAnchorElement>('a')!; expect(link.textContent).toBe(lang === 'cs' ? 'Otevřít zdrojový plán' : 'Open source plan');
+ expect(link.href).toBe('https://boardless-ai.vercel.app/admin/calendar?venture=caught-up'); expect(link.target).toBe('_blank'); expect(link.rel).toBe('noreferrer');
+ expect(button(lang === 'cs' ? 'Importovat plán' : 'Import plan')).toBeUndefined(); expect(fetcher).toHaveBeenCalledOnce(); expect(imported).not.toHaveBeenCalled();
+});
+it('rejects an overflowing chosen week locally with a field association and no request', async () => {
+ const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); render();
+ await act(async () => { const input = host.querySelector('input')!; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '9999-12-31'); input.dispatchEvent(new Event('input', { bubbles: true })); });
+ const input = host.querySelector('input')!; expect(input.getAttribute('aria-invalid')).toBe('true'); expect(input.getAttribute('aria-describedby')).toBe(host.querySelector('[role=alert]')?.id); expect(button('Preview plan').disabled).toBe(true); expect(fetcher).not.toHaveBeenCalled();
+});

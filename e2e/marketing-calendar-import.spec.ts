@@ -5,6 +5,34 @@ import { importOwner, importPreview, importSaved } from '../tests/lib/calendar-i
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]['page'];
 const copy = { en: { calendar: 'Calendar', preview: 'Preview plan', apply: 'Import plan', brand: 'Brand', first: 'First day', success: 'Import confirmed. Review the plan in the calendar.' }, cs: { calendar: 'Kalendář', preview: 'Zkontrolovat plán', apply: 'Importovat plán', brand: 'Značka', first: 'První den', success: 'Import potvrzen. Plán najdeš v kalendáři.' } };
 for (const lang of ['en', 'cs'] as const) {
+ test(`${lang}: invalid source and out-of-range dates recover without a save`, async ({ page }) => {
+  const errors = watchConsole(page), c = copy[lang];
+  let requests = 0;
+  await page.clock.install({ time: new Date('2026-10-29T10:00:00Z') });
+  await page.route('**/api/marketing/import', route => {
+   requests++; expect(route.request().postDataJSON().apply).toBe(false);
+   return route.fulfill({ status: 400, json: { error: 'calendar-import-plan-invalid' } });
+  });
+  await gotoPreview(page, { lang, theme: 'dark' }); await page.goto('/dev-preview?tab=marketing&imports=live');
+  await page.locator('#marketing-tab-calendar').click();
+  const section = page.getByRole('region', { name: lang === 'cs' ? 'Převzít plán z BoardlessAI' : 'Import the BoardlessAI plan' });
+  const date = section.getByLabel(c.first), preview = section.getByRole('button', { name: c.preview, exact: true });
+  await date.fill('9999-12-26');
+  await expect(date).toHaveAttribute('aria-invalid', 'true'); await expect(preview).toBeDisabled();
+  await expect(date).toHaveAccessibleDescription(lang === 'cs' ? 'Vyber první den, od kterého lze naplánovat celých sedm dní.' : 'Choose a start date that leaves room for all seven days.');
+  expect(requests).toBe(0);
+  await date.fill('2026-10-29'); await preview.click();
+  await expect(section.getByRole('alert')).toHaveText(lang === 'cs' ? 'Zdrojový plán potřebuje opravu. Před další kontrolou ověř jeho data, časy a položky.' : 'The source plan needs correction. Review its dates, times and entries before previewing again.');
+  await expect(preview).toBeFocused();
+  const source = section.getByRole('link', { name: lang === 'cs' ? 'Otevřít zdrojový plán' : 'Open source plan' });
+  await expect(source).toHaveAttribute('href', 'https://boardless-ai.vercel.app/admin/calendar?venture=caught-up');
+  await expect(source).toHaveAttribute('target', '_blank'); await expect(source).toHaveAttribute('rel', 'noreferrer');
+  await expect(section.getByRole('button', { name: c.apply, exact: true })).toHaveCount(0);
+  expect(requests).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  expect((await new AxeBuilder({ page: page as unknown as AxePage }).include('main').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  expect(errors).toEqual([`Failed to load resource: the server responded with a status of 400 (Bad Request) (${new URL('/api/marketing/import', page.url()).href})`]);
+ });
  test(`${lang}: captured import, pending exit and uncertainty recover without publishing`, async ({ page }, info) => {
   const errors = watchConsole(page), c = copy[lang];
   await page.clock.install({ time: new Date('2026-10-28T23:15:00Z') });

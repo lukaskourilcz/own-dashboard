@@ -493,10 +493,10 @@
     },
     {
       "path": "src/app/api/marketing/import/route.ts",
-      "lines": 34,
+      "lines": 84,
       "sha256": "df6e48bedb15ccf31daa03c97e833a1beca3553a1771cb148a97c70ddefb964f",
-      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open; finding 395 prepares complete persisted post-trigger confirmation in existing service-only RPC with safe exact-source replay (migration 150, unapplied); browser intent and SDK JSON resource contract remain separate; finding 396 fingerprints the complete owner-stamped planned result and refuses changed matching/report before service admission; general SDK JSON resource contract remains",
-      "reviewedSha256": "3cff3fb4ce0b70351366a2ecabeb2c82676589a4febbdaaa3805f83e6db1fd18"
+      "status": "partial source review; owner/request OAuth coalescing and upstream deadline checked; response/schema/completeness and caller failure states remain; finding 393 passes request retirement through the repository phase, retires its GitHub-only scope and stops late input results before planning/writes; auth/body/knowledge/atomic receipt remain open; finding 394 verifies owner/auth precedence, optional captured-owner header, original/body/knowledge/write consumer bounds and complete bounded owned idea titles; preview omits raw source/entries and UUID is validated; exact persisted receipt and browser intent remain open; finding 395 prepares complete persisted post-trigger confirmation in existing service-only RPC with safe exact-source replay (migration 150, unapplied); browser intent and SDK JSON resource contract remain separate; finding 396 fingerprints the complete owner-stamped planned result and refuses changed matching/report before service admission; general SDK JSON resource contract remains; finding 401 rejects impossible start dates before knowledge/repository work and invalid planning inputs before write admission; general SDK JSON resource contract remains separate",
+      "reviewedSha256": "2e14738bd684135c422f95ef28e429532a7fc6dc0afc43264fff31d4f6526cc4"
     },
     {
       "path": "src/app/api/marketing/jobs/[id]/execute/route.ts",
@@ -1015,10 +1015,10 @@
     },
     {
       "path": "src/components/marketing/calendar-import.tsx",
-      "lines": 11,
+      "lines": 96,
       "sha256": "d3248265ca4dca971be0d498f0c34fe3a609e2a9707780cc6b5849107a51dfa4",
-      "status": "source reviewed; finding 396 checks captured owner/preview identity, same-turn admission, response budgets, Prague live default and fixed selected date, pending-write exits, cancellation, explicit uncertainty recovery, current publishing-neutral copy and fifty-reference local paging; six-width EN/CS/theme/native checks pass; final release remains",
-      "reviewedSha256": "1b9d7a47846602d47a4421da78eb998df029b4248b3f880893c6be3ea3dec2b4"
+      "status": "source reviewed; finding 396 checks captured owner/preview identity, same-turn admission, response budgets, Prague live default and fixed selected date, pending-write exits, cancellation, explicit uncertainty recovery, current publishing-neutral copy and fifty-reference local paging; six-width EN/CS/theme/native checks pass; final release remains; finding 401 validates representable complete weeks locally and provides fixed EN/CS source-correction copy plus registered source link; native recovery/focus/date/axe checks pass",
+      "reviewedSha256": "d2af172b25808767bc5fe6a6aec311c364b3f4476b8da2a6678882696069b461"
     },
     {
       "path": "src/components/marketing/calendar-slot.tsx",
@@ -3302,9 +3302,9 @@
     {
       "path": "src/lib/marketing/calendar-import-client.ts",
       "sha256": null,
-      "lines": 64,
-      "status": "source reviewed; finding 396 validates complete owner/brand/week/report preview and exact save fingerprints, original 65-second/1.1MiB response limits, no replay and explicit changed/unconfirmed outcomes; 27 transport cases and actual UI checks pass; final release remains",
-      "reviewedSha256": "04a6d5b57a94afa00c9a44464dee783275222fa006f7d1c518d303f8d7b44e13"
+      "lines": 56,
+      "status": "source reviewed; finding 396 validates complete owner/brand/week/report preview and exact save fingerprints, original 65-second/1.1MiB response limits, no replay and explicit changed/unconfirmed outcomes; 27 transport cases and actual UI checks pass; final release remains; finding 401 shares inclusive date/report limits and distinguishes confirmed pre-write invalid-source refusals from connection or uncertain-write outcomes",
+      "reviewedSha256": "2b5b2cfb38b60ff493420aecea6145252d5c725f3b64bd8bd2e3d255c1e12a22"
     },
     {
       "path": "src/lib/marketing/calendar-source.ts",
@@ -3315,10 +3315,10 @@
     },
     {
       "path": "src/lib/marketing/campaign-import.ts",
-      "lines": 38,
+      "lines": 49,
       "sha256": "bfd46d2cfa1abc1fb8f19bfef97cb861712e7d7e831e2dbd989e110918698ef0",
-      "status": "partial; fixed/completed/backlog semantics inspected; complete input/date/enum bounds and source capture remain; see remaining-review.md",
-      "reviewedSha256": "bfd46d2cfa1abc1fb8f19bfef97cb861712e7d7e831e2dbd989e110918698ef0"
+      "status": "source reviewed; finding 401 aligns bounded complete planning inputs with SQL storage, refuses impossible times/year-zero/rebase/window overflow, preserves all authored snapshot fields and completed history, bounds total reference matching and deduplicates review titles by canonical identity; full fixture parity, exact ceilings and final inclusive week pass; nonterminal restart rows retain the documented draft/review policy; final release remains",
+      "reviewedSha256": "adbfdb3767aec472da318a83016c5470a9784147bebe801f1cd5aa0280c3ab4e"
     },
     {
       "path": "src/lib/marketing/claude-call-profile.ts",
@@ -5101,6 +5101,13 @@
       "lines": 18,
       "status": "source reviewed; finding 386 inherits strict compiler flags, scopes production roots and retains framework/runtime entrypoints and broad CI/editor checks; actual ordinary build, cold app/root type checks and required packaging pass; final release pending",
       "reviewedSha256": "9cf8788392ff9dd2f66d6474587a19520676d0182ea4fce5667204c837391811"
+    },
+    {
+      "path": "src/lib/marketing/calendar-import-contracts.ts",
+      "sha256": null,
+      "status": "source reviewed; finding 401 shares client/server four-digit nonzero-year dates, inclusive seven-day limits, bounded strict preview/report/save DTOs and source-work constants; positive exact ceilings and invalid receipt/date cases pass; final release remains",
+      "reviewedSha256": "db61c1377b23096b9509d4c41081beb2cb9933b9ed8df95c2dc50ffddb08cdc7",
+      "lines": 24
     }
   ],
   "baselineFileCount": 561

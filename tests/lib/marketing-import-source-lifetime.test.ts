@@ -137,3 +137,14 @@ it.each(['missing', 'wrong', 'changed-matches', 'changed-report'] as const)('ref
  const response = await POST(new Request('https://own.example/api/marketing/import', { method: 'POST', headers: { Origin: 'https://own.example', 'Content-Type': 'application/json' }, body: JSON.stringify(input) }));
  expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: 'calendar-import-preview-changed' }); expect(m.admin).not.toHaveBeenCalled(); expect(m.rpc).not.toHaveBeenCalled();
 });
+
+it.each([false, true])('rejects invalid source shape before service admission for apply=%s', async apply => {
+ const actual = await vi.importActual<typeof import('@/lib/marketing/campaign-import')>('@/lib/marketing/campaign-import'); m.prepare.mockImplementation(actual.planCampaignImport);
+ m.reader.mockResolvedValue({ schemaVersion: 'marketing-calendar/1', project: 'devshark', name: 'Source plan', launch: '2026-10-04', entries: [{ id: 'one', date: '2026-10-04', title: 'Evergreen question', kind: 'thread', platform: 'threads', time: '24:00', body: 'TEST_ONLY_AUTHORED_COPY' }] });
+ const response = await POST(request('repository', apply)); expect(response.status).toBe(400); expect(await response.json()).toEqual({ error: 'calendar-import-plan-invalid' }); expect(m.admin).not.toHaveBeenCalled(); expect(m.rpc).not.toHaveBeenCalled();
+});
+it('refuses an unrepresentable requested week before knowledge or repository work', async () => {
+ const value = await request('repository', false).json(); value.startsOn = '0000-01-01';
+ const response = await POST(new Request('https://own.example/api/marketing/import', { method: 'POST', headers: { Origin: 'https://own.example', 'Content-Type': 'application/json' }, body: JSON.stringify(value) }));
+ expect(response.status).toBe(400); expect(m.from).not.toHaveBeenCalled(); expect(m.factory).not.toHaveBeenCalled(); expect(m.reader).not.toHaveBeenCalled();
+});

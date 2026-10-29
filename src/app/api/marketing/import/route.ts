@@ -10,11 +10,12 @@ import { BrandSchema } from '@/lib/marketing/contracts';
 import { planCampaignImport } from '@/lib/marketing/campaign-import';
 import { readKnowledgeBody } from '@/lib/marketing/knowledge-body';
 import { contentHash } from '@/lib/marketing/hashes';
+import { CalendarImportStartSchema } from '@/lib/marketing/calendar-import-contracts';
 
 export const maxDuration = 60;
 const Input = z.union([
- z.strictObject({ plan: z.unknown(), startsOn: z.iso.date(), apply: z.boolean() }),
- z.strictObject({ source: z.literal('repository'), brand: BrandSchema, startsOn: z.iso.date(), apply: z.boolean(), expectedHash: z.string().regex(/^[a-f0-9]{64}$/).optional(), expectedImportHash: z.string().regex(/^[a-f0-9]{64}$/).optional() }),
+ z.strictObject({ plan: z.unknown(), startsOn: CalendarImportStartSchema, apply: z.boolean() }),
+ z.strictObject({ source: z.literal('repository'), brand: BrandSchema, startsOn: CalendarImportStartSchema, apply: z.boolean(), expectedHash: z.string().regex(/^[a-f0-9]{64}$/).optional(), expectedImportHash: z.string().regex(/^[a-f0-9]{64}$/).optional() }),
 ]);
 const ideaSchema = z.strictObject({ id: z.uuid(), user_id: z.uuid(), title: z.string().max(10_000) });
 const reply = (body: object, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'private, no-store' } });

@@ -58,3 +58,60 @@ describe('campaign restart',()=>{
   expect(r.report.completed).toBe(2);expect(r.report.held).toBe(0);
  });
 });
+
+it.each(['id', 'title', 'kind', 'platform', 'name', 'blank-title', 'time', 'schedule-policy', 'fixed-flag', 'zero-date', 'window-overflow', 'shift-overflow'] as const)('refuses %s input before offering an unsaveable preview', kind => {
+ const value = { ...plan, entries: [{ ...plan.entries[0], time: '09:00', schedulePolicy: 'relative', fixedDate: false }] };
+ let start = '2026-10-18';
+ if (kind === 'id') value.entries[0].id = 'i'.repeat(301);
+ if (kind === 'title') value.entries[0].title = 'x'.repeat(10001);
+ if (kind === 'kind') value.entries[0].kind = 'x'.repeat(101);
+ if (kind === 'platform') value.entries[0].platform = 'x'.repeat(101);
+ if (kind === 'name') value.name = 'x'.repeat(10001);
+ if (kind === 'blank-title') value.entries[0].title = '   ';
+ if (kind === 'time') value.entries[0].time = '24:00';
+ if (kind === 'schedule-policy') value.entries[0].schedulePolicy = 'guess-for-me';
+ if (kind === 'fixed-flag') Object.assign(value.entries[0], { fixedDate: 'true' });
+ if (kind === 'zero-date') value.entries[0].date = '0000-01-01';
+ if (kind === 'window-overflow') start = '9999-12-31';
+ if (kind === 'shift-overflow') { value.launch = '0001-01-01'; value.entries[0].date = '9999-12-31'; }
+ expect(() => planCampaignImport(value, start, [])).toThrow();
+});
+it('keeps exact storage field ceilings and unknown authored fields unchanged', () => {
+ const entry = { ...plan.entries[0], id: 'i'.repeat(300), title: 'x'.repeat(10000), kind: 'k'.repeat(100), platform: 'p'.repeat(100), time: '23:59', unknownAuthoredField: { body: 'Keep this exact text' } };
+ const value = { ...plan, name: 'n'.repeat(10000), entries: [entry], unknownPlanField: { retained: true } };
+ const prepared = planCampaignImport(value, '2026-10-18', []);
+ expect(prepared.entries[0].original).toEqual(entry); expect(prepared.campaign.source_snapshot).toEqual(value);
+ expect(prepared.entries[0]).toMatchObject({ source_id: entry.id, title: entry.title, kind: entry.kind, platform: entry.platform, local_time: '23:59' });
+});
+it('bounds total reference-matching work and refuses oversized reference text', () => {
+ const tipRefs = Array.from({ length: 1001 }, (_, i) => `Reference ${i}`);
+ const entries = Array.from({ length: 10 }, (_, i) => ({ ...plan.entries[0], id: `item-${i}`, tipRefs }));
+ expect(() => planCampaignImport({ ...plan, entries }, '2026-10-18', [])).toThrow();
+ expect(() => planCampaignImport({ ...plan, entries: [{ ...plan.entries[0], tipRefs: ['x'.repeat(10001)] }] }, '2026-10-18', [])).toThrow();
+});
+it('keeps blank references in authored history without showing empty unmatched rows', () => {
+ const entry = { ...plan.entries[0], tipRefs: ['', '   '] };
+ const value = planCampaignImport({ ...plan, entries: [entry] }, '2026-10-18', []);
+ expect(value.entries[0].original).toEqual(entry); expect(value.report.unmatchedTipTitles).toEqual([]); expect(value.report.ambiguousTipTitles).toEqual([]);
+});
+it.each(['PUBLISHED', ' Done '])('keeps %s history at its original date while preserving the exact source status', status => {
+ const entry = { ...plan.entries[0], status };
+ const value = planCampaignImport({ ...plan, entries: [entry] }, '2026-10-18', []);
+ expect(value.entries[0]).toMatchObject({ date: '2026-10-04', status: status.trim().toLowerCase(), needs_review: false, original: entry }); expect(value.report.completed).toBe(1);
+});
+
+it('preserves the first authored spelling of each unmatched or ambiguous reference without duplicate review rows', () => {
+ const entry = { ...plan.entries[0], tipRefs: [' A useful tip ', 'a useful tip', 'A useful tip'] };
+ const value = { ...plan, entries: [entry] };
+ const absent = planCampaignImport(value, '2026-10-18', []);
+ expect(absent.report.unmatchedTipTitles).toEqual([' A useful tip ']); expect(absent.entries[0].original).toEqual(entry);
+ const ambiguous = planCampaignImport(value, '2026-10-18', [{ id: 'one', title: 'A useful tip' }, { id: 'two', title: 'a useful tip' }]);
+ expect(ambiguous.report.ambiguousTipTitles).toEqual([' A useful tip ']); expect(ambiguous.entries[0].knowledge_ids).toEqual([]);
+});
+it('keeps the last representable seven-day window and the exact reference-work ceiling', () => {
+ const value = planCampaignImport({ ...plan, entries: [plan.entries[0]] }, '9999-12-25', []);
+ expect(value.campaign.ends_on).toBe('9999-12-31'); expect(value.entries[0].date).toBe('9999-12-25');
+ const tipRefs = Array.from({ length: 10000 }, (_, i) => `Reference ${i}`);
+ const full = planCampaignImport({ ...plan, entries: [{ ...plan.entries[0], tipRefs }] }, '2026-10-18', []);
+ expect(full.report.unmatchedTipTitles).toHaveLength(10000); expect(full.entries[0].original.tipRefs).toEqual(tipRefs);
+});

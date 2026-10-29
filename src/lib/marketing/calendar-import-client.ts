@@ -1,27 +1,18 @@
 import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
 import { boundedResponseText } from '@/lib/bounded-response';
-import { BrandSchema } from './contracts';
-import { sevenDayMarketingWindow } from './weekly-planning';
+import { CalendarImportSelectionSchema as selection, CalendarImportPreviewSchema as previewSchema, CalendarImportSavedSchema as savedSchema, calendarImportEndDate } from './calendar-import-contracts';
 
-const hash = z.string().regex(/^[a-f0-9]{64}$/);
-const count = z.number().int().min(0).max(1000);
-const titles = z.array(z.string().max(10_000)).max(10_000).refine(rows => new Set(rows).size === rows.length);
-const report = z.strictObject({ inputCount: count, outputCount: count, shiftDays: z.number().int().min(-3_652_425).max(3_652_425), held: count, backlog: count, completed: count, unmatchedTipTitles: titles, ambiguousTipTitles: titles })
-  .refine(value => value.inputCount === value.outputCount && [value.held, value.backlog, value.completed].every(n => n <= value.inputCount));
-const selection = z.strictObject({ brand: BrandSchema, startsOn: z.iso.date() });
-const previewSchema = z.strictObject({ ownerId: z.uuid(), importHash: hash, campaign: z.strictObject({ brand: BrandSchema, starts_on: z.iso.date(), ends_on: z.iso.date(), source_hash: hash }), report });
-const savedSchema = z.strictObject({ id: z.uuid(), ownerId: z.uuid(), importHash: hash, sourceHash: hash, report });
 export type CalendarImportSelection = z.infer<typeof selection>;
 export type CalendarImportPreview = z.infer<typeof previewSchema>;
 export type CalendarImportScope = { ownerId: string; signal: AbortSignal };
 export class CalendarImportError extends Error {
-  constructor(readonly reason: 'changed' | 'unavailable' | 'unconfirmed') { super('Calendar import unavailable'); }
+  constructor(readonly reason: 'changed' | 'unavailable' | 'unconfirmed' | 'invalid-source') { super('Calendar import unavailable'); }
 }
 function confirmPreview(value: unknown, scope: CalendarImportScope, intent: CalendarImportSelection) {
   const parsed = previewSchema.parse(value);
   if (parsed.ownerId !== scope.ownerId || parsed.campaign.brand !== intent.brand || parsed.campaign.starts_on !== intent.startsOn
-    || parsed.campaign.ends_on !== sevenDayMarketingWindow(intent.startsOn).endDateInclusive) throw new Error();
+    || parsed.campaign.ends_on !== calendarImportEndDate(intent.startsOn)) throw new Error();
   return parsed;
 }
 /** One original caller/response budget. No automatic retry or unbounded JSON. */
@@ -41,7 +32,8 @@ async function request<T>(scope: CalendarImportScope, body: object, apply: boole
     if (response.status !== 200) {
       const error = z.strictObject({ error: z.string() }).safeParse(value);
       const changed = response.status === 409 && error.success && ['calendar-source-changed', 'calendar-import-preview-changed', 'calendar-import-owner-changed'].includes(error.data.error);
-      throw new CalendarImportError(changed ? 'changed' : apply ? 'unconfirmed' : 'unavailable');
+      const invalidSource = response.status === 400 && error.success && error.data.error === 'calendar-import-plan-invalid';
+      throw new CalendarImportError(changed ? 'changed' : invalidSource ? 'invalid-source' : apply ? 'unconfirmed' : 'unavailable');
     }
     const result = confirm(value); signal.throwIfAborted(); return result;
   } catch (error) {
