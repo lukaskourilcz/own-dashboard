@@ -98,3 +98,23 @@ it('retires an admitted read on unmount and never caches the later result', asyn
  await act(async () => { finish(Response.json(marketingStateFixture())); });
  expect(client.getQueryData(qk.marketingState)).toBeUndefined();
 });
+
+for (const lang of ['en', 'cs'] as const) {
+ it(`${lang}: a ready text-only Thread has no empty media column or missing-artwork claim`, async () => {
+  m.lang = lang; const value = marketingStateFixture(); value.revisions[0].ready = true;
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json(value))); render(); await displayed('Reviewed draft');
+  const article = host.querySelector('article')!;
+  expect(article.textContent).not.toContain(marketingWorkspace[lang].notReady);
+  expect(article.querySelector('[aria-label="Reviewed draft"]')).toBeNull();
+  expect(article.className).toContain('max-w-3xl'); expect(article.className).toContain('mx-auto');
+  expect(article.querySelector('[data-testid="marketing-review-body"]')!.className).not.toContain('lg:grid-cols');
+ });
+ it(`${lang}: missing Instagram artwork keeps its warning without an empty image column`, async () => {
+  m.lang = lang; const value = marketingStateFixture(); value.revisions[0].revision.account.platform = 'instagram'; value.revisions[0].revision.format = 'post';
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json(value))); render(); await displayed('Reviewed draft');
+  const article = host.querySelector('article')!;
+  expect(article.textContent).toContain(marketingWorkspace[lang].notReady);
+  expect(article.querySelector('[aria-label="Reviewed draft"]')).toBeNull();
+  expect(article.querySelector('[data-testid="marketing-review-body"]')!.className).not.toContain('lg:grid-cols');
+ });
+}
