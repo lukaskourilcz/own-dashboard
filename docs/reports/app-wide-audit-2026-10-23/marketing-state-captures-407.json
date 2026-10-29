@@ -1,7 +1,7 @@
 {
   "applicationBase": "bc92fcbf",
   "capturedDate": "2026-10-29",
-  "sourceState": "Finding 407 reviewed working tree, exact component hashes below; real dev-preview pixels, not generated UI.",
+  "sourceState": "Application components match committed f87104ae; exact component hashes below. Real dev-preview pixels, not generated UI.",
   "fixture": "Isolated nonexistent backend, synthetic owner-stamped replies, refused foreign-owner refresh and controlled Date-only Prague-clock observations; no real owner/provider/publication data.",
   "components": {
     "src/components/panels/marketing-panel.tsx": "3b1f99f931d865dc3aacd39dea12cbaedbbcc6bae3bc77f5b0da6f337d13cad3",
@@ -81,5 +81,6 @@
       ]
     }
   },
-  "verified": "EN/CS light/dark desktop/phone; six desktop widths, reflow, axe, exactly three explicit reads, original read time, refused foreign data, keyboard recovery and zero writes. Crops exclude viewport-fixed navigation overlays."
+  "verified": "EN/CS light/dark desktop/phone; six desktop widths, reflow, axe, exactly three explicit reads, original read time, refused foreign data, keyboard recovery and zero writes. Crops exclude viewport-fixed navigation overlays.",
+  "applicationCommit": "f87104ae"
 }
