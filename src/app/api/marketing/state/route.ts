@@ -4,6 +4,7 @@ import { awaitWithSignal } from '@/lib/abortable';
 import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
 import { marketingJobHealth, safeMarketingJobs } from '@/lib/marketing/job-health';
 import { MARKETING_SOURCE_SUMMARY_COLUMNS, marketingSourceSummary } from '@/lib/marketing/source-summary';
+import { MARKETING_STATE_MAX_BYTES, MarketingStateEnvelopeSchema } from '@/lib/marketing/state-contracts';
 
 export const maxDuration = 30;
 const revisionFields = 'id,user_id,project_id,campaign_id,revision,content_hash,ready,status,approved_at,approved_hash,feedback,created_at,render_report,offline_import_receipt';
@@ -58,7 +59,11 @@ export async function GET(request: Request) {
   if (row.brand !== packet.brand || row.source_id !== packet.sourceId || row.source_revision !== packet.sourceRevision || row.content_hash !== packet.contentHash) throw new Error('source-identity-unavailable');
   return { id: z.uuid().parse(row.id), brand: packet.brand, source_id: packet.sourceId, eligible: z.boolean().parse(row.eligible), packet };
  });
- return reply({ownerId,revisions:project(rows[0],revisionFields),campaigns:project(rows[1],campaignFields),entries:project(rows[2],entryFields),publications:project(rows[3],publicationFields),accounts:project(rows[4],accountFields),sources,sourceHistory:rows[8].map(marketingSourceSummary),jobs,jobHealth:marketingJobHealth(jobs),diagnostics});
+ const value = MarketingStateEnvelopeSchema.parse({ownerId,revisions:project(rows[0],revisionFields),campaigns:project(rows[1],campaignFields),entries:project(rows[2],entryFields),publications:project(rows[3],publicationFields),accounts:project(rows[4],accountFields),sources,sourceHistory:rows[8].map(marketingSourceSummary),jobs,jobHealth:marketingJobHealth(jobs),diagnostics});
+ signal.throwIfAborted();
+ const body = JSON.stringify(value);
+ if (Buffer.byteLength(body) > MARKETING_STATE_MAX_BYTES) throw new Error('state-too-large');
+ return new NextResponse(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store' } });
  } catch { return reply({ error: 'marketing-unavailable' }, 503); }
  finally { retirement.abort(); }
 }

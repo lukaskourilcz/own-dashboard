@@ -7,6 +7,7 @@ import { fetchWithSignal } from '@/lib/abortable';
 import { planCampaignImport } from '@/lib/marketing/campaign-import';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
 import { MarketingSourceSummarySchema } from '@/lib/marketing/source-summary';
+import { loadMarketingState } from '@/lib/marketing/client';
 const m = vi.hoisted(() => ({ client: vi.fn(), auth: vi.fn(), query: vi.fn(), calls: [] as Array<{ table: string; columns: string; owner?: string; retry?: boolean; signal?: AbortSignal }> }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: m.client }));
@@ -81,6 +82,11 @@ it.each(['brand', 'source_id', 'source_revision', 'content_hash', 'summary_title
  m.query.mockImplementation(async (table: string) => ({ data: table === 'marketing_sources' ? [row] : [], error: null }));
  expect((await GET(request())).status).toBe(503);
 });
+it('refuses a valid projected envelope above the wire budget instead of returning a truncated success', async () => {
+ const entries = Array.from({ length: 1000 }, (_, index) => ({ user_id: owner, id: `${String(index).padStart(8, '0')}-0000-4000-8000-000000000000`, campaign_id: id, date: '2026-10-29', local_time: null, bound_source_id: null, title: 'x'.repeat(10000), kind: 'task', platform: 'web', status: 'planned', needs_review: false }));
+ m.query.mockImplementation(async (table: string) => ({ data: table === 'marketing_calendar_entries' ? entries : [], error: null }));
+ const response = await GET(request()); expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: 'marketing-unavailable' });
+});
 
 it('preserves displayed entry and source evidence through actual SDK projections with the full migrated database', async () => {
  const db = await createMigratedDatabase({ owner, instant: '2026-10-29T00:00:00Z' });
@@ -106,6 +112,11 @@ it('preserves displayed entry and source evidence through actual SDK projections
   expect(body.entries).toEqual(originalEntries.map(row => Object.fromEntries(fields.map(field => [field, row[field]]))));
   const summary = MarketingSourceSummarySchema.parse({ brand: packet.brand, sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash, canonicalUrl: packet.canonicalUrl, expiresAt: packet.expiresAt, content: { title: packet.content.title, evidence: packet.content.evidence } });
   expect(body.sourceHistory).toEqual([summary]); expect(body.sources).toEqual([{ id, brand: packet.brand, source_id: packet.sourceId, eligible: true, packet: summary }]);
+  const browser = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json(body));
+  try {
+   const state = await loadMarketingState(new AbortController().signal, owner);
+   expect(state.entries).toEqual(body.entries); expect(state.sources).toEqual(body.sources); expect(state.sourceHistory).toEqual(body.sourceHistory);
+  } finally { browser.mockRestore(); }
   expect(emulator.requests).toHaveLength(9);
   expect(queried.every(url => !url.searchParams.get('select')?.split(',').includes('*'))).toBe(true);
   const before = { entries: originalEntries, sources: [{ id, brand: packet.brand, source_id: packet.sourceId, source_revision: packet.sourceRevision, eligible: true, observed_at: '2026-10-29T00:00:00Z', packet }], sourceHistory: [packet] };

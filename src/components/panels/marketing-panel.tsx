@@ -12,6 +12,7 @@ import { KnowledgeLibrary } from '@/components/marketing/knowledge-library';
 import { KnowledgeImport } from '@/components/marketing/knowledge-import';
 import { CalendarImport } from '@/components/marketing/calendar-import';
 import { useGuardedNavigation } from '@/components/navigation-guard';
+import { useOwnerPreferences } from '@/lib/owner-preferences';
 import { pragueScheduledAt,pragueLocalInput } from '@/lib/marketing/clock';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ const urlSnapshot=()=>window.location.search;
 const serverUrlSnapshot=()=>'';
 
 export function MarketingPanel({isPreview=false,liveCalendarImport=false,onOpenKnowledge}:{isPreview?:boolean;liveCalendarImport?:boolean;onOpenKnowledge:()=>void}){
- const navigate=useGuardedNavigation();const t=useDict().marketingWorkspace;const {lang}=useLang();const qc=useQueryClient();
+ const navigate=useGuardedNavigation();const t=useDict().marketingWorkspace;const {lang}=useLang();const qc=useQueryClient();const owner=useOwnerPreferences();
  const [view,setView]=useState<'review'|'calendar'|'knowledge'|'results'>('review');
  const queryString=useSyncExternalStore(subscribeUrl,urlSnapshot,serverUrlSnapshot);
  const requestedBrand=new URLSearchParams(queryString).get('brand');
@@ -36,7 +37,7 @@ export function MarketingPanel({isPreview=false,liveCalendarImport=false,onOpenK
  const [loadedAssets,setLoadedAssets]=useState<Set<string>>(()=>new Set());
  const [editMode,setEditMode]=useState<'edit'|'returned'>('edit');
  const [editing,setEditing]=useState<MarketingRevisionRow|null>(null);const [caption,setCaption]=useState('');const [schedule,setSchedule]=useState('');const [feedback,setFeedback]=useState('');
- const query=useQuery({queryKey:qk.marketingState,queryFn:({signal})=>loadMarketingState(signal),enabled:!isPreview,initialData:isPreview?EMPTY_MARKETING_STATE:undefined,staleTime:30000,refetchOnWindowFocus:false,retry:false});
+ const query=useQuery({queryKey:qk.marketingState,queryFn:({signal})=>{if(!owner)throw new Error('marketing-unavailable');const original=owner.capture();return loadMarketingState(AbortSignal.any([signal,original.signal]),original.ownerId);},enabled:!isPreview&&!!owner,initialData:isPreview?EMPTY_MARKETING_STATE:undefined,staleTime:30000,refetchOnWindowFocus:false,retry:false});
  const data=query.data??EMPTY_MARKETING_STATE;
  const revisions=data.revisions.filter(r=>brand==='all'||r.revision.brand===brand);
  const status=(key:string)=>({review:t.reviewState,approved:t.approved,published:t.published,returned:t.returned,skipped:t.skipped,superseded:t.superseded,publishing:t.publishing,reconciliation:t.reconciliation,failed:t.errorState}[key]??t.planned);
@@ -51,7 +52,7 @@ export function MarketingPanel({isPreview=false,liveCalendarImport=false,onOpenK
   </div>
   {isPreview&&<p className="mb-3 text-xs text-foreground-muted">{t.preview}</p>}
   {message&&<p role="status" className="mb-4 text-sm">{message}</p>}
-  {query.isPending&&!isPreview?<p role="status">{t.loading}</p>:query.isError?<p role="alert" className="rounded-md border border-border p-4">{t.unavailable}</p>:<div role="tabpanel" id={`marketing-panel-${view}`} aria-labelledby={`marketing-tab-${view}`}>
+  {!isPreview&&!owner?<p role="alert">{t.unavailable}</p>:query.isPending&&!isPreview?<p role="status">{t.loading}</p>:query.isError?<p role="alert" className="rounded-md border border-border p-4">{t.unavailable}</p>:<div role="tabpanel" id={`marketing-panel-${view}`} aria-labelledby={`marketing-tab-${view}`}>
   {view==='review'&&<OfflineDraftImport lang={lang} disabled={isPreview} onImported={()=>void qc.invalidateQueries({queryKey:qk.marketingState})}/>}
   {view==='review'&&<MarketingJobHealthSummary jobs={(data.jobHealth??[]).filter(job=>brand==='all'||job.brand===brand)} lang={lang} disabled={isPreview} refreshing={query.isFetching} onRefresh={()=>void query.refetch()}/>}
   {view==='review'&&(revisions.filter(r=>['review','returned','approved'].includes(r.status)).length===0?<EmptyState title={t.empty} description={t.emptyDescription}/>:<div className="space-y-5">{revisions.filter(r=>['review','returned','approved'].includes(r.status)).map(row=>{

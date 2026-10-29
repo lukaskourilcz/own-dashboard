@@ -563,10 +563,10 @@
     },
     {
       "path": "src/app/api/marketing/state/route.ts",
-      "lines": 64,
+      "lines": 69,
       "sha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f",
-      "status": "partial; full nine-query owner boundary inspected; incomplete caps, last-100 event first-approval bias, runtime validation and request cancellation remain pending; accounts inspected and contain no credential columns; finding 405 verifies original session/optional captured owner and all returned row ownership, bounds original/parallel query consumers with retries disabled, refuses failed/null/malformed/oversized families and projects explicit fields/source summaries; recent-list caps/completeness, browser capture/full DTO and SDK JSON remain separate",
-      "reviewedSha256": "7e33e6415691701da78c2c4519ef3d1c2b703c35a2cbc81fa80a1454bf151190"
+      "status": "partial; full nine-query owner boundary inspected; incomplete caps, last-100 event first-approval bias, runtime validation and request cancellation remain pending; accounts inspected and contain no credential columns; finding 405 verifies original session/optional captured owner and all returned row ownership, bounds original/parallel query consumers with retries disabled, refuses failed/null/malformed/oversized families and projects explicit fields/source summaries; recent-list caps/completeness, browser capture/full DTO and SDK JSON remain separate; finding 406 validates the full owner-stamped DTO and rejects an outbound envelope above 8MiB before success; this does not bound prior SDK JSON decoding/allocation or establish complete historical lists",
+      "reviewedSha256": "de46dd7c974fb90a4599e177230a72cf2537d93b386f1b4e3ab1ebb2c38c6e65"
     },
     {
       "path": "src/app/api/marketing/tick/route.ts",
@@ -1617,10 +1617,10 @@
     },
     {
       "path": "src/components/panels/marketing-panel.tsx",
-      "lines": 80,
+      "lines": 82,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate",
-      "reviewedSha256": "04323dcfc72e4bc4bbe236bd3b7b2493d430ec2d59754e627b53dd7a5770c744"
+      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open",
+      "reviewedSha256": "e222510849126a2ffaabe074f10050ff25a70001d487224272990e7f9a6b1945"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
@@ -3329,10 +3329,10 @@
     },
     {
       "path": "src/lib/marketing/client.ts",
-      "lines": 27,
+      "lines": 47,
       "sha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af",
-      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending; finding 405 narrows source metadata types to the actual title/evidence/identity/expiry fields and removes unused full-body expectations; browser transport/full DTO validation and captured action lifecycles remain open",
-      "reviewedSha256": "e56fe1fd3d15deddfbf215d8dd39a9cc0ec1989ca44451224eea47ede0cdc1dd"
+      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending; finding 405 narrows source metadata types to the actual title/evidence/identity/expiry fields and removes unused full-body expectations; browser transport/full DTO validation and captured action lifecycles remain open; finding 406 replaces the read cast with complete owner/DTO/identity/URL validation, one original 35-second/8MiB UTF-8 response consumer, exact 200/no redirect, late body cleanup and no automatic retry; mutation transport remains open",
+      "reviewedSha256": "784d4cc5feeb8cf946b0ec20b87299d7b3f53016c30fc99bcec57900ec1e3c01"
     },
     {
       "path": "src/lib/marketing/clock.ts",
@@ -5115,6 +5115,13 @@
       "lines": 30,
       "status": "source reviewed; finding 405 validates a strict bounded attribution/expiry/identity projection, selects only those nested packet fields and checks current root identity/hash agreement; actual SDK/full-migration parity and unchanged displayed evidence pass; no authored content is deleted; final release remains",
       "reviewedSha256": "1392a088c417feba3185ff82edd947f92d81dce132fbd3e400987360ccafaa19"
+    },
+    {
+      "path": "src/lib/marketing/state-contracts.ts",
+      "sha256": null,
+      "lines": 63,
+      "status": "source reviewed; finding 406 defines the complete bounded recent-list DTO, original revision owner, canonical dates/time/URLs, per-family identity uniqueness, source agreement, finite diagnostics/costs and exact health-prefix consistency; actual SDK/route/browser/mounted and exact/excess byte tests pass; completeness/history/resource limits remain explicit in callers; final release pending",
+      "reviewedSha256": "0e67a4e0bd9d054d140aee34be6b8dffc2c21eacfa9756f95cfde39784845d59"
     }
   ],
   "baselineFileCount": 561

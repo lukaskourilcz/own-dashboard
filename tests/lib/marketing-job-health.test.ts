@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { safeMarketingJobs, marketingJobHealth } from '@/lib/marketing/job-health';
 import { loadMarketingState } from '@/lib/marketing/client';
+import { marketingStateFixture, stateOwner } from './marketing-state-fixture';
 import { GET } from '@/app/api/marketing/state/route';
 
 const { context } = vi.hoisted(() => ({ context: { owner: '11111111-1111-4111-8111-111111111111' as string | null, rows: [] as unknown[], queries: [] as Array<{ table: string; select: string; owner?: string; limit?: number }>, error: false } }));
@@ -51,10 +52,13 @@ describe('owner-scoped bounded job health', () => {
     expect(response.status).toBe(503); expect(await response.text()).not.toContain('PRIVATE-ERROR');
   });
   it('validates the React Query boundary and preserves cancellation without accepting extra job payload', async () => {
-    const safe = marketingJobHealth(safeMarketingJobs([job()]));
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({ revisions: [], jobHealth: [...safe, { ...safe[0], request: 'PRIVATE-COPY' }] }));
+    const jobs = safeMarketingJobs([job()]), safe = marketingJobHealth(jobs);
+    const value = { ...marketingStateFixture(), jobs, jobHealth: safe };
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json(value));
     const signal = new AbortController().signal;
-    expect((await loadMarketingState(signal)).jobHealth).toEqual(safe);
-    expect(fetcher).toHaveBeenCalledWith('/api/marketing/state', { cache: 'no-store', signal });
+    expect((await loadMarketingState(signal, stateOwner)).jobHealth).toEqual(safe);
+    expect(fetcher).toHaveBeenCalledWith('/api/marketing/state', { cache: 'no-store', redirect: 'error', signal: expect.any(AbortSignal), headers: { 'x-own-dashboard-owner': stateOwner } });
+    fetcher.mockResolvedValueOnce(Response.json({ ...value, jobHealth: [...safe, { ...safe[0], request: 'PRIVATE-COPY' }] }));
+    await expect(loadMarketingState(signal, stateOwner)).rejects.toThrow('marketing-unavailable');
   });
 });
