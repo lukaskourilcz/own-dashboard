@@ -283,7 +283,9 @@ The migrations, in the order they run:
 
 152. `20261029155500_marketing_workspace_snapshot.sql` — prepared, unapplied; one authenticated invoker snapshot replaces nine workspace data calls and retains complete entries for deterministic active/newest plan heads, with explicit overflow refusal. No index or table write grant is added.
 
-The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The sixty-six audit migrations 87–152 remain unapplied; apply them in filename order before deploying the implementation branch.
+153. `20261029164500_captured_marketing_calendar_release.sql` — prepared, unapplied; computes an owner/entry intent hash and adds an authenticated captured release receipt with source/clock checks and post-trigger cancellation/supersession proof. The old void interface remains compatible; no table, column or index is added.
+
+The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28; migrations through 63 were reconciled on 22 October. The authorised 23 October rollout applied migrations 64–86, through `20261023130300`. The sixty-seven audit migrations 87–153 remain unapplied; apply them in filename order before deploying the implementation branch.
 
 Do not rerun `supabase/schema.sql` on an existing project, and do not apply the cleanup migration alone. Never copy a migration's objects back into `supabase/schema.sql`; every schema change is a new migration file. Editing or committing a migration does not apply it to a linked/production database. The applied dates above record the earlier authorised rollout, not a database change by this implementation task. Follow [Migration and rollback](./docs/migration-guide.md).
 
