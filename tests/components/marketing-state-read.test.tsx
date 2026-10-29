@@ -25,6 +25,13 @@ const render = (owner: string | null = stateOwner, preview = false) => act(() =>
 const displayed = (text: string) => vi.waitFor(async () => { await act(async () => {}); expect(host.textContent).toContain(text); });
 const button = (text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === text)!;
 for (const lang of ['en', 'cs'] as const) {
+ it(`${lang}: uses the page Refresh as the single job-status read action`, async () => {
+  m.lang = lang; const t = marketingWorkspace[lang], fetcher = vi.fn(async () => Response.json(marketingStateFixture())); vi.stubGlobal('fetch', fetcher);
+  render(); await displayed('Reviewed draft');
+  expect(button(lang === 'cs' ? 'Zkontrolovat stav znovu' : 'Check status again')).toBeUndefined();
+  await act(async () => { button(t.refresh).click(); await client.getQueryCache().find({ queryKey: qk.marketingState })!.promise; });
+  expect(fetcher).toHaveBeenCalledTimes(2);
+ });
  it(`${lang}: admits one captured read and reuses its validated cache through local view changes`, async () => {
   m.lang = lang; const fetcher = vi.fn(async () => Response.json(marketingStateFixture())); vi.stubGlobal('fetch', fetcher);
   render(); await displayed('Reviewed draft'); expect(fetcher).toHaveBeenCalledOnce();

@@ -25,7 +25,7 @@ for (const lang of ["en", "cs"] as const) {
     await expect(page.getByLabel(lang === 'cs' ? 'Připravené soubory pro import' : 'Prepared import files')).toBeDisabled();
     const jobHealth = page.getByRole('region', { name: lang === 'cs' ? 'Příprava návrhů' : 'Draft preparation' });
     await expect(jobHealth).toBeVisible();
-    await expect(jobHealth.getByRole('button', { name: lang === 'cs' ? 'Zkontrolovat stav znovu' : 'Check status again' })).toBeDisabled();
+    await expect(jobHealth.getByRole('button')).toHaveCount(0);
     await expect(jobHealth.getByText(lang === 'cs' ? 'V načteném vzorku nejsou pro tuto značku žádné úlohy.' : 'No jobs for this brand in the loaded sample.')).toBeVisible();
     await expect(page.locator("#marketing-panel-review article")).toHaveCount(0);
     await expect(page.getByRole("button", { name: copy.approve, exact: true })).toHaveCount(0);

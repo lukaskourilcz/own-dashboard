@@ -1266,10 +1266,10 @@
     },
     {
       "path": "src/components/marketing/job-health.tsx",
-      "lines": 44,
+      "lines": 43,
       "sha256": "f15ce8da7c282ffdbf1dca03c4e0f8d8e2d9253cc0b9162e358a22e0985b8b89",
-      "status": "partial; bounded latest-ten labels inspected; exact error families, formatting/long controls and unavailable scope remain; see remaining-review.md; finding 407 scopes negative results to the loaded sample; observed unavailable/worker-result wording, duplicated refresh action and repeated date formatting remain separate",
-      "reviewedSha256": "3bc1c26a6e3171cd55174461e58cd9f988c86810fbb3dba4480374d1df588489"
+      "status": "source reviewed; finding 408 removes duplicate status action, uses conservative unavailable/worker/provider outcome guidance and one locale formatter per mount/language; EN/CS units and native workspace/recovery checks pass; final consolidated release pending",
+      "reviewedSha256": "28b564012d7c3f51cfb25998a202020fab27df49100147f714b23f8860bd45ab"
     },
     {
       "path": "src/components/marketing/knowledge-import.tsx",
@@ -1619,8 +1619,8 @@
       "path": "src/components/panels/marketing-panel.tsx",
       "lines": 90,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate",
-      "reviewedSha256": "3b1f99f931d865dc3aacd39dea12cbaedbbcc6bae3bc77f5b0da6f337d13cad3"
+      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate; finding 408 keeps page Refresh as the sole workspace/job-status read control",
+      "reviewedSha256": "51d794e13a57cd3cd9fb7551f42a5f73ef53c8bf5b22278398a54f6c247942a1"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",

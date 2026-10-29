@@ -3685,3 +3685,12 @@ Ledger remains 730 entries/180 partial. The captured browser write/dirty/source 
 
 
 The finding-407 visual-plan refresh uses committed application f87104ae. The artifact now contains 69 authentic desktop/phone pairs, with measured notice, original time and page Refresh highlights for the new recovery header. All 69 images decode in each mode; 390/1,440 light/dark reflow, mapped overlays and highlight toggles pass without page errors. Older captures retain their source/date. The builder reads the capture manifest for its source and rectangles. Targeted script lint and whitespace pass. No application, rollout or production operation changes.
+
+
+### Finding 408 — one status action and honest job outcomes
+
+Nine of the original thirty mounted/component cases fail (3.64s). The job summary duplicates the page Refresh action and says no draft was saved for unavailable/worker-uncertain outcomes. Provider errors also do not prove that upstream generation never finished. The summary now points to the page action and reports the recorded problem or uncertainty without inventing a saved-result outcome. Worker/reconciliation/unavailable guidance appears once. Known ordinary failures retain a separate review-before-retry instruction. The busy live region remains; no generation or automatic retry is introduced. One memoized public locale formatter replaces a constructor per job/render; no private data is shared across owners.
+
+All 95 related checks pass across five files in 3.55 seconds. The first post-change run has 29 passes/one formatter-spy fixture failure: the test framework's constructor spy does not forward the native instance. Explicitly delegating construction to the original formatter fixes the fixture; the exact one-constructor/same-language-reuse assertion remains. Sixteen native desktop/phone EN/CS workspace/recovery/API checks pass in 47.9 seconds, including both themes, recovery's six desktop widths, keyboard flow, reflow/axe and zero writes. Broad types, targeted lint and whitespace pass. No standalone long-code visual capture, production timing/cost saving or final full release is claimed.
+
+Ledger: 730 entries/179 partial statuses. The job-summary source review is closed; parent captured writes, text-only media layout and capped-list completeness remain separate. All 65 prepared migrations, canonical rollout, remaining review, final release and main merge remain open.

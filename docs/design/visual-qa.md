@@ -659,3 +659,5 @@ Finding 401: import source/date recovery passes 12 native cases/four duplicate d
 
 
 Finding 407: EN/CS, both themes, desktop/phone recovery retains the original checked records/time, rejects a foreign reply and restores through one explicit keyboard refresh (three reads, zero writes). Eight final native cases pass in 28.6s after a preserved clock-control failure; twenty existing workspace/import cases pass on unchanged application code. Six desktop widths/reduced motion/reflow/axe pass. Actual Czech 430/1,440 crops and measured overlay rectangles are in marketing-state-captures-407.json. No private account or publishing action occurs. The full card capture also exposes a text-only media gap and duplicate job-status refresh; those remain separate review leads.
+
+Finding 408: sixteen native desktop/phone EN/CS workspace/recovery/API cases pass (47.9s), including both themes and recovery reflow/axe at six desktop widths. The job summary has no duplicate Refresh and keeps its pending live region; page Refresh is the sole read control. Captures for finding 407 remain dated to their original source. No publication or managed write occurs.
