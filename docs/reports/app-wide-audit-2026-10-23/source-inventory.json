@@ -360,10 +360,10 @@
     },
     {
       "path": "src/app/api/marketing/calendar-entries/route.ts",
-      "lines": 10,
+      "lines": 31,
       "sha256": "bd282c84745b53c52ae355cb2846b570af9c166124c3268bf0bcc7082ae2a73e",
-      "status": "partial; full route and release SQL inspected; captured entry version, bounded body/deadline, error classification and mutation receipt remain pending",
-      "reviewedSha256": "bd282c84745b53c52ae355cb2846b570af9c166124c3268bf0bcc7082ae2a73e"
+      "status": "partial; full route and release SQL inspected; captured entry version, bounded body/deadline, error classification and mutation receipt remain pending; finding 414 verifies original owner/error-first auth, optional captured-owner matching, 4KiB/five-second input, strict future Prague time, original thirty-second/fifteen-second RPC consumers, no retry, fixed private uncertainty and exact void result; actual full-chain SDK/legacy worker guards pass; captured entry/source and post-trigger receipt remain",
+      "reviewedSha256": "32ba3e89e1526ad8f0d656808206a2c9a39ab210bf9ccd43e5d93575f69d9e9f"
     },
     {
       "path": "src/app/api/marketing/calendars/route.ts",
