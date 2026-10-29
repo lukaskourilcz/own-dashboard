@@ -243,3 +243,5 @@ Finding 279 closes the native Europe-wide remote save→Saved evidence loss and 
 - Finding 401 closes bounded import planning/storage/date/history/reference parity and explicit EN/CS source correction. All 139 targeted cases and 12 native cases/four duplicate skips pass; ledger 728 entries/180 partial. General SDK JSON transport and campaign activation remain separate. The 64 prepared migrations and final release/main merge remain open.
 
 - Finding 402 closes weekly read-only grouping crashes at valid imported date limits without resolving publishing times. All 50 related cases/types/lint pass; actual scheduling validation and remaining activation/slot-action review stay separate. Ledger remains 728 entries/180 partial.
+
+- Finding 403 closes campaign activation verified admission, optional original-owner matching, bounded input/original/RPC consumers and honest uncertainty. All 69 related cases and both native unauthenticated API cases pass; the actual authenticated SDK void RPC preserves other owner/brand isolation. Post-trigger state proof, captured browser actions and SDK JSON remain separate; ledger stays 728 entries/180 partial.

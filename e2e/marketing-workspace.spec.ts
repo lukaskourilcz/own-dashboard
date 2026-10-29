@@ -96,6 +96,7 @@ test("Marketing APIs reject unauthenticated decisions, worker jobs, invalid n8n 
     request.get("/api/marketing/state"),
     request.post("/api/marketing/revisions", { headers:{Origin:origin}, data: { action: "approve", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
     request.post("/api/marketing/knowledge", { headers:{Origin:origin}, data: { action: "preview" } }),
+    request.post("/api/marketing/campaigns", { headers:{Origin:origin}, data: { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", expectedHash: "a".repeat(64) } }),
     request.post("/api/marketing/jobs", { data: {} }),
     request.post("/api/marketing/publications", { headers: { Origin: origin }, data: { action: "requeue", id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" } }),
     request.post("/api/marketing/offline-import", { headers:{Origin:origin}, data: {} }),

@@ -374,10 +374,10 @@
     },
     {
       "path": "src/app/api/marketing/campaigns/route.ts",
-      "lines": 9,
+      "lines": 44,
       "sha256": "45e390a471814beffc8e24d3d947532d99ca4464ecab057d5944fa10b92e90f2",
-      "status": "partial; full route and activation SQL inspected; unbounded JSON, auth errors, request deadlines/cancellation and persisted confirmation still need repair",
-      "reviewedSha256": "45e390a471814beffc8e24d3d947532d99ca4464ecab057d5944fa10b92e90f2"
+      "status": "partial; full route and activation SQL inspected; unbounded JSON, auth errors, request deadlines/cancellation and persisted confirmation still need repair; finding 403 closes verified original-session admission, optional captured-owner mismatch, complete 4KiB/five-second upload, thirty-second original/fifteen-second RPC consumer, no retry and honest fixed uncertainty; actual authenticated SDK/void RPC and isolated brand/owner checks pass; post-trigger activation proof, captured browser confirmation and general SDK JSON resource behavior remain separate",
+      "reviewedSha256": "42b1978d3b0c2284a7d102922dac43ac53f32b7412490ab504526c388dbe9dbd"
     },
     {
       "path": "src/app/api/marketing/diagnostics/[id]/route.ts",
