@@ -654,10 +654,10 @@
     },
     {
       "path": "src/app/dev-preview/page.tsx",
-      "lines": 63,
+      "lines": 65,
       "sha256": "7d6564b14890ab3a54b90b80ee90a58993a3a83eae98ab05ce8da959e3c76000",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only",
-      "reviewedSha256": "76951e5569fe5d4ea6babe86e6e93f100b9740488d99ae05c86f4a6a28f0c1e7"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 adds a read-only state fixture flag only under the existing nonexistent-backend guard; production and public-tour writes remain disabled",
+      "reviewedSha256": "2a56d5e56e46732ace96b05e5b1529d459e2b556dbc3d4a3bb07a685099f8082"
     },
     {
       "path": "src/app/globals.css",
@@ -852,17 +852,17 @@
     },
     {
       "path": "src/components/dashboard-shell.tsx",
-      "lines": 582,
+      "lines": 584,
       "sha256": "c0fe9240e6c7ac272e8a5231c4af209d7a562c50526c1de65698930ae7ef150b",
-      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only",
-      "reviewedSha256": "e5e00449a310cfefd4513f0ece964bb3e4bf5ce51718a885a200160d80a26fba"
+      "status": "source reviewed; finding 274 complete Career lists page/search locally with lazy captured reads; EN/CS desktop/mobile axe/reflow pass; board/remaining writes and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 forwards only the guarded read-state fixture flag without changing the catch-all/private query shell",
+      "reviewedSha256": "c20e663954319782c48aedcd7e3acf992b34c8023d57c859d0cf1fccb17f8558"
     },
     {
       "path": "src/components/demo-dashboard.tsx",
-      "lines": 203,
+      "lines": 211,
       "sha256": "f00dd48e11b8c1cd1a93a0c5e2fc94c3c58baeb9575d9a6cd0c5723791a1ba92",
-      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only",
-      "reviewedSha256": "3f3c481f7fa77fee3a1183c0f0a20f3398935b63206eb4691be8ab9622d8bf7e"
+      "status": "partial review; finding 324 captured owner/version Music toggles, positive persisted receipts, pending exits and retained recovery verified; upload/renderer and final release pending; finding 396 adds only the isolated fake-backend calendar-import fixture flag; ordinary public preview remains read-only; finding 407 forwards the isolated read-only state flag and synthetic owner; ordinary public tour keeps it disabled",
+      "reviewedSha256": "def732fac024262e0b08842829dfe63ff16edc54d289813ad947b83728429623"
     },
     {
       "path": "src/components/finances/bank-sync.tsx",
@@ -1268,8 +1268,8 @@
       "path": "src/components/marketing/job-health.tsx",
       "lines": 44,
       "sha256": "f15ce8da7c282ffdbf1dca03c4e0f8d8e2d9253cc0b9162e358a22e0985b8b89",
-      "status": "partial; bounded latest-ten labels inspected; exact error families, formatting/long controls and unavailable scope remain; see remaining-review.md",
-      "reviewedSha256": "f15ce8da7c282ffdbf1dca03c4e0f8d8e2d9253cc0b9162e358a22e0985b8b89"
+      "status": "partial; bounded latest-ten labels inspected; exact error families, formatting/long controls and unavailable scope remain; see remaining-review.md; finding 407 scopes negative results to the loaded sample; observed unavailable/worker-result wording, duplicated refresh action and repeated date formatting remain separate",
+      "reviewedSha256": "3bc1c26a6e3171cd55174461e58cd9f988c86810fbb3dba4480374d1df588489"
     },
     {
       "path": "src/components/marketing/knowledge-import.tsx",
@@ -1617,10 +1617,10 @@
     },
     {
       "path": "src/components/panels/marketing-panel.tsx",
-      "lines": 82,
+      "lines": 90,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open",
-      "reviewedSha256": "e222510849126a2ffaabe074f10050ff25a70001d487224272990e7f9a6b1945"
+      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate",
+      "reviewedSha256": "3b1f99f931d865dc3aacd39dea12cbaedbbcc6bae3bc77f5b0da6f337d13cad3"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
@@ -2880,10 +2880,10 @@
     },
     {
       "path": "src/lib/i18n/sections/marketing-workspace.ts",
-      "lines": 3,
+      "lines": 117,
       "sha256": "c16479b4a0808d86cbedcccd1987fc344b0b2659080879841d9d65e52d413e1a",
-      "status": "source reviewed; complete EN/CS workspace vocabulary and parity inspected; final app-wide validation pending",
-      "reviewedSha256": "c16479b4a0808d86cbedcccd1987fc344b0b2659080879841d9d65e52d413e1a"
+      "status": "source reviewed; complete EN/CS workspace vocabulary and parity inspected; final app-wide validation pending; finding 407 gives EN/CS neutral refresh recovery and scoped empty messages, removes the unused duplicate noResults string, adds accurate publication labels and formats both dictionaries for paired review",
+      "reviewedSha256": "372918cebf78fccc9d63653d0aa15f1557c345b0a99c5f61b313ec371b4275cd"
     },
     {
       "path": "src/lib/i18n/sections/marketing.ts",

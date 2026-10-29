@@ -5,7 +5,7 @@ import type { MarketingJobHealth } from '@/lib/marketing/job-health';
 
 const copy = {
   en: { title: 'Draft preparation', scope: 'Latest 10 jobs. Check status manually; a status check does not start generation.',
-    empty: 'No preparation jobs recorded for this brand.', refresh: 'Check status again', checking: 'Checking status…', unknownBrand: 'Brand not recorded',
+    empty: 'No jobs for this brand in the loaded sample.', refresh: 'Check status again', checking: 'Checking status…', unknownBrand: 'Brand not recorded',
     queued: 'Waiting', running: 'Generating', review: 'Ready for review', failed: 'Problem', reconciliation: 'Verify the result', unavailable: 'Status unavailable',
     failure: 'No finished draft was saved. Review the problem before the owner requests another generation.', provider: 'The provider did not finish generation.',
     source: 'The source changed or is unavailable.', configuration: 'Check the provider setup and owner consent.', budget: 'Check the approved generation budget.',
@@ -13,7 +13,7 @@ const copy = {
     job: 'Job', code: 'Recorded error', runningNote: 'A finished draft will appear here after it passes validation.',
   },
   cs: { title: 'Příprava návrhů', scope: 'Posledních 10 úloh. Stav ověřte ručně; kontrola stavu nespouští generování.',
-    empty: 'Pro tuto značku nejsou zaznamenané úlohy přípravy.', refresh: 'Zkontrolovat stav znovu', checking: 'Kontroluje se stav…', unknownBrand: 'Značka není zaznamenaná',
+    empty: 'V načteném vzorku nejsou pro tuto značku žádné úlohy.', refresh: 'Zkontrolovat stav znovu', checking: 'Kontroluje se stav…', unknownBrand: 'Značka není zaznamenaná',
     queued: 'Čeká', running: 'Generuje se', review: 'Ke kontrole', failed: 'Problém', reconciliation: 'Ověřit výsledek', unavailable: 'Stav není dostupný',
     failure: 'Hotový návrh se neuložil. Než vlastník zadá nové generování, zkontrolujte problém.', provider: 'Poskytovatel generování nedokončil.',
     source: 'Podklad se změnil nebo není dostupný.', configuration: 'Zkontrolujte nastavení poskytovatele a souhlas vlastníka.', budget: 'Zkontrolujte schválený rozpočet generování.',

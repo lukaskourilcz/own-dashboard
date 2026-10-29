@@ -1,0 +1,85 @@
+{
+  "applicationBase": "bc92fcbf",
+  "capturedDate": "2026-10-29",
+  "sourceState": "Finding 407 reviewed working tree, exact component hashes below; real dev-preview pixels, not generated UI.",
+  "fixture": "Isolated nonexistent backend, synthetic owner-stamped replies, refused foreign-owner refresh and controlled Date-only Prague-clock observations; no real owner/provider/publication data.",
+  "components": {
+    "src/components/panels/marketing-panel.tsx": "3b1f99f931d865dc3aacd39dea12cbaedbbcc6bae3bc77f5b0da6f337d13cad3",
+    "src/components/marketing/job-health.tsx": "3bc1c26a6e3171cd55174461e58cd9f988c86810fbb3dba4480374d1df588489",
+    "src/lib/i18n/sections/marketing-workspace.ts": "372918cebf78fccc9d63653d0aa15f1557c345b0a99c5f61b313ec371b4275cd",
+    "src/components/demo-dashboard.tsx": "def732fac024262e0b08842829dfe63ff16edc54d289813ad947b83728429623",
+    "src/components/dashboard-shell.tsx": "c20e663954319782c48aedcd7e3acf992b34c8023d57c859d0cf1fccb17f8558",
+    "src/app/dev-preview/page.tsx": "2a56d5e56e46732ace96b05e5b1529d459e2b556dbc3d4a3bb07a685099f8082"
+  },
+  "captures": {
+    "1440": {
+      "path": "assets/marketing-state-recovery-407-cs-1440.png",
+      "width": 1120,
+      "height": 192,
+      "clip": {
+        "x": 276,
+        "y": 92,
+        "width": 1120,
+        "height": 192
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 63.541666666666664,
+          "w": 100,
+          "h": 32.29166666666667
+        },
+        {
+          "n": 2,
+          "x": 10.463169642857142,
+          "y": 80.72916666666666,
+          "w": 9.190848214285714,
+          "h": 7.8125
+        },
+        {
+          "n": 3,
+          "x": 91.42857142857143,
+          "y": 0,
+          "w": 8.571428571428571,
+          "h": 16.666666666666664
+        }
+      ]
+    },
+    "430": {
+      "path": "assets/marketing-state-recovery-407-cs-430.png",
+      "width": 398,
+      "height": 367,
+      "clip": {
+        "x": 16,
+        "y": 72,
+        "width": 398,
+        "height": 367
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 0,
+          "y": 76.566757493188,
+          "w": 100,
+          "h": 21.25340599455041
+        },
+        {
+          "n": 2,
+          "x": 29.444095477386934,
+          "y": 89.91825613079018,
+          "w": 25.863693467336685,
+          "h": 4.087193460490464
+        },
+        {
+          "n": 3,
+          "x": 0,
+          "y": 15.258855585831062,
+          "w": 24.120603015075375,
+          "h": 11.989100817438691
+        }
+      ]
+    }
+  },
+  "verified": "EN/CS light/dark desktop/phone; six desktop widths, reflow, axe, exactly three explicit reads, original read time, refused foreign data, keyboard recovery and zero writes. Crops exclude viewport-fixed navigation overlays."
+}

@@ -8,6 +8,7 @@ import { NavigationGuardProvider } from '@/components/navigation-guard';
 import { OwnerPreferencesProvider } from '@/lib/owner-preferences';
 import { qk } from '@/lib/queries/keys';
 import { marketingStateFixture, stateOwner } from '../lib/marketing-state-fixture';
+import { marketingWorkspace } from '@/lib/i18n/sections/marketing-workspace';
 const m = vi.hoisted(() => ({ lang: 'en' as 'en' | 'cs' }));
 vi.mock('@/lib/i18n/lang', async original => {
  const actual = await original<typeof import('@/lib/i18n/lang')>();
@@ -20,8 +21,9 @@ beforeEach(() => {
  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
 });
 afterEach(() => { act(() => root.unmount()); host.remove(); client.clear(); vi.unstubAllGlobals(); });
-const render = (owner: string | null = stateOwner) => act(() => root.render(<StrictMode><QueryClientProvider client={client}><NavigationGuardProvider>{owner ? <OwnerPreferencesProvider ownerId={owner}><MarketingPanel onOpenKnowledge={vi.fn()}/></OwnerPreferencesProvider> : <MarketingPanel onOpenKnowledge={vi.fn()}/>}</NavigationGuardProvider></QueryClientProvider></StrictMode>));
+const render = (owner: string | null = stateOwner, preview = false) => act(() => root.render(<StrictMode><QueryClientProvider client={client}><NavigationGuardProvider>{owner ? <OwnerPreferencesProvider ownerId={owner}><MarketingPanel isPreview={preview} onOpenKnowledge={vi.fn()}/></OwnerPreferencesProvider> : <MarketingPanel onOpenKnowledge={vi.fn()}/>}</NavigationGuardProvider></QueryClientProvider></StrictMode>));
 const displayed = (text: string) => vi.waitFor(async () => { await act(async () => {}); expect(host.textContent).toContain(text); });
+const button = (text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === text)!;
 for (const lang of ['en', 'cs'] as const) {
  it(`${lang}: admits one captured read and reuses its validated cache through local view changes`, async () => {
   m.lang = lang; const fetcher = vi.fn(async () => Response.json(marketingStateFixture())); vi.stubGlobal('fetch', fetcher);
@@ -34,12 +36,51 @@ for (const lang of ['en', 'cs'] as const) {
  it(`${lang}: refuses a foreign-owner reply without caching or rendering its private revision`, async () => {
   m.lang = lang; const value = marketingStateFixture(); value.ownerId = '99999999-9999-4999-8999-999999999999';
   vi.stubGlobal('fetch', vi.fn(async () => Response.json(value))); render();
-  await displayed(lang === 'cs' ? 'Marketing není dostupný.' : 'Marketing is unavailable.');
+  await displayed(marketingWorkspace[lang].unavailable);
   expect(host.textContent).not.toContain('Reviewed draft'); expect(client.getQueryData(qk.marketingState)).toBeUndefined();
  });
 }
+for (const lang of ['en', 'cs'] as const) {
+ it.each(['queued', 'claimed', 'cancelled'] as const)(`${lang}: shows the actual %s publication state in its loaded receipt`, async status => {
+  m.lang = lang; const t = marketingWorkspace[lang], value = marketingStateFixture(); value.publications[0].status = status;
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json(value))); render(); await displayed('Reviewed draft');
+  act(() => host.querySelector<HTMLButtonElement>('#marketing-tab-results')!.click());
+  const receipts = host.querySelector(`section[aria-label="${t.loadedReceipts}"]`)!;
+  expect(receipts.textContent).toContain(status === 'queued' ? t.queued : status === 'claimed' ? t.publishing : t.cancelled);
+  expect(receipts.textContent).not.toContain(t.planned);
+ });
+ it(`${lang}: retains a checked snapshot and editor read-only through failed refresh until explicit recovery`, async () => {
+  m.lang = lang; const t = marketingWorkspace[lang]; const valid = marketingStateFixture(), refused = marketingStateFixture(); refused.ownerId = '99999999-9999-4999-8999-999999999999'; refused.revisions[0].revision.title = 'UNCONFIRMED_DRAFT';
+  let finish!: (value: Response) => void;
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json(valid)).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; })).mockResolvedValueOnce(Response.json(valid)); vi.stubGlobal('fetch', fetcher);
+  render(); await displayed('Reviewed draft'); const checkedAt = client.getQueryState(qk.marketingState)!.dataUpdatedAt;
+  act(() => button(t.edit).click()); expect(host.querySelector('textarea')?.value).toBe('Authored draft');
+  await act(async () => { button(t.refresh).click(); await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2)); });
+  const pendingRead = client.getQueryCache().find({ queryKey: qk.marketingState })!.promise;
+  try { expect(button(t.save).disabled).toBe(true); }
+  finally { await act(async () => { finish(Response.json(refused)); await pendingRead?.catch(() => undefined); }); }
+  await displayed(lang === 'cs' ? 'Obnovení selhalo.' : 'Refresh failed.');
+  expect(host.textContent).toContain('Reviewed draft'); expect(host.textContent).not.toContain('UNCONFIRMED_DRAFT');
+  expect(host.querySelector('[role="alert"] time')?.getAttribute('datetime')).toBe(new Date(checkedAt).toISOString());
+  expect(button(t.save).disabled).toBe(true); expect(host.querySelector('textarea')?.value).toBe('Authored draft');
+  expect(client.getQueryState(qk.marketingState)!.dataUpdatedAt).toBe(checkedAt);
+  await act(async () => { button(t.refresh).click(); await client.getQueryCache().find({ queryKey: qk.marketingState })!.promise; });
+  await vi.waitFor(async () => { await act(async () => {}); expect(host.querySelector('[role="alert"]')).toBeNull(); expect(button(t.save).disabled).toBe(false); });
+  expect(fetcher).toHaveBeenCalledTimes(3); expect(host.querySelector('textarea')?.value).toBe('Authored draft');
+ });
+ it(`${lang}: scopes empty messages to loaded records and has one publication empty explanation`, async () => {
+  m.lang = lang; const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); render(stateOwner, true);
+  expect(host.textContent).toContain(lang === 'cs' ? 'V načtených záznamech nejsou příspěvky ke schválení' : 'No posts to approve in the loaded records');
+  expect(host.textContent).toContain(lang === 'cs' ? 'V načteném vzorku nejsou pro tuto značku žádné úlohy.' : 'No jobs for this brand in the loaded sample.');
+  act(() => host.querySelector<HTMLButtonElement>('#marketing-tab-calendar')!.click());
+  expect(host.textContent).toContain(lang === 'cs' ? 'V načtených záznamech nejsou žádné plány.' : 'No plans in the loaded records.');
+  act(() => host.querySelector<HTMLButtonElement>('#marketing-tab-results')!.click());
+  expect(host.textContent).toContain(lang === 'cs' ? 'Pro tyto plánované termíny nejsou přiřazené záznamy zveřejnění.' : 'No matched publication records for these scheduled slots.');
+  expect(host.textContent).not.toContain(lang === 'cs' ? 'Zatím nejsou potvrzená zveřejnění.' : 'No publication receipts yet.'); expect(fetcher).not.toHaveBeenCalled();
+ });
+}
 it('does not read or show private records without the original owner scope', async () => {
- const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); render(null); await displayed('Marketing is unavailable.');
+ const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); render(null); await displayed(marketingWorkspace.en.unavailable);
  expect(fetcher).not.toHaveBeenCalled(); expect(host.textContent).not.toContain('No posts waiting');
 });
 it('retires an admitted read on unmount and never caches the later result', async () => {

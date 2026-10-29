@@ -656,3 +656,6 @@ Finding 397 resolves that palette test failure: its focus attempt ran while the 
 
 
 Finding 401: import source/date recovery passes 12 native cases/four duplicate device-matrix skips (41.4s), EN/CS desktop/phone. Invalid dates have associated descriptions and disable preview; invalid-source recovery restores preview focus and links to the registered plan without a save. Existing six-width light/dark reflow and axe remain passing. Deliberate HTTP errors are asserted exactly, with no warning filtering. This is local synthetic preview evidence, not a production write or full release.
+
+
+Finding 407: EN/CS, both themes, desktop/phone recovery retains the original checked records/time, rejects a foreign reply and restores through one explicit keyboard refresh (three reads, zero writes). Eight final native cases pass in 28.6s after a preserved clock-control failure; twenty existing workspace/import cases pass on unchanged application code. Six desktop widths/reduced motion/reflow/axe pass. Actual Czech 430/1,440 crops and measured overlay rectangles are in marketing-state-captures-407.json. No private account or publishing action occurs. The full card capture also exposes a text-only media gap and duplicate job-status refresh; those remain separate review leads.

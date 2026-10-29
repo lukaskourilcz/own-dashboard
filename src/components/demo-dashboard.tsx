@@ -25,6 +25,7 @@ export function DemoDashboard({
   language = "cs",
   liveMarketingCalendars = false,
   liveMarketingImport = false,
+  liveMarketingState = false,
   liveRepositories = false,
   liveProjectRecords = false,
   liveMusic = false,
@@ -58,6 +59,8 @@ export function DemoDashboard({
   liveMarketingCalendars?: boolean;
   /** Isolated fake-backend calendar-import checks; never enabled in the public tour. */
   liveMarketingImport?: boolean;
+  /** Isolated fake-backend state reads; publishing and other writes stay disabled. */
+  liveMarketingState?: boolean;
   /** Dev/E2E-only mocked repository interactions; disabled in the public tour. */
   liveRepositories?: boolean;
   /** Dev/E2E-only mocked project collection/write boundaries. */
@@ -113,6 +116,7 @@ export function DemoDashboard({
       previewRepositoryIntegration={liveRepositories}
       previewProjectIntegration={liveProjectRecords}
       previewMarketingImportIntegration={liveMarketingImport}
+      previewMarketingStateIntegration={liveMarketingState}
       previewMusicIntegration={liveMusic}
       previewAccountIntegration={liveAccounts}
       previewPlanIntegration={livePlanRecords}
@@ -127,7 +131,7 @@ export function DemoDashboard({
       previewCalendarIntegration={liveCalendar}
       previewOrganizationIntegration={liveOrganizations}
       previewCompetitorIntegration={liveCompetitors}
-      user={liveMarketingImport || liveAccounts || liveMusic || livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
+      user={liveMarketingState || liveMarketingImport || liveAccounts || liveMusic || livePlanRecords || livePlanning || liveTasks || liveCategories || liveOrganizations || liveCompetitors || liveExports || liveSession || liveCareer ? { ...f.user, id: "11111111-1111-4111-8111-111111111111" } : f.user}
       initialTab={project ? "projects" : initialTab ?? "home"}
       initialProjectId={project?.id}
       initialProjectTab={initialProjectTab}
