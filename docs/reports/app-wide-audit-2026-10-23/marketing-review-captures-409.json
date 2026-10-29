@@ -1,6 +1,6 @@
 {
   "finding": 409,
-  "applicationCommit": "recorded after coherent source commit",
+  "applicationCommit": "34888a36",
   "capturedAt": "2026-10-29",
   "sourceHashes": {
     "src/components/panels/marketing-panel.tsx": "20d13f3f0618eb513cf0bc7a36a8b68cf76e5eb4d6c89ed0b93961a85b6aad5c",
