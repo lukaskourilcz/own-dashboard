@@ -71,7 +71,7 @@ test("a deep link that names no tip exactly only prefills the search", async ({ 
   await expect(main.locator('[data-tip-card="tip2"]').getByRole("button", { name: `Details: ${TIP_CAROUSEL}` })).toHaveAttribute("aria-expanded", "false");
 });
 
-test("tip cards say which plans apply them, read from the calendars, with a Not yet applied filter", async ({ page }) => {
+test("tip cards show references in loaded plans and filter only the loaded citation set", async ({ page }) => {
   const errors = watchConsole(page);
   await gotoPreview(page);
   const requests = await stubCalendars(page, {
@@ -95,7 +95,7 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
   const main = page.locator("#main-content");
 
   const plan = main.locator('[data-tip-card="tip1"]');
-  await expect(plan.locator("[data-tip-usage]")).toHaveText(/^Applied in\s*devShark ×2/);
+  await expect(plan.locator("[data-tip-usage]")).toHaveText(/^Referenced in\s*devShark ×2/);
   const link = plan.getByRole("link", { name: /devShark ×2/ });
   await expect(link).toHaveAttribute("target", "_blank");
   const href = new URL((await link.getAttribute("href"))!);
@@ -110,7 +110,7 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
   await expect(status).toContainText("Could not read lukaskourilcz/quorum/state/marketing-calendar/caught-up.json: the file is not on the default branch yet.");
   await expect(status).toContainText("1 tip title cited in the plans matches no tip here.");
 
-  const notApplied = main.getByRole("group", { name: "Filter by topic" }).getByRole("button", { name: /^Not yet applied/ });
+  const notApplied = main.getByRole("group", { name: "Filter by topic" }).getByRole("button", { name: /^Not referenced in loaded plans/ });
   await expect(notApplied).toContainText("3");
   await notApplied.click();
   await expect(notApplied).toHaveAttribute("aria-pressed", "true");
@@ -130,7 +130,7 @@ test("IG TIPS says when the calendars cannot be read at all", async ({ page }) =
   await page.goto("/dev-preview?tab=ig-tips&calendars=live");
   const main = page.locator("#main-content");
   await expect(main.locator("[data-plans-status]")).toContainText("Could not read the marketing calendars. Try again.");
-  await expect(main.getByRole("button", { name: /^Not yet applied/ })).toHaveCount(0);
+  await expect(main.getByRole("button", { name: /^Not referenced in loaded plans/ })).toHaveCount(0);
   await expect(main.locator("[data-tip-usage]")).toHaveCount(0);
   await expect(main.locator("[data-tip-card]")).toHaveCount(5);
 });
@@ -229,7 +229,7 @@ test("the Work overview lists the next seven marketing days across calendars, re
     sources: [{ ...DEVSHARK, status: "ok", detail: null, calendar: calendar({ launch: day(-20), entries: [entry("ds-001", -20, "08:00", "Old")] }) }],
   });
   await page.reload();
-  await expect(card).toContainText("Nothing is planned in the next seven days.");
+  await expect(card).toContainText("No entries found in the loaded plans for the next seven days.");
 
   // No calendar readable, then no answer at all.
   await stubCalendars(page, { checkedAt: new Date().toISOString(), sources: [{ ...DEVSHARK, status: "error", detail: "502", calendar: null }] });
@@ -258,7 +258,7 @@ test("the preview shows the fixture calendars in Czech at 360 px without overflo
 
   await page.goto("/dev-preview?tab=ig-tips");
   const usage = page.locator('[data-tip-card="tip1"] [data-tip-usage]');
-  await expect(usage).toContainText("Použito v");
+  await expect(usage).toContainText("Odkazy v");
   await expect(usage.getByRole("link")).toHaveText(["devShark ×3 (otevře se na nové kartě)", "DNESKAi ×1 (otevře se na nové kartě)"]);
 });
 

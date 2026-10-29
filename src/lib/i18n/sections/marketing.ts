@@ -58,9 +58,9 @@ const platform = {
 
 export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
   en: {
-    appliedIn: "Applied in",
+    appliedIn: "Referenced in",
     usageLink: (label, count) => `${label} ×${count}`,
-    notYetApplied: "Not yet applied",
+    notYetApplied: "Not referenced in loaded plans",
     plansRead: (summary) => `Marketing plans: ${summary}`,
     calendarEntries: (label, count) => `${label} (${count} ${count === 1 ? "entry" : "entries"})`,
     couldNotRead: (location, reason) => `Could not read ${location}: ${reason}.`,
@@ -93,8 +93,8 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     prelaunchTitle: "Pre-launch due this week",
     prelaunchOverdue: "Overdue",
     prelaunchOwner: { owner: "Owner", agent: "Agent" },
-    noEntries: "Nothing is planned in the next seven days.",
-    noPrelaunch: "No pre-launch item is due in the next seven days.",
+    noEntries: "No entries found in the loaded plans for the next seven days.",
+    noPrelaunch: "No pre-launch tasks found in the loaded plans for the next seven days.",
     nothingRead: "No marketing calendar could be read, so the week's plan is unknown.",
     openCalendar: (label) => `Open the ${label} calendar`,
     showAll: (count) => `Show all ${count}`,
@@ -123,9 +123,9 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     platform: { ...platform, newsletter: "Newsletter", web: "Web" },
   },
   cs: {
-    appliedIn: "Použito v",
+    appliedIn: "Odkazy v",
     usageLink: (label, count) => `${label} ×${count}`,
-    notYetApplied: "Zatím nepoužité",
+    notYetApplied: "Bez odkazu v načtených plánech",
     plansRead: (summary) => `Marketingové plány: ${summary}`,
     calendarEntries: (label, count) =>
       `${label} (${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"})`,
@@ -163,8 +163,8 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     prelaunchTitle: "Příprava před spuštěním, termín tento týden",
     prelaunchOverdue: "Po termínu",
     prelaunchOwner: { owner: "Vlastník", agent: "Agent" },
-    noEntries: "Na příštích sedm dní není nic naplánováno.",
-    noPrelaunch: "Na příštích sedm dní nepřipadá žádný úkol přípravy.",
+    noEntries: "V načtených plánech nejsou záznamy na příštích sedm dní.",
+    noPrelaunch: "V načtených plánech nejsou úkoly přípravy na příštích sedm dní.",
     nothingRead: "Žádný marketingový kalendář se nepodařilo přečíst, takže plán týdne není známý.",
     openCalendar: (label) => `Otevřít kalendář ${label}`,
     showAll: (count) => `Zobrazit všech ${count}`,

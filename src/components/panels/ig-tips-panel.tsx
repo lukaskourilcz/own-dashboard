@@ -129,7 +129,7 @@ export function IgTipsPanel({
   const relations = useProjectLinkMutations(setProjectLinks, projectLinks);
   const [query, setQuery] = useState(initialQuery ?? "");
   const [groupFilter, setGroupFilter] = useState<TipGroupKey | "all">("all");
-  const [notApplied, setNotApplied] = useState(false);
+  const [withoutPlanReferences, setWithoutPlanReferences] = useState(false);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => {
     const target = tipForDeepLink(initialQuery, aiLinks.filter(isTip));
     return new Set(target ? [target.id] : []);
@@ -154,11 +154,11 @@ export function IgTipsPanel({
       searched.filter(
         (tip) =>
           (groupFilter === "all" || tipGroupKey(tip) === groupFilter) &&
-          (!notApplied || !usageRead || usageForTip(usage!, tip.title).length === 0),
+          (!withoutPlanReferences || !usageRead || usageForTip(usage!, tip.title).length === 0),
       ),
-    [searched, groupFilter, notApplied, usage, usageRead],
+    [searched, groupFilter, withoutPlanReferences, usage, usageRead],
   );
-  const notAppliedCount = useMemo(
+  const withoutPlanReferenceCount = useMemo(
     () => (usageRead ? tips.filter((tip) => usageForTip(usage!, tip.title).length === 0).length : 0),
     [tips, usage, usageRead],
   );
@@ -167,7 +167,7 @@ export function IgTipsPanel({
   const exportRelations = useMemo(() => ({ projectLinks, projects }), [projectLinks, projects]);
   const projectUsage = useMemo(() => projectLinkUsageByLink(projectLinks, projects), [projectLinks, projects]);
   const activeProjects = useMemo(() => projects.filter((project) => project.is_active), [projects]);
-  const searching = query.trim().length > 0 || groupFilter !== "all" || (notApplied && usageRead);
+  const searching = query.trim().length > 0 || groupFilter !== "all" || (withoutPlanReferences && usageRead);
 
   // Arriving through `/ig-tips?q=<title>`: once the tips are loaded, open the
   // card whose title is the query and bring it into view. Runs once; the
@@ -374,12 +374,12 @@ export function IgTipsPanel({
               {usageRead && (
                 <button
                   type="button"
-                  aria-pressed={notApplied}
-                  onClick={() => setNotApplied((value) => !value)}
-                  className={cn(chip, "sm:ml-2", notApplied ? chipOn : chipOff)}
+                  aria-pressed={withoutPlanReferences}
+                  onClick={() => setWithoutPlanReferences((value) => !value)}
+                  className={cn(chip, "sm:ml-2", withoutPlanReferences ? chipOn : chipOff)}
                 >
                   {m.notYetApplied}
-                  <span className="ml-1.5 tabular text-foreground-subtle">{notAppliedCount}</span>
+                  <span className="ml-1.5 tabular text-foreground-subtle">{withoutPlanReferenceCount}</span>
                 </button>
               )}
             </div>
@@ -400,7 +400,7 @@ export function IgTipsPanel({
                   onClick={() => {
                     setQuery("");
                     setGroupFilter("all");
-                    setNotApplied(false);
+                    setWithoutPlanReferences(false);
                   }}
                 >
                   {tt.clearFilters}
@@ -683,7 +683,7 @@ function TipCard({
 }
 
 /**
- * Which marketing calendars the "Applied in" counts come from, or why they
+ * Which marketing calendars the "Referenced in" counts come from, or why they
  * could not be read. Ordinary counts stay plain text; a failed refresh is announced once.
  * The tip count above remains the section's status.
  */
@@ -705,8 +705,8 @@ function PlansStatus({
   const m = useDict().marketing;
   const read = view.kind === "ok" ? view.data.sources.filter((source) => source.status === "ok") : [];
   return (
-    <div data-plans-status className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs">
-      <div className="min-w-0 space-y-1">
+    <div data-plans-status className="flex flex-col gap-2 rounded-md border border-border bg-surface-inset px-3 py-2 text-xs lg:flex-row lg:items-center lg:justify-between lg:gap-x-3">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
         {refreshError && <p role="alert" className="text-warning">{refreshError === 'rate-limited' ? m.cachedRateLimited : m.cachedUnavailable}</p>}
         {view.kind === "loading" ? (
           <p className="text-foreground-muted">{m.loading}</p>
@@ -719,13 +719,13 @@ function PlansStatus({
                 {m.plansRead(read.map((source) => m.calendarEntries(source.label, source.calendar?.entries.length ?? 0)).join(", "))}
               </p>
             )}
-            <CalendarSourceNotes sources={view.data.sources} />
+            <CalendarSourceNotes sources={view.data.sources} className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 space-y-0" />
             {unmatchedRefs > 0 && <p className="text-foreground-muted">{m.unmatchedRefs(unmatchedRefs)}</p>}
           </>
         )}
       </div>
       {canCheck && (
-        <Button size="sm" variant="ghost" onClick={onCheckAgain} disabled={checking} className="min-h-11 sm:min-h-0">
+        <Button size="sm" variant="ghost" onClick={onCheckAgain} disabled={checking} className="w-full shrink-0 lg:w-auto">
           {checking ? m.checking : m.checkAgain}
         </Button>
       )}

@@ -1031,7 +1031,7 @@
       "path": "src/components/marketing/calendar-source-notes.tsx",
       "lines": 43,
       "sha256": "2e4ad565ce379edfa632bf08ea6078cf05348a2e090ad9a121508aa283697eb5",
-      "status": "source reviewed; readable/error/skipped calendar metadata and long source labels; no new confirmed source repair; final rendered/release checks pending",
+      "status": "source reviewed; readable/error/skipped calendar metadata and long source labels; no new confirmed source repair; final rendered/release checks pending; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate",
       "reviewedSha256": "2e4ad565ce379edfa632bf08ea6078cf05348a2e090ad9a121508aa283697eb5"
     },
     {
@@ -1563,8 +1563,8 @@
       "path": "src/components/panels/ig-tips-panel.tsx",
       "lines": 734,
       "sha256": "bd8825210893ec2994ed3b39fd113fbacf8374f0820e4f96b7dee99a2ff5a610",
-      "status": "partial; original-owner identity stage verified in finding 242; finding 387 retained calendar counts and single EN/CS stale recovery notice pass six-width/native checks; negative usage claims under incomplete/stale reads, later reader/write/UX phases and final release remain open",
-      "reviewedSha256": "75dbf402288b118bf991335648bedc8e16842913f59376f5996985dcbad859bf"
+      "status": "partial; original-owner identity stage verified in finding 242; finding 387 retained calendar counts and single EN/CS stale recovery notice pass six-width/native checks; negative usage claims under incomplete/stale reads, later reader/write/UX phases and final release remain open; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate",
+      "reviewedSha256": "3d1c5533b3be550d6024e0aaa550c0af31b95724eb233efbf14814790c294a45"
     },
     {
       "path": "src/components/panels/important-dates-panel.tsx",
@@ -2109,7 +2109,7 @@
       "path": "src/components/work/marketing-week.tsx",
       "lines": 222,
       "sha256": "dc43705296df5bb2641d3aa8c0beef59900399be7aed3f3262eb41cbd28be26e",
-      "status": "partial; complete source inspection; calendar completeness, unknown labels and compact responsive actions remain under review; finding 194 closes inherited labels with EN/CS mounted/native evidence; other recorded leads remain open; finding 387 retained legacy-calendar rows/counts, prior read time and one EN/CS recovery notice verified; conservative negative claims and separate density leads remain open",
+      "status": "partial; complete source inspection; calendar completeness, unknown labels and compact responsive actions remain under review; finding 194 closes inherited labels with EN/CS mounted/native evidence; other recorded leads remain open; finding 387 retained legacy-calendar rows/counts, prior read time and one EN/CS recovery notice verified; conservative negative claims and separate density leads remain open; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate",
       "reviewedSha256": "c7d47678661275da6bb26603ac826bfb2ba502c796f0cf7089f907344a8ad8ac"
     },
     {
@@ -2889,8 +2889,8 @@
       "path": "src/lib/i18n/sections/marketing.ts",
       "lines": 195,
       "sha256": "86c9b7da2ac52e88a03243206eaba3e4367c103936bc0a502ebda353f40d89c0",
-      "status": "source reviewed; complete EN/CS dictionary inspection; external calendar failures and unknown plans remain explicit; final rendered/release checks pending; finding 383 updates EN/CS omission reasons for invalid data, duplicates and limits with six-width native reflow/axe evidence; finding 387 retained legacy-calendar rows/counts, prior read time and one EN/CS recovery notice verified; conservative negative claims and separate density leads remain open",
-      "reviewedSha256": "ffa8b0fb998a03488373d3748b57dd6b22078f412ee6204f7f2d868534ff15c2"
+      "status": "source reviewed; complete EN/CS dictionary inspection; external calendar failures and unknown plans remain explicit; final rendered/release checks pending; finding 383 updates EN/CS omission reasons for invalid data, duplicates and limits with six-width native reflow/axe evidence; finding 387 retained legacy-calendar rows/counts, prior read time and one EN/CS recovery notice verified; conservative negative claims and separate density leads remain open; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate",
+      "reviewedSha256": "a2424988c671733f305ee395f10fc89608cc41339ea20b93f6e7c7010dcb2ad5"
     },
     {
       "path": "src/lib/i18n/sections/nav.ts",

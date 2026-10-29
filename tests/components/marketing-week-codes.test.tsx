@@ -32,3 +32,15 @@ it.each(['en', 'cs'] as const)('renders imported unknown and inherited calendar 
   expect(host.querySelector('[data-marketing-entry="entry-5"]')?.textContent).toContain(marketing[lang].status.blocked);
   expect(host.textContent).not.toMatch(/function |native code|\[object Object\]/);
 });
+
+for (const lang of ['en', 'cs'] as const) for (const prelaunch of [false, true]) it(`${lang}: limits ${prelaunch ? 'prelaunch' : 'week'} absence copy to loaded records when another plan is unreadable`, () => {
+  language.value = lang;
+  const parsed = parseMarketingCalendar(JSON.stringify({ schemaVersion: 'marketing-calendar/1', project: 'devshark', launch: prelaunch ? '2026-10-30' : null, entries: [{ id: 'invalid', date: 'not-a-date', title: 'Omitted record', kind: 'post', platform: 'instagram' }], prelaunch: [] }), 'devshark');
+  expect(parsed.ok).toBe(true); if (!parsed.ok) throw new Error('fixture-calendar-invalid');
+  act(() => root.render(<QueryClientProvider client={client}><MarketingWeekCard preview={{ checkedAt: '2026-10-25T12:00:00Z', sources: [{ ...MARKETING_CALENDAR_SOURCES[0], status: 'ok', detail: null, calendar: parsed.calendar }, { ...MARKETING_CALENDAR_SOURCES[1], status: 'not-found', detail: null, calendar: null }] }}/></QueryClientProvider>));
+  expect(host.textContent).toContain(lang === 'cs'
+    ? prelaunch ? 'V načtených plánech nejsou úkoly přípravy na příštích sedm dní.' : 'V načtených plánech nejsou záznamy na příštích sedm dní.'
+    : prelaunch ? 'No pre-launch tasks found in the loaded plans for the next seven days.' : 'No entries found in the loaded plans for the next seven days.');
+  expect(host.textContent).not.toContain(lang === 'cs' ? 'Na příštích sedm dní není nic naplánováno.' : 'Nothing is planned in the next seven days.');
+  expect(host.textContent).toContain(marketing[lang].skipped('devShark', 1));
+});
