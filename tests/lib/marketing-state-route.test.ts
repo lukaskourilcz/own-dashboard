@@ -59,10 +59,10 @@ it.each(['error', 'null', 'object', 'foreign', 'excess'])('refuses a %s family r
  const response = await GET(request()); expect(response.status).toBe(503); expect(await response.text()).not.toContain('TEST_ONLY_PRIVATE');
 });
 it('omits duplicate authored entry bodies and unrelated future fields from the response', async () => {
- const entry = { id, user_id: owner, campaign_id: id, date: '2026-10-29', local_time: '09:00', bound_source_id: null, title: 'Reviewed slot', kind: 'task', platform: 'web', status: 'planned', needs_review: false };
+ const entry = { id, user_id: owner, campaign_id: id, date: '2026-10-29', local_time: '09:00', bound_source_id: null, title: 'Reviewed slot', kind: 'task', platform: 'web', status: 'planned', needs_review: false, capture_hash: 'd'.repeat(64) };
  m.query.mockResolvedValue({ data: { ...emptySnapshot(), campaigns:[selectedCampaign()], entries: [{ ...entry, original: { body: 'TEST_ONLY_AUTHORED_SOURCE'.repeat(1000) }, future_private_field: 'TEST_ONLY_FUTURE_FIELD' }] }, error: null });
  const response = await GET(request()); expect(response.status).toBe(200); const value = await response.json();
- const expected = { id: entry.id, campaign_id: entry.campaign_id, date: entry.date, local_time: entry.local_time, bound_source_id: entry.bound_source_id, title: entry.title, kind: entry.kind, platform: entry.platform, status: entry.status, needs_review: entry.needs_review };
+ const expected = { id: entry.id, campaign_id: entry.campaign_id, date: entry.date, local_time: entry.local_time, bound_source_id: entry.bound_source_id, title: entry.title, kind: entry.kind, platform: entry.platform, status: entry.status, needs_review: entry.needs_review, capture_hash: entry.capture_hash };
  expect(value.entries).toEqual([expected]); expect(JSON.stringify(value)).not.toContain('TEST_ONLY_');
 });
 it.each(['auth', 'queries'] as const)('ends an uncooperative %s consumer at its original phase', async phase => {
@@ -80,7 +80,7 @@ it.each(['brand', 'source_id', 'source_revision', 'content_hash', 'summary_title
  expect((await GET(request())).status).toBe(503);
 });
 it('refuses a valid projected envelope above the wire budget instead of returning a truncated success', async () => {
- const entries = Array.from({ length: 1000 }, (_, index) => ({ user_id: owner, id: `${String(index).padStart(8, '0')}-0000-4000-8000-000000000000`, campaign_id: id, date: '2026-10-29', local_time: null, bound_source_id: null, title: 'x'.repeat(10000), kind: 'task', platform: 'web', status: 'planned', needs_review: false }));
+ const entries = Array.from({ length: 1000 }, (_, index) => ({ user_id: owner, id: `${String(index).padStart(8, '0')}-0000-4000-8000-000000000000`, campaign_id: id, date: '2026-10-29', local_time: null, bound_source_id: null, title: 'x'.repeat(10000), kind: 'task', platform: 'web', status: 'planned', needs_review: false, capture_hash: 'd'.repeat(64) }));
  m.query.mockResolvedValue({ data: { ...emptySnapshot(), campaigns:[selectedCampaign()], entries }, error: null });
  const response = await GET(request()); expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: 'marketing-unavailable' });
 });
@@ -106,7 +106,8 @@ it('preserves displayed entry and source evidence through actual SDK projections
   expect(body.ownerId).toBe(owner); expect(body.entries).toHaveLength(156); expect(body.campaigns).toHaveLength(1); expect(JSON.stringify(body)).not.toContain('FOREIGN_SOURCE');
   const fields = ['id','campaign_id','date','local_time','bound_source_id','title','kind','platform','status','needs_review'];
   const originalEntries = (await db.query<{ row: Record<string, unknown> }>('select to_jsonb(e) as row from marketing_calendar_entries e order by date,local_time nulls last,id')).rows.map(value => value.row);
-  expect(body.entries).toEqual(originalEntries.map(row => Object.fromEntries(fields.map(field => [field, row[field]]))));
+  expect(body.entries.map((row:Record<string,unknown>)=>Object.fromEntries(fields.map(field=>[field,row[field]])))).toEqual(originalEntries.map(row => Object.fromEntries(fields.map(field => [field, row[field]]))));
+  expect(body.entries.every((row:{capture_hash:string})=>/^[a-f0-9]{64}$/.test(row.capture_hash))).toBe(true);
   const summary = MarketingSourceSummarySchema.parse({ brand: packet.brand, sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash, canonicalUrl: packet.canonicalUrl, expiresAt: packet.expiresAt, content: { title: packet.content.title, evidence: packet.content.evidence } });
   expect(body.sourceHistory).toEqual([summary]); expect(body.sources).toEqual([{ id, brand: packet.brand, source_id: packet.sourceId, eligible: true, packet: summary }]);
   const browser = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json(body));

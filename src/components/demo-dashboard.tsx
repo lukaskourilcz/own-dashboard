@@ -27,6 +27,7 @@ export function DemoDashboard({
   liveMarketingImport = false,
   liveMarketingState = false,
   liveCampaignActivation = false,
+  liveCalendarSlots = false,
   liveRepositories = false,
   liveProjectRecords = false,
   liveMusic = false,
@@ -63,6 +64,7 @@ export function DemoDashboard({
   /** Isolated fake-backend state reads; publishing and other writes stay disabled. */
   liveMarketingState?: boolean;
   liveCampaignActivation?: boolean;
+  liveCalendarSlots?: boolean;
   /** Dev/E2E-only mocked repository interactions; disabled in the public tour. */
   liveRepositories?: boolean;
   /** Dev/E2E-only mocked project collection/write boundaries. */
@@ -119,6 +121,7 @@ export function DemoDashboard({
       previewProjectIntegration={liveProjectRecords}
       previewMarketingImportIntegration={liveMarketingImport}
       previewMarketingStateIntegration={liveMarketingState}
+      previewCalendarSlotsIntegration={liveCalendarSlots}
       previewCampaignActivationIntegration={liveCampaignActivation}
       previewMusicIntegration={liveMusic}
       previewAccountIntegration={liveAccounts}

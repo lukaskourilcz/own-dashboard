@@ -8,6 +8,7 @@ import { NavigationGuardProvider } from '@/components/navigation-guard';
 import { OwnerPreferencesProvider } from '@/lib/owner-preferences';
 import { qk } from '@/lib/queries/keys';
 import { marketingStateFixture, stateOwner } from '../lib/marketing-state-fixture';
+import { calendarReleaseCopy } from '@/lib/marketing/calendar-release-copy';
 import { marketingWorkspace } from '@/lib/i18n/sections/marketing-workspace';
 const m = vi.hoisted(() => ({ lang: 'en' as 'en' | 'cs' }));
 vi.mock('@/lib/i18n/lang', async original => {
@@ -179,18 +180,20 @@ it('retires an in-flight activation on unmount and leaves its cache stale withou
 
 for (const lang of ['en', 'cs'] as const) {
  it(`${lang}: keeps an open Calendar source draft read-only after a failed refresh and restores it after recovery`, async () => {
-  m.lang=lang;const t=marketingWorkspace[lang],value=marketingStateFixture(),refused=structuredClone(value);refused.ownerId='99999999-9999-4999-8999-999999999999';
+  m.lang=lang;const t=marketingWorkspace[lang],value=marketingStateFixture();value.campaigns[0].status='active';const refused=structuredClone(value);refused.ownerId='99999999-9999-4999-8999-999999999999';
   const fetcher=vi.fn().mockResolvedValueOnce(Response.json(value)).mockResolvedValueOnce(Response.json(refused)).mockResolvedValueOnce(Response.json(value));vi.stubGlobal('fetch',fetcher);
   render();await displayed('Reviewed draft');act(()=>host.querySelector<HTMLButtonElement>('#marketing-tab-calendar')!.click());
   act(()=>button(lang==='cs'?'Vybrat aktuální podklad':'Select current source').click());
-  const source=[...host.querySelectorAll<HTMLSelectElement>('select')].find(select=>[...select.options].some(option=>option.value===value.sources[0].id))!;
-  act(()=>{source.value=value.sources[0].id;source.dispatchEvent(new Event('change',{bubbles:true}));});
-  const save=button(lang==='cs'?'Připravit slot z tohoto podkladu':'Prepare this slot from the source');expect(save.disabled).toBe(false);
+  const dialog=document.querySelector<HTMLElement>('[role="dialog"]')!,source=dialog.querySelector('select')!,choice=source.options[1].value;
+  act(()=>{source.value=choice;source.dispatchEvent(new Event('change',{bubbles:true}));});
+  const localButton=(text:string)=>[...dialog.querySelectorAll<HTMLButtonElement>('button')].find(item=>item.textContent===text)!;
+  const save=localButton(calendarReleaseCopy[lang].save);expect(save.disabled).toBe(false);
+  // The modal owns recovery; a background page control is inert while it is open.
   await act(async()=>{button(t.refresh).click();await client.getQueryCache().find({queryKey:qk.marketingState})!.promise?.catch(()=>undefined);});
-  await displayed(t.retainedState);expect(client.getQueryState(qk.marketingState)?.status).toBe('error');expect(host.textContent).toContain(t.retainedState);expect(source.value).toBe(value.sources[0].id);expect(source.disabled).toBe(true);expect(save.disabled).toBe(true);
-  for(const field of host.querySelectorAll<HTMLInputElement>('input[type="date"],input[type="time"]'))expect(field.disabled).toBe(true);
+  await displayed(t.retainedState);expect(client.getQueryState(qk.marketingState)?.status).toBe('error');expect(source.value).toBe(choice);expect(source.disabled).toBe(true);expect(save.disabled).toBe(true);
+  for(const field of dialog.querySelectorAll<HTMLInputElement>('input'))expect(field.disabled).toBe(true);
   act(()=>save.click());expect(fetcher).toHaveBeenCalledTimes(2);
-  await act(async()=>{button(t.refresh).click();await client.getQueryCache().find({queryKey:qk.marketingState})!.promise;});
-  await vi.waitFor(async()=>{await act(async()=>{});expect(source.disabled).toBe(false);});expect(source.value).toBe(value.sources[0].id);expect(source.disabled).toBe(false);expect(save.disabled).toBe(false);expect(fetcher).toHaveBeenCalledTimes(3);
+  await act(async()=>{localButton(calendarReleaseCopy[lang].reload).click();await client.getQueryCache().find({queryKey:qk.marketingState})!.promise;});
+  await vi.waitFor(async()=>{await act(async()=>{});expect(source.disabled).toBe(false);});expect(source.value).toBe(choice);expect(save.disabled).toBe(false);expect(fetcher).toHaveBeenCalledTimes(3);
  });
 }

@@ -22,12 +22,13 @@ const campaign = z.strictObject({
  id: z.uuid(), brand: BrandSchema, name: z.string().min(1).max(10_000), starts_on: CalendarImportStartSchema,
  ends_on: CalendarImportDateSchema, source_hash: hash, status: z.enum(['draft', 'active', 'archived']),
 }).refine(row => row.ends_on >= row.starts_on);
-const entry = z.strictObject({
+export const MarketingCalendarEntrySchema = z.strictObject({
  id: z.uuid(), campaign_id: z.uuid(), date: CalendarImportDateSchema,
  local_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(), bound_source_id: z.uuid().nullable(),
  title: z.string().min(1).max(10_000), kind: z.string().min(1).max(100), platform: z.string().min(1).max(100),
- status: z.string().min(1).max(100), needs_review: z.boolean(),
+ status: z.string().min(1).max(100), needs_review: z.boolean(), capture_hash: hash,
 });
+export type MarketingCalendarEntry = z.infer<typeof MarketingCalendarEntrySchema>;
 const publication = z.strictObject({
  id: z.uuid(), revision_id: z.uuid(), platform: PlatformSchema,
  status: z.enum(['queued', 'claimed', 'published', 'failed', 'reconciliation', 'cancelled']),
@@ -46,7 +47,7 @@ const jobs = MarketingJobHealthSchema.extend({ costUsd: z.number().nonnegative()
  * Validating this envelope does not turn its list caps into complete history. */
 export const MarketingStateEnvelopeSchema = z.strictObject({
  ownerId: z.uuid(), revisions: z.array(revision).max(100).refine(idsUnique),
- campaigns: z.array(campaign).max(10).refine(idsUnique), entries: z.array(entry).max(10000).refine(idsUnique),
+ campaigns: z.array(campaign).max(10).refine(idsUnique), entries: z.array(MarketingCalendarEntrySchema).max(10000).refine(idsUnique),
  publications: z.array(publication).max(100).refine(idsUnique),
  accounts: z.array(account).max(4).refine(rows => new Set(rows.map(row => `${row.brand}:${row.platform}`)).size === rows.length),
  sources: z.array(source).max(100).refine(idsUnique),

@@ -362,8 +362,8 @@
       "path": "src/app/api/marketing/calendar-entries/route.ts",
       "lines": 31,
       "sha256": "bd282c84745b53c52ae355cb2846b570af9c166124c3268bf0bcc7082ae2a73e",
-      "status": "partial; full route and release SQL inspected; captured entry version, bounded body/deadline, error classification and mutation receipt remain pending; finding 414 verifies original owner/error-first auth, optional captured-owner matching, 4KiB/five-second input, strict future Prague time, original thirty-second/fifteen-second RPC consumers, no retry, fixed private uncertainty and exact void result; actual full-chain SDK/legacy worker guards pass; captured entry/source and post-trigger receipt remain",
-      "reviewedSha256": "32ba3e89e1526ad8f0d656808206a2c9a39ab210bf9ccd43e5d93575f69d9e9f"
+      "status": "partial; findings 414/416 verify original owner and bounded body/auth/RPC consumers, strict future Prague time, one no-retry captured release with entry/campaign/source preconditions, exact owner/before-hash/source/slot receipt and fixed private uncertainty; actual full-153-chain authenticated SDK passes; generic Supabase SDK prior JSON allocation/resource limits and final release remain separate",
+      "reviewedSha256": "cd237f991986e26a56bd32e388a0d4a38b8d3dcb63a8bfb45ab919b95fe6781e"
     },
     {
       "path": "src/app/api/marketing/calendars/route.ts",
@@ -565,8 +565,8 @@
       "path": "src/app/api/marketing/state/route.ts",
       "lines": 59,
       "sha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f",
-      "status": "partial; findings 405/406 verified original owner, explicit projections and strict bounded DTO/wire validation retained; finding 412 uses one stable own-RLS snapshot, deterministic active/newest heads and complete selected-head entries with overflow refusal; actual SDK/full-chain/native concurrent snapshot and unchanged-data upgrade/rollback pass; generic SDK JSON/allocation, full revision payload and final release remain separate",
-      "reviewedSha256": "c38e04dc692494f6e17a52e4f015d5590b6f3f570ea7de35107e412d8f7db61d"
+      "status": "partial; findings 405/406 verified original owner, explicit projections and strict bounded DTO/wire validation retained; finding 412 uses one stable own-RLS snapshot, deterministic active/newest heads and complete selected-head entries with overflow refusal; actual SDK/full-chain/native concurrent snapshot and unchanged-data upgrade/rollback pass; generic SDK JSON/allocation, full revision payload and final release remain separate; finding 416 projects computed entry capture_hash into the strict DTO; prior SDK allocation/resource lead remains",
+      "reviewedSha256": "de417a8cf289d7bc77be593a39d0e460b325190a5c5fd13c33a786c1aa2da5c5"
     },
     {
       "path": "src/app/api/marketing/tick/route.ts",
@@ -1024,8 +1024,8 @@
       "path": "src/components/marketing/calendar-slot.tsx",
       "lines": 13,
       "sha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c",
-      "status": "partial; full source inspected; mount-time source clock, stale local entry fields, missing entry-version capture, pending-exit guard and confirmed mutation recovery require repair; finding 413 propagates parent read-only state into already-open source/date/time/save fields and refuses direct save admission, preserving selections through explicit successful recovery; captured source/entry/write lifetimes remain",
-      "reviewedSha256": "76ad9f7ffb01f29c500cb7dc515794fe3037a712f2e766899290e072296c8405"
+      "status": "source reviewed; finding 416 moves one retained editor outside rows, captures owner/entry/campaign/source hash and revision before waiting, rechecks expiry/time at click, guards dirty/pending exits/unmount, reserves one attempt, requires exact bounded receipt and explicit successful fresh read after uncertainty; changed or omitted rows preserve the draft until deliberate reset/discard; inactive plans refuse locally; EN/CS native responsive/keyboard/axe checks pass; final release pending",
+      "reviewedSha256": "0b73a7c115f79cf57b22fe81a3aa7020238cd7e0d0f97ecd8de7059880c091ee"
     },
     {
       "path": "src/components/marketing/calendar-source-notes.tsx",
@@ -1324,8 +1324,8 @@
       "path": "src/components/marketing/weekly-calendar.tsx",
       "lines": 48,
       "sha256": "234ef5f4cc0cbd37546cb91a933c48b53a8864e35aaa158cfc7e8b6d306f97ff",
-      "status": "partial; retained backlog/completed semantics inspected; outdated source/cadence copy, captured activation and repeated per-campaign scans remain; see remaining-review.md; finding 402 separates read-only inclusive date grouping from publish-clock resolution, including first/last representable imported weeks; activation/slot mutation lifecycle remains separate; finding 411 adopts independently disabled captured activation while retaining read-only preview slot controls; slot transport, complete entries, cadence copy and per-campaign scans remain",
-      "reviewedSha256": "afb7ce739f5bfd286460299e9b34915b56010c4f13f0f927e2a2fb0cb7322740"
+      "status": "partial; finding 416 hosts one stable captured slot editor outside campaign rows and guards backlog/editor changes, retaining a removed entry draft; activation is independently captured; outdated source/cadence/status copy, per-campaign scans and bounded row paging remain; final release pending",
+      "reviewedSha256": "1c4dbfe92ff7baf3b2770467c43726ac60a043c7f56c802670f5657150e6fa93"
     },
     {
       "path": "src/components/marketing/weekly-results.tsx",
@@ -1619,8 +1619,8 @@
       "path": "src/components/panels/marketing-panel.tsx",
       "lines": 112,
       "sha256": "c8d351ac5def71995b2b96c7137838577901f39aa5b8e86b2853f3930902c949",
-      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate; finding 408 keeps page Refresh as the sole workspace/job-status read control; finding 409 bounds and centres asset-free cards, omits their empty media column, derives missing-artwork warning from existing readiness and equalizes review action cells; actual EN/CS/theme/six-width layout checks pass; MP4 rendering and loaded-asset identity remain open; finding 410 uses paused native MP4 controls with decoded-data admission and revision/content/file/URL-specific loaded identities; actual Chrome codec/keyboard checks pass; loaded-key retention and captured action/source lifetimes remain; finding 411 captures original owner/plan/hash activation, synchronously prevents overlap, guards pending exits/unmount, validates exact bounded receipt and requires explicit fresh read after unknown/changed outcomes; revision/slot actions and editor dirty protection remain separate",
-      "reviewedSha256": "e113a73807ff065cb6ae7cd9fdcd00c8ff557d9e517aa1d67e17d7e13f0459d8"
+      "status": "source reviewed; final release checks pending; finding 396 routes internal tabs through the existing pending/dirty navigation guard and limits mocked import controls to isolated fake-backend preview; other actions remain separate; finding 406 captures the server-owned preference scope in the React Query read, refuses missing owner, cancels retired lifetimes and passes EN/CS mounted strict-mode/same-cache/foreign-reply/unmount checks; stale-read presentation and write lifecycles remain open; finding 407 retains the last validated snapshot/read time on refresh failure, pauses known writes during refresh/error, preserves editor fields, removes duplicate result emptiness and indexes loaded receipts with correct queued/claimed/cancelled labels; captured write/dirty/source lifetimes and text-only media layout remain separate; finding 408 keeps page Refresh as the sole workspace/job-status read control; finding 409 bounds and centres asset-free cards, omits their empty media column, derives missing-artwork warning from existing readiness and equalizes review action cells; actual EN/CS/theme/six-width layout checks pass; MP4 rendering and loaded-asset identity remain open; finding 410 uses paused native MP4 controls with decoded-data admission and revision/content/file/URL-specific loaded identities; actual Chrome codec/keyboard checks pass; loaded-key retention and captured action/source lifetimes remain; finding 411 captures original owner/plan/hash activation, synchronously prevents overlap, guards pending exits/unmount, validates exact bounded receipt and requires explicit fresh read after unknown/changed outcomes; revision/slot actions and editor dirty protection remain separate; finding 416 forwards computed entry hashes, counts successful validated reads independently of timestamps/object identity, pauses slot writes during unavailable reads and guards brand changes; mock-only slot preview cannot enable revision/publishing actions; shared one-editor dirty/expiry/recovery controls adopted; revision decisions, loaded-key retention and general source lifetimes remain",
+      "reviewedSha256": "8d13817e232ae5c7a9b34e0fef261e1ce39071455b8646c1aaa7711f387c98ea"
     },
     {
       "path": "src/components/panels/needed-checklist.tsx",
@@ -3307,11 +3307,39 @@
       "reviewedSha256": "2b5b2cfb38b60ff493420aecea6145252d5c725f3b64bd8bd2e3d255c1e12a22"
     },
     {
+      "path": "src/lib/marketing/calendar-import-contracts.ts",
+      "sha256": null,
+      "status": "source reviewed; finding 401 shares client/server four-digit nonzero-year dates, inclusive seven-day limits, bounded strict preview/report/save DTOs and source-work constants; positive exact ceilings and invalid receipt/date cases pass; final release remains",
+      "reviewedSha256": "db61c1377b23096b9509d4c41081beb2cb9933b9ed8df95c2dc50ffddb08cdc7",
+      "lines": 24
+    },
+    {
+      "path": "src/lib/marketing/calendar-release-copy.ts",
+      "sha256": null,
+      "lines": 3,
+      "status": "source reviewed; finding 416 typed EN/CS parity for retained draft, inactive/missing/changed source/slot, explicit reload and honest uncertain/saved preparation states; focused/native checks pass; final release pending",
+      "reviewedSha256": "210d663e5360e9b16d3e723dd3ea903158f2d2f61cedb5799155a9c075f0f292"
+    },
+    {
+      "path": "src/lib/marketing/calendar-release.ts",
+      "sha256": null,
+      "lines": 34,
+      "status": "source reviewed; finding 416 strict captured intent and owner/entry/source/slot receipts, copied original inputs, one original 35-second scope, exact 200/JSON, 64KiB success/4KiB error bounds, late cleanup and no replay; focused/native checks pass; final release pending",
+      "reviewedSha256": "68c2f720ad12d08537db845f54e44852cd861942a2c99764c34a02bbfcbde7a6"
+    },
+    {
       "path": "src/lib/marketing/calendar-source.ts",
       "lines": 70,
       "sha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505",
       "status": "source reviewed; finding 393 complete pinned commit/file consumers, byte/deadline/caller bounds, exact brand/schema identity, UTF-8, immutable provenance and reader/late-response cleanup pass; parent importer phases remain separate",
       "reviewedSha256": "fda19a715354b6ed90c415eda4267046382b3d7b74bc0445ea81d572387c2fe2"
+    },
+    {
+      "path": "src/lib/marketing/campaign-activation.ts",
+      "sha256": null,
+      "lines": 36,
+      "status": "source reviewed; finding 411 strict owner/plan/hash receipt and one captured 35-second attempt with bounded success/error bodies, retirement and no replay; units/native/actual SDK checks pass; final release pending",
+      "reviewedSha256": "923967a5b81da0784bf4c0e8fee19b87fab33f22ba8161b5779d34792c11f5d3"
     },
     {
       "path": "src/lib/marketing/campaign-import.ts",
@@ -3331,8 +3359,8 @@
       "path": "src/lib/marketing/client.ts",
       "lines": 47,
       "sha256": "0907a97895c5e736b118d72a2dfe5b8a64ef8a3a9a32619dc941a9aba86b79af",
-      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending; finding 405 narrows source metadata types to the actual title/evidence/identity/expiry fields and removes unused full-body expectations; browser transport/full DTO validation and captured action lifecycles remain open; finding 406 replaces the read cast with complete owner/DTO/identity/URL validation, one original 35-second/8MiB UTF-8 response consumer, exact 200/no redirect, late body cleanup and no automatic retry; mutation transport remains open",
-      "reviewedSha256": "784d4cc5feeb8cf946b0ec20b87299d7b3f53016c30fc99bcec57900ec1e3c01"
+      "status": "partial; full source inspected; state is cast, bad job-health rows silently dropped, body bounds/deadline and captured decision receipts remain pending; finding 405 narrows source metadata types to the actual title/evidence/identity/expiry fields and removes unused full-body expectations; browser transport/full DTO validation and captured action lifecycles remain open; finding 406 replaces the read cast with complete owner/DTO/identity/URL validation, one original 35-second/8MiB UTF-8 response consumer, exact 200/no redirect, late body cleanup and no automatic retry; mutation transport remains open; finding 416 reuses the strict inferred entry type; old generic revision-decision transport remains separate",
+      "reviewedSha256": "5472b02128c90d11a096138e65decaf899cde921f78235c844d2c31edf29f72c"
     },
     {
       "path": "src/lib/marketing/clock.ts",
@@ -4252,6 +4280,20 @@
       "reviewedSha256": "1b6dca64b8515c6da96af83011a0ef97d4705c196f1167cd2f6de9d98b7115be"
     },
     {
+      "path": "src/lib/marketing/source-summary.ts",
+      "sha256": null,
+      "lines": 30,
+      "status": "source reviewed; finding 405 validates a strict bounded attribution/expiry/identity projection, selects only those nested packet fields and checks current root identity/hash agreement; actual SDK/full-migration parity and unchanged displayed evidence pass; no authored content is deleted; final release remains",
+      "reviewedSha256": "1392a088c417feba3185ff82edd947f92d81dce132fbd3e400987360ccafaa19"
+    },
+    {
+      "path": "src/lib/marketing/state-contracts.ts",
+      "sha256": null,
+      "lines": 65,
+      "status": "source reviewed; finding 406 defines the complete bounded recent-list DTO, original revision owner, canonical dates/time/URLs, per-family identity uniqueness, source agreement, finite diagnostics/costs and exact health-prefix consistency; actual SDK/route/browser/mounted and exact/excess byte tests pass; completeness/history/resource limits remain explicit in callers; final release pending; finding 412 accepts complete selected-head entries through 10000, refuses orphaned campaign entries and regenerates the eight-table read port from 152 migrations; no added index or table grant; finding 416 exports the strict calendar entry DTO with required scalar capture_hash",
+      "reviewedSha256": "caabca493fc93bdc3e558dbf0169da7b25d57800cfee36307ea7525815a9d219"
+    },
+    {
       "path": "src/lib/marketing/storage-errors.ts",
       "sha256": null,
       "lines": 10,
@@ -5101,34 +5143,6 @@
       "lines": 18,
       "status": "source reviewed; finding 386 inherits strict compiler flags, scopes production roots and retains framework/runtime entrypoints and broad CI/editor checks; actual ordinary build, cold app/root type checks and required packaging pass; final release pending",
       "reviewedSha256": "9cf8788392ff9dd2f66d6474587a19520676d0182ea4fce5667204c837391811"
-    },
-    {
-      "path": "src/lib/marketing/calendar-import-contracts.ts",
-      "sha256": null,
-      "status": "source reviewed; finding 401 shares client/server four-digit nonzero-year dates, inclusive seven-day limits, bounded strict preview/report/save DTOs and source-work constants; positive exact ceilings and invalid receipt/date cases pass; final release remains",
-      "reviewedSha256": "db61c1377b23096b9509d4c41081beb2cb9933b9ed8df95c2dc50ffddb08cdc7",
-      "lines": 24
-    },
-    {
-      "path": "src/lib/marketing/source-summary.ts",
-      "sha256": null,
-      "lines": 30,
-      "status": "source reviewed; finding 405 validates a strict bounded attribution/expiry/identity projection, selects only those nested packet fields and checks current root identity/hash agreement; actual SDK/full-migration parity and unchanged displayed evidence pass; no authored content is deleted; final release remains",
-      "reviewedSha256": "1392a088c417feba3185ff82edd947f92d81dce132fbd3e400987360ccafaa19"
-    },
-    {
-      "path": "src/lib/marketing/state-contracts.ts",
-      "sha256": null,
-      "lines": 65,
-      "status": "source reviewed; finding 406 defines the complete bounded recent-list DTO, original revision owner, canonical dates/time/URLs, per-family identity uniqueness, source agreement, finite diagnostics/costs and exact health-prefix consistency; actual SDK/route/browser/mounted and exact/excess byte tests pass; completeness/history/resource limits remain explicit in callers; final release pending; finding 412 accepts complete selected-head entries through 10000, refuses orphaned campaign entries and regenerates the eight-table read port from 152 migrations; no added index or table grant",
-      "reviewedSha256": "cc198ccb9180e8020244b116d1d895c7d97bc182d04c9b2e1a74f2495dc0faff"
-    },
-    {
-      "path": "src/lib/marketing/campaign-activation.ts",
-      "sha256": null,
-      "lines": 36,
-      "status": "source reviewed; finding 411 strict owner/plan/hash receipt and one captured 35-second attempt with bounded success/error bodies, retirement and no replay; units/native/actual SDK checks pass; final release pending",
-      "reviewedSha256": "923967a5b81da0784bf4c0e8fee19b87fab33f22ba8161b5779d34792c11f5d3"
     }
   ],
   "baselineFileCount": 561

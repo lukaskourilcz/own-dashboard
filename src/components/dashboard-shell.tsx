@@ -136,6 +136,7 @@ type Props = {
   previewMarketingImportIntegration?: boolean;
   previewMarketingStateIntegration?: boolean;
   previewCampaignActivationIntegration?: boolean;
+  previewCalendarSlotsIntegration?: boolean;
   previewPlanningIntegration?: boolean;
   previewPlanIntegration?: boolean;
   previewTaskIntegration?: boolean;
@@ -569,7 +570,7 @@ function DashboardShellContent(props: Props) {
           {tab === "prompts" && <PromptsPanel prompts={prompts} setPrompts={setPrompts} promptLinks={promptLinks} setPromptLinks={setPromptLinks} projects={activeProjects} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} />}
           {tab === "tools" && <ToolsPanel tools={tools} setTools={setTools} aiLinks={aiLinks} aiCategories={aiCategories} projects={activeProjects} projectLinks={projectLinks} setProjectLinks={setProjectLinks} subscriptions={subscriptions} displayCurrency={displayCurrency} onShowInLibrary={(linkId) => { setFocusLinkId(linkId); setTab("links"); }} previewDetectedTools={props.previewDetectedTools} />}
           {tab === "links" && <AiPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiCategories={aiCategories} setAiCategories={setAiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} tools={tools} focusLinkId={focusLinkId} onFocusHandled={() => setFocusLinkId(null)} />}
-          {tab === "marketing" && <MarketingPanel liveCampaignActivation={props.previewCampaignActivationIntegration} liveState={props.previewMarketingStateIntegration} liveCalendarImport={props.previewMarketingImportIntegration} isPreview={props.isPreview} onOpenKnowledge={() => setTab("ig-tips")} />}
+          {tab === "marketing" && <MarketingPanel liveCalendarSlots={props.previewCalendarSlotsIntegration} liveCampaignActivation={props.previewCampaignActivationIntegration} liveState={props.previewMarketingStateIntegration} liveCalendarImport={props.previewMarketingImportIntegration} isPreview={props.isPreview} onOpenKnowledge={() => setTab("ig-tips")} />}
           {tab === "workflows" && <WorkflowsPanel onNavigate={setTab} />}
           {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}

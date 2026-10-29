@@ -9,7 +9,7 @@ import { MARKETING_STATE_MAX_BYTES, MarketingStateEnvelopeSchema } from '@/lib/m
 export const maxDuration = 30;
 const revisionFields = 'id,user_id,project_id,campaign_id,revision,content_hash,ready,status,approved_at,approved_hash,feedback,created_at,render_report,offline_import_receipt';
 const campaignFields = 'id,brand,name,starts_on,ends_on,source_hash,status';
-const entryFields = 'id,campaign_id,date,local_time,bound_source_id,title,kind,platform,status,needs_review';
+const entryFields = 'id,campaign_id,date,local_time,bound_source_id,title,kind,platform,status,needs_review,capture_hash';
 const publicationFields = 'id,revision_id,platform,status,remote_container_id,remote_media_id,remote_url,error_code';
 const accountFields = 'brand,platform,remote_account_id,handle,enabled,verified_at';
 const names = ['revisions','campaigns','entries','publications','accounts','sources','jobs','events','sourceHistory'] as const;

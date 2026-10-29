@@ -1,18 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef,useState } from 'react';
+import { useGuardedNavigation } from '@/components/navigation-guard';
 import { Button } from '@/components/ui/button';
-import { CalendarSlot } from './calendar-slot';
+import { CalendarSlot,CalendarSlotEditor } from './calendar-slot';
 import { calendarImportEndDate } from '@/lib/marketing/calendar-import-contracts';
 import type { MarketingState } from '@/lib/marketing/client';
 
 /** The current seven days and the retained idea bank are separate views, never a silent date shift. */
-export function WeeklyMarketingCalendar({ state, brand, lang, disabled, activationDisabled = disabled, busy, onActivate, onChanged }: {
-  state: MarketingState; brand: string; lang: string; disabled: boolean; activationDisabled?: boolean; busy: string | null;
+export function WeeklyMarketingCalendar({ state, brand, lang, disabled, activationDisabled = disabled, slotDisabled = disabled,readPending=false,readSerial=0,onReload=async()=>{}, busy, onActivate, onChanged }: {
+  state: MarketingState; brand: string; lang: string; disabled: boolean; activationDisabled?: boolean;slotDisabled?:boolean;readPending?:boolean;readSerial?:number;onReload?:()=>Promise<void>; busy: string | null;
   onActivate: (campaign: MarketingState['campaigns'][number]) => void; onChanged: () => void;
 }) {
   const cs = lang === 'cs';
-  const [showBacklog, setShowBacklog] = useState(false);
+  const [showBacklog, setShowBacklog] = useState(false),[editing,setEditing]=useState<{entry:MarketingState['entries'][number];campaign:MarketingState['campaigns'][number];key:number}|null>(null);
+  const editorKey=useRef(0),navigate=useGuardedNavigation();
+  const openEditor=(entry:MarketingState['entries'][number],campaign:MarketingState['campaigns'][number])=>navigate(()=>setEditing({entry:{...entry},campaign:{...campaign},key:++editorKey.current}));
   const campaigns = state.campaigns.filter(c => brand === 'all' || c.brand === brand);
   return <div className="space-y-5">
     <div className="border-l-2 border-border pl-3 text-sm">
@@ -20,7 +23,7 @@ export function WeeklyMarketingCalendar({ state, brand, lang, disabled, activati
       <p className="mt-2">{cs ? 'DNESKAi: každý den nový návrh z aktuálního finálního článku BoardlessAI. V neděli vyhodnotíme předchozích sedm dní a vybereme další témata.' : 'DNESKAi: a fresh draft each day from a current final BoardlessAI article. Review the previous seven days and select the next topics on Sunday.'}</p>
       <p className="mt-2 text-xs text-foreground-muted">{cs ? 'Každá hotová verze potřebuje tvoje schválení. Stories zatím vyžadují dokončení importu a živé ověření publikování; propojení Threads a měření dosahu čeká na nastavení.' : 'Every finished revision needs your approval. Stories still need draft import and live publishing verification; Threads account access and reach measurement await setup.'}</p>
     </div>
-    <Button variant="outline" aria-pressed={showBacklog} onClick={() => setShowBacklog(value => !value)}>{showBacklog ? (cs ? 'Zobrazit sedmidenní plán' : 'Show seven-day plan') : (cs ? 'Zobrazit zásobník nápadů' : 'Show idea backlog')}</Button>
+    <Button variant="outline" aria-pressed={showBacklog} onClick={() => navigate(()=>setShowBacklog(value => !value))}>{showBacklog ? (cs ? 'Zobrazit sedmidenní plán' : 'Show seven-day plan') : (cs ? 'Zobrazit zásobník nápadů' : 'Show idea backlog')}</Button>
     {campaigns.map(campaign => {
       // This view groups authored dates; it does not schedule a publication.
       const window = { startDate: campaign.starts_on, endDateInclusive: calendarImportEndDate(campaign.starts_on) };
@@ -39,10 +42,11 @@ export function WeeklyMarketingCalendar({ state, brand, lang, disabled, activati
         {!visible.length ? <p className="text-sm text-foreground-muted">{cs ? 'V tomto pohledu zatím nejsou žádné položky.' : 'There are no entries in this view yet.'}</p> : <div className="divide-y divide-border rounded-lg border border-border bg-surface">{visible.map(entry => <div key={entry.id} className="grid gap-1 px-3 py-3 text-xs sm:grid-cols-[110px_1fr_150px]">
           <time>{entry.date} {entry.local_time}</time><span className="break-words">{entry.title}</span>
           <span className="text-foreground-muted">{entry.status === 'published' ? (cs ? 'Publikováno' : 'Published') : entry.status === 'done' ? (cs ? 'Dokončeno' : 'Done') : entry.kind === 'story' ? (cs ? 'Stories: publikování čeká' : 'Stories: publishing held') : entry.status === 'backlog' ? (cs ? 'Nápad k přepracování' : 'Idea to revisit') : entry.needs_review ? (cs ? 'Čeká na podklad / kontrolu' : 'Needs source / review') : (cs ? 'Naplánováno' : 'Planned')} · {entry.platform}</span>
-          <CalendarSlot entry={entry} campaign={campaign} sources={state.sources} disabled={disabled} onChanged={onChanged}/>
+          <CalendarSlot entry={entry} disabled={slotDisabled} onOpen={()=>openEditor(entry,campaign)}/>
         </div>)}</div>}
         {archived.length > 0 && <details className="mt-3 text-xs"><summary className="cursor-pointer">{cs ? `Vyřazená zadání (${archived.length})` : `Retired briefs (${archived.length})`}</summary><ul className="mt-2 space-y-2">{archived.map(entry => <li key={entry.id}>{entry.title} · {entry.date}</li>)}</ul><p className="mt-2 text-foreground-muted">{cs ? 'Původní záznamy zůstávají uložené pro dohledání. Nečekají na publikování.' : 'Original records remain available for reference. They are not queued for publishing.'}</p></details>}
       </section>;
     })}
+    {editing&&<CalendarSlotEditor key={editing.key} original={editing.entry} campaign={editing.campaign} current={state.entries.find(row=>row.id===editing.entry.id)} currentCampaign={state.campaigns.find(row=>row.id===editing.campaign.id)} sources={state.sources} disabled={slotDisabled} readPending={readPending} readSerial={readSerial} onReload={onReload} onClose={()=>navigate(()=>setEditing(null))} onReset={()=>{const entry=state.entries.find(row=>row.id===editing.entry.id),campaign=state.campaigns.find(row=>row.id===editing.campaign.id);if(entry&&campaign)openEditor(entry,campaign);}} onSaved={()=>{setEditing(null);onChanged();}}/>}
   </div>;
 }

@@ -11,7 +11,7 @@ let container: HTMLDivElement; let root: Root;
 beforeEach(() => { container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); });
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 const campaign = { id: 'campaign', brand: 'devshark', name: 'Week one', starts_on: '2026-10-18', ends_on: '2026-10-24', source_hash: 'hash', status: 'draft' };
-const entry = (id: string, date: string, status = 'blocked', kind = 'carousel'): MarketingState['entries'][number] => ({ id, campaign_id: campaign.id, title: id, date, local_time: '10:00', bound_source_id: null, kind, platform: 'instagram', status, needs_review: true });
+const entry = (id: string, date: string, status = 'blocked', kind = 'carousel'): MarketingState['entries'][number] => ({ id, campaign_id: campaign.id, title: id, date, local_time: '10:00', bound_source_id: null, kind, platform: 'instagram', status, needs_review: true, capture_hash: 'd'.repeat(64) });
 
 it('separates next-week and explicitly retained ideas from current slots, and keeps retired work recoverable', () => {
   const state: MarketingState = { ...EMPTY_MARKETING_STATE, campaigns: [campaign], entries: [entry('current-slot', '2026-10-18'), entry('later-idea', '2026-10-25', 'planned'), entry('retained-idea', '2026-10-20', 'backlog'), entry('retired-offer', '2026-10-19', 'archived')] };

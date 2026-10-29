@@ -1,0 +1,27 @@
+import { writeFile } from 'node:fs/promises';
+import { expect,test } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { gotoPreview,watchConsole } from './helpers';
+import { calendarReleaseFixture } from '../tests/lib/marketing-calendar-release-fixture';
+import { calendarReleaseCopy } from '../src/lib/marketing/calendar-release-copy';
+import { marketingWorkspace } from '../src/lib/i18n/sections/marketing-workspace';
+import { stateOwner } from '../tests/lib/marketing-state-fixture';
+type AxePage=ConstructorParameters<typeof AxeBuilder>[0]['page'];
+for(const lang of ['en','cs'] as const)for(const theme of ['light','dark'] as const){
+ test(`${lang}/${theme}: retained slot draft, explicit recovery and captured confirmation`,async({page},info)=>{
+  const errors=watchConsole(page),t=calendarReleaseCopy[lang],{state,intent,receipt}=calendarReleaseFixture(),posts:Array<{owner?:string;body:unknown}>=[],otherWrites:string[]=[];let reads=0;
+  let finish!:()=>void;const held=new Promise<void>(resolve=>{finish=resolve;});
+  await page.clock.setFixedTime(new Date('2026-10-29T10:00:00Z'));await page.emulateMedia({reducedMotion:'reduce'});if(info.project.name==='mobile')await page.setViewportSize({width:430,height:900});
+  await page.route('**/api/marketing/state',route=>{reads++;return route.fulfill({json:state});});
+  await page.route('**/api/marketing/calendar-entries',async route=>{posts.push({owner:route.request().headers()['x-own-dashboard-owner'],body:route.request().postDataJSON()});if(posts.length===1){await held;return route.fulfill({json:{ok:true}});}return route.fulfill({json:receipt});});
+  page.on('request',request=>{if(request.url().includes('/api/marketing/')&&request.method()!=='GET'&&!request.url().endsWith('/calendar-entries'))otherWrites.push(request.url());});
+  await gotoPreview(page,{lang,theme});await page.goto('/dev-preview?tab=marketing&marketingState=live&calendarSlots=live');const workspace=page.getByTestId('marketing-workspace');await expect(workspace.getByRole('heading',{name:'Reviewed draft',exact:true})).toBeVisible();await workspace.locator('#marketing-tab-calendar').click();await workspace.getByRole('button',{name:t.opener}).click();
+  const editor=page.getByRole('dialog').filter({has:page.locator('form')}),source=editor.getByRole('combobox');await source.selectOption({label:'Reviewed source'});const selected=await source.inputValue();await editor.getByRole('button',{name:t.cancel,exact:true}).click();const guard=page.getByRole('dialog').filter({hasNot:page.locator('form')});await expect(guard).toBeVisible();await guard.getByRole('button',{name:lang==='cs'?'Zůstat zde':'Stay here'}).click();await expect(source).toHaveValue(selected);
+  const save=editor.locator('button[type="submit"]');await save.focus();await save.press('Enter');await expect.poll(()=>posts.length).toBe(1);await expect(source).toBeDisabled();await expect(save).toBeDisabled();await editor.getByRole('button',{name:t.cancel,exact:true}).click();await expect(guard.getByRole('button',{name:lang==='cs'?'Zahodit a odejít':'Discard and leave'})).toBeDisabled();await guard.getByRole('button',{name:lang==='cs'?'Zůstat zde':'Stay here'}).click();finish();await expect(editor.getByRole('alert')).toHaveText(t.unconfirmed);await expect(save).toBeDisabled();expect(reads).toBe(1);
+  await editor.getByRole('button',{name:t.reload,exact:true}).click();await expect(save).toBeEnabled();await expect(source).toHaveValue(selected);expect(reads).toBe(2);expect(posts).toHaveLength(1);
+  const sizes=info.project.name==='desktop'?[1280,1440,1536,1728,1920,2560]:[320,360,390,430];for(const width of sizes){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);const rect=await editor.boundingBox();expect(rect).not.toBeNull();expect(Math.abs(rect!.x+rect!.width/2-width/2)).toBeLessThan(2);const cancelRect=await editor.getByRole('button',{name:t.cancel,exact:true}).boundingBox(),saveRect=await save.boundingBox();expect(Math.abs(cancelRect!.width-saveRect!.width)).toBeLessThan(2);expect(cancelRect!.height).toBe(saveRect!.height);}
+  await page.setViewportSize({width:info.project.name==='desktop'?1440:430,height:900});expect((await new AxeBuilder({page:page as unknown as AxePage}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  const clip=(await editor.boundingBox())!,areas=await Promise.all([editor.locator('form > div').first().boundingBox(),editor.locator('form > p').boundingBox(),editor.locator('form > div').last().boundingBox()]);await writeFile(info.outputPath(`calendar-slot-${lang}-${theme}-${info.project.name}.json`),JSON.stringify({clip,marks:areas.map((rect,index)=>({n:index+1,x:100*(rect!.x-clip.x)/clip.width,y:100*(rect!.y-clip.y)/clip.height,w:100*rect!.width/clip.width,h:100*rect!.height/clip.height})),reads,posts:posts.length},null,2));
+  await editor.screenshot({path:info.outputPath(`calendar-slot-${lang}-${theme}-${info.project.name}.png`)});await save.focus();await save.press('Enter');await expect(editor).toHaveCount(0);await expect(workspace.getByRole('status')).toHaveText(marketingWorkspace[lang].slotPrepared);expect(reads).toBe(3);expect(posts).toEqual([{owner:stateOwner,body:intent},{owner:stateOwner,body:intent}]);expect(otherWrites).toEqual([]);expect(errors).toEqual([]);
+ });
+}
