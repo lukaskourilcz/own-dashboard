@@ -1024,8 +1024,8 @@
       "path": "src/components/marketing/calendar-slot.tsx",
       "lines": 13,
       "sha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c",
-      "status": "partial; full source inspected; mount-time source clock, stale local entry fields, missing entry-version capture, pending-exit guard and confirmed mutation recovery require repair",
-      "reviewedSha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c"
+      "status": "partial; full source inspected; mount-time source clock, stale local entry fields, missing entry-version capture, pending-exit guard and confirmed mutation recovery require repair; finding 413 propagates parent read-only state into already-open source/date/time/save fields and refuses direct save admission, preserving selections through explicit successful recovery; captured source/entry/write lifetimes remain",
+      "reviewedSha256": "76ad9f7ffb01f29c500cb7dc515794fe3037a712f2e766899290e072296c8405"
     },
     {
       "path": "src/components/marketing/calendar-source-notes.tsx",
