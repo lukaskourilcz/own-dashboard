@@ -1,0 +1,80 @@
+{
+  "finding": 416,
+  "applicationCommit": "99f38503",
+  "capturedAt": "2026-10-29",
+  "sourceHashes": {
+    "src/components/marketing/calendar-slot.tsx": "0b73a7c115f79cf57b22fe81a3aa7020238cd7e0d0f97ecd8de7059880c091ee",
+    "src/components/marketing/weekly-calendar.tsx": "1c4dbfe92ff7baf3b2770467c43726ac60a043c7f56c802670f5657150e6fa93",
+    "src/components/panels/marketing-panel.tsx": "8d13817e232ae5c7a9b34e0fef261e1ce39071455b8646c1aaa7711f387c98ea",
+    "src/lib/marketing/calendar-release.ts": "68c2f720ad12d08537db845f54e44852cd861942a2c99764c34a02bbfcbde7a6",
+    "src/lib/marketing/calendar-release-copy.ts": "210d663e5360e9b16d3e723dd3ea903158f2d2f61cedb5799155a9c075f0f292",
+    "e2e/marketing-calendar-slot.spec.ts": "7e92c16384162dfbdd7dcf557b7dd3cd0d91d071bf7e8c7858aef4e7d099e6b0"
+  },
+  "captures": {
+    "desktop": {
+      "image": "calendar-slot-416-cs-1440.png",
+      "clip": {
+        "x": 336,
+        "y": 280.5,
+        "width": 768,
+        "height": 339
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 2.734375,
+          "y": 26.253687315634217,
+          "w": 94.53125,
+          "h": 15.339233038348082
+        },
+        {
+          "n": 2,
+          "x": 2.734375,
+          "y": 56.932153392330385,
+          "w": 94.53125,
+          "h": 4.71976401179941
+        },
+        {
+          "n": 3,
+          "x": 2.734375,
+          "y": 80.53097345132744,
+          "w": 94.53125,
+          "h": 13.274336283185841
+        }
+      ]
+    },
+    "mobile": {
+      "image": "calendar-slot-416-cs-430.png",
+      "clip": {
+        "x": 12,
+        "y": 208.5,
+        "width": 406,
+        "height": 483
+      },
+      "marks": [
+        {
+          "n": 1,
+          "x": 5.172413793103448,
+          "y": 21.73913043478261,
+          "w": 89.65517241379311,
+          "h": 28.985507246376812
+        },
+        {
+          "n": 2,
+          "x": 5.172413793103448,
+          "y": 61.49068322981366,
+          "w": 89.65517241379311,
+          "h": 6.625258799171843
+        },
+        {
+          "n": 3,
+          "x": 5.172413793103448,
+          "y": 83.85093167701864,
+          "w": 89.65517241379311,
+          "h": 11.801242236024844
+        }
+      ]
+    }
+  },
+  "scope": "Actual fake-backend dev-preview modal crops after explicit identical-state recovery; mocked slot POST only; no owner record, provider or publication operation."
+}
