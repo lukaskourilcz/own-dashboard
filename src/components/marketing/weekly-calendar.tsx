@@ -1,52 +1,43 @@
 'use client';
 
-import { useRef,useState } from 'react';
+import { useMemo,useRef,useState } from 'react';
 import { useGuardedNavigation } from '@/components/navigation-guard';
 import { Button } from '@/components/ui/button';
+import { CollectionPagination } from '@/components/ui/collection-pagination';
+import { collectionPage } from '@/lib/collection-page';
 import { CalendarSlot,CalendarSlotEditor } from './calendar-slot';
-import { calendarImportEndDate } from '@/lib/marketing/calendar-import-contracts';
+import { marketingCalendarGroups,marketingCalendarCopy,marketingCalendarKind,marketingCalendarStatus,type MarketingCalendarGroup } from '@/lib/marketing/calendar-view';
 import type { MarketingState } from '@/lib/marketing/client';
-
-/** The current seven days and the retained idea bank are separate views, never a silent date shift. */
-export function WeeklyMarketingCalendar({ state, brand, lang, disabled, activationDisabled = disabled, slotDisabled = disabled,readPending=false,readSerial=0,onReload=async()=>{}, busy, onActivate, onChanged }: {
-  state: MarketingState; brand: string; lang: string; disabled: boolean; activationDisabled?: boolean;slotDisabled?:boolean;readPending?:boolean;readSerial?:number;onReload?:()=>Promise<void>; busy: string | null;
-  onActivate: (campaign: MarketingState['campaigns'][number]) => void; onChanged: () => void;
-}) {
-  const cs = lang === 'cs';
-  const [showBacklog, setShowBacklog] = useState(false),[editing,setEditing]=useState<{entry:MarketingState['entries'][number];campaign:MarketingState['campaigns'][number];key:number}|null>(null);
-  const editorKey=useRef(0),navigate=useGuardedNavigation();
-  const openEditor=(entry:MarketingState['entries'][number],campaign:MarketingState['campaigns'][number])=>navigate(()=>setEditing({entry:{...entry},campaign:{...campaign},key:++editorKey.current}));
-  const campaigns = state.campaigns.filter(c => brand === 'all' || c.brand === brand);
-  return <div className="space-y-5">
-    <div className="border-l-2 border-border pl-3 text-sm">
-      <p>{cs ? 'devShark: v neděli připravíme a zkontrolujeme celý týden. Denně 1 IG příspěvek, 2 příspěvky na Threads a 3 Stories.' : 'devShark: prepare and review the full week on Sunday. Each day: 1 Instagram post, 2 Threads posts and 3 Stories.'}</p>
-      <p className="mt-2">{cs ? 'DNESKAi: každý den nový návrh z aktuálního finálního článku BoardlessAI. V neděli vyhodnotíme předchozích sedm dní a vybereme další témata.' : 'DNESKAi: a fresh draft each day from a current final BoardlessAI article. Review the previous seven days and select the next topics on Sunday.'}</p>
-      <p className="mt-2 text-xs text-foreground-muted">{cs ? 'Každá hotová verze potřebuje tvoje schválení. Stories zatím vyžadují dokončení importu a živé ověření publikování; propojení Threads a měření dosahu čeká na nastavení.' : 'Every finished revision needs your approval. Stories still need draft import and live publishing verification; Threads account access and reach measurement await setup.'}</p>
-    </div>
-    <Button variant="outline" aria-pressed={showBacklog} onClick={() => navigate(()=>setShowBacklog(value => !value))}>{showBacklog ? (cs ? 'Zobrazit sedmidenní plán' : 'Show seven-day plan') : (cs ? 'Zobrazit zásobník nápadů' : 'Show idea backlog')}</Button>
-    {campaigns.map(campaign => {
-      // This view groups authored dates; it does not schedule a publication.
-      const window = { startDate: campaign.starts_on, endDateInclusive: calendarImportEndDate(campaign.starts_on) };
-      const entries = state.entries.filter(entry => entry.campaign_id === campaign.id);
-      const archived = entries.filter(entry => entry.status === 'archived');
-      const backlog = entries.filter(entry => entry.status !== 'archived' && !['done', 'published'].includes(entry.status) && (entry.status === 'backlog' || entry.date < window.startDate || entry.date > window.endDateInclusive));
-      const backlogIds = new Set(backlog.map(entry => entry.id));
-      const week = entries.filter(entry => entry.status !== 'archived' && !backlogIds.has(entry.id) && entry.date >= window.startDate && entry.date <= window.endDateInclusive);
-      const visible = showBacklog ? backlog : week;
-      return <section key={campaign.id} aria-label={`${campaign.name} ${showBacklog ? 'backlog' : window.startDate}`}>
-        <div className="mb-2 flex flex-wrap items-center gap-3"><h2 className="text-sm font-semibold">{campaign.name} · {showBacklog ? (cs ? 'Zásobník' : 'Backlog') : `${window.startDate} – ${window.endDateInclusive}`}</h2>
-          {!showBacklog && campaign.status === 'draft' && <Button variant="outline" disabled={activationDisabled || busy === campaign.id} onClick={() => onActivate(campaign)}>{cs ? 'Použít tento plán' : 'Use this plan'}</Button>}
-        </div>
-        <p className="mb-3 text-xs text-foreground-muted">{cs ? `${week.length} v týdnu · ${backlog.length} nápadů v zásobníku · ${archived.length} vyřazených zadání` : `${week.length} this week · ${backlog.length} backlog ideas · ${archived.length} retired briefs`}</p>
-        {showBacklog && <p className="mb-3 text-xs text-foreground-muted">{cs ? 'Původní data ukazují starý plán, ne nový termín publikace. Nápad znovu vybereme a upravíme podle výsledků týdne a platného zdroje.' : 'Original dates belong to the old plan, not a new publication schedule. Reconsider each idea using weekly results and a current source.'}</p>}
-        {!visible.length ? <p className="text-sm text-foreground-muted">{cs ? 'V tomto pohledu zatím nejsou žádné položky.' : 'There are no entries in this view yet.'}</p> : <div className="divide-y divide-border rounded-lg border border-border bg-surface">{visible.map(entry => <div key={entry.id} className="grid gap-1 px-3 py-3 text-xs sm:grid-cols-[110px_1fr_150px]">
-          <time>{entry.date} {entry.local_time}</time><span className="break-words">{entry.title}</span>
-          <span className="text-foreground-muted">{entry.status === 'published' ? (cs ? 'Publikováno' : 'Published') : entry.status === 'done' ? (cs ? 'Dokončeno' : 'Done') : entry.kind === 'story' ? (cs ? 'Stories: publikování čeká' : 'Stories: publishing held') : entry.status === 'backlog' ? (cs ? 'Nápad k přepracování' : 'Idea to revisit') : entry.needs_review ? (cs ? 'Čeká na podklad / kontrolu' : 'Needs source / review') : (cs ? 'Naplánováno' : 'Planned')} · {entry.platform}</span>
-          <CalendarSlot entry={entry} disabled={slotDisabled} onOpen={()=>openEditor(entry,campaign)}/>
-        </div>)}</div>}
-        {archived.length > 0 && <details className="mt-3 text-xs"><summary className="cursor-pointer">{cs ? `Vyřazená zadání (${archived.length})` : `Retired briefs (${archived.length})`}</summary><ul className="mt-2 space-y-2">{archived.map(entry => <li key={entry.id}>{entry.title} · {entry.date}</li>)}</ul><p className="mt-2 text-foreground-muted">{cs ? 'Původní záznamy zůstávají uložené pro dohledání. Nečekají na publikování.' : 'Original records remain available for reference. They are not queued for publishing.'}</p></details>}
-      </section>;
-    })}
-    {editing&&<CalendarSlotEditor key={editing.key} original={editing.entry} campaign={editing.campaign} current={state.entries.find(row=>row.id===editing.entry.id)} currentCampaign={state.campaigns.find(row=>row.id===editing.campaign.id)} sources={state.sources} disabled={slotDisabled} readPending={readPending} readSerial={readSerial} onReload={onReload} onClose={()=>navigate(()=>setEditing(null))} onReset={()=>{const entry=state.entries.find(row=>row.id===editing.entry.id),campaign=state.campaigns.find(row=>row.id===editing.campaign.id);if(entry&&campaign)openEditor(entry,campaign);}} onSaved={()=>{setEditing(null);onChanged();}}/>}
-  </div>;
+type Entry=MarketingState['entries'][number];type Campaign=MarketingState['campaigns'][number];
+const PAGE_SIZE=20;
+/** Imported authored dates, local bounded pages and one retained slot editor. */
+export function WeeklyMarketingCalendar({state,brand,lang,disabled,activationDisabled=disabled,slotDisabled=disabled,readPending=false,readSerial=0,onReload=async()=>{},busy,onActivate,onChanged}:{
+ state:MarketingState;brand:string;lang:string;disabled:boolean;activationDisabled?:boolean;slotDisabled?:boolean;readPending?:boolean;readSerial?:number;onReload?:()=>Promise<void>;busy:string|null;onActivate:(campaign:Campaign)=>void;onChanged:()=>void;
+}){
+ const locale=lang==='cs'?'cs':'en',t=marketingCalendarCopy[locale],navigate=useGuardedNavigation();
+ const [showBacklog,setShowBacklog]=useState(false),[editing,setEditing]=useState<{entry:Entry;campaign:Campaign;key:number}|null>(null),editorKey=useRef(0);
+ const groups=useMemo(()=>marketingCalendarGroups(state.campaigns,state.entries),[state.campaigns,state.entries]);
+ const openEditor=(entry:Entry,campaign:Campaign)=>navigate(()=>setEditing({entry:{...entry},campaign:{...campaign},key:++editorKey.current}));
+ return <div className="space-y-5">
+  <div className="flex flex-wrap items-center justify-between gap-3"><p className="max-w-prose text-xs text-foreground-muted">{t.intro}</p><Button variant="outline" aria-pressed={showBacklog} onClick={()=>navigate(()=>setShowBacklog(value=>!value))}>{showBacklog?t.week:t.backlog}</Button></div>
+  {groups.filter(group=>brand==='all'||group.campaign.brand===brand).map(group=><CampaignCalendar key={JSON.stringify([group.campaign.id,group.campaign.source_hash])} group={group} lang={locale} showBacklog={showBacklog} activationDisabled={activationDisabled||busy===group.campaign.id} slotDisabled={slotDisabled} onActivate={()=>onActivate(group.campaign)} onOpen={entry=>openEditor(entry,group.campaign)}/>)}
+  {editing&&<CalendarSlotEditor key={editing.key} original={editing.entry} campaign={editing.campaign} current={state.entries.find(row=>row.id===editing.entry.id)} currentCampaign={state.campaigns.find(row=>row.id===editing.campaign.id)} sources={state.sources} disabled={slotDisabled} readPending={readPending} readSerial={readSerial} onReload={onReload} onClose={()=>navigate(()=>setEditing(null))} onDiscard={()=>setEditing(null)} onReset={()=>{const entry=state.entries.find(row=>row.id===editing.entry.id),campaign=state.campaigns.find(row=>row.id===editing.campaign.id);if(entry&&campaign)openEditor(entry,campaign);}} onSaved={()=>{setEditing(null);onChanged();}}/>}
+ </div>;
+}
+function CampaignCalendar({group,lang,showBacklog,activationDisabled,slotDisabled,onActivate,onOpen}:{group:MarketingCalendarGroup;lang:'en'|'cs';showBacklog:boolean;activationDisabled:boolean;slotDisabled:boolean;onActivate:()=>void;onOpen:(entry:Entry)=>void}){
+ const t=marketingCalendarCopy[lang],cs=lang==='cs',navigate=useGuardedNavigation(),{campaign}=group;
+ const [indices,setIndices]=useState({week:0,backlog:0,retired:0,history:0}),view=showBacklog?'backlog':'week';
+ const visible=collectionPage(group[view],indices[view],PAGE_SIZE),retired=collectionPage(group.retired,indices.retired,PAGE_SIZE),history=collectionPage(group.history,indices.history,PAGE_SIZE);
+ const controls=(page:typeof visible,key:keyof typeof indices,label:string)=><CollectionPagination page={page} onPage={index=>navigate(()=>setIndices(previous=>({...previous,[key]:index})))} label={label} previous={t.previous} next={t.next} range={(from,to,total)=>cs?`${from}–${to} z ${total}`:`${from}–${to} of ${total}`}/>;
+ return <section className="mx-auto max-w-5xl" aria-label={`${campaign.name} ${showBacklog?'backlog':campaign.starts_on}`}>
+  <div className="mb-2 flex flex-wrap items-center justify-between gap-3"><h2 className="min-w-0 break-words text-sm font-semibold">{campaign.name} · {showBacklog?t.backlogTitle:`${campaign.starts_on} – ${group.end}`}</h2>{!showBacklog&&campaign.status==='draft'&&<Button variant="outline" disabled={activationDisabled} onClick={onActivate}>{t.use}</Button>}</div>
+  <p className="mb-3 text-xs text-foreground-muted">{cs?`${group.week.length} v týdnu · ${group.backlog.length} nápadů v zásobníku · ${group.retired.length} vyřazených zadání`:`${group.week.length} this week · ${group.backlog.length} backlog ideas · ${group.retired.length} retired briefs`}</p>
+  {showBacklog&&<p className="mb-3 max-w-prose text-xs text-foreground-muted">{t.backlogHelp}</p>}
+  {!visible.total?<p className="text-sm text-foreground-muted">{t.empty}</p>:<div className="divide-y divide-border rounded-lg border border-border bg-surface">{visible.items.map(entry=><div key={entry.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 py-3 text-xs xl:grid-cols-[minmax(0,1fr)_9rem_11rem_auto]">
+   <span className="col-span-2 min-w-0 break-words font-medium xl:col-span-1">{entry.title}</span><time dateTime={entry.date} className="col-start-1 row-start-2 min-w-0 break-words text-foreground-muted xl:col-start-auto xl:row-start-auto">{entry.date} {entry.local_time}</time><span className="col-start-1 row-start-3 min-w-0 break-words text-foreground-muted xl:col-start-auto xl:row-start-auto">{marketingCalendarStatus(entry,lang)} · {marketingCalendarKind(entry.kind,lang)} · {entry.platform}</span><CalendarSlot entry={entry} disabled={slotDisabled} onOpen={()=>onOpen(entry)}/>
+  </div>)}</div>}
+  {controls(visible,view,showBacklog?t.backlogPages:t.weekPages)}
+  {retired.total>0&&<details className="mt-3 text-xs"><summary className="cursor-pointer">{t.retiredPages} ({retired.total})</summary><ul className="mt-2 space-y-2">{retired.items.map(entry=><li key={entry.id} className="break-words"><span>{entry.title}</span> · <time dateTime={entry.date}>{entry.date}</time></li>)}</ul>{controls(retired,'retired',t.retiredPages)}<p className="mt-2 max-w-prose text-foreground-muted">{t.retiredHelp}</p></details>}
+  {history.total>0&&<details className="mt-3 text-xs"><summary className="cursor-pointer">{t.historyPages} ({history.total})</summary><ul className="mt-2 space-y-2">{history.items.map(entry=><li key={entry.id} className="break-words"><span>{entry.title}</span> · <time dateTime={entry.date}>{entry.date}</time> · {marketingCalendarStatus(entry,lang)}</li>)}</ul>{controls(history,'history',t.historyPages)}<p className="mt-2 max-w-prose text-foreground-muted">{t.historyHelp}</p></details>}
+ </section>;
 }

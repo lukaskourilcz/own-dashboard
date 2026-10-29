@@ -18,9 +18,9 @@ const sourceKey=(source:Source)=>JSON.stringify([source.brand,source.id,source.p
 export function CalendarSlot({entry,disabled,onOpen}:{entry:Entry;disabled:boolean;onOpen:()=>void}){
  const {lang}=useLang();
  if(!['instagram','threads'].includes(entry.platform)||!['post','carousel','thread'].includes(entry.kind)||['done','published','archived'].includes(entry.status))return null;
- return <div className="sm:col-span-3"><Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={onOpen}>{calendarReleaseCopy[lang].opener}</Button></div>;
+ return <div className="col-start-2 row-span-2 row-start-2 xl:col-start-auto xl:row-span-1 xl:row-start-auto"><Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={onOpen}>{calendarReleaseCopy[lang].opener}</Button></div>;
 }
-export function CalendarSlotEditor({original,campaign,current,currentCampaign,sources,disabled,readPending,readSerial,onReload,onClose,onReset,onSaved}:{original:Entry;campaign:Campaign;current?:Entry;currentCampaign?:Campaign;sources:Source[];disabled:boolean;readPending:boolean;readSerial:number;onReload:()=>Promise<void>;onClose:()=>void;onReset:()=>void;onSaved:()=>void}){
+export function CalendarSlotEditor({original,campaign,current,currentCampaign,sources,disabled,readPending,readSerial,onReload,onClose,onDiscard,onReset,onSaved}:{original:Entry;campaign:Campaign;current?:Entry;currentCampaign?:Campaign;sources:Source[];disabled:boolean;readPending:boolean;readSerial:number;onReload:()=>Promise<void>;onClose:()=>void;onDiscard:()=>void;onReset:()=>void;onSaved:()=>void}){
  const {lang}=useLang(),t=calendarReleaseCopy[lang],noticeId=useId(),owner=useOwnerPreferences(),client=useQueryClient(),now=useNow();
  const [source,setSource]=useState<Source|null>(null),[date,setDate]=useState(original.date),[time,setTime]=useState(original.local_time??'09:00');
  const [busy,setBusy]=useState(false),[problem,setProblem]=useState<'changed'|'unconfirmed'|'invalid'|null>(null),[attemptRead,setAttemptRead]=useState<number|null>(null),[saved,setSaved]=useState(false);
@@ -37,7 +37,7 @@ export function CalendarSlotEditor({original,campaign,current,currentCampaign,so
  let validTime=false;try{validTime=now!==null&&date>=campaign.starts_on&&date<=campaign.ends_on&&Date.parse(pragueScheduledAt(date,time))>now.getTime();}catch{}
  const canSave=!paused&&!!selected&&validTime;
  const dirty=source!==null||date!==original.date||time!==(original.local_time??'09:00');
- useUnsavedDraft({get dirty(){return dirty&&!confirmed.current;},get pending(){return active.current!==null;},canSave,save:()=>save()});
+ useUnsavedDraft({get dirty(){return dirty&&!confirmed.current;},get pending(){return active.current!==null;},canSave,save:()=>save(),discard:onDiscard});
  async function reload(){if(reloadBusy.current||active.current)return;reloadBusy.current=true;try{await onReload();}finally{reloadBusy.current=false;}}
  async function save():Promise<boolean>{
   if(disabled||active.current||saved||!owner||!present||changed||inactive||needsRead)return false;

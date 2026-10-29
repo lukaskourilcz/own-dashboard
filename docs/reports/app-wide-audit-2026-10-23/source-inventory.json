@@ -1024,8 +1024,8 @@
       "path": "src/components/marketing/calendar-slot.tsx",
       "lines": 13,
       "sha256": "5f4cb7c8402c7a2d528f06386cbc858ef8a5bd49d1722093135f82f1f1565d4c",
-      "status": "source reviewed; finding 416 moves one retained editor outside rows, captures owner/entry/campaign/source hash and revision before waiting, rechecks expiry/time at click, guards dirty/pending exits/unmount, reserves one attempt, requires exact bounded receipt and explicit successful fresh read after uncertainty; changed or omitted rows preserve the draft until deliberate reset/discard; inactive plans refuse locally; EN/CS native responsive/keyboard/axe checks pass; final release pending",
-      "reviewedSha256": "0b73a7c115f79cf57b22fe81a3aa7020238cd7e0d0f97ecd8de7059880c091ee"
+      "status": "source reviewed; finding 416 moves one retained editor outside rows, captures owner/entry/campaign/source hash and revision before waiting, rechecks expiry/time at click, guards dirty/pending exits/unmount, reserves one attempt, requires exact bounded receipt and explicit successful fresh read after uncertainty; changed or omitted rows preserve the draft until deliberate reset/discard; inactive plans refuse locally; EN/CS native responsive/keyboard/axe checks pass; final release pending; finding 417 fits the trigger inline on wide rows and explicitly discards the retained editor before guarded page/brand navigation; dirty reset and confirmed save behavior stay covered",
+      "reviewedSha256": "948f3fe8bd926817f85597d820a3cb53b67bf2c2d2207d50f20ec685aa28c917"
     },
     {
       "path": "src/components/marketing/calendar-source-notes.tsx",
@@ -1324,8 +1324,8 @@
       "path": "src/components/marketing/weekly-calendar.tsx",
       "lines": 48,
       "sha256": "234ef5f4cc0cbd37546cb91a933c48b53a8864e35aaa158cfc7e8b6d306f97ff",
-      "status": "partial; finding 416 hosts one stable captured slot editor outside campaign rows and guards backlog/editor changes, retaining a removed entry draft; activation is independently captured; outdated source/cadence/status copy, per-campaign scans and bounded row paging remain; final release pending",
-      "reviewedSha256": "1c4dbfe92ff7baf3b2770467c43726ac60a043c7f56c802670f5657150e6fa93"
+      "status": "source reviewed; finding 417 groups complete selected entries once, preserves authored order and completed out-of-week history, bounds week/backlog/retired/history to twenty local rows, guards paging and explicitly closes discarded retained editors, and replaces unsupported cadence/source/Stories setup claims with stored status and conservative plan copy; maximum 10000-entry native fixture, EN/CS/themes/ten widths/axe and slot recovery pass; final release pending",
+      "reviewedSha256": "4e7647103f69a42b30fb112b9092398310be65abdd1422fb5b1bc0e030cbcaf6"
     },
     {
       "path": "src/components/marketing/weekly-results.tsx",
@@ -3333,6 +3333,13 @@
       "sha256": "8a1af2ee7ec7c51ddd698e015fec6a76cd19b579bb840fce439bdbcff432b505",
       "status": "source reviewed; finding 393 complete pinned commit/file consumers, byte/deadline/caller bounds, exact brand/schema identity, UTF-8, immutable provenance and reader/late-response cleanup pass; parent importer phases remain separate",
       "reviewedSha256": "fda19a715354b6ed90c415eda4267046382b3d7b74bc0445ea81d572387c2fe2"
+    },
+    {
+      "path": "src/lib/marketing/calendar-view.ts",
+      "sha256": null,
+      "lines": 25,
+      "status": "source reviewed; finding 417 one-pass complete selected-plan grouping, authored order, explicit completed history and typed EN/CS conservative stored-status/kind labels; 10000-identity-read and all-page reachability checks pass; final release pending",
+      "reviewedSha256": "4bc8ecd28563baa6180ebe347a6433deb0d64270fbb73e413f87f780bbc4cba8"
     },
     {
       "path": "src/lib/marketing/campaign-activation.ts",
