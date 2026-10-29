@@ -118,3 +118,29 @@ for (const lang of ['en', 'cs'] as const) {
   expect(article.querySelector('[data-testid="marketing-review-body"]')!.className).not.toContain('lg:grid-cols');
  });
 }
+
+const preparedMediaState = (mimeType: 'image/jpeg' | 'video/mp4') => {
+ const value = marketingStateFixture(), row = value.revisions[0]; row.ready = true; value.campaigns[0].status = 'active'; value.accounts[0].verified_at = '2026-10-29T00:00:00Z';
+ row.revision.format = mimeType === 'video/mp4' ? 'reel' : 'post';
+ row.revision.assets = [{ url: `https://example.test/asset.${mimeType === 'video/mp4' ? 'mp4' : 'jpg'}`, mimeType, sha256: 'c'.repeat(64), width: 1080, height: 1350, alt: 'Authored media description' }]; return value;
+};
+it('renders MP4 as an explicitly controlled video and waits for decoded media before approval', async () => {
+ const value = preparedMediaState('video/mp4'); vi.stubGlobal('fetch', vi.fn(async () => Response.json(value))); render(); await displayed('Reviewed draft');
+ const video = host.querySelector('video')!; expect(video).not.toBeNull(); expect(host.querySelector('img')).toBeNull();
+ expect(video.controls).toBe(true); expect(video.autoplay).toBe(false); expect(video.preload).toBe('metadata'); expect(video.getAttribute('aria-label')).toBe('Authored media description');
+ expect(button(marketingWorkspace.en.approve).disabled).toBe(true);
+ act(() => video.dispatchEvent(new Event('loadeddata'))); expect(button(marketingWorkspace.en.approve).disabled).toBe(true);
+ Object.defineProperty(video, 'readyState', { value: 2 }); act(() => video.dispatchEvent(new Event('loadeddata'))); expect(button(marketingWorkspace.en.approve).disabled).toBe(false);
+ act(() => video.dispatchEvent(new Event('error'))); expect(button(marketingWorkspace.en.approve).disabled).toBe(true);
+});
+it('does not reuse a loaded hash for another row or changed asset URL', async () => {
+ const value = preparedMediaState('video/mp4'), second = structuredClone(value.revisions[0]); second.id = '00000031-0000-4000-8000-000000000000'; second.revision.title = 'Different revision'; second.revision.assets[0].url = 'https://example.test/other.mp4'; value.revisions.push(second);
+ const next = structuredClone(value); next.revisions[0].revision.assets[0].url = 'https://example.test/refreshed.mp4';
+ const fetcher = vi.fn().mockResolvedValueOnce(Response.json(value)).mockResolvedValueOnce(Response.json(next)); vi.stubGlobal('fetch', fetcher); render(); await displayed('Reviewed draft');
+ const video = host.querySelector('video')!; Object.defineProperty(video, 'readyState', { value: 2 });
+ act(() => video.dispatchEvent(new Event('loadeddata')));
+ const approvals = () => [...host.querySelectorAll<HTMLButtonElement>('article button')].filter(element => element.textContent === marketingWorkspace.en.approve);
+ expect(approvals().map(element => element.disabled)).toEqual([false, true]);
+ await act(async () => { button(marketingWorkspace.en.refresh).click(); await client.getQueryCache().find({ queryKey: qk.marketingState })!.promise; });
+ expect(approvals().map(element => element.disabled)).toEqual([true, true]);
+});

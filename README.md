@@ -303,6 +303,8 @@ npm run build
 npm run test:e2e
 ```
 
+The MP4 review suite uses installed Google Chrome (`channel: "chrome"`) for H.264 playback; other suites keep bundled Chromium. CI installs both with `npx playwright install --with-deps chromium chrome`. Local checks use an isolated test profile, never the signed-in Chrome profile.
+
 The deterministic `/dev-preview` harness drives the Playwright responsive matrix at 360, 430, 768, 1024, 1440, and 1728 px, including mobile destination access, Czech copy, dark mode, overflow, axe checks, PWA metadata, and single-page A4 invoice output. It contains fixtures only and remains unavailable in deployed production.
 
 ## Product design and media
