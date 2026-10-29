@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { gotoPreview, watchConsole } from './helpers';
 import { MARKETING_CALENDAR_SOURCES } from '../src/lib/marketing-calendars';
@@ -41,7 +42,12 @@ for (const lang of ['en', 'cs'] as const) for (const tab of ['work', 'ig-tips'] 
   }
   if (width < 768) expect((await retry.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include(tab === 'work' ? '[data-marketing-week]' : '#main-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
-  if (lang === 'cs' && info.project.name === 'desktop' && [430, 1440].includes(width)) await scope.screenshot({ path: `docs/reports/app-wide-audit-2026-10-23/assets/calendar-evidence-${tab}-398-cs-${width}.png` });
+  if (lang === 'cs' && info.project.name === 'desktop' && [430, 1440].includes(width)) {
+   await scope.screenshot({ path: `docs/reports/app-wide-audit-2026-10-23/assets/calendar-evidence-${tab}-398-cs-${width}.png` });
+   const box = (await scope.boundingBox())!, targets = [scope.getByRole('alert'), tab === 'work' ? scope.getByText(t.noEntries, { exact: true }) : scope.locator('p').filter({ hasText: /devShark/ }), retry];
+   const marks = await Promise.all(targets.map(async (target, index) => { const value = (await target.boundingBox())!; return { n: index + 1, x: 100 * (value.x - box.x) / box.width, y: 100 * (value.y - box.y) / box.height, w: 100 * value.width / box.width, h: 100 * value.height / box.height }; }));
+   writeFileSync(info.outputPath(`calendar-evidence-${tab}-398-cs-${width}.json`), JSON.stringify({ box, marks }, null, 2) + '\n');
+  }
  }
  expect(reads).toBe(4); expect(errors).toEqual([]);
 });
