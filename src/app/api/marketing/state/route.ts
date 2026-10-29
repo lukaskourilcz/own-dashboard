@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { awaitWithSignal } from '@/lib/abortable';
 import { readVerifiedServerContext } from '@/lib/supabase/server-owner';
 import { marketingJobHealth, safeMarketingJobs } from '@/lib/marketing/job-health';
-import { MARKETING_SOURCE_SUMMARY_COLUMNS, marketingSourceSummary } from '@/lib/marketing/source-summary';
+import { marketingSourceSummary } from '@/lib/marketing/source-summary';
 import { MARKETING_STATE_MAX_BYTES, MarketingStateEnvelopeSchema } from '@/lib/marketing/state-contracts';
 
 export const maxDuration = 30;
@@ -12,7 +12,8 @@ const campaignFields = 'id,brand,name,starts_on,ends_on,source_hash,status';
 const entryFields = 'id,campaign_id,date,local_time,bound_source_id,title,kind,platform,status,needs_review';
 const publicationFields = 'id,revision_id,platform,status,remote_container_id,remote_media_id,remote_url,error_code';
 const accountFields = 'brand,platform,remote_account_id,handle,enabled,verified_at';
-const limits = [100, 10, 1000, 100, 4, 100, 100, 100, 200];
+const names = ['revisions','campaigns','entries','publications','accounts','sources','jobs','events','sourceHistory'] as const;
+const limits = [100, 10, 10000, 100, 4, 100, 100, 100, 200];
 function project(rows: Record<string, unknown>[], fields: string) {
  const keys = fields.split(',');
  return rows.map(row => Object.fromEntries(keys.map(key => [key, row[key]])));
@@ -32,23 +33,12 @@ export async function GET(request: Request) {
  const { ownerId, db } = context;
  if (expectedOwner !== null && expectedOwner !== ownerId) return reply({ error: 'marketing-owner-changed' }, 409);
  const querySignal = AbortSignal.any([signal, AbortSignal.timeout(15_000)]);
- const result=await Promise.all([
-  db.from('marketing_revisions').select(revisionFields).eq('user_id',ownerId).order('created_at',{ascending:false}).limit(100),
-  db.from('marketing_campaigns').select(`user_id,${campaignFields}`).eq('user_id',ownerId).neq('status','archived').limit(10),
-  db.from('marketing_calendar_entries').select(`user_id,${entryFields}`).eq('user_id',ownerId).order('date').limit(1000),
-  db.from('marketing_publications').select(`user_id,${publicationFields}`).eq('user_id',ownerId).order('created_at',{ascending:false}).limit(100),
-  db.from('marketing_accounts').select(`user_id,${accountFields}`).eq('user_id',ownerId).limit(4),
-  db.from('marketing_sources').select(`user_id,id,brand,source_id,source_revision,content_hash,eligible,${MARKETING_SOURCE_SUMMARY_COLUMNS}`).eq('user_id',ownerId).order('observed_at',{ascending:false}).limit(100),
-  db.from('marketing_jobs').select('user_id,id,status,error_code,created_at,brand:request->generation->source->>brand,cost_usd:result->usage->>estimatedCostUsd').eq('user_id',ownerId).order('created_at',{ascending:false}).limit(100),
-  db.from('marketing_events').select('user_id,revision_id,kind,created_at').eq('user_id',ownerId).in('kind',['approved','returned','skipped']).order('created_at',{ascending:false}).limit(100),
-  db.from('marketing_source_history').select(`user_id,${MARKETING_SOURCE_SUMMARY_COLUMNS}`).eq('user_id',ownerId).order('recorded_at',{ascending:false}).limit(200),
- ].map(query => awaitWithSignal<{ data: unknown; error: unknown }>(query.retry(false).abortSignal(querySignal), querySignal)));
+ const result=await awaitWithSignal<{data:unknown;error:unknown}>(db.rpc('marketing_workspace_snapshot').retry(false).abortSignal(querySignal),querySignal);
  signal.throwIfAborted();
+ if(result.error)throw new Error('state-unavailable');
+ const snapshot=z.strictObject({ownerId:z.literal(ownerId),entriesComplete:z.literal(true),revisions:z.unknown(),campaigns:z.unknown(),entries:z.unknown(),publications:z.unknown(),accounts:z.unknown(),sources:z.unknown(),jobs:z.unknown(),events:z.unknown(),sourceHistory:z.unknown()}).parse(result.data);
  const ownedRow = z.object({ user_id: z.literal(ownerId) }).passthrough();
- const rows = result.map((family, index) => {
-  if (family.error) throw new Error('state-unavailable');
-  return z.array(ownedRow).max(limits[index]).parse(family.data);
- });
+ const rows = names.map((name,index)=>z.array(ownedRow).max(limits[index]).parse(snapshot[name]));
  const jobs=safeMarketingJobs(rows[6]);
  const events = z.array(z.object({ revision_id: z.uuid().nullable(), kind: z.enum(['approved', 'returned', 'skipped']) })).parse(rows[7]);
  const first=new Map<string,string>();for(const event of [...events].reverse()){if(event.revision_id&&!first.has(event.revision_id))first.set(event.revision_id,event.kind);}

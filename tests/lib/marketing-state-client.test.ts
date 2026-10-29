@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { loadMarketingState } from '@/lib/marketing/client';
-import { marketingStateFixture, stateOwner } from './marketing-state-fixture';
+import { marketingStateFixture, stateOwner, stateId } from './marketing-state-fixture';
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const read = (signal = new AbortController().signal, owner = stateOwner) => loadMarketingState(signal, owner);
 it('accepts one complete original-owner snapshot with explicit no-store/captured-owner fetch', async () => {
@@ -82,4 +82,11 @@ it('accepts exactly the complete response byte ceiling without truncating the fi
  const value = marketingStateFixture(), json = JSON.stringify(value);
  vi.stubGlobal('fetch', vi.fn(async () => new Response(json.padEnd(8 * 1024 * 1024, ' '), { headers: { 'Content-Type': 'application/json' } })));
  expect((await read()).entries).toEqual(value.entries);
+});
+
+it('accepts the complete 10000-entry selected-head allowance and refuses an extra or orphaned entry', async () => {
+ const value=marketingStateFixture();value.entries=Array.from({length:10000},(_,index)=>({...value.entries[0],id:stateId(index+100)}));
+ vi.stubGlobal('fetch',vi.fn(async()=>Response.json(value)));expect((await read()).entries).toHaveLength(10000);
+ value.entries.push({...value.entries[0],id:stateId(20000)});await expect(read()).rejects.toThrow('marketing-unavailable');
+ value.entries=[{...value.entries[0],campaign_id:stateId(30000)}];await expect(read()).rejects.toThrow('marketing-unavailable');
 });

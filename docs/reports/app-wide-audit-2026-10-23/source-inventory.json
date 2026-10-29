@@ -563,10 +563,10 @@
     },
     {
       "path": "src/app/api/marketing/state/route.ts",
-      "lines": 69,
+      "lines": 59,
       "sha256": "ad99779a77a9660a71e9570e352c19e6fc8dde9f4f268466e1e79bee0bbefa5f",
-      "status": "partial; full nine-query owner boundary inspected; incomplete caps, last-100 event first-approval bias, runtime validation and request cancellation remain pending; accounts inspected and contain no credential columns; finding 405 verifies original session/optional captured owner and all returned row ownership, bounds original/parallel query consumers with retries disabled, refuses failed/null/malformed/oversized families and projects explicit fields/source summaries; recent-list caps/completeness, browser capture/full DTO and SDK JSON remain separate; finding 406 validates the full owner-stamped DTO and rejects an outbound envelope above 8MiB before success; this does not bound prior SDK JSON decoding/allocation or establish complete historical lists",
-      "reviewedSha256": "de46dd7c974fb90a4599e177230a72cf2537d93b386f1b4e3ab1ebb2c38c6e65"
+      "status": "partial; findings 405/406 verified original owner, explicit projections and strict bounded DTO/wire validation retained; finding 412 uses one stable own-RLS snapshot, deterministic active/newest heads and complete selected-head entries with overflow refusal; actual SDK/full-chain/native concurrent snapshot and unchanged-data upgrade/rollback pass; generic SDK JSON/allocation, full revision payload and final release remain separate",
+      "reviewedSha256": "c38e04dc692494f6e17a52e4f015d5590b6f3f570ea7de35107e412d8f7db61d"
     },
     {
       "path": "src/app/api/marketing/tick/route.ts",
@@ -3674,8 +3674,8 @@
       "path": "src/lib/marketing/dneskai-read-database.generated.ts",
       "lines": 167,
       "sha256": "4ce75635a0609ae65ef982c33dc4874b5ea4031ee4406e5d3c43ff4e40c66429",
-      "status": "source reviewed; eight-table read port regenerated from all 151 canonical migrations; finite account versions retained and only the current schema fingerprint changes in finding 404; final rollout/release pending",
-      "reviewedSha256": "ba25f623bba08d0432fdfa65fc7676a4891230131682383374255f8f2dc53bf8"
+      "status": "source reviewed; eight-table read port regenerated from all 151 canonical migrations; finite account versions retained and only the current schema fingerprint changes in finding 404; final rollout/release pending; finding 412 regenerates from 152 canonical migrations; only the schema fingerprint changes and the eight read-table types stay identical",
+      "reviewedSha256": "c42db0d5b869146b6bf45559e0b2388c8eb163124405b3ec05ac9c0bdd0ee3fd"
     },
     {
       "path": "src/lib/marketing/dneskai-recovery-rules.ts",
@@ -5119,9 +5119,9 @@
     {
       "path": "src/lib/marketing/state-contracts.ts",
       "sha256": null,
-      "lines": 63,
-      "status": "source reviewed; finding 406 defines the complete bounded recent-list DTO, original revision owner, canonical dates/time/URLs, per-family identity uniqueness, source agreement, finite diagnostics/costs and exact health-prefix consistency; actual SDK/route/browser/mounted and exact/excess byte tests pass; completeness/history/resource limits remain explicit in callers; final release pending",
-      "reviewedSha256": "0e67a4e0bd9d054d140aee34be6b8dffc2c21eacfa9756f95cfde39784845d59"
+      "lines": 65,
+      "status": "source reviewed; finding 406 defines the complete bounded recent-list DTO, original revision owner, canonical dates/time/URLs, per-family identity uniqueness, source agreement, finite diagnostics/costs and exact health-prefix consistency; actual SDK/route/browser/mounted and exact/excess byte tests pass; completeness/history/resource limits remain explicit in callers; final release pending; finding 412 accepts complete selected-head entries through 10000, refuses orphaned campaign entries and regenerates the eight-table read port from 152 migrations; no added index or table grant",
+      "reviewedSha256": "cc198ccb9180e8020244b116d1d895c7d97bc182d04c9b2e1a74f2495dc0faff"
     },
     {
       "path": "src/lib/marketing/campaign-activation.ts",

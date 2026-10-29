@@ -1,4 +1,4 @@
-# Remaining source-review leads — 28 October 2026
+# Remaining source-review leads — 29 October 2026
 
 These are follow-ups from source inspection, not completed repairs or release evidence. The file inventory and audit report remain authoritative for coverage. Validate each reachable failure before changing behavior. No lead authorizes a real provider call, owner-record mutation or publication during verification.
 
@@ -263,3 +263,5 @@ Finding 279 closes the native Europe-wide remote save→Saved evidence loss and 
 - Finding 411 closes captured campaign activation, exact owner/plan/hash receipts, one synchronous attempt, pending exits/unmount and explicit read-first uncertainty recovery. All 167 related cases and 24 native cases pass. No new schema; all 65 prepared migrations remain unapplied. Ledger: 731/179 partial. Revision/slot writes, dirty editors, complete selected-campaign data, generic SDK resources and final review/release remain open.
 
 - Ordinary 56430435 checkpoint: default-heap build, eight renderer traces and seven local admission/production-guard checks pass with all 3,048 tracked inputs unchanged. Branch is pushed and verified; three dynamic-path warnings remain. No deployment, migration or main merge. Checkpoint 101 stays failed; final full release and remaining 731/179-partial review remain open.
+
+- Finding 412 closes selected-plan entry starvation and independent-snapshot/nine-request state reads. All 174 related checks and 24 native UI/API cases pass; full 152-file native concurrent statement/next-statement proof and local advisors pass. The measured ordered-index candidate is rejected; no index is added. Current rollout: 66 prepared files (87–152), unapplied. Ledger stays 731/179 partial. Large Calendar rendering/per-campaign scans, captured revision/slot actions, dirty editors, loaded-key retention, generic SDK resources and final review/release remain open.

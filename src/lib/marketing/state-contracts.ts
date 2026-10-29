@@ -46,7 +46,7 @@ const jobs = MarketingJobHealthSchema.extend({ costUsd: z.number().nonnegative()
  * Validating this envelope does not turn its list caps into complete history. */
 export const MarketingStateEnvelopeSchema = z.strictObject({
  ownerId: z.uuid(), revisions: z.array(revision).max(100).refine(idsUnique),
- campaigns: z.array(campaign).max(10).refine(idsUnique), entries: z.array(entry).max(1000).refine(idsUnique),
+ campaigns: z.array(campaign).max(10).refine(idsUnique), entries: z.array(entry).max(10000).refine(idsUnique),
  publications: z.array(publication).max(100).refine(idsUnique),
  accounts: z.array(account).max(4).refine(rows => new Set(rows.map(row => `${row.brand}:${row.platform}`)).size === rows.length),
  sources: z.array(source).max(100).refine(idsUnique),
@@ -55,6 +55,8 @@ export const MarketingStateEnvelopeSchema = z.strictObject({
  diagnostics: z.strictObject({ sampleSize: z.number().int().min(0).max(100), firstApprovalRate: z.number().min(0).max(1).nullable() })
   .refine(value => value.sampleSize === 0 ? value.firstApprovalRate === null : value.firstApprovalRate !== null),
 }).superRefine((value, context) => {
+ const campaignIds=new Set(value.campaigns.map(row=>row.id));
+ if(value.entries.some(row=>!campaignIds.has(row.campaign_id)))context.addIssue({code:'custom',message:'state-entry-campaign-mismatch'});
  if (value.revisions.some(row => row.user_id !== value.ownerId)) context.addIssue({ code: 'custom', message: 'state-owner-mismatch' });
  const fields = ['id', 'status', 'errorCode', 'brand', 'createdAt'] as const;
  if (value.jobHealth.length !== Math.min(value.jobs.length, 10) || value.jobHealth.some((job, index) => fields.some(field => job[field] !== value.jobs[index]?.[field]))) {
