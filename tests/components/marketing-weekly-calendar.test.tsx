@@ -35,3 +35,16 @@ it('never offers a carousel source action for a Story, retired entry, completed 
   expect(container.textContent).not.toContain('Select current source');
   expect([...container.querySelectorAll('button')].find(button => button.textContent === 'Use this plan')?.disabled).toBe(true);
 });
+
+it.each([
+  ['0001-01-01', '0001-01-07', '0001-01-08'],
+  ['9999-12-25', '9999-12-31', '9999-12-24'],
+])('renders the inclusive imported week %s through %s without resolving publish times', (start, end, outside) => {
+  const state: MarketingState = { ...EMPTY_MARKETING_STATE, campaigns: [{ ...campaign, starts_on: start, ends_on: end }], entries: [entry('first-slot', start, 'planned', 'task'), entry('last-slot', end, 'planned', 'task'), entry('outside-slot', outside, 'planned', 'task')] };
+  act(() => root.render(<WeeklyMarketingCalendar state={state} brand="devshark" lang="en" disabled busy={null} onActivate={vi.fn()} onChanged={vi.fn()} />));
+  expect(container.textContent).toContain(`${start} – ${end}`);
+  expect(container.textContent).toContain('2 this week · 1 backlog ideas');
+  expect(container.textContent).toContain('first-slot'); expect(container.textContent).toContain('last-slot'); expect(container.textContent).not.toContain('outside-slot');
+  act(() => container.querySelector<HTMLButtonElement>('button[aria-pressed]')!.click());
+  expect(container.textContent).toContain('outside-slot'); expect(container.textContent).not.toContain('first-slot');
+});

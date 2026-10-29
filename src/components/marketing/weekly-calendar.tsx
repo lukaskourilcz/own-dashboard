@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CalendarSlot } from './calendar-slot';
-import { sevenDayMarketingWindow } from '@/lib/marketing/weekly-planning';
+import { calendarImportEndDate } from '@/lib/marketing/calendar-import-contracts';
 import type { MarketingState } from '@/lib/marketing/client';
 
 /** The current seven days and the retained idea bank are separate views, never a silent date shift. */
@@ -22,12 +22,13 @@ export function WeeklyMarketingCalendar({ state, brand, lang, disabled, busy, on
     </div>
     <Button variant="outline" aria-pressed={showBacklog} onClick={() => setShowBacklog(value => !value)}>{showBacklog ? (cs ? 'Zobrazit sedmidenní plán' : 'Show seven-day plan') : (cs ? 'Zobrazit zásobník nápadů' : 'Show idea backlog')}</Button>
     {campaigns.map(campaign => {
-      const window = sevenDayMarketingWindow(campaign.starts_on);
+      // This view groups authored dates; it does not schedule a publication.
+      const window = { startDate: campaign.starts_on, endDateInclusive: calendarImportEndDate(campaign.starts_on) };
       const entries = state.entries.filter(entry => entry.campaign_id === campaign.id);
       const archived = entries.filter(entry => entry.status === 'archived');
-      const backlog = entries.filter(entry => entry.status !== 'archived' && !['done', 'published'].includes(entry.status) && (entry.status === 'backlog' || entry.date < window.startDate || entry.date >= window.endDateExclusive));
+      const backlog = entries.filter(entry => entry.status !== 'archived' && !['done', 'published'].includes(entry.status) && (entry.status === 'backlog' || entry.date < window.startDate || entry.date > window.endDateInclusive));
       const backlogIds = new Set(backlog.map(entry => entry.id));
-      const week = entries.filter(entry => entry.status !== 'archived' && !backlogIds.has(entry.id) && entry.date >= window.startDate && entry.date < window.endDateExclusive);
+      const week = entries.filter(entry => entry.status !== 'archived' && !backlogIds.has(entry.id) && entry.date >= window.startDate && entry.date <= window.endDateInclusive);
       const visible = showBacklog ? backlog : week;
       return <section key={campaign.id} aria-label={`${campaign.name} ${showBacklog ? 'backlog' : window.startDate}`}>
         <div className="mb-2 flex flex-wrap items-center gap-3"><h2 className="text-sm font-semibold">{campaign.name} · {showBacklog ? (cs ? 'Zásobník' : 'Backlog') : `${window.startDate} – ${window.endDateInclusive}`}</h2>
