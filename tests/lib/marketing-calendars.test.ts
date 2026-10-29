@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
@@ -310,4 +311,21 @@ describe("readMarketingCalendars", () => {
     );
     expect(huge.sources[0]!.status).toBe("too-large");
   });
+});
+
+it('bounds reference normalization to linear work while preserving authored citation identity', () => {
+  const entries = Array.from({ length: 100 }, (_, i) => entry(`linear-${i}`, '2026-11-06', Array.from({ length: 20 }, (_, j) => `Fixture reference ${i}-${j}`)));
+  const normalizations = vi.spyOn(String.prototype, 'normalize');
+  let index: ReturnType<typeof aggregateTipUsage>, calls: number;
+  try { index = aggregateTipUsage([source('marketingshark', 'devShark', calendar({ entries }))]); calls = normalizations.mock.calls.length; }
+  finally { normalizations.mockRestore(); }
+  const authoredSources = MARKETING_CALENDAR_SOURCES.map(config => {
+    const parsed = parseMarketingCalendar(readFileSync(`fixtures/marketing-calendars/${config.id}.json`, 'utf8'), config.project);
+    if (!parsed.ok) throw new Error('authored-fixture-invalid');
+    return { ...config, status: 'ok' as const, detail: null, calendar: parsed.calendar };
+  });
+  const authored = aggregateTipUsage(authoredSources), snapshot = { sources: authored.readSources, references: [...authored.byTitle] };
+  if (process.env.AUDIT_TIP_USAGE_METRICS) writeFileSync(process.env.AUDIT_TIP_USAGE_METRICS, JSON.stringify({ fixture: '100 entries, twenty distinct references each', entries: entries.length, references: 2000, normalizationCalls: calls, authoredReferenceTitles: authored.byTitle.size, authoredIndexSha256: createHash('sha256').update(JSON.stringify(snapshot)).digest('hex'), scope: 'Synthetic operation counts and exact authored-fixture index parity; not production latency or billing evidence.' }, null, 2) + '\n');
+  expect(index!.byTitle.size).toBe(2000); expect([...index!.byTitle.values()].every(rows => rows.length === 1 && rows[0].count === 1)).toBe(true);
+  expect(calls!).toBeLessThanOrEqual(4000);
 });

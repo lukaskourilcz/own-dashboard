@@ -1563,8 +1563,8 @@
       "path": "src/components/panels/ig-tips-panel.tsx",
       "lines": 734,
       "sha256": "bd8825210893ec2994ed3b39fd113fbacf8374f0820e4f96b7dee99a2ff5a610",
-      "status": "partial; original-owner identity stage verified in finding 242; finding 387 retained calendar counts and single EN/CS stale recovery notice pass six-width/native checks; negative usage claims under incomplete/stale reads, later reader/write/UX phases and final release remain open; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate",
-      "reviewedSha256": "3d1c5533b3be550d6024e0aaa550c0af31b95724eb233efbf14814790c294a45"
+      "status": "partial; original-owner identity stage verified in finding 242; finding 387 retained calendar counts and single EN/CS stale recovery notice pass six-width/native checks; negative usage claims under incomplete/stale reads, later reader/write/UX phases and final release remain open; finding 398 closes broad absence/use claims with loaded-record/citation scope and verifies compact status-row/phone recovery geometry through partial, capped and stale native cases; later persistence/reader phases remain separate; finding 400 shares a per-snapshot tip-id citation map across filters/counts/cards, with both-device zero-repeat NFC and one-read evidence; private persistence/actions remain open",
+      "reviewedSha256": "98728f47724bda4bd3b916d580ae85c5a2d138573f3ab262453641a7609d2caa"
     },
     {
       "path": "src/components/panels/important-dates-panel.tsx",
@@ -2109,8 +2109,8 @@
       "path": "src/components/work/marketing-week.tsx",
       "lines": 222,
       "sha256": "dc43705296df5bb2641d3aa8c0beef59900399be7aed3f3262eb41cbd28be26e",
-      "status": "source reviewed; complete read-only component review closes through findings 194/383/385/387/398/399: validated bounded projection, inherited labels, documented browser-calendar window, twenty initial rows/explicit show-all, source/read-time/retained recovery, scoped negative results and six-width EN/CS native/axe evidence; final consolidated release pending",
-      "reviewedSha256": "c7d47678661275da6bb26603ac826bfb2ba502c796f0cf7089f907344a8ad8ac"
+      "status": "source reviewed; complete read-only component review closes through findings 194/383/385/387/398/399: validated bounded projection, inherited labels, documented browser-calendar window, twenty initial rows/explicit show-all, source/read-time/retained recovery, scoped negative results and six-width EN/CS native/axe evidence; final consolidated release pending; finding 400 groups shown records linearly in new local date buckets with preserved order and native evidence",
+      "reviewedSha256": "974bdaac307ae85710915d11eeb0f9635a817daa948daa91baa77c18aec43e1e"
     },
     {
       "path": "src/components/work/weekly-planning.tsx",
@@ -3254,8 +3254,8 @@
       "path": "src/lib/marketing-calendars.ts",
       "lines": 440,
       "sha256": "8f611826f8f78a9b86ecdd67f9d10d5eaf9bbac15b2aeddd075092d3b8c3c5a4",
-      "status": "partial; findings 383/385 verify bounded unique parser projections, complete omission counts, strict complete browser DTOs, original response scope/bytes/cancellation and explicit guarded recovery focus; cached failed-refresh presentation, server/import lifetimes, repeated title work and final release remain open",
-      "reviewedSha256": "a83c28a88ae581b0fcf21ccfd82d7c4ab03c951346396a16752f7345f3f16784"
+      "status": "source reviewed; findings 383/385 cover bounded unique parser projections, complete omissions and strict original-scope browser responses; findings 387/398/399 close retained/partial evidence and upstream reader contracts; finding 400 closes repeated title work with linear reference normalization and exact authored-index parity; documented browser-calendar semantics retained; final consolidated release pending",
+      "reviewedSha256": "076358a924e2c5b15f5542172c573fedf9771f2d1c0e611400dc14cdce7397a6"
     },
     {
       "path": "src/lib/marketing/account-control-contracts.ts",

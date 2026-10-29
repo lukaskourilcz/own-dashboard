@@ -57,7 +57,7 @@ for (const lang of ['en', 'cs'] as const) {
     if (width < 768) expect(preview!.height).toBeGreaterThanOrEqual(44);
     if (width >= 1024) { expect(Math.abs(input!.y - preview!.y)).toBeLessThan(1); expect(box!.width).toBeLessThanOrEqual(768); }
     expect((await new AxeBuilder({ page: page as unknown as AxePage }).include('main').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
-    if (lang === 'cs' && theme === 'dark' && [430, 1440].includes(width)) await section.screenshot({ path: `docs/reports/app-wide-audit-2026-10-23/assets/calendar-import-396-cs-${width}.png` });
+    if (lang === 'cs' && theme === 'dark' && [430, 1440].includes(width)) await section.screenshot({ path: info.outputPath(`calendar-import-396-cs-${width}.png`) });
    }
    expect(errors).toEqual([]);
   });

@@ -146,6 +146,7 @@ export function IgTipsPanel({
   const calendarSources = calendars.view.kind === "ok" ? calendars.view.data.sources : null;
   const usage = useMemo(() => (calendarSources ? aggregateTipUsage(calendarSources) : null), [calendarSources]);
   const usageRead = usage !== null && usage.readSources.length > 0;
+  const usageByTip = useMemo(() => new Map(tips.map(tip => [tip.id, usage ? usageForTip(usage, tip.title) : NO_USAGE])), [tips, usage]);
   const unmatchedRefs = useMemo(() => (usage ? unmatchedTipRefs(usage, tips.map((tip) => tip.title)) : 0), [usage, tips]);
   const groupLabel = (group: TipGroupKey) => tt.groupLabel[group];
   const searched = useMemo(() => searchTips(tips, query, (group) => tt.groupLabel[group]), [tips, query, tt.groupLabel]);
@@ -154,13 +155,13 @@ export function IgTipsPanel({
       searched.filter(
         (tip) =>
           (groupFilter === "all" || tipGroupKey(tip) === groupFilter) &&
-          (!withoutPlanReferences || !usageRead || usageForTip(usage!, tip.title).length === 0),
+          (!withoutPlanReferences || !usageRead || usageByTip.get(tip.id)!.length === 0),
       ),
-    [searched, groupFilter, withoutPlanReferences, usage, usageRead],
+    [searched, groupFilter, withoutPlanReferences, usageByTip, usageRead],
   );
   const withoutPlanReferenceCount = useMemo(
-    () => (usageRead ? tips.filter((tip) => usageForTip(usage!, tip.title).length === 0).length : 0),
-    [tips, usage, usageRead],
+    () => (usageRead ? tips.filter((tip) => usageByTip.get(tip.id)!.length === 0).length : 0),
+    [tips, usageByTip, usageRead],
   );
   const groups = useMemo(() => groupTips(filtered), [filtered]);
   const availableGroups = useMemo(() => groupTips(tips).map((entry) => entry.group), [tips]);
@@ -425,7 +426,7 @@ export function IgTipsPanel({
                         key={tip.id}
                         tip={tip}
                         forProjects={(projectUsage.get(tip.id) ?? []).map(({ project }) => project.name)}
-                        usage={usage ? usageForTip(usage, tip.title) : NO_USAGE}
+                        usage={usageByTip.get(tip.id) ?? NO_USAGE}
                         expanded={expanded.has(tip.id)}
                         onToggle={() => toggle(tip.id)}
                         onEdit={() => openEdit(tip)}

@@ -259,7 +259,7 @@ export function tipTitleKey(title: string): string {
 export type TipUsage = {
   sourceId: string;
   label: string;
-  /** Entries in that calendar that apply the tip. */
+  /** Entries in that loaded calendar that cite the tip. */
   count: number;
   /** The calendar filtered to this tip. */
   url: string;
@@ -292,10 +292,14 @@ export function aggregateTipUsage(sources: readonly MarketingSourceResult[]): Ti
     readSources.push(source.id);
     const counts = new Map<string, { title: string; count: number }>();
     for (const entry of source.calendar.entries) {
-      for (const key of new Set(entry.tipRefs.map(tipTitleKey))) {
-        if (!key) continue;
+      const seen = new Set<string>();
+      for (const title of entry.tipRefs) {
+        const key = tipTitleKey(title);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
         const current = counts.get(key);
-        counts.set(key, { title: current?.title ?? entry.tipRefs.find((ref) => tipTitleKey(ref) === key)!, count: (current?.count ?? 0) + 1 });
+        if (current) current.count++;
+        else counts.set(key, { title, count: 1 });
       }
     }
     for (const [key, { title, count }] of counts) {

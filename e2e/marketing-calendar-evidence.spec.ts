@@ -43,11 +43,31 @@ for (const lang of ['en', 'cs'] as const) for (const tab of ['work', 'ig-tips'] 
   if (width < 768) expect((await retry.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'] }).include(tab === 'work' ? '[data-marketing-week]' : '#main-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
   if (lang === 'cs' && info.project.name === 'desktop' && [430, 1440].includes(width)) {
-   await scope.screenshot({ path: `docs/reports/app-wide-audit-2026-10-23/assets/calendar-evidence-${tab}-398-cs-${width}.png` });
+   await scope.screenshot({ path: info.outputPath(`calendar-evidence-${tab}-398-cs-${width}.png`) });
    const box = (await scope.boundingBox())!, targets = [scope.getByRole('alert'), tab === 'work' ? scope.getByText(t.noEntries, { exact: true }) : scope.locator('p').filter({ hasText: /devShark/ }), retry];
    const marks = await Promise.all(targets.map(async (target, index) => { const value = (await target.boundingBox())!; return { n: index + 1, x: 100 * (value.x - box.x) / box.width, y: 100 * (value.y - box.y) / box.height, w: 100 * value.width / box.width, h: 100 * value.height / box.height }; }));
    writeFileSync(info.outputPath(`calendar-evidence-${tab}-398-cs-${width}.json`), JSON.stringify({ box, marks }, null, 2) + '\n');
   }
  }
  expect(reads).toBe(4); expect(errors).toEqual([]);
+});
+
+test('search and local filters reuse citation identity without another calendar read', async ({ page }) => {
+ const errors = watchConsole(page);
+ await page.addInitScript(title => {
+  const state = window as unknown as { auditTitleNormalizations: number }; state.auditTitleNormalizations = 0;
+  const original = String.prototype.normalize;
+  String.prototype.normalize = function (form?: string) { if (form === 'NFC' && String(this) === title) state.auditTitleNormalizations++; return original.call(this, form); };
+ }, tip);
+ await gotoPreview(page, { lang: 'en' }); let reads = 0;
+ await page.unroute('**/api/marketing/calendars'); await page.route('**/api/marketing/calendars', route => {
+  reads++; return route.fulfill({ json: { checkedAt: '2026-10-29T00:00:00Z', sources: MARKETING_CALENDAR_SOURCES.map((source, index) => ({ ...source, status: 'ok', detail: null, calendar: { name: source.label, launch: null, periodStart: null, periodEnd: null, entries: index ? [] : [{ id: 'one', date: '2026-10-29', time: null, kind: 'post', platform: 'instagram', title: 'Loaded citation', status: 'planned', tipRefs: [tip] }], prelaunch: [], skipped: 0 } })) } });
+ });
+ await page.goto('/dev-preview?tab=ig-tips&calendars=live');
+ await expect(page.locator('[data-tip-card="tip1"] [data-tip-usage]')).toContainText('devShark ×1');
+ const count = () => page.evaluate(() => (window as unknown as { auditTitleNormalizations: number }).auditTitleNormalizations);
+ const before = await count(); await page.getByRole('textbox', { name: 'Search tips…' }).fill(tip); await expect(page.locator('[data-tip-card]')).toHaveCount(1);
+ expect(await count()).toBe(before);
+ await page.getByRole('button', { name: /^Not referenced in loaded plans/ }).click(); await expect(page.locator('[data-tip-card]')).toHaveCount(0); expect(await count()).toBe(before);
+ await page.getByRole('button', { name: 'Clear filters', exact: true }).click(); await expect(page.locator('[data-tip-card]')).toHaveCount(5); expect(await count()).toBe(before); expect(reads).toBe(1); expect(errors).toEqual([]);
 });

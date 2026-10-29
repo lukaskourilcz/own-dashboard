@@ -53,7 +53,11 @@ export function MarketingWeekCard({ preview }: { preview?: MarketingCalendarsRes
 
   const shownEntries = week ? (showAll ? week.entries : week.entries.slice(0, WEEK_PAGE)) : [];
   const byDay = new Map<string, WeekEntry[]>();
-  for (const entry of shownEntries) byDay.set(entry.date, [...(byDay.get(entry.date) ?? []), entry]);
+  for (const entry of shownEntries) {
+    const dayEntries = byDay.get(entry.date);
+    if (dayEntries) dayEntries.push(entry);
+    else byDay.set(entry.date, [entry]);
+  }
 
   return (
     <Card data-marketing-week aria-busy={checking}>
