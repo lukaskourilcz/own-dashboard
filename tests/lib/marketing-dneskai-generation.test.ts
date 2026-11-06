@@ -348,9 +348,11 @@ describe("deck assembly by code", () => {
     expect(deck.slides[0]).toEqual({ type: "cover-photo", headline: copy.slides[0]!.headline, images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: copy.slides[0]!.alt });
     expect(deck.slides[1]).not.toHaveProperty("kicker");
     expect(deck.slides[3]).toMatchObject({ kicker: "Na Instagramu" });
+    // Every generated deck is drawn in Spotlight (owner decision, 6 November 2026).
+    expect(deck.kit).toBe("spotlight");
     const single: DneskaiCopy = { ...validCopy(pictures), format: "single-image", slides: [{ type: "single", variant: "photo", headline: " Lightroom otevře zavřené oči ", body: "Zdarma jsou 2 použití.", kicker: "Nástroj",
       images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
-    expect(buildDneskaiDeck(single, offerFor())).toEqual({ schemaVersion: expect.any(String), format: "single-image",
+    expect(buildDneskaiDeck(single, offerFor())).toEqual({ schemaVersion: expect.any(String), format: "single-image", kit: "spotlight",
       slides: [{ type: "single", variant: "photo", headline: "Lightroom otevře zavřené oči", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] });
   });
 });

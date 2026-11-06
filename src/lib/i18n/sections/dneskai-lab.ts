@@ -188,7 +188,7 @@ const en = {
     rows: [
       ['J / K or ↓ / ↑', 'Next or previous post'],
       ['← / →', 'Previous or next slide'],
-      ['1–6', 'Choose a kit'],
+      ['1–2', 'Choose a kit'],
       ['A', 'Approve this post'],
       ['D', 'Approve the day'],
       ['E', 'Edit the first field of the slide'],
@@ -437,7 +437,7 @@ const cs: typeof en = {
     rows: [
       ['J / K nebo ↓ / ↑', 'Další nebo předchozí příspěvek'],
       ['← / →', 'Předchozí nebo další slide'],
-      ['1–6', 'Vybrat sadu'],
+      ['1–2', 'Vybrat sadu'],
       ['A', 'Schválit tento příspěvek'],
       ['D', 'Schválit celý den'],
       ['E', 'Upravit první pole slidu'],

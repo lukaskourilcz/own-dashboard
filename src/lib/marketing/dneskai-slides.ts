@@ -25,6 +25,13 @@ export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
  * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
  */
 export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
+/**
+ * Owner decision, 6 November 2026: every DNESKAi post is made in Spotlight. Generation and regeneration write it, and
+ * it is the only kit the Lab offers for a switch. Decks saved in another kit keep it (their hash and any approval stay
+ * bound to it) until the owner switches them; the studio still draws every kit so those decks keep rendering.
+ */
+export const DNESKAI_GENERATION_KIT: DneskaiKitId = "spotlight";
+export const DNESKAI_OFFERED_KIT_IDS: readonly DneskaiKitId[] = [DNESKAI_GENERATION_KIT];
 /** The kit a deck is drawn in. */
 export const dneskaiKitOf = (deck: { kit?: DneskaiKitId } | null | undefined): DneskaiKitId => deck?.kit ?? DNESKAI_EDITORIAL_KIT;
 
