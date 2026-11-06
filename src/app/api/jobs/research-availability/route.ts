@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
-import { OSLO_JOBS } from "@/lib/jobs/oslo-research";
+import { RESEARCH_JOBS } from "@/lib/jobs/research";
 import { verifyListings } from "@/lib/jobs/availability";
 import type { JobListing } from "@/lib/types";
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
     );
   const body = await request.json().catch(() => null);
-  const job = OSLO_JOBS.find((row) => row.id === body?.id);
+  const job = RESEARCH_JOBS.find((row) => row.id === body?.id);
   if (!job)
     return NextResponse.json(
       { error: "Unknown research position" },
