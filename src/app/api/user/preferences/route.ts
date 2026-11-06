@@ -23,7 +23,6 @@ type Patch = {
   cv_url_cs?: string;
   cv_url_en?: string;
   hidden_project_tabs?: string[];
-  show_czech_career?: boolean;
 };
 
 export async function GET() {
@@ -32,7 +31,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   const { data, error } = await supabase
     .from("user_preferences")
-    .select("ai_enabled, ai_sensitive_opt_in, notifications_renewals, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs, show_czech_career")
+    .select("ai_enabled, ai_sensitive_opt_in, notifications_renewals, language, theme, display_currency, hidden_navigation, navigation_order, navigation_collapsed, dashboard_layout, tasks_per_category, cv_url_cs, cv_url_en, hidden_project_tabs")
     .eq("user_id", user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: "Could not load preferences." }, { status: 500 });
@@ -51,7 +50,6 @@ export async function GET() {
     cv_url_cs: data?.cv_url_cs ?? "",
     cv_url_en: data?.cv_url_en ?? "",
     hidden_project_tabs: normalizeHiddenProjectTabs(data?.hidden_project_tabs),
-    show_czech_career: data?.show_czech_career === true,
     sync_available: true,
   });
 }
@@ -146,9 +144,6 @@ export async function PATCH(request: Request) {
   }
   if (typeof body.cv_url_en === "string") {
     patch.cv_url_en = body.cv_url_en.slice(0, 2000);
-  }
-  if (typeof body.show_czech_career === "boolean") {
-    patch.show_czech_career = body.show_czech_career;
   }
   if (Array.isArray(body.hidden_project_tabs)) {
     patch.hidden_project_tabs = normalizeHiddenProjectTabs(

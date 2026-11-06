@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { useLang } from "@/lib/i18n";
 import {
   useCvLinks,
-  useCzechCareerVisibility,
   useDisplayCurrency,
   useNavCollapsed,
   useNavOrder,
@@ -28,7 +27,6 @@ export type SyncedUiPreferences = {
   cv_url_cs: string;
   cv_url_en: string;
   hidden_project_tabs: string[];
-  show_czech_career?: boolean;
   sync_available: boolean;
 };
 
@@ -46,7 +44,6 @@ export function PreferenceHydrator({
   const { setCollapsed } = useNavCollapsed();
   const { setCount } = useTasksPerCategory();
   const { setCs, setEn } = useCvLinks();
-  const { setShowCzechCareer } = useCzechCareerVisibility();
   const { setLayout } = useDashboardLayout();
   const { setHiddenProjectTabs } = useProjectTabVisibility();
 
@@ -65,7 +62,6 @@ export function PreferenceHydrator({
     setCs(preferences.cv_url_cs);
     setEn(preferences.cv_url_en);
     setHiddenProjectTabs(preferences.hidden_project_tabs);
-    setShowCzechCareer(preferences.show_czech_career === true);
   }, [
     preferences,
     setCollapsed,
@@ -79,7 +75,6 @@ export function PreferenceHydrator({
     setOrder,
     setTheme,
     setHiddenProjectTabs,
-    setShowCzechCareer,
   ]);
 
   return null;
