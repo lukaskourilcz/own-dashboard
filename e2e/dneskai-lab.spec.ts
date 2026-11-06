@@ -197,7 +197,8 @@ test('Lab switches a post to Spotlight, previews it unsaved, then saves a versio
   await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
   await expect(page.getByTestId('dneskai-kit-spotlight')).toContainText(t.kits.onStage);
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
-  await expect(page.getByTestId('dneskai-lab-session').getByText(t.actions.saved)).toBeVisible();
+  // The page states the save; the session may show it too until it remounts on the new hash.
+  await expect(lab.getByText(t.actions.saved).first()).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
   // Saved in Spotlight, the post no longer offers its older kit.
