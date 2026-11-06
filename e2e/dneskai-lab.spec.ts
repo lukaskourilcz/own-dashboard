@@ -197,7 +197,7 @@ test('Lab switches a post to Spotlight, previews it unsaved, then saves a versio
   await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
   await expect(page.getByTestId('dneskai-kit-spotlight')).toContainText(t.kits.onStage);
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
-  await expect(lab.getByText(t.actions.saved)).toBeVisible();
+  await expect(page.getByTestId('dneskai-lab-session').getByText(t.actions.saved)).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
   await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
   // Saved in Spotlight, the post no longer offers its older kit.
@@ -350,6 +350,8 @@ for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360
   const topics = page.getByTestId('dneskai-topics');
   await expect(topics).toBeVisible();
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.news) })).toBeVisible();
+  // Owner decision, 6 November 2026: the pause of new topics is stated where the proposed ones are reviewed.
+  await expect(topics.getByTestId('dneskai-topics-paused')).toHaveText(t.paused);
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.education) })).toBeVisible();
   // #210: an approved topic with no link says why it waits.
   await expect(topics.getByTestId('dneskai-topic-code')).toContainText(describeMarketingCode('topic-source-missing', lang).happened);

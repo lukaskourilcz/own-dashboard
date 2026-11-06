@@ -38,6 +38,8 @@ describe('readDneskaiTopics (#150)', () => {
       { data: [{ created_at: '2026-10-23T01:30:00+00:00' }], error: null },
     ]);
     const read = (await readDneskaiTopics(db, owner, project, now, { enabled: true }))!;
+    expect(read.newTopicsPaused).toBe(false);
+    expect((await readDneskaiTopics(db, owner, project, now, { enabled: true, newTopicsPaused: true }))!.newTopicsPaused).toBe(true);
     expect(read.groups.education.proposed.map((topic) => topic.id)).toEqual([id(1)]);
     expect(read.groups.education.proposed[0]!.source).toEqual({ label: 'example.test', url: 'https://www.example.test/reel/1' });
     expect(read.groups.news.approved[0]).toMatchObject({ id: id(2), verdict: 'fact', source: { label: '@itstundeanthony', url: null } });

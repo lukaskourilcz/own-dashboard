@@ -322,7 +322,7 @@ function topicSource(evidence: unknown): DneskaiTopic['source'] {
  * in progress, the newest 120) and the rejected or expired ones of the last 14 days (the newest 40). Returns null
  * when DNESKAI_TOPICS_ENABLED is off, so nothing reads a table that may not exist yet.
  */
-export async function readDneskaiTopics(db: Database, owner: string, project: string, now: Date, options: { enabled: boolean }): Promise<DneskaiTopicsRead | null> {
+export async function readDneskaiTopics(db: Database, owner: string, project: string, now: Date, options: { enabled: boolean; newTopicsPaused?: boolean }): Promise<DneskaiTopicsRead | null> {
   if (!options.enabled) return null;
   z.uuid().parse(owner); z.uuid().parse(project);
   const columns = 'id,kind,source_kind,title_cs,summary,keyword,verdict,evidence,status,proposed_for,approved_at,created_at,updated_at';
@@ -344,5 +344,5 @@ export async function readDneskaiTopics(db: Database, owner: string, project: st
     groups[topic.data.kind][topic.data.status].push(topic.data);
   }
   const latest = rows(latestResult as { data: Array<{ created_at: string }> | null; error: unknown }, 'dneskai-topics-unavailable')[0];
-  return DneskaiTopicsReadSchema.parse({ schemaVersion: DNESKAI_TOPICS_VERSION, generatedAt: now.toISOString(), groups, lastProposedAt: latest ? iso(latest.created_at) : null, unreadable });
+  return DneskaiTopicsReadSchema.parse({ schemaVersion: DNESKAI_TOPICS_VERSION, generatedAt: now.toISOString(), groups, lastProposedAt: latest ? iso(latest.created_at) : null, unreadable, newTopicsPaused: options.newTopicsPaused ?? false });
 }

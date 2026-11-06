@@ -60,6 +60,8 @@ export const DneskaiTopicsReadSchema = z.strictObject({
   lastProposedAt: timestamp.nullable(),
   /** Stored rows that could not be read; shown as a count, never a failed read. */
   unreadable: z.number().int().nonnegative(),
+  /** Owner decision, 6 November 2026: true while no new topics are proposed (`DNESKAI_NEW_TOPICS_ENABLED` is not "true"). */
+  newTopicsPaused: z.boolean(),
 });
 export type DneskaiTopicsRead = z.infer<typeof DneskaiTopicsReadSchema>;
 

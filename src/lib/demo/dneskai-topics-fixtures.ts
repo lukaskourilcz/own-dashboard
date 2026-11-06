@@ -28,7 +28,7 @@ export function createDneskaiTopicsFixture(now: Date): DneskaiTopicsRead {
   ];
   const groups = { news: emptyDneskaiTopicGroups(), education: emptyDneskaiTopicGroups() };
   for (const item of topics) groups[item.kind][item.status].push(item);
-  return DneskaiTopicsReadSchema.parse({ schemaVersion: DNESKAI_TOPICS_VERSION, generatedAt: now.toISOString(), groups, lastProposedAt: hoursAgo(6), unreadable: 0 });
+  return DneskaiTopicsReadSchema.parse({ schemaVersion: DNESKAI_TOPICS_VERSION, generatedAt: now.toISOString(), groups, lastProposedAt: hoursAgo(6), unreadable: 0, newTopicsPaused: true });
 }
 
 export const demoTopicId = id;
