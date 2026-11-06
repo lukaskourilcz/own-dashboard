@@ -327,7 +327,7 @@ describe('createDneskaiBriefs over a store', () => {
       } as unknown as MarketingSchedulerPorts;
       let ticks = 0;
       const tick = async () => {
-        const result = await runMarketingTick({ owner, env: { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true' }, ports, now: () => new Date(clock.at) }, { tick: `aaaaaaaa-aaaa-4aaa-8aaa-${String(++ticks).padStart(12, '0')}`, kind: 'minute' });
+        const result = await runMarketingTick({ owner, env: { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', DNESKAI_NEW_TOPICS_ENABLED: 'true' }, ports, now: () => new Date(clock.at) }, { tick: `aaaaaaaa-aaaa-4aaa-8aaa-${String(++ticks).padStart(12, '0')}`, kind: 'minute' });
         clock.at += 5 * 60_000;
         return result.did.find((step) => step.category === 'briefs')!;
       };

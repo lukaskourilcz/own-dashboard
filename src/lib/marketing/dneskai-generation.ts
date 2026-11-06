@@ -2,7 +2,7 @@ import { z } from "zod";
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
 import { contentHash } from "./hashes";
 import type { DneskaiBrief, DneskaiBriefMedia } from "./dneskai-brief";
-import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_GENERATION_KIT, DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
@@ -515,7 +515,8 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
       alt: slide.alt.trim(),
     };
   });
-  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, slides });
+  // Every generated deck is drawn in Spotlight (owner decision, 6 November 2026).
+  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit: DNESKAI_GENERATION_KIT, slides });
 }
 
 export { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";

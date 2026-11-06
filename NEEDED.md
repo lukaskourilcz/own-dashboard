@@ -2,6 +2,7 @@
 
 Browser steps are GitHub issues labelled `astra`; [docs/astra-handoff.md](docs/astra-handoff.md) orders them for Codex Astra. DNESKAi status below was verified on 23 October 2026.
 
+- [ ] **Review the proposed DNESKAi topics, then resume new ones** — new topics are paused since 6 November: no nightly collection, no scouting and no expiry of proposed news topics. Approve or reject what waits in Náměty, then set `DNESKAI_NEW_TOPICS_ENABLED=true` in Vercel production and redeploy to resume. [imp:4] [owner:me] [time:30m] [kind:decision]
 - [ ] **Apply to the Czech priority roles** — Career → Prověřené role lists 50 priority matches from the 6 November research. Open each original, confirm it is still live, write the letter in the listing's language and record the sent date. Check the unconfirmed degree fields (Watergate, MONEE) and agency/client duplicates first. Priorities expire on 11 December; rerun the research then. [imp:5] [owner:me] [time:3h] [kind:content]
 
 - [x] **Enable Instagram content publishing for @dneskai** — owner explicitly requested ON on 23 October 2026. Accepted the account confirmation and verified Publikování zapnuto. The server switches were already on; approved exact revisions can publish at their scheduled times. This session approved no draft and manually published no post. The daily mix decision below remains separate. [imp:5] [owner:ai] [time:2m] [kind:decision]

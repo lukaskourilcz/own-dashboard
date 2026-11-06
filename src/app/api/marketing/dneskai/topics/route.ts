@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { requireDneskaiProject } from '@/lib/marketing/dneskai-store';
-import { dneskaiTopicsEnabled } from '@/lib/marketing/dneskai-evidence-rollout';
+import { dneskaiNewTopicsEnabled, dneskaiTopicsEnabled } from '@/lib/marketing/dneskai-evidence-rollout';
 import { readDneskaiTopics } from '@/lib/marketing/dneskai-workspace-read';
 import { DneskaiTopicActionResultSchema, DneskaiTopicActionSchema, type DneskaiTopicActionResult, type DneskaiTopicStatus } from '@/lib/marketing/dneskai-topics';
 export const runtime = 'nodejs';
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   const projectId = new URL(request.url).searchParams.get('projectId');
   if (!z.uuid().safeParse(projectId).success) return Response.json({ error: 'invalid-project' }, { status: 400 });
   try { await requireDneskaiProject(db, user.id, projectId!); } catch { return Response.json({ error: 'project-unavailable' }, { status: 404 }); }
-  try { return Response.json(await readDneskaiTopics(db, user.id, projectId!, new Date(), { enabled: true }), { headers }); }
+  try { return Response.json(await readDneskaiTopics(db, user.id, projectId!, new Date(), { enabled: true, newTopicsPaused: !dneskaiNewTopicsEnabled() }), { headers }); }
   catch { return Response.json({ error: 'dneskai-topics-unavailable' }, { status: 503 }); }
 }
 

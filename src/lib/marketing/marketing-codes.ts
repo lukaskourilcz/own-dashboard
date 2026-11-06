@@ -497,6 +497,7 @@ const CODES = {
   'token-refresh-uncertain': ['auto', 'The token refresh result is uncertain.', 'Výsledek obnovení tokenu není jistý.'],
   'yield-to-publication': ['wait', 'A publication is due soon, so this step waits.', 'Brzy je na řadě publikace, proto tento krok počká.'],
   'collection-disabled': ['config', 'Source collection is not enabled.', 'Sběr zdrojů není zapnutý.'],
+  'new-topics-paused': ['config', 'New topics are paused until the proposed ones are reviewed.', 'Nové náměty jsou pozastavené, dokud neprojdete navržené.'],
   // A retired entry point answers 410: /api/marketing/dneskai/collect, and DNESKAi operations of /api/marketing/n8n.
   'route-retired': ['none', 'This entry point was retired; the scheduler does this work now.', 'Tento vstupní bod byl vyřazen; tuto práci teď dělá plánovač.'],
   // Owner decisions 6, 8 and 9 (22 October 2026): approve at the next free slot, regenerate with a note, generate now.

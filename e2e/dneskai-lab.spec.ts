@@ -17,7 +17,9 @@ for (const lang of ['en', 'cs'] as const) test(`Lab queue, saved pixels, fit, di
   const lab = page.getByTestId('dneskai-lab');
   await expect(lab).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
-  await expect(page.getByTestId('dneskai-kit-bold').getByRole('radio')).toBeEnabled();
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeEnabled();
+  // Spotlight only (owner decision, 6 November 2026): no other kit is offered.
+  await expect(page.getByTestId('dneskai-kit-bold')).toHaveCount(0);
   const inspector = page.getByTestId('dneskai-slide-inspector');
   const headline = inspector.getByRole('textbox', { name: t.slide.fields.headline, exact: true });
   await headline.fill(lang === 'cs' ? 'Krátký ověřený titulek' : 'Short checked headline');
@@ -186,18 +188,21 @@ test('Publish now stays off while the account does not publish, and says why', a
   await expect(publish).toHaveAttribute('title', dneskaiLab.en.actions.publishNowOff);
 });
 
-test('Lab switches a post to another kit, previews it unsaved, then saves a version that needs its own approval', async ({ page }) => {
+test('Lab switches a post to Spotlight, previews it unsaved, then saves a version that needs its own approval', async ({ page }) => {
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const t = dneskaiLab.en, lab = page.getByTestId('dneskai-lab');
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
-  await page.getByTestId('dneskai-kit-ticker').click();
+  await page.getByTestId('dneskai-kit-spotlight').click();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
   await expect(lab.getByText(t.savedPreview, { exact: false })).toBeVisible();
-  await expect(page.getByTestId('dneskai-kit-ticker')).toContainText(t.kits.onStage);
+  await expect(page.getByTestId('dneskai-kit-spotlight')).toContainText(t.kits.onStage);
   await lab.getByRole('button', { name: t.actions.save, exact: true }).click();
-  await expect(lab.getByText(t.actions.saved)).toBeVisible();
+  // The page states the save; the session may show it too until it remounts on the new hash.
+  await expect(lab.getByText(t.actions.saved).first()).toBeVisible();
   await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
-  await expect(page.getByTestId('dneskai-kit-ticker').getByRole('radio')).toBeChecked();
+  await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
+  // Saved in Spotlight, the post no longer offers its older kit.
+  await expect(page.getByTestId('dneskai-kit-editorial')).toHaveCount(0);
 });
 
 test('Spotlight takes a round inset picture on the cover from the pool, previews it, saves and approves the new hash', async ({ page }, info) => {
@@ -212,9 +217,9 @@ test('Spotlight takes a round inset picture on the cover from the pool, previews
   await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).not.toBeChecked();
   await expect(inspector.getByTestId('dneskai-lab-inset')).toHaveCount(0);
   await expect(inspector.getByRole('button', { name: t.slide.insetAdd })).toHaveCount(0);
-  // Key 6 puts the post on the Spotlight kit; its cover can now take a second, round picture.
+  // Key 2 (after the post's own kit) puts the post on the Spotlight kit; its cover can now take a second, round picture.
   await page.getByTestId('dneskai-lab-session').focus();
-  await page.keyboard.press('6');
+  await page.keyboard.press('2');
   await expect(page.getByTestId('dneskai-kit-spotlight').getByRole('radio')).toBeChecked();
   const inset = inspector.getByTestId('dneskai-lab-inset');
   await expect(inset).toContainText(t.slide.insetHelp);
@@ -244,7 +249,7 @@ test('Spotlight takes a round inset picture on the cover from the pool, previews
   expect(errors).toEqual([]);
 });
 
-test('a kit without a cover inset drops the Spotlight inset and offers no inset controls', async ({ page }) => {
+test('returning to the post kit drops the Spotlight inset and offers no inset controls', async ({ page }) => {
   const t = dneskaiLab.en;
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   const inspector = page.getByTestId('dneskai-slide-inspector');
@@ -253,7 +258,7 @@ test('a kit without a cover inset drops the Spotlight inset and offers no inset 
   await inset.getByRole('button', { name: t.slide.insetAdd, exact: true }).click();
   await inset.getByTestId('dneskai-media-tray').getByRole('button', { name: new RegExp(`^${dneskaiWorkspace.en.editor.choose}: `) }).first().click();
   await expect(inspector.getByTestId('dneskai-lab-picture-image-2')).toBeVisible();
-  for (const kit of ['editorial', 'bold', 'explainer', 'magazine', 'ticker'] as const) {
+  for (const kit of ['editorial'] as const) {
     await page.getByTestId(`dneskai-kit-${kit}`).click();
     await expect(page.getByTestId(`dneskai-kit-${kit}`).getByRole('radio')).toBeChecked();
     await expect(inspector.getByTestId('dneskai-lab-picture-image-2'), kit).toHaveCount(0);
@@ -346,6 +351,8 @@ for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360
   const topics = page.getByTestId('dneskai-topics');
   await expect(topics).toBeVisible();
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.news) })).toBeVisible();
+  // Owner decision, 6 November 2026: the pause of new topics is stated where the proposed ones are reviewed.
+  await expect(topics.getByTestId('dneskai-topics-paused')).toHaveText(t.paused);
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.education) })).toBeVisible();
   // #210: an approved topic with no link says why it waits.
   await expect(topics.getByTestId('dneskai-topic-code')).toContainText(describeMarketingCode('topic-source-missing', lang).happened);

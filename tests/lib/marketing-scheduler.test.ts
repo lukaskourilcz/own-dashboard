@@ -16,7 +16,7 @@ const evening = Date.parse('2026-10-20T20:30:00Z'), afternoon = Date.parse('2026
 let tickCounter = 0;
 const tickId = () => `aaaaaaaa-aaaa-4aaa-8aaa-${String(++tickCounter).padStart(12, '0')}`;
 const on = {
-  MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true',
+  MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', DNESKAI_NEW_TOPICS_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true',
   MARKETING_PUBLISH_ENABLED: 'true', MARKETING_DNESKAI_PUBLISH_ENABLED: 'true',
 };
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -745,6 +745,58 @@ describe('titling (#153)', () => {
     expect(titleTopics).toHaveBeenCalledWith(project, expect.any(Date), expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(step(night, 'scouting')).toMatchObject({ status: 'done', detail: { titled: 5, duplicates: 1, expired: 2 } });
     expect((await harness({ titleTopics, expireTopics }, new Clock(two)).tick(on)).did.map((entry) => entry.category)).not.toContain('scouting');
+  });
+});
+
+describe('new topics paused (owner decision, 6 November 2026)', () => {
+  const paused = { ...on, DNESKAI_NEW_TOPICS_ENABLED: undefined, DNESKAI_TOPICS_ENABLED: 'true', DNESKAI_SCOUTING_ENABLED: 'true', DNESKAI_TITLING_ENABLED: 'true' };
+  const finished = { collectionRuns: async () => [{ id: runId, date: '2026-10-19', status: 'partial' as const, pilot: false }] };
+  // 23:00 and 02:00 in Prague, each the first five-minute slot of its hour.
+  const night = Date.parse('2026-10-20T21:00:00Z'), two = Date.parse('2026-10-21T00:00:00Z');
+
+  it('collects no new night unless DNESKAI_NEW_TOPICS_ENABLED is exactly "true"', async () => {
+    for (const value of [undefined, 'false', '1', 'TRUE']) {
+      const h = harness({}, new Clock(evening));
+      const result = await h.tick({ ...on, DNESKAI_NEW_TOPICS_ENABLED: value });
+      expect(step(result, 'collection')).toMatchObject({ status: 'skipped', code: 'new-topics-paused' });
+      expect(h.called('tickCollection')).toEqual([]);
+    }
+    const running = harness({}, new Clock(evening));
+    expect(step(await running.tick(on), 'collection').code).not.toBe('new-topics-paused');
+  });
+
+  it('scouts nothing and lets proposed news topics wait instead of expiring, while titling existing ones continues', async () => {
+    const scoutTopics = vi.fn(async () => ({ reports: 3, library: 1, inserted: 4, skipped: 0 }));
+    const expireTopics = vi.fn(async () => 2), titleTopics = vi.fn(async () => ({ titled: 1, duplicates: 0, missing: 0, refused: false, costUsd: 0.001 }));
+    const early = await harness({ scoutTopics, expireTopics, titleTopics }, new Clock(night)).tick(paused);
+    expect(step(early, 'scouting')).toMatchObject({ status: 'noop', detail: { newTopicsPaused: true } });
+    const late = await harness({ scoutTopics, expireTopics, titleTopics }, new Clock(two)).tick(paused);
+    expect(step(late, 'scouting')).toMatchObject({ status: 'done', detail: { newTopicsPaused: true, titled: 1 } });
+    expect(scoutTopics).not.toHaveBeenCalled();
+    expect(expireTopics).not.toHaveBeenCalled();
+  });
+
+  it('sets the newest run aside for good: no news topics and no briefs, also after resuming', async () => {
+    const newsTopics = vi.fn(async () => ({ events: 4, inserted: 4 }));
+    const createBriefs = vi.fn(async () => ({ created: [], skipped: [], pending: false }));
+    const h = harness({ ...finished, newsTopics, createBriefs });
+    expect(step(await h.tick(paused), 'briefs')).toMatchObject({ status: 'noop', code: 'new-topics-paused' });
+    expect(step(await h.tick({ ...paused, DNESKAI_TITLING_ENABLED: undefined }), 'briefs')).toMatchObject({ status: 'noop', code: 'briefs-current' });
+    expect(step(await h.tick({ ...paused, DNESKAI_NEW_TOPICS_ENABLED: 'true' }), 'briefs')).toMatchObject({ status: 'noop', code: 'briefs-current' });
+    expect(newsTopics).not.toHaveBeenCalled();
+    expect(createBriefs).not.toHaveBeenCalled();
+    const plain = harness({ ...finished, newsTopics, createBriefs });
+    expect(step(await plain.tick({ ...on, DNESKAI_NEW_TOPICS_ENABLED: undefined }), 'briefs')).toMatchObject({ status: 'noop', code: 'new-topics-paused' });
+    expect(createBriefs).not.toHaveBeenCalled();
+  });
+
+  it("still runs the owner's own retries and reslots of existing briefs", async () => {
+    const createBriefs = vi.fn(async () => ({ created: [{ briefId: 'brief-1', eventId: 'event-1', jobId: jobA }], skipped: [], pending: false }));
+    const h = harness({ ...finished, createBriefs, pendingBriefRuns: async () => [finishedRun] });
+    const result = await h.tick({ ...on, DNESKAI_NEW_TOPICS_ENABLED: undefined });
+    expect(step(result, 'briefs')).toMatchObject({ status: 'done', detail: { created: 1, reopenedRuns: 1 } });
+    expect(createBriefs).toHaveBeenCalledTimes(1);
+    expect(createBriefs).toHaveBeenCalledWith(expect.objectContaining({ runId: finishedRun }));
   });
 });
 

@@ -33,7 +33,7 @@ describe('/api/marketing/dneskai/topics (#150)', () => {
     const response = await get();
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
-    expect(mocks.read).toHaveBeenCalledWith(expect.anything(), owner, project, expect.any(Date), { enabled: true });
+    expect(mocks.read).toHaveBeenCalledWith(expect.anything(), owner, project, expect.any(Date), { enabled: true, newTopicsPaused: true });
     mocks.user.mockResolvedValueOnce({ data: { user: null } });
     expect((await get()).status).toBe(401);
     expect((await get('?projectId=x')).status).toBe(400);

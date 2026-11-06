@@ -113,7 +113,7 @@ describe('scheduler ports', () => {
   });
   it('calls the owning modules with the owner, the project and the tick signal', async () => {
     const { db } = fakeDb({});
-    const env = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true' };
+    const env = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', DNESKAI_NEW_TOPICS_ENABLED: 'true' };
     const ports = createMarketingSchedulerPorts(db, owner, env);
     const signal = new AbortController().signal;
     mocks.tick.mockResolvedValue({ runId: project, status: 'running', continue: true });
@@ -167,7 +167,7 @@ describe('scheduler ports', () => {
 });
 
 describe('a carousel left at container-pending by the slot tick', () => {
-  const on = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true', MARKETING_PUBLISH_ENABLED: 'true', MARKETING_DNESKAI_PUBLISH_ENABLED: 'true' };
+  const on = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', DNESKAI_NEW_TOPICS_ENABLED: 'true', MARKETING_DNESKAI_PAID_ENABLED: 'true', MARKETING_AI_CONSENT: 'true', MARKETING_PUBLISH_ENABLED: 'true', MARKETING_DNESKAI_PUBLISH_ENABLED: 'true' };
   const job = '44444444-4444-4444-8444-444444444444', run = '55555555-5555-4555-8555-555555555555', finished = '66666666-6666-4666-8666-666666666666';
   const store = (): MarketingSchedulerStore => ({
     beginTick: async () => true, finishTick: async () => true, pruneTicks: async () => 0, release: async () => true, saveState: async () => true,

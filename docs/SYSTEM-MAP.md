@@ -81,6 +81,8 @@ Supabase pg_cron calls `POST /api/marketing/tick` every 5 minutes (`minute`) and
 steps are in `src/lib/marketing/scheduler.ts` and `scheduler-ports.ts`. Each tick runs at most one unit of each step,
 under per-category leases (`marketing_scheduler_state`), and records itself in `marketing_ticks`:
 
+New topics are paused (owner decision, 6 November 2026) unless `DNESKAI_NEW_TOPICS_ENABLED=true`: collection is skipped (`new-topics-paused`), scouting inserts nothing, proposed news topics do not expire, and the briefs step sets the newest run aside for good while still running the owner's retries and reslots. Titling of existing topics, the topic bridge, generation and publishing continue.
+
 | Step | What it does | Code |
 |---|---|---|
 | 1 collection | From 22:00 Prague, reads the native feeds (RSS, Atom, JSON, HTML; registry in `dneskai-registry.ts`, or the owner's `marketing_dneskai_sources` rows with `DNESKAI_SOURCES_TABLE_ENABLED`, through `dneskai-source-catalog.ts`), dedups, and asks Jev to classify the candidates | `dneskai-collection.ts`, `dneskai-native-feed.ts`, `free-feeds/` |
@@ -88,7 +90,7 @@ under per-category leases (`marketing_scheduler_state`), and records itself in `
 | 2 media | Downloads the pictures of selected stories (og:image, article figures), stores them by sha256 with credit, pHash and size | `dneskai-media*.ts` |
 | 3 briefs | Groups stories into events, picks up to four, writes one brief per slot (`marketing_dneskai_briefs`); with `DNESKAI_TITLING_ENABLED` the events become news topics instead | `dneskai-events.ts`, `dneskai-briefs.ts` |
 | 3a enrichment | Only with `DNESKAI_TOPIC_BRIEFS_ENABLED`: approved topics become briefs (news: the event's brief; education: a brief of the report; link-library and manual topics: their URL read through Jina Reader and stored as an `owner-link` report first) and queued jobs; topic status approved → enriching → briefed → generated | `dneskai-topic-bridge.ts`, `dneskai-topic-source.ts` |
-| 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
+| 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides in Spotlight (`DNESKAI_GENERATION_KIT`) | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
@@ -276,6 +278,7 @@ they wait for:
 - **The push alone:** `DNESKAI_RICH_EVIDENCE_ENABLED`, `DNESKAI_OWNER_RECOVERY_ENABLED`,
   `DNESKAI_LAPSED_RELEASE_ENABLED`, `MARKETING_PUBLICATION_REQUEUE_ENABLED`, `DNESKAI_SELECTION_V2_ENABLED`,
   `DNESKAI_REGENERATE_ENABLED`, `DNESKAI_TOPICS_ENABLED`, `DNESKAI_SOURCES_TABLE_ENABLED`.
+- **New topics:** `DNESKAI_NEW_TOPICS_ENABLED=true` resumes the nightly collection, scouting and news-topic expiry; unset keeps them paused.
 - **The topics switch:** `DNESKAI_SCOUTING_ENABLED`, `DNESKAI_TITLING_ENABLED` with `DNESKAI_TOPIC_BRIEFS_ENABLED`,
   `DNESKAI_DAILY_MIX_ENABLED`; `DNESKAI_FACT_OR_HYPE_ENABLED` also needs scouting and the Apify switch.
 - **Reels:** `MARKETING_DNESKAI_REELS_ENABLED`.

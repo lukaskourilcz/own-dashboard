@@ -10,7 +10,7 @@ import { POST as previewFitRoute } from '@/app/api/dev-preview/dneskai-fit/route
 import { POST as revisionsRoute } from '@/app/api/marketing/revisions/route';
 import { fitDneskaiDeck } from '@/lib/marketing/dneskai-fit';
 import {
-  DNESKAI_KITS, DneskaiApproveManyInputSchema, DneskaiFitResultSchema, dneskaiDeckKit, dneskaiFitSlide, dneskaiLabDeadline, dneskaiLabKits, dneskaiLabOrder,
+  DneskaiApproveManyInputSchema, DneskaiFitResultSchema, dneskaiDeckKit, dneskaiFitSlide, dneskaiLabDeadline, dneskaiLabKits, dneskaiLabOrder,
   dneskaiLabProfileCovers, dneskaiLabQueue, type DneskaiFitRequest,
 } from '@/lib/marketing/dneskai-lab';
 import { createDneskaiWorkspaceFixture } from '@/lib/demo/dneskai-workspace-fixtures';
@@ -44,13 +44,15 @@ describe('Design Lab read model', () => {
     expect(dneskaiLabOrder([today!, tomorrow!]).length).toBe(today!.posts.length + tomorrow!.posts.length);
   });
 
-  it('lists six renderable kits per post; only the current kit has a cover, and no cover is ever invented for the others', () => {
+  it('offers Spotlight only, after an older post kit; only the current kit has a cover', () => {
     const post = read().posts[0]!;
     const kits = dneskaiLabKits(post);
-    expect(kits.map((kit) => kit.id)).toEqual([...DNESKAI_KITS]);
-    expect(kits.map((kit) => kit.key)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(kits.map((kit) => kit.id)).toEqual(['editorial', 'spotlight']);
+    expect(kits.map((kit) => kit.key)).toEqual([1, 2]);
     expect(kits[0]).toMatchObject({ id: 'editorial', current: true, renderable: true, cover: post.assets[0], fits: true });
-    for (const kit of kits.slice(1)) expect(kit).toMatchObject({ current: false, renderable: true, cover: null, fits: null });
+    expect(kits[1]).toMatchObject({ id: 'spotlight', current: false, renderable: true, cover: null, fits: null });
+    const spotlight = dneskaiLabKits({ ...post, deck: { ...post.deck!, kit: 'spotlight' } });
+    expect(spotlight.map((kit) => [kit.id, kit.key, kit.current])).toEqual([['spotlight', 1, true]]);
   });
 
   it('reads a v1 deck as the editorial kit and a deck that names its kit as that kit', () => {

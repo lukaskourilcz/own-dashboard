@@ -126,6 +126,7 @@ export function DneskaiTopicsList({ projectId, lang, preview }: { projectId: str
       <div className="min-w-0"><h3 id={`${projectId}-topics-title`} className="text-sm font-semibold">{t.title}</h3><p className="text-xs text-foreground-muted">{t.intro}</p></div>
       {chosen.length > 0 && <Button size="sm" disabled={mutation.isPending} onClick={() => decide('approve', chosen)} data-testid="dneskai-topics-approve-selected">{t.approveSelected(chosen.length)}</Button>}
     </div>
+    {read.newTopicsPaused && <p className="rounded-md border border-border bg-surface-inset p-2 text-xs text-foreground-muted" data-testid="dneskai-topics-paused">{t.paused}</p>}
     <p role="status" className="text-xs empty:hidden">{notice}</p>
     {rows.length === 0 ? <div className="text-sm" data-testid="dneskai-topics-empty"><p className="font-medium">{t.empty}</p><p className="text-xs text-foreground-muted">{time ? t.lastSearch(time) : t.noSearch}</p></div>
       : <div ref={listRef} onKeyDown={onKeyDown} className="space-y-3">

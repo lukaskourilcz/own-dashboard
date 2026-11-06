@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
-import { DNESKAI_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
+import { DNESKAI_KIT_IDS, DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import { pragueScheduledAt } from './clock';
 import {
@@ -96,13 +96,18 @@ export function dneskaiLabDeadline(at: string, now: number): DneskaiLabDeadline 
   return { at, time: pragueTime(at), date: pragueDate(at), minutesLeft, urgent: minutesLeft >= 0 && minutesLeft < DNESKAI_LAB_URGENT_MINUTES, passed: minutesLeft < 0 };
 }
 
+/** The kits the Lab offers for a switch: Spotlight only (owner decision, 6 November 2026). */
+export const DNESKAI_OFFERED_KITS: readonly DneskaiKit[] = DNESKAI_OFFERED_KIT_IDS;
+
 /**
- * The five kit tiles of a post. The current kit's cover is the first rendered slide; any other kit has a cover only
- * when one was rendered for it (none can be today, so `cover` is null and `fits` unknown).
+ * The kit tiles of a post: the offered kits, after the post's own kit when that is an older one, so a deck saved in
+ * Editorial or Bold still shows where it stands and can be moved to Spotlight. The current kit's cover is the first
+ * rendered slide; any other kit has a cover only when one was rendered for it (none can be, so `cover` is null).
  */
 export function dneskaiLabKits(post: Pick<DneskaiWorkspacePost, 'deck' | 'assets' | 'renderReport'>): DneskaiLabKit[] {
   const current = dneskaiDeckKit(post.deck);
-  return DNESKAI_KITS.map((id, index) => {
+  const shown = DNESKAI_OFFERED_KITS.includes(current) ? DNESKAI_OFFERED_KITS : [current, ...DNESKAI_OFFERED_KITS];
+  return shown.map((id, index) => {
     const isCurrent = id === current;
     const clipped = !!post.renderReport?.problems.some((problem) => problem.code === 'text-clipped');
     return {

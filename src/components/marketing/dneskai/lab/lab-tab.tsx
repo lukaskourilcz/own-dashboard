@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
-import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
+import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_OFFERED_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
@@ -116,7 +116,7 @@ export function DneskaiLabTab(props: Props) {
     <Dialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }}><DialogContent><DialogHeader><DialogTitle>{t.actions.discard}</DialogTitle><DialogDescription>{t.actions.dirty}</DialogDescription></DialogHeader>
       <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setPending(null)}>{t.actions.cancel}</Button><Button onClick={() => { const post = pending!; setPending(null); setDirty(false); setChosen({ post, slide: 0 }); remember(post, 0); }}>{t.actions.discard}</Button></div>
     </DialogContent></Dialog>
-    {props.preview && <details className="border-t border-border pt-3 text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.specimens.title}</summary><div className="space-y-6">{DNESKAI_KITS.map((kit) => <figure key={kit} className="space-y-2"><figcaption className="text-foreground-muted">{t.specimens.help(t.kits.names[kit])}</figcaption><a href={`/demo/dneskai/kit-${kit}.png`} target="_blank" rel="noreferrer"><Image unoptimized src={`/demo/dneskai/kit-${kit}.png`} alt={t.specimens.help(t.kits.names[kit])} width={1944} height={2574} sizes="100vw" className="h-auto w-full" /></a></figure>)}</div></details>}
+    {props.preview && <details className="border-t border-border pt-3 text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.specimens.title}</summary><div className="space-y-6">{DNESKAI_OFFERED_KITS.map((kit) => <figure key={kit} className="space-y-2"><figcaption className="text-foreground-muted">{t.specimens.help(t.kits.names[kit])}</figcaption><a href={`/demo/dneskai/kit-${kit}.png`} target="_blank" rel="noreferrer"><Image unoptimized src={`/demo/dneskai/kit-${kit}.png`} alt={t.specimens.help(t.kits.names[kit])} width={1944} height={2574} sizes="100vw" className="h-auto w-full" /></a></figure>)}</div></details>}
     {batch && <ApproveDay {...props} day={batch} onClose={() => setBatch(null)} />}
   </section>;
 }
@@ -265,7 +265,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     const position = order.findIndex((item) => item.post.id === post.id);
     if (['j', 'k', 'arrowdown', 'arrowup'].includes(key)) onChoose(order[Math.max(0, Math.min(order.length - 1, position + (key === 'j' || key === 'arrowdown' ? 1 : -1)))]!.post.id);
     else if (key === 'arrowleft' || key === 'arrowright') onSlide(Math.max(0, Math.min(draft.slides.length - 1, slide + (key === 'arrowright' ? 1 : -1))));
-    else if (/^[1-6]$/.test(key)) { const kit = DNESKAI_KITS[Number(key) - 1]!; chooseKit(kit); }
+    else if (/^[1-6]$/.test(key)) { const kit = lab.kits[Number(key) - 1]?.id; if (kit) chooseKit(kit); }
     else if (key === 'a') void perform('approve');
     else if (key === 'd') { if (!dirty) onBatch(); }
     else if (key === 'e') fieldRef.current?.focus();

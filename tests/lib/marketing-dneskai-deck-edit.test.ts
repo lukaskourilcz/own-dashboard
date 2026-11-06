@@ -72,14 +72,15 @@ describe('kit switches', () => {
     const renderable = await import('@/lib/marketing/dneskai-slides');
     const other = renderable.DNESKAI_KIT_IDS.find((kit) => kit !== 'editorial' && !renderable.DNESKAI_RENDERABLE_KIT_IDS.includes(kit));
     if (other) expect(await code(() => applyDneskaiDeckEdit(deck(), { kit: other, slides: keep(3) }))).toBe('kit-unavailable');
-    const drawn = renderable.DNESKAI_RENDERABLE_KIT_IDS.find((kit) => kit !== 'editorial');
-    if (drawn) {
-      const switched = applyDneskaiDeckEdit(deck(), { kit: drawn, slides: keep(3) });
-      expect(switched.kit).toBe(drawn);
-      // Without a kit the edit keeps the deck's kit; back to editorial removes the field.
-      expect(applyDneskaiDeckEdit(switched, { slides: keep(3) }).kit).toBe(drawn);
-      expect('kit' in applyDneskaiDeckEdit(switched, { kit: 'editorial', slides: keep(3) })).toBe(false);
-    }
+    const switched = applyDneskaiDeckEdit(deck(), { kit: 'spotlight', slides: keep(3) });
+    expect(switched.kit).toBe('spotlight');
+    // Without a kit the edit keeps the deck's kit.
+    expect(applyDneskaiDeckEdit(switched, { slides: keep(3) }).kit).toBe('spotlight');
+    // Spotlight only (owner decision, 6 November 2026): no switch to another kit, also not back to editorial.
+    expect(await code(() => applyDneskaiDeckEdit(deck(), { kit: 'bold', slides: keep(3) }))).toBe('kit-unavailable');
+    expect(await code(() => applyDneskaiDeckEdit(switched, { kit: 'editorial', slides: keep(3) }))).toBe('kit-unavailable');
+    // A deck saved in an older kit may still be edited in it.
+    expect(applyDneskaiDeckEdit({ ...deck(), kit: 'ticker' }, { kit: 'ticker', slides: keep(3) }).kit).toBe('ticker');
     expect('kit' in applyDneskaiDeckEdit(deck(), { kit: 'editorial', slides: keep(3) })).toBe(false);
   });
 });

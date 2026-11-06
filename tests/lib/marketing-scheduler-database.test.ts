@@ -319,7 +319,7 @@ describe('the TypeScript store over the real functions', () => {
       pendingMedia: async () => [], createBriefs: async () => { throw new Error('briefs-unwired'); }, queuedGenerationJobs: async () => [],
       publicationWork: nothing, publicationDueSoon: nothing, nextReconciliation: async () => null, tokenMetadata: async () => [],
     } as unknown as MarketingSchedulerPorts;
-    const env = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true' };
+    const env = { MARKETING_DNESKAI_COLLECTION_ENABLED: 'true', DNESKAI_NEW_TOPICS_ENABLED: 'true' };
     const now = () => new Date(Date.parse('2026-10-20T20:10:00Z'));
     await setTime('2026-10-20T20:10:00Z');
     const first = runMarketingTick({ owner, env, ports, now }, { tick: '12121212-1212-4121-8121-121212121212', kind: 'minute' });

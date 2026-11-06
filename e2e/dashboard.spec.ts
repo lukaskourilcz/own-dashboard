@@ -368,8 +368,12 @@ test.describe("dashboard sections", () => {
     // The fixture review closed the week of 2026-09-07, so the two newest
     // changelog entries published after it are the ones the block should name.
     await expect(page.getByText("Shipped since last review")).toBeVisible();
-    await expect(page.getByText("IG TIPS meet the marketing calendars")).toBeVisible();
-    await expect(page.locator("li").filter({ hasText: "IG TIPS meet the marketing calendars" })).toContainText("2026-09-28");
+    const newest = "Career searches the Czech market; DNESKAi makes every post in Spotlight and pauses new topics";
+    await expect(page.getByText(newest)).toBeVisible();
+    await expect(page.locator("li").filter({ hasText: newest })).toContainText("2026-11-06");
+    await expect(page.getByText("DNESKAi gets a design lab, a smaller workspace and the next phase behind switches")).toBeVisible();
+    // Only the two newest are named; the third is beyond SHIPPED_ENTRY_LIMIT.
+    await expect(page.getByText("IG TIPS meet the marketing calendars")).toHaveCount(0);
   });
 
   test("weekly planning walks five steps from last week's time to next week's objectives", async ({ page }, testInfo) => {

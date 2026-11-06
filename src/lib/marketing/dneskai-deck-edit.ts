@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
   DNESKAI_INSERT_SHAPES, dneskaiCoverInset, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
   dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
@@ -122,6 +122,8 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   const edit = DneskaiDeckEditSchema.safeParse(value);
   if (!edit.success) return fail("deck-edit-invalid");
   if (edit.data.kit && !DNESKAI_RENDERABLE_KIT_IDS.includes(edit.data.kit)) return fail("kit-unavailable");
+  // Spotlight only (owner decision, 6 November 2026): a deck may keep its own older kit, but a switch goes to Spotlight.
+  if (edit.data.kit && edit.data.kit !== dneskaiKitOf(deck) && !DNESKAI_OFFERED_KIT_IDS.includes(edit.data.kit)) return fail("kit-unavailable");
   if (dneskaiDeckEditNeedsPool(deck, edit.data) && !pool) return fail("deck-edit-pool-unavailable");
   const used = new Set<number>();
   // Pictures the kept slides show: an inserted slide may not repeat one.

@@ -35,6 +35,17 @@ export function dneskaiTopicsEnabled(env: Record<string, string | undefined> = p
 }
 
 /**
+ * New topics (owner decision, 6 November 2026): paused until the owner has reviewed the topics already proposed. Off,
+ * the scheduler collects no new night, scouting inserts no topics, the briefs step sets the newest run aside (no news
+ * topics and no briefs from it) and proposed news topics stop expiring. Manual topics, approvals, the topic-to-brief
+ * bridge for approved topics, the owner's retries and reslots, generation, review and publishing all continue.
+ * `DNESKAI_NEW_TOPICS_ENABLED=true` resumes; anything else keeps the pause.
+ */
+export function dneskaiNewTopicsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_NEW_TOPICS_ENABLED === 'true';
+}
+
+/**
  * Scouting (#151). Only with DNESKAI_TOPICS_ENABLED and after 20261023100000_dneskai_topics.sql is applied: the nightly
  * collection then also reads the education sources (their reports never reach Jev), and the scheduler's scouting step
  * turns those reports and highly rated library links into proposed topics. No model call.
