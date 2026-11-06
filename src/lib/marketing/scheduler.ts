@@ -11,7 +11,7 @@ import { dneskaiEngagementWatchEnabled } from "./dneskai-engagement";
 import type { DneskaiScoutingResult } from "./dneskai-scouting";
 import type { DneskaiFactOrHypeResult } from "./dneskai-fact-or-hype";
 import type { DneskaiTitlingResult } from "./dneskai-titling";
-import { dneskaiFactOrHypeEnabled, dneskaiScoutingEnabled, dneskaiTitlingEnabled, dneskaiTopicBriefsEnabled } from "./dneskai-evidence-rollout";
+import { dneskaiFactOrHypeEnabled, dneskaiNewTopicsEnabled, dneskaiScoutingEnabled, dneskaiTitlingEnabled, dneskaiTopicBriefsEnabled } from "./dneskai-evidence-rollout";
 import type { DneskaiTopicBridgeResult } from "./dneskai-topic-bridge";
 
 /**
@@ -319,6 +319,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
   const ordinaryRuns = async () => (await runs()).filter((run) => !run.pilot);
   let yieldRead: Promise<boolean> | null = null;
   const yieldToPublication = () => (yieldRead ??= marketingPublishingLive(env) ? ports.publicationDueSoon(MARKETING_PUBLICATION_YIELD_MS) : Promise.resolve(false));
+  const newTopics = dneskaiNewTopicsEnabled(env);
   const intakePaused = (): StepOutcome | null => env.MARKETING_DNESKAI_COLLECTION_ENABLED === "true" ? null : { status: "skipped", code: "collection-disabled" };
   const yielded: StepOutcome = { status: "deferred", code: "yield-to-publication", pending: true };
 
@@ -333,6 +334,8 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       category: "collection", lease: "collection",
       async precheck(): Promise<StepOutcome | null> {
         const paused = intakePaused(); if (paused) return paused;
+        // Owner decision, 6 November 2026: no new night's collection while new topics are paused.
+        if (!newTopics) return { status: "skipped", code: "new-topics-paused" };
         // The hour cannot be tested before the run list: a run admitted at 22:00 continues past midnight and is
         // found only there. The list is read once per tick and reused by the briefs step, so a slow read is not
         // repeated; its duration is recorded on the no-op so a stall can be attributed (production-13).
@@ -406,16 +409,21 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
         const newsTopics = ports.newsTopics;
         if (newsTopics && dneskaiTitlingEnabled(env)) {
           if (current) return { status: "noop", code: "briefs-current" };
+          // Paused: the run is set aside for good, so resuming never turns an old night into topics.
+          if (!newTopics) return { status: "noop", code: "new-topics-paused", state: { runId: run.id, pending: false } };
           const result = await newsTopics(await project(), run.id, now());
           return { status: result.inserted ? "done" : "noop", detail: { runId: run.id, events: result.events, topics: result.inserted }, state: { runId: run.id, pending: false } };
         }
         try {
           // An owner retry or reslot reopens a brief as pending, possibly in the newest run after it went current or
           // in an older run; those runs get the same createBriefs call, so admission rules stay the ordinary ones.
-          const reopened = ports.pendingBriefRuns ? (await ports.pendingBriefRuns(await project(), current ? "" : run.id)).slice(0, 3) : [];
-          const runIds = [...new Set([...(current ? [] : [run.id]), ...reopened])];
-          if (!runIds.length) return { status: "noop", code: "briefs-current" };
-          let created = 0, jobs = 0, skipped = 0, pending = false, newest: boolean | null = current ? false : null;
+          // While new topics are paused (owner decision, 6 November 2026) the newest run gets no briefs and is set aside
+          // for good; the owner's own retries and reslots still run.
+          const fresh = !current && newTopics;
+          const reopened = ports.pendingBriefRuns ? (await ports.pendingBriefRuns(await project(), fresh ? run.id : "")).slice(0, 3) : [];
+          const runIds = [...new Set([...(fresh ? [run.id] : []), ...reopened])];
+          if (!runIds.length) return { status: "noop", code: current ? "briefs-current" : "new-topics-paused", ...(current ? {} : { state: { runId: run.id, pending: false } }) };
+          let created = 0, jobs = 0, skipped = 0, pending = false, newest: boolean | null = fresh ? null : false;
           for (const runId of runIds) {
             if (abort.aborted) { pending = true; break; }
             const result = await ports.createBriefs({ owner, project: await project(), runId, signal: abort });
@@ -540,7 +548,7 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       const id = await project();
       const detail: MarketingTickDetail = {};
       let worked = false;
-      if (scouting) {
+      if (scouting && newTopics) {
         const result = await scoutTopics!(id, now());
         Object.assign(detail, { reports: result.reports, library: result.library, inserted: result.inserted, skipped: result.skipped });
         worked = result.inserted > 0;
@@ -552,8 +560,10 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
         }
       }
       // Titling (#153): news topics expire after 48 hours; from 02:00 Prague the night's untitled topics get titles.
+      if (!newTopics) detail.newTopicsPaused = true;
       if (titling) {
-        if (expireTopics) { const expired = await expireTopics(id, now()); detail.expired = expired; worked ||= expired > 0; }
+        // Paused, proposed news topics wait for the owner's review instead of expiring after 48 hours.
+        if (expireTopics && newTopics) { const expired = await expireTopics(id, now()); detail.expired = expired; worked ||= expired > 0; }
         const hour = pragueHour(now());
         if (hour >= 2 && hour < 8 && remainingMs() > 15_000) {
           const titled = await titleTopics!(id, now(), { signal: abort });
