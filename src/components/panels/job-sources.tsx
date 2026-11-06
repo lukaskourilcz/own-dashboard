@@ -5,8 +5,7 @@ import { AlertTriangle, ChevronDown, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDict, useLang } from "@/lib/i18n";
-import { JOB_SOURCE_META, isCzechJobSource, type JobSourceKind } from "@/lib/jobs/meta";
-import { useCzechCareerVisibility } from "@/lib/use-prefs";
+import { JOB_SOURCE_META, type JobSourceKind } from "@/lib/jobs/meta";
 import type { JobScrapeRun, SourceOutcome } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +20,6 @@ import { cn } from "@/lib/utils";
 export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
   const t = useDict();
   const { lang } = useLang();
-  const { showCzechCareer: showCzech } = useCzechCareerVisibility();
   const [open, setOpen] = useState(false);
 
   const outcomes = (lastRun?.sources ?? {}) as Record<string, SourceOutcome>;
@@ -63,7 +61,7 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
       {open && (
         <ul className="border-t border-border">
           {Object.entries(outcomes)
-            .filter(([id]) => showCzech && id.startsWith("apify-"))
+            .filter(([id]) => id.startsWith("apify-"))
             .map(([id, outcome]) => (
               <li key={id} className="border-b border-border px-4 py-3 text-sm">
                 <strong>Apify · {id.slice(6)}</strong>
@@ -79,7 +77,7 @@ export function JobSources({ lastRun }: { lastRun: JobScrapeRun | null }) {
                 </p>
               </li>
             ))}
-          {Object.entries(JOB_SOURCE_META).filter(([id]) => showCzech || !isCzechJobSource(id)).map(([id, meta]) => {
+          {Object.entries(JOB_SOURCE_META).map(([id, meta]) => {
             const outcome = outcomes[id];
             return (
               <li

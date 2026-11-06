@@ -11,11 +11,9 @@ import { useLang } from "@/lib/i18n";
 import { CAREER_COMPANIES } from "@/lib/jobs/companies";
 import { OSLO_COMPANIES } from "@/lib/jobs/oslo-companies";
 import { canonicalJobUrl } from "@/lib/jobs/oslo-research";
-import { useCzechCareerVisibility } from "@/lib/use-prefs";
 export function CareerCompanies({ userId, isPreview = false }: { userId: string; isPreview?: boolean }) {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const { showCzechCareer } = useCzechCareerVisibility();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [country, setCountry] = useState("all");
@@ -29,7 +27,7 @@ export function CareerCompanies({ userId, isPreview = false }: { userId: string;
     : directory.data ?? [];
   const publicCompanies: CareerCompany[] = OSLO_COMPANIES.map(row => ({ id: row.name, name: row.name, url: row.url, category: row.category, country: "NO", notes: row.notes[lang], checked_on: row.checkedOn }));
   const publicUrls = new Set(publicCompanies.map(row => canonicalJobUrl(row.url)));
-  const companies = [...publicCompanies, ...stored.filter(row => !publicUrls.has(canonicalJobUrl(row.url)) && (showCzechCareer || /^(NO|Norway|Norge)$/i.test(row.country)))];
+  const companies = [...publicCompanies, ...stored.filter(row => !publicUrls.has(canonicalJobUrl(row.url)))];
   const countries = [...new Set(companies.map(row => row.country).filter(Boolean))].sort();
   const labels: Record<string, string> = cs
     ? {

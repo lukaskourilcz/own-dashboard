@@ -3,8 +3,6 @@ import type { ScrapedJob } from "./types";
 
 // Public employer APIs. Each employer is isolated so failures remain visible.
 export const EMPLOYER_BOARDS = [
-  { id: "ashby-sanity", provider: "ashby", slug: "sanity", name: "Sanity" },
-  { id: "ashby-enode", provider: "ashby", slug: "Enode", name: "Enode" },
   { id: "ashby-rossum", provider: "ashby", slug: "rossum.ai", name: "Rossum" },
   {
     id: "lever-outreach",

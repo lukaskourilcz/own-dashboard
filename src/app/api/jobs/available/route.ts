@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rejectCrossOrigin } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
-import { isCareerRelevant, isOsloRelevant } from "@/lib/jobs/filter";
-import { isCzechJobSource } from "@/lib/jobs/meta";
+import { isCareerRelevant } from "@/lib/jobs/filter";
 import {
   EMPLOYER_BOARDS,
   fetchEmployerBoard,
@@ -49,10 +48,7 @@ export async function POST(request: Request) {
         .slice(0, 500)
     : [];
   const alreadyChecked = new Set(checkedIds);
-  const { data: preferences } = await supabase.from("user_preferences")
-    .select("show_czech_career").eq("user_id", user.id).maybeSingle();
-  const allCandidates = (data as JobListing[]).filter(job => isCareerRelevant(job) &&
-    (preferences?.show_czech_career === true || (!isCzechJobSource(job.source) && isOsloRelevant(job))));
+  const allCandidates = (data as JobListing[]).filter(isCareerRelevant);
   const candidates = allCandidates.filter((j) => !alreadyChecked.has(j.id));
   const nativeIds = new Set<string>(EMPLOYER_BOARDS.map((b) => b.id));
   const states: Record<string, Availability> = {};

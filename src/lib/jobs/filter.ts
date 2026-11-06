@@ -77,32 +77,21 @@ export function isCareerRelevant(job: CareerCandidate): boolean {
   // only roles stay out while owner-selected mixed web/mobile roles survive.
   const webText = text.replace(/\breact\s+native\b/gi, " ");
   if (!/\b(react(?:\.js|js)?|next(?:\.js|js)|typescript|javascript|node(?:\.js)?|n8n|langchain|svelte)\b/i.test(webText)) return false;
-  if (isOsloRelevant(job)) return true;
+  return isCzechRelevant(job);
+}
+
+/** Prague offices and remote work explicitly open to Czechia. Another Czech
+ * city is not a Prague office; Norway and Oslo are no longer target markets. */
+export function isCzechRelevant(job: Pick<CareerCandidate, "location" | "remote">): boolean {
   if (isPrague(job.location)) return true;
   return job.remote && isCzechRemote(job.location);
 }
 
-export function isOslo(location: string | null | undefined): boolean {
-  return /\b(oslo|fornebu|lysaker|høvik|hovik|sandvika|asker|lillestrøm|baerum|bærum)\b/i.test(location ?? "");
-}
-
-export function isNorwayRemote(location: string | null | undefined): boolean {
-  const loc = location ?? "";
-  if (/(?:except|excluding|not in)\s+(?:norway|norge)/i.test(loc)) return false;
-  if (/\b(?:US|UK|Germany|France|Poland|Spain|Czechia|Canada|Australia|EU)[ -]only\b|only (?:in|within) (?:the )?(?:US|UK|Germany|France|EU)\b/i.test(loc)) return false;
-  // Norway is in the EEA, not the EU. EU-only is deliberately insufficient.
-  return /\b(norway|norge|europe|EEA|EMEA|worldwide|anywhere|global)\b/i.test(loc);
-}
-
-export function isOsloRelevant(job: Pick<CareerCandidate, "location" | "remote">): boolean {
-  return isOslo(job.location) || (job.remote && isNorwayRemote(job.location));
-}
-
-/** Snapshots do not have a remote flag. Only explicit text or a remote-only
- * source establishes it; a Norway office in another city is insufficient. */
-export function isOsloSnapshot(job: { location: string | null; source: string | null }): boolean {
-  const remoteSource = ["remotive","remoteok","jobicy","weworkremotely"].includes(job.source ?? "");
-  return isOsloRelevant({location:job.location,remote:remoteSource || /remote/i.test(job.location ?? "")});
+/** Snapshots (saved positions, applications) do not carry a remote flag. Only
+ * explicit text or a remote-only source establishes it. */
+export function isCzechSnapshot(job: { location: string | null; source: string | null }): boolean {
+  const remoteSource = ["remotive", "remoteok", "jobicy", "weworkremotely"].includes(job.source ?? "");
+  return isCzechRelevant({ location: job.location, remote: remoteSource || /remote|na dálku|vzdálen/i.test(job.location ?? "") });
 }
 
 export function isCzechRemote(location: string | null | undefined): boolean {
