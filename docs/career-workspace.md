@@ -20,7 +20,7 @@ The dialog's **Check availability** makes one authenticated, CSRF-checked, rate-
 
 ## Sources
 
-Live feeds: StartupJobs, Jobs.cz, Prace.cz, the curated leads and the Apify, Rossum and Outreach employer boards, plus the remote boards filtered to Czech-compatible locations. The Norway-only Sanity and Enode feeds were removed. Prague offices and remote work explicitly open to Czechia, the EU, EMEA or worldwide pass discovery; another Czech city is not treated as a Prague office, and unknown remote scopes fail closed. Senior titles and adjacent stacks are assessed instead of discarded; unrelated disciplines and mobile-only roles stay excluded.
+Live feeds: StartupJobs, Jobs.cz, Prace.cz, the curated leads, the public ATS boards of Apify, FTMO, Braiins, Rohlik, Gen Digital, Deepnote, n8n, Mews, SentinelOne, Ataccama, Keboola and Outreach, plus the remote boards filtered to Czech-compatible locations. The Norway-only Sanity and Enode feeds and the defunct Rossum Ashby board were removed. Test-automation and security-engineer titles are vetoed as other disciplines. Prague offices and remote work explicitly open to Czechia, the EU, EMEA or worldwide pass discovery; another Czech city is not treated as a Prague office, and unknown remote scopes fail closed. Senior titles and adjacent stacks are assessed instead of discarded; unrelated disciplines and mobile-only roles stay excluded.
 
 The careers directory combines the public Czech research with owner-added `career_companies` links. LinkedIn, StartupJobs, Jobs.cz, Prace.cz, Cocuma and JobStack searches are linked as manual browsing destinations, not as scrape integrations.
 
