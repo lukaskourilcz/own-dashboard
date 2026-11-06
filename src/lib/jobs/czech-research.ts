@@ -1,6 +1,6 @@
 import type { ResearchJob } from "./research";
 
-/** Generated from the 74-role public research snapshot of 2026-11-06.
+/** Generated from the 98-role public research snapshot of 2026-11-06.
  * Paraphrased summaries and manual profile-fit scores only; no copied job
  * descriptions and no private letters. Recheck each original before applying. */
 export const CZECH_RESEARCHED_ON = "2026-11-06";
@@ -11,7 +11,9 @@ export const CZECH_JOBS: ResearchJob[] = [
     "company": "Braiins",
     "title": "Fullstack Engineer / AI Engineer for Braiins Manager",
     "url": "https://www.startupjobs.cz/nabidka/108043/fullstack-engineer-ai-engineer-for-braiins-manager",
-    "aliases": [],
+    "aliases": [
+      "https://jobs.ashbyhq.com/braiins/a567dcbe-add4-4feb-9165-6ad912be1172"
+    ],
     "source": "StartupJobs",
     "location": "Praha / remote",
     "arrangement": "Remote or Prague · Full-time · Employee or B2B",
@@ -1378,7 +1380,9 @@ export const CZECH_JOBS: ResearchJob[] = [
     "company": "FTMO",
     "title": "Product Engineer (AI Native)",
     "url": "https://careers.ftmo.com/job/product-engineer-ai-native/",
-    "aliases": [],
+    "aliases": [
+      "https://jobs.ashbyhq.com/ftmo/80b7c70a-7ba3-42a0-9b60-af254fea20a9"
+    ],
     "source": "Employer",
     "location": "Praha",
     "arrangement": "Hybrid (3 dny kancelář / 2 doma) · Full-time",
@@ -1417,7 +1421,8 @@ export const CZECH_JOBS: ResearchJob[] = [
     "title": "Frontend Product Engineer",
     "url": "https://careers.ftmo.com/job/frontend-product-engineer/",
     "aliases": [
-      "https://www.linkedin.com/jobs/view/4483279318/"
+      "https://www.linkedin.com/jobs/view/4483279318/",
+      "https://jobs.ashbyhq.com/ftmo/2fc70201-73cb-47db-a179-6b5afb4e5257"
     ],
     "source": "Employer",
     "location": "Praha",
@@ -1454,7 +1459,9 @@ export const CZECH_JOBS: ResearchJob[] = [
     "company": "FTMO",
     "title": "AI Software Engineer",
     "url": "https://careers.ftmo.com/job/ai-software-engineer/",
-    "aliases": [],
+    "aliases": [
+      "https://jobs.ashbyhq.com/ftmo/d7253c53-f676-4c94-87fd-27be78bf79a1"
+    ],
     "source": "Employer",
     "location": "Praha",
     "arrangement": "On-site / hybrid · Full-time",
@@ -1572,7 +1579,9 @@ export const CZECH_JOBS: ResearchJob[] = [
     "title": "Senior Software Engineer (Full Stack)",
     "url": "https://www.jamf.com/about/careers/jobs/?gh_jid=6221115004",
     "aliases": [
-      "https://www.linkedin.com/jobs/view/4479569269/"
+      "https://www.linkedin.com/jobs/view/4479569269/",
+      "https://job-boards.greenhouse.io/jamf/jobs/6221115004",
+      "https://job-boards.greenhouse.io/jamf/jobs/6130565004"
     ],
     "source": "Employer",
     "location": "Brno",
@@ -1725,7 +1734,10 @@ export const CZECH_JOBS: ResearchJob[] = [
     "company": "SentinelOne",
     "title": "Staff Front-End Engineer (React)",
     "url": "https://www.linkedin.com/jobs/view/4479092265/",
-    "aliases": [],
+    "aliases": [
+      "https://www.sentinelone.com/jobs/?gh_jid=8030778003",
+      "https://job-boards.greenhouse.io/sentinellabs/jobs/8030778003"
+    ],
     "source": "LinkedIn",
     "location": "Praha / remote",
     "arrangement": "Hybrid Praha/Brno nebo remote CZ/SK · Full-time",
@@ -1879,7 +1891,10 @@ export const CZECH_JOBS: ResearchJob[] = [
     "company": "Shoptet",
     "title": "Agentic Customer Experience Software Engineer",
     "url": "https://www.linkedin.com/jobs/view/4486895946/",
-    "aliases": [],
+    "aliases": [
+      "https://kariera.shoptet.cz/jobs/8655582-agentic-customer-experience-software-engineer",
+      "https://shoptet.teamtailor.com/jobs"
+    ],
     "source": "LinkedIn",
     "location": "Praha",
     "arrangement": "Hybrid · Full-time",
@@ -2291,7 +2306,9 @@ export const CZECH_JOBS: ResearchJob[] = [
     "company": "Productboard",
     "title": "Staff Frontend Product Engineer (Fixed-term Contract)",
     "url": "https://www.linkedin.com/jobs/view/4481771657/",
-    "aliases": [],
+    "aliases": [
+      "https://jobs.gem.com/productboard/am9icG9zdDoaMPkCxlUbsYDApcWCdyCP"
+    ],
     "source": "LinkedIn",
     "location": "Praha / remote",
     "arrangement": "Hybrid Praha nebo remote v ČR/EU · Fixed-term",
@@ -2856,5 +2873,933 @@ export const CZECH_JOBS: ResearchJob[] = [
       "en": "They require 4+ years of Java plus Angular; Czech and English at B2+ are fine."
     },
     "stretch": true
+  },
+  {
+    "id": "apify-senior-backend-engineer-actors",
+    "company": "Apify",
+    "title": "Senior Backend Engineer, Actors",
+    "url": "https://jobs.ashbyhq.com/apify/78861618-2c6b-4933-9a7a-0e7653d00f18",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "Crawlee",
+      "Apify SDK",
+      "Web scraping"
+    ],
+    "points": [
+      28,
+      18,
+      10,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-10-27",
+    "summary": {
+      "cs": "Tým rozvíjí nejpoužívanější Actory v Apify Store, interní nástroje a mentoruje juniorní vývojáře.",
+      "en": "The team develops the most-used Actors in Apify Store, builds internal tooling and mentors junior engineers."
+    },
+    "evidence": {
+      "cs": "Vyzdvihnout Node/TypeScript backend, BFF a API kontrakty z EmbedIT a vlastní používání Apify.",
+      "en": "Lead with Node/TypeScript backend, BFF and API contract work at EmbedIT and personal Apify use."
+    },
+    "gaps": {
+      "cs": "Role je převážně backend a scraping (obcházení anti-bot ochran, reverse engineering webů), což není doloženo. Mentoring juniorů je očekáván.",
+      "en": "Mostly backend and scraping work (anti-bot, website reverse engineering), which is not documented. Mentoring juniors is expected."
+    },
+    "stretch": true
+  },
+  {
+    "id": "apify-senior-backend-engineer-billing",
+    "company": "Apify",
+    "title": "Senior Backend Engineer, Billing",
+    "url": "https://jobs.ashbyhq.com/apify/95bca6ea-e7c9-4e82-bcc2-d01278d67ee0",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / Brno / remote",
+    "arrangement": "Hybrid nebo remote (návštěva kanceláře 1× měsíčně) · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "Nest.js",
+      "React",
+      "Billing",
+      "Payments"
+    ],
+    "points": [
+      30,
+      18,
+      13,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-10-01",
+    "summary": {
+      "cs": "Tým Billing vlastní výplaty tvůrcům, předplatné, fakturaci a platby pro agentní ekonomiku.",
+      "en": "The Billing team owns creator payouts, subscriptions, invoicing and payments for agentic commerce."
+    },
+    "evidence": {
+      "cs": "Začít Stripe integrací v Take a Break, platbami Comgate v NAVIGYM a moderní online bankou v EmbedIT.",
+      "en": "Lead with the Stripe integration at Take a Break, Comgate payments in NAVIGYM and online-banking modernisation at EmbedIT."
+    },
+    "gaps": {
+      "cs": "Požadují 3+ roky backendových systémů a API; backend je u kandidáta spíš součástí fullstack rolí. Chybí zkušenost s fakturačním systémem ve velkém měřítku.",
+      "en": "Asks for 3+ years of backend systems and APIs; backend work is part of fullstack roles. No large-scale billing-system experience."
+    }
+  },
+  {
+    "id": "apify-senior-backend-engineer-publishers",
+    "company": "Apify",
+    "title": "Senior Backend Engineer, Publisher ecosystem",
+    "url": "https://jobs.ashbyhq.com/apify/0e351b39-bbb3-40a3-b1c5-7cb73960d054",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid (min. 2 dny v kanceláři) · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "Nest.js",
+      "Next.js",
+      "React",
+      "MongoDB"
+    ],
+    "points": [
+      31,
+      18,
+      12,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-06-26",
+    "summary": {
+      "cs": "Tým Publishers staví monetizaci, analytiku a hodnocení kvality Actorů v Apify Store.",
+      "en": "The Publishers team builds Actor monetisation, analytics and quality review in Apify Store."
+    },
+    "evidence": {
+      "cs": "Ukázat end-to-end dodávky v Next.js/TypeScript a schopnost dodat i React UI (beKind, Web Integrator).",
+      "en": "Show end-to-end Next.js/TypeScript delivery and the ability to ship React UI as well (beKind, Web Integrator)."
+    },
+    "gaps": {
+      "cs": "Požadují 3+ roky backendu a API; MongoDB, AWS a Kubernetes nejsou doloženy.",
+      "en": "Asks for 3+ years of backend and APIs; MongoDB, AWS and Kubernetes are not documented."
+    }
+  },
+  {
+    "id": "apify-senior-backend-engineer-core-services",
+    "company": "Apify",
+    "title": "Senior Backend Engineer, Core Services",
+    "url": "https://jobs.ashbyhq.com/apify/d7bb9504-494f-4213-b387-6b85631a532d",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / Brno",
+    "arrangement": "Hybrid · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "Nest.js",
+      "AWS",
+      "Linux",
+      "Redis"
+    ],
+    "points": [
+      27,
+      18,
+      9,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-04-20",
+    "summary": {
+      "cs": "Tým Core Services se stará o základní backendové služby platformy Apify.",
+      "en": "Core Services runs the foundational backend services of the Apify platform."
+    },
+    "evidence": {
+      "cs": "Vyzdvihnout Node/TypeScript, testování a CI/CD z EmbedIT.",
+      "en": "Lead with Node/TypeScript, testing and CI/CD from EmbedIT."
+    },
+    "gaps": {
+      "cs": "Požadují 3+ roky backendu a znalost Linuxu; AWS a infrastruktura nejsou doloženy. Inzerát je zveřejněn od dubna 2026, ověřit, zda je stále aktivní nábor.",
+      "en": "Asks for 3+ years of backend and Linux familiarity; AWS and infrastructure are not documented. Listed since April 2026, so confirm hiring is still active."
+    }
+  },
+  {
+    "id": "apify-team-lead-actors",
+    "company": "Apify",
+    "title": "Team Lead, Actors",
+    "url": "https://jobs.ashbyhq.com/apify/e02c02f0-0079-4e98-bb2b-d86257668b41",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / remote",
+    "arrangement": "Hybrid nebo remote · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "Crawlee",
+      "Web automation"
+    ],
+    "points": [
+      28,
+      17,
+      10,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-07-03",
+    "summary": {
+      "cs": "Vedoucí týmu, který staví a provozuje Actory pro web automation, vlastní technický roadmap.",
+      "en": "Leads the team that builds and runs web-automation Actors and owns its technical roadmap."
+    },
+    "evidence": {
+      "cs": "Zmínit vedení frontendu ve Web Integratoru a nastavení konvencí pro tým.",
+      "en": "Mention frontend leadership at Web Integrator and setting team conventions."
+    },
+    "gaps": {
+      "cs": "Jde o vedoucí roli v doméně scrapingu, kterou kandidát doloženou nemá. Zkušenost s náborem a people managementem není doložena.",
+      "en": "A lead role in the scraping domain, which is not documented. Hiring and people-management experience is not documented."
+    },
+    "stretch": true
+  },
+  {
+    "id": "braiins-product-discovery-prototyping-engineer",
+    "company": "Braiins",
+    "title": "Product Discovery & Prototyping Engineer",
+    "url": "https://jobs.ashbyhq.com/braiins/acc76c8e-5c90-4af8-b559-68570bb55d89",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid · Full-time",
+    "stack": [
+      "TypeScript",
+      "Python",
+      "SQL",
+      "Figma",
+      "AI prototyping"
+    ],
+    "points": [
+      22,
+      20,
+      10,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-10-23",
+    "summary": {
+      "cs": "Role na pomezí produktu a vývoje: z nápadů dělá specifikace, experimenty a funkční prototypy.",
+      "en": "A product-and-engineering hybrid role that turns ideas into specs, experiments and working prototypes."
+    },
+    "evidence": {
+      "cs": "Ukázat rychlé prototypy s AI (DNESKAi, ownDashboard) a práci s produktovými požadavky z freelance projektů.",
+      "en": "Show fast AI-assisted prototypes (DNESKAi, ownDashboard) and handling product requirements on freelance projects."
+    },
+    "gaps": {
+      "cs": "Jádrem je product discovery a analýza, ne produkční vývoj; ověřit, zda to odpovídá kariérnímu směru. Datová analýza není doložena.",
+      "en": "The core is product discovery and analysis rather than production engineering; check this fits the career direction. Data analysis is not documented."
+    }
+  },
+  {
+    "id": "gen-digital-lead-software-engineer-partner-portal",
+    "company": "Gen Digital",
+    "title": "Lead Software Engineer, Gen Partner Portal",
+    "url": "https://jobs.ashbyhq.com/gen-digital/8099442f-0c0e-49d9-a027-24c6f5bab6a2",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / Brno",
+    "arrangement": "On-site · Full-time",
+    "stack": [
+      "TypeScript",
+      "API contracts",
+      "React",
+      "Next.js",
+      "Python"
+    ],
+    "points": [
+      32,
+      8,
+      12,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-06-22",
+    "summary": {
+      "cs": "Seniorní IC role, která sjednocuje několik partnerských systémů Gen do jednoho portálu.",
+      "en": "A senior IC role consolidating several Gen partner systems into one portal."
+    },
+    "evidence": {
+      "cs": "Vyzdvihnout API kontrakty, BFF a micro-frontendy z modernizace bankovnictví v EmbedIT.",
+      "en": "Lead with API contracts, BFFs and micro-frontends from the online-banking modernisation at EmbedIT."
+    },
+    "gaps": {
+      "cs": "Požadují 10–15+ let praxe (grade 11), což je výrazně nad doloženou praxí. Python API vrstva je výhodou.",
+      "en": "Requires 10–15+ years (grade 11), well above documented experience. The Python API layer is a plus."
+    },
+    "stretch": true
+  },
+  {
+    "id": "rohlik-group-senior-product-engineer",
+    "company": "Rohlik Group",
+    "title": "Senior Product Engineer",
+    "url": "https://jobs.ashbyhq.com/rohlik/05ccee37-e421-4aa8-8f7f-5cea9ac921d7",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid · Full-time",
+    "stack": [
+      "Claude Code",
+      "Devin",
+      "System design",
+      "On-call"
+    ],
+    "points": [
+      22,
+      10,
+      7,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-08-24",
+    "summary": {
+      "cs": "Seniorní inženýr v malé produktové buňce Rohlik Group, která odpovídá za jednu North Star metriku.",
+      "en": "Senior engineer in a small Rohlik Group product cell that owns one North Star metric."
+    },
+    "evidence": {
+      "cs": "Zmínit agentní vývoj a vedení frontendu ve Web Integratoru.",
+      "en": "Mention agent-driven development and frontend leadership at Web Integrator."
+    },
+    "gaps": {
+      "cs": "Inzerát uvádí 5+ let praxe spolu s vysokoškolským titulem v oboru; kandidát titul nemá, ověřit, zda přijmou ekvivalent. Konkrétní stack v inzerátu chybí (odkazují na stránku tech stacku).",
+      "en": "The listing asks for 5+ years together with a relevant degree; the candidate has none, so check whether equivalent experience is accepted. No concrete stack is named (they link to a tech-stack page)."
+    },
+    "stretch": true,
+    "blocker": true
+  },
+  {
+    "id": "ataccama-fullstack-engineer-java-typescript",
+    "company": "Ataccama",
+    "title": "Fullstack Engineer (Java/TypeScript)",
+    "url": "https://jobs.lever.co/ataccama/171f2580-33d7-45d8-9359-2201acb18d1e",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid · Full-time",
+    "stack": [
+      "Java",
+      "Kotlin",
+      "Spring Boot",
+      "React",
+      "TypeScript",
+      "GraphQL",
+      "PostgreSQL"
+    ],
+    "points": [
+      22,
+      18,
+      8,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-11-03",
+    "summary": {
+      "cs": "Fullstack role na platformě Ataccama ONE pro kvalitu dat: backend v Javě/Kotlinu a React frontend.",
+      "en": "Fullstack role on the Ataccama ONE data-quality platform: Java/Kotlin backend and React frontend."
+    },
+    "evidence": {
+      "cs": "Frontendová část sedí na React/TypeScript a design systém z beKind a Web Integratoru; Playwright a Jest z testování v EmbedIT.",
+      "en": "The frontend half matches React/TypeScript and design-system work from beKind and Web Integrator; Playwright/Jest from EmbedIT testing."
+    },
+    "gaps": {
+      "cs": "Požadují solidní backend v Javě, kterou kandidát nemá doloženou; GraphQL/Apollo také chybí.",
+      "en": "Requires solid Java backend experience, which is not documented; GraphQL/Apollo is also missing."
+    },
+    "stretch": true
+  },
+  {
+    "id": "productboard-staff-fullstack-product-engineer-growth",
+    "company": "Productboard",
+    "title": "Staff Full-stack Product Engineer, Growth",
+    "url": "https://jobs.gem.com/productboard/am9icG9zdDpGGIKW-IlxhJ2EnwVAtLRB",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / remote (CZ)",
+    "arrangement": "Hybrid nebo remote v ČR · Full-time",
+    "stack": [
+      "TypeScript",
+      "React",
+      "GraphQL",
+      "Kotlin",
+      "Python",
+      "Experiments"
+    ],
+    "points": [
+      27,
+      10,
+      14,
+      10,
+      10
+    ],
+    "salary": "2 295 000–3 305 000 Kč/rok",
+    "postedLabel": "Posted 2026-08-25",
+    "summary": {
+      "cs": "Tým Growth řeší onboarding, monetizaci a retenci v Productboardu, včetně AI experimentů.",
+      "en": "The Growth team owns onboarding, monetisation and retention in Productboard, including AI experiments."
+    },
+    "evidence": {
+      "cs": "Zmínit SEO a výkon v beKind, Stripe v Take a Break a rezervační flow s platbami v NAVIGYM.",
+      "en": "Mention SEO and performance at beKind, Stripe at Take a Break and the booking-with-payments flow in NAVIGYM."
+    },
+    "gaps": {
+      "cs": "Úroveň Staff; backend je v Kotlinu, který kandidát nemá. Délka praxe v textu nebyla čitelná, ověřit na stránce inzerátu.",
+      "en": "Staff level; the backend is Kotlin, which is not documented. The required years were not legible in the text, so check the listing page."
+    },
+    "stretch": true
+  },
+  {
+    "id": "productboard-staff-fullstack-product-engineer",
+    "company": "Productboard",
+    "title": "Staff Full-stack Product Engineer",
+    "url": "https://jobs.gem.com/productboard/am9icG9zdDpS7XehojHQK_NnncgSKWoQ",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / remote (CZ)",
+    "arrangement": "Hybrid nebo remote v ČR · Full-time",
+    "stack": [
+      "TypeScript",
+      "React",
+      "GraphQL",
+      "Kotlin",
+      "Python",
+      "Pydantic AI"
+    ],
+    "points": [
+      22,
+      10,
+      13,
+      10,
+      10
+    ],
+    "salary": "2 295 000–3 305 000 Kč/rok",
+    "postedLabel": "Posted 2026-04-30",
+    "summary": {
+      "cs": "Staff role, která navrhuje AI-native architekturu codebase a agentní workflow v Productboardu.",
+      "en": "A Staff role designing the AI-native codebase architecture and agent workflows at Productboard."
+    },
+    "evidence": {
+      "cs": "Ukázat API kontrakty a hranice modulů z EmbedIT a AI-tooling konvence z Web Integratoru.",
+      "en": "Show API contracts and module boundaries from EmbedIT and AI-tooling conventions from Web Integrator."
+    },
+    "gaps": {
+      "cs": "Požadují 6–10+ let a silný backend v Pythonu, Kotlinu nebo Javě; nic z toho není doloženo.",
+      "en": "Requires 6–10+ years and strong Python, Kotlin or Java backend skills; none of these are documented."
+    },
+    "stretch": true
+  },
+  {
+    "id": "productboard-staff-ai-product-engineer",
+    "company": "Productboard",
+    "title": "Staff AI Product Engineer",
+    "url": "https://jobs.gem.com/productboard/8080046002",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha / remote (CZ)",
+    "arrangement": "Hybrid nebo remote v ČR · Full-time",
+    "stack": [
+      "Python",
+      "Pydantic AI",
+      "Braintrust",
+      "TypeScript",
+      "React",
+      "Kotlin"
+    ],
+    "points": [
+      20,
+      10,
+      13,
+      10,
+      10
+    ],
+    "salary": "2 295 000–3 305 000 Kč/rok",
+    "postedLabel": "Posted 2025-07-24",
+    "summary": {
+      "cs": "Staff role pro agentní architekturu, kontextovou infrastrukturu a AI code review v Productboardu.",
+      "en": "A Staff role for agent architecture, context infrastructure and AI code review at Productboard."
+    },
+    "evidence": {
+      "cs": "Zmínit AI analýzu PDF s validací v Ersilii a repo-verzované instrukce pro agenty v ownDashboard.",
+      "en": "Mention the Ersilia PDF analysis with validation and repo-versioned agent instructions in ownDashboard."
+    },
+    "gaps": {
+      "cs": "Požadují 6–10+ let a backend v Pythonu, Kotlinu nebo Javě; chybí. Inzerát je poprvé zveřejněn v červenci 2025.",
+      "en": "Requires 6–10+ years and Python, Kotlin or Java backend; missing. First published in July 2025."
+    },
+    "stretch": true
+  },
+  {
+    "id": "mews-product-builder",
+    "company": "Mews",
+    "title": "Product Builder",
+    "url": "https://www.mews.com/en/careers/jobs/4852746101?gh_jid=4852746101",
+    "aliases": [
+      "https://job-boards.greenhouse.io/mewssystems/jobs/4852746101"
+    ],
+    "source": "Employer",
+    "location": "Praha / remote (CZ)",
+    "arrangement": "Hybrid / remote-first · Full-time",
+    "stack": [
+      "AI products",
+      "Claude",
+      "Cursor",
+      "Lovable",
+      "Product engineering"
+    ],
+    "points": [
+      28,
+      12,
+      13,
+      10,
+      10
+    ],
+    "salary": "1 191 500–2 042 000 Kč/rok",
+    "postedLabel": "Posted 2026-05-08",
+    "summary": {
+      "cs": "Mews (hotelový software z Prahy) hledá inženýra, který sám vede produktové iniciativy s AI funkcemi.",
+      "en": "Mews (Prague-based hospitality software) wants an engineer who owns product initiatives with AI features end to end."
+    },
+    "evidence": {
+      "cs": "Ukázat produkty postavené bez produktového manažera (NAVIGYM, DNESKAi) a AI integraci v Ersilii.",
+      "en": "Show products built without a product manager (NAVIGYM, DNESKAi) and the AI integration at Ersilia."
+    },
+    "gaps": {
+      "cs": "Požadují 7+ let dodávání zákaznického softwaru a AI Fluency Level 4. Stack v inzerátu není uveden; ověřit.",
+      "en": "Requires 7+ years of customer-facing software and AI Fluency Level 4. No stack is named; verify."
+    },
+    "stretch": true
+  },
+  {
+    "id": "mews-product-builder-fintech",
+    "company": "Mews",
+    "title": "Product Builder – Fintech",
+    "url": "https://www.mews.com/en/careers/jobs/5001452101?gh_jid=5001452101",
+    "aliases": [
+      "https://job-boards.greenhouse.io/mewssystems/jobs/5001452101"
+    ],
+    "source": "Employer",
+    "location": "Praha / remote (CZ)",
+    "arrangement": "Hybrid / remote-first · Full-time",
+    "stack": [
+      "Payments",
+      "APIs",
+      "Webhooks",
+      "Reconciliation",
+      "AI tooling"
+    ],
+    "points": [
+      25,
+      12,
+      13,
+      10,
+      10
+    ],
+    "salary": "1 191 500–1 695 000 Kč/rok",
+    "postedLabel": "Posted 2026-10-09",
+    "summary": {
+      "cs": "Tým Acquiring v Mews staví přijímání karet a alternativních plateb, vrstvu payment facilitatoru a reporting do účetní knihy.",
+      "en": "The Acquiring team at Mews builds card and alternative payment acceptance, the payment-facilitator layer and ledger reporting."
+    },
+    "evidence": {
+      "cs": "Začít platbami Stripe a Comgate, webhooky a doménou online bankovnictví z EmbedIT.",
+      "en": "Lead with Stripe and Comgate payments, webhooks and the online-banking domain from EmbedIT."
+    },
+    "gaps": {
+      "cs": "Požadují 7+ let a integraci PSP nebo acquirera ve velkém měřítku; to doloženo není. Karetní lifecycle (3DS, chargebacky, PCI) je výhodou.",
+      "en": "Requires 7+ years and PSP or acquirer integration at scale, which is not documented. Card lifecycle knowledge (3DS, chargebacks, PCI) is a plus."
+    },
+    "stretch": true
+  },
+  {
+    "id": "mews-staff-engineer",
+    "company": "Mews",
+    "title": "Staff Engineer",
+    "url": "https://www.mews.com/en/careers/jobs/4971619101?gh_jid=4971619101",
+    "aliases": [
+      "https://job-boards.greenhouse.io/mewssystems/jobs/4971619101"
+    ],
+    "source": "Employer",
+    "location": "Praha / remote (CZ)",
+    "arrangement": "Hybrid / remote-first · Full-time",
+    "stack": [
+      "Agentic tooling",
+      "Architecture",
+      "AI agents",
+      "Migrations"
+    ],
+    "points": [
+      26,
+      10,
+      13,
+      10,
+      10
+    ],
+    "salary": "1 491 000–2 005 000 Kč/rok",
+    "postedLabel": "Posted 2026-09-09",
+    "summary": {
+      "cs": "Staff inženýr vlastní interní inženýrské agenty, skilly a standardy architektury jednoho tribu v Mews.",
+      "en": "A Staff engineer who owns one Mews tribe's internal engineering agents, skills and architecture standards."
+    },
+    "evidence": {
+      "cs": "Zmínit skilly a pravidla pro agenty v ownDashboard a zavedení AI konvencí ve Web Integratoru.",
+      "en": "Mention agent skills and rules in ownDashboard and the AI conventions introduced at Web Integrator."
+    },
+    "gaps": {
+      "cs": "Úroveň senior/staff s víceletými migracemi a architekturou ve velkém; to doloženo není. Stack v inzerátu chybí.",
+      "en": "Senior/staff level with multi-year migrations and large-scale architecture, which is not documented. No stack is named."
+    },
+    "stretch": true
+  },
+  {
+    "id": "keboola-forward-deployed-engineer",
+    "company": "Keboola",
+    "title": "Forward Deployed Engineer",
+    "url": "https://jobs.lever.co/keboola/6c6a5804-a5c2-4e35-a237-4d64b6119e02",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid (3 dny v kanceláři) · Full-time",
+    "stack": [
+      "Data platform",
+      "AI agents",
+      "APIs",
+      "SQL",
+      "Python"
+    ],
+    "points": [
+      20,
+      14,
+      10,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-10-16",
+    "summary": {
+      "cs": "Inženýr u zákazníků Keboola dovádí datová a AI řešení od první schůzky do produkce.",
+      "en": "An engineer embedded with Keboola clients who takes data and AI solutions from first meeting to production."
+    },
+    "evidence": {
+      "cs": "Zmínit přímou práci s klienty na freelance produktech a automatizace s n8n a Apify.",
+      "en": "Mention direct client work on freelance products and automation with n8n and Apify."
+    },
+    "gaps": {
+      "cs": "Požadují 5+ let v datech, analytice nebo softwaru s prací před klienty; datové inženýrství a Python nejsou doloženy.",
+      "en": "Requires 5+ years in data, analytics or software with client-facing work; data engineering and Python are not documented."
+    },
+    "stretch": true
+  },
+  {
+    "id": "wrike-senior-product-builder-talent-pool",
+    "company": "Wrike",
+    "title": "Senior Product Builder – Talent Pool",
+    "url": "https://job-boards.greenhouse.io/wrike/jobs/4710222005",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Hybrid · Full-time",
+    "stack": [
+      "Java",
+      "Spring",
+      "TypeScript",
+      "React 19",
+      "Micro-frontends",
+      "PostgreSQL"
+    ],
+    "points": [
+      25,
+      15,
+      12,
+      10,
+      10
+    ],
+    "postedLabel": "Posted 2026-06-30",
+    "summary": {
+      "cs": "Talent pool pro fullstack inženýry Wrike, kteří dodávají funkce od backendu v Javě po React frontend.",
+      "en": "A talent pool for Wrike fullstack engineers shipping features from the Java backend to the React frontend."
+    },
+    "evidence": {
+      "cs": "Vyzdvihnout micro-frontendy z EmbedIT a React/TypeScript z Web Integratoru.",
+      "en": "Lead with micro-frontends from EmbedIT and React/TypeScript from Web Integrator."
+    },
+    "gaps": {
+      "cs": "Požadují hlubokou znalost Javy 21 a Springu, kterou kandidát nemá. Jde o talent pool, ne konkrétní pozici.",
+      "en": "Requires deep Java 21 and Spring experience, which is not documented. It is a talent pool, not a specific opening."
+    },
+    "stretch": true
+  },
+  {
+    "id": "deepnote-senior-full-stack-engineer",
+    "company": "Deepnote",
+    "title": "Senior Full Stack Engineer",
+    "url": "https://jobs.ashbyhq.com/deepnote/7f49b6e5-9135-4087-83ce-b6de767de479",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Remote",
+    "arrangement": "Remote · Full-time",
+    "stack": [
+      "TypeScript",
+      "React",
+      "GraphQL",
+      "Node.js",
+      "PostgreSQL",
+      "Redis"
+    ],
+    "points": [
+      36,
+      16,
+      12,
+      9,
+      10
+    ],
+    "postedLabel": "Posted 2024-07-30",
+    "summary": {
+      "cs": "Deepnote (založen v Praze) staví datové notebooky s AI funkcemi pro datové týmy.",
+      "en": "Deepnote (founded in Prague) builds AI-enabled data notebooks for data teams."
+    },
+    "evidence": {
+      "cs": "Vést fullstack TypeScript/React/Node/PostgreSQL a AI/LLM funkcemi z Ersilie.",
+      "en": "Lead with fullstack TypeScript/React/Node/PostgreSQL and the AI/LLM features at Ersilia."
+    },
+    "gaps": {
+      "cs": "Inzerát je zveřejněn od července 2024, ověřit, zda nábor stále běží a ze kterých zemí přijímají. GraphQL není doložen.",
+      "en": "Listed since July 2024, so check whether hiring is active and which countries are eligible. GraphQL is not documented."
+    }
+  },
+  {
+    "id": "linear-senior-staff-product-engineer-europe",
+    "company": "Linear",
+    "title": "Senior / Staff Product Engineer",
+    "url": "https://jobs.ashbyhq.com/linear/069c4628-88d7-4e4d-b393-c996fc7f3076",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Remote (EU)",
+    "arrangement": "Remote · Full-time",
+    "stack": [
+      "TypeScript",
+      "React",
+      "MobX",
+      "Node.js",
+      "GraphQL",
+      "PostgreSQL"
+    ],
+    "points": [
+      35,
+      13,
+      13,
+      9,
+      10
+    ],
+    "postedLabel": "Posted 2022-01-22",
+    "summary": {
+      "cs": "Produktový tým Linear (nástroj pro řízení vývoje) pracuje fullstack v TypeScriptu, remote po Evropě.",
+      "en": "Linear's product team (issue tracking and planning) works fullstack in TypeScript, remote across Europe."
+    },
+    "evidence": {
+      "cs": "Ukázat dotažené produkty end-to-end (NAVIGYM, ownDashboard) a vysoký důraz na kvalitu UI a přístupnost.",
+      "en": "Show products shipped end to end (NAVIGYM, ownDashboard) and a strong focus on UI quality and accessibility."
+    },
+    "gaps": {
+      "cs": "Požadují 5+ let v kvalitní softwarové firmě. Inzerát je evergreen (od 2022), ověřit aktuální nábor. GraphQL a MobX nejsou doloženy.",
+      "en": "Requires 5+ years at a high-quality software company. The listing is evergreen (since 2022); check current hiring. GraphQL and MobX are not documented."
+    },
+    "stretch": true
+  },
+  {
+    "id": "linear-senior-staff-fullstack-engineer-europe",
+    "company": "Linear",
+    "title": "Senior / Staff Fullstack Engineer",
+    "url": "https://jobs.ashbyhq.com/linear/d3bc1ced-3ce4-4086-a050-555055dbb1ff",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Remote (EU)",
+    "arrangement": "Remote · Full-time",
+    "stack": [
+      "TypeScript",
+      "React",
+      "Node.js",
+      "GraphQL",
+      "PostgreSQL",
+      "WebSockets"
+    ],
+    "points": [
+      34,
+      13,
+      12,
+      9,
+      10
+    ],
+    "postedLabel": "Posted 2021-04-27",
+    "summary": {
+      "cs": "Fullstack role na sync enginu a API Linearu, remote pro kandidáty z Evropy.",
+      "en": "Fullstack role on Linear's sync engine and API, remote for candidates in Europe."
+    },
+    "evidence": {
+      "cs": "Vést TypeScript, PostgreSQL a realtime funkcemi (Supabase Realtime v devShark).",
+      "en": "Lead with TypeScript, PostgreSQL and realtime features (Supabase Realtime in devShark)."
+    },
+    "gaps": {
+      "cs": "Požadují 5+ let; offline sync a škálování nejsou doloženy. Evergreen inzerát od roku 2021, ověřit aktuálnost.",
+      "en": "Requires 5+ years; offline sync and scaling are not documented. Evergreen listing since 2021; confirm it is current."
+    },
+    "stretch": true
+  },
+  {
+    "id": "posthog-product-engineer",
+    "company": "PostHog",
+    "title": "Product Engineer",
+    "url": "https://jobs.ashbyhq.com/posthog/20ab9628-20ff-4ae3-bd6a-46ae7e9dc6b8",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Remote",
+    "arrangement": "Remote · Full-time",
+    "stack": [
+      "Python",
+      "Django",
+      "React",
+      "TypeScript",
+      "ClickHouse"
+    ],
+    "points": [
+      26,
+      15,
+      12,
+      9,
+      10
+    ],
+    "postedLabel": "Posted 2026-11-06",
+    "summary": {
+      "cs": "PostHog staví open-source produktovou analytiku; inženýři vlastní celé produkty, plně remote.",
+      "en": "PostHog builds open-source product analytics; engineers own whole products, fully remote."
+    },
+    "evidence": {
+      "cs": "Ukázat vlastnictví celých produktů (NAVIGYM, DNESKAi) a AI integrace.",
+      "en": "Show full product ownership (NAVIGYM, DNESKAi) and AI integrations."
+    },
+    "gaps": {
+      "cs": "Backend je v Pythonu/Djangu, který kandidát nemá. Ověřit, zda přijímají z Česka.",
+      "en": "The backend is Python/Django, which is not documented. Check that they hire from Czechia."
+    },
+    "stretch": true
+  },
+  {
+    "id": "n8n-senior-product-engineer-ts-node-vue",
+    "company": "n8n",
+    "title": "Senior Product Engineer (TS/NodeJS/Vue)",
+    "url": "https://jobs.ashbyhq.com/n8n/896c58a8-0388-4037-b265-82b15633a568",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Remote (EU)",
+    "arrangement": "Remote · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "Vue",
+      "React",
+      "APIs",
+      "SDK"
+    ],
+    "points": [
+      35,
+      17,
+      13,
+      9,
+      10
+    ],
+    "postedLabel": "Posted 2026-03-04",
+    "summary": {
+      "cs": "Enterprise týmy n8n (IAM, Enterprise Nodes, API & OEM) staví fullstack TypeScript funkce; Česko je mezi uvedenými lokalitami.",
+      "en": "n8n enterprise teams (IAM, Enterprise Nodes, API & OEM) ship fullstack TypeScript features; Czechia is among the listed locations."
+    },
+    "evidence": {
+      "cs": "Zmínit vlastní používání n8n, auth a integrace z NAVIGYM a Vue z bootcampu.",
+      "en": "Mention hands-on n8n use, auth and integrations from NAVIGYM, and Vue from the bootcamp."
+    },
+    "gaps": {
+      "cs": "Seniorní role pro enterprise SaaS; IAM a enterprise požadavky ověřit. Vue je doložen jen z bootcampu.",
+      "en": "A senior enterprise-SaaS role; check IAM and enterprise expectations. Vue is documented only from the bootcamp."
+    }
+  },
+  {
+    "id": "n8n-forward-deployed-engineer-emea",
+    "company": "n8n",
+    "title": "Forward Deployed Engineer – EMEA",
+    "url": "https://jobs.ashbyhq.com/n8n/c9fc97fa-a473-4133-b3cb-502785649ecd",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Remote (EU)",
+    "arrangement": "Remote · Full-time · 30–50 % cestování",
+    "stack": [
+      "n8n",
+      "TypeScript",
+      "Custom nodes",
+      "APIs",
+      "Auth"
+    ],
+    "points": [
+      28,
+      15,
+      12,
+      9,
+      10
+    ],
+    "postedLabel": "Posted 2026-10-30",
+    "summary": {
+      "cs": "Inženýr u enterprise zákazníků n8n navrhuje workflow, integrace a vlastní nody.",
+      "en": "An engineer with n8n enterprise customers designing workflows, integrations and custom nodes."
+    },
+    "evidence": {
+      "cs": "Vést praktickou prací s n8n a integracemi API (Comgate, Nuki, Resend, GitHub).",
+      "en": "Lead with hands-on n8n work and API integrations (Comgate, Nuki, Resend, GitHub)."
+    },
+    "gaps": {
+      "cs": "Role vyžaduje 30–50 % cestování po Evropě a práci se strategickými klienty. Vývoj vlastních n8n nodů není doložen.",
+      "en": "Requires 30–50% travel across Europe and work with strategic accounts. Building custom n8n nodes is not documented."
+    }
+  },
+  {
+    "id": "etnetera-full-stack-developer-sw-engineer-ai",
+    "company": "Etnetera Core",
+    "title": "Full-Stack Developer / SW Engineer + AI",
+    "url": "https://www.etnetera.cz/prace-u-nas/full-stack-developer-sw-engineer-ai",
+    "aliases": [],
+    "source": "Employer",
+    "location": "Praha",
+    "arrangement": "Kancelář Praha 7 · Full-time",
+    "stack": [
+      "TypeScript",
+      "Node.js",
+      "React",
+      "Next.js",
+      "Python",
+      "LangChain",
+      "Temporal"
+    ],
+    "points": [
+      33,
+      16,
+      11,
+      10,
+      10
+    ],
+    "summary": {
+      "cs": "Seniorní fullstack role v Etnetera Core, kde je AI součástí každodenního vývoje.",
+      "en": "A senior fullstack role at Etnetera Core where AI is part of daily development."
+    },
+    "evidence": {
+      "cs": "Vést Next.js/TypeScript, LangChain a AI integracemi z Ersilie.",
+      "en": "Lead with Next.js/TypeScript, LangChain and the AI integrations at Ersilia."
+    },
+    "gaps": {
+      "cs": "Jde o seniorní pozici; Python, LangGraph a Temporal nejsou doloženy. Forma spolupráce a datum zveřejnění nejsou uvedeny.",
+      "en": "A senior position; Python, LangGraph and Temporal are not documented. Contract form and posting date are not stated."
+    }
   }
 ];
