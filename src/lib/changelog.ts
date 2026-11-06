@@ -56,6 +56,31 @@ export const SHIPPED_ENTRY_LIMIT = 2;
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-11-06",
+    title: "Career searches the Czech market; DNESKAi makes every post in Spotlight and pauses new topics",
+    features: [
+      {
+        title: "Career for Prague and remote work from Czechia",
+        summary:
+          "Career no longer looks at Oslo. Researched roles lists 98 live frontend, fullstack and AI integration roles at 77 companies, found on Czech job boards, LinkedIn and employer job boards, each scored against the lukaskouril.dev profile. Career links holds 132 official Czech careers pages next to your own links, and Check for new offers also reads ten Prague employers' job boards. The Show Czech Career contents setting is gone; history from the Oslo search stays visible.",
+        media: null,
+      },
+      {
+        title: "Every DNESKAi post in Spotlight",
+        summary:
+          "New and regenerated posts are made in the Spotlight kit, and the Design Lab offers Spotlight as the only kit to switch to. A post already saved in another kit keeps it and its approval until you move it to Spotlight.",
+        media: null,
+      },
+      {
+        title: "New DNESKAi topics paused",
+        summary:
+          "No new night is collected, scouting proposes nothing and proposed news topics no longer expire, so the topics waiting for review stay as they are. Your own topics, approvals and the posts already on their way continue. Náměty says so; DNESKAI_NEW_TOPICS_ENABLED=true resumes.",
+        media: null,
+      },
+    ],
+    fixes: [],
+  },
+  {
     date: "2026-10-23",
     title: "DNESKAi gets a design lab, a smaller workspace and the next phase behind switches",
     features: [
