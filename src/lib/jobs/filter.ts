@@ -9,7 +9,7 @@ import type { JobRole } from "./types";
 // first so they can veto everything else. Czech variants included — the
 // scraped boards are Czech-first.
 const NEGATIVE =
-  /\b(advocate|evangelist|qa|testers?|testing|tester(ka)?|data\s+(analyst|scientist)|analytik|analyst|embedded|hardware|hw|mobile|ios|android|salesforce|sap\b|business\s+develop|sales|marketing|recruit|designer|scrum|product\s+(manager|owner)|project\s+manager|support|helpdesk|account\s+(manager|executive)|copywriter|obchodn)/i;
+  /\b(advocate|evangelist|qa|sdet|in\s+test|security\s+engineer|testers?|testing|tester(ka)?|data\s+(analyst|scientist)|analytik|analyst|embedded|hardware|hw|mobile|ios|android|salesforce|sap\b|business\s+develop|sales|marketing|recruit|designer|scrum|product\s+(manager|owner)|project\s+manager|support|helpdesk|account\s+(manager|executive)|copywriter|obchodn)/i;
 
 const FULLSTACK = /full[\s-]*stack/i;
 
