@@ -1,16 +1,15 @@
 import type { JobListing } from "@/lib/types";
+import { RESEARCH_JOBS } from "./research";
 
 export type Availability = "open" | "closed" | "unknown";
 const LISTING_TIMEOUT_MS = 15_000;
-const HOSTS = [
-  "thehub.io", "finn.no", "arbeidsplassen.nav.no",
-  "careers.sixrobotics.com", "careers.attensi.com", "careers.monil.com",
-  "careers.aize.io", "careers.spond.com", "careers.noisolation.com",
-  "aidn.teamtailor.com", "flowcase.teamtailor.com", "sanity.io", "jobs.dnv.com",
-  "careers.falkor.com", "job-boards.eu.greenhouse.io",
+const BOARD_HOSTS = [
   "startupjobs.cz",
   "jobs.cz",
   "prace.cz",
+  "cocuma.cz",
+  "jobstack.it",
+  "welcometothejungle.com",
   "remoteok.com",
   "remotive.com",
   "arbeitnow.com",
@@ -18,13 +17,28 @@ const HOSTS = [
   "weworkremotely.com",
   "boards.greenhouse.io",
   "job-boards.greenhouse.io",
+  "job-boards.eu.greenhouse.io",
   "jobs.lever.co",
   "jobs.eu.lever.co",
   "jobs.ashbyhq.com",
+  "apply.workable.com",
+  "jobs.smartrecruiters.com",
   "linkedin.com",
   "cz.linkedin.com",
   "popronsystems.cz",
 ];
+/** Every researched vacancy's own host is allowed, so a known research ID can
+ * be checked; arbitrary destinations and redirects elsewhere stay blocked. */
+const RESEARCH_HOSTS = RESEARCH_JOBS.flatMap((job) => [job.url, ...job.aliases])
+  .map((url) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  })
+  .filter(Boolean);
+const HOSTS = [...new Set([...BOARD_HOSTS, ...RESEARCH_HOSTS])];
 
 /** Only known public job hosts; no credentials, custom ports or redirects to arbitrary hosts. */
 export function isJobUrl(value: string): boolean {

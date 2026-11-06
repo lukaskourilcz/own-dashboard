@@ -52,6 +52,10 @@ describe("matchRole", () => {
 
   it("rejects other disciplines even with dev words", () => {
     expect(matchRole("QA Engineer")).toBeNull();
+    expect(matchRole("Senior Software Engineer in Test")).toBeNull();
+    expect(matchRole("SDET – TypeScript")).toBeNull();
+    expect(matchRole("Sr Security Engineer | Remote | Europe")).toBeNull();
+    expect(matchRole("Senior Software Engineer, Security Platform", "React TypeScript")).toBe("frontend");
     expect(matchRole("QA Tester/ka - Stream Platby")).toBeNull();
     expect(matchRole("DevOps Engineer")).toBeNull();
     expect(matchRole("Data Engineer (Python)")).toBeNull();

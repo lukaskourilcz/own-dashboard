@@ -51,7 +51,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { useDateLocale, useDict, useLang } from "@/lib/i18n";
-import { useCvLinks, useCzechCareerVisibility } from "@/lib/use-prefs";
+import { useCvLinks } from "@/lib/use-prefs";
 import { jobSourceLabel } from "@/lib/jobs/meta";
 import { JobSources } from "@/components/panels/job-sources";
 import { compareByFit, matchListing, type JobMatch } from "@/lib/jobs/match";
@@ -72,9 +72,9 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { isCareerRelevant, isOsloRelevant, isOsloSnapshot, isPrague, careerSeniority } from "@/lib/jobs/filter";
-import { OsloCareerWorkspace, OsloLetterReview } from "./oslo-career-workspace";
-import { researchForUrl, careerPositionKey } from "@/lib/jobs/oslo-research";
+import { isCareerRelevant, isPrague, careerSeniority } from "@/lib/jobs/filter";
+import { CareerResearchWorkspace, CareerLetterReview } from "./career-research-workspace";
+import { careerPositionKey } from "@/lib/jobs/research";
 import { CareerBoard } from "./career-board";
 import { CareerCompanies } from "./career-companies";
 import { CareerProgressDialog } from "./career-progress-dialog";
@@ -149,18 +149,19 @@ export function JobsPanel({
 }: Props) {
   const t = useDict();
   const { cs: cvCs, en: cvEn } = useCvLinks();
-  const { showCzechCareer } = useCzechCareerVisibility();
   const { lang } = useLang();
   const [view, setView] = useState<
-    "oslo" | "open" | "saved" | "ready" | "applied" | "letters" | "companies"
-  >("oslo");
+    "research" | "open" | "saved" | "ready" | "applied" | "letters" | "companies"
+  >("research");
   const relevantListings = useMemo(
-    () => listings.filter(job => isCareerRelevant(job) && (showCzechCareer || isOsloRelevant(job))),
-    [listings, showCzechCareer],
+    () => listings.filter(isCareerRelevant),
+    [listings],
   );
 
-  const visibleSaved = savedPositions.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row));
-  const visibleApplications = applications.filter(row => showCzechCareer || !!researchForUrl(row.url) || isOsloSnapshot(row));
+  // Saved positions and applications are the owner's history, including the
+  // retired Oslo search. They stay visible; only discovery is Czech-scoped.
+  const visibleSaved = savedPositions;
+  const visibleApplications = applications;
 
   // Listings the user already applied to, by listing id and by URL (manual
   // logs may match a scraped offer only by its link).
@@ -223,7 +224,7 @@ export function JobsPanel({
           <div className="flex flex-wrap items-center gap-2">
             {(cvCs || cvEn) && (
               <div className="flex items-center">
-                {showCzechCareer && cvCs && (
+                {cvCs && (
                   <Tooltip content={t.jobs.cvCzech}>
                     <Button
                       asChild
@@ -265,12 +266,12 @@ export function JobsPanel({
             )}
             {(view !== "open" || !activated) && <Button onClick={() => { setView("open"); void checkOffers(); }} disabled={checking}><RefreshCw className={cn("size-4",checking && "animate-spin")} aria-hidden />{checking ? t.jobs.checking : t.jobs.checkOffers}</Button>}
             <div className="flex max-w-full flex-wrap rounded-md border border-border bg-surface p-0.5">
-              {(["oslo", "open", "saved", "ready", "applied", "letters", "companies"] as const).map(
+              {(["research", "open", "saved", "ready", "applied", "letters", "companies"] as const).map(
                 (v) => (
                   <button
                     key={v}
                     type="button"
-                    onClick={() => { setView(v); if (v !== "oslo" && !activated) void loadCareer(); }}
+                    onClick={() => { setView(v); if (v !== "research" && !activated) void loadCareer(); }}
                     className={cn(
                       "min-h-11 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-ring",
                       view === v
@@ -278,8 +279,8 @@ export function JobsPanel({
                         : "text-foreground-muted hover:text-foreground",
                     )}
                   >
-                    {v === "oslo"
-                      ? "Oslo"
+                    {v === "research"
+                      ? lang === "cs" ? "Prověřené role" : "Researched roles"
                       : v === "open"
                       ? t.jobs.openTab
                       : v === "saved"
@@ -308,14 +309,14 @@ export function JobsPanel({
         }
       />
 
-      {view === "oslo" ? (
-        <OsloCareerWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyFor(savedToListing(position)); setApplyOpen(true); }} />
+      {view === "research" ? (
+        <CareerResearchWorkspace activated={activated} onActivate={onActivate} isPreview={isPreview} userId={userId} savedPositions={savedPositions} setSavedPositions={setSavedPositions} applications={applications} onPrepare={position => { setSavedFor(position); setApplyFor(savedToListing(position)); setApplyOpen(true); }} />
       ) : !activated ? (
         <Card className="p-5"><p role={activationFailed ? "alert" : "status"} className="mb-3 text-sm">{activationFailed ? lang === "cs" ? "Uložená Kariéra se nepodařila načíst. Zkuste to znovu." : "Could not load saved Career. Please retry." : lang === "cs" ? "Načítám uloženou Kariéru…" : "Loading saved Career…"}</p><Button variant="outline" onClick={() => void loadCareer()}>{lang === "cs" ? "Načíst znovu" : "Retry loading"}</Button></Card>
       ) : view === "companies" ? (
         <CareerCompanies userId={userId} isPreview={isPreview} />
       ) : view === "letters" ? (
-        <><OsloLetterReview /><LetterWorkspace
+        <><CareerLetterReview /><LetterWorkspace
           templates={templates}
           setTemplates={setTemplates}
           userId={userId}
@@ -432,7 +433,6 @@ function OpenPositionsView({
 
   const { lang } = useLang();
   const cs = lang === "cs";
-  const { showCzechCareer } = useCzechCareerVisibility();
   const [detailId, setDetailId] = useState<string | null>(null);
   const [mobileDetail, setMobileDetail] = useState(false);
   const [workplace, setWorkplace] = useState("all");
@@ -773,7 +773,7 @@ function OpenPositionsView({
           aria-label={cs ? "Místo práce" : "Work location"}
           options={[
             { value: "all", label: cs ? "Praha i remote" : "Prague + remote" },
-            ...(showCzechCareer ? [{ value: "prague", label: "Praha" }] : []),
+            { value: "prague", label: cs ? "Praha" : "Prague" },
             { value: "remote", label: "Remote" },
           ]}
         />
@@ -1753,8 +1753,7 @@ function CoverLetterField({
 }) {
   const t = useDict();
   const { lang } = useLang();
-  const { showCzechCareer } = useCzechCareerVisibility();
-  const [letterLanguage, setLetterLanguage] = useState<LetterLanguage>(showCzechCareer ? lang : "en");
+  const [letterLanguage, setLetterLanguage] = useState<LetterLanguage>(lang);
   const [draftName, setDraftName] = useState("");
   const locale = useDateLocale();
   const toast = useToast();

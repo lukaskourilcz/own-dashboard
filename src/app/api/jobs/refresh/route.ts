@@ -51,9 +51,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: preferences } = await supabase.from("user_preferences")
-    .select("show_czech_career").eq("user_id", user.id).maybeSingle();
-  const summary = await runJobScrape(admin, { includeCzech: preferences?.show_czech_career === true });
+  const summary = await runJobScrape(admin);
 
   // Owner deletions are durable job_user_state tombstones. Never delete the
   // shared scraped row here: that would cross the per-user boundary and would

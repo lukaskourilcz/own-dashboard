@@ -28,14 +28,18 @@ import { useLang } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import {
-  OSLO_JOBS,
-  OSLO_RESEARCHED_ON,
-  STRONG_OSLO_MATCH,
+  RESEARCH_JOBS,
+  RESEARCHED_ON,
+  STRONG_MATCH,
+  isAiRole,
+  isContractRole,
+  isPriorityRole,
+  isRemoteRole,
   researchForUrl,
   researchScore,
   researchIsStale,
   type ResearchJob,
-} from "@/lib/jobs/oslo-research";
+} from "@/lib/jobs/research";
 import type { JobApplication, SavedJobPosition, Updater } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -50,11 +54,12 @@ type Props = {
   onPrepare: (position: SavedJobPosition) => void;
 };
 
-export function OsloCareerWorkspace(props: Props) {
+export function CareerResearchWorkspace(props: Props) {
   const { lang } = useLang();
   const cs = lang === "cs";
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("priority");
+  const [source, setSource] = useState("all");
   const [selected, setSelected] = useState<ResearchJob | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -62,26 +67,32 @@ export function OsloCareerWorkspace(props: Props) {
   const confirm = useConfirmation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [today] = useState(() => new Date());
-  const isPriority = (job: ResearchJob) =>
-    researchScore(job) >= STRONG_OSLO_MATCH &&
-    !job.blocker &&
-    !researchIsStale(job, today) &&
-    !/contract|part-time/i.test(job.arrangement);
-  const rows = OSLO_JOBS.filter((job) => {
+  const isPriority = (job: ResearchJob) => isPriorityRole(job, today);
+  const needle = query.trim().toLocaleLowerCase();
+  const rows = RESEARCH_JOBS.filter((job) => {
     if (
-      !`${job.company} ${job.title} ${job.stack.join(" ")}`
+      needle &&
+      !`${job.company} ${job.title} ${job.location} ${job.stack.join(" ")}`
         .toLocaleLowerCase()
-        .includes(query.toLocaleLowerCase())
+        .includes(needle)
     )
       return false;
+    if (source !== "all" && job.source !== source) return false;
     if (filter === "priority") return isPriority(job);
+    if (filter === "remote") return isRemoteRole(job);
+    if (filter === "prague") return /praha|prague/i.test(job.location);
     if (filter === "stretch") return !!job.stretch;
-    if (filter === "ai")
-      return /\bai\b|llm|langchain|n8n/i.test(job.stack.join(" "));
-    if (filter === "contract")
-      return /contract|part-time/i.test(job.arrangement);
+    if (filter === "ai") return isAiRole(job);
+    if (filter === "contract") return isContractRole(job);
+    if (filter === "barrier") return !!job.blocker;
     return true;
-  }).sort((a, b) => researchScore(b) - researchScore(a));
+  }).sort(
+    (a, b) =>
+      researchScore(b) - researchScore(a) ||
+      a.company.localeCompare(b.company, lang),
+  );
+  const sources = [...new Set(RESEARCH_JOBS.map((job) => job.source))].sort();
+  const companies = new Set(RESEARCH_JOBS.map((job) => job.company)).size;
   const saved = selected
     ? props.savedPositions.find(
         (row) => researchForUrl(row.url)?.id === selected.id,
@@ -111,26 +122,26 @@ export function OsloCareerWorkspace(props: Props) {
   return (
     <section
       className="space-y-6"
-      aria-label={cs ? "Pracovní příležitosti v Oslu" : "Oslo opportunities"}
+      aria-label={cs ? "Pracovní příležitosti v Česku" : "Opportunities in Czechia"}
     >
       <div className="career-overview grid gap-5 rounded-xl border border-border bg-surface p-5 sm:grid-cols-[1fr_auto] sm:p-6">
         <div>
           <p className="text-xs font-semibold tracking-wide text-primary">
-            OSLO · NORWAY
+            {cs ? "PRAHA · ČESKO" : "PRAGUE · CZECHIA"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-            {cs ? "Další krok v Oslu." : "Your next role in Oslo."}
+            {cs ? "Další role v Česku." : "Your next role in Czechia."}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-muted">
             {cs
-              ? "Frontend, fullstack a praktické AI integrace. Silné shody nahoře, seniornější příležitosti i konkrétní mezery v detailu."
-              : "Frontend, fullstack and practical AI integrations. Strong matches first, with senior stretches and concrete gaps in each detail."}
+              ? "React, Next.js, TypeScript, Node.js a praktické AI integrace. Silné shody nahoře, seniornější příležitosti a konkrétní mezery v detailu každé role."
+              : "React, Next.js, TypeScript, Node.js and practical AI integrations. Strong matches first, with senior stretches and concrete gaps in each role's detail."}
           </p>
           <p className="mt-3 flex items-center gap-1.5 text-xs text-foreground-muted">
             <MapPin className="size-3.5" aria-hidden />
             {cs
-              ? "Oslo a okolí · remote pozice slučitelné s prací z Norska"
-              : "Oslo area · remote roles compatible with Norway"}
+              ? "Praha · práce na dálku z Česka · zaměstnání i B2B"
+              : "Prague · remote from Czechia · employment or B2B"}
           </p>
         </div>
         <dl className="flex gap-6 sm:border-l sm:border-border sm:pl-6">
@@ -139,7 +150,7 @@ export function OsloCareerWorkspace(props: Props) {
               {cs ? "Prioritní shody" : "Priority matches"}
             </dt>
             <dd className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
-              {OSLO_JOBS.filter(isPriority).length}
+              {RESEARCH_JOBS.filter(isPriority).length}
             </dd>
           </div>
           <div>
@@ -147,7 +158,15 @@ export function OsloCareerWorkspace(props: Props) {
               {cs ? "Prověřené role" : "Researched roles"}
             </dt>
             <dd className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
-              {OSLO_JOBS.length}
+              {RESEARCH_JOBS.length}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-foreground-muted">
+              {cs ? "Firmy" : "Companies"}
+            </dt>
+            <dd className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
+              {companies}
             </dd>
           </div>
         </dl>
@@ -164,55 +183,76 @@ export function OsloCareerWorkspace(props: Props) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder={
               cs
-                ? "Firma, pozice nebo technologie"
-                : "Company, role or technology"
+                ? "Firma, pozice, lokalita nebo technologie"
+                : "Company, role, location or technology"
             }
-            aria-label={cs ? "Hledat pozici v Oslu" : "Search Oslo positions"}
+            aria-label={cs ? "Hledat pozici" : "Search positions"}
           />
         </div>
-        <SimpleSelect
-          value={filter}
-          onValueChange={setFilter}
-          className="w-full sm:w-64"
-          aria-label={cs ? "Výběr příležitostí" : "Opportunity filter"}
-          options={[
-            {
-              value: "priority",
-              label: cs
-                ? "Prioritní shody · 75 % a více"
-                : "Priority matches · 75%+",
-            },
-            {
-              value: "all",
-              label: cs ? "Všechny prověřené role" : "All researched roles",
-            },
-            {
-              value: "stretch",
-              label: cs ? "Seniornější příležitosti" : "Senior stretches",
-            },
-            {
-              value: "ai",
-              label: cs ? "AI a automatizace" : "AI and automation",
-            },
-            {
-              value: "contract",
-              label: cs ? "Doplňkové kontrakty" : "Alternative contracts",
-            },
-          ]}
-        />
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <SimpleSelect
+            value={filter}
+            onValueChange={setFilter}
+            className="w-full sm:w-64"
+            aria-label={cs ? "Výběr příležitostí" : "Opportunity filter"}
+            options={[
+              {
+                value: "priority",
+                label: cs
+                  ? `Prioritní shody · ${STRONG_MATCH} % a více`
+                  : `Priority matches · ${STRONG_MATCH}%+`,
+              },
+              {
+                value: "all",
+                label: cs ? "Všechny prověřené role" : "All researched roles",
+              },
+              { value: "prague", label: cs ? "Praha" : "Prague" },
+              { value: "remote", label: cs ? "Na dálku" : "Remote" },
+              {
+                value: "contract",
+                label: cs ? "B2B a kontrakty" : "B2B and contracts",
+              },
+              {
+                value: "ai",
+                label: cs ? "AI a automatizace" : "AI and automation",
+              },
+              {
+                value: "stretch",
+                label: cs ? "Seniornější příležitosti" : "Senior stretches",
+              },
+              {
+                value: "barrier",
+                label: cs ? "Role s překážkou" : "Roles with a barrier",
+              },
+            ]}
+          />
+          <SimpleSelect
+            value={source}
+            onValueChange={setSource}
+            className="w-full sm:w-48"
+            aria-label={cs ? "Zdroj nabídky" : "Listing source"}
+            options={[
+              { value: "all", label: cs ? "Všechny zdroje" : "All sources" },
+              ...sources.map((value) => ({
+                value,
+                label: value === "Employer" ? (cs ? "Web zaměstnavatele" : "Employer site") : value,
+              })),
+            ]}
+          />
+        </div>
       </div>
       <p className="text-xs leading-relaxed text-foreground-muted">
         {cs
           ? "Procenta vyjadřují shodu s profilem, nikoli pravděpodobnost přijetí. Výzkum k "
           : "Percentages measure profile fit, not hiring probability. Researched "}
-        {OSLO_RESEARCHED_ON}
+        {RESEARCHED_ON}
         {cs
           ? ". Dostupnost a podmínky před podáním znovu ověřte."
           : ". Recheck availability and requirements before applying."}
       </p>
       <div
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-        data-testid="oslo-job-grid"
+        data-testid="career-job-grid"
       >
         {rows.map((job) => {
           const state =
@@ -269,13 +309,13 @@ export function OsloCareerWorkspace(props: Props) {
                           ? cs
                             ? "Seniornější role"
                             : "Stretch role"
-                          : job.source === "Employer" && cs ? "Zaměstnavatel" : job.source}
+                          : sourceLabel(job.source, cs)}
                   </span>
                 </span>
                 <span
                   className={cn(
                     "text-right",
-                    researchScore(job) >= 75 && !job.blocker
+                    researchScore(job) >= STRONG_MATCH && !job.blocker
                       ? "text-primary"
                       : "text-foreground-muted",
                   )}
@@ -318,6 +358,7 @@ export function OsloCareerWorkspace(props: Props) {
             onClick={() => {
               setQuery("");
               setFilter("all");
+              setSource("all");
             }}
           >
             {cs ? "Zobrazit všechny role" : "Show all roles"}
@@ -333,44 +374,18 @@ export function OsloCareerWorkspace(props: Props) {
         <div className="mt-3 space-y-2 leading-relaxed text-foreground-muted">
           <p>
             {cs
-              ? "Technologie 40 bodů, zkušenost 25, doména 15, lokalita 10 a jazyk 10. Jde o ruční posouzení doloženého profilu. Povinná norština omezuje výsledek na 49 %, jiná nevyřešená podmínka na 59 %. Trh, konkurenci ani interní výběr firmy skóre nezná."
-              : "Stack 40 points, experience 25, domain 15, location 10 and language 10. Scores are a manual assessment of documented experience. Mandatory Norwegian caps the result at 49%, other unresolved conditions at 59%. The score cannot account for competition or employer decisions."}
+              ? "Technologie 40 bodů, zkušenost 25, doména 15, lokalita 10 a jazyk 10. Jde o ruční posouzení profilu z lukaskouril.dev. Povinný jazyk, který v profilu není (například němčina), omezuje výsledek na 49 %, jiná nevyřešená povinná podmínka (titul, prověrka, práce na místě mimo Prahu) na 59 %. Trh, konkurenci ani interní výběr firmy skóre nezná."
+              : "Stack 40 points, experience 25, domain 15, location 10 and language 10. Scores are a manual assessment of the profile on lukaskouril.dev. A mandatory language outside the profile (German, for example) caps the result at 49%; another unresolved mandatory condition (degree, clearance, on-site outside Prague) caps it at 59%. The score cannot account for competition or employer decisions."}
           </p>
           <p>
             {cs
-              ? "Na LinkedIn byly ukládány pouze nabídky s ověřeným zveřejněním v posledních 5 týdnech. Repost bez původního data nestačí. U přímých kariérních webů může být aktivní inzerát starší. Po 35 dnech se výzkum přesune z priorit k opětovnému ověření; datum se při aktualizaci API nepřepisuje."
-              : "Only LinkedIn listings with a verified posting age under 5 weeks were saved. A repost date alone is insufficient. An active employer-site vacancy may be older. After 35 days research leaves priorities for rechecking; API refresh does not reset its observation date."}
+              ? "Z LinkedIn a portálů jsou zařazeny nabídky zveřejněné zhruba v posledních 6 týdnech; datum se uvádí jen tam, kde bylo vidět. U přímých kariérních webů může být aktivní inzerát starší. Po 35 dnech se výzkum přesune z priorit k opětovnému ověření; datum se při aktualizaci API nepřepisuje. B2B a kontrakty jsou v prioritách, protože pracujete i na IČO."
+              : "Listings from LinkedIn and job boards were posted roughly within the last 6 weeks; a date is shown only where one was visible. An active employer-site vacancy may be older. After 35 days research leaves priorities for rechecking; API refresh does not reset its observation date. B2B and contract roles count as priorities because freelance work is an option."}
           </p>
         </div>
       </details>
       <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
-        {[
-          [
-            "LinkedIn · ≤ 5 týdnů",
-            "LinkedIn · ≤ 5 weeks",
-            "https://www.linkedin.com/jobs/search/?keywords=frontend%20fullstack%20typescript&location=Oslo%2C%20Norway&f_TPR=r3024000",
-          ],
-          [
-            "Uložené na The Hub",
-            "Saved on The Hub",
-            "https://thehub.io/client/my-jobs",
-          ],
-          [
-            "FINN · Oslo",
-            "FINN · Oslo",
-            "https://www.finn.no/job/search?location=1.20001.20061&q=react",
-          ],
-          [
-            "NAV · Arbeidsplassen",
-            "NAV · Arbeidsplassen",
-            "https://arbeidsplassen.nav.no/stillinger",
-          ],
-          [
-            "Startuplab · Jobs",
-            "Startuplab · Jobs",
-            "https://jobs.startuplab.no/jobs",
-          ],
-        ].map(([cz, en, url]) => (
+        {JOB_BOARDS.map(([cz, en, url]) => (
           <a
             key={url}
             href={url}
@@ -413,7 +428,7 @@ export function OsloCareerWorkspace(props: Props) {
             trigger.current?.focus();
           }}
           className="w-[calc(100%-1.5rem)] max-w-4xl p-0"
-          aria-describedby="oslo-role-description"
+          aria-describedby="career-role-description"
         >
           {selected && (
             <>
@@ -424,7 +439,7 @@ export function OsloCareerWorkspace(props: Props) {
                 <DialogTitle className="pr-10 text-xl leading-snug tracking-tight">
                   {selected.title}
                 </DialogTitle>
-                <DialogDescription id="oslo-role-description" className="mt-2">
+                <DialogDescription id="career-role-description" className="mt-2">
                   {selected.location} · {selected.arrangement}
                 </DialogDescription>
               </div>
@@ -603,21 +618,15 @@ function RoleResearch({
         {job.salary && `${job.salary} · `}
         {job.deadline && `${cs ? "Termín" : "Deadline"}: ${job.deadline} · `}
         {job.postedLabel && `${job.postedLabel} · `}
-        {cs ? "Zdroj" : "Source"}: {job.source === "Employer" && cs ? "Zaměstnavatel" : job.source} · {OSLO_RESEARCHED_ON}
-        {job.linkedinSaved
-          ? cs
-            ? " · Uloženo na LinkedIn"
-            : " · Saved on LinkedIn"
-          : ""}
+        {cs ? "Zdroj" : "Source"}: {sourceLabel(job.source, cs)} ·{" "}
+        {cs ? "ověřeno" : "checked"} {RESEARCHED_ON}
       </p>
-      {(job.aliases.length > 0 || !!job.relatedUrls?.length) && (
+      {job.aliases.length > 0 && (
         <div className="flex flex-wrap gap-3 text-xs">
-          {[...job.aliases, ...(job.relatedUrls ?? [])]
-            .filter(
-              (url) =>
-                !url.includes("linkedin.com") || job.source !== "LinkedIn",
-            )
-            .map((url, i) => (
+          <span className="text-foreground-muted">
+            {cs ? "Stejná nabídka také na:" : "Same listing also on:"}
+          </span>
+          {job.aliases.map((url) => (
               <a
                 key={url}
                 href={url}
@@ -625,7 +634,7 @@ function RoleResearch({
                 rel="noopener noreferrer"
                 className="focus-ring text-primary underline underline-offset-4"
               >
-                {new URL(url).hostname.replace("www.", "")} {i + 1}
+                {new URL(url).hostname.replace("www.", "")}
               </a>
             ))}
         </div>
@@ -732,7 +741,7 @@ function RoleLetter({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           <FileText className="size-4" aria-hidden />
-          {cs ? "Průvodní dopis · anglicky" : "Cover letter · English"}
+          {cs ? "Průvodní dopis" : "Cover letter"}
         </h3>
         {position?.cover_letter_url && (
           <a
@@ -759,11 +768,11 @@ function RoleLetter({
             : "Preview does not expose private letters. Your account loads them when a role opens."}
         </p>
       )}
-      <Label htmlFor="oslo-letter" className="sr-only">
+      <Label htmlFor="career-letter" className="sr-only">
         {cs ? "Text průvodního dopisu" : "Cover letter text"}
       </Label>
       <Textarea
-        id="oslo-letter"
+        id="career-letter"
         value={letter}
         onChange={(e) => setLetter(e.target.value)}
         rows={13}
@@ -775,11 +784,11 @@ function RoleLetter({
         }
       />
       <div>
-        <Label htmlFor="oslo-letter-notes">
+        <Label htmlFor="career-letter-notes">
           {cs ? "Poznámky k přihlášce" : "Application notes"}
         </Label>
         <Textarea
-          id="oslo-letter-notes"
+          id="career-letter-notes"
           className="mt-2 bg-surface"
           rows={2}
           value={notes}
@@ -858,8 +867,30 @@ function RoleLetter({
   );
 }
 
-export function OsloLetterReview() {
+export function CareerLetterReview() {
   const cs = useLang().lang === "cs";
+  const tips: [string, string][] = [
+    [
+      "Zachovat osobní oslovení, nadšení pro programování a konkrétní vazbu na produkt firmy. devShark, NAVIGYM nebo DNESKAi ukazují samostatnou produktovou práci lépe než obecné věty.",
+      "Keep the personal greeting, enthusiasm for programming and a concrete link to the company's product. devShark, NAVIGYM or DNESKAi show independent product work better than generic statements.",
+    ],
+    [
+      "Vést 2–3 důkazy podle role: bankovní BFF, micro-frontendy a testy v EmbedITu; vedení frontendu a přístupnost ve Web Integratoru; validovaná AI analýza PDF v Ersilii; rezervace a platby v NAVIGYMu.",
+      "Lead with 2–3 examples matched to the role: banking BFFs, micro-frontends and tests at EmbedIT; frontend leadership and accessibility at Web Integrator; validated AI PDF analysis at Ersilia; bookings and payments at NAVIGYM.",
+    ],
+    [
+      "Psát v jazyce inzerátu. Český inzerát dostane český dopis, anglický nebo mezinárodní tým anglický. Tón ponechat věcný a krátký.",
+      "Write in the listing's language: a Czech advert gets a Czech letter, an English or international team gets English. Keep the tone factual and short.",
+    ],
+    [
+      "Odstranit starou zmínku o stěhování do Osla. Uvést Prahu jako bydliště, aktuální dostupnost a zda dáváte přednost HPP, nebo B2B. Sazbu či mzdu uvádět, jen když o ni inzerát žádá.",
+      "Remove the old Oslo relocation wording. State Prague as your base, your current availability and whether you prefer employment or B2B. Give a rate or salary only when the listing asks.",
+    ],
+    [
+      "Nedoplňovat roky, titul ani expertizu, které profil nedokládá. „Integrace LLM“ je přesnější než vývoj či trénování modelů; C#, Java, Python nebo Angular popsat jako oblast k učení.",
+      "Do not invent years, degrees or expertise. “LLM integration” is more accurate than model development or training; describe C#, Java, Python or Angular as learning areas.",
+    ],
+  ];
   return (
     <Card className="mb-5 p-5">
       <h2 className="text-base font-semibold">
@@ -868,32 +899,47 @@ export function OsloLetterReview() {
           : "Cover letters: keep your voice, sharpen the evidence"}
       </h2>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-foreground-muted">
-        <li>
-          {cs
-            ? "Zachovat osobní „Hello…“, nadšení pro programování a konkrétní spojení produktu s DevSharkem. Původní Attensi dopis je osobnější než starší šablony."
-            : "Keep the personal “Hello…”, enthusiasm for programming and a concrete DevShark connection. Your original Attensi letter is more personal than the older templates."}
-        </li>
-        <li>
-          {cs
-            ? "Přidat 2–3 důkazy podle role: bankovní BFF/WCAG, vedení rezervační platformy nebo LLM analýzu PDF v Ersilia. AI sekci podpořit n8n, LangChain, Apify a TypeSafe AI (Jev)."
-            : "Add 2–3 relevant examples: banking BFF/WCAG, leading a reservation platform, or Ersilia LLM PDF analysis. Name n8n, LangChain, Apify and TypeSafe AI (Jev) where relevant."}
-        </li>
-        <li>
-          {cs
-            ? "Zkrátit historii kurzů a všechny tři barcelonské kontrakty do jedné věty. Vynechat opakované nabídky live codingu a obecné sliby spolehlivosti; důkazy jsou přesvědčivější."
-            : "Condense courses and the three Barcelona contracts. Remove repeated live-coding offers and generic reliability promises; concrete work is stronger evidence."}
-        </li>
-        <li>
-          {cs
-            ? "Opravit staré „based in Prague/Czechia“. Před 22. říjnem psát o plánovaném přestěhování, po příjezdu upravit na bydliště v Oslu. EU občanství uvést, číslo a daňovou kartu neprezentovat jako již vyřízené."
-            : "Replace stale Prague/Czechia location statements. Before October 22 describe the planned move; update to Oslo residence after arrival. State EU citizenship without implying tax/identity registration is already complete."}
-        </li>
-        <li>
-          {cs
-            ? "Nedoplňovat roky, titul ani expertizu, které CV nedokládá. „LLM integrations“ je přesnější než vývoj/trénování modelů. U Attensi otevřeně rozlišit React od SvelteKit/SignalR a základní C# od produkční expertizy."
-            : "Do not invent years, degrees or expertise. “LLM integrations” is more accurate than model development/training. For Attensi distinguish React experience from learning SvelteKit/SignalR and C# familiarity from production expertise."}
-        </li>
+        {tips.map(([czech, english]) => (
+          <li key={english}>{cs ? czech : english}</li>
+        ))}
       </ul>
     </Card>
   );
 }
+
+function sourceLabel(source: ResearchJob["source"], cs: boolean): string {
+  if (source === "Employer") return cs ? "Web zaměstnavatele" : "Employer site";
+  if (source === "Other") return cs ? "Jiný portál" : "Other board";
+  return source;
+}
+
+/** Manual browsing destinations. They are links, not scrape integrations. */
+const JOB_BOARDS: [string, string, string][] = [
+  [
+    "LinkedIn · Praha · 30 dní",
+    "LinkedIn · Prague · 30 days",
+    "https://www.linkedin.com/jobs/search/?keywords=react%20typescript&location=Prague%2C%20Czechia&f_TPR=r2592000",
+  ],
+  [
+    "LinkedIn · Česko na dálku",
+    "LinkedIn · Czechia remote",
+    "https://www.linkedin.com/jobs/search/?keywords=frontend%20fullstack%20typescript&location=Czechia&f_WT=2&f_TPR=r2592000",
+  ],
+  [
+    "StartupJobs · React",
+    "StartupJobs · React",
+    "https://www.startupjobs.cz/nabidky?superinput=react",
+  ],
+  [
+    "Jobs.cz · React Praha",
+    "Jobs.cz · React Prague",
+    "https://www.jobs.cz/prace/praha/?q%5B%5D=react",
+  ],
+  [
+    "Prace.cz · React Praha",
+    "Prace.cz · React Prague",
+    "https://www.prace.cz/nabidky/praha/?q=react",
+  ],
+  ["Cocuma · IT", "Cocuma · IT", "https://www.cocuma.cz/jobs/"],
+  ["JobStack · Praha", "JobStack · Prague", "https://www.jobstack.it/it-jobs/praha"],
+];

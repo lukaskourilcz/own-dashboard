@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { JOB_SOURCES } from "./sources";
-import { JOB_SOURCE_META, isCzechJobSource } from "./meta";
+import { JOB_SOURCE_META } from "./meta";
 import { selectDeadUrls } from "./prune";
-import { isCareerRelevant, isOsloRelevant } from "./filter";
+import { isCareerRelevant } from "./filter";
 import type { ScrapedJob, ScrapeSummary, SourceOutcome } from "./types";
 
 /**
@@ -74,15 +74,14 @@ export async function runJobScrape(
   // Existing Supabase client uses ungenerated table types.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin: SupabaseClient<any>,
-  options: { includeCzech?: boolean } = {},
 ): Promise<ScrapeSummary> {
   const startedAt = new Date().toISOString();
   const deadline = Date.now() + 45_000;
   const sources: Record<string, SourceOutcome> = {};
 
-  const activeSources = JOB_SOURCES.filter(s => options.includeCzech || !isCzechJobSource(s.id));
+  const activeSources = JOB_SOURCES;
   const activeIds = activeSources.map(s => s.id);
-  const includeJob = (job: ScrapedJob) => isCareerRelevant(job) && (options.includeCzech || isOsloRelevant(job));
+  const includeJob = (job: ScrapedJob) => isCareerRelevant(job);
   const settled = await Promise.allSettled(activeSources.map((s) => s.fetch()));
 
   // Dedupe on (source, external_id) — the CZ boards return overlapping

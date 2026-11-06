@@ -27,8 +27,6 @@ export type JobSourceMeta = {
 };
 
 export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
-  'ashby-sanity': {label:'Sanity · Careers',kind:'json',endpoint:'https://api.ashbyhq.com/posting-api/job-board/sanity',site:'https://www.sanity.io/careers',complete:false,scope:{cs:'Přímý zdroj zaměstnavatele; Oslo a práce na dálku z Norska',en:'Direct employer feed; Oslo and Norway-compatible remote roles'}},
-  'ashby-enode': {label:'Enode · Careers',kind:'json',endpoint:'https://api.ashbyhq.com/posting-api/job-board/Enode',site:'https://enode.com/careers',complete:false,scope:{cs:'Evropské remote pozice; před podáním potvrdit zaměstnávání v Norsku',en:'Europe remote roles; confirm Norway employment before applying'}},
   curated: {
     label: "Selected leads",
     kind: "curated",
@@ -42,7 +40,16 @@ export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
     },
   },
   'ashby-apify': {label:'Apify · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/apify', site:'https://apify.com/jobs', complete:false, scope:{en:'Direct employer feed, React roles in Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, React v Praze nebo na dálku z Česka'}},
-  'ashby-rossum': {label:'Rossum · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/rossum.ai', site:'https://jobs.ashbyhq.com/rossum.ai', complete:false, scope:{en:'Direct employer feed with full descriptions',cs:'Přímý zdroj zaměstnavatele s plnými popisy'}},
+  'ashby-ftmo': {label:'FTMO · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/ftmo', site:'https://careers.ftmo.com/en/it-development/', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'ashby-braiins': {label:'Braiins · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/braiins', site:'https://jobs.ashbyhq.com/braiins', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'ashby-rohlik': {label:'Rohlik Group · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/rohlik', site:'https://career.rohlik.group/group/list', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'ashby-gen-digital': {label:'Gen Digital · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/gen-digital', site:'https://jobs.ashbyhq.com/gen-digital', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'ashby-deepnote': {label:'Deepnote · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/deepnote', site:'https://jobs.ashbyhq.com/deepnote', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'ashby-n8n': {label:'n8n · Careers', kind:'json', endpoint:'https://api.ashbyhq.com/posting-api/job-board/n8n', site:'https://jobs.ashbyhq.com/n8n', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'greenhouse-mews': {label:'Mews · Careers', kind:'json', endpoint:'https://boards-api.greenhouse.io/v1/boards/mewssystems/jobs?content=true', site:'https://www.mews.com/en/careers', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'greenhouse-sentinelone': {label:'SentinelOne · Careers', kind:'json', endpoint:'https://boards-api.greenhouse.io/v1/boards/sentinellabs/jobs?content=true', site:'https://www.sentinelone.com/jobs/', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'lever-ataccama': {label:'Ataccama · Careers', kind:'json', endpoint:'https://api.lever.co/v0/postings/ataccama?mode=json', site:'https://jobs.lever.co/ataccama', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
+  'lever-keboola': {label:'Keboola · Careers', kind:'json', endpoint:'https://api.lever.co/v0/postings/keboola?mode=json', site:'https://jobs.lever.co/keboola', complete:false, scope:{en:'Direct employer feed, Prague or remote from Czechia',cs:'Přímý zdroj zaměstnavatele, Praha nebo na dálku z Česka'}},
   'lever-outreach': {label:'Outreach · Careers', kind:'json', endpoint:'https://api.lever.co/v0/postings/outreach?mode=json', site:'https://jobs.lever.co/outreach', complete:false, scope:{en:'Direct employer feed, Prague and eligible remote roles',cs:'Přímý zdroj zaměstnavatele, Praha a vhodná práce na dálku'}},
   startupjobs: {
     label: "StartupJobs.cz",
@@ -145,10 +152,4 @@ export const JOB_SOURCE_META: Record<string, JobSourceMeta> = {
 
 export function jobSourceLabel(source: string): string {
   return JOB_SOURCE_META[source]?.label ?? source;
-}
-
-const CZECH_SOURCES = new Set(["curated", "startupjobs", "jobscz", "pracecz", "ashby-apify", "ashby-rossum", "lever-outreach"]);
-/** Unknown Apify imports are opt-in too: their configured tasks may target CZ. */
-export function isCzechJobSource(source: string): boolean {
-  return CZECH_SOURCES.has(source) || source.startsWith("apify-");
 }

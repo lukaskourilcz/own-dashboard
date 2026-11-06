@@ -181,7 +181,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
   en: {
     title: "Career",
     description:
-      "Frontend, fullstack and AI integration roles in Oslo. Prepare and track each application.",
+      "Frontend, fullstack and AI integration roles in Prague and remote from Czechia. Prepare and track each application.",
     openTab: "Open positions",
     savedTab: "Saved",
     appliedTab: "Applied",
@@ -365,7 +365,7 @@ export const jobs: { en: JobsStrings; cs: JobsStrings } = {
   cs: {
     title: "Kariéra",
     description:
-      "Frontend, fullstack a AI integrace v Oslu. Připravte a sledujte každou přihlášku.",
+      "Frontend, fullstack a AI integrace v Praze a na dálku z Česka. Připravte a sledujte každou přihlášku.",
     openTab: "Otevřené pozice",
     savedTab: "Uložené",
     appliedTab: "Odeslané přihlášky",

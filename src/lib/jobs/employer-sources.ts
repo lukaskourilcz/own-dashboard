@@ -3,9 +3,6 @@ import type { ScrapedJob } from "./types";
 
 // Public employer APIs. Each employer is isolated so failures remain visible.
 export const EMPLOYER_BOARDS = [
-  { id: "ashby-sanity", provider: "ashby", slug: "sanity", name: "Sanity" },
-  { id: "ashby-enode", provider: "ashby", slug: "Enode", name: "Enode" },
-  { id: "ashby-rossum", provider: "ashby", slug: "rossum.ai", name: "Rossum" },
   {
     id: "lever-outreach",
     provider: "lever",
@@ -13,6 +10,16 @@ export const EMPLOYER_BOARDS = [
     name: "Outreach",
   },
   { id: "ashby-apify", provider: "ashby", slug: "apify", name: "Apify" },
+  { id: "ashby-ftmo", provider: "ashby", slug: "ftmo", name: "FTMO" },
+  { id: "ashby-braiins", provider: "ashby", slug: "braiins", name: "Braiins" },
+  { id: "ashby-rohlik", provider: "ashby", slug: "rohlik", name: "Rohlik Group" },
+  { id: "ashby-gen-digital", provider: "ashby", slug: "gen-digital", name: "Gen Digital" },
+  { id: "ashby-deepnote", provider: "ashby", slug: "deepnote", name: "Deepnote" },
+  { id: "ashby-n8n", provider: "ashby", slug: "n8n", name: "n8n" },
+  { id: "greenhouse-mews", provider: "greenhouse", slug: "mewssystems", name: "Mews" },
+  { id: "greenhouse-sentinelone", provider: "greenhouse", slug: "sentinellabs", name: "SentinelOne" },
+  { id: "lever-ataccama", provider: "lever", slug: "ataccama", name: "Ataccama" },
+  { id: "lever-keboola", provider: "lever", slug: "keboola", name: "Keboola" },
 ] as const;
 type Board = {
   id: string;

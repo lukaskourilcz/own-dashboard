@@ -28,12 +28,12 @@ async function open(page: Page, mobile: boolean, name: string) {
   }
 }
 
-test("Career shows public Oslo research without eager private or scraper requests", async ({ page }, testInfo) => {
+test("Career shows public Czech research without eager private or scraper requests", async ({ page }, testInfo) => {
   await gotoPreview(page);
   const requests = watchDataRequests(page);
   await open(page, testInfo.project.name === "mobile", "Career");
-  await expect(page.getByRole("heading", { name: "Your next role in Oslo." })).toBeVisible();
-  await expect(page.getByTestId("oslo-job-grid")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your next role in Czechia." })).toBeVisible();
+  await expect(page.getByTestId("career-job-grid")).toBeVisible();
   await expect(page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true })).toHaveCount(0);
   await page.waitForTimeout(500);
   expect(requests).toEqual([]);
@@ -46,8 +46,8 @@ test("Career shows public Oslo research without eager private or scraper request
   // Leaving and returning keeps the loaded state for the session.
   await open(page, testInfo.project.name === "mobile", "Projects");
   await open(page, testInfo.project.name === "mobile", "Career");
-  await page.getByRole("button", { name: "Oslo", exact: true }).click();
-  await expect(page.getByTestId("oslo-job-grid")).toBeVisible();
+  await page.getByRole("button", { name: "Researched roles", exact: true }).click();
+  await expect(page.getByTestId("career-job-grid")).toBeVisible();
   await page.getByRole("button", { name: "Open positions", exact: true }).click();
   await expect(page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
 });
