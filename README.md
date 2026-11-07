@@ -184,6 +184,7 @@ The migrations, in the order they run:
 86. `20261023130300_dneskai_tiktok_spend.sql` — unapplied, a fourth kind `tiktok` in the topic spend ledger for the daily TikTok CZ sound chart under its own ceiling, plus service-only run lookup and binding; used only with `DNESKAI_TIKTOK_TRENDS_ENABLED=true`.
 87. `20261107140000_dneskai_plan.sql` — applied 7 November 2026, the rolling 30-day DNESKAi publishing plan (Instagram and Threads slots), with service-only approval, Threads-twin retirement and news-brief extension for the plan step; used with `DNESKAI_PLAN_ENABLED=true`.
 88. `20261107140100_dneskai_today_project_tab.sql` — applied 7 November 2026, allows hiding the DNESKAi "Dnes a zítra" tab.
+89. `20261107180000_devshark_plan.sql` — devShark concepts the owner approves through `marketing_devshark_decide`, and the plan of one Instagram post (12:00, also on Threads) and one Threads post (19:00) a day; filled only with `DEVSHARK_PLAN_ENABLED=true`.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
