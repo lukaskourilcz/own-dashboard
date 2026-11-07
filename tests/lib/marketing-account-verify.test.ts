@@ -147,7 +147,8 @@ describe('owner account routes', () => {
     expect(limited.status).toBe(429); expect(limited.headers.get('retry-after')).toBe('42');
     mocks.user.mockResolvedValueOnce({ data: { user: { id: '22222222-2222-4222-8222-222222222222' } } });
     expect(await (await POST(post({ brand: 'dneskai', platform: 'instagram' }))).json()).toEqual({ error: 'marketing-owner-required' });
-    for (const body of [{ brand: 'devshark', platform: 'instagram' }, { brand: 'dneskai', platform: 'threads' }, { brand: 'dneskai', platform: 'instagram', ownerId: owner }]) expect((await POST(post(body))).status).toBe(400);
+    // devShark Instagram and both Threads profiles verify since 7 November 2026; unknown brands and platforms do not.
+    for (const body of [{ brand: 'quorum', platform: 'instagram' }, { brand: 'devshark', platform: 'linkedin' }, { brand: 'dneskai', platform: 'instagram', ownerId: owner }]) expect((await POST(post(body))).status).toBe(400);
     expect(fetch).not.toHaveBeenCalled(); expect(mocks.admin).not.toHaveBeenCalled();
   });
   it('maps verification failures to codes and hides unexpected errors', async () => {

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
-import { MarketingAccountVerificationError, verifyInstagramAccount } from '@/lib/marketing/meta-account';
+import { MarketingAccountVerificationError, verifyInstagramAccount, verifyThreadsAccount } from '@/lib/marketing/meta-account';
 import type { MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-client';
 
 /**
@@ -15,7 +15,8 @@ import type { MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-cl
  */
 export const runtime = 'nodejs';
 export const maxDuration = 30;
-const Input = z.strictObject({ brand: z.literal('dneskai'), platform: z.literal('instagram') });
+// Threads (owner decision, 7 November 2026): the DNESKAi and devShark profiles verify against Threads' own /me.
+const Input = z.union([z.strictObject({ brand: z.enum(['dneskai', 'devshark']), platform: z.literal('instagram') }), z.strictObject({ brand: z.enum(['dneskai', 'devshark']), platform: z.literal('threads') })]);
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
   const db = await createClient(); const { data: { user } } = await db.auth.getUser();
@@ -26,6 +27,16 @@ export async function POST(request: Request) {
   let input: z.infer<typeof Input>;
   try { const raw = await request.text(); if (raw.length > 1000) throw new Error('too-large'); input = Input.parse(JSON.parse(raw)); }
   catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
+  if (input.platform === 'threads') {
+    try {
+      const verified = await verifyThreadsAccount(createAdminClient(), user.id, input.brand, { signal: request.signal });
+      return Response.json({ account: { id: verified.accountId, brand: verified.brand, platform: verified.platform, handle: verified.handle, verifiedAt: verified.verifiedAt, enabled: verified.enabled, token: verified.token }, tokenStored: verified.tokenStored },
+        { headers: { 'Cache-Control': 'private, no-store' } });
+    } catch (error) {
+      if (error instanceof MarketingAccountVerificationError) return Response.json({ error: error.code }, { status: error.status, headers: { 'Cache-Control': 'private, no-store' } });
+      return Response.json({ error: 'account-verification-unavailable' }, { status: 503 });
+    }
+  }
   try {
     const verified = await verifyInstagramAccount(createAdminClient(), user.id, input.brand, { signal: request.signal });
     const body: MarketingAccountVerifyResponse = { accountType: verified.accountType, tokenStored: verified.tokenStored, ...(verified.page ? { page: verified.page } : {}),
