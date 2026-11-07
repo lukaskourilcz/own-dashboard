@@ -46,7 +46,9 @@ describe("deck revision contract", () => {
     expect(() => parseContentRevision({ ...deckRevision(), format: "story" })).toThrow();
     // #165: a carousel deck may publish as a Reel; it keeps its carousel deck and slide JPEGs.
     expect(parseContentRevision({ ...deckRevision(), format: "reel" }).deck?.format).toBe("carousel");
-    expect(() => parseContentRevision({ ...deckRevision(), account: { ...deckRevision().account, platform: "threads" } })).toThrow();
+    // A deck may go to Threads as the plan's twin (7 November 2026), but never as a Reel.
+    expect(() => parseContentRevision({ ...deckRevision(), account: { ...deckRevision().account, platform: "threads" } })).not.toThrow();
+    expect(() => parseContentRevision({ ...deckRevision(), format: "reel", account: { ...deckRevision().account, platform: "threads" } })).toThrow();
     const single: DneskaiDeck = { schemaVersion: DNESKAI_SLIDES_VERSION, format: "single-image", slides: [{ type: "single", variant: "photo", headline: "Oznámení", images: [{ slot: "image-1", assetSha256: a }], alt: "Oznámení" }] };
     const post = parseContentRevision({ ...deckRevision(), format: "post", deck: single, assets: [deckRevision().assets[0]] });
     expect(post.deck?.format).toBe("single-image");
