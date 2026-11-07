@@ -28,6 +28,7 @@ import { DNESKAI_PLAN_HORIZON_DAYS, advanceDneskaiPlan, dneskaiPlanEnabled } fro
 import { pragueDayAfter } from "./dneskai-workspace";
 import { devsharkPlanEnabled, fillDevsharkPlan } from "./devshark-plan";
 import { prepareDevsharkPosts } from "./devshark-publish";
+import { devsharkConceptModelConfiguration, generateDevsharkConcept } from "./devshark-concepts";
 import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
@@ -148,6 +149,11 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     // The night's news enters the plan only while new topics are on (owner decision, 7 November 2026).
     plan: (project, now, options) => advanceDneskaiPlan(db, owner, project, { now, ...options, news: dneskaiNewTopicsEnabled(env) }),
+    async devsharkConcept(now, signal) {
+      const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
+      if (error || !data) throw new Error("devshark-project-unavailable");
+      return generateDevsharkConcept(db, owner, data.id as string, { now, env, signal, model: () => createClaudeTopicModel(devsharkConceptModelConfiguration(env)) });
+    },
     async devsharkPlan(now, options) {
       const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
       if (error || !data) throw new Error("devshark-project-unavailable");

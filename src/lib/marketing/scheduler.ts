@@ -67,6 +67,8 @@ export const MARKETING_TICK_ENRICHMENT = "enrichment" as const;
 export const MARKETING_TICK_PLAN = "plan" as const;
 /** The devShark plan (owner request, 7 November 2026): places approved concepts, only with DEVSHARK_PLAN_ENABLED. */
 export const MARKETING_TICK_DEVSHARK_PLAN = "devshark-plan" as const;
+/** devShark concept generation (owner decision, 7 November 2026), only with DEVSHARK_GENERATION_ENABLED. */
+export const MARKETING_TICK_DEVSHARK_CONCEPTS = "devshark-concepts" as const;
 /**
  * #160: the comment watcher runs after the categories above and before the reminder, under the publishing lease (it
  * writes to Instagram too), only with DNESKAI_ENGAGEMENT_ENABLED=true and only when the ports wire it.
@@ -77,7 +79,7 @@ export const MARKETING_TICK_ENGAGEMENT = "engagement" as const;
  * it. Two Graph GETs under Facebook Login; it holds no lease, its upsert is idempotent.
  */
 export const MARKETING_TICK_AUDIO_TRENDS = "audio-trends" as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_ENRICHMENT | typeof MARKETING_TICK_PLAN | typeof MARKETING_TICK_DEVSHARK_PLAN | typeof MARKETING_TICK_ENGAGEMENT | typeof MARKETING_TICK_AUDIO_TRENDS;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_ENRICHMENT | typeof MARKETING_TICK_PLAN | typeof MARKETING_TICK_DEVSHARK_PLAN | typeof MARKETING_TICK_DEVSHARK_CONCEPTS | typeof MARKETING_TICK_ENGAGEMENT | typeof MARKETING_TICK_AUDIO_TRENDS;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -128,7 +130,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000, plan: 12_000, "devshark-plan": 12_000, engagement: 8_000, "audio-trends": 12_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000, plan: 12_000, "devshark-plan": 12_000, "devshark-concepts": 30_000, engagement: 8_000, "audio-trends": 12_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -230,6 +232,8 @@ export interface MarketingSchedulerPorts {
   /** The publishing plan (owner decision, 7 November 2026): fills the 30 days and prepares the coming slots (`advanceDneskaiPlan`). */
   plan?(project: string, now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiPlanResult>;
   /** devShark (owner request, 7 November 2026): approved concepts into the one-Instagram, two-Threads daily plan. */
+  /** devShark: one concept for the owner's review when the studio's queue is short (`generateDevsharkConcept`). */
+  devsharkConcept?(now: Date, signal: AbortSignal): Promise<{ status: "generated" | "skipped" | "refused"; code?: string; costUsd?: number }>;
   devsharkPlan?(now: Date, options?: { signal: AbortSignal; remainingMs: () => number }): Promise<{ placed: number; waiting: number; prepared?: number; approved?: number; errors?: string }>;
 }
 
@@ -639,6 +643,21 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       const result = await devsharkPlan(now(), { signal: abort, remainingMs });
       const worked = result.placed + (result.prepared ?? 0) + (result.approved ?? 0) > 0;
       return { status: worked ? "done" : "noop", detail: { placed: result.placed, waiting: result.waiting, prepared: result.prepared ?? 0, approved: result.approved ?? 0, ...(result.errors ? { errors: result.errors } : {}) } };
+    },
+  });
+
+  const devsharkConcept = ports.devsharkConcept;
+  if (devsharkConcept && env.DEVSHARK_GENERATION_ENABLED === "true") minuteSteps.push({
+    category: MARKETING_TICK_DEVSHARK_CONCEPTS, lease: "generation",
+    async precheck(): Promise<StepOutcome | null> {
+      if (env.MARKETING_AI_CONSENT !== "true") return { status: "skipped", code: "generation-consent-required" };
+      if (await yieldToPublication()) return yielded;
+      return null;
+    },
+    async run({ now, signal: abort }): Promise<StepOutcome> {
+      const result = await devsharkConcept(now(), abort);
+      if (result.status === "skipped") return { status: "noop", code: result.code };
+      return { status: result.status === "generated" ? "done" : "error", ...(result.code ? { code: result.code } : {}), detail: { costUsd: result.costUsd ?? 0 } };
     },
   });
 
