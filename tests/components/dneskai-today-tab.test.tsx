@@ -55,6 +55,7 @@ describe('Today and tomorrow in the preview', () => {
     expect(params.get('projectTab')).toBe('dneskai-review');
     expect(params.get('labPost')).toBe('d0e5ca10-0000-4000-8000-000000000001');
     expect(params.get('labSlide')).toBe('0');
+    expect(params.get('labView')).toBe('studio');
     expect(listener).toHaveBeenCalledTimes(1);
     window.removeEventListener('project-tab', listener);
   });

@@ -131,7 +131,8 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
   const [draft, setDraft] = useState<DeckDraft>(() => createDeckDraft(post, account?.id ?? null));
-  const [view, setView] = useState<DneskaiStageView>('feed');
+  // `labView=studio` (from „Dnes a zítra“) opens the post straight in the Design Studio view.
+  const [view, setView] = useState<DneskaiStageView>(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('labView') === 'studio' ? 'studio' : 'feed');
   // Design Studio: the newest picture drawn per slide, so the Studio view keeps it while the next change renders.
   const [studioLast, setStudioLast] = useState<Map<string, { image: string; blocks: DneskaiPreviewResult['blocks'] }>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());

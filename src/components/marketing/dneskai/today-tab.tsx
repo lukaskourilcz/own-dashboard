@@ -20,7 +20,7 @@ export type DneskaiPlanMonth = DneskaiPlanRead | 'loading' | 'unavailable';
 /** Switches the workspace to the Design Lab with this post open (the Lab reads `labPost` when it mounts). */
 function openInLab(id: string) {
   const url = new URL(window.location.href);
-  url.searchParams.set('projectTab', 'dneskai-review'); url.searchParams.set('labPost', id); url.searchParams.set('labSlide', '0');
+  url.searchParams.set('projectTab', 'dneskai-review'); url.searchParams.set('labPost', id); url.searchParams.set('labSlide', '0'); url.searchParams.set('labView', 'studio');
   window.history.replaceState(window.history.state, '', url); window.dispatchEvent(new Event('project-tab'));
 }
 
