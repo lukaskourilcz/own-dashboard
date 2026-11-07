@@ -21,6 +21,8 @@ export async function dneskaiPreviewResponse(deck: DneskaiDeck, slide: number, l
       image: preview.image ? `data:image/webp;base64,${preview.image.toString('base64')}` : null,
       // Codes and fields only: a problem's English message stays on the server, the Lab words the code itself.
       problems: preview.problems.slice(0, 30).map(({ code, field, blocking }) => ({ code, field: field?.slice(0, 80) ?? null, blocking })),
+      // Rounded onto the box grid the deck stores, so a frame the owner has not touched saves as the engine drew it.
+      blocks: preview.blocks.map(({ field, box, height }) => ({ field, height: Math.round(height), box: { x: Math.round(box.x), y: Math.round(box.y), w: Math.max(80, Math.round(box.w)), size: Math.round(box.size), align: box.align } })),
     });
     return Response.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {

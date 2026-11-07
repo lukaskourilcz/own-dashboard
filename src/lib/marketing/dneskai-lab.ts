@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
-import { DNESKAI_KIT_IDS, DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf } from './dneskai-slides';
+import { DNESKAI_KIT_IDS, DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, DneskaiBoxSchema, DNESKAI_EDITABLE_FIELDS } from './dneskai-slides';
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import { pragueScheduledAt } from './clock';
 import {
@@ -338,5 +338,7 @@ export const DneskaiPreviewResultSchema = z.strictObject({
   /** The slide's real pixels, downscaled (`data:image/webp;base64,…`); null when refused. */
   image: z.string().startsWith('data:image/webp;base64,').max(2_000_000).nullable(),
   problems: z.array(z.strictObject({ code: z.string().regex(/^[a-z][a-z0-9-]*$/).max(80), field: z.string().max(80).nullable(), blocking: z.boolean() })).max(30),
+  /** The editable text frames as the engine drew them, in master pixels (Design Studio). Older responses carry none. */
+  blocks: z.array(z.strictObject({ field: z.enum(DNESKAI_EDITABLE_FIELDS), box: DneskaiBoxSchema, height: z.number().min(0).max(1350) })).max(3).default([]),
 });
 export type DneskaiPreviewResult = z.infer<typeof DneskaiPreviewResultSchema>;
