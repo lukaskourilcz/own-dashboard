@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "ticker",
+  "label": "Ticker",
+  "purpose": "Minimal news ticker: white type on the ink ground, a mono wire line, thin rules and small framed pictures, with blueprint blue for the lead tick of every rule and the statement ground. For one fact, fast news and low-resolution or missing pictures.",
+  "palette": {
+    "background": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md, used here as the ground: the ink the dark logotype is approved on."
+    },
+    "surface": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md, used here for body copy and sources on ink so the white headline stays the brightest thing on the slide."
+    },
+    "surface-strong": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md, used here for the hairline rules and picture frames on ink."
+    },
+    "foreground": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md, used here as the type colour on ink and on blue."
+    },
+    "muted": {
+      "value": "#8b919b",
+      "source": "The one supporting colour: a grey between --text-secondary and white that labels, credits and folios need on ink, where #3c4149 reads at under 2:1. It clears 5.7:1 on #14161a."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; the rules' lead tick and the statement ground."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts); the hairlines on the blue statement ground."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Inter",
+      "source": "A compact grotesque for headlines and copy: tight at display sizes and plain at body sizes, so one family carries the fact."
+    },
+    "body": {
+      "family": "Inter",
+      "source": "The headline's family at its regular weight: the ticker's copy reads as one voice, not as an article."
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "source": "The wire face: kickers, sources, credits and folios set like a terminal line, distinct from the editorial look's IBM Plex Mono."
+    }
+  },
+  "style": {}
+}

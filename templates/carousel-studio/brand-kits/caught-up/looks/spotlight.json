@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "spotlight",
+  "label": "Spotlight",
+  "purpose": "Photo-led viral news: colour photographs to the edge fading into ink, white type centred on the fade, a circular inset portrait on the cover and heavy quotes under a pair of quotation marks, with blueprint blue as the accent statement ground.",
+  "palette": {
+    "background": {
+      "value": "#14161a",
+      "source": "--text-primary in DESIGN_SYSTEM.md, used here as the ground every photograph fades into and the ink of the shade: the ink the dark logotype is approved on."
+    },
+    "surface": {
+      "value": "#efefec",
+      "source": "--surface-subtle in DESIGN_SYSTEM.md, used here for the copy under a headline so the white headline stays the brightest thing on the slide."
+    },
+    "surface-strong": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md, used here for the hairlines and thumbnail frames on the ink sources slide."
+    },
+    "foreground": {
+      "value": "#ffffff",
+      "source": "--surface-reading in DESIGN_SYSTEM.md, used here as the type colour on the fade, on ink and on blue, and as the ring around the cover's inset."
+    },
+    "muted": {
+      "value": "#8b919b",
+      "source": "The one supporting colour, shared with the ticker look: a grey between --text-secondary and white for the sources slide's labels on ink, where #3c4149 reads at under 2:1. It clears 5.7:1 on #14161a."
+    },
+    "accent": {
+      "value": "#2f5ae6",
+      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; the accent statement's ground."
+    },
+    "secondary": {
+      "value": "#1a3ab0",
+      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts); kept for the palette's seven tokens, unused by the kit's layers."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Archivo",
+      "source": "A heavy grotesque at 800 for every headline and quote: wide and black enough to read as the viral-news display face at phone size, with drawn Czech accents."
+    },
+    "body": {
+      "family": "Inter",
+      "source": "A plain sans for the copy under a headline (400) and the uppercase attribution line (700), quieter than the display face."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: the sources slide's disclosure line, the only mono text in the kit."
+    }
+  },
+  "style": {}
+}
