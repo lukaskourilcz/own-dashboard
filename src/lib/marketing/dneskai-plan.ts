@@ -33,6 +33,8 @@ type Database = ReturnType<typeof createAdminClient>;
 
 /** Days after today whose slots the step prepares; the topic bridge generates them as soon as they enter it. */
 export const DNESKAI_PLAN_HORIZON_DAYS = 2;
+/** A render starts only with this much of the tick left; the renderer stops at the tick's hard budget. */
+const RENDER_MINIMUM_MS = 18_000;
 /** A post is approved only while its slot is at least this far away. */
 const APPROVAL_LEAD_MS = 2 * 60_000;
 /** A news brief stays current until this long after its planned slot. */
@@ -51,7 +53,7 @@ export type DneskaiPlanTwin = { id: string; status: string; ready: boolean; cont
 
 export type DneskaiPlanAction =
   | { kind: 'wait'; status: DneskaiPlanStatus; code: string | null }
-  | { kind: 'spotlight' | 'move' | 'to-threads' | 'approve' | 'twin' | 'approve-twin'; status: DneskaiPlanStatus };
+  | { kind: 'spotlight' | 'rerender' | 'move' | 'to-threads' | 'approve' | 'twin' | 'approve-twin'; status: DneskaiPlanStatus };
 
 /** The slot's instant in Prague time. */
 export const dneskaiPlanSlotAt = (slot: Pick<DneskaiPlanRow, 'date' | 'local_time'>) => pragueScheduledAt(slot.date, slot.local_time);
@@ -70,7 +72,12 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   if (head.status === 'publishing' || head.status === 'reconciliation') return { kind: 'wait', status: 'approved', code: null };
   const ownerEdit = !!slot.written_revision_id && head.id !== slot.written_revision_id;
   if (head.status === 'review') {
-    if (!head.ready || renderReportBlocks(head.render_report)) return { kind: 'wait', status: 'failed', code: 'render-blocked' };
+    if (!head.ready || renderReportBlocks(head.render_report)) {
+      // The plan's own render that was cut off or failed is drawn again; a render that refused the text waits for the owner.
+      const report = head.render_report as { status?: unknown } | null;
+      if (slot.written_revision_id === head.id && report?.status !== 'refused' && head.revision.deck && !head.revision.assets.length) return { kind: 'rerender', status: 'ready' };
+      return { kind: 'wait', status: 'failed', code: 'render-blocked' };
+    }
     if (!ownerEdit && head.revision.deck && dneskaiKitOf(head.revision.deck) !== DNESKAI_GENERATION_KIT) return { kind: 'spotlight', status: 'ready' };
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
     if (!slot.instagram && head.revision.account.platform === 'instagram') {
@@ -212,8 +219,19 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         if (action.kind === 'wait') { await record(slot, base); Object.assign(slot, base); break; }
         result.worked++;
         const current = head!;
+        // The approval function only takes a revision the plan names, so the slot records its head before any step.
+        if (slot.head_revision_id !== current.id) { await record(slot, { head_revision_id: current.id }); slot.head_revision_id = current.id; }
+        if (action.kind === 'rerender') {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }
+          const wiring = wired();
+          const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: current.id, revision: current.revision }, { render: wiring.render, loadMedia: wiring.loadMedia, signal: input.signal });
+          result.rendered++;
+          const patch = { ...base, status: rendered.ready ? 'ready' as const : 'failed' as const, code: rendered.ready ? null : 'render-blocked' };
+          await record(slot, patch); Object.assign(slot, patch);
+          break;
+        }
         if (action.kind === 'spotlight' || action.kind === 'move') {
-          if (action.kind === 'spotlight' && (result.rendered >= 1 || input.remainingMs() < 30_000)) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }
+          if (action.kind === 'spotlight' && (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS)) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }
           await keepNewsCurrent(db, owner, slot, current.revision, input.signal);
           const saved = await saveEdit(db, owner, current, { kit: action.kind === 'spotlight', scheduledAt: dneskaiPlanSlotAt(slot) }, wired(), input.signal);
           if (saved.rendered) result.rendered++;
