@@ -49,4 +49,12 @@ describe('marketing_devshark_drafts and _plan', () => {
     await expect(db.query("select public.marketing_devshark_decide($1,'rejected')", [draft])).resolves.toBeTruthy();
     await db.query('reset role');
   });
+
+  it('approves only a revision a devShark slot names, and only for the service role (7 November 2026)', async () => {
+    await as('service_role');
+    await expect(db.query("select public.marketing_devshark_plan_approve($1,gen_random_uuid(),$2)", [owner, 'a'.repeat(64)])).rejects.toThrow('revision unavailable');
+    await as('authenticated', owner);
+    await expect(db.query("select public.marketing_devshark_plan_approve($1,gen_random_uuid(),$2)", [owner, 'a'.repeat(64)])).rejects.toThrow();
+    await db.query('reset role');
+  });
 });
