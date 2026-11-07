@@ -18,12 +18,12 @@ type Drag = { key: string; mode: 'move' | 'width'; startX: number; startY: numbe
 const GRID = 8;
 const snap = (value: number) => Math.round(value / GRID) * GRID;
 
-export function StudioToolbar({ block, lang, disabled, onBox, onAuto, children }: {
-  block: StudioBlock | null; lang: Lang; disabled?: boolean; onBox: (key: string, patch: Partial<StudioBox>) => void; onAuto: (key: string) => void; children?: ReactNode;
+export function StudioToolbar({ block, lang, disabled, onBox, onAuto, hint, children }: {
+  block: StudioBlock | null; lang: Lang; disabled?: boolean; hint?: string; onBox: (key: string, patch: Partial<StudioBox>) => void; onAuto: (key: string) => void; children?: ReactNode;
 }) {
   const t = designStudio[lang];
   return <div role="toolbar" aria-label={t.toolbar} className="flex min-h-11 flex-wrap items-center gap-1 rounded-md border border-border bg-surface p-1">
-    <span className="px-2 text-xs text-foreground-muted">{block ? block.label : t.selectHint}</span>
+    <span className="px-2 text-xs text-foreground-muted">{block ? block.label : hint ?? t.selectHint}</span>
     {block && <>
       <button type="button" disabled={disabled} onClick={() => onBox(block.key, { size: Math.max(16, block.box.size - 4) })} className="min-h-9 rounded px-2 text-sm hover:bg-surface-hover focus-ring" aria-label={t.smaller}>A−</button>
       <span className="tabular w-10 text-center text-xs text-foreground-muted" aria-live="polite">{Math.round(block.box.size)}</span>

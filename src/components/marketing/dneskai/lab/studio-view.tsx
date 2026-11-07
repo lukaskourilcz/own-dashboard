@@ -53,7 +53,7 @@ export function DneskaiStudioView({ slide, index, preview, last, editable, onLay
     onLayout(Object.keys(boxes).length ? boxes : undefined);
   };
   return <div className="space-y-2" data-testid="dneskai-studio">
-    <StudioToolbar block={selectedBlock} lang={lang} disabled={!editable} onBox={setBox} onAuto={auto} />
+    <StudioToolbar block={selectedBlock} lang={lang} disabled={!editable} onBox={setBox} onAuto={auto} hint={t.selectHint} />
     {shown ? <BoxOverlay width={WIDTH} height={HEIGHT} blocks={blocks} selected={selected} onSelect={setSelected} onBox={setBox} disabled={!editable} lang={lang} testId="dneskai-studio-canvas">
       {/* eslint-disable-next-line @next/next/no-img-element -- an in-memory data URL of the render-only preview */}
       <img src={shown.image} alt="" aria-hidden width={864} height={1080} className="absolute inset-0 block size-full" />
