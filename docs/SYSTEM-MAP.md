@@ -174,6 +174,12 @@ in the Lab wins: the plan approves the owner's version and derives a new Threads
 Lab. Threads publishing needs the @dneskai Threads profile and its token (NEEDED.md); until then those posts wait with
 `threads-account-missing`. The token step renews the Threads token with `th_refresh_token`.
 
+Every approved Instagram post also goes out as an Instagram story ten minutes later, made from its cover slide
+(`story-image.ts`: the 4:5 cover in a 1080 × 1920 frame over a blurred copy, no model call). @dneskai is a Business
+account since 7 November 2026, which the Stories API requires. With `DNESKAI_NEW_TOPICS_ENABLED=true` the plan keeps
+08:00, 17:00 and 20:00 free ahead; the night's news topics take them, best brief rank first, and the plan approves
+them for the owner; from 05:00 education fills whatever is still free that day.
+
 ### devShark posts (7 November 2026)
 
 devShark gets its own concepts and plan, separate from DNESKAi. `devshark-render.ts` draws a `devshark-deck/1` in the
