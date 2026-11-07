@@ -307,6 +307,7 @@ export function SettingsPanel({
       "dneskai-calendar": dneskaiLabels.calendar,
       "dneskai-published": dneskaiLabels.published,
       "dneskai-costs": dneskaiLabels.costs,
+      "dneskai-today": dneskaiLabels.today,
     } satisfies Record<ProjectTabId, string>;
     return labels[tab];
   };
