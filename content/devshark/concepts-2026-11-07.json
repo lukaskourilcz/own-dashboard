@@ -1,0 +1,28 @@
+[
+ {"cover":"light","slides":[
+  {"kind":"cover","kicker":"JavaScript quiz","headline":"typeof null","body":"One line of JavaScript. [[What does it return?]]"},
+  {"kind":"code","kicker":"Choose an answer","headline":"A. \"null\"\nB. \"object\"\nC. \"undefined\"","code":"typeof null"},
+  {"kind":"answer","kicker":"Answer","headline":"B. \"object\"","body":"A bug from the first JavaScript, kept so old code still works. Test for it with [[value === null]]."},
+  {"kind":"closing","headline":"Quizzes, lessons and [[coding tasks]] for web developers."}]},
+ {"cover":"dark","slides":[
+  {"kind":"cover","kicker":"Interview prep","headline":"One promise rejects.","body":"What do [[Promise.all]] and [[Promise.allSettled]] return?"},
+  {"kind":"text","kicker":"Promise.all","headline":"Fails fast.","body":"It rejects as soon as one promise rejects. You get that error, [[not the other results]]."},
+  {"kind":"text","kicker":"Promise.allSettled","headline":"Waits for all.","body":"Each result says [[fulfilled]] with a value or [[rejected]] with a reason."},
+  {"kind":"answer","kicker":"Which one?","headline":"all: every result is required.","body":"allSettled: you want every outcome, failures included."},
+  {"kind":"closing","headline":"[[Interview prep]] for web developers."}]},
+ {"cover":"light","slides":[
+  {"kind":"cover","kicker":"CSS layout","headline":"Center a div.","body":"Horizontally and vertically, in [[two lines of CSS]]."},
+  {"kind":"code","kicker":"On the parent","headline":"The two lines","code":".parent {\n  display: grid;\n  place-items: center;\n}"},
+  {"kind":"answer","kicker":"Why it works","headline":"place-items is a shortcut.","body":"It sets align-items and justify-items at once, so the child sits in the middle of its cell."},
+  {"kind":"closing","headline":"Short [[CSS lessons]] with tasks you solve in the browser."}]},
+ {"cover":"dark","slides":[
+  {"kind":"cover","kicker":"React","headline":"Keys in lists.","body":"React uses the key to [[tell items apart]] between renders."},
+  {"kind":"code","kicker":"The risky key","headline":"The array index","body":"Reorder or delete, and React reuses the [[wrong item and its state]].","code":"todos.map((todo, i) =>\n  <Todo key={i} todo={todo} />)"},
+  {"kind":"code","kicker":"The safe key","headline":"A stable id","body":"Use an id that [[stays with the item]].","code":"todos.map((todo) =>\n  <Todo key={todo.id} todo={todo} />)"},
+  {"kind":"closing","headline":"[[React quizzes]] and graded coding tasks."}]},
+ {"cover":"light","slides":[
+  {"kind":"cover","kicker":"Coding task","headline":"Reverse the words.","body":"\"learn code every day\" becomes [[\"day every code learn\"]]."},
+  {"kind":"text","kicker":"Your turn","headline":"reverseWords(s)","body":"Extra spaces between words [[should not matter]]. Try it before you swipe."},
+  {"kind":"code","kicker":"One solution","headline":"Trim, split, reverse, join.","code":"function reverseWords(s) {\n  return s.trim()\n    .split(/\\s+/)\n    .reverse()\n    .join(' ');\n}"},
+  {"kind":"closing","headline":"Coding tasks with [[tests that grade]] your solution."}]}
+]
