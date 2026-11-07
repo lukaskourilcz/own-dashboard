@@ -239,6 +239,8 @@ interface Inspection {
   template: CarouselTemplate | null;
   payload: CarouselPayload | null;
   images: Record<string, Buffer>;
+  /** The set height of each hand-placed field, in master pixels: its frame reaches the foot, its words do not. */
+  heights?: Record<string, number>;
 }
 
 async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
@@ -376,9 +378,12 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
   });
   const laid = applyDneskaiBoxes(auto, input.layout);
   // A placed field is set at its fixed size in its new frame: fitted again there, and cut copy is refused as before.
+  const heights: Record<string, number> = {};
   if (laid !== auto) {
     clipped.length = 0;
     for (const fit of carouselTextFits({ template: laid, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT, look: kit.look })) {
+      // The renderer sets lines 1.12 em apart (renderer.ts).
+      if (input.layout && fit.slot in input.layout) heights[fit.slot] = fit.fitted.lines.length * fit.fitted.fontSize * 1.12;
       if (fit.fitted.truncated && payload.strings[fit.slot]) {
         const field = fieldOf(fit.slot, input);
         clipped.push(problem("text-clipped", false, field, `The ${field} does not fit its placed frame whole and would be cut; make it smaller, wider or shorter.`));
@@ -416,7 +421,7 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
       found.push(problem("image-upscaled", false, image.slot, `${drawn} in this frame and may look soft.`));
     }
   });
-  return { kit, problems: [...problems, ...perImage.flat(), ...missing, ...clipped], template: laid, payload, images };
+  return { kit, problems: [...problems, ...perImage.flat(), ...missing, ...clipped], template: laid, payload, images, heights };
 }
 
 /** Every problem the slide has, without rendering it. */
@@ -426,10 +431,10 @@ export async function validateDneskaiSlide(input: DneskaiSlideInput): Promise<Dn
 
 /** Render one slide, or refuse with the problems that stop it. */
 export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<DneskaiSlideResult> {
-  const { kit, problems, template, payload, images } = await inspect(input);
+  const { kit, problems, template, payload, images, heights } = await inspect(input);
   const reference = template ? { id: template.id, version: template.version } : null;
   if (!template || !payload || problems.some((entry) => entry.blocking)) {
-    return { kit:kit?.id??null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload, blocks: template ? dneskaiAutoBoxes(template) : [] };
+    return { kit:kit?.id??null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload, blocks: template ? dneskaiAutoBoxes(template, heights) : [] };
   }
   const rendered = await renderCarouselSlidePng({
     template,
@@ -453,6 +458,6 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
     problems,
     template: reference,
     payload,
-    blocks: dneskaiAutoBoxes(template)
+    blocks: dneskaiAutoBoxes(template, heights)
   };
 }

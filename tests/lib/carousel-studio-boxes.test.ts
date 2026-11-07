@@ -66,3 +66,14 @@ describe("placed words the kit did not shade for", () => {
     }
   }, 120000);
 });
+
+describe("the frame a placed field reports", () => {
+  it("is as tall as its set lines, not the frame down to the foot", async () => {
+    const studio = await import("@/lib/carousel-studio");
+    const statement = (await studio.dneskaiGoldenCases()).find((entry) => entry.input.type === "statement")!;
+    const moved = await studio.renderDneskaiSlide({ ...statement.input, kit: "spotlight", layout: { headline: { x: 72, y: 200, w: 936, size: 64, align: "left" } } });
+    const headline = moved.blocks.find((block) => block.field === "headline")!;
+    expect(headline.height).toBeGreaterThan(60);
+    expect(headline.height).toBeLessThan(600);
+  }, 60000);
+});
