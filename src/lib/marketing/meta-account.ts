@@ -150,3 +150,48 @@ export async function verifyInstagramAccount(db: Database, ownerId: string, bran
   return { accountId: row.data.accountId, brand, platform: 'instagram', handle: row.data.handle, accountType, verifiedAt: row.data.verifiedAt, enabled: row.data.enabled,
     tokenStored: row.data.tokenStored, token: { ...row.data.token, loginMode: mode }, ...(page ? { page } : {}) };
 }
+
+/** Threads profiles the deployment may bind (owner decision, 7 November 2026). */
+export type ThreadsBrand = 'dneskai' | 'devshark';
+const THREADS_HANDLES: Record<ThreadsBrand, string> = { dneskai: 'dneskai', devshark: 'devshark.app' };
+export const THREADS_PUBLISHING_SCOPES = ['threads_basic', 'threads_content_publish'] as const;
+const ThreadsProfileSchema = z.object({ id: z.string().regex(/^\d{1,40}$/), username: z.string().min(1).max(100) });
+
+/**
+ * Checks the brand's Threads token (`MARKETING_<BRAND>_THREADS_*`) against Threads' own `/me` and records the
+ * profile and the token through `marketing_verify_account`, like the Instagram check. A new account starts with
+ * enabled=false. The token travels in the Authorization header and is never returned.
+ */
+export async function verifyThreadsAccount(db: Database, ownerId: string, brand: ThreadsBrand,
+  options: { env?: Environment; fetcher?: typeof fetch; now?: Date; signal?: AbortSignal } = {}): Promise<{ accountId: string; brand: ThreadsBrand; platform: 'threads'; handle: string; verifiedAt: string; enabled: boolean; tokenStored: boolean; token: z.infer<typeof StoredSchema>['token'] }> {
+  const env = options.env ?? process.env; const now = options.now ?? new Date();
+  if (!z.uuid().safeParse(ownerId).success || env.MARKETING_OWNER_ID !== ownerId) fail('marketing-owner-required', 403);
+  const bootstrap = bootstrapMetaCredential(brand, 'threads', env);
+  if (!bootstrap.accessToken) return fail('access-token-missing');
+  const expires = Date.parse(bootstrap.expiresAt);
+  if (!Number.isFinite(expires)) return fail('access-token-expiry-unverified');
+  if (expires <= now.getTime()) return fail('access-token-expired');
+  if (THREADS_PUBLISHING_SCOPES.some((scope) => !bootstrap.scopes.includes(scope))) return fail('publishing-scopes-unverified');
+  if (!metaScopesStorable(bootstrap.scopes)) return fail('verified-scopes-invalid');
+  const version = env[`MARKETING_${brand.toUpperCase()}_THREADS_API_VERSION`] ?? '';
+  if (!/^v\d+\.\d+$/.test(version)) return fail('api-version-unverified');
+  const url = new URL(`https://graph.threads.net/${version}/me`); url.searchParams.set('fields', 'id,username');
+  const timeout = AbortSignal.timeout(10000);
+  let response: Response;
+  try { response = await (options.fetcher ?? fetch)(url.href, { method: 'GET', redirect: 'error', cache: 'no-store', headers: { Authorization: `Bearer ${bootstrap.accessToken}` },
+    signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout }); }
+  catch { return fail('meta-request-failed', 502); }
+  if (!response.ok) return fail(`meta-http-${response.status}`, 502);
+  let profile: z.infer<typeof ThreadsProfileSchema>;
+  try { const parsed = ThreadsProfileSchema.safeParse(await response.json()); if (!parsed.success) return fail('meta-invalid-response', 502); profile = parsed.data; }
+  catch (error) { if (error instanceof MarketingAccountVerificationError) throw error; return fail('meta-invalid-response', 502); }
+  if (profile.username.toLowerCase() !== THREADS_HANDLES[brand]) return fail('remote-account-handle-mismatch');
+  let stored: { data: unknown; error: unknown };
+  try {
+    stored = await db.rpc('marketing_verify_account', { p_owner: ownerId, p_brand: brand, p_platform: 'threads', p_remote_account_id: profile.id, p_handle: profile.username,
+      p_token: bootstrap.accessToken, p_expires_at: new Date(expires).toISOString(), p_scopes: bootstrap.scopes, p_login_mode: 'threads' });
+  } catch { return fail('account-store-failed', 503); }
+  const row = StoredSchema.safeParse(stored.data);
+  if (stored.error || !row.success || row.data.token.loginMode !== 'threads') return fail('account-store-failed', 503);
+  return { accountId: row.data.accountId, brand, platform: 'threads', handle: row.data.handle, verifiedAt: row.data.verifiedAt, enabled: row.data.enabled, tokenStored: row.data.tokenStored, token: row.data.token };
+}
