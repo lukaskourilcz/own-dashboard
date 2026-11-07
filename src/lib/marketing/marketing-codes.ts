@@ -40,6 +40,9 @@ const CODES = {
   // Approval (POST /api/marketing/revisions approve) and owner decisions.
   'revision-not-ready': ['edit', 'This version has no finished render yet, so it cannot be approved.', 'Tato verze ještě nemá hotové vykreslení, proto ji nelze schválit.'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
+  // The devShark studio (7 November 2026).
+  'network-unavailable': ['retry', 'The server could not be reached.', 'Server není dostupný.'],
+  'response-unreadable': ['retry', 'The server answered in a form this screen cannot read.', 'Server odpověděl v podobě, kterou tato obrazovka neumí přečíst.'],
   // The publishing plan (owner decision, 7 November 2026).
   'plan-unavailable': ['retry', 'The plan could not be loaded.', 'Plán se nepodařilo načíst.'],
   'plan-unreadable': ['retry', 'The plan arrived in a form this screen cannot read.', 'Plán přišel v podobě, kterou tato obrazovka neumí přečíst.'],
