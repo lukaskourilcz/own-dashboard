@@ -194,6 +194,16 @@ cover ten minutes later, and the Threads post (12:00 as the twin, 19:00 alone). 
 its source (`devshark-source.ts`), so a concept edited afterwards stops them; the publishing step then sends devShark
 like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`.
 
+### Design Studio (7 November 2026)
+
+One editor for devShark (DNESKAi follows). `src/lib/design-studio/` holds the browser-safe layout: text is measured
+with the renderer's font-metric table, blocks (kicker, headline, text, code) flow automatically or sit at the box the
+owner set (x, y, width, font size, alignment in 1080 × 1350 pixels, stored in the deck's `layout`), and one SVG comes
+out. The studio's `SlideCanvas` shows that SVG with the same fonts (`public/design-studio/`, kept identical to the
+renderer's by a test) and lets the owner drag, resize, write and mark green words on the slide itself;
+`devshark-render.ts` rasterises the same SVG for publishing. Text over the fin is allowed; text off the slide is a
+warning only.
+
 ### Review and approval: the Design Lab
 
 Project DNESKAi → tab "Dnes ke schválení" (`src/components/marketing/dneskai/lab/`, model `dneskai-lab.ts`,
