@@ -30,7 +30,13 @@ const en = {
   },
   stage: {
     label: 'Stage',
-    views: { label: 'Preview', feed: 'Feed', profile: 'Profile', pixels: '1:1' },
+    views: { label: 'Preview', feed: 'Feed', profile: 'Profile', pixels: '1:1', studio: 'Studio' },
+    studio: {
+      help: 'The exact slide the renderer draws. Drag a text to move it, drag its right edge for width, arrows move by 1 px (Shift by 10); write the words in the panel beside it. Each change draws the slide again.',
+      blocks: { headline: 'Headline', body: 'Text', kicker: 'Label' },
+      drawing: 'Drawing the slide…', unavailable: 'The slide cannot be drawn right now; the last picture stays.', noBlocks: 'This slide has no text to place.',
+      readOnly: 'Only a post in review or returned can be changed.',
+    },
     slideOf: (current: number, total: number) => `Slide ${current} of ${total}`,
     previous: 'Previous slide', next: 'Next slide',
     deck: 'All slides', openSlide: (n: number) => `Show slide ${n}`,
@@ -281,7 +287,13 @@ const cs: typeof en = {
   },
   stage: {
     label: 'Náhled',
-    views: { label: 'Zobrazení', feed: 'Feed', profile: 'Profil', pixels: '1:1' },
+    views: { label: 'Zobrazení', feed: 'Feed', profile: 'Profil', pixels: '1:1', studio: 'Studio' },
+    studio: {
+      help: 'Přesně ten slide, který renderer vykreslí. Text přesunete tažením, šířku tažením pravého okraje, šipky posouvají o 1 px (se Shiftem o 10); slova píšete v panelu vedle. Každá změna slide znovu vykreslí.',
+      blocks: { headline: 'Nadpis', body: 'Text', kicker: 'Štítek' },
+      drawing: 'Vykresluji slide…', unavailable: 'Slide se teď nedá vykreslit; zůstává poslední obrázek.', noBlocks: 'Na tomto slidu není text k umístění.',
+      readOnly: 'Měnit lze jen příspěvek ke kontrole nebo vrácený.',
+    },
     slideOf: (current: number, total: number) => `Slide ${current} z ${total}`,
     previous: 'Předchozí slide', next: 'Další slide',
     deck: 'Všechny slidy', openSlide: (n: number) => `Zobrazit slide ${n}`,
