@@ -106,6 +106,9 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
   try {
     const twinResult = await db.from('marketing_dneskai_plan').select('threads_revision_id').eq('user_id', owner).eq('instagram', true).not('threads_revision_id', 'is', null).limit(500);
     if (!twinResult.error) for (const row of (twinResult.data ?? []) as Array<{ threads_revision_id: string }>) twins.add(row.threads_revision_id);
+    // The stories made from a post's cover (7 November 2026) follow the post the same way.
+    const storyResult = await db.from('marketing_dneskai_plan').select('story_revision_id').eq('user_id', owner).not('story_revision_id', 'is', null).limit(500);
+    if (!storyResult.error) for (const row of (storyResult.data ?? []) as Array<{ story_revision_id: string }>) twins.add(row.story_revision_id);
   } catch { /* The plan read is optional: without it no post is hidden. */ }
   const parsed: Array<{ row: RevisionRow; revision: ContentRevision }> = [];
   for (const row of rows(revisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable')) {
