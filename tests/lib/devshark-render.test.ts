@@ -32,6 +32,10 @@ describe('devShark social slides', () => {
       expect(slide.svg.match(/<image /g)?.length ?? 0).toBeLessThanOrEqual(slide === slides[3] ? 2 : 1);
     }
     expect(slides[0]!.alt).toBe('typeof null. One line. What does it return?');
+    // The kicker and its waterline appear on the first slide only.
+    expect(slides[0]!.svg).toContain('JAVASCRIPT QUIZ');
+    expect(slides[0]!.svg).toContain('<pattern');
+    for (const slide of slides.slice(1)) expect(slide.svg).not.toContain('<pattern');
   }, 60_000);
 
   it('refuses text that would run into the fin', async () => {

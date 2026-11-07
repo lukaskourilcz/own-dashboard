@@ -42,9 +42,9 @@ const faces = metrics as unknown as Record<string, Face>;
 const themes = devsharkDesign.themes as Record<Theme, { background: string; foreground: string; muted: string; accent: string }>;
 const WIDTH = 1080, HEIGHT = 1350, MARGIN = 80, TEXT_WIDTH = WIDTH - MARGIN * 2;
 const KICKER = { face: "manrope-700", size: 36, tracking: 3.2, y: 168 };
-const HEADLINE = { face: "manrope-800", size: 96, coverSize: 116, leading: 1.06 };
-const BODY = { face: "manrope-700", size: 60, leading: 1.22 };
-const CODE = { face: "jetbrains-mono-400", size: 30, leading: 1.5, background: "#1B2730", foreground: "#E8EEF0", radius: 16, pad: 36 };
+const HEADLINE = { face: "manrope-800", size: 108, coverSize: 128, leading: 1.05 };
+const BODY = { face: "manrope-700", size: 68, leading: 1.2 };
+const CODE = { face: "jetbrains-mono-400", size: 36, leading: 1.5, background: "#1B2730", foreground: "#E8EEF0", radius: 16, pad: 36 };
 /** The brand fin, bottom right; text must end above it. */
 const FIN = { width: 560, x: 600 };
 const FIN_HEIGHT = FIN.width * 15.9 / 19.2;
@@ -140,6 +140,9 @@ export async function renderDevsharkDeck(value: DevsharkDeck): Promise<DevsharkR
     if (slide.kind === "closing") {
       parts += `<image x="${MARGIN}" y="104" width="400" height="64" xlink:href="data:image/svg+xml;base64,${assets["devshark-logo-horizontal-white.svg"]!.toString("base64")}"/>`;
       y = 330;
+    } else if (index > 0) {
+      // Owner request, 7 November 2026: the kicker and its waterline open the post; later slides start with the headline.
+      y = 210;
     } else {
       const kicker = (slide.kicker ?? "devShark").toUpperCase();
       const width = measureMarketingText(kicker, KICKER.face, KICKER.size) + kicker.length * KICKER.tracking;
