@@ -26,6 +26,7 @@ import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics }
 import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
 import { DNESKAI_PLAN_HORIZON_DAYS, advanceDneskaiPlan, dneskaiPlanEnabled } from "./dneskai-plan";
 import { pragueDayAfter } from "./dneskai-workspace";
+import { fillDevsharkPlan } from "./devshark-plan";
 import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
@@ -143,6 +144,11 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix && !plannedUntil ? { mix } : {}), ...(plannedUntil ? { plannedUntil } : {}), reader: createJinaTopicReader(env) });
     },
     plan: (project, now, options) => advanceDneskaiPlan(db, owner, project, { now, ...options }),
+    async devsharkPlan(now) {
+      const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
+      if (error || !data) throw new Error("devshark-project-unavailable");
+      return fillDevsharkPlan(db, owner, data.id as string, now);
+    },
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();

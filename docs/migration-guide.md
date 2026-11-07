@@ -932,3 +932,11 @@ ahead; the packet's content hash does not cover the expiry, so approvals stay bo
 `20261107140100_dneskai_today_project_tab.sql` adds `dneskai-today` to the hideable project tabs. Both were applied to
 production on 7 November 2026 and recorded under their file versions. Replayed in PGlite
 (`tests/lib/dneskai-plan-database.test.ts`, `tests/lib/project-tabs-database.test.ts`).
+
+## devShark concepts and plan, 7 November 2026
+
+`20261107180000_devshark_plan.sql` adds `marketing_devshark_drafts` (concepts in the `devshark-deck/1` slide format,
+with caption, origin and the owner's decision) and `marketing_devshark_plan` (one row per Prague slot: 12:00 for
+Instagram and Threads, 19:00 for Threads alone, each holding one approved concept). The owner reads both and decides
+through `marketing_devshark_decide`, which only the signed-in owner can call; the scheduler writes the plan with the
+service role. Replayed in PGlite (`tests/lib/devshark-plan-database.test.ts`).

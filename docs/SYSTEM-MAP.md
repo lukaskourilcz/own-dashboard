@@ -174,6 +174,16 @@ in the Lab wins: the plan approves the owner's version and derives a new Threads
 Lab. Threads publishing needs the @dneskai Threads profile and its token (NEEDED.md); until then those posts wait with
 `threads-account-missing`. The token step renews the Threads token with `th_refresh_token`.
 
+### devShark posts (7 November 2026)
+
+devShark gets its own concepts and plan, separate from DNESKAi. `devshark-render.ts` draws a `devshark-deck/1` in the
+look of the posts on @devshark.app: pale, ink and green grounds, the kicker and waterline on the first slide only,
+large Manrope type with green highlights and the large fin; no corner fin and no page counter. Concepts live in
+`marketing_devshark_drafts`; the owner approves or rejects each (`/api/marketing/devshark/drafts`). Behind
+`DEVSHARK_PLAN_ENABLED` the tick's `devshark-plan` step places approved concepts into `marketing_devshark_plan`: one
+Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Publishing waits for the devShark
+Instagram and Threads accounts (NEEDED.md). The first five concepts are in `content/devshark/concepts-2026-11-07.json`.
+
 ### Review and approval: the Design Lab
 
 Project DNESKAi → tab "Dnes ke schválení" (`src/components/marketing/dneskai/lab/`, model `dneskai-lab.ts`,
