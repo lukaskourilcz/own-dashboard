@@ -68,6 +68,13 @@ describe('DNESKAi workspace topic working titles (#211)', () => {
     expect(topicChain.some(([method]) => method === 'limit')).toBe(true);
   });
 
+  it('leaves the plan\'s Threads twins out of the posts (plan, 7 November 2026)', async () => {
+    const { db } = fakeDb({ ...tables(topicRows), marketing_dneskai_plan: [{ data: [{ threads_revision_id: revisionId }], error: null }] });
+    expect((await readDneskaiWorkspace(db, owner, now)).posts).toEqual([]);
+    const missing = fakeDb({ ...tables(topicRows), marketing_dneskai_plan: [{ data: null, error: { code: '42P01' } }] });
+    expect((await readDneskaiWorkspace(missing.db, owner, now)).posts).toHaveLength(1);
+  });
+
   it('keeps the source titles and skips the topics table while the switch is off', async () => {
     const { db, calls } = fakeDb(tables(topicRows));
     const read = await readDneskaiWorkspace(db, owner, now);

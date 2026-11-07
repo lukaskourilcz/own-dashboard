@@ -100,8 +100,13 @@ export async function readDneskaiWorkspace(db: Database, owner: string, now: Dat
       .in('target_date', [today, pragueDayAfter(today, 1)]).order('scheduled_at').limit(16),
   ]);
   let unreadable = 0;
+  // The plan's Threads twins of Instagram posts (owner decision, 7 November 2026) are not posts of their own: the owner
+  // edits the Instagram post and the plan derives a new twin. A missing plan table (before 20261107140000) hides none.
+  const twinResult = await db.from('marketing_dneskai_plan').select('threads_revision_id').eq('user_id', owner).eq('instagram', true).not('threads_revision_id', 'is', null).limit(500);
+  const twins = new Set(twinResult.error ? [] : ((twinResult.data ?? []) as Array<{ threads_revision_id: string }>).map((row) => row.threads_revision_id));
   const parsed: Array<{ row: RevisionRow; revision: ContentRevision }> = [];
   for (const row of rows(revisionResult as { data: RevisionRow[] | null; error: unknown }, 'dneskai-workspace-unavailable')) {
+    if (twins.has(row.id)) continue;
     try {
       const revision = parseContentRevision(row.revision);
       if (revision.brand !== 'dneskai') continue;
