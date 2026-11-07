@@ -917,3 +917,18 @@ transcripts. `marketing_dneskai_tiktok_runs` lists the last runs and `marketing_
 Apify ids onto its reservation once. All three functions are service-only. It needs `20261023100100` first; filename
 order does that. Replayed only in PGlite (`tests/lib/dneskai-tiktok-spend-database.test.ts`). Nothing reserves or
 runs until `DNESKAI_TIKTOK_TRENDS_ENABLED=true` and the owner has approved the spend (NEEDED.md).
+
+## DNESKAi publishing plan, 7 November 2026 (applied)
+
+`20261107140000_dneskai_plan.sql` adds `marketing_dneskai_plan`: one row per Prague slot (08:00, 12:30, 17:00 for
+Instagram and Threads, 20:00 for Threads alone), holding a news revision or an education topic, the revision going out
+(`head_revision_id`), the last one the plan step saved (`written_revision_id`), the Threads twin and the Instagram
+revision it was derived from. The owner reads only their own rows; the scheduler writes them with the service role. A
+trigger keeps every named revision and topic the owner's. Three service-only functions serve the plan step:
+`marketing_dneskai_plan_approve` (the checks of `marketing_approve_revision`, only for a planned revision),
+`marketing_dneskai_plan_retire` (skips a replaced Threads twin and cancels its queued publication) and
+`marketing_dneskai_plan_extend_brief` (keeps a planned news brief current until a day after its slot, at most 45 days
+ahead; the packet's content hash does not cover the expiry, so approvals stay bound).
+`20261107140100_dneskai_today_project_tab.sql` adds `dneskai-today` to the hideable project tabs. Both were applied to
+production on 7 November 2026 and recorded under their file versions. Replayed in PGlite
+(`tests/lib/dneskai-plan-database.test.ts`, `tests/lib/project-tabs-database.test.ts`).
