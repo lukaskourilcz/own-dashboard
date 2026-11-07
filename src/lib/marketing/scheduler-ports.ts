@@ -26,7 +26,8 @@ import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics }
 import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
 import { DNESKAI_PLAN_HORIZON_DAYS, advanceDneskaiPlan, dneskaiPlanEnabled } from "./dneskai-plan";
 import { pragueDayAfter } from "./dneskai-workspace";
-import { fillDevsharkPlan } from "./devshark-plan";
+import { devsharkPlanEnabled, fillDevsharkPlan } from "./devshark-plan";
+import { prepareDevsharkPosts } from "./devshark-publish";
 import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
@@ -65,7 +66,9 @@ export const DNESKAI_REEL_PREPARE_AHEAD_MS = 45 * 60_000;
 /** `origin`: this deployment as the tick reached it; the Reel render (#165) is requested there. */
 export function createMarketingSchedulerPorts(db: Database, owner: string, env: Environment = process.env, options: { origin?: string } = {}): MarketingSchedulerPorts {
   z.uuid().parse(owner);
-  const publications = (columns = "id") => db.from("marketing_publications").select(`${columns},marketing_revisions!inner(brand)`).eq("user_id", owner).eq("marketing_revisions.brand", "dneskai");
+  // devShark posts (7 November 2026) publish through the same step once DEVSHARK_PLAN_ENABLED is on.
+  const brands = devsharkPlanEnabled(env) ? ["dneskai", "devshark"] : ["dneskai"];
+  const publications = (columns = "id") => db.from("marketing_publications").select(`${columns},marketing_revisions!inner(brand)`).eq("user_id", owner).in("marketing_revisions.brand", brands);
   const any = async (query: PromiseLike<{ data: unknown[] | null; error: unknown }>, code: string) => {
     const { data, error } = await query;
     if (error) throw new Error(code);
@@ -145,10 +148,12 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     // The night's news enters the plan only while new topics are on (owner decision, 7 November 2026).
     plan: (project, now, options) => advanceDneskaiPlan(db, owner, project, { now, ...options, news: dneskaiNewTopicsEnabled(env) }),
-    async devsharkPlan(now) {
+    async devsharkPlan(now, options) {
       const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
       if (error || !data) throw new Error("devshark-project-unavailable");
-      return fillDevsharkPlan(db, owner, data.id as string, now);
+      const filled = await fillDevsharkPlan(db, owner, data.id as string, now);
+      const posts = options ? await prepareDevsharkPosts(db, owner, data.id as string, { now, ...options }) : { prepared: 0, approved: 0, codes: {} };
+      return { ...filled, prepared: posts.prepared, approved: posts.approved, errors: Object.keys(posts.codes).slice(0, 3).join(",") };
     },
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
@@ -179,6 +184,11 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       // #165: start the render of a Reel due within 45 minutes, so its MP4 waits at the slot. Best effort, $0.
       if (!dryRun && options.origin) await prepareUpcomingDneskaiReels(db, owner, options.origin, DNESKAI_REEL_PREPARE_AHEAD_MS).catch(() => null);
       const result = options.origin ? await publishDueMarketing(db, owner, "dneskai", dryRun, signal, undefined, { origin: options.origin }) : await publishDueMarketing(db, owner, "dneskai", dryRun, signal);
+      if (devsharkPlanEnabled(env)) {
+        // MARKETING_DEVSHARK_PUBLISH_ENABLED holds a live devShark run; a held brand never stops DNESKAi's outcome.
+        const devshark = await publishDueMarketing(db, owner, "devshark", dryRun, signal).catch(() => ({ outcomes: [] as typeof result.outcomes }));
+        result.outcomes.push(...devshark.outcomes);
+      }
       return { outcomes: result.outcomes.map((outcome) => ({ publicationId: outcome.publicationId, status: outcome.status, errorCode: outcome.errorCode ?? null })) };
     },
     async nextReconciliation(checkedBefore) {
