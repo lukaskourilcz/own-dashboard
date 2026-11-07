@@ -57,6 +57,20 @@ export const DneskaiSlideImageSchema = z.strictObject({
 });
 export type DneskaiSlideImage = z.infer<typeof DneskaiSlideImageSchema>;
 
+/**
+ * The owner's hand placement of a slide's words in the Design Studio (7 November 2026): a frame per field in master
+ * pixels (1080 × 1350), drawn by the slide engine's `applyDneskaiBoxes`. Absent: the kit's own layout.
+ */
+export const DneskaiBoxSchema = z.strictObject({
+  x: z.number().int().min(0).max(1080), y: z.number().int().min(0).max(1350), w: z.number().int().min(80).max(1080),
+  size: z.number().int().min(16).max(200), align: z.enum(['left', 'center', 'right']),
+});
+export type DneskaiBox = z.infer<typeof DneskaiBoxSchema>;
+export const DNESKAI_EDITABLE_FIELDS = ['headline', 'body', 'kicker'] as const;
+export type DneskaiEditableField = (typeof DNESKAI_EDITABLE_FIELDS)[number];
+export const DneskaiSlideLayoutSchema = z.strictObject({ headline: DneskaiBoxSchema.optional(), body: DneskaiBoxSchema.optional(), kicker: DneskaiBoxSchema.optional() });
+export type DneskaiSlideLayout = z.infer<typeof DneskaiSlideLayoutSchema>;
+
 export const DneskaiSlideSchema = z.strictObject({
   type: DneskaiSlideTypeSchema,
   variant: DneskaiSlideVariantSchema.optional(),
@@ -67,6 +81,7 @@ export const DneskaiSlideSchema = z.strictObject({
   sources: z.array(z.string().min(1).max(240)).max(4).optional(),
   images: z.array(DneskaiSlideImageSchema).max(4),
   alt: z.string().min(1).max(1000),
+  layout: DneskaiSlideLayoutSchema.optional(),
 }).superRefine((slide, context) => {
   const slots = slide.images.map((image) => image.slot);
   if (new Set(slots).size !== slots.length) context.addIssue({ code: "custom", message: "image slots must be distinct", path: ["images"] });

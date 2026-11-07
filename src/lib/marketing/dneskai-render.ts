@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@/lib/carousel-studio/dneskai-slide";
+import type { DneskaiImageInput, DneskaiLaidBlock, DneskaiSlideInput, DneskaiSlideProblem } from "@/lib/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
@@ -189,6 +189,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
     images,
     position,
     locale: "cs",
+    ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
   };
 }
 
@@ -218,6 +219,8 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     locale: "cs",
     // Keyed only when not editorial, so every editorial key stays what it was before kits existed.
     ...(kit !== "editorial" ? { kit } : {}),
+    // Keyed only when the owner placed words by hand, so every other key stays what it was.
+    ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
   }));
 }
 
@@ -449,7 +452,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
 export const DNESKAI_PREVIEW_IMAGE = { width: 864, height: 1080, quality: 82, format: "webp" } as const;
 /** Rendered previews kept in memory by render key: a slide the owner returns to is not drawn twice. */
 const PREVIEW_CACHE_ENTRIES = 48;
-const previewCache = new Map<string, Buffer>();
+const previewCache = new Map<string, { image: Buffer; blocks: DneskaiLaidBlock[] }>();
 
 export type DneskaiSlidePreview = {
   status: "rendered" | "refused";
@@ -458,6 +461,8 @@ export type DneskaiSlidePreview = {
   renderKey: string;
   problems: DneskaiSlideRenderProblem[];
   cached: boolean;
+  /** The editable text frames as drawn, in master pixels, for the Design Studio; empty when the slide was not laid out. */
+  blocks: DneskaiLaidBlock[];
 };
 
 /** Forgets every cached preview (tests). */
@@ -485,14 +490,14 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   const hit = previewCache.get(renderKey);
   if (hit && !own.length) {
     previewCache.delete(renderKey); previewCache.set(renderKey, hit);
-    return { status: "rendered", image: hit, renderKey, problems: [], cached: true };
+    return { status: "rendered", image: hit.image, renderKey, problems: [], cached: true, blocks: hit.blocks };
   }
   const loaded = await slideImages(slide, index, mediaLoader(loadMedia), options.signal);
   abortCheck();
   const engine = await studio();
-  if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false };
+  if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false, blocks: [] };
   const input = dneskaiStudioInput(slide, position, loaded.images, kit);
-  if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false };
+  if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false, blocks: [] };
   let result;
   try { result = await engine.renderDneskaiSlide(input); }
   catch { throw new DneskaiRenderError("render-rasterization-failed"); }
@@ -503,7 +508,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   }
   if (result.status !== "rendered" || !result.png || found.some((problem) => problem.blocking)) {
     if (!found.some((problem) => problem.blocking)) found.push({ slide: index, code: "render-refused", blocking: true, field: null, message: "The studio refused this slide." });
-    return { status: "refused", image: null, renderKey, problems: found, cached: false };
+    return { status: "refused", image: null, renderKey, problems: found, cached: false, blocks: result.blocks };
   }
   const sharp = await sharpModule();
   let image: Buffer;
@@ -514,8 +519,8 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   abortCheck();
   // Advisory problems (a picture stretched short of refusal) are part of the preview's answer, not of the cache.
   if (!found.length) {
-    previewCache.set(renderKey, image);
+    previewCache.set(renderKey, { image, blocks: result.blocks });
     while (previewCache.size > PREVIEW_CACHE_ENTRIES) previewCache.delete(previewCache.keys().next().value!);
   }
-  return { status: "rendered", image, renderKey, problems: found, cached: false };
+  return { status: "rendered", image, renderKey, problems: found, cached: false, blocks: result.blocks };
 }
