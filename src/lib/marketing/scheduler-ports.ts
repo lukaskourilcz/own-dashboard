@@ -30,7 +30,7 @@ import { fillDevsharkPlan } from "./devshark-plan";
 import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
-import { dneskaiDailyMixEnabled } from "./dneskai-evidence-rollout";
+import { dneskaiDailyMixEnabled, dneskaiNewTopicsEnabled } from "./dneskai-evidence-rollout";
 import { createDneskaiBriefStore } from "./dneskai-briefs";
 import { createClaudeTopicModel, dneskaiTopicModelConfiguration } from "./dneskai-topic-model";
 
@@ -143,7 +143,8 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       const plannedUntil = dneskaiPlanEnabled(env) ? pragueDayAfter(pragueMarketingDate(now), DNESKAI_PLAN_HORIZON_DAYS) : undefined;
       return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix && !plannedUntil ? { mix } : {}), ...(plannedUntil ? { plannedUntil } : {}), reader: createJinaTopicReader(env) });
     },
-    plan: (project, now, options) => advanceDneskaiPlan(db, owner, project, { now, ...options }),
+    // The night's news enters the plan only while new topics are on (owner decision, 7 November 2026).
+    plan: (project, now, options) => advanceDneskaiPlan(db, owner, project, { now, ...options, news: dneskaiNewTopicsEnabled(env) }),
     async devsharkPlan(now) {
       const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
       if (error || !data) throw new Error("devshark-project-unavailable");

@@ -72,6 +72,8 @@ export const DneskaiPlanSlotSchema = z.strictObject({
   labPostId: uuid.nullable(),
   instagram: DneskaiPlanChannelSchema.nullable(),
   threads: DneskaiPlanChannelSchema.nullable(),
+  /** The Instagram story made from the post's cover, ten minutes after it (7 November 2026). */
+  story: DneskaiPlanChannelSchema.nullable().optional(),
 });
 export type DneskaiPlanSlot = z.infer<typeof DneskaiPlanSlotSchema>;
 

@@ -12,7 +12,7 @@ import { DNESKAI_PLAN_VIEW_VERSION, DneskaiPlanReadSchema, type DneskaiPlanChann
 type Database = SupabaseClient<any>;
 
 type SlotRow = { id: string; project_id: string; date: string; local_time: string; instagram: boolean; threads: boolean; kind: 'news' | 'education'; status: DneskaiPlanSlot['status']; code: string | null;
-  revision_id: string | null; topic_id: string | null; head_revision_id: string | null; threads_revision_id: string | null };
+  revision_id: string | null; topic_id: string | null; head_revision_id: string | null; threads_revision_id: string | null; story_revision_id: string | null };
 type RevisionRow = { id: string; status: string; revision: unknown };
 type PublicationRow = { revision_id: string; status: DneskaiPlanChannel['publicationStatus']; remote_url: string | null; error_code: string | null };
 const rows = <T>(result: { data: T[] | null; error: unknown }): T[] => { if (result.error) throw new Error('dneskai-plan-unavailable'); return result.data ?? []; };
@@ -28,11 +28,11 @@ export async function readDneskaiPlan(db: Database, owner: string, now: Date, in
   const today = pragueMarketingDate(now);
   const from = input.from ?? today, days = input.days ?? 2;
   const until = pragueDayAfter(from, days - 1);
-  let query = db.from('marketing_dneskai_plan').select('id,project_id,date,local_time,instagram,threads,kind,status,code,revision_id,topic_id,head_revision_id,threads_revision_id')
+  let query = db.from('marketing_dneskai_plan').select('id,project_id,date,local_time,instagram,threads,kind,status,code,revision_id,topic_id,head_revision_id,threads_revision_id,story_revision_id')
     .eq('user_id', owner).gte('date', from).lte('date', until).order('date').order('local_time').limit(200);
   if (input.projectId) query = query.eq('project_id', input.projectId);
   const slots = rows(await query as { data: SlotRow[] | null; error: unknown });
-  const revisionIds = [...new Set(slots.flatMap((slot) => [slot.head_revision_id ?? slot.revision_id, slot.threads_revision_id]).filter((id): id is string => !!id))];
+  const revisionIds = [...new Set(slots.flatMap((slot) => [slot.head_revision_id ?? slot.revision_id, slot.threads_revision_id, slot.story_revision_id]).filter((id): id is string => !!id))];
   const topicIds = [...new Set(slots.flatMap((slot) => slot.topic_id ? [slot.topic_id] : []))];
   const [revisionResult, publicationResult, topicResult, accountResult] = await Promise.all([
     revisionIds.length ? db.from('marketing_revisions').select('id,status,revision').eq('user_id', owner).in('id', revisionIds) : Promise.resolve({ data: [], error: null }),
@@ -68,7 +68,7 @@ export async function readDneskaiPlan(db: Database, owner: string, now: Date, in
       kit: head?.revision.deck ? dneskaiKitOf(head.revision.deck) : null,
       slides: (head?.revision.assets ?? []).filter((asset) => asset.mimeType === 'image/jpeg').slice(0, 10).map((asset) => ({ url: asset.url, alt: asset.alt, width: asset.width, height: asset.height })),
       labPostId: head ? headId : null,
-      instagram, threads,
+      instagram, threads, story: slot.story_revision_id ? channel(slot.story_revision_id) : null,
     };
   });
   return DneskaiPlanReadSchema.parse({ schemaVersion: DNESKAI_PLAN_VIEW_VERSION, generatedAt: now.toISOString(), today, from, days, enabled: input.enabled,
