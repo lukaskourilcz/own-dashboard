@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Regenerates the DNESKAi workspace preview fixtures (#119): full-size JPEG renders of invented DNESKAi slides,
- * drawn once by the vendored studio (`@boardlessai/carousel-studio`, vendor/carousel-studio) from synthetic
+ * drawn once by OwnDashboard's slide engine (`src/lib/carousel-studio`, loaded through jiti) from synthetic
  * stand-in photographs, plus downscaled previews of those photographs for the editor's picture pool.
  *
  *   node scripts/dneskai-preview-fixtures.mjs
@@ -16,9 +16,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { renderDneskaiSlide } from '@boardlessai/carousel-studio/dneskai-slide';
+import { createJiti } from 'jiti';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The engine is TypeScript source with `.js` import specifiers; jiti loads it as the app's bundler would.
+const { renderDneskaiSlide } = await createJiti(import.meta.url).import(path.join(root, 'src/lib/carousel-studio/dneskai-slide.ts'));
 const out = path.join(root, 'public/demo/dneskai');
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
