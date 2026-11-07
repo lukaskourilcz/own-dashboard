@@ -1,10 +1,10 @@
-import type { CarouselTemplate } from '../schema.js';
-import type { DneskaiFlow, DneskaiLayoutMetrics } from '../dneskai-layout.js';
-import { kitStyleFor, kitStyleWithLook } from '../kit-style.js';
-import { CAROUSEL_BRANDS } from '../library.js';
-import { resolveFace } from '../fonts.js';
+import type { CarouselTemplate } from '../schema';
+import type { DneskaiFlow, DneskaiLayoutMetrics } from '../dneskai-layout';
+import { kitStyleFor, kitStyleWithLook } from '../kit-style';
+import { CAROUSEL_BRANDS } from '../library';
+import { resolveFace } from '../fonts';
 import { DNESKAI_CODE_OWNED_SLOTS, DNESKAI_MAX_THUMBNAILS, DNESKAI_SLIDE_TYPES, DNESKAI_TEMPLATE_ROLES, DNESKAI_TEXT_FIELDS, dneskaiImageSlots, dneskaiRoleOf,
-  type DneskaiKitId, type DneskaiSlideType, type DneskaiTemplateRole, type DneskaiTextField, type DneskaiVariant } from './contract.js';
+  type DneskaiKitId, type DneskaiSlideType, type DneskaiTemplateRole, type DneskaiTextField, type DneskaiVariant } from './contract';
 
 export interface DneskaiFieldFace { family: string; weight: number; uppercase: boolean }
 export interface DneskaiKitTemplate { role:DneskaiTemplateRole; thumbnails?:number; template:CarouselTemplate; flow:DneskaiFlow }
