@@ -142,7 +142,7 @@ test('every DNESKAi tab reflows at 360, 430, 768 and 1280 px and passes axe', as
   await openWorkspace(page, 'cs', 'review');
   for (const width of [360, 430, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const [tab, id] of [['review', 'dneskai-review'], ['calendar', 'dneskai-calendar'], ['published', 'dneskai-published'], ['costs', 'dneskai-costs']] as const) {
+    for (const [tab, id] of [['today', 'dneskai-today'], ['review', 'dneskai-review'], ['calendar', 'dneskai-calendar'], ['published', 'dneskai-published'], ['costs', 'dneskai-costs']] as const) {
       await openTab(page, 'cs', tab);
       await expect(page.getByTestId(id)).toBeVisible();
       expect(await noOverflow(page), `${id} at ${width}px`).toBe(true);
@@ -181,5 +181,26 @@ test('every DNESKAi tab reflows at 360, 430, 768 and 1280 px and passes axe', as
   // cost-16: booked failed-job cost has its own column; unread provider balances say so instead of showing a number.
   await expect(page.getByTestId('dneskai-costs').getByRole('columnheader', { name: t.costs.booked, exact: true })).toBeVisible();
   await expect(page.getByTestId('dneskai-balances').getByText(t.costs.balanceUnknown, { exact: true })).toHaveCount(2);
+  expect(errors).toEqual([]);
+});
+
+test('Today and tomorrow opens first, shows both days from the demo plan and opens a post in the Lab', async ({ page }) => {
+  const errors = watchConsole(page);
+  const t = dneskaiWorkspace.cs;
+  const requests: string[] = [];
+  page.on('request', (request) => { if (/\/api\/marketing\/dneskai\/plan/.test(request.url())) requests.push(request.url()); });
+  await gotoPreview(page, { lang: 'cs' });
+  await page.goto('/dev-preview?project=dneskai');
+  await expect(page.getByRole('tab', { name: t.tabs.today, exact: true })).toHaveAttribute('aria-selected', 'true');
+  const today = page.getByTestId('dneskai-today');
+  await expect(today.getByTestId('dneskai-today-day')).toHaveCount(2);
+  await expect(today.getByTestId('dneskai-plan-day')).toHaveCount(30);
+  expect(await noOverflow(page)).toBe(true);
+  const axe = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="dneskai-today"]').withTags(AXE_TAGS).analyze();
+  expect(axe.violations).toEqual([]);
+  await today.getByTestId('dneskai-today-day').nth(1).getByRole('button', { name: /^Otevřít v Design Labu: Benchmark/ }).click();
+  await expect(page.getByRole('tab', { name: t.tabs.review, exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('dneskai-lab')).toBeVisible();
+  expect(requests).toEqual([]);
   expect(errors).toEqual([]);
 });
