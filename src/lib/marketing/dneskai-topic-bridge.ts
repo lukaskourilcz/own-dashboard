@@ -36,9 +36,20 @@ type Database = SupabaseClient<any>;
 export type DneskaiBridgeTopic = { id: string; kind: 'news' | 'education'; status: 'approved' | 'enriching' | 'briefed'; source_ref: string; title_cs: string; summary?: string | null; brief_id: string | null; evidence: Record<string, unknown> | null };
 export type DneskaiBridgeCandidate = { id: string; run_id: string; status: DneskaiCandidate['status']; target_date: string | null; content_hash: string; candidate: DneskaiCandidate };
 
+/**
+ * The publishing plan (owner decision, 7 November 2026): a planned topic carries its slot in `evidence.planDate` and
+ * `evidence.planTime`. With `plannedUntil` the bridge takes only planned topics whose day has come into the plan's
+ * horizon, briefs each one for exactly its day and time, and leaves every unplanned approved topic alone.
+ */
+export type DneskaiTopicPlanSlot = { date: string; time: string };
+export function dneskaiTopicPlanSlot(topic: Pick<DneskaiBridgeTopic, 'evidence'>): DneskaiTopicPlanSlot | null {
+  const date = topic.evidence?.planDate, time = topic.evidence?.planTime;
+  return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) && typeof time === 'string' && /^\d{2}:\d{2}$/.test(time) ? { date, time } : null;
+}
+
 export interface DneskaiTopicBridgeStore {
-  /** Approved, enriching and briefed topics, oldest approval first (bounded). */
-  topics(owner: string, project: string): Promise<DneskaiBridgeTopic[]>;
+  /** Approved, enriching and briefed topics, oldest approval first (bounded); with `plannedUntil` only planned topics up to that day. */
+  topics(owner: string, project: string, options?: { plannedUntil?: string }): Promise<DneskaiBridgeTopic[]>;
   brief(owner: string, project: string, briefId: string): Promise<DneskaiBriefRow | null>;
   candidate(owner: string, project: string, candidateId: string): Promise<DneskaiBridgeCandidate | null>;
   /** Marks a report selected for a day, so media collection and the brief's member checks accept it. */
@@ -105,7 +116,7 @@ async function ownerLinkReport(store: DneskaiTopicBridgeStore, reader: DneskaiTo
   return store.insertCandidate(input.owner, input.project, run.id, row);
 }
 
-export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBridgeStore; briefs: DneskaiBriefStore }, input: { owner: string; project: string; now: Date; signal: AbortSignal; remainingMs: () => number; mix?: DneskaiDailyMix; reader?: DneskaiTopicReader }): Promise<DneskaiTopicBridgeResult> {
+export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBridgeStore; briefs: DneskaiBriefStore }, input: { owner: string; project: string; now: Date; signal: AbortSignal; remainingMs: () => number; mix?: DneskaiDailyMix; reader?: DneskaiTopicReader; plannedUntil?: string }): Promise<DneskaiTopicBridgeResult> {
   const { owner, project, now } = input;
   z.uuid().parse(owner); z.uuid().parse(project);
   const result: DneskaiTopicBridgeResult = { enriching: 0, briefed: 0, generated: 0, waiting: 0, unsupported: 0 };
@@ -114,7 +125,9 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
 
   /** Builds and admits one brief row; moves the topic to briefed when its job exists. */
   const admit = async (topic: DneskaiBridgeTopic, row: DneskaiBriefRow) => {
-    const outcome = await createDneskaiBriefsWithStore(stores.briefs, { owner, project, runId: row.run_id, signal: input.signal }, { now: () => now, only: new Set([row.id]), ...(input.mix ? { slotTimes: dneskaiActiveSlotTimes(input.mix) } : {}) });
+    const planned = input.plannedUntil ? dneskaiTopicPlanSlot(topic) : null;
+    const slotTimes = planned ? [planned.time] : input.mix ? dneskaiActiveSlotTimes(input.mix) : null;
+    const outcome = await createDneskaiBriefsWithStore(stores.briefs, { owner, project, runId: row.run_id, signal: input.signal }, { now: () => now, only: new Set([row.id]), ...(slotTimes ? { slotTimes } : {}) });
     const created = outcome.created.find((item) => item.briefId === row.id);
     if (created?.jobId) {
       await stores.topics.updateTopic(owner, topic.id, { status: 'briefed', brief_id: row.id, evidence: evidence(topic, { jobId: created.jobId, bridgeCode: null }) });
@@ -125,7 +138,7 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
     result.waiting++;
   };
 
-  for (let topic of await stores.topics.topics(owner, project)) {
+  for (let topic of await stores.topics.topics(owner, project, input.plannedUntil ? { plannedUntil: input.plannedUntil } : undefined)) {
     if (!time()) break;
     if (topic.status === 'briefed') {
       // Generation finished: the topic is generated and points at its draft.
@@ -178,7 +191,9 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
     }
     const candidate = await stores.topics.candidate(owner, project, reportId);
     if (!candidate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: 'topic-source-unavailable' }) }); result.unsupported++; continue; }
-    const targetDate = await dneskaiTopicTargetDate(stores.briefs, owner, project, now, input.mix ? { daily: input.mix, kind: topic.kind, committed: stores.topics.committed } : undefined);
+    const planned = input.plannedUntil ? dneskaiTopicPlanSlot(topic) : null;
+    if (input.plannedUntil && (!planned || planned.date > input.plannedUntil)) { result.waiting++; continue; }
+    const targetDate = planned ? planned.date : await dneskaiTopicTargetDate(stores.briefs, owner, project, now, input.mix ? { daily: input.mix, kind: topic.kind, committed: stores.topics.committed } : undefined);
     if (!targetDate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: input.mix ? 'topic-daily-mix-full' : 'topic-slot-unavailable' }) }); result.waiting++; continue; }
     if (candidate.status !== 'selected' || candidate.target_date !== targetDate) await stores.topics.selectCandidate(owner, project, candidate, targetDate);
     const row = await stores.topics.insertTopicBrief(owner, { project_id: project, run_id: candidate.run_id, event_id: dneskaiTopicEventId(topic.id), target_date: targetDate,
@@ -194,9 +209,11 @@ const read = <T>(result: { data: T | null; error: unknown }, code: string): T | 
 /** The service-role store. Every query filters on the owner; writes keep the topic's project. */
 export function createDneskaiTopicBridgeStore(db: Database): DneskaiTopicBridgeStore {
   return {
-    async topics(owner, project) {
-      return (read(await db.from('marketing_dneskai_topics').select('id,kind,status,source_ref,title_cs,summary,brief_id,evidence').eq('user_id', owner).eq('project_id', project)
-        .in('status', ['approved', 'enriching', 'briefed']).order('approved_at', { ascending: true }).limit(12), 'topic-bridge-unavailable') ?? []) as DneskaiBridgeTopic[];
+    async topics(owner, project, options) {
+      let query = db.from('marketing_dneskai_topics').select('id,kind,status,source_ref,title_cs,summary,brief_id,evidence').eq('user_id', owner).eq('project_id', project)
+        .in('status', ['approved', 'enriching', 'briefed']);
+      if (options?.plannedUntil) query = query.not('evidence->>planDate', 'is', null).lte('evidence->>planDate', options.plannedUntil);
+      return (read(await query.order('approved_at', { ascending: true }).limit(12), 'topic-bridge-unavailable') ?? []) as DneskaiBridgeTopic[];
     },
     async brief(owner, project, briefId) {
       return read(await db.from('marketing_dneskai_briefs').select('*').eq('user_id', owner).eq('project_id', project).eq('id', briefId).maybeSingle(), 'topic-bridge-unavailable') as DneskaiBriefRow | null;
