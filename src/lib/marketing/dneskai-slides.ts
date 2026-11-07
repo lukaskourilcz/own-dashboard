@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * The DNESKAi slide contract shared by generation (#116), revisions and approval (#118), rendering (#117)
- * and the review UI (#119). It mirrors the input of `renderDneskaiSlide` in `@boardlessai/carousel-studio`
+ * and the review UI (#119). It mirrors the input of `renderDneskaiSlide` in the slide engine (`src/lib/carousel-studio`)
  * (quorum#603): one entry per slide, images referenced by the sha256 of the stored source bytes, never by URL,
  * so an approval binds the exact pictures and crops and a renewed delivery link changes nothing.
  */
@@ -21,7 +21,7 @@ export const DneskaiKitIdSchema = z.enum(DNESKAI_KIT_IDS);
 export type DneskaiKitId = z.infer<typeof DneskaiKitIdSchema>;
 export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
 /**
- * The kits the vendored studio (vendor/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
+ * The kits the slide engine (src/lib/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
  * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
  */
 export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
@@ -57,6 +57,20 @@ export const DneskaiSlideImageSchema = z.strictObject({
 });
 export type DneskaiSlideImage = z.infer<typeof DneskaiSlideImageSchema>;
 
+/**
+ * The owner's hand placement of a slide's words in the Design Studio (7 November 2026): a frame per field in master
+ * pixels (1080 × 1350), drawn by the slide engine's `applyDneskaiBoxes`. Absent: the kit's own layout.
+ */
+export const DneskaiBoxSchema = z.strictObject({
+  x: z.number().int().min(0).max(1080), y: z.number().int().min(0).max(1350), w: z.number().int().min(80).max(1080),
+  size: z.number().int().min(16).max(200), align: z.enum(['left', 'center', 'right']),
+});
+export type DneskaiBox = z.infer<typeof DneskaiBoxSchema>;
+export const DNESKAI_EDITABLE_FIELDS = ['headline', 'body', 'kicker'] as const;
+export type DneskaiEditableField = (typeof DNESKAI_EDITABLE_FIELDS)[number];
+export const DneskaiSlideLayoutSchema = z.strictObject({ headline: DneskaiBoxSchema.optional(), body: DneskaiBoxSchema.optional(), kicker: DneskaiBoxSchema.optional() });
+export type DneskaiSlideLayout = z.infer<typeof DneskaiSlideLayoutSchema>;
+
 export const DneskaiSlideSchema = z.strictObject({
   type: DneskaiSlideTypeSchema,
   variant: DneskaiSlideVariantSchema.optional(),
@@ -67,6 +81,7 @@ export const DneskaiSlideSchema = z.strictObject({
   sources: z.array(z.string().min(1).max(240)).max(4).optional(),
   images: z.array(DneskaiSlideImageSchema).max(4),
   alt: z.string().min(1).max(1000),
+  layout: DneskaiSlideLayoutSchema.optional(),
 }).superRefine((slide, context) => {
   const slots = slide.images.map((image) => image.slot);
   if (new Set(slots).size !== slots.length) context.addIssue({ code: "custom", message: "image slots must be distinct", path: ["images"] });

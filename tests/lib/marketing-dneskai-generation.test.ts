@@ -148,14 +148,14 @@ describe("marketing-copy/7 schema", () => {
     expect((normalizeDneskaiCopy(raw) as DneskaiCopy).slides[0]).toEqual({ type: "single", variant: "photo", headline: "Test", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide" });
   });
   it("keeps the template ceilings equal to the vendored studio's text layers", async () => {
-    const studio = await import("@boardlessai/carousel-studio");
+    const studio = await import("@/lib/carousel-studio");
     for (const [id, limits] of Object.entries(DNESKAI_TEXT_LIMITS)) {
       const layers = studio.DNESKAI_PHOTO_TEMPLATES.get(id)!.slides[0]!.layers.filter((layer) => layer.type === "text" && ["headline", "body", "kicker", "credit"].includes(layer.slot));
       expect({ id, limits: Object.fromEntries(layers.map((layer) => [(layer as { slot: string }).slot, (layer as { maxChars: number }).maxChars])) }).toEqual({ id, limits });
     }
   });
   it("keeps no credit layer in any template of the vendored studio", async () => {
-    const studio = await import("@boardlessai/carousel-studio");
+    const studio = await import("@/lib/carousel-studio");
     for (const id of Object.keys(DNESKAI_TEXT_LIMITS)) {
       const slots = studio.DNESKAI_PHOTO_TEMPLATES.get(id)!.slides[0]!.layers.flatMap((layer) => layer.type === "text" ? [(layer as { slot: string }).slot] : []);
       expect({ id, credit: slots.includes("credit") }).toEqual({ id, credit: false });
@@ -164,7 +164,7 @@ describe("marketing-copy/7 schema", () => {
     for (const id of ["dneskai-cover-photo", "dneskai-single-photo", "dneskai-single-type"] as const) expect(Object.keys(DNESKAI_TEXT_LIMITS[id])).toEqual(["headline"]);
   });
   it("normalizes hashtags as the studio does and keeps at most ten, #dneskai first, topic tags before the base set", async () => {
-    const studio = await import("@boardlessai/carousel-studio");
+    const studio = await import("@/lib/carousel-studio");
     expect(normalizeDneskaiHashtag("Úpravy fotek")).toBe(studio.normalizeHashtag("Úpravy fotek"));
     expect(DNESKAI_HASHTAG_LIMIT).toBe(10);
     expect(dneskaiHashtags([])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);

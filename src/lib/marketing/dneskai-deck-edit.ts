@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideLayoutSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
   DNESKAI_INSERT_SHAPES, dneskaiCoverInset, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
   dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
@@ -29,6 +29,8 @@ export const DneskaiSlideEditSchema = z.strictObject({
   type: DneskaiSlideTypeSchema.optional(),
   /** review-10: a variant within the type's set (`accent | ink`, `photo | type`); null clears it. */
   variant: DneskaiSlideVariantSchema.nullable().optional(),
+  /** Design Studio (7 November 2026): the owner's hand placement of the words; null returns them to the kit's layout. */
+  layout: DneskaiSlideLayoutSchema.nullable().optional(),
 });
 export const DneskaiSlideInsertSchema = z.strictObject({
   insert: z.strictObject({
@@ -146,6 +148,10 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
     // No slide shows a picture credit (owner rule, 22 October 2026): an edit never writes one.
     delete next.credit;
     if (change.alt !== undefined) next.alt = change.alt;
+    // Boxes are frames of one kit's template: a new type or kit lays the words out afresh unless the edit places them.
+    if (shape || kit !== dneskaiKitOf(deck)) delete next.layout;
+    if (change.layout === null) delete next.layout;
+    else if (change.layout !== undefined) { if (Object.keys(change.layout).length) next.layout = structuredClone(change.layout); else delete next.layout; }
     if (change.images !== undefined) {
       // Swap a picture or its crop inside the slide's places; adding or dropping a place would change the template. The
       // one exception: a cover in a kit with an inset (spotlight) may add or drop its optional second picture.

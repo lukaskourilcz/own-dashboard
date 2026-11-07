@@ -1,7 +1,7 @@
 import type { DneskaiImageCrop, DneskaiSlide } from './dneskai-slides';
 
 /**
- * The studio's crop arithmetic (`cropRegion` in vendor/carousel-studio/dist/images.js), copied so the Design Lab can
+ * The studio's crop arithmetic (`cropRegion` in src/lib/carousel-studio/images.ts), copied so the Design Lab can
  * draw the real crop on the client while the owner moves the focal point or zoom, without a render. Pure integer
  * arithmetic; `tests/lib/marketing-dneskai-crop.test.ts` runs both on fixture inputs so the copy cannot drift.
  */

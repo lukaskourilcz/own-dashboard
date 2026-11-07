@@ -55,7 +55,7 @@ Pulse) must not return. Model calls are allowed only in the marketing workflow (
 | Google Calendar | Direct calendar read/write | `src/lib/calendar*`, `src/lib/google-*` | Live |
 | Bank (GoCardless) | Daily transaction sync | `src/lib/gocardless.ts`, `src/lib/bank*` | As configured; no new bank work planned |
 | Jina Reader | Link enrichment: only the submitted URL is sent; DNESKAi topic briefs: only an approved link-library or manual topic's URL (#210) | `src/lib/link-library.ts`, `src/lib/marketing/dneskai-topic-source.ts` | Live; topic briefs behind `DNESKAI_TOPIC_BRIEFS_ENABLED` |
-| **Quorum** (`lukaskourilcz/quorum`) | Source of the carousel studio (`@boardlessai/carousel-studio`), which OwnDashboard vendors as built output | `vendor/carousel-studio/`, `scripts/vendor-carousel-studio.sh` | Vendored at `893a495` |
+| **Quorum** (`lukaskourilcz/quorum`) | Origin of the DNESKAi slide engine. Its source moved into OwnDashboard on 7 November 2026; no dependency remains | `src/lib/carousel-studio/`, `templates/carousel-studio/` | Copied from `893a495` |
 | **Meta / Instagram** | Publishing to `@dneskai` (Creator account) with Instagram Login, Graph API v26.0: carousels, single images and Reels (`media_type=REELS`) | `src/lib/marketing/publisher.ts`, `meta-account.ts`, `meta-credentials.ts` | Verified; account switch **off** after the pilot |
 | **Facebook Login for Business** | A second credential mode (#166, `MARKETING_DNESKAI_INSTAGRAM_LOGIN_MODE=facebook`): `graph.facebook.com` with the token of the Facebook Page linked to `@dneskai`, renewal through `fb_exchange_token` (`MARKETING_META_APP_ID`, `MARKETING_META_APP_SECRET`), private replies through `POST /<PAGE_ID>/messages` (#216) | `meta-credentials.ts`, `meta-account.ts`, `dneskai-engagement-ports.ts` | Prepared, **not set up**: no Page linked yet (Astra #181) |
 | **Meta Audio API** | `GET /ig_audio`: the trending music and original sounds `@dneskai` may use; exists only under Facebook Login (#167) | `dneskai-audio-trends.ts` | Prepared, **off** (`DNESKAI_AUDIO_TRENDS_ENABLED`) |
@@ -141,7 +141,7 @@ Credits and source URLs stay in the database for provenance. Generation, the edi
 
 ### Rendering: the carousel studio and its six kits
 
-Slides are rendered by the vendored Quorum studio (`vendor/carousel-studio`, `renderDneskaiSlide`) into
+Slides are rendered by OwnDashboard's slide engine (`src/lib/carousel-studio`, `renderDneskaiSlide`) into
 1080 × 1350 JPEGs, stored in Storage and keyed by a render key (`dneskai-render.ts`). A post is drawn in one of six
 kits:
 
@@ -154,10 +154,9 @@ kits:
 | Ticker | Dark news screen, compact type, blue floor rule |
 | Spotlight | The owner's photo-led reference: full-bleed photos fading into ink, centred headlines, before/after quote slides, optional round inset picture on the cover |
 
-A deck names its kit (`kit` field, absent for Editorial). Each kit is designed in Quorum
-(`studio/src/dneskai-kits/`, ADR `docs/design-lab/dneskai-kits/ADR.md`) and pinned by golden PNG hashes.
-To change a kit: edit Quorum, build, merge, then re-vendor with `scripts/vendor-carousel-studio.sh <quorum> <commit>
---write`, update `DNESKAI_STUDIO` in `dneskai-render.ts` and run the vendor test.
+A deck names its kit (`kit` field, absent for Editorial). Each kit lives in `src/lib/carousel-studio/dneskai-kits/`
+(design record: Quorum `docs/design-lab/dneskai-kits/ADR.md`) and is pinned by golden PNG hashes in
+`templates/carousel-studio/golden/`. To change a kit, edit it here, update its goldens and bump `DNESKAI_RENDER_POLICY`.
 
 ### The publishing plan and Threads (7 November 2026)
 
@@ -198,13 +197,26 @@ fixed topic rotation (`devshark-concepts.ts`), at most three a day and $0.30 by 
 
 ### Design Studio (7 November 2026)
 
-One editor for devShark (DNESKAi follows). `src/lib/design-studio/` holds the browser-safe layout: text is measured
+One editor for both brands. The editing surface is shared (`src/components/design-studio/box-overlay.tsx`: blocks
+over the slide picture, drag to move, right edge for width, arrows, toolbar for size, alignment and the automatic
+place); each brand draws its own picture.
+
+devShark: `src/lib/design-studio/` holds the browser-safe layout: text is measured
 with the renderer's font-metric table, blocks (kicker, headline, text, code) flow automatically or sit at the box the
 owner set (x, y, width, font size, alignment in 1080 × 1350 pixels, stored in the deck's `layout`), and one SVG comes
 out. The studio's `SlideCanvas` shows that SVG with the same fonts (`public/design-studio/`, kept identical to the
 renderer's by a test) and lets the owner drag, resize, write and mark green words on the slide itself;
 `devshark-render.ts` rasterises the same SVG for publishing. Text over the fin is allowed; text off the slide is a
 warning only.
+
+DNESKAi: the Lab's stage has a **Studio** view (`lab/studio-view.tsx`; "Otevřít v Design Labu" in "Dnes a zítra" opens
+it). It shows the slide exactly as the slide engine renders it (the render-only preview) with the headline, text and
+label as blocks. A box change is stored in the slide's `layout` (`DneskaiSlideLayoutSchema`, same box shape as
+devShark) and the slide draws again; words are written in the panel beside it. The engine applies the boxes after the
+kit's layout (`src/lib/carousel-studio/dneskai-boxes.ts`): held in the safe area, set at the fixed size, drawn above
+the photographs, a moved headline taking its quotation marks along; cut copy is refused as `text-clipped`. A slide
+without `layout` renders byte for byte as before, and its render key is unchanged. A new slide type or kit drops the
+boxes. Every kit can be edited this way.
 
 ### Review and approval: the Design Lab
 

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
+import type { DneskaiImageInput, DneskaiLaidBlock, DneskaiSlideInput, DneskaiSlideProblem } from "@/lib/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
@@ -9,8 +9,8 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
 /**
  * DNESKAi slides through the vendored Design Lab engine (own-dashboard#117, quorum#603).
  *
- * Every slide of a deck goes to `renderDneskaiSlide` in `@boardlessai/carousel-studio`
- * (vendor/carousel-studio). This module owns no layout: it maps the slide contract to the studio
+ * Every slide of a deck goes to `renderDneskaiSlide` in OwnDashboard's slide engine
+ * (`src/lib/carousel-studio`). This module owns no layout: it maps the slide contract to the studio
  * input, applies OwnDashboard's stricter gate, encodes the Instagram JPEG and stores it once per
  * render key in the private `marketing-assets` bucket.
  *
@@ -24,7 +24,11 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
  * One blocking problem on any slide refuses the whole deck and nothing is stored.
  */
 
-/** The vendored engine. `tests/lib/carousel-studio-vendor.test.ts` ties these to vendor/carousel-studio/UPSTREAM.md. */
+/**
+ * The slide engine. Since 7 November 2026 its source is OwnDashboard's own (`src/lib/carousel-studio`, assets in
+ * `templates/carousel-studio`), copied unchanged from Quorum commit 893a495; these values stay those of that commit
+ * because every render key hashes them, and the golden test proves the owned source draws the same pixels.
+ */
 export const DNESKAI_STUDIO = {
   package: "@boardlessai/carousel-studio",
   version: "1.0.0",
@@ -60,8 +64,8 @@ export interface DneskaiSlideStorage {
 // The DNESKAi slide API and the face metrics alone (subpath exports of the vendored manifest): the
 // package barrel also carries the hook-library reader, whose dynamic file reads make Turbopack
 // trace the whole project.
-type Studio = typeof import("@boardlessai/carousel-studio/dneskai-slide");
-type Fonts = typeof import("@boardlessai/carousel-studio/fonts");
+type Studio = typeof import("@/lib/carousel-studio/dneskai-slide");
+type Fonts = typeof import("@/lib/carousel-studio/fonts");
 type Sharp = typeof import("sharp");
 type Position = { index: number; count: number };
 const sha256 = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
@@ -70,12 +74,12 @@ let studioModule: Promise<Studio> | null = null;
 let fontsModule: Promise<Fonts> | null = null;
 /** Loaded on use, like sharp and resvg in render.ts, so importing this module costs nothing. */
 async function studio(): Promise<Studio> {
-  studioModule ??= import("@boardlessai/carousel-studio/dneskai-slide");
+  studioModule ??= import("@/lib/carousel-studio/dneskai-slide");
   try { return await studioModule; }
   catch { studioModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
 }
 async function fonts(): Promise<Fonts> {
-  fontsModule ??= import("@boardlessai/carousel-studio/fonts");
+  fontsModule ??= import("@/lib/carousel-studio/fonts");
   try { return await fontsModule; }
   catch { fontsModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
 }
@@ -185,6 +189,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
     images,
     position,
     locale: "cs",
+    ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
   };
 }
 
@@ -214,6 +219,8 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     locale: "cs",
     // Keyed only when not editorial, so every editorial key stays what it was before kits existed.
     ...(kit !== "editorial" ? { kit } : {}),
+    // Keyed only when the owner placed words by hand, so every other key stays what it was.
+    ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
   }));
 }
 
@@ -445,7 +452,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
 export const DNESKAI_PREVIEW_IMAGE = { width: 864, height: 1080, quality: 82, format: "webp" } as const;
 /** Rendered previews kept in memory by render key: a slide the owner returns to is not drawn twice. */
 const PREVIEW_CACHE_ENTRIES = 48;
-const previewCache = new Map<string, Buffer>();
+const previewCache = new Map<string, { image: Buffer; blocks: DneskaiLaidBlock[] }>();
 
 export type DneskaiSlidePreview = {
   status: "rendered" | "refused";
@@ -454,6 +461,8 @@ export type DneskaiSlidePreview = {
   renderKey: string;
   problems: DneskaiSlideRenderProblem[];
   cached: boolean;
+  /** The editable text frames as drawn, in master pixels, for the Design Studio; empty when the slide was not laid out. */
+  blocks: DneskaiLaidBlock[];
 };
 
 /** Forgets every cached preview (tests). */
@@ -481,14 +490,14 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   const hit = previewCache.get(renderKey);
   if (hit && !own.length) {
     previewCache.delete(renderKey); previewCache.set(renderKey, hit);
-    return { status: "rendered", image: hit, renderKey, problems: [], cached: true };
+    return { status: "rendered", image: hit.image, renderKey, problems: [], cached: true, blocks: hit.blocks };
   }
   const loaded = await slideImages(slide, index, mediaLoader(loadMedia), options.signal);
   abortCheck();
   const engine = await studio();
-  if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false };
+  if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false, blocks: [] };
   const input = dneskaiStudioInput(slide, position, loaded.images, kit);
-  if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false };
+  if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false, blocks: [] };
   let result;
   try { result = await engine.renderDneskaiSlide(input); }
   catch { throw new DneskaiRenderError("render-rasterization-failed"); }
@@ -499,7 +508,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   }
   if (result.status !== "rendered" || !result.png || found.some((problem) => problem.blocking)) {
     if (!found.some((problem) => problem.blocking)) found.push({ slide: index, code: "render-refused", blocking: true, field: null, message: "The studio refused this slide." });
-    return { status: "refused", image: null, renderKey, problems: found, cached: false };
+    return { status: "refused", image: null, renderKey, problems: found, cached: false, blocks: result.blocks };
   }
   const sharp = await sharpModule();
   let image: Buffer;
@@ -510,8 +519,8 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   abortCheck();
   // Advisory problems (a picture stretched short of refusal) are part of the preview's answer, not of the cache.
   if (!found.length) {
-    previewCache.set(renderKey, image);
+    previewCache.set(renderKey, { image, blocks: result.blocks });
     while (previewCache.size > PREVIEW_CACHE_ENTRIES) previewCache.delete(previewCache.keys().next().value!);
   }
-  return { status: "rendered", image, renderKey, problems: found, cached: false };
+  return { status: "rendered", image, renderKey, problems: found, cached: false, blocks: result.blocks };
 }

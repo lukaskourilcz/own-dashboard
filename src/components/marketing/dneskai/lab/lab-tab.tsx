@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
-import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_OFFERED_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult } from '@/lib/marketing/dneskai-lab';
+import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_OFFERED_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult, type DneskaiPreviewResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
@@ -131,7 +131,10 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const id = useId(), client = useQueryClient(), fieldRef = useRef<HTMLElement | null>(null), rootRef = useRef<HTMLDivElement>(null);
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
   const [draft, setDraft] = useState<DeckDraft>(() => createDeckDraft(post, account?.id ?? null));
-  const [view, setView] = useState<DneskaiStageView>('feed');
+  // `labView=studio` (from „Dnes a zítra“) opens the post straight in the Design Studio view.
+  const [view, setView] = useState<DneskaiStageView>(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('labView') === 'studio' ? 'studio' : 'feed');
+  // Design Studio: the newest picture drawn per slide, so the Studio view keeps it while the next change renders.
+  const [studioLast, setStudioLast] = useState<Map<string, { image: string; blocks: DneskaiPreviewResult['blocks'] }>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());
   const [busyAction, setBusyAction] = useState<'approve' | 'save' | 'return' | 'skip' | 'publish' | 'move' | 'regenerate' | null>(null), [message, setMessage] = useState(''), [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<'return' | 'skip' | 'shortcuts' | 'publish' | 'move' | 'regenerate' | null>(null), [note, setNote] = useState('');
@@ -161,15 +164,19 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     return { index, type: item.slide.type, render: saved?.render ?? null, problems: saved?.problems ?? [], draft: unchanged ? null : item.from === null ? 'added' : 'changed', alt: item.slide.alt };
   });
   const invalidDraft = draftProblems(post, draft).some((problem) => PREVIEW_BLOCKERS.has(problem.code));
-  const previewKey = !props.guest && stageSlides[slide]?.draft && request?.deck && !invalidDraft ? JSON.stringify({ deck: request.deck, slide }) : null;
-  const preview: DneskaiStagePreview | null = !stageSlides[slide]?.draft ? null
-    : invalidDraft ? { slide, status: 'unavailable', image: null, code: 'deck-edit-invalid' }
-      : previewKey ? previewMemory.get(previewKey) ?? { slide, status: 'loading', image: null, code: null } : { slide, status: 'unavailable', image: null, code: null };
+  // The Studio view always draws the current slide, changed or not: its blocks come from the engine's own layout.
+  const studioOn = view === 'studio' && !props.guest && !!post.deck;
+  const previewDeck = request?.deck ?? (studioOn && post.deck ? { ...(post.deck.kit ? { kit: post.deck.kit } : {}), slides: post.deck.slides.map((_, from) => ({ from })) } : undefined);
+  const wanted = !!stageSlides[slide]?.draft || studioOn;
+  const previewKey = !props.guest && wanted && previewDeck && !invalidDraft ? JSON.stringify({ deck: previewDeck, slide }) : null;
+  const preview: DneskaiStagePreview | null = !wanted ? null
+    : invalidDraft ? { slide, status: 'unavailable', image: null, code: 'deck-edit-invalid', blocks: [] }
+      : previewKey ? previewMemory.get(previewKey) ?? { slide, status: 'loading', image: null, code: null, blocks: [] } : { slide, status: 'unavailable', image: null, code: null, blocks: [] };
   const remembered = previewKey ? previewMemory.has(previewKey) : true;
   useEffect(() => {
     if (!previewKey || remembered) return;
     const abort = new AbortController();
-    const { deck, slide: index } = JSON.parse(previewKey) as { deck: NonNullable<typeof request>['deck']; slide: number };
+    const { deck, slide: index } = JSON.parse(previewKey) as { deck: NonNullable<typeof previewDeck>; slide: number };
     const keep = (value: DneskaiStagePreview) => setPreviewMemory((before) => {
       const next = new Map(before).set(previewKey, value);
       while (next.size > PREVIEW_MEMORY) next.delete(next.keys().next().value!);
@@ -179,11 +186,13 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     const timer = window.setTimeout(async () => {
       try {
         const result = await (await dneskaiWorkspaceApi(props.preview)).renderPreview({ id: post.id, deck: deck!, slide: index }, abort.signal);
-        if (!abort.signal.aborted) keep({ slide: index, status: result.status, image: result.image, code: result.problems.find((problem) => problem.blocking)?.code ?? null });
+        if (abort.signal.aborted) return;
+        keep({ slide: index, status: result.status, image: result.image, code: result.problems.find((problem) => problem.blocking)?.code ?? null, blocks: result.blocks });
+        if (result.status === 'rendered' && result.image) setStudioLast((before) => new Map(before).set(`${post.id}:${index}`, { image: result.image!, blocks: result.blocks }));
       } catch (failure) {
         if (abort.signal.aborted) return;
         // Kept for this exact draft: the next change asks again (a rate limit or network failure included).
-        keep({ slide: index, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null });
+        keep({ slide: index, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null, blocks: [] });
       }
     }, 450);
     return () => { window.clearTimeout(timer); abort.abort(); };
@@ -286,7 +295,18 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
             {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
         </section>}
         {dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
-        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} />
+        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang}
+          studio={props.guest || !post.deck || !draft.slides[slide] ? null : {
+            slide: draft.slides[slide]!.slide, last: studioLast.get(`${post.id}:${slide}`) ?? null, editable,
+            onLayout: (layout) => {
+              setDraft({ ...draft, slides: draft.slides.map((item, at) => {
+                if (at !== slide) return item;
+                const { layout: _old, ...rest } = item.slide; void _old;
+                return { ...item, slide: layout ? { ...rest, layout } : rest };
+              }) });
+              setFit({ status: 'checking', result: null });
+            },
+          }} />
       </div>
       <div className="min-w-0 space-y-5">
         <DneskaiKitTiles kits={lab.kits} chosen={draft.kit} onChoose={chooseKit} lang={props.lang} />

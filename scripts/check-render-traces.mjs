@@ -11,7 +11,7 @@
  *   platform as the addon. The default trace keeps the addon and drops this library, and sharp then fails
  *   to load (docs/marketing-render-preflight.md). The `.so` name means the check expects a Linux build, as
  *   on CI and Vercel.
- * - at least one vendored studio font under `vendor/carousel-studio/fonts/`. Without one the rasteriser
+ * - at least one slide-engine font under `templates/carousel-studio/fonts/`. Without one the rasteriser
  *   has no face to draw with, because system fonts are switched off.
  * - sharp's native addon, `node_modules/@img/sharp-<platform>/lib/sharp-<platform>-<version>.node`.
  *
@@ -45,7 +45,7 @@ const ffmpegFile = 'node_modules/ffmpeg-static/ffmpeg';
 
 const addonPattern = /^node_modules\/@img\/sharp-([^/]+)\/lib\/sharp-\1-[^/]+\.node$/;
 const libvipsPattern = /^node_modules\/@img\/sharp-libvips-([^/]+)\/lib\/libvips-cpp\.so(\.\d+)*$/;
-const fontPattern = /^vendor\/carousel-studio\/fonts\/.+\.(ttf|otf|woff2?)$/;
+const fontPattern = /^templates\/carousel-studio\/fonts\/.+\.(ttf|otf|woff2?)$/;
 
 /** One route's verdict: the problems found, and what was matched for the summary line. */
 function checkRoute(route) {
@@ -75,7 +75,7 @@ function checkRoute(route) {
   else if (matchingLibvips.length === 0) problems.push(`libvips is traced for ${libvips.map((file) => libvipsPattern.exec(file)[1]).join(', ')} but the addon is for ${[...addonPlatforms].join(', ')}`);
 
   const fonts = files.filter((file) => fontPattern.test(file));
-  if (fonts.length === 0) problems.push('no vendored studio font under vendor/carousel-studio/fonts/ (is "./vendor/carousel-studio/fonts/**/*" still in outputFileTracingIncludes?)');
+  if (fonts.length === 0) problems.push('no slide-engine font under templates/carousel-studio/fonts/ (is "./templates/carousel-studio/fonts/**/*" still in outputFileTracingIncludes?)');
 
   const ffmpeg = ffmpegRoutes.has(route) ? files.filter((file) => file === ffmpegFile) : [];
   if (ffmpegRoutes.has(route) && ffmpeg.length === 0) problems.push(`no ${ffmpegFile} (is "./node_modules/ffmpeg-static/ffmpeg" still in outputFileTracingIncludes?)`);

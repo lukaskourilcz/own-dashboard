@@ -60,7 +60,7 @@ const securityHeaders = [
 // globs put the files at that path in every marketing function that can render a DNESKAi slide.
 // Without them the deployed rasteriser finds no fonts (system fonts are switched off), which is
 // how Quorum's render route answered 500 in production.
-const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/carousel-studio/brand-kits/**/*"];
+const carouselStudioFiles = ["./templates/carousel-studio/fonts/**/*", "./templates/carousel-studio/brand-kits/**/*"];
 // The trace keeps sharp's native addon but drops the libvips library it links against, and sharp
 // then fails to load (docs/marketing-render-preflight.md). Every marketing function that can reach
 // sharp (the job runner, the scheduled tick, revisions, media collection, offline import) gets it.
