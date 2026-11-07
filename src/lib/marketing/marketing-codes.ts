@@ -152,6 +152,7 @@ const CODES = {
   'image-hash-mismatch': ['investigate', 'The stored picture does not match its fingerprint.', 'Uložený obrázek neodpovídá svému otisku.'],
   'image-low-resolution': ['edit', 'The picture is too small for this crop; choose a larger one or zoom out.', 'Obrázek je pro tento výřez příliš malý; vyberte větší nebo zmenšete přiblížení.'],
   'image-upscaled': ['none', 'The picture is enlarged slightly beyond its size; it may look soft.', 'Obrázek je mírně zvětšený nad svou velikost; může působit neostře.'],
+  'text-contrast-low': ['none', 'A moved text stands where it has less contrast than the kit guarantees; check that it reads.', 'Přesunutý text stojí tam, kde má menší kontrast, než kit zaručuje; zkontrolujte, že je čitelný.'],
   'crop-invalid': ['edit', 'The focal point or zoom is out of range.', 'Ohnisko nebo přiblížení je mimo rozsah.'],
   'story-instagram-required': ['investigate', 'A story publishes only to Instagram.', 'Story se publikuje jen na Instagram.'],
   'story-single-jpeg-required': ['investigate', 'A story needs exactly one JPEG.', 'Story potřebuje právě jeden JPEG.'],

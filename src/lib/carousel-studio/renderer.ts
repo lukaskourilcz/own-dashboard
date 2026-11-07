@@ -393,6 +393,11 @@ export interface CarouselRenderInput {
    * position or keeps its logo to the last slide reads it.
    */
   deck?: DeckPosition;
+  /**
+   * Template checks whose failure does not stop the render, by id (`contrast`, `apca`, `overflow`). For words the
+   * owner placed by hand in the Design Studio: the caller reports them as advice and refuses cut copy itself.
+   */
+  relaxedChecks?: readonly string[];
 }
 
 /**
@@ -500,7 +505,7 @@ function renderSlides(input: CarouselRenderInput, wanted?: number): RenderedSlid
   for (const { brand: onGround, ground } of grounded) {
     if (checked.has(ground)) continue;
     checked.add(ground);
-    const failed = validateTemplateForBrand(template, onGround, input.format).filter((check) => check.status === "fail");
+    const failed = validateTemplateForBrand(template, onGround, input.format).filter((check) => check.status === "fail" && !input.relaxedChecks?.includes(check.id));
     if (failed.length) throw new Error(`Template checks failed${ground ? ` on the ${ground} ground` : ""}: ${failed.map((check) => check.detail).join("; ")}`);
   }
   const canvas = template.formats[carouselCanvas(input.format)];
