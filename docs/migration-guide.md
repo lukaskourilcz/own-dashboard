@@ -948,3 +948,10 @@ title, slides and caption, and the concept returns to `draft`, so an approval al
 in the plan or published cannot change. It also adds `devshark-studio` to the hideable project tabs, after
 `dneskai-today`, exactly `PROJECT_TAB_IDS`. Replayed in PGlite (`tests/lib/devshark-plan-database.test.ts`,
 `tests/lib/project-tabs-database.test.ts`).
+## DNESKAi plan stories, 7 November 2026
+
+`20261107210000_dneskai_plan_stories.sql` adds `story_revision_id` and `story_base_revision_id` to
+`marketing_dneskai_plan`, checks the story's owner in the plan trigger and lets `marketing_dneskai_plan_approve` take
+the story. Every approved Instagram post of the plan gets a story made from its cover slide
+(`composeStoryFromCover`, 1080 × 1920, no model call), ten minutes after the post. Instagram publishes stories through
+the API only for Business accounts; @dneskai was switched to Business on 7 November 2026.
