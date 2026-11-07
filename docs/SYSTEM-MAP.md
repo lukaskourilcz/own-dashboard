@@ -159,6 +159,21 @@ A deck names its kit (`kit` field, absent for Editorial). Each kit is designed i
 To change a kit: edit Quorum, build, merge, then re-vendor with `scripts/vendor-carousel-studio.sh <quorum> <commit>
 --write`, update `DNESKAI_STUDIO` in `dneskai-render.ts` and run the vendor test.
 
+### The publishing plan and Threads (7 November 2026)
+
+The owner approved every education topic and the last week's news into a rolling 30-day plan
+(`marketing_dneskai_plan`, behind `DNESKAI_PLAN_ENABLED`): Instagram at 08:00, 12:30 and 17:00, Threads at the same
+times plus 20:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
+fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
+the post in Spotlight, moves it to its slot, approves the exact version for the owner and derives a Threads twin
+(`dneskai-threads.ts`: the same slides, the caption without hashtags or keyword line, shortened to 500 characters,
+then the AI disclosure and `#dneskai`). The topic bridge briefs a planned topic for exactly its slot. A news post's
+brief stays current until a day after its slot. The owner sees today and tomorrow in the tab **Dnes a zítra** and the
+30 days below it (`GET /api/marketing/dneskai/plan`); every post opens in the Design Lab with one click. An edit saved
+in the Lab wins: the plan approves the owner's version and derives a new Threads twin. Threads twins stay out of the
+Lab. Threads publishing needs the @dneskai Threads profile and its token (NEEDED.md); until then those posts wait with
+`threads-account-missing`. The token step renews the Threads token with `th_refresh_token`.
+
 ### Review and approval: the Design Lab
 
 Project DNESKAi → tab "Dnes ke schválení" (`src/components/marketing/dneskai/lab/`, model `dneskai-lab.ts`,
