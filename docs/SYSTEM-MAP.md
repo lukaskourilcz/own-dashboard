@@ -179,7 +179,8 @@ Lab. Threads publishing needs the @dneskai Threads profile and its token (NEEDED
 devShark gets its own concepts and plan, separate from DNESKAi. `devshark-render.ts` draws a `devshark-deck/1` in the
 look of the posts on @devshark.app: pale, ink and green grounds, the kicker and waterline on the first slide only,
 large Manrope type with green highlights and the large fin; no corner fin and no page counter. Concepts live in
-`marketing_devshark_drafts`; the owner approves or rejects each (`/api/marketing/devshark/drafts`). Behind
+`marketing_devshark_drafts`. The owner edits, previews and approves each in the devShark project's **Studio** tab
+(`/api/marketing/devshark/drafts`, `/api/marketing/devshark/preview`); a saved edit returns the concept to review. Behind
 `DEVSHARK_PLAN_ENABLED` the tick's `devshark-plan` step places approved concepts into `marketing_devshark_plan`: one
 Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Publishing waits for the devShark
 Instagram and Threads accounts (NEEDED.md). The first five concepts are in `content/devshark/concepts-2026-11-07.json`.

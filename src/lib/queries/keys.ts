@@ -66,6 +66,7 @@ export const qk = {
   dneskaiMedia: ["marketing", "dneskai-media"] as const,
   // The publishing plan („Dnes a zítra“, 30-day plan), followed by the first day and the number of days.
   dneskaiPlan: ["marketing", "dneskai-plan"] as const,
+  devsharkDrafts: ["marketing", "devshark-drafts"] as const,
   // Topics (náměty, #154), followed by the project id; read by the Lab only when the server has them on.
   dneskaiTopics: ["marketing", "dneskai-topics"] as const,
   // Zdroje → Denní mix (#156), followed by the project id.

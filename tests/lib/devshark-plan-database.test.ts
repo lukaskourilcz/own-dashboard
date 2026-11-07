@@ -28,6 +28,18 @@ describe('marketing_devshark_drafts and _plan', () => {
     expect((await db.query<{ status: string; decided: boolean }>('select status, decided_at is not null decided from public.marketing_devshark_drafts where id=$1', [draft])).rows[0]).toEqual({ status: 'approved', decided: true });
   });
 
+  it('returns an edited concept to review, so an approval binds the saved text', async () => {
+    await as('authenticated', owner);
+    await db.query("select public.marketing_devshark_save($1,'typeof null, edited',$2::jsonb,'New caption')", [draft, deck]);
+    await db.query('reset role');
+    expect((await db.query<{ status: string; caption: string; decided: boolean }>('select status, caption, decided_at is not null decided from public.marketing_devshark_drafts where id=$1', [draft])).rows[0]).toEqual({ status: 'draft', caption: 'New caption', decided: false });
+    await as('authenticated', stranger);
+    await expect(db.query("select public.marketing_devshark_save($1,'x',$2::jsonb,'x')", [draft, deck])).rejects.toThrow('draft unavailable');
+    await as('authenticated', owner);
+    await db.query("select public.marketing_devshark_decide($1,'approved')", [draft]);
+    await db.query('reset role');
+  });
+
   it('keeps 12:00 for Instagram and Threads and 19:00 for Threads alone', async () => {
     await as('service_role');
     await expect(db.query("insert into public.marketing_devshark_plan(user_id,project_id,date,local_time,instagram,threads,draft_id) values($1,$2,'2026-11-08','19:00',true,true,$3)", [owner, project, draft])).rejects.toThrow();
