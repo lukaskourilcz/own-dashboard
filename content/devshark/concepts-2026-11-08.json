@@ -1,0 +1,75 @@
+[
+ {
+  "title": "any vs unknown in TypeScript",
+  "caption": "Everyone reaches for any when TypeScript gets in the way. Seniors reach for unknown. Which one are you?\n\nTypeScript quizzes and coding tasks on devShark: devshark.app 🦈\n#typescript #javascript #webdevelopment #coding #devshark",
+  "deck": {
+   "schemaVersion": "devshark-deck/1",
+   "cover": "dark",
+   "slides": [
+    { "kind": "cover", "kicker": "TypeScript", "headline": "any vs unknown.", "body": "Both accept [[every value]]. Only one keeps you safe." },
+    { "kind": "text", "headline": "any turns checks off.", "body": "Call anything on it and the compiler [[stays quiet]], until it breaks at runtime." },
+    { "kind": "code", "headline": "unknown makes you check.", "code": "function len(x: unknown) {\n  if (typeof x === 'string')\n    return x.length;\n  return 0;\n}" },
+    { "kind": "answer", "headline": "Prefer [[unknown]].", "body": "Narrow it with typeof, instanceof or a type guard before you use it." },
+    { "kind": "closing", "headline": "[[TypeScript quizzes]] and graded coding tasks." }
+   ]
+  }
+ },
+ {
+  "title": "Undo the last Git commit",
+  "caption": "Committed too early? Happens to the best of us. To us, daily. Here is how to take it back without losing a line.\n\nLessons and coding tasks for web developers on devShark: devshark.app 🦈\n#git #webdevelopment #coding #programming #devshark",
+  "deck": {
+   "schemaVersion": "devshark-deck/1",
+   "cover": "light",
+   "slides": [
+    { "kind": "cover", "kicker": "Git", "headline": "Undo the last commit.", "body": "Keep the changes, [[lose the commit]]." },
+    { "kind": "code", "headline": "One command", "body": "The changes stay [[staged]], ready for a better commit.", "code": "git reset --soft HEAD~1" },
+    { "kind": "answer", "headline": "Already pushed? Use [[revert]].", "body": "git revert adds a new commit that undoes it, so shared history stays intact." },
+    { "kind": "closing", "headline": "Quizzes, lessons and [[coding tasks]] for web developers." }
+   ]
+  }
+ },
+ {
+  "title": "0.1 + 0.2 === 0.3",
+  "caption": "Guess before you swipe: is 0.1 + 0.2 equal to 0.3? If you said yes, do not worry. JavaScript said no to all of us once.\n\nMore JavaScript quizzes on devShark: devshark.app 🦈\n#javascript #webdevelopment #coding #frontend #devshark",
+  "deck": {
+   "schemaVersion": "devshark-deck/1",
+   "cover": "light",
+   "slides": [
+    { "kind": "cover", "kicker": "JavaScript quiz", "headline": "0.1 + 0.2 === 0.3", "body": "True or false? [[Guess before you swipe.]]" },
+    { "kind": "code", "headline": "A. true\nB. false", "code": "0.1 + 0.2 === 0.3" },
+    { "kind": "answer", "headline": "B. false", "body": "Numbers are binary floats, so the sum is [[0.30000000000000004]]." },
+    { "kind": "code", "headline": "Compare with a tolerance.", "code": "Math.abs(a - b) < Number.EPSILON" },
+    { "kind": "closing", "headline": "Quizzes, lessons and [[coding tasks]] for web developers." }
+   ]
+  }
+ },
+ {
+  "title": "401 vs 403",
+  "caption": "401 or 403? Interviewers love this one, and plenty of seniors still swap them. Do not be one of them.\n\nInterview prep for web developers on devShark: devshark.app 🦈\n#interviewprep #http #webdevelopment #backend #devshark",
+  "deck": {
+   "schemaVersion": "devshark-deck/1",
+   "cover": "dark",
+   "slides": [
+    { "kind": "cover", "kicker": "Interview prep", "headline": "401 or 403?", "body": "Both say [[no]]. They mean different things." },
+    { "kind": "text", "headline": "401: who are you?", "body": "The request has [[no valid credentials]]. Log in and try again." },
+    { "kind": "text", "headline": "403: not allowed.", "body": "The server knows who you are, but you [[lack permission]]. Logging in again will not help." },
+    { "kind": "answer", "headline": "401 is authentication. 403 is authorization.", "body": "Despite its name, 401 Unauthorized is about [[who you are]]." },
+    { "kind": "closing", "headline": "[[Interview prep]] for web developers." }
+   ]
+  }
+ },
+ {
+  "title": "Use a button, not a div",
+  "caption": "That div with onClick works fine. For you. Want to build for everyone? Learn it step by step on devShark: devshark.app 🦈\n#accessibility #a11y #react #frontend #devshark",
+  "deck": {
+   "schemaVersion": "devshark-deck/1",
+   "cover": "light",
+   "slides": [
+    { "kind": "cover", "kicker": "Accessibility", "headline": "Use a button.", "body": "A div with onClick [[looks the same]] but works for fewer people." },
+    { "kind": "code", "headline": "The risky one", "body": "No focus, no Enter or Space, [[no role]] for screen readers.", "code": "<div onClick={go}>Go</div>" },
+    { "kind": "code", "headline": "The right one", "body": "Focus, keyboard and role [[come for free]].", "code": "<button onClick={go}>Go</button>" },
+    { "kind": "closing", "headline": "Short lessons with [[tasks you solve]] in the browser." }
+   ]
+  }
+ }
+]

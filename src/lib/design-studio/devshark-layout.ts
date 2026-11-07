@@ -7,8 +7,8 @@ import derived from '../../../templates/marketing/devshark/derived-layout.json';
  * slide into positioned text blocks and one SVG of 1080 × 1350; the browser shows that SVG with the same fonts and the
  * server rasterises the same SVG, so what the owner places in the editor is what goes out.
  *
- * A slide without `layout` flows as the first renderer did: kicker and waterline on the first slide only, then
- * headline, text and code stacked from the top. A slide with `layout` places each block at its box: top-left x and y,
+ * A slide without `layout` takes the house layout (`devsharkAutoBoxes`): kicker and waterline on the first slide only,
+ * then headline, text and code stacked as one group around the slide's middle. A slide with `layout` places each block at its box: top-left x and y,
  * width, font size and alignment, in slide pixels. Nothing is refused for position; text running off the slide is
  * reported as a warning, and text over the fin is allowed.
  */
@@ -85,22 +85,35 @@ const escapeXml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ '&':
 const anchorX = (box: Required<DevsharkBox>) => box.align === 'center' ? box.x + box.w / 2 : box.align === 'right' ? box.x + box.w : box.x;
 const anchor = (box: Required<DevsharkBox>) => box.align === 'center' ? 'middle' : box.align === 'right' ? 'end' : 'start';
 
-/** The automatic boxes of a slide, in the order the first renderer stacked them. */
+/**
+ * The house layout (owner's edits of the first five concepts, 8 November 2026): every block left-aligned at the
+ * margin, the brand's sizes, and the slide's words stacked as one group whose middle stands a little above the slide's
+ * middle, clear of the fin. The gaps are the ones the owner set by hand: 40 px under the kicker, 48 under the
+ * headline, 56 above the code. Positions sit on the editor's 8 px grid.
+ */
+export const HOUSE_LAYOUT = { middle: 624, top: 96, gaps: { headline: 40, body: 48, code: 56 } } as const;
+const grid = (value: number) => Math.round(value / 8) * 8;
+const kickerHeight = (size: number) => size * ASCENT + 22 * (size / DEFAULT_SIZES.kicker) + 12;
+const textHeight = (value: string, key: 'headline' | 'body', size: number, width: number) => (wrap(value, FACE[key], size, width).lines.length - 1) * size * LEADING[key] + size;
+const codeHeight = (value: string, size: number) => value.split('\n').length * size * LEADING.code + CODE.pad * 1.4;
+
+/** The automatic boxes of a slide, in the house layout. */
 export function devsharkAutoBoxes(slide: DevsharkSlide, index: number): Partial<Record<StudioBlockKey, Required<DevsharkBox>>> {
   const width = SLIDE_WIDTH - MARGIN * 2;
-  const boxes: Partial<Record<StudioBlockKey, Required<DevsharkBox>>> = {};
   const headlineSize = slide.kind === 'cover' ? DEFAULT_SIZES.coverHeadline : DEFAULT_SIZES.headline;
-  if (index === 0 && slide.kind !== 'closing') boxes.kicker = { x: MARGIN, y: 168 - DEFAULT_SIZES.kicker * ASCENT, w: width, size: DEFAULT_SIZES.kicker, align: 'left' };
-  let baseline = slide.kind === 'closing' ? 330 : index > 0 ? 210 : 300;
-  boxes.headline = { x: MARGIN, y: baseline - headlineSize * ASCENT, w: width, size: headlineSize, align: 'left' };
-  const headlineLines = wrap(slide.headline, FACE.headline, headlineSize, width).lines.length;
-  baseline += (headlineLines - 1) * headlineSize * LEADING.headline + 44;
-  if (slide.body) {
-    baseline += DEFAULT_SIZES.body;
-    boxes.body = { x: MARGIN, y: baseline - DEFAULT_SIZES.body * ASCENT, w: width, size: DEFAULT_SIZES.body, align: 'left' };
-    baseline += (wrap(slide.body, FACE.body, DEFAULT_SIZES.body, width).lines.length - 1) * DEFAULT_SIZES.body * LEADING.body + 24;
+  const stack: { key: StudioBlockKey; size: number; height: number; gap: number }[] = [];
+  if (index === 0 && slide.kind !== 'closing') stack.push({ key: 'kicker', size: DEFAULT_SIZES.kicker, height: kickerHeight(DEFAULT_SIZES.kicker), gap: 0 });
+  stack.push({ key: 'headline', size: headlineSize, height: textHeight(slide.headline, 'headline', headlineSize, width), gap: stack.length ? HOUSE_LAYOUT.gaps.headline : 0 });
+  if (slide.body) stack.push({ key: 'body', size: DEFAULT_SIZES.body, height: textHeight(slide.body, 'body', DEFAULT_SIZES.body, width), gap: HOUSE_LAYOUT.gaps.body });
+  if (slide.code) stack.push({ key: 'code', size: DEFAULT_SIZES.code, height: codeHeight(slide.code, DEFAULT_SIZES.code), gap: HOUSE_LAYOUT.gaps.code });
+  const total = stack.reduce((sum, block) => sum + block.gap + block.height, 0);
+  let y = Math.max(HOUSE_LAYOUT.top, HOUSE_LAYOUT.middle - total / 2);
+  const boxes: Partial<Record<StudioBlockKey, Required<DevsharkBox>>> = {};
+  for (const block of stack) {
+    y += block.gap;
+    boxes[block.key] = { x: MARGIN, y: grid(y), w: width, size: block.size, align: 'left' };
+    y += block.height;
   }
-  if (slide.code) boxes.code = { x: MARGIN, y: baseline + 24, w: width, size: DEFAULT_SIZES.code, align: 'left' };
   return boxes;
 }
 

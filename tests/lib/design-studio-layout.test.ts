@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { devsharkAutoBoxes, layoutDevsharkSlide } from '@/lib/design-studio/devshark-layout';
+import { devsharkAutoBoxes, HOUSE_LAYOUT, layoutDevsharkSlide } from '@/lib/design-studio/devshark-layout';
 import type { DevsharkDeck } from '@/lib/marketing/devshark-deck';
 
 const assets = { finGreen: '/fin-green.svg', finInk: '/fin-ink.svg', logoWhite: '/logo.svg' };
@@ -15,6 +15,16 @@ describe('the shared devShark layout (Design Studio, 7 November 2026)', () => {
     expect(layoutDevsharkSlide(deck, 1, assets).blocks.map((block) => block.key)).toEqual(['headline', 'code']);
     expect(first.svg).toContain('CSS LAYOUT');
     expect(first.svg).toContain('xlink:href="/fin-green.svg"');
+  });
+
+  it('stacks the words in the house layout: left at the margin, one group around the slide\'s middle, on the 8 px grid', () => {
+    for (const index of [0, 1]) {
+      const { blocks } = layoutDevsharkSlide(deck, index, assets);
+      const top = Math.min(...blocks.map((block) => block.box.y)), bottom = Math.max(...blocks.map((block) => block.box.y + block.height));
+      expect(Math.abs((top + bottom) / 2 - HOUSE_LAYOUT.middle)).toBeLessThanOrEqual(8);
+      for (const block of blocks) expect(block.box).toMatchObject({ x: 80, w: 920, align: 'left' });
+      for (const block of blocks) expect(block.box.y % 8).toBe(0);
+    }
   });
 
   it('puts a block exactly at its box, with its size and alignment', () => {
