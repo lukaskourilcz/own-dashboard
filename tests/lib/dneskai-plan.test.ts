@@ -45,10 +45,13 @@ describe('dneskaiPlanAction', () => {
   it('derives the Threads twin of an approved Instagram post, approves it and renews it after an owner edit', () => {
     const approved = head({ status: 'approved' });
     expect(dneskaiPlanAction(slot(), approved, null, true, now).kind).toBe('twin');
-    expect(dneskaiPlanAction(slot(), approved, null, false, now)).toMatchObject({ kind: 'wait', code: 'threads-account-missing' });
+    const withStory = { ...slot(), story_revision_id: 's', story_base_revision_id: approved.id };
+    expect(dneskaiPlanAction(withStory, approved, null, false, now, { id: 's', status: 'approved', ready: true, content_hash: 'y' })).toMatchObject({ kind: 'wait', code: 'threads-account-missing' });
     const twinned = slot({ threads_revision_id: '55555555-5555-4555-8555-555555555555', threads_base_revision_id: approved.id });
     expect(dneskaiPlanAction(twinned, approved, { id: 't', status: 'review', ready: true, content_hash: 'x' }, true, now).kind).toBe('approve-twin');
-    expect(dneskaiPlanAction(twinned, approved, { id: 't', status: 'approved', ready: true, content_hash: 'x' }, true, now)).toEqual({ kind: 'wait', status: 'approved', code: null });
+    const doneStory = { id: 's', status: 'approved', ready: true, content_hash: 'y' };
+    const storied = { ...twinned, story_revision_id: 's', story_base_revision_id: approved.id };
+    expect(dneskaiPlanAction(storied, approved, { id: 't', status: 'approved', ready: true, content_hash: 'x' }, true, now, doneStory)).toEqual({ kind: 'wait', status: 'approved', code: null });
     expect(dneskaiPlanAction({ ...twinned, threads_base_revision_id: 'older' }, approved, { id: 't', status: 'approved', ready: true, content_hash: 'x' }, true, now).kind).toBe('twin');
   });
 
@@ -57,6 +60,19 @@ describe('dneskaiPlanAction', () => {
     expect(dneskaiPlanAction(own, head({ ready: false, render_report: { status: 'failed' } }, { assets: [] }), null, true, now).kind).toBe('rerender');
     expect(dneskaiPlanAction(own, head({ ready: false, render_report: { status: 'refused' } }, { assets: [] }), null, true, now)).toMatchObject({ code: 'render-blocked' });
     expect(dneskaiPlanAction(slot(), head({ ready: false, render_report: { status: 'failed' } }, { assets: [] }), null, true, now)).toMatchObject({ code: 'render-blocked' });
+  });
+
+  it('makes the story from the approved post, approves it and renews it after an owner edit (7 November 2026)', () => {
+    const approved = head({ status: 'approved' });
+    const twin = { id: 't', status: 'approved', ready: true, content_hash: 'x' };
+    const twinned = slot({ threads_revision_id: 't', threads_base_revision_id: approved.id });
+    expect(dneskaiPlanAction(twinned, approved, twin, true, now).kind).toBe('story');
+    const storied = { ...twinned, story_revision_id: 's', story_base_revision_id: approved.id };
+    expect(dneskaiPlanAction(storied, approved, twin, true, now, { id: 's', status: 'review', ready: true, content_hash: 'y' }).kind).toBe('approve-story');
+    expect(dneskaiPlanAction({ ...storied, story_base_revision_id: 'older' }, approved, twin, true, now, { id: 's', status: 'approved', ready: true, content_hash: 'y' }).kind).toBe('story');
+    // Without the Threads account the story still goes out; the slot keeps the Threads code.
+    expect(dneskaiPlanAction(slot(), approved, null, false, now).kind).toBe('story');
+    expect(dneskaiPlanAction({ ...slot(), story_revision_id: 's', story_base_revision_id: approved.id }, approved, null, false, now, { id: 's', status: 'approved', ready: true, content_hash: 'y' })).toMatchObject({ code: 'threads-account-missing' });
   });
 
   it('leaves owner decisions, render problems and passed slots to the owner', () => {
