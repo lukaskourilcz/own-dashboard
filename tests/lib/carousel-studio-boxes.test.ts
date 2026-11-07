@@ -39,3 +39,16 @@ describe("hand placement of DNESKAi words (Design Studio)", () => {
     expect(dneskaiAutoBoxes(template).map((block) => block.field)).toContain("headline");
   });
 });
+
+describe("placed words over a photograph", () => {
+  it("draws a placed field after every other layer", async () => {
+    const studio = await import("@/lib/carousel-studio");
+    const kit = studio.dneskaiKit("editorial")!;
+    const template = kit.resolve("figure", undefined, ["image-1"]);
+    if (!("schemaVersion" in template)) throw new Error("no figure template");
+    const layers = applyDneskaiBoxes(template, { headline: { x: 100, y: 600, w: 800, size: 60, align: "left" } }).slides[0]!.layers;
+    const last = layers.at(-1)!;
+    expect(last.type === "text" && last.slot).toBe("headline");
+    expect(layers).toHaveLength(template.slides[0]!.layers.length);
+  });
+});

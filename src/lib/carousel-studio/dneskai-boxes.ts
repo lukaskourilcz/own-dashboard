@@ -80,7 +80,11 @@ export function applyDneskaiBoxes(template: CarouselTemplate, boxes: DneskaiBoxe
     const next = { ...layer, x: placed.x / W, y: placed.y / H, width: placed.w / W, height: (area.bottom - placed.y) / H, minFontSize: Math.min(placed.size, 160), maxFontSize: placed.size, maxLines: 12, align: ALIGN_TO[placed.align], valign: "top" } as TextLayer;
     return capacity ? { ...next, maxChars: clamp(Math.min(layer.maxChars, capacity(next)), 1, 1_000) } : next;
   });
-  return { ...template, slides: [{ ...slide, layers }, ...template.slides.slice(1)] };
+  // Placed words are drawn last, so a field moved over a photograph stands on it instead of under it.
+  const placedSlots = new Set([...Object.keys(boxes).filter(isField), ...(moved ? ["quote-mark"] : [])]);
+  const onTop = (layer: Layer) => layer.type === "text" && placedSlots.has(layer.slot);
+  const ordered = [...layers.filter((layer) => !onTop(layer)), ...layers.filter(onTop)];
+  return { ...template, slides: [{ ...slide, layers: ordered }, ...template.slides.slice(1)] };
 }
 
 export const DNESKAI_BOX_LIMITS = { width: W, height: H, minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT } as const;
