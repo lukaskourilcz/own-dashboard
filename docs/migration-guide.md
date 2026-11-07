@@ -955,3 +955,10 @@ in the plan or published cannot change. It also adds `devshark-studio` to the hi
 the story. Every approved Instagram post of the plan gets a story made from its cover slide
 (`composeStoryFromCover`, 1080 × 1920, no model call), ten minutes after the post. Instagram publishes stories through
 the API only for Business accounts; @dneskai was switched to Business on 7 November 2026.
+
+## devShark publishing, 7 November 2026
+
+`20261107220000_devshark_publish.sql` adds `instagram_revision_id`, `threads_revision_id` and `story_revision_id` to
+`marketing_devshark_plan` and `marketing_devshark_plan_approve`: the service role approves a revision only when a plan
+slot of a planned concept names it, with the source, account and schedule checks of the DNESKAi approval. Replayed in
+PGlite (`tests/lib/devshark-plan-database.test.ts`).

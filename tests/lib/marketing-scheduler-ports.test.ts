@@ -88,7 +88,7 @@ describe('scheduler ports', () => {
     const { db, log } = fakeDb({ marketing_publications: [{ id: other }] });
     const ports = createMarketingSchedulerPorts(db, owner, {});
     expect(await ports.nextReconciliation('2026-10-20T20:00:00.000Z')).toBe(other);
-    expect(log[0].calls).toEqual(expect.arrayContaining([['eq', ['marketing_revisions.brand', 'dneskai']], ['eq', ['status', 'reconciliation']], ['or', ['last_checked_at.is.null,last_checked_at.lt."2026-10-20T20:00:00.000Z"']]]));
+    expect(log[0].calls).toEqual(expect.arrayContaining([['in', ['marketing_revisions.brand', ['dneskai']]], ['eq', ['status', 'reconciliation']], ['or', ['last_checked_at.is.null,last_checked_at.lt."2026-10-20T20:00:00.000Z"']]]));
     mocks.reconcile.mockResolvedValue({ status: 'reconciliation', errorCode: 'remote-status-unavailable', remoteMediaId: 'private' });
     expect(await ports.reconcile(other)).toEqual({ status: 'reconciliation', errorCode: 'remote-status-unavailable' });
     expect(log[1].calls[0][0]).toBe('update');

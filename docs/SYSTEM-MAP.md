@@ -188,8 +188,11 @@ large Manrope type with green highlights and the large fin; no corner fin and no
 `marketing_devshark_drafts`. The owner edits, previews and approves each in the devShark project's **Studio** tab
 (`/api/marketing/devshark/drafts`, `/api/marketing/devshark/preview`); a saved edit returns the concept to review. Behind
 `DEVSHARK_PLAN_ENABLED` the tick's `devshark-plan` step places approved concepts into `marketing_devshark_plan`: one
-Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Publishing waits for the devShark
-Instagram and Threads accounts (NEEDED.md). The first five concepts are in `content/devshark/concepts-2026-11-07.json`.
+Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Once a concept is in the plan, the same step renders it, stores
+the slides and saves and approves one revision per channel: the Instagram carousel at 12:00 with a story from its
+cover ten minutes later, and the Threads post (12:00 as the twin, 19:00 alone). Each revision cites the concept as
+its source (`devshark-source.ts`), so a concept edited afterwards stops them; the publishing step then sends devShark
+like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`.
 
 ### Review and approval: the Design Lab
 

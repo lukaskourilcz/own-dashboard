@@ -128,7 +128,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000, plan: 12_000, "devshark-plan": 3_000, engagement: 8_000, "audio-trends": 12_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000, plan: 12_000, "devshark-plan": 12_000, engagement: 8_000, "audio-trends": 12_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -230,7 +230,7 @@ export interface MarketingSchedulerPorts {
   /** The publishing plan (owner decision, 7 November 2026): fills the 30 days and prepares the coming slots (`advanceDneskaiPlan`). */
   plan?(project: string, now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiPlanResult>;
   /** devShark (owner request, 7 November 2026): approved concepts into the one-Instagram, two-Threads daily plan. */
-  devsharkPlan?(now: Date): Promise<{ placed: number; waiting: number }>;
+  devsharkPlan?(now: Date, options?: { signal: AbortSignal; remainingMs: () => number }): Promise<{ placed: number; waiting: number; prepared?: number; approved?: number; errors?: string }>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -629,10 +629,16 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
 
   const devsharkPlan = ports.devsharkPlan;
   if (devsharkPlan && env.DEVSHARK_PLAN_ENABLED === "true") minuteSteps.push({
-    category: MARKETING_TICK_DEVSHARK_PLAN, lease: null,
-    async run({ now }): Promise<StepOutcome> {
-      const result = await devsharkPlan(now());
-      return { status: result.placed ? "done" : "noop", detail: { placed: result.placed, waiting: result.waiting } };
+    // It renders a concept at most once per tick, so it runs under the briefs lease like the DNESKAi plan.
+    category: MARKETING_TICK_DEVSHARK_PLAN, lease: "briefs",
+    async precheck(): Promise<StepOutcome | null> {
+      if (await yieldToPublication()) return yielded;
+      return null;
+    },
+    async run({ now, signal: abort, remainingMs }): Promise<StepOutcome> {
+      const result = await devsharkPlan(now(), { signal: abort, remainingMs });
+      const worked = result.placed + (result.prepared ?? 0) + (result.approved ?? 0) > 0;
+      return { status: worked ? "done" : "noop", detail: { placed: result.placed, waiting: result.waiting, prepared: result.prepared ?? 0, approved: result.approved ?? 0, ...(result.errors ? { errors: result.errors } : {}) } };
     },
   });
 

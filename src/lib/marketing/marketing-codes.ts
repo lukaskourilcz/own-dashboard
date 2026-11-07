@@ -40,6 +40,8 @@ const CODES = {
   // Approval (POST /api/marketing/revisions approve) and owner decisions.
   'revision-not-ready': ['edit', 'This version has no finished render yet, so it cannot be approved.', 'Tato verze ještě nemá hotové vykreslení, proto ji nelze schválit.'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
+  // devShark publishing (7 November 2026).
+  'instagram-account-missing': ['account', 'The Instagram account is not verified yet; the post waits.', 'Účet na Instagramu ještě není ověřený; příspěvek čeká.'],
   // The devShark studio (7 November 2026).
   'network-unavailable': ['retry', 'The server could not be reached.', 'Server není dostupný.'],
   'response-unreadable': ['retry', 'The server answered in a form this screen cannot read.', 'Server odpověděl v podobě, kterou tato obrazovka neumí přečíst.'],
@@ -49,7 +51,7 @@ const CODES = {
   'plan-post-missing': ['investigate', 'The post this slot was planned for no longer exists.', 'Příspěvek naplánovaný do tohoto slotu už neexistuje.'],
   'plan-post-superseded': ['edit', 'A newer source replaced this post, so the plan cannot send it.', 'Novější zdroj tento příspěvek nahradil, takže ho plán nemůže odeslat.'],
   'publish-failed': ['investigate', 'Publishing this post failed.', 'Publikování tohoto příspěvku selhalo.'],
-  'threads-account-missing': ['account', 'The @dneskai Threads profile is not connected yet; the Threads post waits.', 'Profil @dneskai na Threads ještě není napojený; příspěvek pro Threads čeká.'],
+  'threads-account-missing': ['account', 'The Threads profile is not connected yet; the Threads post waits.', 'Profil na Threads ještě není napojený; příspěvek pro Threads čeká.'],
   'threads-slot-passed': ['none', 'The time passed before the Threads post was ready; only Instagram went out.', 'Čas uplynul dřív, než byl příspěvek pro Threads připravený; vyšel jen na Instagramu.'],
   'slot-passed': ['none', 'The slot passed before the post was approved.', 'Čas slotu uplynul dřív, než byl příspěvek schválen.'],
   'threads-twin-not-ready': ['edit', 'The Threads version is not ready: its text or slides do not fit Threads.', 'Verze pro Threads není připravená: text nebo slidy se na Threads nevejdou.'],

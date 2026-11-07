@@ -8,6 +8,7 @@ import { marketingPilotConfiguration } from './pilot';
 import { previewPilotRetired } from './preview-pilot';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DneskaiBriefSourceError, refreshDneskaiBriefPacket, type DneskaiBriefDatabase } from './dneskai-brief-source';
+import { DEVSHARK_DRAFT_SOURCE_PREFIX, refreshDevsharkDraftPacket } from './devshark-source';
 
 type SourcePreviewShare = { token: string; origin: string };
 export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
@@ -172,7 +173,18 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
     if ('held' in refreshed) { result.held.push({ sourceId: previous.sourceId, reason: refreshed.held }); continue; }
     append(refreshed.packet, previous.sourceId, true);
   }
-  const bridgeIds = input.sourceIds?.filter(id => !briefs.some(packet => packet.sourceId === id));
+  // devShark concepts (7 November 2026) are refreshed from the owner's own concept store, like DNESKAi briefs.
+  const concepts = input.brand === 'devshark' ? [...new Set(input.sourceIds ?? [])].filter(id => id.startsWith(DEVSHARK_DRAFT_SOURCE_PREFIX)) : [];
+  for (const id of concepts) {
+    if (!input.owner) { result.dropped++; result.held.push({ sourceId: id, reason: 'concept-owner-required' }); continue; }
+    let refreshed;
+    // The orchestrator passes its full service client; the brief path only types the rpc it uses.
+    try { refreshed = await refreshDevsharkDraftPacket((input.db ?? createAdminClient()) as unknown as Parameters<typeof refreshDevsharkDraftPacket>[0], input.owner, id, now); }
+    catch { throw new SourceRefreshError('source-current-unavailable'); }
+    if ('held' in refreshed) { result.held.push({ sourceId: id, reason: refreshed.held }); continue; }
+    append(refreshed.packet, id);
+  }
+  const bridgeIds = input.sourceIds?.filter(id => !briefs.some(packet => packet.sourceId === id) && !concepts.includes(id));
   if (bridgeIds && !bridgeIds.length) return result;
   input = { ...input, ...(bridgeIds ? { sourceIds: bridgeIds } : {}) };
   const config = input.config ?? sourceRefreshConfig(input.brand, input.env);
