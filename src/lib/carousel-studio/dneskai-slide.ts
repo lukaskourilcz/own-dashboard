@@ -12,8 +12,10 @@ import { layoutDneskaiSlide, type DneskaiLaidPicture } from "./dneskai-layout";
 import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./dneskai-photo";
 import { cropRegion } from "./images";
 import { CAROUSEL_BRANDS } from "./library";
-import { charactersPerLine } from "./text";
-import { carouselTextFits, renderCarouselSlidePng } from "./renderer";
+import { carouselTextFits, renderCarouselSlidePng, validateTemplateAsRendered } from "./renderer";
+
+/** What a hand-placed slide may fail without refusing: contrast is reported as advice, cut copy is refused per field. */
+const DNESKAI_PLACED_RELAXED_CHECKS = ["contrast", "apca", "overflow"] as const;
 import { ImageCropSchema, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
 import { applyDneskaiBoxes, dneskaiAutoBoxes, type DneskaiBoxes, type DneskaiLaidBlock } from "./dneskai-boxes";
 export { DNESKAI_EDITABLE_FIELDS, DNESKAI_BOX_LIMITS, clampDneskaiBox, type DneskaiBox, type DneskaiBoxes, type DneskaiEditableField, type DneskaiLaidBlock } from "./dneskai-boxes";
@@ -134,7 +136,9 @@ export type DneskaiProblemCode =
   | "image-hash-mismatch"
   | "image-low-resolution"
   | "image-upscaled"
-  | "crop-invalid";
+  | "crop-invalid"
+  /** Advice only: a hand-placed field stands where its colour has less contrast than the kit guarantees. */
+  | "text-contrast-low";
 
 export interface DneskaiSlideProblem {
   code: DneskaiProblemCode;
@@ -370,8 +374,7 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
     text: Object.fromEntries(fits.map((fit) => [fit.slot, { lines: fit.fitted.lines.length, fontSize: fit.fitted.fontSize, capHeight: fit.face.capHeight / 1000 }])),
     pictures
   });
-  const brand = CAROUSEL_BRANDS["caught-up"];
-  const laid = applyDneskaiBoxes(auto, input.layout, (layer) => charactersPerLine({ widthPx: layer.width * MASTER_CANVAS.width, fontSize: layer.minFontSize, family: brand.fonts[layer.fontToken], weight: layer.fontWeight, tracking: layer.tracking, locale: layer.lang ?? input.locale ?? "cs" }) * layer.maxLines);
+  const laid = applyDneskaiBoxes(auto, input.layout);
   // A placed field is set at its fixed size in its new frame: fitted again there, and cut copy is refused as before.
   if (laid !== auto) {
     clipped.length = 0;
@@ -381,6 +384,10 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
         clipped.push(problem("text-clipped", false, field, `The ${field} does not fit its placed frame whole and would be cut; make it smaller, wider or shorter.`));
       }
     }
+    // The kit guarantees contrast only where it put the words; a moved field is checked and reported, never refused.
+    const low = validateTemplateAsRendered(laid, CAROUSEL_BRANDS["caught-up"], MASTER_FORMAT, kit.look)
+      .some((check) => (check.id === "contrast" || check.id === "apca") && check.status === "fail");
+    if (low) clipped.push(problem("text-contrast-low", false, null, "A placed field stands where it has less contrast than the kit guarantees; check that it reads."));
   }
 
   // Measured on the region the crop actually cuts in the frame the picture is laid out in, not on
@@ -432,7 +439,8 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
     format: MASTER_FORMAT,
     images,
     deck: input.position,
-    index: 0
+    index: 0,
+    ...(input.layout && Object.keys(input.layout).length ? { relaxedChecks: DNESKAI_PLACED_RELAXED_CHECKS } : {})
   });
   if (!rendered) throw new Error(`Template ${template.id} has no slide to render`);
   return {

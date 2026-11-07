@@ -52,3 +52,17 @@ describe("placed words over a photograph", () => {
     expect(layers).toHaveLength(template.slides[0]!.layers.length);
   });
 });
+
+describe("placed words the kit did not shade for", () => {
+  it("renders every slide type with a moved headline and reports low contrast as advice", async () => {
+    const studio = await import("@/lib/carousel-studio");
+    for (const entry of await studio.dneskaiGoldenCases()) {
+      const plain = await studio.renderDneskaiSlide({ ...entry.input, kit: "spotlight" });
+      const headline = plain.blocks.find((block) => block.field === "headline");
+      if (!headline) continue;
+      const moved = await studio.renderDneskaiSlide({ ...entry.input, kit: "spotlight", layout: { headline: { ...headline.box, y: 200, align: "left" } } });
+      expect({ name: entry.name, status: moved.status }).toEqual({ name: entry.name, status: "rendered" });
+      expect(moved.problems.filter((problem) => problem.code === "text-contrast-low").every((problem) => !problem.blocking)).toBe(true);
+    }
+  }, 120000);
+});
