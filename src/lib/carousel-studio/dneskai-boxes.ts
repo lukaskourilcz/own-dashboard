@@ -37,10 +37,10 @@ export function clampDneskaiBox(box: DneskaiBox): DneskaiBox {
   return { x: clamp(Math.round(box.x), 0, W - w), y: clamp(Math.round(box.y), 0, H - MIN_HEIGHT), w, size: clamp(Math.round(box.size), 16, 200), align: box.align };
 }
 
-/** The text layers' frames as the kit laid them out, as boxes: what the editor starts from. */
-export function dneskaiAutoBoxes(template: CarouselTemplate): DneskaiLaidBlock[] {
+/** The text layers' frames as boxes, what the editor starts from. `heights` caps a placed field at its set lines. */
+export function dneskaiAutoBoxes(template: CarouselTemplate, heights: Readonly<Record<string, number>> = {}): DneskaiLaidBlock[] {
   return template.slides[0]!.layers.flatMap((layer) => layer.type === "text" && isField(layer.slot)
-    ? [{ field: layer.slot, height: layer.height * H, box: { x: layer.x * W, y: layer.y * H, w: layer.width * W, size: layer.maxFontSize, align: ALIGN_FROM[layer.align] } }]
+    ? [{ field: layer.slot, height: Math.min(layer.height * H, heights[layer.slot] ?? Infinity), box: { x: layer.x * W, y: layer.y * H, w: layer.width * W, size: layer.maxFontSize, align: ALIGN_FROM[layer.align] } }]
     : []);
 }
 
