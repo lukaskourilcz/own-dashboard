@@ -42,3 +42,16 @@ describe('devShark social slides', () => {
     await expect(renderDevsharkDeck({ ...deck, slides: [{ kind: 'cover', headline: 'Long', body: 'word '.repeat(80).trim() }, deck.slides[3]!] })).rejects.toThrow();
   }, 60_000);
 });
+
+describe('the five devShark concepts of 7 November 2026', () => {
+  it('parse and render without overflow', async () => {
+    const { readFileSync } = await import('node:fs');
+    const concepts = JSON.parse(readFileSync('content/devshark/concepts-2026-11-07.json', 'utf8')) as Array<{ title: string; caption: string; deck: DevsharkDeck }>;
+    expect(concepts).toHaveLength(5);
+    for (const concept of concepts) {
+      expect(concept.caption.length).toBeLessThanOrEqual(2200);
+      expect(concept.caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0).toBeLessThanOrEqual(10);
+      expect((await renderDevsharkDeck(concept.deck)).length).toBe(concept.deck.slides.length);
+    }
+  }, 120_000);
+});
