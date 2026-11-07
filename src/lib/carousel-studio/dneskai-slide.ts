@@ -12,8 +12,11 @@ import { layoutDneskaiSlide, type DneskaiLaidPicture } from "./dneskai-layout";
 import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./dneskai-photo";
 import { cropRegion } from "./images";
 import { CAROUSEL_BRANDS } from "./library";
+import { charactersPerLine } from "./text";
 import { carouselTextFits, renderCarouselSlidePng } from "./renderer";
 import { ImageCropSchema, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
+import { applyDneskaiBoxes, dneskaiAutoBoxes, type DneskaiBoxes, type DneskaiLaidBlock } from "./dneskai-boxes";
+export { DNESKAI_EDITABLE_FIELDS, DNESKAI_BOX_LIMITS, clampDneskaiBox, type DneskaiBox, type DneskaiBoxes, type DneskaiEditableField, type DneskaiLaidBlock } from "./dneskai-boxes";
 
 /**
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).
@@ -111,6 +114,8 @@ export interface DneskaiSlideInput {
   /** The slide's place in the carousel; a single post is `{ 0, 1 }`. No slide prints it. */
   position: { index: number; count: number };
   locale?: "cs" | "en";
+  /** The owner's hand placement of the words (`dneskai-boxes.ts`). Absent: the kit's own layout, unchanged. */
+  layout?: DneskaiBoxes;
 }
 
 export type DneskaiProblemCode =
@@ -153,6 +158,8 @@ export interface DneskaiSlideResult {
   template: { id: string; version: string } | null;
   /** The exact payload the slide was (or would have been) drawn from. */
   payload: CarouselPayload | null;
+  /** The editable text frames as drawn, for the Design Studio's overlay. Empty when the slide could not be laid out. */
+  blocks: DneskaiLaidBlock[];
 }
 
 const FIXED_STRINGS = {
@@ -357,12 +364,24 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
       clipped.push(problem("text-clipped", false, field, `The ${field} does not fit ${fit.slot} whole and would be cut; shorten it.`));
     }
   }
-  const laid = layoutDneskaiSlide({
+  const auto = layoutDneskaiSlide({
     flow: kit.flows.get(template.id)!, metrics: kit.metrics,
     template,
     text: Object.fromEntries(fits.map((fit) => [fit.slot, { lines: fit.fitted.lines.length, fontSize: fit.fitted.fontSize, capHeight: fit.face.capHeight / 1000 }])),
     pictures
   });
+  const brand = CAROUSEL_BRANDS["caught-up"];
+  const laid = applyDneskaiBoxes(auto, input.layout, (layer) => charactersPerLine({ widthPx: layer.width * MASTER_CANVAS.width, fontSize: layer.minFontSize, family: brand.fonts[layer.fontToken], weight: layer.fontWeight, tracking: layer.tracking, locale: layer.lang ?? input.locale ?? "cs" }) * layer.maxLines);
+  // A placed field is set at its fixed size in its new frame: fitted again there, and cut copy is refused as before.
+  if (laid !== auto) {
+    clipped.length = 0;
+    for (const fit of carouselTextFits({ template: laid, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT, look: kit.look })) {
+      if (fit.fitted.truncated && payload.strings[fit.slot]) {
+        const field = fieldOf(fit.slot, input);
+        clipped.push(problem("text-clipped", false, field, `The ${field} does not fit its placed frame whole and would be cut; make it smaller, wider or shorter.`));
+      }
+    }
+  }
 
   // Measured on the region the crop actually cuts in the frame the picture is laid out in, not on
   // the file: a zoom or a frame of another shape draws fewer of the picture's pixels, and those are
@@ -403,7 +422,7 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
   const { kit, problems, template, payload, images } = await inspect(input);
   const reference = template ? { id: template.id, version: template.version } : null;
   if (!template || !payload || problems.some((entry) => entry.blocking)) {
-    return { kit:kit?.id??null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload };
+    return { kit:kit?.id??null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload, blocks: template ? dneskaiAutoBoxes(template) : [] };
   }
   const rendered = await renderCarouselSlidePng({
     template,
@@ -425,6 +444,7 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
     truncatedSlots: rendered.truncatedSlots,
     problems,
     template: reference,
-    payload
+    payload,
+    blocks: dneskaiAutoBoxes(template)
   };
 }
