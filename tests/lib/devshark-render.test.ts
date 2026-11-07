@@ -10,6 +10,8 @@ const deck: DevsharkDeck = { schemaVersion: 'devshark-deck/1', cover: 'light', s
   { kind: 'closing', headline: 'Quizzes and [[coding tasks]].' },
 ] };
 
+const slidesWithoutWarnings = (slides: Array<{ warnings: unknown[] }>) => slides.every((slide) => slide.warnings.length === 0);
+
 describe('devShark social slides', () => {
   it('keeps the space before a green phrase and glues the full stop after it', () => {
     expect(devsharkTokens('and [[coding tasks]] for you.')[0]).toEqual([
@@ -38,8 +40,11 @@ describe('devShark social slides', () => {
     for (const slide of slides.slice(1)) expect(slide.svg).not.toContain('<pattern');
   }, 60_000);
 
-  it('refuses text that would run into the fin', async () => {
-    await expect(renderDevsharkDeck({ ...deck, slides: [{ kind: 'cover', headline: 'Long', body: 'word '.repeat(80).trim() }, deck.slides[3]!] })).rejects.toThrow();
+  it('renders text over the fin and only warns about text off the slide (7 November 2026)', async () => {
+    const long = await renderDevsharkDeck({ ...deck, slides: [{ kind: 'cover', headline: 'Long', body: 'word '.repeat(80).trim() }, deck.slides[3]!] });
+    expect(long).toHaveLength(2);
+    expect(long[0]!.warnings).toContainEqual({ block: 'body', code: 'outside-slide' });
+    expect(slidesWithoutWarnings(await renderDevsharkDeck(deck))).toBe(true);
   }, 60_000);
 });
 
