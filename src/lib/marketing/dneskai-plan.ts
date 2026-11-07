@@ -115,25 +115,52 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
 }
 
 /** The empty slots from `from` through `until`: Instagram and Threads at the three day times, Threads alone at 20:00. */
-export function dneskaiPlanEmptySlots(taken: ReadonlyArray<Pick<DneskaiPlanRow, 'date' | 'local_time'>>, from: string, until: string): Array<{ date: string; time: string; instagram: boolean }> {
+export function dneskaiPlanEmptySlots(taken: ReadonlyArray<Pick<DneskaiPlanRow, 'date' | 'local_time'>>, from: string, until: string, skip: readonly string[] = []): Array<{ date: string; time: string; instagram: boolean }> {
   const used = new Set(taken.map((slot) => `${slot.date} ${slot.local_time}`));
   const result: Array<{ date: string; time: string; instagram: boolean }> = [];
   for (let date = from; date <= until; date = pragueDayAfter(date, 1)) {
-    for (const time of DNESKAI_PLAN_TIMES) if (!used.has(`${date} ${time}`)) result.push({ date, time, instagram: (DNESKAI_PLAN_INSTAGRAM_TIMES as readonly string[]).includes(time) });
+    for (const time of DNESKAI_PLAN_TIMES) if (!skip.includes(time) && !used.has(`${date} ${time}`)) result.push({ date, time, instagram: (DNESKAI_PLAN_INSTAGRAM_TIMES as readonly string[]).includes(time) });
   }
   return result;
 }
 
-export type DneskaiPlanResult = { filled: number; worked: number; rendered: number; approved: number; twins: number; codes: Record<string, number> };
+/**
+ * The times the night's news takes (owner decision, 7 November 2026): with new topics on, education fills only the
+ * other times ahead, the plan approves the night's news topics into these and education takes what is still free on
+ * the day itself from `DNESKAI_NEWS_FALLBACK_HOUR`.
+ */
+export const DNESKAI_PLAN_NEWS_TIMES = ['08:00', '17:00', '20:00'] as const;
+export const DNESKAI_NEWS_FALLBACK_HOUR = 5;
+/** News is placed and the fallback filled only while the slot is at least this far away, so it can be generated. */
+const NEWS_LEAD_MS = 90 * 60_000;
+
+/** Pairs the night's news topics, best rank first, with the free news times of their day that are still far enough away. */
+export function dneskaiNewsPlacement(topics: ReadonlyArray<{ id: string; date: string; rank: number }>, taken: ReadonlyArray<Pick<DneskaiPlanRow, 'date' | 'local_time'>>, now: Date): Array<{ topicId: string; date: string; time: string; instagram: boolean }> {
+  const used = new Set(taken.map((slot) => `${slot.date} ${slot.local_time}`));
+  const result: Array<{ topicId: string; date: string; time: string; instagram: boolean }> = [];
+  for (const topic of [...topics].sort((a, b) => a.date.localeCompare(b.date) || a.rank - b.rank)) {
+    const time = DNESKAI_PLAN_NEWS_TIMES.find((candidate) => !used.has(`${topic.date} ${candidate}`) && Date.parse(pragueScheduledAt(topic.date, candidate)) >= now.getTime() + NEWS_LEAD_MS);
+    if (!time) continue;
+    used.add(`${topic.date} ${time}`);
+    result.push({ topicId: topic.id, date: topic.date, time, instagram: time !== '20:00' });
+  }
+  return result;
+}
+
+export type DneskaiPlanResult = { filled: number; news?: number; worked: number; rendered: number; approved: number; twins: number; codes: Record<string, number> };
 
 const read = <T>(result: { data: T | null; error: unknown }, code: string): T => { if (result.error) throw new Error(code); return result.data as T; };
 const SLOT_COLUMNS = 'id,user_id,project_id,date,local_time,instagram,threads,kind,revision_id,topic_id,head_revision_id,threads_revision_id,written_revision_id,threads_base_revision_id,story_revision_id,story_base_revision_id,status,code';
 
 /** Fills empty slots with approved, unplanned education topics, oldest approval first. */
-async function fillPlan(db: Database, owner: string, project: string, today: string): Promise<number> {
+async function fillPlan(db: Database, owner: string, project: string, today: string, options: { news: boolean; now: Date } = { news: false, now: new Date() }): Promise<number> {
   const from = pragueDayAfter(today, 1), until = pragueDayAfter(today, DNESKAI_PLAN_DAYS - 1);
-  const taken = read(await db.from('marketing_dneskai_plan').select('date,local_time').eq('user_id', owner).eq('project_id', project).gte('date', from).lte('date', until).limit(400), 'plan-unavailable') as Array<{ date: string; local_time: string }>;
-  const empty = dneskaiPlanEmptySlots(taken, from, until).slice(0, FILL_LIMIT);
+  const taken = read(await db.from('marketing_dneskai_plan').select('date,local_time').eq('user_id', owner).eq('project_id', project).gte('date', today).lte('date', until).limit(400), 'plan-unavailable') as Array<{ date: string; local_time: string }>;
+  // With the night's news on, the news times stay free ahead; on the day itself, from 05:00, education takes what is left.
+  const ahead = dneskaiPlanEmptySlots(taken, from, until, options.news ? DNESKAI_PLAN_NEWS_TIMES : []);
+  const fallback = options.news && pragueHourOf(options.now) >= DNESKAI_NEWS_FALLBACK_HOUR
+    ? dneskaiPlanEmptySlots(taken, today, today).filter((slot) => Date.parse(pragueScheduledAt(slot.date, slot.time)) >= options.now.getTime() + NEWS_LEAD_MS) : [];
+  const empty = [...fallback, ...ahead].slice(0, FILL_LIMIT);
   if (!empty.length) return 0;
   const topics = read(await db.from('marketing_dneskai_topics').select('id,evidence').eq('user_id', owner).eq('project_id', project).eq('kind', 'education').eq('status', 'approved')
     .is('evidence->>planDate', null).order('approved_at', { ascending: true }).order('created_at', { ascending: true }).limit(empty.length), 'plan-topics-unavailable') as Array<{ id: string; evidence: Record<string, unknown> | null }>;
@@ -237,11 +264,41 @@ async function approve(db: Database, owner: string, id: string, hash: string) {
   if (error) throw new Error(`plan-approval-${(error.message ?? 'failed').replace(/[^a-z]+/gi, '-').toLowerCase().replace(/^-|-$/g, '').slice(0, 60) || 'failed'}`);
 }
 
-export async function advanceDneskaiPlan(db: Database, owner: string, project: string, input: { now: Date; signal: AbortSignal; remainingMs: () => number }): Promise<DneskaiPlanResult> {
+/**
+ * The night's news topics into the plan (owner decision, 7 November 2026: the plan approves news itself). Proposed
+ * news topics for today or later take the free news times of their day, best brief rank first; the topic is approved
+ * for the owner and the topic bridge briefs it for exactly that slot.
+ */
+async function placeNews(db: Database, owner: string, project: string, now: Date): Promise<number> {
+  const today = pragueMarketingDate(now);
+  const topics = read(await db.from('marketing_dneskai_topics').select('id,brief_id,evidence').eq('user_id', owner).eq('project_id', project).eq('kind', 'news').eq('status', 'proposed')
+    .gte('evidence->>targetDate', today).not('brief_id', 'is', null).order('created_at', { ascending: false }).limit(24), 'plan-news-unavailable') as Array<{ id: string; brief_id: string; evidence: Record<string, unknown> | null }>;
+  if (!topics.length) return 0;
+  const briefs = read(await db.from('marketing_dneskai_briefs').select('id,rank,target_date').eq('user_id', owner).in('id', topics.map((topic) => topic.brief_id)).limit(24), 'plan-news-unavailable') as Array<{ id: string; rank: number; target_date: string }>;
+  const candidates = topics.flatMap((topic) => { const brief = briefs.find((item) => item.id === topic.brief_id); return brief ? [{ id: topic.id, date: brief.target_date, rank: brief.rank }] : []; });
+  const dates = [...new Set(candidates.map((topic) => topic.date))];
+  const taken = read(await db.from('marketing_dneskai_plan').select('date,local_time').eq('user_id', owner).eq('project_id', project).in('date', dates).limit(100), 'plan-unavailable') as Array<{ date: string; local_time: string }>;
+  let placed = 0;
+  for (const slot of dneskaiNewsPlacement(candidates, taken, now)) {
+    const inserted = await db.from('marketing_dneskai_plan').insert({ user_id: owner, project_id: project, date: slot.date, local_time: slot.time, instagram: slot.instagram, threads: true, kind: 'news', topic_id: slot.topicId }).select('id');
+    if (inserted.error) continue;
+    const topic = topics.find((item) => item.id === slot.topicId)!;
+    const { error } = await db.from('marketing_dneskai_topics').update({ status: 'approved', approved_at: now.toISOString(), updated_at: now.toISOString(),
+      evidence: { ...(topic.evidence ?? {}), planDate: slot.date, planTime: slot.time, approvedBy: 'dneskai-plan' } }).eq('user_id', owner).eq('id', slot.topicId).eq('status', 'proposed');
+    if (error) throw new Error('plan-topic-write-failed');
+    placed++;
+  }
+  return placed;
+}
+
+const pragueHourOf = (now: Date) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hour: '2-digit', hourCycle: 'h23' }).format(now));
+
+export async function advanceDneskaiPlan(db: Database, owner: string, project: string, input: { now: Date; signal: AbortSignal; remainingMs: () => number; news?: boolean }): Promise<DneskaiPlanResult> {
   z.uuid().parse(owner); z.uuid().parse(project);
   const result: DneskaiPlanResult = { filled: 0, worked: 0, rendered: 0, approved: 0, twins: 0, codes: {} };
   const today = pragueMarketingDate(input.now);
-  result.filled = await fillPlan(db, owner, project, today);
+  if (input.news) result.news = await placeNews(db, owner, project, input.now);
+  result.filled = await fillPlan(db, owner, project, today, { news: !!input.news, now: input.now });
   const slots = read(await db.from('marketing_dneskai_plan').select(SLOT_COLUMNS).eq('user_id', owner).eq('project_id', project).gte('date', today)
     .lte('date', pragueDayAfter(today, DNESKAI_PLAN_HORIZON_DAYS)).not('status', 'in', '(published,skipped)').order('date').order('local_time').limit(20), 'plan-unavailable') as DneskaiPlanRow[];
   const account = await threadsAccountOf(db, owner);

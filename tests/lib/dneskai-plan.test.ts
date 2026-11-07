@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
-import { dneskaiPlanAction, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
+import { dneskaiNewsPlacement, dneskaiPlanAction, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
 import { deck } from './marketing-dneskai-revision-fixture';
 
 /** The plan step's decisions (owner decision, 7 November 2026), one slot at a time. Synthetic values only. */
@@ -95,5 +95,25 @@ describe('dneskaiPlanEmptySlots', () => {
   it('is off unless DNESKAI_PLAN_ENABLED is true', () => {
     expect(dneskaiPlanEnabled({})).toBe(false);
     expect(dneskaiPlanEnabled({ DNESKAI_PLAN_ENABLED: 'true' })).toBe(true);
+  });
+});
+
+describe('the night\'s news in the plan (7 November 2026)', () => {
+  it('keeps the news times free ahead when news is on', () => {
+    const empty = dneskaiPlanEmptySlots([], '2026-11-20', '2026-11-20', ['08:00', '17:00', '20:00']);
+    expect(empty.map((slot) => slot.time)).toEqual(['12:30']);
+  });
+
+  it('places news topics best rank first into their day\'s free news times, only while they can still be generated', () => {
+    const evening = new Date('2026-11-19T22:00:00Z'); // 23:00 in Prague
+    const placed = dneskaiNewsPlacement([
+      { id: 'b', date: '2026-11-20', rank: 2 }, { id: 'a', date: '2026-11-20', rank: 1 }, { id: 'c', date: '2026-11-20', rank: 3 }, { id: 'd', date: '2026-11-20', rank: 4 },
+    ], [{ date: '2026-11-20', local_time: '17:00' }], evening);
+    expect(placed).toEqual([
+      { topicId: 'a', date: '2026-11-20', time: '08:00', instagram: true },
+      { topicId: 'b', date: '2026-11-20', time: '20:00', instagram: false },
+    ]);
+    const morning = new Date('2026-11-20T06:00:00Z'); // 07:00 in Prague: 08:00 is too close
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '17:00' });
   });
 });
