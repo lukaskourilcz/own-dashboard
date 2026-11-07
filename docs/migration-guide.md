@@ -962,3 +962,9 @@ the API only for Business accounts; @dneskai was switched to Business on 7 Novem
 `marketing_devshark_plan` and `marketing_devshark_plan_approve`: the service role approves a revision only when a plan
 slot of a planned concept names it, with the source, account and schedule checks of the DNESKAi approval. Replayed in
 PGlite (`tests/lib/devshark-plan-database.test.ts`).
+
+## devShark concept cost, 7 November 2026
+
+`20261107230000_devshark_concept_cost.sql` adds `cost_usd` to `marketing_devshark_drafts` and an index on generated
+concepts by time. The `devshark-concepts` step sums the last 24 hours before each call to stay under
+`DEVSHARK_CONCEPT_DAILY_USD`.

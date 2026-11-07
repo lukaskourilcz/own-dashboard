@@ -40,6 +40,15 @@ const CODES = {
   // Approval (POST /api/marketing/revisions approve) and owner decisions.
   'revision-not-ready': ['edit', 'This version has no finished render yet, so it cannot be approved.', 'Tato verze ještě nemá hotové vykreslení, proto ji nelze schválit.'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
+  // devShark concept generation (7 November 2026).
+  'concept-deck-invalid': ['auto', 'The model wrote a concept in the wrong shape; it was set aside.', 'Model napsal koncept ve špatném tvaru; byl odložen.'],
+  'concept-closing-missing': ['auto', 'The model left out the closing slide; the concept was set aside.', 'Model vynechal závěrečný slide; koncept byl odložen.'],
+  'concept-does-not-fit': ['auto', 'The model wrote more text than the slides hold; the concept was set aside.', 'Model napsal víc textu, než se na slidy vejde; koncept byl odložen.'],
+  'concept-queue-full': ['none', 'Five concepts already wait for your approval in the studio.', 'Ve studiu už na schválení čeká pět konceptů.'],
+  'concept-daily-count-reached': ['budget', 'Today\'s number of generated concepts is reached.', 'Dnešní počet vygenerovaných konceptů je vyčerpaný.'],
+  'concept-daily-ceiling': ['budget', 'The daily spend for devShark concepts is reached.', 'Denní limit útraty za koncepty devShark je vyčerpaný.'],
+  'concept-model-failed': ['auto', 'The model call failed; nothing was stored.', 'Volání modelu selhalo; nic se neuložilo.'],
+  'concept-output-invalid': ['auto', 'The model\'s answer could not be read; it was set aside.', 'Odpověď modelu nešla přečíst; byla odložena.'],
   // devShark publishing (7 November 2026).
   'instagram-account-missing': ['account', 'The Instagram account is not verified yet; the post waits.', 'Účet na Instagramu ještě není ověřený; příspěvek čeká.'],
   // The devShark studio (7 November 2026).

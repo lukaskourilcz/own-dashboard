@@ -192,7 +192,9 @@ Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Onc
 the slides and saves and approves one revision per channel: the Instagram carousel at 12:00 with a story from its
 cover ten minutes later, and the Threads post (12:00 as the twin, 19:00 alone). Each revision cites the concept as
 its source (`devshark-source.ts`), so a concept edited afterwards stops them; the publishing step then sends devShark
-like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`.
+like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`. With `DEVSHARK_GENERATION_ENABLED`,
+the `devshark-concepts` step keeps five concepts waiting in the studio: one Claude Sonnet 5.5 call per concept from a
+fixed topic rotation (`devshark-concepts.ts`), at most three a day and $0.30 by default.
 
 ### Design Studio (7 November 2026)
 
