@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, DNESKAI_STUDIO, type DneskaiTextField } from "@/lib/marketing/dneskai-render";
+import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "@/lib/marketing/dneskai-render";
 import { DNESKAI_RENDERABLE_KIT_IDS, type DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
 
 const root = path.resolve(__dirname, "../..");
