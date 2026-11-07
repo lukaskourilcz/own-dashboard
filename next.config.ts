@@ -72,6 +72,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/marketing/jobs/*/execute": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
+    // The devShark studio preview (7 November 2026) draws with the pinned fonts and brand SVGs.
+    "/api/marketing/devshark/preview": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg"],
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
     // The reel renderer (#163) spawns the ffmpeg-static executable, which no import reaches.
     "/api/marketing/dneskai/render-reel": ["./node_modules/ffmpeg-static/ffmpeg"],

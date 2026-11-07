@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { rejectCrossOrigin } from '@/lib/csrf';
+import { DevsharkSaveSchema } from '@/lib/marketing/devshark-studio';
 
 export const runtime = 'nodejs';
 
 /**
  * devShark concepts (owner request, 7 November 2026). GET lists the owner's concepts with their decision and plan
- * slot; POST records the owner's decision on one concept through marketing_devshark_decide, which only the signed-in
- * owner can call. Nothing here publishes: approved concepts wait for the plan step behind DEVSHARK_PLAN_ENABLED.
+ * slot; POST records the owner's decision on one concept through marketing_devshark_decide, and PUT saves an edit through
+ * marketing_devshark_save, which returns the concept to review. Only the signed-in owner can call either. Nothing here publishes: approved concepts wait for the plan step behind DEVSHARK_PLAN_ENABLED.
  */
 const Decision = z.strictObject({ id: z.uuid(), decision: z.enum(['approved', 'rejected', 'draft']) });
 const reasons: Record<string, string> = { 'draft unavailable': 'draft-unavailable', 'draft already planned': 'draft-already-planned', 'invalid decision': 'invalid-decision' };
@@ -35,4 +36,16 @@ export async function POST(request: Request) {
   const { data, error } = await db.rpc('marketing_devshark_decide', { p_draft: input.data.id, p_decision: input.data.decision });
   if (error) return NextResponse.json({ error: reasons[error.message] ?? 'decision-unavailable' }, { status: 409 });
   return NextResponse.json({ id: input.data.id, status: data });
+}
+
+export async function PUT(request: Request) {
+  const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const input = DevsharkSaveSchema.safeParse(await request.json().catch(() => null));
+  if (!input.success) return NextResponse.json({ error: 'invalid-draft' }, { status: 400 });
+  const { error } = await db.rpc('marketing_devshark_save', { p_draft: input.data.id, p_title: input.data.title, p_deck: input.data.deck, p_caption: input.data.caption });
+  if (error) return NextResponse.json({ error: reasons[error.message] ?? 'save-unavailable' }, { status: 409 });
+  return NextResponse.json({ id: input.data.id, status: 'draft' });
 }
