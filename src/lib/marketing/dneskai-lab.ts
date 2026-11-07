@@ -23,7 +23,7 @@ export type DneskaiKit = z.infer<typeof DneskaiKitSchema>;
 /** A `dneskai-slides/1` deck has no kit field; it was drawn by the only look there is, which becomes `editorial`. */
 export const DNESKAI_DEFAULT_KIT: DneskaiKit = 'editorial';
 /**
- * The kits the vendored studio (vendor/carousel-studio, `caught-up`) can render and fit today. Additional kits need approved visual designs and a matching renderer before vendoring;
+ * The kits the slide engine (src/lib/carousel-studio, `caught-up`) can render and fit today. Additional kits need approved visual designs and a matching renderer before vendoring;
  * until then their covers stay unrendered.
  */
 export const DNESKAI_RENDERABLE_KITS: readonly DneskaiKit[] = DNESKAI_RENDERABLE_KIT_IDS;

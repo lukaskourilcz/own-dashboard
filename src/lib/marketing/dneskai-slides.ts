@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * The DNESKAi slide contract shared by generation (#116), revisions and approval (#118), rendering (#117)
- * and the review UI (#119). It mirrors the input of `renderDneskaiSlide` in `@boardlessai/carousel-studio`
+ * and the review UI (#119). It mirrors the input of `renderDneskaiSlide` in the slide engine (`src/lib/carousel-studio`)
  * (quorum#603): one entry per slide, images referenced by the sha256 of the stored source bytes, never by URL,
  * so an approval binds the exact pictures and crops and a renewed delivery link changes nothing.
  */
@@ -21,7 +21,7 @@ export const DneskaiKitIdSchema = z.enum(DNESKAI_KIT_IDS);
 export type DneskaiKitId = z.infer<typeof DneskaiKitIdSchema>;
 export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
 /**
- * The kits the vendored studio (vendor/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
+ * The kits the slide engine (src/lib/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
  * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
  */
 export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
