@@ -97,3 +97,11 @@ export function dneskaiTopicBriefsEnabled(env: Record<string, string | undefined
 export function dneskaiDailyMixEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DNESKAI_DAILY_MIX_ENABLED === 'true' && dneskaiTopicsEnabled(env);
 }
+
+/**
+ * The publishing plan (owner decision, 7 November 2026): the scheduler fills and prepares the 30-day plan only with
+ * DNESKAI_PLAN_ENABLED=true, which waits for 20261107140000_dneskai_plan.sql.
+ */
+export function dneskaiPlanEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DNESKAI_PLAN_ENABLED === 'true';
+}

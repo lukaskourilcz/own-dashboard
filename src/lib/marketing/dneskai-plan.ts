@@ -30,7 +30,6 @@ import { synchronizeMarketingSources } from './orchestrator';
  * tick, because a render takes most of one.
  */
 type Database = ReturnType<typeof createAdminClient>;
-type Environment = Record<string, string | undefined>;
 
 /** Days after today whose slots the step prepares; the topic bridge generates them as soon as they enter it. */
 export const DNESKAI_PLAN_HORIZON_DAYS = 2;
@@ -40,9 +39,7 @@ const APPROVAL_LEAD_MS = 2 * 60_000;
 const NEWS_EXTENSION_MS = 24 * 60 * 60_000;
 const FILL_LIMIT = 40;
 
-export function dneskaiPlanEnabled(env: Environment = process.env): boolean {
-  return env.DNESKAI_PLAN_ENABLED === 'true';
-}
+export { dneskaiPlanEnabled } from './dneskai-evidence-rollout';
 
 export type DneskaiPlanRow = {
   id: string; user_id: string; project_id: string; date: string; local_time: string; instagram: boolean; threads: boolean; kind: DneskaiPlanKind;
