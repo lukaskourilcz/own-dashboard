@@ -1,4 +1,4 @@
-import type { BrandTokens, PublishingLocale } from "./schema.js";
+import type { BrandTokens, PublishingLocale } from "./schema";
 
 /**
  * What each brand publishes in, and which characters that obliges its faces to draw.

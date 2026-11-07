@@ -1,6 +1,6 @@
-import type { CarouselLayerInput } from "./schema.js";
-import { MASTER_RATIO } from "./canvas.js";
-import { ARTICLE_HERO_SLOT } from "./library.js";
+import type { CarouselLayerInput } from "./schema";
+import { MASTER_RATIO } from "./canvas";
+import { ARTICLE_HERO_SLOT } from "./library";
 
 /**
  * The primitives every template family is built from.

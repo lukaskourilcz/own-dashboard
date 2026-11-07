@@ -1,8 +1,8 @@
-import type { CarouselLayerInput, CarouselTemplate } from "../schema.js";
-import { DNESKAI_EDITORIAL_METRICS, type DneskaiFlow, type DneskaiLayoutMetrics } from "../dneskai-layout.js";
-import { defineDneskaiKit } from "./kit.js";
-import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot, type DneskaiTemplateRole } from "./contract.js";
-import { box, text, fill, logo, kicker, body, plated, template, FLOWED, LEFT, RIGHT } from "./compose.js";
+import type { CarouselLayerInput, CarouselTemplate } from "../schema";
+import { DNESKAI_EDITORIAL_METRICS, type DneskaiFlow, type DneskaiLayoutMetrics } from "../dneskai-layout";
+import { defineDneskaiKit } from "./kit";
+import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot, type DneskaiTemplateRole } from "./contract";
+import { box, text, fill, logo, kicker, body, plated, template, FLOWED, LEFT, RIGHT } from "./compose";
 
 /**
  * Magazine: the clipping kit, for a story several outlets reported and a roundup worth comparing.

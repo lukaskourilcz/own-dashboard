@@ -1,6 +1,6 @@
-import { assignHook, type Assignment } from "./assign.js";
-import type { CategoryLists, QuizSubject } from "./evaluate.js";
-import type { Language, Library, Vertical } from "./schema.js";
+import { assignHook, type Assignment } from "./assign";
+import type { CategoryLists, QuizSubject } from "./evaluate";
+import type { Language, Library, Vertical } from "./schema";
 
 /**
  * The category lists devShark declares in `config/marketingshark.json`.

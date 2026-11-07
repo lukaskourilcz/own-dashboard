@@ -1,5 +1,5 @@
-import { loadLibrary, HookLoadError } from "./load.js";
-import { VERTICALS, type Hook, type Predicate, type Surface } from "./schema.js";
+import { loadLibrary, HookLoadError } from "./load";
+import { VERTICALS, type Hook, type Predicate, type Surface } from "./schema";
 
 /**
  * The craft caps from `docs/hooks/02-hook-craft-rules.md`, restated as numbers a check applies.

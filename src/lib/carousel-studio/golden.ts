@@ -31,11 +31,11 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { DECK_FAMILIES, type DeckFamily } from "./designs.js";
-import { familyDeckTemplate, familyTemplateId } from "./families.js";
-import { CAROUSEL_BRANDS, articleSlideSlot } from "./library.js";
-import { renderCarouselPng, type CarouselRenderInput } from "./renderer.js";
-import { MASTER_CANVAS, MASTER_FORMAT } from "./canvas.js";
+import { DECK_FAMILIES, type DeckFamily } from "./designs";
+import { familyDeckTemplate, familyTemplateId } from "./families";
+import { CAROUSEL_BRANDS, articleSlideSlot } from "./library";
+import { renderCarouselPng, type CarouselRenderInput } from "./renderer";
+import { MASTER_CANVAS, MASTER_FORMAT } from "./canvas";
 
 /** The brand the baseline is rendered in. One, because thirty families times nine brands is a suite. */
 export const GOLDEN_BRAND = "mma-files" as const;

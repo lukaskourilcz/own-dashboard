@@ -1,6 +1,6 @@
-import { MASTER_CANVAS } from "./canvas.js";
-import { cropRegion } from "./images.js";
-import { CarouselTemplateSchema, type CarouselTemplate, type ImageCrop } from "./schema.js";
+import { MASTER_CANVAS } from "./canvas";
+import { cropRegion } from "./images";
+import { CarouselTemplateSchema, type CarouselTemplate, type ImageCrop } from "./schema";
 
 /**
  * Where a DNESKAi slide's words and pictures stand, decided from what they measure.

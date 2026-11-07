@@ -32,10 +32,10 @@
  * with the measurement that set it. A composition that reads worse than everything shipped today
  * fails; the floor rises when the library does, never the other way.
  */
-import { textGroundPairs } from "./grounds.js";
-import type { BrandTokens, CarouselTemplate } from "./schema.js";
+import { textGroundPairs } from "./grounds";
+import type { BrandTokens, CarouselTemplate } from "./schema";
 // Type-only, so nothing here is a runtime edge back into the checks that call this one.
-import type { TemplateCheck } from "./validation.js";
+import type { TemplateCheck } from "./validation";
 
 /**
  * The APCA-W3 0.1.9 (`0.98G-4g`) constant set.

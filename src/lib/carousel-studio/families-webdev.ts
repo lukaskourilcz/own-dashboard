@@ -1,5 +1,5 @@
-import { CarouselTemplateSchema, type CarouselLayerInput, type CarouselTemplate } from "./schema.js";
-import { deckCanvas, deckFormats } from "./library.js";
+import { CarouselTemplateSchema, type CarouselLayerInput, type CarouselTemplate } from "./schema";
+import { deckCanvas, deckFormats } from "./library";
 
 export const WEBDEV_SIGNAL_MIN_PANELS = 4;
 export const WEBDEV_SIGNAL_MAX_PANELS = 6;

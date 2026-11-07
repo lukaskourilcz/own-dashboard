@@ -7,13 +7,13 @@ import {
   type CarouselPayload,
   type CarouselTemplate,
   type CarouselTemplateInput
-} from "./schema.js";
-import { CANVAS_ORDER, MASTER_FORMAT } from "./canvas.js";
-import { MAX_RESOLVABLE_SLIDES, MIN_SLIDES } from "./slides.js";
-import { declaredCanvases, fitsSafeArea } from "./validation.js";
-import { familyDeckTemplate, familyDeckTemplates } from "./families.js";
-import { DECK_STYLES, isDeckStyle, type DeckStyle } from "./designs.js";
-import { parseRecipeTemplateId } from "./recipe.js";
+} from "./schema";
+import { CANVAS_ORDER, MASTER_FORMAT } from "./canvas";
+import { MAX_RESOLVABLE_SLIDES, MIN_SLIDES } from "./slides";
+import { declaredCanvases, fitsSafeArea } from "./validation";
+import { familyDeckTemplate, familyDeckTemplates } from "./families";
+import { DECK_STYLES, isDeckStyle, type DeckStyle } from "./designs";
+import { parseRecipeTemplateId } from "./recipe";
 
 export const deckFormats = {
   "instagram-square": { width: 1_080, height: 1_080, safeArea: { top: 0.06, right: 0.06, bottom: 0.08, left: 0.06 } },

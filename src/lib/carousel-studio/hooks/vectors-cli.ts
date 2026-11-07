@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { HOOKS_ROOT, LIBRARY_FILES, readLibrary } from "./libraries.js";
-import { buildVectors, VECTORS_FILE } from "./vectors.js";
+import { HOOKS_ROOT, LIBRARY_FILES, readLibrary } from "./libraries";
+import { buildVectors, VECTORS_FILE } from "./vectors";
 
 /**
  * Regenerate the conformance vectors from the current library and evaluator.

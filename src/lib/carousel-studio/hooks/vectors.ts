@@ -1,6 +1,6 @@
-import { eligibleFor, type CategoryLists, type QuizSubject } from "./evaluate.js";
-import { loadLibrary } from "./load.js";
-import type { Library, RawHook } from "./schema.js";
+import { eligibleFor, type CategoryLists, type QuizSubject } from "./evaluate";
+import { loadLibrary } from "./load";
+import type { Library, RawHook } from "./schema";
 
 export const VECTORS_FILE = "hooks.predicates.spec.json";
 export const VECTORS_SCHEMA_VERSION = "hook-predicate-vectors/1";

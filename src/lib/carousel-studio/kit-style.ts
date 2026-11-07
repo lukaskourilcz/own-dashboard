@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { BRAND_KITS_DIRECTORY, brandKitVentures, logotypeForBrand, logotypeMarkup, readBrandKit, type BrandKitManifest, type LogotypeVariant } from "./brand-kit.js";
-import { FONT_FAMILIES } from "./fonts.js";
-import type { BrandTokens, CarouselTemplate } from "./schema.js";
+import { BRAND_KITS_DIRECTORY, brandKitVentures, logotypeForBrand, logotypeMarkup, readBrandKit, type BrandKitManifest, type LogotypeVariant } from "./brand-kit";
+import { FONT_FAMILIES } from "./fonts";
+import type { BrandTokens, CarouselTemplate } from "./schema";
 
 /**
  * A kitted brand's look, resolved from its brand kit and from nowhere else.

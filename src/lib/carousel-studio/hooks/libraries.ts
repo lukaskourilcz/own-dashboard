@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadLibrary } from "./load.js";
-import type { Library, Surface } from "./schema.js";
+import { loadLibrary } from "./load";
+import type { Library, Surface } from "./schema";
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 

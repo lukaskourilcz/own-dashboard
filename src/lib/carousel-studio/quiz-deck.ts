@@ -1,6 +1,6 @@
-import { renderCarouselSlideSvg, type CarouselRenderInput } from "./renderer.js";
-import type { BrandTokens, CarouselFormat, CarouselTemplate } from "./schema.js";
-import { ENGAGEMENT_REWARD_REFUSAL, promisesEngagementReward } from "./engagement.js";
+import { renderCarouselSlideSvg, type CarouselRenderInput } from "./renderer";
+import type { BrandTokens, CarouselFormat, CarouselTemplate } from "./schema";
+import { ENGAGEMENT_REWARD_REFUSAL, promisesEngagementReward } from "./engagement";
 
 /**
  * marketingShark's quiz carousel as one render path (quorum#575).

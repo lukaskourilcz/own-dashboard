@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { localeForCarouselVenture, type CarouselSummaryVenture } from "./summary.js";
+import { localeForCarouselVenture, type CarouselSummaryVenture } from "./summary";
 
 /**
  * The words that travel with a deck.

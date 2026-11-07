@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { MASTER_CANVAS } from "./canvas.js";
-import { DNESKAI_THUMBNAIL_GRID } from "./dneskai-layout.js";
-import { renderDneskaiSlide, type DneskaiSlideInput } from "./dneskai-slide.js";
-import { GOLDEN_DIRECTORY } from "./golden.js";
+import { MASTER_CANVAS } from "./canvas";
+import { DNESKAI_THUMBNAIL_GRID } from "./dneskai-layout";
+import { renderDneskaiSlide, type DneskaiSlideInput } from "./dneskai-slide";
+import { GOLDEN_DIRECTORY } from "./golden";
 
 /**
  * The golden renders of the DNESKAi photo kit: one pinned slide per template, hashed and committed.

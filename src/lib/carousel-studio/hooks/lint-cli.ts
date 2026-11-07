@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { HOOKS_ROOT, LIBRARY_FILES } from "./libraries.js";
-import { formatFindings, hasErrors, lintLibrary, type Finding } from "./lint.js";
-import { SURFACES, type Surface } from "./schema.js";
+import { HOOKS_ROOT, LIBRARY_FILES } from "./libraries";
+import { formatFindings, hasErrors, lintLibrary, type Finding } from "./lint";
+import { SURFACES, type Surface } from "./schema";
 
 async function readJsonOrEmpty(file: string): Promise<unknown> {
   try {

@@ -22,13 +22,13 @@
  * test calls is dead code, so it gets written in the change that wires it into the render path.
  */
 import { z } from "zod";
-import { DECK_FAMILIES, type DeckFamily } from "./designs.js";
-import { EDITORIAL_FAMILIES } from "./families-editorial.js";
-import { FOUNDING_FAMILIES } from "./families-founding.js";
-import { LAUNCH_FAMILY_SPECS } from "./families-launch.js";
-import { POSTER_FAMILIES } from "./families-poster.js";
-import { PRINT_FAMILIES } from "./families-print.js";
-import { SYSTEM_FAMILIES } from "./families-system.js";
+import { DECK_FAMILIES, type DeckFamily } from "./designs";
+import { EDITORIAL_FAMILIES } from "./families-editorial";
+import { FOUNDING_FAMILIES } from "./families-founding";
+import { LAUNCH_FAMILY_SPECS } from "./families-launch";
+import { POSTER_FAMILIES } from "./families-poster";
+import { PRINT_FAMILIES } from "./families-print";
+import { SYSTEM_FAMILIES } from "./families-system";
 
 /** The checklist a record was gated against. A new checklist gets a new version, not a new field. */
 export const LAYOUT_CHECKLIST_VERSION = "layout-gate/1";

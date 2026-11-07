@@ -1,7 +1,7 @@
-import { renderCarouselSlideSvg, type CarouselRenderInput } from "./renderer.js";
-import { completeQuizSlots, QUIZ_SLIDE_LIMITS, quizSlotBudget, type QuizSlideProblem } from "./quiz-deck.js";
-import type { BrandTokens, CarouselFormat, CarouselTemplate } from "./schema.js";
-import type { DeckPosition } from "./kit-style.js";
+import { renderCarouselSlideSvg, type CarouselRenderInput } from "./renderer";
+import { completeQuizSlots, QUIZ_SLIDE_LIMITS, quizSlotBudget, type QuizSlideProblem } from "./quiz-deck";
+import type { BrandTokens, CarouselFormat, CarouselTemplate } from "./schema";
+import type { DeckPosition } from "./kit-style";
 
 /**
  * marketingShark's post kinds beyond the quiz, as one render path (quorum#576).

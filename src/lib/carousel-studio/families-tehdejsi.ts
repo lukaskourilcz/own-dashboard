@@ -3,9 +3,9 @@ import {
   type CarouselLayerInput,
   type CarouselTemplate,
   type CarouselTemplateInput
-} from "./schema.js";
-import { deckCanvas, deckFormats } from "./library.js";
-import { BOTTOM, LEFT, MEASURE, RIGHT, TOP, rule, shape, text } from "./family-kit.js";
+} from "./schema";
+import { deckCanvas, deckFormats } from "./library";
+import { BOTTOM, LEFT, MEASURE, RIGHT, TOP, rule, shape, text } from "./family-kit";
 
 /**
  * The bilingual kit: two languages on one card, and neither of them a caption for the other.

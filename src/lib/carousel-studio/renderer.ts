@@ -9,14 +9,14 @@ import {
   type CarouselLayer,
   type CarouselPayload,
   type CarouselTemplate
-} from "./schema.js";
-import type { FaceMetrics } from "./font-metrics.generated.js";
-import { fitText, type FittedText } from "./text.js";
-import { isCutFor, prepareCarouselImages } from "./images.js";
-import { fontFiles, measureEm, resolveFace } from "./fonts.js";
-import { validateTemplateForBrand, type TemplateCheck } from "./validation.js";
-import { groundsBehindLayer, type SlideRendering } from "./grounds.js";
-import { LOGO_ID, chooseLogotypeVariant, logotypeForBrand, type KitLogotype } from "./brand-kit.js";
+} from "./schema";
+import type { FaceMetrics } from "./font-metrics.generated";
+import { fitText, type FittedText } from "./text";
+import { isCutFor, prepareCarouselImages } from "./images";
+import { fontFiles, measureEm, resolveFace } from "./fonts";
+import { validateTemplateForBrand, type TemplateCheck } from "./validation";
+import { groundsBehindLayer, type SlideRendering } from "./grounds";
+import { LOGO_ID, chooseLogotypeVariant, logotypeForBrand, type KitLogotype } from "./brand-kit";
 import {
   brandOnGround,
   dressBrand,
@@ -28,7 +28,7 @@ import {
   type DeckPosition,
   type KitCornerMark,
   type KitStyle
-} from "./kit-style.js";
+} from "./kit-style";
 
 function escapeXml(value: string): string {
   return value
@@ -579,7 +579,7 @@ function checkImages(template: CarouselTemplate, payload: CarouselPayload, input
 }
 
 // The photograph pipeline lives in images.ts; its two long-standing entry points stay importable here.
-export { prepareCarouselImages, treatImage } from "./images.js";
+export { prepareCarouselImages, treatImage } from "./images";
 
 export function renderCarouselSvg(input: CarouselRenderInput): RenderedSlide[] {
   return renderSlides(input);

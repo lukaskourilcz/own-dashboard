@@ -1,8 +1,8 @@
-import type { CarouselLayerInput, CarouselTemplate } from "../schema.js";
-import { DNESKAI_EDITORIAL_METRICS, type DneskaiFlow, type DneskaiLayoutMetrics } from "../dneskai-layout.js";
-import { defineDneskaiKit, type DneskaiKitTemplate } from "./kit.js";
-import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./contract.js";
-import { box, text, fill, logo, kicker, body, template, FLOWED, LEFT, MEASURE } from "./compose.js";
+import type { CarouselLayerInput, CarouselTemplate } from "../schema";
+import { DNESKAI_EDITORIAL_METRICS, type DneskaiFlow, type DneskaiLayoutMetrics } from "../dneskai-layout";
+import { defineDneskaiKit, type DneskaiKitTemplate } from "./kit";
+import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./contract";
+import { box, text, fill, logo, kicker, body, template, FLOWED, LEFT, MEASURE } from "./compose";
 
 /**
  * The explainer kit: research results, rules, "how it works", a number or a study.

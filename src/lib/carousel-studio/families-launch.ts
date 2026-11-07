@@ -14,10 +14,10 @@ import {
   type Composer,
   type Context,
   type FamilySpec
-} from "./family-kit.js";
-import { MASTER_RATIO } from "./canvas.js";
-import type { CarouselLayerInput } from "./schema.js";
-import type { DeckFamily } from "./designs.js";
+} from "./family-kit";
+import { MASTER_RATIO } from "./canvas";
+import type { CarouselLayerInput } from "./schema";
+import type { DeckFamily } from "./designs";
 
 /**
  * The launch collection: the five compositions the rotation deals from.

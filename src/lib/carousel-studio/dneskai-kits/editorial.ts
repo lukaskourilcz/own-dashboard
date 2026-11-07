@@ -1,8 +1,8 @@
-import type { CarouselTemplate } from "../schema.js";
-import { DNESKAI_THUMBNAIL_GRID, DNESKAI_EDITORIAL_METRICS, type DneskaiFlow } from "../dneskai-layout.js";
-import { defineDneskaiKit } from "./kit.js";
-import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot, type DneskaiTemplateRole } from "./contract.js";
-import { box, text, fill, logo, kicker, body, bleed, plated, template, FLOWED, LEFT, MEASURE, W, H } from "./compose.js";
+import type { CarouselTemplate } from "../schema";
+import { DNESKAI_THUMBNAIL_GRID, DNESKAI_EDITORIAL_METRICS, type DneskaiFlow } from "../dneskai-layout";
+import { defineDneskaiKit } from "./kit";
+import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot, type DneskaiTemplateRole } from "./contract";
+import { box, text, fill, logo, kicker, body, bleed, plated, template, FLOWED, LEFT, MEASURE, W, H } from "./compose";
 
 /**
  * The editorial kit: the approved DNESKAi photographic compositions in Space Grotesk, Source Serif 4

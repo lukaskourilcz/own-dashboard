@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { TemplateStatusSchema, type CarouselTemplate } from "./schema.js";
-import { mayGoLive, type TemplateCheck } from "./validation.js";
+import { TemplateStatusSchema, type CarouselTemplate } from "./schema";
+import { mayGoLive, type TemplateCheck } from "./validation";
 
 export const TemplateLifecycleOverrideSchema = z.object({
   schemaVersion: z.literal("carousel-template-overrides/1"),

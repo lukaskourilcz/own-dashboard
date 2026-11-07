@@ -3,17 +3,17 @@ import {
   type CarouselLayerInput,
   type CarouselTemplate,
   type CarouselTemplateInput
-} from "./schema.js";
-import { MAX_RESOLVABLE_SLIDES, MIN_SLIDES } from "./slides.js";
-import { articleSlideSlot, deckCanvas, deckFormats } from "./library.js";
-import { DECK_FAMILIES, LAUNCH_FAMILIES, type DeckFamily } from "./designs.js";
-import { RHYTHM, variantsFor, type FamilySpec, type Role } from "./family-kit.js";
-import { FOUNDING_FAMILIES } from "./families-founding.js";
-import { LAUNCH_FAMILY_SPECS } from "./families-launch.js";
-import { POSTER_FAMILIES } from "./families-poster.js";
-import { SYSTEM_FAMILIES } from "./families-system.js";
-import { PRINT_FAMILIES } from "./families-print.js";
-import { EDITORIAL_FAMILIES } from "./families-editorial.js";
+} from "./schema";
+import { MAX_RESOLVABLE_SLIDES, MIN_SLIDES } from "./slides";
+import { articleSlideSlot, deckCanvas, deckFormats } from "./library";
+import { DECK_FAMILIES, LAUNCH_FAMILIES, type DeckFamily } from "./designs";
+import { RHYTHM, variantsFor, type FamilySpec, type Role } from "./family-kit";
+import { FOUNDING_FAMILIES } from "./families-founding";
+import { LAUNCH_FAMILY_SPECS } from "./families-launch";
+import { POSTER_FAMILIES } from "./families-poster";
+import { SYSTEM_FAMILIES } from "./families-system";
+import { PRINT_FAMILIES } from "./families-print";
+import { EDITORIAL_FAMILIES } from "./families-editorial";
 
 /**
  * The template family library: what it contains, and how one family becomes a deck.

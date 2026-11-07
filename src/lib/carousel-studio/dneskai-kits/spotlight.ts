@@ -1,8 +1,8 @@
-import type { CarouselLayerInput, CarouselTemplate } from "../schema.js";
-import { DNESKAI_GAPS, DNESKAI_PANEL, type DneskaiFlow, type DneskaiGapName, type DneskaiLayoutMetrics } from "../dneskai-layout.js";
-import { defineDneskaiKit, type DneskaiKitTemplate } from "./kit.js";
-import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./contract.js";
-import { box, text, logo, kicker, body, template, FLOWED, LEFT, MEASURE, W, H } from "./compose.js";
+import type { CarouselLayerInput, CarouselTemplate } from "../schema";
+import { DNESKAI_GAPS, DNESKAI_PANEL, type DneskaiFlow, type DneskaiGapName, type DneskaiLayoutMetrics } from "../dneskai-layout";
+import { defineDneskaiKit, type DneskaiKitTemplate } from "./kit";
+import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./contract";
+import { box, text, logo, kicker, body, template, FLOWED, LEFT, MEASURE, W, H } from "./compose";
 
 /**
  * Spotlight: the photo-led viral news kit, for a story with a face in it.

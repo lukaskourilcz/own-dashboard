@@ -10,9 +10,9 @@ import {
   text,
   wordmark,
   type FamilySpec
-} from "./family-kit.js";
-import type { CarouselLayerInput } from "./schema.js";
-import type { DeckFamily } from "./designs.js";
+} from "./family-kit";
+import type { CarouselLayerInput } from "./schema";
+import type { DeckFamily } from "./designs";
 
 /**
  * Print grammar, and the hand over the top of it.

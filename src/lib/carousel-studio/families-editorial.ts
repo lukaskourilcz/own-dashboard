@@ -1,4 +1,4 @@
-import { LEFT, MEASURE, TOP, drawnIndex, hero, hookMark, pagerDots, rule, shape, text, type Composer, type FamilySpec } from "./family-kit.js";
+import { LEFT, MEASURE, TOP, drawnIndex, hero, hookMark, pagerDots, rule, shape, text, type Composer, type FamilySpec } from "./family-kit";
 
 // Original compositions informed by the Canva carousel catalog's photo-feature and
 // typography categories. No template assets or third-party compositions are embedded.

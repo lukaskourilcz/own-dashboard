@@ -1,6 +1,6 @@
-import { capacityAverage, measureEm, resolveFace } from "./fonts.js";
-import type { FaceMetrics } from "./font-metrics.generated.js";
-import type { PublishingLocale } from "./schema.js";
+import { capacityAverage, measureEm, resolveFace } from "./fonts";
+import type { FaceMetrics } from "./font-metrics.generated";
+import type { PublishingLocale } from "./schema";
 
 export interface FittedText {
   lines: string[];

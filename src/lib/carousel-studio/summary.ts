@@ -16,8 +16,8 @@
  * looking at rendered slides, and a second copy would drift away from them.
  */
 
-import { primaryLocaleFor } from "./locales.js";
-import { MAX_SLIDE_WORDS, packIntoSlides, proseFromMdx, wordCount } from "./slides.js";
+import { primaryLocaleFor } from "./locales";
+import { MAX_SLIDE_WORDS, packIntoSlides, proseFromMdx, wordCount } from "./slides";
 
 /** Fewer than this and no template has enough passages for its slide plan. */
 export const MIN_SUMMARY_PASSAGES = 3;

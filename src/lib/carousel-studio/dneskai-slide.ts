@@ -1,19 +1,19 @@
-import { dneskaiKit } from "./dneskai-kits/registry.js";
-import { DNESKAI_DEFAULT_KIT, DNESKAI_VARIANTS, DNESKAI_INK_VARIANT, DNESKAI_QUOTE_MARK, type DneskaiKitId, type DneskaiSlideType, type DneskaiVariant } from "./dneskai-kits/contract.js";
-import type { DneskaiKit } from "./dneskai-kits/kit.js";
-export { DNESKAI_KITS, dneskaiKit } from "./dneskai-kits/registry.js";
-export { DNESKAI_KIT_IDS, DNESKAI_DEFAULT_KIT, DNESKAI_SLIDE_TYPES, DNESKAI_VARIANTS, DNESKAI_TEMPLATE_ROLES, dneskaiRoleOf, DNESKAI_TEXT_FIELDS, DNESKAI_CODE_OWNED_SLOTS, DNESKAI_TEXT_LIMITS, dneskaiImageSlots, DNESKAI_OPTIONAL_IMAGE_SLOTS, DNESKAI_TEMPLATE_VARIANTS } from "./dneskai-kits/contract.js";
-export type { DneskaiKitId, DneskaiSlideType, DneskaiVariant, DneskaiTemplateRole, DneskaiTextField } from "./dneskai-kits/contract.js";
-export type { DneskaiKit, DneskaiKitTemplate, DneskaiFieldFace } from "./dneskai-kits/kit.js";
-export type { DneskaiFlow, DneskaiLayoutMetrics } from "./dneskai-layout.js";
+import { dneskaiKit } from "./dneskai-kits/registry";
+import { DNESKAI_DEFAULT_KIT, DNESKAI_VARIANTS, DNESKAI_INK_VARIANT, DNESKAI_QUOTE_MARK, type DneskaiKitId, type DneskaiSlideType, type DneskaiVariant } from "./dneskai-kits/contract";
+import type { DneskaiKit } from "./dneskai-kits/kit";
+export { DNESKAI_KITS, dneskaiKit } from "./dneskai-kits/registry";
+export { DNESKAI_KIT_IDS, DNESKAI_DEFAULT_KIT, DNESKAI_SLIDE_TYPES, DNESKAI_VARIANTS, DNESKAI_TEMPLATE_ROLES, dneskaiRoleOf, DNESKAI_TEXT_FIELDS, DNESKAI_CODE_OWNED_SLOTS, DNESKAI_TEXT_LIMITS, dneskaiImageSlots, DNESKAI_OPTIONAL_IMAGE_SLOTS, DNESKAI_TEMPLATE_VARIANTS } from "./dneskai-kits/contract";
+export type { DneskaiKitId, DneskaiSlideType, DneskaiVariant, DneskaiTemplateRole, DneskaiTextField } from "./dneskai-kits/contract";
+export type { DneskaiKit, DneskaiKitTemplate, DneskaiFieldFace } from "./dneskai-kits/kit";
+export type { DneskaiFlow, DneskaiLayoutMetrics } from "./dneskai-layout";
 import { createHash } from "node:crypto";
-import { CONNECTOR_MAX_SLIDES, MASTER_CANVAS, MASTER_FORMAT } from "./canvas.js";
-import { layoutDneskaiSlide, type DneskaiLaidPicture } from "./dneskai-layout.js";
-import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./dneskai-photo.js";
-import { cropRegion } from "./images.js";
-import { CAROUSEL_BRANDS } from "./library.js";
-import { carouselTextFits, renderCarouselSlidePng } from "./renderer.js";
-import { ImageCropSchema, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema.js";
+import { CONNECTOR_MAX_SLIDES, MASTER_CANVAS, MASTER_FORMAT } from "./canvas";
+import { layoutDneskaiSlide, type DneskaiLaidPicture } from "./dneskai-layout";
+import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./dneskai-photo";
+import { cropRegion } from "./images";
+import { CAROUSEL_BRANDS } from "./library";
+import { carouselTextFits, renderCarouselSlidePng } from "./renderer";
+import { ImageCropSchema, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
 
 /**
  * One DNESKAi Instagram slide, rendered from words and photographs (quorum#603, own-dashboard#110).

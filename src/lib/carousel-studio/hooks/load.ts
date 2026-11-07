@@ -9,7 +9,7 @@ import {
   type Predicate,
   type RawHook,
   type Surface
-} from "./schema.js";
+} from "./schema";
 
 /** A load-time failure that names the hook and the surface, because both are needed to fix it. */
 export class HookLoadError extends Error {

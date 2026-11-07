@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CANVAS_ORDER, CANVAS_RATIO_TOLERANCE, MASTER_FORMAT, MASTER_RATIO, canvasRatio, ratiosAgree } from "./canvas.js";
+import { CANVAS_ORDER, CANVAS_RATIO_TOLERANCE, MASTER_FORMAT, MASTER_RATIO, canvasRatio, ratiosAgree } from "./canvas";
 
 /** The four canvases a template is composed and checked for. `canvas.ts` owns the list. */
 export const CarouselCanvasSchema = z.enum(CANVAS_ORDER);

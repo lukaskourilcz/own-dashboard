@@ -1,7 +1,7 @@
-import type { BrandTokens, ImageCrop } from "./schema.js";
-import { CarouselPayloadSchema, CarouselTemplateSchema, carouselCanvas } from "./schema.js";
-import { dressBrand, kitStyleFor } from "./kit-style.js";
-import type { CarouselRenderInput } from "./renderer.js";
+import type { BrandTokens, ImageCrop } from "./schema";
+import { CarouselPayloadSchema, CarouselTemplateSchema, carouselCanvas } from "./schema";
+import { dressBrand, kitStyleFor } from "./kit-style";
+import type { CarouselRenderInput } from "./renderer";
 
 /*
  * What happens to a photograph between the caller's bytes and the SVG: the crop a payload asks

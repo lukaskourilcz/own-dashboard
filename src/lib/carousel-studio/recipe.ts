@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { FAMILY_SERVES, familyDeckTemplate } from "./families.js";
-import { articleDeckTemplate } from "./library.js";
-import { DECK_DESIGNS, LAUNCH_FAMILIES, isDeckStyle, type DeckDesign, type DeckFamily } from "./designs.js";
-import type { CarouselTemplate } from "./schema.js";
-import type { CarouselSummaryVenture } from "./summary.js";
+import { FAMILY_SERVES, familyDeckTemplate } from "./families";
+import { articleDeckTemplate } from "./library";
+import { DECK_DESIGNS, LAUNCH_FAMILIES, isDeckStyle, type DeckDesign, type DeckFamily } from "./designs";
+import type { CarouselTemplate } from "./schema";
+import type { CarouselSummaryVenture } from "./summary";
 
 /**
  * The complete design decision for one article's social set.

@@ -11,8 +11,8 @@ import {
   text,
   wordmark,
   type FamilySpec
-} from "./family-kit.js";
-import type { CarouselLayerInput } from "./schema.js";
+} from "./family-kit";
+import type { CarouselLayerInput } from "./schema";
 
 /**
  * The heights the line crosses each slide boundary at.
@@ -30,7 +30,7 @@ const DIP = 0.62;
 /** A vertical connector between two heights of the line. */
 const connector = (x: number, from: number, to: number): CarouselLayerInput =>
   shape(x, Math.min(from, to), 0.005, Math.max(0.006, Math.abs(to - from)), { fillToken: "accent" });
-import type { DeckFamily } from "./designs.js";
+import type { DeckFamily } from "./designs";
 
 /**
  * A bracket, drawn as three rectangles.

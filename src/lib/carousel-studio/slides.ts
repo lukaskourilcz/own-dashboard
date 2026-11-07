@@ -13,7 +13,7 @@
  * two readers over one splitter rather than one clever function.
  */
 
-import { INSTAGRAM_MAX_SLIDES, INSTAGRAM_MIN_SLIDES } from "./canvas.js";
+import { INSTAGRAM_MAX_SLIDES, INSTAGRAM_MIN_SLIDES } from "./canvas";
 
 /** No slide may exceed this. The owner's constraint, and the only hard rule here. */
 export const MAX_SLIDE_WORDS = 30;

@@ -1,10 +1,10 @@
-import { CANVAS_ORDER, canvasRatio, ratiosAgree } from "./canvas.js";
-import { apcaCheck } from "./contrast-apca.js";
-import { textGroundPairs } from "./grounds.js";
-import { platformLimitCheck } from "./platform-limits.js";
-import { primaryLocaleFor, publishingLocalesFor } from "./locales.js";
-import { carouselCanvas, type BrandTokens, type CarouselCanvas, type CarouselFormat, type CarouselTemplate } from "./schema.js";
-import { charactersPerLine } from "./text.js";
+import { CANVAS_ORDER, canvasRatio, ratiosAgree } from "./canvas";
+import { apcaCheck } from "./contrast-apca";
+import { textGroundPairs } from "./grounds";
+import { platformLimitCheck } from "./platform-limits";
+import { primaryLocaleFor, publishingLocalesFor } from "./locales";
+import { carouselCanvas, type BrandTokens, type CarouselCanvas, type CarouselFormat, type CarouselTemplate } from "./schema";
+import { charactersPerLine } from "./text";
 
 export interface TemplateCheck {
   id:

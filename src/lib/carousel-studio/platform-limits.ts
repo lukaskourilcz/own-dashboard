@@ -39,10 +39,10 @@ import {
   INSTAGRAM_MIN_SLIDES,
   canvasRatio,
   ratiosAgree
-} from "./canvas.js";
-import { carouselCanvas, type CarouselCanvas, type CarouselFormat, type CarouselTemplate } from "./schema.js";
+} from "./canvas";
+import { carouselCanvas, type CarouselCanvas, type CarouselFormat, type CarouselTemplate } from "./schema";
 // Type-only, so nothing here is a runtime edge back into the checks that call this one.
-import type { TemplateCheck } from "./validation.js";
+import type { TemplateCheck } from "./validation";
 
 /**
  * The canvas shapes this studio composes for, each named the way a platform names it.

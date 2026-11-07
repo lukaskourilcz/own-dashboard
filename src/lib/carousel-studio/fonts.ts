@@ -1,7 +1,7 @@
 import path from "node:path";
-import { FONT_METRICS, type FaceMetrics } from "./font-metrics.generated.js";
-import { lettersFor } from "./locales.js";
-import type { PublishingLocale } from "./schema.js";
+import { FONT_METRICS, type FaceMetrics } from "./font-metrics.generated";
+import { lettersFor } from "./locales";
+import type { PublishingLocale } from "./schema";
 
 /**
  * The typefaces the engine ships with, and the arithmetic it measures them by.

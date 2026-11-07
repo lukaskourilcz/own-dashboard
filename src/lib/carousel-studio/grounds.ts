@@ -11,8 +11,8 @@
  * the pair nobody looked at. `validation.ts` and `contrast-apca.ts` now read this one list and
  * differ only in the arithmetic they apply to it.
  */
-import { chooseLogotypeVariant, logotypeForBrand, type KitLogotype } from "./brand-kit.js";
-import type { BrandTokens, CarouselTemplate } from "./schema.js";
+import { chooseLogotypeVariant, logotypeForBrand, type KitLogotype } from "./brand-kit";
+import type { BrandTokens, CarouselTemplate } from "./schema";
 
 /** Source-over compositing of one colour on another, which is what the renderer draws. */
 function composite(base: string, over: string, alpha: number): string {
