@@ -191,7 +191,7 @@ Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Onc
 the slides and saves and approves one revision per channel: the Instagram carousel at 12:00 with a story from its
 cover ten minutes later, and the Threads post (12:00 as the twin, 19:00 alone). Each revision cites the concept as
 its source (`devshark-source.ts`), so a concept edited afterwards stops them; the publishing step then sends devShark
-like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`. With `DEVSHARK_GENERATION_ENABLED`,
+like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`, the next five, written in the house style, in `concepts-2026-11-08.json`. With `DEVSHARK_GENERATION_ENABLED`,
 the `devshark-concepts` step keeps five concepts waiting in the studio: one Claude Sonnet 5.5 call per concept from a
 fixed topic rotation (`devshark-concepts.ts`), at most three a day and $0.30 by default.
 
@@ -199,15 +199,18 @@ fixed topic rotation (`devshark-concepts.ts`), at most three a day and $0.30 by 
 
 One editor for both brands. The editing surface is shared (`src/components/design-studio/box-overlay.tsx`: blocks
 over the slide picture, drag to move, right edge for width, arrows, toolbar for size, alignment and the automatic
-place); each brand draws its own picture.
+place); each brand draws its own picture. Dashed lines mark the slide's vertical and horizontal middle; a dragged block whose middle
+comes within 24 px of one sticks to it and the line turns solid (`snapToCenter`).
 
 devShark: `src/lib/design-studio/` holds the browser-safe layout: text is measured
-with the renderer's font-metric table, blocks (kicker, headline, text, code) flow automatically or sit at the box the
+with the renderer's font-metric table, blocks (kicker, headline, text, code) take the house layout or sit at the box the
 owner set (x, y, width, font size, alignment in 1080 × 1350 pixels, stored in the deck's `layout`), and one SVG comes
 out. The studio's `SlideCanvas` shows that SVG with the same fonts (`public/design-studio/`, kept identical to the
 renderer's by a test) and lets the owner drag, resize, write and mark green words on the slide itself;
 `devshark-render.ts` rasterises the same SVG for publishing. Text over the fin is allowed; text off the slide is a
-warning only.
+warning only. The house layout (`devsharkAutoBoxes`, from the owner's edits of the first five concepts on 8 November
+2026) stacks the words left at the margin as one group whose middle sits at y 624, clear of the fin. The concept prompt
+carries the owner's caption voice and three of his captions.
 
 DNESKAi: the Lab's stage has a **Studio** view (`lab/studio-view.tsx`; "Otevřít v Design Labu" in "Dnes a zítra" opens
 it). It shows the slide exactly as the slide engine renders it (the render-only preview) with the headline, text and
