@@ -14,23 +14,14 @@ repository. devShark is done (PRs #236, #237). This plan moves DNESKAi.
 - own-dashboard imports only `renderDneskaiSlide` and a few constants (`dneskai-render.ts`, `dneskai-slides.ts`, the
   dev-preview render route, the preview-fixture script).
 
-## Steps
+## What was done (7 November 2026)
 
-1. **Own the source (B1, ~3 h).** Copy `studio/src` (43 modules and `hooks/`) to `src/lib/carousel-studio/`, the
-   fonts, brand kits and goldens to `templates/carousel-studio/`. Replace the three `import.meta.url` directories
-   (`fonts.ts`, `brand-kit.ts`, `golden.ts`) with `process.cwd()` paths, as `devshark-render.ts` does, and point the
-   file tracing in `next.config.ts` at the new folder. Imports change from `@boardlessai/carousel-studio` to
-   `@/lib/carousel-studio`. The golden PNG hashes must stay identical: the existing vendor test becomes a golden
-   test of the owned source. Then delete `vendor/carousel-studio`, the vendor script and its tests, and the
-   `package.json` dependency.
-2. **Spotlight in the shared layout (B2, ~6 h).** Express Spotlight's slide types (photo cover with ink fade and
-   optional round inset, statement, before/after quote, figure, split) as Design Studio layouts: text blocks with
-   boxes, plus picture layers whose crop and focal point the Lab already edits. The automatic boxes must reproduce
-   today's Spotlight output; the goldens are the check.
-3. **Studio editor for DNESKAi (B3, ~4 h).** The Lab's slide stage uses `SlideCanvas` for Spotlight decks: drag,
-   size, align, write and green words on the slide, saved in the deck as `layout`. Older kits stay rendered as they
-   were and are not editable on the slide.
-4. **Cut over (B4, ~2 h).** Generation, the plan step and "Dnes a zítra" render Spotlight through the shared layout;
-   compare a week of posts against the old renderer before switching; docs and the system map.
-
-Estimate: 14–18 hours. Publishing keeps the current renderer until step 4 shows identical output.
+1. **Own the source.** `studio/src` from Quorum 893a495 is `src/lib/carousel-studio/`, its fonts, kits and goldens
+   `templates/carousel-studio/`; the vendor tree, its script, test and package dependency are gone. Every golden PNG
+   still matches byte for byte, and the render keys keep the old pin, so no stored slide renders again.
+2. **Hand placement in the engine, not a second Spotlight.** Re-drawing Spotlight in a new SVG layout would have meant
+   two renderers that must agree pixel for pixel. Instead the engine takes optional boxes per slide
+   (`dneskai-boxes.ts`) and reports the frames it drew, so the Studio edits over the engine's own render.
+3. **One editing surface.** `BoxOverlay` and `StudioToolbar` serve devShark's `SlideCanvas` and DNESKAi's Studio view.
+4. **Connected.** The deck contract, render key, deck edits, preview and "Dnes a zítra" carry the boxes; nothing else
+   about publishing changes, so there is no cut-over step.

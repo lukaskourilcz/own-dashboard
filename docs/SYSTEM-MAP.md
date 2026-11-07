@@ -197,13 +197,26 @@ fixed topic rotation (`devshark-concepts.ts`), at most three a day and $0.30 by 
 
 ### Design Studio (7 November 2026)
 
-One editor for devShark (DNESKAi follows). `src/lib/design-studio/` holds the browser-safe layout: text is measured
+One editor for both brands. The editing surface is shared (`src/components/design-studio/box-overlay.tsx`: blocks
+over the slide picture, drag to move, right edge for width, arrows, toolbar for size, alignment and the automatic
+place); each brand draws its own picture.
+
+devShark: `src/lib/design-studio/` holds the browser-safe layout: text is measured
 with the renderer's font-metric table, blocks (kicker, headline, text, code) flow automatically or sit at the box the
 owner set (x, y, width, font size, alignment in 1080 × 1350 pixels, stored in the deck's `layout`), and one SVG comes
 out. The studio's `SlideCanvas` shows that SVG with the same fonts (`public/design-studio/`, kept identical to the
 renderer's by a test) and lets the owner drag, resize, write and mark green words on the slide itself;
 `devshark-render.ts` rasterises the same SVG for publishing. Text over the fin is allowed; text off the slide is a
 warning only.
+
+DNESKAi: the Lab's stage has a **Studio** view (`lab/studio-view.tsx`; "Otevřít v Design Labu" in "Dnes a zítra" opens
+it). It shows the slide exactly as the slide engine renders it (the render-only preview) with the headline, text and
+label as blocks. A box change is stored in the slide's `layout` (`DneskaiSlideLayoutSchema`, same box shape as
+devShark) and the slide draws again; words are written in the panel beside it. The engine applies the boxes after the
+kit's layout (`src/lib/carousel-studio/dneskai-boxes.ts`): held in the safe area, set at the fixed size, drawn above
+the photographs, a moved headline taking its quotation marks along; cut copy is refused as `text-clipped`. A slide
+without `layout` renders byte for byte as before, and its render key is unchanged. A new slide type or kit drops the
+boxes. Every kit can be edited this way.
 
 ### Review and approval: the Design Lab
 
