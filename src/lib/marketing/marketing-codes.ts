@@ -40,6 +40,17 @@ const CODES = {
   // Approval (POST /api/marketing/revisions approve) and owner decisions.
   'revision-not-ready': ['edit', 'This version has no finished render yet, so it cannot be approved.', 'Tato verze ještě nemá hotové vykreslení, proto ji nelze schválit.'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
+  // The publishing plan (owner decision, 7 November 2026).
+  'plan-unavailable': ['retry', 'The plan could not be loaded.', 'Plán se nepodařilo načíst.'],
+  'plan-unreadable': ['retry', 'The plan arrived in a form this screen cannot read.', 'Plán přišel v podobě, kterou tato obrazovka neumí přečíst.'],
+  'plan-post-missing': ['investigate', 'The post this slot was planned for no longer exists.', 'Příspěvek naplánovaný do tohoto slotu už neexistuje.'],
+  'plan-post-superseded': ['edit', 'A newer source replaced this post, so the plan cannot send it.', 'Novější zdroj tento příspěvek nahradil, takže ho plán nemůže odeslat.'],
+  'publish-failed': ['investigate', 'Publishing this post failed.', 'Publikování tohoto příspěvku selhalo.'],
+  'threads-account-missing': ['account', 'The @dneskai Threads profile is not connected yet; the Threads post waits.', 'Profil @dneskai na Threads ještě není napojený; příspěvek pro Threads čeká.'],
+  'threads-slot-passed': ['none', 'The time passed before the Threads post was ready; only Instagram went out.', 'Čas uplynul dřív, než byl příspěvek pro Threads připravený; vyšel jen na Instagramu.'],
+  'slot-passed': ['none', 'The slot passed before the post was approved.', 'Čas slotu uplynul dřív, než byl příspěvek schválen.'],
+  'threads-twin-not-ready': ['edit', 'The Threads version is not ready: its text or slides do not fit Threads.', 'Verze pro Threads není připravená: text nebo slidy se na Threads nevejdou.'],
+  'plan-render-waiting': ['wait', 'The post waits for its Spotlight render.', 'Příspěvek čeká na vykreslení ve Spotlightu.'],
   'revision-changed': ['reload', 'The post changed after you opened it; the approval no longer matches this version.', 'Příspěvek se změnil, když jste ho měli otevřený; schválení už neodpovídá této verzi.'],
   'schedule-expired': ['edit', 'The planned time has passed or is too far ahead for the stored images.', 'Plánovaný čas už minul nebo je pro uložené obrázky příliš daleko.'],
   'source-changed': ['source', 'A source of this post changed after the draft was written.', 'Zdroj příspěvku se po napsání návrhu změnil.'],
