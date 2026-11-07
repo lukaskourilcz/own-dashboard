@@ -36,12 +36,12 @@ function PlanStatus({ slot, lang }: { slot: Pick<DneskaiPlanSlot, 'status'>; lan
 }
 
 /** The networks a slot posts to, as short marks with their full names for assistive technology. */
-function NetworkMarks({ slot, lang, short = false }: { slot: Pick<DneskaiPlanSlot, 'instagram' | 'threads'>; lang: Lang; short?: boolean }) {
+function NetworkMarks({ slot, lang, short = false }: { slot: Pick<DneskaiPlanSlot, 'instagram' | 'threads' | 'story'>; lang: Lang; short?: boolean }) {
   const t = dneskaiToday[lang];
-  const networks = (['instagram', 'threads'] as const).filter((network) => slot[network]);
+  const networks = (['instagram', 'story', 'threads'] as const).filter((network) => slot[network]);
   return <ul className="flex flex-wrap gap-1" aria-label={networks.map((network) => t[network]).join(', ')}>
     {networks.map((network) => <li key={network} className="inline-flex min-h-6 items-center rounded-sm border border-border bg-surface-inset px-1.5 text-[11px] font-medium text-foreground-muted">
-      {short ? <><span aria-hidden>{network === 'instagram' ? t.instagramShort : t.threadsShort}</span><span className="sr-only">{t[network]}</span></> : t[network]}
+      {short ? <><span aria-hidden>{network === 'instagram' ? t.instagramShort : network === 'story' ? t.storyShort : t.threadsShort}</span><span className="sr-only">{t[network]}</span></> : t[network]}
     </li>)}
   </ul>;
 }
