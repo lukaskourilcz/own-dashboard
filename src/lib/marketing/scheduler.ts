@@ -513,7 +513,8 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
     {
       category: "token", lease: "token",
       async precheck(): Promise<StepOutcome | null> {
-        dueTokens = (await ports.tokenMetadata()).filter((token) => token.platform === "instagram" && instagramTokenRefreshDue(token, clock()));
+        // Instagram and, since 7 November 2026, Threads tokens of every brand: instagramTokenRefreshDue decides by login mode.
+        dueTokens = (await ports.tokenMetadata()).filter((token) => instagramTokenRefreshDue(token, clock()));
         return dueTokens.length ? null : { status: "noop" };
       },
       async run({ state, signal: abort, now, saveState }): Promise<StepOutcome> {

@@ -471,9 +471,15 @@ describe('Instagram token refresh', () => {
     expect(step(await h.tick(), 'token')).toMatchObject({ status: 'skipped', code: 'token-refresh-backoff' });
     h.clock.advance(2 * 60 * 60_000);
     expect(step(await h.tick(), 'token').status).toBe('error');
-    const fresh = harness({ tokenMetadata: async () => [{ ...dueToken(), expiresAt: iso(evening + 30 * 86_400_000) }, { ...dueToken(), platform: 'threads', loginMode: 'threads' }] }, new Clock(evening));
+    const fresh = harness({ tokenMetadata: async () => [{ ...dueToken(), expiresAt: iso(evening + 30 * 86_400_000) }, { ...dueToken(), platform: 'threads', loginMode: 'threads', expiresAt: iso(evening + 30 * 86_400_000) }] }, new Clock(evening));
     expect(step(await fresh.tick(), 'token').status).toBe('noop');
     expect(fresh.called('refreshToken')).toEqual([]);
+  });
+
+  it('renews a Threads token that is due, like an Instagram one (7 November 2026)', async () => {
+    const h = harness({ tokenMetadata: async () => [{ ...dueToken(), platform: 'threads', loginMode: 'threads' }] }, new Clock(evening));
+    await h.tick();
+    expect(h.called('refreshToken')).toHaveLength(1);
   });
 });
 
