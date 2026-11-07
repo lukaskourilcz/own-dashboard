@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // The vendored studio's own function, by file: OwnDashboard's runtime imports only the dneskai-slide and fonts entries.
-import { cropRegion } from '../../vendor/carousel-studio/dist/images.js';
+import { cropRegion } from '@/lib/carousel-studio/images';
 import { dneskaiCropFractions, dneskaiCropRegion, dneskaiCropUpscale, dneskaiSlotFrame } from '@/lib/marketing/dneskai-crop';
 
 const sources = [{ width: 1600, height: 1200 }, { width: 1200, height: 1500 }, { width: 1000, height: 700 }, { width: 800, height: 800 }, { width: 4032, height: 3024 }, { width: 901, height: 1999 }];

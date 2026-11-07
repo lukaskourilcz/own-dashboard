@@ -1,62 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { DNESKAI_FIELD_FACES, DNESKAI_PLACED_FIELDS, DNESKAI_STUDIO, type DneskaiTextField } from "@/lib/marketing/dneskai-render";
 import { DNESKAI_RENDERABLE_KIT_IDS, type DneskaiSlideType } from "@/lib/marketing/dneskai-slides";
 
 const root = path.resolve(__dirname, "../..");
-const vendor = path.join(root, "vendor/carousel-studio");
-const upstream = readFileSync(path.join(vendor, "UPSTREAM.md"), "utf8");
+const assets = path.join(root, "templates/carousel-studio");
 
-/** The hash `scripts/vendor-carousel-studio.sh` records: sha256 of the sorted `sha256sum` lines of every file but UPSTREAM.md. */
-function treeHash(directory: string): string {
-  const files: string[] = [];
-  const walk = (relative: string) => {
-    for (const entry of readdirSync(path.join(directory, relative), { withFileTypes: true })) {
-      const next = `${relative}/${entry.name}`;
-      if (entry.isDirectory()) walk(next);
-      else if (next !== "./UPSTREAM.md") files.push(next);
-    }
-  };
-  walk(".");
-  files.sort((left, right) => left < right ? -1 : left > right ? 1 : 0);
-  const listing = files.map((file) => `${createHash("sha256").update(readFileSync(path.join(directory, file))).digest("hex")}  ${file}\n`).join("");
-  return createHash("sha256").update(listing).digest("hex");
-}
-
-describe("vendored @boardlessai/carousel-studio", () => {
-  it("is exactly the recorded build: tree hash, commit and version agree with UPSTREAM.md and the renderer pin", () => {
-    const recorded = /^- Tree sha256: `([0-9a-f]{64})`$/m.exec(upstream)?.[1];
-    const commit = /^- Commit: `([0-9a-f]{40})`$/m.exec(upstream)?.[1];
-    expect(treeHash(vendor)).toBe(recorded);
-    expect(DNESKAI_STUDIO.treeSha256).toBe(recorded);
-    expect(DNESKAI_STUDIO.commit).toBe(commit);
-    const manifest = JSON.parse(readFileSync(path.join(vendor, "package.json"), "utf8"));
-    expect(Object.keys(manifest)).toEqual(["name", "version", "type", "exports", "dependencies"]);
-    expect(manifest.name).toBe(DNESKAI_STUDIO.package);
-    expect(manifest.version).toBe(DNESKAI_STUDIO.version);
-  });
-
-  it("resolves through node_modules to one copy of sharp, resvg and zod shared with OwnDashboard", () => {
-    const fromProject = createRequire(path.join(root, "package.json"));
-    const fromStudio = createRequire(path.join(vendor, "package.json"));
-    const packageJson = realpathSync(path.join(root, "node_modules/@boardlessai/carousel-studio/package.json"));
-    expect(packageJson).toBe(realpathSync(path.join(vendor, "package.json")));
-    for (const dependency of ["sharp", "@resvg/resvg-js", "zod"]) {
-      expect(realpathSync(fromStudio.resolve(dependency))).toBe(realpathSync(fromProject.resolve(dependency)));
-    }
-    const declared = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")).dependencies;
-    expect(declared["@boardlessai/carousel-studio"]).toBe("file:vendor/carousel-studio");
-  });
-
-  it("imports the way a route handler does and finds every font and the DNESKAi kit beside its own module", async () => {
-    // Route handlers reach the studio through `await import(...)` in dneskai-render.ts; the
-    // package resolves its fonts and kits from import.meta.url, so they must sit next to dist/.
-    const studio = await import("@boardlessai/carousel-studio");
-    expect(realpathSync(studio.FONTS_DIRECTORY)).toBe(realpathSync(path.join(vendor, "fonts")));
-    expect(realpathSync(studio.BRAND_KITS_DIRECTORY)).toBe(realpathSync(path.join(vendor, "brand-kits")));
+describe("OwnDashboard's slide engine (src/lib/carousel-studio, owned since 7 November 2026)", () => {
+  it("finds every font and the DNESKAi kit under templates/carousel-studio from the project root", async () => {
+    // Next bundles the engine, so it reads its assets from the project root, never from its own file location.
+    const studio = await import("@/lib/carousel-studio");
+    expect(realpathSync(studio.FONTS_DIRECTORY)).toBe(realpathSync(path.join(assets, "fonts")));
+    expect(realpathSync(studio.BRAND_KITS_DIRECTORY)).toBe(realpathSync(path.join(assets, "brand-kits")));
     const fonts = studio.fontFiles();
     expect(fonts.length).toBeGreaterThanOrEqual(40);
     expect(fonts.filter((file) => !existsSync(file))).toEqual([]);
@@ -65,21 +22,21 @@ describe("vendored @boardlessai/carousel-studio", () => {
   });
 
   it("exports the DNESKAi slide API and the face metrics, which is all the renderer imports", async () => {
-    const slide = await import("@boardlessai/carousel-studio/dneskai-slide");
+    const slide = await import("@/lib/carousel-studio/dneskai-slide");
     expect(typeof slide.renderDneskaiSlide).toBe("function");
     expect(typeof slide.validateDneskaiSlide).toBe("function");
-    const fonts = await import("@boardlessai/carousel-studio/fonts");
+    const fonts = await import("@/lib/carousel-studio/fonts");
     expect(fonts.missingCommittedGlyphs(fonts.resolveFace("Space Grotesk", 700), "Žluťoučký kůň 🦈")).toEqual(["🦈"]);
     const renderer = readFileSync(path.join(root, "src/lib/marketing/dneskai-render.ts"), "utf8");
-    const specifiers = [...renderer.matchAll(/(?:from\s+|import\(\s*)"(@boardlessai\/carousel-studio[^"]*)"/g)].map((match) => match[1]);
-    expect(specifiers.length).toBeGreaterThanOrEqual(2);
-    // Never the barrel: only the two subpaths the vendored manifest adds.
-    expect(specifiers).toContain("@boardlessai/carousel-studio/dneskai-slide");
-    expect(specifiers.filter((specifier) => !["@boardlessai/carousel-studio/dneskai-slide", "@boardlessai/carousel-studio/fonts"].includes(specifier))).toEqual([]);
+    const specifiers = [...renderer.matchAll(/(?:from\s+|import\(\s*)"(@\/lib\/carousel-studio[^"]*)"/g)].map((match) => match[1]);
+    // Never the barrel: only the slide and font modules, so the route bundles stay small.
+    expect(specifiers).toContain("@/lib/carousel-studio/dneskai-slide");
+    expect(specifiers.filter((specifier) => !["@/lib/carousel-studio/dneskai-slide", "@/lib/carousel-studio/fonts"].includes(specifier))).toEqual([]);
+    expect(readFileSync(path.join(root, "package.json"), "utf8")).not.toContain("@boardlessai/carousel-studio");
   });
 
   it("draws each written field in the face, and on the slide types, that the renderer's text gate assumes", async () => {
-    const studio = await import("@boardlessai/carousel-studio");
+    const studio = await import("@/lib/carousel-studio");
     const brand = studio.CAROUSEL_BRANDS["caught-up"];
     const style = studio.kitStyleFor(brand);
     if (!style) throw new Error("the caught-up kit is missing");
@@ -107,8 +64,8 @@ describe("vendored @boardlessai/carousel-studio", () => {
     }
   });
 
-  it("offers exactly the kits the vendored studio registers, each placing every field a deck carries", async () => {
-    const slide = await import("@boardlessai/carousel-studio/dneskai-slide");
+  it("offers exactly the kits the engine registers, each placing every field a deck carries", async () => {
+    const slide = await import("@/lib/carousel-studio/dneskai-slide");
     expect([...slide.DNESKAI_KITS.keys()]).toEqual([...DNESKAI_RENDERABLE_KIT_IDS]);
     expect(DNESKAI_RENDERABLE_KIT_IDS[0]).toBe("editorial");
     // One copy deck sets in every kit, so a kit switch can never strand text the new kit does not draw.
@@ -122,15 +79,15 @@ describe("vendored @boardlessai/carousel-studio", () => {
 
   it("traces the fonts and the kit into every marketing function, at the path the bundled studio reads at run time", () => {
     const config = readFileSync(path.join(root, "next.config.ts"), "utf8");
-    expect(config).toContain('const carouselStudioFiles = ["./vendor/carousel-studio/fonts/**/*", "./vendor/carousel-studio/brand-kits/**/*"];');
+    expect(config).toContain('const carouselStudioFiles = ["./templates/carousel-studio/fonts/**/*", "./templates/carousel-studio/brand-kits/**/*"];');
     expect(config).toContain('"/api/marketing/**": [...carouselStudioFiles, sharpLibvips],');
     const picomatch = createRequire(path.join(root, "package.json"))("next/dist/compiled/picomatch") as (glob: string) => (value: string) => boolean;
     for (const route of ["/api/marketing/jobs/[id]/execute", "/api/marketing/n8n", "/api/marketing/revisions"]) expect(picomatch("/api/marketing/**")(route)).toBe(true);
   });
 
   it("reproduces every pinned DNESKAi golden PNG with OwnDashboard's sharp and zod", async () => {
-    const studio = await import("@boardlessai/carousel-studio");
-    const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(vendor, "golden/dneskai-photo.json"), "utf8")));
+    const studio = await import("@/lib/carousel-studio");
+    const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(assets, "golden/dneskai-photo.json"), "utf8")));
     const cases = await studio.dneskaiGoldenCases();
     expect(cases.map((entry) => entry.name)).toEqual(golden.entries.map((entry) => entry.name));
     for (const { name, input } of cases) {
@@ -142,10 +99,10 @@ describe("vendored @boardlessai/carousel-studio", () => {
   }, 60000);
 
   it("renders the golden cases in every other kit, byte for byte where the kit pins that case", async () => {
-    const studio = await import("@boardlessai/carousel-studio");
+    const studio = await import("@/lib/carousel-studio");
     const cases = await studio.dneskaiGoldenCases();
     for (const kit of DNESKAI_RENDERABLE_KIT_IDS.filter((id) => id !== "editorial")) {
-      const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(vendor, `golden/dneskai-${kit}.json`), "utf8")));
+      const golden = studio.DneskaiGoldenSchema.parse(JSON.parse(readFileSync(path.join(assets, `golden/dneskai-${kit}.json`), "utf8")));
       for (const { name, input } of cases) {
         const result = await studio.renderDneskaiSlide({ ...input, kit });
         expect({ kit, name, status: result.status, kitName: result.kit, truncated: result.truncatedSlots }).toEqual({ kit, name, status: "rendered", kitName: kit, truncated: [] });
