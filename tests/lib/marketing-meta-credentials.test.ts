@@ -64,7 +64,7 @@ describe('Meta token resolution', () => {
     expect(instagramTokenRefreshDue({ expiresAt: at(-1), refreshedAt: at(-2 * day), loginMode: 'instagram' }, now)).toBe(false);
     // #166: a Facebook Login token is renewed by the same window; Threads is not.
     expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-2 * day), loginMode: 'facebook' }, now)).toBe(true);
-    expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-2 * day), loginMode: 'threads' }, now)).toBe(false);
+    expect(instagramTokenRefreshDue({ expiresAt: at(9 * day), refreshedAt: at(-2 * day), loginMode: 'threads' }, now)).toBe(true);
     expect(await listMetaTokenMetadata(database(null).db, owner)).toEqual([{ accountId: account.id, brand: 'dneskai', platform: 'instagram', expiresAt: at(5 * day), refreshedAt: at(-55 * day), scopes: ['instagram_business_basic'], loginMode: 'instagram' }]);
   });
 });
@@ -132,9 +132,18 @@ describe('refreshInstagramToken', () => {
     const outcome = await refreshInstagramToken(database(stored(), { storeError: true }).db, owner, account, { env: env(), now, fetcher: meta(Response.json({ access_token: 'TEST-ONLY-REFRESHED-TOKEN-0004', expires_in: 5_184_000 })) });
     expect(outcome).toEqual({ status: 'uncertain', accountId: account.id, code: 'refresh-store-failed' });
   });
-  it('holds Threads accounts, foreign accounts and an unavailable store', async () => {
+  it('renews a Threads token with th_refresh_token (plan, 7 November 2026)', async () => {
+    const fetcher = meta(Response.json({ access_token: 'TEST-ONLY-THREADS-TOKEN-00005', token_type: 'bearer', expires_in: 5_184_000 }));
+    const threads = stored({ loginMode: 'threads', scopes: ['threads_basic', 'threads_content_publish'] });
+    const outcome = await refreshInstagramToken(database(threads).db, owner, { ...account, platform: 'threads' }, { env: env(), now, fetcher });
+    expect(outcome).toMatchObject({ status: 'refreshed' });
+    const url = new URL(String(fetcher.mock.calls[0]![0]));
+    expect(url.origin + url.pathname).toBe('https://graph.threads.net/refresh_access_token');
+    expect(url.searchParams.get('grant_type')).toBe('th_refresh_token');
+  });
+  it('holds a Threads account whose token is not a Threads token, foreign accounts and an unavailable store', async () => {
     const fetcher = meta(Response.json({}));
-    expect(await refreshInstagramToken(database(stored()).db, owner, { ...account, platform: 'threads' }, { env: env(), now, fetcher })).toMatchObject({ status: 'held', code: 'refresh-instagram-only' });
+    expect(await refreshInstagramToken(database(stored()).db, owner, { ...account, platform: 'threads' }, { env: env(), now, fetcher })).toMatchObject({ status: 'held', code: 'login-mode-mismatch' });
     expect(await refreshInstagramToken(database(stored()).db, owner, { ...account, user_id: '22222222-2222-4222-8222-222222222222' }, { env: env(), now, fetcher })).toMatchObject({ status: 'held', code: 'credential-owner-mismatch' });
     expect(await refreshInstagramToken(database(stored(), { readError: true }).db, owner, account, { env: env(), now, fetcher })).toMatchObject({ status: 'held', code: 'credential-store-unavailable' });
     expect(fetcher).not.toHaveBeenCalled();
