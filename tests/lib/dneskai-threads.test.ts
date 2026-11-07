@@ -47,6 +47,11 @@ describe('dneskaiThreadsTwin', () => {
     expect(revisionReadiness(twin)).toEqual([]);
   });
 
+  it('never publishes a deck to Threads as a Reel', () => {
+    const twin = dneskaiThreadsTwin(instagram(), { remote_account_id: '26000000000000001', handle: 'dneskai' });
+    expect(() => parseContentRevision({ ...twin, format: 'reel' })).toThrow('a Threads deck revision is a carousel or a post');
+  });
+
   it('refuses a source that is not an Instagram DNESKAi post', () => {
     const twin = dneskaiThreadsTwin(instagram(), { remote_account_id: '26000000000000001', handle: 'dneskai' });
     expect(() => dneskaiThreadsTwin(twin, { remote_account_id: '1', handle: 'x' })).toThrow('threads-twin-source-invalid');
