@@ -940,3 +940,11 @@ with caption, origin and the owner's decision) and `marketing_devshark_plan` (on
 Instagram and Threads, 19:00 for Threads alone, each holding one approved concept). The owner reads both and decides
 through `marketing_devshark_decide`, which only the signed-in owner can call; the scheduler writes the plan with the
 service role. Replayed in PGlite (`tests/lib/devshark-plan-database.test.ts`).
+
+## devShark studio, 7 November 2026
+
+`20261107200000_devshark_studio.sql` adds `marketing_devshark_save`: the signed-in owner saves a concept's edited
+title, slides and caption, and the concept returns to `draft`, so an approval always binds the saved text. A concept
+in the plan or published cannot change. It also adds `devshark-studio` to the hideable project tabs, after
+`dneskai-today`, exactly `PROJECT_TAB_IDS`. Replayed in PGlite (`tests/lib/devshark-plan-database.test.ts`,
+`tests/lib/project-tabs-database.test.ts`).
