@@ -63,7 +63,11 @@ Structure: 4 to 6 slides. The first slide has kind "cover" with a short kicker (
 Middle slides use kind "text", "code" or "answer" (the answer or key takeaway, at most one). The last slide has kind "closing": one sentence about what devShark offers, no code.
 Limits: headline at most 45 characters (cover at most 30); body at most 140 characters; code at most 7 lines of at most 34 characters each.
 Mark 1 to 4 key words per slide as green with double brackets, like [[this]]. Never put brackets inside code.
-Caption: 2 short paragraphs, then a line with 3 to 5 hashtags ending with #devshark. The caption may mention devshark.app and no other URL. No emoji.`;
+Caption, in the owner's voice: one or two short paragraphs that talk to the reader directly with a playful, slightly teasing challenge (a question they may hesitate over, a nudge from junior to senior), never a dry summary and never a hint like "answer on slide 3". Then the devShark line naming what devShark offers for this topic, with devshark.app followed by the shark emoji 🦈. Then 3 to 5 hashtags ending with #devshark. The caption may mention devshark.app and no other URL. The shark is the only emoji.
+Captions the owner wrote:
+- "Guess before you swipe: what does typeof null return? If you know, then you are much better than what they say about you. 🦈\n\nMore JavaScript quizzes on devShark: devshark.app\n#javascript #webdevelopment #coding #frontend #devshark"
+- "We heard that many devs still get this wrong. Including us.\nLearn CSS layout step by step on devShark: devshark.app 🦈\n#css #frontend #webdevelopment #coding #devshark"
+- "Do you know how to reverse the order of words in a sentence? Of course you know, that is a junior thing. Do you want to be a senior though? Then check out our coding tasks for web developers on devShark: devshark.app 🦈\n#codingchallenge #javascript #webdevelopment #coding #devshark"`;
 
 export function devsharkConceptPrompt(topic: string, recentTitles: readonly string[]): string {
   return [`Topic for this concept: ${topic}.`, recentTitles.length ? `Do not repeat these recent concepts:\n${recentTitles.map((title) => `- ${title}`).join('\n')}` : '', 'Return the concept.'].filter(Boolean).join('\n\n');
