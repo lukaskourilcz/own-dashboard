@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Hook, Library, MmaPredicate, NewsPredicate, Predicate, QuizPredicate, Surface } from "./schema.js";
+import type { Hook, Library, MmaPredicate, NewsPredicate, QuizPredicate, Surface } from "./schema.js";
 
 /**
  * What a quiz predicate is evaluated against.

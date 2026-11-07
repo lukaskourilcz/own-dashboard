@@ -1,5 +1,4 @@
 import {
-  BOTTOM,
   LEFT,
   MEASURE,
   TOP,

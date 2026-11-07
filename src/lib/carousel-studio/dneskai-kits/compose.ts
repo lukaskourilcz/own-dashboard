@@ -1,6 +1,5 @@
 import { CarouselTemplateSchema, type CarouselLayerInput, type CarouselTemplate, type CarouselTemplateInput } from "../schema.js";
 import { MASTER_CANVAS, MASTER_FORMAT } from "../canvas.js";
-import { DNESKAI_THUMBNAIL_GRID } from "../dneskai-layout.js";
 
 /**
  * DNESKAi's photographic slides for Instagram (quorum#603), one single-slide template per type.
