@@ -20,6 +20,10 @@ create table public.marketing_dneskai_plan (
  topic_id uuid references public.marketing_dneskai_topics(id) on delete set null,
  head_revision_id uuid references public.marketing_revisions(id) on delete set null,
  threads_revision_id uuid references public.marketing_revisions(id) on delete set null,
+ -- The last revision the plan step saved itself; a newer head is the owner's own edit from the Design Lab.
+ written_revision_id uuid references public.marketing_revisions(id) on delete set null,
+ -- The Instagram revision the Threads twin was derived from; a different head means a new twin.
+ threads_base_revision_id uuid references public.marketing_revisions(id) on delete set null,
  status text not null default 'planned' check(status in ('planned','generating','ready','approved','published','skipped','failed')),
  code text check(code is null or code ~ '^[a-z][a-z0-9_-]{0,99}$'),
  created_at timestamptz not null default clock_timestamp(),
