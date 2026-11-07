@@ -6,13 +6,14 @@ import { Bookmark, ChevronLeft, ChevronRight, Heart, MessageCircle, Send } from 
 import { Button } from '@/components/ui/button';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
-import type { DneskaiLabAsset, DneskaiLabPost } from '@/lib/marketing/dneskai-lab';
-import type { DneskaiSlideType } from '@/lib/marketing/dneskai-slides';
+import type { DneskaiLabAsset, DneskaiLabPost, DneskaiPreviewResult } from '@/lib/marketing/dneskai-lab';
+import type { DneskaiSlide, DneskaiSlideLayout, DneskaiSlideType } from '@/lib/marketing/dneskai-slides';
+import { DneskaiStudioView } from './studio-view';
 import { cn } from '@/lib/utils';
 import { DneskaiCodeText } from '../code-text';
 
 type Lang = 'en' | 'cs';
-export type DneskaiStageView = 'feed' | 'profile' | 'pixels';
+export type DneskaiStageView = 'feed' | 'profile' | 'pixels' | 'studio';
 /**
  * One slide as the stage shows it. While the owner edits, `render` is the saved JPEG only when the draft slide would
  * render to exactly the same pixels (same words, pictures, place and deck length); otherwise it is null and `draft`
@@ -20,7 +21,9 @@ export type DneskaiStageView = 'feed' | 'profile' | 'pixels';
  */
 export type DneskaiStageSlide = { index: number; type: DneskaiSlideType; render: DneskaiLabAsset | null; problems: DneskaiLabPost['slides'][number]['problems']; draft: 'changed' | 'added' | null; alt: string };
 /** The render-only preview of the current draft slide: real pixels, never stored, never approvable. */
-export type DneskaiStagePreview = { slide: number; status: 'loading' | 'rendered' | 'refused' | 'unavailable'; image: string | null; code: string | null };
+export type DneskaiStagePreview = { slide: number; status: 'loading' | 'rendered' | 'refused' | 'unavailable'; image: string | null; code: string | null; blocks: DneskaiPreviewResult['blocks'] };
+/** The Design Studio on the stage: the draft slide, its newest drawn picture and where a box change goes. */
+export type DneskaiStageStudio = { slide: DneskaiSlide; last: { image: string; blocks: DneskaiPreviewResult['blocks'] } | null; editable: boolean; onLayout: (layout: DneskaiSlideLayout | undefined) => void };
 
 export function dneskaiStageSlides(lab: DneskaiLabPost): DneskaiStageSlide[] {
   return lab.slides.map((item) => ({ index: item.index, type: item.type, render: item.render, problems: item.problems, draft: null, alt: item.render?.alt ?? '' }));
@@ -34,11 +37,13 @@ export const DNESKAI_PHONE_WIDTH = 390;
  * The phone chrome is decorative and hidden from assistive technology; the slide image carries the alt text. A slide
  * without a render shows its state and problem in words, never a stand-in picture.
  */
-export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCovers, onLoaded, caption, lang, slides: given, preview = null }: {
+export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCovers, onLoaded, caption, lang, slides: given, preview = null, studio = null }: {
   lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; view: DneskaiStageView; onView: (view: DneskaiStageView) => void;
   profileCovers: readonly DneskaiLabAsset[]; onLoaded: (url: string, ok: boolean) => void; caption: string; lang: Lang;
   /** The draft's slides while editing; the saved revision's otherwise. */
   slides?: DneskaiStageSlide[]; preview?: DneskaiStagePreview | null;
+  /** The Design Studio view; absent hides it (a guest tour, a post without a deck). */
+  studio?: DneskaiStageStudio | null;
 }) {
   const t = dneskaiLab[lang];
   const id = useId();
@@ -47,7 +52,7 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
   const current = slides[slide] ?? null;
   const draftPreview = current?.draft && preview?.slide === slide ? preview : null;
   const touch = useRef<number | null>(null);
-  const views: DneskaiStageView[] = ['feed', 'profile', 'pixels'];
+  const views: DneskaiStageView[] = studio ? ['feed', 'profile', 'pixels', 'studio'] : ['feed', 'profile', 'pixels'];
   return <section aria-label={lab.post.title} className="min-w-0 space-y-3" data-testid="dneskai-lab-stage">
     <div className="flex flex-wrap items-center justify-end gap-2">
       <fieldset className="flex shrink-0 rounded-md border border-border bg-surface-secondary p-0.5" data-testid="dneskai-stage-views">
@@ -118,6 +123,8 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
         <Image unoptimized src={current.render.url} alt={current.render.alt} width={current.render.width} height={current.render.height} className="block max-w-none" style={{ width: current.render.width, height: current.render.height }} />
       </div>
     </div> : <p role="status" className="text-sm text-foreground-muted">{t.stage.noRender}</p>)}
+
+    {view === 'studio' && studio && <DneskaiStudioView slide={studio.slide} index={slide} preview={preview} last={studio.last} editable={studio.editable} onLayout={studio.onLayout} lang={lang} />}
 
     <DeckStrip slides={slides} slide={slide} onSlide={onSlide} lang={lang} onLoaded={onLoaded} />
   </section>;
