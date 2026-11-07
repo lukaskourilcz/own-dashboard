@@ -20,6 +20,7 @@ export const DNESKAI_PROJECT_TABS = [
   "dneskai-calendar",
   "dneskai-published",
   "dneskai-costs",
+  "dneskai-today",
 ] as const;
 
 export type DneskaiProjectTab = (typeof DNESKAI_PROJECT_TABS)[number];
@@ -37,12 +38,14 @@ export const PROJECT_TAB_IDS = [
 export type ProjectTabId = (typeof PROJECT_TAB_IDS)[number];
 
 /**
- * The four tabs the DNESKAi workspace strip shows, in order (#169). Review opens
- * by default. Sources is a general tab id that no other project shows.
+ * The tabs the DNESKAi workspace strip shows, in order (#169). The first one,
+ * Today and tomorrow, opens by default. Sources is a general tab id that no
+ * other project shows.
  * `dneskai-costs` keeps its id (the database check lists it) but left the strip:
  * Errors and costs opens from the overflow menu.
  */
 export const DNESKAI_WORKSPACE_TAB_ORDER = [
+  "dneskai-today",
   "dneskai-review",
   "dneskai-calendar",
   "dneskai-published",

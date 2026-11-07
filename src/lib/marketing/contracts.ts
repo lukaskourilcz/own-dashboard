@@ -160,7 +160,9 @@ export const ContentRevisionSchema = z.strictObject({
     return;
   }
   if (revision.brand !== "dneskai") context.addIssue({ code: "custom", message: "a deck revision belongs to DNESKAi", path: ["brand"] });
-  if (revision.account.platform !== "instagram") context.addIssue({ code: "custom", message: "a deck revision publishes to Instagram", path: ["account", "platform"] });
+  // A deck publishes to Instagram, or to Threads as the plan's twin of an Instagram post (owner decision, 7 November 2026).
+  if (revision.account.platform !== "instagram" && revision.account.platform !== "threads") context.addIssue({ code: "custom", message: "a deck revision publishes to Instagram or Threads", path: ["account", "platform"] });
+  if (revision.account.platform === "threads" && revision.format === "reel") context.addIssue({ code: "custom", message: "a Threads deck revision is a carousel or a post", path: ["format"] });
   if (!revision.deck) { context.addIssue({ code: "custom", message: "a marketing-content/2 revision requires a deck", path: ["deck"] }); return; }
   // A Reel (#165) is a carousel deck published as one rendered video: same slides, same JPEGs, one more format.
   const expected = revision.format === "carousel" || revision.format === "reel" ? "carousel" : revision.format === "post" ? "single-image" : null;

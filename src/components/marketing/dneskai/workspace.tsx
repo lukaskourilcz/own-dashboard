@@ -13,6 +13,10 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { DneskaiCalendarTab } from './calendar-tab';
 import { DneskaiPublishedTab } from './published-tab';
 import { DneskaiCostsTab } from './costs-tab';
+import { DneskaiTodayTab } from './today-tab';
+import { dneskaiToday } from '@/lib/i18n/sections/dneskai-today';
+import { dneskaiPlanApi, dneskaiPlanKey } from '@/lib/marketing/dneskai-plan-client';
+import type { DneskaiPlanRead } from '@/lib/marketing/dneskai-plan-view';
 import type { DneskaiProjectTab } from '@/lib/project-workspace-tabs';
 
 export type DneskaiWorkspaceTabId = DneskaiProjectTab;
@@ -43,14 +47,34 @@ function useRenderFailed(projectId: string) {
 }
 
 /**
- * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Today, Calendar and Posts share the review
- * read; Errors and costs has its own. In the preview the reads come from the in-memory demo, never from a server.
+ * One DNESKAi workspace tab (#119). Loaded only when the tab opens: Review, Calendar and Posts share the review
+ * read; Errors and costs and Today and tomorrow (the plan read) have their own. In the preview the reads come from the in-memory demo, never from a server.
  */
 export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean }) {
-  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} /> : <ReviewRead tab={tab} projectId={projectId} lang={lang} preview={preview} />;
+  return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} />
+    : tab === 'dneskai-today' ? <TodayTab lang={lang} preview={preview} />
+    : <ReviewRead tab={tab} projectId={projectId} lang={lang} preview={preview} />;
 }
 
-function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs'>; projectId: string; lang: Lang; preview: boolean }) {
+/** While a slot of the plan is being prepared, read again every minute until it is ready or failed. */
+const PLAN_PREPARING_POLL_MS = 60_000;
+const preparing = (read: DneskaiPlanRead | undefined) => !!read?.slots.some((slot) => slot.status === 'generating');
+
+/** „Dnes a zítra“: the two-day plan read first, the 30-day plan beside it; neither reads the review. */
+function TodayTab({ lang, preview }: { lang: Lang; preview: boolean }) {
+  const t = dneskaiToday[lang];
+  const twoDays = useQuery<DneskaiPlanRead>({ queryKey: dneskaiPlanKey(), ...options,
+    refetchInterval: (query) => preparing(query.state.data) ? PLAN_PREPARING_POLL_MS : false,
+    queryFn: async ({ signal }) => (await dneskaiPlanApi(preview)).load({}, signal) });
+  const month = useQuery<DneskaiPlanRead>({ queryKey: dneskaiPlanKey({ days: 30 }), ...options,
+    queryFn: async ({ signal }) => (await dneskaiPlanApi(preview)).load({ days: 30 }, signal) });
+  if (twoDays.isPending) return <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>;
+  if (twoDays.isError) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
+  return <DneskaiTodayTab read={twoDays.data} month={month.isPending ? 'loading' : month.isError ? 'unavailable' : month.data} lang={lang} preview={preview}
+    refreshing={twoDays.isFetching || month.isFetching} onRefresh={() => { void twoDays.refetch(); void month.refetch(); }} />;
+}
+
+function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs' | 'dneskai-today'>; projectId: string; lang: Lang; preview: boolean }) {
   const t = dneskaiWorkspace[lang];
   const pathname = usePathname();
   const guest = preview && pathname === '/guest';

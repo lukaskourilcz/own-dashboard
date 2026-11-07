@@ -63,6 +63,7 @@ describe("synchronized user preferences", () => {
         "dneskai-calendar",
         "dneskai-published",
         "dneskai-costs",
+        "dneskai-today",
         "dneskai-review",
         "dneskai-unknown",
         "DNESKAI-COSTS",
@@ -73,6 +74,7 @@ describe("synchronized user preferences", () => {
       "dneskai-calendar",
       "dneskai-published",
       "dneskai-costs",
+      "dneskai-today",
       "sources",
     ]);
     expect(normalizeHiddenProjectTabs("dneskai-review")).toEqual([]);
@@ -95,7 +97,7 @@ describe("synchronized user preferences", () => {
   });
 
   it("constrains hidden project tabs to exactly the workspace tabs", () => {
-    expect(latestTabCheck).toBe("20261021124712_dneskai_hideable_project_tabs.sql");
+    expect(latestTabCheck).toBe("20261107140100_dneskai_today_project_tab.sql");
     expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_TAB_IDS]);
     expect(checkedTabs(tabCheckSql)).not.toContain("operations");
     expect(checkedTabs(tabCheckSql)).toContain("competition");

@@ -36,6 +36,8 @@ export const INSTAGRAM_LOGIN_SCOPES = ['instagram_business_basic', 'instagram_bu
 export const FACEBOOK_LOGIN_SCOPES = ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement', 'pages_show_list'] as const;
 /** Facebook Login's long-lived token exchange; it needs the Meta app's id and secret (server-only). */
 export const FACEBOOK_TOKEN_ENDPOINT = 'https://graph.facebook.com';
+/** Threads long-lived tokens last 60 days and renew like Instagram Login tokens, once at least a day old. */
+export const THREADS_REFRESH_ENDPOINT = 'https://graph.threads.net/refresh_access_token';
 /** Meta refreshes only a long-lived token that is at least 24 hours old and unexpired. */
 export const INSTAGRAM_TOKEN_MIN_AGE_MS = 24 * 60 * 60 * 1000;
 /** The #120 scheduler refreshes a token once fewer than ten days remain. */
@@ -114,7 +116,7 @@ export async function listMetaTokenMetadata(db: Database, owner: string): Promis
  */
 export function instagramTokenRefreshDue(token: Pick<MetaTokenMetadata, 'expiresAt' | 'refreshedAt' | 'loginMode'>, now = new Date()): boolean {
   const expires = instant(token.expiresAt); const refreshed = instant(token.refreshedAt);
-  return (token.loginMode === 'instagram' || token.loginMode === 'facebook') && Number.isFinite(expires) && Number.isFinite(refreshed) && expires > now.getTime() &&
+  return (token.loginMode === 'instagram' || token.loginMode === 'facebook' || token.loginMode === 'threads') && Number.isFinite(expires) && Number.isFinite(refreshed) && expires > now.getTime() &&
     expires - now.getTime() < INSTAGRAM_TOKEN_REFRESH_WINDOW_MS && now.getTime() - refreshed >= INSTAGRAM_TOKEN_MIN_AGE_MS;
 }
 
@@ -168,7 +170,8 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   const now = options.now ?? new Date();
   const outcome = (status: Exclude<InstagramTokenRefreshOutcome['status'], 'refreshed'>, code: string): InstagramTokenRefreshOutcome => ({ status, accountId: account.id, code });
   if (account.user_id !== owner) return outcome('held', 'credential-owner-mismatch');
-  if (account.platform !== 'instagram') return outcome('held', 'refresh-instagram-only');
+  // Threads (owner decision, 7 November 2026) renews its 60-day token the same way, with th_refresh_token.
+  if (account.platform !== 'instagram' && account.platform !== 'threads') return outcome('held', 'refresh-instagram-only');
   let stored: StoredMetaToken | null;
   try { stored = await readStoredMetaToken(db, owner, account.id); }
   catch { return outcome('held', 'credential-store-unavailable'); }
@@ -179,7 +182,8 @@ export async function refreshInstagramToken(db: Database, owner: string, account
   const live = (expiresAt: string) => Number.isFinite(instant(expiresAt)) && instant(expiresAt) > now.getTime();
   const current = stored && live(stored.expiresAt) ? stored : fromEnvironment && live(fromEnvironment.expiresAt) ? fromEnvironment : stored ?? fromEnvironment;
   if (!current) return outcome('held', 'access-token-missing');
-  if (current.loginMode !== 'instagram' && current.loginMode !== 'facebook') return outcome('held', 'refresh-instagram-login-required');
+  if ((account.platform === 'threads') !== (current.loginMode === 'threads')) return outcome('held', 'login-mode-mismatch');
+  if (current.loginMode !== 'instagram' && current.loginMode !== 'facebook' && current.loginMode !== 'threads') return outcome('held', 'refresh-instagram-login-required');
   const expires = instant(current.expiresAt);
   if (!Number.isFinite(expires)) return outcome('held', 'access-token-expiry-unverified');
   if (expires <= now.getTime()) return outcome('held', 'access-token-expired');
@@ -201,6 +205,10 @@ export async function refreshInstagramToken(db: Database, owner: string, account
     url.searchParams.set('client_id', appId);
     url.searchParams.set('client_secret', appSecret);
     url.searchParams.set('fb_exchange_token', current.accessToken);
+  } else if (current.loginMode === 'threads') {
+    url = new URL(THREADS_REFRESH_ENDPOINT);
+    url.searchParams.set('grant_type', 'th_refresh_token');
+    url.searchParams.set('access_token', current.accessToken);
   } else {
     url = new URL(INSTAGRAM_REFRESH_ENDPOINT);
     url.searchParams.set('grant_type', 'ig_refresh_token');

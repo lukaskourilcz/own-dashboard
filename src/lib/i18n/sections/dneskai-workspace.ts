@@ -4,7 +4,7 @@ import type { MediaResolution } from '@/lib/marketing/dneskai-deck-editor';
 
 /** The DNESKAi workspace tabs (#119). Every string exists in English and Czech with the same meaning. */
 const en = {
-  tabs: { review: 'For review today', calendar: 'Calendar', published: 'Posts', costs: 'Errors and costs' },
+  tabs: { today: 'Today and tomorrow', review: 'For review today', calendar: 'Calendar', published: 'Posts', costs: 'Errors and costs' },
   more: { button: 'More', costs: 'Errors and costs', account: 'Instagram account', recovery: 'Topic recovery', shortcuts: 'Keyboard shortcuts', sections: 'Project',
     accountDescription: 'The account DNESKAi publishes to and its verification.', recoveryDescription: 'Last night’s collection, held topics and the owner recovery actions.',
     shortcutsDescription: 'Keys that work in the Design Lab when focus is not in a field.' },
@@ -93,7 +93,7 @@ const en = {
 };
 
 const cs: typeof en = {
-  tabs: { review: 'Dnes ke schválení', calendar: 'Kalendář', published: 'Příspěvky', costs: 'Chyby a náklady' },
+  tabs: { today: 'Dnes a zítra', review: 'Dnes ke schválení', calendar: 'Kalendář', published: 'Příspěvky', costs: 'Chyby a náklady' },
   more: { button: 'Více', costs: 'Chyby a náklady', account: 'Účet Instagram', recovery: 'Obnova témat', shortcuts: 'Klávesové zkratky', sections: 'Projekt',
     accountDescription: 'Účet, na který DNESKAi publikuje, a jeho ověření.', recoveryDescription: 'Noční sběr, pozdržená témata a akce pro jejich obnovu.',
     shortcutsDescription: 'Klávesy fungují v Design Labu, když kurzor není v poli.' },

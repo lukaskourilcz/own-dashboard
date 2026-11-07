@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { advanceDneskaiTopicBriefs, dneskaiTopicTargetDate, type DneskaiBridgeTopic, type DneskaiTopicBridgeStore } from '@/lib/marketing/dneskai-topic-bridge';
+import { advanceDneskaiTopicBriefs, dneskaiTopicPlanSlot, dneskaiTopicTargetDate, type DneskaiBridgeTopic, type DneskaiTopicBridgeStore } from '@/lib/marketing/dneskai-topic-bridge';
 import type { DneskaiBriefRow, DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 import { dneskaiTopicBriefsEnabled } from '@/lib/marketing/dneskai-evidence-rollout';
 
@@ -43,6 +43,26 @@ describe('topic bridge decisions (#155)', () => {
     const all = (date: string, offset: string) => ['08:00', '12:30', '17:00', '20:00'].map((time) => new Date(`${date}T${time}:00${offset}`).toISOString());
     const full = stores([], null, [...all('2026-10-23', '+02:00'), ...all('2026-10-24', '+02:00')]);
     expect(await dneskaiTopicTargetDate(full.briefStore, owner, project, new Date('2026-10-23T05:00:00Z'))).toBeNull();
+  });
+
+  it('briefs a planned topic for exactly its plan day and leaves one beyond the horizon waiting (plan, 7 November 2026)', async () => {
+    const report = { id: '77777777-7777-4777-8777-777777777777', run_id: '88888888-8888-4888-8888-888888888888', status: 'candidate', target_date: null, content_hash: 'h', candidate: {} };
+    const planned = topic({ kind: 'education', source_ref: `report:${report.id}`, evidence: { planDate: '2026-10-25', planTime: '12:30' } });
+    const later = topic({ id: '99999999-9999-4999-8999-999999999999', kind: 'education', source_ref: `report:${report.id}`, evidence: { planDate: '2026-10-30', planTime: '08:00' } });
+    const s = stores([planned, later]);
+    const select = vi.fn(); const insert = vi.fn(async (_owner: string, row: { target_date: string }) => ({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', ...row }));
+    Object.assign(s.topicStore, { candidate: async () => report, selectCandidate: select, insertTopicBrief: insert });
+    const result = await advanceDneskaiTopicBriefs({ topics: s.topicStore, briefs: s.briefStore }, { owner, project, now: new Date('2026-10-23T05:00:00Z'), signal: new AbortController().signal, remainingMs: () => 40_000, plannedUntil: '2026-10-25' });
+    expect(result).toMatchObject({ enriching: 1, waiting: 1 });
+    expect(select).toHaveBeenCalledWith(owner, project, report, '2026-10-25');
+    expect(insert.mock.calls[0]![1]).toMatchObject({ target_date: '2026-10-25' });
+    expect(s.updates[0]!.patch).toMatchObject({ status: 'enriching', evidence: { planDate: '2026-10-25', targetDate: '2026-10-25' } });
+  });
+
+  it('reads a plan slot only when both day and time are well formed', () => {
+    expect(dneskaiTopicPlanSlot({ evidence: { planDate: '2026-11-08', planTime: '17:00' } })).toEqual({ date: '2026-11-08', time: '17:00' });
+    expect(dneskaiTopicPlanSlot({ evidence: { planDate: '2026-11-08' } })).toBeNull();
+    expect(dneskaiTopicPlanSlot({ evidence: null })).toBeNull();
   });
 
   it('is on only with its switch and the topics switch', () => {

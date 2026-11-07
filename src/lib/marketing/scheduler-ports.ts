@@ -24,6 +24,8 @@ import { advanceDneskaiTikTokChart, dneskaiTikTokTrendsEnabled } from "./dneskai
 import { advanceDneskaiFactOrHype } from "./dneskai-fact-or-hype";
 import { dneskaiNewsTopicsFromRun, expireDneskaiNewsTopics, titleDneskaiTopics } from "./dneskai-titling";
 import { advanceDneskaiTopicBriefs, createDneskaiTopicBridgeStore } from "./dneskai-topic-bridge";
+import { DNESKAI_PLAN_HORIZON_DAYS, advanceDneskaiPlan, dneskaiPlanEnabled } from "./dneskai-plan";
+import { pragueDayAfter } from "./dneskai-workspace";
 import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
@@ -136,8 +138,11 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     },
     async topicBriefs(project, now, options) {
       const mix = dneskaiDailyMixEnabled(env) ? (await readDneskaiDailyMix(db, owner, project, { enabled: true })).mix : undefined;
-      return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix ? { mix } : {}), reader: createJinaTopicReader(env) });
+      // With the plan on, the bridge briefs only planned topics whose day is inside the plan's horizon.
+      const plannedUntil = dneskaiPlanEnabled(env) ? pragueDayAfter(pragueMarketingDate(now), DNESKAI_PLAN_HORIZON_DAYS) : undefined;
+      return advanceDneskaiTopicBriefs({ topics: createDneskaiTopicBridgeStore(db), briefs: createDneskaiBriefStore(db) }, { owner, project, now, ...options, ...(mix && !plannedUntil ? { mix } : {}), ...(plannedUntil ? { plannedUntil } : {}), reader: createJinaTopicReader(env) });
     },
+    plan: (project, now, options) => advanceDneskaiPlan(db, owner, project, { now, ...options }),
     executeJob: (jobId, signal) => executeMarketingJob(db, owner, jobId, { refreshSource, loadDneskaiMedia: createDneskaiMediaLoader(db, owner), signal, env, deferRetry: true }),
     async publicationDueSoon(aheadMs) {
       const now = new Date();
