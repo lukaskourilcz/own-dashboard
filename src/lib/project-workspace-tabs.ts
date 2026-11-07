@@ -25,6 +25,10 @@ export const DNESKAI_PROJECT_TABS = [
 
 export type DneskaiProjectTab = (typeof DNESKAI_PROJECT_TABS)[number];
 
+/** The devShark studio (owner request, 7 November 2026). Only the devShark project shows it. */
+export const DEVSHARK_PROJECT_TABS = ["devshark-studio"] as const;
+export type DevsharkProjectTab = (typeof DEVSHARK_PROJECT_TABS)[number];
+
 /**
  * Every id a project workspace tab can have, and so every id
  * user_preferences.hidden_project_tabs may store. The database check
@@ -33,6 +37,7 @@ export type DneskaiProjectTab = (typeof DNESKAI_PROJECT_TABS)[number];
 export const PROJECT_TAB_IDS = [
   ...PROJECT_WORKSPACE_TABS,
   ...DNESKAI_PROJECT_TABS,
+  ...DEVSHARK_PROJECT_TABS,
 ] as const;
 
 export type ProjectTabId = (typeof PROJECT_TAB_IDS)[number];

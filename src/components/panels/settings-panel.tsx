@@ -1,5 +1,6 @@
 "use client";
 
+import { devsharkStudio } from '@/lib/i18n/sections/devshark-studio';
 import {
   Bell,
   Coins,
@@ -308,6 +309,7 @@ export function SettingsPanel({
       "dneskai-published": dneskaiLabels.published,
       "dneskai-costs": dneskaiLabels.costs,
       "dneskai-today": dneskaiLabels.today,
+      "devshark-studio": devsharkStudio[lang].title,
     } satisfies Record<ProjectTabId, string>;
     return labels[tab];
   };
