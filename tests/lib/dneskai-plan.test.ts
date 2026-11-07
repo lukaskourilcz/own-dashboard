@@ -52,6 +52,13 @@ describe('dneskaiPlanAction', () => {
     expect(dneskaiPlanAction({ ...twinned, threads_base_revision_id: 'older' }, approved, { id: 't', status: 'approved', ready: true, content_hash: 'x' }, true, now).kind).toBe('twin');
   });
 
+  it('draws its own cut-off render again but leaves a refused one to the owner', () => {
+    const own = slot({ written_revision_id: '33333333-3333-4333-8333-333333333333' });
+    expect(dneskaiPlanAction(own, head({ ready: false, render_report: { status: 'failed' } }, { assets: [] }), null, true, now).kind).toBe('rerender');
+    expect(dneskaiPlanAction(own, head({ ready: false, render_report: { status: 'refused' } }, { assets: [] }), null, true, now)).toMatchObject({ code: 'render-blocked' });
+    expect(dneskaiPlanAction(slot(), head({ ready: false, render_report: { status: 'failed' } }, { assets: [] }), null, true, now)).toMatchObject({ code: 'render-blocked' });
+  });
+
   it('leaves owner decisions, render problems and passed slots to the owner', () => {
     expect(dneskaiPlanAction(slot(), head({ status: 'skipped' }), null, true, now)).toMatchObject({ status: 'skipped', code: 'owner-skipped' });
     expect(dneskaiPlanAction(slot(), head({ ready: false }), null, true, now)).toMatchObject({ status: 'failed', code: 'render-blocked' });
