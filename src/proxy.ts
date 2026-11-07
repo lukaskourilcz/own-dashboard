@@ -12,6 +12,6 @@ export const config = {
   // `/robots.txt` to `/login` — which is why the manifest failed to parse
   // ("Line 1, column 1, Syntax error": it got the login HTML, not JSON).
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|ttf|woff|woff2)$).*)",
   ],
 };
