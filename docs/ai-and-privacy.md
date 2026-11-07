@@ -50,3 +50,9 @@ LangSmith is separately opt-in. Only hashes, technical versions, brand, usage, t
 For selected DNESKAi topics only, the media collector downloads the source pictures (Instagram CDN links from the collection, or one read of the public article page and its images on the publisher's own hosts) through the free-feeds HTTPS, DNS and size guards. The scheduler's `media` step runs it after each collection run. No model sees them at this step. The original bytes go to the private, owner-prefixed `marketing-media` bucket with origin and credit; one-hour signed links serve the owner's preview only. See [DNESKAi source media](dneskai-source-media.md).
 
 Private `marketing-assets` storage contains immutable owner-prefixed JPEGs. Seven-day signed URLs are issued only for slots within six days; the publisher verifies the reachable bytes against approved hashes immediately before sending. No browser receives service-role credentials. Publication starts paused globally and per brand, and requires a verified enabled profile and current live source checks. Ambiguous remote replies enter reconciliation without automatic resending.
+
+## devShark concepts (7 November 2026)
+
+With `DEVSHARK_GENERATION_ENABLED`, the `devshark-concepts` step sends Claude a fixed web-development topic and the
+titles of the last 40 devShark concepts, nothing else, and stores the answer as a concept the owner reviews in the
+studio. Every call counts toward the daily devShark ceiling before it starts.
