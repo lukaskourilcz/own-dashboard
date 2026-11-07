@@ -261,7 +261,7 @@ export function dneskaiSlidePixelsKey(slide: DneskaiSlide): string {
   const images = [...slide.images].sort((left, right) => left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0)
     .map((image) => [image.slot, image.assetSha256, image.crop?.focal.x ?? null, image.crop?.focal.y ?? null, image.crop?.zoom ?? null, image.crop?.fit ?? null]);
   return JSON.stringify([slide.type, slide.variant ?? null, slide.headline.trim(), (slide.body ?? '').trim(), (slide.kicker ?? '').trim(), (slide.credit ?? '').trim(),
-    (slide.sources ?? []).map((line) => line.trim()).filter(Boolean), images]);
+    (slide.sources ?? []).map((line) => line.trim()).filter(Boolean), images, slide.layout && Object.keys(slide.layout).length ? slide.layout : null]);
 }
 
 /** Characters as the owner counts them (code points of the composed text). */
@@ -317,7 +317,7 @@ export function scheduledIso(local: string): string | null {
   try { return pragueScheduledAt(local.slice(0, 10), local.slice(11, 16)); } catch { return null; }
 }
 
-export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null };
+export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null; layout?: NonNullable<DneskaiSlide['layout']> | null };
 export type DneskaiSlideInsertEdit = { insert: { type: 'figure' | 'split' | 'statement'; variant?: 'accent' | 'ink'; headline: string; body?: string; kicker?: string; alt: string; images: DneskaiSlideImage[] } };
 /** `engagement` (#157): left out keeps the saved keyword and messages, null removes them. */
 export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; audioTrackId?: string | null; format?: 'carousel' | 'reel'; deck?: { kit?: DneskaiKitId; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> };
@@ -369,6 +369,9 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
     if (placed.has('credit') && !(entry.type !== undefined && slide.credit === undefined) && (slide.credit ?? '') !== (source.credit ?? '')) entry.credit = slide.credit ?? '';
     if (slide.alt !== source.alt) entry.alt = slide.alt;
     if (!sameImages(slide.images, source.images)) entry.images = slide.images.map((image) => structuredClone(image));
+    // Design Studio boxes: sent when they differ from the saved ones; null returns the slide to the kit's layout.
+    const layout = slide.layout && Object.keys(slide.layout).length ? slide.layout : null;
+    if (JSON.stringify(layout) !== JSON.stringify(source.layout && Object.keys(source.layout).length ? source.layout : null)) entry.layout = layout ? structuredClone(layout) : null;
     if (Object.keys(entry).length > 1) changed = true;
     return entry;
   });
