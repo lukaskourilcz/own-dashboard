@@ -54,7 +54,7 @@ function SlideStrip({ slot, lang }: { slot: DneskaiPlanSlot; lang: Lang }) {
     return <p className="rounded-md border border-dashed border-border-strong px-3 py-4 text-xs text-foreground-muted">{note}</p>;
   }
   return <ul role="list" tabIndex={0} aria-label={t.slides(slot.title)} data-testid="dneskai-today-slides"
-    className="flex w-0 min-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-md pb-2 focus-ring">
+    className="relative flex w-0 min-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-md pb-2 focus-ring">
     {slot.slides.map((slide, index) => <li key={`${slide.url}-${index}`} className="w-36 shrink-0 snap-start sm:w-44">
       <Image unoptimized src={slide.url} alt={slide.alt || t.slide(index + 1, slot.slides.length)} width={slide.width} height={slide.height} loading="lazy" sizes="11rem"
         className="h-auto w-full rounded border border-border bg-surface-inset" />
