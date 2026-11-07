@@ -19,10 +19,10 @@ import { bootstrapMetaCredential, FACEBOOK_LOGIN_SCOPES, INSTAGRAM_LOGIN_SCOPES,
  */
 type Database = ReturnType<typeof createAdminClient>;
 type Environment = Record<string, string | undefined>;
-export type VerifiableBrand = 'dneskai';
+export type VerifiableBrand = 'dneskai' | 'devshark';
 /** Professional account types returned by Instagram Login; a personal account cannot publish. */
 export const INSTAGRAM_PROFESSIONAL_ACCOUNT_TYPES = ['BUSINESS', 'MEDIA_CREATOR'] as const;
-const DEFAULT_HANDLES: Record<VerifiableBrand, string> = { dneskai: 'dneskai' };
+const DEFAULT_HANDLES: Record<VerifiableBrand, string> = { dneskai: 'dneskai', devshark: 'devshark.app' };
 
 export class MarketingAccountVerificationError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); this.name = 'MarketingAccountVerificationError'; }

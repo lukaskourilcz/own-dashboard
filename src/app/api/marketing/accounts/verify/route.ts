@@ -16,7 +16,7 @@ import type { MarketingAccountVerifyResponse } from '@/lib/marketing/accounts-cl
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 // Threads (owner decision, 7 November 2026): the DNESKAi and devShark profiles verify against Threads' own /me.
-const Input = z.union([z.strictObject({ brand: z.literal('dneskai'), platform: z.literal('instagram') }), z.strictObject({ brand: z.enum(['dneskai', 'devshark']), platform: z.literal('threads') })]);
+const Input = z.union([z.strictObject({ brand: z.enum(['dneskai', 'devshark']), platform: z.literal('instagram') }), z.strictObject({ brand: z.enum(['dneskai', 'devshark']), platform: z.literal('threads') })]);
 export async function POST(request: Request) {
   const csrf = rejectCrossOrigin(request); if (csrf) return csrf;
   const db = await createClient(); const { data: { user } } = await db.auth.getUser();
