@@ -21,7 +21,8 @@ export const DevsharkDraftSchema = z.object({
 });
 export type DevsharkDraft = z.infer<typeof DevsharkDraftSchema>;
 export const DevsharkDraftsReadSchema = z.object({
-  drafts: z.array(DevsharkDraftSchema).max(100),
+  // A generated concept the model got wrong is stored rejected with no slides (its cost still counts); the studio skips it.
+  drafts: z.array(z.unknown()).max(100).transform((items) => items.flatMap((item) => { const parsed = DevsharkDraftSchema.safeParse(item); return parsed.success ? [parsed.data] : []; })),
   plan: z.array(z.object({ draft_id: z.uuid(), date: z.string(), local_time: z.string(), instagram: z.boolean(), threads: z.boolean(), status: z.string(), code: z.string().nullable() })).max(200),
 });
 export type DevsharkDraftsRead = z.infer<typeof DevsharkDraftsReadSchema>;
