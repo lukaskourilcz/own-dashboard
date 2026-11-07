@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { qk } from '@/lib/queries/keys';
 import { devsharkStudio } from '@/lib/i18n/sections/devshark-studio';
+import { designStudio } from '@/lib/i18n/sections/design-studio';
+import { SlideCanvas } from '@/components/design-studio/slide-canvas';
 import type { DevsharkDeck, DevsharkSlide } from '@/lib/marketing/devshark-deck';
 import { decideDevsharkDraft, devsharkEditable, devsharkStudioErrorCode, fetchDevsharkDrafts, renderDevsharkPreview, saveDevsharkDraft,
   type DevsharkDraft, type DevsharkDraftsRead, type DevsharkPreview } from '@/lib/marketing/devshark-studio';
@@ -69,6 +71,8 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
   const [rendered, setRendered] = useState<{ for: Draft; slides: DevsharkPreview['slides'] } | null>(null);
   const [busy, setBusy] = useState<'render' | 'save' | 'approve' | 'reject' | 'reopen' | null>(null);
   const [message, setMessage] = useState<{ tone: 'info' | 'risk'; text: string } | null>(null);
+  const [active, setActive] = useState(0);
+  const s = designStudio[lang];
   const editable = devsharkEditable(draft.status);
   const dirty = !same(value, saved);
   const stale = rendered !== null && !same(rendered.for, value);
@@ -96,8 +100,15 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
       <label className="block space-y-1 text-xs font-medium text-foreground-muted">{t.fields.title}
         <input id={`${ids}-title`} className={fieldClass} value={value.title} maxLength={160} onChange={(event) => setValue((prev) => ({ ...prev, title: event.target.value }))} />
       </label>
-      <p className="text-xs text-foreground-muted">{t.greenHint}</p>
-      <ol className="min-w-0 space-y-3">{value.deck.slides.map((slide, index) => <li key={index} className="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-3">
+      <div className="min-w-0 space-y-2" data-testid="design-studio">
+        <div role="tablist" aria-label={s.slides} className="flex flex-wrap gap-1">{value.deck.slides.map((slide, index) => <button key={index} type="button" role="tab" aria-selected={index === active}
+          onClick={() => setActive(index)} className={cn('min-h-9 rounded-md px-3 text-xs font-medium focus-ring', index === active ? 'bg-accent text-foreground' : 'text-foreground-muted hover:bg-surface-hover')}>{s.slideTab(index + 1)} · {t.kinds[slide.kind]}</button>)}</div>
+        <div className="max-w-xl"><SlideCanvas deck={value.deck} index={Math.min(active, value.deck.slides.length - 1)} lang={lang} disabled={!editable || preview || busy !== null}
+          onChange={(slide) => setValue((prev) => ({ ...prev, deck: { ...prev.deck, slides: prev.deck.slides.map((item, at) => at === Math.min(active, prev.deck.slides.length - 1) ? slide : item) } }))} /></div>
+      </div>
+      <details className="min-w-0 rounded-lg border border-border bg-surface p-3"><summary className="min-h-9 cursor-pointer text-sm font-medium">{s.formTitle}</summary>
+      <p className="mt-2 text-xs text-foreground-muted">{t.greenHint}</p>
+      <ol className="mt-2 min-w-0 space-y-3">{value.deck.slides.map((slide, index) => <li key={index} className="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-3">
         <p className="text-xs font-semibold text-foreground-muted">{t.slide(index + 1, value.deck.slides.length)} · {t.kinds[slide.kind]}</p>
         {index === 0 && <label className="block space-y-1 text-xs font-medium text-foreground-muted">{t.fields.kicker}
           <input id={`${ids}-k${index}`} className={fieldClass} value={slide.kicker ?? ''} maxLength={40} onChange={(event) => setSlide(index, { kicker: event.target.value })} /></label>}
@@ -108,6 +119,7 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
         {(slide.kind === 'code' || slide.code !== undefined) && <label className="block space-y-1 text-xs font-medium text-foreground-muted">{t.fields.code}
           <textarea id={`${ids}-c${index}`} className={cn(fieldClass, 'font-mono')} rows={4} spellCheck={false} value={slide.code ?? ''} maxLength={600} onChange={(event) => setSlide(index, { code: event.target.value })} /></label>}
       </li>)}</ol>
+      </details>
       <label className="block space-y-1 text-xs font-medium text-foreground-muted">{t.fields.caption}
         <textarea id={`${ids}-caption`} className={fieldClass} rows={6} value={value.caption} maxLength={2200} onChange={(event) => setValue((prev) => ({ ...prev, caption: event.target.value }))} /></label>
     </fieldset>
