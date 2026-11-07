@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@boardlessai/carousel-studio/dneskai-slide";
+import type { DneskaiImageInput, DneskaiSlideInput, DneskaiSlideProblem } from "@/lib/carousel-studio/dneskai-slide";
 import { AssetSchema, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
@@ -9,8 +9,8 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
 /**
  * DNESKAi slides through the vendored Design Lab engine (own-dashboard#117, quorum#603).
  *
- * Every slide of a deck goes to `renderDneskaiSlide` in `@boardlessai/carousel-studio`
- * (vendor/carousel-studio). This module owns no layout: it maps the slide contract to the studio
+ * Every slide of a deck goes to `renderDneskaiSlide` in OwnDashboard's slide engine
+ * (`src/lib/carousel-studio`). This module owns no layout: it maps the slide contract to the studio
  * input, applies OwnDashboard's stricter gate, encodes the Instagram JPEG and stores it once per
  * render key in the private `marketing-assets` bucket.
  *
@@ -24,7 +24,11 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
  * One blocking problem on any slide refuses the whole deck and nothing is stored.
  */
 
-/** The vendored engine. `tests/lib/carousel-studio-vendor.test.ts` ties these to vendor/carousel-studio/UPSTREAM.md. */
+/**
+ * The slide engine. Since 7 November 2026 its source is OwnDashboard's own (`src/lib/carousel-studio`, assets in
+ * `templates/carousel-studio`), copied unchanged from Quorum commit 893a495; these values stay those of that commit
+ * because every render key hashes them, and the golden test proves the owned source draws the same pixels.
+ */
 export const DNESKAI_STUDIO = {
   package: "@boardlessai/carousel-studio",
   version: "1.0.0",
@@ -60,8 +64,8 @@ export interface DneskaiSlideStorage {
 // The DNESKAi slide API and the face metrics alone (subpath exports of the vendored manifest): the
 // package barrel also carries the hook-library reader, whose dynamic file reads make Turbopack
 // trace the whole project.
-type Studio = typeof import("@boardlessai/carousel-studio/dneskai-slide");
-type Fonts = typeof import("@boardlessai/carousel-studio/fonts");
+type Studio = typeof import("@/lib/carousel-studio/dneskai-slide");
+type Fonts = typeof import("@/lib/carousel-studio/fonts");
 type Sharp = typeof import("sharp");
 type Position = { index: number; count: number };
 const sha256 = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
@@ -70,12 +74,12 @@ let studioModule: Promise<Studio> | null = null;
 let fontsModule: Promise<Fonts> | null = null;
 /** Loaded on use, like sharp and resvg in render.ts, so importing this module costs nothing. */
 async function studio(): Promise<Studio> {
-  studioModule ??= import("@boardlessai/carousel-studio/dneskai-slide");
+  studioModule ??= import("@/lib/carousel-studio/dneskai-slide");
   try { return await studioModule; }
   catch { studioModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
 }
 async function fonts(): Promise<Fonts> {
-  fontsModule ??= import("@boardlessai/carousel-studio/fonts");
+  fontsModule ??= import("@/lib/carousel-studio/fonts");
   try { return await fontsModule; }
   catch { fontsModule = null; throw new DneskaiRenderError("render-rasterizer-unavailable"); }
 }

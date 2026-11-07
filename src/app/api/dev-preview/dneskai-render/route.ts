@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import sharp from 'sharp';
-import { renderDneskaiSlide } from '@boardlessai/carousel-studio/dneskai-slide';
+import { renderDneskaiSlide } from '@/lib/carousel-studio/dneskai-slide';
 import { rejectCrossOrigin } from '@/lib/csrf';
 import { DneskaiDeckSchema } from '@/lib/marketing/dneskai-slides';
 import assets from '@/lib/demo/dneskai-preview-assets.json';
