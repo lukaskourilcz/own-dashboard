@@ -7,7 +7,7 @@ import { createDneskaiBriefsWithStore, dneskaiFreeSlots, dneskaiMemberHash, type
 import { pragueDayAfter } from './dneskai-workspace';
 import { pragueMarketingDate } from './weekly-planning';
 import { dneskaiActiveSlotTimes, type DneskaiDailyMix } from './dneskai-daily-mix';
-import { DNESKAI_TOPIC_READER_ATTEMPTS, dneskaiOwnerLinkCandidate, dneskaiTopicUrl, type DneskaiTopicReader } from './dneskai-topic-source';
+import { DNESKAI_TOPIC_READER_ATTEMPTS, dneskaiOwnerLinkCandidate, dneskaiTopicUrl, dneskaiTopicUrls, type DneskaiTopicReader } from './dneskai-topic-source';
 import { dneskaiCheapIdentity } from './dneskai-registry';
 import { contentHash } from './hashes';
 
@@ -116,6 +116,35 @@ async function ownerLinkReport(store: DneskaiTopicBridgeStore, reader: DneskaiTo
   return store.insertCandidate(input.owner, input.project, run.id, row);
 }
 
+/**
+ * The reports of a topic's further pages (owner decision, 8 November 2026), stored in `evidence.extraReports` by URL.
+ * They only add pictures, so a page that cannot be read is left out: after `DNESKAI_TOPIC_READER_ATTEMPTS` passes
+ * the topic goes on with the pages it has. `evidence` is the patch to store when something changed.
+ */
+async function ownerLinkExtras(store: DneskaiTopicBridgeStore, reader: DneskaiTopicReader | undefined, topic: DneskaiBridgeTopic, input: { owner: string; project: string; now: Date; signal: AbortSignal }):
+  Promise<{ ids: string[]; evidence?: Record<string, unknown> }> {
+  const urls = dneskaiTopicUrls(topic.evidence).slice(1);
+  const stored = topic.evidence?.extraReports;
+  const known: Record<string, string> = stored && typeof stored === 'object' && !Array.isArray(stored)
+    ? Object.fromEntries(Object.entries(stored).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : {};
+  const ids = () => urls.flatMap((url) => known[url] ? [known[url]] : []);
+  const attempts = typeof topic.evidence?.extraAttempts === 'number' ? topic.evidence.extraAttempts : 0;
+  const missing = urls.filter((url) => !known[url]);
+  if (!missing.length || attempts >= DNESKAI_TOPIC_READER_ATTEMPTS || !reader || !store.candidateByUrl || !store.latestRun || !store.insertCandidate) return { ids: ids() };
+  const run = await store.latestRun(input.owner, input.project);
+  if (!run) return { ids: ids() };
+  for (const url of missing) {
+    if (input.signal.aborted) break;
+    const found = await store.candidateByUrl(input.owner, input.project, contentHash(dneskaiCheapIdentity({ title: '', text: '', url }).canonicalUrl));
+    if (found) { known[url] = found.id; continue; }
+    const page = await reader(url, input.signal);
+    if (!page) continue;
+    const row = dneskaiOwnerLinkCandidate({ topicId: topic.id, kind: topic.kind, url, page, fallbackTitle: topic.title_cs, fallbackText: null, now: input.now, part: urls.indexOf(url) + 2 });
+    known[url] = (await store.insertCandidate(input.owner, input.project, run.id, row)).id;
+  }
+  return { ids: ids(), evidence: { extraReports: known, extraAttempts: attempts + 1 } };
+}
+
 export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBridgeStore; briefs: DneskaiBriefStore }, input: { owner: string; project: string; now: Date; signal: AbortSignal; remainingMs: () => number; mix?: DneskaiDailyMix; reader?: DneskaiTopicReader; plannedUntil?: string }): Promise<DneskaiTopicBridgeResult> {
   const { owner, project, now } = input;
   z.uuid().parse(owner); z.uuid().parse(project);
@@ -191,13 +220,24 @@ export async function advanceDneskaiTopicBriefs(stores: { topics: DneskaiTopicBr
     }
     const candidate = await stores.topics.candidate(owner, project, reportId);
     if (!candidate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: 'topic-source-unavailable' }) }); result.unsupported++; continue; }
+    let extras: DneskaiBridgeCandidate[] = [];
+    if (ownerLink) {
+      const found = await ownerLinkExtras(stores.topics, input.reader, topic, input);
+      if (found.evidence) {
+        await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, found.evidence) });
+        topic = { ...topic, evidence: evidence(topic, found.evidence) };
+      }
+      const rows = await Promise.all(found.ids.filter((id) => id !== candidate.id).map((id) => stores.topics.candidate(owner, project, id)));
+      extras = rows.filter((row): row is DneskaiBridgeCandidate => !!row);
+    }
     const planned = input.plannedUntil ? dneskaiTopicPlanSlot(topic) : null;
     if (input.plannedUntil && (!planned || planned.date > input.plannedUntil)) { result.waiting++; continue; }
     const targetDate = planned ? planned.date : await dneskaiTopicTargetDate(stores.briefs, owner, project, now, input.mix ? { daily: input.mix, kind: topic.kind, committed: stores.topics.committed } : undefined);
     if (!targetDate) { await stores.topics.updateTopic(owner, topic.id, { evidence: evidence(topic, { bridgeCode: input.mix ? 'topic-daily-mix-full' : 'topic-slot-unavailable' }) }); result.waiting++; continue; }
-    if (candidate.status !== 'selected' || candidate.target_date !== targetDate) await stores.topics.selectCandidate(owner, project, candidate, targetDate);
+    const members = [candidate, ...extras];
+    for (const member of members) if (member.status !== 'selected' || member.target_date !== targetDate) await stores.topics.selectCandidate(owner, project, member, targetDate);
     const row = await stores.topics.insertTopicBrief(owner, { project_id: project, run_id: candidate.run_id, event_id: dneskaiTopicEventId(topic.id), target_date: targetDate,
-      category: topic.kind === 'news' ? 'ai-news' : 'tool', member_ids: [candidate.id], lead_candidate_id: candidate.id, member_hash: dneskaiMemberHash([candidate]), topic_id: topic.id });
+      category: topic.kind === 'news' ? 'ai-news' : 'tool', member_ids: members.map((member) => member.id), lead_candidate_id: candidate.id, member_hash: dneskaiMemberHash(members), topic_id: topic.id });
     await stores.topics.updateTopic(owner, topic.id, { status: 'enriching', brief_id: row.id, evidence: evidence(topic, { targetDate, bridgeCode: null }) });
     result.enriching++;
   }
