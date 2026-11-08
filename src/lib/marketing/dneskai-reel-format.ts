@@ -1,12 +1,12 @@
 /**
- * The format a newly generated DNESKAi post starts in (#165, plan C3): education posts as a Reel, news as a carousel.
- * Only while `MARKETING_DNESKAI_REELS_ENABLED=true`; off, every carousel deck stays a carousel as before. Until topics
- * carry their own kind (#150), a brief's category stands in: `tool` and `ai-project` are the education categories.
- * The owner can switch either way in the Lab before approval.
+ * The format a newly generated DNESKAi post starts in. The owner decided on 8 November 2026 that DNESKAi publishes
+ * only carousels and classic single-photo posts, never Reels, so generation never starts a post as `reel`, whatever
+ * `MARKETING_DNESKAI_REELS_ENABLED` says (#165's education Reels are retired). `category` and `env` stay in the
+ * signature for the callers and tests written before.
  */
 export const DNESKAI_EDUCATION_CATEGORIES: readonly string[] = ['tool', 'ai-project'];
 
-export function dneskaiDefaultRevisionFormat(deckFormat: 'carousel' | 'single-image', category: string, env: Record<string, string | undefined> = process.env): 'carousel' | 'reel' | 'post' {
-  if (deckFormat !== 'carousel') return 'post';
-  return env.MARKETING_DNESKAI_REELS_ENABLED === 'true' && DNESKAI_EDUCATION_CATEGORIES.includes(category) ? 'reel' : 'carousel';
+export function dneskaiDefaultRevisionFormat(deckFormat: 'carousel' | 'single-image', category: string, env: Record<string, string | undefined> = process.env): 'carousel' | 'post' {
+  void category; void env;
+  return deckFormat === 'carousel' ? 'carousel' : 'post';
 }
