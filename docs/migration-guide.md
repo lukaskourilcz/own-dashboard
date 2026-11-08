@@ -1024,3 +1024,9 @@ used the whole budget.
 `20261108230000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
 decided comment replies get no signature or sign-off (no "— Lukáš"): neither a drafted reply nor what is sent appends
 one. The column was never written by shipped code, so the drop is safe.
+
+`20261108250000_publishing_times.sql` applies the owner's new times of 8 November 2026. The DNESKAi plan accepts 19:00
+(Instagram and Threads) and 21:00 (Threads only) next to the old 17:00 and 20:00, which past rows keep; the daily mix
+offers 08:00, 12:30, 19:00 and 21:00; devShark's Instagram slot is 16:00 Prague. Unpublished DNESKAi slots still ahead
+move to the new times and the plan step moves their versions (`move`, approved posts included). A devShark slot already
+prepared at 12:00 cancels its queued publications, supersedes its versions and is prepared again at 16:00.
