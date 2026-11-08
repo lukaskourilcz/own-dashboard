@@ -72,7 +72,8 @@ async function topUpPictures(db: Database, owner: string, briefId: string, env: 
     if (known.has(image.sha256)) continue;
     try { await store.put(`${owner}/${image.sha256}.${image.ext}`, Buffer.from(fetched.bytes), image.mime, { ownerId: owner, sha256: image.sha256 }); } catch { continue; }
     const credit = entry.credit ?? 'Foto: Pexels';
-    const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: row.lead_candidate_id, position: 60 + index, credit, width: image.width, height: image.height, originKind: 'stock', ...dneskaiMediaCapabilities(image) };
+    // Media positions stop at 49 (marketing_media_assets); a top-up takes 40 to 44, after any article picture.
+    const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: row.lead_candidate_id, position: 40 + index, credit, width: image.width, height: image.height, originKind: 'stock', ...dneskaiMediaCapabilities(image) };
     const { data, error } = await db.rpc('marketing_dneskai_restyle_add_picture', { p_owner: owner, p_brief: briefId,
       p_asset: { sha256: image.sha256, mime: image.mime, width: image.width, height: image.height, bytes: image.bytes, phash: image.phash, originUrl: fetched.originUrl, originKind: 'stock', credit }, p_media: media });
     if (error) continue;
