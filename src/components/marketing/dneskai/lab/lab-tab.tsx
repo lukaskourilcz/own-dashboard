@@ -132,7 +132,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const post = lab.post, account = props.read.accounts.find((item) => item.remoteId === post.account.id);
   const [draft, setDraft] = useState<DeckDraft>(() => createDeckDraft(post, account?.id ?? null));
   // `labView=studio` (from „Dnes a zítra“) opens the post straight in the Design Studio view.
-  const [view, setView] = useState<DneskaiStageView>(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('labView') === 'studio' ? 'studio' : 'feed');
+  const [view, setView] = useState<DneskaiStageView>(() => { const wanted = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('labView'); return wanted === 'studio' || wanted === 'story' ? wanted : 'feed'; });
   // Design Studio: the newest picture drawn per slide, so the Studio view keeps it while the next change renders.
   const [studioLast, setStudioLast] = useState<Map<string, { image: string; blocks: DneskaiPreviewResult['blocks'] }>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, boolean>>(() => new Map());
@@ -173,6 +173,35 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
     : invalidDraft ? { slide, status: 'unavailable', image: null, code: 'deck-edit-invalid', blocks: [] }
       : previewKey ? previewMemory.get(previewKey) ?? { slide, status: 'loading', image: null, code: null, blocks: [] } : { slide, status: 'unavailable', image: null, code: null, blocks: [] };
   const remembered = previewKey ? previewMemory.has(previewKey) : true;
+  // The story view (8 November 2026): the draft's cover drawn as the native 1080×1920 story it goes out as. Every
+  // cover edit (headline, photo, crop, kit) changes the key, so the story follows the draft.
+  const storyDeck = request?.deck ?? (post.deck ? { ...(post.deck.kit ? { kit: post.deck.kit } : {}), slides: post.deck.slides.map((_, from) => ({ from })) } : undefined);
+  const storyKey = view === 'story' && !props.guest && storyDeck && !invalidDraft ? JSON.stringify({ deck: storyDeck, slide: 0, format: 'instagram-story' }) : null;
+  const story: DneskaiStagePreview | null = props.guest || !post.deck ? null
+    : invalidDraft ? { slide: 0, status: 'unavailable', image: null, code: 'deck-edit-invalid', blocks: [] }
+      : storyKey ? previewMemory.get(storyKey) ?? { slide: 0, status: 'loading', image: null, code: null, blocks: [] } : { slide: 0, status: 'loading', image: null, code: null, blocks: [] };
+  const storyRemembered = storyKey ? previewMemory.has(storyKey) : true;
+  useEffect(() => {
+    if (!storyKey || storyRemembered) return;
+    const abort = new AbortController();
+    const { deck } = JSON.parse(storyKey) as { deck: NonNullable<typeof storyDeck> };
+    const keep = (value: DneskaiStagePreview) => setPreviewMemory((before) => {
+      const next = new Map(before).set(storyKey, value);
+      while (next.size > PREVIEW_MEMORY) next.delete(next.keys().next().value!);
+      return next;
+    });
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await (await dneskaiWorkspaceApi(props.preview)).renderPreview({ id: post.id, deck: deck!, slide: 0, format: 'instagram-story' }, abort.signal);
+        if (abort.signal.aborted) return;
+        keep({ slide: 0, status: result.status, image: result.image, code: result.problems.find((problem) => problem.blocking)?.code ?? null, blocks: [] });
+      } catch (failure) {
+        if (abort.signal.aborted) return;
+        keep({ slide: 0, status: 'unavailable', image: null, code: failure instanceof DneskaiWorkspaceRequestError ? failure.code : null, blocks: [] });
+      }
+    }, 450);
+    return () => { window.clearTimeout(timer); abort.abort(); };
+  }, [storyKey, storyRemembered, post.id, props.preview]);
   useEffect(() => {
     if (!previewKey || remembered) return;
     const abort = new AbortController();
@@ -295,7 +324,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
             {moveBlock && <p id={`${id}-move-block`} className="text-foreground-muted">{moveBlock}</p>}</>}
         </section>}
         {dirty && <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning">{t.actions.dirty} {t.savedPreview}</p>}
-        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang}
+        <DneskaiLabStage lab={lab} slides={stageSlides} preview={preview} slide={slide} onSlide={onSlide} view={view} onView={setView} profileCovers={dneskaiLabProfileCovers(props.read, post.id)} onLoaded={onLoaded} caption={post.caption} lang={props.lang} story={story}
           studio={props.guest || !post.deck || !draft.slides[slide] ? null : {
             slide: draft.slides[slide]!.slide, last: studioLast.get(`${post.id}:${slide}`) ?? null, editable,
             onLayout: (layout) => {

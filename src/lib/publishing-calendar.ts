@@ -105,10 +105,13 @@ export function publishingNetworkCounts(posts: readonly PublishingPost[]): Recor
   return counts;
 }
 
-/** The workspace URL that opens a post's detail: the DNESKAi Design Lab in its Studio view, or the devShark Studio. */
-export function publishingTargetHref(target: NonNullable<PublishingPost["target"]>): string {
+/**
+ * The workspace URL that opens a post in its Design Lab: DNESKAi in its Studio view (the Story 9:16 view when the
+ * story version is the one being looked at), devShark in its Design Lab tab.
+ */
+export function publishingTargetHref(target: NonNullable<PublishingPost["target"]>, channel?: PublishingChannel): string {
   const params = target.kind === "dneskai-lab"
-    ? new URLSearchParams({ projectTab: "dneskai-review", labPost: target.postId, labSlide: "0", labView: "studio" })
+    ? new URLSearchParams({ projectTab: "dneskai-review", labPost: target.postId, labSlide: "0", labView: channel === "story" ? "story" : "studio" })
     : new URLSearchParams({ projectTab: "devshark-studio", studioDraft: target.draftId });
   return `/projects/${target.kind === "dneskai-lab" ? "dneskai" : "devshark"}?${params}`;
 }
