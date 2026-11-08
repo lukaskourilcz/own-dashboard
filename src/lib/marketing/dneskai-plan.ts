@@ -7,6 +7,7 @@ import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
 import { dneskaiEmphasisFor } from './dneskai-palette';
+import { isDneskaiClosingSlide } from './dneskai-closing';
 import { DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
@@ -63,10 +64,17 @@ export type DneskaiPlanAction =
   | { kind: 'wait'; status: DneskaiPlanStatus; code: string | null }
   | { kind: 'spotlight' | 'rerender' | 'move' | 'series' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
   /** The post has no photo on its first slide: retired and the slot freed for another post (8 November 2026). */
-  | { kind: 'drop'; status: 'skipped'; code: 'plan-photo-missing' };
+  | { kind: 'drop'; status: 'skipped'; code: 'plan-photo-missing' | 'plan-photos-short' }
+  /** A carousel with too few photo slides is written again with more pictures, once (8 November 2026). */
+  | { kind: 'restyle'; status: 'planned' };
 
 /** A drafted DNESKAi deck whose first slide shows no picture. A revision without a deck (rendered assets) passes. */
 export const dneskaiDeckLacksPhoto = (revision: Pick<ContentRevision, 'deck'>) => !!revision.deck && !(revision.deck.slides[0]?.images.length);
+/** The owner's slide rule (photo, photo, optional text, photo, closing): a carousel needs this many photo slides. */
+export const DNESKAI_MIN_PHOTO_SLIDES = 3;
+/** Photo slides of a carousel, the closing slide not counted; null for a post that is not a drafted carousel. */
+export const dneskaiPhotoSlides = (revision: Pick<ContentRevision, 'deck'>): number | null =>
+  revision.deck?.format === 'carousel' ? revision.deck.slides.filter((slide) => slide.images.length > 0 && !isDneskaiClosingSlide(slide)).length : null;
 /** Topic bridge codes that mean the topic's post can never carry a photo. */
 const PHOTO_MISSING_CODES = new Set(['media-photo-missing']);
 
@@ -100,6 +108,13 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   if (head.status === 'publishing' || head.status === 'reconciliation') return { kind: 'wait', status: 'approved', code: null };
   // Every post shows a photo (owner decision, 8 November 2026): one without leaves the plan, silently.
   if ((head.status === 'review' || head.status === 'approved') && dneskaiDeckLacksPhoto(head.revision)) return { kind: 'drop', status: 'skipped', code: 'plan-photo-missing' };
+  // At least three photo slides (owner decision, 8 November 2026). A post from before the house style is written
+  // again once, with the brief topped up with pictures; a house-style post that still falls short leaves the plan.
+  const photos = head.status === 'review' || head.status === 'approved' ? dneskaiPhotoSlides(head.revision) : null;
+  if (photos !== null && photos < DNESKAI_MIN_PHOTO_SLIDES) {
+    const restyled = head.revision.promptVersion.startsWith('marketing-copy/8') || slot.code === DNESKAI_RESTYLE_FAILED;
+    return restyled ? { kind: 'drop', status: 'skipped', code: 'plan-photos-short' } : { kind: 'restyle', status: 'planned' };
+  }
   const ownerEdit = !!slot.written_revision_id && head.id !== slot.written_revision_id;
   if (head.status === 'review') {
     if (!head.ready || renderReportBlocks(head.render_report)) {
@@ -421,6 +436,12 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
         const action = !head && slot.topic_id && await topicLacksPhoto(db, owner, slot.topic_id) ? { kind: 'drop' as const, status: 'skipped' as const, code: 'plan-photo-missing' as const } : dneskaiPlanAction(slot, head, twin, !!account, input.now, story, headings.get(slot.id) ?? null);
+        if (action.kind === 'restyle') {
+          const patch: Partial<DneskaiPlanRow> = { status: 'planned', code: DNESKAI_RESTYLE_REQUESTED };
+          await record(slot, patch); Object.assign(slot, patch);
+          result.codes['plan-photos-restyle'] = (result.codes['plan-photos-restyle'] ?? 0) + 1;
+          break;
+        }
         if (action.kind === 'drop') {
           for (const id of [head?.id, slot.threads_revision_id, slot.story_revision_id]) if (id) await db.rpc('marketing_dneskai_plan_retire', { p_owner: owner, p_revision_id: id });
           // The freed time is filled with another post on the next pass.
