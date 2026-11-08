@@ -122,7 +122,7 @@ describe('scheduler ports', () => {
     expect(mocks.tick.mock.calls[0]).toEqual([owner, { projectId: project }, { store: expect.anything(), signal, env }]);
     expect(mocks.tick.mock.calls[1][1]).toEqual({ projectId: project, runId: other });
     await ports.collectMedia(project, ['c1'], { signal, budgetMs: 40_000 });
-    expect(mocks.collect).toHaveBeenCalledWith(db, owner, project, ['c1'], { signal, budgetMs: 40_000 });
+    expect(mocks.collect).toHaveBeenCalledWith(db, owner, project, ['c1'], { signal, budgetMs: 40_000, env: expect.any(Object) });
     await ports.purgeMedia(30);
     expect(mocks.purge).toHaveBeenCalledWith(db, owner, 30);
     mocks.loader.mockReturnValue('media-loader');
