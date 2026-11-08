@@ -1018,3 +1018,9 @@ Both tables are service role only. The pipeline itself is described in `docs/hey
 `{ tick, kind }` to `/api/heydarlink/ambient/tick` at the scheduler's base URL, and the pg_cron job
 `heydarlink-ambient-tick` (`2-59/5 * * * *`). The marketing tick no longer runs HeyDarlink frames: its DNESKAi steps
 used the whole budget.
+
+## Comment replies carry no signature, 8 November 2026
+
+`20261108230000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
+decided comment replies get no signature or sign-off (no "— Lukáš"): neither a drafted reply nor what is sent appends
+one. The column was never written by shipped code, so the drop is safe.
