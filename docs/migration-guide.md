@@ -1007,3 +1007,9 @@ session. Replayed in PGlite (`tests/lib/backlog-database.test.ts`).
 
 `20261108200100_project_heydarlink_name.sql` renames the `phone-app` project from LINKA to heyDarlink. The portfolio
 registry creates missing rows but never renames one, so the stored name changes here, and only while it is still LINKA.
+## HeyDarlink ambient photos, 8 November 2026
+
+`20261108200000_heydarlink_ambient.sql` adds `heydarlink_ambient_batches` (one persona's shot list with its cost cap,
+one open batch per persona) and `heydarlink_ambient_frames` (one row per shot and aspect, with attempts, reasons,
+cost, pHash, sha256 and HeyDarlink's ingest id), and `heydarlink_ambient_claim`, which hands one frame to one tick.
+Both tables are service role only. The pipeline itself is described in `docs/heydarlink-ambient.md`.
