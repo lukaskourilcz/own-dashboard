@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "dneskai-photo-golden/1",
+  "canvas": {
+    "width": 1080,
+    "height": 1350
+  },
+  "updatedAt": "2026-11-08",
+  "entries": [
+    {
+      "name": "cover-photo",
+      "templateId": "dneskai-videofirst-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "d0b3b1f0c38687b5e53395f0705ce917fe82fd5d031855f3501779c36b07f4f0"
+    },
+    {
+      "name": "cover-photo-crop",
+      "templateId": "dneskai-videofirst-cover-photo",
+      "version": "1.1.0",
+      "pngHash": "2f593b56d01d6504f59f0cdbd5a986637ac2a24c04640262ecb1cfda108621d9"
+    },
+    {
+      "name": "figure",
+      "templateId": "dneskai-videofirst-figure",
+      "version": "1.1.0",
+      "pngHash": "4117482691ebf832a207761b40fc17237a4767a0e2a227ef886bb71b2a14e524"
+    },
+    {
+      "name": "split",
+      "templateId": "dneskai-videofirst-split",
+      "version": "1.1.0",
+      "pngHash": "34826d45a07b1ddd30d3efc087ab38b0e49291db58e93bc24b6422d0d09ee8bc"
+    },
+    {
+      "name": "split-pair",
+      "templateId": "dneskai-videofirst-split-pair",
+      "version": "1.1.0",
+      "pngHash": "ebf639932d2bb7866e26001c3e0bb504aba10c1a5e82e5962d367ff07709b012"
+    },
+    {
+      "name": "statement",
+      "templateId": "dneskai-videofirst-statement",
+      "version": "1.1.0",
+      "pngHash": "5ba77070c5ece476937a21ed44f316eabaf6665a6fd31abed7aa24115662eae0"
+    },
+    {
+      "name": "statement-ink",
+      "templateId": "dneskai-videofirst-statement",
+      "version": "1.1.0",
+      "pngHash": "cb08db4387b1e56031d064381354b83140a12de213dc762a0d52040430fe75b5"
+    },
+    {
+      "name": "sources",
+      "templateId": "dneskai-videofirst-sources-4",
+      "version": "1.1.0",
+      "pngHash": "3c65b9f8601dc87be869bb61582867d5cd9d8171c652da16ef03373f03389824"
+    },
+    {
+      "name": "single-photo",
+      "templateId": "dneskai-videofirst-single-photo",
+      "version": "1.1.0",
+      "pngHash": "2029494211e3c25f1ce00df5f1caee4c368b83f08cb57f08564aa63d281f158a"
+    },
+    {
+      "name": "single-photo-focal",
+      "templateId": "dneskai-videofirst-single-photo",
+      "version": "1.1.0",
+      "pngHash": "21193972b677415280d05122b224825a5ee56ac2353a3b7c6d8d0f2013fcda5f"
+    },
+    {
+      "name": "single-type",
+      "templateId": "dneskai-videofirst-single-type",
+      "version": "1.1.0",
+      "pngHash": "ff746ef7179b04c5c0bac39f98b3d6217ac02a8923c5cc77812035dc1e3b1f44"
+    }
+  ]
+}
