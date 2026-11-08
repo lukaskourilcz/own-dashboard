@@ -135,7 +135,7 @@ const coverPhoto = template({
     photo("image-1", 0, W, H, BLEED_FADE),
     inset,
     logo,
-    headline(box(LEFT, 772, MEASURE, 490), { minFontSize: 46, maxFontSize: 64, maxChars: 110, maxLines: 6 }),
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7 }),
     seriesLine(box(LEFT, H - 140, MEASURE, 40))
   ]
 });
@@ -149,8 +149,8 @@ const figure = template({
   layers: [
     photo("image-1", 0, W, DEPTH, DEPTH_FADE),
     logo,
-    headline(box(LEFT, 668, MEASURE, 290), { minFontSize: 42, maxFontSize: 64, maxChars: 110, maxLines: 5 }),
-    copy(box(LEFT, 1_000, MEASURE, 260), { minFontSize: 27, maxFontSize: 30, maxChars: 260, maxLines: 7 })
+    headline(box(LEFT, 560, MEASURE, 400), { minFontSize: 56, maxFontSize: 88, maxChars: 110, maxLines: 6 }),
+    copy(box(LEFT, 980, MEASURE, 290), { minFontSize: 32, maxFontSize: 36, maxChars: 260, maxLines: 8 })
   ]
 });
 
@@ -159,7 +159,7 @@ const quote = (bodyChars: number): CarouselLayerInput[] => [
   mark(box(LEFT, 668, MEASURE, 180)),
   speaker(box(LEFT, 1_088, MEASURE, 34)),
   headline(box(LEFT, 850, MEASURE, 236), { minFontSize: 42, maxFontSize: 96, maxChars: 110, maxLines: 5 }),
-  copy(box(LEFT, 1_126, MEASURE, 160), { minFontSize: 25, maxFontSize: 28, maxChars: bodyChars, maxLines: 6 })
+  copy(box(LEFT, 1_126, MEASURE, 160), { minFontSize: 28, maxFontSize: 32, maxChars: bodyChars, maxLines: 6 })
 ];
 
 const split = template({
@@ -191,7 +191,7 @@ const statement = template({
     logo,
     mark(box(LEFT, 256, MEASURE, 180)),
     headline(box(LEFT, 440, MEASURE, 500), { minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8 }),
-    copy(box(LEFT, 960, MEASURE, 290), { minFontSize: 28, maxFontSize: 32, maxChars: 240, maxLines: 8 })
+    copy(box(LEFT, 960, MEASURE, 290), { minFontSize: 32, maxFontSize: 38, maxChars: 240, maxLines: 8 })
   ]
 });
 
@@ -231,7 +231,7 @@ const singlePhoto = template({
   layers: [
     photo("image-1", 0, W, H, BLEED_FADE),
     logo,
-    headline(box(LEFT, 772, MEASURE, 490), { minFontSize: 46, maxFontSize: 64, maxChars: 110, maxLines: 6 })
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7 })
   ]
 });
 
