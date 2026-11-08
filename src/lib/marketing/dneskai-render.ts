@@ -523,6 +523,8 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
 
 /** The preview image: the slide's real pixels at 80 % (two device pixels per CSS pixel of the 390 px stage and more), WebP. */
 export const DNESKAI_PREVIEW_IMAGE = { width: 864, height: 1080, quality: 82, format: "webp" } as const;
+/** A 9:16 story preview thumbnail, same webp quality as the 4:5 one (owner rule, 8 November 2026). */
+export const DNESKAI_STORY_PREVIEW_IMAGE = { width: 608, height: 1080, quality: 82, format: "webp" } as const;
 /** Rendered previews kept in memory by render key: a slide the owner returns to is not drawn twice. */
 const PREVIEW_CACHE_ENTRIES = 48;
 const previewCache = new Map<string, { image: Buffer; blocks: DneskaiLaidBlock[] }>();
@@ -548,7 +550,7 @@ export function clearDneskaiPreviewCache() { previewCache.clear(); }
  * problems. The bytes are a preview only: approval still binds a saved revision's content hash and its stored JPEGs.
  * `signal` bounds the work like the save path's abort budget: an abort between stages is `worker-timeout`.
  */
-export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loadMedia: LoadDneskaiMediaBytes, options: { signal?: AbortSignal } = {}): Promise<DneskaiSlidePreview> {
+export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loadMedia: LoadDneskaiMediaBytes, options: { signal?: AbortSignal; story?: boolean } = {}): Promise<DneskaiSlidePreview> {
   const deck = parseDeck(value);
   const slide = deck.slides[index];
   if (!slide) throw new DneskaiRenderError("render-input-invalid");
@@ -556,16 +558,18 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   abortCheck();
   const position = { index, count: deck.slides.length };
   const kit = dneskaiKitOf(deck);
+  const previewSize = options.story ? DNESKAI_STORY_PREVIEW_IMAGE : DNESKAI_PREVIEW_IMAGE;
   const [metrics, faces] = await Promise.all([fonts(), kitFieldFaces(kit)]);
   const encoder = await dneskaiEncoderIdentity();
-  const renderKey = dneskaiRenderKey(slide, position, encoder, kit, deck.emphasis);
+  // The story is a different canvas, so it caches under its own key.
+  const renderKey = dneskaiRenderKey(slide, position, encoder, kit, deck.emphasis) + (options.story ? ":story" : "");
   const own = textProblems(slide, index, metrics, faces);
   const hit = previewCache.get(renderKey);
   if (hit && !own.length) {
     previewCache.delete(renderKey); previewCache.set(renderKey, hit);
     return { status: "rendered", image: hit.image, renderKey, problems: [], cached: true, blocks: hit.blocks };
   }
-  if (isDneskaiClosingSlide(slide) && !own.length) {
+  if (!options.story && isDneskaiClosingSlide(slide) && !own.length) {
     const card = await closingCardRender();
     const sharp = await sharpModule();
     const image = await sharp(card.png).resize(DNESKAI_PREVIEW_IMAGE.width, DNESKAI_PREVIEW_IMAGE.height, { fit: "fill" }).webp({ quality: DNESKAI_PREVIEW_IMAGE.quality }).toBuffer();
@@ -578,7 +582,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   const input = dneskaiStudioInput(slide, position, loaded.images, kit, deck.emphasis);
   if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false, blocks: [] };
   let result;
-  try { result = await engine.renderDneskaiSlide(input); }
+  try { result = await engine.renderDneskaiSlide(input, options.story ? "instagram-story" : "instagram-portrait"); }
   catch { throw new DneskaiRenderError("render-rasterization-failed"); }
   abortCheck();
   const found = result.problems.map((problem) => slideProblem(index, problem));
@@ -593,7 +597,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   let image: Buffer;
   try {
     image = await sharp(result.png).flatten({ background: "#ffffff" }).toColourspace("srgb")
-      .resize(DNESKAI_PREVIEW_IMAGE.width, DNESKAI_PREVIEW_IMAGE.height, { fit: "fill" }).webp({ quality: DNESKAI_PREVIEW_IMAGE.quality }).toBuffer();
+      .resize(previewSize.width, previewSize.height, { fit: "fill" }).webp({ quality: previewSize.quality }).toBuffer();
   } catch { throw new DneskaiRenderError("render-jpeg-encoding-failed"); }
   abortCheck();
   // Advisory problems (a picture stretched short of refusal) are part of the preview's answer, not of the cache.

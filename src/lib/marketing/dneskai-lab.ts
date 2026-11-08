@@ -327,6 +327,8 @@ export const DneskaiPreviewRequestSchema = z.strictObject({
   id: z.uuid(),
   deck: DneskaiDeckEditSchema,
   slide: z.number().int().min(0).max(9),
+  /** The canvas to preview; absent means the 4:5 slide. `instagram-story` draws the cover as a native 1080×1920 story. */
+  format: z.enum(['instagram-portrait', 'instagram-story']).optional(),
 });
 export type DneskaiPreviewRequest = z.infer<typeof DneskaiPreviewRequestSchema>;
 export const DneskaiPreviewResultSchema = z.strictObject({

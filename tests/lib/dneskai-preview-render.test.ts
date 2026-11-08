@@ -26,6 +26,14 @@ describe('fixture-only renderer',()=>{
   expect(edited.ready).toBe(true);expect(edited.assets[0].sha256).not.toBe(original.assets[0].sha256);
   expect(edited.assets[0].url).toMatch(/^data:image\/jpeg;base64,/);
  });
+ it('renders the cover as one native 1080×1920 story with ?format=instagram-story',async()=>{
+  const storyRequest=new Request(`${url}?format=instagram-story`,{method:'POST',headers:{Origin:'https://own.example','Content-Type':'application/json'},body:JSON.stringify(deck())});
+  const body=await(await POST(storyRequest)).json();
+  expect(body.ready).toBe(true);
+  expect(body.assets).toHaveLength(1);
+  expect(body.assets[0]).toMatchObject({width:1080,height:1920});
+  expect(body.assets[0].url).toMatch(/^data:image\/jpeg;base64,/);
+ });
 });
 
 it('renders a saved demo version whose assets never attached, even with no deck changes', async()=>{
