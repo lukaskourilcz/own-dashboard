@@ -49,6 +49,9 @@ describe('owner-link sources (#210)', () => {
     const input = { topicId, kind: 'education' as const, page: { title: 'Page', text: 'Text.' }, fallbackTitle: 'T', fallbackText: null, now: new Date('2026-11-08T08:00:00Z') };
     expect(dneskaiOwnerLinkCandidate({ ...input, url, part: 1 }).candidate.id).toBe(`owner-link:${topicId}`);
     expect(dneskaiOwnerLinkCandidate({ ...input, url: 'https://b.example.test/2', part: 2 }).candidate.id).toBe(`owner-link:${topicId}:2`);
+    // A series topic's summary leads the page text (8 November 2026); without page text the summary is the fallback alone.
+    expect(dneskaiOwnerLinkCandidate({ ...input, url, lead: 'Shrnutí tipu.' }).candidate.text).toBe('Shrnutí tipu.\n\nText.');
+    expect(dneskaiOwnerLinkCandidate({ ...input, url, page: { title: 'P', text: '' }, fallbackText: 'Shrnutí tipu.', lead: 'Shrnutí tipu.' }).candidate.text).toBe('Shrnutí tipu.');
   });
 });
 
