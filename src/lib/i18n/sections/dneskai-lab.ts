@@ -60,7 +60,7 @@ const en = {
   },
   kits: {
     label: 'Kit',
-    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker', spotlight: 'Spotlight', plakat: 'Plakát' } satisfies Record<DneskaiKit, string>,
+    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker', spotlight: 'Spotlight', plakat: 'Plakát', videofirst: 'Video-first' } satisfies Record<DneskaiKit, string>,
     current: 'Current', fits: 'fits', shorten: 'shorten text',
     unavailable: 'Not rendered yet',
     pick: 'Choose to preview',
@@ -317,7 +317,7 @@ const cs: typeof en = {
   },
   kits: {
     label: 'Sada',
-    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker', spotlight: 'Spotlight', plakat: 'Plakát' },
+    names: { editorial: 'Editorial', bold: 'Bold', explainer: 'Explainer', magazine: 'Magazine', ticker: 'Ticker', spotlight: 'Spotlight', plakat: 'Plakát', videofirst: 'Video-first' },
     current: 'Současná', fits: 'vejde se', shorten: 'zkrátit text',
     unavailable: 'Zatím nevykresleno',
     pick: 'Vyberte pro náhled',
