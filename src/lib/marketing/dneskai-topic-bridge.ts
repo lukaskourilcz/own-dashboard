@@ -25,7 +25,8 @@ import { contentHash } from './hashes';
  *   Jina Reader (URL only) and saved as one report (`owner-link`) in the project's latest finished run; from there it
  *   takes the education path above, pictures included. A manual topic with a title and no URL stops with
  *   `topic-source-missing`: a post needs a source it can cite. A page the reader cannot read is tried three times,
- *   then stops with `topic-source-unreadable`.
+ *   then stops with `topic-source-unreadable`. Up to two further URLs (a series topic, 8 November 2026) become reports
+ *   of their own and members of the same brief, so their pictures are offered too; an unreadable one is left out.
  *
  * Status: approved → enriching (brief row exists, waiting for pictures or a slot) → briefed (job queued) →
  * generated (the job's draft is in review). A brief that lapses leaves its code on the topic.
