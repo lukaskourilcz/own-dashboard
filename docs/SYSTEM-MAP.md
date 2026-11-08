@@ -73,7 +73,7 @@ Secrets live only in Vercel env vars and Supabase Vault, never in the repo.
 ## 4. The DNESKAi pipeline, end to end
 
 DNESKAi is a Czech daily briefing about AI and technology. OwnDashboard turns each night's news into up to four
-Instagram posts a day for `@dneskai` (slots 08:00, 12:30, 17:00, 20:00 Prague). Nothing publishes without the
+Instagram posts a day for `@dneskai` (slots 08:00, 12:30, 19:00, 21:00 Prague). Nothing publishes without the
 owner approving the exact version.
 
 ### The scheduler
@@ -170,8 +170,8 @@ A deck names its kit (`kit` field, absent for Editorial). Each kit lives in `src
 ### The publishing plan and Threads (7 November 2026)
 
 The owner approved every education topic and the last week's news into a rolling 30-day plan
-(`marketing_dneskai_plan`, behind `DNESKAI_PLAN_ENABLED`): Instagram at 08:00, 12:30 and 17:00, Threads at the same
-times plus 20:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
+(`marketing_dneskai_plan`, behind `DNESKAI_PLAN_ENABLED`): Instagram at 08:00, 12:30 and 19:00, Threads at the same
+times plus 21:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
 fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
 the post in its style (Spotlight or Plakát), moves it to its slot, approves the exact version for the owner and derives a Threads twin
 (`dneskai-threads.ts`: the same slides, only the caption's first paragraph without hashtags or keyword line,
@@ -188,7 +188,7 @@ Lab. Threads publishing needs the @dneskai Threads profile and its token (NEEDED
 Every approved Instagram post also goes out as an Instagram story ten minutes later, made from its cover slide
 (`story-image.ts`: the 4:5 cover in a 1080 × 1920 frame over a blurred copy, no model call). @dneskai is a Business
 account since 7 November 2026, which the Stories API requires. With `DNESKAI_NEW_TOPICS_ENABLED=true` the plan keeps
-08:00, 17:00 and 20:00 free ahead; the night's news topics take them, best brief rank first, and the plan approves
+08:00, 19:00 and 21:00 free ahead; the night's news topics take them, best brief rank first, and the plan approves
 them for the owner; from 05:00 education fills whatever is still free that day.
 
 **Extra times and restyle (8 November 2026).** Slots may also sit at 10:00 and 14:30 (Instagram and Threads); the
@@ -202,7 +202,7 @@ job cap is 24 per 24 hours since that day.
 ### Series (8 November 2026)
 
 Six recurring series (Slovník AI, and tips from Mosseri, Karpathy, Cherny, Mollick and Pocock) take 12:30 every day
-and 17:00 from Monday to Saturday, from 16 November 2026. They are education topics tagged `evidence.series`; the plan
+and 19:00 from Monday to Saturday, from 16 November 2026. They are education topics tagged `evidence.series`; the plan
 seats them, numbers them and writes their label on the cover and the first caption line (`dneskai-series.ts`,
 `dneskai-plan.ts`). Details, the weekly grid and the backlogs: `docs/dneskai-series.md`.
 

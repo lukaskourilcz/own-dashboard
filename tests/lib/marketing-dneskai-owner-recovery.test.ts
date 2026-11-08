@@ -14,7 +14,7 @@ const now = new Date('2026-10-23T08:00:00Z');
 const ON = { retry: true, reslot: true, heldRelease: true, lapsedRelease: true };
 let db: PGlite;
 beforeAll(async () => {
-  db = await createBriefsDatabase([owner, other], [], now.toISOString(), [...BRIEF_MIGRATIONS, '20261022141512_dneskai_owner_recovery.sql', '20261022141613_dneskai_release_lapsed_brief.sql']);
+  db = await createBriefsDatabase([owner, other], [], now.toISOString(), [...BRIEF_MIGRATIONS, '20261022141512_dneskai_owner_recovery.sql', '20261022141613_dneskai_release_lapsed_brief.sql', '20261109021000_dneskai_reslot_times.sql']);
 }, 60_000);
 afterAll(async () => { await db?.close(); });
 
@@ -103,7 +103,7 @@ describe('reslot', () => {
   it('skips a taken slot and never picks a slot after the brief expires', async () => {
     const f = await seed('reslot-taken');
     await reslotDneskaiBrief(context(ON, ['2026-10-23T10:30:00.000Z']), f.brief);
-    expect((await row(f.brief)).brief.scheduledAt).toBe('2026-10-23T15:00:00.000Z');
+    expect((await row(f.brief)).brief.scheduledAt).toBe('2026-10-23T17:00:00.000Z');
     const early = await seed('reslot-expiring', { expiresAt: '2026-10-23T10:00:00.000Z' });
     expect(await refusal(reslotDneskaiBrief(context(), early.brief))).toBe('recovery-no-free-slot');
     expect((await row(early.brief)).status).toBe('skipped');

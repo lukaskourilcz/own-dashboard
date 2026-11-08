@@ -88,7 +88,7 @@ describe('GET /api/marketing/dneskai/review (#119)', () => {
     expect(dneskaiPostState(post!, dneskaiStateContext(read)).state).toBe('review');
     expect(read.jobs.map((job) => [job.status, job.errorCode])).toEqual([['running', null], ['failed', 'dneskai-daily-generation-budget-exhausted']]);
     expect(read.accounts).toEqual([{ id: '55555555-5555-4555-8555-555555555555', remoteId: '17841400000000000', handle: 'dneskai', verified: true, enabled: false }]);
-    expect(read.slots).toEqual(['08:00', '12:30', '17:00', '20:00']);
+    expect(read.slots).toEqual(['08:00', '12:30', '19:00', '21:00']);
     expect(JSON.stringify(body)).not.toContain('PRIVATE');
     expect(mocks.filters.filter(([, op, field]) => op === 'eq' && field === 'user_id').every(([, , , value]) => value === owner)).toBe(true);
   });

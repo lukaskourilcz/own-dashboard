@@ -12,8 +12,8 @@ import { z } from 'zod';
 export const DNESKAI_PLAN_VIEW_VERSION = 'dneskai-plan/1';
 
 /** Instagram posts three times a day; Threads repeats those three and adds an evening post of its own. */
-export const DNESKAI_PLAN_INSTAGRAM_TIMES = ['08:00', '12:30', '17:00'] as const;
-export const DNESKAI_PLAN_THREADS_ONLY_TIMES = ['20:00'] as const;
+export const DNESKAI_PLAN_INSTAGRAM_TIMES = ['08:00', '12:30', '19:00'] as const;
+export const DNESKAI_PLAN_THREADS_ONLY_TIMES = ['21:00'] as const;
 export const DNESKAI_PLAN_TIMES = [...DNESKAI_PLAN_INSTAGRAM_TIMES, ...DNESKAI_PLAN_THREADS_ONLY_TIMES] as const;
 /**
  * Extra Instagram and Threads times (owner decision, 8 November 2026). The plan never fills them by itself; they hold
@@ -21,7 +21,7 @@ export const DNESKAI_PLAN_TIMES = [...DNESKAI_PLAN_INSTAGRAM_TIMES, ...DNESKAI_P
  */
 export const DNESKAI_PLAN_EXTRA_TIMES = ['10:00', '14:30'] as const;
 /** Every time a slot may have, in the order of the day. */
-export const DNESKAI_PLAN_ALL_TIMES = ['08:00', '10:00', '12:30', '14:30', '17:00', '20:00'] as const;
+export const DNESKAI_PLAN_ALL_TIMES = ['08:00', '10:00', '12:30', '14:30', '19:00', '21:00'] as const;
 /** The plan reaches this many Prague days ahead, today included. */
 export const DNESKAI_PLAN_DAYS = 30;
 /** The read serves at most this many days in one request. */

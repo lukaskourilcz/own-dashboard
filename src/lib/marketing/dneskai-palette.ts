@@ -27,7 +27,7 @@ const pragueParts = (at: Date) => Object.fromEntries(new Intl.DateTimeFormat('en
 
 /**
  * The colour of the post that goes out at `scheduledAt`. Posts are numbered by their place in the plan (six times a
- * day: 08:00, 10:00, 12:30, 14:30, 17:00, 20:00) and the number walks the palette, so two posts one after the other
+ * day: 08:00, 10:00, 12:30, 14:30, 19:00, 21:00) and the number walks the palette, so two posts one after the other
  * never share a colour, and a re-render of the same post keeps its colour. A time off the plan counts by its hour.
  */
 export function dneskaiEmphasisFor(scheduledAt: string): DneskaiEmphasisHex {

@@ -6,7 +6,7 @@ import { z } from 'zod';
  * the mix (`readDneskaiDailyMix` in dneskai-daily-mix-read.ts) when it picks topics and slots. No stored row means
  * the default. The four times are `DNESKAI_BRIEF_SLOTS`; the mix only switches some of them off.
  */
-export const DNESKAI_DAILY_MIX_TIMES = ['08:00', '12:30', '17:00', '20:00'] as const;
+export const DNESKAI_DAILY_MIX_TIMES = ['08:00', '12:30', '19:00', '21:00'] as const;
 export type DneskaiDailyMixTime = (typeof DNESKAI_DAILY_MIX_TIMES)[number];
 
 export const DneskaiDailyMixSchema = z.strictObject({
@@ -19,7 +19,7 @@ export const DneskaiDailyMixSchema = z.strictObject({
 });
 export type DneskaiDailyMix = z.infer<typeof DneskaiDailyMixSchema>;
 
-export const DEFAULT_DNESKAI_DAILY_MIX: DneskaiDailyMix = Object.freeze({ newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '17:00'] }) as DneskaiDailyMix;
+export const DEFAULT_DNESKAI_DAILY_MIX: DneskaiDailyMix = Object.freeze({ newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '19:00'] }) as DneskaiDailyMix;
 
 /** The active times in the day's order, whatever order they were saved in. */
 export function dneskaiActiveSlotTimes(mix: Pick<DneskaiDailyMix, 'slots'>): DneskaiDailyMixTime[] {

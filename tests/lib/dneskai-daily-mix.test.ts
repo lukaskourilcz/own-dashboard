@@ -20,13 +20,13 @@ afterEach(() => { vi.unstubAllEnvs(); });
 
 describe('daily mix (#156)', () => {
   it('validates the mix: 0 to 4 per kind, distinct known times, a time for every post', () => {
-    for (const mix of [DEFAULT_DNESKAI_DAILY_MIX, { newsPerDay: 0, educationPerDay: 0, slots: ['20:00'] }, { newsPerDay: 4, educationPerDay: 0, slots: ['08:00', '12:30', '17:00', '20:00'] }, { newsPerDay: 0, educationPerDay: 4, slots: ['20:00', '08:00', '17:00', '12:30'] }]) {
+    for (const mix of [DEFAULT_DNESKAI_DAILY_MIX, { newsPerDay: 0, educationPerDay: 0, slots: ['21:00'] }, { newsPerDay: 4, educationPerDay: 0, slots: ['08:00', '12:30', '19:00', '21:00'] }, { newsPerDay: 0, educationPerDay: 4, slots: ['21:00', '08:00', '19:00', '12:30'] }]) {
       expect(DneskaiDailyMixSchema.safeParse(mix).success, JSON.stringify(mix)).toBe(true);
     }
-    for (const mix of [{ newsPerDay: 5, educationPerDay: 0, slots: ['08:00'] }, { newsPerDay: 2, educationPerDay: 1, slots: ['08:00', '17:00'] }, { newsPerDay: 1, educationPerDay: 0, slots: ['09:00'] }, { newsPerDay: 1, educationPerDay: 0, slots: ['08:00', '08:00'] }]) {
+    for (const mix of [{ newsPerDay: 5, educationPerDay: 0, slots: ['08:00'] }, { newsPerDay: 2, educationPerDay: 1, slots: ['08:00', '19:00'] }, { newsPerDay: 1, educationPerDay: 0, slots: ['09:00'] }, { newsPerDay: 1, educationPerDay: 0, slots: ['08:00', '08:00'] }]) {
       expect(DneskaiDailyMixSchema.safeParse(mix).success, JSON.stringify(mix)).toBe(false);
     }
-    expect(dneskaiActiveSlotTimes({ slots: ['17:00', '08:00'] })).toEqual(['08:00', '17:00']);
+    expect(dneskaiActiveSlotTimes({ slots: ['19:00', '08:00'] })).toEqual(['08:00', '19:00']);
     expect([0, 1, 4].map((newsPerDay) => dneskaiNewsTopicLimit({ newsPerDay }))).toEqual([0, 3, 12]);
   });
 
@@ -44,14 +44,14 @@ describe('daily mix (#156)', () => {
   it('narrows the free slots to the active times', () => {
     const now = new Date('2026-10-23T04:00:00Z'); // 06:00 in Prague
     expect(dneskaiFreeSlots('2026-10-23', [], now)).toHaveLength(4);
-    expect(dneskaiFreeSlots('2026-10-23', [], now, ['08:00', '17:00'])).toEqual(['2026-10-23T06:00:00.000Z', '2026-10-23T15:00:00.000Z']);
+    expect(dneskaiFreeSlots('2026-10-23', [], now, ['08:00', '19:00'])).toEqual(['2026-10-23T06:00:00.000Z', '2026-10-23T17:00:00.000Z']);
   });
 
   it('fills a day with as many topics of each kind as the mix asks, for 0, 1 and 4', async () => {
     const briefs = { takenSlots: async () => [] } as unknown as DneskaiBriefStore;
     const now = new Date('2026-10-23T04:00:00Z');
     const committed = (kinds: Array<'news' | 'education'>) => async () => kinds;
-    const base = { newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '12:30', '17:00', '20:00'] as const };
+    const base = { newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '12:30', '19:00', '21:00'] as const };
     expect(await dneskaiTopicTargetDate(briefs, owner, project, now, { daily: { ...base, educationPerDay: 0, slots: [...base.slots] }, kind: 'education', committed: committed([]) })).toBeNull();
     expect(await dneskaiTopicTargetDate(briefs, owner, project, now, { daily: { ...base, slots: [...base.slots] }, kind: 'education', committed: committed([]) })).toBe('2026-10-23');
     expect(await dneskaiTopicTargetDate(briefs, owner, project, now, { daily: { ...base, slots: [...base.slots] }, kind: 'education', committed: async (_o, _p, date) => date === '2026-10-23' ? ['education'] : [] })).toBe('2026-10-24');
@@ -64,7 +64,7 @@ describe('daily mix (#156)', () => {
     const topic: DneskaiBridgeTopic = { id: '33333333-3333-4333-8333-333333333333', kind: 'news', status: 'approved', source_ref: 'event:e', title_cs: 'T', brief_id: '44444444-4444-4444-8444-444444444444', evidence: {} };
     const store = { topics: async () => [topic], brief: async () => ({ id: topic.brief_id, status: 'pending', target_date: '2026-10-23', run_id: '55555555-5555-4555-8555-555555555555', event_id: 'e' }),
       committed: async () => ['news'], updateTopic: async (_o: string, _id: string, patch: Record<string, unknown>) => { updates.push(patch); } } as unknown as DneskaiTopicBridgeStore;
-    const result = await advanceDneskaiTopicBriefs({ topics: store, briefs: {} as DneskaiBriefStore }, { owner, project, now: new Date('2026-10-23T04:00:00Z'), signal: new AbortController().signal, remainingMs: () => 40_000, mix: { newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '17:00'] } });
+    const result = await advanceDneskaiTopicBriefs({ topics: store, briefs: {} as DneskaiBriefStore }, { owner, project, now: new Date('2026-10-23T04:00:00Z'), signal: new AbortController().signal, remainingMs: () => 40_000, mix: { newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '19:00'] } });
     expect(result).toMatchObject({ waiting: 1 });
     expect(updates[0]).toMatchObject({ evidence: { bridgeCode: 'topic-daily-mix-full' } });
   });
@@ -73,8 +73,8 @@ describe('daily mix (#156)', () => {
     const get = await GET(new Request(url));
     expect(await get.json()).toEqual({ mix: DEFAULT_DNESKAI_DAILY_MIX, stored: false });
     const put = (body: unknown, origin = 'https://own.example') => PUT(new Request(url, { method: 'PUT', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }));
-    expect((await put({ newsPerDay: 1, educationPerDay: 2, slots: ['08:00', '12:30', '17:00'] })).status).toBe(200);
-    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: owner, project_id: project, news_per_day: 1, education_per_day: 2, slots: ['08:00', '12:30', '17:00'] }), { onConflict: 'user_id,project_id' });
+    expect((await put({ newsPerDay: 1, educationPerDay: 2, slots: ['08:00', '12:30', '19:00'] })).status).toBe(200);
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: owner, project_id: project, news_per_day: 1, education_per_day: 2, slots: ['08:00', '12:30', '19:00'] }), { onConflict: 'user_id,project_id' });
     expect((await put({ newsPerDay: 3, educationPerDay: 2, slots: ['08:00'] })).status).toBe(400);
     expect((await put(DEFAULT_DNESKAI_DAILY_MIX, 'https://evil.example')).status).toBe(403);
     vi.stubEnv('DNESKAI_DAILY_MIX_ENABLED', '');

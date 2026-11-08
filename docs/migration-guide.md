@@ -1050,6 +1050,17 @@ one. The column was never written by shipped code, so the drop is safe.
 `marketing_settle_dneskai_series_wave` records the wave's Apify and Claude cost, the tips it inserted and its code,
 once. The cron `/api/cron/dneskai-series-refill` uses them (`docs/dneskai-series.md`). It is additive and has no backfill.
 
+## New publishing times, 8 November 2026
+
+`20261109020000_publishing_times.sql` applies the owner's new times of 8 November 2026. The DNESKAi plan accepts 19:00
+(Instagram and Threads) and 21:00 (Threads only) next to the old 17:00 and 20:00, which past rows keep; the daily mix
+offers 08:00, 12:30, 19:00 and 21:00; devShark's Instagram slot is 16:00 Prague. Unpublished DNESKAi slots still ahead
+move to the new times and the plan step moves their versions (`move`, approved posts included). A devShark slot already
+prepared at 12:00 cancels its queued publications, supersedes its versions and is prepared again at 16:00.
+
+`20261109021000_dneskai_reslot_times.sql` redefines `marketing_dneskai_reslot_brief` with the daily times 08:00, 12:30,
+19:00 and 21:00; nothing else in it changes.
+
 ## HeyDarlink ambient inbox, 8 November 2026
 
 `20261109030000_heydarlink_ambient_inbox.sql` creates the private Storage bucket `heydarlink-ambient-inbox` (JPEG, PNG

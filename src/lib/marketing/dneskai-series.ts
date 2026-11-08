@@ -2,9 +2,9 @@
  * The DNESKAi recurring series (owner decisions, 8 November 2026). A series post is an education topic tagged with
  * `evidence.series`; the plan step seats it in its fixed slot before it fills the rest of the plan with ordinary
  * topics. Every series posts at least twice a week (owner rule, 8 November 2026), from 16 November 2026, on the two
- * daytime slots that post on Instagram and Threads; 08:00 and Threads at 20:00 stay with the news every day:
+ * daytime slots that post on Instagram and Threads; 08:00 and Threads at 21:00 stay with the news every day:
  *
- * | Day | 12:30 | 17:00 |
+ * | Day | 12:30 | 19:00 |
  * |---|---|---|
  * | Monday | `explainer` | `karpathy` |
  * | Tuesday | `mosseri` | `cherny` |
@@ -35,16 +35,16 @@ export const DNESKAI_SERIES_LABELS: Readonly<Record<DneskaiSeries, string>> = {
 
 /** The weekly grid: weekday (0 = Sunday) to the series that own its slots. */
 export const DNESKAI_SERIES_GRID: Readonly<Record<number, Readonly<Partial<Record<string, DneskaiSeries>>>>> = {
-  1: { '12:30': 'explainer', '17:00': 'karpathy' },
-  2: { '12:30': 'mosseri', '17:00': 'cherny' },
-  3: { '12:30': 'explainer', '17:00': 'mollick' },
-  4: { '12:30': 'mosseri', '17:00': 'pocock' },
-  5: { '12:30': 'explainer', '17:00': 'karpathy' },
-  6: { '12:30': 'cherny', '17:00': 'mollick' },
+  1: { '12:30': 'explainer', '19:00': 'karpathy' },
+  2: { '12:30': 'mosseri', '19:00': 'cherny' },
+  3: { '12:30': 'explainer', '19:00': 'mollick' },
+  4: { '12:30': 'mosseri', '19:00': 'pocock' },
+  5: { '12:30': 'explainer', '19:00': 'karpathy' },
+  6: { '12:30': 'cherny', '19:00': 'mollick' },
   0: { '12:30': 'pocock' },
 };
 /** The slot times the grid uses; both post on Instagram and Threads. */
-export const DNESKAI_SERIES_TIMES = ['12:30', '17:00'] as const;
+export const DNESKAI_SERIES_TIMES = ['12:30', '19:00'] as const;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 

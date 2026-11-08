@@ -11,13 +11,13 @@ describe('devShark plan cadence', () => {
     for (const day of counts.values()) expect(day).toEqual({ instagram: 1, threads: 2 });
   });
 
-  it('posts on Instagram and Threads at 12:00 and on Threads alone at 19:00', () => {
-    expect(DEVSHARK_PLAN_SLOTS).toEqual([{ time: '12:00', instagram: true, threads: true }, { time: '19:00', instagram: false, threads: true }]);
+  it('posts on Instagram and Threads at 16:00 and on Threads alone at 19:00', () => {
+    expect(DEVSHARK_PLAN_SLOTS).toEqual([{ time: '16:00', instagram: true, threads: true }, { time: '19:00', instagram: false, threads: true }]);
   });
 
   it('leaves taken slots alone', () => {
-    const slots = devsharkPlanEmptySlots([{ date: '2026-11-08', local_time: '12:00' }], '2026-11-08', '2026-11-09');
-    expect(slots.map((slot) => `${slot.date} ${slot.time}`)).toEqual(['2026-11-08 19:00', '2026-11-09 12:00', '2026-11-09 19:00']);
+    const slots = devsharkPlanEmptySlots([{ date: '2026-11-08', local_time: '16:00' }], '2026-11-08', '2026-11-09');
+    expect(slots.map((slot) => `${slot.date} ${slot.time}`)).toEqual(['2026-11-08 19:00', '2026-11-09 16:00', '2026-11-09 19:00']);
   });
 
   it('is off unless DEVSHARK_PLAN_ENABLED is true', () => {
