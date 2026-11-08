@@ -23,11 +23,13 @@ import type { ContentRevision } from './contracts';
  *    and under the daily cost ceiling like every DNESKAi job;
  * 4. returns the old version, so it cannot go out meanwhile. The finished job supersedes it (`marketing_finish_job`)
  *    and the plan takes the new version from there: render check, slot, approval, Threads twin and story.
- *    A post that was already published is written again as a new post: an education topic's slot then follows the
- *    job through its topic (`briefed`, then `generated` by the topic bridge).
+ *    A post that was already published is written again as a new post: the slot takes the job's revision over once
+ *    the job is in review (the plan finds the job by `dneskaiRestyleJobKey`). A failed job leaves `restyle-failed`.
  */
 export const DNESKAI_RESTYLE_REQUESTED = 'restyle-requested';
 export const DNESKAI_RESTYLE_QUEUED = 'restyle-queued';
+/** The regeneration job failed; the slot shows it and can ask again with `restyle-requested`. */
+export const DNESKAI_RESTYLE_FAILED = 'restyle-failed';
 /** Pictures a restyled brief should offer, so most slides can show one. */
 export const DNESKAI_RESTYLE_PICTURES = 4;
 /** The owner's note the regeneration carries to the model, next to the house style already in the system prompt. */

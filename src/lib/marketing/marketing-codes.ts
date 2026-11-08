@@ -62,6 +62,7 @@ const CODES = {
   // Restyle (owner request, 8 November 2026).
   'restyle-requested': ['none', 'The post waits to be written again in the house style.', 'Příspěvek čeká na přepsání v domácím stylu.'],
   'restyle-queued': ['none', 'The post is being written again in the house style.', 'Příspěvek se právě přepisuje v domácím stylu.'],
+  'restyle-failed': ['regenerate', 'Writing the post again failed; ask for the restyle again.', 'Přepsání příspěvku selhalo; požádejte o přepis znovu.'],
   'restyle-unsupported': ['investigate', 'This post cannot be written again: it has no deck or source.', 'Tento příspěvek nejde přepsat: nemá slidy ani zdroj.'],
   'restyle-brief-missing': ['investigate', 'The research brief of this post is gone, so it cannot be written again.', 'Podklad tohoto příspěvku už neexistuje, takže ho nejde přepsat.'],
   'restyle-source-missing': ['investigate', 'The source of this post could not be read again.', 'Zdroj tohoto příspěvku se nepodařilo znovu načíst.'],
