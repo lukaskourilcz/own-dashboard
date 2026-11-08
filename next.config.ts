@@ -77,6 +77,8 @@ const nextConfig: NextConfig = {
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
     // HeyDarlink ambient batches load the grading code, which needs sharp.
     "/api/heydarlink/**": [sharpLibvips],
+    // The DNESKAi series refill cron reads topic pages through modules that can load sharp.
+    "/api/cron/dneskai-series-refill": [sharpLibvips],
     // The reel renderer (#163) spawns the ffmpeg-static executable, which no import reaches.
     "/api/marketing/dneskai/render-reel": ["./node_modules/ffmpeg-static/ffmpeg"],
     // The audio library (#164) measures each upload with the same binary.
