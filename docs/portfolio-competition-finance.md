@@ -17,7 +17,7 @@ ventures become child rows (`parent_id`) of the boardlessAI repository project.
 | --- | --- | --- | --- |
 | OwnDashboard | OwnDashboard | `own-dashboard` | `lukaskourilcz/own-dashboard` |
 | Products | DNESKAi | `aifirst` | `lukaskourilcz/aifirst` |
-| Products | LINKA | `phone-app` | `lukaskourilcz/phone-app` |
+| Products | heyDarlink | `phone-app` | `lukaskourilcz/phone-app` |
 | Products | devShark | `react-express-app` | `lukaskourilcz/react-express-app` |
 | boardlessAI ventures | boardlessAI | `quorum` | `lukaskourilcz/quorum` |
 | boardlessAI ventures | Design Lab | `quorum-design-lab` | subsection of boardlessAI |

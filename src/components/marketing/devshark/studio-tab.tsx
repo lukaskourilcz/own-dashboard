@@ -34,7 +34,8 @@ export function DevsharkStudioTab({ lang, preview = false }: { lang: Lang; previ
   const t = devsharkStudio[lang];
   const query = useQuery({ queryKey: qk.devsharkDrafts, queryFn: fetchDevsharkDrafts, enabled: !preview, staleTime: 30_000 });
   const read = preview ? PREVIEW_READ : query.data;
-  const [selected, setSelected] = useState<string | null>(null);
+  // The publishing calendar opens a concept here with `?studioDraft=<id>` (8 November 2026).
+  const [selected, setSelected] = useState<string | null>(() => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('studioDraft'));
   const drafts = read?.drafts ?? [];
   const current = drafts.find((draft) => draft.id === selected) ?? drafts[0] ?? null;
   return <section aria-labelledby="devshark-studio-title" className="min-w-0 space-y-5" data-testid="devshark-studio">

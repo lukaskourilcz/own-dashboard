@@ -1,12 +1,12 @@
 import type { NavTab } from '@/lib/nav-tabs';
 
 export const WORKFLOW_AREAS = {
-  daily: ['home', 'work', 'tasks', 'calendar', 'goals', 'dates'],
+  daily: ['home', 'work', 'tasks', 'backlog', 'calendar', 'goals', 'dates'],
   projects: ['projects', 'competition'],
   clients: ['opportunities', 'clients', 'career'],
   finance: ['invoices', 'money', 'accounts', 'transactions', 'subscriptions', 'categories'],
   knowledge: ['notes', 'prompts', 'tools', 'links', 'ig-tips'],
-  marketing: ['marketing'],
+  marketing: ['marketing', 'schedule'],
   settings: ['settings'],
 } as const satisfies Record<string, readonly NavTab[]>;
 

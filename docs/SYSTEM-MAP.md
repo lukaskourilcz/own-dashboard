@@ -14,11 +14,13 @@ own-only under row-level security. The product areas:
 | Area | What it holds | Main code |
 |---|---|---|
 | Home | Daily focus (seven tasks), completion garden, weekly planning, cron and integration health | `src/app/api/daily-focus/route.ts`, `src/lib/weekly-planning.ts`, `src/lib/cron-heartbeat.ts` |
-| Work | Projects (workspaces at `/projects/<id-or-slug>`), tasks, notes, prompts, tools, the link library | `src/lib/projects.ts`, `src/lib/project-*`, `src/lib/link-library.ts` |
+| Work | Projects (workspaces at `/projects/<id-or-slug>`; the Projects section lists only DNESKAi, devShark and heyDarlink since 8 November 2026), tasks, notes, prompts, tools, the link library | `src/lib/projects.ts`, `src/lib/project-*`, `src/lib/link-library.ts` |
 | Opportunities | Freelance pipeline, clients and organizations (ARES and VIES checks), competition | `src/lib/freelance.ts`, `src/lib/competition.ts`, `src/lib/tax-registry.ts` |
 | Career | The Prague and Czech-remote job search: researched roles, careers directory, application drafts | `src/components/panels/career-research-workspace.tsx`, `src/lib/jobs` |
 | Money | Czech invoices (VAT, QR, print), transactions and rules, subscriptions, static FX, bank sync, payment matching | `src/lib/invoices.ts`, `src/lib/finances.ts`, `src/lib/bank*`, `src/lib/payment-matching*` |
 | Marketing | DNESKAi Instagram pipeline (below), devShark weekly drafts, knowledge import | `src/lib/marketing/`, `services/marketing-worker/` |
+| Publishing calendar | Today and the next two days of both brands' plans, per channel (Instagram post and story, Threads; Facebook and LinkedIn shown as not connected yet); a click opens the post's detail (8 November 2026) | `src/lib/publishing-calendar*.ts`, `src/app/api/publishing-calendar/route.ts`, `src/components/panels/publishing-calendar-panel.tsx` |
+| Backlog | `backlog_items`, the tasks every agent on the owner's laptop adds when told to put something in the backlog; project and status filters, inline status (8 November 2026) | `src/lib/backlog.ts`, `src/components/panels/backlog-panel.tsx`, migration `20261108200000` |
 | Settings | Preferences, hidden tabs, integrations, language | `src/components/panels/settings-panel.tsx` |
 
 The temporary product name is centralized in `src/lib/brand.ts`. Retired areas (personal habits, books, couples,

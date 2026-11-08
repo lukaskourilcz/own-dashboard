@@ -992,3 +992,18 @@ also sit at 10:00 and 14:30; both post on Instagram and Threads. `20261108151000
 of the function is unchanged. `20261108160000_dneskai_restyle.sql` adds two service-role functions for the plan's
 restyle step: `marketing_dneskai_restyle_add_picture` stores one stock picture for a brief (asset, link and the brief's
 media list in one transaction) and `marketing_dneskai_restyle_move_entry` moves the brief's calendar entry to the slot.
+
+## Shared backlog, 8 November 2026
+
+`20261108200000_backlog_items.sql` creates `backlog_items`: one task per row with `project` (heyDarlink, DNESKAi,
+devShark, personal), `title`, `description`, `status` (open, in_progress, done, dropped), `source`, `external_ref` and
+the two timestamps. The global agent instructions insert into it as postgres through the Supabase MCP with only
+`project`, `title`, `description`, `source` and `external_ref`, so those columns are a fixed contract. The table also
+has `user_id` for own-only RLS: a trigger fills it from the session, or with the dashboard's single owner when there is
+none, and keeps it and `created_at` on every update. The Backlog section reads and changes rows through the owner's
+session. Replayed in PGlite (`tests/lib/backlog-database.test.ts`).
+
+## heyDarlink name, 8 November 2026
+
+`20261108200100_project_heydarlink_name.sql` renames the `phone-app` project from LINKA to heyDarlink. The portfolio
+registry creates missing rows but never renames one, so the stored name changes here, and only while it is still LINKA.

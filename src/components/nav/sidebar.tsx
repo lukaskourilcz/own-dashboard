@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import {
   BriefcaseBusiness,
+  CalendarClock,
   CalendarDays,
   CircleDollarSign,
   CreditCard,
@@ -15,6 +16,7 @@ import {
   Landmark,
   LayoutDashboard,
   Lightbulb,
+  ListChecks,
   ListTodo,
   LogOut,
   Menu,
@@ -79,6 +81,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { value: "work", icon: BriefcaseBusiness },
       { value: "marketing", icon: CalendarDays },
+      { value: "schedule", icon: CalendarClock },
       { value: "workflows", icon: Network },
       { value: "projects", icon: FolderKanban },
       { value: "competition", icon: Swords },
@@ -102,6 +105,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     id: "planning",
     items: [
       { value: "tasks", icon: ListTodo },
+      { value: "backlog", icon: ListChecks },
       { value: "calendar", icon: CalendarDays },
       { value: "goals", icon: Target },
       { value: "dates", icon: Gift },

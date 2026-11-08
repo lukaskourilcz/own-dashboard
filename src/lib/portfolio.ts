@@ -60,7 +60,7 @@ export const PORTFOLIO: PortfolioEntry[] = [
   },
   {
     key: "phone-app",
-    name: "LINKA",
+    name: "heyDarlink",
     repo: "lukaskourilcz/phone-app",
     category: "products",
     slug: "phone-app",
@@ -251,4 +251,14 @@ export function planPortfolioSync(projects: Project[]): PortfolioPlanStep[] {
     if (Object.keys(patch).length > 0) steps.push({ kind: "update", project: existing, patch });
   }
   return steps;
+}
+
+/**
+ * The products the Projects section lists (owner request, 8 November 2026): DNESKAi, devShark and heyDarlink, matched by
+ * their registry key, which survives a rename. Every other project keeps its data and stays reachable elsewhere.
+ */
+export const PROJECTS_SECTION_KEYS = ["aifirst", "react-express-app", "phone-app"] as const;
+
+export function isProjectsSectionProject(project: Pick<Project, "portfolio_key">): boolean {
+  return (PROJECTS_SECTION_KEYS as readonly string[]).includes(project.portfolio_key ?? "");
 }
