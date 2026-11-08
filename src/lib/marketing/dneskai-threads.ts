@@ -1,5 +1,5 @@
 import { parseContentRevision, type ContentRevision } from './contracts';
-import { DNESKAI_AI_DISCLOSURE } from './dneskai-caption';
+import { DNESKAI_AI_DISCLOSURE, dneskaiTopic } from './dneskai-caption';
 
 /**
  * DNESKAi on Threads (owner decision, 7 November 2026). Every Instagram post of the plan also goes to Threads, and
@@ -8,8 +8,8 @@ import { DNESKAI_AI_DISCLOSURE } from './dneskai-caption';
  * no comment-to-DM keyword.
  */
 export const THREADS_TEXT_MAX = 500;
-/** Threads turns one hashtag into the post's topic; DNESKAi uses its own name. */
-export const DNESKAI_THREADS_TOPIC_TAG = '#dneskai';
+/** The topic when a caption has no hashtag of its own. */
+export const DNESKAI_THREADS_FALLBACK_TOPIC = 'umelainteligence';
 const KEYWORD_LINE = /^Napište do komentáře „[A-Z0-9]{1,24}“ a pošleme vám návod do zpráv\.$/;
 const HASHTAG = /(^|\s)#[\p{L}\p{N}_]+/gu;
 
@@ -24,9 +24,10 @@ function shorten(text: string, max: number): string {
 }
 
 /**
- * The Threads text of an Instagram caption: the written paragraphs without hashtags and without the keyword line (no
- * comment-to-DM on Threads), shortened to fit, then the AI disclosure and the one topic tag. Always at most 500
- * characters; the disclosure is never cut.
+ * The Threads text of an Instagram caption: the written paragraphs without hashtags, the AI disclosure and the keyword
+ * line (no comment-to-DM on Threads), shortened to fit, then the post's topic as one hashtag: the caption's first
+ * hashtag after #dneskai (owner decision, 8 November 2026). The publisher sends that hashtag as the Threads
+ * `topic_tag`, not as text. Always at most 500 characters.
  */
 export function dneskaiThreadsText(caption: string): string {
   const paragraphs = caption.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
@@ -35,7 +36,7 @@ export function dneskaiThreadsText(caption: string): string {
     .map((paragraph) => paragraph.replace(HASHTAG, '$1').replace(/[ \t]{2,}/g, ' ').trim())
     .filter(Boolean)
     .join('\n\n');
-  const tail = `${DNESKAI_AI_DISCLOSURE}\n\n${DNESKAI_THREADS_TOPIC_TAG}`;
+  const tail = `#${dneskaiTopic(caption) ?? DNESKAI_THREADS_FALLBACK_TOPIC}`;
   const room = THREADS_TEXT_MAX - tail.length - 2;
   const text = body ? `${shorten(body, room)}\n\n${tail}` : tail;
   return text.slice(0, THREADS_TEXT_MAX);

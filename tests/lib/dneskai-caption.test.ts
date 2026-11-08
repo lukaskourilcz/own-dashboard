@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DNESKAI_AI_DISCLOSURE, dneskaiCaptionWithKeyword, dneskaiKeywordLine } from '@/lib/marketing/dneskai-caption';
+import { DNESKAI_AI_DISCLOSURE, dneskaiCaptionWithKeyword, dneskaiKeywordLine, dneskaiPublicText, dneskaiTopic } from '@/lib/marketing/dneskai-caption';
 
 const body = 'Adobe přidává do mobilního Lightroomu rychlou akci.\n\nZdarma jsou 2 použití.';
 const tags = '#dneskai #adobe #lightroom';
@@ -27,5 +27,20 @@ describe('the caption keyword line (#158)', () => {
   it('leaves an owner sentence that only resembles the line alone', () => {
     const own = `${body}\n\nNapište do komentáře, co vás zajímá.\n\n${DNESKAI_AI_DISCLOSURE}`;
     expect(dneskaiCaptionWithKeyword(own, null)).toBe(own);
+  });
+});
+
+describe('dneskaiPublicText (owner, 8 November 2026)', () => {
+  const stored = 'Tým zveřejnil nástroj.\n\nText připravil jazykový model. Výběr a schválení: redakce DNESKAi.\n\n#dneskai #overtone #ai';
+  it('drops the AI disclosure on Instagram and keeps the hashtags', () => {
+    expect(dneskaiPublicText(stored, 'instagram')).toEqual({ text: 'Tým zveřejnil nástroj.\n\n#dneskai #overtone #ai', topicTag: null });
+  });
+  it('sends the article\'s topic as the Threads topic tag, not as text', () => {
+    expect(dneskaiPublicText(stored, 'threads')).toEqual({ text: 'Tým zveřejnil nástroj.', topicTag: 'overtone' });
+    expect(dneskaiPublicText('Text.\n\n#dneskai', 'threads')).toEqual({ text: 'Text.', topicTag: null });
+  });
+  it('takes the first hashtag after the brand as the topic', () => {
+    expect(dneskaiTopic('#dneskai #fio #api')).toBe('fio');
+    expect(dneskaiTopic('bez štítků')).toBeNull();
   });
 });
