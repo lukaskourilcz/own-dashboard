@@ -218,6 +218,198 @@
     "https://fortune.com/2026/06/11/anthropic-claude-boris-cherny-doesnt-write-code-by-hand-anymore/",
     "https://x.com/bcherny/status/2031089411820228645"
    ]
+  },
+  {
+   "order": 17,
+   "slug": "programovani-z-telefonu",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 2/13; 30. 3. 2026 (29. 3. v USA), X, vlákno 15 skrytých funkcí, tipy 1 a 2/15; 8. 6. 2026, X a video s Cat Wu „Reflecting on a year of Claude Code“ (YouTube)",
+   "confidence": "high",
+   "title": "Kód bez notebooku. Cherny zadává Claudovi práci z mobilní aplikace.",
+   "keyword": "mobil",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, píše velkou část kódu z telefonu. V aplikaci Claude pro iOS i Android stačí otevřít záložku Code. Ráno a během dne tak spustí několik sezení a později je zkontroluje. Rozdělanou práci lze přesouvat mezi mobilem, webem a počítačem: příkaz /teleport stáhne sezení z cloudu k vám, /remote-control vám dovolí ovládat sezení z počítače na dálku z mobilu. V červnu řekl, že už programuje převážně z telefonu.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454337811386436",
+    "https://x.com/bcherny/status/2064034799711588805"
+   ]
+  },
+  {
+   "order": 18,
+   "slug": "smycky-loop-a-schedule",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 3/15; 8. 6. 2026, X a video s Cat Wu (rutiny a smyčky)",
+   "confidence": "high",
+   "title": "Práce, která běží sama. Cherny nechává Clauda opakovat úkoly v intervalech.",
+   "keyword": "smycky",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, řadí příkazy /loop a /schedule k nejsilnějším funkcím. Claude pak sám opakuje úkol v nastaveném intervalu, až týden v kuse. Cherny má třeba smyčku, která každých pět minut vyřizuje připomínky k jeho změnám v kódu, jinou, která každou půlhodinu promění zpětnou vazbu ze Slacku v návrhy úprav, a další, která jednou za hodinu zavírá zastaralé návrhy. Radí udělat z postupu skill a ten pak pouštět ve smyčce.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454341884154269",
+    "https://x.com/bcherny/status/2064034799711588805"
+   ]
+  },
+  {
+   "order": 19,
+   "slug": "dispatch-na-dalku",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 5/15",
+   "confidence": "high",
+   "title": "Asistent i mimo stůl. Cherny posílá Claudovi úkoly přes Dispatch.",
+   "keyword": "dispatch",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, používá každý den funkci Dispatch z nástroje Cowork. Funguje jako zabezpečené dálkové ovládání aplikace Claude na počítači. Nechává si přes ni shrnout Slack a e-maily, třídit soubory a vyřizovat věci na notebooku, i když u něj zrovna nesedí. Claude přitom smí používat prohlížeč, propojené nástroje i počítač, ale jen s vaším svolením. Cherny říká, že když zrovna neprogramuje, zadává úkoly přes Dispatch.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454345419936040"
+   ]
+  },
+  {
+   "order": 20,
+   "slug": "data-bez-sql",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 11/13; 31. 1. 2026, X, vlákno tipů týmu, tip 9/10 „Use Claude for data & analytics“",
+   "confidence": "high",
+   "title": "Půl roku bez SQL. Cherny nechává Clauda vytahovat a rozebírat data.",
+   "keyword": "data",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, už přes šest měsíců nenapsal ani řádek SQL. Analytické otázky za něj řeší Claude: přes příkazový nástroj databáze BigQuery si sám stáhne a rozebere čísla. Tým má na dotazy do dat sdílený skill, který používají všichni. Podle Chernyho to funguje s jakoukoli databází, ke které existuje příkazový nástroj, MCP server nebo API.",
+   "urls": [
+    "https://officechai.com/ai/claude-code-creator-boris-cherny-claude-code-tips",
+    "https://x.com/bcherny/status/2017742757666902374",
+    "https://x.com/bcherny/status/2007179856266789204"
+   ]
+  },
+  {
+   "order": 21,
+   "slug": "napojte-clauda-na-nastroje",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 11/13; 11. 2. 2026, X, vlákno o přizpůsobení Claude Code, tip 3/12",
+   "confidence": "high",
+   "title": "Slack, chyby i pluginy. Cherny nechává Clauda pracovat v jeho nástrojích.",
+   "keyword": "nastroje",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, říká, že Claude za něj používá všechny jeho nástroje. Přes MCP server prohledává Slack a píše do něj a ze služby Sentry si sám stahuje záznamy chyb. Nastavení napojení má tým uložené ve sdíleném souboru, takže ho mají všichni stejné. Nové schopnosti lze přidat i pluginy z oficiálního obchodu Anthropicu nebo z vlastního firemního, stačí příkaz /plugin.",
+   "urls": [
+    "https://www.xda-developers.com/set-up-claude-code-like-boris-cherny/",
+    "https://x.com/bcherny/status/2007179856266789204",
+    "https://x.com/bcherny/status/2021699862522364149"
+   ]
+  },
+  {
+   "order": 22,
+   "slug": "uroven-usili-effort",
+   "said": "11. 2. 2026, X (@bcherny), vlákno o přizpůsobení Claude Code, tip 2/12; 16. 4. 2026, X, vlákno tipů k Opus 4.7, tip 5/6",
+   "confidence": "high",
+   "title": "Kolik má Claude přemýšlet. Cherny si úroveň úsilí nastavuje sám.",
+   "keyword": "usili",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, radí nastavit, kolik úsilí má Claude do práce dát. Příkazem /effort zvolíte nižší úroveň pro rychlejší odpovědi a menší spotřebu, nebo vyšší pro náročnější úlohy. Sám používá na většinu práce druhou nejvyšší úroveň xhigh a nejvyšší max si nechává na nejtěžší problémy. Úroveň max platí jen pro aktuální sezení, ostatní si Claude pamatuje i příště.",
+   "urls": [
+    "https://pasqualepillitteri.it/en/news/925/claude-opus-4-7-complete-guide-features",
+    "https://x.com/bcherny/status/2044847856872546639",
+    "https://x.com/bcherny/status/2021699860869902424"
+   ]
+  },
+  {
+   "order": 23,
+   "slug": "focus-mode-jen-vysledek",
+   "said": "16. 4. 2026, X (@bcherny), vlákno tipů k Opus 4.7, tipy 3/6 (recaps) a 4/6 (focus mode)",
+   "confidence": "high",
+   "title": "Méně šumu na obrazovce. Cherny sleduje hlavně výsledek, ne každý krok.",
+   "keyword": "focus",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, si zapíná režim focus příkazem /focus. Ten skryje všechny mezikroky a ukáže jen konečný výsledek. Model je podle něj už tak spolehlivý, že mu věří se správnými příkazy i úpravami a kontroluje hlavně výsledek. K tomu se hodí rekapitulace: krátká shrnutí, co agent udělal a co chystá dál. Ocení je hlavně ten, kdo se k dlouho běžícímu sezení vrací po pár minutách nebo hodinách.",
+   "urls": [
+    "https://pasqualepillitteri.it/en/news/925/claude-opus-4-7-complete-guide-features",
+    "https://x.com/bcherny/status/2044847855006024147",
+    "https://x.com/bcherny/status/2044847853030580247"
+   ]
+  },
+  {
+   "order": 24,
+   "slug": "povolte-bezpecne-prikazy",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 10/13; 11. 2. 2026, X, vlákno o přizpůsobení, tip 5/12; 16. 4. 2026, X, vlákno tipů k Opus 4.7, tip 2/6",
+   "confidence": "high",
+   "title": "Méně dotazů, stejná kontrola. Cherny povoluje bezpečné příkazy předem.",
+   "keyword": "opravneni",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, nevypíná kontrolu oprávnění přepínačem pro přeskočení všech dotazů. Místo toho příkazem /permissions předem povolí běžné příkazy, o kterých ví, že jsou v jeho prostředí bezpečné. Seznam má uložený v nastavení projektu a sdílí ho s týmem. V dubnu přidal skill /fewer-permission-prompts, který projde historii sezení a navrhne, které často odklikávané bezpečné příkazy povolit natrvalo.",
+   "urls": [
+    "https://infoq.com/news/2026/01/claude-code-creator-workflow/",
+    "https://x.com/bcherny/status/2007179854077407667",
+    "https://x.com/bcherny/status/2044847851591856461"
+   ]
+  },
+  {
+   "order": 25,
+   "slug": "sandbox-izolace",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 12/13; 11. 2. 2026, X, vlákno o přizpůsobení Claude Code, tip 6/12",
+   "confidence": "high",
+   "title": "Claude v uzavřeném prostoru. Cherny radí zapnout sandbox.",
+   "keyword": "sandbox",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, doporučuje zapnout sandbox příkazem /sandbox. Claude pak na vašem počítači běží v izolovaném prostředí s omezeným přístupem k souborům i k síti. Vyšší bezpečnost přitom znamená méně žádostí o povolení. Dlouhé úlohy, při kterých Claude nemá čekat na potvrzení, pouští Cherny bez dotazů jen právě uvnitř sandboxu.",
+   "urls": [
+    "https://infoq.com/news/2026/01/claude-code-creator-workflow/",
+    "https://x.com/bcherny/status/2021700506465579443",
+    "https://x.com/bcherny/status/2007179858435281082"
+   ]
+  },
+  {
+   "order": 26,
+   "slug": "stavovy-radek",
+   "said": "31. 1. 2026, X (@bcherny), vlákno tipů týmu, tip 7/10 „Terminal & Environment Setup“; 11. 2. 2026, X, vlákno o přizpůsobení Claude Code, tip 7/12",
+   "confidence": "high",
+   "title": "Přehled na jednom řádku. Cherny si pod okno zadání přidává stavový řádek.",
+   "keyword": "statusline",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, radí přidat si stavový řádek přímo pod políčko pro zadání. Může ukazovat použitý model, složku, zbývající kontext, větev v gitu nebo cenu. Stačí spustit /statusline a Claude ho podle vašeho nastavení terminálu vytvoří sám. Každý v týmu Claude Code má svůj vlastní. Mnozí si navíc barevně odlišují a pojmenovávají karty terminálu, jednu pro každý úkol.",
+   "urls": [
+    "https://officechai.com/ai/claude-code-creator-boris-cherny-claude-code-tips",
+    "https://x.com/bcherny/status/2021700784019452195",
+    "https://x.com/bcherny/status/2017742753971769626"
+   ]
+  },
+  {
+   "order": 27,
+   "slug": "rozdvojte-sezeni",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 8/15",
+   "confidence": "high",
+   "title": "Zkuste to jinak bez rizika. Cherny radí rozdvojit rozdělané sezení.",
+   "keyword": "branch",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, odpovídá na častou otázku, jak rozdvojit rozdělané sezení. V sezení stačí napsat /branch, z příkazové řádky jde totéž přes obnovení sezení s volbou --fork-session. Vznikne kopie celé dosavadní konverzace. V ní můžete vyzkoušet jiný postup, zatímco původní sezení zůstane netknuté.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454350214041740"
+   ]
+  },
+  {
+   "order": 28,
+   "slug": "batch-velke-zmeny",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 11/15 (funkci představil 28. 2. 2026)",
+   "confidence": "high",
+   "title": "Velká práce po kouscích. Příkaz /batch ji rozdělí mezi mnoho agentů.",
+   "keyword": "batch",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, používá na rozsáhlé změny příkaz /batch. Claude se vás nejdřív vyptá na podrobnosti úkolu. Pak práci rozdělí mezi agenty, z nichž každý pracuje ve vlastní kopii repozitáře. Podle velikosti úkolu jich mohou být desítky, stovky i tisíce. Hodí se to na velké migrace kódu a další práci, kterou lze rozdělit na nezávislé části.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454355469484142"
+   ]
+  },
+  {
+   "order": 29,
+   "slug": "pristup-k-dalsi-slozce",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 13/15",
+   "confidence": "high",
+   "title": "Dva projekty v jednom sezení. Cherny pouští Clauda i do další složky.",
+   "keyword": "slozky",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, často spustí Clauda v jednom repozitáři a pak mu zpřístupní i druhý. Slouží k tomu volba --add-dir nebo příkaz /add-dir. Claude pak o druhé složce ví a smí v ní také pracovat. Týmy si mohou další složky zapsat do sdíleného nastavení, takže se načtou automaticky při každém spuštění.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454359047156203"
+   ]
+  },
+  {
+   "order": 30,
+   "slug": "vlastni-agent-na-miru",
+   "said": "11. 2. 2026, X (@bcherny), vlákno o přizpůsobení Claude Code, tip 4/12; 30. 3. 2026 (29. 3. v USA), X, vlákno 15 skrytých funkcí, tip 14/15",
+   "confidence": "high",
+   "title": "Claude s vlastní rolí. Cherny radí spouštět agenty na míru.",
+   "keyword": "agenti",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, považuje vlastní agenty za užitečnou a často přehlíženou funkci. Agent je krátký soubor ve složce .claude/agents s vlastními pokyny, nástroji, oprávněními i modelem. Spustíte ho přes claude --agent a jménem agenta, takže hlavní sezení rovnou pracuje třeba jako recenzent kódu. Začít lze příkazem /agents.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454360418787764",
+    "https://x.com/bcherny/status/2021700144039903699"
+   ]
   }
  ]
 }
