@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesOf, dneskaiSeriesSlot } from '@/lib/marketing/dneskai-series';
+import { DNESKAI_SERIES, DNESKAI_SERIES_LABELS, DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot } from '@/lib/marketing/dneskai-series';
 
 const topic = (id: string, series?: string) => ({ id, evidence: series ? { series } : {} });
 const slot = (date: string, time: string) => ({ date, time });
@@ -20,8 +20,7 @@ describe('the DNESKAi series', () => {
     expect(dneskaiSeriesSlot('2026-11-18', '12:30')).toBe('explainer');
     expect(dneskaiSeriesSlot('2026-11-19', '12:30')).toBe('mosseri');
     expect(dneskaiSeriesSlot('2026-11-20', '12:30')).toBe('explainer');
-    expect(dneskaiSeriesSlot('2026-11-21', '12:30')).toBeNull(); // Saturday
-    expect(dneskaiSeriesSlot('2026-11-22', '12:30')).toBeNull();
+    expect(dneskaiSeriesSlot('2026-11-21', '12:30')).toBe('karpathy'); // Saturday
     expect(dneskaiSeriesSlot('2026-11-16', '17:00')).toBeNull();
     expect(dneskaiSeriesSlot('2026-11-13', '12:30')).toBeNull(); // before the start
     expect(dneskaiSeriesSlot('16. 11.', '12:30')).toBeNull();
@@ -49,5 +48,31 @@ describe('the DNESKAi series', () => {
   it('never puts a series topic outside its series slots', () => {
     const pairs = dneskaiSeriesAssignment([slot('2026-11-16', '08:00'), slot('2026-11-17', '12:30')], [topic('e1', 'explainer')], '2026-11-30');
     expect(pairs).toEqual([]);
+  });
+
+  it('gives Sunday to Cherny, Mollick and Pocock by turns, week after week', () => {
+    expect(['2026-11-22', '2026-11-29', '2026-12-06', '2026-12-13', '2026-12-20'].map((date) => dneskaiSeriesSlot(date, '12:30')))
+      .toEqual(['cherny', 'mollick', 'pocock', 'cherny', 'mollick']);
+    expect(dneskaiSeriesSlot('2026-11-15', '12:30')).toBeNull(); // the Sunday before the start
+  });
+
+  it('labels every series and numbers its heading', () => {
+    expect(Object.keys(DNESKAI_SERIES_LABELS).sort()).toEqual([...DNESKAI_SERIES].sort());
+    expect(dneskaiSeriesHeading('explainer', 3)).toBe('Slovník AI #3');
+    expect(dneskaiSeriesHeading('mosseri', 1)).toBe('Tipy od šéfa Instagramu Mosseriho #1');
+    expect(dneskaiSeriesHeading('pocock', 12)).toBe('Tipy Matta Pococka na AI skills #12');
+  });
+
+  it('numbers published posts first, then the coming ones in slot order, with no gap for a skipped post', () => {
+    const slot = (id: string, date: string, series: 'mosseri' | 'explainer', status: string) => ({ id, date, local_time: '12:30', series, status });
+    const numbers = dneskaiSeriesNumbers([
+      slot('m3', '2026-11-24', 'mosseri', 'approved'),
+      slot('m1', '2026-11-17', 'mosseri', 'published'),
+      slot('m2', '2026-11-19', 'mosseri', 'skipped'),
+      slot('e1', '2026-11-16', 'explainer', 'published'),
+      slot('m4', '2026-11-26', 'mosseri', 'planned'),
+      slot('e2', '2026-11-18', 'explainer', 'failed'),
+    ]);
+    expect(Object.fromEntries(numbers)).toEqual({ m1: 1, m3: 2, m4: 3, e1: 1 });
   });
 });
