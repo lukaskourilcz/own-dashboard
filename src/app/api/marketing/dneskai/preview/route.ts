@@ -45,5 +45,5 @@ export async function POST(request: Request) {
     if (failure instanceof DneskaiRevisionEditError) return Response.json({ error: failure.code }, { status: 409 });
     return Response.json({ error: 'media-unavailable' }, { status: 503 });
   }
-  return dneskaiPreviewResponse(deck, input.slide, wiring.loadMedia, signal);
+  return dneskaiPreviewResponse(deck, input.slide, wiring.loadMedia, signal, input.format === 'instagram-story');
 }

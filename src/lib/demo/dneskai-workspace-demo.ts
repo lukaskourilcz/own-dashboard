@@ -185,7 +185,7 @@ export const demoDneskaiWorkspaceApi: DneskaiWorkspaceApi = {
   async renderPreview(request, signal) {
     const post = find(request.id);
     const slides = applyEdit(post, { action: 'edit', id: request.id, caption: post.caption, scheduledAt: post.scheduledAt, deck: request.deck });
-    return previewAt('/api/dev-preview/dneskai-preview', { deck: editedDeck(post, { deck: request.deck }, slides), slide: request.slide }, signal);
+    return previewAt('/api/dev-preview/dneskai-preview', { deck: editedDeck(post, { deck: request.deck }, slides), slide: request.slide, ...(request.format ? { format: request.format } : {}) }, signal);
   },
   async decide(id, action, feedback) {
     await pause(200);

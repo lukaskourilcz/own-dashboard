@@ -9,7 +9,7 @@ import assets from '@/lib/demo/dneskai-preview-assets.json';
 
 export const runtime = 'nodejs';
 
-const Body = z.strictObject({ deck: DneskaiDeckSchema, slide: z.number().int().min(0).max(9) });
+const Body = z.strictObject({ deck: DneskaiDeckSchema, slide: z.number().int().min(0).max(9), format: z.enum(['instagram-portrait', 'instagram-story']).optional() });
 
 /**
  * The Design Lab's render-only preview for the fixture-only `/dev-preview` harness: the same in-memory render as
@@ -30,5 +30,5 @@ export async function POST(request: Request) {
     if (createHash('sha256').update(bytes).digest('hex') !== sha256) throw new Error('fixture-hash-mismatch');
     return bytes;
   };
-  return dneskaiPreviewResponse(input.deck, input.slide, loadMedia, AbortSignal.any([request.signal, AbortSignal.timeout(DNESKAI_PREVIEW_BUDGET_MS)]));
+  return dneskaiPreviewResponse(input.deck, input.slide, loadMedia, AbortSignal.any([request.signal, AbortSignal.timeout(DNESKAI_PREVIEW_BUDGET_MS)]), input.format === 'instagram-story');
 }

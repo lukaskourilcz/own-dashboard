@@ -17,9 +17,12 @@ export async function POST(request: Request) {
   catch { return Response.json({ error: 'invalid-request' }, { status: 400 }); }
   const photos = new Map(Object.values(assets.photos).map((photo) => [photo.sha256, photo]));
   if (deck.slides.some((slide) => slide.images.some((image) => !photos.has(image.assetSha256)))) return Response.json({ error: 'deck-asset-outside-brief' }, { status: 400 });
+  // `?format=instagram-story` draws the cover as a native 1080×1920 story; absent draws the whole 4:5 deck.
+  const story = new URL(request.url).searchParams.get('format') === 'instagram-story';
   try {
     const rendered = [], problems = [];
-    for (const [index, slide] of deck.slides.entries()) {
+    const slides = story ? deck.slides.slice(0, 1) : deck.slides;
+    for (const [index, slide] of slides.entries()) {
       if (request.signal.aborted) throw new Error('aborted');
       const images = await Promise.all(slide.images.map(async (image) => {
         const photo = photos.get(image.assetSha256)!;
@@ -27,13 +30,13 @@ export async function POST(request: Request) {
         if (createHash('sha256').update(bytes).digest('hex') !== image.assetSha256) throw new Error('fixture-hash-mismatch');
         return { ...image, bytes };
       }));
-      const result = await renderDneskaiSlide({ ...slide, ...(deck.kit ? { kit: deck.kit } : {}), images, position: { index, count: deck.slides.length }, locale: 'cs' });
+      const result = await renderDneskaiSlide({ ...slide, ...(deck.kit ? { kit: deck.kit } : {}), images, position: { index, count: deck.slides.length }, locale: 'cs' }, story ? 'instagram-story' : 'instagram-portrait');
       problems.push(...result.problems.map((problem) => ({ ...problem, slide: index, blocking: problem.blocking || problem.code === 'text-clipped' })));
       if (!result.png || result.status !== 'rendered' || result.truncatedSlots.length) continue;
       const jpeg = await sharp(result.png).flatten({ background: '#ffffff' }).jpeg({ quality: 82 }).toBuffer();
-      rendered.push({ url: `data:image/jpeg;base64,${jpeg.toString('base64')}`, sha256: createHash('sha256').update(jpeg).digest('hex'), width: 1080, height: 1350, alt: slide.alt });
+      rendered.push({ url: `data:image/jpeg;base64,${jpeg.toString('base64')}`, sha256: createHash('sha256').update(jpeg).digest('hex'), width: 1080, height: story ? 1920 : 1350, alt: slide.alt });
     }
-    const ready = rendered.length === deck.slides.length && !problems.some((problem) => problem.blocking);
+    const ready = rendered.length === slides.length && !problems.some((problem) => problem.blocking);
     return Response.json({ ready, assets: ready ? rendered : [], problems }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch { return Response.json({ error: 'render-unavailable' }, { status: 503 }); }
 }
