@@ -29,8 +29,8 @@
       "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; the accent statement's ground."
     },
     "secondary": {
-      "value": "#1a3ab0",
-      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts); kept for the palette's seven tokens, unused by the kit's layers."
+      "value": "#6ec1ff",
+      "source": "The icy blue of the new avatar (owner, 8 November 2026): the key words of a headline on a photograph or on ink, unless the post sets its own colour."
     }
   },
   "fonts": {

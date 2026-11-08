@@ -13,7 +13,7 @@ describe("key-word marks (Plakát, 8 November 2026)", () => {
     expect(dneskaiPlainText("Sleduj [[DNESKAi]]")).toBe("Sleduj DNESKAi");
   });
 
-  it("colours only the marked words in Plakát and draws plain words in kits without an emphasis colour", async () => {
+  it("colours only the marked words in Plakát and Spotlight", async () => {
     const studio = await import("@/lib/carousel-studio");
     const input = (await studio.dneskaiGoldenCases()).find((entry) => entry.name === "cover-photo")!.input;
     const marked = { ...input, headline: "Alexa umí [[100+]] nových nákupních funkcí" };
@@ -23,8 +23,9 @@ describe("key-word marks (Plakát, 8 November 2026)", () => {
     expect(plakat.payload?.emphasis).toEqual({ headline: [false, false, true, false, false, false] });
     const spotlight = await studio.renderDneskaiSlide({ ...marked, kit: "spotlight" });
     const plain = await studio.renderDneskaiSlide({ ...input, headline: "Alexa umí 100+ nových nákupních funkcí", kit: "spotlight" });
-    expect(spotlight.payload?.emphasis).toBeUndefined();
-    expect(spotlight.pngHash).toBe(plain.pngHash);
+    // Spotlight marks key words too since 8 November 2026 (the owner's ten colours).
+    expect(spotlight.payload?.emphasis).toEqual({ headline: [false, false, true, false, false, false] });
+    expect(spotlight.pngHash).not.toBe(plain.pngHash);
   }, 60000);
 
   it("draws the key words in the post's own colour (owner request, 8 November 2026)", async () => {
