@@ -366,7 +366,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(internet.unknown).toEqual([]);
   }, 300_000);
 
-  it('the next night, a follow-up report that reuses a published picture is a repeat and a picture-less report becomes a carousel of text slides', async () => {
+  it('the next night, a follow-up report that reuses a published picture is a repeat and a picture-less report is refused before any model call', async () => {
     const before = await snapshot();
     let time = Date.parse('2026-10-27T21:00:30.000Z');
     for (let index = 0; index < 24; index++) {
@@ -397,20 +397,14 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const textOnly = DneskaiBriefSchema.parse(briefs.find((row) => row.status === 'queued')!.brief);
     expect(textOnly).toMatchObject({ schemaVersion: 'dneskai-brief/1', suggestedFormat: 'carousel', media: [] });
     expect(textOnly.evidence.map((item) => item.url)).toEqual([STORIES.c.url]);
-    const lastPrompt = anthropic.requests.at(-1)!.prompt;
-    expect(lastPrompt).not.toContain('Your previous answer');
-    const offer = JSON.parse(lastPrompt) as { media: unknown[]; rules: unknown };
-    expect(offer).toMatchObject({ media: [], rules: { formats: ['carousel', 'single-image'], firstSlide: 'statement', minimumPictureSlides: 0 } });
-    const [textRow] = (await revisionRows()).filter((row) => parseContentRevision(row.revision).sources[0]?.sourceId === textOnly.eventId);
-    const textRevision = parseContentRevision(textRow!.revision);
-    expect(textRow).toMatchObject({ status: 'review', ready: true });
-    expect(textRevision.deck!.slides.map((slide) => slide.type)).toEqual(['statement', 'statement', 'statement', 'statement']);
-    expect(textRevision.deck!.slides.every((slide) => slide.images.length === 0)).toBe(true);
-    expect(textRevision.assets).toHaveLength(4);
+    // Every post shows a photo (owner decision, 8 November 2026): the picture-less brief's job is refused before any
+    // model call and no revision is written; the plan fills its time with another post.
+    const [job] = await sql<{ status: string; error_code: string | null }>('select status,error_code from public.marketing_jobs where id=$1', [briefs.find((row) => row.status === 'queued')!.job_id]);
+    expect(job).toMatchObject({ status: 'failed', error_code: 'media-photo-missing' });
+    expect((await revisionRows()).filter((row) => parseContentRevision(row.revision).sources[0]?.sourceId === textOnly.eventId)).toEqual([]);
     const after = await snapshot();
-    // One new job, one call and four rendered slides; no picture was downloaded for either report.
     expect({ jobs: after.jobs, revisions: after.revisions, anthropic: after.anthropic, assetUploads: after.assetUploads, mediaAssets: after.mediaAssets })
-      .toEqual({ jobs: before.jobs + 1, revisions: before.revisions + 1, anthropic: before.anthropic + 1, assetUploads: before.assetUploads + 4, mediaAssets: before.mediaAssets });
+      .toEqual({ jobs: before.jobs + 1, revisions: before.revisions, anthropic: before.anthropic, assetUploads: before.assetUploads, mediaAssets: before.mediaAssets });
   }, 300_000);
 
   it('refreshes the stored Instagram token once fewer than ten days remain, and the next Graph call uses the new token (#121)', async () => {

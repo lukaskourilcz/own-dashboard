@@ -58,7 +58,14 @@ export type DneskaiPlanTwin = { id: string; status: string; ready: boolean; cont
 
 export type DneskaiPlanAction =
   | { kind: 'wait'; status: DneskaiPlanStatus; code: string | null }
-  | { kind: 'spotlight' | 'rerender' | 'move' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus };
+  | { kind: 'spotlight' | 'rerender' | 'move' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
+  /** The post has no photo on its first slide: retired and the slot freed for another post (8 November 2026). */
+  | { kind: 'drop'; status: 'skipped'; code: 'plan-photo-missing' };
+
+/** A drafted DNESKAi deck whose first slide shows no picture. A revision without a deck (rendered assets) passes. */
+export const dneskaiDeckLacksPhoto = (revision: Pick<ContentRevision, 'deck'>) => !!revision.deck && !(revision.deck.slides[0]?.images.length);
+/** Topic bridge codes that mean the topic's post can never carry a photo. */
+const PHOTO_MISSING_CODES = new Set(['media-photo-missing']);
 
 /** A slot's story goes out this long after its Instagram post. */
 export const DNESKAI_STORY_DELAY_MS = 10 * 60_000;
@@ -78,6 +85,8 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   if (head.status === 'superseded') return { kind: 'wait', status: 'failed', code: 'plan-post-superseded' };
   if (head.status === 'failed') return { kind: 'wait', status: 'failed', code: 'publish-failed' };
   if (head.status === 'publishing' || head.status === 'reconciliation') return { kind: 'wait', status: 'approved', code: null };
+  // Every post shows a photo (owner decision, 8 November 2026): one without leaves the plan, silently.
+  if ((head.status === 'review' || head.status === 'approved') && dneskaiDeckLacksPhoto(head.revision)) return { kind: 'drop', status: 'skipped', code: 'plan-photo-missing' };
   const ownerEdit = !!slot.written_revision_id && head.id !== slot.written_revision_id;
   if (head.status === 'review') {
     if (!head.ready || renderReportBlocks(head.render_report)) {
@@ -177,6 +186,16 @@ async function fillPlan(db: Database, owner: string, project: string, today: str
 }
 
 const RevisionRowSchema = z.object({ id: z.uuid(), status: z.string(), ready: z.boolean(), content_hash: z.string(), revision: z.unknown(), render_report: z.unknown().optional(), slides: z.unknown().optional() });
+async function topicLacksPhoto(db: Database, owner: string, topicId: string): Promise<boolean> {
+  const topic = read(await db.from('marketing_dneskai_topics').select('evidence').eq('user_id', owner).eq('id', topicId).maybeSingle(), 'plan-topic-unavailable') as { evidence: Record<string, unknown> | null } | null;
+  if (typeof topic?.evidence?.bridgeCode === 'string' && PHOTO_MISSING_CODES.has(topic.evidence.bridgeCode)) return true;
+  // Generation refuses a brief without a usable photo before any model call; its job fails with that code.
+  const jobId = typeof topic?.evidence?.jobId === 'string' ? topic.evidence.jobId : null;
+  if (!jobId) return false;
+  const job = read(await db.from('marketing_jobs').select('status,error_code').eq('user_id', owner).eq('id', jobId).maybeSingle(), 'plan-topic-unavailable') as { status: string; error_code: string | null } | null;
+  return job?.status === 'failed' && !!job.error_code && PHOTO_MISSING_CODES.has(job.error_code);
+}
+
 async function revisionRow(db: Database, owner: string, id: string) {
   const row = read(await db.from('marketing_revisions').select('id,status,ready,content_hash,revision,render_report,slides').eq('user_id', owner).eq('id', id).maybeSingle(), 'plan-revision-unavailable');
   return row ? RevisionRowSchema.parse(row) : null;
@@ -319,7 +338,15 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         const head = await resolveHead(db, owner, slot);
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
-        const action = dneskaiPlanAction(slot, head, twin, !!account, input.now, story);
+        const action = !head && slot.topic_id && await topicLacksPhoto(db, owner, slot.topic_id) ? { kind: 'drop' as const, status: 'skipped' as const, code: 'plan-photo-missing' as const } : dneskaiPlanAction(slot, head, twin, !!account, input.now, story);
+        if (action.kind === 'drop') {
+          for (const id of [head?.id, slot.threads_revision_id, slot.story_revision_id]) if (id) await db.rpc('marketing_dneskai_plan_retire', { p_owner: owner, p_revision_id: id });
+          // The freed time is filled with another post on the next pass.
+          const { error } = await db.from('marketing_dneskai_plan').delete().eq('user_id', owner).eq('id', slot.id);
+          if (error) throw new Error('plan-write-failed');
+          result.codes[action.code] = (result.codes[action.code] ?? 0) + 1;
+          break;
+        }
         const base: Partial<DneskaiPlanRow> = { head_revision_id: head?.id ?? slot.head_revision_id, status: action.status, code: action.kind === 'wait' ? action.code : null };
         if (action.kind === 'wait') { await record(slot, base); Object.assign(slot, base); break; }
         result.worked++;

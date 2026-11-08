@@ -13,6 +13,9 @@ enforce them; a change that lets any of them through is a bug.
 
 - **The first slide shows the headline and nothing else.** A carousel's cover and a single-image post's only
   slide carry no kicker, no body, no picture credit and no label.
+- **Every post shows a photo, on its first slide too** (owner decision, 8 November 2026). No text-only opener and
+  no type-only single post; a post without a usable photo is not published (`media-photo-missing`,
+  `plan-photo-missing`). An AI illustration (`generated`, credit „Ilustrace: AI“ in the database) is the last resort.
 - **No page counts.** No slide shows "02 / 05" or any other position or count.
 - **No picture credits on any slide.** "Obrázek: …" and "Foto: …" never appear in the graphics.
 - **No sources slide.** A deck is the written slides only; nothing is appended after them.

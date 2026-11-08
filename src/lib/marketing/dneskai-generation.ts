@@ -166,7 +166,7 @@ export type DneskaiBriefOffer = {
   brief: DneskaiBrief;
   evidence: DneskaiOfferEvidence[];
   media: DneskaiOfferMedia[];
-  rules: { formats: ("carousel" | "single-image")[]; firstSlide: "cover-photo" | "figure-or-statement" | "statement"; singleVariant: "photo" | "type"; minimumPictureSlides: number };
+  rules: { formats: ("carousel" | "single-image")[]; firstSlide: "cover-photo" | "figure"; singleVariant: "photo"; minimumPictureSlides: number };
   /** Every text the model was shown that may carry a number: what the number gate checks against. */
   corpus: string;
 };
@@ -233,11 +233,14 @@ function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: Offe
   }).sort((left, right) => left.evidenceIndex - right.evidenceIndex || (right.visionScore ?? 5) - (left.visionScore ?? 5) || left.position - right.position).slice(0, plan.media);
   const usable = media.filter((item) => item.fullBleedCapable || item.insetCapable).length;
   const fullBleed = media.some((item) => item.fullBleedCapable);
+  // Every post shows a photo, on its first slide too (owner decision, 8 November 2026): no statement opener, no
+  // type-only single post. A single-image post needs a picture that fills the slide, else it becomes a carousel.
+  const singlePhoto = media.some((item) => item.singlePhotoCapable);
   const rules = {
-    formats: brief.suggestedFormat === "single-image" ? ["single-image" as const] : ["carousel" as const, "single-image" as const],
-    firstSlide: fullBleed ? "cover-photo" as const : media.some((item) => item.insetCapable) ? "figure-or-statement" as const : "statement" as const,
-    singleVariant: media.some((item) => item.singlePhotoCapable) ? "photo" as const : "type" as const,
-    minimumPictureSlides: Math.min(2, usable),
+    formats: !singlePhoto ? ["carousel" as const] : brief.suggestedFormat === "single-image" ? ["single-image" as const] : ["carousel" as const, "single-image" as const],
+    firstSlide: fullBleed ? "cover-photo" as const : "figure" as const,
+    singleVariant: "photo" as const,
+    minimumPictureSlides: Math.max(1, Math.min(2, usable)),
   };
   const corpus = [brief.title, czechDate(brief.targetDate) ?? "", ...evidence.flatMap((item) => [item.title, item.excerpt, item.published ?? ""])].join("\n");
   return { brief, evidence, media, rules, corpus };
@@ -413,7 +416,7 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
   });
   if (copy.format === "carousel" && copy.slides[0]) {
     const first = copy.slides[0].type;
-    const allowed = offer.rules.firstSlide === "cover-photo" ? ["cover-photo"] : offer.rules.firstSlide === "figure-or-statement" ? ["figure", "statement"] : ["statement"];
+    const allowed = offer.rules.firstSlide === "cover-photo" ? ["cover-photo"] : ["figure"];
     if (!allowed.includes(first)) issues.push(issue("first-slide-invalid", 0, "type", `rules.firstSlide allows ${allowed.join(" or ")} here.`));
     const pictured = copy.slides.filter((slide) => slide.images.length > 0).length;
     if (pictured < offer.rules.minimumPictureSlides) issues.push(issue("too-few-pictures", null, "slides", `Show pictures on at least ${offer.rules.minimumPictureSlides} slides; ${pictured} do.`));
