@@ -1042,3 +1042,10 @@ for them. The contract columns and the agents' insert are unchanged. Replayed in
 `20261108250000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
 decided comment replies get no signature or sign-off (no "— Lukáš"): neither a drafted reply nor what is sent appends
 one. The column was never written by shipped code, so the drop is safe.
+
+## DNESKAi series refill waves, 9 November 2026
+
+`20261109010000_dneskai_series_waves.sql` adds `marketing_private.dneskai_series_waves` and two service-only functions.
+`marketing_reserve_dneskai_series_wave` admits one wave per owner per `p_gap_days` and records its cap (at most $5).
+`marketing_settle_dneskai_series_wave` records the wave's Apify and Claude cost, the tips it inserted and its code,
+once. The cron `/api/cron/dneskai-series-refill` uses them (`docs/dneskai-series.md`). It is additive and has no backfill.
