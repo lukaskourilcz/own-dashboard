@@ -17,11 +17,11 @@ The owner found the kit-drawn closing slide poor ("je dost nešťastný"). Since
 finished 1080 × 1350 card instead, the same in Spotlight and Plakát:
 
 - Picture: the same Higgsfield original, cropped inside the window frame (left 208, top 380, 1320 × 1173 of the
-  1728 × 2304 PNG) so only the city shows, fading into ink.
+  1728 × 2304 PNG) so only the city shows, in black and white (owner, 8 November 2026), fading into ink.
 - Words: "SLEDUJ" in white and "DNESKAi" in the brand's icy blue (#6EC1FF), Anton at 212 px; "pro všechny novinky ze světa AI
-  a technologií." in Inter; a white "@dneskai" pill with "Instagram · Threads".
+  a technologií." in Inter; "@dneskai" in white inside a white outlined pill with no fill (owner, 8 November 2026: no "Instagram · Threads").
 - Source: `closing-card-source/card.html` with `photo.jpg`, screenshot at 1080 × 1350 in Playwright Chromium.
   A new screenshot is not byte-identical, so a redraw changes the pinned hash.
-- sha256 `295d3aad72b5ea70bc4f59725bbbffa5147bae07b317b1689ef320986a03f484`, pinned in
+- sha256 `083216792eb2d5cf0933d9952b381a2fe1207c1d71af4f86d04ccf748364b62a`, pinned in
   `src/lib/marketing/dneskai-closing.ts` (`DNESKAI_CLOSING_CARD_SHA256`). The deck still names the closing slide by
   the picture's hash above; the render sees that hash and draws the card.
