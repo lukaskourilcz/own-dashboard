@@ -327,7 +327,7 @@ async function saveStory(db: Database, owner: string, post: ContentRevision, loa
   // falls back to the padded cover under the original key.
   const coverSlide = post.deck?.slides[0];
   const native = !!post.deck && !!coverSlide && coverSlide.images.length > 0;
-  const renderKey = storyRenderKey(cover.sha256, native ? 'dneskai-story/2' : 'marketing-story/1');
+  const renderKey = storyRenderKey(cover.sha256, native ? 'dneskai-story/3' : 'marketing-story/1');
   let stored = await storage.find(renderKey);
   if (!stored && native) {
     const story = await renderDneskaiStoryJpeg(coverSlide!, loadMedia, dneskaiKitOf(post.deck!), post.deck!.emphasis, signal);

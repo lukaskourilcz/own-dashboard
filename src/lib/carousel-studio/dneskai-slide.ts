@@ -498,9 +498,13 @@ async function renderDneskaiStoryResult(input: DneskaiSlideInput): Promise<Dnesk
   if (!headline || !png) return refused(problems);
   // Top-anchored if the owner set no focal point: a cropped-to-fill 9:16 keeps faces and the subject near the top.
   const focal = picture?.crop?.focal ?? { x: 0.5, y: 0.4 };
-  const payload = CarouselPayloadSchema.parse({ locale: input.locale ?? "cs", strings: { headline }, images: { "image-1": { focal } } });
+  // Build the payload the way a slide does, so the headline's `[[emphasis]]` markup is stripped to plain words rather
+  // than drawn with its brackets.
+  const payload = CarouselPayloadSchema.parse({ locale: input.locale ?? "cs", strings: strings(input, DNESKAI_COVER_STORY_TEMPLATE), images: { "image-1": { focal } } });
   const rendered = await renderCarouselSlidePng({
-    template: DNESKAI_COVER_STORY_TEMPLATE, payload, brand: CAROUSEL_BRANDS["caught-up"], look: kit.look,
+    // No kit look: a story keeps one legible treatment on any photograph — a white headline on the dark floor shade —
+    // whatever kit the post uses, rather than a kit whose look paints the headline dark against that same shade.
+    template: DNESKAI_COVER_STORY_TEMPLATE, payload, brand: CAROUSEL_BRANDS["caught-up"],
     format: "instagram-story", images: { "image-1": png }, deck: input.position, index: 0, relaxedChecks: DNESKAI_PLACED_RELAXED_CHECKS
   });
   if (!rendered) throw new Error("The DNESKAi story template has no slide to render");
