@@ -1,6 +1,6 @@
 import 'server-only';
 import sharp from 'sharp';
-import { AMBIENT_FAL, AMBIENT_SIZES, ambientSeed, type AmbientAspect, type AmbientShot } from './ambient-config';
+import { AMBIENT_FAL, AMBIENT_RENDER_SIZES, ambientSeed, type AmbientAspect, type AmbientShot } from './ambient-config';
 
 /**
  * fal FLUX dev renders every HeyDarlink ambient frame natively at its aspect. A shot with a `stockSeed` first takes a
@@ -37,7 +37,7 @@ export async function ambientStockSeed(shot: AmbientShot, aspect: AmbientAspect,
     if (new URL(chosen.url).hostname !== 'images.pexels.com') return null;
     const image = await fetcher(chosen.url, { redirect: 'error', signal: timeout(30_000, input.signal) });
     if (!image.ok) return null;
-    const { width, height } = AMBIENT_SIZES[aspect];
+    const { width, height } = AMBIENT_RENDER_SIZES[aspect];
     const bytes = await sharp(await readBytes(image, MAX_IMAGE_BYTES)).rotate().resize(width, height, { fit: 'cover', kernel: 'lanczos3' }).jpeg({ quality: 88 }).toBuffer();
     return { bytes, strength: shot.stockSeed.strength, ref: chosen.ref };
   } catch { return null; }
@@ -46,7 +46,7 @@ export async function ambientStockSeed(shot: AmbientShot, aspect: AmbientAspect,
 /** One fal render. Throws `AmbientRenderError` on any failure; the caller records it and moves on. */
 export async function renderAmbientFrame(input: { falKey: string; prompt: string; aspect: AmbientAspect; seed: number; stock?: { bytes: Uint8Array; strength: number; ref: string } | null; fetchImpl?: typeof fetch; signal?: AbortSignal }): Promise<AmbientRender> {
   const fetcher = input.fetchImpl ?? fetch;
-  const size = AMBIENT_SIZES[input.aspect];
+  const size = AMBIENT_RENDER_SIZES[input.aspect];
   const model = input.stock ? AMBIENT_FAL.img2imgModel : AMBIENT_FAL.model;
   const body: Record<string, unknown> = {
     // FLUX has no negative prompt input; the positive prompt already says what to leave out.

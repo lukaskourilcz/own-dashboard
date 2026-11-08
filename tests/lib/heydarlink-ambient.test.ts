@@ -29,9 +29,9 @@ describe('HeyDarlink ambient shot list (moved from Quorum, 8 November 2026)', ()
     expect(next.used).toEqual([]);
   });
 
-  it('prices fal per megapixel rounded up', () => {
-    expect(ambientFalUsd('4:5')).toBeCloseTo(0.05);
-    expect(ambientFalUsd('9:16')).toBeCloseTo(0.075);
+  it('prices fal per megapixel rounded up: one megapixel per attempt at either aspect', () => {
+    expect(ambientFalUsd('4:5')).toBeCloseTo(0.025);
+    expect(ambientFalUsd('9:16')).toBeCloseTo(0.025);
   });
 
   it('stays idle until it is switched on, has consent, its keys and the ingest token', () => {
@@ -110,5 +110,35 @@ describe('plan frames named by a HeyDarlink posting-plan ref (8 November 2026)',
     const { ambientPlanPrompt } = await import('@/lib/heydarlink/ambient-batch');
     expect(ambientPlanPrompt('Candid iPhone photo of a marina skyline at golden hour in Dubai. No people, no faces, no hands, no text, no logos, no watermark.')).toBe(true);
     expect(ambientPlanPrompt('Candid iPhone photo of a marina skyline at golden hour in Dubai, people strolling.')).toBe(false);
+  });
+});
+
+describe('the vision gate rubric (8 November 2026)', () => {
+  it('keeps the reason for an off-brief verdict and still fails closed on readable text', async () => {
+    const { ambientVerdictReasons, AMBIENT_GATE_SYSTEM } = await import('@/lib/heydarlink/ambient-gates');
+    const clean = { people: false, faces: false, body_parts: false, text_or_logos: false, nsfw: false, matches_brief: true, note: '' };
+    expect(ambientVerdictReasons(clean)).toEqual([]);
+    expect(ambientVerdictReasons({ ...clean, matches_brief: false, note: 'The  mug   melts into the table.' })).toEqual(['vision:off-brief', 'vision:note:The mug melts into the table.']);
+    expect(ambientVerdictReasons({ ...clean, text_or_logos: true })).toEqual(['vision:text_or_logos']);
+    expect(AMBIENT_GATE_SYSTEM).toContain('readable text anywhere does');
+  });
+});
+
+describe("the owner's ambient inbox (8 November 2026)", () => {
+  it('reads <girl>__<shot_id>[__4x5|__9x16].jpg and nothing else, and picks the format from the shape', async () => {
+    const { parseAmbientInboxName, ambientInboxAspect, ambientInboxPillar, fitAmbientInboxPicture } = await import('@/lib/heydarlink/ambient-inbox');
+    expect(parseAmbientInboxName('fatimah__marina-skyline-golden-hour.jpg')).toEqual({ persona: 'fatimah', shotId: 'marina-skyline-golden-hour', aspect: null });
+    expect(parseAmbientInboxName('nina__new-ambient-9-16-letna-at-dusk__9x16.png')).toEqual({ persona: 'nina', shotId: 'new-ambient-9-16-letna-at-dusk', aspect: '9:16' });
+    expect(parseAmbientInboxName('anna__marina.jpg')).toBeNull();
+    expect(parseAmbientInboxName('fatimah__Marina Skyline.jpg')).toBeNull();
+    expect(ambientInboxAspect(1024, 1536)).toBe('9:16');
+    expect(ambientInboxAspect(1024, 1280)).toBe('4:5');
+    expect(ambientInboxAspect(1024, 1024)).toBe('4:5');
+    expect(ambientInboxPillar('dates-arabic-coffee-tray')).toBe('food');
+    expect(ambientInboxPillar('4x4-headlights-on-sand')).toBe('city');
+    const sharp = (await import('sharp')).default;
+    const square = await sharp({ create: { width: 1024, height: 1024, channels: 3, background: { r: 200, g: 120, b: 80 } } }).png().toBuffer();
+    const story = await sharp(await fitAmbientInboxPicture(square, '9:16')).metadata();
+    expect([story.width, story.height, story.format]).toEqual([1080, 1920, 'jpeg']);
   });
 });

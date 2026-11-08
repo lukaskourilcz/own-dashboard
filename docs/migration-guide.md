@@ -1049,3 +1049,9 @@ one. The column was never written by shipped code, so the drop is safe.
 `marketing_reserve_dneskai_series_wave` admits one wave per owner per `p_gap_days` and records its cap (at most $5).
 `marketing_settle_dneskai_series_wave` records the wave's Apify and Claude cost, the tips it inserted and its code,
 once. The cron `/api/cron/dneskai-series-refill` uses them (`docs/dneskai-series.md`). It is additive and has no backfill.
+
+## HeyDarlink ambient inbox, 8 November 2026
+
+`20261109030000_heydarlink_ambient_inbox.sql` creates the private Storage bucket `heydarlink-ambient-inbox` (JPEG, PNG
+or WebP, at most 20 MB) and `public.heydarlink_ambient_imports`, service role only. The owner uploads
+`<girl>__<shot_id>.jpg` in Supabase Studio; the ambient tick ingests it (`docs/heydarlink-ambient.md`). Additive.
