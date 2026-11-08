@@ -1066,3 +1066,6 @@ prepared at 12:00 cancels its queued publications, supersedes its versions and i
 `20261109030000_heydarlink_ambient_inbox.sql` creates the private Storage bucket `heydarlink-ambient-inbox` (JPEG, PNG
 or WebP, at most 20 MB) and `public.heydarlink_ambient_imports`, service role only. The owner uploads
 `<girl>__<shot_id>.jpg` in Supabase Studio; the ambient tick ingests it (`docs/heydarlink-ambient.md`). Additive.
+
+`20261109040000_heydarlink_ambient_import_gate.sql` adds `gate` (`claude` by default, or `owner-reviewed`) to
+`heydarlink_ambient_imports`. Additive.

@@ -19,6 +19,7 @@ import { saveRevision } from './store';
 import { createHash } from 'node:crypto';
 import { createDneskaiSlideStorage } from './worker-runtime';
 import { STORY_HEIGHT, STORY_WIDTH, composeStoryFromCover, storyRenderKey } from './story-image';
+import { renderDneskaiStoryJpeg } from './dneskai-render';
 import { synchronizeMarketingSources } from './orchestrator';
 import { DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesCaption, dneskaiSeriesDeck, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot, type DneskaiSeries } from './dneskai-series';
 
@@ -73,7 +74,7 @@ export type DneskaiPlanAction =
 export const dneskaiDeckLacksPhoto = (revision: Pick<ContentRevision, 'deck'>) => !!revision.deck && !(revision.deck.slides[0]?.images.length);
 /**
  * Slides drawn before this instant predate the icy blue, the new logo and the two remaining styles (owner, 8 November
- * 2026). The plan draws an unpublished post rendered earlier again, under `DNESKAI_RENDER_POLICY` dneskai-render/3.
+ * 2026). The plan draws an unpublished post rendered earlier again, under `DNESKAI_RENDER_POLICY` (dneskai-render/4).
  */
 export const DNESKAI_RENDERS_CURRENT_SINCE = '2026-11-08T16:26:00.000Z';
 export function dneskaiRenderStale(report: unknown): boolean {
@@ -317,12 +318,21 @@ async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit
  * The story of an approved Instagram post (owner decision, 7 November 2026): its cover slide in a 1080 x 1920 frame,
  * stored once per cover in the slide store, ten minutes after the post. The cover's bytes must match its sha256.
  */
-async function saveStory(db: Database, owner: string, post: ContentRevision, signal: AbortSignal) {
+async function saveStory(db: Database, owner: string, post: ContentRevision, loadMedia: Wiring['loadMedia'], signal: AbortSignal) {
   const cover = post.assets[0];
   if (!cover || cover.mimeType !== 'image/jpeg') throw new Error('story-cover-missing');
   const storage = createDneskaiSlideStorage(db, owner, { signal });
-  const renderKey = storyRenderKey(cover.sha256);
+  // A native 1080x1920 story re-lays the cover's photo and headline for 9:16, full-bleed, no bars (owner rule, 8 Nov
+  // 2026). It needs the deck (the cover slide's photo and words); an older post that carries only rendered assets
+  // falls back to the padded cover under the original key.
+  const coverSlide = post.deck?.slides[0];
+  const native = !!post.deck && !!coverSlide && coverSlide.images.length > 0;
+  const renderKey = storyRenderKey(cover.sha256, native ? 'dneskai-story/2' : 'marketing-story/1');
   let stored = await storage.find(renderKey);
+  if (!stored && native) {
+    const story = await renderDneskaiStoryJpeg(coverSlide!, loadMedia, dneskaiKitOf(post.deck!), post.deck!.emphasis, signal);
+    stored = await storage.put({ renderKey, bytes: story.jpeg, sha256: story.sha256, metadata: { kind: 'dneskai-story', coverSha256: cover.sha256 } });
+  }
   if (!stored) {
     const response = await fetch(cover.url, { signal, redirect: 'error' }).catch(() => null);
     if (!response?.ok) throw new Error('story-cover-unavailable');
@@ -545,7 +555,7 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         }
         if (action.kind === 'story') {
           if (slot.story_revision_id) await db.rpc('marketing_dneskai_plan_retire', { p_owner: owner, p_revision_id: slot.story_revision_id });
-          const saved = await saveStory(db, owner, current.revision, input.signal);
+          const saved = await saveStory(db, owner, current.revision, wired().loadMedia, input.signal);
           const patch = { ...base, story_revision_id: saved.id, story_base_revision_id: current.id };
           await record(slot, patch); Object.assign(slot, patch);
           continue;

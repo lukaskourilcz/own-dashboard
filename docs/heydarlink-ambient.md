@@ -94,3 +94,7 @@ and scales them, then runs the duplicate check, the format check and Claude's lo
 the passing ones to HeyDarlink under that shot id. A file moves to `done/` or `rejected/`; `heydarlink_ambient_imports`
 records the reasons. `HEYDARLINK_AMBIENT_REFILL=false` keeps the low-stock refill from opening generated batches
 meanwhile.
+
+Pictures uploaded under `reviewed/` in the same bucket were already checked by eye in the owner's own session (people,
+text, logos, realism, format). They skip Claude's look and cost nothing; the crop, the duplicate check and the format
+check still run, and the import records `gate = owner-reviewed`. They are taken before the rest of the inbox.
