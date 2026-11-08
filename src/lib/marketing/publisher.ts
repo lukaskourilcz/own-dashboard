@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { parseContentRevision, parseSourcePacket, publishedStoryReceipt, renderReportBlocks, revisionReadiness, sourceUsable, type MarketingRevisionRow, type PublicationRow, type SourcePacket, type ContentRevision } from './contracts';
 import { contentHash, revisionContentHash } from './hashes';
+import { dneskaiPublicText } from './dneskai-caption';
 
 export const MARKETING_SOURCE_MAX_AGE_MS = 15 * 60_000;
 export type MarketingPublishAccount = { id: string; user_id: string; brand: ContentRevision['brand']; platform: ContentRevision['account']['platform'];
@@ -449,6 +450,13 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       // Story text is rendered in the JPEG. The stored caption is internal
       // review copy; it is never sent as a public Story caption or alt_text.
       const fields: Record<string, string> = revision.format === 'story' ? {} : { [threads ? 'text' : 'caption']: revision.caption };
+      // DNESKAi (owner decision, 8 November 2026): no AI disclosure line, and on Threads the article's topic goes out as
+      // the post's topic tag instead of a hashtag line in the text.
+      if (revision.brand === 'dneskai' && revision.format !== 'story') {
+        const shown = dneskaiPublicText(revision.caption, threads ? 'threads' : 'instagram');
+        fields[threads ? 'text' : 'caption'] = shown.text;
+        if (threads && shown.topicTag) fields.topic_tag = shown.topicTag;
+      }
       // Instagram accepts alt_text on image containers only; Threads takes it for images and videos.
       const altText = (asset: ContentRevision['assets'][number]): Record<string, string> => threads || asset.mimeType === 'image/jpeg' ? { alt_text: asset.alt } : {};
       if (revision.format === 'story') {
@@ -476,9 +484,15 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       // auto_publish_text is omitted: container creation cannot approve or publish a thread.
       try { container = await create(fields); }
       catch (error) {
-        // A sound Instagram refuses for this account or region (#167): nothing was created; the owner picks a library track.
-        if (fields.audio_configuration && error instanceof MetaFailure && /^meta-http-4\d\d$/.test(error.code) && error.code !== 'meta-http-429') throw new MetaFailure('trending-audio-unavailable');
-        throw error;
+        // A topic tag Threads refuses (a 4xx; nothing was created): the topic goes in the text as its one hashtag instead.
+        if (fields.topic_tag && error instanceof MetaFailure && /^meta-http-4\d\d$/.test(error.code) && error.code !== 'meta-http-429') {
+          const { topic_tag: topic, ...rest } = fields;
+          container = await create({ ...rest, text: `${rest.text}\n\n#${topic}`.slice(0, 500) });
+        } else {
+          // A sound Instagram refuses for this account or region (#167): nothing was created; the owner picks a library track.
+          if (fields.audio_configuration && error instanceof MetaFailure && /^meta-http-4\d\d$/.test(error.code) && error.code !== 'meta-http-429') throw new MetaFailure('trending-audio-unavailable');
+          throw error;
+        }
       }
       await save('container-created', result('pending', 'container-pending', container));
     }
