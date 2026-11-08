@@ -34,6 +34,7 @@ import { revisionContentHash } from '@/lib/marketing/hashes';
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
 import { DneskaiBriefSchema, type DneskaiBrief } from '@/lib/marketing/dneskai-brief';
 import { DNESKAI_RENDERER_VERSION } from '@/lib/marketing/dneskai-render';
+import { DNESKAI_CLOSING_SHA256 } from '@/lib/marketing/dneskai-closing';
 import { POST as revisionsPOST } from '@/app/api/marketing/revisions/route';
 
 const OWNER = '7a1c0b52-3f5e-4c11-9b8e-2d4f6a8c0e11';
@@ -221,7 +222,8 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
       expect(row.content_hash).toBe(revisionContentHash(revision));
       expect(revision.sources[0]).toMatchObject({ sourceId: brief.eventId, sourceRevision: brief.memberHash });
       const pool = new Set(brief.media.map((item) => item.assetSha256));
-      expect(revision.deck!.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)).every((hash) => pool.has(hash))).toBe(true);
+      // Every picture comes from the brief, except the closing slide's, which is a file of the app (8 November 2026).
+      expect(revision.deck!.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)).every((hash) => pool.has(hash) || hash === DNESKAI_CLOSING_SHA256)).toBe(true);
       expect(revision.assets).toHaveLength(revision.deck!.slides.length);
       for (const [index, asset] of revision.assets.entries()) {
         const bytes = await assetBytes(asset.url);
@@ -332,14 +334,14 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const [published] = await sql<{ status: string; remote_media_id: string; remote_url: string; error_code: string | null }>(
       "select p.status,p.remote_media_id,p.remote_url,p.error_code from public.marketing_publications p where p.revision_id=$1", [morning.id]);
     expect(published).toMatchObject({ status: 'published', error_code: null, remote_media_id: graph.media[0]!.id, remote_url: graph.media[0]!.permalink });
-    expect(graph.fetchedImages).toHaveLength(4);
+    expect(graph.fetchedImages).toHaveLength(5);
     expect(graph.fetchedImages.every((image) => image.format === 'jpeg' && image.width === 1080 && image.height === 1350)).toBe(true);
     // The bytes Meta fetched are the approved ones: the approval binds content_hash, which binds every asset sha256.
     const [approvedRow] = await sql<{ approved_hash: string; content_hash: string; status: string }>('select approved_hash,content_hash,status from public.marketing_revisions where id=$1', [morning.id]);
     expect(approvedRow).toEqual({ approved_hash: morning.content_hash, content_hash: morning.content_hash, status: 'published' });
     expect(graph.fetchedImages.map((image) => image.sha256)).toEqual(morning.revision.assets.map((asset) => asset.sha256));
     const carousel = [...graph.containers.values()].find((container) => container.children)!;
-    expect(carousel.children).toHaveLength(4);
+    expect(carousel.children).toHaveLength(5);
     expect(carousel.caption).toBe(morning.revision.caption);
     expect([...graph.containers.values()].filter((container) => container.alt).map((container) => container.alt)).toEqual(morning.revision.assets.map((asset) => asset.alt));
   }, 300_000);
