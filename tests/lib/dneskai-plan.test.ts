@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
-import { dneskaiDeckLacksPhoto, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiSeriesOutOfDate, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
+import { dneskaiDeckLacksPhoto, dneskaiPhotoSlides, dneskaiRenderStale, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiSeriesOutOfDate, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
 import { deck } from './marketing-dneskai-revision-fixture';
 import { dneskaiEmphasisFor } from '@/lib/marketing/dneskai-palette';
 
@@ -10,7 +10,12 @@ const now = new Date('2026-11-07T14:00:00Z'); // 15:00 in Prague
 const slot = (patch: Partial<DneskaiPlanRow> = {}): DneskaiPlanRow => ({ id: '11111111-1111-4111-8111-111111111111', user_id: 'u', project_id: 'p', date: '2026-11-08', local_time: '08:00', instagram: true, threads: true,
   kind: 'news', revision_id: '22222222-2222-4222-8222-222222222222', topic_id: null, head_revision_id: null, threads_revision_id: null, written_revision_id: null, threads_base_revision_id: null, status: 'planned', code: null, ...patch });
 // Every deck carries the key-word colour of its time unless a test sets one (owner request, 8 November 2026).
-const withEmphasis = (value: ContentRevision): ContentRevision => value.deck && !value.deck.emphasis ? { ...value, deck: { ...value.deck, emphasis: dneskaiEmphasisFor(value.scheduledAt) } } : value;
+const withColour = (value: ContentRevision): ContentRevision => value.deck && !value.deck.emphasis ? { ...value, deck: { ...value.deck, emphasis: dneskaiEmphasisFor(value.scheduledAt) } } : value;
+// The fixture deck shows two photos; the owner's rule wants three, so a third framed photo is added unless a test says otherwise.
+const third = { type: 'figure' as const, headline: 'Třetí fotka', images: [{ slot: 'image-1', assetSha256: 'd'.repeat(64) }], alt: 'Fotka' };
+const withPhotos = (value: ContentRevision): ContentRevision => value.deck?.format === 'carousel' && dneskaiPhotoSlides(value) !== null && dneskaiPhotoSlides(value)! < 3 && value.deck.slides[0]?.images.length
+  ? { ...value, deck: { ...value.deck, slides: [...value.deck.slides, third] } } : value;
+const withEmphasis = (value: ContentRevision): ContentRevision => withColour(withPhotos(value));
 const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => withEmphasis(parseContentRevision({ schemaVersion: 'marketing-content/2', brand: 'dneskai', title: 'Titulek', caption: 'Text.', format: 'carousel',
   sources: [{ sourceId: 'a'.repeat(64), sourceRevision: 'b'.repeat(64), contentHash: 'c'.repeat(64) }], knowledgeIds: [],
   assets: [1, 2, 3].map((n) => ({ url: `https://assets.example.invalid/${n}.jpg`, sha256: String(n).repeat(64), mimeType: 'image/jpeg', width: 1080, height: 1350, alt: `Slide ${n}` })),
@@ -19,6 +24,29 @@ const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => with
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
+  it('draws again a post rendered before the icy blue and new logo, approved or not, while its slot is ahead (8 November 2026)', () => {
+    const stale = { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [], renderKeys: [], renderedAt: '2026-11-08T15:55:00.000Z' };
+    const fresh = { ...stale, renderedAt: '2026-11-08T17:00:00.000Z' };
+    expect(dneskaiRenderStale(stale)).toBe(true);
+    expect(dneskaiRenderStale(fresh)).toBe(false);
+    expect(dneskaiRenderStale(null)).toBe(false);
+    expect(dneskaiPlanAction(slot(), head({ render_report: stale }), null, true, now)).toEqual({ kind: 'redraw', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved', render_report: stale }), null, true, now)).toEqual({ kind: 'redraw', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({ render_report: fresh }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+  });
+
+  it('writes a short carousel again once, drops a house-style one that is still short, and leaves single posts alone (8 November 2026)', () => {
+    const short = (promptVersion: string) => { const value = head({}, { promptVersion }); return { ...value, revision: { ...value.revision, deck: { ...value.revision.deck!, slides: value.revision.deck!.slides.filter((item) => item.headline !== 'Třetí fotka') } } }; };
+    expect(dneskaiPhotoSlides(short('qa/1').revision)).toBe(2);
+    expect(dneskaiPlanAction(slot(), short('qa/1'), null, true, now)).toEqual({ kind: 'restyle', status: 'planned' });
+    expect(dneskaiPlanAction(slot(), short('marketing-copy/8+abc'), null, true, now)).toEqual({ kind: 'drop', status: 'skipped', code: 'plan-photos-short' });
+    expect(dneskaiPlanAction(slot({ code: 'restyle-failed' }), short('qa/1'), null, true, now)).toEqual({ kind: 'drop', status: 'skipped', code: 'plan-photos-short' });
+    expect(dneskaiPlanAction(slot(), { ...short('qa/1'), status: 'approved' }, null, true, now).kind).toBe('restyle');
+    expect(dneskaiPhotoSlides(head().revision)).toBe(3);
+    const single = head({}, { format: 'post' as never, deck: { schemaVersion: deck().schemaVersion, format: 'single-image', slides: [{ type: 'single', variant: 'photo', headline: 'Jedna fotka', images: [{ slot: 'image-1', assetSha256: 'a'.repeat(64) }], alt: 'Fotka' }] } as never });
+    expect(dneskaiPhotoSlides(single.revision)).toBeNull();
+  });
+
   it('drops a post whose first slide shows no photo, approved or not, but never one already going out (8 November 2026)', () => {
     const text = { ...deck(), kit: 'spotlight' as const, slides: deck().slides.map((item, index) => index === 0 ? { ...item, type: 'statement' as const, images: [] } : item) };
     expect(dneskaiDeckLacksPhoto({ deck: text } as never)).toBe(true);
