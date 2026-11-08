@@ -88,28 +88,21 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
     expect(prompt.evidence.map((item: { publisher: string; captionOnly: boolean; published: string }) => [item.publisher, item.captionOnly, item.published]))
       .toEqual([["The Verge", false, "20. 10. 2026"], ["@technology (Instagram)", true, "20. 10. 2026"]]);
     expect(prompt.media.map((item: { assetSha256: string }) => item.assetSha256)).toEqual([pictures.hero.sha256, pictures.figure.sha256, pictures.post.sha256]);
-    // Without a full-bleed picture the cover is a figure or a statement and a single post is set in type.
-    const framed = offerFor({ media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })) });
-    expect(framed.rules).toMatchObject({ firstSlide: "figure-or-statement", singleVariant: "type" });
-    expect(offerFor({ media: [], suggestedFormat: "single-image" }).rules).toEqual({ formats: ["single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
+    // Without a full-bleed picture the cover is a framed figure and the post is a carousel: every post shows a photo
+    // on its first slide (owner decision, 8 November 2026), so there is no statement opener and no type-only post.
+    const framed = offerFor({ media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })), suggestedFormat: "single-image" });
+    expect(framed.rules).toEqual({ formats: ["carousel"], firstSlide: "figure", singleVariant: "photo", minimumPictureSlides: 2 });
   });
-  it("lets a picture-less carousel brief use text slides only and never invents a picture (briefs-01)", () => {
+  it("never lets a brief without a usable photo open on text: the first slide must carry a picture (8 November 2026)", () => {
     const offer = offerFor({ media: [], suggestedFormat: "carousel" });
-    expect(offer.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "statement", singleVariant: "type", minimumPictureSlides: 0 });
-    expect(offer.media).toEqual([]);
+    expect(offer.rules).toEqual({ formats: ["carousel"], firstSlide: "figure", singleVariant: "photo", minimumPictureSlides: 1 });
     const statements: DneskaiCopy = { ...validCopy(pictures), slides: [
-      { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", body: "Rychlá akce Open Eyes je v aplikaci pro iOS i Android.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
+      { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
       { type: "statement", headline: "Zdarma jsou 2 použití, pak je potřeba předplatné.", images: [], alt: "Textový slide o tom, kolik funkce stojí." },
       { type: "statement", variant: "ink", headline: "Jak funkce zvládá skupinové fotky, Adobe neuvedlo.", images: [], alt: "Textový slide o tom, co zůstává otevřené." },
       { type: "statement", headline: "Účet @technology akci vyzkoušel na portrétu.", images: [], alt: "Textový slide o vyzkoušení funkce na Instagramu." },
     ] };
-    expect(validateDneskaiCopy(statements, offer)).toEqual([]);
-    const deck = buildDneskaiDeck(statements, offer);
-    expect(deck.slides.map((slide) => slide.type)).toEqual(["statement", "statement", "statement", "statement"]);
-    expect(deck.slides.every((slide) => slide.images.length === 0)).toBe(true);
-    // A picture the brief does not offer is refused, so a carousel never gains an invented picture.
-    const invented: DneskaiCopy = { ...statements, slides: [{ type: "figure", headline: "Rychlá akce Open Eyes", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide s obrázkem." }, ...statements.slides.slice(1)] };
-    expect(validateDneskaiCopy(invented, offer).map((entry) => entry.code)).toEqual(expect.arrayContaining(["unknown-asset", "first-slide-invalid"]));
+    expect(validateDneskaiCopy(statements, offer).map((entry) => entry.code)).toEqual(expect.arrayContaining(["first-slide-invalid", "too-few-pictures"]));
   });
   it("names publishers from the registry in the worker and from the account or host without it", async () => {
     const evidence = briefFixture(pictures).evidence;
@@ -203,12 +196,12 @@ describe("deterministic gates before render", () => {
     const offer = dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => item.assetSha256 === pictures.hero.sha256 ? { ...item, insetCapable: false } : item) }), publishers);
     expect(codes(copy, offer)).toEqual(["0:picture-not-full-bleed", "1:picture-not-inset"]);
   });
-  it("starts a carousel with a cover photo when a full-bleed picture exists, otherwise with a figure or statement", () => {
+  it("starts a carousel with a cover photo when a full-bleed picture exists, otherwise with a framed figure", () => {
     const copy = validCopy(pictures); copy.slides = [copy.slides[1]!, copy.slides[0]!, copy.slides[2]!, copy.slides[3]!];
     expect(codes(copy)).toEqual(["1:cover-not-first", "0:first-slide-invalid"]);
     const framed = dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })) }), publishers);
     const statementFirst = validCopy(pictures); statementFirst.slides = [statementFirst.slides[2]!, statementFirst.slides[1]!, statementFirst.slides[3]!];
-    expect(codes(statementFirst, framed)).toEqual([]);
+    expect(codes(statementFirst, framed)).toContain("0:first-slide-invalid");
   });
   it("uses only fields the slide type places, within the template's ceiling, and an alt text that is not the headline", () => {
     const copy = validCopy(pictures);
@@ -229,9 +222,9 @@ describe("deterministic gates before render", () => {
     const single: DneskaiCopy = { ...validCopy(pictures), format: "single-image", slides: [{ type: "single", variant: "photo", headline: "Lightroom otevře zavřené oči", body: "Zdarma jsou 2 použití.", kicker: "Nástroj",
       images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
     expect(validateDneskaiCopy(single, offerFor()).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "body"], [0, "text-unplaced", "kicker"]]);
-    const typeSingle: DneskaiCopy = { ...single, slides: [{ type: "single", variant: "type", headline: "Lightroom otevře zavřené oči", body: "Zdarma jsou 2 použití.", images: [], alt: "Textový slide o nové funkci Lightroomu." }] };
-    const typeOffer = offerFor({ media: [], suggestedFormat: "single-image" });
-    expect(validateDneskaiCopy(typeSingle, typeOffer).map((entry) => [entry.slide, entry.code, entry.field])).toEqual([[0, "text-unplaced", "body"]]);
+    // A type-only single post is no longer allowed: every post shows a photo.
+    const typeSingle: DneskaiCopy = { ...single, slides: [{ type: "single", variant: "type", headline: "Lightroom otevře zavřené oči", images: [], alt: "Textový slide o nové funkci Lightroomu." }] };
+    expect(validateDneskaiCopy(typeSingle, offerFor()).map((entry) => entry.code)).toContain("single-variant");
   });
   it("refuses numbers the evidence does not state, URLs, emoji and hashtags in the prose", () => {
     const copy = validCopy(pictures);
