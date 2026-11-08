@@ -155,6 +155,16 @@ describe("DNESKAi deck renderer on the vendored studio", () => {
     // The kit is keyed only when it is not editorial, so every editorial key is the one it was before kits existed.
     expect(dneskaiRenderKey(deck.slides[0], { index: 0, count: 7 }, encoder, "editorial")).toBe(base);
     expect(dneskaiRenderKey(deck.slides[0], { index: 0, count: 7 }, encoder, "bold")).not.toBe(base);
+    // A series line is keyed only on a series cover, so every other key stays the one it was (8 November 2026).
+    expect(key({ ...deck.slides[0], series: "Slovník AI #1" })).not.toBe(base);
+    expect(key({ ...deck.slides[0], series: "Slovník AI #1" })).not.toBe(key({ ...deck.slides[0], series: "Slovník AI #2" }));
+  });
+
+  it("takes a series line on the cover only (8 November 2026)", async () => {
+    const { asset } = await fixtures();
+    const deck = carousel(asset);
+    expect(DneskaiDeckSchema.safeParse({ ...deck, slides: [{ ...deck.slides[0], series: "Slovník AI #1" }, ...deck.slides.slice(1)] }).success).toBe(true);
+    expect(DneskaiDeckSchema.safeParse({ ...deck, slides: [deck.slides[0], { ...deck.slides[1], series: "Slovník AI #1" }, ...deck.slides.slice(2)] }).success).toBe(false);
   });
 
   it("writes editorial by leaving the kit out and refuses an explicit one", () => {
