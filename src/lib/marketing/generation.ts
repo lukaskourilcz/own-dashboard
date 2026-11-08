@@ -337,6 +337,8 @@ async function briefProfile(input: z.infer<typeof GenerationInputSchema>, source
   let offer: DneskaiBriefOffer;
   try { offer = dneskaiBriefOffer(brief, await (dependencies.evidencePublishers ?? dneskaiFallbackPublishers)(brief.evidence.slice(0, 6)), { promptBytes }); }
   catch { throw new MarketingGenerationError("brief-preparation-failed"); }
+  // No usable photo, no post (owner decision, 8 November 2026): refused before any model call.
+  if (!offer.media.some((item) => item.fullBleedCapable || item.insetCapable)) throw new MarketingGenerationError("media-photo-missing");
   const loadMedia = memoizedMedia(dependencies.loadDneskaiMedia!);
   const validateDeck = dependencies.validateDneskaiDeck ?? validateDneskaiDeck;
   return {
