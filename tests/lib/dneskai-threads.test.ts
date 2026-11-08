@@ -30,6 +30,13 @@ describe('dneskaiThreadsText', () => {
     expect(text.startsWith('Věta číslo 1 vysvětluje')).toBe(true);
   });
 
+  it('keeps only the first paragraph and ends with the deck topic as people write it (owner, 8 November 2026)', () => {
+    const text = dneskaiThreadsText(caption('První odstavec o Fio bance.\n\nDruhý odstavec s podrobnostmi.'), 'FioBanka');
+    expect(text).toBe('První odstavec o Fio bance.\n\n#FioBanka');
+    // Without a deck topic the caption's first hashtag after #dneskai takes a capital letter.
+    expect(dneskaiThreadsText('Text.\n\n#dneskai #alexa #amazon')).toBe('Text.\n\n#Alexa');
+  });
+
   it('cuts a single run-on paragraph at a word with an ellipsis', () => {
     const text = dneskaiThreadsText(caption('slovo '.repeat(200).trim()));
     expect(text.length).toBeLessThanOrEqual(THREADS_TEXT_MAX);

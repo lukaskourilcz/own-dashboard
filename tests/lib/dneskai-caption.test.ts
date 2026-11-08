@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { DNESKAI_AI_DISCLOSURE, dneskaiCaptionWithKeyword, dneskaiKeywordLine, dneskaiPublicText, dneskaiTopic } from '@/lib/marketing/dneskai-caption';
+import { DNESKAI_AI_DISCLOSURE, dneskaiCaptionWithKeyword, dneskaiKeywordLine, dneskaiPublicText, dneskaiTopic, dneskaiTopicName } from '@/lib/marketing/dneskai-caption';
+
+describe('dneskaiTopicName (owner, 8 November 2026)', () => {
+  it('writes the name with a capital and without spaces, dots or ampersands', () => {
+    expect(dneskaiTopicName('FioBanka')).toBe('FioBanka');
+    expect(dneskaiTopicName('fio banka')).toBe('FioBanka');
+    expect(dneskaiTopicName('alexa')).toBe('Alexa');
+    expect(dneskaiTopicName('OpenAI')).toBe('OpenAI');
+    expect(dneskaiTopicName('AT&T')).toBe('ATT');
+    expect(dneskaiTopicName('Node.js')).toBe('NodeJs');
+    expect(dneskaiTopicName(' . ')).toBeNull();
+    expect(dneskaiTopicName('a'.repeat(80))!.length).toBe(50);
+  });
+});
 
 const body = 'Adobe přidává do mobilního Lightroomu rychlou akci.\n\nZdarma jsou 2 použití.';
 const tags = '#dneskai #adobe #lightroom';
