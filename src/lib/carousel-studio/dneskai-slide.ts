@@ -12,11 +12,12 @@ import { layoutDneskaiSlide, type DneskaiLaidPicture } from "./dneskai-layout";
 import { DNESKAI_MAX_SOURCES, DNESKAI_MAX_THUMBNAILS, dneskaiSourceSlot } from "./dneskai-photo";
 import { cropRegion } from "./images";
 import { CAROUSEL_BRANDS } from "./library";
-import { carouselTextFits, renderCarouselSlidePng, validateTemplateAsRendered } from "./renderer";
+import { carouselTextFits, renderCarouselSlidePng, toRenderablePng, validateTemplateAsRendered } from "./renderer";
+import { DNESKAI_COVER_STORY_TEMPLATE } from "./dneskai-story";
 
 /** What a hand-placed slide may fail without refusing: contrast is reported as advice, cut copy is refused per field. */
 const DNESKAI_PLACED_RELAXED_CHECKS = ["contrast", "apca", "overflow"] as const;
-import { ImageCropSchema, leadingOf, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
+import { carouselCanvas, CarouselPayloadSchema, ImageCropSchema, leadingOf, type CarouselFormat, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
 import { applyDneskaiBoxes, dneskaiAutoBoxes, type DneskaiBoxes, type DneskaiLaidBlock } from "./dneskai-boxes";
 export { DNESKAI_EDITABLE_FIELDS, DNESKAI_BOX_LIMITS, clampDneskaiBox, type DneskaiBox, type DneskaiBoxes, type DneskaiEditableField, type DneskaiLaidBlock } from "./dneskai-boxes";
 
@@ -281,7 +282,7 @@ interface Inspection {
   heights?: Record<string, number>;
 }
 
-async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
+async function inspect(input: DneskaiSlideInput, format: CarouselFormat = MASTER_FORMAT): Promise<Inspection> {
   const problems: DneskaiSlideProblem[] = [];
   const { index, count } = input.position;
   if (!Number.isInteger(index) || !Number.isInteger(count) || count < 1 || count > CONNECTOR_MAX_SLIDES || index < 0 || index >= count) {
@@ -401,7 +402,7 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
   // The words fitted in the template's declared frames: what would be cut, found without the
   // photographs so it is reported even when an image problem stops the render, and the lines
   // the layout stacks.
-  const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT, look: kit.look });
+  const fits = carouselTextFits({ template, payload, brand: CAROUSEL_BRANDS["caught-up"], format, look: kit.look });
   const clipped: DneskaiSlideProblem[] = [];
   for (const fit of fits) {
     if (fit.fitted.truncated && payload.strings[fit.slot]) {
@@ -420,7 +421,7 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
   const heights: Record<string, number> = {};
   if (laid !== auto) {
     clipped.length = 0;
-    for (const fit of carouselTextFits({ template: laid, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT, look: kit.look })) {
+    for (const fit of carouselTextFits({ template: laid, payload, brand: CAROUSEL_BRANDS["caught-up"], format, look: kit.look })) {
       // The renderer sets lines the layer's leading apart (1.12 em unless the kit sets its own; renderer.ts).
       const layer = laid.slides[0]!.layers.find((entry) => entry.type === "text" && entry.slot === fit.slot);
       if (input.layout && fit.slot in input.layout) heights[fit.slot] = fit.fitted.lines.length * fit.fitted.fontSize * leadingOf(layer as { leading?: number } | undefined);
@@ -430,7 +431,7 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
       }
     }
     // The kit guarantees contrast only where it put the words; a moved field is checked and reported, never refused.
-    const low = validateTemplateAsRendered(laid, CAROUSEL_BRANDS["caught-up"], MASTER_FORMAT, kit.look)
+    const low = validateTemplateAsRendered(laid, CAROUSEL_BRANDS["caught-up"], format, kit.look)
       .some((check) => (check.id === "contrast" || check.id === "apca") && check.status === "fail");
     if (low) clipped.push(problem("text-contrast-low", false, null, "A placed field stands where it has less contrast than the kit guarantees; check that it reads."));
   }
@@ -444,7 +445,8 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
     const layer = laidLayers.get(image.slot);
     // Only the given image a slot was decoded from: a duplicate was refused above.
     if (!picture || !layer || (input.images ?? []).findIndex((other) => other.slot === image.slot) !== index) return;
-    const frame = { width: layer.width * MASTER_CANVAS.width, height: layer.height * MASTER_CANVAS.height };
+    const canvas = laid.formats[carouselCanvas(format)];
+    const frame = { width: layer.width * canvas.width, height: layer.height * canvas.height };
     const region = cropRegion(picture, picture.crop, frame, picture.crop.fit ?? layer.fit);
     const upscale = Math.max(region.outWidth / region.width, region.outHeight / region.height);
     const drawn = `${image.slot} is ${picture.width} × ${picture.height} px and this crop draws ${region.width} × ${region.height} px of it at ${upscale.toFixed(2)}×`;
@@ -469,9 +471,46 @@ export async function validateDneskaiSlide(input: DneskaiSlideInput): Promise<Dn
   return (await inspect(input)).problems;
 }
 
-/** Render one slide, or refuse with the problems that stop it. */
-export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<DneskaiSlideResult> {
-  const { kit, problems, template, payload, images, heights } = await inspect(input);
+/**
+ * Renders the cover as a native 1080×1920 Instagram story (owner rule, 8 November 2026): the photograph to every
+ * edge, the headline on the floor and the logo at the head, all inside the story safe area, with no bars. Composed
+ * for the story canvas (`DNESKAI_COVER_STORY_TEMPLATE`) because layer places are shared across canvases; the headline
+ * is balanced like every DNESKAi block. Contrast is relaxed to advice, as for a hand-placed field: the story shade
+ * guarantees it, and a pale photograph should report, not refuse.
+ */
+async function renderDneskaiStoryResult(input: DneskaiSlideInput): Promise<DneskaiSlideResult> {
+  const kit = dneskaiKit(input.kit ?? DNESKAI_DEFAULT_KIT);
+  const reference = { id: DNESKAI_COVER_STORY_TEMPLATE.id, version: DNESKAI_COVER_STORY_TEMPLATE.version };
+  const refused = (problems: DneskaiSlideProblem[], payload: CarouselPayload | null = null): DneskaiSlideResult =>
+    ({ kit: kit?.id ?? null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload, blocks: [] });
+  if (!kit) return refused([problem("kit-invalid", true, "kit", `Unknown DNESKAi kit ${String(input.kit)}.`)]);
+  const problems: DneskaiSlideProblem[] = [];
+  const headline = input.headline?.trim();
+  if (!headline) problems.push(problem("text-missing", true, "headline", "A story needs a headline."));
+  const picture = (input.images ?? []).find((entry) => entry.slot === "image-1") ?? (input.images ?? [])[0];
+  if (!picture) problems.push(problem("image-missing", true, "image-1", "A story needs the cover photograph (image-1)."));
+  let png: Buffer | null = null;
+  if (picture) {
+    const bytes = Buffer.from(picture.bytes);
+    if (!sniffImageFormat(bytes)) problems.push(problem("image-unsupported", true, picture.slot, `The story photograph is not ${DNESKAI_IMAGE_FORMATS.join(", ")}; this renderer takes no other format.`));
+    else { png = await toRenderablePng(bytes); if (!png) problems.push(problem("image-undecodable", true, picture.slot, "The story photograph could not be decoded.")); }
+  }
+  if (!headline || !png) return refused(problems);
+  // Top-anchored if the owner set no focal point: a cropped-to-fill 9:16 keeps faces and the subject near the top.
+  const focal = picture?.crop?.focal ?? { x: 0.5, y: 0.4 };
+  const payload = CarouselPayloadSchema.parse({ locale: input.locale ?? "cs", strings: { headline }, images: { "image-1": { focal } } });
+  const rendered = await renderCarouselSlidePng({
+    template: DNESKAI_COVER_STORY_TEMPLATE, payload, brand: CAROUSEL_BRANDS["caught-up"], look: kit.look,
+    format: "instagram-story", images: { "image-1": png }, deck: input.position, index: 0, relaxedChecks: DNESKAI_PLACED_RELAXED_CHECKS
+  });
+  if (!rendered) throw new Error("The DNESKAi story template has no slide to render");
+  return { kit: kit.id, status: "rendered", png: rendered.png, pngHash: rendered.pngHash, svgHash: rendered.svgHash, truncatedSlots: rendered.truncatedSlots, problems, template: reference, payload, blocks: [] };
+}
+
+/** Render one slide, or refuse with the problems that stop it. Renders at the master 4:5 canvas unless a format is given (e.g. `instagram-story` for a native 1080×1920 story). */
+export async function renderDneskaiSlide(input: DneskaiSlideInput, format: CarouselFormat = MASTER_FORMAT): Promise<DneskaiSlideResult> {
+  if (format === "instagram-story") return renderDneskaiStoryResult(input);
+  const { kit, problems, template, payload, images, heights } = await inspect(input, format);
   const reference = template ? { id: template.id, version: template.version } : null;
   if (!template || !payload || problems.some((entry) => entry.blocking)) {
     return { kit:kit?.id??null, status: "refused", png: null, pngHash: null, svgHash: null, truncatedSlots: [], problems, template: reference, payload, blocks: template ? dneskaiAutoBoxes(template, heights) : [] };
@@ -481,7 +520,7 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
     payload,
     brand: CAROUSEL_BRANDS["caught-up"],
     look: kit!.look,
-    format: MASTER_FORMAT,
+    format,
     images,
     deck: input.position,
     index: 0,
