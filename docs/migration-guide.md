@@ -1014,6 +1014,11 @@ one open batch per persona) and `heydarlink_ambient_frames` (one row per shot an
 cost, pHash, sha256 and HeyDarlink's ingest id), and `heydarlink_ambient_claim`, which hands one frame to one tick.
 Both tables are service role only. The pipeline itself is described in `docs/heydarlink-ambient.md`.
 
+`20261108220000_heydarlink_ambient_tick.sql` adds `marketing_private.heydarlink_ambient_post`, which posts a signed
+`{ tick, kind }` to `/api/heydarlink/ambient/tick` at the scheduler's base URL, and the pg_cron job
+`heydarlink-ambient-tick` (`2-59/5 * * * *`). The marketing tick no longer runs HeyDarlink frames: its DNESKAi steps
+used the whole budget.
+
 ## Sharing switches, 8 November 2026
 
 `20261108230000_publishing_switches.sql` creates `marketing_publishing_switches`: one row per switched-off version of a

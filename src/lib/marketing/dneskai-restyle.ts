@@ -42,9 +42,15 @@ export type DneskaiRestyleResult = { code: string; pictures: number; jobId: stri
 
 const read = <T>(result: { data: T | null; error: unknown }, code: string): T => { if (result.error) throw new Error(code); return result.data as T; };
 
-/** One restyle per post version and slot: a repeated tick finds the same job. */
-export function dneskaiRestyleJobKey(owner: string, revisionId: string, revisionHash: string, scheduledAt: string): string {
-  const value = createHash('sha256').update(['dneskai-restyle/2', owner, revisionId, revisionHash, scheduledAt, DNESKAI_RESTYLE_NOTE].join('|')).digest('hex').slice(0, 32);
+/** Tries per post version and slot: a slot asked again after a failure gets a new job, up to this many. */
+export const DNESKAI_RESTYLE_ATTEMPTS = 3;
+/**
+ * One restyle per post version, slot and attempt: a repeated tick finds the same job. Attempt 0 keeps the key the
+ * first jobs were enqueued under.
+ */
+export function dneskaiRestyleJobKey(owner: string, revisionId: string, revisionHash: string, scheduledAt: string, attempt = 0): string {
+  const parts = ['dneskai-restyle/2', owner, revisionId, revisionHash, scheduledAt, DNESKAI_RESTYLE_NOTE, ...(attempt > 0 ? [`attempt-${attempt}`] : [])];
+  const value = createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 32);
   return `${value.slice(0, 8)}-${value.slice(8, 12)}-5${value.slice(13, 16)}-8${value.slice(17, 20)}-${value.slice(20)}`;
 }
 
@@ -118,7 +124,13 @@ export async function restyleDneskaiPost(db: Database, owner: string, input: { s
       .eq('user_id', owner).eq('id', head.id).in('status', ['review', 'approved']);
     if (error) throw new Error('restyle-return-failed');
   }
-  const key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, slot.scheduledAt);
+  // A failed earlier attempt for this version and slot is not repeated under the same key.
+  let key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, slot.scheduledAt);
+  for (let attempt = 1; attempt < DNESKAI_RESTYLE_ATTEMPTS; attempt++) {
+    const earlier = read(await db.from('marketing_jobs').select('status').eq('user_id', owner).eq('idempotency_key', key).maybeSingle(), 'restyle-job-unavailable') as { status: string } | null;
+    if (earlier?.status !== 'failed') break;
+    key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, slot.scheduledAt, attempt);
+  }
   const original = last.data.request as Record<string, unknown> & { generation: Record<string, unknown> };
   const request = { ...original, idempotencyKey: key, calendarEntryVersion: moved.data, generation: { ...original.generation, source: stored.packet, scheduledAt: slot.scheduledAt, revisionId: key,
     ownerNote: DNESKAI_RESTYLE_NOTE, replacesRevisionId: head.id, ...(head.revision.engagement ? { engagement: head.revision.engagement } : {}) } };

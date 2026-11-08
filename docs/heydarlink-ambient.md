@@ -23,8 +23,10 @@ Each persona has at most one open batch. Batches and frames live in `heydarlink_
 
 ## What happens to a frame
 
-Behind `HEYDARLINK_AMBIENT_ENABLED=true`, the marketing minute tick (`heydarlink-ambient` step) claims frames one at
-a time while it has about 40 seconds left, so a batch of 20 takes one to two hours.
+Behind `HEYDARLINK_AMBIENT_ENABLED=true`, its own tick (`POST /api/heydarlink/ambient/tick`, pg_cron job
+`heydarlink-ambient-tick` every five minutes, two and a half minutes after the marketing tick, signed with
+`MARKETING_SCHEDULER_SECRET`) checks the stock and claims frames one at a time for up to 52 seconds, one or two frames
+per call, so a batch of 20 takes one to two hours.
 
 1. **Render.** fal `fal-ai/flux/dev` natively at the frame's size. A shot with a `stockSeed` takes a Pexels photo
    of the landmark (portrait, no person in its description) and renders it through `fal-ai/flux/dev/image-to-image`

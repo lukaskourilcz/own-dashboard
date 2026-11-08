@@ -232,7 +232,7 @@
       "label": "Logo on light",
       "file": "DNESKAi-logo.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "0fe91493de7ec3debb82794f6235057a25c926c023a8977810b57b18f71796ef",
+      "sha256": "5dc45bba6ef91ed0825b28f8a63b154966af13446869e7e9aea34bf1bfbf021d",
       "bytes": 2198,
       "sourcePath": "public/brand/DNESKAi-logo.svg",
       "use": "White or paper surfaces (#ffffff, #f7f7f5).",
@@ -243,7 +243,7 @@
       "onPhoto": false,
       "inks": [
         "#14161a",
-        "#1e88d9"
+        "#6ec1ff"
       ],
       "viewBox": [
         50,
@@ -408,7 +408,7 @@
       "label": "Share card, light",
       "file": "DNESKAi-og.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "e611e491847bb3d2c272c62e9d6b5be0a96b21533f219ec142dd65da1b81ec5b",
+      "sha256": "67ccddd7ad26dad8243b9b97645a671d17a80a252972fde36edce60af7b5661c",
       "bytes": 2320,
       "sourcePath": "public/brand/DNESKAi-og.svg",
       "use": "Default 1200 × 630 share card on white.",
@@ -417,7 +417,7 @@
       "inks": [
         "#ffffff",
         "#14161a",
-        "#1e88d9"
+        "#6ec1ff"
       ],
       "viewBox": [
         0,

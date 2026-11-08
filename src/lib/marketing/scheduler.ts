@@ -79,9 +79,7 @@ export const MARKETING_TICK_ENGAGEMENT = "engagement" as const;
  * it. Two Graph GETs under Facebook Login; it holds no lease, its upsert is idempotent.
  */
 export const MARKETING_TICK_AUDIO_TRENDS = "audio-trends" as const;
-/** HeyDarlink ambient frames (moved from Quorum, 8 November 2026): works open batches one frame at a time. */
-export const MARKETING_TICK_HEYDARLINK_AMBIENT = "heydarlink-ambient" as const;
-export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_ENRICHMENT | typeof MARKETING_TICK_PLAN | typeof MARKETING_TICK_DEVSHARK_PLAN | typeof MARKETING_TICK_DEVSHARK_CONCEPTS | typeof MARKETING_TICK_ENGAGEMENT | typeof MARKETING_TICK_AUDIO_TRENDS | typeof MARKETING_TICK_HEYDARLINK_AMBIENT;
+export type MarketingTickCategory = (typeof MARKETING_TICK_CATEGORIES)[number] | (typeof MARKETING_DAILY_DUTIES)[number] | typeof MARKETING_TICK_REMINDER | typeof MARKETING_TICK_SCOUTING | typeof MARKETING_TICK_ENRICHMENT | typeof MARKETING_TICK_PLAN | typeof MARKETING_TICK_DEVSHARK_PLAN | typeof MARKETING_TICK_DEVSHARK_CONCEPTS | typeof MARKETING_TICK_ENGAGEMENT | typeof MARKETING_TICK_AUDIO_TRENDS;
 /** Lease names in `marketing_scheduler_state`. Media retention shares the media lease: it never runs during collection. */
 export type MarketingSchedulerLease = "collection" | "media" | "briefs" | "generation" | "publishing" | "reconciliation" | "token" | "renewal";
 export type MarketingTickStatus = "done" | "noop" | "skipped" | "busy" | "backoff" | "deferred" | "error";
@@ -132,7 +130,7 @@ export const MARKETING_RECONCILIATION_INTERVAL_MS = 30 * 60_000;
 export const MARKETING_URL_RENEWAL_WINDOW_MS = 48 * 60 * 60_000;
 const MINIMUM_START_MS: Record<MarketingTickCategory, number> = {
   collection: 20_000, media: 25_000, briefs: 5_000, generation: 43_000, publishing: 15_000, reconciliation: 5_000, token: 16_000,
-  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000, plan: 12_000, "devshark-plan": 12_000, "devshark-concepts": 30_000, engagement: 8_000, "audio-trends": 12_000, "heydarlink-ambient": 40_000,
+  renewal: 15_000, purge: 10_000, retention: 1_000, reminder: 2_000, scouting: 5_000, enrichment: 20_000, plan: 12_000, "devshark-plan": 12_000, "devshark-concepts": 30_000, engagement: 8_000, "audio-trends": 12_000,
 };
 /** A candidate busy in another media pass holds a 120 s claim. */
 const MEDIA_BUSY_BACKOFF_MS = 125_000;
@@ -237,8 +235,6 @@ export interface MarketingSchedulerPorts {
   /** devShark: one concept for the owner's review when the studio's queue is short (`generateDevsharkConcept`). */
   devsharkConcept?(now: Date, signal: AbortSignal): Promise<{ status: "generated" | "skipped" | "refused"; code?: string; costUsd?: number }>;
   devsharkPlan?(now: Date, options?: { signal: AbortSignal; remainingMs: () => number }): Promise<{ placed: number; waiting: number; prepared?: number; approved?: number; errors?: string }>;
-  /** HeyDarlink ambient batches: the low-stock check, then frames while the tick has time. Off without HEYDARLINK_AMBIENT_ENABLED. */
-  heydarlinkAmbient?(now: Date, options: { signal: AbortSignal; remainingMs: () => number }): Promise<{ status: "idle" | "worked" | "skipped"; code?: string; frames: number; uploaded: number; costUsd: number; opened: number }>;
 }
 
 export interface MarketingSchedulerDependencies {
@@ -662,22 +658,6 @@ export async function runMarketingTick(deps: MarketingSchedulerDependencies, val
       const result = await devsharkConcept(now(), abort);
       if (result.status === "skipped") return { status: "noop", code: result.code };
       return { status: result.status === "generated" ? "done" : "error", ...(result.code ? { code: result.code } : {}), detail: { costUsd: result.costUsd ?? 0 } };
-    },
-  });
-
-  const heydarlinkAmbient = ports.heydarlinkAmbient;
-  if (heydarlinkAmbient && env.HEYDARLINK_AMBIENT_ENABLED === "true") minuteSteps.push({
-    // Each frame is claimed in the database, so the step needs no lease of its own.
-    category: MARKETING_TICK_HEYDARLINK_AMBIENT, lease: null,
-    async precheck(): Promise<StepOutcome | null> {
-      if (await yieldToPublication()) return yielded;
-      return null;
-    },
-    async run({ now, signal: abort, remainingMs }): Promise<StepOutcome> {
-      const result = await heydarlinkAmbient(now(), { signal: abort, remainingMs });
-      if (result.status === "skipped") return { status: "skipped", ...(result.code ? { code: result.code } : {}) };
-      return { status: result.frames || result.opened ? "done" : "noop", ...(result.code ? { code: result.code } : {}),
-        detail: { frames: result.frames, uploaded: result.uploaded, costUsd: Number(result.costUsd.toFixed(4)), opened: result.opened } };
     },
   });
 
