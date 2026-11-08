@@ -334,6 +334,7 @@ pilots or n8n: Preview-only names are ignored elsewhere (`src/lib/marketing/prev
 | `MARKETING_CLAUDE_MODEL` | `claude-sonnet-5-5` | Generation and knowledge model | Live |
 | `MARKETING_CLAUDE_INPUT_USD_PER_MTOK`, `MARKETING_CLAUDE_OUTPUT_USD_PER_MTOK` | 2 and 10 for the default model | Cost accounting of model calls | Live |
 | `MARKETING_DNESKAI_DAILY_GENERATION_USD` | 1 | Rolling daily DNESKAi generation ceiling; a malformed value refuses every paid call | Live |
+| `MARKETING_DNESKAI_DAILY_GENERATION_USD_UNTIL` | unset | ISO instant after which the ceiling is the default again; makes a raised ceiling temporary (production: $5 until 13 November 2026 00:00 Prague) | Live |
 | `MARKETING_DNESKAI_APIFY_ACTOR_ID`, `MARKETING_DNESKAI_APIFY_BUILD` | unset: Apify stages refuse | The pinned Instagram actor and build | Live |
 | `MARKETING_DNESKAI_TRANSCRIPT_DAILY_USD` | 0.50 | Daily ceiling of FACT or HYPE reel transcripts; a malformed value refuses every transcript | Off until migration `20261023100100` |
 | `MARKETING_DNESKAI_TIKTOK_DAILY_USD` | 0.10 | Daily ceiling of the TikTok CZ chart run (at most 1); a malformed value refuses every run | Off until migration `20261023130300` |

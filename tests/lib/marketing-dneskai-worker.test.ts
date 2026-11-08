@@ -185,6 +185,11 @@ describe("the DNESKAi daily generation ceiling at the paid call", () => {
     }
     expect(dneskaiDailyGenerationCeiling({})).toBe(DEFAULT_DNESKAI_DAILY_GENERATION_USD);
     expect(dneskaiDailyGenerationCeiling({ MARKETING_DNESKAI_DAILY_GENERATION_USD: "2.5" })).toBe(2.5);
+    // A raised ceiling with an expiry holds until it and falls back to the default after (owner, 8 November 2026).
+    const raised = { MARKETING_DNESKAI_DAILY_GENERATION_USD: "5.00", MARKETING_DNESKAI_DAILY_GENERATION_USD_UNTIL: "2026-11-13T00:00:00+01:00" };
+    expect(dneskaiDailyGenerationCeiling(raised, new Date("2026-11-12T22:59:59Z"))).toBe(5);
+    expect(dneskaiDailyGenerationCeiling(raised, new Date("2026-11-12T23:00:00Z"))).toBe(DEFAULT_DNESKAI_DAILY_GENERATION_USD);
+    expect(dneskaiDailyGenerationCeiling({ ...raised, MARKETING_DNESKAI_DAILY_GENERATION_USD_UNTIL: "soon" }, new Date("2026-11-10T00:00:00Z"))).toBe(DEFAULT_DNESKAI_DAILY_GENERATION_USD);
     for (const value of ["0", "51", "-1", "abc"]) expect(() => dneskaiDailyGenerationCeiling({ MARKETING_DNESKAI_DAILY_GENERATION_USD: value })).toThrow("dneskai-daily-generation-budget-invalid");
   });
   it("records what a failed job spent, so the ledger counts its measured cost instead of the reservation", async () => {
