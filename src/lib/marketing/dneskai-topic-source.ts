@@ -76,9 +76,11 @@ export function createJinaTopicReader(env: Record<string, string | undefined> = 
 }
 
 /** The candidate row of an owner link, with the identity hashes the candidates table keeps unique per owner and project. */
-export function dneskaiOwnerLinkCandidate(input: { topicId: string; kind: 'news' | 'education'; url: string; page: DneskaiTopicPage; fallbackTitle: string; fallbackText: string | null; now: Date; part?: number }) {
+export function dneskaiOwnerLinkCandidate(input: { topicId: string; kind: 'news' | 'education'; url: string; page: DneskaiTopicPage; fallbackTitle: string; fallbackText: string | null; now: Date; part?: number; lead?: string | null }) {
   const title = (input.page.title || input.fallbackTitle).slice(0, 500);
-  const text = (input.page.text || input.fallbackText || '').slice(0, 12000);
+  // A series topic's own summary (a paraphrase of this page) leads, so the post is about the tip, not the whole page.
+  const page = input.page.text || input.fallbackText || '';
+  const text = (input.lead?.trim() && input.page.text ? `${input.lead.trim()}\n\n${page}` : page).slice(0, 12000);
   const identity = dneskaiCheapIdentity({ title, text, url: input.url });
   // The first page keeps the id it always had; a further page of the same topic is numbered from 2.
   const id = input.part && input.part > 1 ? `${DNESKAI_OWNER_LINK_SOURCE_ID}:${input.topicId}:${input.part}` : `${DNESKAI_OWNER_LINK_SOURCE_ID}:${input.topicId}`;

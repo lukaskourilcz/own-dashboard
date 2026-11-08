@@ -9,6 +9,7 @@ import { pragueMarketingDate } from './weekly-planning';
 import { dneskaiActiveSlotTimes, type DneskaiDailyMix } from './dneskai-daily-mix';
 import { DNESKAI_TOPIC_READER_ATTEMPTS, dneskaiOwnerLinkCandidate, dneskaiTopicUrl, dneskaiTopicUrls, type DneskaiTopicReader } from './dneskai-topic-source';
 import { dneskaiCheapIdentity } from './dneskai-registry';
+import { dneskaiSeriesOf } from './dneskai-series';
 import { contentHash } from './hashes';
 
 /**
@@ -113,7 +114,7 @@ async function ownerLinkReport(store: DneskaiTopicBridgeStore, reader: DneskaiTo
   if (!run) return { code: 'topic-run-unavailable', waiting: true };
   const page = await reader(url, input.signal);
   if (!page) return { code: 'topic-source-unreadable', waiting: attempts + 1 < DNESKAI_TOPIC_READER_ATTEMPTS, evidence: { readerAttempts: attempts + 1 } };
-  const row = dneskaiOwnerLinkCandidate({ topicId: topic.id, kind: topic.kind, url, page, fallbackTitle: topic.title_cs, fallbackText: topic.summary ?? null, now: input.now });
+  const row = dneskaiOwnerLinkCandidate({ topicId: topic.id, kind: topic.kind, url, page, fallbackTitle: topic.title_cs, fallbackText: topic.summary ?? null, now: input.now, lead: dneskaiSeriesOf(topic.evidence) ? topic.summary : null });
   return store.insertCandidate(input.owner, input.project, run.id, row);
 }
 
