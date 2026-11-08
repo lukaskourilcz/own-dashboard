@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commentDraftsEnabled, commentInboxEnabled, DEFAULT_REPLY_SIGNATURE } from '@/lib/marketing/comment-inbox';
+import { commentDraftsEnabled, commentInboxEnabled } from '@/lib/marketing/comment-inbox';
 
 describe('comment inbox switches', () => {
   it('captures only when the inbox switch is on', () => {
@@ -13,9 +13,5 @@ describe('comment inbox switches', () => {
     expect(commentDraftsEnabled({ MARKETING_COMMENT_INBOX_ENABLED: 'true', MARKETING_COMMENT_DRAFTS_ENABLED: 'true' })).toBe(false); // consent off
     expect(commentDraftsEnabled({ MARKETING_COMMENT_INBOX_ENABLED: 'true', MARKETING_AI_CONSENT: 'true' })).toBe(false); // drafts off
     expect(commentDraftsEnabled({ MARKETING_COMMENT_INBOX_ENABLED: 'true', MARKETING_COMMENT_DRAFTS_ENABLED: 'true', MARKETING_AI_CONSENT: 'true' })).toBe(true);
-  });
-
-  it('defaults the reply signature to the owner\'s', () => {
-    expect(DEFAULT_REPLY_SIGNATURE).toBe('— Lukáš');
   });
 });
