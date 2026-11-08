@@ -8,6 +8,7 @@ import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRende
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
 import { dneskaiKeywordLine, dneskaiTopicName } from "./dneskai-caption";
+import { dneskaiEmphasisFor } from "./dneskai-palette";
 
 /**
  * Generation v5 for DNESKAi (#116): one structured Claude call turns a research brief (#115) into the
@@ -567,7 +568,9 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
   // and every carousel ends with code's closing slide.
   const kit = dneskaiGenerationKit([copy.title, ...copy.slides.map((slide) => slide.headline)].join("\n"));
   const closed = copy.format === "carousel" ? [...slides, dneskaiClosingSlide()] : slides;
-  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit, ...(topic ? { topic } : {}), slides: closed });
+  // The key words take the colour of the post's place in the plan (owner request, 8 November 2026).
+  const emphasis = dneskaiEmphasisFor(offer.brief.scheduledAt);
+  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit, emphasis, ...(topic ? { topic } : {}), slides: closed });
 }
 
 export { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";

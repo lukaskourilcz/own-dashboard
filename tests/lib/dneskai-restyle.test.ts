@@ -24,9 +24,9 @@ describe('DNESKAi restyle (owner request, 8 November 2026)', () => {
     expect(dneskaiRestyleMissingPictures(pictures(1), { MARKETING_DNESKAI_STOCK_ENABLED: 'true' })).toBe(0);
   });
 
-  it('asks the model for the house style and photos on most slides, and names no source', () => {
+  it('asks the model for the house style only, keeps every other rule, and names no source', () => {
     expect(DNESKAI_RESTYLE_NOTE).toContain('domácím stylu');
-    expect(DNESKAI_RESTYLE_NOTE).toContain('fotku');
+    expect(DNESKAI_RESTYLE_NOTE).toContain('pravidla platí');
     expect(DNESKAI_RESTYLE_NOTE).not.toMatch(/zdroj/i);
   });
 });

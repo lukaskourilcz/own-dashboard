@@ -198,8 +198,9 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces:
  * The slide as the studio takes it. Code writes the folio, the sources title and the disclosure;
  * DNESKAi is Czech-only.
  */
-export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = [], kit: DneskaiKitId = "editorial"): DneskaiSlideInput {
+export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = [], kit: DneskaiKitId = "editorial", emphasis?: string): DneskaiSlideInput {
   return {
+    ...(emphasis ? { emphasisColor: emphasis } : {}),
     // Absent is the editorial kit; naming it would change nothing but is left out like everywhere else.
     ...(kit !== "editorial" ? { kit } : {}),
     type: slide.type,
@@ -226,7 +227,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
  * studio takes them, trimmed and with blank source lines dropped, so an edit to the surrounding
  * whitespace is a hit. The alt text is not drawn and is not part of the key.
  */
-export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }, kit: DneskaiKitId = "editorial"): string {
+export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }, kit: DneskaiKitId = "editorial", emphasis?: string): string {
   const images = [...slide.images].sort((left, right) => left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0)
     .map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, crop: image.crop ?? null }));
   return sha256(canonicalJson({
@@ -247,6 +248,8 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     ...(slide.series?.trim() ? { series: slide.series.trim() } : {}),
     // Keyed only when the owner placed words by hand, so every other key stays what it was.
     ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
+    // Keyed only when the post has its own key-word colour, so every other key stays what it was.
+    ...(emphasis ? { emphasis } : {}),
     // The closing slide is the finished card, so a new card is a new key.
     ...(isDneskaiClosingSlide(slide) ? { closingCard: DNESKAI_CLOSING_CARD_SHA256 } : {}),
   }));
@@ -334,7 +337,7 @@ export async function validateDneskaiDeck(value: DneskaiDeck, loadMedia: LoadDne
     const loaded = await slideImages(slide, index, load, signal);
     problems.push(...loaded.problems);
     if (loaded.problems.length) continue;
-    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images, kit), index));
+    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images, kit, deck.emphasis), index));
   }
   return problems;
 }
@@ -419,7 +422,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
     const ownProblems = deck.slides.map((slide, index) => textProblems(slide, index, metrics, faces));
     const refusedByText = ownProblems.some((found) => found.length > 0);
     const encoder = await dneskaiEncoderIdentity();
-    const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder, kit));
+    const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder, kit, deck.emphasis));
     const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));
     abortCheck();
 
@@ -436,7 +439,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
       problems.push(...loaded.problems);
       if (loaded.problems.length) { rendered.push(null); continue; }
       const engine = await studio();
-      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images, kit);
+      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images, kit, deck.emphasis);
       if (refusedByText) {
         // The deck is refused already: report the studio's problems too, without drawing a slide nobody keeps.
         problems.push(...await studioProblems(engine, studioInput, index));
@@ -523,7 +526,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   const kit = dneskaiKitOf(deck);
   const [metrics, faces] = await Promise.all([fonts(), kitFieldFaces(kit)]);
   const encoder = await dneskaiEncoderIdentity();
-  const renderKey = dneskaiRenderKey(slide, position, encoder, kit);
+  const renderKey = dneskaiRenderKey(slide, position, encoder, kit, deck.emphasis);
   const own = textProblems(slide, index, metrics, faces);
   const hit = previewCache.get(renderKey);
   if (hit && !own.length) {
@@ -540,7 +543,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   abortCheck();
   const engine = await studio();
   if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false, blocks: [] };
-  const input = dneskaiStudioInput(slide, position, loaded.images, kit);
+  const input = dneskaiStudioInput(slide, position, loaded.images, kit, deck.emphasis);
   if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false, blocks: [] };
   let result;
   try { result = await engine.renderDneskaiSlide(input); }

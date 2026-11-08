@@ -105,7 +105,8 @@ const inset: CarouselLayerInput = {
 };
 
 const headline = (frame: Frame, options: Parameters<typeof text>[2]): CarouselLayerInput =>
-  text("headline", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "middle", uppercase: UPPERCASE, ...options });
+  // Key words (`[[…]]`) in the post's colour (owner request, 8 November 2026); on the blue statement ground they are ink.
+  text("headline", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "middle", uppercase: UPPERCASE, emphasisColorToken: "secondary", ...options });
 
 /** The pair of quotation marks above a quote; the API writes them. */
 const mark = (frame: Frame): CarouselLayerInput =>
@@ -190,7 +191,7 @@ const statement = template({
   layers: [
     logo,
     mark(box(LEFT, 256, MEASURE, 180)),
-    headline(box(LEFT, 440, MEASURE, 500), { minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8 }),
+    headline(box(LEFT, 440, MEASURE, 500), { minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8, emphasisColorToken: "background" }),
     copy(box(LEFT, 960, MEASURE, 290), { minFontSize: 32, maxFontSize: 38, maxChars: 240, maxLines: 8 })
   ]
 });
