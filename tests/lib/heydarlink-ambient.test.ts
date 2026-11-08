@@ -123,3 +123,22 @@ describe('the vision gate rubric (8 November 2026)', () => {
     expect(AMBIENT_GATE_SYSTEM).toContain('readable text anywhere does');
   });
 });
+
+describe("the owner's ambient inbox (8 November 2026)", () => {
+  it('reads <girl>__<shot_id>[__4x5|__9x16].jpg and nothing else, and picks the format from the shape', async () => {
+    const { parseAmbientInboxName, ambientInboxAspect, ambientInboxPillar, fitAmbientInboxPicture } = await import('@/lib/heydarlink/ambient-inbox');
+    expect(parseAmbientInboxName('fatimah__marina-skyline-golden-hour.jpg')).toEqual({ persona: 'fatimah', shotId: 'marina-skyline-golden-hour', aspect: null });
+    expect(parseAmbientInboxName('nina__new-ambient-9-16-letna-at-dusk__9x16.png')).toEqual({ persona: 'nina', shotId: 'new-ambient-9-16-letna-at-dusk', aspect: '9:16' });
+    expect(parseAmbientInboxName('anna__marina.jpg')).toBeNull();
+    expect(parseAmbientInboxName('fatimah__Marina Skyline.jpg')).toBeNull();
+    expect(ambientInboxAspect(1024, 1536)).toBe('9:16');
+    expect(ambientInboxAspect(1024, 1280)).toBe('4:5');
+    expect(ambientInboxAspect(1024, 1024)).toBe('4:5');
+    expect(ambientInboxPillar('dates-arabic-coffee-tray')).toBe('food');
+    expect(ambientInboxPillar('4x4-headlights-on-sand')).toBe('city');
+    const sharp = (await import('sharp')).default;
+    const square = await sharp({ create: { width: 1024, height: 1024, channels: 3, background: { r: 200, g: 120, b: 80 } } }).png().toBuffer();
+    const story = await sharp(await fitAmbientInboxPicture(square, '9:16')).metadata();
+    expect([story.width, story.height, story.format]).toEqual([1080, 1920, 'jpeg']);
+  });
+});
