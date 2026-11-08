@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
-import { dneskaiDeckLacksPhoto, dneskaiPhotoSlides, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiSeriesOutOfDate, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
+import { dneskaiDeckLacksPhoto, dneskaiPhotoSlides, dneskaiRenderStale, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiSeriesOutOfDate, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
 import { deck } from './marketing-dneskai-revision-fixture';
 import { dneskaiEmphasisFor } from '@/lib/marketing/dneskai-palette';
 
@@ -24,6 +24,17 @@ const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => with
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
+  it('draws again a post rendered before the icy blue and new logo, approved or not, while its slot is ahead (8 November 2026)', () => {
+    const stale = { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [], renderKeys: [], renderedAt: '2026-11-08T15:55:00.000Z' };
+    const fresh = { ...stale, renderedAt: '2026-11-08T17:00:00.000Z' };
+    expect(dneskaiRenderStale(stale)).toBe(true);
+    expect(dneskaiRenderStale(fresh)).toBe(false);
+    expect(dneskaiRenderStale(null)).toBe(false);
+    expect(dneskaiPlanAction(slot(), head({ render_report: stale }), null, true, now)).toEqual({ kind: 'redraw', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved', render_report: stale }), null, true, now)).toEqual({ kind: 'redraw', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({ render_report: fresh }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+  });
+
   it('writes a short carousel again once, drops a house-style one that is still short, and leaves single posts alone (8 November 2026)', () => {
     const short = (promptVersion: string) => { const value = head({}, { promptVersion }); return { ...value, revision: { ...value.revision, deck: { ...value.revision.deck!, slides: value.revision.deck!.slides.filter((item) => item.headline !== 'Třetí fotka') } } }; };
     expect(dneskaiPhotoSlides(short('qa/1').revision)).toBe(2);

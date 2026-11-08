@@ -62,7 +62,7 @@ export type DneskaiPlanTwin = { id: string; status: string; ready: boolean; cont
 
 export type DneskaiPlanAction =
   | { kind: 'wait'; status: DneskaiPlanStatus; code: string | null }
-  | { kind: 'spotlight' | 'rerender' | 'move' | 'series' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
+  | { kind: 'spotlight' | 'rerender' | 'move' | 'redraw' | 'series' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
   /** The post has no photo on its first slide: retired and the slot freed for another post (8 November 2026). */
   | { kind: 'drop'; status: 'skipped'; code: 'plan-photo-missing' | 'plan-photos-short' }
   /** A carousel with too few photo slides is written again with more pictures, once (8 November 2026). */
@@ -70,6 +70,15 @@ export type DneskaiPlanAction =
 
 /** A drafted DNESKAi deck whose first slide shows no picture. A revision without a deck (rendered assets) passes. */
 export const dneskaiDeckLacksPhoto = (revision: Pick<ContentRevision, 'deck'>) => !!revision.deck && !(revision.deck.slides[0]?.images.length);
+/**
+ * Slides drawn before this instant predate the icy blue, the new logo and the two remaining styles (owner, 8 November
+ * 2026). The plan draws an unpublished post rendered earlier again, under `DNESKAI_RENDER_POLICY` dneskai-render/3.
+ */
+export const DNESKAI_RENDERS_CURRENT_SINCE = '2026-11-08T16:26:00.000Z';
+export function dneskaiRenderStale(report: unknown): boolean {
+  const at = report && typeof report === 'object' ? (report as { renderedAt?: unknown }).renderedAt : undefined;
+  return typeof at === 'string' && Date.parse(at) < Date.parse(DNESKAI_RENDERS_CURRENT_SINCE);
+}
 /** The owner's slide rule (photo, photo, optional text, photo, closing): a carousel needs this many photo slides. */
 export const DNESKAI_MIN_PHOTO_SLIDES = 3;
 /** Photo slides of a carousel, the closing slide not counted; null for a post that is not a drafted carousel. */
@@ -126,6 +135,7 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
     // A deck in a retired kit (Video-first included) is redrawn in one of the rotating styles; Spotlight and Plakát stay as drawn.
     if (!ownerEdit && head.revision.deck && !DNESKAI_GENERATION_KITS.includes(dneskaiKitOf(head.revision.deck))) return { kind: 'spotlight', status: 'ready' };
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
+    if (head.revision.deck && dneskaiRenderStale(head.render_report) && slotAt > now.getTime() + APPROVAL_LEAD_MS) return { kind: 'redraw', status: 'ready' };
     // A series post carries its label and running number, the owner's edit included (8 November 2026).
     if (heading && head.revision.deck && dneskaiSeriesOutOfDate(head.revision, heading)) return { kind: 'series', status: 'ready' };
     // The key words take the colour of the slot (owner request, 8 November 2026); a post moved here is redrawn in it.
@@ -140,6 +150,8 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   if (head.status === 'approved' && heading && head.revision.deck && dneskaiSeriesOutOfDate(head.revision, heading) && Date.parse(head.revision.scheduledAt) > now.getTime() + SERIES_RENUMBER_LEAD_MS) {
     return { kind: 'series', status: 'ready' };
   }
+  // An approved post drawn in the retired look is drawn again and approved again while its slot is ahead.
+  if (head.status === 'approved' && head.revision.deck && dneskaiRenderStale(head.render_report) && slotAt > now.getTime() + APPROVAL_LEAD_MS) return { kind: 'redraw', status: 'ready' };
   if (head.status === 'approved' && slot.instagram && head.revision.account.platform === 'instagram') {
     const gone = ['skipped', 'superseded', 'returned', 'failed'];
     const posted = Date.parse(head.revision.scheduledAt);
@@ -281,13 +293,14 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 }
 
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
-async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string }, wiring: Wiring, signal: AbortSignal) {
+async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string; fresh?: boolean }, wiring: Wiring, signal: AbortSignal) {
   const deck = head.revision.deck;
   const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
   const deckEdit = edit.kit && deck && kit ? { kit, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
   const prepared = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
   const revision = prepared.deck ? { ...prepared, deck: { ...prepared.deck, emphasis: dneskaiEmphasisFor(edit.scheduledAt) } } : prepared;
-  let reuse = reusableDneskaiRender(head.revision, head.render_report, revision);
+  // A redraw never reuses the old pixels: that is the point of it.
+  let reuse = edit.fresh ? null : reusableDneskaiRender(head.revision, head.render_report, revision);
   if (reuse) { try { reuse = { ...reuse, assets: await refreshMarketingAssetUrls(db, owner, reuse.assets) }; } catch { reuse = null; } }
   const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
   const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wiring.render, loadMedia: wiring.loadMedia, signal, reuse });
@@ -473,10 +486,10 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           await record(slot, patch); Object.assign(slot, patch);
           break;
         }
-        if (action.kind === 'spotlight' || action.kind === 'move') {
-          if (action.kind === 'spotlight' && (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS)) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }
+        if (action.kind === 'spotlight' || action.kind === 'move' || action.kind === 'redraw') {
+          if (action.kind !== 'move' && (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS)) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }
           await keepNewsCurrent(db, owner, slot, current.revision, input.signal);
-          const saved = await saveEdit(db, owner, current, { kit: action.kind === 'spotlight', scheduledAt: dneskaiPlanSlotAt(slot) }, wired(), input.signal);
+          const saved = await saveEdit(db, owner, current, { kit: action.kind === 'spotlight', scheduledAt: dneskaiPlanSlotAt(slot), fresh: action.kind === 'redraw' }, wired(), input.signal);
           if (saved.rendered) result.rendered++;
           const patch = { ...base, head_revision_id: saved.id, written_revision_id: saved.id, status: saved.ready ? 'ready' as const : 'failed' as const, code: saved.ready ? null : 'render-blocked' };
           await record(slot, patch); Object.assign(slot, patch);
