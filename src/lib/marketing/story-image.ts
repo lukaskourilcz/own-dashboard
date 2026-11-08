@@ -24,8 +24,12 @@ export async function composeStoryFromCover(cover: Buffer): Promise<{ jpeg: Buff
   return { jpeg, sha256: createHash('sha256').update(jpeg).digest('hex'), width: STORY_WIDTH, height: STORY_HEIGHT };
 }
 
-/** The render key a story is stored under: one story per cover. */
-export function storyRenderKey(coverSha256: string): string {
+/**
+ * The render key a story is stored under: one story per cover. The `version` namespaces the key so a change of story
+ * renderer stores under a fresh key and never reuses a story made by the old one. DNESKAi keeps the default;
+ * devShark's native 1080×1920 story (8 November 2026) passes `devshark-story/2`.
+ */
+export function storyRenderKey(coverSha256: string, version = 'marketing-story/1'): string {
   if (!/^[a-f0-9]{64}$/.test(coverSha256)) throw new Error('story-cover-invalid');
-  return createHash('sha256').update(`marketing-story/1\n${coverSha256}`).digest('hex');
+  return createHash('sha256').update(`${version}\n${coverSha256}`).digest('hex');
 }

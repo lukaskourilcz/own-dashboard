@@ -110,7 +110,7 @@ export async function prepareDevsharkPosts(db: Database, owner: string, project:
         }
         if (want.story) {
           const cover = slides[0]!;
-          const renderKey = storyRenderKey(cover.sha256);
+          const renderKey = storyRenderKey(cover.sha256, 'devshark-story/2');
           let story = await storage.find(renderKey);
           if (!story) { const image = await renderDevsharkStory(draft.deck); story = await storage.put({ renderKey, bytes: image.jpeg, sha256: image.sha256, metadata: { kind: 'devshark-story', draftId: draft.id } }); }
           const saved = await saveRevision(db, owner, parseContentRevision({ ...common, caption: `Story: ${draft.title}`.slice(0, 2200), format: 'story',
