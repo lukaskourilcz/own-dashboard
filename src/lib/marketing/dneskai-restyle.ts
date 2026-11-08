@@ -31,7 +31,7 @@ export const DNESKAI_RESTYLE_QUEUED = 'restyle-queued';
 /** Pictures a restyled brief should offer, so most slides can show one. */
 export const DNESKAI_RESTYLE_PICTURES = 4;
 /** The owner's note the regeneration carries to the model, next to the house style already in the system prompt. */
-export const DNESKAI_RESTYLE_NOTE = 'Napiš příspěvek znovu v domácím stylu DNESKAi: titulek ve dvou dobách, první věta popisku říká co, kdo a kolik, druhá proč na tom záleží; vlastními slovy. Dej fotku na co nejvíc slidů: každý slide kromě nejvýš jednoho textového nese fotku.';
+export const DNESKAI_RESTYLE_NOTE = 'Napiš příspěvek znovu v domácím stylu DNESKAi, celý vlastními slovy. Všechna ostatní pravidla platí beze změny: délky textů, výběr a počet fotek i pravidla pro čísla.';
 
 type Database = DneskaiMediaDatabase;
 type Environment = Record<string, string | undefined>;
@@ -42,7 +42,7 @@ const read = <T>(result: { data: T | null; error: unknown }, code: string): T =>
 
 /** One restyle per post version and slot: a repeated tick finds the same job. */
 export function dneskaiRestyleJobKey(owner: string, revisionId: string, revisionHash: string, scheduledAt: string): string {
-  const value = createHash('sha256').update(['dneskai-restyle/1', owner, revisionId, revisionHash, scheduledAt].join('|')).digest('hex').slice(0, 32);
+  const value = createHash('sha256').update(['dneskai-restyle/2', owner, revisionId, revisionHash, scheduledAt, DNESKAI_RESTYLE_NOTE].join('|')).digest('hex').slice(0, 32);
   return `${value.slice(0, 8)}-${value.slice(8, 12)}-5${value.slice(13, 16)}-8${value.slice(17, 20)}-${value.slice(20)}`;
 }
 
