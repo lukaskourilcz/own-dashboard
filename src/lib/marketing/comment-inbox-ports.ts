@@ -1,7 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import type { createAdminClient } from '@/lib/supabase/admin';
-import { COMMENT_INBOX_MEDIA_PER_TICK, type CapturedComment, type InboxStore, type InboxTarget } from './comment-inbox-watch';
+import { COMMENT_INBOX_MEDIA_PER_TICK, type InboxStore, type InboxTarget } from './comment-inbox-watch';
 
 /**
  * Supabase behind the comment-inbox capture (owner request, 8 November 2026). Every read and write is owner-scoped and
