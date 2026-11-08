@@ -41,7 +41,7 @@ Instagram and Threads. 08:00 and the Threads post at 20:00 stay with the news ev
 4. **Copy.** Generation follows `DNESKAI_STYLE_RULES` (`docs/dneskai-style-guide.md`): no question in the title or on
    the cover, a hook and then the plain statement.
 5. **Number and label.** Before approval the plan writes the heading, for example „Slovník AI #3“, on the cover
-   (`series` on the cover slide, drawn by Spotlight, Plakát and Video-first) and as the first caption line, which the
+   (`series` on the cover slide, drawn by Spotlight and Plakát) and as the first caption line, which the
    Threads post keeps. The number counts the series' published posts, then the coming ones in slot order. A post
    skipped or failed before publication gets no number, so there is no gap. An approved post whose number changed is
    renumbered while its slot is at least 30 minutes away.

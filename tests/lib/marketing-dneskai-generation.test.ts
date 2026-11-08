@@ -382,7 +382,7 @@ describe("deck assembly by code", () => {
     expect(DNESKAI_GENERATION_KITS).toContain(deck.kit);
     const single: DneskaiCopy = { ...validCopy(pictures), format: "single-image", slides: [{ type: "single", variant: "photo", headline: " Lightroom otevře zavřené oči ", body: "Zdarma jsou 2 použití.", kicker: "Nástroj",
       images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
-    expect(buildDneskaiDeck(single, offerFor())).toEqual({ schemaVersion: expect.any(String), format: "single-image", kit: expect.stringMatching(/^(spotlight|plakat|videofirst)$/), emphasis: expect.stringMatching(/^#[0-9a-f]{6}$/),
+    expect(buildDneskaiDeck(single, offerFor())).toEqual({ schemaVersion: expect.any(String), format: "single-image", kit: expect.stringMatching(/^(spotlight|plakat)$/), emphasis: expect.stringMatching(/^#[0-9a-f]{6}$/),
       slides: [{ type: "single", variant: "photo", headline: "Lightroom otevře zavřené oči", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] });
   });
 });

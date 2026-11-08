@@ -12,6 +12,15 @@ import type { DneskaiSlide } from "./dneskai-slides";
  */
 export const DNESKAI_CLOSING_SHA256 = "23afb625077955c0e00bcedec70e01084501358cd8a61b61a3f9cbe903872a11";
 export const DNESKAI_CLOSING_FILE = ["templates", "carousel-studio", "brand-kits", "caught-up", "dneskai-closing.jpg"] as const;
+/**
+ * The finished closing slide (owner, evening of 8 November 2026: the kit-drawn closing slide looked poor). One
+ * 1080 × 1350 card, the same in every kit: the city from the Higgsfield picture without its window frame, "SLEDUJ"
+ * and "DNESKAi" in tall capitals, the follow line and the handle. The render draws this file instead of laying the
+ * slide out in the deck's kit; its source is `closing-card-source/card.html` next to it.
+ */
+export const DNESKAI_CLOSING_CARD_SHA256 = "295d3aad72b5ea70bc4f59725bbbffa5147bae07b317b1689ef320986a03f484";
+export const DNESKAI_CLOSING_CARD_FILE = ["templates", "carousel-studio", "brand-kits", "caught-up", "dneskai-closing-card.png"] as const;
+export const DNESKAI_CLOSING_CARD_TEMPLATE = { id: "dneskai-closing-card", version: "1.0.0" } as const;
 export const DNESKAI_CLOSING_HEADLINE = "Sleduj [[DNESKAi]]";
 export const DNESKAI_CLOSING_BODY = "pro všechny novinky ze světa AI a technologií. @dneskai";
 

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { dneskaiMarkedWords, dneskaiPlainText } from "@/lib/carousel-studio/dneskai-slide";
-import { dneskaiClosingBytes } from "@/lib/marketing/dneskai-render";
-import { DNESKAI_CLOSING_SHA256, dneskaiClosingSlide, isDneskaiClosingSlide } from "@/lib/marketing/dneskai-closing";
+import { dneskaiClosingBytes, dneskaiClosingCardBytes, previewDneskaiSlide } from "@/lib/marketing/dneskai-render";
+import { DNESKAI_CLOSING_CARD_SHA256, DNESKAI_CLOSING_SHA256, dneskaiClosingSlide, isDneskaiClosingSlide } from "@/lib/marketing/dneskai-closing";
 import { createHash } from "node:crypto";
 
 describe("key-word marks (Plakát, 8 November 2026)", () => {
@@ -53,4 +53,20 @@ describe("the closing slide (8 November 2026)", () => {
     const bytes = await dneskaiClosingBytes();
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(DNESKAI_CLOSING_SHA256);
   });
+
+  it("draws the finished card in every generation kit, not a kit layout (owner, evening of 8 November 2026)", async () => {
+    const card = await dneskaiClosingCardBytes();
+    expect(createHash("sha256").update(card).digest("hex")).toBe(DNESKAI_CLOSING_CARD_SHA256);
+    const sharp = (await import("sharp")).default;
+    expect(await sharp(card).metadata()).toMatchObject({ width: 1080, height: 1350 });
+    const cover = { type: "cover-photo" as const, headline: "Titulek", images: [{ slot: "image-1", assetSha256: "a".repeat(64) }], alt: "Fotka." };
+    const keys = new Set<string>();
+    for (const kit of ["spotlight", "plakat"] as const) {
+      const deck = { schemaVersion: "dneskai-slides/1", format: "carousel", kit, slides: [cover, dneskaiClosingSlide()] } as never;
+      const preview = await previewDneskaiSlide(deck, 1, () => Promise.reject(new Error("no media")));
+      expect(preview.status).toBe("rendered");
+      keys.add(createHash("sha256").update(preview.image!).digest("hex"));
+    }
+    expect(keys.size).toBe(1);
+  }, 60000);
 });
