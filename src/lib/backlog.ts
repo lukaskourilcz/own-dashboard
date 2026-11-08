@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
  * agent instructions insert against (`20261108200000_backlog_items.sql`); change them only together with it.
  */
 export const BACKLOG_PROJECTS = ["heyDarlink", "DNESKAi", "devShark", "personal"] as const;
-export const BACKLOG_STATUSES = ["open", "in_progress", "done", "dropped"] as const;
+/** `ready_for_agent` (8 November 2026): the owner added a note and handed the task to an agent session. */
+export const BACKLOG_STATUSES = ["open", "ready_for_agent", "in_progress", "done", "dropped"] as const;
 export type BacklogProject = (typeof BACKLOG_PROJECTS)[number];
 export type BacklogStatus = (typeof BACKLOG_STATUSES)[number];
 
@@ -17,6 +18,9 @@ export type BacklogItem = {
   status: BacklogStatus;
   source: string | null;
   external_ref: string | null;
+  /** The owner's answer or input for whoever picks the task up. */
+  note: string | null;
+  note_updated_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,29 +33,32 @@ export const BACKLOG_READ_LIMIT = 500;
 export async function fetchBacklogItems(): Promise<BacklogItem[]> {
   const { data, error } = await createClient()
     .from("backlog_items")
-    .select("id,project,title,description,status,source,external_ref,created_at,updated_at")
+    .select("id,project,title,description,status,source,external_ref,note,note_updated_at,created_at,updated_at")
     .order("created_at", { ascending: false })
     .limit(BACKLOG_READ_LIMIT);
   if (error) throw error;
   return (data ?? []) as BacklogItem[];
 }
 
-export async function updateBacklogStatus(id: string, status: BacklogStatus): Promise<BacklogItem> {
+export const BACKLOG_NOTE_MAX = 20000;
+
+/** Changes the status, the note, or both in one write (the "Save and hand to an agent" action). */
+export async function updateBacklogItem(id: string, change: { status?: BacklogStatus; note?: string | null }): Promise<BacklogItem> {
   const { data, error } = await createClient()
     .from("backlog_items")
-    .update({ status })
+    .update(change)
     .eq("id", id)
-    .select("id,project,title,description,status,source,external_ref,created_at,updated_at")
+    .select("id,project,title,description,status,source,external_ref,note,note_updated_at,created_at,updated_at")
     .single();
   if (error) throw error;
   return data as BacklogItem;
 }
 
-/** "Active" is open and in progress: the default view, so finished and dropped work stays out of the way. */
+/** "Active" is open, ready for an agent and in progress: the default view, so finished and dropped work stays out of the way. */
 export function filterBacklog(items: readonly BacklogItem[], filter: BacklogFilter): BacklogItem[] {
   return items.filter((item) =>
     (filter.project === "all" || item.project === filter.project) &&
-    (filter.status === "all" || (filter.status === "active" ? item.status === "open" || item.status === "in_progress" : item.status === filter.status)));
+    (filter.status === "all" || (filter.status === "active" ? item.status !== "done" && item.status !== "dropped" : item.status === filter.status)));
 }
 
 /** Counts per project for the filter, over the rows the status filter keeps. */
