@@ -46,7 +46,7 @@ export const CONTAINER_RETRY_CODE = 'container-retry';
  */
 export function containerFailureRetryable(code: string): boolean {
   return /^meta-http-(5\d\d|429)$/.test(code) || ['meta-request-uncertain', 'meta-invalid-response', 'container-identity-unavailable', 'container-status-unavailable',
-    'publication-deadline-exceeded', 'checkpoint-or-revalidation-failed'].includes(code);
+    'publication-deadline-exceeded', 'checkpoint-or-revalidation-failed', 'carousel-video-processing'].includes(code);
 }
 export type PublisherState = { revisionRow: MarketingRevisionRow; account: MarketingPublishAccount; sources: SourcePacket[] };
 /** The rendered MP4 of a DNESKAi deck Reel (#163, #165): a signed URL Instagram fetches, and the bytes it must be. */
@@ -61,6 +61,11 @@ export const deckReel = (revision: ContentRevision) => revision.format === 'reel
 export type PublishMarketingInput = PublisherState & { publication: PublicationRow & { user_id: string; lease_until?: string | null };
   /** Required for a deck Reel; the orchestrator renders it before the claim. */
   reel?: MarketingReelVideo | null;
+  /**
+   * Video-first carousels (8 November 2026): per slide index, the stored clip that goes out as that carousel item
+   * instead of the slide JPEG. Absent: every item is its JPEG, as before.
+   */
+  slideVideos?: Readonly<Record<number, { url: string }>> | null;
   /** With a dry run, also run the read-only remote checks (account, asset bytes, quota) and stop before any container. */
   preflight?: boolean;
   config: MetaPublisherConfig; dryRun?: boolean; now?: Date; signal?: AbortSignal; fetcher?: typeof fetch; wait?: (ms: number) => Promise<void>;
@@ -469,8 +474,24 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
         if (revision.audio && 'instagramAudioId' in revision.audio) fields.audio_configuration = JSON.stringify({ audio_id: revision.audio.instagramAudioId, audio_volume: 100 });
       } else if (revision.format === 'carousel') {
         const children: string[] = [];
-        for (const asset of revision.assets) children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
-          [asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url']: asset.url, is_carousel_item: 'true', ...altText(asset) }));
+        const videoChildren: string[] = [];
+        for (const [index, asset] of revision.assets.entries()) {
+          const clip = input.slideVideos?.[index];
+          // A video-first slide goes out as its clip; Instagram takes alt text on images only, Threads on both.
+          if (clip) { const child = await create({ media_type: 'VIDEO', video_url: clip.url, is_carousel_item: 'true', ...(threads ? { alt_text: asset.alt } : {}) }); children.push(child); videoChildren.push(child); continue; }
+          children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
+            [asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url']: asset.url, is_carousel_item: 'true', ...altText(asset) }));
+        }
+        // Video items are processed before the carousel may name them; one still processing retries the containers next tick.
+        for (const child of videoChildren) {
+          let status = 'IN_PROGRESS';
+          for (let attempt = 0; attempt < REEL_CONTAINER_POLL.attempts && status === 'IN_PROGRESS'; attempt++) {
+            if (attempt) await pollWait(input, Math.max(0, Math.min(REEL_CONTAINER_POLL.intervalMs, input.config.pollIntervalMs ?? REEL_CONTAINER_POLL.intervalMs)));
+            status = await containerStatus(input, child);
+          }
+          if (status === 'IN_PROGRESS') throw new MetaFailure('carousel-video-processing');
+          if (status !== 'FINISHED') throw new MetaFailure('carousel-video-failed');
+        }
         Object.assign(fields, { media_type: 'CAROUSEL', children: children.join(',') });
       } else if (revision.assets[0]) {
         // An Instagram single image is the default container type: image_url without media_type or children.
