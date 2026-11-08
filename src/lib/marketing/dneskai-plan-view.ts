@@ -15,6 +15,13 @@ export const DNESKAI_PLAN_VIEW_VERSION = 'dneskai-plan/1';
 export const DNESKAI_PLAN_INSTAGRAM_TIMES = ['08:00', '12:30', '17:00'] as const;
 export const DNESKAI_PLAN_THREADS_ONLY_TIMES = ['20:00'] as const;
 export const DNESKAI_PLAN_TIMES = [...DNESKAI_PLAN_INSTAGRAM_TIMES, ...DNESKAI_PLAN_THREADS_ONLY_TIMES] as const;
+/**
+ * Extra Instagram and Threads times (owner decision, 8 November 2026). The plan never fills them by itself; they hold
+ * posts placed there on purpose and show in the plan only when they do.
+ */
+export const DNESKAI_PLAN_EXTRA_TIMES = ['10:00', '14:30'] as const;
+/** Every time a slot may have, in the order of the day. */
+export const DNESKAI_PLAN_ALL_TIMES = ['08:00', '10:00', '12:30', '14:30', '17:00', '20:00'] as const;
 /** The plan reaches this many Prague days ahead, today included. */
 export const DNESKAI_PLAN_DAYS = 30;
 /** The read serves at most this many days in one request. */
@@ -89,7 +96,7 @@ export const DneskaiPlanReadSchema = z.strictObject({
     instagram: z.strictObject({ handle: z.string().min(1).max(100), enabled: z.boolean() }).nullable(),
     threads: z.strictObject({ handle: z.string().min(1).max(100), enabled: z.boolean() }).nullable(),
   }),
-  slots: z.array(DneskaiPlanSlotSchema).max(DNESKAI_PLAN_READ_MAX_DAYS * DNESKAI_PLAN_TIMES.length),
+  slots: z.array(DneskaiPlanSlotSchema).max(DNESKAI_PLAN_READ_MAX_DAYS * DNESKAI_PLAN_ALL_TIMES.length),
 });
 export type DneskaiPlanRead = z.infer<typeof DneskaiPlanReadSchema>;
 

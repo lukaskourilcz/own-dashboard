@@ -37,6 +37,12 @@ describe('dneskaiPlanAction', () => {
     expect(rest.title).toBe('Titulek');
   });
 
+  it('keeps a Plakát or Video-first post in its kit instead of redrawing it in Spotlight', () => {
+    for (const kit of ['plakat', 'videofirst'] as const) {
+      expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit } }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+    }
+  });
+
   it('keeps the kit and time of a revision the owner saved in the Design Lab', () => {
     const owned = slot({ written_revision_id: '44444444-4444-4444-8444-444444444444' });
     expect(dneskaiPlanAction(owned, head({}, { deck: { ...deck() }, scheduledAt: '2026-11-08T09:00:00.000Z' }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });

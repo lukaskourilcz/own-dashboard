@@ -983,3 +983,12 @@ for the daily vision ceiling. It is replayed in PGlite (`tests/lib/marketing-dne
 `marketing_comment_style_samples` a small per-brand sample of the owner's own writing, and a
 `comment_inbox_enabled` switch on `marketing_accounts`. Every table is own-read with service-role writes and
 before-write ownership triggers. It is replayed in PGlite (`tests/lib/marketing-comment-inbox-database.test.ts`).
+
+## DNESKAi extra plan times, job cap and restyle, 8 November 2026
+
+`20261108150000_dneskai_plan_extra_times.sql` replaces the `local_time` check of `marketing_dneskai_plan` so slots may
+also sit at 10:00 and 14:30; both post on Instagram and Threads. `20261108151000_marketing_job_budget_24.sql` rewrites
+`marketing_private.marketing_enqueue_job` in place with a cap of 24 jobs per rolling 24 hours instead of 8; the rest
+of the function is unchanged. `20261108160000_dneskai_restyle.sql` adds two service-role functions for the plan's
+restyle step: `marketing_dneskai_restyle_add_picture` stores one stock picture for a brief (asset, link and the brief's
+media list in one transaction) and `marketing_dneskai_restyle_move_entry` moves the brief's calendar entry to the slot.
