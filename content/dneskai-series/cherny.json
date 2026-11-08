@@ -1,0 +1,223 @@
+{
+ "series": "cherny",
+ "note": "Owner decision 8 Nov 2026: \"Tipy od tvůrce Claude Code Borise Chernyho #N\", twice a week (Tue 17:00, Sat 12:30). Cherny is named as the speaker; URLs stay in the database only. Paraphrase only. X posts were read through the public api.fxtwitter.com mirror. The plan-mode tip says that his advice changed in June 2026; the auto-mode tip is medium because its editorial source does not name him.",
+ "topics": [
+  {
+   "order": 1,
+   "slug": "pet-claudu-paralelne",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 1/13; zopakováno v podcastu Pragmatic Engineer (4. 3. 2026)",
+   "confidence": "high",
+   "title": "Pět Claudů najednou. Tvůrce Claude Code nechává pracovat víc sezení souběžně.",
+   "keyword": "paralelne",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, pouští v terminálu pět Claudů zároveň. Karty si čísluje 1–5 a systémové notifikace mu hlásí, kdy některá potřebuje jeho vstup. Dalších 5–10 sezení mu běží v prohlížeči na claude.ai. Každé lokální sezení má vlastní kopii repozitáře, takže si navzájem nepřekážejí. Zatímco jeden agent pracuje, on zadává nebo kontroluje druhého.",
+   "urls": [
+    "https://venturebeat.com/technology/the-creator-of-claude-code-just-revealed-his-workflow-and-developers-are",
+    "https://x.com/bcherny/status/2007179833990885678",
+    "https://newsletter.pragmaticengineer.com/p/building-claude-code-with-boris-cherny"
+   ]
+  },
+  {
+   "order": 2,
+   "slug": "nejsilnejsi-model-s-premyslenim",
+   "said": "2. 1. 2026, X (@bcherny), vlákno „How I use Claude Code“, tip 3/13",
+   "confidence": "high",
+   "title": "Pomalejší je nakonec rychlejší. Cherny volí nejsilnější model s přemýšlením.",
+   "keyword": "opus",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, používá na všechno nejsilnější model Opus se zapnutým přemýšlením. Přiznává, že je větší a pomalejší než Sonnet. Výsledek je ale podle něj skoro vždy hotový dřív, protože model potřebuje méně opravování a lépe zachází s nástroji. Šetřit na modelu se tak často nevyplatí.",
+   "urls": [
+    "https://venturebeat.com/technology/the-creator-of-claude-code-just-revealed-his-workflow-and-developers-are",
+    "https://x.com/bcherny/status/2007179838864666847",
+    "https://infoq.com/news/2026/01/claude-code-creator-workflow/"
+   ]
+  },
+  {
+   "order": 3,
+   "slug": "claude-md-kazda-chyba-jednou",
+   "said": "2. 1. 2026, X, tip 4/13 (sdílený CLAUDE.md); 31. 1. 2026, X, vlákno tipů týmu, tip 3/10",
+   "confidence": "high",
+   "title": "Každá chyba jen jednou. Cherny zapisuje poučení do souboru CLAUDE.md.",
+   "keyword": "claudemd",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, má s týmem jeden sdílený soubor CLAUDE.md uložený v gitu. Kdykoli Claude něco udělá špatně, zapíšou to tam jako pravidlo, aby se chyba neopakovala. Po každé opravě radí Claudovi říct, ať si CLAUDE.md sám doplní, protože pravidla pro sebe píše dobře. Soubor se má upravovat tak dlouho, dokud chyb znatelně neubude.",
+   "urls": [
+    "https://venturebeat.com/technology/the-creator-of-claude-code-just-revealed-his-workflow-and-developers-are",
+    "https://x.com/bcherny/status/2007179840848597422",
+    "https://x.com/bcherny/status/2017742747067945390"
+   ]
+  },
+  {
+   "order": 4,
+   "slug": "nejdriv-plan-pak-kod",
+   "said": "2. 1. 2026, X, tip 6/13; 31. 1. 2026, X, vlákno tipů týmu, tip 2/10 (v červnu 2026 řekl, že dnes dává přednost auto mode)",
+   "confidence": "high",
+   "title": "Nejdřív plán, pak kód. Cherny začíná složité úkoly v plan mode.",
+   "keyword": "planmode",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, v lednu 2026 radil začínat složitější úkol v plan mode (dvakrát Shift+Tab). S Claudem ladí plán, dokud není spokojený, a teprve potom ho pustí k úpravám. Dobrý plán pak Claude většinou dotáhne na první pokus. Když se práce zvrtne, vrací se k plánování, místo aby tlačil dál. V červnu dodal, že s novějšími modely už samostatné plánování tolik nepotřebuje.",
+   "urls": [
+    "https://infoq.com/news/2026/01/claude-code-creator-workflow/",
+    "https://x.com/bcherny/status/2007179845336527000",
+    "https://x.com/bcherny/status/2017742745365057733"
+   ]
+  },
+  {
+   "order": 5,
+   "slug": "opakovane-ukoly-jako-skilly",
+   "said": "2. 1. 2026, X, tip 7/13 (slash příkazy); 31. 1. 2026, X, tip 4/10 (skilly); podle Fortune zopakováno v červnu 2026",
+   "confidence": "high",
+   "title": "Co děláte denně, automatizujte. Cherny dělá z opakovaných úkolů skilly a příkazy.",
+   "keyword": "skilly",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, radí udělat skill nebo slash příkaz ze všeho, co děláte víc než jednou denně. Ukládá je do gitu, takže je sdílí celý tým i Claude. Sám používá desítkykrát denně příkaz /commit-push-pr, který jedním povelem uloží změny, odešle je a otevře pull request. Pro Fortune to shrnul tak, že z každého úkolu má vzniknout skill pro příště.",
+   "urls": [
+    "https://fortune.com/2026/06/11/anthropic-claude-boris-cherny-doesnt-write-code-by-hand-anymore/",
+    "https://x.com/bcherny/status/2017742748984742078",
+    "https://x.com/bcherny/status/2007179847949500714"
+   ]
+  },
+  {
+   "order": 6,
+   "slug": "subagenti-cisty-kontext",
+   "said": "2. 1. 2026, X, tip 8/13; 31. 1. 2026, X, vlákno tipů týmu, tip 8/10",
+   "confidence": "high",
+   "title": "Víc hlav, čistší hlava. Cherny rozděluje práci mezi subagenty.",
+   "keyword": "subagenti",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, pravidelně používá subagenty, tedy pomocné Claudy na dílčí úkoly. Jeden po dokončené práci zjednodušuje kód, jiný aplikaci kompletně otestuje. Ke složitému zadání radí připsat „use subagents“, aby Claude nasadil víc výpočetního výkonu. Hlavní agent si tak udrží čistý a soustředěný kontext.",
+   "urls": [
+    "https://venturebeat.com/technology/the-creator-of-claude-code-just-revealed-his-workflow-and-developers-are",
+    "https://x.com/bcherny/status/2007179850139000872",
+    "https://x.com/bcherny/status/2017742755737555434"
+   ]
+  },
+  {
+   "order": 7,
+   "slug": "hook-uklidi-formatovani",
+   "said": "2. 1. 2026, X, vlákno „How I use Claude Code“, tip 9/13",
+   "confidence": "high",
+   "title": "Úklid kódu na autopilota. Cherny nechává formátování na hooku.",
+   "keyword": "hooky",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, používá hook, tedy příkaz, který se spustí automaticky pokaždé, když Claude upraví soubor. U něj tak hned po každé úpravě proběhne formátovač. Claude podle něj píše úhledný kód sám, hook ale dočistí drobnosti, které by jinak shodily automatické kontroly. Rutinu tak nemusí hlídat ani člověk, ani model.",
+   "urls": [
+    "https://infoq.com/news/2026/01/claude-code-creator-workflow/",
+    "https://x.com/bcherny/status/2007179852047335529"
+   ]
+  },
+  {
+   "order": 8,
+   "slug": "dejte-claudovi-overit-praci",
+   "said": "2. 1. 2026, X, tip 13/13 označený jako nejdůležitější; zopakováno 8. 6. 2026 na X",
+   "confidence": "high",
+   "title": "Nejdůležitější tip ze všech. Dejte Claudovi možnost ověřit si vlastní práci.",
+   "keyword": "overovani",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, považuje za nejdůležitější dát Claudovi způsob, jak si práci sám zkontrolovat. Podle něj to zlepší výsledek dvakrát až třikrát. Každou změnu nechává Clauda vyzkoušet v prohlížeči přes rozšíření pro Chrome, dokud vše nefunguje. Podle oboru to může být i sada testů, příkaz v terminálu nebo simulátor telefonu.",
+   "urls": [
+    "https://venturebeat.com/technology/the-creator-of-claude-code-just-revealed-his-workflow-and-developers-are",
+    "https://x.com/bcherny/status/2007179861115511237",
+    "https://infoq.com/news/2026/01/claude-code-creator-workflow/"
+   ]
+  },
+  {
+   "order": 9,
+   "slug": "claude-opravi-chybu-sam",
+   "said": "31. 1. 2026, X (@bcherny), vlákno tipů týmu Claude Code, tip 5/10",
+   "confidence": "high",
+   "title": "Stačí napsat fix. Cherny nechává Clauda opravovat chyby samostatně.",
+   "keyword": "opravy",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, tvrdí, že většinu chyb Claude opraví sám. Tým propojil Clauda se Slackem, vloží mu vlákno s hlášením chyby a napíše jen „fix“. Stejně tak mu stačí říct, ať opraví padající testy, a nemusí vysvětlovat jak. Ke složitějším problémům mu dávají přečíst logy.",
+   "urls": [
+    "https://officechai.com/ai/claude-code-creator-boris-cherny-claude-code-tips",
+    "https://x.com/bcherny/status/2017742750473720121"
+   ]
+  },
+  {
+   "order": 10,
+   "slug": "at-vas-claude-vyzkousi",
+   "said": "31. 1. 2026, X (@bcherny), vlákno tipů týmu, tip 6/10 „Level up your prompting“",
+   "confidence": "high",
+   "title": "Ať vás AI vyzkouší. Cherny radí nechat Clauda kriticky prověřit vaše změny.",
+   "keyword": "zadani",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, radí obrátit role: ať Claude vyzkouší vás. Může vaše změny podrobit křížovému výslechu a pustit je dál, až obstojíte. Když je oprava jen průměrná, ať ji Claude zahodí a s tím, co už ví, napíše elegantní řešení. A čím konkrétnější je zadání, tím lepší je výsledek.",
+   "urls": [
+    "https://officechai.com/ai/claude-code-creator-boris-cherny-claude-code-tips",
+    "https://x.com/bcherny/status/2017742752566632544"
+   ]
+  },
+  {
+   "order": 11,
+   "slug": "claude-jako-ucitel",
+   "said": "31. 1. 2026, X (@bcherny), vlákno tipů týmu, tip 10/10 „Learning with Claude“",
+   "confidence": "high",
+   "title": "Claude jako učitel. Cherny radí nechat si neznámý kód vysvětlit.",
+   "keyword": "uceni",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, doporučuje používat Clauda i k učení. V nastavení lze zapnout vysvětlující styl, kdy Claude ke každé změně řekne proč. Neznámý kód si můžete nechat převést do prezentace v HTML nebo nakreslit jako jednoduchý diagram. Tým má i skill, kde Claude doplňujícími otázkami hledá mezery ve vašich znalostech.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/the-claude-code-team-just-shared-how-they-actually-use-claude-code-and-its-wild/",
+    "https://x.com/bcherny/status/2017742759218794768",
+    "https://officechai.com/ai/claude-code-creator-boris-cherny-claude-code-tips"
+   ]
+  },
+  {
+   "order": 12,
+   "slug": "otazka-bokem-btw",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 9/15",
+   "confidence": "high",
+   "title": "Otázka bokem. Příkaz /btw nepřeruší Clauda uprostřed práce.",
+   "keyword": "btw",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, často používá příkaz /btw. Napíšete ho s rychlým dotazem, zatímco Claude pracuje na velkém úkolu. Claude odpoví a hlavní práci nepřeruší ani neztratí nit. Hodí se na drobnosti, kvůli kterým nechcete zastavovat agenta ani otevírat nové sezení.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454351849787485"
+   ]
+  },
+  {
+   "order": 13,
+   "slug": "zadavani-hlasem",
+   "said": "30. 3. 2026 (29. 3. v USA), X (@bcherny), vlákno 15 skrytých funkcí, tip 15/15",
+   "confidence": "high",
+   "title": "Kód hlasem. Cherny většinu zadání Claudovi diktuje.",
+   "keyword": "hlas",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, píše podle svých slov většinu kódu tak, že na Clauda mluví. V terminálu zapne hlas příkazem /voice a mluví při podrženém mezerníku. V desktopové aplikaci stačí tlačítko a na iPhonu systémové diktování. Mluvené zadání bývá rychlejší a podrobnější než psané.",
+   "urls": [
+    "https://www.theneuron.ai/explainer-articles/-claude-codes-creator-just-dropped-his-15-favorite-power-features-most-people-dont-know-about-/",
+    "https://x.com/bcherny/status/2038454362226467112"
+   ]
+  },
+  {
+   "order": 14,
+   "slug": "auto-mode-misto-potvrzovani",
+   "said": "16. 4. 2026, X, vlákno tipů k Opus 4.7, tip 1; 8. 6. 2026, video „Reflecting on a year of Claude Code“ (YouTube) a příspěvek na X",
+   "confidence": "medium",
+   "title": "Konec neustálého potvrzování. Cherny pracuje v režimu auto mode.",
+   "keyword": "automode",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, radí používat auto mode. Místo člověka posuzuje každou žádost o povolení zvláštní model, který bezpečné kroky schválí a podezřelé zastaví. Díky tomu může běžet víc Claudů najednou, aniž by je musel hlídat. Za bezpečnější než ruční potvrzování ho považuje proto, že lidé nakonec odklikávají skoro všechno bez čtení.",
+   "urls": [
+    "https://siliconangle.com/2026/03/24/anthropic-unchains-claude-code-auto-mode-allowing-choose-permissions/",
+    "https://x.com/bcherny/status/2044847849662505288",
+    "https://www.youtube.com/watch?v=Hth_tLaC2j8"
+   ]
+  },
+  {
+   "order": 15,
+   "slug": "mluvte-s-ai-jako-s-kolegou",
+   "said": "6. 10. 2026, X (@bcherny), příspěvek; 7. 10. 2026 o něm psal Business Insider",
+   "confidence": "high",
+   "title": "Žádné tajné promptování. Cherny radí mluvit s AI jako s kolegou.",
+   "keyword": "promptovani",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, tvrdí, že na promptování žádné tajemství není. S Claudem radí mluvit jako s kolegou, protože většina úkolů složité zadání nepotřebuje. Stačí říct tři věci: co má udělat, kolik úsilí do toho má dát a jak pozná, že to udělal správně. Pečlivé ladění promptů podle něj patřilo ke starším modelům.",
+   "urls": [
+    "https://www.businessinsider.com/claude-code-creator-boris-cherny-ai-prompt-advice-2026-10",
+    "https://x.com/bcherny/status/2107565388250874193"
+   ]
+  },
+  {
+   "order": 16,
+   "slug": "revize-kodu-tymem-agentu",
+   "said": "9. 3. 2026, X (@bcherny), oznámení funkce Code Review; červen 2026 podle Fortune (11. 6. 2026)",
+   "confidence": "high",
+   "title": "Tým agentů hlídá kód. Cherny nechává první revizi na skupině Claudů.",
+   "keyword": "revize",
+   "summary": "Boris Cherny, který v Anthropicu vytvořil Claude Code, nechává každou změnu v kódu nejdřív projít týmem agentů. Ti ji důkladně zkontrolují a hledají chyby. Kontrola se stala úzkým hrdlem, protože inženýři s AI vyrábějí mnohem víc kódu. Podle Fortune mají agenti různé role, poslední slovo má ale vždy člověk. Cherny říká, že takto zachytil řadu chyb, které by sám přehlédl.",
+   "urls": [
+    "https://fortune.com/2026/06/11/anthropic-claude-boris-cherny-doesnt-write-code-by-hand-anymore/",
+    "https://x.com/bcherny/status/2031089411820228645"
+   ]
+  }
+ ]
+}
