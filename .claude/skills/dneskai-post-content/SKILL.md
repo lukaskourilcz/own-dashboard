@@ -13,6 +13,9 @@ enforce them; a change that lets any of them through is a bug.
 
 - **The first slide shows the headline and nothing else.** A carousel's cover and a single-image post's only
   slide carry no kicker, no body, no picture credit and no label.
+  One exception (owner decision, 8 November 2026): a series post's cover carries its series label and running
+  number above the headline („Slovník AI #3“). Code writes it (`series` on the cover slide, `dneskai-series.ts`);
+  the model never does. The same heading opens the caption and the Threads post.
 - **Every post shows a photo, on its first slide too** (owner decision, 8 November 2026). No text-only opener and
   no type-only single post; a post without a usable photo is not published (`media-photo-missing`,
   `plan-photo-missing`). An AI illustration (`generated`, credit „Ilustrace: AI“ in the database) is the last resort.
