@@ -1,0 +1,46 @@
+import type { PublishingBrand, PublishingChannel, PublishingNetwork } from "@/lib/publishing-calendar";
+
+/** The publishing calendar (owner request, 8 November 2026). Every string exists in English and Czech with the same meaning. */
+const en = {
+  title: "Publishing calendar",
+  description: "What DNESKAi and devShark share today and in the next two days. Open a post to edit it.",
+  networks: "Networks",
+  network: { facebook: "Facebook", instagram: "Instagram", threads: "Threads", linkedin: "LinkedIn" } satisfies Record<PublishingNetwork, string>,
+  channel: { facebook: "Facebook", instagram: "Instagram post", story: "Instagram story", threads: "Threads", linkedin: "LinkedIn" } satisfies Record<PublishingChannel, string>,
+  brand: { dneskai: "DNESKAi", devshark: "devShark" } satisfies Record<PublishingBrand, string>,
+  notConnected: "Not connected yet",
+  today: "Today",
+  tomorrow: "Tomorrow",
+  empty: "Nothing planned this day.",
+  allHidden: "Switch on a network to see its posts.",
+  loading: "Loading the calendar…",
+  unavailable: "The calendar could not be loaded. Check the connection, then refresh.",
+  brandUnavailable: (brand: string) => `The ${brand} plan could not be loaded; its posts are missing below.`,
+  open: (title: string, channel: string, time: string) => `Open ${title}, ${channel} at ${time}`,
+  noDetail: "Not prepared yet, so there is nothing to open.",
+  previewOnly: "Preview data.",
+  statuses: { planned: "Planned", generating: "Generating", ready: "Ready", approved: "Approved", published: "Published", skipped: "Skipped", failed: "Failed", queued: "Queued", claimed: "Publishing", reconciliation: "Checking" } as Record<string, string>,
+};
+
+const cs: typeof en = {
+  title: "Kalendář sdílení",
+  description: "Co DNESKAi a devShark sdílí dnes a další dva dny. Příspěvek otevřeš kliknutím a můžeš ho upravit.",
+  networks: "Sítě",
+  network: { facebook: "Facebook", instagram: "Instagram", threads: "Threads", linkedin: "LinkedIn" },
+  channel: { facebook: "Facebook", instagram: "Instagram příspěvek", story: "Instagram story", threads: "Threads", linkedin: "LinkedIn" },
+  brand: { dneskai: "DNESKAi", devshark: "devShark" },
+  notConnected: "Zatím nepropojeno",
+  today: "Dnes",
+  tomorrow: "Zítra",
+  empty: "Na tenhle den nic naplánováno.",
+  allHidden: "Zapni síť, ať vidíš její příspěvky.",
+  loading: "Načítám kalendář…",
+  unavailable: "Kalendář se nepodařilo načíst. Zkontroluj připojení a obnov stránku.",
+  brandUnavailable: (brand: string) => `Plán ${brand} se nepodařilo načíst, jeho příspěvky níž chybí.`,
+  open: (title: string, channel: string, time: string) => `Otevřít ${title}, ${channel} v ${time}`,
+  noDetail: "Ještě není připravený, zatím není co otevřít.",
+  previewOnly: "Ukázková data.",
+  statuses: { planned: "Naplánováno", generating: "Generuje se", ready: "Připraveno", approved: "Schváleno", published: "Zveřejněno", skipped: "Přeskočeno", failed: "Selhalo", queued: "Ve frontě", claimed: "Zveřejňuje se", reconciliation: "Ověřuje se" },
+};
+
+export const publishingCalendar = { en, cs };

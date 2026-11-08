@@ -39,6 +39,8 @@ export const qk = {
   shortcuts: ["shortcuts"] as const,
   referenceRows: ["referenceRows"] as const,
   importantDates: ["importantDates"] as const,
+  backlog: ["backlog"] as const,
+  publishingCalendar: ["publishing-calendar"] as const,
   invoices: ["invoices"] as const,
   invoiceItems: ["invoiceItems"] as const,
   invoiceSettings: ["invoiceSettings"] as const,
