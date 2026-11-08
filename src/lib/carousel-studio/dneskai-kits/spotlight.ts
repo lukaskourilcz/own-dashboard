@@ -187,12 +187,13 @@ const statement = template({
   description: "One sentence set as a quote under a pair of quotation marks, centred on blueprint blue, or on ink in the INK variant, with a quieter note under it.",
   backgroundToken: "accent",
   version: FLOWED,
-  variants: [{ id: "INK", backgroundToken: "background" }],
+  // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
+  variants: [{ id: "INK", backgroundToken: "background", inkToken: "foreground" }],
   layers: [
     logo,
-    mark(box(LEFT, 256, MEASURE, 180)),
-    headline(box(LEFT, 440, MEASURE, 500), { minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8, emphasisColorToken: "background" }),
-    copy(box(LEFT, 960, MEASURE, 290), { minFontSize: 28, maxFontSize: 32, maxChars: 240, maxLines: 8 })
+    { ...mark(box(LEFT, 256, MEASURE, 180)), colorToken: "background" } as CarouselLayerInput,
+    headline(box(LEFT, 440, MEASURE, 500), { colorToken: "background", minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8, emphasisColorToken: "background" }),
+    copy(box(LEFT, 960, MEASURE, 290), { colorToken: "background", minFontSize: 28, maxFontSize: 32, maxChars: 240, maxLines: 8 })
   ]
 });
 

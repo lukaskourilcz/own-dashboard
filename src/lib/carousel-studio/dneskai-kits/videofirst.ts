@@ -110,11 +110,12 @@ const statement = template({
   description: "Short words in big capitals on blue, key words in ink, with a quieter line under them; on ink in the INK variant.",
   backgroundToken: "accent",
   version: FLOWED,
-  variants: [{ id: "INK", backgroundToken: "background" }],
+  // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
+  variants: [{ id: "INK", backgroundToken: "background", inkToken: "foreground" }],
   layers: [
     logo,
-    caption(box(LEFT, 240, MEASURE, 620), { minFontSize: 72, maxFontSize: 140, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
-    line(box(LEFT, 880, MEASURE, 300), { minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 7 })
+    caption(box(LEFT, 240, MEASURE, 620), { colorToken: "background", minFontSize: 72, maxFontSize: 140, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
+    line(box(LEFT, 880, MEASURE, 300), { colorToken: "background", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 7 })
   ]
 });
 

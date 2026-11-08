@@ -146,11 +146,12 @@ const statement = template({
   description: "One sentence in tall capitals on blue, its key words in ink, with a quieter note under it; on ink in the INK variant.",
   backgroundToken: "accent",
   version: FLOWED,
-  variants: [{ id: "INK", backgroundToken: "background" }],
+  // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
+  variants: [{ id: "INK", backgroundToken: "background", inkToken: "foreground" }],
   layers: [
     logo,
-    headline(box(LEFT, 260, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
-    copy(box(LEFT, 920, MEASURE, 330), { colorToken: "foreground", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 8 })
+    headline(box(LEFT, 260, MEASURE, 620), { colorToken: "background", minFontSize: 64, maxFontSize: 104, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
+    copy(box(LEFT, 920, MEASURE, 330), { colorToken: "background", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 8 })
   ]
 });
 
