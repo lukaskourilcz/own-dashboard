@@ -61,24 +61,24 @@ export const PREVIEW_PUBLISHING: PublishingCalendar = {
   schemaVersion: "publishing-calendar/2", generatedAt: "2026-11-08T07:00:00.000Z", from: "2026-11-08", days: ["2026-11-08", "2026-11-09", "2026-11-10"],
   connected: { facebook: false, instagram: true, threads: true, linkedin: false }, unavailable: [],
   posts: [
-    { id: "p1", slotId: "00000000-0000-4000-8000-0000000000d1", off: false, brand: "dneskai", date: "2026-11-08", time: "08:00", scheduledAt: at("2026-11-08", "08:00"), title: "Nový model umí číst tabulky", status: "approved", thumbnail: null,
+    { id: "p1", slotId: "00000000-0000-4000-8000-0000000000d1", off: false, brand: "dneskai", date: "2026-11-08", time: "08:00", scheduledAt: at("2026-11-08", "08:00"), title: "Nový model umí číst tabulky", headline: "Nový model umí číst tabulky", status: "approved", thumbnail: null,
       target: { kind: "dneskai-lab", postId: "00000000-0000-4000-8000-0000000000c1" },
       versions: [
         version("story", "2026-11-08", "08:10", "approved", null),
         version("instagram", "2026-11-08", "08:00", "approved", "Nový model přečte tabulku z fotky a spočítá ji za tebe.\n\n#dneskai #ai #tabulky"),
         version("threads", "2026-11-08", "08:00", "approved", "Nový model přečte tabulku z fotky a spočítá ji za tebe. #AI"),
       ] },
-    { id: "p2", slotId: "00000000-0000-4000-8000-0000000000d2", off: false, brand: "devshark", date: "2026-11-08", time: "12:00", scheduledAt: at("2026-11-08", "12:00"), title: "typeof null", status: "ready", thumbnail: null,
+    { id: "p2", slotId: "00000000-0000-4000-8000-0000000000d2", off: false, brand: "devshark", date: "2026-11-08", time: "12:00", scheduledAt: at("2026-11-08", "12:00"), title: "typeof null", headline: "typeof null", status: "ready", thumbnail: null,
       target: { kind: "devshark-studio", draftId: "00000000-0000-4000-8000-000000000001" },
       versions: [
         version("story", "2026-11-08", "12:10", "ready", null),
         version("instagram", "2026-11-08", "12:00", "ready", "Guess before you swipe: what does typeof null return?\n\n#javascript #devshark"),
         version("threads", "2026-11-08", "12:00", "ready", "Guess before you swipe: what does typeof null return?"),
       ] },
-    { id: "p3", slotId: "00000000-0000-4000-8000-0000000000d3", off: false, brand: "devshark", date: "2026-11-08", time: "19:00", scheduledAt: at("2026-11-08", "19:00"), title: "Array holes", status: "planned", thumbnail: null,
+    { id: "p3", slotId: "00000000-0000-4000-8000-0000000000d3", off: false, brand: "devshark", date: "2026-11-08", time: "19:00", scheduledAt: at("2026-11-08", "19:00"), title: "Array holes", headline: null, status: "planned", thumbnail: null,
       target: { kind: "devshark-studio", draftId: "00000000-0000-4000-8000-000000000002" },
       versions: [version("threads", "2026-11-08", "19:00", "planned", null)] },
-    { id: "p4", slotId: "00000000-0000-4000-8000-0000000000d4", off: false, brand: "dneskai", date: "2026-11-09", time: "20:00", scheduledAt: at("2026-11-09", "20:00"), title: "Proč roste cena čipů", status: "planned", thumbnail: null, target: null,
+    { id: "p4", slotId: "00000000-0000-4000-8000-0000000000d4", off: false, brand: "dneskai", date: "2026-11-09", time: "20:00", scheduledAt: at("2026-11-09", "20:00"), title: "Proč roste cena čipů", headline: null, status: "planned", thumbnail: null, target: null,
       versions: [version("threads", "2026-11-09", "20:00", "planned", null)] },
   ],
 };
@@ -172,7 +172,7 @@ function VersionPreview({ version, lang }: { version: PublishingVersion; lang: L
   </div>;
 }
 
-function PostDialog({ post, connected, lang, isPreview, onClose, onSwitch, saving, failed }: { post: PublishingPost; connected: PublishingCalendar["connected"]; lang: Lang; isPreview: boolean; onClose: () => void;
+function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed }: { post: PublishingPost; connected: PublishingCalendar["connected"]; lang: Lang; onClose: () => void;
   onSwitch: (input: PublishingSwitch) => void; saving: boolean; failed: boolean }) {
   const t = strings[lang];
   const versions = useMemo(() => new Map(post.versions.map((v) => [v.channel, v])), [post]);
@@ -191,6 +191,7 @@ function PostDialog({ post, connected, lang, isPreview, onClose, onSwitch, savin
     <DialogContent className="max-w-2xl" data-testid="publishing-post-dialog">
       <DialogTitle className="pr-10 text-base font-semibold">{t.dialogTitle(post.title)}</DialogTitle>
       <DialogDescription className="mt-1 text-xs text-foreground-muted">{t.brand[post.brand]} · {t.versionsOf(orderedVersions(post).map((v) => t.channel[v.channel]).join(", "))}</DialogDescription>
+      {post.headline && <p className="mt-2 text-sm" data-testid="post-headline"><span className="text-xs text-foreground-muted">{t.headline}: </span>{post.headline}</p>}
       <label className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium">
         <span>{t.sharePost}<span className="block text-xs font-normal text-foreground-muted">{post.off ? t.postOffHint : t.postOnHint}</span></span>
         <Switch checked={!post.off} disabled={saving} aria-label={t.sharePost} data-testid="post-switch"
@@ -223,8 +224,8 @@ function PostDialog({ post, connected, lang, isPreview, onClose, onSwitch, savin
         {current ? <VersionPreview version={current} lang={lang} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
       </div>
       {post.target && <div className="mt-4 flex justify-end">
-        <Button type="button" variant="outline" disabled={isPreview} onClick={() => { const target = post.target!; onClose(); openTarget(target); }}>
-          <ExternalLink className="h-4 w-4" aria-hidden />{post.target.kind === "dneskai-lab" ? t.editInLab : t.editInStudio}
+        <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target); }}>
+          <ExternalLink className="h-4 w-4" aria-hidden />{t.editInLab}
         </Button>
       </div>}
     </DialogContent>
@@ -235,9 +236,11 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
   const { lang } = useLang();
   const t = strings[lang];
   // No stale time: back from the Design Lab or the Studio, the preview shows the saved version.
-  const query = useQuery({ queryKey: qk.publishingCalendar, queryFn: fetchPublishingCalendar, enabled: !isPreview, staleTime: 0, refetchOnWindowFocus: true });
-  const [preview, setPreview] = useState(PREVIEW_PUBLISHING);
-  const calendar = isPreview ? preview : query.data;
+  // /dev-preview reads the in-memory Design Lab samples of both brands, so an edit saved there shows here (8 November 2026).
+  const query = useQuery({ queryKey: isPreview ? [...qk.publishingCalendar, "preview"] : qk.publishingCalendar,
+    queryFn: isPreview ? () => import("@/lib/demo/publishing-calendar-demo").then((demo) => demo.previewPublishingCalendar()) : fetchPublishingCalendar,
+    staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: true });
+  const calendar = query.data;
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: saveSwitch,
@@ -249,7 +252,10 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
     },
     onError: (_error, _input, context) => { if (context?.before) queryClient.setQueryData(qk.publishingCalendar, context.before); },
   });
-  const onSwitch = (input: PublishingSwitch) => { if (isPreview) setPreview((old) => applySwitch(old, input)); else mutation.mutate(input); };
+  const onSwitch = (input: PublishingSwitch) => {
+    if (!isPreview) { mutation.mutate(input); return; }
+    void import("@/lib/demo/publishing-calendar-demo").then(async (demo) => { await demo.previewPublishingSwitch(input); await queryClient.invalidateQueries({ queryKey: [...qk.publishingCalendar, "preview"] }); });
+  };
   const [shown, setShown] = useState<ReadonlySet<PublishingNetwork>>(() => new Set(PUBLISHING_NETWORKS));
   const [open, setOpen] = useState<string | null>(null);
   const days = useMemo(() => calendar ? publishingDays(calendar, shown) : [], [calendar, shown]);
@@ -276,7 +282,7 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
       })}
     </div>
     {isPreview && <p className="mb-3 text-xs text-foreground-muted">{t.previewOnly}</p>}
-    {!isPreview && query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
+    {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
       : !calendar ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
       : <>
         {calendar.unavailable.map((brand) => <p key={brand} role="alert" className="mb-3 text-sm text-risk">{t.brandUnavailable(t.brand[brand])}</p>)}
@@ -290,7 +296,7 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
               </ul>}
           </Card>)}
         </div>
-        {openPost && <PostDialog key={openPost.id} post={openPost} connected={calendar.connected} lang={lang} isPreview={isPreview} onClose={() => { mutation.reset(); setOpen(null); }}
+        {openPost && <PostDialog key={openPost.id} post={openPost} connected={calendar.connected} lang={lang} onClose={() => { mutation.reset(); setOpen(null); }}
           onSwitch={onSwitch} saving={mutation.isPending} failed={mutation.isError} />}
       </>}
   </section>;
