@@ -15,6 +15,11 @@ import {
 } from './dneskai-media-plan';
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
 import { DNESKAI_MEDIA_READ_VERSION, DneskaiMediaReadSchema, type DneskaiMediaCandidateView, type DneskaiMediaRead } from './dneskai-media-contracts';
+import {
+  DNESKAI_ILLUSTRATION_CREDIT, DNESKAI_ILLUSTRATION_URL, DNESKAI_MEDIA_PLAN_LIMIT, DNESKAI_PRESS_KITS, DNESKAI_SUPPLEMENT_TARGET, dneskaiIllustrationPrompt, dneskaiIllustrationsPerDay,
+  dneskaiMediaSourceSwitches, dneskaiPressKitsFor, dneskaiStockQuery, fetchDneskaiPageViaApify, generateDneskaiIllustration, pressKitEntries, pressKitImagePolicy,
+  searchDneskaiStock, stockImagePolicy, type DneskaiSupplementEntry,
+} from './dneskai-media-sources';
 
 /**
  * DNESKAi source media (#114): downloads the pictures of selected research candidates once, stores the
@@ -158,6 +163,10 @@ export interface DneskaiMediaDependencies {
    */
   budgetMs?: number;
   concurrency?: number;
+  /** Switches and keys of the extra picture sources (`dneskai-media-sources.ts`); process.env by default. */
+  env?: Record<string, string | undefined>;
+  /** AI illustrations already made in the last 24 hours; read from the assets by default. */
+  illustrationsToday?: () => Promise<number>;
 }
 
 /** `count` and `hosts` appear only on the plan-level (-1) media-host-not-publisher record. */
@@ -237,7 +246,7 @@ const BeginSchema = z.object({
   claimed: z.boolean(), reason: z.string().optional(), candidate: z.unknown().optional(),
   state: z.object({
     status: z.enum(['pending', 'complete', 'partial', 'failed', 'empty']),
-    plan: z.array(z.object({ position: z.number().int(), url: z.string(), kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), fallbackUrl: z.string().optional(), sourceAltText: z.string().max(1000).optional() })).nullable(),
+    plan: z.array(z.object({ position: z.number().int(), url: z.string(), kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), fallbackUrl: z.string().optional(), sourceAltText: z.string().max(1000).optional(), credit: z.string().min(1).max(120).optional() })).nullable(),
     skipped: z.array(z.object({ position: z.number().int(), code: z.string(), retryable: z.boolean(), attempts: z.number().int(), count: z.number().int().optional(), hosts: z.array(z.string()).max(DNESKAI_MEDIA_REFUSED_HOSTS_LIMIT).optional() })),
     page_attempts: z.number().int(), asset_count: z.number().int(),
   }).optional(),
@@ -305,8 +314,11 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   }
   const candidate = parsed.data;
   const instagram = source.kind === 'instagram';
-  const allowImage = instagram ? instagramImageUrlPolicy : publisherImageUrlPolicy(source, candidate.url);
-  let plan = state.plan as DneskaiMediaPlanEntry[] | null;
+  const publisherPolicy = instagram ? instagramImageUrlPolicy : publisherImageUrlPolicy(source, candidate.url);
+  const allowImage = publisherPolicy;
+  const env = deps.env ?? process.env;
+  const switches = dneskaiMediaSourceSwitches(env);
+  let plan = state.plan as DneskaiSupplementEntry[] | null;
   const refusedHosts = new Map<string, number>();
   if (!plan) {
     if (instagram) {
@@ -317,6 +329,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
       try {
         const page = await fetchArticle(candidate.url, deps, deps.signal);
         plan = extractArticleMedia(page.html, page.url, { allowImage, feedImages: candidate.mediaUrls, refusedHosts });
+        plan = await supplementDneskaiPlan(db, owner, candidate, plan, switches, env, deps);
         if (dneskaiRichEvidenceEnabled()) await rpc(db,'marketing_media_set_evidence',{p_owner:owner,p_project:project,p_candidate:candidateId,p_fence:fence,p_article_text:extractArticleText(page.html)});
         await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'ok', p_page_error: null });
       } catch (error) {
@@ -327,17 +340,22 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
           await finish('pending', state.skipped);
           return { ...base, status: 'pending', skipped: [{ position: -1, code: failure.code }] };
         }
-        // No readable page: the feed's own image is all the publisher offered.
+        // The page refused the server: Apify reads it through its proxy, under the same publisher-own host rules.
         refusedHosts.clear();
-        plan = extractArticleMedia('', candidate.url, { allowImage, feedImages: candidate.mediaUrls, refusedHosts });
-        await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: 'failed', p_page_error: failure.code });
+        const proxied = switches.apify ? await fetchDneskaiPageViaApify(candidate.url, env, { fetchImpl: deps.fetchImpl, signal: deps.signal }) : null;
+        // Without a readable page, the feed's own image is all the publisher offered.
+        plan = extractArticleMedia(proxied?.html ?? '', proxied?.url ?? candidate.url, { allowImage, feedImages: candidate.mediaUrls, refusedHosts });
+        plan = await supplementDneskaiPlan(db, owner, candidate, plan, switches, env, deps);
+        await rpc(db, 'marketing_media_set_plan', { p_owner: owner, p_project: project, p_candidate: candidateId, p_fence: fence, p_plan: plan, p_page_status: proxied ? 'ok' : 'failed', p_page_error: proxied ? 'media-page-via-apify' : failure.code });
       }
     }
   }
 
   // Each picture is credited from its own signals: the plan's URL and caption, and the credit fields of its file.
-  const creditFor = (entry: DneskaiMediaPlanEntry, prepared: PreparedEntry) => dneskaiMediaCredit(source, candidate, undefined,
+  // A newsroom, stock or AI picture carries the credit its source set in the plan.
+  const creditFor = (entry: DneskaiSupplementEntry, prepared: PreparedEntry) => entry.credit ?? dneskaiMediaCredit(source, candidate, undefined,
     { url: prepared.originUrl, sourceAltText: entry.sourceAltText, embeddedCredits: prepared.image.embeddedCredits });
+  const policyFor = (entry: DneskaiMediaPlanEntry): DneskaiImageUrlPolicy => entry.kind === 'press-kit' ? anyPressKitPolicy : entry.kind === 'stock' ? stockImagePolicy : publisherPolicy;
   const linked = new Set((begun.links ?? []).map((link) => link.position));
   const skips = new Map<number, Skip>(state.skipped.map((skip) => [skip.position, skip]));
   const refusedSkip = dneskaiRefusedHostsSkip(refusedHosts);
@@ -354,7 +372,7 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   const limit = limiter(Math.max(1, Math.min(deps.concurrency ?? 2, 4)));
   const tasks = plan.filter(open).map((entry) => ({ entry, prepared: limit(async () => {
     if (deps.signal.aborted || remaining() < BUDGET_RESERVE_MS || leaseLeft() < ENTRY_WORST_MS + LEASE_MARGIN_MS) return null;
-    try { return await prepareEntry(owner, entry, allowImage, deps, db); }
+    try { return await prepareEntry(owner, entry, policyFor(entry), { ...deps, env, illustration: () => dneskaiIllustrationPrompt(candidate) }, db); }
     catch (error) { return error instanceof FetchFailure ? error : new FetchFailure(error instanceof DneskaiMediaError ? error.code : 'media-fetch-failed', true); }
   }) }));
   for (const { entry, prepared } of tasks) {
@@ -382,6 +400,48 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   return { candidateId, status, assets, downloaded: counters.downloaded, reused: counters.reused, skipped: skipped.map(({ position, code }) => ({ position, code })) };
 }
 
+/** AI illustrations stored in the last 24 hours; an unreadable count stops new ones. */
+async function dneskaiIllustrationsToday(db: DneskaiMediaDatabase, owner: string): Promise<number> {
+  try {
+    const made = await db.from('marketing_media_assets').select('id', { count: 'exact', head: true }).eq('user_id', owner).eq('origin_kind', 'generated').gte('fetched_at', new Date(Date.now() - 86_400_000).toISOString());
+    return made.error ? Number.POSITIVE_INFINITY : made.count ?? 0;
+  } catch { return Number.POSITIVE_INFINITY; }
+}
+const anyPressKitPolicy: DneskaiImageUrlPolicy = (url) => DNESKAI_PRESS_KITS.some((kit) => pressKitImagePolicy(kit)(url));
+
+/**
+ * Tops a short plan up from the extra sources (`dneskai-media-sources.ts`), in their order and only while it is
+ * short: the newsrooms of the companies the story names, then stock when the publisher and the newsrooms offered
+ * nothing, then one AI illustration when still nothing, at most `dneskaiIllustrationsPerDay` a day.
+ */
+export async function supplementDneskaiPlan(db: DneskaiMediaDatabase, owner: string, candidate: Pick<z.infer<typeof DneskaiCandidateSchema>, 'title' | 'text'>, base: readonly DneskaiSupplementEntry[], switches: ReturnType<typeof dneskaiMediaSourceSwitches>, env: Record<string, string | undefined>, deps: Pick<DneskaiMediaDependencies, 'fetchImpl' | 'resolveImpl' | 'signal' | 'illustrationsToday'>): Promise<DneskaiSupplementEntry[]> {
+  const plan = base.slice(0, DNESKAI_MEDIA_PLAN_LIMIT).map((entry) => ({ ...entry }));
+  const seen = new Set(plan.map((entry) => entry.url));
+  let next = Math.max(19, ...plan.map((entry) => entry.position)) + 1;
+  const add = (entries: readonly DneskaiSupplementEntry[], limit: number) => {
+    for (const entry of entries) {
+      if (limit <= 0 || plan.length >= DNESKAI_MEDIA_PLAN_LIMIT || next > 49 || seen.has(entry.url)) continue;
+      seen.add(entry.url); plan.push({ ...entry, position: next++ }); limit -= 1;
+    }
+  };
+  const signal = deps.signal ?? new AbortController().signal;
+  if (switches.pressKit && plan.length < DNESKAI_SUPPLEMENT_TARGET) {
+    for (const kit of dneskaiPressKitsFor(candidate)) {
+      for (const page of kit.pages) {
+        if (plan.length >= DNESKAI_SUPPLEMENT_TARGET + 1) break;
+        let read: { url: string; html: string } | null = null;
+        try { read = await fetchArticle(page, deps, signal); } catch { read = switches.apify ? await fetchDneskaiPageViaApify(page, env, { fetchImpl: deps.fetchImpl, signal }) : null; }
+        if (read) add(pressKitEntries(read.html, read.url, kit, 3), 2);
+      }
+    }
+  }
+  if (switches.stock && plan.length === 0) add(await searchDneskaiStock(dneskaiStockQuery(candidate), 2, env, { fetchImpl: deps.fetchImpl, signal }), 2);
+  if (switches.generated && plan.length === 0) {
+    if (await (deps.illustrationsToday ?? (() => dneskaiIllustrationsToday(db, owner)))() < dneskaiIllustrationsPerDay(env)) add([{ position: 0, url: DNESKAI_ILLUSTRATION_URL, kind: 'generated', credit: DNESKAI_ILLUSTRATION_CREDIT }], 1);
+  }
+  return plan;
+}
+
 function limiter(concurrency: number) {
   let active = 0;
   const waiting: Array<() => void> = [];
@@ -393,9 +453,13 @@ function limiter(concurrency: number) {
 
 type PreparedEntry = { originUrl: string; image: Awaited<ReturnType<typeof inspectDneskaiImage>>; uploaded: boolean; reused: boolean };
 /** Fetches, inspects and (when new) uploads one picture. The row is written only after the object exists. */
-async function prepareEntry(owner: string, entry: DneskaiMediaPlanEntry, allowImage: DneskaiImageUrlPolicy, deps: DneskaiMediaDependencies & { store: DneskaiMediaObjectStore; signal: AbortSignal }, db: DneskaiMediaDatabase): Promise<PreparedEntry> {
+async function prepareEntry(owner: string, entry: DneskaiMediaPlanEntry, allowImage: DneskaiImageUrlPolicy, deps: DneskaiMediaDependencies & { store: DneskaiMediaObjectStore; signal: AbortSignal; env: Record<string, string | undefined>; illustration: () => string }, db: DneskaiMediaDatabase): Promise<PreparedEntry> {
   let originUrl = entry.url, bytes: Uint8Array;
-  try { bytes = await fetchBytes(entry.url, allowImage, deps, deps.signal); }
+  if (entry.kind === 'generated') {
+    const made = await generateDneskaiIllustration(deps.illustration(), deps.env, { fetchImpl: deps.fetchImpl, signal: deps.signal });
+    if (!made) throw new FetchFailure('media-generation-failed', true);
+    bytes = made;
+  } else try { bytes = await fetchBytes(entry.url, allowImage, deps, deps.signal); }
   catch (error) {
     // A full-size rendition that is missing, refused or too large falls back to the publisher's own URL.
     if (!entry.fallbackUrl) throw error;
