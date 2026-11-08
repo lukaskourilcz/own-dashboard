@@ -420,6 +420,12 @@ export interface CarouselRenderInput {
    * owner placed by hand in the Design Studio: the caller reports them as advice and refuses cut copy itself.
    */
   relaxedChecks?: readonly string[];
+  /**
+   * The colour of the key words for this post (DNESKAi, owner request of 8 November 2026: ten colours that rotate from
+   * post to post). It replaces the look's `secondary` token, the colour every DNESKAi kit marks key words in. A hex
+   * colour, `#rrggbb`; absent keeps the look's own.
+   */
+  emphasisColor?: string;
 }
 
 /**
@@ -514,7 +520,9 @@ function renderSlides(input: CarouselRenderInput, wanted?: number): RenderedSlid
   const declared = BrandTokensSchema.parse(input.brand);
   // A kitted brand is drawn from its kit or not at all: `kitStyleFor` throws for a missing or
   // damaged kit, and so does a kit that gives the logo slot nothing to draw.
-  const style = kitStyleWithLook(kitStyleFor(declared), input.look);
+  const looked = kitStyleWithLook(kitStyleFor(declared), input.look);
+  if (input.emphasisColor !== undefined && !/^#[0-9a-f]{6}$/i.test(input.emphasisColor)) throw new Error(`Emphasis colour ${input.emphasisColor} is not #rrggbb`);
+  const style = looked && input.emphasisColor ? { ...looked, palette: { ...looked.palette, secondary: input.emphasisColor.toLowerCase() } } : looked;
   if (style && !logotypeForBrand(declared.id)) throw new Error(`Brand kit ${style.venture} marks no logotype file for the logo slot`);
   const brand = style ? dressBrand(declared, style) : declared;
   const template = style ? kitTemplate(parsed, style) : parsed;
