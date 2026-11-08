@@ -112,6 +112,8 @@ function photographGrounds(image: ImageLayer, layer: Layer, brand: BrandTokens, 
 export interface SlideRendering {
   background: string;
   accent: string;
+  /** What text set in `background` draws in this rendering; absent: `background`. */
+  ink?: string;
 }
 
 /**
@@ -210,7 +212,8 @@ export function textGroundPairs(
       { background: slide.backgroundToken, accent: "accent" },
       ...slide.variants.map((variant) => ({
         background: variant.backgroundToken ?? slide.backgroundToken,
-        accent: variant.accentToken ?? "accent"
+        accent: variant.accentToken ?? "accent",
+        ...(variant.inkToken ? { ink: variant.inkToken } : {})
       }))
     ];
     for (const rendering of renderings) {
@@ -218,7 +221,7 @@ export function textGroundPairs(
       slide.layers.forEach((layer, layerIndex) => {
         if (layer.type !== "text" && layer.type !== "logo") return;
         const candidates = groundsBehindLayer(slide, layerIndex, brand, rendering, { photographs: template.schemaVersion === "carousel-template/2" });
-        let foreground = brand.colors[layer.colorToken === "accent" ? rendering.accent : layer.colorToken];
+        let foreground = brand.colors[layer.colorToken === "accent" ? rendering.accent : layer.colorToken === "background" && rendering.ink ? rendering.ink : layer.colorToken];
         if (!foreground) return;
         if (layer.type === "logo" && logotype) {
           const chosen = chooseLogotypeVariant(logotype, candidates, false);
