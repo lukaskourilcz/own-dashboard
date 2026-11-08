@@ -128,7 +128,7 @@ const SYSTEM_RULES = [
   "Evidence with captionOnly true is the text an author posted under an Instagram post or Reel. It is not a transcript: never write that the person said, explained or showed something in the video; write what they posted, wrote or announced.",
   "Register: natural Czech editorial prose, calm, direct and skeptical. Name the actor and the change. No hype, no clickbait, no exclamation marks, no rhetorical questions, no emoji, no markdown, no URLs, no hashtags in the title, caption or slides, no greetings and no call to follow or comment. Use Czech quotation marks „ “ and plain punctuation; no symbols such as ✓, →, • or ™, which the typefaces cannot draw. Never nest quotations and never use the low single quote ‚ or ‘ as a quotation mark; rephrase instead.",
   "Cover hook: the headline of the first slide (of the single slide in a single-image post) states the most concrete and surprising true fact of the story as a plain declarative sentence: a number, a date, a named actor or a precise change, exactly as strong as the evidence states it. The next slide or the caption backs it up from the evidence. Never a question, an exclamation, a teaser that withholds the subject, a superlative, \"first\" or \"breaking\" unless the evidence says so, or anything the evidence does not carry. Every other slide stays calm and plain.",
-  "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. fullBleedCapable, insetCapable and singlePhotoCapable say which slides a picture and its credit fit. Use each picture at most once. Omit crop: the editor sets the focal point.",
+  "Pictures: you cannot see them. Choose them only from media, by the exact assetSha256, using their evidence, credit, origin, position and size. Never describe what a picture shows. fullBleedCapable, insetCapable and singlePhotoCapable say which slides a picture and its credit fit. visionScore (0-10, when present) is how good a reviewer found the picture for this post: put the highest-scored fitting picture on the first slide. Use each picture at most once. Omit crop: the editor sets the focal point.",
   "Formats: a carousel has 4 to 7 slides you write and nothing else; there is no sources slide. A single-image post is exactly one slide of type single. Use only the formats the rules allow.",
   "Slide types, with character targets (the renderer refuses text that does not fit). No slide shows a picture credit or a page number; never write one.",
   `- cover-photo: the first slide of a carousel only. images: image-1, one picture with fullBleedCapable true, drawn to every edge. headline only, up to ${target(DNESKAI_TEXT_LIMITS["dneskai-cover-photo"].headline)}. No kicker, no body: the first slide carries its headline and nothing else.`,
@@ -230,7 +230,7 @@ function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: Offe
       fullBleedCapable: item.fullBleedCapable && creditFits(item.credit, "dneskai-cover-photo"),
       insetCapable: item.insetCapable && creditFits(item.credit, "dneskai-figure") && creditFits(item.credit, "dneskai-split"),
       singlePhotoCapable: item.fullBleedCapable && creditFits(item.credit, "dneskai-single-photo") }];
-  }).sort((left, right) => left.evidenceIndex - right.evidenceIndex || left.position - right.position).slice(0, plan.media);
+  }).sort((left, right) => left.evidenceIndex - right.evidenceIndex || (right.visionScore ?? 5) - (left.visionScore ?? 5) || left.position - right.position).slice(0, plan.media);
   const usable = media.filter((item) => item.fullBleedCapable || item.insetCapable).length;
   const fullBleed = media.some((item) => item.fullBleedCapable);
   const rules = {
@@ -285,7 +285,7 @@ export function dneskaiBriefPrompt(offer: DneskaiBriefOffer, ownerNote: ReturnTy
     rules: offer.rules,
     evidence: offer.evidence.map(({ url, ...item }) => { void url; return item; }),
     media: offer.media.map((item) => ({ assetSha256: item.assetSha256, evidenceIndex: item.evidenceIndex, position: item.position, credit: item.credit, originKind: item.originKind,
-      width: item.width, height: item.height, fullBleedCapable: item.fullBleedCapable, insetCapable: item.insetCapable, singlePhotoCapable: item.singlePhotoCapable, ...("sourceAltText" in item&&item.sourceAltText?{sourceAltText:item.sourceAltText}:{}) })),
+      width: item.width, height: item.height, fullBleedCapable: item.fullBleedCapable, insetCapable: item.insetCapable, singlePhotoCapable: item.singlePhotoCapable, ...("visionScore" in item && typeof item.visionScore === "number" ? { visionScore: item.visionScore } : {}), ...("sourceAltText" in item&&item.sourceAltText?{sourceAltText:item.sourceAltText}:{}) })),
     // Owner-reviewed presentation knowledge does not apply to briefs (#95, #101 decoupled).
     presentationOnly: [],
   });
@@ -502,7 +502,8 @@ export function dneskaiHashtags(proposed: readonly string[]): string[] {
  * records. Text a slide type does not draw is left out, so the first slide keeps its headline alone.
  */
 export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): DneskaiDeck {
-  void offer;
+  // Claude vision's focal point sets the crop the model was told to omit (8 November 2026).
+  const focal = new Map(offer.media.flatMap((item) => "focal" in item && item.focal ? [[item.assetSha256, item.focal] as const] : []));
   const slides: DneskaiSlide[] = copy.slides.map((slide) => {
     const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
     return {
@@ -511,7 +512,7 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
       headline: slide.headline.trim(),
       ...(slide.body && placed.includes("body") ? { body: slide.body.trim() } : {}),
       ...(slide.kicker && placed.includes("kicker") ? { kicker: slide.kicker.trim() } : {}),
-      images: slide.images.map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, ...(image.crop ? { crop: image.crop } : {}) })),
+      images: slide.images.map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, ...(image.crop ? { crop: image.crop } : focal.has(image.assetSha256) ? { crop: { focal: focal.get(image.assetSha256)! } } : {}) })),
       alt: slide.alt.trim(),
     };
   });
