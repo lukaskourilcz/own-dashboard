@@ -66,7 +66,7 @@ function ItemCard({ item, lang, isPreview }: { item: PublishingItem; lang: Lang;
     <span className="relative block h-[60px] w-12 shrink-0 overflow-hidden rounded border border-border bg-surface-inset">
       {item.thumbnail
         ? <Image unoptimized src={item.thumbnail.url} alt="" width={item.thumbnail.width} height={item.thumbnail.height} loading="lazy" sizes="3rem" className="h-full w-full object-cover" />
-        : <span aria-hidden className="flex h-full items-center justify-center text-[10px] font-semibold text-foreground-subtle">{t.brand[item.brand].slice(0, 2)}</span>}
+        : <span aria-hidden className="flex h-full items-center justify-center text-[11px] font-semibold text-foreground-muted">{t.brand[item.brand].slice(0, 2)}</span>}
     </span>
     <span className="min-w-0 flex-1 space-y-1">
       <span className="flex flex-wrap items-center gap-1">
@@ -79,7 +79,7 @@ function ItemCard({ item, lang, isPreview }: { item: PublishingItem; lang: Lang;
     </span>
   </>;
   const className = "flex w-full min-w-0 items-start gap-3 rounded-md border border-border bg-surface p-2.5 text-left";
-  if (!item.target) return <div className={cn(className, "opacity-80")} title={t.noDetail}>{body}</div>;
+  if (!item.target) return <div className={cn(className, "border-dashed")} title={t.noDetail}>{body}<span className="sr-only">{t.noDetail}</span></div>;
   const target = item.target;
   return <button type="button" className={cn(className, "hover:bg-surface-hover focus-ring")} aria-label={t.open(item.title, channel, item.time)} disabled={isPreview}
     onClick={() => openTarget(target)}>{body}</button>;
@@ -109,7 +109,7 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
             on ? "border-border-strong bg-accent text-foreground" : "border-border bg-surface text-foreground-muted",
             connected ? "hover:bg-surface-hover" : "cursor-not-allowed opacity-60")}>
           {t.network[network]}
-          {connected ? <span className="tabular-nums text-xs text-foreground-subtle">{counts[network]}</span> : <span className="text-xs text-foreground-subtle">· {t.notConnected}</span>}
+          {connected ? <span className="tabular-nums text-xs text-foreground-muted">{counts[network]}</span> : <span className="text-xs text-foreground-muted">· {t.notConnected}</span>}
         </button>;
       })}
     </div>

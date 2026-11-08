@@ -36,8 +36,8 @@ export const PREVIEW_BACKLOG: BacklogItem[] = [
 const STATUS_TONE: Record<BacklogStatus, string> = {
   open: "border-border bg-surface",
   in_progress: "border-warning/40 bg-warning/5",
-  done: "border-border bg-surface opacity-70",
-  dropped: "border-border bg-surface opacity-60",
+  done: "border-dashed border-border bg-surface-inset",
+  dropped: "border-dashed border-border bg-surface-inset",
 };
 
 export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
@@ -98,12 +98,12 @@ export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <EntityBadge>{t.projects[item.project]}</EntityBadge>
                   {item.external_ref && (href
-                    ? <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-h-6 items-center gap-1 text-xs font-medium text-brand hover:underline focus-ring">{item.external_ref}<ExternalLink className="h-3 w-3" aria-hidden /></a>
+                    ? <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-h-6 items-center gap-1 text-xs font-medium text-foreground underline underline-offset-2 hover:no-underline focus-ring">{item.external_ref}<ExternalLink className="h-3 w-3" aria-hidden /></a>
                     : <span className="text-xs text-foreground-muted">{item.external_ref}</span>)}
                 </div>
-                <p className={cn("text-sm font-medium break-words", item.status === "done" && "line-through decoration-foreground-subtle")}>{item.title}</p>
+                <p className={cn("text-sm font-medium break-words", (item.status === "done" || item.status === "dropped") && "line-through decoration-foreground-muted")}>{item.title}</p>
                 {item.description && <p className="whitespace-pre-line text-xs break-words text-foreground-muted">{item.description}</p>}
-                {item.source && <p className="text-[11px] text-foreground-subtle">{t.addedBy(item.source)}</p>}
+                {item.source && <p className="text-[11px] text-foreground-muted">{t.addedBy(item.source)}</p>}
                 {failed === item.id && <p role="alert" className="text-xs text-risk">{t.saveFailed}</p>}
               </div>
               <SimpleSelect value={item.status} onValueChange={(value) => setStatus(item.id, value as BacklogStatus)} options={statusChoices} aria-label={t.statusOf(item.title)} className="w-full shrink-0 sm:w-40" />

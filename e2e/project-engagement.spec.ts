@@ -83,19 +83,16 @@ test("Settings moves a project into Freelance and back without a reload", async 
     await expect(page.locator("aside").getByRole("link", { name: "Recipe box app", exact: true })).toBeVisible();
   }
 
-  // The Projects table groups from the same record.
+  // Since 8 November 2026 the Projects table lists only DNESKAi, devShark and heyDarlink, so the move shows in
+  // the sidebar and Settings only; the table keeps the three products.
   if (mobile) {
     await page.getByTestId("mobile-nav").getByRole("button", { name: "Projects", exact: true }).click();
   } else {
     await page.locator("aside nav").getByRole("button", { name: "Projects", exact: true }).click();
   }
   const table = page.getByRole("table");
-  await expect(table.getByRole("row", { name: "Freelance", exact: true })).toBeVisible();
-  const rows = await table.locator("tbody tr").allTextContents();
-  const divider = rows.findIndex((text) => text.trim() === "Freelance");
-  const recipe = rows.findIndex((text) => text.includes("Recipe box app"));
-  expect(recipe).toBeGreaterThan(-1);
-  expect(recipe).toBeLessThan(divider);
+  await expect(table.getByRole("row", { name: "Freelance", exact: true })).toHaveCount(0);
+  await expect(table.getByRole("link", { name: "Recipe box app", exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
