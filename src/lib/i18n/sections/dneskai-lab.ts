@@ -113,10 +113,8 @@ const en = {
     title: 'Post',
     caption: 'Caption',
     feedLine: 'First line in the feed',
-    slot: 'Time', sources: 'Sources', disclosure: 'AI disclosure',
+    slot: 'Time', sources: 'Sources',
     slotExpired: (time: string) => `The original time ${time} has passed. The nearest possible time is filled in; change it if you like, then save.`,
-    disclosureMissing: 'This deck has no disclosure slide.',
-    disclosureText: 'The last slide states that AI helped prepare the post. Code writes it.',
   },
   actions: {
     label: 'Post actions',
@@ -371,10 +369,8 @@ const cs: typeof en = {
     title: 'Příspěvek',
     caption: 'Popisek',
     feedLine: 'První řádek ve feedu',
-    slot: 'Čas', sources: 'Zdroje', disclosure: 'Označení AI',
+    slot: 'Čas', sources: 'Zdroje',
     slotExpired: (time: string) => `Původní čas ${time} už minul. Je doplněný nejbližší možný čas. Můžete ho změnit, pak uložte.`,
-    disclosureMissing: 'Tato sada nemá slide s označením AI.',
-    disclosureText: 'Poslední slide uvádí, že s přípravou příspěvku pomohla AI. Píše ho kód.',
   },
   actions: {
     label: 'Akce příspěvku',

@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DNESKAI_AI_DISCLOSURE, DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_CAPTION_LIMIT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_LIMIT, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
-  MARKETING_BRIEF_PROMPT_VERSION, assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues,
+  MARKETING_BRIEF_PROMPT_VERSION, DNESKAI_STYLE_RULES, assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues,
   dneskaiTalksAboutSources, dneskaiUnsupportedNumbers, dneskaiRetryFeedback, normalizeDneskaiCopy, normalizeDneskaiHashtag, validateDneskaiCopy, type DneskaiCopy,
 } from "@/lib/marketing/dneskai-generation";
 import { DEFAULT_GENERATION_BUDGET, claudeCallProfile, createClaudeMarketingModel, generateMarketingDraft, type GenerationDependencies, type MarketingModel } from "@/lib/marketing/generation";
@@ -37,12 +37,12 @@ const clean = vi.fn(async (): Promise<DneskaiSlideRenderProblem[]> => []);
 const admit = vi.fn(async (input: { attempt: number; maxCostUsd: number }) => { void input; });
 beforeEach(() => { vi.clearAllMocks(); });
 
-describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)", () => {
+describe("marketing-copy/8 prompt (#116, #158, owner rules of 22 October 2026)", () => {
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
-    expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/7");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("04b558e8ce145f68188c5cf9b962f1d17a8ed37e2c4be9bb8171b9adb2d2b2dc");
-    expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/7+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
+    expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/8");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("28c0f71a42b64f0a2ab72f2c76ea23fa9053a116e480903e255392234bc894c9");
+    expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/8+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
     for (const rule of ["Cover hook: the headline of the first slide", "most concrete and surprising true fact", "exactly as strong as the evidence states it", "Never a question, an exclamation, a teaser that withholds the subject",
@@ -60,6 +60,11 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
     }
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain(MARKETING_HUMANIZER_POLICY_FINGERPRINT);
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("For DNESKAi use natural Czech editorial prose");
+    // The house style (docs/dneskai-style-guide.md) sits in the prompt as one block.
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain(DNESKAI_STYLE_RULES);
+    for (const rule of ["House style (CzechCrunch-like", "Cover headline in two beats", "Order of facts:", "gloss it at once with „tedy“", "reusing the wording of the source articles"]) {
+      expect(DNESKAI_STYLE_RULES).toContain(rule);
+    }
     // Prompt targets sit under the studio ceilings.
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain(`headline only, up to ${Math.floor(DNESKAI_TEXT_LIMITS["dneskai-cover-photo"].headline * 0.8)}`);
     expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain(`headline up to ${Math.floor(DNESKAI_TEXT_LIMITS["dneskai-figure"].headline * 0.8)}`);
@@ -68,7 +73,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
     for (const rule of ["Never write about sources, sourcing or verification, in the slides or the caption", "whether it is confirmed or independently verified",
       "„Zdrojem je…“", "„Údaj pochází od…“", "„nezávislé potvrzení chybí“", "„Z dostupného textu nevyplývá…“", "„podle dostupných zdrojů“",
       "Attribute a claim to its actor in the sentence and move on. Code adds no source list either.",
-      "No slide shows a picture credit or a page number; never write one.", "the caption names no source and no picture credit", "Code appends the AI disclosure and the hashtags"]) {
+      "No slide shows a picture credit or a page number; never write one.", "the caption names no source and no picture credit", "Code appends the hashtags", "carries no line saying a language model or AI wrote it"]) {
       expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain(rule);
     }
     // The actor attribution the rule asks for instead.
@@ -120,7 +125,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
   });
 });
 
-describe("marketing-copy/7 schema", () => {
+describe("marketing-copy/8 schema", () => {
   it("sends the SDK-transformed schema: enums and limits as descriptions, no unsupported constraints", () => {
     const wire = dneskaiCopyWireSchema() as { properties: Record<string, Record<string, unknown>> & { slides: { items: { properties: Record<string, Record<string, unknown>> } } } };
     expect(wire.properties.slides.items.properties.type!.description).toBe('{enum: ["cover-photo","figure","split","statement","single"]}');

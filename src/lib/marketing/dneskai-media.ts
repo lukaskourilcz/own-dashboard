@@ -226,6 +226,18 @@ async function fetchBytes(url: string, allowImage: DneskaiImageUrlPolicy, deps: 
   } catch (error) { throw classifyFetchError(error, signal); }
 }
 
+/**
+ * The bytes of one licensed stock picture (Pexels or Unsplash), under the stock host rules, trying the smaller
+ * rendition when the full one fails. The restyle step (`dneskai-restyle.ts`) adds such pictures to an older brief.
+ */
+export async function fetchDneskaiStockBytes(entry: { url: string; fallbackUrl?: string }, deps: Pick<DneskaiMediaDependencies, 'fetchImpl' | 'resolveImpl'> & { signal: AbortSignal }): Promise<{ bytes: Uint8Array; originUrl: string } | null> {
+  for (const url of [entry.url, entry.fallbackUrl]) {
+    if (!url) continue;
+    try { return { bytes: await fetchBytes(url, stockImagePolicy, deps, deps.signal), originUrl: url }; } catch { /* the next rendition */ }
+  }
+  return null;
+}
+
 async function fetchArticle(url: string, deps: DneskaiMediaDependencies, signal: AbortSignal) {
   const host = new URL(url).hostname;
   const sibling = host.startsWith('www.') ? host.slice(4) : `www.${host}`;

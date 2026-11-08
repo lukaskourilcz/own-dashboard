@@ -320,7 +320,6 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
           <div><label htmlFor={`${id}-time`} className="text-xs font-medium">{t.post.slot} · Europe/Prague</label><Input id={`${id}-time`} type="datetime-local" value={draft.scheduledLocal} aria-describedby={expired ? `${id}-time-expired` : undefined} onChange={(event) => setDraft({ ...draft, scheduledLocal: event.target.value })} />
             {expired && <p id={`${id}-time-expired`} className="mt-1 text-xs text-warning">{t.post.slotExpired(pragueClock(post.scheduledAt))}</p>}</div>
         </fieldset>
-        <section className="space-y-1 text-xs"><h4 className="font-medium">{t.post.disclosure}</h4><p className="text-foreground-muted">{post.deck?.slides.some((item) => item.type === 'sources') ? t.post.disclosureText : t.post.disclosureMissing}</p></section>
         {post.status === 'returned' && <section className="space-y-2 border-t border-border pt-3 text-xs"><p>{post.feedback}</p><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => fieldRef.current?.focus()}>{t.actions.editByHand}</Button>
           {regeneratable && <Button variant="outline" size="sm" data-testid="dneskai-lab-regenerate" disabled={busy || !!regenerateBlock} aria-describedby={regenerateBlock ? `${id}-regenerate-block` : undefined} onClick={() => { setError(null); setDialog('regenerate'); }}>{t.actions.regenerate}</Button>}</div>
           {regenerateBlock && <p id={`${id}-regenerate-block`} className="text-foreground-muted">{regenerateBlock}</p>}</section>}
