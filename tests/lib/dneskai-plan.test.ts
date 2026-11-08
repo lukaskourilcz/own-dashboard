@@ -24,6 +24,15 @@ const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => with
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
+  it('re-tags an Instagram post whose hashtags break the current rule while its slot is ahead (8 November 2026)', () => {
+    const old = 'Text.\n\n#dneskai #openai #ai #aitech #gemini #nvidia';
+    expect(dneskaiPlanAction(slot(), head({}, { caption: old }), null, true, now)).toEqual({ kind: 'retag', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved' }, { caption: old }), null, true, now)).toEqual({ kind: 'retag', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({}, { caption: 'Text.\n\n#dneskai #ai #zpravy #nvidia #cipy' }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+    // A slot already past is left as it is.
+    expect(dneskaiPlanAction(slot(), head({}, { caption: old }), null, true, new Date('2026-11-08T08:00:00Z')).kind).not.toBe('retag');
+  });
+
   it('draws again a post rendered before the icy blue and new logo, approved or not, while its slot is ahead (8 November 2026)', () => {
     const stale = { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [], renderKeys: [], renderedAt: '2026-11-08T15:55:00.000Z' };
     const fresh = { ...stale, renderedAt: '2026-11-08T17:00:00.000Z' };
